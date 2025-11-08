@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StorageProvider } from "./contexts/StorageContext";
 import { ErrorBoundary } from "./components/SharedComponents";
 import Dashboard from "./components/Dashboard";
+import { checkAndMigrateStorage } from "./utils/storageVersion";
 import "./App.css";
 
 function App() {
+  // Controlla versione storage all'avvio
+  useEffect(() => {
+    checkAndMigrateStorage();
+  }, []);
+
   return (
     <ErrorBoundary>
       <StorageProvider useMockData={true}>
