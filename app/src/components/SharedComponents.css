@@ -1,0 +1,392 @@
+/**
+ * Shared Components Styles
+ * Sistema Gestione ISO 9001 - QS Studio
+ */
+
+/* === ERROR BOUNDARY === */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 20px;
+}
+
+.error-boundary-content {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+}
+
+.error-boundary-content h2 {
+  color: #e74c3c;
+  margin-bottom: 15px;
+}
+
+.error-details {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: left;
+  overflow-x: auto;
+  margin: 20px 0;
+  color: #555;
+  font-size: 0.85em;
+}
+
+/* === LOADING SPINNER === */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.loading-spinner.small {
+  padding: 20px;
+}
+
+.loading-spinner.large {
+  padding: 80px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner.small .spinner {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+.loading-spinner.large .spinner {
+  width: 60px;
+  height: 60px;
+  border-width: 5px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-message {
+  margin-top: 15px;
+  color: #7f8c8d;
+  font-size: 0.95em;
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+  border-left: 4px solid;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-success {
+  border-left-color: #27ae60;
+}
+
+.toast-error {
+  border-left-color: #e74c3c;
+}
+
+.toast-warning {
+  border-left-color: #f39c12;
+}
+
+.toast-info {
+  border-left-color: #3498db;
+}
+
+.toast-icon {
+  font-size: 1.5em;
+}
+
+.toast-message {
+  flex: 1;
+  color: #2c3e50;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: #95a5a6;
+  padding: 0;
+  transition: color 0.3s;
+}
+
+.toast-close:hover {
+  color: #2c3e50;
+}
+
+/* === AUTO SAVE INDICATOR === */
+.autosave-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: #7f8c8d;
+}
+
+.saving-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.saved-check {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+/* === EMPTY STATE === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
+}
+
+.empty-state-icon {
+  font-size: 4em;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.4em;
+}
+
+.empty-state-message {
+  margin: 0 0 20px 0;
+  color: #7f8c8d;
+  max-width: 400px;
+}
+
+/* === BADGE === */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-default {
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.badge-primary {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.badge-success {
+  background: #e8f5e9;
+  color: #27ae60;
+}
+
+.badge-warning {
+  background: #fff8e1;
+  color: #f39c12;
+}
+
+.badge-danger {
+  background: #ffebee;
+  color: #e74c3c;
+}
+
+/* === PROGRESS BAR === */
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+  transition: width 0.5s ease;
+  border-radius: 6px;
+}
+
+.progress-bar-default .progress-bar-fill {
+  background: linear-gradient(90deg, #3498db 0%, #5dade2 100%);
+}
+
+.progress-bar-warning .progress-bar-fill {
+  background: linear-gradient(90deg, #f39c12 0%, #f8b739 100%);
+}
+
+.progress-bar-danger .progress-bar-fill {
+  background: linear-gradient(90deg, #e74c3c 0%, #ec7063 100%);
+}
+
+.progress-bar-label {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 45px;
+  text-align: right;
+}
+
+/* === CARD === */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* === TABS === */
+.tabs-container {
+  display: flex;
+  gap: 5px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  color: #7f8c8d;
+  font-weight: 600;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab:hover {
+  color: #2c3e50;
+  background: #f8f9fa;
+}
+
+.tab.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+}
+
+.tab-icon {
+  font-size: 1.2em;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .toast {
+    min-width: 0;
+    max-width: calc(100vw - 40px);
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-state-icon {
+    font-size: 3em;
+  }
+
+  .tabs-container {
+    overflow-x: auto;
+  }
+
+  .tab {
+    white-space: nowrap;
+  }
+}

@@ -1,0 +1,2510 @@
+﻿n.4
+2015
+
+Linea Guida applicativa
+sulla ISO 9001:2015
+
+I QUADERNI DI CONFORMA
+
+
+
+
+
+
+©2015 UNI - Milano
+
+TUTTI I DIRITTI SONO RISERVATI
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi,
+
+fotocopie, microfi lm, o altro senza il consenso scritto dell’editore.
+
+ALL RIGHTS RESERVED
+No part of this work may be reproduced, stored in a retrieval system or transmitted in any form or by any
+
+means electronic, photocopying recording or otherwise, without the written permission from the publisher.
+
+Questa pubblicazione non è un documento normativo.
+La responsabilità dei concetti espressi è unicamente dell’autore.
+
+Autore
+Conforma -  Associazione Organismi Cerifi cazione Ispezione Prove Taratura
+
+Editore
+UNI – Ente Nazionale Italiano di Unifi cazione
+
+Via Sannio, 2 – 20137 Milano - Italia
+Tel. 02 70024.1 – Fax 02 5515256
+
+www.uni.com
+
+Novembre 2015
+
+ 
+
+
+
+La presente Linea Guida nasce come progetto del Gruppo di Lavoro ACCREDITAMENTO di Conforma al 
+quale aderiscono i seguenti Soci:
+
+• ASACERT 
+• AICQ SICEV  
+• BUREAU VERITAS 
+• CERTIQUALITY 
+• CSI   
+• CSQA 
+• DEKRA 
+• DNV GL 
+• ICIM 
+• ICMQ 
+• IGQ
+• ISTITUTO ITALIANO DEI PLASTICI 
+• IMQ 
+• RINA SERVICES 
+• SGS
+
+Il documento è il risultato di un tavolo tecnico CONFORMA ISO 9001:2015, al quale hanno partecipato:
+
+Valerio PAOLETTI  RINA Services      COORDINATORE 
+Andrea ALLOISIO  RINA Services
+Michele AVERSA   CSI
+Giulio BATTISTELLA  CSQA
+Massimo CASSINARI  ICMQ
+Luisa COLOMBO  DNV- GL
+Fiorenzo COSTA  AICQ SICEV
+Lionella DAGO   CSQA
+Valentina DORONZO  CONFORMA
+Lucio GALDANGELO  ICIM
+Roberto GRAMPA  ICMQ
+Lodovico JUCKER  BUREAU VERITAS 
+Francesca MALINVERNI  IMQ
+Paola PACE   DNV-GL
+Alessandra PEVERINI  CERTIQUALITY
+Barbara RENALDI  RINA Services 
+Angelo SALDUCCO  AICQ SICEV
+
+Alla revisione del documento ha partecipato Marco CIBIEN di UNI
+
+
+
+Sommario
+
+Introduzione ...................................................................................................................................... 7
+1 Scopo e campo di applicazione........................................................................................................ 9
+2 Riferimenti Normativi ...................................................................................................................... 9
+3 Termini e defi nizioni ....................................................................................................................... 9
+4 Contesto dell’Organizzazione ......................................................................................................... 9
+5 Leadership ..................................................................................................................................... 12
+6 Pianifi cazione ................................................................................................................................. 14
+7 Supporto ....................................................................................................................................... 18
+8 Attività operative ........................................................................................................................... 25
+9 Valutazione delle prestazioni ......................................................................................................... 33
+10 Miglioramento ............................................................................................................................ 35
+
+ALLEGATO - 1 
+ISO 9001:2008 to ISO 9001 - Correlation Matrix ..................................................................... 38
+
+ALLEGATO - 2 
+Esempi di applicazione del requisito 4.1 ........................................................................................... 40
+
+ALLEGATO - 3 
+“RISCHIO” IN ISO 9001:2015........................................................................................................... 41
+
+ALLEGATO - 4 
+Esempio non esaustivo di possibili rischi riferibili al contesto/parti interessate ................................... 47
+
+ALLEGATO - 5 
+Considerazioni su come effettuare audit per conformità alla ISO 9001:2015 .................................... 48
+
+
+
+
+
+
+Introduzione 
+
+Linea Guida applicativa sulla ISO 9001:2015
+
+Già dalla pubblicazione della versione DIS della ISO 9001, sono nate numerose iniziative per dare 
+informazioni sulle differenze tra la nuova norma e l’edizione precedente, sui signifi cati dei nuovi requisiti 
+e sui miglioramenti introdotti al fi ne di aumentare la capacità di raggiungimento degli obiettivi che una 
+Organizzazione si pone con l’adozione di un sistema di gestione per la qualità.
+
+Con l’uscita della versione FDIS (Final Draft International Standard) CONFORMA ha predisposto la 
+prima edizione di questa Guida con l’intenzione di collocarla su un piano leggermente diverso, con 
+l’ambizione di fornire indicazioni pratiche, sia per gli auditor degli Organismi di Certifi cazione, su cosa ci si 
+può aspettare di trovare in una Organizzazione per avere adeguata confi denza della corretta applicazione 
+dei requisiti della nuova ISO 9001:2015, sia per le Organizzazioni che adottano questa norma, per poter 
+dimostrare la conformità e l’effi cacia del loro sistema di gestione. Con la pubblicazione della versione 
+defi nitiva della norma, avvenuta il 23 settembre 2015, questa Linea Guida è stata revisionata per tenere 
+conto delle pochissime modifi che introdotte rispetto alla versione FDIS. 
+
+Per molti aspetti la versione 2015 della norma è frutto di una ricollocazione dei requisiti a fronte della 
+“High Level Structure” (ISO/IEC Directives Part 1-2014 (5th edition) / Annex SL), ma introduce anche 
+dei nuovi concetti e prescrizioni che meritano di essere approfonditi.  
+
+La Guida nasce dall’esperienza e dalla competenza che gli Organismi di Certifi cazione che aderiscono 
+a CONFORMA hanno maturato nella valutazione dei sistemi di gestione, che, unite alla conoscenza 
+approfondita delle norme di riferimento relative, permette di individuare l’interpretazione, ritenuta più 
+appropriata, dei requisiti applicabili ed in particolare di effettuare audit effi caci che possano dare valore 
+aggiunto alle Organizzazioni che lo ricevono, evitando di eccedere in formalismi.
+
+Naturalmente questo documento non può entrare nello specifi co di ogni Organizzazione, in quanto 
+le variabili in gioco sono moltissime come, ad esempio, il tipo di prodotto, le dimensioni, la complessità 
+operativa, il contesto in cui l’Organizzazione agisce, e soprattutto gli obiettivi che l’Organizzazione 
+si pone con l’adozione di un sistema di gestione per la qualità, limitandosi pertanto a considerazioni 
+di carattere generale che potranno comunque essere adattate alle singole realtà a cui la norma ISO 
+9001:2015 sarà applicata. 
+
+La Guida potrà essere utilizzata come riferimento per la valutazione della conformità e dell’effi cacia 
+di un sistema di gestione per la qualità alla ISO 9001:2015, contribuendo alla uniformità di giudizio 
+da parte dei valutatori, caratteristica attesa da tutte le parti interessate, con particolare riguardo agli 
+Organismi di Accreditamento. 
+
+I QUADERNI DI CONFORMA 7
+
+
+
+Questa Guida deve essere utilizzata unitamente alla norma, nella quale sono indicati i requisiti da 
+rispettare. Per ogni prescrizione della norma, i cui titoli e numerazione sono indicati nella prima colonna, 
+sono state indicate delle considerazioni sul requisito e le possibili evidenze da ricercare durante l’audit. 
+Ciò può essere particolarmente utile sia nel caso di un’Organizzazione già certifi cata per conformità alla 
+ISO 9001: 2008, che si trovi a preparare ed affrontare un audit per la verifi ca della conformità alla nuova 
+norma, sia per quelle Organizzazioni che sono in fase di predisposizione ed applicazione del proprio 
+sistema di gestione.
+
+Nella parte riservata alle possibili evidenze, sono stati utilizzati termini al “condizionale” (potrebbe; 
+dovrebbe; ....) per evidenziare che quanto indicato può non essere la sola modalità per soddisfare il 
+requisito.
+
+Negli allegati si trovano: una tabella comparativa tra la norma ISO 9001:2008 e la ISO 9001:2015; 
+degli esempi di applicazione del requisiti di cui al punto 4.1; la traduzione in italiano del documento ISO/
+TC 176/SC2  N1222  che fornisce un chiarimento sull’ “approccio basato sul rischio” che occorre tenere 
+nella determinazione dei processi, un esempio di possibili rischi riferibili al contesto in cui l’Organizzazione 
+opera ed alcune considerazioni su come approcciare un audit per conformità alla nuova edizione della 
+norma.
+
+UNI, riconoscendo la valenza della Linea Guida, l’ha condivisa e ha particolarmente curato l’aspetto di 
+congruenza terminologica con il corpo normativo dedicato alla gestione per la qualità ed alla valutazione 
+della conformità.
+
+8 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+1 Scopo
+
+2 Riferimenti Normativi
+
+3 Termini e definizioni
+
+4 Contesto dell’Organizzazione
+
+4.1 Comprendere l’Organizzazione e il suo contesto
+
+Il punto è completamente nuovo rispetto alla prece- Il requisito non specifi ca come dare evidenza 
+dente ISO 9001:2008. di tale analisi. Potrebbero essere accettabili 
+L’Organizzazione deve individuare ed analizzare relazioni specifi che, verbali di meeting, o la 
+i fattori interni ed esterni (positivi e negativi), che valutazione potrebbe essere parte del riesame 
+sono rilevanti per i suoi obiettivi strategici e che in- di direzione. I cambiamenti di contesto do-
+fl uenzano la sua capacità di ottenere i risultati attesi vrebbero essere input al riesame (vedi 9.3).
+dal sistema di gestione per la qualità. In mancanza di evidenze documentate, l’in-
+L’obiettivo è di elevare il livello di visione strategica tervista con il top management potrebbe for-
+dell’Organizzazione nel progettare il sistema di ge- nire indicazioni su come sono stati considerati 
+stione per la qualità, tenendo conto del contesto in i fattori interni ed esterni che concorrono alla 
+cui la stessa opera. comprensione del contesto in cui si colloca 
+Identifi care i fattori che possono infl uenzare la capa- l’Organizzazione.
+cità dell’Organizzazione di raggiungere I risultati de- L’auditor dovrebbe verifi care e valutare la co-
+siderati è fondamentale per ragionare in una ottica erenza tra il contesto determinato dall’Orga-
+di “Risk Based Thinking” (vedi 6.1) e di conseguenza nizzazione, l’analisi dei rischi e la pianifi cazio-
+defi nire e sviluppare opportunamente il sistema di ne del sistema di gestione per la qualità. 
+gestione per la qualità. Nel caso in cui l’analisi appaia incompleta o 
+
+superfi ciale, si dovrebbe valutare se tali ca-
+Per avere una visione completa dei fattori esterni e renze costituiscano un pericolo reale per la 
+interni che infl uenzano l’Organizzazione può esse- capacità dell’Organizzazione di soddisfare i 
+re opportuno il coinvolgimento di più competenze: requisiti impliciti/espliciti dei clienti, cogenti, 
+marketing e vendite, acquisti, amministrazione e fi - e in conseguenza a ciò formalizzare un rilievo. 
+nanza, risorse umane, direzione tecnica, produzione.
+In allegato 2 si trovano alcuni esempi, non esaustivi, 
+di come può essere applicato il requisito.
+
+4.2 Comprendere le esigenze e le aspettative delle parti interessate
+ 
+Il punto è completamente nuovo rispetto alla prece- Non è richiesto esplicitamente di disporre di 
+dente ISO 9001:2008. evidenze documentate di questa analisi, ma 
+L’Organizzazione deve determinare quali sono le potrebbe essere ragionevole aspettarsi che 
+parti interessate che possono avere infl uenza sulla queste informazioni siano raccolte in un do-
+sua capacità di fornire in maniera continuativa pro- cumento, riesaminate e aggiornate periodica-
+dotti e servizi che rispettino i requisiti impliciti, espli- mente.  (vedi 4.1).
+citi e cogenti.
+Devono essere individuate le aspettative delle parti 
+interessate che possono infl uenzare il sistema di ge-
+stione per la qualità.
+
+I QUADERNI DI CONFORMA 9
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+Si presti attenzione al fatto che non è richiesta l’ana-
+lisi completa di tutte le parti interessate, ma solo di 
+quelle rilevanti per il sistema di gestione per la qua-
+lità, ovvero con un potenziale impatto sull’effi cacia 
+del sistema in relazione al contesto dove l’Organiz-
+zazione opera od intende operare.
+
+La considerazione delle esigenze delle parti interes-
+sate deve essere funzionale alla soddisfazione del 
+cliente.
+Esempi di parti interessate possono essere:
+- utilizzatori finali dei prodotti, possono avere 
+
+aspettative differenti dalle specifi che richieste del 
+cliente diretto;
+
+- azionisti, che con le loro politiche infl uenzano il 
+sistema di gestione con ricadute sulla qualità del 
+prodotto;
+
+- dipendenti e sindacati, gestione orari di lavo-
+ro, rivendicazioni in merito alla sicurezza con ri-
+chiesta di investimenti in infrastrutture;
+
+- fornitori, necessità di rispetto dei tempi di pa-
+gamento per reciproca sostenibilità, necessità di 
+pianifi cazione ordini per rispettare i tempi di con-
+segna.
+
+I requisiti o le aspettative delle parti interessate de-
+vono essere input per la pianifi cazione del sistema 
+di gestione per la qualità (vedi 6.1) e del riesame di 
+direzione (vedi 9.3).
+
+4.3 Determinare il campo di applicazione del sistema di gestione per la qualità 
+ 
+Il campo di applicazione del sistema di gestione per Rimane fondamentale l’analisi approfondita 
+la qualità determina il perimetro entro il quale sono della correttezza del campo di applicazione 
+applicati i requisiti della norma. del sistema di gestione per la qualità: lo stesso 
+Il campo di applicazione deve essere documentato, deve essere coerente con le richieste dei clien-
+e deve identifi care i prodotti e i servizi compresi nel ti e con i requisiti cogenti. È anche richiesto di 
+sistema di gestione, anche se non è più richiesto che verifi carne la coerenza con il contesto inter-
+sia redatto un “manuale della qualità”, e deve es- no ed esterno in cui opera l’Organizzazione e 
+sere soggetto a riesame periodico. È ora esplicitato con i requisiti delle parti interessate.
+cosa si deve tenere in considerazione per defi nire il Le motivazioni e giustifi cazioni di eventuali 
+campo di applicazione:i fattori esterni e interni e i esclusioni di requisiti della norma dovrebbero 
+requisiti delle parti interessate oltre ovviamente ai risultare congruenti con il campo di applica-
+prodotti o servizi offerti dall’Organizzazione. zione del sistema.
+La norma non parla più di esclusioni, bensì di appli- Sarebbe opportuno verifi care che tutti i pro-
+cabilità dei requisiti, stabilendo che, se un requisito dotti/servizi oggetto del campo di applica-
+è applicabile, questo deve essere applicato. zione della certifi cazione siano coperti dal 
+Tutti i requisiti di norma che sono pertinenti al cam- sistema di gestione per la qualità e che una 
+po di applicazione stabilito dall’organizzazione sono eventuale non applicazione di requisiti sia 
+applicabili. supportata da analisi pertinenti.
+
+10 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+Nel caso in cui un requisito non possa essere ap- In particolare è necessario verifi care che l’Or-
+plicato, ciò non deve avere effetti sulla capacità ganizzazione si assuma la responsabilità dei 
+e/o responsabilità dell’Organizzazione di assicurare processi in outsourcing. (vedi 8.4.2).
+la conformità dei prodotti e servizi e la soddisfazione Esempi di casi critici:
+del cliente. - progettazione in outsourcing affi data ad 
+Anche le motivazioni alle eventuali non applicabilità uno studio di ingegneria esterno;
+devono essere documentate e soprattutto è neces- - realizzazione in outsourcing di un prodotto 
+sario dimostrare che gli eventuali requisiti non ap- soggetto a requisiti cogenti (alimenti, di-
+plicabili non abbiano alcuna rilevanza sul sistema, spositivi medici);
+sui prodotti o sui servizi offerti anche attraverso una - assistenza infermieristica ospedaliera affi da-
+analisi dei rischi (vedi 6.1). ta ad una cooperativa;
+Si presti attenzione al termine “responsabilità” che - servizio mensa scolastica in outsourcing.
+ha una forte ricaduta anche sui processi o prodotti 
+realizzati in outsourcing: l’Organizzazione non può 
+esimersi dalla responsabilità dei risultati di questi 
+processi e/o prodotti.
+
+4.4 Sistema di gestione per la qualità e relativi processi
+
+Questo requisito è già presente al punto 4.1 della In alternativa al manuale della qualità po-
+ISO 9001:2008. trebbero essere resi disponibili diagrammi di 
+È stata data maggior enfasi all’approccio per proces- fl usso o tabelle, matrici di responsabilità, pro-
+si, alla misura dell’effi cacia dei processi e al migliora- cedure o altra documentazione equivalente. 
+mento continuo delle prestazioni. Dovrebbe essere verifi cato che gli indicatori 
+In particolare: determinati dall’Organizzazione siano ade-
+- devono essere determinati gli input necessari e gli guati a misurare l’effi cacia dei processi rispet-
+
+output previsti per ciascun processo, le loro inte- to agli output attesi per il processo stesso.
+razioni e le risorse ad essi dedicate; In merito alla necessità di mantenere infor-
+
+- devono essere determinati i metodi, i criteri e gli mazioni documentate a supporto dei proces-
+indicatori che misurino le prestazioni dei processi; si, dovrebbe essere verifi cato che il sistema di 
+
+- devono essere assegnate le responsabilità e l’auto- gestione sia in grado di soddisfare i requisi-
+rità per la gestione dei processi. ti della norma, e che l’Organizzazione sia in 
+
+Nella ISO 9001:2015 viene aggiunto un nuovo re- grado di operare, e assicurare la conformità 
+quisito: del prodotto, utilizzando la documentazione 
+- devono essere considerati i rischi (intesi come mi- predisposta.  
+
+nacce) e le opportunità, e le modalità di gestione Dovrebbe essere valutato come l’Organizza-
+(ripreso poi in 6.1). zione, nello sviluppo ed applicazione del si-
+
+Alla gestione dei processi in outsourcing è stato de- stema, abbia tenuto conto di azioni indiriz-
+dicato un punto specifi co (vedi 8.4); i processi in zate alla gestione dei rischi su ogni processo.
+outsourcing devono essere comunque descritti nel 
+fl usso di processo, con inclusa l’analisi dei rischi e 
+delle opportunità.
+Non c’è più l’obbligo di predisporre le 6 procedu-
+re documentate su alcuni aspetti toccati dalla nor-
+ma, ma è chiesto all’Organizzazione di mantenere 
+informazioni documentate (procedure) a supporto 
+dell’operatività dei processi, nell’estensione ritenuta 
+necessaria.  Anche il manuale della qualità non è più 
+obbligatorio, ma probabilmente chi ne utilizza già 
+
+I QUADERNI DI CONFORMA 11
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+uno potrebbe decidere di mantenerlo e aggiornarlo 
+rispetto ai nuovi requisiti. 
+Inoltre devono essere conservate e rese disponibili 
+informazioni documentate (registrazioni) per fornire 
+evidenza dell’applicazione dei processi, così come 
+pianifi cata.
+
+5 Leadership
+
+5.1 Leadership e impegno
+
+5.1.1 Generalità
+
+Sono state enfatizzate le responsabilità dell’alta di- Il rispetto del requisito di norma, potrebbe es-
+rezione ed il ruolo che essa ha, in termini di suppor- sere verifi cato attraverso:
+to e motivazione nei confronti delle risorse umane, a. colloquio con il Top Management per va-
+nell’attuazione del sistema di gestione per la qualità. lutarne l’effettivo impegno;
+La nuova norma non parla più di un Rappresentante b. verifi ca del riesame di direzione;
+della Direzione, ma coinvolge esplicitamente il “Top c. verifi ca di obiettivi e indirizzi strategici;
+Management”. d. interviste al personale;
+A riguardo, si nota come la nuova norma introduca e. verifi ca delle comunicazioni del top mana-
+il concetto di top management inteso come: gement;
+“Persona o gruppo di persone che dirigono e con- f. effettiva  disponibilità di risorse adeguate.
+trollano una Organizzazione al più alto livello”. g. Verifi ca dell’effettivo coinvolgimento del 
+In primis chi dovrebbe dimostrare la consapevolezza personale
+sull’importanza del sistema di gestione per la qualità Dovrebbero essere disponibili defi nizioni di 
+dovrebbe essere proprio il top management. strategie e obiettivi relativi:
+Il coinvolgimento dell’alta direzione è fondamentale - al business dei prodotti/servizi oggetto del 
+per l’effi cace attuazione di un Sistema di gestione campo di applicazione del sistema;
+per la qualità, ed è richiamato in molti requisiti di - al rispetto dei requisiti dei clienti tenendo 
+norma. conto anche delle delle parti interessate ri-
+Le prescrizioni riportate ai punti b e c rendono più levanti;
+esplicito il concetto di integrazione tra il “sistema - a eventuali requisiti cogenti applicabili.
+azienda” e il sistema di gestione per la qualità. Inoltre dovrebbe essere valutata:
+
+- l’evidenza della declinazione degli obiettivi 
+L’applicazione del sistema azienda si estende anche all’interno dell’Organizzazione;
+ai processi legati al business coniugati agli obiettivi e - l’evidenza dell’attività di monitoraggio e ve-
+performance dell’Organizzazione. rifi ca dello stato di attuazione degli obiettivi 
+Più esplicita adesso è la necessità di promuovere la defi niti.
+consapevolezza dell’approccio per processi e del’ap-
+proccio basato sul rischio (Risk Based Thinking). 
+
+5.1.2 Focalizzazione sul Cliente
+
+In linea generale rimane il concetto di coinvolgi- Le evidenze dovrebbero essere ricercate nella 
+mento della Direzione nelle attività di individuazio- defi nizione della politica per la qualità, delle 
+ne dei requisiti dei clienti diretti e indiretti. strategie e degli obiettivi e nell’analisi dei ri-
+Nel punto della norma è inserito lo specifi co riferi- schi (vedi 6.1).
+mento anche ai “requisiti cogenti” e alla necessità di Le evidenze potrebbero essere ricercate, ad 
+
+12 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+identifi cazione dei rischi e delle opportunità, riferite esempio, in:
+al rispetto delle esigenze dei clienti e dei requisiti - verbalizzazioni di incontri effettuati da parte 
+cogenti applicabili. della Direzione nei confronti dei clienti;
+
+- risultati di indagini di mercato e della con-
+correnza; 
+
+- dati analizzati in sede di riesame di direzione.
+In particolari casi, quali ad esempio:
+- ingresso in un nuovo mercato
+- attivazione di un nuovo cliente
+- nuove o sostanziale modifi ca di un requisito 
+
+cogente, potrebbero essere attivate da par-
+te della direzione attività di analisi dei rischi 
+(vedi 6.1) e delle opportunità connesse.
+
+Infi ne la verifi ca dell’effi cacia degli strumenti 
+predisposti può essere comunque dimostrata 
+dai risultati in termini di soddisfazione o in-
+soddisfazione dei clienti (analisi delle “perfor-
+mance” attraverso indicatori, analisi dei recla-
+mi, resi, ecc.). 
+
+5.2 Politica 
+
+5.2.1 Stabilire la politica per la qualità
+
+Le novità consistono nel richiamo al contesto in cui Occorrerebbe accertarsi che la politica sia co-
+opera l’Organizzazione e nella comunicazione dello erente con:
+stesso verso le parti interessate rilevanti. - analisi del contesto 
+A fronte della nuova edizione della norma, si può - esigenze ed aspettative dei clienti
+dire che sia defi nitivamente tramontato il periodo - strategie dell’Organizzazione
+delle politiche per la qualità generiche e statiche. - eventuali requisiti cogenti
+I contenuti della politica dovrebbero essere coerenti - esigenze ed aspettative delle altre pertinen-
+con i risultati dell’analisi di contesto, con le esigenze ti parti interessate.
+dei clienti, delle altre parti interessate e dei requisi- La politica dovrebbe contenere un impegno 
+ti cogenti, e gli obiettivi stabiliti dovrebbero essere verso il miglioramento continuo del sistema 
+congruenti con la politica. di gestione per la qualità.
+Le continue mutazioni della Organizzazione e del 
+contesto in cui la stessa opera, impongono una revi-
+sione periodica della politica.
+
+5.2.2 Comunicare la politica per la qualità
+
+In termini di comunicazione occorre prevedere la È necessario verifi care che la politica sia di-
+possibilità di rendere disponibile la politica per la sponibile come informazione documentata, 
+qualità, oltre che all’interno dell’Organizzazione, sia stata opportunamente comunicata all’in-
+anche alle parti interessate rilevanti, al fi ne di pro- terno dell’Organizzazione e di conseguenza 
+muoverne il relativo coinvolgimento. sia conosciuta ed applicata.
+La politica potrebbe essere resa disponibile con qua- Sarebbe opportuno verifi care se, come e con 
+lunque mezzo. quali criteri sono state individuate le parti 
+
+interessate a cui può essere resa disponibile 
+
+I QUADERNI DI CONFORMA 13
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+la politica e se, quindi, la stessa sia stata co-
+municata all’esterno (ad esempio potrebbe 
+essere divulgata ai fornitori che con il proprio 
+operato concorrono al successo dell’Organiz-
+zazione).
+Infi ne occorrerebbe accertarsi che sia revisio-
+nata in maniera sincrona alla rivalutazione e 
+mutazioni del contesto.
+
+5.3 Ruoli organizzativi, responsabilità e autorità
+
+Al Top Management delle Organizzazioni è richiesto Nella maggior parte dei casi dovrebbero es-
+di defi nire le responsabilità e le autorità nell’ambito sere disponibili organigrammi, disposizioni 
+dei processi e delle attività svolte. organizzative, mansionari. Tuttavia è accetta-
+Ancorché il requisito di norma non faccia riferimen- bile, a seconda della complessità delle Orga-
+to ad informazioni documentate, vi possono essere nizzazioni e delle relative attività, una defi ni-
+diverse forme di defi nizione delle responsabilità e zione delle responsabilità a livello di:
+autorità che dipendono dalle prassi in atto e comun- - fl ussi dei processi;
+que dalla complessità organizzativa. - procedure gestionali;
+
+- istruzioni operative;
+Non è più prevista la fi gura del “rappresentante del- - accessi riservati ai sistemi informative azien-
+la direzione” che accentrava tutte le responsabilità dali.
+relative alla conduzione del sistema di gestione per 
+la qualità, ma è pur sempre richiesto che dette re- Sarebbe sempre comunque opportuno accer-
+sponsabilità ed autorità siano assegnate. È comun- tarsi della effettiva rilevanza dei ruoli cui siano 
+que opportuno che il canale di comunicazione della state assegnate le responsabilità ed autorità e 
+Direzione con l’interno e l’esterno, per quanto ri- della coerenza fra queste ultime e quelle effet-
+guarda il sistema di gestione per la qualità , sia defi - tivamente riscontrate durante l’audit nell’am-
+nito in modo chiaro, attraverso l’assegnazione delle bito dei processi aziendali.
+relative responsabilità.
+Le responsabilità e autorità assegnate, anche a più 
+di una persona, per quanto di loro competenza, 
+devono essere comunicate e note all’interno della 
+Organizzazione.
+
+L’eliminazione del requisito relativo al rappresentan-
+te della Direzione non deve necessariamente com-
+portare la cancellazione di tale fi gura dal sistema di 
+gestione per la qualità, soprattutto nei casi in cui 
+la delega non è di tipo formale, ma sostanziale e/o 
+funzionale, nonché a rappresentare la Direzione, ad 
+esempio, nei confronti dei clienti.
+
+6 Pianificazione
+
+6.1 Azioni per affrontare rischi e opportunità
+
+Sebbene la norma non parli espressamente di “ana- Dovrebbe essere possibile all’auditor, par-
+lisi dei rischi”, un “approccio basato sul rischio” tendo dagli obiettivi del sistema che devono 
+
+14 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+(Risk Based Thinking)   è ritenuto fondamentale per essere documentati (6.2.1), risalire alle azioni 
+pianifi care il sistema di gestione per la qualità, con- pianifi cate per raggiungere questi obiettivi 
+siderando che uno degli scopi del sistema stesso è (6.1.2) e, per mezzo di interviste e altre “in-
+fornire uno strumento di prevenzione all’Organizza- formazioni documentate” (ad es. il riesame 
+zione che lo adotta. di direzione), verifi care se queste azioni sono 
+Anche se alla parola “rischio” è normalmente asso- coerenti e appropriate con gli obiettivi e, an-
+ciato un valore negativo, questa può assumere una cora, se sono appropriate ai rischi e alle op-
+connotazione positiva o negativa. portunità individuate.
+
+La gestione del rischio viene esplicitamente richiesta Dovrebbe essere verifi cato se l’Organizzazio-
+a fronte dei seguenti requisiti: ne applica tecniche di analisi dei rischi, come 
+- sistema di gestione per la qualità ed i suoi processi ad esempio FMEA di progetto, processo, pro-
+
+(vedi 4.4.1,f) in termini di determinazione dei ri- dotto. 
+schi e delle opportunità associati ai processi;
+
+- focalizzazione al cliente (vedi 5.1.2,b) in termini Nell’ambito delle attività di analisi dei rischi è 
+di rischi e opportunità che possono infl uenzare la auspicabile che le Organizzazioni individuino 
+capacità dell’Organizzazione di soddisfare i requi- opportune metodologie per gerarchizzare i 
+siti dei clienti. rischi come ad esempio indici basati sulla gra-
+
+vità (delle conseguenze) e sulla probabilità di 
+Si può, inoltre, desumere dal testo del requisito: accadimento di eventi.
+- attività di post consegna (vedi 8.5.5) in termini 
+
+di rischi e opportunità associate ai prodotti e ai Dovrebbe essere verifi cato, inoltre, se l’Orga-
+servizi. nizzazione ha identifi cato/pianifi cato le esi-
+
+genze per la revisione delle proprie azioni. 
+Le opportunità possono includere ad esempio: il lan- Dovrebbe essere verifi cato se il personale 
+cio di nuovi prodotti, apertura di nuovi mercati, in- dell’Organizzazione è consapevole che l’ap-
+troduzione di nuove tecnologie o partnerships, ecc. proccio sul sistema di gestione per la qualità 
+Infi ne, tra gli input del riesame di direzione (vedi e sui processi è basato sul rischio (Risk Based 
+9.3) è contemplata anche la verifi ca delle azioni in- Thinking).
+traprese per affrontare i rischi e le opportunità.
+Nella fase di pianifi cazione del sistema di gestione 
+per la qualità è necessario riferirsi ai risultati dell’a-
+nalisi del contesto (interno ed esterno) in cui opera 
+l’Organizzazione, nonché ai risultati dell’analisi dei 
+requisiti delle parti interessate rilevanti.
+Tenendo conto di ciò, occorre identifi care i rischi e 
+le opportunità legati al raggiungimento dei risultati 
+attesi ed individuare gli eventi che possono inter-
+ferire con il raggiungimento degli obiettivi, o che 
+possono costituire opportunità di miglioramento.
+
+Si fa presente che la norma non richiede un’analisi 
+condotta secondo uno specifi co modello (una orga-
+nizzazione è libera di scegliere l’approccio o la me-
+todologia più adeguata per rispettare il requisito) e 
+neppure un processo documentato formale per la 
+gestione del rischio, tuttavia un minimo di evidenza 
+documentata potrebbe essere utile al fi ne di tenere 
+sotto controllo le pertinenti attività.
+
+I QUADERNI DI CONFORMA 15
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+In particolare le Organizzazioni dovranno:
+- analizzare e classifi care i rischi in rapporto alla gra-
+
+vità delle possibili conseguenze;
+- pianifi care le azioni per poter affrontare i rischi 
+
+(eliminazione e/o mitigazione degli stessi);
+- mettere in atto tali azioni;
+- controllarne l’effi cacia;
+- apprendere dall’esperienza.
+Nella classifi cazione dei rischi può essere utile riferirsi 
+a metodologie già riconosciute a livello internazio-
+nale (esempio: ISO 31000, ISO 31010, ed altre).
+È comunque responsabilità dell’Organizzazione sta-
+bilire in che misura e con quali modalità gestire una 
+analisi dei rischi nell’ambito del proprio sistema di 
+gestione per la qualità, tenendo conto del tipo di 
+prodotto, della propria complessità, della criticità 
+dei processi ed in generale del contesto in cui opera.
+ISO ha pubblicato un interessante documento (Al-
+legato 3) nel quale da una spiegazione su come 
+affrontare l’approccio basato sul rischio (Risk Based 
+Thinking) nello sviluppo del Sistema di Gestione per 
+la Qualità.
+Il documento include anche degli esempi che, sep-
+pur molto semplici ed elementari, riescono a far 
+comprendere come le organizzazioni, anche quelle 
+meno complesse, sempre tenendo conto del conte-
+sto in cui operano, possono adottare e seguire un 
+approccio basato sul rischio, nella pianifi cazione e 
+sviluppo del proprio sistema.
+I risultati dell’analisi dei rischi dovrebbero essere 
+utilizzati per la pianifi cazione del sistema di gestio-
+ne per la qualità, in tutte le sue fasi. In particolare 
+l’individuazione delle metodologie per tenere sotto 
+controllo i processi dovrebbe essere defi nita da par-
+te dell’Organizzazione, con l’approccio “risk based 
+thinking”. Per le Organizzazioni potrebbe essere 
+l’occasione per rivalutare quanto fatto nell’ottica di 
+una maggiore effi cacia. 
+Nei casi di Organizzazioni che applicano già tecni-
+che di analisi dei rischi, come ad esempio FMEA di 
+progetto, processo, prodotto, le stesse potranno es-
+sere prese in considerazione, fermo restando la ne-
+cessità di estendere le analisi anche ad altri ambiti.
+In allegato è inserito anche un elenco, non esaustivo, 
+di possibili rischi che un’azienda potrebbe valutare 
+in relazione al contesto in cui opera (vedi allegato 4).
+Si fa comunque notare che non tutti i processi deter-
+minati per il sistema di gestione per la qualità pos-
+sono presentare lo stesso livello di rischio e il livello 
+
+16 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+di rischio potrebbe essere diverso a seconda delle 
+esigenze dei vari clienti.
+Una analisi dei rischi dovrebbe essere riesaminata, 
+aggiornata o ripetuta nel tempo, ed in ogni caso 
+quando ritenuto necessario.
+
+Necessità di esecuzione e/o riesame dell’analisi dei 
+rischi possono emergere a fronte di:
+- risultati dell’analisi del contesto;
+- risultati dell’analisi delle esigenze dei clienti e delle 
+
+altre pertinenti parti interessate;
+- risultati dell’analisi del rispetto dei requisiti cogenti;
+- defi nizione e/o rivisitazione dei processi;
+- qualsiasi altra necessità come ad esempio la scelta 
+
+di un nuovo fornitore, l’allargamento di un inter-
+vallo di taratura di uno strumento, la necessità di 
+ridurre campionamenti nelle fasi di controllo qua-
+lità, ecc.
+
+Altra tematica che dovrebbe essere presa in consi-
+derazione è quella della formazione riguardante le 
+tecniche di analisi del rischio. 
+
+6.2 Obiettivi per la qualità e pianificazione per il loro raggiungimento
+
+Le prescrizioni rimangono sostanzialmente le mede- Il rispetto del requisito potrebbe essere verifi -
+sime rispetto alla ISO 9001: 2008; tuttavia sono for- cato attraverso uno o più dei seguenti aspetti:
+niti maggiori dettagli circa le caratteristiche attese - l’evidenza documentata della defi nizione e 
+per gli obiettivi, e nella seconda parte del requisito comunicazione degli obiettivi verifi cando-
+sono specifi cate le modalità di pianifi cazione degli ne la coerenza con i risultati dell’analisi del 
+obiettivi stessi. contesto, con la politica per la qualità, con i 
+Si conferma la necessità di defi nire obiettivi concreti requisiti dei clienti e quelli cogenti applica-
+e misurabili che possono riguardare o scaturire da: bili;
+- strategie aziendali; - la coerenza degli obiettivi di dettaglio con 
+- analisi di mercato; quelli macro e/o strategici;
+- requisiti dei clienti; - l’evidenza di quanto pianifi cato per il rag-
+- requisiti cogenti; giungimento degli obiettivi;
+- analisi dei processi; - la assegnazione di responsabilità e risorse 
+- analisi dei rischi; per il raggiungimento degli obiettivi;
+- ecc. - quanto messo in atto dall’ l’Organizzazione 
+Gli obiettivi possono essere poi declinati in obiettivi per mantenere sotto controllo il raggiungi-
+di maggior dettaglio coinvolgendo i pertinenti livelli mento degli obiettivi.
+e le relative funzioni nell’ambito dell’Organizzazio-
+ne. Una novità signifi cativa rispetto alla precedente 
+edizione della norma è la richiesta di stabilire obiet-
+tivi qualitativi per prodotti, processi e per il migliora-
+mento della soddisfazione del cliente.
+La concretezza degli obiettivi è anche funzione del-
+la loro reale e specifi ca pianifi cazione per il relativo 
+raggiungimento.
+
+I QUADERNI DI CONFORMA 17
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+6.3 Pianificazione delle modifiche
+
+Il requisito non presenta sostanziali novità, ma risul- Il rispetto del requisito potrebbe essere va-
+ta maggiormente articolato. lutato verifi cando se eventuali cambiamenti 
+L’applicazione del requisito richiede alle Organizza- hanno avuto o meno impatti sul sistema di 
+zioni di verifi care, nel caso di modifi che, come ad gestione per la qualità e come questi sono 
+esempio: stati pianifi cati e gestiti.
+- introduzione di nuovi prodotti;
+- introduzione di nuovi mercati e/o clienti;
+- modifi ca di requisiti contrattuali;
+- modifi che di requisiti cogenti;
+- modifi che di carattere organizzativo;
+- modifi che o introduzioni di nuovi sistemi informa-
+
+tivi;
+l’impatto delle stesse sul sistema di gestione per la 
+qualità.
+
+7 Supporto
+
+7.1 Risorse
+
+7.1.1 Generalità
+
+L’Organizzazione deve defi nire e fornire le risorse Nel riesame di direzione (vedi 9.3.1) dovreb-
+umane e infrastrutturali, interne ed esterne, necessa- be essere inclusa un’evidenza dell’analisi del-
+rie per la gestione dei processi rientranti nel campo le risorse necessarie e delle relative azioni da 
+di applicazione del sistema di gestione per la qualità. intraprendere, per colmare eventuali carenze.
+
+Dovrebbe poter essere verifi cato che per ogni 
+Nell’ identifi cazione di quanto necessario l’Organiz- processo:
+zazione dovrà tenere conto della capacità e dei limiti - siano state destinate risorse umane e infra-
+delle risorse già presenti e della necessità di coinvol- strutturali, interne ed esterne, adeguate in 
+gere anche risorse esterne ai fi ni della conformità ai congruenza con gli obiettivi stabiliti; 
+requisiti ed aspettative del cliente e per la realizza- - siano stati defi niti gli indicatori di presta-
+zione di nuove attività di business individuate. zione, la formazione erogata (return on in-
+
+vestment), e la necessità di acquisire risor-
+se in previsione di un cambiamento (vedi 
+9.3.2) sostanziale del prodotto o servizio. 
+
+Dovrebbe essere verifi cato se, per la defi nizio-
+ne delle risorse, è stato considerato l’impatto 
+potenziale, dei processi e/o attività affi date 
+all’esterno (prodotti, componenti, materiali, 
+servizi, processi, ... altro).
+
+7.1.2 Persone
+
+L’Organizzazione dovrà assicurare personale ade- L’Organizzazione dovrebbe poter dimostrare 
+guato per l’effi cace attuazione del sistema di ge- che le persone identifi cate siano adeguate alle 
+stione per la qualità e per l’operatività e controllo necessità del sistema di gestione per la qualità 
+dei suoi processi, per soddisfare in modo costante ed agli obiettivi stabiliti.
+
+18 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+le richieste del cliente e delle normative e leggi ap- Dovrebbero essere verifi cate eventuali clauso-
+plicabili. le in merito al numero di persone necessarie 
+Ad esempio: per l’attività, stabilite contrattualmente con i 
+- nel caso di un contratto che richieda l’impiego di un clienti.
+
+numero minimo di persone per una data attività;
+- nel caso in cui debba essere garantito il comple-
+
+tamento di una attività entro certi limiti di tempo, 
+per il passaggio ad un processo successivo.
+
+7.1.3 Infrastrutture 
+
+Al fi ne di assicurare l’adeguatezza e l’effi cacia del- Il rispetto del requisito potrebbe essere verifi -
+le proprie infrastrutture, l’Organizzazione dovrebbe cato attraverso:
+predisporre idonee istruzioni di lavoro, prevedendo - l’analisi del fabbisogno delle infrastrutture 
+un’idonea competenza degli utilizzatori e program- sulla base del piano degli obiettivi;
+mando interventi manutentivi ordinari. - la valutazione dei fornitori utilizzati;
+
+- l’esame del programma e dei piani di ma-
+nutenzione previsti per il controllo delle in-
+frastrutture e relative registrazioni dei con-
+trolli effettuati considerando anche quelli 
+cogenti (in relazione alla qualità del prodot-
+to/servizio fornito);
+
+- la verifi ca di contratti con i fornitori dei ser-
+vizi di manutenzione.
+
+7.1.4 Ambiente per il funzionamento dei processi
+
+Si nota l’utilizzo del termine generico di ambiente e Dovrebbe essere verifi cato se l’Organizzazione 
+non di ambiente di lavoro. Tale genericità estende il ha considerato e determinato quali fattori 
+riferimento dalle strutture tecniche e infrastrutturali, sociali, psicologici e fi sici siano rilevanti 
+combinando fattori umani e fi sici. nell’ambito della realizzazione del prodotto/
+
+erogazione del servizio.
+L’ambiente comprende ogni tipo di variabile che 
+può infl uenzare il benessere ed il comportamento Il rispetto del requisito potrebbe essere 
+delle persone che hanno relazione direttamente o verifi cato attraverso:
+indirettamente con l’Organizzazione. - l’analisi delle condizioni ambientali 
+
+adeguate alle necessità dell’Organizzazione;
+- l’esame del piano di controllo delle 
+
+condizioni dell’ambiente di lavoro, e le 
+registrazioni dei controlli e monitoraggi 
+effettuati considerando anche quelli cogenti 
+(in relazione alla qualità del prodotto/
+servizio fornito) e la qualifi ca dei fornitori 
+utilizzati;
+
+- l’esame di contratti con I fornitori di servizio 
+di manutenzione.
+
+I QUADERNI DI CONFORMA 19
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+7.1.5 Risorse per il monitoraggio e la misurazione
+
+7.1.5.1 Generalità
+
+7.1.5.2 Riferibilità della misurazione
+
+Sono previsti, come nell’edizione precedente della Il rispetto del requisito potrebbe essere 
+norma, casi di monitoraggi e misurazioni strumen- verifi cato attraverso:
+tali e non strumentali con utilizzo di mezzi diversi - l’esame di procedure o istruzioni di lavoro 
+(apparecchiature di misura e monitoraggio, prove e che diano evidenza della pianifi cazione 
+collaudi, indagini telefoniche/questionari). delle risorse necessarie per effettuare 
+
+monitoraggi e misurazioni corrette ed 
+L’Organizzazione dovrà defi nire le risorse necessarie, affi dabili; 
+umane ed infrastrutturali, coinvolte nei processi di - l’esame di documenti di registrazione 
+monitoraggio e misurazione, per garantire risultati di monitoraggi e misurazioni effettuate. 
+corretti ed affi dabili, e, ove richiesto, metrologica- Tali documenti devono essere disponibili 
+mente riferibili. (informazioni documentate). Tra questi 
+
+possono essere considerati anche, ad 
+L’Organizzazione garantirà che le risorse fornite si- esempio, i test di effi cacia di apprendimento 
+ano adatte per il tipo specifi co di monitoraggio e per le società di formazione;
+misurazione da effettuare, siano mantenute per ga- - le registrazioni di tarature, gestione 
+rantire la loro idoneità nel tempo e dovrà conser- e controllo delle apprecchiature di 
+varne appropriata informazione documentata come monitoraggio e misurazione (ad esempio 
+evidenza. registrazioni di prove e collaudi effettuati);
+
+- l’esame del giudizio di adeguatezza del 
+fornitore utilizzato, qualora tale attività 
+venga esternalizzata.
+
+7.1.6 Conoscenza organizzativa
+
+Questo nuovo requisito focalizza l’importanza della Il rispetto del requisito potrebbe essere verifi -
+disponibilità costante, all’interno dell’Organizza- cato attraverso:
+zione, della conoscenza adeguata per ottenere la - l’analisi di eventuali documenti che identifi -
+conformità di prodotti e servizi, e di programmarne cano le fonti e i tipi di conoscenze necessari 
+la disponibilità in caso di mancanza della stessa. (ad es: riesame di direzione);
+Esso enfatizza la necessità di patrimonializzare l’e- - evidenza che una valutazione delle cono-
+sperienza aziendale per rafforzare la conoscenza scenze sia stata effettuata prima di ogni 
+del personale al fi ne di assicurare la conformità dei cambiamento nel sistema di gestione o a 
+prodotti e dei servizi e la necessità da parte dell’Or- seguito di modifi che di esigenze specifi che; 
+ganizzazione di essere in grado di rispondere con - la ricostruzione, anche attraverso interviste, 
+adeguata competenza ai cambiamenti del contesto di un caso reale di cambiamento.
+interno ed esterno in cui opera, alle aspettative dei 
+clienti e delle parti interessate.
+L’Organizzazione dovrebbe valutare come la co-
+noscenza sia defi nita e protetta e prevedere come 
+poter ottenere la conoscenza necessaria nella quo-
+tidianità e per il futuro utilizzando fonti interne ed 
+esterne.
+I mezzi per identifi care, mantenere e proteggere la 
+
+20 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+competenza/conoscenza possono derivare da:
+- insuccessi o successi;
+- contributi in termini di valore delle singole perso-
+
+ne nell’Organizzazione relativi a esperienza, cono-
+scenza e capacità;
+
+- scambio di esperienze con clienti, fornitori e part-
+ners.
+
+NOTA
+CONOSCENZA: Acquisizione di contenuti, cioè di 
+principi, teorie, concetti, termini, regole, proce-
+dure, metodi e tecniche.
+
+7.2 Competenza
+
+Il concetto espresso dalla norma è che devono esse- Il rispetto del requisito potrebbe essere verifi -
+re determinate le competenze necessarie per ogni cato attraverso:
+attività da effettuare e deve essere assicurato che le - l’identifi cazione e l’analisi delle competenze 
+persone che effettuano una attività abbiano le com- necessarie, anche nel caso di modifi che;
+petenze necessarie. - il Riesame di Direzione con valutazione dei 
+
+rischi (identifi cazione, conferma, aggiorna-
+NOTA mento delle competenze, richiesta di nuove 
+COMPETENZA: Utilizzazione delle conoscenze competenze per nuovi business);
+acquisite per risolvere situazioni o produrre nuo- - la verifi ca di eventuali piani di sviluppo del 
+vi prodotti/servizi personale e relativi obiettivi;
+
+- la verifi ca di eventuali piani di sviluppo delle 
+Si nota che la competenza può essere acquisita in competenze;
+molti modi e non è strettamente legata alla forma- - la verifi ca di eventuali piani di monitoraggio 
+zione; la formazione è solo uno degli elementi da delle competenze;
+considerare. -  azioni correttive; 
+Occorre determinare anche le necessarie competen- - esame dei risultati degli audit interni per la 
+ze delle persone che effettuano lavori sotto il con- valutazione di competenze nuove o da ag-
+trollo dell’Organizzazione, esterne all’Organizzazio- giornare;
+ne stessa (es. fornitori). - esame delle registrazioni dell’attività forma-
+
+tiva svolta con verifi ca dell’effi cacia.
+
+7.3 Consapevolezza
+
+Il requisito riporta in modo più specifi co di cosa il La consapevolezza del personale dovrebbe 
+personale deve essere consapevole, focalizzando essere valutata dall’auditor durante la verifi ca 
+l’attenzione sulla politica della qualità, sugli obietti- della gestione e sviluppo dei processi in quan-
+vi per la qualità, sul contributo di ciascuna persona to ne è parte integrante.
+all’effi cacia del sistema di gestione e ai benefi ci col- Durante l’audit l’applicazione del presente re-
+legati al migloramento delle prestazioni e alle impli- quisito da parte dell’Organizzazione potreb-
+cazioni/ricadute di situazioni non conformi relative be essere valutato, ad esempio, attraverso 
+al sistema di gestione. interviste dirette, verifi ca di registrazioni, ecc.
+
+L’intervista al personale, durante tutta la con-
+La “consapevolezza” viene elevata a requisito. duzione dell’audit, può essere uno dei meto-
+I requisiti presenti al punto 7.3 sono rivolti non solo di più importanti per verifi care l’acquisizione 
+
+I QUADERNI DI CONFORMA 21
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+al personale dell’Organizzazione ma anche ai forni- della consapevolezza, (vedi anche il punto 
+tori e esterni. 5.1) e quindi l’effi cacia di quanto attuato 
+
+dall’Organizzazione per soddisfare il requisito.
+Il requisito richiede di garantire che il personale che L’esame di alcune registrazioni può essere di 
+opera all’interno dell’Organizzazione, anche quel- supporto anche per la verifi ca dell’applicazio-
+lo non direttamente dipendente ma coinvolto nei ne del requisito, specie nel caso di processi 
+processi dell’Organizzazione stessa, sia consapevo- affi dati a fornitori esterni.
+le dell’importanza del suo lavoro come contributo 
+all’effi cacia del sistema di gestione.
+
+Il requisito focalizza l’attenzione su cosa può com-
+portare il generare una non conformità (conseguen-
+ze sul sistema di gestione, sul prodotto/servizio for-
+nito al Cliente, sul Cliente interno ed esterno, ecc.).
+
+I metodi per rendere consapevoli i dipendenti pos-
+sono variare e possono comprendere:
+- comunicazioni dirette;
+- riunioni;
+- audit sul sistema di gestione;
+- formazione specifi ca;
+- condivisione di obiettivi/risultati;
+- condivisione NC riscontrate;
+- condivisione dei contenuti della politica per la 
+
+qualità;
+- questionari sulla consapevolezza;
+- eventuali istruzioni / procedure.
+
+7.4 Comunicazione
+
+Il requisito è più dettagliato rispetto alla precedente Durante l’audit il recepimento da parte 
+edizione della norma ed introduce il concetto di co- dell’Organizzazione del presente requisito 
+municazione esterna con le parti interessate. potrebbe essere valutato, ad esempio, 
+
+mediante la verifi ca della gestione di 
+L’Organizzazione deve determinare quali comunica- comunicazioni, interne ed esterne, verifi cando 
+zioni, interne ed esterne devono avere luogo, da chi l’assegnazione delle responsabilità per la 
+devono essere effettuate e verso quali soggetti, con comunicazione anche attraverso interviste 
+quali modalità, tempi, responsabilità ed autorità. con le persone interessate e l’analisi delle 
+
+differenti tipologie di informazioni trasmesse.
+L’alta Direzione deve far sì che la comunicazione sia 
+diffusa a tutti i livelli in modo chiaro, comprensibile Dovrebbero essere verifi cati i canali di 
+ed adeguato all’obiettivo; la comunicazione esterna comunicazione interni ed esterni e le relative 
+consente di comprendere e rispondere ad esigenze responsabilità, in relazione al contesto nel 
+ed aspettative delle parti interessate. quale opera l’Organizzazione ed al modello 
+
+organizzativo in esame (ad esempio settore 
+cogente, modello corporate, unità distribuite 
+nel mondo, siti temporanei, cantieri…).
+
+22 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+7.5 Informazioni documentate
+
+7.5.1 Generalità
+
+L’espressione “informazione documentata” sostitu- Le informazioni documentate esplicitamente 
+isce i termini registrazione e procedura documen- richieste dalla norma, sono le seguenti.
+tata, presenti nelle edizioni precedenti della norma. - Campo di applicazione (vedi 4.3) (incluso 
+Tale concetto costituisce una delle principali innova- eventuali giustifi cazioni della non applicabi-
+zioni della nuova edizione della norma, contribuen- lità di requisiti).
+do in maniera determinante ad una semplifi cazione - Descrizione del sistema di gestione per la 
+dei requisiti documentali. qualità e dei suoi processi (vedi 4.4).
+
+- Politica della qualità (vedi 5.2.2).
+L’Organizzazione deve determinare quali documen- - Obiettivi per la qualità (vedi 6.2.1).
+ti sono necessari per la gestione ed effi cacia del siste- - Adeguatezza dei sistemi di monitoraggio e 
+ma, e come questi devono essere gestiti. misurazione (vedi 7.1.5).
+Al  punto a A.6  (Appendice A della norma) si chiari- - Quando la riferibilità metrologica è un re-
+sce che l’espressione: quisito, i metodi di calibrazione o verifi ca, 
+- “retain documented information” (Conser- qualora non esista un campione di riferi-
+
+vare informazioni documentate) è riferita a quei mento, indicando il riferimento adottato 
+documenti che la precedente versione della nor- (vedi 7.1.5.2).
+ma indicava come “records” (registrazioni); - Competenza (vedi 7.2).
+
+- “maintain documented information” (man- - Dimostrazione della conformità del proces-
+tenere informazioni documentate) è riferita a quei so come pianifi cato e del prodotto ai requi-
+documenti che la precedente versione della nor- siti (vedi 8.1).
+ma indicava come ad esempio manuale, proce- - Riesame dei requisiti relativi al prodotto 
+dura documentata, istruzione, piano qualità, ecc. (vedi 8.2.3).
+per i quali è prevista una gestione controllata e - Input alla progettazione e sviluppo (vedi 8.3.3)
+servono per la gestione del sistema. - Controlli della progettazione e sviluppo 
+
+(vedi 8.3.4).
+La norma indica puntualmente per quali re- - Risultati della progettazione e sviluppo 
+quisiti è necessario conservare una registra- (vedi 8.3.5).
+zione (retain documented information) o - Modifi che della progettazione e sviluppo 
+mantenere un documento gestionale (mai- (vedi 8.3.6).
+natin documented information). - Documentazione sulla valutazione e moni-
+
+toraggio delle prestazioni dei fornitori (vedi 
+8.4.1).
+
+- Defi nizione delle caratteristiche dei prodotti/
+servizi e i risultati da conseguire (vedi 8.5.1).
+
+- Attività da effettuare e risultati da raggiun-
+gere (vedi 8.5.1).
+
+- Mantenimento della rintracciabilità (vedi 
+8.5.2).
+
+- Perdita, danneggiamento o inutilizzabilità 
+di una proprietà del cliente o di un fornitore 
+esterno (vedi 8.5.3).
+
+- Controllo delle modifi che (vedi 8.5.6).
+- Evidenza della conformità del prodotto/ser-
+
+vizio rilasciato a fronte dei criteri di accetta-
+zione (vedi 8.6).
+
+I QUADERNI DI CONFORMA 23
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+- Riferibilità delle persone che sono autorizza-
+te al rilascio del prodotto/servizio al cliente 
+(vedi 8.6). 
+
+- Controllo delle risultati dei processi, prodot-
+ti o servizi non conformi (vedi 8.7).
+
+- Evidenza dei risultati di monitoraggin e mi-
+surazioni, analisi e valutazioni (vedi 9.1.1).
+
+- Evidenze della applicazione ed effettuazio-
+ne del programma di audit interni e i relativi 
+risultati (vedi 9.2.2).
+
+- Risultati del riesame di direzione (vedi 
+9.3.3).
+
+- Natura delle non conformità, correzioni ed 
+azioni correttive (vedi 10.2.2).
+
+Potrebbe essere verifi cato se l’Organizzazione 
+ha determinato come necessaria la seguen-
+te documentazione:
+
+- documentazione di origine esterna identifi -
+cata dalla Organizzazione (vedi 7.5.3.2);
+
+- pianifi cazione della progettazione.
+
+7.5.2 Creazione e aggiornamento
+
+Sostanzialmente non ci sono differenze rispetto alla Il rispetto del requisito potrebbe essere verifi -
+precedente edizione della norma. cato attraverso:
+L’Organizzazione, nel creare e aggiornare l’informa- - esame delle differenti tipologie di informa-
+zione documentata, dovrà stabilire le modalità di zioni documentate applicate, loro gestione 
+identifi cazione e descrizione, il formato ed assicurar- compreso lo stato di aggiornamento.
+ne l’adeguatezza  attraverso opportuno riesame ed 
+approvazione .
+Vengono forniti esempi di metodologie accettabili.
+
+7.5.3 Controllo delle informazioni documentate
+
+Sostanzialmente non ci sono differenze con la pre- Il rispetto del requisito potrebbe essere valu-
+cedente edizione della norma. tato attraverso l’esame delle modalità di ge-
+Le informazioni documentate richieste dal sistema stione delle informazioni documentate.
+di gestione per la qualità dovranno essere corret-
+tamente gestite per garantire la loro disponibilità Il rispetto del requisito potrebbe essere verifi -
+e idoneità all’utilizzo, dove e quando necessario, e cato attraverso:
+adeguatamente protette (es: dalla perdita di riserva- - l’esame dell’applicazione delle modalità di 
+tezza, uso improprio, o perdita di integrità). gestione, controllo e protezione delle infor-
+
+mazioni documentate;
+Per il controllo dell’informazione documentata l’Or- - l’esame delle modalità di identifi cazione ed 
+ganizzazione dovrà tenere conto della distribuzione, aggiornamento della documentazione di 
+accesso, recupero e utilizzo, archiviazione e conser- origine esterna;
+vazione, inclusa la conservazione per la lettura e il - l’esame di un eventuale elenco di informa-
+controllo delle modifi che (stato di revisione del do- zioni documentate riportante lo stato di ag-
+cumento), conservazione e destinazione. giornamento;
+
+24 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+Non c’è un riferimento diretto al tempo di conserva-
+zione ma si parla di “retrival” (reperimento). - accesso ed uso di eventuali sistemi elettro-
+
+La documentazione di origine esterna necessaria per nici utilizzati per la tenuta sotto controllo 
+
+la pianifi cazione e operatività del sistema di gestio- dei documenti.
+
+ne per la qualità dovrà essere appropriata e tenuta 
+sotto controllo.
+
+Le informazioni documentate conservate come evi-
+denza di conformità devono essere protette da alte-
+razioni involontarie.
+
+8 Attività operative
+
+8.1 Pianificazione e controllo operativi
+
+È un requisito generale che va coniugato all’interno Dovrebbe essere verifi cato come l’Organizza-
+di ogni processo operativo, con intensità ed appro- zione ha pianifi cato le attività operative.
+fondimento diversi in funzione delle caratteristiche Per la pianifi cazione operativa l’Organizzazio-
+dell’Organizzazione e del campo di applicazione del ne deve fornire evidenza di come ha pianifi ca-
+suo sistema di gestione per la qualità, tenendo conto to il “controllo” delle attività operative. 
+di quanto è stato pianifi cato per assicurare il raggiun-
+gimento degli obiettivi e prevenire e/o ridurre, i rischi. Per la gestione operativa sarebbe opportuno 
+
+verifi care la presenza, ad esempio, di:
+- piani della qualità;
+- piani di controllo qualità;
+- piani di progetto;
+- piani realizzazione del prodotto/erogazione 
+
+servizio;
+- cicli di lavoro;
+- pianifi cazione risorse;
+- lista materiali.
+
+Per controllo operativo, (da trovare all’interno 
+del relativo processo operativo) del prodotto/
+servizio:
+- punti di controllo, validazione, monitorag-
+
+gio, misurazione, collaudo, qualifi ca, ispe-
+zione e prova specifi che per il prodotto/
+servizio.
+
+A livello di gestione dei processi:
+- validazione, monitoraggio, misurazione, 
+
+analisi dei rischi.
+8.2 Requirements for products and services
+
+Dovrebbe essere verifi cata la presenza di in-
+8.2.1 C formazioni documentate, sia relativamente 
+
+a documenti di programmazione che a regi-
+strazioni, che diano evidenza di quanto sopra.
+
+I QUADERNI DI CONFORMA 25
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+8.2 Requisiti per i prodotti e I servizi
+
+8.2.1 Comunicazione con il cliente
+
+È richiesto di individuare uno o più processi per la Dovrebbe essere verifi cata la metodologia 
+gestione della comunicazione con il cliente. Questi messa in atto per ottenere una comunicazio-
+potrebbero non essere tutti processi a se stanti, ma ne effi cace con il cliente, comprensiva di re-
+alcuni potrebbero essere riscontrati attraverso azioni sponsabilità ed autorità.
+contenute all’interno dei processi operativi. Dovrebbe essere verifi cata la chiarezza del-
+Possono essere individuati diversi momenti di ge- la comunicazione in relazione all’oggetto e 
+stione della comunicazione con il cliente: all’obiettivo, evitando aspetti ambigui al fi ne 
+- contatti con il mercato (informazioni relative al di non creare false attese.
+
+prodotto ed al servizio, a mezzo brochure, web, Dovrebbero essere verifi cate le risposte alle 
+visite, ecc, punti di vista e percezioni da parte del comunicazioni, per quanto applicabile, in ter-
+mercato); mini di effi cacia e tempi di risposta.
+
+- contatti in fase di offerta e revisione d’ordine (in- Dovrebbe essere verifi cato come sono tenute 
+formazioni relative al prodotto ed al servizio, que- sotto controllo le informazioni, in senso più 
+siti, defi nizione di contratti o di ordini); lato, al mercato, ad esempio attraverso:
+
+- contatti in fase di gestione ordine, inclusa assisten- - brochure
+za quando contrattualmente defi nita (quesiti, ge- - web site
+stione di contratti o di ordini, compresi i relativi ag- - cataloghi
+giornamenti, punti di vista e percezioni del cliente, - pubblicità
+compresi i suoi reclami, gestione delle proprietà - etichettature e confezione
+del cliente quando applicabile, requisiti specifi ci - istruzioni per l’utilizzo del prodotto
+per le azioni di emergenza, quando pertinente); - carta dei servizi
+
+- contatti in fase di consegna e post vendita. - Piano Offerta Formativa
+- offerte / conferme d’ordine
+- ecc.
+
+8.2.2 Determinazione dei requisiti relativi a prodotti e servizi
+
+Questo requisito è già presente nella ISO 9001:2008. Il rispetto del requisito potrebbe essere veri-
+L’ Organizzazione deve avere la capacità di: fi cato:
+- defi nire in modo completo i requisiti del prodot- - valutando se e come vengono ricevute e 
+
+to/servizio; gestite informazioni dal mercato;
+- garantire la sua reale capacità di soddisfare i requi- - valutando le modalità di gestione e presa in 
+
+siti defi niti per il prodotto/servizio che offre; carico nei documenti interni e nel prodot-
+- rispettare le asserzioni relative ai prodotti e ai ser- to/servizio dei requisiti cogenti;
+
+vizi offerti. - valutando come sono gestite le comunica-
+zioni con i potenziali clienti;
+
+Possibili casi sono: - valutando come l’Organizzazione riesamina 
+- prodotti standard (prodotti le cui caratteristiche i requisiti offerti ai potenziali clienti;
+
+sono già completamente defi nite a livello di nor- - valutando se le informazioni (istruzioni, 
+mativa); pubblicità, sito web etc.) relative alle carat-
+
+- prodotti/servizi a catalogo (progettazione già ese- teristiche dei prodotti e servizi offerti, ab-
+guita e validata dall’Organizzazione); biano una loro fondatezza.
+
+- prodotti/servizi a catalogo ma con modifi che ri- Dovrebbe essere verifi cato come l’Organizza-
+chieste da cliente (progettazione da rivedere in zione sia in grado di assicurare il rispetto dei 
+parte); requisiti offerti attraverso:
+
+26 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+- nuovi prodotti richiesti da cliente (progettazione - evidenza di risorse adeguate (interne od 
+da sviluppare integralmente). esterne), inclusi i fornitori;
+
+- esistenza di un sistema di programmazione 
+adeguato al prodotto/servizio da offrire;
+
+- esistenza di metodi per la revisione dei re-
+quisiti relativi a prodotti e servizi (tra cui 
+l’ordine e la revisione del contratto);
+
+- effettivo rispetto dei requisiti defi niti per 
+prodotti, processi e/o servizi.
+
+8.2.3 Riesame dei requisiti relative a prodotti e servizi
+
+Viene richiesto il riesame dei requisiti indicati dal Occorrerebbe verifi care la disponibilità di in-
+cliente (sia in fase di richiesta d’offerta che di ordine formazioni documentate, relative all’ attività 
+e di revisione d’ordine) per assicurare che l’Organiz- di riesame (offerta, ordine/contratto, revisioni 
+zazione abbia la capacità di fornire quanto richiesto d’ordine), e se queste sono suffi cienti a dare 
+dal cliente stesso. evidenza del corretto svolgimento dello stes-
+Se il cliente non specifi ca requisiti, è l’Organizza- so, verifi cando anche che sia effettuato prima 
+zione che li deve defi nire e comunicare al cliente della conferma della fornitura.
+(nell’offerta o nella conferma d’ordine). Sarebbe opportuno verifi care la corrispon-
+Vanno considerati anche i casi in cui non si può denza dei requisiti del prodotto, incluse le 
+effettuare formalmente il riesame dell’ordine (ad modalità di consegna e attività post vendita, 
+esempio le vendite via internet). espressi in offerta, ordine e/o conferma d’or-
+I requisiti derivanti da parti interessate rientrano nel- dine.
+la categoria dei requisiti ritenuti necessari, dall’Or- Nel caso in cui non si possa effettuare formal-
+ganizzazione stessa, ai fi ni della soddisfazione del mente il riesame dell’ordine (ad esempio le 
+cliente (impiego di prodotti o materiali a un minore vendite via internet) la verifi ca dovrebbe ri-
+impatto ambientale, utilizzo di fornitori attenti alla guardare informazioni relative ai prodotti, 
+responsabilità sociale di impresa, ecc.). quali cataloghi e materiale pubblicitario. 
+È richiesto che siano conservate informazioni docu-
+mentate (registrazioni). 
+
+8.2.4 Modifiche ai requisiti per i prodotti e servizi
+
+Viene richiesto che, a fronte di variazione dei requi- Occorrerebbe verifi care qualche esempio di 
+siti di prodotto/servizio, siano adeguatamente gesti- gestione di una modifi ca.
+te le variazioni della documentazione e il passaggio 
+delle informazioni al personale di riferimento.
+
+8.3 Progettazione e sviluppo di prodotti e servizi
+
+8.3.1 Generalità
+
+Il processo di progettazione e sviluppo deve essere Occorrerebbe verifi care l’adeguatezza di 
+tale da assicurare la fornitura di prodotti e l’eroga- quando determinato dall’Organizzazione in 
+zione dei servizi. relazione al tipo di prodotto, processo o servi-
+I risultati della progettazione e sviluppo sono zio fornito ed ai suoi requisiti.
+le caratteristiche che il prodotto/servizio 
+deve avere per rispettare i requisiti specificati.
+
+I QUADERNI DI CONFORMA 27
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+8.3.2 Pianificazione della progettazione e sviluppo
+
+È richiesta la defi nizione della progettazione e svi- Occorrerebbe verifi care come l’Organizzazio-
+luppo in termini di fasi e controlli. ne abbia pianifi cato adeguatamente la attività 
+Si segnala una maggiore articolazione del requisito di progettazione e sviluppo.
+ed in particolare la possibilità di coinvolgimento del Occorrerebbe verifi care che, nella determina-
+cliente nelle fasi di progettazione. zione delle fasi e per tenere sotto controllo 
+
+il processo di progettazione e sviluppo, siano 
+state considerate le informazioni documenta-
+te necessarie a confermare che i requisiti rela-
+tivi alla progettazione siano soddisfatti.
+
+8.3.3 Input alla progettazione e sviluppo
+
+La norma fornisce una serie di fattori da considerare Occorrerebbe verifi care come procede l’Or-
+nella determinazione dei dati di input per la proget- ganizzazione per identifi care i requisiti in in-
+tazione. put per la progettazione e sviluppo.
+Tra i codici di buona pratica dovrebbero essere consi- Occorrerebbe verifi care la disponibilità di re-
+derate anche le informazioni derivanti da precedenti gistrazioni dei dati di input alla progettazione 
+progettazioni simili, nonché situazioni non conformi e sviluppo.
+e reclami originati in precedenti progettazioni.
+
+Relativamente al requisito di cui al punto e) l’Orga-
+nizzazione dovrebbe tenere conto dei risultati sca-
+turiti dall’analisi delle conseguenze dei potenziali 
+difetti di prodotto/servizio.
+
+8.3.4 Controlli della progettazione e sviluppo
+
+Questo requisito è, di fatto, già presente nella ISO Dovrebbe essere verifi cato che cosa ha piani-
+9001:2008. fi cato l’Organizzazione per tenere sotto con-
+Nessuna considerazione signifi cativa in quanto trollo il processo di progettazione.
+sostanzialmente coincidente con la norma prece- Dovrebbe essere possibile verifi care registra-
+dente. zioni (retained documented information) su 
+
+riesami, verifi che e validazioni della progetta-
+zione e sulle eventuali azioni intraprese a fron-
+te di problemi evidenziati durante tali fasi.
+
+8.3.5 Output  della progettazione e sviluppo
+
+Rispetto alla precedente versione della norma, si Dovrebbe essere verifi cato che quanto pia-
+aggiunge quanto prescritto al punto c) dove si fa nifi cato dall’Organizzazione per soddisfare il 
+riferimento esplicito ai requisiti di monitoraggio e requisito sia adeguato.
+misurazione. Dovrebbe essere verifi cato che le informa-
+
+zioni documentate relative ai risultati del 
+In ogni caso, i criteri per monitoraggio e misurazio- processo di progettazione e sviluppo siano 
+ne del prodotto/servizio erano già un output della adeguate all’utilizzo del prodotto/servizio e 
+progettazione. forniscano evidenza che i requisiti relativi sia-
+
+no soddisfatti.
+
+28 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+8.3.6 Modifiche della progettazione e sviluppo
+
+Rispetto alla precedente versione della norma, non Dovrebbe essere verifi cato che le informazio-
+si riscontra alcuna modifi ca signifi cativa. ni documentate relative alle modifi che della 
+È richiesto in modo esplicito la disponibilità di docu- progettazione e sviluppo, incluse le autoriz-
+mentazione relativa alle autorizzazioni di modifi che zazioni alle modifi che e le loro ragioni, non-
+ed alle azioni intraprese per evitare impatti negativi. ché le azioni intraprese per evitare impatti 
+
+negativi, siano adeguate e forniscano eviden-
+za che i requisiti relativi siano soddisfatti.
+
+8.4. Controllo dei processi, prodotti e servizi forniti dall’esterno
+
+8.4.1 Generalità
+
+Tra le forniture esterne sono ora esplicitamente Il rispetto del requisito potrebbe essere valu-
+comprese anche i processi ed i servizi. tato attraverso la verifi ca di criteri identifi cati 
+L’Organizzazione deve assicurare che quanto fornito per la scelta dei controlli da applicare a pro-
+dall’esterno, sia conforme ai requisiti. dotti, processi e servizi di fornitura esterna. 
+Sono state specifi cate meglio le casistiche per le Il rispetto del requisito potrebbe essere valu-
+quali è necessario defi nire i controlli sui prodotti e tato attraverso:
+servizi forniti dall’esterno. - la verifi ca dei criteri identifi cati per la scelta 
+È stato esplicitato il monitoraggio delle presta- dei fornitori, coerenti con la valutazione di 
+zioni dei fornitori. rischi/opportunità;
+È esplicitamente richiesto di mantenere la docu- - la verifi ca dei criteri identifi cati per il moni-
+mentazione relativa alla valutazione dei fornitori. toraggio e il riesame periodico delle presta-
+
+zioni dei fornitori distinta per tipologia di 
+fornitura (ad esempio differenza tra fornito-
+ri di servizi e di prodotti);
+
+- la verifi ca della documentazione relativa alla 
+valutazione iniziale dei fornitori e alla loro 
+rivalutazione;
+
+- la verifi ca della gestione di non conformità, 
+reclami e segnalazioni relative ai fornitori.
+
+8.4.2 Tipo ed estensione del controllo
+
+É utilizzato un maggior dettaglio nella defi nizione Il rispetto del requisito potrebbe essere valu-
+dei criteri ma nessuna variazione signifi cativa rispet- tato attraverso:
+to alla precedente edizione della norma. - la verifi ca dei criteri identifi cati per la scelta 
+É esplicitato che se un processo è interamente for- ed estensione dei controlli da applicare a 
+nito da un fornitore esterno, deve rimanere sotto prodotti, processi e servizi di fornitura ester-
+il controllo del sistema di gestione per la qualità na, coerenti con una valutazione di rischi/
+dell’Organizzazione. opportunità, incluse le specifi che del cliente 
+
+e la necessità di garantire la continuità delle 
+Il tipo di controllo che l’Organizzazione esercita sia attività.
+sul fornitore, sia su quanto fornito, deve essere sta- - la verifi ca di un eventuale Piano dei controlli;
+bilito comunque dall’Organizzazione. - la verifi ca delle eventuali registrazioni dei 
+Non è espressamente richiesto che il piano dei con- controlli;
+trolli sia un’informazione documentata. - interviste con il personale addetto ai controlli;
+
+I QUADERNI DI CONFORMA 29
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+Ciò non toglie che, in mancanza di uno scritto, il - evidenze di controllo sui processi in 
+personale addetto ai controlli dovrebbe avere ben outsourcing (monitoraggi, audit di parte 
+chiaro che cosa fare. seconda ecc.) in funzione dell’impatto sulla 
+In realtà per alcuni prodotti il piano dei controlli sul- conformità del prodotto/servizio;
+le forniture è specifi camente richiesto da altri docu- - la verifi ca della coerenza del tipo ed esten-
+menti applicabili (es norme di marcatura CE e linee sione dei controlli con capitolati/specifi che 
+Guida STC per il calcestruzzo preconfezionato, stan- di acquisto;
+dard contrattuali come IFS e BRC nel settore food). - evidenza della pianifi cazione ed effettuazio-
+
+ne dei controlli da parte del fornitore
+
+8.4.3 Informazioni ai fornitori esterni
+
+Di fatto non c’è alcuna variazione signifi cativa ri- Il rispetto del requisito potrebbe essere valu-
+spetto alla ISO 9001:2008. tato attraverso:
+È stato chiarito che l’adeguatezza dei requisiti deve - la verifi ca delle modalità di defi nizione/ap-
+essere assicurata prima della formulazione dell’ordine. provazione degli ordini di acquisto e con-
+Unica novità è il punto e) anche se è logico che il tratti di appalto;
+fornitore si aspetti di essere in qualche modo con- - la verifi ca delle modalità di comunicazione 
+trollato e monitorato. Non è richiesta una informa- identifi cate con i fornitori esterni e la com-
+zione documentata, di fatto, però, è diffi cile che pletezza delle informazioni fornite;
+una Organizzazione non mantenga alcuna traccia - l’esame di Ordini di acquisto;
+documentata su questo aspetto. - l’esame di Contratti di appalto (capitolati).
+
+8.5 Produzione ed erogazione dei servizi
+
+8.5.1 Controllo della produzione e dell’erogazione dei servizi
+
+Questo requisito richiede la disponibilità di infor- Il rispetto del requisito potrebbe essere valu-
+mazioni documentate che defi niscano le attività da tato attraverso:
+svolgere ed i risultati da raggiungere. - l’esame di istruzioni di lavoro, anche in 
+
+forma “semplifi cata” tipo tabelle, immagi, 
+Sono stati estesi i requisiti del controllo alle attività schemi di fl usso;
+di rilascio, consegna e post-consegna del prodotto - l’esame di eventuali piani dei controlli inclu-
+e del servizio. si limiti di accettazione;
+
+- l’esame delle registrazioni dei controlli ef-
+Si richiedono, in modo esplicito, delle informazioni fettuati;
+documentate che devono contenere le attività da - l’esame della documentazione relativa ad 
+svolgere e i risultati da raggiungere. eventuali processi che devono essere vali-
+
+dati e relative evidenze di validazione;
+La maggiore novità è la richiesta di applicare azioni - l’identifi cazione delle situazioni in cui l’erro-
+per prevenire errori umani. re umano può avere impatto sulla confor-
+
+mità di prodotti/servizi e della defi nizione 
+di misure di prevenzione e/o contenimento 
+messe in atto.
+
+8.5.2 Identificazione e rintracciabilità
+
+Non c’è nessuna variazione signifi cativa rispetto alla Il rispetto del requisito potrebbe essere valu-
+ISO 9001:2008. tato attraverso:
+
+30 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+- la verifi ca dei criteri determinati per l’identi-
+fi cazione e la rintracciabilità coerenti con le 
+condizioni contrattuali e/o requisiti cogenti;
+
+- la verifi ca dei criteri determinati per l’identi-
+fi cazione e la rintracciabilità coerenti con la 
+valutazione dei rischi/opportunità;
+
+- la verifi ca di esistenza di informazioni com-
+plete per la gestione dell’identifi cazione e 
+della rintracciabilità;
+
+- l’evidenza di prove di rintracciabilità esegui-
+te dall’azienda;
+
+- la verifi ca di eventuali metodi fi sici di identi-
+fi cazione e rintracciabilità.
+
+8.5.3 Proprietà che appartengono ai clienti o ai fornitori esterni
+
+Rispetto la precedente edizione della norma i requi- Il rispetto del requisito potrebbe essere valu-
+siti sono estesi alle proprietà dei fornitori esterni. tato attraverso:
+La documentazione di origine esterna del cliente e - l’osservazione di attività, modalità di gestio-
+del fornitore dovrebbe essere trattata in accordo a ne/conservazione della proprietà del clien-
+questi requisiti (vedi 7.5.3). te/fornitore;
+La nota fornisce esempi di proprietà del cliente e del - la verifi ca dei controlli in ingresso sul mate-
+fornitore. riali fornito dal cliente/fornitore;
+
+- la verifi ca di comunicazioni col cliente/for-
+nitore;
+
+- la verifi ca della gestione dei dati personali/
+sensibili; 
+
+- la verifi ca della gestione delle proprietà in-
+tellettuali del cliente.
+
+8.5.4 Preservazione
+
+Non ci sono variazioni signifi cative rispetto alla pre- Il rispetto del requisito potrebbe essere valu-
+cedente edizione della norma. tato attraverso:
+
+- la verifi ca di modalità di gestione di materie 
+La parola “product” è stata sostituita con “process prime, semilavorati, prodotti;
+outputs”, però nella versione 2008 si dice “during - la presenza di indicazioni su come gestire 
+internal processing”. i prodotti: istruzioni di lavoro, modalità di 
+
+stoccaggio a magazzino ecc.;
+Nella versione 2015 scompare la parola “delivery” - la verifi ca delle modalità di imballaggio e 
+che ritorna nella nota sotto forma di “transportation”. spedizione;
+
+- la verifi ca delle condizioni di conservazione, 
+Di fatto le due variazioni si compensano e si intende incluse eventuali contaminazioni, durante 
+dire che la conservazione deve essere garantita du- le fasi dell’intero processo sotto la respon-
+rante tutte le fasi del processo produttivo ed estesa sabilità dell’Organizzazione.
+alle fasi relative al processo di spedizione, trasporto, 
+consegna, nonché alla conservazione presso il pun-
+to vendita, quando queste sono sotto la responsabi-
+lità dell’Organizzazione.
+
+I QUADERNI DI CONFORMA 31
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+8.5.5 Attività post-consegna
+
+In funzione delle responsabilità associate ai propri Il rispetto del requisito potrebbe essere valu-
+prodotti e servizi, il requisito, innovativo, estende tato attraverso:
+l’ambito di attività da considerare fi no a compren- - la verifi ca di criteri per la determinazione 
+dere le conseguenze indesiderate associate ai pro- della estensione delle attività post conse-
+dotti /servizi; l’uso, la natura e la durata prevista del gna, coerenti con la valutazione dei rischi/
+prodotto e del servizio; il feedback dei clienti; gli opportunità e le esigenze dei clienti;
+obblighi contrattuali in termini di garanzie, obblighi - la verifi ca di condizioni contrattuali e di ga-
+di manutenzione, di ritiro del prodotto a fi ne vita e ranzia;
+simili. - la verifi ca di comunicazioni con clienti suc-
+
+cessive alla consegna e che non siano solo 
+le risposte a reclami.
+
+8.5.6 Controllo delle modifiche
+
+Occorre defi nire compiti e responsabilità per come Il rispetto del requisito potrebbe essere valu-
+gestire i cambiamenti e/o modifi che sia nel caso tato attraverso:
+questi siano pianifi cati, sia nel caso di situazioni in - la verifi ca delle modalità defi nite (incluse re-
+cui, a fronte di un “imprevisto”, non si possano sponsabilità ed autorità) per la defi nizione e 
+adottare le modalità defi nite per la produzione del l’approvazione dei processi di produzione/
+prodotto o l’erogazione del servizio. erogazione del servizio;
+
+- la verifi ca dell’eventuale analisi di rischio ef-
+fettuata per avvalorare le scelte effettuate;
+
+- la verifi ca di documentazione relativa ad 
+eventuali situazioni critiche;
+
+- la verifi ca della defi nizione di ruoli per situa-
+zioni critiche in forma documentata o con 
+interviste al personale (nell’ipotesi in cui si 
+debba risolvere un problema, chi si chia-
+ma?).
+
+8.6 Rilascio prodotti e servizi
+
+Non si riscontra alcuna differenza signifi cativa con la Il rispetto del requisito potrebbe essere valu-
+ISO 9001: 2008 tato attraverso:
+È richiesto sia conservata l’evidenza della conformità - la verifi ca di modalità defi nite per l’autoriz-
+ai criteri di accettazione e che sia mantenuta docu- zazione del rilascio del prodotto/servizio e 
+mentazione relativa all’autorizzazione al rilascio dei relative evidenze documentate a supporto;
+prodotti/servizi ai clienti. - l’esame di registrazioni dei controlli svolti 
+
+con i risultati delle verifi che svolte a fronte 
+di criteri di accettabilità;
+
+- l’esame della dichiarazione di conformità 
+del prodotto;
+
+- la verifi ca della possibilità di individuare chi 
+ha autorizzato il rilascio del prodotto;
+
+- la verifi ca di eventuali istruzioni per l’utilizzo 
+del prodotto con relativi pericoli in caso di 
+utilizzo improprio od errato.
+
+32 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+8.7 Controllo degli output non conformi
+
+È stata esplicitata la necessità di gestire le Non Con- Il rispetto del requisito potrebbe essere valu-
+formità attraverso opportune azioni, basate sulla tato attraverso:
+natura della Non Conformità stessa e dei suoi po- - la verifi ca della modalità di gestione delle 
+tenziali effetti. Non Conformità e registrazione delle stesse 
+È stata esplicitata la necessità di comunicare con il (ad esempio esistenza di prassi/istruzioni/
+cliente. modulistica);
+La norma richiede di garantire la gestione dei pro- - l’evidenza della gestione delle non confor-
+blemi che potrebbero verifi carsi negli “output”, che mità riscontrate e della correzione effettua-
+interessano le varie fasi dell’intero processo produt- ta per ognuna di esse;
+tivo/di erogazione del servizio. - l’esistenza di registrazioni relative a infor-
+La gestione della Non Conformità è strettamen- mative al cliente;
+te legata al tipo di prodotto/servizio. Alcuni limiti - l’esistenza dei documenti relativi alla ri-veri-
+alla libera scelta delle azioni da intraprendere che fi ca del prodotto corretto;
+la norma fornisce dal p.to a) al p.to d) sono lega- - la presenza di eventuali concessioni per 
+ti, per esempio, alla presenza di riferimenti norma- l’immissione in commercio/rilascio/eroga-
+tivi ai quali i prodotti devono essere strettamente zione del servizio, da parte di chi ne ha l’au-
+rispondenti, alla fase del processo in cui si ravvisa torità;
+la non conformità (non conformità del materiale in - la verifi ca dell’autorità a disposizione del 
+ingresso, non conformità del processo produttivo, personale che eroga il servizio, per decidere 
+non conformità del prodotto fi nito) e all’immissione come disporre di tempi e attrezzature (ad 
+o meno sul mercato del prodotto o l’erogazione o esempio quando e se interrompere l’ero-
+meno del servizio. gazione non conforme, come correggere/
+
+sostituire il servizio);
+Nel caso di organizzazioni che erogano servizi, la - la verifi ca di misure attuate come tratta-
+non conformità è generalmente riscontrata a valle mento per la gestione della non conformità 
+dell’erogazione stessa. (ad esempio rimborsi, nuove offerte, credi-
+Una valutazione dei potenziali rischi che potrebbero ti…);
+verifi carsi in caso di non conformità è utile per piani- - l’Identifi cazione, segregazione e sostituzio-
+fi care le azioni da intraprendere. ne di eventuali mezzi/attrezzature.
+NB: l’Organizzazione deve gestire come NC anche 
+eventuali carenze riscontrate su prodotti semilavora-
+ti o in fasi intermedie per l’erogazione del servizio.
+
+9 Valutazione delle prestazioni
+
+9.1 Monitoraggio, misurazione, analisi e valutazione
+
+9.1.1 Generalità
+
+Il requisito esplicita la pianifi cazione delle attività di Il rispetto del requisito potrebbe essere valu-
+monitoraggio sul prodotto/servizio. tato attraverso:
+Le attività di monitoraggio, misurazione, analisi ser- - la verifi ca dei criteri determinati per l’ese-
+vono a garantire l’effi cacia del sistema di gestione cuzione di monitoraggio e misurazioni, 
+qualità e il costante soddisfacimento dei requisiti/ coerenti con i risultati della valutazione dei 
+obiettivi che l’Organizzazione stessa ha stabilito. rischi/opportunità;
+L’Organizzazione deve quindi individuare le tecni- - la verifi ca di modalità di gestione dei risulta-
+che e le frequenze di controllo più idonee per lo ti del monitoraggio;
+
+I QUADERNI DI CONFORMA 33
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+svolgimento di queste attività e deve assicurare che - l’esame di informazioni documentate come 
+queste siano effettuate. Deve, inoltre, conservare evidenza di monitoraggio, controlli e misu-
+delle informazioni documentate quale evidenza dei razioni effettuati.
+risultati.
+
+9.1.2 Soddisfazione del cliente
+
+L’organizzazione deve monitorare il grado di soddi- Il rispetto del requisito potrebbe essere valu-
+sfazione delle esigenze e delle aspettative dei propri tato attraverso:
+clienti. Le tecniche per valutare la soddisfazione del - la verifi ca di modalità di monitoraggio, del-
+cliente possono essere dirette o indirette. la soddisfazione dei clienti, inclusa la fre-
+Esempi di metodi diretti: quenza;
+- indagine telefonica o chiamate a consegna effet- - l’esistenza di un sistema di raccolta, analisi 
+
+tuata; ed utilizzo dei dati circa la soddisfazione dei 
+- questionari telefonici o cartacei. clienti.
+Esempi di metodi indiretti:
+- analisi delle richieste d’offerta non convertite in 
+
+ordine;
+- analisi dei reclami pervenuti;
+- storicità degli ordini;
+- Informazioni di ritorno dal mercato (es. resi, richie-
+
+sta note di credito, riparazioni in garanzia, riesame 
+disdette, variazioni negli ordini).
+
+9.1.3 Analisi e valutazione
+
+Il requisito sottolinea con maggiore enfasi l’impor- Il rispetto del requisito potrebbe essere valu-
+tanza dell’analisi e valutazione di dati ed informa- tato attraverso:
+zioni provenienti da monitoraggi e misurazioni per - la verifi ca della pianifi cazione dei dati da 
+dimostrare l’effi cacia della pianifi cazione. raccogliere;
+La norma indica gli aspetti che possono essere va- - la verifi ca della metodologia per la raccolta 
+lutati attraverso una analisi di dati, anche attraverso dei dati;
+metodi statistici. - la verifi ca della metodologia per l’analisi dei 
+
+dati;
+- l’esame di risultati dell’analisi dei dati;
+- l’analisi dell’output del Riesame di direzio-
+
+ne.
+
+9.2 Audit interno
+
+La norma, oltre a specifi care le motivazioni per l’ef- Il rispetto del requisito potrebbe essere valu-
+fettuazione di audit interni, esplicita modalità e re- tato attraverso:
+quisiti da tenere in considerazione nella preparazio- - la verifi ca di un programma di audit;
+ne del programma degli audit interni. - l’esame dei rapporti di audit;
+Per la conduzione degli audit si fa sempre riferimen- - la verifi ca della competenza ed indipenden-
+to alla norma ISO 19011. za degli auditor;
+Devono essere garantite imparzialità ed indipen- - la verifi ca della azioni messe in atto a segui-
+denza dell’auditor rispetto al processo sottoposto to dei risultati degli audit;
+ad audit. - l’analisi del riesame di direzione.
+
+34 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+9.3 Riesame di direzione
+
+9.3.1 Generalità
+
+9.3.2  Input del riesame di direzione
+
+9.3.3  Output del riesame di direzione
+
+La norma indica quali devono essere gli aspetti da Il rispetto del requisito potrebbe essere verifi -
+tenere in considerazione come input e output del cato attraverso:
+riesame; si nota che gli elementi di input sono stati - la verifi ca della pianifi cazione del riesame e 
+estesi rispetto a quanto richiesto dalla precedente le logiche di questa pianifi cazione (analisi 
+edizione della norma. dei rischi);
+Il riesame di direzione deve coinvolgere i soggetti - la verifi ca dell’esistenza della documenta-
+con potere decisionale, in grado, cioè, di interve- zione attestante la verbalizzazione del riesa-
+nire ed agire. È fi nalizzato a verifi care che il siste- me, effettuato con cadenza periodica.
+ma di gestione per la qualità mantenga nel tempo L’output del riesame dovrebbe includere:
+adeguatezza ed effi cacia, in accordo con gli indirizzi - le opportunità di miglioramento;
+startegici dell’Organizzazione. - decisioni relative alle azioni da intraprendere;
+Il riesame deve essere condotto a intervalli pianifi - - assegnazione di responsabilità e risorse ade-
+cati; ogni Organizzazione, in funzione della propria guate per le singole attività;
+struttura, può stabilirne la frequenza. - necessità di modifi che del sistema di gestione;
+
+- fabbisogni di risorse.
+Oltre agli input, defi niti dalla norma, si possono 
+considerare anche altri elementi, quali, ad esempio:
+- analisi dei dati prevista al punto 8.4;
+- esigenze di formazione; 
+- problemi relativi ai fornitori;
+- necessità di nuove attrezzature e di  manutenzio-
+
+ne delle stesse;
+- stato dell’ambiente di lavoro e delle infrastrutture.
+
+I risultati del riesame devono essere registrati e do-
+vrebbero fornire evidenza dell’effi cacia del riesame e 
+della congruenza delle sue conclusioni con la politi-
+ca e gli obiettivi per la qualità.
+
+10 Miglioramento
+
+10.1 Generalità
+
+È stato Introdotto un nuovo requisito, relativo all’ap- Gli obiettivi di miglioramento del sistema di 
+proccio al miglioramento in generale. gestione per la qualità dovrebbero essere coe-
+
+renti con le aspettative dell’Organizzazione e 
+Il miglioramento deve essere vissuto come un’at- delle parti interessate, le esigenze del cliente 
+tività continua: ogni volta che un’opportunità di e quelle del mercato.
+miglioramento viene identifi cata, l’Organizzazione Il miglioramento continuo del prodotto/ser-
+dovrebbe stabilire se perseguirla e quali risorse uti- vizio dovrebbe essere valutato dall’auditor 
+lizzare. considerando ad esempio la capacità e sta-
+
+I QUADERNI DI CONFORMA 35
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+Per miglioramento non si intende solo miglioramen- bilità dei processi, il riscontro delle caratte-
+to del prodotto/servizio, ma anche miglioramento ristiche del prodotto/servizio in relazione ai 
+del sistema di gestione in sé. requisiti del cliente.
+
+È possibile trovare evidenze relative al pro-
+Il processo di miglioramento può comprendere una cesso di miglioramento in svariati ambiti del 
+serie di fasi, tra le quali: sistema di gestione per la qualità.
+- identifi cazione di potenziali opportunità per mi- Le evidenze delle azioni da intraprendere, po-
+
+gliorare il sistema di gestione per la qualità; trebbero essere riscontrate come:
+- analisi costi/benefi ci per attuare un’azione di mi- - output del riesame di direzione;
+
+glioramento; - conseguenza dell’applicazione di un’azione 
+- valutazione delle risorse necessarie; correttiva;
+- attuazione di un’azione di miglioramento; - conseguenza di riorganizzazioni aziendali;
+- implementazione dell’azione di miglioramento; - come sviluppo di nuovi progetti/linee di 
+- misurazione dell’impatto del miglioramento; business.
+- valutazione dei risultati al successivo riesame della 
+
+direzione. 
+
+10.2 Non conformità e azioni correttive
+
+Per evitare il ripetersi delle non conformità (vedi an- Il rispetto del requisito potrebbe essere verifi -
+che punto 8.7) devono essere intraprese delle azioni cato attraverso:
+correttive sul sistema di gestione. - esame delle registrazioni relative alla gestio-
+
+ne delle non conformità;
+L’azione correttiva è un’importante attività di mi- - verifi ca che le non conformità riscontrate 
+glioramento, in quanto mira ad eliminare defi niti- siano state considerate nel riesame di dire-
+vamente, laddove possibile, le cause e gli effetti di zione;
+eventi avversi che potrebbero avere impatti negativi - verifi ca che sia stata valutata l’effi cacia delle 
+sui risultati dell’Organizzazione, sull’erogazione del azioni correttive intraprese. 
+prodotto/servizio, sui processi, sul sistema di gestio-
+ne e sulla soddisfazione del cliente.
+
+Un’azione correttiva può essere necessaria in segui-
+to a:
+- non conformità;
+- problemi con i fornitori;
+- reclami dei clienti;
+- richieste di interventi in garanzia;
+- audit interni (vedi 9.2).
+
+La dimensione del problema e dei rischi connessi 
+per l’Organizzazione determinerà le azioni che è ne-
+cessario adottare. La norma esplicita le azioni che 
+l’Organizzazione deve intraprendere a seguito di 
+una non conformità.
+
+È opportuno garantire che gli effetti delle azioni 
+correttive intraprese in un determinato ambito, non 
+causino effetti avversi in altri ambiti dell’Organizza-
+zione.
+
+36 I QUADERNI DI CONFORMA
+
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ
+
+10.3 Miglioramento continuo
+
+Sono stati enfatizzati gli output dell’analisi dei dati e Il rispetto del requisito potrebbe essere valu-
+del riesame di direzione. tato attraverso:
+Il miglioramento continuo del sistema di gestione - l’esame dei risultati del riesame del sistema 
+è espressione degli obiettivi fi ssati dal Top Manage- di gestione;
+ment. - l’esame delle eventuali strategie e politiche 
+Il miglioramento dovrebbe essere inteso come un per il miglioramento;
+continuo susseguirsi di attività che l’Organizzazione - l’esame di eventuali programmi di miglio-
+stabilisce di intraprendere. ramento (segmentati in progetti, azioni, 
+
+iniziative…) e del loro continuo aggiorna-
+mento da parte dell’Organizzazione.
+
+I QUADERNI DI CONFORMA 37
+
+
+
+Allegato 1
+
+ISO 9001:2008 to ISO 9001 - Correlation Matrix 
+
+ISO 9001:2008 ISO 9001:2015 
+4  Quality management system 4 Context of the Organization
+
+4.4  Quality management system and its processes
+4.1  General requirements 4.4  Quality management system and its processes
+4.2  Documentation requirements 7.5  Documented information
+4.2.1  General 7.5.1 General
+4.2.2  Quality manual 4.3  Determining the scope of the quality 
+
+management system
+7.5.1  General
+4.4  Quality management system and its processes
+
+4.2.3 Control of documents 7.5.2  Creating and updating
+7.5.3  Control of documented Information
+
+4.2.4 Control of records 7.5.2  Creating and updating
+7.5.3  Control of documented Information
+
+5 Management responsibility 5  Leadership
+5.1  Management commitment 5.1  Leadership and commitment
+5.2  Customer focus 5.1.2 Customer focus
+5.3  Quality policy 5.2  Policy
+5.4  Planning 6  Planning for the quality management system
+5.4.1  Quality objectives 6.2 Quality objectives and planning to achieve 
+
+them
+5.4.2  Quality management system planning 6 Planning for the quality management system
+5.5  Responsibility, authority and communication 5 Leadership
+5.5.1  Responsibility and authority 5.3  Organizational roles, responsibilities and 
+
+authorities
+5.5.2  Management representative 5.3  Organizational roles, responsibilities and 
+
+authorities
+5.5.3  Internal communication 7.4  Communication
+5.6  Management review 9.3  Management review
+5.6.1  General 9.3.1  General
+5.6.2  Review input 9.3.2  Management review inputs
+5.6.3  Review output 9.3.3  Management review outputs
+6  Resource management 7.1  Resources
+6.1  Provision of resources 7.1.1  General
+
+7.1.2  People
+6.2  Human resources 7.2  Competence
+6.2.1  General 7.2  Competence
+6.2.2  Competence, training and awareness 7.2  Competence
+
+7.3  Awareness
+6.3  Infrastructure 7.1.3  Infrastructure
+6.4 Work environment 7.1.4  Environment for the operation of processes
+7 Product realization 8  Operation
+7.1 Planning of product realization 8.1  Operational planning and control
+7.2  Customer-related processes 8.2  Requirements related to products and services
+
+38 I QUADERNI DI CONFORMA
+
+
+
+ISO 9001:2008 ISO 9001:2015 
+7.2.1  Determination of requirements related to the 8.2.2  Determination of requirements related to 
+
+product products and services
+7.2.2  Review of requirements related to the product 8.2.3 Review of requirements related to the products 
+
+and services
+7.2.3  Customer communication 8.2.1 Customer communication
+7.3  Design and development 8.3  Design and development of products and 
+
+services
+8.3.1  General
+
+7.3.1  Design and development planning 8.3.2  Design and development planning
+7.3.2  Design and development inputs 8.3.3  Design and development Inputs
+7.3.3  Design and development outputs 8.3.5  Design and development outputs
+7.3.4  Design and development review 8.3.4  Design and development controls
+7.3.5  Design and development verifi cation 8.3.4  Design and development controls
+7.3.6  Design and development validation 8.3.4  Design and development controls
+7.3.7  Control of design and development changes 8.3.6  Design and development changes
+7.4 Purchasing 8.4  Control of externally provided processes, 
+
+products and services
+7.4.1  Purchasing process 8.4.1  General
+
+8.4.2  Type and extent of control 
+7.4.2  Purchasing information 8.4.3  Information for external providers
+7.4.3  Verifi cation of purchased product 8.6  Release of products and services
+7.5  Production and service provision 8.5  Production and service provision
+7.5.1  Control of production and service provision 8.5.1  Control of production and service provision
+
+8.5.5  Post-delivery activities
+7.5.2  Validation of processes for production and 8.5.1  Control of production and service provision
+
+service provision 8.5.2  Identifi cation and traceability
+7.5.3  Identifi cation and traceability 8.5.3  Property belonging to customers or external 
+7.5.4  Customer property providers
+7.5.5  Preservation of product 8.5.4  Preservation
+7.6  Control of monitoring and measuring 7.1.5  Monitoring and measuring resources
+
+equipment
+8.0 Measurement, analysis and improvement 9  Performance evaluation
+
+9.1  Monitoring, measurement, analysis and 
+evaluation
+
+8.1  General 9.1.1  General
+8.2  Monitoring and measurement 9.1  Monitoring, measurement, analysis and 
+8.2.1 Customer satisfaction evaluation
+
+9.1.2  Customer satisfaction
+8.2.2  Internal audit 9.2  Internal audit
+8.2.3 Monitoring and measurement of processes 9.1.1  General
+8.2.4  Monitoring and measurement of product 8.6  Release of products and services
+8.3  Control of nonconforming product 8.7  Control of nonconforming outputs 
+8.4  Analysis of data 9.1.3  Analysis and evaluation
+8.5  Improvement 10  Improvement
+8.5.1  Continual improvement 10.1  General
+
+10.3  Continual Improvement
+8.5.2  Corrective action 10.2  Nonconformity and corrective action
+8.5.3  Preventive action 6.1  Actions to address risks and opportunities (see 
+
+6.1.1, 6.1.2)
+
+I QUADERNI DI CONFORMA 39
+
+
+
+Allegato 2
+
+Esempi di applicazione del requisito 4.1
+
+Fattori interni Fattori esterni
+
+Prodotto/mercato Capacità di soddisfare le Presenza di requisiti cogenti, 
+aspettative dei clienti presenza di competitor, 
+
+riconoscimento del brand, 
+aspettative dei clienti
+
+Fattori ambientali Gestione emissioni, rifi uti, Condizioni ambientali, 
+disponibilità di spazi adeguati, disponibilità e costo delle materie 
+condizioni climatiche idonee ai prime e dell’energia
+processi
+
+Fattori economici Accesso al credito, costo della Presenza di competitor e loro 
+e politici manodopera, disponibilità politica commerciale, solvibilità 
+
+fi nanziaria per investimenti, clienti, termini pagamento 
+sistema di tassazione, presenza di fornitori, rischio valuta, stabilità 
+investitori politica dei paesi di destinazione 
+
+dei prodotti
+
+Risorse umane Struttura organizzativa, politiche Relazioni contrattuali con i clienti 
+e strategie, processi decisionali, e con i fornitori, relazioni e 
+propensione al rischio, aspettative delle parti interessate, 
+propensione all’innovazione, rapporti con la pubblica 
+know how, capacità di amministrazione, rapporti con gli 
+comunicazione interna, con enti regolatori, relazioni sindacali, 
+i clienti, con gli stake holder, associazioni di categoria
+aspettative dei dipendenti, 
+contesto culturale in cui 
+l’Organizzazione opera
+
+Infrastrutture Disponibilità di spazi, impianti, Trasporto dei beni
+tecnologie e sistemi
+
+40 I QUADERNI DI CONFORMA
+
+
+
+Allegato 3
+
+“RISCHIO” IN ISO 9001:2015
+
+1. Obiettivi di questo documento
+
+• Spiegare come viene affrontato il rischio nella ISO 9001
+
+• Spiegare il signifi cato di “opportunità” nella in ISO 9001
+
+• Affrontare la problematica della possibilità che il “risk based thinking” (approccio basato sul rischio) 
+sostituisca l’approccio basato sul processo
+
+• Affrontare il problema che azione preventiva è stata tolta da ISO 9001
+
+• Spiegare in modo semplice tutti gli elementi di un approccio basato sul rischio
+
+2. Generalità
+
+Uno dei cambiamenti più signifi cativi della revisione 2015 di IS0 9001 è di stabilire un approccio sistema-
+tico al rischio, piuttosto che vederlo come componente singolo di un sistema di gestione della qualità.
+Nelle edizioni precedenti di ISO 9001 una clausola sulle azioni preventive è stata separata dal resto della 
+norma. Ora il rischio viene preso in considerazione nell’intero testo della norma.
+
+Adottare un approccio risk-based rende un’organizzazione proattiva e non reattiva, impedendo o 
+riducendo effetti indesiderati e promuovendo il miglioramento continuo. Un’azione preventiva è 
+automatica quando un sistema di gestione è basato sul rischio.
+
+I QUADERNI DI CONFORMA 41
+
+
+
+3. Che cosa è il “risk-based thinking”?
+
+Risk-based thinking è una cosa che tutti noi facciamo automaticamente.
+
+Per esempio: se vogliamo attraversare una strada guardiamo prima il traffi co – se sta arrivando una macchina 
+rimaniamo fermi. 
+
+Risk-based thinking ha sempre fatto parte di ISO 9001 – questa revisione l’incorpora nell’intero 
+sistema di gestione.
+
+In ISO 9001:2015 il rischio fa parte dell’intero documento normativo. L’azione preventiva è una parte 
+della pianifi cazione strategica come lo è delle operazioni e della revisione.
+
+Risk-based thinking fa già parte dell’approccio basato sul processo.
+
+Per esempio: si può attraversare una strada direttamente oppure usare un ponte pedonale. La scelta sarà 
+effettuata considerando i rischi che corriamo.
+
+Il Rischio viene generalmente considerato come fattore negativo. Nel risk-based thinking esistono 
+anche le opportunità; ciò può essere visto come l’aspetto positivo del rischio.
+
+Per esempio: Attraversare la strada direttamente ci da l’opportunità di raggiungere l’altro lato più rapidamente, 
+ma aumenta il rischio di essere investiti dalle automobili in movimento.
+Il rischio se si usa il ponte è di impiegare più tempo; l’opportunità di utilizzare il ponte è che è minore il rischio 
+di essere investiti da un’automobile.
+
+L’opportunità non è sempre correlata al rischio ma è sempre correlata agli obbiettivi. Nel valutare 
+una situazione può essere possibile identificare opportunità di miglioramento.
+
+Per esempio:
+Un’analisi di questa situazione mostra ulteriori opportunità di miglioramento:
+• sottopassaggio 
+• semafori per pedoni
+• deviazioni della viabilità per eliminare il traffi co nell’area
+
+È necessario analizzare le opportunità e valutare le azioni più propizie da adottare.  L’impatto e la 
+fattibilità di prendere un’opportunità devono essere entrambe considerati. Qualunque azione sia 
+decisa cambierà il contesto e i rischi, che quindi vanno rivalutati. 
+
+42 I QUADERNI DI CONFORMA
+
+
+
+4. Dove viene affrontato il rischio in ISO 9001:2015?
+
+INTRODUZIONE
+
+Il concetto di risk-based thinking viene spiegato nella introduzione della ISO 9001: 2015.
+
+DEFINIZIONI
+
+ISO 9001:2015 defi nisce il rischio come “l’effetto dell’incertezza su un risultato previsto”.
+
+1. Un effetto è una deviazione dal previsto – positivo o negativo. 
+
+2. Il rischio riguarda quello che potrebbe accadere e l’eventuale effetto di questo avvenimento.
+
+3. Il rischio prende anche in considerazione la probabilità.
+
+L’obbiettivo di un sistema di gestione è la conformità e la soddisfazione del cliente. 
+
+ISO 9001:2015 utilizza il risk-based thinking per raggiungere questi obiettivi tramite le seguenti 
+modalità:
+
+Clausola  4 (Contesto) l’organizzazione ha l’obbligo di determinare i rischi che possono avere un 
+impatto sul contesto.
+
+Clausola  5 (Leadership) il top management ha l’obbligo di garantire che la Clausola 4 venga 
+rispettata.
+
+Clausola  6 (Planning) l’organizzazione ha l’obbligo di identifi care i rischi e le opportunità. 
+
+Clausola  8 (Operazione) l’organizzazione ha l’obbligo di attuare processi per affrontare i rischi e le 
+opportunità.
+
+In Clausola 9 (Valutazione performance) l’organizzazione ha l’obbligo di monitorare, misurare, 
+analizzare e valutare i rischi e le opportunità.
+
+In Clausola 10 (Miglioramento) l’organizzazione ha l’obbligo di migliorare reagendo ai cambiamenti 
+dei rischi.
+
+ 
+
+I QUADERNI DI CONFORMA 43
+
+
+
+5. Perché usare il risk-based thinking?
+
+Prendere in considerazione i rischi nell’intera organizzazione fa sì che le probabilità di raggiungere 
+obbiettivi siano incrementate; l’output sarà più continuo e i clienti più fi duciosi di ricevere il prodotto/
+servizio che si aspettano.
+
+Il risk-based thinking, quindi:
+• costruisce una consistente base di conoscenze 
+• stabilisce una cultura proattiva di miglioramento
+• assicura la coerenza nella qualità dei beni/servizi
+• aumenta la fi ducia e la soddisfazione da parte del cliente 
+
+Le imprese di successo assumono intuitivamente un approccio risk-based
+
+6. Come posso farlo?
+
+Adottare un approccio basato sui rischi nei vostri processi organizzativi.
+
+Identificare i PROPRI rischi e opportunità – dipende dal contesto
+
+Per esempio:
+Se attravero una strada molto traffi cata i rischi non sono gli stessi rispetto ad una strada piccola e poco 
+traffi cata. Bisogna anche tener presente aspetti come le condizioni meteorologiche, la visibilità, la mobilità 
+personale e gli obbiettivi personali.
+
+ANALIZZARE E PRIORITARIZZARE I PROPRI RISCHI E LE PROPRIE OPPORTUNITÀ
+
+Cosa è accettabile e cosa non è accettabile? Quali sono i vantaggi e gli svantaggi di un processo 
+rispetto ad un altro?
+
+Per esempio: 
+Obiettivo: devo attraversare in sicurezza una strada per arrivare in tempo per una riunione.
+È INACCETTABILE subire un infortunio. 
+È INACCETTABILE arrivare in ritardo. 
+La possibilità di raggiungere il mio obbiettivo più rapidamente deve essere bilanciata con la possibilità di 
+infortunio. È più importante arrivare alla riunione incolume che in orario.
+Può essere ACCETTABILE raggiungere l’altro lato della stradain ritardo utilizzando il ponte pedonale se le 
+probabilità di farmi male attraversando la strada direttamente sono alte.
+Valuto la situazione: il ponte è lontano 200 metri, quindi devo prolungare il mio viaggio. Il tempo meteo è 
+buono, la visibilità è buona vedo che la strada non è tanto traffi cata in questo momento.
+Decido che il livello di rischio se attraverso la strada direttamente è accettabilmente basso e mi permette di 
+raggiungere in orario la  riunione.
+
+44 I QUADERNI DI CONFORMA
+
+
+
+PIANIFICARE AZIONI PER AFFRONTARE I RISCHI
+
+Come faccio ad eliminare, evitare o mitigare i rischi?
+
+Per esempio:
+potrei eliminare ogni rischio d’infortunio utilizzando il ponte, ma ho già deciso che il rischio di attraversare la 
+strada direttamente è accettabile.
+Adesso pianifi co di ridurre la probabilità d’infortunio e/o l’effetto d’infortunio.
+Non posso ragionevolmente controllare l’effetto del l’urto da parte di una macchina.
+Posso, invece, ridurre il rischio di essere investito da una macchina. Pianifi co di attraversare in un momento 
+quando non ci sono macchine vicine, e quindi riduco la probabilità di un incidente.
+Scelgo anche di attraversare la strada in un punto dove la visibilità è buona e posso fermarmi a metà per 
+rivalutare la situazione, riducendo ulteriormente le probabilità di un incidente.
+
+ATTUARE IL PIANO – PRENDERE AZIONE
+
+Per esempio:
+Mi avvicino al ciglio della strada, controllo che non ci siano ostacoli/barriere e che ci sia un posto al sicuro in 
+mezzo alla strada. Controllo che non stia arrivando alcuna macchina.
+Attraverso la prima metà delal strada e mi fermo in un posto sicuro in centro.
+Rivaluto la situazione e poi proseguo attraversando la seconda parte della strada.
+
+CONTROLLARE L’EFFICACIA DELLE AZIONI - FUNZIONANO?
+
+Per esempio:
+Arrivo all’altro lato della strada indenne e in orario: il piano ha funzionato ed eventualità indesiderate sono 
+state evitate.
+
+IMPARARE DALLE ESPERIENZE – MIGLIORAMENTO CONTINUO
+
+Per esempio:
+Ripeto il piano per alcuni giorni in orari diversi con tempo meteorologico diverso.
+Questo sistema mi fornisce elementi per capire come cambiamenti nel contesto (orario, tempo, quantità di 
+automobili) infl uiscono direttamente sull’effi cacia del piano e aumentano la probabilità che io non raggiunga 
+i miei obbiettivi (essere in orario ed evitare infortuni).
+L’esperienza m’insegna che attraversare la strada in alcuni orari della giornata è molto diffi cile perché c’è 
+troppo traffi co. 
+Per limitare i rischi rivedo e miglioro il mio processo utilizzando il ponte pedonale in quegli orari.
+Continuo ad analizzare l’effi cacia dei processi e li riconsidero quando cambia il contesto.
+Continuo, inoltre, a valutare opportunità innovative:
+• si può cambiare il luogo della riunione per non dover attraversare questa strada?
+• Si può cambiare l’orario della riunione in modo da poter attraversare la strada quando c’è poco traffi co?
+• Si può fare una video-conference?
+
+I QUADERNI DI CONFORMA 45
+
+
+
+7. Conclusione
+
+• risk-based thinking non è una novità
+
+• risk-based thinking è una cosa che già si fa
+
+• risk-based thinking è costante 
+
+• risk-based thinking assicura maggior conoscenza e preparazione
+
+• risk-based thinking aumenta le probabilità di raggiungere gli obbiettivi
+
+• risk-based thinking riduce le probabilità di cattivi risultati
+
+• risk-based thinking fa sì che la prevenzione diventi un’abitudine
+
+Documenti utili
+
+ISO 31000:2009 Risk Management – Principles and guidelines
+
+PD ISO/TR 31004:2013. Risk management - Guidance for the implementation of ISO 31000
+
+46 I QUADERNI DI CONFORMA
+
+
+
+Allegato 4
+
+“RISCHIO” IN ISO 9001:2015
+
+Esempio non esaustivo di possibili rischi riferibili al contesto/parti interessate
+
+MINACCE NOTE 
+
+Attacco cibernetico
+
+IT- telefono
+
+Perdita di dati
+
+Interruzione forniture
+
+Destabilizzazione catena fornitura
+
+Furti security
+
+Eventi meteo (es. Terremoti, alluvioni, tzunami, ecc) In relazione al contesto
+
+Malattie (es. Patologie, infermità, indisposizioni, ecc)
+
+Incendio
+
+Atti di terrorismo In relazione al contesto
+
+Incidenti sul lavoro In relazione alla gravità
+
+Nuove Leggi e regolamenti
+
+Leggi e regolamenti
+
+Disponibilità di competenze
+
+Instabilità sociale In relazione al contesto
+
+Disponibilità energia / costi
+
+NC di prodotto
+
+Incidenti ambientali In relazione alla gravità
+
+Etica / business In relazione al contesto
+
+Guerre e confl itti In relazione al contesto
+
+Controverse industriali
+
+Responsabilità prodotto difettoso
+
+Insolvenza clienti principali
+
+Disponibilità costi / fi nanziamenti In relazione alle commesse acquisite
+
+Volatilità cambio monetario In relazione alle commesse acquisite
+
+Scarsità di risorse naturali
+
+Chiusura spazi aerei In relazione alle commesse acquisite
+
+Malattie /epidemie animali In relazione al contesto
+
+I QUADERNI DI CONFORMA 47
+
+
+
+Allegato 5
+
+Considerazioni su come effettuare audit per conformità alla ISO 
+9001:2015
+
+La metodologia per effettuare un audit sostanzialmente non cambia.
+
+L’auditor, al fi ne di avere una ragionevole certezza della conformità del sistema ai requisiti, dovrebbe 
+però modifi care l’atteggiamento da una “ricerca della conformità” ad una maggiore “valutazione della 
+conformità” del Sistema di gestione.
+
+Un esempio può essere fornito dalla verifi ca dell’adeguatezza delle “informazioni documentate” che 
+l’Organizzazione ha la facoltà di defi nire per garantire una effi cace applicazione del sistema di gestione 
+per la qualità. L’esame di queste informazioni documentate dovrebbe concorrere alla valutazione da 
+parte dell’auditor sulla effi cacia del sistema.
+
+Alla luce del maggior ed esplicito coinvolgimento richiesto alla Direzione Aziendale, sarebbe opportuno 
+che gli auditor richiedessero la partecipazione dei vertici aziendali (Top Management), sicuramente alle 
+riunioni iniziali e fi nali, ma anche durante il processo di audit. 
+
+Durante questo incontro, che assume una particolare importanza ai fi ni della valutazione del Sistema 
+di Gestione per la Qualità, alla Direzione Aziendale dovrebbe essere chiesto di illustrare come è stato 
+identifi cato il contesto in cui l’Organizzazione opera e come è stato considerato un “Risk Based Approach” 
+nella pianifi cazione del sistema di gestione per la qualità, e dovrà poter giustificare tutte le decisioni prese 
+per pianifi care e gestire il sistema aziendale.
+
+Dovrà inoltre dimostrare come persegue la sua politica, con che strumenti, con che mezzi, e come 
+assicura che ciò sia attuato da parte del personale. L’effi cacia della direzione in questo senso si può 
+valutare durante tutto l’audit attraverso le interviste o confronti con il personale, ed attraverso la verifi ca 
+degli output dei vari processi.
+
+Dovrebbe essere adottato un approccio con domande aperte che permettano agli intervistati di spiegare 
+come viene assicurata l’applicazione del sistema, ed all’auditor di valutare le risposte.
+
+Dovrebbe anche essere preferito un approccio basato sui risultati (Bottom Up). Se il risultato è una “non 
+conformità” ciò è una indicazione di una “falla” nel sistema di gestione. L’Organizzazione dovrà essere 
+chiamata ad analizzarne le cause e proporre una vera azione correttiva. Per le aziende che erogano servizi 
+si possono adottare anche metodi di “mystery audit”.
+
+48 I QUADERNI DI CONFORMA
+
+
+
+PUNTI DI POSSIBILE CRITICITÀ PER L’ORGANIZZAZIONE
+
+- Contesto
+- Aspettative dal Sistema Qualità
+- Identifi cazione di rischi ed opportunità 
+- Identifi cazione delle parti interessate
+- Identifi cazione di ruoli e responsabilità
+- Identifi cazione delle competenze
+- Informazioni documentate (Aspettative)
+
+ASPETTI DI POSSIBILE CRITICITÀ PER GLI AUDITOR
+
+- Campo di applicazione del Sistema di gestione
+- Conoscenza del contesto in cui l’Organizzazione opera
+- Responsabilità della direzione aziendale
+- Adeguatezza delle informazioni documentate
+
+I QUADERNI DI CONFORMA 49
+
+
+
+CONFORMA - Associazione Organismi Certificazione Ispezione Prove Taratura, opera nel set-
+tore TIC (Testing, Inspection, Certifi cation), ovvero nel settore della Valutazione della Conformità intesa 
+come l’insieme delle attività, generalmente svolte in regime di accreditamento e/o su autorizzazione dei 
+Ministeri competenti, in ambito volontario o cogente, di attività di certifi cazione di sistemi di gestione, 
+prodotto, personale e servizi, ispezioni, marcatura CE e prove di laboratorio e taratura.
+
+Costituita nel 2012 da alcune fra le più importanti Organizzazioni a livello nazionale ed internazionale 
+nel settore della Valutazione della Conformità di parte terza indipendente, ha sede nel centro di Milano 
+ed è strutturata in 4 settori tecnici: Certifi cazione, Ispezione, Prove e Taratura.
+
+UNI - Ente Nazionale Italiano di Unificazione - è un’associazione privata senza scopo di lucro ri-
+conosciuta dallo Stato e dall’Unione Europea, che da quasi 100 anni elabora e pubblica norme tecniche 
+volontarie – le norme UNI – in tutti i settori industriali, commerciali e del terziario.
+
+Sono soci UNI le imprese, i professionisti, le associazioni, gli enti pubblici, i centri di ricerca, gli istituti 
+scolastici e accademici, le rappresentanze dei consumatori e dei lavoratori, il terzo settore e le orga-
+nizzazione non governative, che insieme costituiscono una piattaforma multi-stakeholder di confronto 
+tecnico unica a livello nazionale.
+
+UNI rappresenta l’Italia presso le organizzazioni di normazione europea (CEN) e mondiale (ISO) e orga-
+nizza la partecipazione delle delegazioni nazionali ai lavori di normazione sovranazionale, con lo scopo di:
+- promuovere l’armonizzazione delle norme necessaria al funzionamento del mercato unico,
+- sostenere e trasporre le peculiarità del modo di produrre italiano in specifi che tecniche che valorizzi-
+
+no l’esperienza e la tradizione produttiva nazionale.
+
+
+
+
+
+
+Piazzale R. Morandi 2, 20121 Milano - Telefono 02.77790408 - 02.77790409 
+info@associazioneconforma.eu - c.f. e p. iva 07671900962
+
+www.associazioneconforma.eu
+
+Via Sannio, 2 - 20137 Milano - Telefono 02.70024200 - fax 02.5515256
+www.uni.com
+
+c.f./p.iva. 06786300159
+
+NOVEMBRE 2015
+
+Elaborazione grafica: www.andreanobilio.com

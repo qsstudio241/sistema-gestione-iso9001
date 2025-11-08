@@ -1,0 +1,3253 @@
+﻿AOITAI LA QUALITÀ 
+
+Fattori 
+del contesto - 
+e parti interessate ; 
+Nicola Gigante 
+
+© D 
+w ENTE ITALIANO 
+
+' DI NORMAZIONE 
+
+O 
+L 
+#a 
+LL] 
+
+”a 
+_i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 
+
+©2016 UNI - Milano 
+
+TUTTI | DIRITTI SONO RISERVATI 
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi, fotocopie, microfilm, o altro senza il 
+consenso scritto dell'editore. 
+
+ALL RIGHTS RESERVED 
+No part of this work may be reproduced, stored in a retrieval system or transmitted in anr form or by any means elec- 
+tronic, photocopying, recording or othenwise, without the written permission from the publisher. 
+
+Quesia pubblicazione non è un documento normativo. 
+La responsabilità dei concetti espressi è unicamente dell'autore. 
+
+Autore 
+Nicola Gigante 
+
+Editore 
+UNI - Ente Nazionale Italiano di Unificazione 
+Via Sannio, 2 - 20137 Milano 
+Italia 
+Tel. 02 70024.1 - Fax. 02 5515256 
+Wwww.uni.com 
+
+12 edizione - Gennaio 2016
+
+
+
+O.ME.FA. S.p.A. 
+UNFstore - 2016 - 371459 
+
+quaderni della qualità 
+
+Quaderno 2 
+
+Fattori del contesto 
+e parti interessate 
+
+di 
+
+Nicola Gigante
+
+
+
+O.ME.FA. S.p.A. 
+UNistore - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 
+
+Indice 
+
+Introduzione _. _1 
+
+Contesto, parti interessate e sostenibilità. 6 
+
+Impatto dei nuovi requisiti 4.1 e 4.2 _ o 18 
+
+Quanto è esteso il contesto dell'organizzazione_? _17 
+
+Comr'è fatto il contesto? 20 
+
+L'applicazione dei requisiti relativi al contesto e alle parti interessate 38 
+
+Conclusioni...... 58 
+
+Riferimenti bibliografici_.. ...59 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 1 
+
+Introduzione 
+
+La ISO 9001:2015, Sistemi di gestione per la qualità - Requisiti, presenta un approccio alla gestione per la 
+qualità più vicino, rispetto al passato, alla complessità reale delle organizzazioni, alle quali si propone come 
+strumento per affrontare rischi e opportunità associati al loro contesto e ai loro obiettivi per la qualità!. 
+
+Questo si riflette innanzitutto nei requisiti del capitolo 4: "Contesto dell’organizzazione”’, e in particolare in 
+quelli che richiedono all'organizzazione di considerare le variabili del proprio contesto esterno/interno e le 
+istanze delle parti interessate, come condizione per perimetrare, mettere in atto e migliorare un Sistema di 
+Gestione per la Qualità efficace®. 
+
+La comprensione del contesto dell’organizzazione 
+è un processo il cui obiettivo è la determinazione 
+dei fattori che influenzano le finalità, 
+gli obiettivi e la sostenibilità dell’organizzazione. 
+Parte del processo per comprendere 
+il contesto dell’organizzazione 
+consiste nell’identificazione 
+delle sue parti interessate. 
+
+Secondo quanto stabilito al punto 4.1, l’organizzazione deve determinare i fattori esterni ed interni rilevanti 
+per le sue finalità e per i suoi indirizzi strategici, e che influenzano la sua capacità di conseguire i risultati 
+attesi del Sistema di Gestione per la Qualità (SGQ), e deve monitorare e riesaminare le informazioni che 
+riguardano tali fattori. 
+
+La ISO 9000:2015 specifica che la comprensione del contesto dell'organizzazione è un processo il cui 
+obiettivo è la determinazione dei fattori che influenzano le finalità, gli obiettivi è la sostenibilità dell'organiz- 
+zazione e che in particolare le finalità possono essere espresse attraverso la vision, la mission, le politiche e 
+
+1 Da UNI EN ISO 9001:2015, $ 0.1: | benefici potenziali che possono derivare all'organizzazione dall'attuazione di un sistema di gestione per la qualità 
+basato sulla presente norma internazionale sono ...c) affrontare rischi e opportunità associati al suo contesto e ai suoi obiettivi... 
+
+2 Il capitolo 4 è composto dai seguenti punti: 
+4.1 Comprendere l'organizzazione e il suo contesto 
+
+4.2 Comprendere le esigenze e le aspettative delle parti interessate 
+4.3 Determinare il campo di applicazione del sistema di gestione per la qualità 
+
+4.4 Sistema di gestione per la qualità e relativi processi 
+
+3 Da UNI EN ISO 9000:2015. Sistemi di gestione per la qualità - Fondamenti e vocabolario 
+- Plo 322- Contesto dell'organizzazione: combinazione di fattori interni e esterni che possono avere un'influenza sull'approccio di un'organizzazione 
+
+per lo sviluppo e il conseguimento i suoi obiettivi. 
+— Plo 3.2.3 - Parte interessata, stakeholder: persona od organizzazione che può influenzare, essere influenzata, o percepire se stessa come influenzata 
+
+da una decisione o attività. Esempio: Chienti (3,2,4), proprietari, persone dell'organizzazione, fornitori (3.2.5), banche, autorità legislative, sindacati, 
+partner, o collettività, che può comprendere concorrenti o gruppi di pressione antagonisti.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 20 1@addrAafà Qualità: Quaderno 2 
+
+gli obiettivi dell'organizzazione. Come riportato al punto 2.2.4 (Parti interessate) della stessa ISO 9000, tale 
+processo include l'identificazione delle parti interessate, nel contesto considerato*. 
+
+Il requisito 4.2 della ISO 9001 richiede in effetti che siano determinate le parti interessate rilevanti peril SGO, 
+cioè quelle che generano un rischio significativo per la sostenibilità dell'organizzazione, nel caso in cui non 
+vengano da questa soddisfatte le loro esigenze e aspettative, e i loro rilevanti requisiti, in quanto le une e gli 
+altri possono incidere sulla capacità dell'organizzazione di fornire con regolarità prodotti e servizi conformi. 
+Si stabilisce inoltre che l'organizzazione deve monitorare e riesaminare le informazioni riguardanti sia le parti 
+interessate che i relativi requisiti. 
+
+Bisogna osservare che il requisito 4.2 non riguarda tutti i soggetti che potrebbero interagire con l'organizza- 
+zione, ma solo quelli che possono incidere sul sistema qualità, e chiede alle organizzazioni di occuparsi non 
+di tutte le istanze di tali parti interessate “rilevanti" per il Sistema Qualità, ma esclusivamente di quelle che, 
+a loro volta, potrebbero influenzare la capacità di quest'ultimo di raggiungere gli obiettivi (Fig.1). L'aggettivo 
+"rilevante" attiene appunto al criterio di attribuzione delle priorità che dovrebbe permettere alle organizzazioni 
+di selezionare le istanze più critiche, e sottoporle alla gestione del sistema qualità®. 
+
+CONTESTO 
+
+PARTI INTERESSATE 
+
+REQUISITI DELLE PARTI 
+INTERESSATE RILEVANTI 
+
+REQUISITI RILEVANTI 
+| DELLE PARTI 
+INTERESSATE 
+RILEVANTI 
+
+Fig.1 Dal "contesto" ai requisiti "rilevanti" 
+
+Ancora, la Norma ISO 9000:2015 ricorda che: 
+— Le organizzazioni definiscono quali output devono essere forniti alle parti interessate rilevanti per ridurre 
+
+il rischio associato alle loro esigenze e aspettative. 
+— ÀAi fini del loro successo, le organizzazioni devono essere in grado di attirare, acquisire e mantenere il 
+
+supporto delle parti interessate da cui tale successo principalmente dipende. 
+
+Sia il punto 4.1 che il punto 4.2 riprendono, integrandolo, il "testo comune" dell'Annex SL (HLS)$; le finalità di 
+tali articoli, nella Struttura di Alto Livello, sono spiegate dal documento UTCG/TF4/N27 - Concept document 
+
+4 Rif. UNI EN ISO 9000:2015, p.lo 2.2.4. 
+
+5 Rif. UNI EN ISO 9001:2015, A.3: Comprensione delle esigenze e delle aspettative delle parti interessale. 
+
+6 Come meglio illustrato in: Quaderno della Qualità n. 1 - Dicembre 2015, pag. 3, l'Annex SL coslituisce il riferimento non solo per la ISO 9001, ma per 
+tutti i MSS, inclusa ad esempio la ISO 14001:2015 Sistema di Gestione Ambientale, pubblicata contemporaneamente alla ISO 9001:2015.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 3 
+
+to support of Annex SL, che fornisce esempi di fattori che possono essere importanti per un Sistema di 
+Gestione, fra i quali: 
+
+Il contesto esterno culturale, sociale, politico, legale, regolamentare, finanziario, tecnologico, economico, 
+naturale e competitivo, sia internazionale che nazionale, regionale o locale; 
+caralteristiche e condizioni dell'organizzazione, come: 
+
+—  governance dell'organizzazione, flusso di informazioni e processo decisorio; 
+
+— _ politiche, obiettivi dell'organizzazione, e le strategie che sono in atto per il loro raggiungimento; 
+— _ la capacità dell'organizzazione, intesa in termini di risorse (p.es.: capitale, tempo, persone, cono- 
+
+scenza, processi, sistemi e tecnologie); 
+
+— _ la cultura dell'’organizzazione; 
+
+- norme, linee guida e modelli adottati dall'organizzazione; 
+
+- il ciclo di vita dei prodotti e servizi dell'organizzazione. 
+
+Lo stesso documento riporta i seguenti esempi di potenziali parti interessate: 
+Autorità legali e di regolamentazione (locali, regionali, statali, nazionali o internazionali) 
+Organizzazioni sovraordinate 
+Clienti 
+Associazioni di categoria e professionali 
+Collettività 
+Organizzazioni non governative 
+Fornitori 
+Vicini 
+Addetti e altre persone che lavorano per conto dell’organizzazione, 
+
+i cui requisiti potrebbero comprendere: 
+Requisiti di legge 
+Permessi, licenze e altre forme di autorizzazioni 
+Ordini emessi da agenzie di regolamentazione 
+Prescrizioni in ambito civile o penale 
+Trattati, convenzioni o protocolli 
+Codici industriali e norme di settore e contratti che ne prevedono l'applicazione 
+Accordi con la collettività o con organizzazioni non governative 
+Accordi con pubbliche autorità e clienti 
+Regquisiti dell'organizzazione 
+Principi applicati volontariamente o codici di pratica 
+Marchi volontari o ambientali. 
+
+Come stabilito ai paragrafi 4.3, 4.4 e 6.1 della ISO 9001:20157, le attività richieste ai punti 4.1 e 4.2 costitu- 
+iscono: 
+
+7 
+4,3 - Determinare il campo di applicazione del sistema di gestione per la qualità 
+
+4.4 - Sistema di gestione per la qualità e relalivi processi 
+
+6.1 - Azioni per affrontare rischi e opportunità
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 20 1paddraAf Qualità: Quaderno2 
+
+a) un input per definire il campo di azione e i processi del Sistema Qualità e 
+
+b} il quadro di riferimento per determinare i rischi e le opportunità che occorrerà affrontare per massi- 
+mizzare i risultati del Sistema Qualità, attraverso la loro adeguata declinazione e gestione nell'ambito 
+dell'intera organizzazione. 
+
+In particolare: 
+
+a) al punto 4.3, la Norma richiede che l'organizzazione determini i confini e l'applicabilità del SGQ per 
+stabilirne il campo di applicazione, tenendo conto: 
+
+—  dei fattori esterni ed interni considerati in applicazione del punto 4.1; 
+—  dei requisiti delle parti interessate rilevanti oggetto del paragrafo 4.2; 
+
+— dei prodotti e dei servizi dell'organizzazione; 
+b) al punto 4.4 è stabilito che l'organizzazione istituisca e mantenga attivo un sistema di gestione per la 
+
+qualità che includa i processi necessari per ottenere con regolarità la conformità di prodotti e servizi e 
+per accrescere la soddisfazione dei clienti; 
+
+c) al punto 6.1, infine, la Norma impone all’organizzazione di: 
+
+1.  considerare i fattori del contesto, di cui al punto 4.1, e i requisiti delle parti interessate, oggetto del 
+punto 4.2, per determinare i rischi e le opportunità da affrontare allo scopo di: 
+
+-  qgarantire che il sistema qualità ottenga i risultati attesi; 
+- massimizzare gli effetti positivi e minimizzare gli effetti negativi sul sistema stesso; 
+
+- _ ottenere miglioramenti; 
+
+2. pianificare le azioni necessarie per affrontare i rischi e le opportunità e fare sì che tali azioni siano inte- 
+grate nei processi (oggetto del punto 4.4) e che ne sia valutata l'efficacia. 
+
+Sul piano operativo, le azioni di cui sopra andranno realizzate (rif. p.to 8.1 - Pianificazione e controllo opera- 
+tivi) per mezzo dei processi di produzione e di erogazione dei servizi, nelle condizioni controllate stabilite al 
+capitolo 8 (Attività operative). 
+
+Successivamente (rif. 9.1.3 - Analisi e valutazione, p.to e) dovrà essere valutata l'efficacia delle azioni con- 
+dotte allo scopo di affrontare i rischi e di cogliere le opportunità, mentre il riesame di direzione riguarderà 
+tra l'altro i cambiamenti nei pertinenti fattori del contesto esterno e interno (9.3.2 b), gli andamenti relativi 
+ai feedback dalle parti interessate (9.3.2 c, 1), l'efficacia delle azioni intraprese per affrontare i rischi e le 
+opportunità (9.3.2 e). 
+Infine, opportuni miglioramenti andranno pianificati e messi in atto a seguito di quanto emerso nelle attività 
+di valutazione e riesame (Cap.10). 
+
+Come si vede i requisiti 4.1 e 4.2 costituiscono la premessa e il riferimento generale per buona parte di ciò 
+che l'organizzazione è tenuta a mettere in pratica nel proprio sistema qualità: dall'istituzione stessa del siste- 
+ma qualità, alla sua attuazione, al suo riesame, alle iniziative di miglioramento.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 
+
+4. CONTESTO DELL'ORGANIZZAZIONE 
+
+4.1 4.2 
+Contesto Parti interessate 
+
+4.3 
+Confini del SGQ 
+
+4.4 
+SGQ e Processi 
+
+Rischi/Opportunità — 
+
+i] 
+
+9- R.Iesarri:qdlb.iiézlofle. _ 
+
+v 
+10 - Miglioramento 
+
+Fig.2 Schema delle principali relazioni fra i requisiti 4.1 e 4.2 e gli altri capitoli della Norma
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstoge - 20 }@vaddrA/Uala Qualità: Quaderno2 
+
+Contesto, parti interessate e sostenibilità 
+
+Attraverso i requisiti dei punti 4.1 e 4.2 la Norma presenta l'organizzazione come un organismo adattivos, 
+soggetto alle sollecitazioni dell''ecosistema" (contesto) di appartenenza. Quale condizione per stabilire le 
+azioni necessarie a raggiungere le proprie finalità, essa deve razionalmente selezionare, fra gli innumerevoli 
+aspetti del contesto, quelli che maggiormente incidono o potrebbero incidere, sia in senso positivo che ne- 
+gativo, sull'efficacia del sistema di gestione, e deve monitorare e riesaminare le informazioni che riguardano 
+tali fattori. 
+
+Ai fini della gestione per la qualità, il fatto che l'organizzazione come "sistema aperto", oltre che essere de- 
+terminata dai decisori interni, sia condizionata in misura importante dall'ambiente in cui opera, suggerisce 
+l'estensione dell'idea di "processo", generalmente inteso come insieme di attività interrelate che hanno luogo 
+entro i confini dell'organizzazione stessa, o poco al di là di essi, e sotto la sua sovranità, a ciò che accade 
+oltre tali confini (purché tale da influenzare la qualità e la soddisfazione dei clienti). 
+
+Quando necessario, l'approccio per processi" dovrà rivolgersi perciò a questo ambito più esteso, che inclu- 
+de un più vasto repertorio di decisioni e decisori, e che perciò comporta la necessità, per l'organizzazione, 
+di interagire costruttivamente con essi. 
+Questo scenario riguarda la vita quotidiana di numerosissime imprese: la Norma, nell'affrontare il tema del 
+contesto e le dinamiche di relazione con le parti interessate, non sta introducendo concetti estranei alle 
+normali logiche di buona conduzione di un'organizzazione, piccola o grande che sia, ma sta allargando la 
+propria visione, per abbracciare tali logiche e ricondurne l'attuazione nel Sistema Qualità. 
+
+L'organizzazione come sistema aperto 
+è condizionata in misura importante 
+dall'ambiente in cui opera: 
+l''approccio per processi", 
+generalmente riferito a ciò che ha luogo 
+entro i confini dell'organizzazione stessa, 
+dovrebbe estendersi a ciò che accade oltre tali confini. 
+
+Dunque la "novità" consiste nel fatto che la gestione del contesto, spesso affrontata, soprattutto dalle piccole 
+imprese, in termini intuitivi, estemporanei, emergenziali, diventa ora oggetto di un approccio sistematico e 
+strutturato. 
+
+Secondo tale approccio, l'applicazione della ISO 9001:2015 potrebbe generare il seguente scenario: 
+
+1. Un'organizzazione riconosce un determinato aspetto (X) del contesto esterno come rilevante per le sue 
+finalità e per i suoi indirizzi strategici, e tale da influenzare la sua capacità di conseguire i risultati attesi 
+
+8 Vedere anche: Rummler G.A., Brache A.P., Improving performance, Jossey-Bass Publisher - 2nd Edition 1995, pag. 9: *The organization as an adap- 
+tive system" {Trad It.: Migliorare la performance aziendale, Franco Angeli Ed. 1996)
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 7 
+
+del SGQ. 
+2. Questo fa sì che l'organizzazione stabilisca di riportare l'aspetto in questione nel perimetro del proprio 
+
+Sistema di Gestione per la Qualità. 
+
+3. All'interno di tale perimetro, le politiche e gli obiettivi per la qualità dell'organizzazione costituiscono di 
+conseguenza il criterio rispetto ai quali l'aspetto considerato deve essere riesaminato allo scopo di de- 
+terminare i rischi e le opportunità ad esso correlati. 
+
+4. Da tale riesame potrebbe discendere la decisione di affrontare la gestione dell'aspetto (X) in modo pro- 
+attivo, interagendo con altre parti portatrici di interessi relativi all'aspetto in questione. 
+
+5. In quanto ricadenti nell'ambito del Sistema Qualità, le azioni conseguenti dovranno in tal caso essere 
+affrontate come processo (con definizione di obiettivi, risorse, autorità, controlli). 
+
+6. Gli obiettivi di tale processo dovranno confrontarsi con gli obiettivi delle altre parti legittimate, in varia 
+misura, a rivendicare parte della ownership del processo stesso. 
+
+7. Ciò richiederà una più o meno complessa negoziazione, allo scopo di definire obiettivi comuni, abba- 
+stanza soddisfacenti per tutti i soggetti in gioco, e modi condivisi per il loro ottenimento, il che potrebbe 
+a sua volta rendere necessario "elevare" e "ampliare" gli obiettivi, andando oltre le finalità specifiche e 
+immediate dell'organizzazione: infatti essi tanto più avranno la probabilità di essere condivisi quanto 
+più saranno rivolti all'interesse comune. Questo orientamento a gradi sempre più estesi e inclusivi di 
+condivisione, tanto più se in una prospettiva di lungo periodo, può essere letta come strumentale alla 
+sostenibilità®. 
+
+Lo schema in fig.3 sintetizza lo scenario appena illustrato. 
+
+Quello ora considerato non è il solo percorso che metta in relazione la Gestione per la Qualità con la soste- 
+nibilità. Un'altra ricorrente condizione che spinge in tal senso è determinata dalla sensibilità dei clienti e dei 
+consumatori nei riguardi delle caratteristiche di sostenibilità del prodotto. 
+Infatti, sebbene molte "parti interessate" siano estranee alla dinamica "organizzazione fornitrice - cliente""°, 
+tuttavia trascurarne le aspettative (per esempio connesse all'ambiente, alla salvaguardia dei diritti, alla salu- 
+te, all'uso efficiente delle risorse energetiche, ecc.) potrebbe comportare l'insoddisfazione del cliente stesso. 
+
+In altri termini, pur essendo vero che il prodotto/servizio potrebbe non perdere le proprie caratteristiche 
+funzionali anche se realizzato attraverso processi "non responsabili" o "non sostenibili", tuttavia è noto che 
+la preferenza del consumatore, nel momento in cui sceglie fra due prodotti/servizi equivalenti sul piano 
+funzionale, è spesso condizionata da elementi del prodotto/servizio che non riguardano direttamente la sua 
+capacità di svolgere la propria funzione "sostanziale”. 
+
+9 Da: Gigante N., Rivara M., Organizzazioni di successo. Comprendere e applicare la norma ISO 9004:2009 per raggiungere il successo e mantenerlo 
+nel tempo - Ed. UNI - Gennaio 2011, p.21: Data la crescente influenza (del) contesto sulle prospettive di successo delle organizzazioni, il management 
+(...) deve gestire un numero sempre maggiore di variabili esterne ma, non potendo spesso su queste ultime assumere direttamente decisioni e con- 
+durre azioni, deve essere in grado di stabilire accordi e relazioni con le parti interessate, allo scopo di condividere con esse il processo decisionale. 
+In tale prospettliva di reciprocità, l’organizzazione dovrebbe, per quanto possibile, perseguire l’empowerment delle parti interessate interne ed esterne, 
+per esempio allargando sempre più verso l'esterno i processi di comunicazione, formazione, informazione. 
+Ciò può essere ottenuto promuovendo dei confronti delle parti interessate (a partire dal cliente) la formazione e l'informazione sui principi e sui conte- 
+nuti del sistema di gestione, il che aumenterà la consapevolezza, all'interno come all'esterno dell'organizzazione, dei benefici che tale sistema di ge- 
+stione può offrire alle stesse parti interessate, e dunque solleciterà un loro maggiore coinvolgimento e impegno nel contribuire all'efficace attuazione 
+del sistema. 
+
+10 Rif.: Nicola Gigante - "Qualità responsabile e futura ISO 9001" in: U&C n.2 - febbraio 2013.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 20 1vadérAMfaffà Qualità: Quaderno 2 
+
+VALUTAZIONE DI 
+
+Po RILEVANZA DETERMINAZIONE 
+DEL CC())r(\I)TESTO LES TRATEGIE ELE DI RISCHI E 
+
+FINALITA! DELL' OPPORTUNITA 
+ORGANIZZAZIONE 
+
+RILEVANTI PARTI INTERESSATE 
+IN RELAZIONE ALL'ASPETTO (X}: 
+
+AREA DELLA 
+NEGOZIAZIONE 
+
+PROCESSO PER LA GESTIONE DI (X) 
+
+CONTESTO ESTERNO SISTEMA QUALITA' 
+
+Fig.3 | La gestione degli aspetti (0 fattori}\del contesto esterno, attraverso il coinvalgimento delle rilevanti parti interessate 
+
+Questo è in genere dato per scontato quando si pensa per esempio alla componente estetica, o a quella 
+simbolica, per alcuni beni o servizi. Si tratta di caratteristiche non di tipo funzionale, ma che insistono sulla 
+sfera emotiva del consumatore e la cui considerazione nel processo di progettazione del prodotto/servizio è 
+spesso rilevante. 
+
+In realtà, anche le modalità con cui il prodotto/servizio è stato realizzato, con il trascorrere del tempo e con 
+la progressiva nobilitazione!’! delle aspettative dei clienti, intervengono in modo crescente a determinare i 
+comportamenti di acquisto: in molti settori, a parità di altre condizioni, la scelta fra un prodotto/servizio rea- 
+lizzato in modo responsabile (senza utilizzo di lavoro minorile, nel rispetto dell'ambiente, in uno stabilimento 
+sicuro, ecc.) e un altro del quale non vi è evidenza di tale approccio è pressoché scontata: il prodotto/servizio 
+"etico", dall'essere una semplice opzione, risponde ad una domanda crescente del mercato, tanto da indurre 
+sempre più spesso le organizzazioni a dotarsi di sistemi per la gestione responsabile, non solo per non in- 
+correre in sanzioni da parte degli organi di controllo, ma anche come motivo di preferenza per i propri clienti. 
+
+Atteso dunque che l'applicazione di un sistema di gestione responsabile (per l'ambiente, la sicurezza, ecc.) 
+può soddisfare: 
+— le aspettative delle "pertinenti parti interessate", diverse dal cliente, 
+-  le aspettative del cliente, connesse alle caratteristiche di sostenibilità del prodotto, 
+
+queste ultime dovrebbero essere considerate a tutti gli effetti come caratteristiche della qualità, intesa come 
+
+11 Da UNI EN ISC 9000:2015, $ 2.1: Limpatto della qualità va oltre la soddisfazione del cliente: esso può anche avere un effetto diretto sulla reputazione 
+dell'organizzazione, La società è diventata meglio istruita e più esigente, rendendo le parti interessate progressivamente più influenti.
+
+REQUISITI RILEVANTI 
+DELLE PARTI INTERESSATE 
+
+OBIETTIVI DEL PROCESSO DI 
+GESTIONE DELL'ASPETTO (X) 
+
+POLITICA E OBIETTIVI 
+DEL SISTEMA QUALITA” 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 9 
+
+Grado in cui un insieme di caratteristiche intrinseche di un oggetto soddisfa i requisiti, dove l'aggettivo “intrin- 
+seco”, come contrario di “assegnato”, significa che è presente nell'oggetto'?, se è vero che una caratteristica 
+inerente al prodotto, e per di più permanente, è rappresentata dalla sua "storia", ovvero dall'insieme delle 
+condizioni nelle quali esso è stato realizzato. 
+
+Le caratteristiche di sostenibilità 
+sono intrinseche al prodotto 
+e spesso cruciali per la soddisfazione del cliente. 
+Esse devono perciò essere considerate 
+come "caratteristiche della qualità" 
+e la loro gestione dovrebbe rientrare 
+nel campo di applicazione del Sistema Qualità 
+
+D'altra parte, l'idea che la soddisfazione dei bisogni e delle aspettative delle parti interessate sia una condi- 
+zione per il successo dell'organizzazione è espressamente affermata nei Principi di Gestione per la Qualità, 
+ricordando che il fondamento logico del primo Principio (Focalizzazione sul cliente) afferma che "il successo 
+durevole è acquisito allorché un'organizzazione attrae e conserva la fiducia dei clienti e delle altre parti inte- 
+ressate rilevanti. Ogni aspetto dell’interazione con il cliente fornisce un'opportunità di creare più valore per il 
+cliente stesso. Comprendere le esigenze attuali e future dei clienti e delle altre parti interessate contribuisce 
+al successo durevole dell’organizzazione"' e che la ISO 9000:2015, nell'enumerare le azioni che l'organiz- 
+zazione potrebbe intraprendere per mettere in atto il primo Principio di Gestione per la Qualità, include fra 
+esse: "determinare e intraprendere azioni sulla base delle esigenze e aspettative delle parti interessate che 
+possono influenzare la soddisfazione del cliente" (ISO 9000:2015 - 2,3.1.4 - Possibili azionì). 
+In effetti, il fondamento logico del primo principio risultava già anticipato nella ISO 9004:2009**. Tuttavia, una 
+differenza fra l'approccio al contesto e alle parti interessate secondo la UNI EN ISO 9004:2009 e l'approccio 
+ISO 9001:2015 consiste nel fatto che la prima focalizza l'attenzione sulle parti interessate in quanto tali, 
+riconoscendo nel soddisfacimento bilanciato delle loro aspettative uno strumento per il successo durevole 
+dell'organizzazione, mentre la seconda, come si è visto, richiede che le aspettative delle parti interessate 
+siano considerate e gestite nella misura in cui ciò è necessario allo scopo di assicurare prodotti e servizi 
+conformi, ottenere la soddisfazione del cliente, conseguire gli obiettivi del Sistema Qualità'*, 
+
+12 Da UNI EN ISO 8000:2015, $ 3,6,2: Quatità. 
+
+13 Da UNI EN ISO 2000:2015, $ 2.3.1.2. 
+
+14 L'organizzazione può conseguire il successo durevole attraverso il continuo soddisfacimento delle esigenze e delle aspettative delle proprie parti in- 
+teressate, in un modo bilanciato, nel tungo periodo (UNI EN ISO 9004:2009, $ 4.2 Successo durevole); Soddisfare le esigenze e le aspettative delle 
+parti interessate contribuisce al conseguimento del successo durevole da parte dell'organizzazione {UNI EN ISO 8004:2009, $ 4.4 - Parti interessate, 
+esigenze ed aspettative). 
+
+15 L'introduzione alla ISO 2004:2009 chiarisce: ‘la presente norma internazionale fornisce una prospeltiva di gestione per la qualità più ampia rispetto 
+alla ISO 9001; essa si rivolge alle esigenze ed aspettative di tutte le pertinenti parti interessate e fornisce una guida per il miglioramento sistematico e 
+continuo delle prestazioni complessive dell'organizzazione". Anche se evidentemente il riferimento è qui alla ISO 9001:2008, tuttavia tale precisazione 
+può ritenersi del tutto applicabile anche all' edizione 2015 della ISO 900t, che continua a essere focalizzala sulla soddistazione del cliente, mantenen- 
+do inalterato lo "scopo è campo di applicazione" rispetto al 2008.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstong - 20 1@)vaddrAM/afla Qualità: Quaderno 2 
+
+In sintesi: 
+
+1. La ISO 9001:2015 considera il soddisfacimento delle aspettative delle “rilevanti parti interessate" una 
+condizione per conseguire e accrescere la soddisfazione del cliente e in definitiva per raggiungere attra- 
+verso quest'ultima gli obiettivi dell'organizzazione. 
+Tale concetto fa parte anche dei contenuti della ISO 9004:2009, che tuttavia propone una visione più 
+ampia della Gestione per la Qualità, in base alla quale il soddisfacimento dei bisogni e delle aspettative 
+delle parti interessate rappresenta "in quanto tale", oltre alla precedente, una condizione per "raggiun- 
+gere il successo durevole". 
+
+Secondo la ISO 9000:2015, 
+"determinare e intraprendere azioni 
+sulla base delle esigenze e aspettative 
+delle parti interessate che possono influenzare 
+la soddisfazione del cliente" rappresenta 
+una delle possibili azioni per mettere in atto 
+il primo Principio di Gestione per la Qualità. 
+
+La ISO 9001:2015, nell'aprire una prospettiva sulle parti interessate diverse dal cliente, predispone 
+l'organizzazione ad affrontare esigenze (tipicamente correlate alla sostenibilità), apparentemente non 
+riferibili alla qualità del prodotto/servizio ma che si rivelano tali nel momento in cui il loro soddisfacimento 
+viene percepito dal cliente come valore associato al prodotto. 
+
+L'aspettativa del cliente verso tale valore è sempre più evidente in una molteplicità di settori e talvolta 
+così imprescindibile da costituire un requisito esplicito di fornitura, come ad esempio nel caso in cui fra le 
+prescrizioni contrattuali il committente include l'obbligo per l'organizzazione fornitrice di operare in con- 
+formità a requisiti di gestione ambientale, o di gestione per la sicurezza, o di responsabilità sociale, ecc. 
+
+Tali requisiti organizzativi (che si aggiungono a quelli già espressamente coperti dalla ISO 9001), po- 
+trebbero essere affrontati dall'organizzazione attraverso l'applicazione delle corrispondenti "norme di 
+sistema”, le quali pertanto entrerebbero in relazione diretta con il Sistema Qualità, come riferimenti utili 
+affinché il fine essenziale di quest'ultimo, ovvero la soddisfazione dei requisiti del cliente, possa essere 
+più agevolmente raggiunto. 
+
+Anche in questo caso dunque, a partire dalla considerazione del contesto e delle esigenze delle parti interes- 
+sate, il Sistema Qualità costituisce la base per la realizzazione di politiche di sostenibilità. La figura seguente 
+rappresenta sinteticamente quanto appena esposto.
+
+
+
+O.ME.FA. $.p.A. 
+UNIstore - 2016 - 371459 Faltori del contesto e parti interessate 11 
+
+ESIGENZEE PA R SODDISFAZIONE HH 
+ASPETTATIVE : DEI CLIENTI B 
+DEI CLIENTI 
+
+ASPETTATIVE P - Q i SODDISFAZIONE H 
+DELLE ALTRE LP aiT a aJv AI DELLE ALTRE 
+
+PARTI P L FE : p PARTI 
+INTERESSATE POE Îi iei A INTERESSATE 
+
+CONTESTO DELL'ORGANIZZAZIONE 
+
+Fig.4  La coppia ISO 9001-ISO 9004 come piattaforma per un Sistema di Gestione per la Sostenibilità 
+
+L'influenza delle logiche di sostenibilità sul sistema di gestione qualità si può estendere: 
+da un grado minimo, nel caso in cui i clienti dell'organizzazione non siano affatto interessati ad aspetti 
+non direttamente correlati alla funzionalità del prodotto/servizio, o non siano in grado di valutare tali 
+aspetti (come per esempio nel caso di un'acciaieria fornitrice di grandi committenti, indifferenti a tema- 
+tiche di sostenibilità, e alla quale il consumatore finale non è in grado di ricondurre la "paternità" dei 
+materiali che entrano nel prodotto acquistato)'$; 
+a un massimo, come nel caso ad esempio di un Ente Locale che decidesse di dotarsi di un sistema 
+di gestione per garantire la qualità dei servizi resi alla collettività: in questo caso il contesto (fisico e 
+socioeconomico) e le parti interessate coincideranno rispettivamente con il luogo di erogazione e con 
+i destinatari del servizio. Gli aspetti ambientali, culturali, ecc. saranno in altri termini una componente 
+diretta della qualità del servizio. 
+
+La maggior parte delle organizzazioni si collocherà in una posizione intermedia fra tali due estremi. La capa- 
+cità dell'organizzazione di individuare la propria esatta "posizione” rappresenterà una condizione preliminare 
+a ogni efficace politica di approccio al contesto. 
+
+Questo non significa che pur in presenza di prodotti conformi e di committenti soddisfatti, i destini dell'organizzazione non possano risultare minacciati 
+dall'azione diretta delle parti interessate in questione - inclusi gli Enti regolatori - quando gli impatti sul contesto dovessero rivelarsi insostenibili per que- 
+ste ultime: ma di fronte a questo rischio, i modelli gestionali applicabili sarebbero quelli specificamente rivolti a soddisfare le parti interessate in questione: 
+ISO 14001 per gli aspetti ambientali, OHSAS 18001, per la salute e sicurezza, ISO 26000 per le problematiche di responsabilità sociale, ecc.
+
+
+
+O.ME.FA. S.p.A. 
+UNI Istong - 20 1@nazérarHafa Qualità: Quaderno 2 
+
+Impatto dei nuovi requisiti 4.1 e 4.2 
+
+Sia il requisito 4.1 che il requisito 4.2 comportano una serie di nuove attività che potrebbero risultare varia- 
+mente impegnative e impattanti per le organizzazioni con un sistema qualità preesistente, in funzione della 
+complessità della loro natura, delle strategie, politiche e obiettivi. 
+Le successive tabelle (fig. 5 e fig. 6) scomponendo entrambi i punti nei rispettivi "requisiti elementari", forni- 
+scono una più chiara idea delle singole azioni richieste dalla Norma. 
+
+4.1 - L'Organizzazione: 
+
+1 Deve determinare i fattori esterni ...rilevanti per le sue finalità ...che hanno effetto sui risultati 
+
+2 Deve determinare i fattori interni ...rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+3 Deve determinare i fattori esterni ...rilevanti per la sua direzione strategica...che hanno effetto sui risultati 
+
+4 Deve determinare i fattori interni ... rilevanti per la sua direzione strategica...che hanno effetto sui risultati 
+
+5 Deve monitorare le informazioni sui fattori esterni rilevanti per le sue finalità...che hanno effelto sui risultati 
+
+6 Deve riesaminare le informazioni sui fattori esterni rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+7 Deve monitorare le informazioni sui fattori interni rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+8 Deve riesaminare le informazioni sui fattori interni rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+9 Deve monitorare le informazioni sui fattori esterni rilevanti per a sua direzione strategica... 
+
+Deve riesaminare le informazioni sui fattori esterni rilevanti per la sua direzione strategica... 
+
+Deve monitorare le informazioni sui fattori interni ... rilevanti per la sua direzione strategica... 
+
+Deve riesaminare le informazioni sui fattori interni ... rilevanti per la sua direzione strategica.., 
+
+Fig.5 Scomposizione del requisito 4.1 nei suoi requisiti elementari 
+
+4,2 - L'Organizzazione: 
+
+Deve determinare le parti interessate rilevanti per il sistema di gestione per la qualità 
+
+Deve determinare i requisiti di tali parti interessate che sono rilevanti per il SGQ 
+
+Deve monitorare le informazioni che riguardano tali parti inferessate 
+
+Deve riesaminare le informazioni che riguardano tali parti interessate 
+
+Deve monitorarei loro requisiti rilevanti... 
+
+Deve riesaminare i loro requisiti rilevanti... 
+
+Fig.6 Scomposizione del requisito 4.2 nei suoi requisiti elementari
+
+-> —> 
+n n s Ww N > N - © 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del conteesptaroti interessate 13 
+
+In realtà l'impatto dei nuovi requisiti 4.1 e 4.2 sulle organizzazioni già dotate di un Sistema Qualità conforme 
+alla precedente edizione della Norma non può esprimersi solo in termini di "nuove cose da fare", ma deve 
+essere stimato tenendo conto di condizioni più complesse, fra le quali le seguenti: 
+
+a) Cultura gestionale dell'organizzazione: 
+Occorre considerare che la nuova revisione impone alle organizzazione una lettura e una comprensione 
+di se stesse nel contesto di appartenenza, che la precedente edizione non richiedeva espressamente, 
+e che come si è visto ciò comporta per le aziende la capacità di interpretare il sistema qualità in termini 
+dinamici e adattivi, ben più di quanto non emergesse da una lettura testuale della ISO 9001:2008. 
+
+b) Struttura organizzativa: 
+Potrebbe essere necessario assegnare nuovi compiti e responsabilità prima non ricadenti nel perimetro 
+di pertinenza del sistema qualità, ai fini di una valutazione sistematica e accurata dei fattori del contesto 
+e delle esigenze provenienti da soggetti esterni o interni. 
+Competenze richieste: 
+Quanto sopra potrebbe rendere necessarie nuove competenze, specialmente nel caso in cui la com- 
+prensione del contesto e la ricognizione dei requisiti delle parti interessate dovesse richiedere l'appli- 
+cazione di specifiche metodologie (eventualmente supportate dal tecniche statistiche o da particolari 
+strumenti di elaborazione). 
+
+d) Tempo da dedicare all'implementazione e mantenimento del nuovo requisito: 
+Un fattore impattante potrebbe essere costituito dal tempo eventualmente necessario all'organizzazione 
+per pianificare, condurre ed elaborare le indagini rivolte al contesto e alle parti interessate. 
+
+Modalità di valutazione/autovalutazione: 
+L'attuazione efficace dei nuovi requisiti andrà valutata da parte dell'organizzazione e di eventuali valuta- 
+tori esterni. Tale valutazione, che include i processi di audit, potrebbe richiedere approcci e competenze 
+diversi rispetto a quelli tradizionali, anche in considerazione del fatto che che nessuna informazione 
+documentata è richiesta dalla Norma in relazione ai requisiti in oggetto, e che pertanto la decisione di 
+produrre o meno procedure, registrazioni, ecc. spetta alla singola organizzazione, come pure la scelta 
+delle forme e del grado di dettaglio che l'eventuale documentazione dovrà avere. 
+Prodotti/processi: 
+Anche l'impatto sui prodotti/servizi e sui processi potrebbe essere non trascurabile: 
+-  Nuovi processi potrebbero rendersi necessari per la stessa comprensione del contesto, per l'in- 
+
+dividuazione delle esigenze rilevanti provenienti dalle parti interessate, e per la gestione di tali 
+esigenze nel sistema qualità. 
+
+—  Le specifiche di prodotti e servizi potrebbero dover essere modificate per meglio rispondere a ta- 
+li esigenze. 
+
+— | processi realizzativi e di supporto necessari per assicurare la conformità alle nuove specifiche 
+potrebbero a loro volta subire modifiche più o meno significative. 
+
+g) Apparato documentale: 
+L'apparato documentale e la sua gestione potrebbero estendersi a ulteriori elaborati, rispetto a quelli ormai 
+consolidati nel sistema qualità "edizione 2008", anche in relazione a quanto detto prima, al punto e). 
+
+h) Infrastruttura (compresa ICT): 
+Infine, in situazioni di particolare complessità, la dotazione HW e SW già presente nell'organizzazione 
+potrebbe richiedere aggiornamenti e integrazioni, per gestire (raccogliere, conservare, elaborare, valu- 
+tare, ecc.) efficacemente dati e informazioni più numerosi e di nuovo tipo.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstorg - 20 1@oa48r4Fafa Qualità: Quaderno2 
+
+Quanto sopra vale soprattutto per le organizzazioni che nel passato si sono limitate a un'applicazione lette- 
+rale della ISO 9001:2008, e che non abbiano già per proprio conto, nel perimetro del sistema qualità già in 
+atto, o fuori da esso, messo in pratica i concetti oggi espressi nei requisiti 4.1 e 4.2. 
+
+| requisiti in questione, potenzialmente "impattanti" in senso generale (se confrontati con la versione prece- 
+dente dello standard) esprimeranno di fatto tale potenziale impatto in misura differente su ciascuna organiz- 
+zazione, anche in funzione di: 
+
+a) Condizioni iniziali dell'organizzazione e del suo SGQ ("gap" rispetto al nuovo scenario, misurato per 
+esempio sugli otto parametri suindicati): 
+le organizzazioni già attente alle questioni oggi sollevate dai nuovi requisiti, e dunque la cui "cultura orga- 
+nizzativa" è del tutto allineata con i nuovi concetti, non solo non subiranno l'impatto della nuova edizione, 
+ma al contrario vedranno riconosciuti e premiati in essa gli sforzi già in atto. 
+
+b) Disponibilità di risorse (di tempo, economiche, di competlenza, ecc.) per colmare il gap: 
+per le organizzazioni che non hanno particolari problemi a rendere disponibili le proprie risorse per 
+affrontare i nuovi requisiti, e che già dispongono delle competenze necessarie a tal fine, l'introduzione 
+delle nuove prescrizioni non sarà né traumatico né oneroso (è il caso per esempio di quelle aziende che 
+avendo già affrontato i temi della sostenibilità e adottato un bilancio sociale, potrebbero riportare nel 
+sistema qualità conoscenze e risultati già immediatamente disponibili). 
+
+Le organizzazioni 
+la cui "cultura organizzativa" 
+è già allineata con i nuovi concetti 
+non solo non subiranno 
+l'impatto della nuova edizione, 
+ma vedranno riconosciuti 
+e valorizzati in essa gli sforzi già in atto. 
+
+c) “Anzianità" del precedente SGQ (come carattere positivo o negativo): 
+l'esperienza accumulata nella gestione per la qualità potrebbe risultare una discriminante dal punto di 
+vista dell'impatto. Organizzazioni con sistemi qualità già sedimentati potrebbero risultare avvantaggiate 
+nell'estendere ai nuovi requisiti il loro "impianto". D'altra parte, proprio l'anzianità del sistema qualità 
+vigente potrebbe rendere difficile l'implementazione del nuovo, se le logiche della flessibilità e del cam- 
+biamento non dovessero già far parte della cultura dell'organizzazione. 
+
+d) Atteggiamento verso il cambiamento: 
+Appunto la resistenza o viceversa la propensione al cambiamento potrebbero giocare contro o a favore 
+dell'effetto impattante della nuova edizione della Norma sull'organizzazione. 
+
+Prospettive di ritorno sull'investimento nel cambiamento: 
+Altro elemento determinante potrebbe consistere nella capacità dell'organizzazione di intravvedere pos- 
+sibilità concrete di "ritorno di investimento sulla qualità" nella ISO 9001:2015 e in particolare nei requisiti 
+in discussione.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del conteesptaroti interessate 15 
+
+L'elenco non si esaurisce qui: altri aspetti specifici di ogni organizzazione potrebbero influenzare la sua 
+capacità di affrontare le novità rappresentate dai requisiti 4.1.e 4.2, fino a determinare, nelle situazioni più 
+favorevoli, il ribaltamento di quel profilo di impatto delineato prima in termini generali, e a permettere l'assi- 
+milazione completa e spontanea delle nuove prescrizioni, come naturale e anzi necessaria evoluzione del 
+sistema di gestione preesistente. 
+
+La nuova ISO 9001 vede l’organizzazione 
+non tanto come un meccanismo 
+che ripete in modo regolare 
+i propri comportamenti, 
+ma prima di tutto come un essere pensante 
+che deve adattarsi ai cambiamenti del contesto. 
+
+Volendo tentare una sintesi delle nuove logiche che i requisiti sul contesto introducono nella ISO 9001, e 
+perciò del salto di complessità che i Sistemi Qualità sono chiamati a compiere per aderire a tali logiche, si 
+può affermare che la nuova ISO 9001 pone ora l'accento sul fatto che l’organizzazione non deve tanto essere 
+vista come un "meccanismo" che, anche se in un'ottica di perfezionamento e affinamento continui, ripete in 
+modo regolare i propri comportamenti, mantenendo inalterati i propri processi, ma piuttosto come un "essere 
+pensante"1?, l cui modo di agire varia come necessario, anche in modo repentino, ma sempre razionalmente 
+e attraverso decisioni basate su conoscenze oggettive: l'assicurazione della qualità, fondata sulla capacità 
+di mantenere lo stato di controllo dei processi attraverso un sistema di prescrizioni che ne garantiscono la 
+regolare e disciplinata attuazione, viene ora, più che nella passata edizione della ISO 9001, subordinata 
+all''intelligenza" organizzativa. 
+
+17 ISO 9000:2015, punto 2.4.1 “Modello di QMS": Le organizzazioni condividono molte caratteristiche con gli esseri umani, in quanto organismi sociali 
+che vivono e apprendono. Ciascuno di essi si adatta e comprende sistemi, processi e attività interagenti. Al fine di adattarsi alla variabilità del loro con- 
+testo, ciascuno ha l’esigenza di disporre della capacità di cambiare. Le organizzazioni spesso innovano per conseguire miglioramenti radicali. I mo- 
+dello di QMS di un'organizzazione riconosce che non tutti i sistemi, processi e attività possono essere predeterminati; pertanto, deve essere flessibile 
+e adattabile nell'ambito delle complessità del contesto organizzativo.
+
+
+
+O.ME.FA. S.p.A. 
+UNI storg - 20 1nadéritfafa Qualità: Quaderno 2 
+
+Alcune differenze fra l'analogia di tipo "meccanico" e quella di tipo "organico" sono sintetizzate è commentate 
+nello schema seguente. 
+
+ORGANIZZAZIONE ORGANIZZAZIONE 
+COME COME 
+
+"MECCANISMO" "ESSERE UMANO" 
+
+L'intelligenza organizzativa produrrà soluzioni che andranno comunque diligentemente 
+DILIGENZA — > ISEEZ alluale, se necessario passando allraverso la definizione di nuove regole. L'intelligenza 
+
+dell'organizzazione orienta questultima al cambiamento e all'innovazione 
+
+L'organizzazione dovrà essere in grado di modificare se stessa in base alle necessità. 
+Nuovi comportamenti organizzalivi dovranno comungque essere rigorosamente mantenuti 
+fino a quando nuove necessità richiederanno nuove modifiche 
+
+In una macchina è prioritaria la stabilità dei comportamenti. Invece i comportamenti di un 
+STABILITA' — > TTAMENTO essere vivente devono adattarsi al mulevole contesto. Per quanto occorre andrà poi 
+
+assicurata la necessarie ripetibilità di tali mutati comportamenti 
+
+Priorità ai risultati, e non alle prescrizioni. Non è sufficiente operare secondo le regole 
+PRESCRIZIONE — f> IONT stabilite se non si tfiene presente l'obiettivo finale per cui ciò viene fatto e se non si verifica 
+
+che le azioni stiano andando verso tale obietlivo. 
+
+APPLICARE p DECIDERE Le procedure predeterminate potrebbero da sole non essere sufficienti ad affrontare 
+qualsiasi scenario. Nell'organizzazione vengono assunte decisioni a tutti i livelli. Occorre 
+
+LE REGOLE LE REGOLE che sia disciplinato il processo decisionale, Quanto deciso andrà poi applicato con rigore. 
+
+Un meccanismo inanimato deve mantenersi nel suo stalo originario il più a lungo possibile. 
+CONSERVAZIONE — > BIANZAAIONA Le organizzazioni come entità organiche devono invece saper concepire è altuare 
+
+soluzioni innovalive per i processi e per t prodolti/senvizi. 
+
+| comportamenti meccanici e perciò prevedibili potrebbero non bastare in un contesto in 
+PREVEDIBILITA' — > UAN continua evoluzione. Non tutto è prevedibile e i nuovi scenari, così come le nuove 
+
+siluazioni, richiederanno la capacità di ideare e atluare soluzioni originali. 
+
+Il continuo affinamento delle prestazioni di un meccanismo è ottenuto attraverso il 
+
+PARFOFGIRNEASMSEINVTOO  |_ MIGLIORAMENTO miglioramento continuo; ciò polrebbe non bastare nel caso dell'organismo vivente, che 
+deve saper applicare tutte le forme del miglioramento (es.: i miglioramenti dirompenti) 
+
+Un meccanismo affidabile prescinde dalle individualità, riducendole a "risorse" 
+RISORSAUMANA — l> MSOT (intercambiabili}. L'azienda organica si basa invece sulle intelligenze soggettive; la 
+
+soggettività delle persone andrà considerata in termini di rischio/opportunità 
+
+INFORMAZIONE Da "procedure documentate* e "manuale qualità" {intesi come il "manuale d'uso” del 
+
+O a DOCUNENTATA meccanismo) si passa a "informazione documentata" con accento sul termine 
+"informazione” (come indispensabile per orientare i comportamenti organizzalivi) 
+
+CONOSCENZA Ad un "meccanismo" non si associa l'idea di una conoscenza "centrale'; invece 
+l'organizzazione in quanto organismo pensante dispone di un proprio patrimonio cognitivo, 
+che andrà gestito (determinato, protelto, utilizzato, sviluppato} nel sistema qualità. 
+
+AFFRONTARE IL p PIANIFICARE IL Per un "meccanismo’ i cambiamenti sono eventi nuovi che polrebbero disturbarne gli 
+equilibri: come tali essi vanno affrontati per preservare l'integrità. In un sistema vivente il 
+
+CAMBIAMENTO CAMBIAMENTO cambiamento è vitale: esso andrà quindi perseguito e gestito come processo. 
+
+Fig.7 Nuovi concetti applicabili all'organizzazione nel passaggio dalla sua rappresentazione come “"meccanismo" alla sua 
+rappresentazione come "essere umano". Nell'ultima colonna viene chiarito che le capacità del "meccanismo" non sono eliminate 
+e sostituite dalla nuova visione, ma ne restano una componente essenziale
+
+
+
+O.ME.FA, 8.p.A. 
+UNI store - 2016 - 371459 Faltori del contestoe parti interessate 17 
+
+Quanto è esteso il contesto dell'organizzazione? 
+
+L'ampiezza del contesto è da intendersi come l'estensione delle relazioni, indipendentemente dalla dimen- 
+sione fisica del territorio su cui tali relazioni si realizzano. 
+
+Quest'ultima caratteristica tuttavia potrà essere rilevante sul piano degli aspetti logistici di gestione dei pro- 
+cessi proiettati verso l'esterno (modalità, mezzi, costi, rischi relativi al trasporto, tempi di percorrenza, acces- 
+sibilità dei luoghi, condizioni climatiche, ecc.). 
+Per quanto riguarda l'estensione "virtuale" del contesto esterno, ovvero quella non fisica ma relativa alla 
+prossimità delle relazioni, essa andrà definita dall'organizzazione in funzione dei rischi/opportunità che que- 
+sta intende o è tenuta ad affrontare. 
+Un primo grado di prossimità è costituito dall'insieme delle relazioni esterne che si instaurano alle interfacce 
+di ciascun processo; per esempio: relazioni con i fornitori, relazioni con gli enti regolatori, relazioni con i 
+partner, ecc. 
+Una volta individuate tali relazioni e le relative parti coinvolte, sarà possibile: 
+—  determinare i corrispondenti requisiti, e i rischi/opportunità connessi a tali requisiti; 
+— _ procedere all'individuazione di ulteriori eventuali soggetti, collegati a loro volta alle parti interessate di cui 
+
+sopra e tali da influenzare, indirettamente e per il loro tramite, l'efficacia del sistema qualità. 
+
+Contesto Interno 
+
+Contesto esterno 
+di contiguità 
+
+Contesto esterno 
+delle relazioni 
+indirette 
+
+Fig.8  Gradi di prossimità del contesto 
+
+Per esempio, l'esternalizzazione di un processo manifatturiero potrebbe comportare rischi legati alla qualità 
+delle lavorazioni e del prodotto/semilavorato risultante, ma potrebbe anche esporre l'organizzazione a rischi 
+di tipo reputazionale, derivanti dalla condotta dell'outsourcer, dalla sostenibilità dei processi non direttamente 
+presidiati dall'organizzazione, dalle ulteriori relazioni dell'outsourcer, ecc.: in questo caso fra le parti interessate 
+andrebbe annoverata l'opinione pubblica, ove ritenuta capace di influenzare la soddisfazione e l'orientamento 
+dei consumatori.
+
+
+
+O,.ME.FA. S.p.A. 
+UNI stong - 20 }@paddrArafk Quatità: Quaderno 2 
+
+In generale, il contesto andrebbe quindi visto in una prospettiva più ampia, tale da abbracciare il perimetro 
+entro il quale potrebbero trovare luogo parti interessate (collettività, a livello locale, regionale, nazionale o 
+globale, a seconda dei casi) capaci di condizionare le aspettative del cliente e la "customer satisfaction”. 
+
+L'estensione del contesto esterno 
+andrà determinata dall'organizzazione 
+in funzione dei rischi/opportunità 
+che essa intende o è tenuta ad affrontare. 
+
+In sintesi, si possono individuare almeno tre livelti di prossimità del contesto (fig. 8) passibili di attenzione 
+da parte dell'organizzazione, a ciascuno dei quali corrisponderanno specifiche parti interessate e forme di 
+relazione: 
+- l primo livello è costituito dal contesto interno dell'organizzazione; 
+- ll secondo è il contesto esterno "di contiguità", con cui l'organizzazione interagisce direttamente; 
+- l terzo è il contesto delle relazioni indirette (contesto "esteso"), i cui fattori risultino ancora significativi 
+
+per l'organizzazione, ma questa volta attraverso la mediazione delle parti interessate più prossime all'or- 
+ganizzazione. 
+
+Nella figura 9 sono forniti esempi delle forme di relazione e delle parti interessate che potrebbero caratteriz- 
+zare ciascuno dei tre livelli del contesto. 
+È necessario tuttavia specificare che: 
+
+1. sia le parti interessate che le forme di relazione, qui attribuite per semplicità a un particolare livello di 
+estensione del contesto, potrebbero essere riferite anche agli altri due; 
+
+2,  oltre al livello delle relazioni indirette di cui si è detto, si potrebbero individuare ulteriori gradi di esten- 
+sione del contesto organizzativo, come necessario all'organizzazione in relazione alle proprie strategie, 
+politiche, obiettivi.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Falttori del contesto e parti interessate 19 
+
+Esempi di tipiche parti Interessate Esempi di tipiche forme della relazione 
+
+partimenti 
+
+Negoziazione 
+Vincoli formali 
+Contratti commerciali e di fornitura 
+Accotdi di reciprocità 
+Comunicazione esterna mirata 
+
+" Pubblica opinione " Concertazione 
+i " Concorrenti effeotptotienzviaili " Gestione della sostenibilità 
+E " Collettività " Coinvolgimento delle parti interessate 
+% " Mass media " Impegno verso l'esterno 
+X " Enti locali " Comunicazione esterna generica 
+:à_: " ecc, 
+[= 
+
+6 
+
+Fig.9  Esempi delle forme di relazione e delle parti interessate che potrebbero caratterizzare ciascuno dei tre livelli del contesto
+
+Contesto esterno 
+Contesto Interno 
+
+di contiguità 
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstobg - 20 1@na26r4faftà Qualità: Quaderno 2 
+
+Com'è fatto il contesto? 
+
+La nota 1 al punto 4.1 della ISO 9001:2015 suggerisce una possibile tipologia di fattori del contesto (a livello 
+internazionale, nazionale, regionale o locale), e in particolare richiama, in riferimento al contesto esterno, gli 
+"ambienti": 
+
+legale, 
+tecnologico, 
+competitivo, 
+di mercato, 
+
+culturale, 
+
+sociale ed economico, 
+
+@, in riferimento al contesto interno, richiama gli aspetti legati a: 
+
+valori, 
+cultura, 
+Conoscenza, e 
+prestazioni dell'organizzazione. 
+
+Altre norme e documenti propongono repertori di fattori più o meno simili. Le tabelle che seguono forniscono, 
+rispettivamente per il contesto esterno e per il contesto interno, una sintesi di tali contributi, estratti, oltre che 
+dalla stessa UNI EN ISO 9001:2015, dai seguenti documenti, nei quali esiste una focalizzazione sul conte- 
+sto, anche se non sempre nella sola prospettiva del Quality Management: 
+
+UNI EN ISO 9000:2015 - Sistemi di gestione per la qualità - Fondamentie vocabolario 
+ISO/DTS 9002:2015 - Quality management systems — Guidelines for the application of ISO 9001:2015 
+JCTG TF4/N27 - Concept document to support of Annex SL 
+UNI ISO 31000:2010 - Gestione del rischio - Principi e linee guida
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459 Fattori del contesto e parti interessate 21 
+
+ISO/DTS JTCG!I 
+Fattori del contesto esterno SOI ISO 9000 TF4/N27 ISO 31000 
+
+9002 
+
+Aspetti culturali ‘i [EAT 
+Aspetti finanziari [ - 
+Aspetti dell'ambiente naturale 
+Aspetti fegali, ambito cogente ENET 
+Risorse UAN NIN 
+Relazioni con gli stakeholdar esterni H t - 
+Percezioni e valori degli stakeholder esterni - 
+Fattori Tecnologici quali: 
+- Nuove tecnologie di settore -- 
+- Materiali e attrezzature --- 
+- Diritti di proprietà industriale F RST BS 
+- Codici deontologici POST IA Ra 
+Fattori Competitivi, quali: --
+- Quote di mercato dell'organizzazione 
+- Prodotti e servizi simili e sostitutivi S RA E 
+- Tendenze dei leader di mercato PA FENN PE 
+- Tendenze di crescita del bacindoi utenza 
+- Stabilità del mercato I EI BI 
+Fattori Soclali, quali: 
+- Tasso di dlsoccupazlone FOE PO P S 
+- Percezione di sicurezza 
+
+- Livelli di scolarizzazione 
+- Festività pubbliche giorni lavorativi OR S FR RR 
+Fattori Politici, quali: 
+- Stabilità politica SA RA SEA PE 
+- Investimenti pubblici IS t i ES 
+- Infrastrutture locali _ ISN FE FSEN ESI 
+- Accordi commerciali internazionali RIC S a P 
+Fattori Macro-economici quali: 
+- Previsioni relative al cambio monetario ESEN @S PS BR 
+- Situazione economica 
+- Previsioni di inflazione ER GSI DA E 
+- Accesso al credito SE ES S9I Ri 
+Fattori che influenzano il contesto lavorativo, quali: FE OC RSE s 
+- Regolamenti sindacali INSI P E SI 
+- Requisiti cogenti, inclusi i codici ambientali 
+
+Fig. 10 Fattori del contesto esterno, secondo la ISO 9001:2015 e altre norme e documenti pertinenti
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 201 @uaddrhfbafa Qualità: Quaderno 2 
+
+Fattori del contesto interno 
+
+Valori TOC 
+Strategie [EA LOGRI FR 1U IO 
+Politiche UESET KO K3 LETT 
+Obiettivi PSO LA LA MN E 
+Risultati finanziari FENN DUG INO LL 
+Flusso di informazioni VERUONITI FOI Pv CMI 
+Sistemi informativi 
+
+Norme, LLGG e Modelli adottati dall'organizzazione ' 
+
+Ciclo di vita di prodotti e servizi NEN DURU I FOA PAT 
+Relazioni con i portatori di interesse 
+
+Forma ed estensione delle relazioni contrattuali NEEN DARRNNNTEI AG FAReci PA 
+Risorse, quali: 
+
+- Infrastruttura RNEN IT N a 
+- Ambiente operativo FENN RG AONI LE 
+- Capitale 
+
+- Tempo [OT PONAZ I PSO PA FRe 
+- Persone FENNT PSAS AN LN Po 
+- Conoscenze 
+
+- Conoscenza organizzativa 
+- Processi 
+
+- Sistemi 
+
+- Tecnologie 
+Fattori umani quali: 
+
+- Competenze 
+
+- Cultura Organizzativa 
+- Relazioni con i sindacati 
+Fattori Operativi, quali ad es.: 
+
+- Capacità di processo, produttive o di consegna 
+
+- Performance dell'organizzazionel/del SGQ 
+
+- Valutazioni da parte dei clienti 
+Fattori di Governance quali: 
+- Regole e procedure per le decisioni 
+
+- Processi decisionali (formali e informali) 
+
+- Struttura organizzativa / Ruoli e responsabilità 
+
+Fig. 11 Fattori del contesto interno, secondo la ISO 9001:2015 e altre norme e documenti pertinenti 
+
+Come si può osservare, se da un lato vi è una certa convergenza delle fonti citate su alcuni tipici fattori del 
+contesto, tuttavia non sembra che alla base di questi repertori vi sia un criterio di classificazione sistematico. 
+Volendo mettere ordine in questi elenchi, e adottando logiche di scomposizione più simili a una "tassono- 
+mia", conviene partire da una prima suddivisione del contesto nelle tre seguenti componenti generali:
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 23 
+
+*  componente fisica, 
+*  componente sociale, 
+*  componente economica. 
+
+Si tratta di una classificazione - applicabile sia all'ambiente esterno che a quello interno - tipica delle scienze 
+sociali!, e coerente con il framework adottato nei modelli di sostenibilità (si veda la “triple bottom line""®; 
+ambientale, sociale, economica). Sebbene affrontabili separatamente, le tre componenti sono strettamente 
+interrelate: per esempio un'azione sugli aspetti del contesto fisico potrà avere ricadute sulle prospettive 
+economico-sociali, ecc. 
+
+Un'ulteriore disaggregazione di queste tre componenti potrebbe portare a identificare per esempio i seguenti aspetti: 
+01. componente fisica”: 
+
+* 01,01. Ambiente naturale 
+* _ 01.02. Ambiente artificiale 
+
+02. componente sociale: 
+* 02.01. Aspetti culturali 
+
+02.02. Aspetti etici 
+02.03. Aspetti di sicurezza e protezione 
+02.04. Pubblico interesse e pubblica amministrazione 
+02.05. Fattori demografici 
+
+03. componente economica?': 
+* 03.01. Competizione 
+* _ 03.02. Redditività 
+* _ 03.03. Prestazioni ed efficienza organizzativa 
+*  03.,04. Gestione efficiente della rete di fornitura 
+. 03.05, Partnership 
++ 03.06. Variabili e strategie di mercato 
+*  03,07. Gestione economico-finanziaria 
+
+Sulla base di questa scomposizione, del tutto generica e alla quale ogni organizzazione potrebbe aggiun- 
+gere o sottrarre elementi, oltre che attribuire ad essi "pesi" diversi, nelle pagine successive si fornisce una 
+rappresentazione più dettagliata di ciascuno degli aspetti elencati, attraverso una serie di "schede di analisi 
+del contesto" che hanno lo scopo di delineare un primo quadro delle possibili esigenze e criticità legate ad 
+essi, e di alcuni possibili modi per affrontare i relativi rischi e opportunità. 
+
+Anche in questo caso, le "schede” non hanno nessuna pretesa di scientificità e completezza, ma costituisco- 
+no un'ipotesi di come il contesto potrebbe essere letto e interpretato da parte delle organizzazioni. 
+
+18 Rif. Voci: Ambiente, Territorio, in: Nuovo Dizionario di Sociologia - Edizioni Paoline, 1987; Voce: Formazione Economico-Sociale in: Luciano Gallino, 
+Dizionario di Sociologia - Ed, UTET, 2004; Alfredo Mela, Max Pellegrini, Formazioni Sociali e Squilibri Interregionali, Guida Editori, 1978. 
+
+19 Brown, D., J. Dillard and R.$. Marshall.'Triple Bottom Line: A business metaphor for a social construct' Portland State University, School of Business 
+Administration, 2006. 
+
+20 La componente fisica del contesto si estende all'ambito territoriale di interesse dell'organizzazione, nel quale le altre due componenti possono eser- 
+citare la loro influenza. L'organizzazione dovrebbe definire i limiti de! proprio ambito fisico di interesse, allo scopo di valutare e gestire gli impatti reci- 
+proci organizzazione-ambito fisico pertinente. 
+Elementi tipicamente propri della componente fisica, come le infrastrutture di comunicazione, vanno sempre più dematerializzandosi, in virtù dell'e- 
+voluzione tecnologica, lasciando progressivamente il passo alla piena informatizzazione degli scambi. Per tale motivo l'aggettivo "fisico" deve essere 
+inteso in senso lato, per includere anche, per esempio, gli strumenti dell'ICT. 
+
+21 In generale tutti gli aspetti della componente economica, sia in prospettiva esterna che interna, hanno un impatto importante, più o meno diretto, sulla 
+qualità del prodotti e del servizio e sulla soddisfazione del cliente, e in definitiva sul successo dell'organizzazione. Come tali, questi aspetti sono nor- 
+malmente al centro dell'attenzione di ogni organizzazione, oltre che oggetto inesauribile di trattazione, in molteplici ambiti disciplinari. Nel seguito, ci 
+si limiterà a fornire esempi di alcuni dei principali elementi di cui l'organizzazione, alla luce di quanto indicato nel requisito 4.1 della norma, dovrebbe 
+tenere conto, rinviando per i dettagli e peri  necessari approfondimenti alla vasta letteratura sull'argomento. In relazione a ciascuno deali aspetti con- 
+
+ii attori maggiormente coinvolti esprimeranno in forma diretta o indiretta esigenze e aspeltative, da individuare e soddisfare secondo una 
+H;‘sk Based Thinking, e applicando il modello PDCA.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstopg - 20 1@naddrhAfafà Quatità: Quaderno 2 
+
+Le schede di analisi del contesto 
+
+01. Componente Fisica 
+
+* _ Particolari limitazioni potrebbero riguardare l'accesso alle risorse naturali, o gli impatti ambientali dei pro- 
+cessi e dei prodotti. Esse potrebbero impedire all'organizzazione di attuare processi o fornire prodotti/ 
+servizi di un certo tipo. Gli stessi limiti potrebbero tradursi in opportunità, dal punto di vista progettuale e di 
+realizzazione di prodotti/servizi adeguati 
+
+* _ |clienti dell'organizzazione, in determinati contesti, potrebbero avere maturato una elevata sensibilità am- 
+bientale, e orientare i propri acquisti verso prodotti "sostenibili" dal punto di vista ambientale 
+
+* _ La reputazione del marchio potrebbe ricevere un vantaggio da iniziative a favore della salvaguardia e valo- 
+rizzazione ambientale, con conseguenti vantaggi competitivi e fidelizzazione del cliente 
+
+Per quanto riguarda l''ambiente naturale", in prospettiva interna, si rinvia alla gestione dell'ambiente per il fun- 
+zionamento dei processi, oggetto del punto 7.1.4 della ISO 9001:2015, applicabile nella misura in cui i processi 
+operativi, e di conseguenza la qualità del prodotto/servizio, risultassero ad esempio condizionati da variabili 
+ambientali {es.: cantieri o siti dell'organizzazione soggetti a condizioni naturali di temperatura, polverosità, U.R., 
+ecc.). 
+
+Contesto interno Contesto esterno 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 25 
+
+01. Componente Fisica 
+
+‘01,02. Ambiente Artificiale 
+|
+
+Fattori riguardanti l'ambiente costruito esterno possono risultare significativi ai fini della Gestione per la Qualità. 
+Dove appropriato, l'organizzazione potrebbe ad esempio definire le proprie politiche di localizzazione in modo 
+da perseguire una positiva integrazione con il contesto urbano e residenziale, mirando a: 
+
+l Favorire: 
+l'accessibilità da parte delle persone che lavorano per l'organizzazione, 
+la prossimità dei luoghi di approvvigionamento, attraverso: 
+- _ l'integrazione urbanistica e la contiguità fra luoghi di lavoro e luoghi della residenza, 
+— _ @/0 attraverso un'infrastrutturazione efficiente, 
+
+— @/0 tenendo conto della configurazione delle reti di trasporto. 
+
+Sponsorizzare opere di miglioramento infrastrutturale, di valorizzazione del patrimonio edilizio/urbanistico 
+preesistente; sviluppare soluzioni logistico-organizzative tali da coincidere con il pubblico interesse: per 
+esempio, opportuna dislocazione di nuovi siti dell'organizzazione, utili alla valorizzazione del territorio circo- 
+stante, grazie alla creazione di nuove infrastrutture di pubblica utilità, di polarità economico-funzionali, ecc. 
+
+Supportare, con iniziative e investimenti, lo sviluppo delle tecnologie di comunicazione e informazione sul 
+territorio. 
+
+Un simile approccio potrebbe per esempio generare: 
+Una migliore organizzazione della rete logistica, con positiva ricaduta sulla gestione dei processi e sulla 
+qualità dei prodotti e dei servizi 
+Una gestione razionale dell'energia, con impatto positivo sui clienti, i quali preferiranno prodotti a minore 
+impatto energetico 
+Un maggiore senso di appartenenza da parte delle persone che operano per/nell'organizzazione e con 
+esso maggiore coinvolgimento e maggiori contributi al miglioramento dei processi, del prodotto/servizio e 
+del sistema di gestione 
+Un miglioramento della reputazione: attrattività per i clienti, che "premiano" le politiche dell'organizzazione 
+verso il territorio, attraverso le preferenze di acquisto e consumo 
+Una più immediata accessibilità del cliente al prodotto/servizio {costi minori per accedere al prodotto, tem- 
+pestività del servizio, rapida diponibilità del prodotto, minori rischi relativi alla preservazione del prodotto/ 
+servizio, ecc.) e di conseguenza un aumento della scddisfazione del cliente 
+ecc. 
+
+L''ambiente artificiale" nella prospettiva del contesto interno riguarda innanzitutto le componenti infrastrutturali: 
+in quanto direttamente correlate alla realizzazione del prodotto o servizio, e come tali oggetto di specifiche 
+prescrizioni all'interno della ISO 9001 {in particolare, al punto 7.1,3 - Infrastruttura); 
+dal punto di vista del loro impatto diretto sulla soddisfazione del cliente (ciò potrebbe riguardare per esem- 
+pio le caratteristiche degli ambienti di erogazione di un servizio e le attrezzature); 
+dal punto di vista della salute e sicurezza dei lavoratori:i  clienti potrebbero essere particolarmente sensibili 
+al rispetto del diritto alla salute dei lavoratori, e preferire prodotti e servizi per la cui realizzazione vi sia 
+evidenza dell'impegno da parte dell'organizzazione, relativamente a tale aspetto, e dei risultati ottenuti. 
+
+Contesto interno Contesto esterno 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstopg - 20 1@uaddrArbafà Qualità: Quaderno 2 
+
+02. Componente Sociale 
+
+02,01. Aspetti Culturali 
+
+È necessario individuare gli aspetti relativi alla cultura del contesto esterno di riferimento che potrebbero avere 
+qualche relazione, di tipo positivo o negativo, con la capacità di fornire prodotti e servizi conformi, di soddisfare 
+
+o i propri clienti, di introdurre miglioramenti, 
+d 
+: ' i ; 
+‘D Tale influenza potrebbe riguardare, per esempio: 
+o *  L'interesse dei clienti dell'organizzazione nei confronti di iniziative culturali assunte dall'organizzazione 
+ra . r a _ - 
+
+L {mecenatismo, valorizzazione del territorio, ecc.) 
+"È' * _ Una politica di relazioni e di comunicazioni attenta alle peculiarità del contesto e alle differenze culturali, 
+O tale da fornire input utili per migliorare la progettazione e la fornitura di beni e servizi 
+
+*  Cooperazione con altri soggetti del contesto, ai fini della costituzione di un'offerta integrata di prodotti e 
+servizi, tali da promuovere l'identità storico-culturale del territorio 
+
+Gli aspetti culturali, in prospettiva interna, possono assumere varie forme; per esempio: 
+
+*  Diversi comportamenti, consuetudini e valori delle persone che operano nella/per l'organizzazione, in 
+relazione alla loro origine, estrazione sociale, religione, livello di scolarità, biografie individuali 
+
+* _ Orientamenti determinati dall'alta direzione, relativamente all'identità culturale che l'organizzazione inten- 
+de realizzare nei propri processi e prodotti/servizi 
+
+* _ Attività di tipo culturale o servizi gratuitamente forniti dall'organizzazione ai propri dipendenti e ai loro 
+familiari 
+
+Tenere conto della cultura delle persone nell'organizzazione, dal punto di vista: 
+* _ della forma delle comunicazioni interne 
+* _ del coinvolgimento 
+* _ della valorizzazione delle conoscenze individuali 
+* _ delle relazioni funzionali 
+*  delrispetto delle culture è delle forme di inclusione culturale 
+
+° * _ della gestione del tempo di non lavoro 
+É ’ ecc 
+E in funzione di: 
+..3 . tipo, . 
+% *  dimensione, 
+&° * _ lao] calizzazione, 
+
+* _ orientamenti e strategie dell'organizzazione e della 
+* _ mnatura del prodotto/servizio offerto, 
+
+può generare effetti positivi: 
+* _ sull'efficienza dei processi e sulla qualità dei prodotti (per esempio, in presenza di lavoratori di fede islami- 
+
+ca, riorganizzare gli orari di lavoro durante il ramadan, per evitare che le conseguenze fisiche del digiuno 
+possano compromettere la sicurezza dei lavoratori e l'efficienza dei processi) 
+
+* _ sulla interiorizzazione di valori, politiche e principi di gestione per la qualità, e, come conseguenza, sulla 
+conformità del prodotto/servizio, sulle capacità di innovazione e miglioramento e sulla soddisfazione dei 
+clienti 
+
+* _ sugli orientamenti all'acquisto dei prodotti/servizi offerti dall'organizzazione, o sulla possibilità di essere 
+selezionati come fornitori qualificati, da parte, rispettivamente, di consumatori e committenti orientati a 
+preferire prodotti/servizi realizzati tenendo conto delle peculiarità culturali espresse dalle persone che 
+operano all'interno/per l'organizzazione, o dall'organizzazione stessa
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 27 
+
+02. Componente Sociale 
+
+| 02,02. Aspetti Etici ' “p e e R i L o | 
+
+Un orientamento in senso etico, per esempio tale da esprimersi: 
+* _ nella veridicità delle comunicazioni esterne relative al prodotto e al servizio; 
+* _ nella trasparenza verso l'esterno delle azioni e dei programmi; 
+* _ in azioni aziendali di sostegno alle politiche sociali; 
+* _ in una concorrenza leale e costruttiva; 
+
+° *  ecc. 
+_ 
+
+% potrebbe: 
+g * _ suscitare miglioramenti nella proposizione, progettazione e fornitura di prodotti e servizi, 
+P * _ favorire un positivo orientamento del cliente, soprattutto nei contesti in cui il cliente è particolarmente sen- 
+-È sibile agli aspetti etici; 
+& * _ favorire una più ampia, credibile ed efficace comunicazione verso l'esterno, riguardo alla qualità dei prodotti 
+
+e servizi offerti, e come conseguenza una maggiore capacità di ottenere e gestire i relativi feedback; 
+*  accrescere l'affidabilità e solidità delle relazioni nel supply network; 
+*  ecc. 
+
+Nel contesto interno, i fattori etici potrebbero includere, per esempio: 
+* . il rispetto dei diritti e le politiche non discriminatorie nei confronti delle persone che lavorano nella/per 
+
+l'organizzazione; 
+* _ la lealtà del management e delle altre persone dell'organizzazione, nei confronti dell'organizzazione stes- 
+
+sa, e i suoi effetti în termini di fidelizzazione, di salvaguardia dei diritti di proprietà industriale, di condivisione 
+effettiva dei valori e della vision; 
+
+* _ qgli orientamenti etici del personale, laddove ne possano risultare influenzate la capacità di erogare un 
+servizio o realizzare un prodotto (per esempio, nel caso dell'esercizio del diritto all'obiezione di coscienza 
+da parte di medici operanti in strutture sanitarie che praticano linterruzione di gravidanza, o da parte di 
+personale che opera n aziende del settore cosmetico che utilizzano la sperimentazione su animali, ecc.); 
+
+- * _ supporto alla maternità e alla paternità; 
+É * _ promozione delle pari opportunità; 
+= * Co 
+
+£ Tenere conto di tali fattori può favorire: 
+—g ° Una preferenza da parte dei clienti nei confronti dei prodotti e dei servizi offerti dall'organizzazione 
+e *  Modifiche del prodotto/servizio tali da renderlo più capace di corrispondere alle aspettative del cliente 
+
+* _ ll consolidamento delle risorse umane e professionali, è una maggiore affidabilità dei processi realizzativi 
+e dei prodotti 
+
+*  Maggiore attrattività verso altre risorse umane e professionali qualificate, e di conseguenza maggiore com- 
+pelitività 
+
+* l consolidamento e miglioramento del know-how aziendale, ai fini del miglioramento del prodotto/servizio 
+e della soddisfazione crescente del cliente 
+
+*  La reputazione dell'organizzazione sul mercato 
+*  Una maggiore resilienza del supply network 
+* _ Miglioramento della business continuity
+
+
+
+O.ME.FA. S.p.A. 
+UNIstopg - 20 @naderArafa Qualità: Quaderno 2 
+
+02. Componente Sociale 
+
+| 02.03, Aspdiesitcurtezzia e protezio 
+
+Azioni tali da tenere conto dei fattori esterni relativi alla sicurezza e alla protezione potrebbero comprendere, 
+fra l'altro: 
+* _ il miglioramento del benessere dei clienti e dei potenziali clienti, nell'ambito delle aree e dei siti nei quali 
+
+opera l'organizzazione; 
+* _ Iniziative rivolte alla sicurezza e alla protezione delle persone e delle loro proprietà, nel contesto di appar- 
+
+o tenenza dell'organizzazione; 
+É *  Comunicazioni e azioni rispettose della sensibilità delle persone e delle categorie, 
+fi * _ Salvaguardia dei diritti di proprietà industriale e della riservatezza dei dati relaatcilievntii, fornitori e partner. 
+
+É Esse potrebbero generare, come conseguenze favorevoli: 
+*É *  Luoghi e condizioni di erogazione del servizio e fornitura del prodotto più attrattivi per il cliente, e più capaci 
+Ò di soddisfarne le aspettalive 
+
+*  Una migliore reputazione dell'organizzazione e una valorizzazione del brand, tali da favorire l'apprezza- 
+mento dei prodotti e servizi sul mercato 
+
+* _ Un positivo senso di appartenenza all'organizzazione da parte delle persone che operano per/nell'organiz- 
+zazione stessa, con consolidamento delle competenze organizzalive e conseguente maggiore possibilità 
+miglioramento dei prodotti/servizi offerti 
+
+Tipicamente gli aspetti del contesto interno che riguardano la sicurezza e la protezione sono costituiti da: 
+* _ Salute e sicurezza dei lavoratori e delle persone che agiscono nell'ambito di pertinenza dell'organizzazione 
+*  Protezione delle proprietà, dei dati e delle informazioni che appartengono alle persone che operano 
+
+nell'ambito/per l'organizzazione 
+*  Protezione delle proprietà (inclusi dati e informazioni) appartenenti al cliente o ai fornitori, messi a disposi- 
+
+[ zione dell'organizzazione ai fini della produzione /erogazione dei servizi 
+% * rr. 
+E 
+[ Come possibili effetti di una adeguata gestione di tali aspetti: 
+g * _ il cliente "promuove" il prodotto ottenuto nel rispetto dei diritti e dei requisiti di salute e sicurezza delle per- 
+= sone che operano per/nell'organizzazione: prodotti e servizi realizzati in tali condizioni vengono enfatizzati, 
+o come tali, verso il consumatore, che a parità di altre condizioni, è come condizione di preferenza, sceglie il 
+
+prodotto/servizio che dimostra di possedere fra le proprie caratteristiche quella di risultare da processi che 
+non hanno messo a rischio l'incolumità e la salute degli operatori. 
+
+* Îl prodotto e il servizio migliorano, potendo gli operatori agire in condizione di maggiore comfort operativo e 
+protezione (minore stress legato alla sensazione di trovarsi in condizioni non sicure, ecc.). 
+
+* _ Aumenta il coinvolgimento delle persone, e il loro contributo al miglioramento dei processi e in generale 
+del SGQ.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del conteesptaroti interessate 29 
+
+02. Componente Sociale 
+
+Considerare i fattori riguardanti l'interesse pubblico e l'amministrazione pubblica può comportare: 
+* _ l'aggiornamento legislativo - p.es. attraverso una metodica consultazione delle fonti {previo esame dei ri- 
+
+schi per stabilire le priorità delle fonti da consultare e la severità delle correlate procedure di aggiornamento 
+e monitoraggio); 
+
+* _ l'accessibilità gratuita, o a condizioni favorevoli, al prodotto/servizio, concessa a utilizzatori diversi dal clien- 
+te; 
+
+* _ il sostegno a iniziative di pubblico interesse intraprese da amministrazioni locali o di livello superiore; 
+* _ la "concertazione’ con i soggetti della Pubblica Amministrazione; 
+* _ la partecipazione alle attività di sviluppo normativo e regolamentare; 
+
+É * _ iniziative a valenza civica (per esempio, a carattere educativo o di valorizzazione del patrimonio comune); 
+% * _ il monitaraggio dello scenario politico, delle sue evoluzioni e delle ricadute sul sistema qualità dell'organiz- 
+Rd zazione. 
+É L'adeguata identificazione e gestione di tali aspetti potrebbe favorire: 
+= * _ una maggiore attrattività per clienti sensibili al positivo radicamento dell'organizzazione nel contesto e alle 
+8 iniziative rivolte al miglioramento del benessere comune; 
+
+* _ una maggiore legittimazione da parte del contesto socio-politico, e di conseguenza maggiori possibilità di 
+interagire costruttivamente con le parti interessate al fine di sviluppare e proporre prodotti/servizi migliori; 
+
+* _ la possibilità di sviluppare soluzioni tecnico-normative idonee a favorire lo sviluppo e l'innovazione; 
+* _ l'apprezzamento sociale, con conseguente approvazione delle iniziative di sviluppo dell'organizzazione e 
+
+dei suoi prodotti/servizi; 
+*  la creazione nel tempo di una cultura civica favorevole al miglioramento e all'innovazione dei prodotti e 
+
+servizi offerti (es.: nel caso di servizi di raccolta differenziata dei tifiuti). 
+
+& Per le organizzazioni pubbliche di servizio e per le Pubbliche Amministrazioni, il contesto di riferimento e le parti 
+& interessate ricadono "per definizione" nel perimetro di erogazione del servizio. È possibile comunque identificare 
+% anche per tali organizzazioni un contesto più ampio, ed ulteriori parti interessate, nelle quali i comportamenti or- 
+'° ganizzativi potrebbero suscitare reazioni favorevoli o sfavorevoli tali da influenzare la capacità di erogare servizi 
+É conformi ai requisiti e da soddisfare la comunità di riferimento. 
+
+‘É' Per esempio, ciò può riguardare un'Amministrazione Comunale la qualità dei cui servizi sia nota e apprezzata 
+O nel contesto sovralocale (regionale, nazionale, comunitario), in misura tale da agevolare l'accesso a nuove 
+
+risorse, finanziarie o di altro tipo, o un uso migliore delle risorse già disponibili, ecc.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstgo  - 20 1 @uaddrifafa Qualità: Quaderno 2 
+
+02. Componente Sociale 
+
+02,05. Fattori demogr'afic1 . 
+
+Il sistema qualità potrebbe risultare influenzato dagli aspetti demografici del contesto. 
+Potrebbe essere necessario affrontare rischi e opportunità legati a: 
+*  Caratteristiche sociali del bacino di utenza 
+*  Classi di età 
+* _ Struttura dei nuclei familiari 
+*  Tassi di natalità/mortalità 
+* _ Distribuzione e densità della popolazione 
+* _ Flussi migratori in entrata e in uscita 
+* _ Livelli di istruzione 
+*  Pendolarismo 
+*  ecc, 
+Tali aspetti potrebbero incidere, sia in senso positivo che negativo, su: 
+* _ orientamenti e aspettative dei consumatori 
+
+o *  caratteristiche dei servizi da erogare 
+É * _ previsioni di sviluppo futuro di prodotti e servizi 
+'%' *  modalità di comunicazione relativi ai prodotti e servizi 
+[= *  ecc 
+É L'interesse per gli aspetti demografici può variare notevolmente in base al tipo di organizzazione: 
+É * _ Organizzazioni di servizio del settore pubblico (scuole, ospedali, trasporti, ecc.) non potranno in molti casi 
+© prescindere da un accurato presidio di tale fattore. 
+
+* _ Aziende produttrici di beni di consumo saranno interessate a conoscere solo alcuni specifici aspetti relativi 
+alle caratteristiche della popolazione, e affidarsi a fornitori di servizi specialistici in grado di condurre inda- 
+gini appropriate su tali aspetti 
+
+* _ L'organizzazione potrebbe istituire uno specifico osservatorio per esaminare le tendenze demografiche, 
+stabilendo gli orizzonti temporali da traguardare in funzione della natura dei propri prodotti e servizi e delle 
+proprie strategie. 
+
+* _ Andrebbero individuate fonti attendibili di informazione, tali da tenere aggiornato lo stato delle conoscenze 
+in merito alle questioni sopraelencate {nota: fra le competenze tipicamente richieste per comprendere e 
+interpretare i dati demografici, sono comprese quelle di tipo statistico). 
+
+Dal punto di vista del contesto interno, caratteristiche demografiche delle parti interessate, significative per 
+l'organizzazione, potrebbero riguardare: 
+* _ la disponibilità di manodopera nell'area di riferimento 
+* _ la possibile dislocazione delle attività, tenendo conto della pendolarità 
+
+g *  elà, scolarità, e altre caratteristiche anagrafiche delle persone che operano per conto dell'organizzazione 
+,GE> * _ tendenze e andamenti del mercato del lavoro, ecc. 
+i Ove tali da influenzare gli obiettivi per la qualità, tali aspetti andrebbero affrontati, sulla base di opportune politi- 
+1è che, nell'ambito del sistema qualità. 
+"È' In particolare, programmi di sviluppo nel lungo periodo potrebbero richiedere, come dati in ingresso, un'analisi 
+O ' demografica accurata, in modo da ottenere benefici durevoli, ad esempio in termini di: 
+
+* _ livello di professionalità degli addetti 
+* _ stabilità delle risorse umane 
+* _ possibilità di ricambio 
+*  benefici reputazionali
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459 Fattori del contesto e parti interessate 31 
+
+03. Componente Economica 
+
+Fra i possibili aspetti correlati allo scenario competitivo esterno, potrebbero rientrare: 
+* _ Struttura di settore; 
+*  Accordi commerciali; 
+* _ Accordi interaziendali; 
+*  Confronto competitivo (benchmarking); 
+*  Sviluppo di politiche distintive per la qualità e loro declinazione; 
+*  Sviluppo e innovazione; 
+*  Partecipazione all'elaborazione della normativa tecnica; 
+* _ Associazionismo di categoria; 
+*  Economie di scala/polarizzazioni, ecc. 
+
+g La conoscenza e la gestione degli aspetti relativi alla competizione possono influire in modo essenziale: 
+.È * _ sulla determinazione dei requisiti del prodotto/servizio, e dei processi per il loro soddisfacimento; 
+e * _ sulla comunicazione con i clienti e sulla soddisfazione dei clienti. 
+'g Un maggiore dinamismo dello scenario competitivo potrebbe indurre l'organizzazione: 
+“È‘ *  arendere disponibili con immediatezza prodotti e servizi compelitivi; 
+Ò * a migliorarne rapidamente le caratteristiche; 
+
+* a perseguire programmi di riduzione della difettosità di prodotto; 
+* a esaminare con maggior e cura e sistematicità gli atteggiamenti è le opinioni dei clienti. 
+
+All'opposto, in una situazione di debolezza competitiva l'organizzazione potrebbe essere tentata di adottare, per 
+compensazione: 
+* _ politiche di comunicazione esterna non veritiera sulla qualità del prodotto/servizio; 
+* _ diminuzione degli investimenti produttivi, con abbassamento della qualità del prodotto/servizio; 
+° _ diminuzione dei controlli, e aumento della possibilità di fornire prodotti e servizi non conformi; 
+* _ politiche di delocalizzazione, con conseguente contlittualità a livello locale; 
+* _ politiche del lavoro e salariali meno soddisfacenti per le persone nell'organizzazione. 
+
+In chiave interna, il fattore competitivo potrebbe riftettersi in termini di: 
+* _ competizione fra Business Unit 
+
+g * _ competizione fra prodotti 
+= * _ competizione fra Dipartimenti/Funzioni 
+o * _ competizione fra società del Gruppo, ecc. 
+
+E E conseguenti programmi di miglioramento del prodotto, dei processi, degli elementi di supporto (infrastrutture, 
+= attrezzature, competenze, ecc.). 
+
+Cu Andrebbero accuratamente considerati î rischi corretati alle dinamiche di competizione interna, dal punto di vista 
+dell'integrità dei processi e della qualità delle relazioni interne. Tutti i comportamenti dovrebbero rispondere ad 
+una visione positiva della competizione.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIIstogg - 20 1/@0a&drAMlaffa Qualità: Quaderno 2 
+
+03. Componente Economica 
+
+03.02. Redditività 
+
+Fattori esterni riferibili all'ambito della redditività del business possono includere, ad esempio: 
+* _ La trasparenza dei programmi di investimento economico-produttivo, e dei risultati ottenuti; 
+*  L'utilizzo efficiente, la valorizzazione e la promozione delle economie di scala, nel contesto di riferimento; 
+*  L'attrattività per gli investitori; 
+*  Le prospettive economiche per il sistema di fornitura e per i partner; 
+*  Maggiore disponibilità da parte dei soggetti finanziatori, e conseguente maggiore disponibilità di risorse 
+
+per lo sviluppo e il miglioramento dei prodotti/servizi. 
+In termini generali: 
+*  L'approccio alle istanze di redditività del business potrebbe influire sulla qualità dei prodotti/servizi e sulla 
+
+soddisfazione del cliente 
+*  Una eccessiva propensione alla realizzazione di risultati economici di breve periodo influirà negativamen- 
+
+te sulle politiche di fidelizzazione, brand equity, qualità sostanziale del prodotto/servizio, consolidamento 
+della rete di fornitura e partnership, ecc. e potrebbe contraddire il principio di focalizzazione sul cliente, 
+
+L) pregiudicando la capacità di fornire con regolarità prodotti e servizi conformi ai requisiti, e di conseguire la 
+E crescente soddisfazione del cliente 
+É *  Viceversa, l'istituzione di strategie di lungo periodo comporteranno la crescente soddisfazione dei clienti e 
+P delle parti influenzate dal successo dell'organizzazione sul mercato, costituiranno la base per l'istituzione 
+"gj di un Sistema Qualità come strumento per fornire con regolarità prodotti e servizi conformi ai requisiti, e di 
+= conseguire la crescente soddisfazione del cliente 
+e Possibili azioni: 
+
+*  Piani economici di lungo periodo, nei quali il successo dell'organizzazione è perseguito attraverso la capa- 
+cità di realizzare e fornire con regolarità prodotti e servizi conformi ai requisiti, e di conseguire la crescente 
+soddisfazione del cliente. 
+
+* _ Induzione di benefici economici nel contesto esterno (es.: possibilità di occupazione, creazione di ester- 
+nalità positive, ecc.). 
+
+*  Trasparenza economico-finanziaria dell'organizzazione, come valore associato al prodotto/servizio. 
+* _ Analisi di profittabilità per: area di business e/o segmento, tipologia di prodotto e/o servizio, canale e/o 
+
+punto di vendita, area geografica, tipologia di clientela e/o singolo cliente, fase del processo produttivo, ecc. 
+*  ecc. 
+
+Questioni del contesto interno, riguardanti la redditività del business, e tali da influire sull'efficacia del SGQ, 
+potrebbero riguardare: 
+* Îl ritorno economico di investimento nel breve periodo; 
+* _ Ilritorno economico nel medio-lungo periodo; 
+* l benefici indiretti, per le parti interessate interne, provenienti dal successo dell'organizzazione; 
+
+° *  La trasparenza, verso l'interno, dei programmi di investimento economico-produttivo, e dei risultati ottenuti; 
+% * _ L'utilizzo efficiente, la valorizzazione e la promozione delle economie di scala, nel contesto di riferimento. 
+
+= Andrebbero affrontati i possibili impatti di tali aspetti sulla qualità dei prodotti/servizi e sulla soddisfazione del 
+o cliente. Le azioni conseguenti potrebbero includere: 
+’£ *  L'implementazione di modelli strutturati per collegare la prospettiva economica alle altre prospettive di 
+‘É gestione dell'organizzazione (es. Balance Scorecard) 
+[ * _ L'integrazione dei modelli di Activity-Based Costing con il Quality Management 
+
+*  L'adozione di modelli di simulazione 
+* _ L'implementazione di Norme che correlano la Gestione per la Qualità con lo stabile successo organizzati- 
+
+vo, quali la ISO 9004 e la ISO 10014, inclusi i relativi strumenti di autovalutazione 
+*  L'integrazione della gestione per la qualità con il "controllo di gestione" 
+*  ecc
+
+
+
+OQ.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 33 
+
+03. Componente Economica 
+
+Aspetti del contesto esterno correlati alle prestazioni e all'efficienza organizzativa e tali da incidere sulla soddi- 
+sfazione delle parti interessate e del cliente, potrebbero riguardare ad esempio: 
+* _ La valorizzazione del prodotto/servizio come mezzo di promozione del territorio (p.es.: nel settore food) e 
+
+soddisfacimento di interessi collettivi; 
+* _ Casidi efficienza organizzativa tali da rappresentare modelli di riferimento e indurre meccanismi di allinea- 
+
+mento "verso l'alto" delle parti interessate esterne (inclusi: concorrenti, collettività, €cC.); 
+* _ ll contributo di efficienza e performance all'interno di una partnership; 
+*  La creazione di indotti, tali da fornire risorse e strumenti e soluzioni per il miglioramento dell'efficienza 
+
+e delle performance (es.: trasporti, comunicazioni, servizi formativi specialistici, servizi di reclutamento, 
+servizi gestionali, ecc.); 
+
+* _ l'aggiornamento delle tecnologie produttive e di supporto. 
+Riflessi positivi di una adeguata presa in carico di tali fattori, sulla qualità dei prodotti/servizi e sulla soddisfazio- 
+ne dei clienti possono comprendere: 
+*  La creazione di marchi di origine e di tipicità tali da valorizzare il prodotto e indurre il miglioramento delle 
+
+sue caratteristiche e la sua disponibilità. 
+* l riconoscimento dell'organizzazione e dei suoi prodotti/servizi come "benchmark" o "prima scelta", da 
+
+parte, rispettivamente, di concorrenti e clienti. 
+*  Più efficaci sinergie nell'ambito di partnership e raggruppamenti. 
+*  Una maggiore reattività nei confronti dei cambiamenti normativi e regolamentari applicabili al prodotto/ 
+
+Servizio. 
+
+* _ Un'immagine positiva dell'organizzazione, tale da migliorare l'attrattività dei suoi prodotti/servizi. 
+*  ecc, 
+
+In prospettiva interna, i fattori di efficienza organizzativa sono in buona parte riconducibili a quanto espressa- 
+mente disciplinato attraverso la ISO 9001 e le norme correlate, fra le quali: le norme della serie ISO "10000" (e 
+in particolare la ISO 10014), la ISO 9004 la ISO/T$ 9002 - Quality management systems — Guidelines for the 
+application of ISO 9001:2015 {in corso di elaborazione alla data di pubblicazione di questo Quaderno). 
+
+Sebbene la ISO 9001 non sia espressamente rivolta all'efficienza, tuttavia il requisito di adozione di un approc- 
+cio per processi implica l'orientamento in tale direzione. 
+
+Al fine di perseguire il miglioramento delle prestazioni e l'efficienza dei processi, l'organizzazione potrebbe, per 
+quanto pertinente, adoftare: 
+*  modelli di efficienza e miglioramento organizzativi (gestione per processi, Business Process Reenginee- 
+
+ring, ecc.). 
+* _ forme di efficientamento dei processi operativi e di supporto, tali da produrre effetti favorevoli sul contesto 
+
+(es.: sul sistema dei trasporti, sul consumo di risorse comuni, ecc.). 
+* _ Adozione di modelli e tecniche evoluti di Gestione per la Qualità. 
+* _ Politiche di ottimizzazione delle risorse (finanziarie, energetiche, umane, strumentali, ecc.). 
+*  ecc, 
+
+Contesto interno Contesto esterno 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoya - 20 l0addrAAfafà Qualità: Quaderno 2 
+
+03. Componente Economica 
+
+03.04. Gestione della rete di fornitura 
+
+Con riferimento al supply network varie questioni afferenti alla dimensione economica del contesto possono 
+riguardare, per esempio: 
+* I mantenimento dei fornitori interessati, nella vendor list dell'organizzazione 
+*  L'affidabilità della catena di fornitura, ai fini della qualità del prodotto 
+*  La creazione di opportunità di sviluppo e occupazione sul territorio, attraverso la creazione e il consolida- 
+
+mento dell'indotto 
+*  Qualificazione delle competenze esterne, e conseguente generale aumento del benessere collettivo 
+*  La valorizzazione del territorio attraverso la salvaguardia di marchi e denominazioni d'origine e tipicità 
+* _ Laresilienza del supply network, a garanzia della continuità del servizio 
+* _ La salvaguardia dei diritti di proprietà industriale e dei dati 
+* Îl rispetto delle norme cogenti applicabili, e la gestione etica, lungo l'intera catena di fornitura 
+*  Promozione della collaborazione fra fornitori, per lo sviluppo delle tecnologie e delle performance 
+
+Affrontare i diversi aspetti connessi alla gestione del supply network, può contribuire al miglioramento della 
+qualità e della customer satisfaction. Per esempio: 
+*  fidelizzare | fornitori consentirà di migliorare l'assicurazione qualità; viceversa, una gestione di corto respiro 
+
+delle relazioni con i fornitori comporterà il rischio di interruzioni nel flusso di approvvigionamento. 
+Un consolidato tessuto di relazioni qualificate con i fornitori potrebbe suscitare l'approvazione, da parte 
+della collettività, dell'organizzazione e dei suoi prodotti è servizi. 
+
+*  Una gestione delle forniture esterne rivolta alla valorizzazione di prodotti e servizi a forte identificazione 
+territoriale potrebbe creare un ambiente più favorevole all'organizzazione. 
+
+*  Strategie efficaci di gestione della rete di fornitura potrebbero risultare utili a fronteggiare crisi impreviste; a 
+tale scopo potrebbe risultare essenziale l'allineamento degli indicatori prestazionali nell'intera supply chain, 
+la valorizzazione delle eccellenze nella catena di fornitura, un monitoraggio sistematico delle performance, 
+strategie di gestione del rischio basate sul protfilo dei singoli fornitori, ecc. 
+
+e _ Una gestione "etica" delle relazioni di fornitura dovrebbe comportare il rispetto dei diritti di proprietà in- 
+dustriale e di riservatezza: ciò alimenterà la fiducia dei fornitori verso l'organizzazione, che avrà più facile 
+accesso a dati e informazioni utili al miglioramento del prodotto e dei servizi. 
+
+* I| consolidamento delle reti di fornitura può consentire l'instaurarsi di relazioni più collaborative fra i fornitori, 
+che potrebbero in tal modo condividere e ottimizzare risorse ed energie rivolte ad accrescere la qualità dei 
+beni e servizi prodotti dall'organizzazione. 
+
+In ottica interna, la gestione degli approvvigionamenti dovrebbe essere affrontata come un processo, in applica- 
+zione dei requisiti pertinenti ISO 9001:2015. 
+* _ Inalcuni casi, l'impossibilità di ricorrere a fornitori alternativi imporrà alle organizzazioni di istituire soluzioni 
+
+interne tali da mitigare il rischio di approvvigionamenti insoddisfacentTia.li  soluzioni potrebbero compren- 
+dere: controlli al ricevimento più severi; modifiche delle specifiche di prodotto/servizio; modifiche delle pro- 
+cedure e strategie di approvvigionamento; modifiche nella pianificazione dei processi; ridimensionamento 
+degli obiettivi e delle politiche per la qualità; continuo monitoraggio degli effetti del processo di approvvigio- 
+namento sulla capacità di realizzare le strategie dell'organizzazione, ecc. 
+
+*  Potrebbero risultare necessari strumenti specifici di gestione delle forniture (impiego di indicatori quali- 
+quantitativi, analisi strutturata degli scenari, piani condivisi di sviluppo dei prodotti/servizi, ecc.), e relative 
+competenze specialistiche. 
+
+* _ Una gestione degli approvvigionamenti in prospettiva interna potrebbe suggerire, infine, l'adozione siste- 
+matica dell'approccio per processi, per la determinazione e il governo delle dinamiche cliente-fornitore 
+interni. 
+
+Contesto interno Contesto esterno 
+
+
+
+O,ME.FA, $.p.A. 
+UNIIstore - 2016 - 371459 Fattori del contesto e parti interessate 35 
+
+03. Componente Economica 
+
+Il contesto esterno potrebbe essere caratterizzato da una molteplicità di rapporti di collaborazione e partnership. 
+Essi potranno essere di diversa natura, e consistere in raggruppamenti di soggetti eterogenei (es.: mondo ac- 
+cademico e della ricerca, agenzie formative sul territorio, organizzazioni non profit, soggetti della Pubblica Am- 
+ministrazione, ecc.) ma orientati a collaborare con l'organizzazione, per la realizzazione di un progetto comune, 
+] parlner dell'organizzazione possono essere allo stesso tempo portatori di aspettative e interessi "esterni" e 
+protagonisti dei processi. Per esempio, mentre un soggetto pubblico può essere interessato, come terza parte, 
+
+L) alla gestione delle relazioni fra l'organizzazione e i suoi fornitori (come nel caso di un ente di sorveglianza sani- 
+É taria nei confronti della tracciabilità di un alimento), in una prospettiva di partnership lo stesso soggetto potrebbe 
+g entrare in diretta relazione funzionale con l'organizzazione. 
+L) Anche nel caso della componente "partnership", andrebbe identificata, valutata e gestita l'incertezza legata alla 
+g- conformità e alla soddisfazione del cliente, in relazione alla più o meno soddisfacente (per le parti) risposta alle 
+£ esigenze e aspettative provenienti dal contesto esterno. Soddisfare in varia misura le istanze legate alle politiche 
+8 di partnership dell'organizzazione, può incidere su tale "incertezza" in vari modi: 
+
+*  esempio 1: soggetti finanziatori che offrono condizioni di finanziamento più favorevoli alle organizzazioni 
+che erogano servizi di accoglienza, ristorazione e cultura, quando esse aderiscono a modelli di collabora- 
+zione strutturata con conseguente miglioramento dell'offerta di tali servizi sul territorio; 
+
+* _ esempio 2: una partnership, promossa dall'organizzazione committente, che coinvolga istituti di ricerca ed 
+enti locali, tale da migliorare e consolidare la qualità e la disponibilità dei prodotti/servizi. 
+
+Dal punto di vista del contesto interno, la gestione delle partnership andrà affrontata come un processo. Il tema 
+delle partnership andrà esaminato e affrontato sotto vari aspetti, fra i quali: 
+
+| * _ Definizione delle politiche e obiettivi di partnership, in relazione alle politiche/obiettivi per la qualità, e alle 
+E strategie dell'organizzazione 
+..°é | *  Valutazione e gestione della propensione, da parte dei soggetti interni (proprietari, azionisti, management, 
+S responsabili di funzioni e processi, ecc.) alla istituzione di partnership 
+"fi *  Determinazione delle risorse e degli strumenti per la gestione delle partnership, incluse le competenze 
+= necessarie, e loro integrazione nel Sistema Qualità 
+a * — Messa a disposizione delle risorse necessarie 
+
+*  Riesame dei processi operativi e di supporto, in relazione alle relazioni di partnership 
+*  Valutazione dell'efficacia delle relazioni, nell'ambito dei rissami di direzione per la Qualità
+
+
+
+O.ME.FA. S.p.A. 
+UNIIstogg - 20 1@aaddrhMafa Qualità: Quaderno 2 
+
+03. Componente Economica 
+
+Le questioni esterne attinenti al "mercato", e che potrebbero influire sugli obiettivi del sistema qualità, possono 
+includere ad esempio: 
+* _ l'estensione del mercato di riferimento, e le eventuali prospettive di individuazione di nuove aree 
+* _ iltarget, i bacini di utenza, le aree di influenza, ecc. 
+* _ le tecniche e le tecnologie di comunicazione relative al prodotto 
+° le strategie di mercato 
+* _ la diversificazione e lo sviluppo del prodotto 
+*  la capacità di vendita di servizi associati al prodotto 
+* _ il potenziamento della rete di vendita 
+* _ la flessibilità e l'adattività in funzione dell'evoluzione della domanda 
+
+A tali fattori potrebbero essere associate numerose azioni determinanti per i fini del sistema qualità, fra le quali: 
+*  marketing non invasivo, utilizzo non intrusivo delle tecnologie di comunicazione; 
+* _ organizzazione di eventi legati alla promozione del prodotto; 
+* _ prospettive di allargamento del mercato tramite fusioni e acquisizioni; 
+* _ monitoraggio dell'attuazione delle leggi in tema di diritto commerciale (relative a: posizione dominante, 
+
+pubblicità ingannevole, diritti di proprietà intellettuale e industriale, concorrenza sleale, ecc.); 
+* _ creazione di aree di polarizzazione commerciale e distretti di produzione; 
+*  monitoraggio della chiarezza e affidabilità delle comunicazioni per la promozione del prodotto/servizio; 
+* _ miglioramento della qualità del prodotto; 
+* _ estensione della gamma di prodotto; 
+* _ miglioramento del rapporto qualità/prezzo; 
+* _ monitoraggio delle qualità dei piani finanziari legati ai programmi di marketing; 
+* _ applicazione di tecniche per la gestione del rischio nell'elaborazione delle strategie di mercato. 
+Tali azioni potrebbero influire sulta conformità del prodotto e sull'aumento della soddisfazione del cliente, in vari 
+modi, fra i quali i seguenti: 
+
+* _ L'individuazione di nuove aree di mercato potrebbe richiedere modifiche nelle specifiche dei prodotti e 
+servizi, per adattamento alle caratteristiche della domanda nei nuovi contesti o per rispettare nuovi o 
+diversi vincoli. 
+
+* _ La differenziazione e lo sviluppo del prodotto, l'ampliamento della gamma, saranno tali da venire incontro 
+alle aspettative dei consumatori, o addirittura da anticiparle o superarle. 
+
+* _ ll potenziamento della rete di vendita potrebbe aumentare la pronta disponibilità del prodotto/servizio. 
+
+Ulteriori questioni potrebbero riguardare il contesto interno, e richiedere specifiche azioni a tale livello. Per 
+esempio: 
+*  Coerenza delle politiche per la qualità con le strategie di mercato 
+*  Opportunità e rischi, per il personale, connessi alla delocalizzazione o all'ampliamento del bacino di mer- 
+
+cato (es.: rischio di aumento della distanza fra luogo di residenza e luogo di lavoro; mobilità geografica, 
+ecc.) 
+
+’ ecc
+
+Contesto interno Contesto esterno 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 37 
+
+03. Componente Economica 
+
+Le variabili esterne relative alla gestione economica e finanziaria, incluso il reperimento delle risorse, possono in 
+varia misura incidere sulla capacità del sistema qualità di conseguire gli obiettivi; fra le questioni da considerare 
+sì possono annoverare le seguenti: 
+*  Trasparenza e integrità nel reperimento e impiego delle risorse economico-finanziarie 
+* _ Adesione a politiche di finanziamento e sostegno, a livello locale regionale, nazionale e internazionale 
+* _ Distribuzione di parte delle risorse per scopi etici e iniziative di sostenibilità 
+*  Tempestività è puntualità nei pagamenti ai fornitori 
+
+Rispetto della legalità, trasparenza dei bilanci, politiche di contrasto ai fenomeni corruttivi, ecc. 
+Delocalizzazione in aree più favorevoli dal punto di vista fiscale e delle politiche di supporto: ricadute sulla 
+qualità del prodotto 
+Solvibilità 
+
+*  Regolarità fiscale e contributiva 
+
+le) Una gestione non corretta è appropriata delle risorse economico-finanziarie potrebbe generare: 
+É *  L'indisponibilità di risorse rivolte alla qualità del prodotto e del servizio 
+'%' i * _ Conflittualità e contenziosi tali da incidere sulla qualità del prodotto/servizio e sulla continuità del business 
+[ * _ Ostacoli ai programmi di innovazione e sviluppo 
+È> * _ Perdita di reputazione e disaffezione dei clienti 
+S Pertanto l'organizzazione dovrebbe considerare, per quanto appropriato è applicabile: 
+e * _ L'adozione dell'approccio basato su rischi/opportunità nella gestione economico-finanziaria, e la sua inte- 
+
+grazione nel sistema qualità 
+* _ Politiche di trasparenza 
+* _ Politiche di razionalizzazione energetica 
++ ll severo presidio e la puntuale attuazione del quadro prescrittivo 
+* _ L'acquisizione e uso di competenze specifiche per i fattori di tipo economico-finanziario 
+
+Inoltre, in prospettiva interna, le questioni potrebbero includere: 
+* _ L'allocazione delle risorse economico-finanziarie alla gestione per la qualità, che potrebbe essere condi- 
+
+zionata dalle aspettative di ritorno di investimento di proprietari e azionisti 
+* _ L'ottenimento di benefici economico-finanziari dall'applicazione dei principi di gestione per la qualità 
+*  L'impiego di congrue risorse per il miglioramento del prodotto/servizio (per esempio budget per ricerca e 
+
+° innovazione) 
+.‘;.g * — La capacità di pianificazione degli investimenti 
+‘° Fra le azioni potrebbero essere considerate, ad esempio: 
+"€q * _ Un controllo della gestione economico-amministrativa per garantire che essa non implichi azioni non coe- 
+"É renti con gli obiettivi per la qualità 
+[ *  Programmi di redistribuzione dei benefici economici provenienti dalla gestione per la qualità, agli operatori 
+
+nell'organizzazione 
+* _ Sistemi premiali e compensi commisurati al merito e al grado di assimilazione e messa a frutto di principi 
+
+e politiche per la qualità 
+° Verifica della coerenza delle politiche per la qualità con le strategie economico-finanziarie 
+*  Puntualità ed equità delle retribuzioni
+
+
+
+O.ME.FA. S.p.A. 
+
+UNI sto 5g - 20 1@npaddrAffafà Qualità: Quaderno 2 
+
+L'applicazione dei requisiti relativi al contesto e alle parti interessate” 
+
+La Norma non richiede né suggerisce l'adozione di particolari tecniche o modalità per l'applicazione dei 
+requisiti 4.1 e 4.2. Ogni decisione a tale riguardo spetterà dunque all'organizzazione e dovrà discendere da 
+valutazioni che tengano conto della natura della stessa, della sua complessità, del settore nel quale essa 
+opera, delle strategie e politiche, dell'ambiente competitivo, degli obiettivi, ecc. 
+In ogni caso, è richiesto alle organizzazioni di compiere i seguenti passi°*. 
+
+1. Determinare i fattori rilevanti del contesto esterno/interno 
+2. Determinare i confini e il campo di applicazione del Sistema Qualità e istituire/gestire i relativi processi 
+
+3. lIdentificare le rilevanti parti interessate e i relativi requisiti 
+
+4. Determinare i rischi e le opportunità connessi ai fattori del contesto e alle aspettative delle parti interes- 
+sate 
+
+5. Pianificare e implementare le azioni per affrontarli 
+
+6. Monitorare e riesaminare sistematicamente il processo per apportare miglioramenti e correttivi 
+
+Nelle pagine successive le sei fasi sopraelencate vengono meglio dettagliate, ed affrontate in termini appli- 
+cativi. 
+
+L'esito di tali azioni dovrebbe essere descritto attraverso quadri rappresentativi del sistema complessivo del- 
+le parti interessate/elementi del contesto, come informazione utile a definire i "profili di risposta" più adeguati. 
+La tabella seguente fornisce un esempio (del tutto ipotetico) di tali quadri di sintesi. In essa la dimensione dei 
+simboli utilizzati all'intersezione fattore/parte interessata è commisurata al grado di correlazione. Le caselle 
+vuote indicano assenza di correlazione. 
+
+La tabella consente in questo modo di identificare a colpo d'occhio: 
+- i fattori che coinvolgono un numero elevato di parti interessati e il grado di interesse ad essi associato, 
+— _ le parti interessate di maggiore rilievo, considerato il numero di aspetti del contesto che ne contemplano 
+
+il coinvolgimento. 
+
+La stessa tabella potrebbe essere utilizzata per riportare altri tipi di informazione. Per esempio: gli interessi 
+gravanti sull'organizzazione associati al peso negoziale delle parti, o, a seguito di una valutazione dei rischi, 
+le situazioni di maggiore rilevanza per il sistema qualità, ecc. 
+
+La tabella andrebbe periodicamente riesaminata e aggiornata, per tenere conto delle modifiche che inter- 
+vengono nel contesto e nella compagine delle parti interessate. 
+
+22 Parte della presente sezione si basa sulla rielaborazione è aggiornamento di alcuni contenuti dei capitoli 1 e 2 del volume: Organizzazioni di succes- 
+so, Comprendere e applicare la norma ISO 8004:2009 per raggiungere il successo e mantenerlo nel tempo, di N. Gigante e Mauro Rivara - Ed, UNI 
+- Gennaio 2011. 
+
+23 Le organizzazioni piccole e medie dovrebbero valutare l'opportunità di promuovere accordi, alleanze e forme di cooperazione che permettano loro di 
+mettere in comune le risorse e di ottimizzare i costi e le energie richiesti per affrontare efficacemente le questioni riguardanti il contesto e le parti in- 
+teressate.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessale 39
+
+L1BIZUBUIJ-09/LUOLUOI9 S H nE nn - nnno: 
+10}ej [r] 
+
+[ ] 
+
+e1N}1U10} 
+Ip 9791 e|lap 3UOsS99 S 
+
+3 
+‘}ezzIUeB.10 EZUAIDIJjO e 
+
+aa 
+/iuoIze)sa1d P 
+
+BNAMIPPIY S 
+P 
+L 
+
+0ANNaduoa P 
+o 
+
+w 
+191je_BoW9p 1107}8j aa 
+
+= 
+
+‘v'd 
+a assa19ju] 091/qaNd ]L-  
+
+auoizajo.id 
+a ezza1N91$ 
+
+N 
+19na medsy BH H U 
+
+Ijen}jno madsy 
+
+aleio1ji}le ajueIqLIY 
+
+ajeANjeU SjUSIdLUY [—] 
+
+10}89]}U09 |ap 110}}ej 
+
+Componente 
+fisica Componente sociale 
+
+Componente economica 
+
+Parti interessate: 01. 1 0102 0201 02.03 03.05 03.06 
+
+| 13’a'"fi:ìà"lefitèlve , enti re 
+
+‘ Agpatnero 
+17.cofletnvnta. 
+
+2.o rgarì;mome  attività vicine, neit erntono = H 
+
+Fig. 12 Esempio di matrice delle relazioni fra contesto e parti interessate 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstro9  - 20 1@naderatHafa Quatità: Quaderno2 
+
+1. La determinazione dei fattori rilevanti del contesto e delle principali parti interessate 
+
+La determinazione dei fattori può essere condotta utilizzando una molteplicità di modi e strumenti, dai più 
+semplici ai più sofisticati, in funzione della complessità dell'organizzazione e delle sue possibili relazioni 
+con il contesto, Nel determinare i fattori in questione emergeranno le fondamentali esigenze da soddisfare, 
+insieme con una prima identificazione dei soggetti più rilevanti, considerata la ragion d'essere e le strategie 
+dell'organizzazione*. Successivamente, basandosi anche sulla mappa dei processi (come meglio specifi- 
+cato al successivo punto 3 - L'identificazione delle rilevanti parti interessate e dei relativi requisitì, l'indivi- 
+duazione delle parti interessate e dei loro requisiti potrà essere confermata, completata e spinta a livelli di 
+maggiore dettaglio. 
+
+Per una definizione dei fattori andrebbero condotte riunioni fra le funzioni competentiTa.li riunioni dovrebbero 
+comprendere rappresentanti dell'alta direzione e | responsabili dei processi, delle funzioni, dei dipartimenti. 
+Le riunioni possono essere condotte efficacemente con un'opportuna applicazione delle tecniche di brain- 
+storming e/o con il supporto di checklist. Andrebbero valorizzate nell'ambito di tali riunioni l'esperienza, l'in- 
+tuito, le conoscenze specifiche, i dati e le informazioni provenienti dall'esterno e dall'interno dell'organizzazio- 
+ne. A tale riguardo, i dati già disponibili presso l'organizzazione potrebbero includere quelli già prodotti in altre 
+circostanze da altri gruppi o dipartimenti. Un'utile fonte di dati potrebbe essere ad esempio rappresentata da 
+precedenti indagini condotte ai fini della redazione di un "bilancio sociale" o da eventuali valutazioni di rischio 
+eseguite a supporto dell'analisi e pianificazione strategica o di programmi di investimento, ecc. 
+
+Nelle situazioni di maggiore complessità l'organizzazione potrebbe fare ricorso ad approcci strutturati, come 
+ad esempio l'analisi PE.S.T., la sua variante PE.S.T.L.E.*, la SWOT Analysis®, ecc., la Urgency/Importancy 
+Grid, il modello delle cinque forze competitive di Porter, ecc. 
+
+È tuttavia necessario ricordare che tali strumenti non sono stati originariamente concepiti nella prospettiva 
+ISO 9001. Si consideri, in particolare, che l'oggetto della ISO 9001 è la Gestione per la Qualità, e il suo obiet- 
+tivo è la soddisfazione del cliente, mentre gli strumenti suddetti sono rivolti in senso generale alla gestione 
+strategica dell'organizzazione””. Essi dovrebbero perciò essere opportunamente adattati per gli scopi del 
+Sistema Qualità. 
+
+24 Da UNI ISO 26000:2010: Per identificare gli stakeholder, un'organizzazione dovrebbe porsi le domande seguenti: 
+— _ Verso chi l'organizzazione ha obblighi legali? 
+— _ Chi potrebbe essere influenzato positivamente o negativamente dalle decisioni o dalle attività dell'organizzazione? 
+— _ Chi potrebbe esprimere preoccupazioni in merito alle decisioni e alle attività dell’organizzazione? 
+— _ Chi è stato coinvolto nel passato quando è stato necessario affrontare preoccupazioni simili? 
+— _ Chi può aiutare l'organizzazione ad affrontare impatti specifici? 
+
+Chi può influenzare la capacità dell'organizzazione di soddisfare le proprie responsabilità? 
+Chi sarebbe svantaggiato se escluso dal coinvolgimento? 
+
+— _ Chi è influenzato nella catena del valore? 
+Questo set di questioni, concepito nella logica della responsabilità sociale, potrebbe essere adattato e integrato con altri item nella prospettiva del 
+Quality Management. 
+
+25 PE .S.T. è l’acronimo dei fattori Politici, Economici, Sociali, Tecnologici: è uno strumento di analisi dei cambiamenti del mercato utilizzato dalle organiz- 
+zazioni per individuare opportunità di crescita e investimento. La sua variante PE.S.T.L.E., considera, oltre ai precedenti, anche i fattori di tipo Legale 
+e Ambientale. 
+
+26 L'analisi PESTLE opportunamente adattata alle specificità e agli scopi del Quality Management, può costituire la base per: 
+- _ la conduzione della $WOT Analysis; 
+— _ la definizione degli scenari di riferimento per la piarificazione strategica; 
+- _ la determinazione delle azioni per affrontare i rischi e le opportunità; 
+— _ le decisioni relative al campo di applicazione, alle politiche e agli obiettivi del Sistema Qualità. 
+
+27 Per esempio, nella SWOT Analysis: a) le "minacce" non corrispondono del tutto ai "Rischi" della ISO 9001, dove questi ultimi vengono visti anche nel 
+loro aspetto positivo; b} gli elementi di "Forza" e "Debolezza" non sono come tali richiamati nel capitolo relativo al contesto.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 41 
+
+Quale che sia il metodo adottato per la determinazione dei fattori del contesto, occorrerà assicurare l'ade- 
+qguatezza dei dati e delle informazioni raccolte. 
+
+Dovrebbero essere condotte 
+riunioni fra le funzioni competenti, 
+per una definizione dei fattori. 
+Tali riunioni dovrebbero comprendere 
+rappresentanti dell'alta direzione 
+e i responsabili dei processi 
+e delle unità organizzative. 
+
+Nella successiva "finestra" sono riepilogate le principali caratteristiche a cui dovrebbero corrispondere in 
+generale tali dati e le informazioni. Lo schema riporta inoltre alcuni suggerimenti per aumentare la possibilità 
+di ottenere dati e informazioni validi e attendibili. 
+
+In generale, perché la qualità dei dati sia sotto controllo, e siano soddisfatte le caratteristiche di adeguatezza 
+in questione, è opportuno che l'organizzazione: 
+- _ pianifichi il reperimento/la rilevazione dei dati e delle informazioni 
+— _ definisca chiaramente gli obiettivi di tale attività 
+—  verifichi la qualità delle fonti 
+— _ istituisca, ove necessario, procedure strutturate di rilevazione 
+— _ garantisca risorse idonee per il processo di rilevazione (strumenti e competenze) 
+— _ definisca le caratteristiche quali-quantitative attese, per i dati e le informazioni da raccogliere 
+- _ verifichi tempestivamente l'idoneità dei dati e le informazioni raccolte 
+— verifichi il rispetto del piano di rilevazione, intervenendo con Je necessarie azioni migliorative.
+
+
+
+O.ME.FA, S.p.A. 
+UNIstoga - 20 1@nadzrAtaf Qualità: Quaderno 2 
+
+Caratteristiche di qualità dei dati delle informazioni riguardanti i fattori del contesto 
+
+1. Oggettività 
+| dati dovrebbero derivare da fonti imparziali. | contributi soggeltivi all'individuazione dei dati e delle informazioni possono essere 
+accettati, e anzi saranno spesso utili ai fini della completezza del quadro conoscitivo, ma dovranno essere esenti da conflitti di 
+interesse, Occorrerà accertarsi che le fonti dei dati e delle informazioni, le modalità di raccolta, reporting, rappresentazione, non 
+siano ispirate ad altra logica se non a quella della fedele rappresentazione della realtà, e non intervengano da parte dei soggetti 
+coinvoalti nella rilevazione obiettivi diversi rispetto a quelli a cui la raccolta e l'utilizzazione dichiaratamente sono rivolte. Per tale 
+motivo, gli obiettivi della ritevazione dovrebbero essere chiaramente condivisi con tutti i soggetti coinvolti nella rilevazione, e 
+dovrebbe essere accertata l'assenza di condizioni che possano pregiudicare la validità e l'affidabilità delle informazioni raccolte 
+
+2. Completezza ed esaustività: 
+| dati dovrebbero riguardare tutte le dimensioni significative del contesto (può essere utile a tale riguardo fare riferimento alla 
+scomposizione del contesto, secondo le "schede' proposte in precedenza); a tale scopo, essi dovranno scaturire da indagini 
+sistematiche, omogeneamente estese a tutte le pertinenti aree e parti interessate, e, nella misura appropriata, condotte secondo 
+schemi di rilevazione strutturati 
+
+3. Correttezza 
+| dali e le informazioni dovrebbero essere esenti da distorsioni o errori; a tal fine, i dati e le informazioni dovranno: 
+a) derivare da fonti altendibili, 
+b) essere raccolti con strumenti di rilevazione di accertata affidabilità, 
+c) verificati nel contenuto, allo scopo di individuare eventuati errori e inesattezze. 
+
+4. Adeguato dettaglio 
+| dati e le informazioni dovrebbero essere sufficientemente approfonditi da costituire la base per valutazioni e decisioni concrete; 
+per questo, dati e informazioni andrebbero organizzati, sin dalla loro raccolta, secondo un modello strutturato di disaggregazione 
+(p.es.: anche in questo caso, seguendo lo schema di scomposizione delle "schede" di cuì sopra), e dovrebbe essere prestabilito il 
+livello di definizione al quale spingere la rilevazione. 
+
+5. Attualità 
+Dati e informazioni dovranno rispondere allo stato attuale del contesto, e tali da costituime una rappresentazione aggiornata; al 
+riguardo, occorrerà verificare lo stato di validità dei dati, e accertare che le condizioni del contesto non siano significativamente 
+mutate dopo l'ultima rilevazione 
+
+6. Univocità 
+Dati e informazioni non dovrebbero essere soggetti a interpretazioni soggettive. Per quanto possibile, essi dovrebbero a tal fine 
+essere espressi o tradotti in una forma quantitativa; ciò garantirà l'assenza di confitti interpretativi e ambiguità; tale aspetto 
+dovrebbe essere considerato già nella fase di pianificazione delle indagini; le metriche adottate dovrebbero essere stabilite in modo 
+coerente e condiviso; ove necessario, tali metriche dovrebbero essere definite con il supporto di esperti. 
+
+7. Comprensibilità/Chiarezza 
+| dati e le informazioni dovrebbero essere rappresentati in modo ordinato e accessibile, in relazione alle analisi e alle decisioni a 
+seguire. Ai fini della comprensibilità e della leggibilità, dati e informazioni dovrebbero essere opporlunamente organizzati in forma 
+schematica, anche con l'aiuto di grafici. Inoltre, le forme di rappresentazione dovrebbero rispondere a criteri di omogeneità, per 
+agevolare il confronto fra i dati e, ove necessario, la loro elaborazione. 
+
+8. Pertinenzal/specificità: 
+Dovrebbero essere resi disponibili esclusivamente dati e informazioni effettivamente utili ai fini del processo decisionale; dati e 
+informazioni ridondanti, non strettamente correlati agli obiettivi dell'indagine, indefiniti, complicherebbero l'analisi e l'interpretazione 
+del contesto, pregiudicando la consistenza è la tempestività del processo decisionale. 
+
+Fig.13  Caratteristiche di adeguatezza dei dati e delle informazioni riguardanti i faltori del contesto
+
+
+
+O.ME.FA. S.pA.. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 43 
+
+2, La determinazione dei confini e del campo di applicazione del Sistema Qualità e la 
+determinazione dei processi 
+
+L'organizzazione dovrà individuare le ricadute delle componenti del contesto sulle prospettive di realizzazio- 
+ne della propria politica e dei propri obiettivi per la qualità. In particolare, andranno definiti: 
+— le condizioni (p.es. di tipo normativo, tecnologico, culturale, socio-politico, finanziario, ambientale, etico, 
+
+@cc.) tali da costituire elementi di minaccia o di opportunità; 
+- l'effettiva probabilità di ricadute, positive o negative, di tali condizioni sulla pianificazione e attuazione 
+
+efficace del sistema qualità. 
+Tali aspetti, oltre che essere identificati con riguardo alla configurazione corrente, dovrebbero essere studiati 
+anche in prospettiva futura; a questo scopo, tutti gli elementi e le relazioni che possano determinare e orien- 
+tare il cambiamento dello stato attuale (per esempio, la previsione di sviluppo del quadro normativo, i possibili 
+cambiamenti nel mercato del lavoro, ecc.) dovrebbero essere ragionevolmente considerati. 
+
+| risultati di tale iniziale valutazione di rischio/opportunità serviranno a stabilire se il Sistema Qualità copre 
+adeguatamente tutte le questioni rilevanti del contesto, per consentire all'organizzazione di affrontarle in 
+modo sistematico e strutturato, o in caso contrario di ridefinire il perimetro del Sistema Qualità allo scopo di 
+assicurare tale copertura®®. 
+
+La "finestra" di fig.14 fornisce un esempio di quanto sopra, sviluppando quanto trattato in termini generali 
+nella precedente sezione: "Contesto, parti interessate e sostenibilità". 
+
+28 Questa perimetrazione del Sistema di Gestione Qualità, in modo da ricomprendere quanto occorre per affrontare i fattori rilevanti del contesto e le 
+aspettative delle parti interessate rilevanti, è ciò che la Norma richiede al $ 4.3 (Determinare il campo di applicazione del Sistema di Gestione per la 
+Qualità). Si veda anche il precedente paragrafo: "Contesto, parti interessate e sostenibilità'.
+
+
+
+O.ME.FA, S.p.A. 
+UNI stoma - 20 1@vaddrhfUafa Qualità: Quaderno 2 
+
+Un esempio di determinazione dei confini del sistema qualità per tenere conto di un fattore 
+esterno rilevante. 
+L'esempio riguarda un'azienda manifatturiera che ha deciso di prendere attivamente parte ai lavori di normazione tecnica relativi al 
+suo settore in quanto ha riconosciuto gli aspetti del quadro tecnico-normativo di riferimento quali fattori esterni rilevanti, per le sue 
+finalità e i suoi indirizzi strategici, e che influenzano la sua capacità di conseguire i risultati attesi del SGQ. 
+Strategie direzionali rivolte per esempio a consolidare o rinforzare la sua posizione sul mercato potrebbero aver suggerito 
+l'opportunità di partecipare alla definizione stessa delle prescrizioni, allo scopo di indirizzare il quadro normativo verso soluzioni che 
+esaltino gli elementi di forza dell'azienda, o da ridurre ìl rischio connesso alle eventuali aree di debolezza. 
+Altre organizzazioni del settore, con ambizioni più circoscritte e strategie più semplici, potrebbero limitarsi a tenere sotto controllo 
+(individuazione, comprensione e monitoraggio) gli aspelti normativi attraverso normali procedure di gestione controllata della 
+"documentazione di origine esterna". 
+Si tratta di due modi diversi di affrontare un fattore del contesto significativo per il sistema qualità sicuramente significativo in quanto 
+direttamente correlato (per definizione) alla conformità del prodotto: le norme tecniche di settore costituiscono nel nostro esempio 
+un aspelto *rilevante' che proviene da una particolare *rilevante" parte interessata (in questo caso, l'Ente di Normazione Tecnica). 
+Le azioni messe in atto per dare seguito al primo dei due approcci, così come quelle necessarie nel secondo caso, ricadranno 
+perciò entro i confini di competenza del Sistema Qualità. 
+In quanto tali, i processi di cui tali azioni entreranno a far parte dovranno essere affrontati applicando i requisiti previsti in generale 
+per i processi del Sistema Qualità. Andranno cioè (come stabilito al punto 4.4 della Norma) determinati gli obiettivi (misurabili), gli 
+input e gli output, le risorse, opportuni indicatori di prestazione, specifiche autorità, rischi e opportunità {insieme con la azioni 
+necessarie alla loro gestione), ecc., e applicata ad essi la logica PDCA. Nel caso in esame, in cui l'azienda interviene 
+"proattivamente' nella definizione delle norme tecniche, tuttavia essa dovrà affrontare una situazione singolare dal punto di vista 
+della gestione per la qualità; il processo infatti non potrà in quasto caso essere completamente presidiato dall'organizzazione, in 
+quanto fra gli attori vi saranno soggetti esterni, perciò non sottoposti alla sua autorità. Essi saranno portatori di interessi e istlanze 
+solo in parte coincidenti con quelli dell'azienda in questione, ma più spesso diversi e talvolta opposti: tali parti interessate 
+potrebbero comprendere, oltre allo stesso Ente Tecnico, vari competitor, gli utilizzatori dei prodotti, associazioni dei committenti, 
+altri gruppi di interesse. Il dilemma sarà: come gestire un processo del sistema qualità che si sviluppa saolo in parte dentro il 
+perimetro di autorità dell'organizzazione, mentre per un'altra buona parte ha luogo fuori da tale perimetro? In altri termini, come 
+affrontare un processo critico per l'organizzazione, senza disporre della completa ownership di processo? La soluzione consisterà 
+nel confronto costruttivo fra portatori di interessi non coincidenti, alla ricerca di una soluzione negoziata, mediamente accettabile 
+per le parti. 
+Ciò sarà tanto più praticabile quanto più verranno stabiliti obieltivi, per il processo, lali da coprire una porzione adeguata delle 
+esigenze espresse da ciascuna delte rilevanti parti interessate. 
+Lo schema generale precedentemente presentato in fig. 3 diventa, per l'esempio considerato, il seguente: 
+
+FALIORE VALUTAZIONE DI 
+DEL CONTESTO: RILEVANZA, PER LE DETERMINAZIONE 
+
+QUADRO TECNICO- STRATEGIE E LE DI RISCHI E 
+NORMATIVO DI FINALITA' DELL' OPPORTUNITA' 
+SETTORE ORGANIZZAZIONE 
+
+RILEVANTI 
+
+AREA DELLA 
+NEGOZIAZIONE 
+
+PROCESSO DI NORMAZIONE TECNICA 
+
+CONTESTO ESTERNO SISTEMA QUALITA' 
+
+Fig.14 Un esempio di estensione dei confini del sistema qualità, per ricomprendere un processo correlato a un fattore esterno
+rilevante 
+
+REQUISITI RILEVANTI 
+DELLE PARTI INTERESSATE 
+
+OBIETTIVI DEL PROCESSO DI DI 
+PARTECIPAZIONE AL PROCESSO 
+
+NORNATIVO 
+
+POLITICA E OBIETTIVI 
+DEL SISTEMA QUALITA' 
+
+
+
+O.,ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Faltori del contesto e parti inleressate 45 
+
+9. L'identificazione delle rilevanti parti interessate e dei relativi requisiti 
+
+Una volta che i dati relativi al contesto siano stati raccolti, che ne sia stata verificata l'adeguatezza, che 
+opportune sintesi siano state prodotte per rendere tali dati interpretabili e fruibili, il quadro delle conoscenze 
+così ottenuto dovrebbe consentire di definire: 
+— l'effettivo repertorio delle pertinenti parti interessate (a seguito dell'indagine, potrebbero emergere nuovi 
+
+soggetti o entità del contesto, in precedenza non considerati), 
+— _ il sistema di esigenze e aspettative. 
+La ISO 9000 e altri documenti sui sistemi di gestione” forniscono esempi di possibili parti interessate (fig. 15). 
+Tuttavia ogni organizzazione dovrebbe determinare un proprio repertorio di soggetti rilevanti per il Sistema 
+Qualità. 
+
+Clienti : ) i © | © 
+Organizzazioni-madre o collegate | i 
+
+Consumatori o beneficiari 
+
+Proprietari 
+
+Azionisti 
+
+Persone dell’organizzazione o operanti per essa 
+
+Fornitori 
+
+Banche 
+
+Autorità legislative, enti regolatori 
+
+Franchisor 
+
+Sindacati 
+
+Partner 
+
+Collettività 
+
+Società | | ® 
+Associazioni commerciali e professionali 
+
+Organizzazioni non governative 
+
+Organizzazioni e attività vicine, nel territorio 
+
+Concorrenti 
+
+Fig.15  Esempi di parti interessate, secondo la ISO 9000:2015 e altre norme e documenti pertinenti 
+
+Per fare ciò può essere opportuno partire dalla mappatura dei processi "critici" dell'organizzazione, cioè 
+quelli che, a fronte degli obiettivi strategici da conseguire, sono i più importanti, e che necessitano di mag- 
+giore controllo. 
+
+29 In questo caso sono state considerali e messi a confronto i seguenti documenti: 
+UNI EN ISO 9000:2015 - Sistemi di gestione per la qualità - Fondamenti e vocabolario 
+JSO/DTS 8002:2015 - Qualily management systems — Guidelines for the application ol ISO 9001:2015 
+JCTG TF4/N27 - Concept document to support of Annex SL
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 1/@nadérh afà Qualità: Quaderno 2 
+
+| confini di tali processi saranno attraversati da una varietà di elementi che possono essere classificati, sche- 
+maticamente, in: 
+
+input 
+output 
+
+vincoli 
+
+risorse 
+
+Per individuare le parti interessate 
+è opportuno partire dall'individuazione 
+dei processi "critici", 
+cioè di quelli più importanti, 
+a fronte degli obiettivi strategici, 
+e che necessitano di maggiore controllo. 
+
+Dove, per le applicazioni qui in discussione: 
+L'input comprende i prodotti, tangibili o intangibili, o i servizi, che entrano nel processo, per essere messi 
+a disposizione del processo successivo nella forma adatta a subire ulterioriì trasformazioni. L'input corri- 
+sponde in genere all'output generato, anche non intenzionalmente, da uno o più processi che si trovano 
+a monte del processo considerato. 
+L'output comprende i prodotti, tangibili o intangibili, o i servizi, che scaturiscono anche in modo non in- 
+tenzionale dal processo, per entrare in uno o più processi successivi, del quale costituiranno input, nella 
+forma adatta a subire ulteriori trasformazioni o per essere utilizzati dal destinatario finale. 
+I vincoli includono tutte le variabili {(di tipo economico/finanziario, organizzativo, legale, strategico, tecni- 
+co, ecc.) che costituiscono un impedimento o un limite all'effettuazione delle attività del processo. 
+Le risorse comprendono le condizioni (di tipo economico/finanziario, organizzativo, legale, strategico, 
+tecnico, ecc.) che alimentano e/o consentono e/o agevolano l'effettuazione delle attività del processo. 
+
+A partire da tali elementi sarà possibile identificare, quali rilevanti parti interessate: 
+i soggetti che producono input anche in modo non intenzionale e, quando rilevante, i soggetti che sono 
+in relazione con essi 
+i soggetti che ricevono output anche non intenzionali e, quando rilevante, i soggetti che sono in relazione 
+Con essi 
+i soggetti che esercitano o potrebbero esercitare una funzione di vincolo 
+i soggetti che forniscono o potrebbero fornire risorse all'organizzazione
+
+
+
+O.ME.FA. S.p.A. 
+UNistore - 2016 - 371459 Fattori del conteesptaroli interessate 47 
+
+PARTI INTERESSATE 
+
+INPUT OUTPUT 
+LLI ; LI 
+| FORNITORI MATERIE PRIME ò “{ PRODOTTO FINITO RESP, LOGISTICA |&' 
+
+$ - 3 
+1) 
+:;"g" OUTSOURCER SEMILAVORATI l SEMILAVORATI REP, FINITURA È 
+
+ui ' = 
+4 DIP. PROGETTAZ. SPECIFICHE H EMISSIONI AMBIENTE = 
+
+i= E 
+E i L 
+E CLIENTI ORDINI i SERVIZI UTENTI A 
+
+[1a) 
+[ 
+|b  
+| 
+= 
+[ 
+[ 
+1] 
+<T 
+[14 
+U 
+= 
+
+PARTI INTERESSATE 
+
+Fig. 16 Esempi di Input, Qutput, Vincoli, Risorse, relativi a un processo generico, e relativi esempi di parti interessate 
+
+Per gli scopi di tale identificazione può essere utile considerare quanto segue: 
+
+a) Per "soggetti" si intendono qui individui, o gruppi di individui, o organizzazioni, o altre entità nei cui con- 
+fronti la relazione può essere diretta o mediata attraverso loro rappresentanti*°. 
+
+b) Le parti interessate potranno fare parte del contesto esterno dell'organizzazione, oppure del contesto 
+interno qualora le interfacce considerate siano quelle stabilite fra il processo considerato e altri processi 
+del sistema qualità dell'organizzazione. 
+
+c) Le parti interessate "esterne" non sono esclusivamente quelle visibili al livello delle interfacce del pro- 
+
+30 Secondo la UNI ISO 26000:2010 - Guida alla responsabilità sociate, l'organizzazione dovrebbe esaminare se i gruppi che dichiarano di parlare a no- 
+me di stakeholder specifici o le cause specifiche di cui si fanno promotori sono rappresentativi e credibili. In alcuni cast, non è possibile rappresenta- 
+re direttamente degli interessi importanti. Per esempio, i bambini raramente possiedono o controltano gruppi organizzati; così come fauna e flora non 
+sono in grado di farlo. In questa situazione, un'organizzazione dovrebbe rivolgere la propria attenzione al punto di vista di gruppi credibili che cercano 
+di proteggere tali interessi.
+
+VINCOLI 
+
+ENTI FINANZIATORI ENTI REGOLAZION 
+
+MANUTENTORI AMMINISTRAZIONE 
+
+DIPARTIMENTO HR PROCESS CWNER 
+
+ENTI TERRITORIALI ECONOMIE DI $SCALA CODICI DI CONDOTTA f BIREZIONE 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 20 @aadérA afà Quatità: Quaderno 2 
+
+cesso, ma comprendono, per quanto appropriato, anche i soggetti che potrebbero influenzarle o essere 
+influenzati da esse. In altri termini, si dovrà tenere conto tanto delle parti interessate "contigue” all'orga- 
+nizzazione, quanto di quelle che hanno con essa una relazione indiretta. 
+
+Sulla base dell'analisi delle interfacce sarà dunque possibile definire un elenco delle parti interessate, dal 
+quale partire per l'identificazione del relativo sistema di bisogni/aspettative, ove del caso servendosi di sup- 
+porti come quello costituito dalle "schede di analisi del contesto" presentate in precedenza (v. fig. 8). Ciò 
+dovrebbe essere fatto come opportuno, per mezzo di: 
+
+riesami condotti coinvolgendo le funzioni competenti dell'organizzazione; 
+analisi di dati ed esperienze; 
+confronto con organizzazioni concorrenti; 
+metodi strutturati di analisi e previsione, 
+CC. 
+
+In particolare, l'individuazione delle esigenze/aspettative andrebbe ove possibile completata e confermata 
+attraverso il coinvolgimento delle stesse parti interessate*!. Tale coinvolgimento risulterà prezioso anche ai 
+fini dell'efficace conduzione delle azioni successive. 
+
+Dai riesami e dai confronti con le parti interessate è probabile che emerga la necessità: 
+a) di un'ulteriore disaggregazione dei fattori e di una conseguente mappatura di dettaglio delle esigenze e 
+
+aspettative ad essi correlate, affinché sia possibile: 
+
+l'individuazione delle possibili convergenze delle parti interessate su specifiche esigenze/aspettative 
+una valutazione dell'intensità con cui ciascuna parte interessate esprime una determinata aspet- 
+tativa, e del potere negoziale della parte interessata in questione 
+una migliore valutazione dei rischi e delle opportunità associati a ciascuna relazione: parte inte- 
+ressata/aspettativa. 
+una gerarchizzazione di tali rischi/opportunità, come base per decidere quali fra essi andranno 
+affrontati Con maggiore urgenza 
+
+b) di una tipizzazione più dettagliata delle parti interessate, laddove una classificazione in categorie troppo 
+ampie risultasse non idonea a consentire l'individuazione di specifiche criticità. 
+
+Le figure nn. 17 e 18 sono un esempio di scomposizione, rispettivamente, dei fattori e delle parti interessate. 
+
+31 Da UNI ISO 26000: 2010: 
+
+$ 221 Coinvolgimento degli stakeholder: Attività intrapresa per creare opportunità di dialogo tra un'organizzazione e uno o più dei suoi stakeholder, 
+con lo scopo di fornire una base informata per le decisioni dell'organizzazione. 
+
+$ 5.3.3 Coinvolgimento degli stakeholder 
+
+Esistono vari motivi per un’organizzazione per coinvolgere î propri stakeholder. Il coinvolgimento degli stakeholdpeurò essere utilizzato per: 
+aumentare la comprensione da parte dell'organizzazione delle probabili conseguenze delle proprie decisioni e attività Su determinati stakeholder; 
+stabilire come incrementare al meglio gli impatti benefici delle decisioni e atlività dell'organizzazione e come diminuire gli impatti negalivi; 
+stabilire se le asserzioni dell'organizzazione riguardo la sua responsabilità sociale sono percepite come credibili; 
+aiutare l'organizzazione a riesaminare le proprie prestazioni in modo da migliorarle; 
+riconciliare i contlitti che coinvolgono i propri interessi, quelli degli stakeholdere le aspettative della società nel suo complesso; 
+affrontare il legame tra interessi degli stakeholder e le responsabilità dell’organizzazione conla società in senso ampio; 
+contribuire all'apprendimento continuo da parte dell'organizzazione; 
+adempiere agli obblighi legali {per esempio nei confronti dei dipendenti); 
+affrontare i conflitti di interesse, sia tra organizzazione e stakeholder sia tra i vari stakeholder; 
+fornire all'organizzazione i vantaggi di ottenere prospettive diverse; 
+aumentare la trasparenza delle proprie decisioni e attività; 
+creare partnership per il raggiungimento di obiettivi positivi per entrambe le parti.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parti interessate 49 
+
+Una volta identificate con opportuno grado di dettaglio le parti interessate e i corrispondenti requisiti, andreb- 
+be condotto un esame più approfondito dell'effettiva influenza che esse potrebbero esercitare sull'organiz- 
+zazione. Occorrerebbe a tal fine: 
+
+valutare il tipo e il grado di influenza che le parti interessate possono esercitare sull'organizzazione, 
+incluso il loro peso negoziale,; 
+comprendere le condizioni in cui tale influenza potrebbe manifestarsi; 
+stimare la probabilità che a determinati comportamenti organizzativi conseguano, direttamente o indi- 
+rettamente, reazioni, da parte di tali soggetti, tali da agevolare o ostacolare l'organizzazione nel perse- 
+guimento dei propri obiettivi nel sistema qualità; 
+prevedere l'evolversi, nel tempo, dell'influenza esercitata dalle parti interessate sull'organizzazione. 
+
+L'individuazione delle esigenze/aspettative 
+andrà ove possibile 
+completata e confermata 
+attraverso il coinvolgimento 
+delle parti interessate. 
+
+L'organizzazione dovrebbe considerare in questa fase la possibilità e la rapidità di cambiamenti (e le loro 
+più probabili combinazioni) riguardanti le parti interessate. Elementi soggetti a cambiamento potrebbero 
+comprendere, per esempio: 
+
+l'identità stessa delle parti interessate; 
+il loro peso negoziale nei confronti dell'organizzazione; 
+la natura (es.: competizione, conflitto, convergenza, ecc.) e l'intensità delle relazioni fra le parti interes- 
+sate. 
+
+Questo consentirà all'organizzazione di distinguere fra: 
+attuali parti interessate {per esempio su base "storica", per confronto con organizzazioni analoghe, per 
+esperienza dell'organizzazione, ecc.); 
+future (possibili) parti interessate (sulla base degli orientamenti strategici dell'organizzazione, delle poli- 
+tiche di sviluppo di prodotto e di mercato, delle tendenze del contesto, ecc.); 
+parti interessate emergenti, anche, ove opportuno, tramite l'analisi del quadro economico-produttivo 
+generale e delle sue possibili ricadute sul contesto di riferimento presente e futuro dell'organizzazione.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstogg - 20 1addrAafà Qualità: Quaderno 2 
+
+RILEVANTI PARTI INTERESSATE 
+
+3 
+: 4x E E4 EE  
+E & = o H = 
+4-Oo g O wx - 
+
+- C. ONTESTO ; : EI _ ESTERNO - ]i  % ==  WE  Ed  ù[  o2  EZ  2z  
+
+COMPONENTE | EO ECONOMICA E @ E Cd S aà 
+@51ALE  ESO AANAZ pot poz Po3 Po POS POS POT POE 
+
+IL MANTENIMENTO DEI FORNITORI NELLA VENDOR LIST 
+L E. 03.04.01 DELL'ORGANIZZAZIONE " H ai 
+
+L'AFFIDABILITÀ DELLA CATENA DI FORNITURA, AI FINI DELLA QUALITÀ' 
+jg E. 03.04.02 rEL PRODOTTO " HH H r 
+P/ OPPORTUNITÀ DI SVILUPPO E OCCUPAZIONE SUL TERRITORIO, 
+AA E- 03.04.03 ATTRAVERSO LA CREAZIONE E IL CONSOLIDAM. DELL'INDOTTO o L 
+5 E, 03,04,04 MIGLCIONTIONUORDELALE CMOMPEETENZE TESTEORNE - H H H 
+E VALORIZZAZIONE DEI TERRITORIO ATTRAVERSO LA SALVAGUARDIA 
+= E, 03.04.05 5} ORIGINE E TIPICITA' DI PRODOTTO - L LL LL 
+= RESILIENZA DEL SUPPLY NETWORK, A GARANZIA DELLA CONTINUITÀ' 
+|n—: E. 03.04.06 DEL SERVIZIO " - - - - 
+
+É E. 03.04,07 SALVAGUARDIA DEI DIRITTI DI PROPRIETÀ' INDUSTRIALE E DEI DATI " - H a - . n I 
+FORME COLLABORATIVE FRA FORNITORI, PER IL MIGLIORAMENTO DI 
+
+r{A E- 03-04.08 TECNOELPORESGTAIZIOENI nE : H 
+FI E.03.04.09 CHIAREZZA DELLE SPECIDFI IFORCNIHTUERA H 
+[an]  
+- E. 03.04.10 REGONEI LPAGAMENRTI DIEI FOTRNIÀTORI |s] - " H NM | 
+
+P RELAZIONI STRUTTURALI CON LE ASSOCIAZIONI RAPPRESENTATIVE 
+% E, 03.04.11 nE FORNITORI " H n " 
+a] E. 03.04,12 AFFIDABILITÀ ECONOMICA DEI FORNITORI | H = m " H 
+LL 
+a E. 03.04,13 COSTI DI APPROVVIGIONAMENTO u H H a = 
+
+Fig.17  Esempio di matrice delle correlazioni positive fra parti interessate e requisiti, per una generica organizzazione. La 
+dimensione dei simboli posti in ciascuna intersezione indica correlazioni forti, medie, deboli o assenti {casella vuota). L'esempio 
+riguarda l'aspetto "gestione efficiente della rete di fornitura" 
+
+L'organizzazione dovrebbe tenere anche conto dell'eventualità che gli interessi e le istanze delle parti inte- 
+ressate possano contrapporsi, determinando situazioni di conflitto, effettivo o potenziale, fra esse o istanze 
+di segno diverso provenienti dalla stessa parte interessata®°. 
+L'organizzazione dovrebbe intercettare i "punti di conflitto". Tali situazioni dovrebbero essere riconosciute 
+- prima di determinare la risposta al sistema di aspettative esterne e interne, e i processi necessari all'attua- 
+zione delle strategie - con il supporto, ove possibile, di rappresentazioni grafiche (ad esempio: mappe dei 
+processi, matrici di compatibilità, matrici di correlazione) e ove opportuno con l'adozione di idonei metodi di 
+simulazione e ottimizzazione. Nell'individuare le situazioni conflittuali si dovrebbe tenere conto delle relazioni 
+attuali e future. 
+
+Una volta che all'organizzazione sia disponibile un quadro delle compatibilità/incompatibilità fra i soggetti 
+rilevanti del contesto di riferimento, essa dovrà essere in grado di mitigare gli eventuali contlitti, portandoli a 
+livelli accettabili, in relazione alla necessità di realizzare i propri obiettivi per la qualità. 
+
+Questo potrebbe richiedere, ancora una volta, elevate capacità di tipo negoziale: l'organizzazione dovrà 
+essere in grado individuare e saper proporre ai propri interlocutori scelte e soluzioni tali da generare effetti 
+
+32 Da UNI ISO 268000:2010: ... diversi stakeholder hanno svariati interessi che talvolta possono essere in competizione tra loro. Per esempio, gli interes- 
+si dei residenti di una comunità potrebbero includere gli impatti positivi di un'organizzazione, come l’occupazione, ma anche gli impatti negativi della 
+stessa organizzazione, come l'inquinamento,
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 
+
+mediamente soddisfacenti per ciascuno di essi, oltre che funzionali al raggiungimento del successo e al suo 
+mantenimento nel tempo. 
+
+ATTIVITA' COMMERCIALI 
+
+PROGETTAZIONE E SVILUPPO 
+
+APPROVVIGIONAMENTO 
+
+REALIZZAZIONE PRODOTTO/SERVIZIO 
+
+PRESERVAZIONE 
+
+POST-CONSEGNA 
+
+GESTIONE HR 
+
+GESTIONE INFRASTRUTTURE 
+
+RIESORSE PER MISURAZIONE E MONITORAGGIO 
+
+GESTIONE COMPETENZE 
+
+GESTIONE DELLE COMUNICAZIONI 
+
+GESTIONE BDELLE INFORMAZIONI DOCUMENTATE 
+
+BUDGETING 
+
+SISTEMIINFORMATIVI 
+
+GESTIONE DELLE RELAZIONI CON IL CLIENTE 
+
+AMMINISTRAZIONE 
+
+ANALISI DI SCENARIO 
+
+PIANI STRATEGICI 
+
+RISFRUTTURAZIONI ORGANIZZATIVE 
+
+PIANI INDUSTRIALE 
+
+RELAZIONI POLITICO-ISTITU7'7 
+
+GESTIONE DEGLI AP” 
+
+RISK MANAFT 
+
+Fig. 18 Esempio di scomposizione di una categoria di "parte interessata" {in questo caso, i fornitori), in sottogruppi significativi 
+per il Sistema Qualità
+
+FORNITORI ESTERNI 
+
+PER TIPO DI FORNITURA 
+
+PROCESSI DI PROCESSI 
+MANAGEMENT PROCESSI DI SUPPORTO OPERATIVI 
+
+
+
+O.ME.FA. S.p.A. 
+
+UNI Istoga - 20 1vaddri/afk Qualità: Quaderno 2 
+
+4. La determinazione dei rischi e delle opportunità connessi ai fattori del contesto 
+e alle aspettative delle parti interessate 
+
+Una volta determinati i fattori del contesto, e le esigenze e aspettative rilevanti delle parti interessate, l'orga- 
+nizzazione dovrebbe: 
+a) definire e gerarchizzare i rischi e le opportunità connessi ai fattori del contesto e alle aspettative delle 
+
+parti interessate, per quanto rilevanti rispetto agli obiettivi del Sistema Qualità; 
+b) pianificare e attuare le azioni per affrontare efficacemente tali rischi e opportunità. 
+Riguardo al punto a), la valutazione dei rischi e delle opportunità può essere agevolata mediante l'applica- 
+zione di opportuni strumenti per la gestione del rischio (es.: What if? matrice dei rischi, FMEA, ecc.). 
+
+L'organizzazione dovrà tenere conto 
+dell'eventualità che le istanze 
+delle parti interessate possano divergere, 
+determinando situazioni di contlitto 
+fra diversi soggetti o istanze di segno diverso 
+provenienti dalla stessa parte interessata. 
+
+Riguardo al punto b), le azioni per affrontare le esigenze e le aspettative delle parti interessate dovrebbero 
+costituire nel loro insieme una "risposta bilanciata" alle stesse esigenze e aspettative. A tale scopo, l'organiz- 
+zazione dovrebbe considerare i seguenti aspetti: 
+
+1. | bisogni e le aspettative delle parti interessate dovrebbero essere interpretati come "sistema", e non 
+come semplice somma, considerando tra l'altro: 
+
+—  le caratteristiche complessive di tale sistema, determinate, per esempio, da numero e tipo dei soggetti 
+componenti, oltre che dalla natura, sistematicità, criticità, intensità delle relazioni interne che lo caratte- 
+rizzano; 
+
+- il modo in cui il sistema, nel suo complesso, evolve, dal punto di vista dei comportamenti; 
+- _ l'orientamento complessivo del sistema e gli effetti su di esso che potrebbero scaturire dalle azioni dei 
+
+soggetti e degli enti che lo costituiscono. 
+2, l sistema di cui sopra, e il contesto (di cui l'organizzazione è parte) cambiano secondo dinamiche non 
+
+necessariamente lineari: di ciò l'organizzazione deve tenere conto nell'individuare orizzonti ragionevoli 
+di previsione per fronteggiare e gestire efficacemente il cambiamento. 
+
+3. La capacità di affrontare i cambiamenti del sistema di aspettative nel lungo periodo deriva, tra l'altro: 
+-  dalla robustezza della vision; 
+-  dalla capacità di agire costruttivamente nei confronti delle parti interessate rilevanti, ai fini della realiz- 
+
+zazione della stessa vision; 
+-  dalla disponibilità e dalla sistematica utilizzazione di sensori affidabili per cogliere le tendenze al muta- 
+
+mento, prima che queste si manifestino;
+
+
+
+O.ME.FA . S.p.A. 
+UNIstore - 2016 - 371459 Faltori del contesto e parti interessate 53 
+
+dalla capacità predittiva dell'organizzazione; 
+dalla flessibilità e capacità di adattamento della stessa; 
+dall'applicazione del modello PDCA, esteso al contesto dell'organizzazione. 
+In linea di massima, nell'elaborare una risposta "bilanciata” alle aspettative delle rilevanti parti interessa- 
+te, l'organizzazione dovrebbe assicurare: 
+che la soddisfazione delle istanze provenienti da una o più fra esse non rappresenti una perdita per le 
+altre; 
+che la risposta complessiva sia vantaggiosa ai fini dell'efficacia del sistema qualità; 
+che la risposta complessiva sia il migliore compromesso, e venga riconosciuto come tale, per ciascuna 
+delle parti interessate. 
+
+Le azioni per affrontare le esigenze e le aspettative 
+delle parti interessate, 
+dovrebbero delineare nel loro insieme 
+un profilo bilanciato di risposta. 
+Esso può rappresentare il framework 
+per un sistema di gestione integrato. 
+
+Benché il cliente sia solo una fra le parti interessate, in un Sistema di Gestione per la Qualità le sue 
+esigenze e aspettative sono prioritarie, rispetto alle altre, così come i requisiti cogenti. 
+
+La gestione delle relazioni fra l'organizzazione e le parti interessate non può essere affrontata in modo 
+unidirezionale dall'organizzazione, ma come si è visto in precedenza è spesso frutto di una mediazione; 
+tale mediazione risulterà agevolata: 
+—  da un buon sistema di comunicazione; 
+-  dalla consapevolezza delle proprie e altrui politiche e obiettivi; 
+
+-  dalla condivisione degli interessi di lungo periodo; 
+
+-  dalla propensione alla negoziazione; 
+- dall'esistenza di regole, standard e prescrizioni di riferimento, dalla loro conoscenza e compren- 
+
+sione e dalla volontà/impegno per la loro applicazione. 
+
+Il sistema delle relazioni andrebbe pertanto pianificato, definendo: 
+
+— {a politica delle relazioni (in base alla quale tali relazioni dovrebbero caratterizzarsi in termini di 
+distanza/prossimità, di rigidezza/flessibilità, di reciprocità, di partnership, ecc.); 
+
+— _ ipiani di relazione, attraverso i quali stabilire l'evoluzione prevista e/o desiderata del sistema di relazioni®, 
+
+Le relazioni dovrebbero essere supportate da un idoneo sistema di comunicazioni con le parti interessate. 
+
+33 Utili potrebbero essere inoltre i too!s associati a norme sulla e responsabilità sociale sostenibilità quali la ISO 26000 {con riferimento ad es. allo sta- 
+keholder involvement), la quale a sua volta richiama altri schemi e approcci la cui consultazione potrebbe fornire qualche ulteriore orientamento.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstgo  - 20 1@oaderafh Qualità: Quaderno 2 
+
+L'organizzazione dovrebbe, a tal fine: 
+
+—  definire la politica delle comunicazioni (compresi il cosa e il come comunicare); 
+
+— _ stabilire gli obiettivi della comunicazione; 
+— valutare l'attuale assetto delle comunicazioni; 
+
+—  individuare le reti di comunicazione esistenti e previste; 
+
+— stabilire modalità e interfacce per la comunicazione; 
+
+— attrezzarsi con mezzi, strumenti, competenze (incluse le doti diplomatiche e di negoziazione) e 
+procedure per la gestione delle interfacce e per le comunicazioni; 
+
+— _ pianificare i processi di comunicazione; 
+
+—  definire sistemi e processi di controllo e monitoraggio dell'efficacia delle comunicazioni; 
+
+— condurre riesami e, dove necessario, azioni di miglioramento dei processi di comunicazione. 
+
+7. l profilo complessivo di risposta alle istanze delle diverse parti interessate può rappresentare il fra- 
+mework di riferimento per un "sistema integrato" ({Es. Qualità-Sicurezza-Ambiente-Responsabilità So- 
+ciale). 
+
+5. Attuare le azioni 
+
+In che modo l'organizzazione può ridurre i rischi di interferenza negativa, da parte del contesto, sulla possi- 
+bilità di realizzazione delle proprie strategie e politiche? In che modo è possibile valorizzare le opportunità, 
+estraendone il massimo vantaggio? 
+Per dare risposta a queste domande, una volta identificate le minacce e le opportunità, al presente e in 
+prospettiva futura, l'organizzazione dovrebbe valutare la possibilità di mutare la configurazione del contesto 
+(approccio propositivo) e/o di attrezzarsi nel modo migliore, allo scopo di adattarvisi (approccio reattivo), 
+scegliendo la più efficace combinazione fra tali due approcci. Fra le azioni che l'organizzazione potrebbe 
+considerare, sono comprese: 
+
+Nell'ambito degli interventi di tipo propositivo, come si è in parte già visto: 
+— la negoziazione con le parti interessate, per stabilire accordi e concertare azioni di comune interesse; 
+— _ la partecipazione al processo normativo e di regolazione, attraverso il contributo tecnico, la condivisione 
+
+di dati e informazioni, la segnalazione di esigenze e opportunità, nei confronti dei soggetti regolatori; 
+— la gestione dei conflitti fra interessi contrastanti, per creare le condizioni di una risposta bilanciata e 
+
+coerente alle esigenze delle parti interessate; 
+— _ la promozione di valori, politiche e obiettivi, in modo da ottenere legittimazione e approvazione da parte 
+
+del contesto; 
+- ecc, 
+Dal punto di vista delle azioni di tipo reattivo: 
+— _ la revisione e l'adeguamento dei valori, della vision e delle strategie e politiche, per renderli maggior- 
+
+mente condivisibili da parte delle pertinenti parti interessate {ciò può comprendere una maggiore foca- 
+lizzazione sugli aspetti etici, sulle politiche di salvaguardia ambientale o di ottimizzazione nell'impiego 
+delle fonti energetiche, ecc.); 
+
+— _ la costituzione di alleanze con le parti interessate, attraverso forme di associazione e cooperazione (per 
+esempio, attraverso la realizzazione di consorzi con altre organizzazioni, la condivisione dei vantaggi 
+economici con il proprio personale, ecc.); 
+
+- l'assunzione congiunta delle decisioni, attraverso, per esempio, opportune forme di concertazione fra le
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e parli inferessate 55 
+
+azioni dell'organizzazione e le azioni dei soggetti regolatori; 
+- l'adeguamento dei processi, dei prodotti e delle strutture dell'organizzazione; 
+- ecc. 
+
+Nell'affrontare le minacce e le opportunità, 
+l'organizzazione dovrebbe valutare 
+la possibilità di mutare 
+la configurazione del contesto 
+e/o di adattarvisi, 
+scegliendo la più praticabile 
+ed efficace combinazione 
+fra tali due approcci. 
+
+Ove necessario, l'insieme dei comportamenti di tipo "proattivo" e reattivo*!, può essere integrato in una 
+nuova identità valoriale e in strategie coerenti, e originare gli opportuni cambiamenti organizzativi, culturali, 
+tecnologici, all'interno dell'organizzazione. Il nuovo "assetto" dovrebbe essere oggetto di comunicazione 
+verso il contesto, e continuamente monitorato, per verificarne l'efficaciea definire, ove necessario, gli ulteriori 
+adattamenti. 
+
+34 Schematismo qui utile solo per semplicità espositiva, essendo evidentemente molto più sfumalta la gamma delle possibili azioni orientate a realizzare 
+il migliore equilibrio fra organizzazione e contesto.
+
+
+
+O.ME.FA. S.p.A. 
+UNIsto & - 20 1@naddrb ffà Qualità: Quaderno 2 
+
+6. Il monitoraggio e il riesame 
+
+Dovrebbe essere condotto il continuo monitoraggio del contesto, delle parti interessate e dei processi®, per 
+assicurare che il Sistema Qualità sia aggiornato, ove necessario, per tenere conto dei cambiamenti. 
+
+Il monitoraggio e il riesame del contesto, 
+delle parti interessate 
+e dei processi messi in atto 
+per affrontare i corrispondenti 
+rischi/opportunità, 
+dovrebbero fornire informazioni 
+sull'adattività dell'organizzazione. 
+
+L'insieme delle informazioni e dei dati, raccolto, analizzato e interpretato per aggiornare il "profilo di risposta" 
+bilanciato dell'organizzazione, nei confronti del contesto, andrebbe sistematicamente sottoposto a riesa- 
+mes*®, fra i cui input rientreranno le informazioni di ritorno dalle parti interessate (incluso il cliente), raccolte 
+con idonee tecniche di rilevazione e analisi e, come si è detto, attraverso il coinvolgimento delle stesse parti 
+interessate, per quanto appropriato. 
+
+Il monitoraggio e il riesame del contesto, delle parti interessate, e dei processi messi in atto per affrontare i 
+corrispondenti rischi/opportunità, dovrebbero focalizzarsi sull''adattività" dell'organizzazione: essa dovrebbe 
+essere valutata mediante l'impiego di opportuni indicatori, fra cui: 
+
+1. La reattività ai mutamenti del contesto, comprensiva di: 
+— _ tempestività nella percezione del mutamento e nella raccolta dei dali delle informazioni che lo descrivono, 
+- rapidità del processo analitico e di assunzione delle decisioni, 
+- immediatezza per la messa in atto di quanto stabilito, 
+
+35 Da UNI EN ISO 9004:2009, $ 8.4 (“Analisi"): ... L'organizzazione dovrebbe monitorare e mantenere le informazioni pertinenti, ed analizzare i poten- 
+ziali impatlti sulla propria strategia e sulle proprie politiche. L'analisi delle informazioni raccolte dovrebbe permettere di assumere decisioni basate su 
+dali di fatto, relativamente ad aspetti di strategia e di politica quali: 
+— _ le modifiche potenziali nelle esigenze e nelle aspetltative delle parti interessate, nel lungo periodo; 
+
+i prodotti e le attività esistenti che al momento forniscono il massimo valore per le sue parti inleressate; 
+i nuovi prodotti e processi necessari a soddisfare le multevoli esigenze ed aspettative delle sue parti interessale; 
+l'evoluzione della domanda peri prodotti dell'organizzazione, nel lungo periodo; 
+l'influenza delle tecnologie emergenti sull'organizzazione; 
+le nuove competenze che polrebbero essere necessarie; 
+le modifiche che si possono prevedere nei requisiti cogenti, o nei mercati del lavoro e nelle altre risorse, che potrebbero influire sull'organizzazione. 
+
+36 Da: UNI EN ISO 9004:2009, p.to 8.5 - Riesame delle informazioni provenienti da monitoraggio, misurazione ed analisi: L'alta direzione dovrebbe utiliz- 
+zare un approccio sistematico per riesaminare le informazioni disponibili e per assicurare che le informazioni siano utilizzale per il processo decisio- 
+nale (vedere il punto 4.2). 
+Possono essere raccolli dati da varie fonti, quali: 
+— l monitoraggio del contesto dell'organizzazione; 
+— _ le misurazioni delle prestazioni dell'organizzazione, compresi gli indicatori chiave di prestazione; 
+
+le valutazioni dell'integrità e della validità dei processi di misurazione; 
+i risultati degli audit interni, delle attività di autovatutazione e di benchmarking; 
+Ja valutazione del rischio; 
+e informazioni di ritorno da clienti e da altre parti interessate.
+
+i 1 i 1 IA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Fattori del contesto e patti interessate 57 
+
+tempi di valutazione degli effetti, 
+ecc. 
+l'efficacia delle azioni di adattamento e reazione, rappresentata per esempio: 
+dall'effettivo grado di riallineamento fra comportamenti/assetti organizzativi e variazioni del contesto, 
+dai risultati conseguiti, in termini di benefici misurabili per l'organizzazione e per le pertinenti parti inte- 
+ressate, 
+dal grado di mitigazione dei rischi connessi alle variazioni intervenute o previste, 
+dal livello di realizzazione delle nuove opportunità, 
+eCcc. 
+
+L'organizzazione dovrebbe assicurare e verificare che sia mantenuta la congruenza del sistema di gestione, 
+a fronte dei mutamenti e delle conseguenti azioni di adattamento/risposta. 
+La capacità di adattamento dell'organizzazione, rispetto all'ambiente circostante, andrebbe inoltre ove pos- 
+sibile confrontata con le prestazioni di altre organizzazioni, operanti nello stesso contesto, come competitor, 
+o in contesti assimilabili. 
+
+Gli esiti del riesame dovranno comprendere le decisioni per il miglioramento del processo e una pianificazio- 
+ne per l'attuazione e la verifica di efficacia delle azioni stabilite.
+
+
+
+O.ME.FA. S.p.A. 
+UNIst5o8 - 20 l@nazdrArtafa Qualità: Quaderno 2 
+
+Conclusioni 
+
+A partire dall'esame dei requisiti del capitolo 4 {(Contesto dell'organizzazione) e in particolare di quelli che 
+riguardano i fattori del contesto e le parti interessate, è stato evidenziato, attraverso le argomentazioni pre- 
+sentate in questo quaderno e alcuni esempi applicativi, che: 
+— _ un Sistema Qualità conforme alla ISO 9001:2015 può costituire uno strumento per raggiungere gli obiet- 
+
+tivi per la qualità anche quando ciò dovesse richiedere una negoziazione con soggetti esterni, e quando 
+i relativi processi dovessero trovarsi in parte dislocati fuori dai confini di autorità dell'organizzazione. 
+
+-  la ISO 9001:2015, può costituire la piattaforma per l'istituzione di veri e propri "sistemi di gestione per 
+la sostenibilità'". 
+
+—  la relazione fra gestione per la qualità e sostenibilità dovrebbe essere intesa, tutte le volte che ne ri- 
+corrano le condizioni, come strumentale agli obiettivi di business anche di breve periodo, e non solo 
+finalizzata al raggiungimento di traguardi "su scala generazionale". 
+
+Per ottenere tali risultati, è tuttavia necessario che l'istituzione del sistema qualità rappresenti una scelta 
+strategica”” dell'organizzazione e che opportune competenze e strumenti vengano messi a disposizione per 
+la sua applicazione. 
+
+37 Da UNI ISO 9001:2015: 0.1 Generalità. L'adozione di un sistema di gestione per la qualità è una decisione strategica per un'organizzazione, che può 
+aiutare a migliorare la sua prestazione complessiva e costituisce una solida base per iniziative di sviluppo sostenibile.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 Faltori del contesto e parti interessate 59 
+
+Riferimenti bibliografici 
+
+| principali riferimenti utilizzati nell'elaborazione di questo Quaderno sono i seguenti: 
+
+—  Quaderno della Qualità n. 1, Struttura di Alto Livello e ISO 9001:2015 - Ed. UNI Dicembre 2015 
+- ISO/IEC Directives, Part 1 Consolidated ISO Supplement - Annex SL: Proposals for management sy- 
+
+stem standards - Sixth edition, 2015 /SL.9 High level structure, identical core text and common terms 
+and core definitions for use in Management Systems Standards/Appendix 2 
+
+— UNI EN ISO 9001:2015 - Sistemi di gestione per la qualità - Requisiti 
+— UNI EN ISO 9000:2015 - Sistemi di gestione per la qualità - Fondamenti e vocabolario 
+— UNI EN ISO 9001:2008 - Sistemi di gestione per la qualità - Requisiti 
+— UNI EN ISO 9004:2009 - Gestire un'organizzazione per il successo durevole - L'approccio della gestio- 
+
+ne per la qualità 
+- JTCG/TF4/N27 - Concept document to support of Annex SL 
+- ISO/TC 176/SC2/N1271 - ISO 9001:2015 Revision, Frequently Asked Questions (FAQs) 
+- ISO/TC 176/SC2/N1274 - The process approach in ISO 9001:2015 
+- ISQTC 176/SC2/N1275 - How Change is addressed within ISO 9001:2015 
+- 1SQO/TC 176/SC2/N1282 - ISO 9001:2008 to ISO 9001:2015 - Summary of Changes 
+- MIT and PwC Research Study, Supply Chain and Risk Management - MIT Forum for Supply Chain 
+
+Innovation - 2013 
+-  Guidalberto Gagliardi, La PEST del XXI secolo, un'analisi a tutto campo, in: Amministrazione e Finanza, 
+
+5/2013 
+- ISO/DTS 9002:2015 - Quality management systems — Guidelines for the applicalion of ISO 9001:2015 
+- UNI ISO 31000:2010 - Gestione del rischio - Principi e linee guida 
+- UNI ISO 26000:2010 - Guida alla responsabilità sociale 
+- Gigante N., Rivara M., Organizzazioni di successo. Comprendere e applicare la norma ISO 9004:2009 
+
+per raggiungere il successo e mantenerlo nel tempo, Ed. UNI - Gennaio 2011 
+—  Nicola Gigante - Qualità responsabile e futura ISO 9001, in U&C n.2 - febbraio 2013 
+— Rummiler G.A,., Brache A.P., Improving performance, Jossey-Bass Publisher - 2nd Edition 1995, (Trad iIt.: 
+
+Migliorare la pertormance aziendale, Franco Angeli Ed. 1996) 
+— _ Nuovo Dizionario di Sociologia - Edizioni Paoline, 1987; 
+— Luciano Gallino, Dizionario di Sociologia - Ed. UTET, 2004; 
+- Alfredo Mela, Max Pellegrini, Formazioni Sociali e Squilibri Interregionali, Guida Editori, 1978 
+- Brown, D., J. Dillard and R.S. Marshall. Triple Bottom Line: A business metaphor for a social construct, 
+
+Portland State University, School of Business Administration, 2006 
+- Kevin Foley, Theodor Zahner, Creating and Managing the Sustainable Organization: The Stakeholder 
+
+Way, SAI Global, Sydney 2009 
+
+Quando nel presente Quaderno è stato necessario richiamare o citare parti di tali documenti, non sempre 
+sono state utilizzate traduzioni testuali, per motivi di sintesi o per rendere la trattazione più discorsiva. 
+
+Per ogni altra utilizzazione delle fonti sopraccitate si rinvia pertanto alle versioni originali oppure, se presenti, 
+alle traduzioni approvate.
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459 
+
+L’autore 
+
+Nicola GIGANTE, Architetto e Sociologo, nato nel 1958, si occupa di 
+gestione per la qualità dal 1991. 
+
+— Ha effettuato a tut'oggi migliaia di audit ISO 9001 di parte terza e 
+ispezioni negli schemi della serie “ISO 17000”, ed ha gestito per 
+oltre 12 anni, come General Manager di una importante società di 
+audit, l’attività di circa 80 auditor professionisti, nei più diversi sche- 
+mi e settori di applicazione. 
+
+— È componente della Commissione Tecnica UNI: “Gestione per la 
+qualità e tecniche di supporto” - e coordinatore del Gruppo di Lavo- 
+ro Qualità (GL2). 
+
+— Fa parte dal 2007 della delegazione italiana neilavori dell'ISOTC 176, 
+per l’elaborazione delle norme “ISO 9000” e correlate, ed è capo delegazione dal 2009. 
+
+— Ha fatto parte del Gruppo Internazionale ISO che ha rielaborato | “Principi di Gestione per la 
+Qualità”, producendone l'attuale versione. 
+
+- Come esperto italiano, partecipa regolarmente dal 2009 alle attività del Gruppo di Lavo- 
+ro ISO TC176/SC2/WG 24, costituito con lo scopo di produrre la ISO 9001:2015 e, succes- 
+sivamente, la ISO/TS 9002 Quality management systems - Guidelines for the application of 
+ISO 9001:2015 ({In corso di elaborazione) 
+
+— È autore, insieme con Mauro Rivara, del testo: Organizzazioni di successo - Comprendere e 
+applicare la ISO 9004:2009 per raggiungere il successo e mantenerlo nel tempo - Ed. UNI - 2011 
+
+— Svolge attività di formazione, come docente di vari corsi presenti nel catalogo UNI, ed ha scritto 
+numerosi articoli sui temi del Quality Management. 
+
+La Segreteria dell'ISO TC 176/SC2 lo ha incaricato di guidare il Gruppo di Lavoro (WG22 - Inter- 
+pretations) che avrà d'ora in avanti il delicato compito di dirimere i dubbi interpretativi riguardanti la 
+nuova norma, e produrre di volta in volta risposta ufficiale e definitiva sulle questioni sollevate dagli 
+utilizzatori, a livello internazionale. A tal fine, ha recentemente coordinato la revisione del processo 
+di interpretazione, per renderlo più idoneo a corrispondere alle esigenze degli utilizzatori.
+
+
+
+O.ME.FA. $.p.A. 
+UNIstore - 2016 - 371459 
+
+© 
+ENTE ITALIANO 
+DI NORMAZIONE 
+
+Membro italiano ISO e CEN 
+www.uni.com 
+
+diffusione @uni.com

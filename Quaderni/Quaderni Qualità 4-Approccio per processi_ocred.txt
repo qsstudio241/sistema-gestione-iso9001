@@ -1,0 +1,3405 @@
+﻿ISNMIA ZLA QUALITÀ 
+
+L’approccio 
+per processi o 
+
+- 
+© D w ENTE ITALIANO 
+
+ù DI NORMAZIONE 
+
+O 
+L 
+L 
+LL] 
+
+Z 
+e: 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 
+
+©2016 UNI - Milano 
+
+TUTTI | DIRITTI SONO RISERVATI 
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi, fotocopie, microfilm, o altro senza il 
+consenso scritto dell’editore. 
+ALL RIGHTS RESERVED 
+No part of this work may be reproduced, stored in a retrieval system or transmitted in any form or by any means elec- 
+tronic, photocopying, recording or otherwise, without Ihe written permission from the publisher. 
+
+Questa pubblicazione non è un documento normativo. 
+La responsabilità dei concetti espressi è unicamente dell'autore. 
+
+Autore 
+Nicola Gigante 
+
+Editore 
+UNI - Ente Nazionale Italiano di Unificazione 
+Via Sannio, 2 - 20137 Milano 
+Italia 
+Tel. 02 70024,1 - Fax. 02 5515256 
+WWW.uni.com 
+
+12 edizione - Marzo 2016
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 
+
+| quaderni della qualità 
+
+Quaderno 4 
+
+L'approccio 
+per processi 
+
+di 
+
+Nicola Gigante
+
+
+
+O.ME.FA. $.p.A. 
+UNIstore - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 ii 
+
+Indice 
+
+Introduzione 1 
+
+| riferimenti ai processi nella ISO 9001:2015 5 
+
+Il decumento ISO/TC 176/SC 2/N1289 11 
+Scheda 1 - Classificazione dei processi....... o aa nn 24 
+
+Scheda 2 - Rappresentazione dei processi 32 
+
+Scheda 3 - Autorità di processo 40 
+
+Scheda 4 - Miglioramento dei processi 43 
+
+Scheda 5 - Indicatori di prestazione 57 
+
+Conclusioni 63 
+
+Appendice 64 
+
+Riferimenti bibliografici 67 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoreg - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 1 
+
+Introduzione 
+
+L''Approccio per processi" è un principio della gestione per la qualità. Per questo motivo non vi può essere 
+gestione per la qualità in assenza di questo approccio. Nella ISO 9000:2015, a proposito di tale principio, 
+si afferma che quando le attività sono interpretate e gestite come processi correlati che agiscono come un 
+sistema coerente, allora risultati costanti e prevedibili sono consequiti in modo più efficace e più efficiente’. 
+In particolare, comprendere attraverso quali percorsi il sistema di gestione per la qualità produce i suoi effetti 
+permetterà all'organizzazione di: 
+— meglio focalizzare gli sforzi sui processi chiave e sulle opportunità di miglioramento; 
+— _ Ottenere esiti costanti e prevedibili mediante un sistema di processi allineati; 
+- _ ottimizzare le prestazioni attraverso un'efficace gestione dei processi, un utilizzo efficiente delle risorse 
+
+e una riduzione delle barriere interfunzionali; 
+
+— fare sì che le parti interessate possano confidare maggiormente nella regolarità dei comportamenti 
+organizzativi, e nella efficacia ed efficienza dell'organizzazione?. 
+
+L'approccio per processi è un principio 
+della gestione per la qualità. 
+Perciò non c'è gestione per la qualità 
+in assenza questo approccio 
+
+Ancora, nella ISO 9000:2015 leggiamo: (p.to 2.4.1,2 - Sistema) Le organizzazioni cercano di comprendere 
+il contesto interno ed esterno per identificare le esigenze e le aspettative delle parti interessate rilevanti. 
+Queste informazioni sono utilizzate nello sviluppo del QMS per acquisire la sostenibilità organizzativa. Gli 
+output di un processo possono essere gli input di altri processi e sono correlati in una rete complessiva. Ogni 
+organizzazione ed il suo QMS sono unici, sebbene spesso sembri che siano costituiti da processi simili. 
+Tale relazione fra l'approccio per processi e l'organizzazione vista come entità organica immersa in un eco- 
+sistema mutevole, del quale essa dovrà affrontare rischi e opportunità, è da tempo ampiamente trattata nelle 
+teorie della gestione organizzativa. Oggi la ISO 9001:2015 ne fa oggetto di specifici requisiti, ai quali occor- 
+rerà dunque che le organizzazioni corrispondano sistematicamente, fornendo dimostrazione della efficacia 
+delle soluzioni adottate®. 
+
+Prima di inoltrarci nella presentazione di alcune fra tali possibili soluzioni e delle logiche che dovrebbero 
+sostenerne l'individuazione, è utile richiamare brevemente quanto è stato scritto in proposito da Rummler 
+
+1 Da ISO 9000.2015: QMPs - 2.3.4 Approccio per processi - 2.3,4,1 Enunciazione. 
+
+2 Da ISO 9000.2015: QMPs - 2.3.4 Approccio per processi - 2.3.4.3 Benefici fondamentali. 
+
+3 Si vedano, in proposito, i Quaderni della Qualità nn. 1 e 2 (gennaio-febbraio 2016 - Ed. UNI), rispettivamente relativi ai "fattori del contesto e parti in- 
+teressate" e al "Risk Based Thinking".
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstoge - 20 1@)naddarfAà Qualità: Quaderno 4 
+
+e Brache nel loro "Improving performance"*. Secondo gli autori, ogni strumento per il miglioramento delle 
+performance organizzative, a partire dalla trasformazione della visione tradizionale dell'organizzazione come 
+struttura composta da "silos" funzionali, a una visione orizzontale dell'organizzazione, nella quale i processi 
+"tagliano" i confini delle funzioni (V. Fig.1), deve basarsi sull'idea che le organizzazioni si comportano come 
+meccanismi adattivi. 
+
+REQUISITI DEL 
+CLIENTE E 
+
+DELLE ALTRE SODDISFAZIONE 
+PARTI DEL CLIENTE 
+
+INTERESSATE 
+RILEVANTI 
+
+Fig.1 | processi "attraversano" le funzioni 
+
+L'organizzazione come "sistema di processi": 
+—  Cconverte varie risorse in ingresso (input), trasformandole in prodotti e servizi in uscita (output), che ven- 
+
+gono consegnati ad altri sistemi riceventi, o mercati 
+— fornisce ai proprietari e agli azionisti un valore finanziario, nella forma di capitale o dividendi 
+- è guidata dai propri criteri e feedback interni, ma sono le informazioni di ritorno dal mercato che in ultima 
+
+analisi la orientano 
+- infine, dispone di un meccanismo di controllo, il management, che interpreta e reagisce ai feedback 
+
+interni ed esterni, in modo che essa si mantenga in equilibrio con l'ambiente esterno®, come risultato di 
+quella forma dell'intelligenza organizzativa che si può definire “adattività" dell'organizzazione. 
+
+L'intero scenario di business si svolge nell'ambiente socio-economico-politico di riferimento, come mostra 
+l'immagine in fig.2, nella quale sono identificate le principali componenti di un generico ecosistema, ed evi- 
+denziato il meccanismo di adattamento a tali componenti in continua trasformazione. 
+
+4 Rummler G.A., Brache A.P., improving performance, Jossey-Bass, 2nd Ed. 1995. 
+
+5 L'impiego intelligente di tali feedback, secondo gli autori, sta alla base di ciò che è stata definità "learning organization" (Senge P The Fifth Discipline: 
+The art and Practice of the Learning Organization - New York: Doubleday, 1990).
+
+
+
+O.ME.FA. $.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 3 
+
+Generlc] fattori del contesto In grado di influenzare l'organizzazione: 
+{Es.: Politici, Economici, Sociali, Tecnologici, Legali, Ambiaentall, ecc.) 
+
+AA AA AA AA A 
+INPUT ORGANIZZAZIONE 
+
+come sistema di processi RISULTATI PROPRIETARI 
+" Risorse finanziarie ECONOMICI 
+
+r FEEDBACK AZIONISTI 
+
++ - OUTPUT 
+
+) 
+aÒ 
+
+ORDINI E  
+LL 
+= 
+
+PRODOTTI/SERVIZI 
+CONCORRENTI 
+
+Fig2  Organizzazione come sistema adattivo (rielaborata da: Rummler G.A., Brache A.P, Improving performance, 
+Jossey-Bass, 2nd Ed. 1995, Fig. 2.4} 
+
+Ma cosa vuol dire, in pratica, in questo scenario, adottare un "approccio per processi"? Cosa esattamente 
+viene richiesto alle organizzazioni, a tale proposito? E come le organizzazioni possono trarre vantaggio dal 
+soddisfacimento dei requisiti della ISO 9001:2015 che riguardano i processi? 
+
+Con il termine "approccio per processi", sì intende definire l'adozione, nell'ambito dell'organizzazione, di un 
+sistema di processi, unitamente alla loro identificazione, interazione e gestione. L'approccio per processi si 
+basa sul presupposto che un’organizzazione, per funzionare in modo efficace ed efficiente, deve definire e 
+gestire numerose attività tra loro collegate, e che essa genera valore attraverso i suoi processi, e non me- 
+diante le sue funzioni®. 
+
+La maggior parte degli elementi della performance organizzativa sono dunque il frutto di processi interfun- 
+zionali, le cui tre variabili sono le seguenti”: 
+-  Obiettivi dei processi 
+
+Struttura dei processi 
+Gestione dei processi 
+
+6 Tale concetto, nella sua espressione di Cross Functional Management, è uno dei cardini della "Direzione per Politiche", processo chiave per la realiz- 
+zazione del Company Wide Quality Control. Questo processo manageriale è stato messo a punto nel 1960 alla Toyota, dal prof. Ishikawa (Rit.: Galga- 
+no A., La Qualità Totale. Il Company-Wide Quality Contro!l come nuovo sistema manageriale, Ed. Il Sole 240re Libri, 2$ Ed. 1993). 
+
+7 La parte che segue è tratta da Rummler-Brache (1995) (Op. cit.).
+
+RISORSE 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 20 1 @naddrAH/afa Qualità: Quaderno 4 
+
+Obiettivi dei processi 
+
+Gli obiettivi dei processi che entrano in contatto con il cliente esterno (es.: vendite, assistenza tecnica, fattu- 
+razione) devono derivare dagli obiettivi dell'organizzazione e dalle esigenze del cliente stesso. 
+
+Analogamente, per i processi rivolti all'interno (es.: budgeting, reclutamento del personale, ecc.), gli obiettivi 
+devono essere guidati dalle necessità del cliente interno, 
+Gli obiettivi di funzione andranno determinati solo dopo aver compreso il contributo delle funzioni ai processi 
+di appartenenza. 
+
+Ad una prima osservazione, 
+le organizzazioni risultano composte da funzioni. 
+Tuttavia per comprendere 
+come un'organizzazione lavora realmente, 
+dobbiamo osservarne i processi 
+
+Struttura dei processi 
+
+Una volta determinati gli obiettivi, bisogna assicurarsi che i processi siano strutturati affinchèé tali obiettivi ven- 
+gano raggiunti. | processi devono essere dei percorsi logici e semplici verso il conseguimento degli obiettivi. 
+
+Gestione dei processi 
+
+| processi andranno gestiti, affinché possano produrre i risultati attesi. La gestione riguarderà: 
+- i loro chiettivi, che determineranno gli obiettivi di ogni singola funzione attraverso la creazione di sotto- 
+
+obiettivi per ogni passaggio critico dei processi 
+— _ le prestazioni, attraverso: 
+
+l'ottenimento di regolari informazioni di ritorno da parte dei clienti, riguardo a quanto il processo 
+ha prodotto 
+
+— _ il controllo della performance dei processi, mediante parametri di misurazione stabiliti contestual- 
+mente agli obiettivi 
+
+— la comunicazione delle performance 
+—  la correzione dei punti di debolezza 
+
+— la ridefinizione degli obiettivi, in considerazione dei nuovi vincoli e delle nuove necessità dei clienti 
+—  le risorse, ovvero il supporto ad ogni passaggio del processo, mediante la messa a disposizione di per- 
+
+sone, attrezzature, risorse finanziarie, ai fini dell'ottenimento del risultato 
+—  le relazioni, attraverso la gestione degli "spazi bianchi" tra le diverse fasi dei processi, in particolare nei 
+
+passaggi fra una funzione e l'altra. 
+
+l
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 5 
+
+| riferimenti ai processi nella ISO 9001:2015 
+
+La ISO 9001:2015 adotta l'approccio per processi, che incorpora il Risk Based Thinking e il PDCAS. Ciò si 
+riflette nei numerosi riferimenti al concetto di processo e all'approccio per processi contenuti nella Norma, 
+a partire dalla sezione introduttiva (0.3 Approccio per processi - 0.3.1 Generalità), nella quale si promuove 
+l'adozione di un approccio per processi nello sviluppo, attuazione e miglioramento dell'efficacia del Sistema 
+Qualità°, allo scopo di accrescere la soddisfazione del cliente attraverso il soddisfacimento dei suoi requisiti. 
+Viene inoltre spiegato nella Norma che un approccio per processi implica la definizione sistematica dei pro- 
+cessi e delle loro interazioni, in modo da raggiungere i risultati attesi in accordo con la politica per la qualità 
+e con gli indirizzi strategici dell'organizzazione. 
+
+PUNTO DI PARTENZA PUNTO DI ARRIVO 
+
+L MATERIALI 
+PROCESSI A MONTE MATERIALI A ENERGIA PROCESSI A VALLE 
+
+INF'È’ÀÎ:‘Î;È i I INFORMAZIONI 
+per esempio, | i per esempio, 
+presso fornitori per esempio, s peresempio, presso clienti 
+(interni ed esterni), clienti, sottoforma i solloforma di {interni ed esterni), clienti, 
+altre parti interessate di materiali, prodotto, altre parti interessate 
+rilevanti risorse, requisiti i senvizio, rilevanti 
+
+n decisione 
+
+POSSIBILI CONTROLLI E PUNTI DI CONTROLLO PER MONITORARE E MISURARE LE PRESTAZIONI 
+
+Fig.3  Rappresentazione schematica degli elementi di un singolo processo (rielaborata da: UNI EN ISO 9001:2015, fig. 1) 
+
+Sempre nell'introduzione, la Norma rinvia al punto 4.4 per gli specifici requisiti da soddisfare, come condi- 
+zione necessaria per l'applicazione di un approccio per processi. |l requisito 4.4 (Sistema di gestione per la 
+qualità e relativi processì), contiene in effetti una serie di prescrizioni che segnano una significativa accentua- 
+
+8 Da: UNI EN ISO 9001:2015, $ 0.1: Questa Norma Internazionale adotta l'approccio per processi che incorpora il ciclo Plan Do Check Act, e il risk based 
+thinking {...) l'impiego congiunto del modello PDCA ed una focalizzazione sul Risk Based Thinking permettono di gestire i processi e il sistema come un'en- 
+tità unica. L'approccio per processi permette alle organizzazioni di pianificare i propri processi e le loro interazioni. L'applicazione del ciclo PDCA consente 
+alle organizzazioni di assicurare che i loro processi siano alimentati e gestiti adeguatamente e che le opportunità per il miglioramento siano colte e messe 
+in atto. Il Risk Based Thinking mette le organizzazioni nelle condizioni di identificare ciò che potrebbe causare una deviazione dei processi e del Sistema 
+Qualità dai risultati attesi, di mettere in atto controlli di tipo preventivo per ridurre gli effetti negativi e massimizzare le opportunità, 
+
+9 n realtà dalla lettura dei requisiti emerge che nella Norma vi è qualcosa di più della promozione di un approccio: al punto 5.1.1 viene prescritto che il 
+top management si faccia promotore di tale approccio, come diretto responsabile. In altri termini, se l'alta direzione dovesse venire meno a tale com- 
+pito, ciò andrebbe considerato come una "non conformità" al requisito appena ricordato.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstoge - 20 1@nadérA/efa Qualità: Quaderno 4 
+
+zione rispetto al modo, meno serrato e puntuale, con cui il tema veniva affrontato nella versione precedente 
+del 2008. In essa, veniva richiesto'’ all'organizzazione di: 
+—  determinare i processi del sistema qualità, e la loro applicazione nell'ambito dell'intera organizzazione 
+— _ determinare la sequenza e l'interazione dei processi 
+— determinare i criteri è i metodi per assicurare l'efficacia tanto dell'operatività quanto del presidio dei 
+
+processi 
+—  assicurare la disponibilità delle risorse e delle informazioni necessarie a supportare la messa in atto e il 
+
+monitoraggio dei processi 
+— monitorare, misurare e analizzare i processi 
+
+-  adottare le azioni necessarie 
+- gestire i processi, in accordo con i requisiti della Norma. 
+
+Oggi, una scomposizione del paragrafo 4.4.1 (punto 4.4 - Sistema di gestione per la qualità e relativi proces- 
+si) nei suoi “requisiti elementari", rivela un più esteso elenco di "cose da fare", come si può osservare dalla 
+tabella seguente (V. Fig. 4). 
+
+10 UNI EN ISO 9001:2008, p.to 4.1.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 20- 13716459 L'approccio per processi 
+
+L'Organizzazione deve, infatti: 
+
+441 Determinare i processi necessari per il sistema di gestione qualità 
+
+‘4,4.1 - Determinare la loro applicazione nell'ambito di tutta l'organizzazione 
+
+444 a) Determinare gli input richiesti 
+
+i 4412 Determinare gli output attesi 
+
+‘4.4.1 b) Determinare la sequenza dei processi 
+
+441 b) Determinare l'interazione dei processi 
+44.10) Determinare i criteri per assicurare l'efficace operatività dei processi 
+
+E 4410 Determinare i metodi per assicurare l'efficace operatività dei processi 
+
+441 6) Applicare i criteri per assicurare l'efficace operatività dei processi 
+
+441 6) Applicare i metodi per assicurare l'efficace operatività dei processi 
+
+44.10) Includere, fra i metodi, il monitoraggio 
+
+44.10) Includere, fra i metodi, la misurazione 
+
+441 6) Includere, fra i metodi, gli indicatori di prestazione 
+
+441 d) Determinare le risorse necessarie per i processi 
+
+441 d) Assicurare la disponibilità di tali risorse 
+441 6) Assegnare le responsabilità peri  processi 
+
+4416 Assegnare le autorità per i processi 
+
+441) Affrontare i rischi, come determinati in accordo con i requisiti del punto 6.2 
+
+4411) Affrontare le opportunità, come determinate in accordo con i requisiti del punto 6.2 
+
+441 9) Valutare i processi 
+
+44.1 9) Mettere in atto | cambiamenti necessari per assicurare che essi raggiungano i risultati 
+
+4.4.1h) Migliorare i processi (e il sistema qualità) 
+
+‘4.4,2 a) Mantenere le informazioni documentate necessarie a supportare l'operatività dei processi 
+
+4.4.2 b) Conservare informazioni documentate per dimostrare che i processi rispondono a quanto pianificato 
+
+Fig.4 Scomposizione del punto 4.4 della UNI EN ISO 9001:2015, nei suoi "requisiti elementari" 
+
+In realtà, oltre al punto 4.4, molti altri punti della Norma richiamano l'approccio per processi: 
+
+- Nel Cap. 5 (Leadership) si prescrive che l'alta direzione promuova l'approccio per processi nell'ambito 
+dell'organizzazione e garantisca l'integrazione del sistema qualità nei processi di business 
+
+- Alp.to 5.3 si richiede all'alta direzione di assegnare responsabilità e autorità, per garantire che i processi 
+producano gli output stabiliti 
+
+— _ Nel p.to 6.1.2 è richiesto che l'organizzazione pianifichi le modalità per integrare nei processi del sistema 
+qualità le azioni intraprese per affrontare i rischi e le opportunità che scaturiscono dalla comprensione 
+dei fattori del contesto e dei requisiti delle parti interessate 
+
+- _ ll p.to 6.2 impone all'organizzazione di stabilire obiettivi per la qualità relativi ai pertinenti livelli, processi 
+e funzioni del SGQ
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 201@pa3darfAà Qualità: Quaderno 4 
+
+- ll pto 7.1.2 prevede che il SGQ disponga delle persone necessarie per assicurare l'efficace attuazione 
+del sistema e per l'operatività e il controllo dei suoi processi 
+
+— l requisito 7.1.3 riguarda l'idoneità dell'infrastruttura occorrente affinché i processi abbiano luogo e for- 
+niscano output conformi 
+
+- _ ll punto 7.1.4 prescrive idonee condizioni ambientali per l'operatività dei processi 
+
+— AI punto 7.1.8 viene assegnata all'organizzazione la responsabilità di gestire la conoscenza richiesta 
+per l'attuazione dei processi 
+
+- ll cap. 8 attiene nel suo insieme alle condizioni controllate entro cui i processi operativi, inclusi quelli 
+affidati all'esterno, andranno pianificati ed effettuati 
+
+— A| pito 9.2.2 è stabilito che il programma di audit sia correlato all'importanza dei processi 
+
+— AI p.to 9.3.2 si richiede che il riesame di direzione sia condotto sulla base di informazioni sulle perfor- 
+mance del SGQ e sull'andamento delle prestazioni dei processi. 
+
+Quella appena presentata non è peraltro che la sintesi dei passaggi in cui la Norma fa riferimento esplicito ai 
+processi. A questo elenco va ancora aggiunto quanto riportato al Cap.10, che si sofferma sul miglioramento 
+delle performance del SGQ citando vari esempi di intervento migliorativo, oltre al miglioramento continuo, 
+fra cui la riorganizzazione, il breakthrough, l'innovazione: esempi facilmente riferibili a quanto prodotto negli 
+ultimi decenni dai teorici del process management. 
+
+La complessità dell'organizzazione 
+e dei processi andrà considerata 
+come base per la definizione 
+di un'adeguata politica 
+per la gestione dei processi 
+
+In definitiva, una riflessione sui processi si traduce in una riflessione sull'intero sistema qualità. Ciò detto, 
+in prospettiva più immediatamente applicativa è tuttavia opportuno focalizzare l'attenzione sui passaggi in 
+cui la Norma affronta espressamente l'approccio per processi: cosa che verrà fatta nel seguito di questo 
+Quaderno. 
+
+Come si è visto, la conformità a tali requisiti richiede che l'organizzazione effettui numerose attività. D'altra 
+parte, non si richiede una formale "gestione per processi", bensi l'adozione generalizzata di un "orientamen- 
+to ai processi". Questo fa sì che laddove non sia necessario per le organizzazioni utilizzare metodi formali 
+per affrontare e gestire i processi - tipicamente nelle micro-organizzazioni, Composte da pochissime persone 
+che coprono diversi ruoli - ciò non costituirà un problema dal punto di vista della conformità alla Norma. In 
+questi casi, buona parte dei requisiti prima elencati potranno essere soddisfatti in modo semplice, in virtù 
+della brevità e semplicità della "catena del valore", che sarà interamente nelle mani di tali persone e su cui 
+le stesse saranno in grado di esercitare direttamente il proprio presidio, purché guidate da un'adeguata 
+"sensibilità" verso i processi.
+
+
+
+O.ME.FA, S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 9 
+
+Nelle altre situazioni, di maggiore complessità: 
+
+1. l'approccio per processi, se correttamente compreso e adottato, potrebbe condurre a una formale "ge- 
+stione per processi" 
+
+2. vari requisiti del p.to 4.4 quali: 
+
+la determinazione dei processi, dei loro input e output, e delle loro interazioni (p.ti 4.4 a è b} 
+
+l'applicazione degli indicatori di performance (c) 
+l'assegnazione delle responsabilità "di processo" (e) 
+la gestione di rischi e opportunità (f) 
+
+il cambiamento dei processi (g) 
+
+il miglioramento dei processi (correlato a quanto in proposito affrontato al Cap.10} (h}, 
+
+e le altre prescrizioni ad essi correlate, andranno interpretate e soddisfatte risalendo ove opportuno ai 
+concetti chiave e agli strumenti che lo stato delle conoscenze mette di volta in volta a disposizione, quali 
+migliori prassi per la piena realizzazione del modello ISO 9001. Tali concetti e strumenti comprendono, 
+ad esempio: 
+
+l'impiego di tassonomie per la tipizzazione e modellizzazione dei processi 
+
+la definizione e l'uso sistematico di key performance indicator (KPI} 
+l'istituzione del process owner e delle altre figure richieste per la gestione strutturata e per il mi- 
+glioramento dei processi 
+
+la gerarchizzazione dei processi in funzione della loro criticità 
+
+le tecniche di rappresentazione dei processi 
+
+Il controllo statistico dei processi 
+
+il Business Process Reengineering (BPR) e le altre forme di intervento migliorativo riconducibili 
+al tema generale del process management. 
+
+In definitiva, la complessità e la dimensione dell'organizzazione, il tipo di attività, la criticità dei processi, la 
+necessità di rendere formalmente conto delle performance!!, andranno considerati come criteri per la defi- 
+nizione di un'adeguata "policy" per la gestione dei processi, in funzione dei rischi e delle opportunità legati 
+al contesto, e dei requisiti delle parti interessate. La stessa valutazione dei rischi e opportunità dovrà sup- 
+portare ove opportuno la decisione di istituire percorsi e Mmodelli di Business Process Managementin modo 
+progressivo e graduale, oppure con rapidità e urgenza. 
+
+11 Tali elementi sono indicati nel documento: ISO/TC 176/SC 2/N1289 - The Process Approach in ISO 9001:2015, di cui si parlerà estesamente più avanti.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstong - 20 1addrAtafa Qualità: Quaderno4 
+
+Una valutazione dei rischi e delle opportunità 
+consentirà di dimostrare che 
+il grado di strutturazione prescelto 
+per affrontare i processi aziendali 
+è quello più adatto alla realtà dell'organizzazione 
+
+Ciò consentirà di dimostrare, quando necessario, che il grado di strutturazione prescelto per le modalità di 
+gestione dei processi aziendali è quello oggettivamente più adatto alla realtà dell'organizzazione, nel conte- 
+sto di riferimento. Tale preliminare analisi e la conseguente determinazione della policy spettano all'alta di- 
+rezione, come uno dei compiti riferibili alla generale responsabilità di quest'ultima di promuovere l'approccio 
+per processi'?, 
+
+In tutti i casi, potrà tornare utile alle organizzazioni quanto riportato nel documento di supporto: 
+ISO/TC 176/SC 2/N1289 - The Process Approach in ISO 9001:2015!3, Esso costituisce infatti una buona 
+traccia per affrontare le gestione dei processi organizzativi, e mettere in pratica l'approccio per processi, 
+senza la necessità di ricorrere a tecniche o strumenti sofisticati, sebbene si presti anche ad applicazioni di 
+maggiore complessità, come necessario nel caso delle organizzazioni più ampie e strutturate. 
+
+12 Da UNI EN ISO 9001:2015: Cap.5, Leadership - Par. 5.1, Leadership e impegno - Pto 5.,1.1, Generalità: "l’alta direzione deve dimostrare leadership e 
+impegno nei riguardi del sistema di gestione per la qualità: ... d) promuovendo l'utilizzo dell'approccio per processi e del risk-based thinking", 
+
+13 Disponibile Su: www.iso.org/tc176/sc02/public.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 11 
+
+Il documento 1S0/TC176/SC2/N1289 come guida per il process 
+approach 
+
+Il documento ISO/TC176/SC2/N1289 - The Process Approach in 1S0 9001:2015, illustra {nell'alegato A) 
+il percorso con cui un'organizzazione potrebbe istituire e controllare i processi del proprio sistema qualità, 
+al livello generale, al livello dei singoli processi e a quello delle specifiche attività operative. Le tabelle che 
+seguono riprendono i contenuti dell'allegato, allo scopo di: 
+
+1. illustrare le attività che un'organizzazione potrebbe intraprendere per Mmettere in pratica l'approccio per 
+processi 
+
+2. evidenziare, attraverso il richiamo ai singoli punti della Norma di volta in volta correlati alle attività'*, 
+come esse possono soddisfare gli specifici requisiti della ISO 9001 (per comodità, l'elenco dei requisiti è 
+riportato in appendice a questo Quaderno) 
+
+3. identificare alcuni strumenti della gestione per processi, correlati a ciascuno dei passaggi illustrati, allo 
+scopo di indicare soluzioni per un'attuazione "evoluta" dell'approccio per processi, anche se strettamen- 
+te ancorata ai requisiti della Norma 
+
+4. individuare, ove possibile, ulteriori norme e documenti che l'organizzazione potrebbe adottare per me- 
+glio rispondere ai requisiti {i riferimenti completi a tali documenti e norme sono riportati alla fine della 
+serie di tabelle) 
+
+5. rinviare a specifiche "schede", successivamente riportate nel Quaderno, nelle quali vengono forniti ulte- 
+riori chiarimenti e spunti applicativi. 
+
+14 Per una più chiara comprensione dei rimandi ai punti della Norma, in appendice a questo Quaderno essi sono richiamati con il loro titolo o argamento..
+
+
+
+O.ME.FA. S.p.A. 
+UNIstong - 20 1paderA/Wafà Qualità: Quaderno 4 
+
+ISO/TC176/SC2/N1289 The Process Approach in ISO 9001:2015 Strumenti 
+
+[4] 
+
+E £ Norme e doc. ISO 
+
+S 5 correlati 
+e Rif. scheda 
+
+Fasi 5 
+Attività da =
+
+dell'approccio Suggerimenti operativi A 
+
+svolgere 
+per processi 
+
+Definire il contesto Identificare le Raccogliere, analizzare e determinare le 
+dell'organizzazione responsabilità responsabilità esterne e interne 
+
+dell'organizzazione, all'organizzazione, per il soddisfacimento 
+le parti interessate dei rilevanti requisiti, bisogni e aspettative 
+rilevanti e i loro delle parti interessate rilevanti. 41 
+
+Rif. Quaderno 
+rilevanti requisiti, 
+
+della Qualità 
+bisogni e Monitorare e comunicare frequentemente 
+
+{QdQ)} n. 02 
+aspeltative, come con queste ultime, in modo da essere sicuri 
+base per la che l'organizzazione stia continuando a 
+definizione degli comprendere tali requisiti, bisogni e 
+scopi aspettative. 
+dell'organizzazione 
+
+Definire campo di Sulla base Determinare il campo di applicazione, i 
+applicazione, dell'analisi dei confini e l'applicabilità del proprio sistema di 
+obiettivi e politiche requisiti, bisogni e gestione, tenendo conto del contesto interno 
+dell'organizzazione aspettative, stabilire ed esterno, e dei requisiti delle parti 4.3 
+
+il campo di interessate. 
+applicazione, gli 5.2.1 
+
+Rif. QdQ n. 02 
+obiettivi e le Decidere a quali aree di mercato indirizzarsi. 
+politiche pertinenti 
+al sistema di Stabilire gli obiettivi e le politiche per 
+gestione qualità. ottenere gli esiti desiderati (attività, questa, 
+
+di competenza dell'alta direzione). 
+
+Determinare i Determinare i Determinare (da parte del management)i - 4.4.1a) 
+processi processi necessari processi necessari per ottenere gli ouput 
+nell'organizzazione per soddisfare gli altesi, comprendendo in ciò la 4.4.1 b} 
+
+obiettivi e le determinazione: 441 c) 
+politiche, e per - della loro gestione, 
+generare gli ouput - delle risorse, 441 d) Rif. QdQ n. 02/03
+attesi. - delle attività operative, 
+
+- delle misurazioni, 4.4.1 e) 
+- dell'analisi 
+- del miglioramento. 4.4.1 h) 
+
+6.2.2 
+
+P03 P02 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 13 
+
+ISO/TC176/SC2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+PL AN É i Normee doq. ISO 
+S3 correlati 
+
+; ES Rif scheda 
+FS Attività da 5 È 
+
+dell'approccio Suggerimenti operativi a . ’ 
+; svolgere E 
+
+per processi i i i 
+
+Process Mapping 
+Determinare la Determinare il Definire e descrivere la rete dei processi e 
+sequenza dei modo in cuì delle loro interazioni, considerando: Risk Based Thinking 
+processi processi si - gli input e gli output di ciascun processo 
+
+susseguono e (che possono essere esterni o Interni) 
+interagiscono - l'interazione e le interfacce che abilitano|  ISO 31000 
+
+processi o da cui essi dipendono ISO/TR 31004 
+- l'efficienza e l'efficacia ottimali della ISO/IEC 31010 
+
+sequenza 4.4.1 
+- irischi per l'efficace interazione dei 4 Rif, QdQ n. 03 
+
+processi 4.1a) 
+JL aa S 4.4.1b) - 
+
+Per esempio, i processi realizzativi (come 
+quelli necessari per ottenere i prodolti e i 44416) : 
+servizi da fornire al cliente) interagiranno f 
+con altri processi {(come i processi 4441f) | 
+gestionali, di misurazione, di acquisizione 
+delle risorse) 
+
+Le sequenze e la interazioni del protessi ! ‘ : 
+possono essere sviluppate con l'impiego di ia g j 
+strumenti quali modelli, diagrammi, matrici, | “B 
+flow chart.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstong - 20 1@oadédrAFlefh Qualità: Quaderno 4 
+
+ISO/TC176/SC2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+Norme e doc. ISO 
+correlati 
+
+| Rif, scheda 
+Fasi 
+
+Attività da 
+dell'approccio Suggerimenti operativi 
+
+svolgere 
+per processi 
+
+Process Owner 
+Definire le persone Assegnare la Organizzare e definire la titolarità dei 
+e le attribuzioni per responsabilità è processi, i relativi obblighi di risultato, i ISO 9004 
+l'assunzione della l'autorità per singoli ruoli, le responsabilità, i gruppi di 
+aownership del ciascun processo lavoro, i mandati, le autorità, e garantire le 
+processo e delle necessarie competenze per ciascun 
+relative processo e per le sue Interazioni: anche 
+responsabilità questo è compito del management. 4e 
+
+Per i soggetti o le attribuzioni di cui sopra 
+viene normatmente utilizzata la definizione 
+di "Process Owner". 
+
+Allo scopo di gestire le interazioni fra i 
+processi può essere utile anche stabilire un 53d) e
+team del sistema di gestione che abbia una 
+visione complessiva del sistema attraverso 
+tutti i processi e che potrebbe comprendere 
+rappresentanti delle funzioni e dei processi 
+interagenti. 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 15 
+
+IS0/TC176/$C2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+Norme e doc. ISO 
+correlati 
+
+Rif. scheda 
+Fasi 
+
+Attività da 
+dell'approccio Suggerimenti operativi 
+
+svolgere 
+per processi 
+
+Definire le esigenze Determinare quali Indipendentemente dal fatto di essere 
+di informazioni sono i processi che formalizzati o meno, | processi sono presenti 
+documentate richiedono una nell'organizzazione. Non è detto peraltro Risk Based Thinking 
+
+definizione formale che si debba elaborare un catalogo o una 
+e il modo in cui lista dei processi. Spetta all'organizzazione, BPM 
+devono essere applicando il Risk Based Thinking, (Business Process 
+documentati determinare quali processi occorre Management) 
+
+documentare, Tale decisione polrebbe ad 
+esempio basarsi: Process Mapping 
+- sulla dimensione dell'organizzazione 
+- sul tipo di attività svolte 
+- sulla complessità dei processi e delle 
+
+loro interazioni 
+- sulla criticità dei processi 
+- sulla necessità di rendere formalmente ISO 31000 
+
+conto delle performance. ISO/TR 31004 
+4.4,2a) ISO/IEC 31010 
+
+| processi possono essere documentati 
+utilizzando molti metodi, come ad esempio: 4.4.2b) Rif. QdQ n. 03 
+rappresentazioni grafiche, user stories, 
+istruzioni scritte, checklist, flow charts, visual 75 ISO/TC 176/SC 
+media o metodi elettronici, compresi grafici 
+e sistemalizzazioni. La scelta del metodo o 5.1.1 d) 2/N1276 
+
+{Guidance on the 
+della tecnologia non devona tultavia essere 6.4 Documented 
+fini a se stessi. Essi devono poter essere Information) 
+utilizzati per descriverei  processi, che a loro 
+Volta sono il mezzo con cui raggiungere 
+l'obiettivo. 
+
+Processi efficaci e ben organizzati 
+consentono una regolare e affidabile 
+operatività, permettono di raggiungere gli \o 
+
+obiettivi desiderati e comportano la 
+possibilità di migliorare i risultati. 
+
+Per maggiori informazioni può essere 
+consultata la guida sui requisiti che 
+riguardano le informazioni documentate, 
+facente parte dell'ISO 9000 Introduction and 
+Support Package. 
+
+pertinente 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 20 @vaddrafbafla Qualità: Quaderno 4 
+
+ISO/TC176/SC2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+[12] 
+
+E g Norme e doc. ISO 
+PLAN S G correlati 
+
+ZC 
+
+O Rif. scheda 
+Fasi CDi =
+
+| i Attività da M i = Y e É 
+
+dell'approccio Suggerimenti operativi A 
+
+è svolgere 
+per processi 
+
+Definire le Determinare le Definire gli output desiderati, e gli input dei Risk Based Thinking 
+
+interfacce, i rischi e attività necessarie  processi. KPI 
+le altività perchè i processi 
+nell'ambito dei conseguano | Determinare i rischi per la conformità dei 4.4.1 a) 
+processi risultati attesi, e i prodotti, dei servizi e per la soddisfazione 
+
+4.4.1b) 1SO 9004 
+rischi di output del cliente, qualora dovesse essere 
+indesiderati. rilasciato un output indesiderato. 
+
+4.4.16) ISO 31000 
+ISO/TR 31004 
+
+Determinare le attività, le misure e | controlli 44.11) ISO/EC 31010 
+ad esse inerenti, necessari per trasformare 
+gli input negli output attesi, 
+
+44 Rif. QdQ n, 03 
+
+Determinare e definire le sequenze e le 
+interazioni fra le attività, nell'ambito del 
+processo, 
+
+816 j 
+Determinare come ogni attività andrà svolta. 
+
+Assicurare che il sistema di gestione nel suo 
+insieme tenga conto di tutti i rischi materiali 
+per l'organizzazione e per gli utilizzatori. 
+
+Nota: in qualche caso, il cliente potrebbe 8.3.5
+specificare non solo i requisiti degli qutput, 
+ma anche quelli per la realizzazione di un 
+processo, 
+
+P07 
+
+
+
+O.ME.FA, S.p.A. 
+UNI store - 2016 - 371459 L'approccio per processi 17 
+
+ISO/TC176/S62/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+È K  Norme e doc. ISO 
+È É correfati 
+o ‘E Rif. scheda . 
+
+aSI Attività da 5 è [ 
+dell'approccio Suggerimenti operativi - . 
+
+: svolgere 
+per processi ; 'i  
+
+Definire i requisiti di  Determinare dove e Identificare le validazioni necessarie per SPC 
+misurazione e come devono garantire l'efficacia dei processi e del 
+monitoraggio essere applicati l sistema. KPI 
+
+monitoraggio e la 
+misurazione. Tenere conto di fattori quali: Lean Production 
+Ciò dovrebbe - Criteri di monitoraggio è misurazione 
+riguardare tanto il - Riesame delle performance Six Sigma 
+controllo e il - Soddisfazione delle parti interessate 
+miglioramento dei - Performance dei fornitori Balanced $corecard 
+processi, quanto gli - Puntualità di consegna e lead time 
+output prodotti dal - Livello delle difettosità e scarti 
+processo - Costi del processo 1S0 9004 
+
+P) - Frequenza degli accadimenti 8.5,1 f) 
+P Determinare la - Altre misure della conformità ai requisiti UNI EN 10014 
+OA necessità di 
+
+registrare i risultati 911 Norme sul controllo 
+statistico (v. dettaglio 
+a fine tabella) 
+
+
+
+O.ME.FA. S.p.A. 
+UNIIsto1g - 20 1@aad8/Atfafà Qualità: Quaderno 4 
+
+ISO/TC176/SC2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+[43 
+
+E£ Norme e doc. ISO 
+
+O $ correlati 
+5
+e Rif. scheda 
+
+Fasi F=C 
+Attività da 53 A 
+
+dell'approccio d& 
+svolgere Suggerimenti operativi 
+
+per processi 
+
+Attuazione Condurre le azioni  Eseguire le attività, il monitoraggio, le KPI 
+necessarie per misurazioni e i controlli relativi al processi e 
+eseguire le attività _ alle procedure definiti {(che potrebbero SPC 
+pianificate e essere automatizzati), esternalizzare o 
+conseguire i risultati  adottare altri metodi necessari a 
+
+raggiungere i risultati pianificati. UNI 1ISO/TR 10017 
+
+8.1 
+UNI EN 10014 
+
+F 
+
+L) 8.5.1 
+a Norme sul controllo 
+
+8.5.1 c) statistico (v, dettaglio 
+a fine tabella) 
+
+Definire le risorse  Determinare le Le risorse comprendono, ad esempio: Knowledge 
+
+necessarie risorse necessarie management 
+
+per l'efficace - Risorse umane 
+operatività di ogni - Infrastruttura 
+
+UNI ISO 10018 
+processo - Ambiente 
+
+- Informazioni 74 
+UNI ISO 10015
+
+- Risorse naturali (compresa la 
+conoscenza) 
+
+- Materiali 
+- Risorse finanziarie 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 19 
+
+ISO/TC176/$C2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+CHECK É K Noremdoec, ISO 
+’Zò î, correlati 
+o E Rif. scheda 
+
+Fa Attività da PA 
+dell'approccio SE Suggerimenti operativi a 
+per processi g 
+
+; . ju g . KPI 
+Verificare il Olttenere conferma  L'organizzazione dovrebbe confrontare gli 
+processo, a fronte  che il processo è output con gli obiettivi, per verificare che SPC 
+degli obiettivi efficace e che le tutti i requisiti risultino soddisfatti. 
+stabiliti caratteristiche dei 
+
+processi sono Saranno necessari processi per la raccolta UNI ISO/TR 10017 
+coerenti con i dei dali. 8.6 
+propositi ‘° UNI EN 10014 
+dell'organizzazione  Esempi: 8.7 
+
+- Misurazioni " UNIISO 11155 
+FP . 
+
+- Monitoraggio 9.1 
+O - Riesami ISO 19011 
+
+- Audit 9.2 
+- Analisi delle performance UNI 11087 
+- ecc. 9.3
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstopg - 20 1@paddrifWafa Qualità: Quaderno 4 
+
+ISO/TC176/SC2/N1289 - The Process Approach in ISO 9001:2015 Strumenti 
+
+[43 
+
+= Norme e doc. ISO 
+o c correlati 
+= è 
+2 = Rif. scheda 
+
+Fasi =T 
+Altività da pBAa d 
+
+dell'approccio Suggerimenti operativi A 
+
+svolgere 
+per processi 
+
+Miglioramento Modificare i Agire su quanto rilevato in modo da Business Process 
+processi allo scopo garantire il miglioramento dell'efficacia del Management 
+di assicurare che processo (Nota: l'organizzazione potrebbe 
+essi continuino a anche voler migliorare l'efficienza del Business Process 
+rilasciare gli output processo, sebbene non vi siano requisiti a Improvement 
+desiderati tale riguardo, nella ISO 9001) 
+
+Business Process 
+Ad esito di una mancanza verificatasi nel Reengineering 
+processo l'azione correttiva dovrebbe 
+comprendere l'identificazione e Lean Production 
+l'eliminazione delle cause-radice dei 
+problemi. Il “pensiero sistemico" riconosce Six Sigma 
+che un evento verificatosi În un processo 
+può avere cause o effetti in un processo con Balanced Scorecard 
+esso interdipendente. Le cause e gli effetti 
+potrebbero non trovarsi nel medesimo UNI ISO 13053-1, 2 
+processo. il problem solving e il 
+miglioramento seguono tipicamente | UNI CENITS: 
+seguenti passi essenziali; 16555 -1, 2, 3,4, 5, 
+- definizione dei problemi o degli obiellivi 6,7 
+- raccolta e analisi dei dati riguardanti il 
+
+problema e | processi pertinenti 10 
+UNI ISO/TR 10017 
+
+- scella e messa in atto delle soluzioni 
+preferite UNI EN 10014 
+
+- valutazione dell'efficacia delle soluzioni 
+- incorporazione delle soluzioni nella Norme sul controllo 
+
+routine statistico (v. dettaglio 
+a fine tabella)
+
+Anche quando gli output pianificati del 
+processo vengono ottenuti e i requisiti 
+soddisfatti, l'organizzazione dovrebbe 
+comunque tentare di migliorare la 
+performance del processo, la soddisfazione 
+del cliente e la reputazione. Ciò può essere 
+ottenuto, ad esempio, attraverso un 
+miglioramento continuo per piccoli passi 
+("kaizen"), è miglioramenti dirompenti, elo 
+iniziative di innovazione. 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 21 
+
+Elenco delle norme pertinenti: 
+
+Aspetti gestionali: 
+UNI 11097:2003 - Gestione per la qualità. Indicatori e quadri di gestione della qualità. Linee guida ge- 
+nerali 
+UNI CEN/TS 16555-1:2013 Gestione dell'innovazione - Parte 1: Sistema di gestione dell'innovazione 
+UNI CEN/TS 16555-2:2015 Gestione dell'innovazione - Parte 2: Gestione dell'intelligence strategica 
+UNI CEN/TS 16555-3:2015 Gestione dell'innovazione - Parte 3: Orientamento all'innovazione 
+UNI CEN/TS 16555-4:2015 Gestione dell'innovazione - Parte 4: Gestione della proprietà intellettuale 
+UNI CEN/TS 16555-5:2015 Gestione dell'innovazione - Parte 5: Gestione della collaborazione 
+UNI CEN/TS 16555-6:2015 Gestione dell'innovazione - Parte 6: Gestione della creatività 
+UNI CEN/TS 16555-7:2016 Gestione dell'innovazione - Parte 7: Valutazione della gestione dell'innova- 
+zione 
+UNI EN 10014: 2007 - Gestione per la qualità - Linee guida per la realizzazione di benefici economici e 
+finanziari 
+UNI EN 12973:2003 - Gestione del valore 
+UNI EN 1325:2014 - Gestione del valore - Vocabolario - Termini e definizioni 
+UNI EN 16271:2013 - Gestione del valore - Espressione funzionale delle esigenze e delle specifiche 
+di prestazione funzionale - Requisiti per esprimere e validare le esigenze da soddisfare nell’ambito del 
+processo di acquisto od ottenimento di un prodotto 
+UNI EN ISO 19011:2012 - Gestione per la qualità - Linee guida per audit di sistemi di gestione 
+UNI ISO 10015:2003 - Linee Guida per la Formazione 
+UNI ISO 10018:2013 Gestione per la qualità - Linee guida per il coinvolgimento e la competenza delle 
+persone 
+UNI ISO 11155:2007 Attività operative delle imprese - Misurazione delle prestazioni 
+UNI ISO 13053-1:2014 - Metodi quantitativi per il miglioramento dei processi - Sei Sigma - Parte 1: 
+metodologia DMAIC 
+UNI ISO 13053-2:2014 - Metodi quantitativi per il miglioramento dei processi - Sei Sigma - Parte 2: 
+Strumenti e tecniche 
+
+Controllo statistico: 
+
+UNI ISO 22514-1:2014 - Metodi statistici per la gestione dei processi - Capacità e prestazione - Parte 1: 
+Principi e concetti generali 
+UNI ISO 22514-2:2014 - Metodi statistici per la gestione dei processi - Capacità e prestazione - Parte 2: 
+Capacità di processo e prestazioni dei modelli di processo dipendenti dal tempo 
+UNI ISO 22514-3:2010 - Metodi statistici per la gestione dei processi - Capacità e prestazione - Parte 3: 
+Studi di prestazione di macchine per dati misurati su parti discrete 
+UNI ISO 22514-6:2014 - Metodi statistici per la gestione dei processi - Capacità e prestazione - Parte 6: 
+Statistiche di capacità di processo per caratteristiche che seguono una distribuzione normale multiva- 
+riata 
+UNI ISO 22514-7:2014 - Metodi statistici per la gestione dei processi - Capacità e prestazione - Parte 7: 
+Capacità dei processi di misura 
+UNI ISO 24153:2014 - Procedure per il campionamento casuale e la randomizzazione
+
+
+
+O.ME.FA. S.p.A. 
+UNI Istogg - 20 1@aaderh/afa Qualità: Quaderno 4 
+
+— UNI ISO 2859-1:2007 - Procedimenti di campionamento nell'ispezione per attributi - Parte 1: Schemi 
+di campionamento indicizzati secondo il limite di qualità accettabile (AQL) nelle ispezioni lotto per lotto 
+
+— UNI ISO 2859-10:2007 - Procedimenti di campionamento nell'ispezione per attributi - Parte 10: Introdu- 
+zione alla serie di norme ISO 2859 per il campionamento nell'ispezione per attributi 
+
+— UNI ISO 2859-2:1993 - Procedimenti di campionamento nel collaudo per attributi. Piani di campiona- 
+mento indicizzati secondo la qualità fimite {QL) per il collaudo di un lotto isolato. 
+
+— UNI ISO 2859-3:2007 - Procedimenti di campionamento nell'ispezione per attributi - Parte 3: Procedi- 
+menti di campionamento con salto di lotti 
+
+— UNI ISO 2859-4:2007 - Procedimenti di campionamento nell'ispezione per attributi - Parte 4: Procedi- 
+menti per la valutazione di livelli di qualità dichiarati 
+
+- UNI ISO 2859-5:2007 - Procedimenti di campionamento nell'ispezione per attributi - Parte 5: Sistema di 
+piani di campionamento sequenziali indicizzati secondo il limite di qualità accettabile (AQL) per l'ispe- 
+zione lotto per lotto 
+
+- UNI ISO 28801:2014 - Piani di campionamento doppi per attributi con numerosità minima del campione, 
+indicizzati secondo il rischio di qualità per il produttore (PRQ) e il rischio di qualità per il cliente (CRQ) 
+
+- UNI ISO 3534-1:2014 - Statistica - Vocabolario e simboli - Parte 1: Termini statistici generali e termini 
+utilizzati nel calcolo delle probabilità 
+
+- UNI ISO 3534-2:2014 - Statistica - Vocabolario e simboli - Parte 2: Statistica applicata 
+- UNI ISO 3534-3:2014 - Statistica - Vocabolario e simboli - Parte 3: Progettazione di esperimenti 
+- UNI ISO 3534-4:2014 - Statistica - Vocabolario e simboli - Parte 4: Campionamento per indagini 
+- UNI ISO 3951-1:2014 - Procedure di campionamento per l'ispezione per variabili - Parte 1: Specifiche di 
+
+piani di campionamento semplici indicizzati secondo il limite di qualità accettabile (AQL) per l'ispezione 
+lotto per lotto relativa ad una singola caratteristica di qualità e ad un solo AQL 
+
+— UNI ISO 3951-2:2014 - Procedure di campionamento per l'ispezione per variabili - Parte 2: Specifiche 
+generali per piani di campionamento semplici secondo il limite di qualità accettabile (AQL) per l'ispezione 
+lotto per lotto di caratteristiche di qualità indipendenti 
+
+— UNI ISO 3951-3:2007 - Procedimenti di campionamento nell'ispezione per variabili - Parte 3: Schemi di 
+campionamento doppi indicizzati secondo il limite di qualità accettabile (AQL) per l'ispezione lotto per 
+lotto 
+
+— UNI ISO 3951-4:2014 - Procedure di campionamento per l'ispezione per variabili - Parte 4: Procedure 
+per la valutazione di livelli di qualità dichiarali 
+
+- UNI ISO 3951-5:2007 - Procedimenti di campionamento nell'ispezione per variabili - Parte 5: Piani di 
+campionamento sequenziali indicizzati secondo il limite di qualità accettabile {AQL) per l'ispezione per 
+variabili (scarto tipo noto) 
+
+- UNI ISO 7870-1:2014 - Carte di controllo - Parte 1: Linee guida generali 
+- UNI ISO 7870-2:2014 - Carte di controllo - Parte 2: Carte di controllo di Shewart 
+- UNI ISO 7870-3:2014 - Carte di controllo - Parte 3: Carte di controllo per accettazione 
+— UNI ISO 7870-4:2014 - Carte di controllo - Parte 4: Carte a somme cumulate 
+- UNI ISO 7870-5:2014 - Carte di controllo - Parte 5: Carte di controllo speciali 
+— UNI 1S0 7873:2014 - Carte di controllo per la media aritmetica con limiti di avvertimento 
+- UNI ISO/TR 10017:2000 - Gestione per la qualità- Guida alle tecniche statistiche per la ISO 9001:2000 
+- UNI ISO/TR 18532:2010 - Guida all'applicazione di metodi statistici per la qualità e la normazione in 
+
+ambito industriale 
+— UNI ISO/TR 22514-4:2010 - Metodi statistici per la gestione dei processi - Capacità e prestazione - 
+
+Parte 4: Stime della capacità di processo e misure di prestazione
+
+
+
+O.ME.FA. S.p.A. 
+UNstore - 2016 - 371459 L'approccio per processi 23 
+
+- UNI ISO/TR 22971:2008 - Accuratezza (esattezza e precisione) dei risultati è dei metodi di misurazione 
+— Guida pratica all'utilizzo della ISO 5725-2:1994 nella progettazione, attuazione e analisi statistica dei 
+
+risultati di prove interlaboratorio di ripetibilità e di riproducibilità 
+- UNI ISO/TR 8550-1:2014 - Guida alla selezione e utilizzo dei sistemi di campionamento per accettazio- 
+
+ne per l'ispezione di elementi discreti in lotti - Parte 1: Campionamento per accettazione 
+— UNI ISO/TR 8550-2:2014 - Guida alla selezione e utilizzo dei sistemi di campionamento per accettazio- 
+
+ne per l'ispezione di elementi discreti in lotti - Parte 2: Campionamento per attributi 
+- UNI ISO/TR 8550-3:2014 - Guida alla selezione e utilizzo dei sistemi di campionamento per accettazio- 
+
+ne per l'ispezione di elementi discreti in lotti - Parte 3: Campionamento per variabili 
+— UNI 10993:2002 - Controllo statistico di processo - Determinazione degli indici di capacità e di presta- 
+
+zione del processo - Caratteristica con densità di probabilità normale 
+- UNI ISO 11462-1:2014 - Linee guida per l'attuazione del controllo statistico di processo (SPC) - 
+
+Parte 1: Elementi di SPC 
+- UNI ISO 11462-2:2014 - Linee guida per l'attuazione del controllo statistico di processo (SPC) - Parte 2: 
+
+Elenco di strumenti e tecniche
+
+
+
+O.ME.FA. S.p.A. 
+UNIstopg - 201 @nadérA/afh Quatità: Quaderno 4 
+
+Classificazione dei processi 
+
+Nella ISO 9001, nella ISO 9000 e nel documento di supporto ISO/TC176/SC2/N1289 vi è una molteplicità 
+di riferimenti, anche impliciti, a temi caratteristici della gestione per processi, su alcuni dei quali è bene fare 
+un po' di chiarezza, esaminandone il contenuto e le implicazioni. Una prima questione, che si riflette sulle 
+diverse soluzioni gestionali, attiene alla classificazione dei processi e, in definitiva, al concetto stesso di 
+processo, che la ISO 9000 definisce come "un insieme di attività correlate o interagenti che utilizzano input 
+per consegnare un risultato atteso""5, 
+
+Nella ISQ 9001 si parla in generale di "processi", senza ulteriori classificazioni. Un'unica eccezione riguarda 
+il riferimento ai "processi di business"', 
+Esistono tuttavia "in letteratura" numerose classificazioni, a supporto di altrettanto numerosi strumenti e 
+modelli per la gestione dei processi, a cui un'organizzazione può attingere, in funzione delle sue specificità. 
+
+La catena del valore 
+
+La maggior parte delle definizioni di "processo" ruotano intorno al concetto di "valore”, che, come si è visto, 
+è citato sia nel "vocabolario" ISO 9000:2015, che nella formulazione dei principi di gestione per la qualità. 
+Questa visione del processo come generatore di valore può essere ricondotta all'idea di “catena del valore" 
+formulata da Porter!”, È utile perciò soffermarsi brevemente su tale modello, al fine di meglio comprendere 
+la sua applicazione nella gestione per la qualità. A questo scopo riportiamo di seguito alcune affermazioni 
+"cruciali" tratte dal lavoro di Porter: 
+- l valore, secondo Porter, è la somma che i compratori sono disposti a pagare per quello che un'azienda 
+
+fornisce loro, e creare un valore per i compratori, che superi i costi sostenuti, è l'obiettivo generale di 
+qualsiasi strategia 
+
+— bisogna usare il valore, e non il costo, per analizzare la posizione competitiva 
+— la catena del valore visualizza il valore totale e comprende due elementi: le attività generatrici di valore 
+
+e il margine. Le attività generatrici di valore sono le attività fisicamente e tecnologicamente distinte che 
+un'azienda svolge 
+
+— _ ogni attività generatrice di valore si serve di input acquistati, risorse umane e di una qualche forma di tec- 
+nologia per svolgere la sua funzione. Ogni attività usa, anche, e crea, informazioni, quali: i dati sugli ac- 
+quirenti (acquisizione ordini), i parametri delle prestazioni (collaudo) e le statistiche sui difetti dei prodotti. 
+
+A partire da tali presupposti, Porter suddivide le attività generatrici di valore in due grandi gruppi: attività 
+primarie e attività di supporto: 
+— _ le attività primarie sono quelle impegnate nella creazione fisica del prodotto e nella sua vendita e trasfe- 
+
+15 Da ISO 9000:2015: 3.4 Termini relativi al processo - 3.4.1 processo, 
+
+16 Il riferimento è nel par. 5.1.1, e in una nota in cui si chiarisce che il termine “business” può essere inteso, in senso ampio, come riferito a quelle attività 
+che caratterizzano la ragion d'essere dell'organizzazione, sia quest'ultima pubblica, privata, a scopo di lucro o no profit. 
+
+17 Michael E. Porter, Il vantaggio competttivo, Edizioni di Comunità IV edizione, 1993.
+
+SCHEDA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 25 
+
+rimento al compratore, oltre che nell'assistenza post-vendita 
+le attività di supporto sostengono le attività primarie e si sorreggono a vicenda, fornendo input, tecnolo- 
+gie, risorse umane. 
+
+Il valore è la somma 
+che i compratori sono disposti a pagare 
+per quello che un'azienda fornisce loro, 
+e creare un valore per i compratori, 
+che superi i costi sostenuti, 
+è l'obiettivo di qualsiasi strategia 
+
+Secondo l'autore, le attività primarie possono essere classificate a loro volta in cinque categorie generali: 
+
+1 Logistica in entrata: attività associate al ricevimento, all'immagazzinamento e alla distribuzione degli 
+input al prodotto 
+
+Attività operative: attività associate alla trasformazione degli input nella forma del prodotto finale 
+
+Logistica in uscita: attività associate alla raccolta, immagazzinamento e distribuzione fisica del prodotto 
+ai compratori 
+
+Marketing e vendite. attività orientate a procurare i mezzi mediante i quali | compratori possono acqui- 
+stare il prodotto e sono indotti a farlo 
+
+5. Servizi: attività correlate alla fornitura di servizi atti a migliorare o a mantenere il valore del prodotto 
+
+Le attività di supporto si dividono invece in quattro grandi categorie: 
+
+1. Approvvigionamento - Sebbene siano comunemente associati alle attività primarie, gli input di acquisto 
+sono presenti in ogni attività generatrice di valore, comprese le attività di supporto 
+
+2 Sviluppo della tecnologia - Ciascuna attività generatrice di valore incorpora delle tecnologie. Lo sviluppo 
+della tecnologia si articola in una gamma di attività che possono essere a grandi linee classificate come: 
+impegni per migliorare il prodotto, e impegni per migliorare il processo 
+
+Gestione delle risorse umane - La gestione delle risorse umane è l'insieme delle attività che hanno a 
+che fare con la ricerca, l'assunzione, l'addestramento, lo sviluppo e la mobilità di tutti i tipi di personale. 
+La gestione delle risorse umane fa da sostegno sia ad attività specifiche di tipo primario e di supporto 
+(come l'assunzione di ingegneri), sia all'intera catena del valore (le negoziazioni sindacali) 
+
+Attività infrastrutturali dell'azienda - l'infrastruttura dell'azienda si compone di numerose attività, fra cui la 
+direzione generale, la pianificazione, l'amministrazione, la finanza, il legale, gli affari con gli enti pubblici 
+e la gestione della qualità. Le attività infrastrutturali, a differenza di altre attività di supporto, di solito lavo- 
+rano a sostegno dell'intera catena, e non di attività singole. 
+
+All'interno di ciascuna categoria di attività primarie e di supporto ci sono inoltre tre tipi di attività che svolgono 
+un ruolo diverso nella determinazione del vantaggio competitivo:
+
+
+
+O.ME.FA. $.p.A. 
+UNIstorg - 20 l@uagdrirHafa Qualità: Quaderno 4 
+
+1. Ruolo diretto: attività direttamente impegnate a creare valore per il cliente: per esempio il montaggio, 
+la lavorazione in officina, l'attività delle forze di vendita, la pubblicità, la progettazione del prodotto, il 
+reclutamento, ecc. 
+
+2. Ruolo indiretto: attività che rendono possibile svolgere le attività di tipo diretto su base continuativa, quali 
+la manutenzione, la programmazione operativa, la gestione degli impianti, l'amministrazione delle forze 
+di vendita, l'amministrazione della ricerca, la gestione degli schedari dei fornitori, ecc. 
+
+3. Assicurazione della qualità: attività che assicurano la qualità di altre attività, quali il monitoraggio, l'ispe- 
+zione, il collaudo, la revisione e la rilavorazione'®, 
+
+ATTIVITA' DI ATTIVITA' INFRASTRUTTURALI 
+SUPPORTO ” 
+
+G ESTIONE DELLE RISORSE E UMAN UMANE 1% 
+
+SVILUPPO DELLA TECNOLOGIA # 
+
+APPROVVIGIONAMENTO 
+n 
+
+LOGISTICA ATTIVITA' LOGISTICA MARKETING  SERVIZI 3È 
+
+INENTRATA  OPERATIVE INUSCITA E VENDITE è"*° 
+
+A7 
+
+\ | 
+ATTIVITA' l PRIMARIE 
+
+Fig.5  Catena del valore generica (adattato da: Porter - 1985, Fig. 2-2) 
+
+Sebbene le attività generatrici di valore siano i blocchi costitutivi del vantaggio competitivo, la catena del 
+valore - prosegue Porter - non è una collezione di attività indipendenti, bensì un sistema di attività interdi- 
+pendenti, correlate da collegamenti all'interno della catena del valore stessa. | collegamenti sono relazioni 
+che si stabiliscono tra il modo in cui viene eseguita un'attività generatrice di valore e il costo o la prestazione 
+di un'altra (...) | collegamenti possono portare al vantaggio competitivo in due maniere: 
+
+a. attraverso l'ottimizzazione e 
+b. attraverso il coordinamento. 
+
+Essere in grado di coordinare i collegamenti spesso riduce i costi o enfatizza la differenziazione. Un miglior 
+coordinamento, per esempio, può ridurre il fabbisogno di scorte in tutta l'azienda. 
+
+Identificare ì collegamenti vuol dire cercare ì modi in cui ciascuna attività generatrice di valore influisce sulle 
+altre o viene da altre influenzata. 
+Un'azienda può essere in grado di tracciare i confini tra le unità organizzative in modo più adeguato rispetto 
+
+18 Porter precisa che 'L'assicurazione della qualità non è sinonimo di gestione per la qualità, perché molte attività generatrici di valore contribuiscono alla 
+qualità".
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 27 
+
+alle sue fonti di vantaggio competitivo e anche di assicurare il tipo adatto di coordinamento, se correla la sua 
+struttura organizzativa alla catena del valore e ai collegamenti che vi si trovano sia con i fornitori sia con i 
+clienti. Una struttura organizzativa che corrisponda alla catena del valore migliorerà le capacità di un'azienda 
+di creare e mantenere il vantaggio competitivo. 
+
+Un'azienda può essere in grado di tracciare 
+i confini tra le unità organizzative in modo più adeguato 
+se correla la sua struttura organizzativa 
+alla catena del valore. 
+Una struttura organizzativa che corrisponda alla 
+catena del valore migliorerà le capacità di un'azienda 
+di creare e mantenere il vantaggio competitivo 
+
+Classificazioni dei processi secondo altri autori 
+
+Una definizione classica di "processo di business" è quella riportata da Hammer e Champy'°: Un insieme di 
+attività che richiede uno © più tipi di input e crea un output che ha un valore per il cliente. 
+
+Harrington” fornisce le seguenti definizioni per alcune parole-chiave, nel vocabolario dei processi: 
+
+— _ Processo: Ogni attività o gruppo di attività che assume un input, vi aggiunge valore, e fornisce un output 
+ad un cliente interno o esterno. | processi utilizzano le risorse di un'organizzazione per fornire risultati 
+definitivi. 
+
+— _ Processo produttivo: Ogni processo che viene fisicamente a contatto con l'elemento tangibile o intangibi- 
+le che sarà consegnato al cliente esterno, fino al punto in cui il prodotto è confezionato (es.: produzione 
+di computer, preparazione di cibi per la ristorazione collettiva, raffinazione del petrolio, produzione di 
+acciaio). Esso non comprende i processi di spedizione e distribuzione. 
+
+— Processo di Business: Ogni servizio o processo che supporta i processi produttivi (p.es.: processo di 
+gestione degli ordini, processi di modifica dell'ingegneria, processi relativi alle retribuzioni, progettazione 
+dei processi produttivi). Un processo di business consiste in un gruppo di compiti logicamente intercon- 
+nessi che impiegano le risorse dell'organizzazione per fornire elementi risultanti prestabiliti, a supporto 
+degli obiettivi dell'organizzazione. 
+
+- Funzione: Un gruppo all'interno di un'organizzazione funzionale. Tipiche funzioni potrebbero essere: 
+
+19 Hammer M., Champy J., Ripensare l'azienda - Un manifesto per la rivoluzione manageriale, Sperling & Kupter Ed. 1993. 
+
+20 Harrington, H. James, Business Process Improvement- The Breakthrough Strategy for Total Quatity Productivity and Competitiveness, McGraw Hill, 
+1991 - {NdA: Nell'etenco qui riportato sono richiamati solo alcuni fra 1 termini citati da H., in quanto più utili ai fini della presente trattazione).
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 }@naddri/afh Qualità: Quaderno 4 
+
+marketing e vendite, contabilità, ingegneria, acquisti, assicurazione qualità. 
+
+- _ Dipartimento/reparto: Un manager o supervisore, e tutti gli addetti che riportano a questi. 
+
+Sono processi primari 
+quelli a maggiore impatto sui risultati di business 
+dell'organizzazione. 
+Essi creano un valore che il cliente riconosce 
+e sono cruciali ai fini del successo organizzativo 
+
+Merli e Biroli?! distinguono fra: 
+
+- Processi primari: quelli a maggiore impatto sui risultati di business dell'organizzazione: spesso carat- 
+teristici del settore a cui l'azienda appartiene, essi creano un valore che il cliente riconosce, e sono 
+cruciali ai fini del successo organizzativo. In genere si tratta di un numero di processi che si estende 
+da 5 a 8, variabili in funzione del settore, dell'azienda e della congiuntura che settore e azienda stanno 
+attraversando. Per esempio, in un'organizzazione che produce componenti da installare, $u comMmessa, 
+gli autori riportano quali processi primari: 
+
+La preparazione dell'offerta 
+
+La progettazione e l'industrializzazione 
+La gestione della Ccommessa 
+
+Gli approvvigionamenti 
+La produzione dei componenti 
+Il montaggio 
+
+Il trasporto 
+
+L'installazione. 
+
+- Processi di supporto: sono quelli necessari per la gestione aziendale, che tuttavia non aggiungono al 
+prodotto/servizio un valore riconoscibile da parte del cliente. "Si tratta quindi di processi che dovrebbero 
+essere eliminati nel momento in cui si riuscisse a trovare un modo per non averne più bisogno". Alcuni 
+esempi di tali processi sono: 
+
+La gestione dei materiali 
+La programmazione 
+
+La manutenzione 
+
+ll controllo di qualità 
+Il controllo della produttività 
+
+21 Merli G., Biroli M., Organizzazione e gestione per processi, Ed. ISEDI, 1996.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 29 
+
+- ECC. 
+
+Gli autori estendono poi la classificazione dei processi, allo scopo di fornirne una caratterizzazione di tipo 
+pratico, cioè utile a supportare la reingegnerizzazione dei processi di business, identificando innanzitutto 
+questi ultimi come: "tutti quelli che si debbono svolgere per garantire l'operalività, l'efficienza e l'efficacia dei 
+processi primari e per poter gestire l'azienda" (i processi di business, in tale ottica, possono comprendere sia 
+processi primari che di supporto, come il processo di fatturazione) e, oltre a questi: 
+— | processi critici; quelli che sono svolti con qualità insoddisfacente 
+— | processi prioritari: i processi critici ad alto impatto sul risultato del business (potrebbero essere non 
+
+primari né di business). 
+
+Osserviamo qui come la classificazione di un processo come “processo di supporto" dovrebbe oggi tenere 
+maggiormente conto anche in questo caso del contesto e dei requisiti delle parti interessate. Alla luce infatti 
+di quanto si è detto nel "Quaderno" n. 2, processi tipicamente considerati “a non valore aggiunto" come 
+molti di quelli afferenti alla gestione ambientale o alla gestione per la sicurezza, in realtà potrebbero essere 
+identificati dal cliente come elementi di preferenza del prodotto/servizio, e come tali dover rientrare a pieno 
+fitolo fra quei processi che aggiungono al prodotto/servizio un valore riconoscibile da parte del cliente e per 
+il quale il cliente è "disposto a pagare". 
+
+Processi apparentemente a non valore aggiunto 
+come quelli afferenti alla gestione ambientale 
+0 alla gestione per la sicurezza, 
+in realtà potrebbero dover rientrare 
+fra quelli che aggiungono al prodotto/servizio 
+un valore per il quale il cliente è "disposto a pagare" 
+
+De Risi e Franchi” riportano la seguente classificazione dei processi: 
+
+— _ Processi operativi. quelli che convertono risorse e input negli output direttamente necessari al raggiun- 
+gimento degli obiettivi dell'organizzazione 
+
+- Processi di supporto: che garantiscono l'acquisizione, l'utilizzo e l'aggiornamento delle risorse neces- 
+sarie 
+
+— _ Processi di gestione: che definiscono gli obiettivi aziendali e ne monitorano e regolano il raggiungimento 
+
+22 De Risi P, Franchi P "Dalla visione per processi alla gestione dei processi* in : Conti T, De Risi P (a cura di), Manuale della Qualità, Ed. ll Sole 240re, 
+2001.
+
+
+
+O.ME.FA, S.p.A. 
+UNIstogg - 20 1@naddrAfUafla Qualità: Quaderno 4 
+
+Ostinelli* presenta una classificazione variabile a seconda: 
+
+— _ delle entità organizzative o sotto-unità coinvolte 
+— deltipo di oggetto sottoposto a trasformazione 
+— _ della tipologia di attività svolte. 
+
+Con riferimento alle entità organizzative o sotto-unità coinvolte, i processi possono essere: 
+-  inter-organizzativi (cioè che avvengono tra due distinte organizzazioni aziendali) 
+- _ interfunzionali (ai quali partecipano le funzioni aziendali o le unità appartenenti alla medesima impresa) 
+— _ interpersonali (che coinvolgono ristretti gruppi di persone all'interno di definite funzioni o unità organiz- 
+
+zative). 
+
+Con riferimento al tipo di oggetto sottoposto a trasformazione, si possono distinguere processi di: 
+—  trasformazione di informazioni (es.: il processo di formulazione di offerta ai cliente) 
+- trasformazione di oggetti fisici (es.: la manutenzione di un impianto di produzione), 
+
+con le ulteriori scomposizioni del caso (tuttavia, osserva l'autore, una demarcazione nitida fra processi, ba- 
+sata su questo criterio, può essere impraticabile, considerato che molti processi trattano tanto informazioni 
+quanto oggetti fisici). 
+
+Con riferimento alla tipologia di attività, avremo: 
+- Processi di tipo operativo 
+— Processi di tipo manageriale. 
+
+Rummler e Brache° propongono la seguente classificazione dei processi aziendali: 
+
+Processi primari generici: 
+-  Generazione contrattuale 
+- Sviluppo e lancio di prodotti e servizi 
+- Produzione 
+- _ Distribuzione 
+- Fatturazione 
+—  Evasione degli ordini 
+- Servizi ai clienti 
+- Gestione delle garanzie 
+
+Processi primari specifici di settore: 
+—  Concessione di prestiti (banche) 
+— _ Definizione dei rimborsì (assicurazioni) 
+— _ Assegnazione di sussidi (enti governativi) 
+— Ritiro della merce {commercio al dettaglio) 
+— Preparazione dei pasti (ristorazione) 
+
+23 Ostinelli C., La mappatura e l'analisi dei processi gestionali: al cuore dell'Activity Based Management, LIUC Papers n.22, Serie economica aziendale, 
+4, luglio-agosto 1995. 
+
+24 Rummiler G.A., Brache A.P., Improving performance - How to manage the White Space on the Organizalion Chart, Jossey-Bass Publishers - 2nd Ed. 
+1995.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 31 
+
+- _ Movimentazione dei bagagli {trasporto aereo) 
+— Servizi dell'operatore (telefonia) 
+— Redazione di manuali d'uso (produttori di computer) 
+- Gestione delle prenotazioni (hotel) 
+
+Processi generici di supporto: 
+- Formalizzazione della pianificazione strategica e tattica 
+—  Budgeting 
+— _ Reclutamento di personale 
+- Formazione 
+-  Gestione dei servizi generali 
+- _ Approvvigionamenti 
+-  Sistemi Informativi 
+
+Processi manageriali generici: 
+- Pianificazione strategica e tattica 
+— _ Disposizione degli obiettivi 
+- _ Allocazione delle risorse 
+- Gestione delle prestazioni del personale 
+— Riesame delle attività operative/Monitoraggio delle performances 
+
+Norton e Kaplan®, nel definire la catena del valore dei processi aziendali interni, identificano tre principali 
+processi dell'attività economica di un'organizzazione: 
+
+— Processo di innovazione, distinto in: 
+
+—  lIdentificare il mercato 
+
+— Creare il prodotto/servizio 
+
+- _ Processo gestionale operativo, costituito da: 
+— Realizzare i prodotti/servizi da offrire 
+— Consegnare i prodotti/servizi 
+
+- _ Processo di servizio post-vendita, consistente nell' assistere il cliente. 
+
+25 Kaplan R.S., Norton D.P, Balanced Scorecard - Tradurre la strategia in azione, Ed. ISEDI, 2000.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoga - 20 1@0a3érA/Uafa Qualità: Quaderno 4 
+
+Rappresentazione dei processi 
+
+Lo studio dei processi aziendali, finalizzato alla loro analisi e al loro miglioramento, ne potrebbe richiedere 
+una rappresentazione descrittiva. La descrizione accurata di un processo, attraverso le diverse soluzioni 
+grafiche che ne sintetizzano i passaggi, può costituire anche una base per la pianificazione di percorsi di 
+audit che tengano conto delle criticità dei processi, consentendo di modulare opportunamente i tempi e il 
+grado di approfondimento dell'indagine. Sono disponibili numerose metodologie di analisi e progettazione 
+dei processi, atte a fornire: 
+— _ elenchi dei processi, strutturati sui diversi livelli della loro possibile stomposizione 
+— _ iflussi operativi che descrivono la successione delle attività 
+- strumenti SW per la rappresentazione grafica dei percorsi di attività e delle relazioni. 
+
+La rappresentazione accurata di un processo 
+costituisce anche una base per la pianificazione 
+di percorsi di audit che tengano conto delle criticità 
+al fine di modulare opportunamente i tempi 
+e il grado di approfondimento dell'indagine 
+
+Quanto, in particolare, alla scomposizione dei processi, vengono in genere considerati i seguenti livelli, in 
+ordine di dettaglio progressivo*: 
+— Mmagcroprocesso 
+— processo 
+- fase 
+— attività 
+- operazione. 
+
+— La scomposizione in macroprocessi, come quella, già richiamata, impiegata da Porter per rappresentare 
+la catena del valore, permette l'individuazione di output definiti, dotati di valore riconoscibile dal punto di 
+vista del mercato. 
+
+- | processi hanno di solito come "clienti" altri processi; essi descrivono in modo abbastanza dettagliato 
+i percorsi per la realizzazione di output che in genere sono valutabili dal punto di vista del loro valore 
+economico. 
+
+26 i contenuti di questo paragrafo sono basati in buona parte su: Ostinelli C. (1995).
+
+SCHEDA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 33 
+
+— Le fasi definiscono le tappe del percorso appena descritto e descrivono il modo in cui i processi vengono 
+messi in atto. 
+
+— Le atlività sono le componenti operative delle fasi; producono output il cui valore è significativo solo 
+nell'ambito del processo di appartenenza. Le attività costituiscono tipicamente il livello minimo di analisi 
+e in genere vengono svolte da una stessa unità funzionale dell'organizzazione. 
+
+- Infine, le singole operazioni costituiscono l'unità elementare di esecuzione di un'attività. La loro indivi- 
+duazione può essere necessaria quando occorre spingere lo studio del processo a un livello particolar- 
+mente approfondito. 
+
+Un progetto di "process mapping", 
+data la natura transfunzionale che lo caratterizza, 
+richiede sempre la costituzione di team 
+composti da persone 
+appartenenti alle diverse unità organizzative, 
+dotate di elevate competenza, 
+capacità critica e creatività 
+
+Le modellizzazioni hanno lo scopo di descrivere il processo nello stato attuale (as is) e nella sua configu- 
+razione desiderata (as to be). Ai fini della progettazione o trasformazione dei processi, la modellizzazione 
+dei flussi di attività può assumere diverse forme, dalle più semplici alle più complesse, Nei casi di maggiore 
+complessità esse si servono di supporti SW di analisi e rappresentazione, ampiamente disponibili sul merca- 
+to, allo scopo di soddisfare le varie esigenze di applicazione e i diversi livelli di approfondimento dello studio. 
+Attraverso le modellizzazioni è possibile eseguire la mappatura dei processi aziendali, al fine di: 
+
+1. comprendere in che modo vengoano impiegate le risorse aziendali 
+
+2, esplicitare le interdipendenze fra le diverse attività, anche se svolte da funzioni distinte 
+
+3. valutare la convenienza economica dei diversi corsi di azione (per esempio, allo scopo di decidere se 
+produrre all'interno o esternalizzare) 
+
+4, imputare i costi delle attività aziendali, soprattutto quelle legate a processi manageriali e di supporto, agli 
+oggetti ultimi di calcolo, quali: prodotti, servizi, tipologie dei clienti, canali disiributivi, aree geografiche 
+
+5. determinare il mix e il livello appropriati di risorse da assegnare ai processi 
+
+6. semplificare i processi gestionali identificando le attività che non aggiungono valore alla soddisfazione 
+del cliente, ovvero quelle attività ridondanti e non necessarie, che assorbono risorse senza però gene- 
+rare benefici significativi in termini competitivi. 
+
+Un progetto di "process mapping”, data la natura transfunzionale che lo caratterizza, richiede sempre la 
+costituzione di team composti da persone appartenenti alle diverse unità organizzative, dotate di elevate 
+competenza, capacità critica e creatività.
+
+
+
+O.ME.FA. S.p.A. 
+UNIst5oa - 20 }@padérirlafà Qualità: Quaderno 4 
+
+La struttura Input-Output-Vincoli-Risorse, 
+oltre a caratterizzare ogni singola attività, 
+deve consentire di pervenire al disegno della mappa 
+del processo nel suo insieme. 
+Attraverso questi elementi devono essere 
+messe in luce le relazioni di dipendenza 
+cliente-fornitore esistenti lungo un processo 
+
+Le tecniche di modellizzazione dovrebbero consentire, anche nei casi di minore complessità organizzativa, 
+di mettere in luce, per le diverse attività, almeno i seguenti elementi: 
+
+Gli input possono essere un fabbisogno o domanda, un passaggio documentale-informativo, un'entità 
+fisica (materia prima o semilavorato) 
+
+Gli output sono il prodotto finale che viene rilasciato dall'attività, il suo risultato ultimo 
+
+| fattori di vincolo: sotto forma di obiettivi e metodologie di lavoro, i fattori di vincolo condizionano l'attività. 
+Hanno natura gestionale, organizzativa e strutturale. Sono costituiti da eventi, procedure, regole, norme 
+o linee guida che determinano le performance di efficacia ed efficienza di un'attività 
+
+| fattori di complessità: misure di tipo fisico-tecnico che mettono in relazione i carichi di lavoro di un'attivi- 
+tà, ovvero la quantità di risorse impiegate, con la complessità gestionale dell'impresa. Sono misure della 
+frequenza e dell'intensità delle richieste di risorse da parte dei prodotti, dei clienti, dei canali distributivi, 
+dei fornitori e dei dipendenti 
+
+Le risorse impiegate, ovvero le persone, le tecnologie, gli strumenti, le strutture e i servizi esterni utilizzati 
+per lo svolgimento di un'attività 
+
+| fornitori e i clienti. 
+
+La struttura Input-OQutput-Vincoli-Risorse, oltre a caratterizzare ogni singola attività, deve consentire di per- 
+venire al disegno della mappa del processo nel suo insieme. Attraverso l'esplicitazione di questi elementi 
+devono essere messe in luce le relazioni di dipendenza cliente-fornitore esistenti lungo un processo.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 35 
+
+Strumenti per la rappresentazione dei processi 
+
+Alcuni fra i diagrammi più utilizzati, per una documentazione di tipo generale dei processi, sono i seguenti””: 
+Diagramma SIPOC 
+Diagramma di flusso 
+Diagrammi Interfunzionali 
+Diagramma IDEFO 
+
+Il diagramma SIPOC (Supplier-Input-Process-Output-Customer), evidenzia le macrofasi prima elencate, 
+fornendo le risposte alle seguenti questioni: 
+1. Chi fornisce input al processo? 
+
+Quali sono gli input del processo? 
+
+Quali sono le fasi del processo? 
+
+Quali sono gli output del processo? 
+Chi riceve gli output del processo? 
+
+Chi fornisce Quali sono gli Quali sono le Quali sono gli Chi riceve gli 
+input al input del fasi del output del output del 
+
+processo? processo? processo? processo? processo? 
+
+A 
+
+L) n 
+
+- im m 
+
+Fig.6 _ Diagramma SIPOC 
+
+27 Si tratta di un elenco essenziale, al quale vanno aggiunti numerosi tools, validi in funzione dell'ambiente di applicazione. Vedere anche, in particolare 
+per le organizzazioni di servizio: E. Leonardi, Disegnare i processi. Il metodo ZOOM UP. La persona e il gruppo. La comunicazione interna, Ed. Franco 
+Angeli, 2012.
+
+f E w N 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 {@oaddrAFafà Qualità: Quaderno 4 
+
+Diagramma di flusso 
+
+In senso generale, un diagramma di flusso {flowchart) è la rappresentazione grafica del flusso di attività in un 
+processo. Îl modo più semplice per elaborare un diagramma di flusso è quello di utilizzare simboli diversi per 
+rappresentare le attività, e frecce per rappresentare le connessioni fra le attività. La simbologia più comune 
+prevede l'uso degli elementi riportati in figura 7. In aggiunta ad essi è possibile indicare al lato dei simboli le 
+risorse e gli strumenti che vengono impiegati e le condizioni nelle quali le attività si svolgono. 
+
+Un limite dei diagrammi di flusso è quello di non mostrare chi esegue le diverse attività. Tale limite può essere 
+superato attraverso l'impiego dei diagrammi interfunzionali, illustrati di seguito*s. 
+
+Punto di inizio/fine 
+
+Fase o attività del processo 
+
+‘ Punto di decisione 
+
+‘ Input/Output 
+
+Documento 
+
+Fig.7  Diagramma di flusso e relative notazioni 
+
+28 Andersen 8., Business Process Improvement, ASQ Quality Press, 1999.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 37 
+
+Diagramma interfunzionale 
+
+Un diagramma di flusso interfunzionale fornisce informazioni aggiuntive, rispetto alla semplice successione 
+delle attività illustrata attraverso un diagramma di flusso di tipo lineare, come quello appena visto. Il diagram- 
+ma interfunzionale può inoltre accogliere informazioni aggiuntive, quali: il tempo impiegato per svolgere 
+un'attività, i costi, il valore aggiunto, il grado di completamento. 
+
+D'altra parte, aggiungere molte informazioni può rendere la rappresentazione difficile da comprendere, spe- 
+cialmente se la complessità del processo rappresentato è elevata. 
+In questo caso può risultare utile un diagramma multilivello, che consiste nella scomposizione della rappre- 
+sentazione in vari livelli gerarchici: per ciascuna delle attività principali rappresentate nel diagramma gene- 
+rale, quando è necessario scendere a un livello di maggiore dettaglio, si elabora un diagramma di flusso di 
+livello inferiore”®. 
+
+Questo principio sostiene l'ultima tecnica qui richiamata: l'IDEFO. 
+
+P FUNZIONEA | FUNZONEB | FUNZIONEC | FUNZONED. — FUNZIONEE. 
+
+Fig.8 _ Esempio di diagramma interfunzionale 
+
+29 Andersen B. (1999).
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstogg - 20 1@uad4A/fafa Qualità: Quaderno 4 
+
+Diagramma IDEFO 
+
+IDEF (Integrated Definition Methods) è una modalità di modellazione e analisi organizzativa, consistente in 
+un repertorio di 15 tipi di diagrammi, dei quali IDEFO è il più diffuso. IDEFO (Integration Definition Language 0) 
+è basato sulla tecnica SADT (Structured Analysis and Design Technique), sviluppata da Douglas T. Ross and 
+Soffech, Inc. Nella sua forma originale, IDEFO comprende sia la definizione di un linguaggio di modellazione 
+grafica che la descrizione di una metodologia generale per sviluppare modelli®°, 
+Attraverso IDEFO i processi vengono rappresentati secondo una logica di scomposizione progressiva dell'or- 
+ganizzazione În sotto-sistemi, processi, sotto-processi e attività. È possibile in questo modo individuare fun- 
+zioni, attività, azioni, processi, operazioni e relazioni funzionali, oltre che i flussi di informazioni e dati che 
+attraversano l'organizzazione. 
+La notazione grafica di base prevede che una funzione, processo o atlività siano rappresentati come un ret- 
+tangolo, identificato con un codice attività e con una descrizione attività, e le relazioni con l'esterno mediante 
+frecce in entrata e in uscita dal rettangolo, che indicano: Input, Qutput, Risorse (o "mechanism"), vincoli (o 
+"control"). La figura che segue rappresenta, schematizzandola, la logica di scomposizione IDEFO. 
+
+PROCESS NAME 
+
+1 
+PROCESS NAME 
+
+, 2 
+
+Noda Tille No. 
+
+Fig.9  Logica di scomposizione IDEFO 
+
+30 Drafi Federal Information Processing Standards Publication 183 - 1993 Decembe2r1 - Standardfor Integration Definition for Function Modelling (IDEFO)} 
+
+
+
+O.ME.FA. S.p.A. 
+UNiIstore - 2016 - 371459 L'approccio per processi 39 
+
+Altri strumenti di rappresentazione 
+
+Oltre agli strumenti appena richiamati, l'analisi, lo sviluppo, la gestione e il monitoraggio dei processi azien- 
+dali sono oggi supportati, nelle situazioni di maggiore complessità, da soluzioni IT che consentono una 
+modellizzazione estesa dei processi e costituiscono uno strumento utile sia nella fase di conversione delle 
+strutture organizzative funzionali in organizzazioni orientate ai processi, sia per automatizzare l'esecuzione 
+dei processi. Fra gli strumenti più diffusi si segnala il Business Process Modeling Notification (BPMN)?"; si 
+tratta di un linguaggio standard per la modellizzazione dei processi aziendali che permette di graficizzare 
+i processi, utilizzando le logiche del diagramma di flusso. L'obiettivo del BPMN è quello di costituire un 
+supporto per il Business Process Management, accessibile sia agli specialisti che al personale aziendale, 
+attraverso un sistema di notazione intuitivo, ma comunque adatto a rappresentare anche situazioni di elevata 
+complessità. 
+
+31 Cr. Sinibaldi A, La gestione dei processi in azienda - Introduzione al Business Process Management, Franco Angeli, 2009. l testo fornisce indicazioni 
+per orientarsi nel vasto mercato dei Business Process Management System (BPMS), e per la scelta dei prodotti SW più idonei a rispondere alle esi- 
+genze delle diverse organizzazioni,
+
+
+
+O.ME.FA. S.p.A. 
+UNIstor9 - 20 1@nadérArafà Qualità: Quaderno 4 
+
+Autorità di processo 
+
+Nell'approccio per processi si applica, come si è visto, la logica "fornitore-cliente interni". In base a tale 
+logica ogni funzione aziendale coinvolta nel processo deve conoscere, comprendere e soddisfare i bisogni 
+del "cliente" {la funzione che segue, nel flusso delle attività, e che utilizza l'output dell'attività precedente). Il 
+responsabile di ciascuna attività diviene in tal modo il manager della propria "sotto-organizzazione”, ed è il 
+responsabile della realizzazione dei corrispondenti obiettivi (dettati dalle aspettative del cliente)?®°. 
+
+Le attività che "toccano" il cliente finale determinano peraltro l'orientamento della concatenazione interna 
+fornitore-cliente. Questa condizione fa sì che l'intero sistema sia regolato dal meccanismo delle aspettative 
+interne, rendendo meno necessaria una direzione di tipo verticistico. 
+
+Nell'approccio per processi si applica 
+la logica "fornitore-cliente interni": 
+ogni funzione aziendale deve soddisfare 
+i bisogni del "cliente" (la funzione che segue). 
+Il responsabile di ciascuna attività 
+è il manager della propria "sotto-organizzazione" 
+
+L'effetto benefico di un simile approccio per processi è in generale superiore nelle grandi aziende, dove esso 
+si rivela maggiormente utile nel riuscire a finalizzare agli obiettivi di business quelle attività che sono organiz- 
+zativamente più distanti dalla fase realizzativa (in particolare, processi e funzioni di supporto). E soprattutto in 
+tali realtà, pertanto, che attraverso la creazione del process owner deve essere assegnata la responsabilità 
+del processo. Il process owner è il responsabile del processo di business. Le sue responsabilità coprono 
+l'intero processo "end to end" e riguardano le performance del processo in termini economici e di qualità. 
+Egli sarà responsabile per: 
+- il raggiungimento degli obiettivi 
+
+— la gestione del miglioramento 
+- _ il presidio delle prestazioni. 
+
+A tal fine dovrà governare le relazioni funzionali fra gli enti che intervengono nel processo. 
+
+32 | contenuti di questa scheda fanno in buona parte riferimento a quanto riportato sull'argomento da Merli-Biroli (1999), qui riesaminato e adattato alla 
+luce dei requisiti ISO 9001:2015, soprattutto allo scopo di evidenziare come i sistemi qualità istituiti in base alla nuova Norma possano trarre vantag- 
+gio, ai fini della loro applicazione, dalle soluzioni proposte dagli autori.
+
+SCHEDA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 41 
+
+Le attività che il process owner, coadiuvato dai responsabili delle funzioni coinvolte nel processo, dovrà 
+sviluppare, sono: 
+
+— _ individuazione delle finalità del processo {mission) 
+
+- _ individuazione delle interazioni con l'esterno e con le altre attività dell'azienda 
+— _ analisi del processo 
+
+-  individuazione delle opportunità di miglioramento 
+
+— _ definizione delle modalità di intervento 
+— _ attuazione delle modifiche 
+
+—  Verifica dei risultati. 
+
+È necessario che l'istituzione 
+della figura del process owner sia preceduta 
+dalla predisposizione 
+delle opportune condizioni "culturali", 
+in seno all'organizzazione 
+
+L'analisi del processo, in particolare, sarà costituita da: 
+
+- _ definizione dei limiti che stabiliscono l'inizio e la fine del processo; tali limiti spesso coincidono con azioni 
+puntuali (quali, per esempio, l'emissione di un particolare documento, o l'effettuazione di una specifica 
+attività, ecc.) e rappresentano un riferimento per l'individuazione e l'analisi del “tempo di attraversamento” 
+
+- identificazione dei fornitori e delle pertinenti parti interessate, sia esterne che esterne, ovvero di tutti 
+coloro che forniscono input al processo e di tutti coloro che utilizzano gli output di processo 
+
+- rilevazione delle aspettative delle pertinenti parti interessate (interne/esterne) e loro gerarchizzazione, 
+secondo opportune scale di priorità. Questo può essere fatto mediante intervista ai responsabili delle 
+funzioni/processi a valle del processo considerato o ad esso correlati. Relativamente ai clienti interni ed 
+esterni, normalmente, emergeranno aspettative riconducibili ai seguenti fattori: 
+
+— _ puntualità (rispetto dei tempi) 
+
+— assenza di errori o difetti 
+— _ qualità delle comunicazioni e dei processi relazionali”3, 
+
+— _ definizione degli indicatori di prestazione, per il monitoraggio del processo. 
+
+Oltre al ruolo del process owner, risulta di fondamentale importanza il ruolo dell'alta direzione, la quale sarà 
+responsabile di definire l'architettura del sistema, individuare le strategie di risposta al cliente esterno, attri- 
+buire le responsabilità gestionali. 
+
+33 Per quanto riguarda le ulteriori aspettative delle parti interessate, numerose questioni di altra natura potranno, come si è visto, aggiungersi a quelle 
+qui richiamate, nelle logiche di sostenibilità evidenziate, in particolare, nei "Quaderni" nn.2 e 3.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstony@ - 20 1@naddrA/afa Qualità: Quaderno 4 
+
+Nell'individuare il process owner occorrerà considerare le possibili resistenze, da parte dei responsabili delle 
+funzioni ricadenti nell'ambito del processo a questi assegnato e delle figure di più elevato livello, a cui questi 
+ultimi tradizionalmente riportano, nella piramide organizzativa; potrebbe in particolare essere difficile da fare 
+accettare l'interposizione di una nuova figura sovraordinata alle funzioni che ricadono nel processo consi- 
+derato, in aggiunta alle figure di livello superiore già presenti nella consolidata struttura organizzativa, con il 
+rischio di conflitti di competenze e scarsa legittimazione del ruolo. 
+
+È necessario, allo scopo di prevenire tale problema: 
+
+che l'implementazione dell'approccio per processi, e la conseguente istituzione della figura del process 
+owner, siano precedute da un'accurata predisposizione delle opportune condizioni "culturali", in seno 
+all'organizzazione 
+
+che il process owner venga individuato fra i responsabili delle funzioni componenti il processo a questi 
+assegnato, e in particolare, fra le funzioni che caratterizzano tale processo dal punto di vista delle criticità 
+e delle competenze di livello più complesso 
+
+che il process owner riceva adeguato training in riferimento agli aspetti di leadership e comunicazione 
+
+che le relazioni nell'ambito del processo siano adeguatamente "mappate" e che siano predisposte op- 
+portune procedure per la gestione del processo. 
+
+Il Process Owner non è l'unica figura a cui potrebbero essere assegnate specifiche responsabilità connesse 
+all'approccio per processi. Fra le altre figure legate a tale approccio, si possono individuare*: 
+
+il Process Facilitator, con il compito, nelle situazioni più articolate, di garantire l'efficace collaborazione 
+delle unità operative nello svolgimento del processo. La sua funzione è particolarmente importante du- 
+rante la transizione dell’organizzazione dal modello funzionale al modello "per processi". 
+Il Project Manager, responsabile di un progetto (di ricerca, di miglioramento, ecc.). La sua responsabilità 
+riguarda: 
+- il raggiungimento degli obiettivi del progetto 
+
+— ilrispetto dei tempi 
+
+— la gestione del team di progetto 
+
+— _ la consuntivazione del progetto 
+Il Program Manager. Nelle situazioni di maggiore complessità, ha la funzione di pianificare controllare 
+ed integrare i vari team che agiscono sul processo. In generale, garantisce i risultati tecnici, economici e 
+temporali del programma affidatogli. 
+
+34 Cir. Barbarino FC., Capire i processi. Come organizzarli, gestirli e migliorarti, Ed. UNI, 2002.
+
+
+
+O.ME.FA. S.p.A. 
+UN Istore - 2016 - 371459 L'approccio per processi 43 
+
+Miglioramento dei processi 
+
+La vasta letteratura prodotta sul tema della gestione per processi e del miglioramento dei processi mette 
+a disposizione ampie e dettagliate guide per affrontare tali aspetti nel modo più adatto alle caratteristiche 
+dell'organizzazione, nel contesto di riferimento. 
+Risalendo ai contributi più consolidati, è possibile individuare i passaggi che meglio corrispondono alla pro- 
+spettiva delineata dalla ISO 9001. Ad essi si farà riferimento nelle parti che seguono, in questa scheda. 
+
+Innanzitutto è bene richiamare alcuni fondamenti della gestione per processi. Secondo Merli e Biroli (1996) 
+essi si possono sintetizzare nei seguenti concetti-chiave: 
+1. Focalizzazione sui processi visti come concatenazioni di Clienti e Fornitori interni (C-F) 
+
+2. Continuo allineamento dei processi ai bisogni del Cliente finale 
+
+3. Presidio continuo delle prestazioni e delle modalità di attuazione del processo 
+4. Gerarchizzazione dei processi per stabilire le priorità degli interventi migliorativi 
+
+In particolare, la scelta dei processi su cui occorre intervenire "prima che sugli altri" rappresenta una compo- 
+nente fondamentale nel percorso di miglioramento complessivo dell'organizzazione. Gli autori forniscono a 
+tale riguardo la soluzione riportata nelle pagine seguenti, distinguendo due fasi principali: 
+
+1. La determinazione dei processi prioritari 
+
+2. Gli interventi operativi 
+
+Allo scopo di evidenziare il modo (uno dei modi possibili) in cui i requisiti della ISO 9001 possono essere 
+soddisfatti attraverso l'applicazione degli strumenti del Business Process Management e del Business Pro- 
+cess Improvement, a ciascuno dei passaggi di cui si compone il percorso qui considerato è stato associato, 
+quando applicabile, il pertinente punto della Norma”. 
+
+35 Si veda in appendice l'elenco dei punti-norma.
+
+SCHEDA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstom - 20 1 uaddrAfafa Qualità: Quaderno 4 
+
+Fase 01 - Determinazione dei processi prioritari 
+
+Descrizione 
+p.to Norma 
+
+° applicabile 
+
+01.01 Determinare gli obiettivi strategici dell'organizzazione, nel breve-medio periodo 4.1 
+
+Individuare i processi interni ad essi più direttamente collegati: ciò deve essere 4.4 
+01.02 ottenuto attraverso il confronto delle funzioni competenti, ad esito di discussioni 
+
+strutturate e opportunamente disciplinate da regole di confronto 7.3 
+
+Determinare i fattori-chiave di successo, che dovranno rispondere alle seguenti 
+caratteristiche: 5.1.1 
+- devono essere in numero limitato (da 4 a 8, in relazione, rispettivamente, alla 
+
+maggiore o minore criticità della situazione aziendale, e quindi della 
+01.03 5.2.1 
+
+necessità maggiore o minore di concentrare gli sforzi) 
+- devono esser condivisi nell'ambito del gruppo di discussione 
+- devono essere associati a fattori di peso diversi, per esempio altribuendo a 6.2.1 
+
+ciascuno un valore percentuale 
+
+Ricercare i processi interni correlati ai fattori-chiave, ovvero i processi che 
+impattano maggiormente sul loro raggiungimento: ciò può essere fatto 
+
+01.04 
+elencando i processi interni (di livello gerarchico omogeneo) e determinando 
+per agni fattore chiave di successo i processi ad esso correlati. 
+
+Osserviamo, a questo riguardo, che: 
+
+1. Di "Fattori Gritici di Successo" parla anche Ostinelli (1995), che li descrive come segue: "quelle variabili, 
+interne all'azienda o esterne d'ambiente, dalle quali dipende il successo dell'azienda (Fattori Critici di 
+Successo - FC.S,), intendendo per successo la capacità di produrre un adeguato livello di redditività, di 
+mantenere una posizione di leadership nel settore e di garantirsi un buon rapporto con le istituzioni di 
+riferimento (...). L'enfasi viene posta su quelle sequenze di attività che l'azienda ha via via predisposto 
+per differenziarsi dai suoi concorrenti nell'attuale contesto competitivo. Se nel business in cui l'azienda 
+opera l'ampiezza e la completezza della gamma sono fattori critici di successo, al processo di sviluppo 
+di un nuovo prodotto o di nuove varianti deve essere dedicata un'attenzione particolare", 
+
+Come conseguenza di ciò, nella gestione per la qualità, Fattori Critici di Successo dovrebbero ispirare 
+la politica per la qualità, in quanto distintiva degli orientamenti di un'organizzazione relativi alla qualità, 
+e ove possibile trovare riflesso nella sua formulazione, in modo da generare corrispondenti obiettivi per 
+la qualità, e così assicurare: 
+— la coerenza della Politica per la Qualità con gli indirizzi strategici dell'Organizzazione
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 45 
+
+- II dispiegamento di un Sistema Qualità tale da assicurare la pianificazione, l'ottenimento, il moni- 
+toraggio e il continuo miglioramento della capacità di raggiungere gli obiettivi e perciò di contribu- 
+ire alla realizzazione degli indirizzi strategici. 
+
+Quando i FCS per la Qualità dovessero essere individuati nella prospettiva appena tracciata, il modello 
+proposto da Merli-Biroli costituirebbe una delle possibili modalità per affrontare in modo sistematico alcuni 
+requisiti fondamentali della ISO 9001 relativi alla Leadership (Cap. 5) e alla Pianificazione (Cap. 6)%. 
+
+i p.to Norma 
+Descrizione SE 
+
+applicabile 
+
+Definire la matrice Processi/Fattori chiave, per l'individuazione dei processi 
+prioritari, come segue: 
+
+d Oqgni intersezione processo/fattore chiave viene studiata per valutare se esiste 
+fra essi correlazione. Se la correlazione esiste, essa va classificata come "forte” 
+o "debole", con valori rispettivamente pari a 2e 1 
+
+01.06 Si esegue la somma ponderata (somma dei prodotti: valore della correlazione x 
+" "peso" % del fattore) 
+
+36 Il riferimento è soprattutto ai seguenti requisiti: 
+
+5.1.1  Generalità - L'alta direzione deve dimostrare leadership e impegno nei riguardi del sistema di gestione per la qualità: {...) 
+
+b) assicurando che siano stabiliti la politica e gli obiettivi per la qualità relativi al sistema di gestione per la qualità e che essi siano compatibili con il 
+contesto e con gli indirizzi strategici dell'organizzazione; 
+
+c) assicurando l'integrazione dei requisiti del sistema di gestione per la qualità nei processi di business dell'organizzazione... 
+
+5.2.1 Sviluppo della politica per la qualità - L'alta direzione deve stabilire, attuare e mantenere una politica per la qualità che: 
+
+a) sia appropriata alle finalità e al contesto dell'organizzazione e supporli i suoi indirizzi strategici; 
+
+b} costituisca un quadro di riferimento per fissare gli obiettivi per la qualità,.. 
+
+6.2.1  Ll’organizzazione deve stabilire gli obiettivi per la qualità relativi alle funzioni, ai livelli e ai processi pertinenti, necessari per il sistema di gestione per 
+la qualità. Gli cbiettivi per la qualità devono: 
+a) essere coerenti con la potitica per la qualità...
+
+
+
+O.ME.FA. S.p.A. 
+UNIstor - 20 1@naderAM/efa Qualità: Quaderno 4 
+
+Si riporta la somma ponderata su una scala da 1 a 5, per ciascuna riga, in 
+una colonna ("B") che indicherà per ciascuno dei processi considerati il 
+
+01.07 valore ottenuto, da intendersi come misura dell'impatto di quel processo sul 
+business. | valori più alti identificheranno i processi che maggiormente 
+influenzano la realizzazione dei FCS, 
+
+Si passa a valutare ciascuno dei processi questa volta in funzione delle sue 9,1.3 c) 
+performance attuali, in termini di efficacia e di efficienza. Tale valutazione 
+dovrebbe essere condotta attraverso il coinvolgimento dei clienti interni del 
+
+01.08 
+processo e, per quanto possibile, attraverso il confronto con i competitor. 9,3.2 c) 3) 
+
+7.3 
+
+Il risultato della valutazione verrà espresso come giudizio relativo alla 
+Qualità ("Q") del processo, utilizzando questa volta una scala alfabetica: 
+A = Ottima 
+
+01.,09 B = Buona 
+C = Discreta 
+D = Sufficiente 
+E = Insufficiente 
+
+Questi giudizi varranno riportati in un'altra colonna della matrice. Le coppie 
+di coordinate B/Q serviranno a collocare i punti rappresentativi di ciascun 
+processo su un piano cartesiano nel quale i processi ricadenti nell'area 
+
+01.10 dove è più elevato il valore di B (elevato impatto del processo sul business) 8.4a.) 21) 
+e contemporaneamente più basso il valore "Q" (processi con qualità 
+insufficiente) risulteranno prioritari. 
+Su di essi andranno pertanto avviati i primi interventi di miglioramento. 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 47 
+
+Fase 02: Interventi operativi 
+
+S p.to Norma 
+Descrizione RS 
+
+applicabile 
+
+La gestione per processi richiede innanzitutto l'assegnazione della 
+responsabilità di processo a un "Process Owner" il quale deve possedere: 4.4.1 @) 
+
+- autorevolezza {leadership basata sulla competenza) 
+- elevate doti relazionali. 5.1.1 j} 
+
+In genere il ruolo andrebbe assegnato ai responsabili prevalenti del processo, 
+02,01 ovvero a coloro che hanno maggiore e più diretto interesse verso l'output 
+
+5.3 b) 
+Il process owner deve essere investito della responsabilità globale del 
+processo ed essere adeguatamente motivato, anche attraverso opportuni 13 
+riconoscimenti legati al risultato 
+
+Il process owner dovrebbe innanzitutto costituire un team interfunzionale, allo 
+scopo di: 
+a) determinare chiaramente le finalità del processo, ovvero la sua "ragion 
+
+d'essere". Per esempio la ragion d'essere del processo di formazione 4.4.1 
+interna è ottenere migliori prestazioni dalle attività in cui sono coinvolte le 
+persone a cui la formazione è rivolta 4.4.1 a) 
+
+b) identificare le relazioni del processo con l'esterno e con le altre attività 
+aziendali 4.4.1 b) 
+
+02.02 c) definire i punti di inizio e fine del processo, in modo che essi siano 
+' chiaramente identificabili 
+
+d) individuare i fornitori interni del processo 4.4.1 c) 
+e) individuare i clienti interni del processo 
+f) individuare gli input 4.4.1 f} 
+g) individuare gli output 
+h) identificare gli elementi del processo che influenzeranno la soddisfazione 8.5.1 c) 
+
+del cliente finale 
+i) definire su tale base criteri e indicatori della qualità dell'output
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 1oagdrAflèfh Qualità: Quaderno 4 
+
+A questo punto occorre avere una visione dell'interno del processo, necessaria 
+allo scopo di identificare e condurre i miglioramenti necessari. 
+A tale scopo occorrerà descrivere nel dettaglio la sequenza delle fasi del 
+processo, utilizzando le tecniche di rappresentazione più idonee. 
+Fra esse, nella maggior parte dei casi si rivela efficace il diagramma di flusso 
+interfunzionale, attraverso il quale si possono evidenziare, con una semplice 
+
+02.03 schematizzazione: 4.4.2 a) 
+- la frammentazione del flusso 
+- la presenza di ricicli 
+- le attività con e senza valore aggiunto 
+
+E' importante in questa fase descrivere il processo nel modo in cui 
+effettivamente si svolge, e non come dovrebbe essere in base alle procedure 
+che lo disciplinano, le quali talvolta possono risultare in parte solo "teoriche". 
+
+Allo scopo di stabilire con esattezza gli interventi migliorativi di cui il processo 
+necessita, è necessario ora scomporlo nelle singole parti. 
+Si procede analogamente a quanto fatto per la determinazione dei processi 
+prioritari, dunque attraverso le seguenti fasi: 
+
+- individuazione dei sottoprocessi 
+- creazione della matrice sottoprocessi/fattori chiave del processo (ovvero 
+
+quelli che ne determinano il risultato, quali ad esempio: rapidità, assenza di 9.1.3 c) 
+errori, ecc.). | fattori possono essere accompagnati da un peso, nello 
+
+02.04 
+stesso modo in cui si è proceduto in precedenza, per i Fattori Chiave di 
+Successo. 9.3.2 c) 3) 
+
+- Sempre in analogia con quanto è stato visto in precedenza, 
+nell'intersezione sottoprocesso/fattore, viene indicato il contributo fornito dal 
+sottoprocesso in questione sul fattore stesso: la somma ponderata verrà 
+anche in questo caso riportata nella colonna degli "impatti" ("B") 
+
+- Si passa poi a valutare lo "stato" ("Q") del sottoprocesso, dal punto di vista 
+della sua efficacia ed efficienza. 
+
+In proposito si segnala che tanto per il caso precedente ("prioritizzazione” dei processi) quanto per questo 
+(classificazione dei sottoprocessi) l'aver definito lo "stato" e l''importanza" degli uni e degli altri potrà costitu- 
+ire una base oggettiva di pianificazione degli audit interni”. 
+
+37 Da UNI EN ISO 9001:2015: 9.2.2 l'organizzazione deve: a) pianificare, stabilire, attuare e mantenere uno o più programmi di audit comprensivi di fre- 
+quenza, metodi, responsabilità, requisiti di pianificazione e reporting, che devono tenere in considerazione l’imporlanza dei processi coinvolti, i cam- 
+biamenti che influiscono sull'organizzazione, e i risultati degli audit precedenti.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 49 
+
+R p.to Norma 
+Descrizione AZ 
+
+applicabile 
+
+Utilizzando, anche in questo caso, una scala di cinque valori per "B" e per "Q", 
+02.05 si creerà una matrice B/Q. 4.4.1 h) 
+
+La matrice verrà poi divisa in 4 aree, tali da identificare rispettivamente: 
+
+A. | sottoprocessi altamente impattanti ma scarsamente performanti, che 4.4.1 g) 
+necessitano di essere riprogettati, utilizzando le logiche del Business Process 
+Reengineering per la loro totale riprogettazione "da zero”, oppure basandosi 6.3 
+
+02.06 sulla loro configurazione attuale. 
+La riprogettazione dovrebbe riguardare le attività in funzione del valore da esse 
+prodotto: in particolare le attività senza valore aggiunto andrebbero minimizzate 
+e se possibile eliminate. 10.1 
+
+B. | sottoprocessi con impatto non trascurabile e con scarse performance; essi, — 4,4,1 g) 
+pur non richiedendo di essere riprogettati, hanno bisogno di miglioramenti 
+
+02.07 drastici (breaktrough), mediante l'adozione delle tecniche più idonee. 6.3 
+
+10.1 
+
+C. | sottoprocessi che sono allo stesso tempo cruciali e altamente performanti. 4.4.1 c) 
+02.08 Essi richiedono di essere gestiti con le logiche del Miglioramento Continuo, 
+
+affinché sia assicurato anche in futuro il loro livello prestazionale. Per tali 
+processi è importante presidiare la catena Fornitore Interno - Cliente Interno 10.1 
+
+D. | sottoprocessi non determinanti, e soddisfacentemente condotti, per i quali — 4,4,1 c) 
+02.09 è richiesta la definizione di adeguati indicatori per presidiare le loro prestazioni 
+
+" e mantenerne lo stato 10.3 
+
+Da tale classificazione dei processi e delle azioni ad essi rivolte, si può osservare come il miglioramento 
+continuo, cardine della ISO 9001, presuma che i processi a cui esso deve essere applicato siano esenti da 
+difetti strutturali. 
+
+Un processo di rilievo per gli obiettivi del Sistema Qualità, che sia affetto da carenze prestazionali, dovrà 
+prima di tutto essere affrontato con interventi dirompenti, repentini e mirati, per risolverne le lacune, e solo 
+allora potrà entrate in "regime" di miglioramento continuo.
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIsto5g - 20 1nadérafAà Qualità: Quaderno 4 
+
+Un esempio di applicazione 
+
+Nel seguito, si propone un esempio di applicazione del procedimento proposto da Merli e Biroli, per la parte 
+relativa all'individuazione dei processi prioritari. Questo, lo scenario ipotizzato: 
+
+Tipo di organizzazione. Istituto di formazione professionale 
+
+Obiettivo strategico di breve-medio periodo: Aumentare il placement del 20 % in tre anni 
+
+Fattori chiave di successo: 
+
+Competenza e professionalità dei docenti 
+
+2. Rete di relazioni con l'esterno (con altre agenzie formative, con associazioni di categoria, con gli Enti 
+Locali, ecc.) 
+
+3. Capacità di innovazione dell'offerta formativa e delle tecnologie formative 
+Comprensione del contesto e delle istanze delle parti interessate e in particolare: 
+Monitoraggio della situazione e delle prospettive occupazionali 
+
+Individuazione delle prospettive di sviluppo economico sul territorio 
+
+Qualità dell'offerta formativa 
+
+Elenco dei processi interni: 
+
+Processi primari generici 
+Generazione contrattuale 
+Sviluppo e proposizione dei servizi 
+Processi amministrativi 
+Servizi ai clienti 
+
+Processi primari specifici di settore 
+- Progettazione formativa 
+- Erogazione dei Corsi 
+
+Processi generici di supporto 
+- Budgeting 
+- Reclutamento di personale 
+- Formazione 
+— Gestione dei servizi generali 
+- _ Approvvigionamenti 
+—  Gestione delle informazioni 
+
+38 Viene qui utilizzata, attualizzandola ai temi della ISO 9001:2015, la classificazione proposta da Rummler-Brache (1995) op.cit.
+
+
+
+O_ME.FA. S.p.A. 
+UNIIstore - 2016 - 371459 L'approccio per processi 51 
+
+Processi manageriali generici 
+- Comprensione del contesto 
+— Pianificazione strategica e tattica 
+-  Definizione degli obiettivi 
+— Allocazione delle risorse 
+— Gestione delle prestazioni del personale 
+- Audit 
+— _ Monitoraggio delle performance 
+- Riesami di direzione 
+
+Applicando quanto prima descritto nei punti da 01.05 a 01.09, si ottiene la seguente matrice “Processi/ 
+Fattori-Chiave" 
+
+ai S L | O P R I ]B /O 
+Competenza e Reto di a ai | Monitoraggio | Individuazione 
+
+SUCCESSO professionalità } relazioni con i(n:rîgîaî;'1iînrî; faltori prospettive Q\;Élr':_îaîlr:zna 
+dei docenti l'esterno occupazionali |_ economiche i 
+
+pEso%| 15 | 2 | o | o | o i 
+PROCESS 
+
+[X Generazione contrattuale L) L 
+[17 Sviluppo e proposizione dei senvizi e e e e e i 
+lm Processi amministrativi _] L Ù 
+TTH Servizi i clienti ° e LA e 
+TT3 Budgeting 9 © e i 
+GL Reclutamento di personale e e e o 
+(1YA | Formazione e © L e 
+
+Gestione dei servizi generali e e L 
+
+[ETEN Approvvigionamenti ® 
+4NH Gestione delle informazioni © © e e e i 
+
+Comprensione del contesto © e e e e e 
+Pianificazione strateegtiatctiaca ® e © e 
+Definizione degli obiettivi © L e e o B- 
+
+[47 Allocazione delle risorse e ® L L e i L 
+Gestione prestazioni del personale @0 © e i 
+
+4:) Audt © © ® L 9 © 
+Monitoraggio delle performance L) © e e | 
+
+XEN Riesami di direzione e ) e © o e ii 
+
+Fig.10  La matrice "Processi/Fattori Chiave"
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoga - 20 1@naddrArbafà Qualità: Quaderno 4 
+
+Attraverso la matrice B/Q (v. figura successiva), ottenuta eseguendo il passaggio descritto al punto 01.10, 
+vengono individuati | seguenti Processi Prioritari: 
+
+P02 - Sviluppo e proposizione dei servizi 
+
+P07 - Formazione del personale docente 
+
+P11 - Comprensione del contesto 
+
+P12 - Pianificazione strategica e tattica 
+
+» 
+009000 
+
+Fig. 11 Individuazione dei processi prioritari 
+
+| processi individuati come prioritari andranno affrontati applicando i passaggi della Fase 2, ovvero attraverso 
+l'ulteriore scomposizione e analisi, fino alla determinazione della nuova matrice B-Q, che fornirà indicazioni 
+relative al tipo di intervento migliorativo da applicare (v. Fig. 12).
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 53 
+
+4 B 
+
+° MIGLIORAMENTO 
+CONTINUO RIPROGETTAZIONE 
+
+MIGLIORAMENTO 
+o MANTENIMENTO BREAKTHROUGH 
+
+Q 
+
+00000 
+Fig. 12 matrice B-Q per l'individuazione degli interventi di miglioramento 
+
+Quello appena illustrato non è l'unico modo per determinare i processi prioritari. Secondo Ostinelli (1995), si 
+distinguono almeno tre metodi per individuare i primi processi sui quali occorre intervenire®”: 
+1. la controsequenza 
+
+2. i fattori critici di successo e i processi gestionali 
+3. le aspettative del cliente e le opportunità di miglioramento. 
+
+Applicando tali approcci, anche in questo caso, viene assegnata priorità ai processi in grado di fornire il mag- 
+giore contributo al raggiungimento degli obiettivi stabiliti dall'organizzazione. La scelta dei processi prioritari, 
+secondo l'autore, deve essere coerente con: 
+— _ la strategia dell'organizzazione 
+-  le politiche organizzative (e, ancora, nell'ambito di pertinenza della ISO 9001, non può non essere in 
+
+particolare considerata la Quality Policy) 
+— _ qdli obiettivi economico-finanziari. 
+
+39 Tali modalità indicate dall'autore consistono a loro volta in adattamenti delle proposte di Berchi e Fontanazza (La semplificazione dei processi azien- 
+dali. Primo passo verso la qualità totale, Milano, Etas Libri, 1991) e di Harrington (Business Process Improvement: The Breaktrough Strategy for Total 
+Quality, Productivity, and Competiliveness, New York, McGraw Hill, 1991).
+
+
+
+O,.ME.FA, S.p.A. 
+UNIstoga - 20 }@oazérirlafa Qualità: Quaderno 4 
+
+Di seguito le tre metodologie richiamate vengono spiegate in breve, non senza segnalare che ampi margini 
+di adattamento e aggiornamento sono disponibili alle organizzazioni che intendano includere tali strumenti 
+nel perimetro del loro sistema qualità. 
+
+1. La controsequenza 
+
+La metodologia della controsequenza consiste nel confronto a coppie fra i processi individuati in relazione 
+a ogni obiettivo aziendale (per noi, in particolare, agli obiettivi per la qualità), per stabilire, al fine di raggiun- 
+gere ciascun obiettivo, quale sia il processo su cui agire in via prioritaria. Praticamente, si costruisce una 
+matrice simmetrica in cui i processi vengono elencati con lo stesso ordine sia in intestazione alle righe che 
+alle colonne. 
+
+Si prende in esame ogni intersezione e in corrispondenza di essa si valuta quale dei due processi messi a 
+confronto sia quello "vincente”. | possibili risultati, e le corrispondenti notazioni da riportare nella matrice, 
+sono indicati nella tabella seguente: 
+
+: Punteggio Notazione nella 
+
+Vince di gran lunga il processo posto sulla riga 3 3R 
+
+Vince ll processo posto sulla riga ' 1 1R 
+
+Condizione di parità 0 0 
+
+Vince il processo posto sulla colonna 1 1C 
+
+Vince di gran lunga il processo posto sulla colonna 3 3C 
+
+| punteggi totali ottenuti da ciascun processo vengono trasformati in percentuale, per consentire l'individua- 
+zione da quelli da cui dipende in misura maggiore il raggiungimento degli obiettivi strategici. 
+
+La figura che segue mostra un esempio di applicazione del metodo ai processi già considerati nella si- 
+mulazione precedente, facendo sempre riferimento all'obiettivo strategico identificato come: "aumentare il 
+placement del 20 % in tre anni". 
+
+La matrice evidenzia quali processi prioritari: 
+
+— _ Pianificazione strategica e tattica 
+— _ Definizione degli obiettivi 
+
+- Comprensione del contesto 
+
+—  Sviluppo e proposizione dei servizi 
+
+— Reclutamento del personale
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459 L'approccio per processi 55 
+
+s3 1 ai 
+
+EEÈ!È!!ÈHÈ!È!È 
+0 R] 0 BRIARIORABRR 0 10 /10 ARARARAARR o Po 
+D 3C 3C 3C 3C 10 1C 3C 3C 3C 30 3C 3C 30 30 36 | 
+
+GR1C 3c sc s 0 m0 .0 IÀ:'Ì 
+0 0 3C 3C 3C30 scscacacsc 
+
+Più 
+
+s3 
+s3 
+E0 
+s 
+67 
+
+tot: 
+
+Fig.13 _ Applicazione del metodo della controsequenza 
+
+; | fattori critici di successo e i processi gestionali 
+
+Il metodo dei fattori critici di successo è riconducibile a quello visto in precedenza (illustrato in Fig.10), con la 
+differenza che nella matrice Processi/FCS si inseriscono direttamente i valori che esprimono la rilevanza di 
+ciascun processo rispetto a ciascuno dei FCS. Nell'applicazione richiamata da Ostinelli si applica la seguen- 
+te classificazione: Alto: Peso = 7; Medio: Peso = 4; Basso: Peso = 1. Anche in questo caso per ciascun pro- 
+cesso la somma trasformata in percentuale esprimerà il "peso" complessivo, ovvero la criticità del processo 
+ai fini del raggiungimento dell'obiettivo.
+
+N 
+) u o 
+ra P aa vijuo U 
+_i L . 
+
+PS - - -
+>  +è N N w D Ww Ww O p
+
+Nh-d  P > N“ 4 & a o w o TOT sulle Colonne 
+
+s|e/e|efefefefefefe[-[-[-[sfof-[-s -Q 
+o = ra _ 
+n 
+
+
+
+O.ME.FA. S.p.A. 
+UNIsto@ - 20 1@naddrAfafà Qualità: Quadermno 4 
+
+3. Le aspettative del cliente e le opportunità di miglioramento 
+
+Questa metodologia considera congiuntamente l'importanza del processo per la soddisfazione del cliente e 
+gli attuali margini di miglioramento del processo. 
+
+È un metodo particolarmente congeniale alle logiche della ISO 9001, considerando che in questo caso viene 
+studiata in modo diretto la capacità dei processi di soddisfare i clienti. 
+
+Esso inoltre è particolarmente intuitivo e semplice, e potrebbe perciò risultare più adatto alle organizzazioni 
+di minore dimensione e complessità. Per l'applicazione dello strumento è necessario: 
+- raccogliere dati sui clienti, sui concorrenti e sui fornitori 
+
+- _ determinare dettagliatamente le aspettative del cliente, in ordine di importanza 
+
+— valutare le diverse opportunità di miglioramento. 
+
+La matrice che deriva dall'analisi permette di collocare i processi in funzione del contributo Basso, Medio o 
+Alto, alla soddisfazione del cliente, e di opportunità di miglioramento Basse, Medie o Alte. 
+
+Nell'esempio di Fig.15 sono stati ricollocati i processi già considerati negli esempi precedenti (v. Figg. 10 e 13) 
+
+LL 
+f 
+b 
+L 
+l 
++) 
+l 
+[TT 
+[4m] 
+u 
+a 
+o 
+
+è 
+w 
+[22) 
+) 
+[e) 
+(72) 
+< 
+] 
+l 
+< 
+a[)  
+f 
+o 
+[ 
+| 
+b 
+) ©C 
+e 
+
+BASSA ALTA 
+
+OPPORTUNITA' DI MIGLIORAMENTO 
+
+Fig.14 _ Applicazione del metodo “aspeltative del cliente e opportunità di miglioramento" 
+
+All'individuazione delle attività e dei processi prioritari, in uno o più dei modi qui presentati, dovranno seguire: 
+l'accurata misurazione delle prestazioni attuali 
+
+- _ lo studio delle aspettative dei clienti, dei comportamenti dei competitor e delle prestazioni dei fornitori.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 57 
+
+Indicatori di prestazione 
+
+L'impiego di opportuni indicatori di prestazione’° è necessario per mettere in pratica il Principio di Gestione 
+per la Qualità“! definito come: "processo decisionale basato sull’evidenza". Le possibili azioni per l'attuazione 
+del principio comprendono infatti la determinazione, misurazione e monitoraggio degli indicatori chiave per 
+dimostrare le prestazioni dell’organizzazione. 
+
+La ISO 9001:2015 richiama nei suoi requisiti gli indicatori di prestazione (performance indicatoî), al 
+punto 4.4.1 c), dove è stabilito che essi siano determinati allo scopo di garantire l'efficace attuazione e il con- 
+trollo dei processi del Sistema Qualità; ma la Norma torna a parlare di performance e della sua misurazione, 
+in tutti gli altri i capitoli. In particolare: 
+
+al punto 5.3, è stabilito come compito dell'alta direzione quello di assegnare le responsabilità e le auto- 
+rità per riferire sulle performance del sistema qualità 
+
+nel capitolo 6, si richiede che siano definiti gli obiettivi e che gli stessi siano misurabili e sottoposti a 
+monitoraggio 
+
+al punto 7.2 a), è richiesto di determinare le competenze necessarie delle persone da cui dipendono le 
+prestazioni del SGQ 
+
+al p.to 7.3 si stabilisce che le persone devono essere consapevoli dei benefici che provengono dal mi- 
+glioramento delle performance 
+
+si parla, ancora, di performance dei prodotti e servizi al p.to 8.3.3, e di performance dei fornitori ai 
+punti 8.4.1, 8.4.3 e, 9.1.3 f, 9.3.2 c) 7) 
+
+alla valutazione delle performance è dedicato l'intero capitolo 9, dove si prescrive all'organizzazione di 
+valutare, documentando talì valutazioni, sulla base di opportune analisi (9.1.3 c), insieme all'efficacia 
+anche le performance del SGQ (9.1.1) e di riportare all'alta direzione (9.3.2) le informazioni sulle presta- 
+zioni del SGQ, compresi gli andamenti delle prestazioni dei prodotti e servizi (9,3.2 c 3) 
+
+nel cap. 10, dedicato al miglioramento, si richiede, fra le azioni da mettere in pratica per soddisfare le 
+esigenze del cliente e accrescere la sua soddisfazione, il miglioramento delle performance del SGQ. 
+
+40 Secondo Parmenter {2010) gli indicatori di prestazione costituiscono uno dei seguenti 4 1ipi di misurazione delle prestazioni: 
+1. Gli indicatori chiave di risultato (Key results indicators - KRI), che dicono come si è operation  una prospettiva di fattori critici di SUCCeSSO 
+2. Gli indicatori di risultato (Result indicators - RI} che dicono cosa è stato fatto 
+
+3. Gli indicatori, appunto, di prestazione (Performance indicators - PI) che indicano cosa deve essere fatto. Si tratta di misure non finanziarie, com- 
+
+amento alle strategie dell'organizzazione 
+4. Gli indicatori chiave di prestazione {Key performance indicatori - KPI) che indicano cosa deve essere fatto per un considerevole miglioramento 
+delle performance. Essi perciò rappresentano un insieme di misure focalizzate sugli aspetti delle prestazioni organizzative più critici per il suUCcesso 
+dell'organizzazione. 
+
+a) UNI EN 1S0 9000:2015, p.to 2.3.6.
+
+SCHEDA 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 l@addrAtafla Qualità: Quaderno 4 
+
+L'intera Norma, come si è visto in particolare nel Quaderno n. 3, adotta dunque un approccio di tipo "presta- 
+zionale", allontanandosi ulteriormente, grazie anche all'introduzione del Risk Based Thinking, dalle logiche 
+di tipo prescrittivo delle edizioni precedenti. 
+
+Le azioni per l'attuazione del 
+Principio di Gestione per la Qualità: 
+"Processo decisionale basato sull’evidenza" 
+comprendono la determinazione, 
+la misurazione e il monitoraggio degli indicatori chiave 
+per dimostrare le prestazioni dell’organizzazione 
+
+Sebbene gli indicatori debbano essere individuati con riferimento alle specificità di ogni organizzazione e 
+del suo contesto, servendosi delle prospettive proposte da Kaplan-Norton‘?, possono essere definite alcune 
+misure "tipiche", dalle quali ogni organizzazione potrà derivarne altre di maggiore dettaglio, o alle quali potrà 
+aggiungerne di ulteriori*3. 
+
+Per esempio, con riferimento alla prospettiva dei clienti e delle altre parti interessate, tipiche misure da mo- 
+nitorare saranno costituite da: 
+
+—  quote di mercato 
+—  indicatori di fidelizzazione 
+
+— _ nuovi clienti acquisiti 
+
+— _ indici di soddisfazione, ulteriormente disaggregati con riferimento ai parametri oggetto di valutazione 
+— _ indicatori di coinvolgimento delle parti interessate 
+—  indicatori di qualità ed efficacia delle partnership 
+
+- _ indicatori di reputazione 
+-  indicatori di efficacia negli ambiti della sicurezza e dell'ambiente 
+- ecc. 
+
+Riguardo all'andamento dei prodotti e dei processi, gli indicatori potrebbero riguardare, tra l'altro: 
+
+— numero di modifiche al progetto approvate in rapporto ai dati di partenza 
+— tasso di realizzazione delle fasi del progetto 
+— percentuale del fatturato generato dai nuovi prodotti 
+
+— _ performance dei fornitori 
+
+— capacità dei processi 
+
+-  lead time 
+
+42 Kaplan R.S., Norton D.P, Balanced Scorecard - Tradurre la strategia in azione, Ed. ISEDI, 2000. 
+
+43 Vedere anche: UNI 11097:2003 - Gestione per la qualità Indicatori e quadri di gestione della quatità - Linee qguida generali.
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 59 
+
+tasso di difettosità (es.: parti per milione), non conformità/disservizi, scarti, rilavorazioni e resi 
+
+performance funzionali del prodotto/servizio 
+indicatori di efficienza della catena logistica 
+
+indicatori di gestione della configurazione 
+tasso di utilizzo di una attrezzatura o di un impianto 
+tasso di indisponibilità delle apparecchiature (o fermo macchina per guasti) 
+
+tempo d'’intervento per ripristino della funzionalità delle attrezzature 
+ecc. 
+
+Nella prospettiva delle persone nell'organizzazione: 
+
+tasso di assenteismo 
+
+rotazione del personale (turn over) 
+
+produttività dei dipendenti 
+
+soddisfazione del personale 
+realizzazione dei percorsi di crescita individuale 
+
+percentuale di personale formato/personale da formare 
+efficacia del training 
+
+ecc. 
+
+Nella prospettiva economico-finanziaria: 
+
+performance dei venditori 
+
+tasso di acquisizione di nuovi clienti 
+evoluzione del portafoglio ordini 
+
+tasso di conversione delle offerte in ordini 
+
+evoluzione delle aree di mercato 
+
+cross selling 
+
+redditività per cliente 
+ricavi per dipendente 
+
+tasso di aumento delle vendite per segmento 
+
+posizionamento competitivo 
+percentuale del fatturato generato dai nuovi prodotti 
+
+risultato operativo sulle vendite 
+
+ritorno sul capitale investito 
+costi nei confronti dei competitor 
+
+ecc. 
+
+Coerente con l'impianto ISO 9001, con particolare riferimento ai processi realizzativi, è la soluzione propo- 
+sta anche in questo caso da Berli-Biroli (1996), che illustra l'impiego degli indicatori di prestazione quando 
+occorre gestire un processo "prioritario" che non sia necessario sottoporre a trasformazione, ma che tuttavia 
+è necessario presidiare in modo continuo, al fine di migliorarne le prestazioni#*: 
+
+44 Tale modalità di gestione del processo prende il nome di "Daily Routine Work" (DRW).
+
+
+
+O.ME.FA. S.,p.A. 
+UNIstog - 20 1@nadérA afà Qualità: Quaderno 4 
+
+Il percorso ipotizzato, in questo caso, sarà il seguente: 
+
+A. Una volta definito illi processoli prioritario/i occorrerà: 
+1. rappresentarne il flusso, anche in modo non dettagliato, per evidenziarne le relazioni con gli altri 
+
+processi e con l'esterno 
+condurne il riesame, per comprendere la collocazione del processo nella catena aziendale Forni- 
+tore-Processo-Cliente, risalendo al macroprocesso aziendale nel quale si colloca il processo esa- 
+minato 
+
+codificare, con semplici formule descrittive, il fine ultimo del processo 
+
+B. Si passerà all'identificazione dei clienti e dei loro bisogni e aspettative, attraverso: 
+1. l'identificazione puntuale dei prodotti e servizi che scaturiscono dal processo 
+2. l'identificazione dei clienti che ricevono il prodotto/servizio, anche al di là del cliente che si trova 
+
+immediatamente a valle del processo 
+3. la definizione nel dettaglio dei bisogni del cliente, e la loro gerarchizzazione: ciò andrebbe fatto 
+
+attraverso il coinvolgimento del cliente stesso. 
+
+A seguire, bisognerà: 
+
+C. Identificare gli indicatori di Qualità 
+Le esigenze dei clienti vengono soddisfatte attraverso i prodotti e i servizi forniti dall'organizzazione. Gli 
+indicatori di qualità costituiscono lo strumento per misurare la capacità di soddisfare le esigenze e perciò 
+devono avere due caratteristiche: 
+
+l riguardare in modo diretto aspetti del processo e del prodotto/servizio 
+2. essere direttamente correlati ai bisogni e alle aspettative del cliente. 
+
+Per identificare gli indicatori occorrerà, allora: 
+
+1. individuare le caratteristiche misurabili dell'output del processo correlate ai bisogni del cliente (per 
+esempio, se il cliente richiede la "puntualità" la caratteristica de misurare sarà il tempo 
+
+stabilire e valutare le correlazioni fra i bisogni e le caratteristiche misurabili, per individuare le carat- 
+teristiche più legate ai bisogni del cliente 
+
+definire per ogni caratteristica l'intervallo di valori che soddisfa i bisogni (es.: tempo massimo di con- 
+segna) 
+
+definire, quali indicatori di qualità, quelli che misurano la capacità dell'organizzazione di fornire risul- 
+tati che ricadano nell'intervallo di accettabilità (es.: numero di consegne effettuate entro tre giorni).
+
+
+
+O.ME.FA, S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 61 
+
+D. Stabilire gli obiettivi e i limiti di controllo, e in particolare: 
+1. Stabilire il valore dell'indicatore di qualità che occorre raggiungere per soddisfare il cliente 
+2. Stabilire i limiti di accettabilità 
+
+3. Costruire un grafico che consenta di confrontare immediatamente le prestazioni effettive del pro- 
+cesso con i limiti stabiliti. Quando ne esistano le condizioni (possibilità di ottenere con regolarità dati 
+statisticamente significativi) questi grafici assumeranno la forma di carte di controllo. 
+
+E. Definire il sistema di controllo 
+
+Le fasi d i tale passaggio sono le seguenti: 
+1. Stabilire come deve essere svolta l'attività o il processo, attraverso la standardizzazione della mo- 
+
+dalità attuale: è in questa fase che si determina la necessità di elaborare procedure o istruzioni 
+documentate per assicurare la stabilità delle modalità operative 
+
+Identificare i punti di controllo e a tal fine: 
+
+a.  elaborare un diagramma di causa/effetto, per fasi del processo, relativo al non raggiungimen- 
+to dell'obiettivo per ogni indicatore della qualità‘* 
+
+b. Individuare le cause possibili, secondo logiche di probabilità di accadimento e conseguenze 
+
+c. Ripetere le due fasi precedenti per ciascun indicatore di qualità 
+
+d. Elencare le cause critiche, legate a ciascun indicatore 
+Definire gli indicatori di qualità del processo: una volta determinati i punti di controllo, è necessario 
+stabilire che cosa andrà misurato, e i relativi criteri di riferimento. 
+
+F. Definire le modalità di gestione, e in particolare: 
+
+1. le modalità e frequenza di raccolta dei dati 
+
+2. le modalità di rappresentazione dei dati 
+
+3. le responsabilità per la raccolta e la verifica dei dati. 
+
+G. Mettere in atto il sistema di controllo, assicurando la disponibilità delle necessarie risorse 
+
+(strumentali, informative, ambientali, di competenza, ecc.). 
+
+H. Veri ficare i risultati, e cioè: 
+
+1. valutare l'andamento degli indicatori di qualità del prodotto/servizio a fronte degli obiettivi e dei 
+relativi limiti di accettabilità 
+valutare gli indicatori di qualità del processo, anche in questo caso confrontandoli con gli obiettivi e 
+con i limiti. Nel caso di andamento insoddisfacente di un indicatore di qualità del processo occorrerà 
+circoscrivere la fase interessata e identificare le cause 
+identificare i problemi da affrontare: stabilire la necessità di intervenire, individuando dove e su quali 
+aspetti 
+
+decidere le modalità di intervento, analizzando il problema e stabilendo le contromisure più adatte. 
+
+45 In questa fase trova evidentemente diretta applicazione il "Risk Based Thinking”, di cui quello appena richiamato può essere uno degli strumenti (non 
+necessariamente il migliore o il solo),
+
+
+
+O.ME.FA. S.p.A. 
+UNIstaga - 20 |@naddrAfHafià Qualità: Quaderno 4 
+
+A conclusione del ciclo, secondo la logica PDCA, le contromisure andranno attuate e la nuova situazione 
+andrà standardizzata, consolidando la configurazione ottenuta a seguito del miglioramento, ove del caso, 
+attraverso la revisione delle procedure documentate, opportuno training, la verifica dell'efficacia del nuovo 
+"standard".
+
+
+
+O.ME.FA. S.p.A. 
+UtNIstore - 2016 - 371459 L'approccio per processi 63 
+
+Conclusioni 
+
+La soddisfazione del cliente deve guidare i percorsi di azione nell'organizzazione. L'orientamento ai processi 
+permette di istituire, riconoscere, gestire e migliorare questi percorsi, affinché il traguardo sia sempre rag- 
+giunto (cliente soddisfatto) e le energie dell'organizzazione siano ben spese. 
+
+Nel procedere dalla comprensione del contesto alla "consegna” al cliente dei prodotti e servizi richiesti, l'or- 
+ganizzazione deve comportarsi come un organismo vivente. La sua natura di Sistema Complesso Adattivo 
+ne orienterà la condotta e le scelte, e il Risk Based Thinking farà sì che tali comportamenti e scelte siano 
+sempre il frutto di decisioni razionali. 
+
+A questa componente dell'intelligenza organizzativa deve fare da complemento la capacità di apprendere, 
+affinché la considerazione dei rischi e delle opportunità risulti sempre arricchita e sostenuta dall'esperienza. 
+
+AI Risk Based Thinking deve aggiungersi perciò, nell'approccio per processi, l'esercizio sistematico del 
+PDCA. 
+
+Quando l'approccio per processi sarà maturo e interiorizzato, esso condurrà l'organizzazione a individuare 
+soluzioni migliori e a dotarsi di nuovi strumenti, per un'applicazione della ISO 9001:2015 di tipo non riduttivo, 
+ma sempre più orientata alla realizzazione del suo potenziale, come reale strumento di successo organiz- 
+zativo. 
+
+Questo Quaderno ha cercato di evidenziare la possibilità di perseguire tale prospettiva di tipo non "minima- 
+lista", riportando esempi di soluzioni strutturate, comunque accessibili anche alle organizzazioni meno com- 
+plesse. Soluzioni che potranno essere applicate tal quali, o rielaborate dalle organizzazioni, in funzione delle 
+proprie necessità, o semplificate o ulteriormente sviluppate, ed applicate ove necessario a quei processi di 
+"gestione delle relazioni" che i nuovi requisiti sul contesto e sulle parti interessate dovessero ricondurre nel 
+perimetro di competenza del Sistema Qualità. 
+
+Fig. 15 Relazioni fra Approccio per processi, PDCA e Risk Based Thinking
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoa - 20 1@oadearfAà Qualità: Quaderno 4 
+
+Appendice 
+
+Elenco dei punti di Norma {evidenziati in grassetto) richiamati in questo Quaderno 
+
+P.to Norma Argomento 
+
+4 Contesto dell'organizzazione 
+41 Comprendere l'organizzazione e il suo contesto 
+4,2 Comprendere le esigenze e le aspettative delle parti interessate 
+4.3 Determinare il campo di applicazione del sistema di gestione per la qualità 
+4,4 Sistema di Gestione per la qualità e relativi processi 
+4,4.1 a) l'Organizzazione deve: determinare gli input e gli output dei processi 
+4.4.1 b) ... determinare la sequenza e l'interazione dei processi 
+4.4.1 c) ... determinare e applicare criteri e metodi 
+4.4.1 d) ... determinare le risorse e assicurare la loro disponibilità 
+4.4.1 e) ... attribuire responsabilità e autorità per i processi 
+4.4.1 f) ... affrontare i rischi e le opportunità 
+4.4.1 g) ... Valutare i processi e attuare i cambiamenti ove necessari 
+4.4.1 h) ... migliorare i processi e il SGQ 
+4.,4.2 a) ... Mantenere informazioni documentate 
+4,4.2 b) ... conservare informazioni documentate 
+5 Leadership 
+5.1 Leadership e impegno 
+SAA Generalità 
+
+5.1.1 d) l'alta direzione deve promuovere l'approccio per processi e del RBT 
+
+5.1.1 j} l'alta direzione deve sostenere i ruoli gestionali nel dimostrare leadership 
+5.1.2 Focalizzazione sul cliente 
+5.2 Politica 
+5.2.1 Stabilire la politica per la qualità 
+5.2.2 Comunicare la politica per la qualità 
+5.3 Ruoli, responsabilità e autorità nell'organizzazione 
+5.3 b) ...assicurare l'efficacia dei processi 
+5,3 d) ... promuovere il focus sui clienti 
+6 Pianificazione 
+
+6.1 Azioni per affrontare rischi e opportunità 
+6.2 Obiettivi per la qualità e pianificazione per il loro raggiungimento 
+6.3 Pianificazione delle modifiche
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459 L'approccio per processi 65 
+
+Supporto 
+7.1 Risorse 
+7.1.1 Generalità 
+7.1,2 Persone 
+1a3 Infrastruttura 
+7.1.4 Ambiente per l'operatività dei processi 
+#.A8 Risorse per il monitoraggio e la misurazione 
+7.1.6 Conoscenza organizzativa 
+2 Competenza 
+7.3 Consapevolezza 
+7.4 Comunicazione 
+7.5 Informazioni documentate 
+7.5.1 Generalità 
+192 Generazione e aggiornamento 
+153 Controllo delle informazioni documentate 
+
+Attività operative 
+8.1 Pianificazione e controllo operativi 
+
+8.1 b) ... Stabilire criteri per processi e accettazione di prodotti/servii 
+
+8.1 d) ... attuare il controllo dei processi 
+
+8.2 Regquisiti per i prodotti e i servizi 
+8.2.1 Comunicazione con il cliente 
+B Determinazione dei requisiti relativi ai prodotti e servizi 
+8.2.3 Riesame dei requisiti relativi ai prodotti e servizi compresi: 
+8.2.4 Modifiche ai requisiti per i prodotti e servizi 
+8.3 Progettazione e sviluppo di prodotti e servizi 
+8.3.1 Generalità 
+8.3.2 Pianificazione della progettazione e sviluppo 
+8133 Input alla progettazione e sviluppo 
+
+8.3.3 e) ... potenziali conseguenze di guasto 
+8.3.4 Controlli della progettazione e sviluppo 
+8.,3.5 Qutput della progettazione e sviluppo 
+8.3.6 Modifiche della progettazione e sviluppo 
+8.4 Controllo dei processi, prodotti e servizi forniti dall'esterno 
+8.4.1 Generalità 
+842 Tipo ed estensione del controllo
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIst6o8 - 20v addrAfafa Qualità: Quaderno 4 
+
+8.4.3 Informazioni ai fornitori esterni 
+8.5 Produzione ed erogazione di servizi 
+8.5.1 Controllo della produzione e dell'erogazione di servizi 
+
+8.5.1 c) ... misurazioni e monitoraggi 
+
+8.5.1 f} ... validazione e periodica rivalidazione dei processi ... 
+
+8.5,2 Identificazione e rintracciabilità 
+85I Proprietà che appartengono ai clienti o ai fornitori esterni 
+8.5.4 Preservazione 
+8.5.5 Attività post consegna 
+8.5.6 Controllo delle modifiche 
+8.6 Rilascio di prodotti e di servizi 
+8.7 Controllo degli output non conformi 
+9 Valutazione delle prestazioni 
+9.1 Monitoraggio, misurazione, analisi e valutazione 
+9.1.1 Generalità 
+9.1.2 Soddisfazione del cliente 
+9,1.3 Analisi e valutazione 
+
+9.1.3 c) ... prestazioni ed efficacia del SGQ 
+
+9,2 Audit interno 
+9,3 Riesame di direzione 
+9I Generalità 
+932 Input del riesame di Direzione. Devono comprendere: 
+
+9,3.2c)3) _ prestazioni di processo e conformità dei prodotti/servizi 
+
+9.3.3 Qutput del riesame di Direzione 
+10 Miglioramento 
+10.1 Generalità 
+10.2 Non conformità e azioni correttive 
+10.3 Miglioramento continuo
+
+
+
+O.ME.FA. S.p.A. 
+UNIIstore - 2016 - 371459 L'approccio per processi 67 
+
+Riferimenti bibliografici 
+
+| principali riferimenti utilizzati nell'elaborazione di questo Quaderno sono i seguenti: 
+
+UNI EN ISO 9001:2015 - Sistemi di gestione per la qualità - Requisiti 
+
+UNI EN ISO 9000:2015 - Sistemi di gestione per la qualità - Fondamenti e vocabolario 
+
+UNI EN ISO 9001:2008 - Sistemi di gestione per la qualità - Requisiti 
+
+UNI EN ISO 9004.2009 - Gestire un'organizzazione per il successo durevole - l'approccio della gestione 
+per la qualità 
+
+UNI ISO 31000:2010 - Gestione del rischio - Principi e linee guida 
+
+ISO TR 31004:2013 - Risk management - Guidance for Implementation of ISO 31000 
+
+ISO/IEC 31010:2009 - Risk management - Risk assessment techniques. 
+
+ISO/TC 176/SC2/N1269, Risk-Based Thinking in Iso 9001:2015 
+
+ISO/TC 176/SC 2/N1268, ISO 9001:2015 Risk-based thinking 
+
+ISO/TC 176/SC2/N1274 - The process approach in ISO 9001:2015 
+
+ISO/TC 176/SC2/N1282 - ISO 8001:2008 to ISO 9001:2015 - Summary of Changes. 
+
+ISO/DTS 9002:2015 - Quality management systems - Guidelines for the application of ISO 9001:2015 
+
+Andersen B., Business Process Improvement, ASQ Quality Press, 1999 
+
+Barbarino F.C., Capire i processi. Come organizzarli, gestirli è miglioratli, Ed. UNI, 2002 
+
+Berchi R., Fontanazza M., La semplificazione dei processi aziendali - Primo passo verso la Qualità 
+Totale, ETASLIBRI, 1991 
+
+De Risi P, Franchi P.,"Dalla visione per processi alla gestione dei processi" in: Conti T., De Risi P {a cura 
+di), Manuale della Qualità, Ed. Il Sole 240re, 2001 
+
+Desel J., Pernici B., Weske M. (Eds.), Business Process Management - Second International Conferen- 
+ce, BPM 2004 - Postdam, Germany, June 2004 Proceedings. Springer, 2004 
+
+Draft Federal Information Processing Standards Publication 183 - 1993 December 21 - Standard for 
+Integration Definition for Function Modelling (IDEFO) 
+
+Galgano A., La Qualità Totale. l Company-Wide Quality Control come nuovo sistema manageriale, Ed. 
+Il Sole 240re Libri, 2$ Ed. 1993 
+
+Gigante N. - Quaderno della Qualità n. 3, Risk Based Thinking, Ed. UNI, Febbraio 2016 
+
+Gigante N. - Quaderno della Qualità n. 2, Fattori del contesto e parti interessate, Ed. UNI, Gennaio 2016 
+
+Gigante N., Rivara M., Organizzazioni di successo. Comprendere e applicare la norma ISO 9004:2009 
+per raggiungere il successo e mantenerlo nel tempo, Ed. UNI, Gennaio 2011 
+
+Hammer M., Champy J., Ripensare l'azienda - Un manifesto per la rivoluzione manageriale, Sperling & 
+Kupfer Ed., 1993 
+
+Hunt VD., Process mapping - How to reengineer your business processes, John Wiley and Sons, 1996
+
+
+
+O.ME.FA. S.p.A. 
+UNIstofg - 20 1@aaderaif/à Qualità: Quaderno 4 
+
+— Harrington, H. James, Business Process Improvement - The Breakthrough Strategy for Total Quality 
+Productivity and Competitiveness, McGraw Hill, 1991 
+
+— Kaplan R.S., Norton D.P, Balanced Scorecard - Tradurre la strategia in azione, Ed. ISEDI, 2000 
+
+- Leonardi E., Disegnare i processi. Il metodo ZOOM UP La persona e il gruppo. La comunicazione inter- 
+na, Ed. Franco Angeli - 2012 
+
+- Merli G., Biroli M., Organizzazione e gestione per processi, Ed. ISEDI - 1996 
+
+-  Ostinelli C., La mappatura e l'analisi dei processi gestionali: al cuore dell'Activity Based Management, 
+LIUC Papers n.22 - Serie economica aziendale, 4, luglio-agosto 1995 
+
+- Parmenter D, Key perftormance indicator. Developing, implementing and using winning KPIs, Wiley. 
+2010 (2nd Edition) 
+
+- Porter M.E., l vantaggio competitivo, Edizioni di Comunità IV edizione, 1993 
+
+- Rummler G.A., Brache A.P, Improving pertormance - How to manage the White Space on the Organi- 
+zation Chart, Jossey-Bass Publishers - 2nd Fd. 1985 
+
+- Sinibaldi A., La gestione dei processi in azienda - Introduzione al Business Process Management, 
+Franco Angeli, 2009
+
+
+
+O.ME.FA. S.p.A. 
+UNiIstore - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNiIstore - 2016 - 371459
+
+
+
+O.ME.FA. S.p.A. 
+UNistore - 2016 - 371459 
+
+L’autore 
+
+Nicola GIGANTE, Architetto e Sociologo, nato nel 1958, si occupa di 
+gestione per la qualità dal 1991. 
+
+— Ha effettuato a tutl'oggi migliaia di giornate di audit ISO 9001 di 
+parte terza e ispezioni negli schemi della serie “ISO 17000”, ed ha 
+gestito per oltre 12 anni, come General Manager di una importante 
+società di audit, l’attività di circa 80 auditor professionisti, nei più 
+diversi schemi e settori di applicazione. 
+
+- È componente della Commissione Tecnica UNI: "Gestione per la 
+qualità e metodi statistici” - e coordinatore del Gruppo di Lavoro 
+“Sistemi di gestione per la qualità” (GL2). 
+
+— Fa parte dal 2007 della delegazione italiana nei lavori dell’ISO TC 176, per l’elaborazione delle 
+norme “ISO 9000” e correlate, ed è capo delegazione dal 2009. 
+
+— Ha fatto parte del Gruppo Internazionale ISO che ha rielaborato | “Principi di Gestione per la 
+Qualità”, producendone l’attuale versione. 
+
+- Come esperto italiano, partecipa regolarmente dal 2009 alle attività del Gruppo di Lavo- 
+ro ISO TC176/SC2/WG 24, costituito con lo scopo di produrre la ISO 9001:2015 e, succes- 
+sivamente, la ISO/TS 9002 Quality management systems - Guidelines for the application of 
+ISO 9001:2015 {In corso di elaborazione) 
+
+— È autore, insieme con Mauro Rivara, del testo: Organizzazioni di successo - Comprendere e 
+applicare la ISO 9004:2009 per raggiungere il successo e mantenerlo nel tempo - Ed. UNI - 2011 
+
+— Svolge attività di formazione, come docente di vari corsi presenti nel catalogo UNI, ed ha scritto 
+numerosi articoli sui temi del Quality Management. 
+
+La Segreteria dell’ISO TC 176/SC2 lo ha incaricato di guidare il Gruppo di Lavoro (WG22 - Interpre- 
+tations) che ha il delicato compito di dirimere i dubbi interpretativi riguardanti la nuova norma, e pro- 
+durre di volta in volta risposta ufficiale e definitiva sulle questioni sollevate dagli utilizzatori, a livello 
+internazionale. A tal fine, ha coordinato la revisione del processo di interpretazione, per renderlo più 
+idoneo a corrispondere alle esigenze degli utilizzatori.
+
+
+
+O.ME.FA, S.p.A. 
+UNIstore - 2016 - 371459 
+
+© 
+ENTE ITALIANO 
+DI NORMAZIONE 
+
+Membro italiano ISO e CEN 
+Wwww.uni.com 
+
+diffusione @uni.com

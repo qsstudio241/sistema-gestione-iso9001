@@ -1,0 +1,4635 @@
+﻿: O.ME.FA, S.p.A. 
+UNIstore - 2016 - 378263 
+
+Audit 
+ISO 9001:2015 = 
+
+i 
+© 
+w ENTE ITALIANO D 
+
+DI NORMAZIONE 
+
+O 
+’ 
+a 
+LI 
+
+Fa 
+) 
+
+
+
+IL 
+
+
+
+O.ME.FA. S.p.A. 
+UlNIstore - 2016 - 378263 
+
+©2016 UNI - Milano 
+
+TUTTI | DIRITTI SONO RISERVATI 
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi, fotocopie, micrafilm, o altro senza il 
+consenso scritto dell'editore. 
+ALL RIGHTS RESERVED 
+No part of this work may be reproduced, stored in a retrieval systern or transmitted in agr form or by any means elec- 
+tronic, photocopying, recording or otherwise, without fhe written permission from the publisher. 
+
+Questa pubblicazione non è un documento normativo. 
+La responsabilità dei concetti espressi è unicamente dell'autore. 
+
+Autore 
+Nicola Gigante 
+
+Editore 
+UNI - Ente Nazionale Italiano di Unificazione 
+Via Sannio, 2 - 20137 Milano 
+Italia 
+Tel. 02 70024.1 - Fax. 02 5515256 
+www.uni.com 
+
+1° edizione - Aprile 2016 
+
+Copertina QDUQ5.indd 2 © 03/4/2016 12:0157
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 
+
+| quaderni della qualità 
+
+Quaderno 5 
+
+Audit 
+ISO 9001:2015 
+
+di 
+
+Nicola Gigante
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Ill 
+
+Indice 
+
+Introduzione. i _ u 1 
+
+Audit e incertezza........ 
+
+Metodi e tecniche per l'audit ISO 9001:2015 __ u aa aa i aa nn aa s e 
+
+Esempi di rilievi di audit | a33 
+
+Gestione delle competenze e del programma di audit 
+
+Strumenti dell'audit_.__.. | A| 
+
+Il ruolo degli Organismi di Certificazione 
+
+Gonclusioni. | | ) 
+
+Appendice - terminologia :
+
+Riferimenti bibliografiCi. ... a aa ov ai nn nn t 67 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 2016 - 378263
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 1 
+
+Introduzione 
+
+Una consapevole applicazione della nuova ISO 90011 dovrebbe dare origine a Sistemi di Gestione per la 
+Qualità "contestualizzati" e "adattivi”, tali perciò da risultare più che nel passato: 
+— _ diversi fra un'organizzazione e l'altra 
+-  variabili nel tempo. 
+
+Le logiche di variabilità introdotte in particolare con i nuovi requisiti relativi al contesto e al rischio/opportunità 
+e la nuova enfasi sull’evolutività del sistema di gestione per la qualità (per esempio attraverso i numerosi rife- 
+rimenti, nella Norma, al tema del cambiamento) richiederanno processi di audit in grado di fornire, come par- 
+te essenziale della valutazione di conformità, una stima attendibile anche della capacità dell’organizzazione 
+di mantenere e accrescere le performance del proprio sistema qualità al variare delle condizioni circostanti. 
+
+| nuovi requisiti su contesto 
+e rischio/opportunità 
+richiedono che l'audit fornisca una stima 
+della capacità adattiva dell’organizzazione 
+al variare delle condizioni circostanti 
+
+D'altra parte, la maggiore complessità del modello adottato dalla nuova Norma per interpretare l’organizza- 
+zione (ora esplicitamente assimilata, non a caso, a un essere umano?, in continua e dinamica interazione 
+con il proprio ecosistema), rende l’audit meno facilmente risolvibile attraverso l’applicazione di protocolli pre- 
+stabiliti e perciò accresce il rischio che l'obiettivo essenziale di un audit ISO 9001, consistente nel restituire 
+una misura valida dello stato di conformità/efficacia del sistema qualità, possa non essere raggiunto. In altre 
+parole, con la nuova ISO 9001 potrebbe crescere l''incertezza" associata al risultato dell'audit. 
+
+Di tale incertezza già si occupava la Norma UNI EN ISO 19011:2012, ben prima della pubblicazione della 
+nuova ISO 9001, in particolare nei punti: 
+—  6.3.2.1 e 6.3.2.2, entrambi riferiti alla preparazione del piano di audit 
+— 7.2.1, riguardante la determinazione delle conoscenze e abilità richieste all’auditor 
+- 7.2.3.4 c), relativo alle conoscenze e abilità richieste al team leader, per la gestione del processo di audit, 
+- e nell'appendice B, ai punti B.1, sull'applicazione dei metodi di audit e B.3.2, riferito al campionamento 
+
+“basato sul giudizio”. 
+
+Questo Quaderno affronta in particolare il tema dell’incertezza associata alla valutazione dei sistemi di ge- 
+stione qualità, alla luce della nuova edizione della ISO 9001, nel tentativo di fornire qualche strumento per 
+
+1 ISO 9001.2015 Sistemi di gestione per la qualità - Requisiti. 
+
+2 Da: ISO 9000:2015, punto 2.4.1 “Modello di QMS”: Le organizzazioni condividono molte caratteristiche con gli esseri umani, in quanto organismi so- 
+ciali che vivono e apprendono. Ciascuno di essi si adatta e comprende sistemi, processi e attività interagenti. Al fine di adattarsi alla variabilità del loro 
+contesto, ciascuno ha l'esigenza di disporre della capacità di cambiare.
+
+
+
+
+
+
+O.ME.FA, S.p.A. 
+UNIsiore - 201/QuaddAfdella Qualità: Quaderno 5 
+
+ridurre tale incertezza e dunaue il rischio che l’audit stesso non produca "valore"’ o, peggio, possa risultare 
+fuorviante per l'alta direzione. 
+
+3 Per "valore" generato da un audit, riconoscibile come tale dalle parti interessate, intendiamo qui soprattutto la sua capacità di suscitare azioni di cor- 
+rezione e miglioramento sul sistema di gestione esaminato, tali da mantenerne, ripristinarne o potenziarne la capacità di realizzare le politiche e gli 
+obiettivi. Ciò coincide in buona parte con quanto riportato nel documento ISO/IAF: ISO 9001 Auditing Practices Group Guidance on Adding Value" 
+(13 Gennaio 2016) a cui si rinvia per gli approfondimenti del caso. Da tale Guida, tuttavia, questo Quaderno si discosta per qualche aspetto. In parti- 
+colare, nel classificare te organizzazioni in base al doppio criterio del livello di “maturità del sistema qualità' dell'organizzazione e del livello di maturità 
+della sua "cultura della qualità", la Guida APG identifica la seguente situazione: "maturità del sistema qualità alta/cultura della qualità bassa”, che im- 
+plica, come effetto, un SGQ "parallelo" alle normali attività dell'organizzazione, e perciò fale da generare ridondanze e inefficienze. Secondo la Guida 
+tale scenario andrebbe affrontato dall'auditer attraverso la formulazione di "raccomandazioni per il miglioramento" che inducano l'organizzazione ad 
+“andare oltre" i requisiti della Norma. Secondo le argomentazioni portate nel presente Quaderno una situazione di questo tipo risulterebbe invece inac- 
+cettabile, ovvero passibile di essere segnalata con nete di non conformità, in quanto l'integrazione del SGQ con i processi aziendali non è un'opzione 
+migliorativa, ma un requisito generale e pervasivo della Norma (della quale altrimenti non si comprenderebbe il senso) evocato in varie forme, e, se 
+non bastasse, specificamente codificato al punto 5.1.1 c} ("L'alta direzione deve dimostrare leadership e impegno nei riguardi del sistema di gestione 
+per la qualità: ... assicurando l'integrazione dei requisiti del sistema di gestione per la qualità nei processi di business dell'organizzazione"). 
+\i parziale disallineamento fra le posizioni di questo Quaderno e la Guida in questione è ìn qualche modo "autorizzato' dal fatto che le Guide APG, 
+sebbene nel complesso rappresentino un prezioso strumento per gli utilizzatori della Norma, non hanno esse stesse carattere normativo: esse non 
+saona infatti soggette a formale approvazione da parte di ISO, IAF, CASCO, e vengoneo rese disponibili a soli scopi didaltici e di comunicazione.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 3001:2015 3 
+
+Audit e incertezza 
+
+L'audit del Sistema di Gestione per la Qualità è per propria natura affetto dal rischio significativo che le valu- 
+tazioni non corrispondano all'effettivo stato di conformità del "misurando" {il Sistema di Gestione, appunto), 
+costituito da un'entità le cui caratteristiche distintive, con l'introduzione della nuova ISO 9001 sono oggi, in 
+modo ancora più evidente che in passato: 
+
+1. l’elevata complessità, se si pensa al maggior numero dei fattori da considerare, per effetto dei nuovi 
+requisiti, e delle loro interrelazioni 
+
+2. la variabilità nel tempo, in relazione alla più precisa richiesta che il sistema di gestione si adatti tempe- 
+stivamente alle mutevoli condizioni del contesto 
+
+3. l'intangibilità, enfatizzata in particolare dal fatto che la Norma si rivolge ora in modo più esplicito all'ampio 
+universo delle organizzazioni che erogano servizi, abbandonando definitivamente, anche nell'uso dei 
+termini, la propria impronta "manifatturiera". 
+
+Prendendo a prestito il termine dal campo metrologico, e facendo riferimento alla UNI EN ISO 19011, che 
+ne fa ampio uso, abbiamo prima definito tale rischio, associato alle valutazioni di audit, come "incertezza”. 
+
+Con la dovuta cautela, l'analogia metrologica può servire a condurre un'analisi strutturata dell'attività di audit, 
+dal punto di vista della sua validità. In particolare, il concetto di incertezza può essere un utile riferimento per 
+individuare, anche nel processo di audit, come per un qualsiasi processo di misurazione, le componenti che 
+potrebbero pregiudicare l’attendibilità del giudizio, e dunque per definire accorgimenti idonei a contenere 
+l'effetto di tali componenti entro limiti tollerabili. 
+
+Innanzitutto occorrerà definire in che cosa si esprime la "misurazione' effettuata attraverso l'audit. 
+
+Con la dovuta cautela, l'analogia metrologica 
+può servire a studiare il processo di audit, 
+e in particolare 
+ad affrontare l'incertezza 
+associata ai suoi risultati 
+
+Ricordiamo che l'audit è il "processo sistematico, indipendente e documentato per ottenere evidenze ogget- 
+tive e valutarle con obiettività, al fine di stabilire in quale misura i criteri dell’audit sono soddisfatti”*. 
+
+La definizione implica che il risultato di un audit non debba limitarsi ad una determinazione di tipo "passa/non 
+passa", ma comporti l'espressione di un "livello" della conformità rispetto ai criteri considerati. 
+
+Gli organismi di valutazione della conformità o le organizzazioni che eseguono audit interni o sui propri for- 
+nitori identificano a volte tale livello come posizione lungo una scala numerica; in qualche caso, algoritmi più 
+
+4 Da UNI EN ISO 9000:2015, punto 3.13.1.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoge - 20 1@naddrArdafla Qualità: Quaderno £ 
+
+o meno semplici vengono ideati per tradurre l'insieme delle risultanze dell'audit in un "grado" di conformità 
+complessivo, che a sua volta determina le conclusioni della verifica (per esempio, esito positivo, negativo, o 
+condizionato). 
+
+Nella maggior parte dei casi tuttavia, chi esegue o commissiona l'audit si limita a stabilire preventivamente 
+una graduazione, per lo più molto semplice, delle possibili anomalie, definendo quelle di livello più elevato 
+come “bloccanti" cioè tali da impedire la formulazione di un giudizio favorevole. ll Sistema sottoposto ad audit 
+verrà dunque ritenuto "non conforme" in presenza di non conformità gravi (talvolta definite "maggiori", di 
+"categoria 1", ecc.), indipendentemente dal loro numero, intendendosi in genere per "gravi" le non conformità 
+che sollevano dubbi sulla complessiva conformità del sistema di gestione ai criteri considerati (e, in parti- 
+colare, ai requisiti cogenti applicabili) o sulla complessiva capacità del sistema di conseguire gli obiettivi. In 
+definitiva la misura del soddisfacimento dei criteri di audit viene affrontata attraverso la definizione di "classi 
+di anomalia". 
+
+Quale che sia la soluzione adottata, esiste un margine di indeterminatezza del giudizio, che potrebbe pre- 
+giudicarne la significatività. 
+
+Sulla base dell'esperienza, è possibile ipotizzare i seguenti fattori che contribuiscono all'incertezza di audit’ 
+(come schematizzati in Fig. 1), per intervenire su di essi, e in tal modo ricondurre tale incertezza entro limiti 
+tollerabili*: 
+
+Fattori legati all'operatore (auditor) 
+
+Fattori legati agli "strumenti" e regole di audit 
+
+Fattori legati all'oggetto di audit 
+
+Fattori legati all'interazione auditor/oggetto dell'audit 
+Fattori ambientali. 
+
+01. 1 fattori legati all'operatore 
+
+L'audit si basa in gran parte sulla componente umana e professionale. 
+
+Ì contributi all'incertezza che si generano al livello dell'operatore (auditor, lead auditor, esperto, ecc.) sono 
+riconducibili in particolare al tema della competenza, e pertanto consistono prevalentemente negli aspetti 
+relativi al comportamento, all'esperienza e alle conoscenze. 
+
+— _ Per quello che attiene agli aspetti comportamentali è in genere alle caratteristiche personali, l'emotività, 
+i comportamenti, le attitudini, il grado di coinvolgimento, ecc., rappresentano i principali elementi di va- 
+riabilità del processo valutativo 
+
+— _ per quanto riguarda l'esperienza, le variabili sono prevalentemente costituite dalle precedenti attività e 
+dall'anzianità di lavoro, che si riflettono sulla prontezza nell'affrontare situazioni inattese, sulla capacità 
+di gestire | tempi, ecc. 
+
+5 In questa panoramica si è deciso: 
+
+a) di considerare la sola parte del processo di audit che è di competenza dell'audit team, restando perciò esclusi gli aspetti relativi alla gestione com- 
+plessiva degli audit, tra cui il follow up, alcuni dei quali sono comunque trattati nei capitoli successivi 
+
+b) di non prendere in esame anche la componente di imparzialita/assenza di conflitti di interesse, in quanto qui oggetto in discussione è linsierne 
+delle condizioni tecniche e operative che dovrebbero assicurare la validità dell’audit, e non eventuali condizionamenti di tipo generale, come le 
+minacce all’imparzialità che possono gravare a priori efo strutturalmente sull'audit team e sul processo di audit in generale. Eventuali confiitti di 
+interesse o assenza di imparzialità, se esistessero, sarebbero tali da falsare l'intero campo di analisi, rendendo inutili buona parte delle presenti 
+considerazioni. Per una trattazione di tali aspetti, particolarmente critici nel caso degli audit di parte II, si rinvia perciò a quanto ampiamente di- 
+sciplinato dalla UNI EN ISO/IEC 17021-1:2015, in molti passaggi del documento e con specifiche focalizzazioni nei punti 4.2 {Imparzialità) e 5,2 
+{Gestione dell’imparzialità).
+
+I i Gi NO 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 5 
+
+- _ infine, le conoscenze acquisite nel processo di formazione/addestramento possono essere diverse, per 
+qualità e quantità, fra i diversi operatori e diversamente idonee in funzione dell'oggetto sottoposto ad 
+audit. 
+
+SVOLGIMENTO DELL'AUDIT 
+
+OBIETTIVI ORGANIZZAZIONE RISULTANZE 
+DELL'AUDIT GRUPPO DI AUDIT ) INTERAZIONE 4 OGGEDTI TAUDOIT DELL'AUDIT 
+
+AMBIENTE DI AUDIT 
+
+METODI E STRUMENTI 
+
+Fig.1  Fattori che influenzano l'esecuzione dell’audit 
+
+Opportune politiche di gestione delle competenze, e conseguenti azioni, dovrebbero essere adottate allo 
+scopo di contenere per quanto possibile gli effetti negativi delle variabili soggettive sulla validità del giudizio. 
+
+In particolare, l'auditor dovrebbe adottare un "metro di valutazione" definito e stabile, in modo da assicurare 
+al processo l'uniformità e la coerenza necessarie affinché: 
+— _ lo stesso auditor, al quale venga richiesto di auditare in tempi diversi un "oggetto" ipoteticamente inva- 
+
+riato, esprima valutazioni sostanzialmente identiche 
+--  più auditor, ai quali venga richiesto di auditare contemporaneamente lo stesso "oggetto”, esprimano 
+
+valutazioni sostanzialmente identiche. 
+
+L'affidabilità e l'attendibilità del processo dovrebbero essere monitorate nel tempo; esse potranno essere mi- 
+gliorate agendo su molte componenti del processo di audit e le azioni di miglioramento dovrebbero costituire 
+una parte importante della gestione del programma di audit. 
+
+In particolare, ci si aspetta che l’attività degli audit team soddisfi e favorisca le seguenti condizioni, tutte 
+concorrenti alla validità delle valutazioni: 
+
+a. conformità 
+
+b. congruenza 
+
+concordanza 
+
+stabilità 
+
+equità 
+
+omogeneità nel settore 
+
+g. equivalenza delle attestazioni di conformità
+
+- © 2 o 
+
+
+
+s AG 3 PSO 
+
+
+
+O.ME.FA. S.p.A. 
+UNIsto g - 201 pa84/AFfaa Qualità: Quaderno 5 
+
+Dove: 
+
+a. con il termine "conformità" ci si riferisce alla capacità, da parte dell'auditor, di assicurare che la propria 
+ricerca e valutazione delle anomalie corrisponda alle direttive e alle politiche (incluso il livello di "severità" 
+stabilito) del committente dell'audit e/o dall'organizzazione di audit. Ciò comporta la conoscenza e l'ap- 
+plicazione da parte dell'auditor delle raccomandazioni e del modo di operare del committente dell'audit 
+e dell'organizzazione di audit e l'interiorizzazione delle politiche di cui sopra 
+
+per "congruenza” si intende qui la coerenza fra le risultanze formulate da un singolo auditor; ciò sì veri- 
+fica in particolare quando l'auditor: 
+
+— sa dedicare tempo e attenzione adeguati alle diverse aree e ai diversi processi, in funzione della 
+loro criticità e importanza 
+
+— _ evita di associare indistintamente, per esempio nell'ambito della formulazione di una stessa nota 
+di non conformità, anomalie di tipo secondario con altre di tipo importante, in modo da non ge- 
+nerare, in particolare in chi è sottoposto all’audit, dubbi sul senso complessivo della valutazione 
+
+— assegna il giusto livello di gravità ai rilievi, senza lasciarsi fuorviare dall'emotività o da personali 
+preferenze per particolari oggetti di indagine 
+
+- ecc. 
+
+per "concordanza" sì vuole indicare la capacità di allineamento delle valutazioni del singolo auditor a 
+quelle dell'audit team e, in generale, ai riferimenti forniti al riguardo da parte del Lead Auditor (il quale da 
+parte sua opererà in modo che il team adotti un approccio armonizzato al proprio interno) 
+
+Opportune politiche 
+di gestione delle competenze 
+dovrebbero essere adottate 
+allo scopo di contenere gli effetti negativi 
+delle variabili soggettive sulla validità del giudizio 
+
+la "stabilità" (che riporta ai concetti di ripetibilità e riproducibilità in senso metrologico) consiste nel far 
+sì che il valutando non debba chiedersi per esempio: "come mai ciò che lo scorso anno è stato valutato 
+conforme, oggi è ritenuto non conforme dallo stesso auditor (o da altri)?”. Ciò non deve limitare l'orien- 
+tamento a perseguire il miglioramento delle capacità di osservare/valutare 
+
+il termine "equità”" è stato utilizzato per indicare la capacità dell'auditor di far sì che la stessa anomalia 
+riscontrata a carico di una specifica organizzazione, a parità di condizioni (es.: obiettivi del sistema di 
+gestione, livello di qualità accettabile per il bene o servizio, ecc.) sarebbe valutata in modo analogo 
+presso qualsiasi altra organizzazione dello stesso tipo e in concorrenza (anche potenziale). La mancan- 
+za di equità, soprattutto in situazioni di audit di parte terza, può produrre sbilanciamento degli equilibri 
+competitivi 
+
+l'omogeneità nel settore" è intesa come la condizione che si osserva quando viene efficacemente 
+perseguita l'uniformità dell'approccio per tutte le organizzazioni appartenenti allo stesso settore, Essa
+
+
+
+s 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 3001:20185 7 
+
+è anche il frutto della presenza delle altre condizioni elencate sopra. Condizioni importanti per assicu- 
+rare tale omogeneità sono la conoscenza del quadro normativo applicabile all'area tecnica o settore 
+di competenza e la disponibilità di opportune linee guida di settore, per la conduzione dell'audit. Tale 
+condizione viene perseguita, dagli Organismi di Certificazione, anche attraverso periodici "calibration 
+meetings”. Una parte delle caratteristiche del settore, per esempio quelle riguardanti gli aspetti tecnolo- 
+gici o normativi, potrebbero essere identificati come fattori cruciali del contesto, nel senso considerato 
+dalla ISO 9001:2015. 
+
+g. con il termine "equivalenza delle attestazioni di conformità" ci si riferisce infine alla proprietà dell'audit 
+(e dunque alla corrispondente capacità dell'auditor) di generare attestazioni allineate a quelle che si 
+otterrebbero al variare del committente dell'audit/organizzazione di audit (per quanto riguarda l’ambito 
+certificativo un importante presidio su tale aspetto è esercitato dall'Ente nazionale di accreditamento e, a 
+livello europeo, dall'European Cooperation for Accreditation); tale allineamento produce tra l'altro, come 
+effetto, il reciproco riconoscimento della validità delle certificazioni.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstoge - 20 1@naddrA/fèlja Qualità: Quaderno 5 
+
+La concomitanza di tutte queste condizioni determina un quadro d'insieme come quello rappresentato nello 
+schema seguente: 
+
+ORGANIZZAZIONI CON CARATTERISTICHE (X) SIMILI/ CONCORRENTI 
+_ STABILITA 
+
+““GRGANIZZAZIONE A- AUDIT PROGRAMME . 27AZ RUD RAM 
+CONCORDANZA CONCORDANZA CONCORDANZA CONC 
+
+AUDIT 1 AUDIT 2 AUDIT 1 AUDIT2 
+| CONGRUENZA.  ' CONGRUENZA : CONGRUENZA- | CONGRUENZA:  | CONGRUENZA | CONGRUENZA ' ' CONGRUENZA|  CONGRUENZA 
+! AUDITOR i AUDITOR2 " AUDITOR 1 AUDITOR2 ‘ AUDITOR1 - AUDITOR2 ‘’ AUDITOR1 . AUDITOR2 
+CONFORMITA'  CONFORMITÀ'  CONFORMITÀ CONFORMITÀ  CONFORMITÀ  CONFORMITA'  CONFORMITA'  CONFORMITA' 
+
+v v v v v v v v 
+rilievi rilievi rilievi ritievi rifievi ilievi rilievi rilievi 
+
+I E A A E S " i ” 
+
+ORGANIZZAZIONI CON CARATTERISTICHE {Y) SIMILI/ CONCOR TI 
+
+ZZAZIONE B: AUDIT PROGRAMME 1° 
+
+L CONGRUENZA . CONGRUENZA . CONGR. .UCOENGNRUEZNZA: CONGRUENZA  CONGR| UCONEGRNUEZNZA : CONGRUENZA 
+i ‘AUDITOR1  AUDITOR2. - AUDITOR1  ‘AUDITOR2 " AUDITOR1 - AUDITOR2  AUDITORI ‘ AUDITOR2 
+CONFORMITA'  CONFORMITÀ — CONFORMITA'  CONFORMITA'  CONFORMITÀA — CONFORMITA'  CONFORMITA'  CONFORMITA' 
+
+v v v v v v v v 
+rilievi rilievi tilievi rilievi rilievi rilievi rillevi rilievi 
+
+2 11 2 1 2 1 2 1 2 
+
+EQUITA 
+
+CONCORDANZA CONCORDANZA CONCORDANZA CONCORDANZA ' 
+AUDIT 2 AUDIT 1 AUDIT 2 
+
+IDITOR :L 
+CONFORMITA'  CONFORMITA'  CONFORMITÀ  CONFORMITA'  CONFORMITÀ'  CONFORMITA' 
+
+v v v v v v v v 
+tillevi tillevi rilievi rillevi rilievi dlievi illevi dillevi 
+
+1/ 2 1 A 1 @ 1 2 1 2 { 2 1 2 1 2 
+
+ORGANIZA - ZAUDAITZPRIOGORANMME1 _ “ 
+CONCORDANZA CONCORDANZA 
+
+AUDIT1 AUDIT2 
+Î CONGRUENZA | CONGRUENZA . CONGRUENZA . CONGRUENZA ' CONGRUENZA' ' CONGRUENZA| ; CONGRUENZA | CONGRUENZA 
+i _ AUDITOR{ ‘ AUQITOR2 : AUDITOR1 .. ‘AUDITOR2 " AUDITORA © AUDITOR2 ‘ AUDITORI  | AUDITORZ 
+
+ìè CONFORMITÀ'  CONFORMITÀ'  CONFORMITÀ'  CONFORMITÀ'  CONFORMITA  CONFORMITA'  CONFORMITA'  CONFORMITA' 
+
+; v v v v v v v Y 
+rilievi rillevi rilievi rillevi rillevi rilievi rilievi tilievi 
+
+P U N I a P e P A a . 
+
+Fig.2  L'uniformità nel sistema di valutazione della conformità
+
+aa QU AA LENZA DELLE ATTESTAZIONI DI CONFORM 
+7747 
+LLALZ IONI AUDITA ZZAZIONI AUDITATE DALLO STESSO ORGANISMO (A) 
+
+OMOGENEITA' OMOGENEITA' 
+
+ORGANIZZAZIONI DELLO STESSO SETTORE 
+
+
+
+T r f a 
+
+’ i i{ Îl g 
+e i e n ‘i i .‘..'[fl“‘-3îtl òîù À 'IÈ«';4Î s ; 1i s fL*. 
+
+- ’ "v , ial4 _’(u u;{_fl[y_à_ u nn -î.‘.--. '.. fi 
+l _4?.‘:J ’:'.: . l"‘|f =-p[É v* i A f ;' ì O 
+
+=i  
+| ® 
+
+’ 4 
+I 
+
+Bf ] f iP t 
+
++ 
+
+--.«r!à.—- ade '.’ì‘.-f|fi«?& .i ‘.'î E l 
+
+l } - 
+ia i fi|! 
+
+- P 
+' ““_7*3«4 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 8001:2015 9 
+
+02. Con riferimento ai fattori "strumentali" e ai protocolli di audit, gli elementi che andrebbero oppor- 
+tunamente considerati e gestiti, allo scopo di minimizzare i margini di incertezza associati al giudizio, sono 
+rappresentati soprattutto da: 
+
+procedure di valutazione e relativi strumenti di supporto documentale (es.: checklist, Modulistica, tipizza- 
+zione dei rilievi) 
+tecniche di conduzione dell'audit (es.: osservazione diretta, esame documentale, audit per processi, 
+audit di tipo "verticale", ecc.} 
+regole di formalizzazione (per esempio relative alla formulazione dei rilievi e all'elaborazione del report). 
+
+In particolare: 
+dettagliate liste di riscontro aumentano la possibilità di replicare il processo di indagine, in tempi diversi 
+e da parte di auditor diversi, assicurandone sempre la completezza, il necessario grado di approfondi- 
+mento, e, indirettamente, l'idonea durata 
+l'applicazione disciplinata di determinate tecniche di audit migliora l'uniformità dell'approccio e accresce 
+la possibilità di ottenere, relativamente al medesimo oggetto, le siesse risultanze, in condizioni di ripeti- 
+zione dell'indagine. Questo non significa che le modalità di indagine debbano essere rigide e indifferenti 
+alle situazioni mutevoli del contesto e dell'oggetto di audit. Un buon audit "per processi" dovrebbe costi- 
+tuirsi di volta in volta in base alle condizioni dei processi stessi, al momento dell'indagine. Un approccio 
+rigido all'indagine di audit potrebbe produrre in qualche caso non una diminuzione dei margini di incer- 
+tezza, ma al contrario una loro amplificazione (dovuta al fatto che la stessa modalità viene applicata 
+meccanicamente a oggetti diversi per stato, criticità, ecc.). 
+
+Un buon audit dovrebbe adattarsi 
+di volta in volta alle condizioni dei processi. 
+Un approccio rigido potrebbe in qualche caso 
+non ridurre i margini di incertezza, 
+ma amplificarli 
+
+la possibilità che le conclusioni di audit corrispondano al "valor vero", cioè all'effettivo stato di conformità/ 
+efficacia del sistema esaminato, aumentano nella misura in cui l'espressione delle risultanze risponde 
+a regole precise di formulazione, tali da prevenire fraintendimenti trelativamente al contenuto, ai livello di 
+severità, all'oggetto del rilievo, oltre che al requisito disatteso: tutti elementi che contribuirebbero all''in- 
+certezza", nel senso qui considerato. Riguardo a tale aspetto, lo stesso report di audit dovrebbe seguire 
+regole di compilazione precise e stabili nel tempo (il che spesso viene ottenuto semplicemente attraver- 
+so la predisposizione di appositi "form"). 
+
+03. Componenti dell'incertezza legate all'oggetto di audit 
+
+Parte dell'incertezza associata alle conclusioni di audit deriva dalle condizioni stesse del sistema sottoposto 
+ad audit. In particolare, determinanti saranno:
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstog - 20 1@padd/A/dèffa Qualità: Quaderno 5 
+
+a. l’appropriatezza del campione di audit 
+
+b. le condizioni di accessibilità al’oggetto dell’audit. 
+
+Dove: 
+
+a. L'appropriatezza del campione riguarderà principalmente 
+l'intervallo intercorrente fra un audit e quello successivo 
+
+l'estensione fisica delle aree sottoposte a indagine e il numero dei siti visitati 
+il tempo dedicato all'audit (documentale e in campo) e a ciascuna delle sue parti 
+
+il periodo nel quale l'audit viene condotto (in particolare quando i processi da auditare sono sog- 
+getti a fattori di stagionalità o in generale di variabilità nell'ambito di un arco di tempo definito) 
+la numerosità dei processi e delle attività auditate 
+
+la rilevanza dei processi e delle attività stessi 
+
+l'estensione temporale entro la quale si intende risalire, a ritroso, per l'esame delle registrazioni 
+
+la quantità e la significatività delle registrazioni stesse 
+
+il grado di dettaglio dell'indagine di audit (incluso il grado di approfondimento documentale: per 
+esempio tale da comprendere o meno la verifica di conformità alle singole prescrizioni elementari 
+di un'istruzione di lavoro, o l'esame dei contenuti di un certificato di taratura, ecc.} 
+
+la numerosità, la funzione e il grado gerarchico delle persone intervistate 
+il grado richiesto di robustezza delle evidenze della conformità. 
+
+Al momento risultano formalmente disciplinate, in particolare per gli audit di terza parte, soprattutto la scelta 
+dei tempi, dei siti da visitare, della periodicità degli audit e dei processi da auditare. 
+
+b.  quanto alle condizioni di “accessibilità", la disponibilità di un sistema di gestione ad essere auditato, nella 
+sequenza e con il grado di accuratezza adeguati ai fini della attendibilità della valutazione, può essere 
+ricondotta a vari elementi, fra cui: 
+
+la collaborazione e trasparenza dell'organizzazione auditata nel mettere prontamente a disposi- 
+zione del team di audit le evidenze di applicazione del sistema di gestione 
+
+la leggibilità dei dati e delle informazioni (in qualche caso l'esame di dati e documenti disponibili 
+solo su supporto informatico può risultare più disagevole e meno efficace rispetto alla versione 
+su carta; in altri casi, al contrario, lo strumento informatico potrebbe migliorare la disponibilità del- 
+le informazioni per l'auditor) 
+
+l'accessibilità fisica dei luoghi e delle attrezzature (determinati luoghi potrebbero risultare scarsa- 
+mente o per nulla accessibili all'auditor, per motivi logistici, climatici, di sicurezza, di segretezza, 
+di conformazione, ecc.). 
+
+04. Componenti dell'incertezza legate all'interazione auditor/oggetto dell'audit 
+
+L'interaz ione fra auditor e sistema auditato può generare fraintendimenti, perdite di informazioni o acquisizio- 
+ne di dati e informazioni errati a causa di: 
+— _ interlocutori non appropriati 
+- _ inadeguata gestione dei processi comunicativi (quanto alle componenti: verbale, inclusa la conoscenza 
+
+della lingua con cui viene condotto l'audit, paraverbale, non verbale) 
+- comportamenti inappropriati da parte dell'auditor: es. mancanza di puntualità, aspetti etici, ecc.
+
+
+
+
+
+
+O.ME.FA, S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 11 
+
+05. Componenti ambientali 
+
+Le componenti dell'incertezza dovuti a fattori ambientali (sia relativi all'ambiente fisico che a quello relazio- 
+nale) possono essere classificate a loro volta in: 
+
+possibili distorsioni derivanti dall'interferenza dell'auditor con l'ambiente nel quale si svolgono i processi 
+auditati; tali interferenze possono produrre effetti sui comportamenti delle persone e sulle modalità di 
+conduzione dei processi, provocando situazioni "innaturali" e come tali non rappresentative dell'effettivo 
+stato del sistema di gestione. Al riguardo va sottolineato che per "interferenze" non devono intendersi 
+solo atteggiamenti di tipo esplicitamente intrusivo da parte dell'auditor, o azioni tali da insistere in modo 
+diretto sull'oggetto dell'audit: la semplice percezione, da parte dell'organizzazione, della presenza di un 
+osservatore, potrebbe condizionarne i comportamenti, diminuendo la significatività dell'osservazione 
+fattori climatici: la presenza di condizioni climatiche sfavorevoli (o insolitamente favorevoli) potrebbe inci- 
+dere sulla rappresentatività dei fenomeni osservati 
+condizioni dell'ambiente culturale: strettamente connessi alla componente "interazione”, i fattori culturali 
+vanno attentamente considerati per evitare due possibili errori di segno oppostio: 
+
+1. prescindere da essi, pretendendo o aspettandosi dal sistema auditato comportamenti non perti- 
+nenti al contesto (ciò che accade per esempio quando sulla base della propria estrazione culturale, 
+l'auditor attribuisce significati e valenze impropri ai fenomeni osservati, orientando perciò l'indagine 
+di audit e gli approfondimenti in direzioni non significative, con conseguente perdita di tempo e com- 
+promissione delle dinamiche di comunicazione); 
+
+2. sopravvalutarli, fino a giustificare situazioni di oggettiva non conformità 
+condizionamenti derivanti da soggezione psicologica o, al contrario, da pregiudizio negativo, per esem- 
+pio determinati dall'immagine e/o dalla reputazione dell'organizzazione auditata 
+condizionamenti derivanti da interferenza di soggetti interessati esterni al processo di audit (es.: compre- 
+senza di osservatori per conto dell'Ente di accreditamento, o di committenti dell'organizzazione auditata, 
+o di enti di regolazione, o del top management dell'organizzazione, o di osservatori del committente 
+dell'audit, o di auditor in training, ecc.). Si noti che l'interferenza può essere anche dislocata nel tempo: 
+alcuni fra i soggetti di cui sopra potrebbero non essere presenti nel corso dell'audit, ma “incombere" su 
+di esso, dovendo riceverne il report o averne comunque informazione in tempi successivi. 
+
+Anche se le non conformità 
+vanno sempre rilevate, 
+nelle situazioni di audit 
+occorre considerare i fattori culturali 
+
+Un non adeguato presidio delle componenti fin qui descritte potrebbe non “consentire ad auditor che opera- 
+no in modo indipendente gli uni dagli altri, di pervenire a conclusioni simili in circostanze simili"®, 
+In altri termini, potrebbe risultare eccessivo il contributo all’incertezza di audit dovuto all’’errore di riproducibilità””. 
+
+6 Rif.: UNI EN ISO 18011:2012, punto 4 - Principi dell’attività di audit. 
+
+7 Rif.: UNI EN ISO 19011:2012, punto 4 - Principi dell’attività di audit - f) Approccio basato sull’evidenza: il metodo razionale per raggiungere conclusioni 
+dell’audit affidabili e riproducibili in un processo di audit sistematico.
+
+
+
+‘ 
+i 
+
+l 
+° ' 
+
+i 
+
+E:T 
+
+| 
+F 
+
+i '\ è 
+
+, T 
+
+i 
+‘ ; 
+
+{ : - 
+
+l 
+
+i - 
+
+À 
+
+
+
+O.ME.FA. $S.p.A. 
+UNIstorg - 20 l aoadd aa Qualità: Quaderno 5 
+
+Le variabili che possono influenzare in senso negativo la riproducibilità e in particolare,
+-  
+ ria
+
+J s
+a s
+c u
+o m
+m e
+p nd
+o o
+n :
+e  
+nte soggettiva, che può accrescere la discrezionalità del giudizio, 
+
+— i fattori strumentali, 
+- l'oggetto dall'audit, 
+- _ inappropriate modalità di interazione, 
+— _i condizionamenti ambientaji, 
+dovrebbero essere affrontate, attraverso il programma di audit, con oppo
+p r
+a t
+r u
+t n
+i e
+co  c
+l o
+a n
+r t
+e r
+ s o
+u m
+l i
+ s
+f u
+a r
+tt e
+o ,
+r  
+e i
+ n
+u t
+m e
+a rv
+n e
+o n
+ e
+{ n
+c d
+o o
+m  
+p in
+e  
+tenze), sui metodi (es.: Risk Based 
+
+e A
+ u
+s d
+u i
+g t
+l i
+i n
+ g
+s ,
+t  
+r P
+u D
+m C
+en A
+t ,
+i  
+ a
+( u
+e d
+s i
+. t
+:  
+ p
+p e
+r r
+o  
+c p
+e r
+d o
+u c
+r e
+e s
+, s
+ i)
+l  
+iste di riscontro, linee guida). 
+
+Le contromisure dovrebbero fare sì che l’incertezza sia contenuta entr
+b o
+i  i
+l  
+e li
+ m
+l i
+a t
+ i
+v  
+a o
+l l
+i t
+d r
+i e
+t  i
+à  q
+ u
+d a
+e l
+l i
+l  
+e s
+ a
+co r
+n e
+c b
+l b
+u e
+s  
+i q
+o u
+n e
+i s
+: t
+ i
+in o
+ n
+al a
+t -
+ri  
+ termini, l’incertezza di audit non 
+
+l d
+a o
+p v
+o r
+ss e
+i b
+b b
+il e
+i  
+t e
+à s
+ s
+c e
+h r
+e e
+  
+u ta
+n l
+ e
+g  
+i d
+u a
+d  
+i c
+z o
+io m
+ p
+f o
+a r
+v t
+o a
+r r
+ev e
+o  
+le venga formulato a fronte di sistemi 
+
+O d
+, i
+  
+v g
+i e
+c s
+e t
+v i
+e o
+r n
+s e
+a  
+, d
+ i
+c  f
+h a
+e tt
+ o
+s  
+i n
+s o
+te n
+m  
+i c
+ o
+s n
+o f
+s o
+t r
+a m
+n i
+z  
+ialmente conformi ed efficaci ricevano una valutazione negativa (v. fig. 3). 
+
+Alla luce delle novità introdotte dalla nuova ISO 9001, nel seguito verrann
+g o
+l  
+i a
+ a ff
+s r
+p o
+e n
+t t
+t a
+i t
+ i
+d  
+i c
+ u o
+n n
+  
+p m
+r a
+o g
+c g
+e i
+s o
+s r
+o e
+ d  d
+i e
+a t
+u t
+d a
+i g
+t l
+, i
+ f o
+
+i  
+n qui richiamati, che possono contribui
+
+f r
+i e
+n  a
+e l
+ d l
+i a
+  
+i va
+n l
+d i
+i d
+v i
+i t
+d à 
+u d
+a e
+r l
+e l
+ p e
+o  v
+s a
+s l
+i u
+b t
+il a
+i z
+ i
+s o
+o n
+l i
+u ,
+z  
+i al
+o  
+ni per la loro gestione. 
+
+INCERTEZZA 
+ASSOCIATA 
+AL RISULTATO 
+
+IITE DI ACCETTABILITA' 
+
+ERRORE DI 
+RIPRODUCIBILITA' 
+
+APPROCCIO 
+SOGGETTIVO 
+
+APPROCCIO NON 
+STRUTTURATO 
+
+LL 
+T 
+
+SCARSA 
+ACCESSIBILITA' ° 
+
+E 
+| 
+
+INADEGUATA O 
+INTERAZIONE a 
+
+CONDIZIONAMENTI 
+AMBIENTALI 
+
+Fig.3  Riproducibilità e incertezza di audit
+
+PRINCIPI 
+
+
+
+: I 
+
+1* ! 
+
+1 
+
+; è 
+
+i 
+
+- i 
+
+L 
+
+i 
+
+t 
+
+i i : 1 
+
+1 " ' i l I 
+
+LI 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit 1S0 9001:2015 19 
+
+Metodi e tecniche per l'audit ISO 9001:2015 
+
+La questione della “auditabilità” 
+
+Nel corso degli incontri e dei seminari che hanno accompagnato la pubblicazione della ISO 9001:2015 è 
+tfalvolta emersa l'opinione che la nuova Norma, essendo meno “prescrittiva" rispetto all'edizione del 2008, si 
+presti meno a una valutazione rigorosa. 
+
+L'idea che la ISO 9001:2015 contenga minori prescrizioni rispetto al passato nasce forse da una interpre- 
+tazione superficiale di quanto riportato nell'Appendice A della Norma: // risk-based thinking applicato nella 
+presente Norma Internazionale ha consentito una certa riduzione dei requisiti "prescrittivi", e la loro sostitu- 
+zione con requisiti di natura "prestazionale". 
+
+La nuova ISO 9001 è più flessibile 
+rispetto all'edizione del 2008 
+ma questo non significa 
+che il numero delle prescrizioni sia diminuito 
+
+C'è in effetti una maggiore flessibilità, rispetto alla ISO 9001:2008, nei requisiti riguardanti le informazioni 
+documentate e le soluzioni organizzative, ma questo non significa che il numero delle prescrizioni sia dimi- 
+nuito. Al contrario, ad una lettura attenta del documento scopriamo che esse sono in realtà cresciute, nel 
+numero e nell'impegno richiesto per la loro applicazione, anche se in molti casi non è imposta la produzione 
+di corrispondenti evidenze “documentali”. 
+
+Ma quanti e quali sono i requisiti, e quanto è realistico pensare di poterne esaminare, attraverso l'audit, 
+singolarmente l’applicazione? Consideriamo l’elenco riportato in Fig. 4: esso riporta oltre 300 “prescrizioni”.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI stong - 20 1@add/A/è/fa Qualità: Quaderno 5
+
+Ev iririe  aa TTels[s 588 a alalelalalajalalelaialelalalelalsi E masjalsae leleajezlalaelellelae] PR = i
+uR L  IE 
+
+a e h PI iio = P 
+b = ] sisij2 
+
+EE 
+
+- I I g 4 l P E P DA Da = - © 
+
+Fig.4 Elenco delle singole prescrizioni ISO 9001:2015 (continua) 
+
+P'ta norma Î Requisito $ Pianificazione 74 Comunicazione 
+
+4 Contesto dell'organizzazione 6.1 Azioni per affrontare rischi e opportunità ?.4a) l'organzzazione Geve determinare l'oggetlo della COmMuNICAZIONE 
+4.1 Comprendere l'organi e il su 611 ... determinare risch: e opportumità da affromtare per 74b} 1 temp della comumcazione 
+4.1 Determinare ' fattori 6.118a) ._ assicurare l'efficatia cel SGQ 746) qli interlocuton 
+41 Monitorare e nesaminare le informazioni sur fattoni 6.1.1b) .. accrescere gli effett desiderati T4d) — tome comumeare 
+42 Compi e esi: pettative delle parti in 641412 ... Preve© rridsurte egh esiti norn voluti 74e) _ chi deve comunicare 
+
+42a) Determinare le rilevanti part interessate 6.11d) . conseguire l miglioramento 7.5 Informazioni documentate 
+42b) Determmnare i requisit nievanti delle parti interessate 6$12a) L'org deve pi ie azioni per affre nièsopcporhtunità 754 Generabità 
+43 Determinare il campo di applicazione del SGQ 612b) 1 pianficare le modalità per integrare le azioni nel $GQ 751a} U SO deve comprendere|  document previsti dalla Noma 
+
+43 Determinare confini e applicabilità del SGQ ; Campo di apphcazione 6,1.2b}2 e valutarne l'efficacia 751b) — queti stabilit dall'organzzazione 
+
+43a} Considerando : fattori del contesto 612 Le Arnioni devono essere proporzionali all'impatiò 752 Generazione e aggiornamento 
+
+4.3b} Considerando | requisiti deile part interessate 62 ‘Obiettivi per la qualitae pianificaziopnere  il loro raggiungimento 752a) L'Orgamzzazione deve assicurare dentilicazione e descrizione 
+
+43c) Considerando } prodotti e servizi 621 Stabilire obrettivi per tutto il SQ 7.52b} — formale mezzo 
+43 Documentare il campo di apphicazione, nclusa non applicabilità 6.21a) coerenctoin  la politica quallta 752C}  resame e approvazione 
+
+44 Sistemdai Gestione per ia qualità e relativi processi 6.2.1b} ... Misurabili 753 Controtlo delle informazioni documentatte 
+A441a) l'Organezazione deve: determinare gli Input e gli OUtDLI dei processi 6210 .. tenere CoOntO dei Feguisità 75234 a) Documenti Gisponibilie adati all'uso 
+4416} ia er Ce: processi 621 d) ... essere pertinenti alta à e alla del cliente 753.1b) . adeguatamente protetti 
+441c} . delterminare e applicare enieri è metodi 6.21e) ... eSsere monitorali 153.2a) DÙsinbuznone, accesso. renenmento e ubiizzo 
+A44d) . delermiatiee risorse e assicurar1ea loro disponibiltà 62.11) ... COMmunICati 7532b)  archiviazione e protezione 
+44.1e) .. atinbure responsabiltà e autorità per!  processi 6219) aggiornati 7532c) . controllo delle modifiche 
+4411) ... affrontare i rischi e le opportumità 621 documentati 1T5320 conservazione d EIMIMaZziIoNe 
+44.1 9) .. valutare 1 processi e attuare ! cambiamenti ove Necessan 622 Nel piar gli obrettivi ione deva stabilire 75.32 qgestre 1 document esterma 
+44.1h} ... migliorare 1 processi è l $GO 6.22a) ..cosa fare 7532 proteggerlee  regisl u da all 
+
+4428 . PA 622b) ... CON quali ASONse 8 Attmià operative 
+44.2b) ... consenvare nformazioni documentate 6.22c) ... GHI sarà responsabile 8.1 Pianificatione e controllo operativi 
+
+5 Leadership 6.22d) . ! tempdii realizzazione 81 8) delerminare ) retderuprosdoliivseniati 
+5.1 Leadership è impegno 622e) ... i mododi valutare | nsultati 8.15, 1) 2 stabilire crileri per processi e accettaziondei prodotti serza 
+
+5.1.1 Generaltà 6.3 Pianifidcelajez miodoifnicehe 8.1c) — delerminare le ns0nse necessane 
+
+6118} . l'alta dmezione deve la iià dei SQ 6,32a) Occorre le finalità e le cc delle modifichi 81812 attuare il controldleor prOCESSI 
+
+5.1.1b) ... assicurare che siano stabititi poliica è obiettivi 6.3b) .. l'integrità del $.0. B.1e) — documentare l'attuanone dei processi e ia conformità del prodotto semmzio 
+
+5.1.1 C) ... assicurare l'integrazione dei requisit hiei processdii  busiriess 6.30) - le risorse 81 Contuallo delle modiiche 
+5.1.1 dj ... promuovere l'ublizzo dell'approccio per processi e dei RET 6.3d) _. le responsabilità e le autorità 8.1 Contrallo der processi atfidati all'esterno 
+
+... assicurarlee nsorse 7 Supporto 82 Reqpuer 1 iprodsolti e 1t serinzi  
+& Timy e della g Risorse 821 Comunicazione con il chente 
+
+. assicuracrhe  l $GQ consegua ! nsultati 741 Generalità 821a) nformazioni u prodoè tsetnnizi 
+
+.- Comvyolgere. guidare e sostenere le persone 711a) considerarlea capacità delle nisorse interne e i relativi vincol 821 b} gestone nctreste d'otferta, conte rordaicat è tdel.le modifiche 
+
+.. promuovere il miglioramento 7.1.1b) cosa otteriere da forruton estermi 821} feedbackè reciami 
+
+i ruoli gestonali nel la propria leadersh: 712 Persone 8.2.1d) propnetà del chente 
+
+Focalzzazione sul cliente - l'alta direzioNe deve. 713 infrastrumura 8218; rk n emergenza 
+
+assicuracrhe  | requisiti siano determinati. compresi e soddisfatti 714 Ambiente per l'operatività dei processi 822 Determnaziondeei Tequisit relativi à1 prodolti & Servizi 
+
+Che nischi è opp: siano e affrontat: 715 Risorse per il monitoraggio e la misurazione 822a) è Cetinire 1 requisiti compresi quelli cogenti 
+
+e the sia focalizzata \à crescente soddisfazione del cliente 74151a} ... assiIcUNATe che le NSOrse per MenItoraggio & mISuTazioNne siano adatte 822a) 2 è quelli dell'organizzazione 
+Politica 7.1.5.1 b} ... siano adeguatamente manutenute 8.22b) assicurare d fore quanio promesso 
+
+Stabilire la politica peria qualità che: 7.152a) Le apparecchiatura di misurabone deygnd essere tarate eia verficale. 823 Resame dei Tequisiti 7etaln ai pr OG È SENAZI CONMIPeSi 
+
+... sia appropriata a finalità. contesto e strategie 7.1.5.2b) 823a) requisi speciicati dal chente anche per la consegna e suCCessivI 
+
+... ia il riferimento pegrli  obrettivi 715260 8.23b) requsiti non speaticati dal chente, ma Necessari 
+
+... COMprenda Fimpegrno a sodéis1 freaquirsieti 7152 gestire : nsultali precedenti 823c) requsiti specficati dall'organizzazione 
+
+... comprenda l'impegno al miglioramento continuo 716 Conoscenza organgzaliva 823d) requisiti cogenti 
+
+Comunicare la politica per la qualità 72 Competeniza 523e} requsdi di contratto moditizali nspetto A 4uell espressi prima 
+
+5.22a} . documentare la Politica 72a) DI le 823 tsoivere differenze miervenute re contratto 
+
+52.2b) Poliica comunicata compresa e appiicata 7.2b) le 823 confermarael chente ' regusib da guesti non documentali 
+
+522C} dsponbilalele parti mteressatea 720 Acqute le comperenze ove del taso 524 Nodiliche a requisiti Der 1 prodottie servizi 
+
+5.3 Ruoli, resp ilità e autorità nell 7.2d) Tenere evdenza documentata 8.3 Progettazione e sviluppo di prodottie servizi 
+
+5.3.a) assegnare responsabilità e autontà per ia conformità del $GQ alla Norma...  7.3 Consapevolazza 831 Generaità 
+5.3b} ...assicurare l'etficacia dei processi 7.3a) Le persone devono essere consapevoli della Politica Qualità 832 P della p è sluppe, considerando 
+
+5.3<c) . menre all'a.d. sulle performance del S Q e sulle opportunità di miglioramento 7.3b) . degli obiettivi B32a) natura. durata e complessilà 
+
+53d) .. promuovere il focus Sui clienti 730 _. <iel contributo all'efficaec iaai migliordeallem peresntatziooni di qualità 832b) fas, compi1r esasttaa 
+5.2e) ..assicurare l'integrità del SGQ n caso di modifiche 7.3d) ... di ciò che comporta ii mancato soddisfacimento Gei requisit 832c) venfe ivalcidahzioeni 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 15
+
+alalajalalealelalalalalsielala [ 
+= e fsfealsiojeleioloeljoelcisicieloalelsiolsielcisia ww alel=|sfy  a 
+
+FMi AFi  EA FMi ME MF EASRTEN  EAA REI OBA  E E:3 EiA Ei  PBAo  EiA  i4 F  A2AlaSlt izAiRalAe ANAf RAAOANARSANSES AARA RnAIN AESA AE  a] Lv g "r3 E-3 [ a [ R] EES JSHB EBEHMH e]  ]P 
+{a]   ] ]f  SISISISISISISe 
+
+i 4 iL  CL)  FE:A3  34  E23  E2)  P3el  DP5A3  F=i  nDiie lo elslsie P
+*7‘PIRIT e 
+
+L- 
+r 
+
+ “jeleleleis]ale]aleinlelelelc]clole]elelcicieio ii lale e sielele s|=le[slalale]<[e|e] 
+ alelalalalslzialelsialelelelalsiele]lael elefe|=l elelslslslslalells lelee lale 
+
+832d) responsabiita e autoria 85 Produzionde erogazione di servizi 921a) 1) A requisiti dell'organizzazione 
+
+832e) nsorse nteedresnterene necessane 8.5.1 Controlla della produzione e dell'erogazione di sernzi 921a) 2} A: requisiti della Norma 
+83.2f) controllo delle interfacce 85.1a) Informazioni documentate: 921b) È efficace 
+8329) coinvolgimento clienti e utilzzatori 8.5.1a) 1) relatve alle carattenstiche dei prodottu'servazi 922 Programmdai audit 
+832h) requisti di fornitura/erogazione 8.5.1a) 2) relatve a nisultati da oltenere 922a) Frequenza, metodi, responsabilità. requesib di panficazione 
+832î) Ivello di controdallla opi atteso dai 85.1b) à di strumenti di 922b) Defmnire crten e campo di applicaziondei  ciascun audit 
+B32)) regstrazioni 85.t C) misurazionie  monitoraggi 922 c) S$cegliere gli auditor ed effettuare gli audit n modo imparziale e obiettivo 
+833 input della progettazione è sviluppo 8.5,1d) mfraster aumbtietntu idronee: per | processi 922d) Riportare ! risultati ala direzione 
+
+83.3a) | fequisit fU i e pi 8.5.1e) designazione di figure compelenti 922e) Condurre folow up tempestin 
+83.3b) le nformaziondia progettazioni precedenti 85.11) valdazione è rvalidazione dei Qrocessi 
+
+922f) Regstrare l'attuazione e : nisultati del programma e degli audit 
+8.3.3 0} +requsiti cogent B8.5.1g} azioni per prevenre l'errore umano 
+
+93 Riesame di direzione 
+8.3.30} nore mcodeici di condotta 8.5.1} niascio. conse peos! gconsegana 
+
+93.1 Generalità 
+833°} potenziali conseguenze di guasto B.52 identficazione e mmiracciabilità 
+833 mput adeguat 932 Input del nesame di Duezione. Devono comprendere: 
+
+853 Propnetà che appartengono a: client: o a fornitori estetf 
+932a) stato delle azon! dervanti dai riesami precedenti 
+
+833 soluzione di confiitt fra input 854 Preservazione 
+833 documentazione degli input $55 Altiytà posi consegna - Determnare attrmtà posi-consegna, considerando: 9,3.2b} cambiamenti dei fatton esterne nterni 
+
+834 Controlli della progettaez siviolunppeo 8.55a) Requisti cogent 9320} prestazioni ed efficatidea!  SGO. compres: gli andamenti retatin è 
+
+834a) assicuracrhe  i nisultatdia ottenere siano definiti 8.5.,5t}) Potenziali conseguenze 9.3.2c) 7} soddisfazione del chente 
+834b) nesami 8.55<) Natura, utiizzo e durata di vita attesa di prodott e servizi 93.2c) 1) feedback dalle parti nteressate 
+B.34c) venfiche 855d) Requisit del chente 932c) 2) raggiungimento degli obiettnni 
+
+834d) validazione 855e) Feedback dal chente 932 c) 3) prestazioni di processoe conformità dei prodottiservzi 
+834 e) amon: a segure $56 Controlio delle modifiche 9.3,2c)4) non conformità e azioni correttive 
+6.3.41) registrazidoenhie attività B.65 Rilascio di prode oditsetrvizi 932c) 5) rsultati di montoraggi e misurazioni 
+835 Qutput della progettazione e sviluppo 8.6a) Registrazioni di contormitàa 1 crhten 9,32c) 6) rsuttatdii  audi 
+
+8.35a) gli output devono soddisfare ! requisiti n Mgresso 86b) Regstdel rresaponszabiile doei nrilaesto  9.32c) 7} prestazioni de: forrutori 
+83,5b) essere done! alla iva fo g dei 20 87 Comrollo degli output non conformi 93.2d) adegualezza delle risorse 
+835t:) ,. .reqws:bdi " ea:mndvmet:az 8.7.1  Identificare e trattare gli output non conformi. in uno o più dei seguenti modi: 932e) efficdelalec aziioani per rischi è opportunità 
+835d) le iche d 871a) Correzione 
+
+9321} opportunità di migiioramento 
+835 regstradezglii oountpiut 8,7.15) Segregazione, resttuzione, della tornitura 
+
+933 Qutpudlel nesame di Direzione, comprensiv ci. 
+836 Modifiche della progettazionea sviluppo 871 ©) informazione al chente 
+
+933a) Opportunità di miglioramento 
+836 Controllo delle modifiche 8710} Ottenmento di concessioni 
+
+93.3b) Eventuali modifiche da apportare al SGQ 
+83.6a) regstrazioni delle modifiche 872 Regstrare 
+
+836b) dei riesami delle modifich a72a} Le non conformità 9.33c) Necessità di nisorse 
+
+83,6c) registderllea auztoirizozanzioini delle modifiche 8.7.2b} Le azioni adottate 9.3.3 Registrare le nisultanze del riesami 
+
+8.3.6d) regstrazioni delle azioni per prevenire ! rischi dermanti dalle modifiche 8.7.2c) Le concessioni ortenute 10 Miglioramento 
+
+84 Controllo dei processi, prodotti e servizi forniti dall'esterno 87.2d) Le autortà che Ranno assunto dec:sioni 101 lità. Di i i le di miglii 
+
+B4:1  Assicurare conformità di procassi, prodotti è servzi (PPS} approvvigionati 9 Valutazione delle prestazioni 10.1  Soddisfare ' requisidteil cliente e accrescerne la soddisfazione: 
+
+841 a) Determmare i controlli: sui PPS da Incorporare nei prod /servizi da realizzare 94 itoraggio, mi: analisiè  10.1 a) Miglioramento di prodotti e servizi, anche per soddisfare aspettative future 
+BAID) ... quando sono fomiiti dal fornit. aì clieme 5.1.1 Generalità - determinare: 10.1b) Correggere. prevenre e ndurre gli effetti mdesdmerati 
+
+&41C) ... su PP$ quando si è deciso di estemaliuUnzPzroaDreseso 9.1.1a) Cosa monitorare/misurare 10.1 £} Migliorare prestazioni ed efficacia del SQ 
+8.4.1 Valutare, sceghere monitorare le performance. rivalutare|  formiton 911b} Come montorare/misurare/analizzarevahriare 10.2 Non conformità e azioni correttive 
+
+8.4.1 Conservare registrazioni 9,1.t1 ©) Quando monitorare/misurare 10.21 Gestre le non conformità e le azioni corrattive 
+842 Tipeod estensione del controlio 9.1.16} Quando analzzare e valutare 1 risuttadterl monitoraggio/Misurazione 10.21a) Reagre alle Non Conformità e 
+
+842a} Controllo dei processi estemalizzati 9.1.1 Valutare prestazioni ed efficacdieal  $GQ 10.21a) 1) Controllarie/correggerle 
+842b) Defnizione dei controlli su fornitor e prodott approvvigionati 9.1.1 Registrare | nisultati 10.2.1 a) 2) Affrontarne le conseguenze 
+8.4.2c} considerare 9.12 Soddisfaziodneel clente- monitorare la CS 10.21b) Valutare la necessità di eliminare le cause di NC 
+
+8420) 1) limpatto delle forniture sulla conformità 912 Cetermnare i metodi per ottenere, monttorare, niesaminare 1 dali di CS 
+10.215) 1) Riesammnandoe analizzando la NC 
+
+8.4.2c) 2) l'efficacia dei controlldeil fornitore 9.1,3 Anae lvaliutaszionie. | risullati devono essere utlizzati per valutare. 
+10.2.1 5) 2) Determmando ie cause di NC 
+
+842d} determinartee verfiche su quanto approvvigionato 9,13a) la conformitdài  prodeotti e servizi 
+10.2.î b) 3) Determmnando se vi sono o potrebbero venficarsi NC simili 
+
+843 Informazioni ai fornitori esterni - assicurare l'adeguatezza dei requisiti 9.1.3b) la soddistazione del chente 
+10,2.1 ©) Attuarlee azioni necessane 
+
+843a) Comunicare ai forniton : requisiti relativi a. processi. prodotti& servizi da fornire 9.1,3<) prestazioneid efficama del SGQ 
+1021 d} Riesaminare l'etficaca delle amoni correttive 
+
+843b) 1) Approvdi aprodzottii eo senrviezi .  9.13d) efficacia della pranrficazone 
+84.3b) 2) Approvazione di metodi. processi e apparecchiature 9.13e) efficaGa dalle azioni per rischi è opporturatà 10,2.e1} Aggiornare ! rischi e le opportunità determinal n precedenza 
+
+843b) 3) Approvazione di rilascio di prodolti e senvizi 9.1,31) prestadze:i fornmmion 10.211) Etfettuare le eventuali modifiche necessane al 5SGQ 
+
+$8430 Competenze del personale 9139) esgenza di rugloranpmere in StSiQ 10.2a2}  Regstrare le non conformità e le azioni sucCessive 
+
+B8436) Interazioni fomitore/rorganizzazione 92 Audit interno 10.22b} Registrare | nsultat della azioni correttive 
+
+843e)  Controlla e montoraggio delle performance del fornitore 921 Condurre audi pianficati per accertare se l SGQ 10,3 Miglioramento continuo - di. idoneità, adeguatezza ed etfficacia del SGQ 
+843f) Venfiche e validazioni da etfettuare presso Il forniore 921a) È conforme 10,3 valutare | risultat delle valutazioni'anatrsi è dei Nesami di direziane. 
+
+
+
+
+
+
+O.ME.FA, S.p.A. 
+UNIston6 - 20 1@0a348/8//è/la Qualità: Quaderno 5 
+
+La lista si ferma peraltro ai punti di Norma identificati come tali e cioè: 
+- singoli item degli elenchi puntati o numerati contenuti all’interno di un articolo 
+— _ prescrizioni derivate dalla scomposizione di un singolo articolo. 
+
+L’ulteriore frammentazione che si otterrepbe se ogni prescrizione fosse suddivisa a sua volta in tutte le com- 
+ponenti introdotte “logicamente” dall’accezione “deve”, fornirebbe una lista ben più estesa di “cose da fare”. 
+
+Per dare un'idea di ciò, si osservi l’esempio seguente (fig.5), nel quale i requisiti 4.1 e 4.2 sono stati suddivisi 
+nelle loro componenti ultime (cioè in requisiti non ulteriormente divisibili): 
+
+4.1 - L'Organizzazione: 
+
+Deve determinare i fattori esterni ...rilevanti per le sue finalità ...che hanno effelto sui risultati 
+
+Deve determinare i fattori interni ...rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+Deve determinare i fattori esterni ...rilevanti per la sua direzione strategica...che hanno effetto sui risultali 
+
+Deve determinare| fattori interni ... rilevanti per la sua direzione strategica...che hanno effetto sui risultati 
+
+Deve monitorare le informazioni sui fattori esterni rilevanti per te sue finatità...che hanno effetto sui risultati 
+
+Deve riesaminare le informazioni sui fattori esterni rilevanti per le sue finalità...che hanno effelto suì risultati 
+
+Deve monitorare le informazioni suì fattori interni rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+Deve riesaminare le informazioni sui fattori interni rilevanti per le sue finalità...che hanno effetto sui risultati 
+
+Deve monitorare le informazioni sui fattori esterni rilevanti per la sua direzione strategica... 
+
+Deve riesaminare le informazioni sul fattori esterni rilevanti per la sua direzione strategica... 
+
+Deve monitorare le informazioni sui fattori interni ... rilevanti per la sua direzione strategica.., 
+
+12  Deve riesaminare le informazioni sui fattori interni ... rilevanti per la sua direzione strategica... 
+
+4,2 - L'Organizzazione: 
+
+1 Deve determinare le parti interessate rilevanti per il sistema di gestione per la qualità 
+
+2 Deve determinare i requisiti di tali parti interessate che sono rilevanti per il SGQ 
+
+3 Deve monitorare le informazioni che riguardano tali parti interessate 
+
+4 Deve riesaminare le informazioni che riguardano tali parti interessate 
+
+5 _ Deve monitorare i loro requisiti rilevanti... 
+
+6 Deve riesaminare i loro requisiti rilevanti... 
+
+Fig.5  Esempio di scomposizione della Norma nei suoi requisiti elementari
+
+— — 
+— = © w - a& n h w h - 
+
+
+
+E 
+
+M iD 
+
+1a e EOEST 
+
+i ” EST 
+
++ I 
+
+AA i 
+af 
+
+L i | + 
+j . l 
+
+i7 L ’ 
+
+K 
+
+P 
+
+' 
+
+1 U d i 
+
+P “lira fi n3 28 
+
+; s ; 
+F !*. 1 
+
+fi ’a EE i i | 
+
+i E ON ‘ 
+
+a 
+i ’ 
+
+d I 
+
+‘ 
+: “ 
+
+- 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 17 
+
+Come si vede, sono stati isolati nel nostro esempio, 18 requisiti “elementari”, laddove la tabella precedente 
+individuava in tutto quattro “item” riconducibili agli articoli 4.1 è 4.2 della Norma. Se questa proporzione 
+dovesse essere applicata all'intera Norma, un audit di tipo “puntuale” consisterebbe nella “scansione” di un 
+migliaio di elementi, il che sarebbe incompatibile, come è facile comprendere, con i normali tempi di audit®. 
+
+Ma questo non è il motivo principale per il quale non è ragionevole pensare di condurre un audit “per requi- 
+siti”, come si cercherà di spiegare qui di seguito. 
+
+Audit "di sistema" e audit "sistemico" 
+
+Secondo la ISO 9001, un Sistema di Gestione per la Qualità efficace è quello attraverso il quale l'organizza- 
+zione raggiunge | propri obiettivi per la qualità, e cioè produce il valore atteso per i propri clienti, attraverso 
+la regolare conformità di prodotti e servizi, e assicurando nel tempo la crescente soddisfazione dei clienti. 
+In pratica, un sistema qualità deve essere determinato e gestito in modo che si possa trarre beneficio dalla 
+giusta interazione fra le sue componenti, il che aiuta a comprendere meglio la definizione di “sistema”, piut- 
+tosto laconica, fornita dalla ISO 9000 (Sistema: insieme di elementi correlati o interagenti}? e di considerare 
+in termini pratici il concetto di "audit sistemico". A tale riguardo, alcune definizioni classiche di “sistema”, più 
+appaganti rispetto a quella appena citata, sono riportate nella scheda di approfondimento che segue'?, 
+
+Si vede come tanto la ISO 9001, quanto i sistemi di gestione che derivano dalla sua applicazione, riflettono 
+tutti i concetti in essa elencati, e specialmente l’ultimo, quello che stabilisce l’analogia fra sistemi organizzativi 
+e organismi viventi, già citato prima e di cui si è discusso ampiamente nel Quaderno n. 2 (Fattori del contesto 
+e parti interessate)'". 
+
+8 Rif. UNI EN ISO 9000:2015, punto 41) ... | risultati dovrebbero essere verificabili e in linea di massima basati su campioni delle informazioni disponibili, 
+poiché l'audit è condotto durante un periodo di tempo limitato e con risorse limitate, 
+
+9 Rif. UNI EN ISO 9000:2015, punto 3.5.1. 
+
+10 Nella breve panoramica proposta dalla scheda di approfondimento mancano alcuni contributi che, sebbene importanti in senso generale, to sono me- 
+no per le finalità di questo Quaderno: è il caso ad esempio delle definizioni fornite da Ashby (1956), di grande rilevanza teorica, ma meno funzionali 
+alla nostra necessità di identificare e affrontare concretamente il sistema organizzativo, in termini gestionali e di valutazione (cfr. Ashby, R.ML An Intro- 
+ducetion to Cybernetics, Chapman Hall, 1956, London, tr. it. 1971, introduzione alla cibernetica, Einaudi). 
+
+11 Con riferimento, in particolare, all'idea dei "vari livelli*, una classica partizione per livelli strutturali e dimensionali dei sistemi sociali colloca le nostre 
+organizzazioni nella fascia dei cosiddetti “meso-sistemi sociali”, e in particolare fra i cosiddetli “sistemi socio-tecnici": sistemi aperti, caratterizzati da 
+fitti interscambi con l'ambiente, composti da elementi: 
+a) di tipo tecnico (attrezzature, infrastrutture, processi, ecc.)} 
+b) di tipo sociale (comportamenti individuali e di gruppo, atteggiamenti, ecc.) 
+c) di tipo economico (efficienza dell'uso delle risorse in vista dell'ottenimento di un obiettivo) 
+Di fatto, le soluzioni organizzative concrete sono una combinazione di tali elementi (Mela A., Pellegrini M., Una lettura della sociologia per paradigmi, 
+Celid, 1981).
+
+
+
+
+
+
+O.ME.FA, S.p.A. 
+UNIstorg - 20 1@paddrA/èa Qualità: Quaderno5 
+
+Scheda di approfondimento: definizioni classiche di "sistema" 
+
+Secondo Von Bertalantffy (1967)"? il sistema, inteso come “complessità organizzata" è un complesso di 
+elementi tra loro in interazione, cosicché il comportamento di un elemento legato ad altri elementi da una 
+relazione R è differente da quello che sarebbe il suo comportamento rispetto ad un’altra relazione R. 
+
+Miller (1965)"° definisce il sistema come un insieme di unità aventi relazioni tra loro. Dove la parola “insieme” 
+implica che le unità abbiano in comune delle proprietà, e dove lo stato di ciascuna unità è obbligato, condi- 
+zionato o dipendente dallo stato delle altre unità. 
+
+Per La Moigne (1977) il sistema è un oggetto che, in un ambiente, ed essendo dotato di finalità, svolge 
+un’'attività e vede la sua struttura interna evolvere nel tempo senza che esso perda la sua identità (posizione, 
+questa, particolarmente familiare in prospettiva ISO 9001:2015, se si considerano i nuovi requisiti sul conte- 
+sto e l’enfasi "prestazionale” che caratterizza la Norma). 
+
+Infine un repertorio delle idee portanti della prospettiva sistemica è il seguente, proposto da Boguslaw 
+(1965)": 
+
+1. idea di connessioni fra le parti (meccanismo fisico) 
+
+2 idea di controllo tipica della cibernetica, centrata sui concetti di omeostasi, regolazione e feedback 
+
+3 idea di interdisciplinarietà, già presente in von Bertalanffy, tesa al confronto fra sistemi e discipline 
+in ambiti scientifici differenti 
+
+4, idea dei vari livelli dei sistemi, delineata da Boulding (1956)"° è molto sviluppata in seguito, che mira 
+a distinguere sistemi con organizzazioni più o meno complesse, sistemi a loro volta contenenti altri 
+sistemi, o sottosistemi, ecc. 
+
+5. l'idea di “organismo”, che riguarda tutti i sistemi complessi, perciò anche le organizzazioni, ma che 
+mira a utilizzare l’analogia organismica, più che altro per studiare la caratteristica dei sistemi in cui 
+l’insieme non è solo maggiore delle parti ma è diverso da tale somma, perché comprende “in più” 
+anche i principi di organizzazione che “tengono insieme il sistema”. 
+
+12 Von Bertalantfy, L., General System Theory, Foundation, Development, Applications, 1967 Brazilter, New York ; tr.it. 1971 Teoria generale dei sistemi, 
+fondamenti, sviluppo, applicazioni, 2004 Mondadori, Milano. 
+
+13 Miller, J.G. La teoria generale dei sistemi viventi, 1978, F. Angeli, Milano, Il edizione. 
+
+14 Boguslaw R., The New Utopians. A Study of System Design and Social Change, Prentice Hall, Englewood Cliffs; tr. it.1975, / nuovi utopisti. Una eritica 
+degli ingegneri sociali, Rosemberg e Sellier, Torino. 
+
+15 Boutding K., General System Theory. A Scheleton ol Science, in Management Science, n. 2, 1956.
+
+
+
+ia SEE A
+ 
+
+GAT A 
+
+AAT 
+
+iTà 
+
+
+
+O.ME.FA. S.p.A. 
+UNFstore - 2016 - 378263 Audit ISO 9001:2015 19 
+
+Per comprendere meglio quali potrebbero essere gli effetti dell''approccio sistemico" sul processo di audit, 
+si consideri l’analogia fra l’audit e la verifica della capacità di un meccanismo fisico di elevata complessità, 
+di eseguire il compito per il quale è stato concepito e realizzato. In un meccanismo fisico sono importanti le 
+condizioni in cui si trovano i singoli componenti: se parti del meccanismo non fossero presenti, o risultassero 
+“non a specifica” o danneggiate, allora questo pregiudicherebbe in partenza la conformità del meccanismo 
+stesso, cioè la sua complessiva corrispondenza ai requisiti. 
+
+La verifica del meccanismo d'’altra parte non potrà ridursi alla somma delle verifiche di conformità dei singoli 
+elementi che lo compongono: le sue parti potrebbero risultare tutte presenti e in perfette condizioni, ma da 
+questo non deriverebbe la certezza del funzionamento del sistema meccanico nel suo complesso; tanto 
+meno della sua capacità di raggiungere le performance desiderate. 
+
+In altre parole, se ci fermassimo a una valutazione delle singole parti ci sfuggirebbe quell’’in più" che fa di 
+esse un sistema: nel caso del meccanismo, per ottenere una valutazione “sistemica” è “di efficacia” occorrerà 
+aggiungere alla verifica di conformità puntuale, l’accertamento, almeno: 
+- _ dell’idoneità dello “schema funzionale” 
+- _ della sua corretta applicazione, nell’assemblaggio delle parti meccaniche 
+- _ del funzionamento dell’apparato, una volta messo in azione 
+- delle prestazioni funzionali ottenute 
+- dell'affidabilità 
+
+La valutazione di un sistema 
+non si riduce 
+alla somma delle valutazioni di conformità 
+dei singoli elementi che lo compongono 
+
+Gli stessi aspetti ci interessa considerare in un audit ISO 9001, il cui scopo è appunto quello di verificare 
+che il sistema qualità “funzioni” e che sia in grado di raggiungere gli obiettivi fondamentali per i quali è stato 
+istituito (ovvero la regolare conformità dei prodotti/servizi e la crescente soddisfazione dei clienti), come 
+strumento strategico per la gestione e il successo organizzativi. 
+
+Come per il sistema meccanico, anche in un sistema qualità è dunque importante che tutti i componenti 
+siano disponibili e conformi; questo non significa che debba essere condotta una verifica di conformità “re- 
+quisito per requisito” (così come la verifica di un sistema meccanico non richiede, salvo casi particolari, la 
+scomposizione del sistema in tutte le sue parti, né la verifica della loro conformità “una per una”). 
+
+Nell'analogia meccanica, una buona valutazione consisterà invece nell’accertare prima di tutto che i di- 
+versi sottosistemi svolgano senza problemi le funzioni richieste. Tenendo conto del tempo a disposizione, 
+gli esperti incaricati di esaminare il meccanismo inizieranno verosimilmente a occuparsi delle funzioni più 
+importanti, o di quelle che a loro avviso potrebbero manifestare qualche particolare problematica, per poi 
+passare a quelle di tipo secondario o marginale. 
+
+Quando dovesse emergere qualche sintomo di malfunzionamento, o si sospetti, per effetto di qualche ano- 
+malia significativa, l’esistenza di un problema, in qualsiasi sottosistema, allora l’indagine verrà localmente
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstrog - 20 1@maddrArdàlla Qualità: Quademo 5 
+
+approfondita e, se necessario, questa volta il sottosistema verrà scomposto perché possa essere esaminato 
+con maggiore dettaglio lo stato dei singoli elementi da cui potrebbe dipendere l’anomalia. 
+
+Affinché l’ispezione” possa ritenersi significativa e ragionevolmente completa dovranno essere soddisfatte 
+due condizioni: 
+
+1. non andrà trascurato nessuno dei sottosistemi più importanti dell'apparato e perciò essi andranno esa- 
+minati per primi e con maggiore cura 
+
+la valutazione dei comportamenti dell'apparato dovrà essere tale da poterne ragionevolmente dedurre 
+che se i comportamenti riscontrati sono quelli attesi, allora le singole componenti sono “conformi” e 
+adeguatamente interrelate. Questa informazione potrebbe essere ottenuta sottoponendo l’apparato ad 
+adeguate prove funzionali che ne stressino tutte le capacità ipotizzate o attese 
+
+la scelta dei sottosistemi (e relative funzioni) da esaminare, pur effettuata secondo un ordine di priorità 
+che dipende dalla loro importanza, dovrà essere tale da consentire una valutazione di tutti i componenti 
+dell’apparato. Laddove in altri termini l’analisi delle funzionalità prioritarie non bastasse a desumere lo 
+stato di tutti gli elementi del sistema meccanico, andrebbero esaminati ai fini della completezza anche i 
+sottosistemi secondari. 
+
+Una volta che tali condizioni siano ottenute, allora si potrà essere ragionevolmente certi che: 
+
+a) le singole parti componenti sono tutte “a specifica” 
+
+D) esse “lavorano” interagendo in modo coordinato e coerente, in modo da assicurare lo svolgimento di 
+tutte le funzionalità per cui l’apparato è stato concepito 
+
+©) l’apparato nel suo complesso è "conforme”. 
+
+In altre parole, che si tratta di una "buona macchina". 
+
+L’audit deve coprire tutti i requisiti, 
+attraverso l'esame dei processi, 
+con il fine ultimo di esprimere 
+una valutazione sul sistema di gestione 
+nel suo complesso 
+
+Nella nostra similitudine: 
+
+1. i singoli componenti dell'apparato corrispondono agli elementi del sistema qualità, e ai requisiti elemen- 
+tari ad essi applicabili 
+
+2. le “funzionalità" o i sottosistemi dell’apparato corrispondono ai processi e attività del sistema di gestione 
+fra loro correlati secondo determinati "schemi funzionali"
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 21 
+
+3. l’apparato nel suo complesso equivale all'intero sistema di gestione per la qualità'®, 
+
+Di conseguenza: 
+
+1. L’audit, come l'ispezione meccanica, dovrebbe fornire una valutazione della conformità a tutti i requisiti’”, 
+proiettati sui processi dell’organizzazione, con il fine ultimo di esprimere un giudizio non su questi ultimi, 
+considerati singolarmente, ma sul sistema di gestione nel suo complesso, nel quale i processi operano 
+in reciproca relazione’®, 
+
+2. | processi dovrebbero essere auditati in funzione della loro importanza, ai fini del raggiungimento degli 
+obiettivi, nel sistema qualità “specifico” (ovvero quello determinato dalle particolari condizioni del conte- 
+sto organizzativo). 
+
+3. Nel sottoporre ogni requisito ad audit, occorre tenere conto della sua rilevanza nel processo di riferi- 
+mento 
+
+Affinché tutto questo sia possibile, l'Organizzazione dovrà fornire evidenza: 
+—  di avere perimetrato il sistema qualità e istituito i processi, in funzione dei fattori rilevanti del (mutevole) 
+
+contesto e dei requisiti delle parti interessate 
+— di avere determinato e gerarchizzato la rilevanza degli elementi del sistema qualità e dei processi, a 
+
+tutti i livelli del SGQ (strategico, tattico, operativo) in base ai rischi e alle opportunità correlati al contesto. 
+
+Ciò è richiesto dalla Norma {in particolare, per quanto riguarda il contesto e la conseguente determinazione 
+dei confini del SGQ, al punto 4), e pertanto rappresenta allo stesso tempo una condizione preliminare alla 
+valutazione di conformità ed essa stessa una condizione di conformità del sistema. 
+
+Per poter eseguire un audit basato sul rischio 
+l'Organizzazione 
+dovrà avere gerarchizzato i processi 
+e gli elementi del sistema qualità 
+
+Per esempio, ur'organizzazione che produce alimenti surgelati, i cui obiettivi strategici, in un’ottica di mi- 
+glioramento della soddisfazione del cliente, comprendano la velocizzazione delle consegne ai venditori e 
+l’alargamento della gamma di prodotto, potrebbe selezionare, come processi prioritari, quelli legati alla con- 
+servazione, alla gestione delle apparecchiature di misurazione, alla logistica e manutenzione dei mezzi, alla 
+ricerca e sviluppo. 
+
+16 Tuttavia la similitudine fra macchina e sistema qualità non può spingersi oltre: la valutazione di un sistema di gestione, rispetto a quella di un mecca- 
+nismo fisico, è naturalmente ben più complessa, se si considera che l’analogia più appropriata, secondo la ISO 9000:2015 è quellta che assimita l’or- 
+ganizzazione non a una macchina, ma a un essere umano. 
+
+17 Da UNI CEI EN ISOEC 17021-1:2015, punto 9.3.1,3 — Fase 2. (...} La fase 2 (...} deve almeno comprendere (...) le informazioni e le evidenze circa 
+la conformità a tutti i requisiti della norma di sistema digestione applicabile o di altri documenti normativi. 
+
+18 Da UNI EN IS0 9000: 2015: 2.3.4 Approccio per processi - 2.3,4,1 Enunciazione: Risullati costanti e prevedibili sono conseguiti più efficacemente ed 
+elficientemente quando le attività sono comprese e gestite come processi corretati che agiscono come un sistema coerente - 2.3.4.2 Fondamento 
+logico: Il QMS è costituito da processi correlati. Comprendere come siano prodotti risultati da questo sistema permette ad un'organizzazione di otti- 
+mizzare il sistema stesso e le relative prestazioni.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNI stopg - 20 1padd/Ardèlla Qualità: Quaderno 5 
+
+| correlati requisiti di Norma saranno perciò quelli che richiederanno maggiore attenzione da parte dell’audit 
+team, e un campionamento focalizzato su tali aspetti, secondo l'approccio Risk-Based Auditing"®. 
+
+In sintesi: 
+
+- così come l'approccio basato sul rischio deve caratterizzare il sistema di gestione per la qualità, allo 
+stesso modo esso dovrebbe sostenere il processo di audit in quanto tale 
+
+— fra le finalità dell’audit andrà considerata, come complementare alla verifica della conformità e dell'effi- 
+cacia del sistema, anche la valutazione della sua adattività, cioè della capacità di mantenersi conforme 
+ed efficace a fronte dei cambiamenti del contesto”?, 
+
+Un audit “per processi" come appena delineato, dovrebbe essere pianificato in modo da risultare allineato 
+con il percorso di generazione del valore e basarsi sulla valutazione, in riferimento a ciascuno dei processi 
+esaminati, dell'applicazione del PDCA. 
+
+Le tecniche di indagine, di conseguenza, dovrebbero comprendere interviste quidate dalle 5 "domande 
+chiave" di un audit per processi, a loro volta strutturate secondo la sequenza logica PDCA: 
+
+1. "Che cosa state cercando di ottenere?" {PLAN: quali sono e come vengono gestiti gli obiettivi, i piani? 
+ecc.?) 
+
+2. "Come avete operato/state operando, per ottenerlo?" (DO: quali sono e come vengono eseguite le atti- 
+vità operative, e i relativi elementi di supporto? ecc.) 
+
+3. "Come sapete se avete ottenuto quanto desiderato?" (CHECK: quali sono e come vengono svolte le 
+misurazioni e i monitoraggi? ecc.) 
+
+4, "Come sapete se quello che state adottando è il modo migliore per ottenere quanto desiderato?" (ACT: 
+quali azioni di miglioramento sono state pianificate ed eseguite? ecc.) 
+
+5. "Come potete essere certi che ciò che state cercando di ottenere è giusto?" {In che modo è garantita la 
+coerenza complessiva del sistema? Esiste continuità fra gli obiettivi strategici e quelli operalivi? ecc.}?! 
+
+Attraverso di esse, a partire dal livello strategico®, le questioni da affrontare per prime dovrebbero compren- 
+dere le seguenti: 
+
+1. la Politica per la Qualità è stata definita? È congruente con le finalità e il contesto dell'organizzazione? È 
+tale da supportare la direzione strategica dell'organizzazione? 
+
+2. Gli obiettivi per la qualità sono stati chiaramente stabiliti? Sono riconducibili alla Politica per la Qualità? 
+
+3. Le attività e i processi per conseguire tali obiettivi sono stati determinati? È stato in ciò impiegato l'ap- 
+proccio Risk Based Thinking (RBT)? 
+
+4. Le interconnessioni sono state individuate? Sono individuati i clienti interni e i fornitori interni? Sono 
+definite e governate le interfacce? 
+
+19 Rif. UNI EN ISO 19011:2012, punto 5.1: "Dovrebbe essere data priorità ad assegnare le risorse del programma di audit al fine di solttoporre ad audit 
+gli elementi significativi nell'ambito del sistema di gestione. Questi elementi possono comprendere le caratteristiche chiave della qualità del prodotto 
+{...) Nota: questo concetto è comunemente noto come attività di audit basata sui rischi (risk-based auditing}". 
+
+20 Come in generate per l'intero oggetto dell'indagine di audit, anche tale capacità di adattamento andrà valutata sulla base: 
+- delle evidenze dei comportamenti manifestati dal sistema nel passato (e dei risultati raggiunti) 
+
+di quanto osservabile al momento dell’audit 
+in prospettiva futura, in base all'affidabilità delle condizioni organizzative (comprese le politiche, la pianificazione, le risorse). 
+
+21 Rif.: Hoyle D. e Thompson J., /SO 2000:2000 Auditor Questions, Ed. Transition Support LtD 2001. 
+
+22 Nel caso in cui dovesse risultare più praticabile e utile un approccio di tipo induttivo, è possibile un percorso di audit "a ritroso”", a partire dalle singole 
+attività operative. Tuttavia questo non cambia la disposizione logica degli elementi del SGQ, la cui funzione è quella di declinare le determinazioni di- 
+rezionali per la qualità, fino al livello operativo.
+
+
+
+
+
+
+O.ME.FA. $.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 23 
+
+5. Sono stati identificati i processi critici in relazione al contesto e allo stato dell'organizzazione? È stato 
+utilizzato il RBT per la loro individuazione? 
+
+A seguire, dovrebbero essere affrontati gli aspetti gestionali e operativi: 
+
+1. Sono stati stabiliti strumenti e risorse per il governo dei processi, commisurati alla loro importanza/criti- 
+cità? Tali strumenti e risorse includono le informazioni documentate, e i "supporti" citati al punto 7 della 
+Norma? 
+
+IL SGQ è integrato con i processi di business dell'organizzazione? Questa integrazione tiene conto della 
+criticità (stato/importanza) dei processi? 
+
+Quali sono i "passaggi critici" dei processi? Sono stati definiti e valutati utilizzando un approccio RBT? 
+
+Quali sono i controlli applicati ai passaggi critici? | controlli vengono correttamente effettuati? Qual è il 
+risultato di tali controlli? Come è gestito questo risultato? 
+
+Come sono in generale utilizzati gli esiti del controllo e del monitoraggio del sistema di gestione (corre- 
+zione, miglioramento, apprendimento organizzativo, innovazione, cambiamento, ecc.)? 
+
+L'indagine di audit 
+dovrebbe comprendere interviste 
+guidate dalle 5 "domande chiave" 
+di un audit per processi 
+
+Tutto ciò può essere schematizzato nel grafico di fig. 6. In esso si mette in evidenza: 
+
+1. la derivazione del SGOQ, incluse politiche e obiettivi per la qualità, dal contesto e dalle strategie 
+
+A la gerarchizzazione dei processi, sulla base dei rischi/opportunità 
+
+3. l'audit condotto per processi, ai vari livelli del SGQ, a partire dai processi prioritari e dei fattori chiave di 
+tali processi, attraverso le prospettive del Risk Based Thinking e del PDCA®, 
+
+23 La stretta relazione fra approccio per processi, RBT e PDOCA era stata messa in evidenza nei Quaderni della Qualità nn.3  e 4.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstog - 20 1@pad4/Afèlla Qualità: Quaderno 5 
+
+CONTESTO 
+*
+
+STRATEGIE OBIETTIVI STRATEGICI 
+
+DECISIONE DI ISTITUIRE 
+UN SISTEMA DI GESTIONE PER LA QUALITA' 
+
+DETERMINAZIONE DEI FATTORI E 
+l ESIGENZE DELLE PARTI INTERESS. 
+
++ DEFINIZIONE 
+| DEL SISTEMA QUALITA' 
+
+POLITICA/OBIETTIVI 
+
+L | PER LA QUALITA' 
+
+E‘ 
+
+”- DETERMINAZIONE 
+
+= DEI RISCHI/OPPORTUNITA' 
+
+= 
+ISTITUZIONE DEI PROCESSI 
+
+DETERMINAZIONE 
+
+l à!! l DEI FATTORI: GRITICI 
+
+GERARCHIZZAZIONE 
+
+wx DEI PROCESSI 
+
+2 
+l 
+
+REALIZZAZIONE 
+E CONTROLLO 
+
+DEL 
+PRODOTTO/! 
+SERVIZIO 
+
+Fig.6 _ Audit basato su PDCA, RBT e Process approach
+
+REQUIS. APPLICABILI REQUISITI APPLICABILI REQUISITI APPLICABILI 
+AL LIVELLO OPERATIVO AL LIVELLO TATTICO AL LIiVELLO STRATEGICO 
+
+OLY0ddNS 
+
+O.1N3WV3OI9IN ‘3INSIWYS3I8 ‘ISTTYNY ‘OI99VAYO.LINON ‘3NOIZVANSIN 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 25 
+
+Valutare le informazioni documentate del SGQ 
+
+Una componente essenziale dell'audit è quella che riguarda l’esame delle informazioni documentate. 
+
+Come si è visto, la ISO 9001:2015: 
+
+1. adotta un approccio più flessibile nei riguardi del tipo di informazioni documentate che devono fare parte 
+di un sistema qualità; per esempio non è più imposta l’adozione di uno specifico documento denomina- 
+to “manuale della qualità", né che siano prodotte specifiche “procedure documentate”, stabilendo che 
+siano le organizzazioni a determinare le procedure e gli altri documenti necessari (che si andranno a 
+sommare a quelli comunque, ancora, richiesti dalla Norma) 
+
+2. riduce l'enfasi sulla gestione documentale: 
+
+— confinandone la trattazione nel paragrafo conclusivo (p.to 7.5) del punto “Supporto” {nell’edizio- 
+ne del 2008, la gestione controllata dei documenti era oggetto dei requisiti introduttivi, al punto 4: 
+"Sistema di Gestione per la Qualità") 
+
+- _ introducendo l'accezione “informazione documentata”, dove l’accento è posto sul contenuto (l’in- 
+formazione, appunto) e non sulla forma (il “documento”). 
+
+Anche in questo caso, una lettura affrettata della nuova Norma ha prodotto in alcuni l’errata convinzione che 
+l’apparato documentale abbia perso la sua rilevanza, con affermazioni del tipo: “non occorre più il manuale 
+della qualità” o “i sistemi qualità d'ora in avanti non avranno procedure scritte”, ecc. 
+
+Si tratta di un'interpretazione non corretta: la Norma non prevede un ridimensionamento del sistema docu- 
+mentale, ma ne subordina la generazione, in buona parte, alle effettive esigenze di controllo del sistema e 
+dei suoi processi? 
+
+La Norma non prevede 
+un ridimensionamento della documentazione, 
+ma la subordina 
+alle reali esigenze di controllo 
+del sistema e dei processi 
+
+Lo stesso documento ISO/TC 176/SC2/N1276 Guidance on the Requirements for Documented Information 
+of ISO 9001:2015 (www.iso.org/te176/sc02/public), nel riprendere i punti della Norma che riguardano le in- 
+formazioni documentate, ci permette di rilevare che la quantità dei documenti prescritti, e in particolare delle 
+registrazioni richieste per dare evidenza di attuazione del sistema, in sostanza non è diminuita. 
+
+Nel documento si elencano innanzitutto le informazioni documentate che l'organizzazione deve “mantenere” 
+allo scopo di istituire il SGQ (documenti trasversali di alto livello). Esse includono: 
+
+1. l campo di applicazione del SGQ (p.to 4.3) 
+
+24 Ciò sarà sviluppato nel Quaderno n. 6, dedicato al tema delle “informazioni documentate”.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstopg - 2010add/Arfèffa Qualità: Quaderno 5 
+
+Le informazioni documentate necessarie per supportare l'attuazione dei processi (p.to 4.4) 
+
+La Politica per la qualità (p.to 5) 
+
+Gli obiettivi per la qualità (p.to 6.2) 
+
+Informazioni documentate mantenute dall'organizzazione allo scopo di comunicare le informazioni ne- 
+cessarie all'organizzazione stessa per operare (documenti specifici, di livello inferiore). Vedere p.to 4.4. 
+
+A queste si sommano i documenti che l’organizzazione potrebbe generare in quanto utili al SGQ, fra i quali: 
+Organigrammi 
+Mappe di processo, diagrammi di flusso di processo e/o descrizioni del processo 
+Procedure 
+Istruzioni di lavoro e/o di prova 
+Specifiche 
+Documenti che contengono comunicazioni interne 
+Piani di produzione 
+Liste di fornitori approvati 
+Piani di prova e ispezione 
+Piani della Qualità 
+Manuali della Qualità 
+Piani strategici 
+Moduli 
+
+Segue l'elenco delle informazioni documentate che l'organizzazione deve “conservare”, allo scopo di fornire 
+evidenza dei risultati raggiunti, cioè le registrazioni sempre necessarie perché si possa confidare nel fatto 
+che i processi vengono condotti come pianificato (p.to 4.4), e fra esse: 
+
+1. Evidenze di adeguatezza all'uso, delle risorse per il monitoraggio e la misurazione (p.to 7.1.5.1) 
+
+2, Evidenza delle basi utilizzate per la taratura delle risorse per monitoraggio e misurazione (quando non 
+esistono campioni di riferimento internazionali o nazionali) (p.to 7.1.5.2) 
+
+Evidenze di competenza della/e persona/e che eseguono sotto il controllo dell'organizzazione un lavoro 
+che influenza le prestazioni e l'efficacia del SGQ (p.to 7.2) 
+
+Risultati del riesame e nuovi requisiti dei prodotti e servizi {p.to 8.2.3) 
+
+Registrazioni necessarie per dimostrare che i requisiti della progettazione e sviluppo sono stati soddi- 
+sfatti (p.to 8.3.2) 
+
+Registrazioni degli input della progettazione e sviluppo (8.3.3) 
+
+Registrazioni delle attività di controllo della progettazione e sviluppo (p.to 8.3.4) 
+
+Registrazioni degli output della progettazione e sviluppo (p.to 8.3.5) 
+
+Modifiche della progettazione e sviluppo, compresi i risultati del riesame e l'autorizzazione alle modifi- 
+che, e le azioni necessarie (p.to 8.3.6) 
+
+10. Registrazioni delle valutazioni, selezione, monitoraggio delle prestazioni e rivalutazione dei fornitori 
+esterni, e di tutte le azioni che emergono da tali attività (p.to 8.4.1) 
+
+11. Evidenza di identificazione univoca degli output, quando la rintracciabilità è un requisito (p.to 8.5.2)
+
+L %E N b n R w N 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 27 
+
+12. Registrazioni della proprietà del cliente o del fornitore esterno, smarrita, danneggiata o riscontrata ina- 
+datta all'uso, e delle relative comunicazioni al proprietario (p.to 8.5.3). 
+
+13. Risultati del riesame delle modifiche relative alla produzione o alla erogazione del servizio, persona che 
+autorizza la modifica, e le necessarie azioni intraprese (p.to 8.5.6) 
+
+14. Registrazioni del rilascio autorizzato di prodotti e servizi per la consegna al cliente, compresi i criteri di 
+accettazione e la riferibilità alla persona/e che ha autorizzato (p.to 8.6) 
+
+15. Registrazioni delle non conformità, delle azioni intraprese, delle concessioni ottenute e dell'identificazio- 
+ne dell'autorità che ha deciso l'azione a fronte della non conformità {p.to 8.7) 
+
+16. Risultati della valutazione delle prestazioni e dell'efficacia del SGQ (p.to 9.1.1) 
+
+17. Evidenza dell'attuazione del programma di audit e risultati degli audit (p.to 9.2.2) 
+
+18. Evidenza dei risultati del riesame di direzione (p.to 9.3.3) 
+
+19. Evidenza della natura delle non conformità e di tutte le azioni susseguenti intraprese {(p.to 10.2.2) 
+
+20. Risultati di ogni azione correttiva (p.to 10.2.2) 
+
+Le attività preliminari all'audit in campo, 
+finalizzate ad accertare 
+l'appropriatezza dell'impianto 
+e la sua coerenza con il contesto, 
+saranno cruciali 
+e perciò dovrebbero essere 
+particolarmente accurate ed estese 
+
+Buona parte delle informazioni di audit e in particolare quelle relative all'individuazione dei processi e alla do- 
+cumentazione che l'organizzazione ha ritenuto di elaborare per la loro gestione, inclusi i tipi di registrazione, 
+dovrebbero essere raccolte prima dell'audit in campo. Se si tratta di un audit iniziale di terza parte una prima 
+generale valutazione di questo tipo dovrebbe essere condotta in particolare durante lo Stage 1° 
+
+Queste attività preliminari, proprio perché finalizzate ad accertare l'appropriatezza dell'impianto e la sua 
+coerenza con il contesto, saranno cruciali e perciò dovrebbero essere particolarmente accurate ed estese. 
+Esse saranno tanto più efficaci quanto più saranno svolte nell'interazione fra l'auditor e l'organizzazione e 
+quest'interazione sarà a sua volta tanto più efficace quanto più potrà avvenire presso la sede dell'organizza- 
+zione oggetto dell'audit. 
+
+In particolare dovrebbe essere valutata con cura l'adeguatezza delle informazioni documentate, e andrebbe 
+cercata risposta almeno alle questioni seguenti: 
+
+25 Vedere, per gli audit di parte terza: UNI CEI EN ISO/lEC 17021-1:2015, punto 9.3.1.2.2 a; per gli audit di parte prima e seconda: ISO 19011, punto 6.3.1 
+- Svolgimento del riesame dei documenti nel corso della preparazione dell'audit.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 1@oaddrArdèfla Qualità: Quaderno 5 
+
+1. Esiste una rappresentazione dei processi sufficientemente completa e dettagliata, anche come "mappa" 
+da utilizzare per un idoneo percorso di audit? 
+
+2. Le procedure e le istruzioni sono adeguate, in relazione a: 
+— _ estensione (grado di copertura dei processi, nella misura necessaria)? 
+
+grado di dettaglio? 
+
+— esattezza (correttezza delle informazioni in esse contenute)? 
+
+— _ stato di aggiornamento? 
+- coerenza con le politiche del SGQ? 
+—  Coerenza interna? 
+
+— feciproca coerenza? 
+
+— chiarezza? 
+
+- completezza? 
+
+- _ allineamento al quadro cogente (riferimenti normativi, ecc.)? 
+
+- ecc. 
+
+Una volta che le procedure documentate siano state ritenute idonee da parte del team di audit, si passerà 
+alla verifica della loro applicazione, attraverso l'audit in campo. 
+
+Cosa accade se l'organizzazione non ha prodotto un significativo sistema documentale a supporto 
+dei processi (oltre a quello richiesto esplicitamente dalla norma)? 
+
+L'organizzazione, come si è detto più volte, ha maggiore libertà, oggi, di decidere riguardo alla documenta- 
+zione di cui dotarsi; tuttavia i criteri per tale decisione all'occorrenza devono essere esposti all'auditor, che 
+valuterà l'adeguatezza dell'apparato documentale anche sulla base delle spiegazioni ottenute. 
+
+Tali richieste di spiegazioni non devono necessariamente riguardare tutta la documentazione, ma quella che 
+l'auditor ritiene più critica ai fini della corretta declinazione del sistema di gestione (vedi fig. 7) sulla base della 
+propria conoscenza/familiarità con il settore, che perciò risulterà di fondamentale importanza. 
+
+La validità delle argomentazioni sarà commisurata alla loro oggettività e quest'ultima sarà tanto più evidente 
+quanto più l'organizzazione: 
+—  avrà utilizzato il Risk Based Thinking per valutare rischi e opportunità correlati alla configurazione docu- 
+
+mentale {per esempio: è stata condotta una valutazione dei rischi sufficientemente completa e accurata, 
+come base per giustificare il drastico alleggerimento della documentazione di sistema, rispetto alla sua 
+precedente versione "ISO 9001:2008"? L'eventuale conferma del vecchio sistema documentale, nella 
+transizione alla nuova edizione della Norma, è il risultato di un attento riesame della documentazione, 
+per valutarne l'adeguatezza a fronte del nuovo approccio alla Gestione Qualità, o è avvenuta in modo 
+"automatico"?, ecc.) 
+
+- sarà in grado di supportare le proprie argomentazioni con dati e informazioni attendibili (le spiegazioni 
+fornite dagli intervistati, ai livelli pertinenti dell'organizzazione, sono convergenti e convincenti sul piano 
+logico e su quello tecnico? esistono evidenze di analisi, ricerche, riunioni, condotte per stabilire e conva- 
+lidare la "policy" documentale?, ecc.).
+
+
+
+
+
+
+O.ME.FA. $.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 8001:2015 29 
+
+COMPRENSIONE E DETERMINAZIONI RELATIVE AL 
+CONTESTO E ALLE PARTI INTERESSATE 
+
+DEFINIZIONE DEL CAMPO DI APPLICAZIONE DEL 
+SISTEMA DI GESTIONE PER LA QUALITA 
+
+DETERMINAZIONE DELLA POLITICA PER LA QUALITA 
+
+DEFINIZIONE DEGLI OBIETTIVI PER LA QUALITA' 
+
+ISTITUZIONE E ATTUAZIONE DEI PROCESSI DEL 
+SISTEMA QUALITA' 
+
+PIANIFICAZIONE E ATTUAZIONE DEI CONTROLLI 
+
+DEFINZIONE E ATTUAZIONE 
+DELLE AZIONI A SEGUIRE 
+
+Fig.7  Declinazione del sistema qualità come riferimento per la valutazione documentale 
+
+Potrebbero verificarsi, in generale, due diverse situazioni: 
+
+1. L'apparato documentale, per la parte lasciata alla discrezionalità dell'organizzazione, risulta carente, per 
+esempio rispetto alle buone prassi o alle consuetudini del settore, e non emergono giustificazioni tali da 
+supportare le scelte operate in tal senso dall'organizzazione: ciò andrà segnalato all'organizzazione, nel 
+modo opportuno {con note di non conformità, osservazioni, commenti, ecc.), affinché siano intraprese le 
+azioni necessarie {inclusa la revisione dell'impianto documentale, per la correzione delle lacune riscon- 
+trate), come condizione per poter condurre l'audit in campo. 
+
+2. Se la mancanza di una dettagliata documentazione a supporto di uno o più processi risulterà invece 
+accettabile, allora durante l'audit in campo l'idoneità dei processi, e specialmente dei processi primari, 
+verrà valutata soprattutto attraverso: 
+— l'osservazione diretta dei processi stessi (anche in questo caso emerge la necessità che l'auditor 
+
+abbia elevate competenze tecniche), per un tempo e in circostanze significativi 
+— _ interviste agli interessati (anche per valutare la consapevolezza del processo, degli obiettivi e del- 
+
+la politica) 
+— _ la valutazione dei piani e delle registrazioni, a partire da quelle richieste dalla ISO 9001:2015 
+— la valutazione della regolarità e accettabilità dei risultati conseguiti, attraverso l'esame delle per- 
+
+formance ottenute nel tempo
+
+e & e e 
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 lnadédrAiaiafla Quatità: Quaderno 5 
+
+— _ la valutazione della capacità di continuare a conseguire in modo sistematico i risultati attesi, attra- 
+verso la verifica delle condizioni di "assicurazione qualità", fra cui la gestione del "supporto" (inclu- 
+se le evidenze di disponibilità di idonei: apparecchiature, competenze, ambiente operativo, ecc.) 
+
+— l'esame delle relazioni con i processi collegati 
+
+— la valutazione della soddisfazione del cliente esterno e del cliente interno. 
+
+VALUTAZIONE PRELIMINARE DELLE INFORMAZIONI DOCUMENTATE 
+
+VALUTAZIONE DELLE INFORMAZIONI VALUTAZIONE DELLE INFORMAZIONI 
+DOCUMENTATE DA MANTENERE DOCUMENTATE DA CONSERVARE 
+
+RICHIESTE DALLA JA Ù DETERMINATE DALL' 
+NORMA Ì ORGANIZZAZIONE 
+
+o Y 
+C ONFORMMII ? ” : — CNHEICAERGICMIENiTI 
+
+sry 
+L'AUDITOR RICHIEDE 
+
+CHIARIMENTI SULLE SOLUZIONI 
+DOCUMENTALI ADOTTATE 
+
+no | 
+NC = CHIA‘R0IKM?E NTI 
+
+AUDIT IN CAMPO 
+
+Fig.8 II processo di audit documentale
+
+
+
+Vil2 i 4 
+
+af 
+
+E 
+
+i 
+
+
+
+O,ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 8001:2015 31 
+
+Le "affermazioni” di audit 
+
+La valutazione di conformità si deve basare su informazioni oggettive, il cui grado di formalizzazione, laddove 
+manchi nella Norma una specifica richiesta in tal senso, sarà, come si è detto, deciso dall'organizzazione. 
+Per semplicità possiamo immaginare che, relativamente a un determinato aspetto, le alternative si riducano 
+alle seguenti: 
+
+a) L'organizzazione ha prodotto specifiche registrazioni, anche se non richieste dalla Norma, (per esempio 
+relative alla determinazione dei rischi/opportunità, o all'individuazione delle parti interessate rilevanti, 
+eCcc.). 
+
+b) L'organizzazione, attraverso gli intervistati, riporta verbalmente (attraverso spiegazioni, resoconti, ecc.) 
+le informazioni che riguardano l'attuazione del Sistema di Gestione per la Qualità. 
+
+Ricordiamo che anche in questo caso, in base al Principio del "processo decisionale basato sull'evidenza”, 
+questa scelta dovrebbe essere sostenuta da elementi oggettivi e, quando dovesse risultare rilevante ai fini 
+dell'efficacia del Sistema Qualità {questo sarà l'auditor a stabilirlo oltre che, come abbiamo visto, in fase 
+di pre-audit, anche durante l'audit in campo, per esempio sulla base delle criticità dei processi), occorrerà 
+innanzitutto valutare, senza preconcetti, se le argomentazioni a favore dell'una o dell'altra decisione sono 
+sostenibili, sul piano logico e dei contenuti. 
+
+Nel caso in cui le evidenze dovessero consistere in semplici "affermazioni", di nuovo l'auditor ne valuterà 
+contenuto e coerenza, accettandole o respingendole. È bene in proposito ricordare che una dichiarazione 
+verbale non è necessariamente meno valida o meno "robusta" di una registrazione o di una procedura do- 
+cumentata®®; talvolta anzi essa può risultare addirittura più convincente, proprio perché in molti casi sarebbe 
+impossibile all'intervistato fornire una spiegazione o un resoconto verbale validi senza avere piena familiarità 
+con l'argomento; al contrario non è detto che ad una "informazione documentata" corrisponda sempre l'effet- 
+tiva padronanza dei contenuti, da parte di chi, su richiesta, l'ha fornita all'auditor. 
+
+Una "dichiarazione” oggettivamente non accettabile, per esempio sul piano logico e/o su quello tecnico, darà 
+origine a una segnalazione di Non Conformità, classificata al livello di severità opportuno. 
+
+Affinché tutto ciò abbia luogo senza lasciare margini a dubbi o contestazioni, l'eventuale "Non Conformità" 
+andrà espressa più che mai in modo chiaro e oggettivo, utilizzando, per il riferimento all'evidenza, formule del 
+tipo: "secondo quanto dichiarato nell'intervista di audit"?, o equivalenti. 
+
+26 Da UNI EN ISO 9000:2015: 
+3,8,4 Evidenza oggettiva 
+
+Dati (3.8. 1) che supportano l'esistenza di qualcosa o la verità intorno a qualcosa 
+
+Nota 1: L'evidenza oggettiva può essere ottenuta attraverso osservazione, misurazione (3.13.7), prova (3.13.5) o altri mezzi. 
+
+Nota 2: L'evidenza oggeltiva per le finalità di audit (3. 10. 1) consiste generalmente in registrazioni (3,8.11), affermazioni di fatti o altre informazioni (3.8.2) per- 
+tinenti ai criteri di audit (3.10.14) e verificabili. 
+
+27 Ove fosse necessario, in un rilievo di audit, fare riferimento all'intevistato, questi non dovrebbe mai essere citato in modo nominativo ma, al più, attra- 
+verso le iniziali.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIstoga - 20 1 @paddf/dàffa Qualità: Quaderno 5 
+
+Una dichiarazione verbale, 
+purché verificata, 
+non è necessariamente meno valida 
+di una registrazione 
+o di una procedura documentata. 
+Talvolta essa può essere addirittura più convincente 
+
+Come per la documentazione che supporta l'attuazione dei processi (procedure, istruzioni, piani, ecc.) an- 
+che la valutazione delle evidenze, dovendo essere di tipo sostanziale, sarà efficace nella misura in cui l'au- 
+ditor disporrà di buone conoscenze sull'argomento e sul tipo di organizzazione oggetto di audit (condizioni 
+necessarie a comprendere "tecnicamente”, e se del caso a confutare, le spiegazioni ricevute, quale che sia 
+il tema trattato e la funzione intervistata).
+
+
+
+
+
+
+O.ME.FA. $.p.A. 
+UNIIstore - 2016 - 378263 Audit ISO 9001:2015 33 
+
+Esempi di rilievi di audit 
+
+Applicando i criteri fin qui illustrati, il team di audit potrebbe riscontrare disallineamenti più o meno importanti 
+rispetto alla Norma. 
+
+Qualora emergano Non Conformità, esse andranno formulate rispettando, come sempre, l'articolazione: 
+"requisito, Mancanza, evidenza”. In questo caso però la formulazione e il "grado" dei rilievi potrebbero essere 
+influenzati dagli aspetti di novità che caratterizzano l'edizione del 2015 rispetto alle precedenti, e in particolar 
+modo: 
+— dal nuovo orientamento della ISO 9001 nel senso dell’efficacia, più che in quello della prescrizione 
+
+formale 
+— _ dalla centralità delle logiche di rischio, proiettate su tutta la Norma (e dunque sull’intero sistema qualità, 
+
+che deve rifletterne le prescrizioni) 
+— da una più serrata formulazione, nella ISO 9001, dei requisiti riguardanti l’approccio per processi e gli 
+
+aspetti di tipo strategico e direzionale. 
+
+La formulazione e la severità dei rilievi 
+potrebbero essere influenzati 
+dagli aspetti di novità 
+che caratterizzano l’edizione ISO 9001:2015 
+
+La struttura stessa dei requisiti, nella nuova edizione della Norma, è inoltre tale da influire, oltre che natural- 
+mente sul tipo, anche sul grado di severità dei rilievi di audit, se si considera che: 
+
+a) | requisiti della Norma rispondono a una gerarchia implicita in cui si distinguono almeno tre livelli: 
+
+1.  quello "strategico”", al quale sono riferibili i requisiti "di inquadramento" e "orientamento" del 
+Sistema Qualità, ovvero quelli del punto 4 (Contesto dell'organizzazione) e del punto 5 (Lea- 
+dership) 
+
+2. quello "tattico", al quale appartengono i requisiti più espressamente gestionali, rappresentato 
+dai punti: 6 (Pianificazione), 9 {Valutazione delle prestazioni), 10 (Miglioramento) 
+
+3. e infine quelli a carattere operativo, prevalentemente riferibili ai punti 7 (Supporto) e 8 (Attività 
+operative). 
+
+SI tratta evidentemente di una classificazione grossolana, visto che requisiti appartenenti a ciascuno dei 
+punti citati potrebbero essere assegnati a livelli diversi da quelli qui ipotizzati, ma tuttavia utile per facilitare 
+una lettura "strutturata" della Norma e del SGQ e fornire un orientamento nella classificazione dei rilievi, la 
+cui portata sarà tanto più estesa e significativa, in generale, quanto più essi riguarderanno i livelli più elevati 
+della gerarchia appena illustrata (senza disattendere, beninteso, le consolidate regole generali di classifica- 
+zione dei rilievi stessi, in base alle quali per esempio devono essere considerate "gravi" le non conformità 
+emerse a fronte di requisiti cogenti applicabili al prodotto o servizio, a prescindere dal livello al quale vengono
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoga - 20 1@)naddrA zèà Qualità: Quaderno 5 
+
+riscontrate le anomalie, se "strategico" "tattico" o "operativo”). 
+
+b) | requisiti sono spesso fra loro correlati per mezzo di legami più o meno numerosi, forti e stabili (cioè in- 
+dipendenti dallo scenario in cui la Norma verrà applicata). Questo riflette la natura sistemica della Norma 
+e ne suggerisce una lettura di tipo "reticolare", invece che semplicemente "sequenziale", nella quale ogni 
+requisito potrebbe rinviare ad altri, e così via, fino, al limite, a chiamare in causa l'intera Norma. In altri 
+termini, ogni punto della ISO 9001, e dunque ogni situazione nell'organizzazione che ne preveda l'appli- 
+cazione, dovrebbero essere interpretati tenendo conto della loro posizione nella "trama" complessiva e 
+dei legami con gli altri elementi della stessa trama. Ciò potrebbe complicare l'individuazione precisa del 
+"punto norma" a cui ricondurre i rilievi riscontrati e perciò richiedere maggiori esercizi di calibrazione fra 
+gli auditor, per assicurare le condizioni di riproducibilità cui si è partato in precedenza. 
+
+La natura sistemica della Norma 
+ne suggerisce una lettura 
+di tipo "reticolare", 
+invece che "sequenziale" 
+
+Per maggiore chiarezza, di seguito vengono forniti alcuni esempi dei rilievi che potrebbero emergere da un 
+audit ISO 9001:2015, non senza prima precisare che: 
+
+1. La maggior parte dei rilievi non è riconducibile a settori o attività specifiche: si è preferito proporre esempi 
+tali da corrispondere ai nuovi requisiti, considerando una “generica” organizzazione. 
+
+| casi proposti non sono in genere di carattere puntuale (per esempio non vi sono rilievi del tipo: "non è 
+risultato effettuato il controllo al ricevimento del materiale X ..." o "non risultano eseguite le attività forma- 
+tive previste nel piano ...", ecc.) che pure ci si aspetta che emergano da un audit accurato, ma che non 
+sarebbe particolarmente utile riportare ai fini di questo lavoro. 
+
+Gli esempi riportati, anche se, inevitabilmente, derivano dall’esperienza di audit di chi scrive, sono del 
+tutto ipotetici. Essi perciò non possono essere riferiti ad alcuna reale organizzazione. 
+
+| rilievi non sono classificati. Essi potrebbero risultare Non Conformità “maggiori”L L o t “minori”, oppure “os- 
+servazioni" o “commenti”, ecc. Questo dipenderà dai criteri di classificazione e della "policy" adottati 
+dall’organizzazione di audit, dagli obiettivi dell’audit, ma soprattutto dal contesto dell’organizzazione au- 
+ditata e dalle aspettative delle parti interessate. Anomalie apparentemente secondarie (per esempio re- 
+lative alla formale gestione di un documento) riscontrate a carico di elementi o processi particolarmente 
+critici del SGQ (dato il settore, e i rischi/opportunità che insistono sull’organizzazione) potrebbero dover 
+essere classificate come Non Conformità “Grave”: per esprimere una valutazione in tal senso sarebbe 
+necessario “contestualizzare” il rilievo, ma nel nostro esempio manca una descrizione dello scenario, e 
+quindi non avrebbe senso nessuna ipotesi sul grado di severità. 
+
+Pur considerando quanto appena detto, un buon numero degli esempi proposti fa riferimento ai requisiti 
+della Norma di livello "strategico" o "tattico/manageriale" (si veda quanto detto sopra a tale riguardo), 
+il che implica che nella maggior parte dei casi reali il rilievo ipotizzato sarebbe classificato come "Non 
+Conformità", e spesso di tipo "maggiore".
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 35 
+
+6. Negli esempi riportati, il riferimento al requisito di Norma disatteso potrebbe non risultare univoco o 
+sempre condivisibile. Si consideri che la citata struttura "reticolare” dei requisiti potrebbe generare a tal 
+proposito decisioni diverse da parte dei diversi auditor, ma ugualmente valide, relative: 
+
+— a quale sia il requisito "“cardine” a cui andrebbe riferito il rilievo 
+
+— _ alla necessità di citare più di un requisito, per un inquadramento più significativo dell'anomalia ri- 
+scontrata.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIsto58 - 20 1@2a344/R/dèffa Qualità: Quaderno 5 
+
+Esempi di rilievi di audit 
+
+Red. ISO 9001:2015 Area/Processo/Argomento 
+
+01 4.1, 4.2 - Contesto dell'organizzazione ‘ Direzione 
+
+Daescrizione: 
+
+Con riferimento al Riesame della Direzione di cui al verbale n. X/NNNN del ..., e alle conseguenti individuazioni dei 
+miglioramenti infrastrutturali necessari al fine di continuare ad assicurare la qualità del servizio, dall'intervista con la 
+Direzione emerge che si potrà dare seguito alle azioni stabilite solo dopo avere ottenuto l'autorizzazione da parte 
+della XXX SpA che detiene il 100% delle quote azionarie dell'Organizzazione, Tale circostanza non emergeva 
+nell'ambito delle valutazioni che avevano riguardato il contesto di riferimento dell’organizzazione (visto documento: 
+“fattori interni/esterni di rilievo per il sistema qualità”, allegato al verbale del precedente Riesame di Direzione, n. NN 
+del ..., condotto in occasione della transizione alla nuova edizione della Norma ISO 9001}, anche per chiarire la 
+fattibilità degli obiettivi, a fronte dei limiti all'effettiva autonomia gestionale dell'organizzazione. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+02 4.4 - 7.1.5,2 b) - Processi - Tarature Reparto Lavorazioni Meccaniche 
+
+Descrizione: 
+
+La richiesta di servizi di taratura degli strumenti utilizzati per misurazioni nel reparto di lavorazione dello Stabilimento 
+XX viene per procedura indirizzata a una società del Gruppo: la XXXX srl, costituita per gestire centralmente tutti gli 
+approvvigionamenti di prodotti e servizi. Quest'ultima seleziona dal proprio elenco dei fornitori qualificati i Laboratori 
+accreditati per il tipo di taratura richiesta e, una volta autorizzato l’acquisto del servizio da parte della propria funzione 
+Amministrazione, riceve lo strumento e a sua volta lo trasmette alla sede direzionale del Laboratorio accreditato; 
+quest'ultimo inoltra lo strumento al proprio sito competente per il tipo di tarature richieste, Al rientro dello strumento, 
+la Soc. XXXX srl esegue i controlli in accettazione, e in caso di esito favorevole degli stessi, restituisce lo strumento 
+all'Organizzazione. 
+In vari casi il ritardo nella restituzione dell'apparecchiatura ha determinato problemi di pianificazione in produzione. 
+Si rileva che l'intero processo, sebbene ricadente nel perimetro di pertinenza e responsabilità del Sistema Qualità 
+dell’Organizzazione non è identificato né gestito come tale: in particolare, gli obiettivi relativi alle tempistiche di 
+taralura non sono declinati e presidiali al livello delle diverse attività coinvolte, all'interno e all'esterno 
+dell’organizzazione, non sono definiti indicatori di prestazione e non è stata identificata un'autorità per garantire il 
+governo “end to end" del processo e l'ottenimento del risultato atteso. 
+{Evidenze: Intervista al Responsabile Tarature dello Stabilimento XX, Richiesta di Approvvigionamento del XX, email 
+intercorrenti fra il Direttore dello Stabilimento XX, La Direzione di Gruppo e la Direzione della XXX srl, DDT n. XX, del 
+... relativo alla consegna delle catene termometriche Matr. nn. XX, YY, WW munite di certificati di taratura rilasciati 
+da centro LAT n. XXX in data ..., registrazioni di attuazione dei piani di lavorazione nn. XX e YY del ... e del ... Data 
+Base con registrazioni delle Non Conformità relative all'anno XXXX)
+
+
+
+‘| i : 
+
+O } 
+Y 
+
+’ 
+: : 
+
+’ 
+- 
+
+i } 
+l 
+
+' 
+i 
+
+“i 
+
+; 
+
+I 
+
+- 
+
+'
+
+
+
+O.ME.FA,. S.p.A. 
+UN Istore - 2016 - 378263 Audit ISO 9001:2015 37 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+03 4.4.1 c), 8.5.4 - Controllo dei processi, Area spedizioni 
+Preservazione 
+
+Descrizione: 
+
+Con riferimento all'analisi delle performance dei processi riportata nella relazione del ..., la qualità del processo di 
+spedizione è stata considerala soddisfacente in base ai seguenti indicatori: 
+-  Confezioni danneggiate durante le fasi di carico 
+- Tempi di carico degli automezzi. 
+Tuttavia tali indicatori non sono risultati del tutto rappresentativi della qualità attesa, dal momento che, come emerge 
+dall'intervista con il Direttore dello Stabilimento, gli effettivi parametri da considerare, indicati dalla Direzione Centrale 
+nel corso dell’ultima riunione annuale con il Management, sono rappresentati dai tempi di consegna e dalle condizioni 
+del prodotto alla consegna. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+04 4.4.1 c), 8.2.1 c) - Controllo dei processi, Area Qualità 
+reclami 
+
+Descrizione: 
+
+La procedura PGRXX, rev. ... del ... ("Gestione dei Reclami”} non stabilisce limiti di tempo per le fasi significative del 
+processo di gestione del rectamo {inclusa la chiusura dello stesso), in modo da assicurare che il processo risulti 
+soddisfacente, anche per tale aspetto, dal punto di vista del reclamante. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+5.1.1 - Leadership Direzione 
+
+Descrizione: 
+
+$i rilevano diverse anomalie tali da evidenziare un non adeguato esercizio della leadership con riferimento al sistema 
+di gestione per la qualità. In particolare: 
+1. non hanno preso parte all'audit (incluse le riunioni iniziale e finale) la Direzione, né suoi Rappresentanti 
+
+formalmente designati. 
+2. non vi è evidenza di Riesami di Direzione condotti a tutt'oggi. La sola evidenza di attività di riesame che abbia 
+
+coinvolto le funzioni manageriali è rappresentata dal piano di azioni stabilite per correggere i rilievi documentali 
+emersi in fase di pre-audit. 
+
+3. non vi è evidenza, nel documento di Politica per la Qualità o in altre forme, di orientamenti dell'alta direzione tali 
+da assicurare l’applicazione di quanto stabilito al punto 5.1.1. della Norma (per esempio, dalla documentazione 
+e dalle interviste ai responsabili delle funzioni XX, YY, WW, non si evince alcuna precedente attività di 
+comunicazione e/o informazione e/o formazione relative all'approccio per processi, all'approccio basato sul 
+rischio, ecc.).
+
+
+
+i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstora - 20 1vaddrAzfela Qualità: Quaderno 5 
+
+Rea. ISO 9001:2015 Area/Processo/Argomento 
+
+5.1.1, 9.3.1-  Leadership, Riesame di direzione  Direzione 
+
+Descrizione: 
+
+Il più recente Riesame di Direzione (rif. Verbale n. ... del ...) risulta condotto dal precedente Amministratore 
+Delegato. 
+Non vi è evidenza di riesami condotti dal nuovo AD (XX), subentrato sei mesi fa, o di presa in carico, da parte di 
+quest'ultimo, dei contenuti del riesame di cui sopra, e delle conseguenti determinazioni. 
+Dall'intervista con l'Alta Direzione si rileva che la stessa non ha al momento preso visione dei contenuti e degli 
+obiettivi del Sistema Qualità. 
+
+Reg. ISO 9001:2015 Area/Processo/Argomento 
+
+07 5.1.2, 9,1.2 - Focalizzazione sul cliente, Area Qualità 
+Soddisfazione del cliente 
+
+Descrizione: 
+
+Con riferimento all'indagine di Customer Satisfaction condotta attraverso la distribuzione, nel periodo gennaio-marzo 
+XXXX, di appositi questionari, non vi è evidenza di “misure interne” delle stesse componenti della qualità del servizio 
+su cui viene richiesta l'opinione del cliente, in modo da valutare se la percezione di quest'ultimo corrisponde al livello 
+qualitativo che l'organizzazione ritiene di avere raggiunto, ed eventualmente gestire gli scostamenti tra le due 
+valutazioni. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+5.2.1 a), 6.2.1- Politica, Obiettivi per la qualità  Direzione 
+
+Descrizione: 
+
+Emerge, dall'intervista alla Direzione, che il documento di Politica per la Qualità (Rev. XX del ...), e i conseguenti 
+obiettivi prioritari e indicatori (per esempio, rispettivamente: affidabilità del prodotto, percentuale di guasti nel ciclo di 
+vita, in “Pianificazione della Qualità" rev. XX del ...} non riflettono gli orientamenti della Direzione stessa, con 
+riferimento agli aspetti distintivi della qualità del servizio da questa effeltivamente perseguiti come strumento 
+competitivo, quali, soprattutto, la tempestività delle consegne al cliente. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+6.1- Rischi/Opportunità, Area Qualità 
+
+Descrizione: 
+
+La Procedura Gestionale "Valutazione dei Rischi ..." rev. ... del ... stabilisce che la valutazione dei rischi sia condotta 
+a partire dall'identificazione delle situazioni a rischio, ma non specifica quali strumenti, tecniche, metodi, competenze, 
+riferimenti tecnico-normativi supporteranno tale identificazione, allo scopo di assicurarne l'adeguatezza (p.es. dal 
+punto di vista dell’oggettività e completezza). Come conseguenza, non è esaustivamente valutabile il "Registro dei 
+Rischi" (rev. ... del ...).
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9007:2015 39 
+
+Reg. ISO 9001:2015 Area/Processo/Argomento 
+
+6.1 - Rischi/Opportunità Area Qualità 
+
+Descrizione: 
+
+Con riferimento alla "Procedura di valutazione del rischio ", rev. ... del ..., non vi è evidenza del significato attribuito a 
+ciascuno dei diversi livelli di probabilità (poco probabile, possibile, molto probabile) e di importanza (molto importante, 
+importante, poco importante) da utilizzare per la classificazione del rischio. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+11 6.1, 4.4.1 b) - Rischi/Opportunità, Area Commerciale 
+Determinazione dei processi 
+
+Descrizione: 
+
+Con riferimento al "Documento di Analisi e Gestione dei rischi", rev. ... del ..., prodotto a supporto del riesame della 
+commessa relativa all'erogazione di servizi socio-assistenziali di tipo domiciliare, non vi è evidenza di una definizione 
+dei processi dell’organizzazione ad un livello di dettaglio sufficiente a fare emergere natura e criticità delle singole 
+attività {i processi sono identificati mediante il loro titolo e non anche attraverso una sia pur generale indicazione 
+delle attività che ne fanno parte) 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+6,1.1-  Opportunità Gestione delle opportunità 
+
+Descrizione: 
+
+Nel documento di Politica per la Qualità (PQ rev. XX del ...) è dichiarato quanto segue: “Il nostro punto di forza è la 
+capacità di innovare. Questa Direzione intende cogliere ogni occasione favorevole all'innovazione dei processi e dei 
+prodotti...". Tultavia è emerso dall'intervista che il Responsabile dello Sviluppo, l Direttore Tecnico e Il Responsabile 
+Commerciale non erano al corrente della possibilità di accedere a un finanziamento comunitario {i cui termini di 
+domanda sono ormai scaduti) a supporto dei progetti/prodotti innovativi nel campo della gestione energetica (di 
+pertinenza dell'organizzazione), sebbene fossero incaricati dalla Direzione di monitorare le opportunità di 
+finanziamento, per le rispettive competenze ({rif. Mansionario rev. XX del ...) (Rif.:; Programma comunitario “XXX" - 
+Bando di partecipazione n. XX del ..., scaduto in data ...)
+
+
+
+iS Ey 
+ia 1 
+
+i u RA 
+
+” 7] '..$_. ia 
+
+> r= f ai {.“!.'ijfi i 
+ra , --u-qnfl;=:'.=hì‘.îil‘fi—ilfitì* 
+
+u 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorma - 20 1@naddrRrdàfla Qualità: Quaderno 5 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+13 6.1.1, 9.1.3, 10,2.1 f) - Rischi! opportunità, Area Qualità 
+Analisi e valutaz., NC/AC 
+
+Descrizione: 
+
+Il doc. "Analisi Rischi retativi ai requisiti delle parti interessate" del ... individua numerose situazioni di rischio 
+utilizzando un approccio di tipo empirico. 
+Considerato che la determinazione dei rischi (come dichiarato dagli intervistati dell'Area Qualità durante l'audit) è 
+basata sull'esperienza e prodotta ad esito di riunioni interfunzionali, si rileva che non sono state previste modalità per 
+aggiornare/arricchire con sistematicità la tipologia dei rischi individuati (anche, per esempio, sulla base di non 
+conformità, segnalazioni "dal campo", e proposte di miglioramento da parte degli operatori). 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+14 6.1, 8.2.3 - Rischi/Opportunità, Riesame dei Area Commerciale 
+requisiti 
+
+Descrizione: 
+
+Il documento "Analisi dei rischi relativi all’erogazione dei servizi della Commessa n. XX" (rev. ... del ...) evidenzia 
+l'applicazione di una metodica strutturata per l'analisi dei rischi relativi all'erogazione del servizio e per la 
+conseguente attribuzione delle priorità. Tuttavia ad esito delle azioni condotte sui rischi identificati, pure descritte nel 
+documento, non vi è evidenza di un ricalcolo del rischio, per dimostrare che esso è ora tollerabile, né di una verifica 
+dell'efficacia delle azioni stesse. 
+
+Req. ISO 9001:2015 Areal/Processo/Argomento 
+
+15 6,2.1, 6.2,2 c), 4.4.1 c), 4.4.1 e) Direzione 
+Obiettivi per la Qualità - Processi 
+
+Descrizione: 
+
+Nel documento "Obiettivi per la Qualità per l'anno XXXX”, emesso il ..., è stabilito l'obiettivo di tempestività del 
+servizio, nella forma del tempo medio di erogazione richiesto; tuttavia si rileva che: 
+1. a tale obiettivo non è associato un indice di dispersione statistica, o altri indicatori tali da escludere anche in 
+
+presenza di una prestazione mediamente accettabile, situazioni negative particolarmente gravi e/o numerose 
+2. non è prevista una declinazione/scomposizione dell'obiettivo al livello delle singole funzioni/enti coinvalti, per 
+
+assicurare il controllo dell'intera concatenazione di attività concorrenti al soddisfacimento dell'obiettivo finale. 
+3. Tale concatenazione infine, intesa come “processo”, non risulta sottoposta al presidio di figure responsabili di 
+
+assicurare il risultato alteso.
+
+
+
+a - è À 
+’ “ 
+
+i ‘ 
+
+l 
+
+d rii Wix , 
+
+[ d P s = 
+
+i CET è = 
+
+i i i # : i - 
+
+i ‘ RL rai Fa i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 41 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+- Obiettivi per la qualità Business Unit XX 
+
+Descrizione: 
+
+| target di qualità dei prodotti e servizi riportati nel Verbale di Riesame della Business Unit di ... risultano in qualche 
+caso meno restrittivi rispetto a quelli indicati nella scheda di assegnazione degli obiettivi (SG n. XZ) per l'anno ..., 
+fornita dalla Direzione Centrale alle Business Unit (v. meeting report n. ... del ...), Per esempio quest'ultima fissa 
+come obiettivo per i tempi di consegna: < 15 gg, mentre la scheda obiettivi SG n. XZ stabilisce per lo stesso 
+indicatore un limite di 12 gg. 
+Non vi è evidenza di autorizzazioni a supporto di tale modifica degli obiettivi. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+6,2.1 a)- Oblettivi per la qualità - Direzione 
+
+Descrizione: 
+
+Sebbene la "politica per la qualità" (data ...} dichiarì che l'organizzazione vuole distinguersi per la prontezza di 
+risposta alle richieste di assistenza da parte del cliente, tuttavia l’organizzazione non ha individuato e documentato 
+corrispondenti obiettivi (Rif. "Obiettivi anno XXXX", del ...). 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+6.2,1 d)- Obiettivi Direzione 
+
+Descrizione: 
+
+Gli obiettivi stabiliti a valle del riesame di direzione (Rif. "Objettivi del SGQ relativi all'anno XXXX) riguardano la 
+percentuale di attuazione del programma formativo, il numero delle gare aggiudicate, il mantenimento della 
+certificazione ISO 9001. Non sono invece stabiliti obiettivi esplicitamente riferibili alla qualità. 
+
+Redq. ISO 9001:2015 Area/Processo/Argomento 
+
+6.3 - Pianificazione delle modifiche Direzione 
+
+Descrizione: 
+
+In vista dell'imminente riorganizzazione del Gruppo a cui appartiene l'azienda, è stato elaborato un “Piano di 
+Gestione del Cambiamento” (emesso in data ...}; tuttavia non vi è evidenza che sia stato a tutl'oggi considerato, nel 
+documento in questione o in altre forme, il rischio (verosimile , come emerge dalle interviste di audit) che una 
+prevedibile centralizzazione di alcune funzioni (es.: gestione delle HR, Servizi Informativi, Approvvigionamenti) possa 
+pregiudicare l'autonomia dell'Organizzazione nel perseguire l’attuazione delle proprie politiche per la qualità e i 
+raggiungimento degli obiettivi correlati.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 1@nadérA/a Qualità: Quaderno 5 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+20 6.3 a), 7.1.3 - Pianificazione delle modifiche, Distribuzione pasti 
+Infrastruttura 
+
+Descrizione: 
+
+Non risultano determinati ed esaminati | rischi connessi alla recente decisione di riportare all'interno 
+dell'organizzazione il processo di manutenzione degli autoveicoli per la distribuzione dei pasti, in passato sempre 
+affidato a una società esterna. 
+Allo scopo di meglio circostanziare il presente rilievo, si segnala che dall'analisi dei dati degli anni precedenti e 
+dall'intervista con la Direzione, emerge che in passato non vi sono stati disservizi o criticità legati a tale aspetto, ma 
+che la decisione risponde esclusivamente a valutazioni di natura economica. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+21 6.3 a), b), 8.4.1 - Pianificazione delle modifiche, Approvvigionamenti 
+Controllo delle forniture esterne 
+
+Descrizione: 
+
+Nella recente revisione della Procedura “Gestione degli Approvvigionamenti”, rev. ... del ... è ora stabilito il 
+meccanismo di acquisto su piattaforma MePA (Mercato Elettronico della Pubblica Amministrazione). Le nuove 
+modalità di scelta dei fornitori basate su tale sistema (come pure emerge dall'intervista con il Responsabile della 
+funzione “Acquisiti" e con la Direzione), potrebbero non soddisfare tutti i requisiti di qualificazione e la politica per la 
+qualità dell’Organizzazione; tuttavia non vi è evidenza che tale possibilità sia stata considerata, per stabilire come 
+affrontare il rischio che ne potrebbe derivare per la qualità dei servizi, 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+2 7.1,5.1 a), 8.5.1 b) - Risorse per monitoraggio e  Reparto lavorazione X 
+misurazione, Controllo della produzione 
+
+Descrizione: 
+
+Con riferimento alle apparecchiature indicate nel documento XXX "Elenco degli strumenti di misura applicabili al 
+processo di lavorazione”, non vi è evidenza di una preventiva mappatura delle esigenze di misurazione correlate al 
+campo di applicazione del sistema qualità, dalla quale si possa evincere l'esaustività dell'elenco in questione. 
+Peraltro non sono citati nell'elenco alcuni strumenti verosimilmente pertinenti alle lavorazioni, quali: pinze 
+amperometriche, manometri, chiavi dinamometriche, ecc.
+
+
+
+i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 43 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+23 7.1.5.1 a), 8.5.1 b) - Risorse per monitoraggio e  Reparto lavorazione X 
+misurazione, Controllo della produzione 
+
+Descrizione: 
+
+Non vi è evidenza che l'organizzazione abbia condolto a tutt'oggi un riesame delle esigenze di misurazione connesse 
+ai processi realizzativi, allo scopo di determinare i casi in cui la taratura non è ritenuta significativa, quelli in cui deve 
+essere assicurata la riferibilità, quelli in cui la riferibilità al Sistema Internazionale è impraticabile (per definire, ove del 
+caso, soluzioni alternative valide) 
+
+Reqg. ISO 9001:2015 Area/Processo/Argomento 
+
+24 7.1.5.1 b), 7.1.5.2 - Risorse per il monitoraggio  Stabilimento XX 
+e la misurazione 
+
+Descrizione: 
+
+Gli intervalli di taratura per la maggior parte degli strumenti utilizzati nel reparto lavorazioni meccaniche sono stati 
+raddoppiati con decisione del Responsabile del Reparto, autorizzata dalla Direzione di Stabilimento. 
+Tuttavia non vi è evidenza di valutazioni che giustifichino tale determinazione sul piano tecnico, nè di dati o 
+informazioni dalla cui analisi possa emergere una dimostrazione della sua adeguatezza, e del mantenimento della 
+capacità di soddisfare i requisiti di misurazione (es. Rif.: Schede taratura Micrometri da n. ... a n. ..., Comparatori 
+centesimali da ... a ...: scadenza di taratura portata da 12 mesi a 24 mesi, ecc.}. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+7.2, 6.1 - Competenze, Rischi/Opportunità Dipartimento HR 
+
+Descrizione: 
+
+L'Organizzazione adotta una politica di gestione delle competenze basata sul reclutamento di giovani professionisti 
+che vengono sottoposti a lunghi e impegnativi programmi di formazione e affiancamento, fino al raggiungimento delle 
+elevate capacità professionali che costituiscono il punto di forza dell'organizzazione nei confronti dei competitor {rif. 
+Politica per la qualità, rev. ..., ed ...). 
+Come emerge dall'intervista con la Direzione, si è verificata in passato la perdita inattesa di risorse umane, passate a 
+società concorrenti una volta conseguite le competenze richieste. Dalle stesse analisi condotte dall'Organizzazione 
+(Rif. Riesame di Direzione del ...) emerge una possibile evoluzione del mercato tale da determinare 
+un'intensificazione del confronto competitivo nel prossimo futuro. 
+A fronte di tutto ciò non è risultata, neppure informalmente, condotta una valutazione (quanto a possibilità effettiva e 
+gravità delle conseguenze) dei rischi per la qualità e regolarità del servizio, determinati da possibili nuovi episodi di 
+“migrazione” delle competenze verso | competitor.
+
+
+
+n ° ri ‘IiC 'É[g«.4 _q 4 d Ù 
+
+a + ' : a &_'ll…ilA j: W ai 1ne 
+
+SAA ME 
+,"l Fa I F?.jq.- ì D e ' 
+
+e t APE E z 6 E L E FNNE CFaT 
+
+ì.r£nt:f'.gl;;*..f.«v:\qrî-.- aa ei ss 
+
+i d i X +H" "4..'5-..t'. ‘*Îr B '? 'fllv"fl‘i 
+
+LI
+
+
+
+O.ME.FA. S.p.A. 
+UNIstom - 20 1@0248/A/fèffa Qualità: Quaderno 5 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+7.2 a)- Competenza Area Qualità 
+
+Descrizione: 
+
+Fra ì requisiti minimi di competenza del Responsabile Qualità (Doc. SGQ — MXX del ...) che ha guidato la revisione 
+del Sistema Qualità a seguito della pubblicazione della UNI EN ISO 9001:2015, (Rif. Progetto n. XX del ...) non è 
+prevista la conoscenza, oltre che, come già specificato, della stessa Norma, e della UNI EN ISO 19011:2012, anche 
+delle norme e documenti correlati all'attuazione del Sistema Qualità (es. ISO serie “10000”, norme per la gestione del 
+rischio, documenti-guida prodotti dall’ISO, ecc.) 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+7.2 b) Competenza Gestione HR 
+
+Descrizione: 
+
+Con riferimento al "Piano di Formazione di BU", (Mod. XX del ...) elaborato a partire da una formale ricognizione dei 
+fabbisogni formativi espressi dal personale, e ai documenti di Pianificazione Formativa prodotti dalla Direzione 
+Centrale ("Pianificazione Formativa Corporate" - Anno ..., emesso il ...) si rileva che buona parte della formazione 
+richiesta non è stata autorizzata dall'Unità Centrale “HR Management”, ia quale ha pianificato attività formative 
+diverse per tipo e contenuto, senza fornire spiegazioni. 
+A fronte di tale disallineamento fra | fabbisogni formativi espressi dalle persone nell'organizzazione e la formazione 
+autorizzata dalla Direzione, non vi è evidenza di azioni condotte da quest'ultima e dalla Business Unit, per individuare 
+e gestire eventuali criticità che dovessero emergere come conseguenza di gap di competenza irrisolti. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+28 7.5.3.1 a) - Controllo delle informazioni Area Qualità 
+documentate 
+
+Descrizione: 
+
+| documenti del sistema di gestione vengono distribuiti al personale tramite il loro inserimento in un'area dedicata 
+della intranet aziendale, e contestuale comunicazione a mezzo email agli interessali. 
+L'organizzazione ha stabilito di distribuire tutti | documenti e le relative revisioni, indistintamente, a tutto il personale. 
+AI riguardo non è stato considerato che, come emerge dalle interviste con parte del personale (es. responsabili delle 
+funzioni XX, YY, WW?), istruzioni critiche potrebbero risultare non evidenti nè immediatamente percepite come tali dai 
+destinatari maggiormente interessati alla loro applicazione, soprattutto quando tali documenti, nuovi o revisionati, 
+dovessero essere distribuiti, come nel caso dell'ultima “campagna di revisione” {Viste comunicazioni emai! del ...} 
+contestualmente a numerosi altri documenti di tipo diverso, non tutti ugualmente significativi (Es. Procedura n. ... rev 
+... del ..., relativa a ...; Istruzione Cod. XX, rev. del ..., relativa a ...}
+
+
+
+p r ’ H 
+
+- L ’ l O f 
+
+è 
+
+’ 
+
+L) ? 
+
+1 ‘ i L, a ’ P 
+
+ia i PaETI ®i  
+
+. LI ‘ e ° Ì i 
+4] ; 
+
+A) i 
+u o 
+
+À b3 l + ’ 
+
+L ° ; [ ; 
+
+i, ì r E 
+
+i ‘ PE 
+
+| * 
+
+1 î i I À ‘ 
+
+A j i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 8001:2015 45 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+29 7.5.3.2, 8.4.2 a) - Informazioni Documentate, Sistemi Informativi 
+Processi esterni 
+
+Descrizione: 
+
+Non vi è evidenza di adeguata integrazione fra le procedure del sistema qualità e i regolamenti e le prassi adottate 
+dalla funzione Servizi Informativi, svolta da un'altra organizzazione del Gruppo (XX). In particolare, le procedure 
+applicabili del sistema di gestione (Es. PGSQXX ... rev... del ...) non considerano, per disciplinarle opportunamente, 
+le relazioni fra i requisiti di archiviazione delle registrazioni elettroniche del Sistema Qualità e le modalità/tempi di 
+mantenimento dei dati applicati da parte dei Servizi Informativi (che, come emerge dall’intervista, non sono noti 
+all'organizzazione), per affrontare e risolvere gli eventuali disallineamenti. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+30 7.5.3.2 b) - Controllo delle informazioni Area Qualità 
+documentate 
+
+Descrizione: 
+
+Nel prevedere la conservazione “permanente” di alcune registrazioni elettroniche (Rif. Procedura PGGD n. XX rev. ... 
+del ...) non sono stabilite modalità per assicurarne la leggibilità, nel tempo, a fronte della prevedibile evoluzione 
+dell'HW, che potrebbe rendere obsoleti gli attuali supporti di memoria. 
+
+Reqg. ISO 9001:2015 Area/Processo/Argomento 
+
+31 8.1 - Pianificazione e controllo operativi Magazzino in ingresso 
+(Modifiche) 
+
+Descrizione: 
+
+Non per tutti i materiali l'indicazione delle scorte minime è risultata inserita nel SW di gestione in uso ai magazzini. In 
+alcuni casi l'approvvigionamento avviene a seguito di una verifica diretta “a vista” delle disponibilità. 
+È stato spiegato durante l'intervista, dal responsabile del magazzino, che tale modalità viene adottata 
+temporaneamente, in attesa che la Direzione Pianificazione fornisca i dati di scorta minima rielaborati sulla base dei 
+programmi di produzione per il prossimo periodo. 
+Tuttavia questa situazione transitoria non è risultata disciplinata, né in particolare vi è evidenza della sua durata 
+prevista, degli eventuali rischi ad essa collegata, di formali autorizzazioni a procedere in deroga alle procedure 
+formali (es.: PGSQ n. ..., del ...} 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+32 8.2.1 c) - Comunicazioni con il cliente Area Qualità 
+(Reclami) 
+
+Descrizione: 
+
+L'individuazione del “modulo reclami” sul sito web dell’organizzazione non è agevole e immediata. La Carta dei 
+Servizi ed. X del ... rinvia, per la presentazione dei reclami, alla home page aziendale, mentre da una verifica diretta 
+la ricerca del modulo richiede passaggi ulteriori e non intuitivi.
+
+
+
+a + 
+
+i i 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 20 | @naddiAzfèffa Qualità: Quaderno 5 
+
+Redq. ISO 9001:2015 Area/Processo/Argomento 
+
+33 8.3.3 e) - Potenziali conseguenze di guasto Progettazione e sviluppo 
+
+Descrizione: 
+
+(Rif.: Analisi dei Rischi XX rev. ...del ...). In applicazione della Procedura YY - rev. ... del ... l'organizzazione ha 
+elaborato un documento di analisi e gestione dei rischi, nell'ambito della progettazione del servizio di distribuzione dei 
+pasti di cui alla Gara d’Appalto prot, N... del ... 
+Non vi è evidenza di adeguatezza e validità delle modalità utilizzate per la determinazione, l'analisi e la gestione dei 
+rischi, non essendo disponibili, tra l'altro: 
+- riferimenti metodologici adottati 
+- riconducibilità al criterio di attribuzione dei valori di probabilità/gravità ai diversi possibili accadimenti 
+- evidenze di esaustività nell'individuazione dei rischi (i processi esaminati sono riportati in modo sintetico e 
+
+generale} 
+- criteri che hanno supportato la mitigazione del rischio. Per esempio riguardo al rischio connesso al 
+
+mantenimento delle condizioni di conservazione dei prodotti surgelati (scheda n. XX} non vi è evidenza del 
+criterio di assegnazione del livello di probabilità {("medio") al rischio iniziale, né su quali componenti del rischio 
+{probabilità/gravità) si sia intervenuto per ridurre il rischio stesso da "elevato" a "basso". 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+34 8.4.3 d) - Informazioni ai fornitori Area approvvigionamenti 
+
+Descrizione: 
+
+Non vi è evidenza che siano determinate e disciplinate le condizioni di interazione fra il sistema di gestione qualità 
+dell'Organizzazione e i sistemi di gestione qualità degli outsourcer (per esempio stabilendo le modalità per la 
+gestione dei rilievi che dovessero emergere da audit condotti sull'organizzazione dai suoi clienti, o 
+dall’organizzazione sugli stessi outsourcer) anche allo scopo di assicurare che i comportamenti di questi ultimi siano 
+coerenti con la politica per la qualità dell'organizzazione (riferimenti: Politica per la Qualità rev. XX del ..., Contratti di 
+fornitura di servizi n. XX, e YY del ... e del ..., nota di segnalazione all'outsourcer XX, del ..., con la quale si sollecita 
+l’invio delle evidenze di chiusura della Non Conformità n. XX, riscontrata nel corso dell'audit all'outsourcer condotto in 
+data ...). 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+35 ‘8.5.3 - Proprietà dei fornitori Direzione 
+
+Descrizione: 
+
+Nel “Codice di Condotta Aziendale” {CCA, rev. XX del ...} non sono presenti prescrizioni relative alla riservatezza e 
+alla salvaguardia dei diritti di proprietà industriale dei Fornitori. 
+Come confermato dalle interviste ai Responsabili delle Funzioni e alla Direzione, tali prescrizioni non risultano 
+neppure in altra forma comunicate al personale direttamente coinvolto nella gestione dei dati e delle informazioni in 
+questione (es. personale della funzione "Progettazione e Sviluppo”)
+
+
+
+l i3 ia AAT 
+
+À "", b “ 
+i | 
+
+i ? B p: FE E ÉJ - 
+
+1 PI u i a 
+
+SET 
+
+E t An 
+S, f eglatardi, 'b  IK 
+
+LI 
+
+a t t a a e 1a l‘.'i’.:.î.‘- ‘=_|F.'Ì*;:ù ii?f & *.Bàli‘l i LL 
+
+P E 20° AZ Da RSEN im':ìlg. M « w i 
+
+iR a 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9007:2015 47 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+36 8.5.3, 6.1 - Proprietà del cliente, Area commerciale 
+Rischi/Opportunità 
+
+Descrizione: 
+
+Le comunicazioni con il cliente inviate via email o via fax riguardano anche dati riservati (es. Fax prot, n. ... del ..., 
+relativa a problematiche riscontrate su materiali forniti dal cliente; email da ... a ..., del ... riportante l'elenco dei 
+fornitori qualificati, entrambi recanti in oggetto la dicitura “riservato”.) Al riguardo non sono stati considerati i rischi per 
+la confidenzialità e stabiliti accorgimenti per ridurre, per esempio, la possibilità che i messaggi possano essere 
+raccolti da persone non autorizzate, nè vi è evidenza di approvazione, da parte del cliente, di tali modalità di 
+comunicazione. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+9.1.1-  Monitoraggio StabilimentX o- Area spedizioni 
+
+Descrizione: 
+
+È prevista la verifica finale del raggiungimento degli obiettivi di qualità e di prestazione dei processi, come 
+documentato dal Piano di Miglioramento (Doc,. n. XX del ...), ma non risultano pianificate/attuate attività di 
+monitoraggio durante if periodo considerato, per valutare l'andamento delle performance e ove del caso intervenire 
+tempestivamente per le necessarie correzioni. 
+
+Reg. ISO 9001:2015 Area/Processo/Argomento 
+
+38 9.1.1 b), 9.1.3 - Monitoraggio, misurazione, Area Qualità 
+analisi, valutazione 
+
+Descrizione: 
+
+L’elaborazione degli indicatori gestionali individuati dall'organizzazione ai fini del miglioramento (p.es. Puntualità delle 
+consegne) non risulta sempre adeguata in quanto, come applicabile: 
+1. non vengono esclusi dal calcolo della media dei tempi di consegna i valori statisticamente aberranti, più 
+
+appropriatamente gestibili come casi singoli, la cui considerazione nel calcolo fornisce, come pure emerge 
+dall'intervista alla Direzione, una rappresentazione fuorviante delle effetlive performance 
+
+2. non è stata eseguita una stratificazione dei dati, per tenere conto del fatto che le prestazioni oggetto di 
+misurazione della puntualità sono di natura fra loro diversa e perciò non confrontabili.
+
+
+
+% ; t 
+
+i À 
+
+rE s i} - 
+
+# 1 Ri 
+
+E) i i 
+i E 
+
+3 5 
+
+© # } l - 
+
+€ 
+
+’ i 
+
+“ vi” ! 
+
+L i 
+
+ì i 4 
+
+E = 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstorg - 20 1oadd/f/faf Qualità: Quaderno 5 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+39 9,1.2, 6.1 - Soddisfazione del cliente, Area Qualità 
+Rischi/Opportunità 
+
+Descrizione: 
+
+È stato riscontrato uno scarso ritorno di questionari di customer satisfaction compilati: a fronte dei 460 questionari 
+distribuiti nel primo quadrimestre dell'anno XXXX, solo 22 sono stati restituiti, né vi è evidenza di criteri di 
+campionamento tali da far ritenere comunque rappresentativa tale quantità di feedback raccolti. La circostanza è 
+stata evidenziata nel corso del briefing semestrale della Funzione Qualità (Report n. ... del ...) dal quale tuttavia non 
+sono scaturite specifiche determinazioni al riguardo. In particolare pur essendo emerso dall'intervista di audit che 
+l'organizzazione dispone di numerose fonti alternative di dati relativi alla custorner satisfaction (per esempio: misure 
+interne della fidelizzazione dei clienti, opinioni espresse su organi di stampa locale, relativamente alla qualità dei 
+servizi, ecc.), non risulta che sia stata considerala, in sede di Riesame di Direzione né in altre occasioni, 
+l’opportunità di analizzare tali informazioni come utili a fornire una più significativa misura della soddisfazione dei 
+clienti. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+40 9.1.3 b) - Analisi e valutazione Soddisfazione del cliente 
+
+Descrizione: 
+
+Fra gli obiettivi di qualità stabiliti in sede di riesame di Direzione del ... è stato inserito quello di non ottenere dal 
+cliente punteggi medi < 3 (su una scala di 4) nei questionari di rilevazione della customer satisfaction 
+Tuttavia non risultano definiti/applicati criteri per analizzare gli eventuali punteggi negativi riguardanti specifici aspetti 
+del servizio. Per esempio, successivamente al Riesame sono stati distribuiti ai clienti, e da questi compilati, 140 
+questionari {(Mod. XX Questionario di soddisfazione del cliente), 20 dei quali riportano una valutazione accettabile 
+(media = 3) ma con giudizi negativi (punteggio = 1 su una scala di 4) per diversi parametri di qualità del servizio, 
+senza che ciò abbia dato luogo a valutazioni, in sede di analisi dei risultati (visto report customer satisfaction 
+02000} 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+9.1.3 b), 6.2.2 a), b) Area Qualità 
+
+Descrizione: 
+
+Con riferimento al "Piano annuale di miglioramento” (Doc. PAM n. XX del ...) e degli obiettivi in esso riportati (es.: 
+richieste di intervento in garanzia sui prodotti venduti: < 0,5%): 
+1. non sono risultati disponibili dati che descrivano lo stato attuale, anche al fine di documentare se e quanto i 
+
+suddetti obiettivi siano effettivamente migliorativi 
+2. Non vi è evidenza delle risorse e modalità individuate e rese disponibile per il conseguimento degli obiettivi 
+
+stessi
+
+
+
+T i i 7 i ’ - ’ 
+
+E - a I ’ 
+
+’ 
+
+- n & " d - 
+
+a ’ = MO # SA : i 
+
+- ° # - - - L 
+
+| ì - 
+
+
+
+O.ME.FA. $S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 49 
+
+Reg. ISO 9001:2015 Area/Processo/Argomento 
+
+42 9,1.3 c), g), 9.1.1 d) - Reparto X - Produzione 
+Analisi e valutazione 
+
+Descrizione: 
+
+Non vi è evidenza di determinazione e applicazione di criteri per l’interpretazione degli andamenti relativi alle non 
+conformità in produzione, come rappresentati dalle carte di controllo adottate nel Reparto X. 
+In particolare non risulta stabilito come riconoscere tendenze allo scopo di intervenire per tempo, prevenendo il 
+superamento dei limiti di controllo. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+9,2,2 a)- Programmi di Audit Dipartimento Impiantistica 
+
+Descrizione: 
+
+Il Programma di audit (Doc. XX, del ...} non prevede audit interni ai processi operativi svolti presso i cantieri, pur 
+essendo tale attività strategica per l'organizzazione, come pure documentato dall'ultimo Riesame di Direzione 
+(Verbale di riesame n. XX del ...) 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+9,3 - Riesami di Direzione Direzione 
+
+Descrizione: 
+
+Non vi è evidenza di conduzione dei Riesami Annuali della Direzione (come previsti al $ XX della Procedura XX- rev. 
+... 4, del ...) nel corso degli ultimi 28 mesi. 
+Come conseguenza, non vi è evidenza di formale presidio di vari elementi del sistema qualità. Per esempio, 
+diversamente da quanto stabilito nella Politica per la Qualità (rev. ...) che prevede, ad esito dei Riesami di Direzione e 
+per ognuno degli obiettivi strategici in essa elencati, lo sviluppo di appositi "Programmi annuali della qualità" (con 
+obiettivi e indicatori misurabili), tali "Programmi annuali" non sono risultati disponibili. 
+Avendo peraltro l’Organizzazione stabilito, nella stessa procedura, che il rapporto annuale del Responsabile Qualità 
+alla Direzione è contestuale al Riesame di Direzione, non vi è evidenza neppure di tale attività di reporting, nel 
+periodo in questione. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+45 9320)1)- _ Area Qualità 
+
+Descrizione: 
+
+L'organizzazione eroga servizi alle imprese che intendono accedere a finanziamenti pubblici a sostegno di progetti di 
+integrazione culturale. Considerata la complessità delle relazioni dell'organizzazione sul territorio, l’attuale rilevazione 
+dei feedback refativi alla qualità dei servizi erogati è riduttiva. In particolare, l'organizzazione conduce indagini basate 
+sulla distribuzione di questionari ad un campione di imprese che hanno utilizzato il servizio, ma non ha valorizzato 
+significative informazioni di ritorno e altre indicazione di percezione della qualità suo operato, da parte di altri rilevanti 
+stakeholder (Pubblica opinione, Enti di Finanziamento, Associazioni, ecc.} 
+(Rif. Rapporto sullo stato del SGQ del ...)
+
+
+
+’ À 
+' 
+
+‘ 
+
+A - 
+
+i , : 
+
+R : 
+
+ì * 
+
+ì 
+
+R i ‘ À 
+
+i ’ CTH ;R}i  ° 
+
+O r : i ’ SA 
+I ” e d ‘ n 
+
+i ° 
+
+i i 
+
+: i : 
+
+P , 
+
+
+
+O.ME.FA, S.p.A. 
+UNIst5og - 20 10add/fi/dèlla Qualità: Quaderno 5 
+
+Req. ISO 9001:2015 Areal/Processo/Argomento 
+
+46 9,3.2 c) 1), 9.1.2 - Riesame di Direzione, Direzione 
+Soddisfazione del cliente 
+
+Descrizione: 
+
+Nel Riesame di Direzione (rif.: Verbale di riesame emesso il ...) non è presente una valutazione del grado di 
+soddisfazione del cliente con la giustificazione che ciò al momento non è possibile "a causa della recente 
+applicazione del Sistema di Gestione”, e con positiva valutazione finale della Direzione, sullo stato del sistema 
+gqualità, ciò non fiene conto del fatto che l'audit iniziale di certificazione ha lo scopo di valutare la conformità del 
+Sistema di Gestione nella sua interezza (V. Regolamento di certificazione rev. ... del ...) 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+47 10.1 a), 6.2.1 a) - Miglioramento, Obiettivi per la  Direzione 
+qualità 
+
+Descrizione: 
+
+| due obiettivi scaturiti dall'ultimo riesame di Direzione (Verbale del XX.XX,XX), relativamente alla tempestività del 
+servizio e alla soddisfazione del cliente, non sono migliorativi rispetto a quanto pianificato ed effettivamente realizzato 
+nel corso dell’anno precedente. 
+Tale determinazione, apparentemente non in linea con le politiche di miglioramento dell'organizzazione {Rif. Politica 
+per la Qualità del XX.XX.XX), non risulta circostanziata/giustificata nell'ambito delle registrazioni del riesame, né ad 
+esito dell'intervista alla Direzione e al Responsabile Qualità. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+10.1.c), 5.1.1 g) - Miglioramento, Leadership  Direzione 
+
+Daescrizione: 
+
+Con riferimento al Report del Riesame di Direzione n. XX del ..., l’analisi delle performance evidenzia un trend 
+negativo nel periodo XXXX-YYYY per il parametro: tempi di evasione dell’ordine. In particolare, l'obiettivo dei 45 gg 
+come tempo massimo di evasione ordine è risultato soddisfatto nel 72 % dei casi nell'anno XXXX e nel 56% dei casi 
+nell'anno successivo. Alla corrispondente voce: "Azioni”, del report è riportata la frase: ‘la flessione era inevitabile, 
+dato l'aumento degli ordini". Non vi è evidenza di ulteriori analisi e conseguenti azioni (inclusi per esempio, il riesame 
+della capacità di mantenere la politica per la qualità, l'eventuale ridimensionamento o la rimodulazione degli obiettivi 
+per la qualità, o l'incremento delle risorse, ecc.) in modo che continui ad essere assicurata l'efficacia del sistema di 
+gestione per la qualità.
+
+
+
+{ r *'  s 
+
+I À I 
+
+‘ - 
+
+P b 
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 51 
+
+Reg. ISO 9001:2015 Area/Processo/Argomento 
+
+49 10.2 - Non Conformità e Azioni Correttive . Area Qualità 
+
+Descrizione: 
+
+Non risultano aver trovato applicazione le procedure relative alla gestione delle Non Conformità e Azioni Correttive 
+(rif. Rapporti di Riesame di Direzione degli ultimi 2 anni, dai quali emergono “zero Non Conformità Maggiori, “zero 
+Non Conformità Minori"). Tale circostanza: 
+1. fornisce una rappresentazione dello stato del sistema di gestione e dei processi come del tutto esente da 
+
+anomalie, in contraddizione con quanto si evince per esempio dal confronto con il quadro emergente dal 
+presente audit di rinnovo, e con le risultanze dei precedenti audit periodici. 
+
+2. non risulta considerata, per esempio nell'ambito degli stessi Riesami di Direzione, allo scopo di valutare se le 
+procedure applicabili di cui sopra possano ritenersi adeguate, opportunamente comprese dal personale e 
+correttamente applicate. 
+
+Req. ISO 9001:2015 Area/Processo/Argomento 
+
+50 10,2.1 b) - Azioni correttive Sistemi Informativi 
+
+Descrizione: 
+
+In alcuni casi, anche a fronte di Non Conformità significative (Es. NC n. ... del ..., relativa ad un guasto Intermittente 
+del sistema informatico), l’organizzazione ha stabilito di non intraprendere azioni correttive, ma non vi è evidenza di 
+oggettive valutazioni, opportunamente basate sul rischio, che abbiano sostenuto tale decisione
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoga - 20 1 @padéèffa Qualità: Quaderno 5 
+
+Gestione delle competenze e del programma di audit 
+
+È noto che già con le edizioni precedenti della Norma le competenze dell'auditor non potevano ridursi alla 
+capacità di condurre una sequenza di valutazioni, per quanto completa e accurata, “requisito per requisito”, 
+ma dovevano rivolgersi al sistema nel suo complesso, attraverso l’esame dei processi che ne fanno parte. A 
+ciò oggi si aggiunge la maggiore competenza necessaria per sviluppare una valutazione delle evidenze di 
+tipo più "sostanziale". 
+
+La nuova Norma non si presta 
+ad essere affrontata attraverso l’attuazione 
+di sistemi di gestione “preconfezionati”. 
+L’auditor dovrà dunque disporre 
+ancora più che in passato 
+di elevate apertura mentale e capacità esplorative 
+
+Perché tale competenza sia determinata e ottenuta, occorre considerare, richiamando alcuni temi affrontati 
+nelle pagine precedenti, che: 
+
+a) La nuova Norma non si presta ad essere affrontata attraverso l’attuazione di sistemi di gestione “pre- 
+confezionati”. L'auditor dovrà dunque disporre ancora più che in passato di elevate apertura mentale e 
+capacità esplorative. 
+
+b) La maggiore libertà delle organizzazioni di decidere modi e forme dei percorsi per raggiungere il risul- 
+tato, e il Risk Based Thinking come strumento per l'assunzione razionale delle decisioni, faranno sì che 
+più che nel passato la domanda ricorrente dell'auditor sarà "perché...?", in modo da verificare l'idoneità 
+di tali percorsi, sulla base delle argomentazioni di tipo tecnico e logico, fornite, anche in forma verbale, 
+dall'organizzazione. Solo ad esito soddisfacente della risposta si passerà al "come...?", per valutare se 
+le azioni si svolgono nel modo stabilito. 
+
+c) Il "Risk Based Audit", allineandosi ai percorsi di produzione del valore nell'organizzazione, si dovrà 
+soffermare sulle tappe più significative. Questo dovrebbe essere reso possibile da una chiara consape- 
+volezza, da parte dell'auditor, della configurazione delle relazioni e dei processi, anche con il supporto 
+di rappresentazioni dei processi ragionevolmente dettagliate, in funzione della loro importanza. 
+
+d) Quando non fosse disponibile un completo percorso documentale (vedere ISO 17021-3, punti 5.4, 5.5, 
+5.6) la valutazione si dovrà basare soprattutto sull'osservazione diretta dei processi e delle attività, il che 
+richiederà, mediamente, più elevate competenze tecniche all'audit team. 
+
+e) Non è improbabile che si rendano necessarie competenze estese anche ad altri sistemi di gestione, 
+considerato che questi potrebbero essere stati istituiti dall'organizzazione nell'ambito della stessa ge-
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 53 
+
+stione per la qualità*5, come strumenti per affrontare al meglio le istanze provenienti dalle pertinenti parti 
+interessate (diverse dal cliente) tali da incidere maggiormente sulla capacità di assicurare la conformità 
+dei prodotti e servizi ai requisiti e di accrescere la soddisfazione del cliente. 
+
+{)  Come più volte evidenziato, in un sistema qualità "sostanziale" non ha molto senso applicare, e dunque 
+valutare, la Norma con la logica del "minimo indispensabile": ne va invece perseguita ed esaminata la 
+"migliore" applicazione (non si vede come altrimenti potrebbe essere sostenuto e attuato il principio del 
+miglioramento). Ciò si rifletterà sul tenore dell'indagine di audit e, ancora, sulle competenze necessarie 
+ai fini della sua efficacia. 
+
+Non è improbabile che si rendano necessarie 
+competenze di audit 
+estese ad altri sistemi di gestione, 
+considerato che essi 
+potrebbero essere in stretta relazione 
+con la gestione per la qualità 
+
+D'altra parte, non è realistico pretendere che ogni auditor debba disporre, al massimo livello, di tutte le com- 
+petenze teoricamente necessarie per valutare qualsiasi sistema di gestione nel più ampio campo di varia- 
+bilità prospettato dalla nuova Norma. Occorrerà invece lavorare maggiormente sulla competenza dell'audit 
+teamn nel suo complesso. 
+
+Premesso che le competenze del singolo auditor dovrebbero, come si è visto: 
+- essere il più possibile focalizzate su quanto necessario per esaminare uno specifico sistema qualità, in 
+
+uno specifico scenario 
+—  includere tutti gli strumenti per comprendere, in tale quadro, l'adeguatezza delle operation sul piano 
+
+organizzativo e tecnico, e ove del caso rilevare ogni scostamento dalle "buone prassi", 
+
+la necessità di assicurare all'audit team una competenza approfondita e allo stesso tempo versatile, potreb- 
+be meglio essere soddisfatta attraverso: 
+
+1. una più accurata predisposizione dell'audit team, la cui composizione dovrebbe aderire a ciascuna 
+situazione di audit, ove necessario facendo più ampio ricorso agli esperti tecnici 
+
+2, una gestione del programma di audit che sappia distribuire: 
+
+a) le competenze in funzione di necessità che nel tempo (audit per audit) potrebbero variare, in rela- 
+zione alla specifica congiuntura (ovvero alla combinazione dei fattori del contesto e delle istanze 
+delle parti interessate) attraversata di volta in volta dall'organizzazione, e, come conseguenza, in 
+relazione alle caratteristiche del sistema qualità che per quanto necessario l'organizzazione avrà 
+dovuto ridefinire, per continuare a mantenerne l'efficacia a fronte delle mutate condizioni. 
+
+28 Si veda al riguardo il Quaderno n. 2 {Fattori del contesto e parli interessate), al 8 "Contesto, parti interessate e sostenibilità".
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstoga - 20 1@oaddrRèfla Qualità: Quaderno 5 
+
+b) gli intervalli di audit in modo non meccanico, ma, di nuovo, modulati in base alle dinamiche di varia- 
+zione del contesto organizzativo e del sistema di gestione corrispondente. 
+
+Riguardo a quest'ultimo aspetto, quanto detto dovrebbe condurre, specialmente nei settori caratterizzati dal- 
+la rapida evoluzione del contesto, a intendere la sorveglianza periodica del sistema come un'attività sempre 
+più simile a un "monitoraggio in continuo" che a una successione di verifiche complete (o quasi), separate da 
+lunghi intervalli. D'altra parte è ovvio che eseguire un audit completo ogni sei o dodici mesi è più praticabile, 
+sul piano economico e organizzativo, che svolgere audit molto più ravvicinati, tuttavia ciò potrebbe essere 
+superato programmando una successione di audit più frequenti nel tempo ma: 
+
+a) più circoscritti quanto a campo di applicazione 
+
+b) distribuiti, per numero e successione temporale, in funzione delle aree di rischio/opportunità, e di con- 
+seguenza delle priorità individuate nel sistema di gestione. 
+
+La necessità di assicurare all'audit team 
+una competenza approfondita e allo stesso tempo versatile, 
+dovrebbe essere soddisfatta a partire 
+dalla configurazione dell'audit team 
+e dalla gestione del programma di audit 
+
+Si tratta di un'ipotesi evidentemente più praticabile per programmi di audit interni che in ambito certificativo, 
+dove è irrealistico aspettarsi una modifica, nel senso appena descritto, di programmi di audit, tipicamente 
+organizzati sulla base degli intervalli massimi e dei tempi di audit minimi imposti dai requisiti di accreditamen- 
+to. In questo caso, un mezzo alternativo per monitorare con continuità l'andamento del sistema di gestione 
+dell'organizzazione dovrebbe consistere nel mantenimento di un "canale aperto" per lo scambio sistematico 
+(opportunamente strutturato e quando possibile supportato dai rispettivi sistemi informativi) di comunicazio- 
+ni riguardanti le condizioni del contesto organizzativo e il conseguente stato del sistema di gestione, fra gli 
+esperti dell'organizzazione e quelli dell'organismo di certificazione. ll risultato di questo scambio di informa- 
+zioni (utile anche come mezzo per consolidare le relazioni fra l'Organismo di Certificazione e i suoi clienti) 
+dovrebbe costituire un input per il processo di gestione del programma di audit, al fine di "aggiustare il tiro" 
+degli audit di sorveglianza. 
+
+Ciò potrà risultare poco appetibile per le organizzazioni che adottano una visione "minimalista" del proprio 
+sistema di gestione, ma suscitare l'interesse di quelle che al contrario vogliono investire strategicamente nel- 
+la qualità. Al riguardo, opportuni "esperimenti" potrebbero essere avviati dagli Organismi di Certificazione, in 
+modo circoscritto e controllato, affinché il loro buon esito ne incoraggi nel tempo l'estensione a un numero 
+sempre più ampio” di organizzazioni clienti. 
+
+29 Un esempio dell'opportunità di "sperimentare", nel senso qui considerato, è offerto in: "La biologia della sopravvivenza aziendale" di Martin Reeves, 
+Simon Levin e Daichi Ueda, in: Harward Business Review Italia, Gennaio-Febbraio 2016: "La Consultancy Services opera nell'ambito dei servizi tec- 
+nologici, caratterizzato da un alto tasso di imprevedibilità sia della tecnologia stessa che della sua applicazione da parte di grandi organizzazioni. 
+Rendendosi conto che doveva lavorare sulla propria capacità adattiva, la società ha istituito il suo modello di sperimentazione delle 4E: sperimenta, 
+rendi possibile, evangelizza e sfrutta (explore, enable, evangelize, exploitT)C.S sperimenta lanciando tante piccole scommesse e decidendo poi se 
+scalarle verso l'alto o verso il basso sulla base del feedback che riceve dal mercato..."
+
+
+
+i - 
+
+- 
+
+‘ 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 55 
+
+Come si diceva, una situazione di audit di parte prima rappresenta lo scenario più favorevole per ridefinire 
+ove opportuno le logiche del programma di audit, nel senso descritto. Infatti un programma di audit interni "in 
+continuo", se eseguito adeguatamente: 
+
+a) non impatterebbe, sul piano economico e organizzativo, più di quanto pienamente giustificato dai bene- 
+fici che ne deriverebbero in termini di effettivo presidio sui processi e sulle attività 
+
+b) aumenterebbe la possibilità di integrazione fra sistema di gestione qualità e processi di business 
+
+c) attraverso la sistematicità del confronto, migliorerebbe la familiarità delle persone, a tutti i livelli dell'orga- 
+nizzazione, con il sistema qualità "reale", favorendo l'interiorizzazione delle politiche e delle procedure e 
+l'integrazione del sistema qualità con i processi di business. 
+
+Fra le specificità di un audit interno che giocano a favore dell'approccio appena ipotizzato occorre anche 
+considerare: 
+
+a) II fatto che l’auditor interno, soprattutto se fa parte stabilmente dell'organizzazione, vive in costante con- 
+tatto con essa e ne conosce bene gli elementi di forza e di debolezza, con la possibilità pertanto di orien- 
+tare molto più prontamente l'indagine di audit, come richiesto dalla dinamica del sistema di gestione 
+
+b) può giovarsi del supporto dei responsabili tecnici dell'azienda, coinvolgendoli, quando necessario, come 
+esperti nell'audit team, per una valutazione più appropriata e concreta dei processi (fatte salve le con- 
+dizioni di indipendenza). 
+
+Per contro, un'eventuale difetto di autorevolezza da parte del team leader interno renderebbe l'audit ineffica- 
+ce. Si consideri che l'autorità conferita agli auditor interni dovrebbe essere tale consentire loro di esaminare 
+criticamente anche l'operato del top management (a cui la nuova Norma assegna maggiori e più dirette 
+responsabilità nel Sistema Qualità, rispetto al passato) ed essendo proprio quest'ultimo responsabile di pro- 
+muovere la leadership dei ruoli gestionali’’ e dunque dello stesso team leader, è evidente che l'ipotesi qui in 
+discussione risulterà praticabile solo se esisterà la fortissima convinzione, da parte dei vertici dell'organizza- 
+zione, dell'importanza strategica dell'audit (e se quest'ultimo saprà meritarsi la fiducia del top management). 
+
+Quale che sia la soluzione, emerge la centralità della gestione del programma di audit, come strumento 
+primario per assicurare audit ISO 9001:2015 efficaci; per tale motivo: 
+
+a) dovrebbe essere attribuita crescente importanza alla misurazione del grado di raggiungimento degli 
+obiettivi dell’audit programme. In tal senso, andrebbe potenziato il monitoraggio dell’efficacia del pro- 
+gramma di audit e della sua effettiva capacità di produrre valore, ove possibile attraverso l’individuazione 
+di indicatori di mitigazione del rischio e di beneficio economico generato nelle organizzazioni oggetto di 
+audit 
+
+b) dovrebbe essere indirizzata particolare attenzione alle competenze delle persone responsabili della 
+gestione del programma stesso, anche attraverso la definizione di idonei percorsi di formazione®'. 
+
+30 Vedere UNI EN ISO 9001:2015, p.to 5.1.1 j). 
+
+31 Da UNI EN ISO 19011:2012, punto 5,6 - Riesame e miglioramento del programma di audit: 
+
+La persona che gestisce il programma di audit dovrebbe riesaminare il programma di audit per valutare se sono stati raggiunti i relativi obiettivi. Gli 
+insegnamenti derivanti dal riesame del programma di audit dovrebbero essere utilizzate come elementi in ingresso del processo di miglioramento 
+continuo del programma. ll riesame del programma di audit dovrebbe prendere in considerazione quanto segue: 
+a) i risultati e le tendenze risultanti dal monitoraggio del programma di audit; 
+
+c) l’evoluzione delle esigenze e delle attese delle parti interessate; 
+
+e) metodi di audit alternativi o nuovi; 
+1) l'efficacia delle misure per affrontare i rischi associati al programma di audit; 
+
+(...)
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstog - 20 1@mad48/82è/fa Qualità: Quaderno 5 
+
+Gli organismi di certificazione 
+dovrebbero mantenere un canale aperto 
+per lo scambio di comunicazioni 
+sulle condizioni del contesto dell'organizzazione 
+e sul conseguente stato del sistema di gestione, 
+come input per il riesame sistematico 
+del programma di audit 
+
+Per quanto riguarda infine l'audit di seconda parte (ai fornitori dell'organizzazione), in esso è l'organizzazione 
+stessa a determinare il contesto, oltre che rappresentare per definizione la principale parte interessata. In 
+questo caso, il Risk Based Audit è implicito (a conferma che in molti casi l'audit del cliente è per sua natura 
+il più potente fra i tipi di audit). Qualche riflessione in più meriterebbe invece l'audit di parte seconda quando 
+ricevuto dall'organizzazione, in quanto fornitore: alla luce dell'importanza assegnata dalla nuova Norma alle 
+parti interessate, in questo caso l’audit potrebbe essere utilizzato: 
+
+come strumento di convocazione e coinvolgimento di queste ultime (a partire dal cliente)® 
+per ottenere una misura immediata e diretta del grado di soddisfazione del cliente 
+come opportunità di marketing e di miglioramento reputazionale 
+nel caso delle organizzazioni che erogano i servizi di pubblica utilità e interesse, per "aprirsi" alla col- 
+lettività, migliorando il contatto con essa e dunque la capacità di percepirne le aspettative e ottenerne il 
+feedback 
+per migliorare la capacità dell'audit interno di valutare con lo stesso “metro di misura” del cliente l’ade- 
+guata definizione e il raggiungimento degli obiettivi per la qualità 
+ecc. 
+
+32 L'uso sistemalico dell'audit di parte seconda nel senso appena considerato, ove applicabile potrebbe costituire uno strumento di esercizio collettivo 
+del "diritto alla qualità": associazioni di consumatori, pubbliche amministrazioni che hanno esternalizzato i propri servizi, soggetti collettivi organizzati, 
+rappresentanze di utenti, potrebbero potenziare la propria capacità di negoziazione nei riguardi dei loro fornitori/ousourcer.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 57 
+
+Strumenti dell'audit 
+
+| più importanti strumenti di supporto al processo di audit del sistema qualità sono quelli contenuti o richia- 
+mati nelle Norme, più volte citate in questo Quaderno: 
+— UNI EN ISO 19011:2012 - Linee guida per audit di sistemi di gestione 
+— UNI EN ISO 17021-1:2015 - Valutazione della conformità. Requisiti per gli organismi che forniscono 
+
+audit e certificazione di sistemi di gestione. Parte 1 - Requisiti 
+— UNI CEI ISO/EC TS 17021-3:2013 - Valutazione della conformità. Requisiti per gli organismi che forni- 
+
+scono audit e certificazione di sistemi di gestione. Parte 3 - Requisiti per le attività di audit e la certifica- 
+zione di sistemi di gestione per la qualità. 
+
+Ad esse si rimanda perciò per i necessari approfondimenti. 
+
+Inoltre, un'importante e ricca fonte di informazioni utili, tale da coprire i principali temi relativi al processo di 
+audit, è quella rappresentata dalle Guide dell''ISO 9001 Auditing Practices Group", già richiamate in questo 
+Quaderno. 
+
+Esse forniscono suggerimenti per affrontare gli aspetti generali di conduzione di un audit e per auditare 
+efficacemente numerosi singoli requisiti della ISO 9001. 
+
+La tabella che segue mostra in sintesi quali fra questi requisiti sono coperti in maniera generale o specifica 
+dalle quide APG, rinviando alla loro lettura (v. www.iso.org/tc176/IS09001AuditingPracticesGroup)...
+
+
+
+
+
+
+ISO 9001 Auditing Practices 
+Guidance on: 
+Audit di certificazione iniziale in due fast 
+
+Valore aggiunto 
+
+l Rapondiandi _ 
+l Perosodiadt — 
+EE EAN 
+
+condotta e aspetti 
+
+| RE 
+| Relzionooniconsuni — 
+l 'aspotiauturai — 
+| comnicazione conticienie __ 
+| Regamgelclene — 
+
+| cliente 
+
+MAAA 
+Cia 
+
+raa aogiaane — 
+[Rssahats __ 
+[Fomoroseni — 
+o LTT 
+
+Fi i a i Miglioramento 
+
+Audit inferno 
+
+H nE lonuiaaanione 
+Uso efficace della ISO 19011 
+
+. Riferibilità delle misurazioni 
+
+Risorse di moniloraggio e misurazione 
+
+' Conoscenza organizzativa 
+
+. .. Polilica Obiettivi e Riesame di Direzione 
+
+o D E 7 
+O 
+
+|'Non Contorita: fisane e atiusra 
+SI ES - E rsss 
+
+H | compodiAppicazine — 
+|orgnidzi sezrazaio zioni 
+
+Requisiti legali e regolamentari 
+Esperti lecnici 
+
+Alta Direzione 
+
+Audit a val| ore aggiunlo vs. ConsuÀ lenza 
+
+S Ou/aPenoò PIrend WiepgPpeota!0,2  - BSoIsiNA 
+‘v'd'S ' V4IWO
+
+Iziuas a mMopoud | 19d AISINDA: e SYONIPON PE 
+IZIMSS 3 MOPOId 1P IARETA NISIMba: 1ap SLIESAN SE 
+
+1ZI1J85 & MOPOIA IE IANEIZI ISINDBAI 1ap 2UOIZEULIOIOO ZZ8 
+SIU I UO QUOIZENIUNLIOO LZE 
+
+12188 1S QOpard 1 1ad misinbay 28 
+1AgPISdO Oj94UC9 a suOZEIgIUEIA L8 
+
+aaeado gy 8 
+
+AEJUSWUNIOP UOTZELUOJUI Sjap OJORUOO ES 
+ClUaLLEWOSBE è augize:suao TS 
+
+FINC LSI 
+SFEJUALUNDOP UOIZELUOZUI 73 
+
+UOZEANIUNWO) PL 
+
+ezzajonadesuo 1 
+EZUAIAdWOI ZL 
+
+PANEZZIUEGIO EZUIISOUO  g'1'Z 
+SUOIZEINSILI ] è OIBBEOjUOLI fi Jad asi0siyj S'L'Z 
+
+Issagoud 1ap eiiageado, sad ayuaiquiy $°1"Z 
+EMANASEYU] SL 
+
+auosiag ZL 
+RIIPISUSS) FZ 
+UOT FL 
+
+quoddns Z 
+4N POL SSP SuUoZEIFILEIG £Y 
+
+‘’ EIlenb e lad AMBIGO Z9 
+euunuoddo a Iyosu alejuaiye 180 luorziy  1'9 
+
+SUOIZENYIVEIS 9 
+UOZEZZIUPBIO9,U BILOINE a EIIgesuodsa: Hony  g'5 
+
+eljenb el Jad eayN0d e auegiunuion 7T75 
+Egenb e 1ad e9 PI aigeis 1T6 
+
+4) 
+IO NS AUOIZEZZIENOY  T'L'6 
+
+FIBBUSO  L'1'S 
+vubedut a diusiapea? FS 
+
+diysuapea?] 6 
+
+Issan01d 1ANeja. a EINEND E 190 SUONSO) 1P ELIAISIS - d 
+auozegidde 1p odweo l areuawn9og g 
+
+alessaualu! "d ajrap "dse ai a szuebise a) alapuaiduon e 
+O}SajuO9 ONS I1 a SUOIZEZZIUPBIO] alapuaidwuoS5  p'p 
+
+SUOIZEZZIURBJIaOp 01Saju0n # 
+
+
+
+C ';r..ÎÈ;I!JII[|: Wa ss
+ 
+
+- L I.J‘-- E a I 
+
+i 
+
+; Fi À i, a \"'.: 
+| i 1[ g -Éîf’; 
+
+l ... 
+
+! n 
+f':”  Bi_o‘  : 
+
+À ii [T o 
+
+i n a EE 
+
+P i 1i PP i l 
+I ii |ir|!"Î\{-_‘i.ir:l
+
+.=…- 
+
+i I À i I 
+
+-.\_.‘. o 
+eE 
+
+F a i ii t è 
+SEE 4 E * 
+
+HL  w EFa AS E E a A 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 59 
+
+ezuajnsuo” SA ojuni66e aJ0 OP 
+
+6£ 
+
+L: 
+
+l£ 
+
+9E 
+
+SE 
+
+LE 
+
+SUOIZAING Ip auesary a IANIGO EI0 0£ 
+
+eanezziuebio ezue9souon +A 
+auoizensiu! a o:6beouow 1p asiosnj EA 
+
+1uo/ze.nsiw ajjop eliquajy BA 
+
+LLO6L OSI 8i18p 1ja 0sf L 
+
+z 
+| COL” 
+o
+Te M 
+
+HNE 
+e 
+
+WNIOP ‘WjOju I91UO19j3 1LUS}SIS 
+
+Oddnjias 9 9U $01d 1p 0ssa901q .l..'.. 
+EUL'ON Bjie E]ILLUOJLIO? IP IUOIZENSOLIG k 
+
+UII |ap 1eqpa9g . 
+
+[ aweesm e ] _ _ 
+IO fi UOI SUOIZENUNLUOD 
+
+BNNI madsy 
+
+0}s9jU0 
+
+ezualadiuo B g î i E Ri i i 
+
+1918 I1} a 
+
+154984 
+Upne Ip 08109186 
+
+lipne Ip iuoddey 
+
+e a0A 
+
+1SP) aNp UI ajelziu! SUOIZEAILUSA IP fipPNy 
+
+‘10 a9uEpNO E 
+seojoeud Bunpriy 1006 OSI E a i 
+
+E 3 E ® 
+£ 8 s ? 5 e @ 
+
+= ® 3 S 
+è 3 gÉs 3 8 z 3 
+sv  gi SBS&S@  BeE  E=  ‘E : s 
+k 2n>è‘m3m è = Èg z L) 
+P S5=SG ro e£ $SE RE fi ; è E 
+& j EEo 2 è g 5 è 
+H %ÈÈÈÈÈÉÈ”ÈÉFÈ 863 SE @ Ég 8 
+& 868 RSI ÉÉ sss o i S. . G3 s 8S 
+
+: gÈÈÉÈÉÉÉÈEÈES SSSCE d SE E s} DS 
+E° SPERPRoR  RR.RT S EE EEEE  SLN IE  E2jÈE. Os 3 
+gggggug.fia- 5.,È.;; ggugeegg:;;._g;g ?3..gÈ:BJ?È 
+EcgÉ“fi°È$ÉÉÉEEEEÉQÉEÈÉQÈ£GEÈÉgSÉÈÉÉ 
+F”2 PÈÈF:ÉIÈPÈEE8SP9I3PI= PÈI°I ÈSÈ ÉPIÉI: ÉET£ _RFEF” °PEÈT% ÈESIÉSQE%TÈ cpTÉ  
+
+SOS Onn SO 
+& && O O a i t&0 3 L è o ra d ro ra e e @ i 8 o d o PE
+
+w [12) 
+
+Legenda: 
+
+Flg 9 Correlazione fra Guide ISO IAF APG e requ|slll della Norma Nessuna correlazione 
+
+Correlazione generica _U 
+Correlazione speciica
+
+
+
+v 
+
+l A 
+W R 
+
++ aD RA SI 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstogg - 20 1 @nadé/Arfèlla Qualità: Quaderno 5 
+
+Il ruolo degli Organismi di Certificazione 
+
+Con la pubblicazione della ISO 9001:2015 da più parti ci si chiede se la nuova edizione verrà accolta dagli 
+Organismi di Certificazione (di seguito: OdC) come un'opportunità per fare sì che aumenti la fiducia verso la 
+certificazione dei Sistemi di Gestione per la Qualità*®. 
+
+| dubbi a tale riguardo si traducono in una serie di questioni, la risposta alle quali, positiva o negativa, potreb- 
+be determinare rispettivamente il successo o il drammatico insuccesso della nuova edizione, dal punto di 
+vista dei suoi riflessi sulle certificazioni dei SGQ, e condizionare l'efficacia del Conformity Assessmentcome 
+strumento condiviso di supporto all'aumento della soddisfazione dei clienti, di facilitazione delle transazioni, 
+di miglioramento organizzativo. 
+
+La nuova edizione verrà accolta 
+dagli Organismi di Certificazione come un'opportunità 
+per fare sì che aumenti la fiducia 
+verso la certificazione 
+dei Sistemi di Gestione per la Qualità? 
+
+Le questioni, in buona parte derivanti dalle argomentazioni presentate in questo Quaderno, riguardano in 
+particolare gli aspetti di: 
+
+1. Consapevolezza 
+
+2. Impegno 
+
+3. Risorse 
+
+4. Attuazione 
+
+@ si possono riassumere come segue: 
+
+01. Consapevolezza 
+
+Gli OdC sono consapevoli del fatto che la nuova norma richiede un approccio valutativo focalizzato, più 
+che nel passato, sulla sostanza dei fatti e meno sulla loro rappresentazione documentale? 
+Premesso che di un Sistema Qualità vanno valutate sia la conformità che l'efficacia e ammettendo che 
+la conformità possa ridursi, al limite, all'applicazione al "minimo" dei requisiti, gli OdC sono consapevoli 
+del fatto che l'efficacia del Sistema dipende invece dalla capacità dell'organizzazione di estrarre il mas- 
+simo potenziale dal modello ISO 9001:2015? 
+Sono, in altri termini, consapevoli del fatto che un Sistema di Gestione per la Qualità valido per le parti 
+
+Rif.: N.Gigante, “Auditare" la UNI EN ISO 9001:2015, in: U&C Unificazione & Certificazione - Gennaio 2016.
+
+
+
+' 
+
+i 
+
+# u 
+
+| 
+i t 
+
++ r 
+
+| 
+| 
+
+d 
+‘ 
+
+i 
+
+P 
+L L 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 8001:2015 61 
+
+interessate è quello applicato non con la logica del "minimo indispensabile", ma con quella del "massimo 
+possibile", e che pertanto l'approccio all'audit dovrebbe tenere conto di ciò? 
+
+02. Impegno 
+
+Ammesso che gli OdC siano consapevoli e convinti di quanto sopra: 
+- Gli OdC si impegneranno a perseguire politiche di certificazione conseguenti a tale consapevolezza? 
+- _ Il loro impegno sarà, oltre che formale, sostanziale? 
+— Saranno in grado di evidenziare tale impegno, anche con un'efficace comunicazione verso il mercato, e 
+
+di predisporre le condizioni per la sua attuazione, anche attraverso la sensibilizzazione delle parti inte- 
+ressate (a partire dalle organizzazioni clienti, e dai clienti di queste ultime)? 
+
+03. Risorse 
+
+Una volta che vi sia un impegno sostanziale degli OdC, riconosciuto e sostenuto dalle parti: 
+— Gli QdC sapranno attrezzarsi per assicurare la sua massima attuazione? 
+— _ Disporranno delle competenze, e di ogni altra condizione necessaria, per una corretta declinazione di 
+
+tali politiche certificative? 
+
+04. Attuazione 
+
+Atteso, infine, che un OdC voglia nei fatti dare seguito al proprio impegno: 
+- L'attuazione sarà sempre priva di ostacoli interni, o invece dovrà svolgersi in antagonismo con esigenze 
+
+commerciali di breve periodo? 
+- II sistema di gestione dell'OdC sarà esso stesso non solo conforme ai requisiti, ma tale da poter es- 
+
+sere apprezzato come "modello" di riferimento (come ci si aspetterebbe da un Ente che ha il compito 
+di valutare omologhi sistemi di gestione presso aziende di complessità anche elevata), e da garantire 
+un servizio "esemplare" a supporto della propria autorevolezza e per la crescente soddisfazione delle 
+organizzazioni clienti e delle altre parti interessate? 
+
+-  L'OdC sarà in grado di utilizzare selettivamente le proprie competenze, anche attraverso una corretta 
+gestione dei Programmi di Audit? In particolare, saranno valorizzati (per esempio, affidando loro gli audit 
+più complessi) gli auditor più competenti e più capaci di interpretare “nei fatti" le logiche ISO 9001:2015? 
+
+La risposta positiva a queste domande è condizione necessaria per il successo del modello proposto dalla 
+ISO 9001:2015 in chiave certificativa. 
+
+Dal punto di vista delle organizzazioni, è prevedibile che la maggiore complessità e "concretezza" del model- 
+lo ISO 9001:2015, rispetto all'edizione precedente, impatterà in modo significativo su numerose aziende che 
+fino ad oggi si sono limitate a un'applicazione prevalentemente formale dei requisiti. 
+
+È tuttavia improbabile che, a fronte di tali possibili difficoltà delle aziende meno "attrezzate", gli OdC adottino 
+un atteggiamento molto più severo e selettivo che nel passato, tale da comportare il rischio di una sensibile 
+riduzione del numero dei loro clienti. 
+
+È verosimile invece che essi opteranno per un approccio flessibile, soprattutto nel valutare il grado di ap- 
+plicazione dei requisiti più “innovativi" {quelli, in particolare, che riguardano: contesto, parti interessate,
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+
+UNIsIo7 - 20 1Mgadd/fiàfta Qualità: Quaderno 5 
+
+rischio/opportunità, ma anche: gestione per processi, conoscenza organizzativa, miglioramento). 
+
+D'altra parte la flessibilità, intesa come disponibilità ad ammettere per quanto possibile anche evidenze 
+elementari di conformità ai nuovi requisiti, non dovrebbe tradursi in generica indulgenza o approssimazione, 
+pena la validità dei processi certificativi, e, per essere accettabile, dovrebbe soddisfare le seguenti condizioni: 
+- rappresentare uno strumento effettivo di supporto alla progressiva interiorizzazione della nuova Norma 
+
+e verso l'instaurarsi nell'organizzazione delle "forme mentali" da esso richieste 
+— essere sempre meno praticata con l'avanzare del programma di audit 
+- _ essere applicata limitatamente alle questioni non critiche (per esempio, non essere utilizzata per declas- 
+
+sare situazioni che andrebbero oggettivamente registrate come gravi "non conformità") 
+- comunque dare origine a rilievi, anche se di tipo "minore" (per esempio, attraverso l'uso adeguato della 
+
+Non Conformità "Marginale", dell''Osservazione”, del "Commento"”, ecc.,), e in ogni caso di contenuto 
+non banale 
+
+- generare un follow up tale da provocare miglioramenti concreti e misurabili nel Sistema di Gestione. 
+
+La maggiore complessità e concretezza 
+del modello ISO 9001:2015 
+potrebbe impattare soprattutto 
+sulle aziende che fino ad oggi si sono limitate 
+a un'applicazione prevalentemente formale dei requisiti 
+
+Riassumendo, non sarebbe corretto se, in nome della flessibilità, l'OdC si accontentasse di qualsiasi rispo- 
+sta, anche estemporanea o non significativa, da parte delle organizzazioni, nei riguardi dei nuovi requisiti 
+(sebbene tale modalità appaia subito come la più confortevole, potendosi risolvere nella meccanica compi- 
+lazione di una checklist). 
+
+Invece la giusta flessibilità nell'auditare gli aspetti più innovativi della Norma dovrebbe comportare una valu- 
+tazione accurata delle evidenze di conformità, anche di tipo non documentato, e se del caso una formulazio- 
+ne di rilievi, per quanto possibile e senza pregiudicare la validità del giudizio, non "bloccanti", ma tali, per con- 
+tenuto e forma, da indurre l'organizzazione a familiarizzare, senza passaggi traumatici, con i nuovi concetti.
+
+
+
+DET 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 63 
+
+Conclusioni 
+
+Si è cercato di dimostrare che un approccio all’ audit di tipo “minimalista” non può fornire alcuna ragionevole 
+misura di efficacia del sistema di gestione. 
+
+La stessa natura volontaria della Norma implica che il frutto della sua applicazione non possa derivare da 
+una visione riduttiva del modello ISO 9001 (come è stato messo in evidenza più volte anche nei Quaderni 
+precedenti). In tal senso, occorre che l’organizzazione persegua un'applicazione della Norma rivolta al mas- 
+simo risultato, tanto più ora che, con la nuova edizione, l’approccio prestazionale prevale dichiaratamente 
+su quello prescrittivo, e perciò si ponga la domanda: “cosa possiamo fare per estrarre il maggiore beneficio 
+dall’applicazione del requisito X?" (e non invece: “qual è la minima evidenza di conformità che dobbiamo 
+produrre per dimostrare la conformità al requisito X?”). 
+
+La domanda dovrebbe essere: 
+“cosa possiamo fare per estrarre 
+il massimo benetficio dall’applicazione della Norma?” 
+e non: “qual è la minima evidenza 
+che dobbiamo produrre 
+per dimostrare la conformità ai requisiti?" 
+
+l’audit dovrà riflettere tale prospettiva, per valutare se essa ha trovato effettiva applicazione e continuerà 
+verosimilmente ad essere applicata in futuro. Per questi motivi: 
+- ammesso che la conformità a ciascun requisito possa essere accertata attraverso singole evidenze 
+
+di applicazione “al minimo indispensabile”, questo tipo di verifica, oltre che aumentare la possibilità di 
+un'applicazione meramente formale della Norma, non fornirà come esito una misura della conformità 
+del sistema nel suo complesso 
+
+— la valutazione dell'efficacia del sistema sarà ottenuta quando di ciascun requisito sarà considerata l’ap- 
+plicazione “al meglio”, nel rispetto delle logiche rigorose di costo-beneficio che devono orientare ogni 
+comportamento/decisione nell'organizzazione, e quando sarà verificata l'adeguatezza delle relazioni 
+esistenti nel sistema. 
+
+Quanto sopra, in ottica “certificativa”, non contraddice il principio “no more no less”, talvolta invocato per 
+giustificare una lettura “semplicistica” del sistema di gestione: la verifica dell’efficacia, nei termini appena 
+richiamati, non è una pretesa impropria, rispetto alla verifica di conformità, ma rappresenta appunto, come 
+si è visto, quanto occorre a garantire la piena applicazione, da parte degli Organismi di Certificazione, dei 
+requisiti di accreditamento.
+
+
+
+
+
+
+O.ME.FA. $.p.A. 
+
+UNIstoga - 20 1@naddrf/fèfla Qualità: Quaderno 5 
+
+Appendice 
+
+TERMINOLOGIA (da UNI EN ISO 9000:2015, punto 3.13 - Termini relativi all'audit) 
+
+Audit (audit) 
+
+processo sistematico, indipendente e documentato per ottenere evidenze oggettive e valutarie con obiettivi- 
+tà, al fine di stabilire in quale misura i criteri dell'audit sono soddisfatti 
+
+Nota 1: Gli elementi fondamentali di un audit comprendono la determinazione della conformità di un oggetto 
+secondo una procedura effettuata da personale non responsabile dell'oggetto sottoposto a audit. 
+
+Nota 2: Un audit può essere un audit interno (di prima parte), o un audit esterno (di seconda parte o di terza 
+parte) e può essere un audit combinato o un audit congiunto. 
+
+Nota 3: Gli audit interni, a volte denominati “audit di prima parte”, sono condotti, per il riesame di direzione e 
+per altri fini interni, dall’organizzazione stessa, o per suo conto, e possono costituire la base per una dichia- 
+razione di conformità da parte dell’organizzazione. L’'indipendenza può essere dimostrata con l'assenza di 
+responsabilità per l'attività oggetto dell’audit. 
+
+Nota 4: Gli audit esterni comprendono quegli audit che sono generalmente denominati “audit di seconda 
+parte” e di ‘terza parte”. Gli audit di seconda parte sono condotti da chi ha un interesse nell’organizzazione, 
+quali i clienti, o da altre persone per conto degli stessi. Gli audit di terza parte sono condotti da organizzazioni 
+di audit esterne indipendenti, quali quelle che rilasciano certificazioni/registrazioni di conformità o agenzie 
+governaltive. 
+
+Notla 5: Il presente termine fa parte dei termini comuni e delle definizioni di base per le norme ISO di sistemi 
+di gestione riportati nell'Appendice SL del Supplemento consolidato alla Parte 1 delle Direttive ISO/EC, La 
+definizione originale e le Note sono state modificate per rimuovere l’effetto di circolarità tra i termini “criteri 
+dell’audit” e “evidenza dell’audit”, e le Note 3 e 4 sono state aggiunte. 
+
+programma di audit (audit programme) 
+
+insieme di uno o più audit pianificati per un arco di tempo definito e orientati verso uno scopo specifico 
+
+campo di applicazione dell’audit (audit scope) 
+
+estensione e limiti di un audit 
+
+Nota: Il campo di applicazione dell'audit generalmente comprende una descrizione dei siti, delle unità orga- 
+nizzative, delle attività e dei processi. 
+
+piano dell’audit (audit plan) 
+
+descrizione delle attività e delle disposizioni riguardanti un audit
+
+
+
+4i ù I i 
+
+a À ' 
+
+| 
+I 
+
+- t H 
+
+- | ’ 
+P ‘ _ 
+
+L 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 Audit ISO 9001:2015 65 
+
+criteri dell’audit (audit criteria) 
+
+insieme di politiche, procedure, o requisiti utilizzati come riferimento, rispetto ai quali si confrontano le evi- 
+denze oggettive 
+
+evidenze dell’audit (audit evidence) 
+
+registrazioni, dichiarazioni di fatti o altre informazioni, che sono pertinenti ai criteri dell'audit e verificabili 
+
+risultanze dell’audit (audit findings) 
+
+risultati della valutazione delle evidenze dell’audit raccolte rispetto ai criteri dell’audit 
+
+Nota 1: Le risultanze dell’audit indicano conformità o non conformità. 
+
+Nota 2: Le risultanze dell’audit possono portare all'identificazione di opportunità di miglioramento o a docu- 
+mentare buone prassi. 
+
+Nota 3: In inglese, se i criteri dell’audit sono selezionati da requisiti legislativi o da requisiti regolamentari, le 
+risultanze dell’audit possono essere denominate conformità legale o non conformità legale. 
+
+conclusioni dell’audit (audit conclusion) 
+
+esito di un audit dopo aver preso in esame gli obiettivi dell’audit e tutte le risultanze dell'audit 
+
+committente dell’audit (audit client) 
+
+organizzazione o persona che richiede un audit 
+
+organizzazione oggetto dell’audit (auditee) 
+
+organizzazione sottoposta all’audit 
+
+guida (quide) 
+
+persona designata dall'organizzazione oggetto dell’audit per assistere il gruppo di audit 
+
+gruppo di audit (audit team) 
+
+una o più persone che conducono un audit, supportati, se necessario, da esperti tecnici 
+
+Nota 1: Un auditor del gruppo di audit è nominato responsabile del gruppo stesso. 
+
+Nota 2: Il gruppo di audit può comprendere auditor in formazione. 
+
+auditor (auditor) 
+
+persona che conduce un audit
+
+
+
+
+
+
+O.ME.FA. 5.p.A. 
+
+UNIstog$ - 20 1@uad8/A/4èfa Qualità: Quaderno 5 
+
+esperto tecnico (technical expert) 
+
+persona che fornisce conoscenze o esperienza specifiche al gruppo di audit 
+
+Nota 1: Le conoscenze o esperienza specifiche sono riferite all’organizzazione, al processo o all’attività da 
+sottoporre a audit, o alla lingua o alla cultura. 
+
+Nota 2: Un esperto tecnico non agisce come auditor nel gruppo di audit. 
+
+osservatore (observer) 
+
+persona che accompagna il gruppo di audit ma non agisce come un auditor 
+
+Nota: Un osservatore può essere un membro dell’organizzazione oggetto dell’audit, un legislatore o un’'altra 
+parte interessata che presenzia all’audit.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263 Audit ISO 9001:2015 67 
+
+Riferimenti bibliografici 
+
+| principali riferimenti utilizzati nell'elaborazione di questo Quaderno sono i seguenti: 
+— UNI EN ISO 9001:2015 - Sistemi di gestione per la qualità - Requisiti 
+- UNI EN ISO 9000:2015 - Sistemi di gestione per la qualità - Fondamenti è vocabolario 
+- UNI EN ISO 9001:2008 - Sistemi di gestione per la qualità - Requisiti 
+- UNI EN ISO 19011:2012 - Linee guida per audit di sistemi di gestione 
+- UNI EN ISO 17021-1:2015 - Valutazione della conformità. Requisiti per gli organismi che forniscono 
+
+audit e certificazione di sistemi di gestione. Parte 1 - Requisiti 
+- UNI CEI ISO/IEC TS 17021-3:2013 - Valutazione della conformità. Reauisiti per gli organismi che forni- 
+
+scono audit e certificazione di sistemi di gestione. Parte 3 - Requisiti per le attività di audit e la certifica- 
+zione di sistemi di gestione per la qualità 
+
+- ISO/TC 176/SC2/N1269, Risk-Based Thinking in Iso 9001:2015 
+- ISO/TC 176/SC 2/N1268, ISO 9001:2015 Risk-based thinking 
+- ISO/TC 176/SC2/N1274 - The process approach in ISO 9001:2015 
+- ISO/TC 176/SC2/N1282 - ISO 9001:2008 to ISO 9001:2015 - Summary of Changes 
+— |SO/TC 176/SC2/N1276 - Guidance on the Requirements for Documented Information of ISO 9001:2015 
+—  Ashby, A.W., An Introduction to Cybernetics, Chapman Hall, 1956, London, tr.it. 1971, Introduzione alla 
+
+cibernetica, Einaudi) 
+— Boguslaw R., The New Utopians. A Study of System Design and Social Change, Prentice Hall, Englewo- 
+
+od Cliffs; tr. it. 1975, ! nuovi utopisti. Una critica degli ingegneri sociali, Rosemberg e Sellier, Torino 
+- Boulding K., "General System Theory. A Scheleton of Science", in Management Science, n.2, 1956 
+- Gigante N., "Auditare" la UNI EN ISO 9001:2015, in: U&C Unificazione & Certificazione - Gennaio 2016 
+- Gigante N. - Quaderno della Qualità n. 2, Fattori del contesto e parti interessate - Ed. UNI - Gennaio 
+
+2016 
+- Gigante N. - Quaderno della Qualità n. 3, Risk Based Thinking - Ed. UNI - Febbraio 2016 
+— Gigante N. - Quaderno della Qualità n. 4, Approccio per processi- Ed. UNI - Marzo 2016 
+-  Gigante N., "Il Risk Based Thinking nei sistemi qualità", in: U&C Unificazione & Certificazione - Gennaio 
+
+2016 
+— Hoyle D. e Thompson J., ISO 9000:2000 Auditor Questions, Ed. Transition Support LtD 2001 
+- Martin Reeves, Simon Levin e Daichi Ueda, "La biologia della sopravvivenza aziendale", in: Harward 
+
+Business Review Italia, Gennaio-Febbraio 2016. 
+— Mela A., Pellegrini M., Una lettura della sociologia per paradigmi, Celid, 1981 
+- Miller, J.G., La teoria generale dei sistemi viventi, 1978, F. Angeli, Milano Il edizione. 
+
+- Von Bertalanffy, L., Genera!l System Theory, Foundation, Development, Applications, 1967 Braziller, 
+New York; tr. it. 1971, Teoria generale dei sistemi. Fondamenti, sviluppo, applicazioni, 2004, Mondadori, 
+Milano. 
+
+Quando nel presente Quaderno è stato necessario richiamare o citare parti di tali documenti, non sempre 
+sono state utilizzate traduzioni testuali, per motivi di sintesi o per rendere la trattazione più discorsiva. Per 
+ogni altra utilizzazione delle fonti sopraccitate si rinvia pertanto alle versioni originali oppure, se presenti, alle 
+traduzioni approvate.
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNI store - 2016 - 378263
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNiIstore - 2016 - 378263
+
+
+
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 
+
+L’autore 
+
+Nicola GIGANTE, Architetto e Sociologo, nato nel 1958, si occupa di 
+gestione per la qualità dal 1991. 
+
+Ha effettuato a tutl'oggi migliaia di giornate di audit ISO 9001 di 
+parte terza e ispezioni negli schemi della serie “ISO 17000”, ed ha 
+gestito per oltre 12 anni, come General Manager di una importante 
+società di audit, l’attività di circa 80 auditor professionisti, nei più 
+diversi schemi e settori di applicazione. 
+È componente della Commissione Tecnica UNI: “Gestione per la 
+qualità e metodi statistici” - e coordinatore del Gruppo di Lavoro 
+“Sistemi di gestione per la qualità” (GL2). 
+Fa parte dal 2007 della delegazione italiana nei lavori dell'ISO TC 176, per l’elaborazione delle 
+norme “ISO 9000” e correlate, ed è capo delegazione dal 2009. 
+Ha fatto parte del Gruppo Internazionale ISO che ha rielaborato | “Principi di Gestione per la 
+Qualità”, producendone l’attuale versione. 
+Come esperto italiano, partecipa regolarmente dal 2009 alle attività del Gruppo di Lavoro 
+ISO TC176/SC2/WG 24, costituito con lo scopo di produrre la ISO 9001:2015 e, successi- 
+vamente, la ISO/TS 9002 - Quality management systems - Guidelines for the application of 
+ISO 9001:2015 (In corso di elaborazione) 
+È autore, insieme con Mauro Rivara, del testo: Organizzazioni di successo - Comprendere e 
+applicare la ISO 9004:2009 per raggiungere il successo e mantenerlo nel tempo - Ed. UNI - 2011 
+Svolge attività di formazione, come docente di vari corsi presenti nel catalogo UNI, ed ha scrit- 
+to numerosi articoli sui temi del Quality Management. 
+
+La Segreteria dell’ISO TC 176/SC2 lo ha incaricato di guidare il Gruppo di Lavoro (WG22 - Interpre- 
+tations) che ha il delicato compito di dirimere i dubbi interpretativi riguardanti la nuova norma, e pro- 
+durre di volta in volta risposta ufficiale e definitiva sulle questioni sollevate dagli utilizzatori, a livello 
+internazionale. A tal fine, ha coordinato la revisione del processo di interpretazione, per renderlo più 
+idoneo a corrispondere alle esigenze degli utilizzatori. 
+
+Copertina QUOS5.indd _ 3 08/04/2016 12:01:57
+
+
+
+j ip  F1°E  1% I 
+
+i 
+
+’ 
+
+Î 
+
+Ln  ni a i u raa a e P - 
+
+i : a:  
+
+; l 
+h j 
+
+- 
+: 
+
+: 
+
+‘ : 
+
+| DT i 
+
+a] ]i  EVE uaRiII  ' 
+
+
+
+O.ME.FA. S.p.A. 
+UNIstore - 2016 - 378263 
+
+© 
+w ENTE ITALIANO 
+
+DI NORMAZIONE 
+
+Membro italiano ISO e CEN 
+www.uni.com 
+
+diffus@iunoi.ncoem 
+
+Copertina QDLQs5.indd 4 08/04/2016 12:01:38

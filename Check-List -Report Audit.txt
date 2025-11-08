@@ -1,0 +1,975 @@
+
+Sommario
+1 – DATI GENERALI	2
+2- OBIETTIVO DELL’AUDIT	2
+3 - RILIEVI PENDENTI	3
+4 - CONTESTO DELL’ORGANIZZAZIONE	3
+4.1 - Comprendere l'Organizzazione e il suo contesto	3
+4.2 - Esigenze e aspettative delle parti interessate	3
+4.3 - Ambito di applicazione del SGQ	4
+4.4 - SGQ e processi	4
+5 – LEADERSHIP	4
+5.1 Leadership E Impegno	4
+5.1.2 Focalizzazione sul Cliente	5
+5.2 Politica	5
+5.2.2 Comunicazione della Politica	5
+5.3 Ruoli organizzativi, responsabilità e autorità	6
+6 - PIANIFICAZIONE	6
+6.1	Azioni per affrontare rischi e opportunità	6
+6.2 Obiettivi e pianificazione	6
+7 - SUPPORTO	6
+7.1.2 Persone	6
+7.2 Competenza	7
+7.3 Consapevolezza	7
+7.4 Comunicazione	7
+8 - ATTIVITA OPERATIVE	7
+8.4 Controllo dei processi, prodotti e servizi forniti dall'esterno	7
+8.7	Controllo degli output non conformi	8
+9 VALUTAZIONE DELLE PRESTAZIONI	8
+9.1	Monitoraggio, misurazione, analisi e valutazione	8
+9.1.2 	Soddisfazione del cliente	8
+9.2	Audit interno	9
+9.3	Riesame di direzione	9
+10 MIGLIORAMENTO	10
+10.2	Non conformità e azioni correttive	10
+10.3	Miglioramento continuo	10
+11 ESITO DELL’AUDIT	11
+Conclusioni	12
+Rilievi Emersi	12
+Allegati:	12
+Distribuzione	12
+
+
+
+
+1 – DATI GENERALI
+OGGETTO: 
+Audit di Verifica ispettiva interna RP
+CAMPO APPLICAZIONE: 
+Sistema di Gestione per la Qualità RP: Contesto, 
+Pianificazione, Supporto, Leadership, Valutazione 
+Prestazioni, Miglioramento
+DOCUMENTI:
+Norma ISO 9001 cap.4-5-6-7-8-9-10
+Procedure interne
+DATA AUDIT
+20/06/2025
+PROCESSI/FUNZIONI:
+vari
+PROGRAMMA COMUNICATO IL:
+15/05/2025
+VERIFICATORI: 
+MARCO CAMELLINI (EXT AUDITOR)  
+
+
+2- OBIETTIVO DELL’AUDIT
+
+Verificare il grado di implementazione del Sistema di Gestione della Qualità secondo la 
+norma UNI EN ISO 9001:2015 e il rispetto delle procedure interne.
+
+Verificare la completezza documentale e l’efficacia dei processi
+
+
+
+
+Presenti per l’organizzazione:
+DG
+RCOM
+ACQ
+R.TEC
+RPROD 
+Claudia Pisani
+
+
+
+Claudia Pisani
+E. Zanotti
+
+
+
+Legenda
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+
+0 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Almeno 1 Esempio e Commento: 
+
+
+OSSERVAZIONE (OSS) = Criticità che comporta un rischio non trascurabile (è uno spunto di miglioramento oppure 
+una carenza che potrebbe diventare NC) 
+NON CONFORMITÀ (NC) = Non conformità che necessita di trattamento. (esempio punto norma disatteso o 
+procedure del SGQ non rispettate)
+OPPORTUNITA’ DI MIGLIORAMENTO (OM) = Opportunità di miglioramento del processo
+COMMENTO = Nota a margine da utilizzare come promemoria
+3 - RILIEVI PENDENTI 
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+AP - Rilievi emersi 
+dai precedenti 
+Audit Interni-
+Esterni
+0 Soddisfatto
+0 Parzialmente 
+soddisfatto OSS)
+0 Non Soddisfatto 
+(NC)
+1 Non applicabile
+Non ci sono rilievi pendenti
+
+4 - CONTESTO DELL’ORGANIZZAZIONE
+Attività/processo
+Valutazione di efficacia
+Evidenze delle attività operative auditate
+4.1 - Comprendere 
+l'Organizzazione e il 
+suo contesto
+0 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto 
+(NC)
+0 Non applicabile
+
+Comprendere l'organizzazione e il suo contesto termini e le definizioni di cui alia
+ L’organizzazione deve determinare i fattori esterni e interni rilevanti per le sue finalita e indirizzi strategici e che 
+influenzano la sua capacita di conseguire il(i) risultato(i) atteso(i) per il proprio sistema di gestione per la qualita. 
+L'organizzazione deve monitorare e riesaminare le informazioni che riguardano tali fattori esterni e interni.
+
+Attività/processo
+Valutazione di efficacia
+Evidenze delle attività operative auditate
+4.2 - Esigenze e 
+aspettative delle parti 
+interessate
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto 
+(NC)
+0 Non applicabile
+Visto modulo PR02.01 rev.3 del 31/07/2024 
+aggiornato al 31/7/2024, dove sono state 
+identificate le parti interessate ed i relativi requisiti. 
+Le parti interessate sono le seguenti: Clienti, 
+Fornitori, Dipendenti, Soci, Istituti di Credito, 
+Associazioni di categoria, Sindacati, Organismi di 
+controllo e vigilanza (USL, ARPA, VVFF, ecc.), Enti 
+di certificazione.
+Visto ad esempio i clienti che si aspettano di 
+ricevere pezzi conformi secondo i tempi di 
+consegna concordati e documentazione completa 
+e conforme alle richieste 
+In data odierna è in corso la revisione del 
+documenti con aggiunta di principi etici e 
+ambientali richiesti dai clienti e presi in carico 
+dall’azienda.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+4.3 - Ambito di 
+applicazione del SGQ
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto 
+(NC)
+0 Non applicabile
+Sul Manuale della Qualità MQ01 rev.0 del 
+05/11/2021 al cap.4.3 è definito il campo di 
+applicazione, che è il seguente: “Produzione di 
+componenti meccanici su commessa e disegno 
+del cliente”.
+È esclusa l’attività di progettazione in quanto la 
+stessa viene realizzata dai clienti. Raccorderia 
+Piacentina si limita a programmare i cicli di lavoro 
+per la realizzazione dei manufatti, attraverso 
+l’utilizzo di macchine utensili.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+4.4 - SGQ e processi
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto 
+(NC)
+0 Non applicabile
+I processi aziendali sono definiti nel modulo 
+“Schema Processi aziendali” PR06.05 rev.0 del 
+22/04/2021, aggiornato al 12/07/2021.
+Sono presenti i seguenti processi:
+-Processo Direzionale
+-Processo Commerciale
+-Processo di Produzione
+-Processo di Collaudo finale
+-Amministrazione
+-Ufficio Tecnico
+Nel documento sono indicate le interazioni fra i vari 
+processi. Il dettaglio delle attività relative a ciascun 
+processo è definito nel Mansionario Aziendale che 
+associa ciascun processo ad una funzione 
+aziendale. Per i principali processi sono presenti 
+anche delle procedure interne formalizzate nella 
+documentazione interna della qualità.
+5 – LEADERSHIP
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+5.1 Leadership E 
+Impegno
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto 
+(NC)
+0 Non applicabile
+La Leadership aziendale e l’impegno sono garantiti 
+dalla alta direzione mediante l’impegno in prima 
+persona della proprietà che ha comunicato a tutto il 
+personale l’importanza del Sistema di Gestione per 
+la qualità, finalizzato alla soddisfazione dei clienti. È 
+stata spiegata, con una riunione interna, 
+l’importanza del contributo che ogni dipendente può 
+e deve dare per il conseguimento dell’obiettivo 
+certificazione ed in generale per il miglioramento 
+continuo dei processi aziendali.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+5.1.2 Focalizzazione sul 
+Cliente
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+La focalizzazione sul cliente è garantita dalla 
+attenzione che la direzione pone sui requisiti 
+specifici del cliente (attenta lettura e massimo 
+rispetto dei disegni, capitolati, ecc.).
+Sono stati allo scopo definiti appositi indicatori per il 
+monitoraggio della soddisfazione del cliente: 
+Visto ad esempio su modulo “Cruscotto indicatori 
+Aziendali” PR02.07 rev.0 del 12/07/2021 aggiornato 
+al 03/06/2025 i seguenti indicatori: 
+?	Pz. reclamati/ pz. venduti (0,19% 2024)
+?	Nr. solleciti ricevuti/Righe ordine (1,73% 2024) 
+?	Nr. solleciti ricevuti su documenti /Nr. righe 
+ordine con documentazione (0% nel 2024).
+?	% Costo Reclami/Fatturato vendita (0,3% 2024)
+?	% Costo sostenuto su reclami/Fatturato (0,05%)
+?	Tasso fidelizzazione (100%)
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+5.2 Politica
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+La Politica per la qualità è presente su modulo 
+PR02.06 rev.0 del 22/04/2021. La politica è 
+articolata nei seguenti punti:
+?	Soddisfacimento scrupoloso di tutti i requisiti di 
+prodotto dettati dal cliente e dei requisiti cogenti 
+?	Puntualità nelle consegne dei prodotti lavorati e 
+nelle risposte alle richieste del cliente
+?	Completezza della documentazione di supporto 
+fornita al cliente
+?	Accrescimento delle competenze del proprio 
+personale mediante attività formative specifiche 
+?	Miglioramento continuo del sistema di gestione 
+per la qualità e dei relativi processi 
+È verificato che la politica è allineata alla strategia 
+di fondo dell’azienda, costituisce un quadro di 
+riferimento per gli indicatori aziendali PR02.07, 
+sono compresi l’impegno per il rispetto dei requisiti 
+del cliente e per il miglioramento continuo
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+5.2.2 Comunicazione 
+della Politica
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+La Politica è presente come informazione 
+documentata ed è disponibile per le parti 
+interessate qualora lo richiedano. 
+La Politica è stata consegnata ai lavoratori in 
+occasione dell’incontro formativo 2021-02 registrato 
+come corso interno ed è esposta negli spogliatoi.
+E’ inoltre esposta presso il locale spogliatoi
+
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+5.3 Ruoli 
+organizzativi, 
+responsabilità e 
+autorità
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto Organigramma aziendale su modulo PR06.04 
+rev.0 del 22/04/21 aggiornato al 31/10/2024, nel 
+quale sono definite le responsabilità funzionali e la 
+gerarchia aziendale. Al 31/10/2024 è stato 
+aggiornato in quanto un dipendente si è licenziato.
+
+Data di aggiornamento alla data attuale non si è 
+registrato alcun nuovo assunto, né cambi di 
+mansione nell’organico. 
+
+
+6 - PIANIFICAZIONE
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+6.1	Azioni per 
+affrontare rischi e 
+opportunità
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto Analisi Rischi/Opportunità aggiornato al 
+31/07/2024 dove sono presenti ad esempio i 
+seguenti rischi individuati:
+
+?	Minaccia: Possibili danni a infrastrutture 
+causati dai cambiamenti climatici
+?	Opportunità: Utilizzo fonti energia rinnovabile
+?	Debolezze: scarsa velocità di connettività
+
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+6.2 Obiettivi e 
+pianificazione
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Gli obiettivi sono definiti nel modulo “Cruscotto 
+indicatori Aziendali” PR02.07 rev.0 del 12/07/2021 
+aggiornato al 03/06/2025 che viene aggiornato con 
+frequenza semestrale. Tali obiettivi sono analizzati 
+e discussi in sede di riesame di direzione. 
+Visto per il 2024 erano presenti fra gli altri i 
+seguenti obiettivi: 
+?	% di preventivi andati a buon fine obiettivo 
+>60% conseguito 61,36%, 
+?	%Copertura competenze >95 conseguito 100%
+
+
+7 - SUPPORTO
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+7.1.2 Persone
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Le persone che operano all’interno dell’azienda 
+hanno una anzianità lavorativa che garantisce la 
+loro conoscenza dei processi, competenza nello 
+svolgimento delle mansioni e consapevolezza del 
+loro apporto al corretto funzionamento del Sistema 
+di gestione per la qualità.
+Parlato con Avamini Elena, Pisani Claudia, Pisani 
+Pietro, Zanotti Enrico.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+7.2 Competenza
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Le competenze previste per le mansioni sono 
+definite nel documento Matrice Competenze 
+PR06.01/b rev.0 del 22/04/2021 aggiornata al 
+31/10/2024 dove sono presenti 15 persone 
+corrispondenti all’organico aziendale. Visto la 
+Matrice evidenzia come tutto il personale sia in 
+possesso delle competenze previste per lo 
+svolgimento delle mansioni e pertanto il livello di 
+copertura delle competenze è del 100% (110 su 
+110).
+Visto Piano di Formazione e Addestramento 
+PR06.03 rev.0 del 22/04/2021 aggiornato al 
+19/06/2025
+Visto Corso 2025-02 Corso base FeatureCam 
+docente Fabrizio De Feo, partecipante Claudia 
+Pisani, pianificato per lug-set 2025
+Nel corso odel 2025 è presente un altro corso che è 
+2025-01 Project Management 
+		
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+7.3 Consapevolezza
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Verificato mediante colloquio con il personale in 
+sede di Audit. Parlato con:
+?	Pisani Claudia
+?	Enrico Zanotti
+Tutto il personale intervistato ha mostrato una 
+buona conoscenza del processo da loro presidiato 
+e delle procedure specifiche relative alla mansione.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+7.4 Comunicazione
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+La comunicazione avviene in maniera diretta fra le 
+varie funzioni aziendali, essendo l’azienda di 
+piccole dimensioni. Sono presenti la Politica per la 
+qualità esposta negli spogliatoi. Sono presenti in 
+produzione schede di lavoro e scheda di controllo 
+PR09.01 che indicano agli operatori i controlli.
+
+8 - ATTIVITA OPERATIVE
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+8.4 Controllo dei 
+processi, prodotti e 
+servizi forniti 
+dall'esterno
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto registro fornitori PR03.01 rev.0 del 29/06/2021 
+aggiornato al 19/06/2025.
+Sono presenti nr.1 fornitore qualificato nel 2024. Fornitore: 
+Acciaierie Valbruna con valutazione di nr.1 consegna su 3 
+con ddt n.PR24001269 del 10/06/2024. Valutato Conformità 
+= 5, tempi = 4, documentazione = 5, prezzo = 4 , servizio = 
+5
+
+Monitoraggio 2024 ha evidenziato una sostanziale livello 
+positivo dei fornitori che sono tutti sopra il punteggi minimo 
+fissato di 4 ad eccezione del fornitore Carini Industria che 
+ha ottenuto 3,9 in quanto ha tempi di consegna lunghi (voto 
+2 = mediocre)
+
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+8.7	Controllo 
+degli output non 
+conformi
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Le non conformità sono gestite in tempo reale dalla 
+direzione che le analizza e decide immediatamente quale 
+trattamento adottare. Non è pertanto presente un’area 
+apposita di segregazione, nemmeno un contenitore, in 
+quanto i pezzi nc sono rottamati o ripresi immediatamente. 
+Nel corso del 2024 sono state registrate nr.12 Non 
+conformità, suddivise così: Nr.6 Reclami cliente, Nr.3 NC 
+interne, Nr.23 NC fornitore
+Nel corso del 2025 ci sono state nr.3 NC (reclami cliente)
+Visto reclamo 2025-01 dove il cliente segnala la quota 
+15mm relativa alla partenza del ø179 e' stata riscontrata 
+12mm. risultano invertite le due quote rispetto alla sede 
+della guarnizione. Trattamento: il cliente accetta il 
+particolare allo stato. Chiusura: 11/04/2025 per questa NC è 
+stata aperta azione correttiva.
+Visto reclamo 2025-02 del 28/04/2024 cliente Drillmec 
+particolare 01991713 Distanziale. Difetto: il cliente 
+controllando il ø280 +0,1/+0,2 rileva un pz fuori tolleranza 
+con quota ø280,33. Causa: l'operatore sulla scheda di 
+collaudo riporta misura ø280,15 ø280,19 (in tolleranza). 
+trattamento: il cliente accetta il pezzo allo stato. NC chiusa 
+in data 28/04/2025
+Visto reclamo 2025-03 del 13/05/2025 cliente Drillmec 
+particolare cod.01815646 Anello di Guida. Il cliente segnala 
+che il diametro interno 201,2 +0,4/+0,5 viene rilevato 
+ø202,13 la fresatura di 15mm non e' stata eseguita. causa: 
+durante la costruzione del pezzo ci siamo accordi di aver 
+costruito il particolare con ø errato. Trattamento: dopo aver 
+chiarito con collaudo e ut il disguido il pz e' stato accettato 
+allo stato. Reclamo chiuso in data 20/05/2025
+9 VALUTAZIONE DELLE PRESTAZIONI 
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+9.1	Monitoraggio, 
+misurazione, analisi 
+e valutazione
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto ad esempio su modulo “Cruscotto indicatori 
+Aziendali” PR02.07 rev.0 del 12/07/2021 aggiornato 
+al 03/06/2025 i seguenti indicatori: 
+?	Pz. reclamati/ pz. venduti (0,19% 2024)
+?	Nr. solleciti ricevuti/Righe ordine (1,73% 2024) 
+?	Nr. solleciti ricevuti su documenti /Nr. righe ordine 
+con documentazione (0% nel 2024).
+?	% Costo Reclami/Fatturato vendita (0,3% 2024)
+?	% Costo sostenuto su reclami/Fatturato (0,05%)
+?	Tasso fidelizzazione (100%)
+?	Copertura competenze (100%)
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+9.1.2 	Soddisfazione 
+del cliente
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+La soddisfazione del cliente viene misurata in 
+maniera indiretta attraverso i seguenti indicatori:
+a)	% reclami su venduto (pezzi e fatturato) 
+indicatore 2023 = 0,05%
+b)	% solleciti (indicatore 2023 = 1.59%)
+c)	Tasso di fidelizzazione percentuale 
+(indicatore 2023=1.59%)
+
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+9.2	Audit interno
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto Piano Audit Interni PR02.03 rev.0 del 
+22/04/2021 aggiornato al 15/05/2024.
+Nel 2025 sono stati pianificati nr.2 Audit Interni 
+pianificato nelle date odierna del 20/06/2025 e 
+16/10/2025.
+L’esito degli audit del 2024 è stato positivo con la 
+seguente conclusione: “Il sistema di gestione per la 
+qualità è correttamente implementato e mantenuto. Il 
+personale rispetta le procedure e le modalità 
+operative interne ed è consapevole del proprio 
+contributo al raggiungimento degli obiettivi aziendali”.
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+9.3	Riesame di 
+direzione
+
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Visto riesame di direzione per l’anno 20234 eseguito 
+in data 31/07/2024 dove sono presenti tutti gli input e 
+output previsti, nel dettaglio. Sono presenti tutti gli  
+elementi in entrata  fra i quali ad es.: Stato delle 
+azioni derivanti da precedenti riesami di direzione, 
+Analisi del contesto, Efficacia delle azioni intraprese 
+per affrontare rischi e le opportunità, Soddisfazione 
+del cliente, Andamento delle non conformità e delle 
+azioni correttive (Nr.5 reclamo cliente, Nr.4 NC 
+fornitore, Nr.4 NC interne), Risultati degli audit interni 
+ed  esterni, Prestazioni dei fornitori (punteggio 
+peggiore CE-BA Ingranaggi = 4).
+Fra gli elementi in uscita sono presenti le Opportunità 
+di miglioramento quali l’ Acquisto NAS e configurazione 
+backup automatici. 
+È in fase di redazione alla data odierna il riesame di 
+direzione anno 2024
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+10 MIGLIORAMENTO
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+10.2	Non 
+conformità e azioni 
+correttive
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Vedi anche punto 8.7
+Nel corso del 2024 sono state intraprese nr.5 azioni 
+correttive di cui nr.4 chiuse positivamente nr.1 
+pianificata (2024-006) con chiusura prevista a 
+settembre 2025
+
+Visto Azione correttiva relativa al reclamo 24-006 per 
+il diametro 240k6 (-0,024/+0,005) che viene rilevato 
+dal cliente Ø240,05. Azione Correttiva che ha 
+previsto di costruire un anello per azzeramento 
+dell'alesametro. ultima consegna effettuata con ddt 
+25/507 del 11/06/2025. Si attende una nuova 
+produzione per verificare l’efficacia dell’azione 
+pianificata entro 30/09/2025.  
+Visto Azione correttiva 2025-001 relativa al reclamo 
+cliente che evidenziava la quota 15mm relativa alla 
+partenza del ø179 che e' stata riscontrata 12mm. 
+risultano invertite le due quote rispetto alla sede della 
+guarnizione. Trattamento: il cliente accetta il 
+particolare allo stato. Azione correttiva: È stato rifatto 
+il programma. Verifica efficacia pianificata alla 
+prossima produzione (al 18/06/2025 non ancora 
+riordinate)
+
+
+Attività/processo
+Valutazione di efficacia
+Dettaglio delle attività operative auditate
+10.3	Miglioramento 
+continuo
+1 Soddisfatto
+0 Parzialmente 
+soddisfatto (OSS)
+0 Non Soddisfatto (NC)
+0 Non applicabile
+Il miglioramento è perseguito attraverso le azioni 
+pianificate a seguito del riesame di direzione.
+
+Visto riesame dell’anno 2023 eseguito in data 
+31/07/2024 nel quale sono presenti come elementi in 
+uscita dal riesame le seguenti azioni di miglioramento 
+in corso di attuazione:
+?	Acquisto NAS e configurazione backup automatici 
+?	Percorso di affiancamento da parte di Claudia a 
+Pietro e Paola al fine di acquisire le competenze 
+necessarie per la conduzione dell'azienda.
+?	Ampliamento piazzale esterno per stoccaggio 
+materie prime	
+
+
+
+
+
+11 ESITO DELL’AUDIT
+
+RILIEVI
+
+Elemento / Processo della norma auditato
+CONF
+NC
+OSS
+COM
+N.A.
+AP
+Azioni pendenti derivanti da precedenti Audit
+
+
+
+
+X
+4.1
+Contesto dell’organizzazione
+X
+
+
+
+
+4.2
+Esigenze e aspettative delle parti interessate
+X
+
+
+
+
+4.3
+Campo di Applicazione
+X
+
+
+
+
+4.4
+Sistema di gestione e processi
+X
+
+
+
+
+5.1
+Leadership e impegno
+X
+
+
+
+
+5.1.2
+Focalizzazione sul Cliente
+X
+
+
+
+
+5.2
+Politica per la qualità
+X
+
+
+
+
+5.2.2
+Comunicazione della politica
+X
+
+
+
+
+5.3 
+Ruoli e responsabilità nell’organizzazione
+X
+
+
+
+
+6.1
+Azioni per affrontare rischi e opportunità
+X
+
+
+
+
+6.2
+Obiettivi e pianificazione
+X
+
+
+
+
+7.1.2
+Risorse: Persone
+X
+
+
+
+
+7.2 
+Competenza
+X
+
+
+
+
+7.3 
+Consapevolezza
+X
+
+
+
+
+7.4
+Comunicazione
+X
+
+
+
+
+8.4
+Controllo dei fornitori esterni
+X
+
+
+
+
+8.7
+Controllo degli output non conformi
+X
+
+
+
+
+9.1
+Monitoraggio, misurazione, analisi e 
+valutazione
+X
+
+
+
+
+9.1.2
+Soddisfazione del cliente
+X
+
+
+
+
+9.2
+Audit interno
+X
+
+
+
+
+9.3
+Riesame della direzione
+
+X
+
+
+
+
+10.2
+Non conformità e azioni correttive
+X
+
+
+
+
+10.3
+Miglioramento continuo
+X
+
+
+
+
+
+Il team di audit ha individuato:
+0
+Non Conformità
+0
+Osservazioni
+0
+Opp. Miglioramento
+0
+Commenti
+
+
+
+Gli obiettivi dell’audit sono stati raggiunti?
+SI   1
+NO 0
+
+
+
+
+
+Conclusioni
+
+Il sistema di gestione per la qualità è correttamente implementato e mantenuto. Il personale 
+rispetta le procedure e le modalità operative interne ed è consapevole del proprio contributo al 
+raggiungimento degli obiettivi aziendali.
+
+
+
+
+Rilievi Emersi
+Sono emersi i seguenti rilievi: NESSUNO
+
+
+
+Data concordata per il prossimo audit
+(quando applicabile)
+Da pianificare     (vedi piano aziendale)
+
+
+Data
+20/06/2025
+
+Firma Lead Auditor
+
+
+
+
+
+Firma dell’Organizzazione
+
+
+
+Claudia Pisani
+
+Allegati:
+0	
+
+Distribuzione
+1	Originale Organizzazione
+0	Copia a: …………………
+
+
+
+ 
+AUDIT REPORT 2025-01
+PR02.04
+Rev.0
+22/04/2021
+
+Check-List Interna Audit
+
+
+
+
+
+Pag. 1 di 1

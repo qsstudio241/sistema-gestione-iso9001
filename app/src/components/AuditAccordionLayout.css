@@ -1,0 +1,428 @@
+/**
+ * AuditAccordionLayout - Mobile-First Responsive Design
+ * Palette: #FFFFFF, #F5F5F7, #0071E3, #1D1D1F
+ */
+
+.audit-accordion-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+    "Roboto", sans-serif;
+}
+
+/* ============================================
+   NO AUDIT MESSAGE
+   ============================================ */
+
+.no-audit-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.no-audit-message h2 {
+  font-size: 24px;
+  color: #1d1d1f;
+  margin-bottom: 12px;
+}
+
+.no-audit-message p {
+  font-size: 16px;
+  color: #86868b;
+  line-height: 1.6;
+}
+
+/* ============================================
+   AUDIT HEADER
+   ============================================ */
+
+.audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #d2d2d7;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.audit-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audit-title h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+}
+
+.audit-number {
+  font-size: 13px;
+  font-weight: 400;
+  color: #86868b;
+}
+
+.audit-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.audit-status {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #34c759;
+  color: #ffffff;
+}
+
+.audit-date {
+  font-size: 12px;
+  color: #86868b;
+}
+
+/* ============================================
+   ACCORDION CONTAINER - Mobile First
+   ============================================ */
+
+.accordion-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* ============================================
+   ACCORDION SECTIONS (Main Level)
+   ============================================ */
+
+.accordion-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: none;
+  background-color: #ffffff;
+  color: #1d1d1f;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  letter-spacing: -0.3px;
+}
+
+.accordion-header:active {
+  background-color: #f5f5f7;
+}
+
+.accordion-header.open {
+  background-color: #f5f5f7;
+}
+
+.section-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.section-title {
+  flex: 1;
+}
+
+.section-arrow {
+  font-size: 14px;
+  color: #86868b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.accordion-header.open .section-arrow {
+  transform: rotate(0deg);
+}
+
+/* ============================================
+   ACCORDION CONTENT
+   ============================================ */
+
+.accordion-content {
+  padding: 0 0 12px 0;
+  background-color: #f5f5f7;
+}
+
+/* ============================================
+   ACCORDION SUB-SECTIONS (Nested Level)
+   ============================================ */
+
+.accordion-subsection {
+  margin: 8px 12px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.accordion-subheader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: none;
+  background-color: #ffffff;
+  color: #1d1d1f;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.accordion-subheader:active {
+  background-color: #f5f5f7;
+}
+
+.accordion-subheader.open {
+  background-color: #f5f5f7;
+}
+
+.subsection-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0071e3;
+  flex-shrink: 0;
+  min-width: 30px;
+}
+
+.subsection-title {
+  flex: 1;
+  font-size: 15px;
+}
+
+.subsection-arrow {
+  font-size: 12px;
+  color: #86868b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.accordion-subheader.open .subsection-arrow {
+  transform: rotate(0deg);
+}
+
+/* ============================================
+   STANDARD SECTIONS (ISO 9001/14001/45001)
+   ============================================ */
+
+.standard-section {
+  border-left: 3px solid #0071e3;
+}
+
+.standard-header {
+  background-color: rgba(0, 113, 227, 0.02);
+}
+
+.standard-header.open {
+  background-color: rgba(0, 113, 227, 0.05);
+}
+
+.standard-icon {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+/* ============================================
+   SUBSECTION CONTENT
+   ============================================ */
+
+.subsection-content {
+  padding: 0;
+  background-color: #ffffff;
+}
+
+/* Integrazione ChecklistModule dentro accordion */
+.subsection-content .checklist-module {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Rimuovi header duplicato quando ChecklistModule è dentro accordion */
+.subsection-content .checklist-module > h2,
+.subsection-content .checklist-module > .module-header {
+  display: none;
+}
+
+/* Adatta norm-tabs per accordion (se multi-standard) */
+.subsection-content .norm-tabs {
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e5ea;
+  background-color: #f5f5f7;
+}
+
+/* ============================================
+   PLACEHOLDERS & MESSAGES
+   ============================================ */
+
+.checklist-placeholder,
+.outcome-placeholder {
+  padding: 20px;
+  text-align: center;
+  color: #86868b;
+}
+
+.checklist-placeholder p,
+.outcome-placeholder p {
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+.hint {
+  font-size: 13px;
+  color: #86868b;
+  font-style: italic;
+}
+
+.outcome-placeholder pre {
+  text-align: left;
+  background-color: #f5f5f7;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.no-standards-message {
+  padding: 32px 20px;
+  text-align: center;
+  background-color: #fff3cd;
+  border-radius: 8px;
+  margin: 12px;
+}
+
+.no-standards-message p {
+  margin: 8px 0;
+  font-size: 15px;
+  color: #856404;
+}
+
+.no-standards-message .hint {
+  color: #856404;
+  font-size: 14px;
+}
+
+/* ============================================
+   RESPONSIVE - Tablet & Desktop
+   ============================================ */
+
+@media (min-width: 768px) {
+  .audit-header {
+    padding: 24px 32px;
+  }
+
+  .audit-title h1 {
+    font-size: 24px;
+  }
+
+  .audit-number {
+    font-size: 14px;
+  }
+
+  .audit-meta {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .audit-status {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .audit-date {
+    font-size: 14px;
+  }
+
+  .accordion-container {
+    padding: 24px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .accordion-section {
+    margin-bottom: 20px;
+  }
+
+  .accordion-header {
+    padding: 18px 24px;
+    font-size: 18px;
+  }
+
+  .section-icon {
+    font-size: 24px;
+  }
+
+  .accordion-subsection {
+    margin: 12px 16px;
+  }
+
+  .accordion-subheader {
+    padding: 16px 20px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .audit-accordion-layout {
+    display: grid;
+    grid-template-columns: 1fr 1200px 1fr;
+  }
+
+  .audit-header {
+    grid-column: 1 / -1;
+  }
+
+  .accordion-container {
+    grid-column: 2 / 3;
+  }
+}
+
+/* ============================================
+   SMOOTH ANIMATIONS
+   ============================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .accordion-header,
+  .accordion-subheader {
+    transition: background-color 0.2s ease;
+  }
+
+  .section-arrow,
+  .subsection-arrow {
+    transition: transform 0.2s ease;
+  }
+}

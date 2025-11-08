@@ -1,0 +1,121 @@
+/**
+ * ReportBuilder Styles
+ */
+
+.report-builder {
+  padding: 20px;
+}
+
+.report-builder.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.report-header h3 {
+  margin: 0;
+  font-size: 1.8em;
+  color: #2c3e50;
+}
+
+.report-empty {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+  color: #999;
+}
+
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.chapter-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.chapter-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.chapter-number {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.chapter-title {
+  flex: 1;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.chapter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #3498db;
+}
+
+.btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-icon.danger:hover {
+  background: #ffebee;
+  border-color: #e74c3c;
+}
+
+.chapter-preview {
+  color: #555;
+  line-height: 1.6;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+@media (max-width: 768px) {
+  .report-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .chapter-actions {
+    flex-wrap: wrap;
+  }
+}

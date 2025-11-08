@@ -1,0 +1,171 @@
+/**
+ * PendingIssuesCascade Styles
+ */
+
+.pending-cascade {
+  padding: 20px;
+}
+
+.pending-cascade.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.pending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+  gap: 20px;
+}
+
+.pending-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.8em;
+  color: #2c3e50;
+}
+
+.pending-description {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.95em;
+}
+
+.pending-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-value {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pending-empty {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+  color: #999;
+}
+
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.issue-card {
+  background: white;
+  border: 2px solid #f39c12;
+  border-left-width: 5px;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.issue-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.issue-card.resolved {
+  border-color: #27ae60;
+  opacity: 0.7;
+}
+
+.issue-header {
+  display: flex;
+  align-items: start;
+  gap: 15px;
+}
+
+.issue-checkbox {
+  margin-top: 3px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.issue-title-section {
+  flex: 1;
+}
+
+.issue-title {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 1.1em;
+}
+
+.issue-card.resolved .issue-title {
+  text-decoration: line-through;
+}
+
+.issue-source {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #e3f2fd;
+  color: #2196f3;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.issue-delete {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.issue-delete:hover {
+  opacity: 1;
+}
+
+.issue-notes {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #9b59b6;
+  color: #555;
+  line-height: 1.6;
+}
+
+.issue-notes strong {
+  color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+  .pending-header {
+    flex-direction: column;
+  }
+
+  .pending-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
