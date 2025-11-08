@@ -332,9 +332,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Risorse umane: organico adeguato. Risorse infrastrutturali: macchinari manutenuti secondo piano. Budget qualità allocato.',
-                        evidenceRef: 'Piano manutenzione 2025',
+                        evidence: {
+                            mainDocumentRef: 'Piano Manutenzione 2025, Budget SGQ 2025',
+                            detailedObservations: [
+                                'Verificata determinazione risorse per SGQ. Risorse umane: organico 32 dipendenti (dato marzo 2025) di cui 18 produzione, 8 qualità/tecnici, 6 amministrazione/commerciale. Rapporto adeguato a volume produttivo 2025 (target 450K pezzi/anno). RSGQ dedicato part-time 50%, 2 addetti controllo qualità full-time con formazione specifica (corsi metrologia, SPC). Nuova assunzione programmata Q3-2025: operatore pressa + tecnico controllo qualità.',
+                                'Infrastrutture: verificato Piano Manutenzione Preventiva 2025 per attrezzature critiche SGQ. Strumenti di misura (calibri, micrometri, durometro, proiettore profili) sottoposti a taratura annuale presso LAT accreditato (certificati taratura 2024 visionati, prossima scadenza giugno 2025). Macchinari produttivi (5 presse idrauliche, 2 CNC, 3 torni) con manutenzione programmata ogni 500 ore/esercizio. Registro manutenzioni aggiornato, ultima manutenzione pressa P-03 effettuata 15 maggio 2025.',
+                                'Budget SGQ 2025 allocato: €47.000 totali suddivisi in formazione qualità €12K, tarature/calibrazioni €8K, audit esterni €6K, consulenze €5K, software gestione documentale €10K, materiali consumabili CQ €6K. Budget approvato in Riesame Direzione gennaio 2025. A giugno 2025 spesi €22K (47% del budget), in linea con pianificazione semestrale. Positivo: risorse adeguate e monitorate.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-019-piano-manutenzione', 'ev-020-budget-sgq']
                     },
                     {
                         id: 'q7.2',
@@ -343,9 +350,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Matrice competenze aggiornata. Piano formazione 2025 in corso: formazione tecnica, sicurezza, qualità. Registri formativi completi.',
-                        evidenceRef: 'PR03.02 Piano Formazione 2025',
+                        evidence: {
+                            mainDocumentRef: 'PR03.02 Piano Formazione 2025 rev. 2, Matrice Competenze',
+                            detailedObservations: [
+                                'Esaminata Matrice Competenze aggiornata a marzo 2025. Per ogni ruolo definite competenze richieste (istruzione, esperienza, formazione specifica). Esempi: Operatore pressa richiede diploma tecnico + corso sicurezza macchine + affiancamento 40 ore; Addetto CQ richiede diploma + corso metrologia base + corso lettura disegno tecnico; RSGQ richiede laurea ingegneria/equipollente + corso Lead Auditor ISO 9001 + 3 anni esperienza sistemi gestione. Matrice compilata per 100% del personale, gap competenze identificati per 4 risorse (nuovi assunti 2024).',
+                                'Piano Formazione 2025 strutturato per colmare gap e aggiornamento continuo. Corsi erogati/pianificati: gennaio-marzo 2025 corso ISO 9001:2015 interno (8 ore, 22 partecipanti, docente RSGQ), aprile 2025 corso SPC Statistical Process Control (16 ore, 3 addetti CQ, ente esterno), maggio 2025 aggiornamento auditor interni (8 ore, 4 auditor). Pianificati Q3-Q4: corso 5S lean manufacturing, corso manutenzione preventiva, corso gestione reclami. Registro Formazione completo con: partecipanti, date, durata, attestati, test apprendimento.',
+                                'Verifica competenza sul campo: intervistati 3 operatori produzione, tutti dimostrano conoscenza procedure operative, capacità lettura disegno, uso strumenti misura. Intervistato addetto CQ: competente in uso calibro centesimale, durometro, compilazione report controllo. Evidenza efficacia formazione: tasso difettosità calato da 2.1% (2023) a 1.8% (2024) grazie a formazione tecnica operatori. Registri formativi ben organizzati, tracciabilità completa.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-021-matrice-competenze', 'ev-022-registro-formazione']
                     },
                     {
                         id: 'q7.3',
@@ -354,9 +368,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Politica comunicata in riunioni. Obiettivi condivisi. Consapevolezza verificata tramite interviste spot.',
-                        evidenceRef: 'Verbali briefing trimestrali',
+                        evidence: {
+                            mainDocumentRef: 'Verbali Briefing Trimestrali 2024-2025, Interviste Consapevolezza',
+                            detailedObservations: [
+                                'Verificata comunicazione e consapevolezza personale su Politica Qualità e obiettivi SGQ. Briefing trimestrali condotti da RSGQ con partecipazione capireparto e figure chiave (ultimo briefing 18 marzo 2025, 15 partecipanti). Argomenti trattati: aggiornamento Politica Qualità rev.3, illustrazione obiettivi 2025 (riduzione NC, miglioramento OTD, riduzione reclami), presentazione risultati audit interni, condivisione reclami clienti con lesson learned. Verbali con firme presenza acquisiti.',
+                                'Consapevolezza verificata tramite 8 interviste spot condotte durante audit il 20 giugno 2025. Risultati: 7 persone su 8 (87.5%) sanno indicare almeno 2 punti della Politica Qualità (eccellenza prodotto, soddisfazione cliente, miglioramento continuo). 6 persone su 8 (75%) conoscono almeno 1 obiettivo qualità 2025 rilevante per il proprio ruolo. Operatore produzione intervistato sa che obiettivo reparto è ridurre scarti sotto 1.5%, tecnico CQ sa che target è ridurre reclami a 5/anno.',
+                                'Comunicazione impatto individuale: ogni addetto CQ ha KPI personale (n. NC rilevate/lotto controllato), ogni operatore pressa ha indicatore pezzi conformi/turno visualizzato su scheda produzione. Dashboard qualità affisso in reparto produzione con grafici andamento NC mensili, OTD, reclami. Positivo: cultura qualità diffusa, consapevolezza buona ma migliorabile (target 90% consapevolezza completa da raggiungere con formazione continua).',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-023-verbali-briefing', 'ev-024-interviste-consapevolezza']
                     },
                     {
                         id: 'q7.4',
@@ -365,9 +386,34 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Comunicazioni interne: riunioni, email, bacheca. Comunicazioni esterne: portale clienti, email fornitori, documenti spedizione.',
-                        evidenceRef: 'PR01.08 Gestione Comunicazione',
+                        evidence: {
+                            mainDocumentRef: 'PR01.08 Gestione Comunicazione rev. 4 del 10/09/2024',
+                            detailedObservations: [
+                                'Esaminata procedura PR01.08 che definisce comunicazioni interne/esterne rilevanti per SGQ. Comunicazioni interne: riunioni trimestrali qualità (verbali), email informative RSGQ a tutti i dipendenti (newsletter mensile qualità), bacheca aziendale (affissione Politica, obiettivi, esiti audit), intranet aziendale (sezione Qualità con procedure, istruzioni operative, moduli). Registro comunicazioni interne: 24 email/newsletter inviate nel 2024, 4 riunioni plenarie, 12 affissioni bacheca.',
+                                'Comunicazioni esterne clienti: portale web clienti principali (upload certificati qualità, rapporti collaudo), email commerciale per conferme ordine/spedizioni (CC a RSGQ per ordini speciali), documenti accompagnatori con dichiarazione conformità CE quando applicabile, risposte a reclami entro 7 giorni (procedura PR04.03). Verificata comunicazione esterna con cliente XYZ: report collaudo lotto L-2025-045 caricato su portale il 10 giugno, email conferma spedizione con DDT e certificato materiale.',
+                                'Comunicazioni esterne fornitori: richieste offerta tramite portale acquisti, ordini via email con specifiche tecniche allegate, solleciti qualità (esempio: NC materiale acciaio fornitore STEEL-IT, email del 5 maggio 2025 richiedendo 8D report). Comunicazioni ente certificazione: scambio email per pianificazione audit, invio documenti pre-audit, follow-up NC da audit precedente. Positivo: flussi comunicazione ben definiti, tracciabilità garantita da archiviazione email e verbali.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-025-procedura-comunicazione', 'ev-026-registro-comunicazioni']
+                    },
+                    {
+                        id: 'q7.5',
+                        text: 'Le informazioni documentate richieste dal SGQ sono controllate?',
+                        clauseRef: '7.5',
+                        status: CHECKLIST_STATUS.COMPLIANT,
+                        score: 5,
+                        notes: 'Gestione documentale con procedura PR01.02. Sistema elettronico per controllo revisioni. Archivio cartaceo e digitale ben organizzato.',
+                        evidence: {
+                            mainDocumentRef: 'PR01.02 Gestione Informazioni Documentate rev. 5, Elenco Documenti SGQ',
+                            detailedObservations: [
+                                'Esaminata procedura PR01.02 Gestione Informazioni Documentate rev.5 che copre tutto il ciclo vita: creazione (richiesta/bozza), riesame (verifica RSGQ), approvazione (firma DG o delegato), distribuzione (intranet/copie controllate), archiviazione, obsolescenza. Documenti SGQ classificati in: procedure (PR), istruzioni operative (IO), moduli (MOD), registrazioni (REG). Ogni documento ha codice univoco, titolo, revisione, data, responsabile approvazione. Template standardizzati garantiscono uniformità.',
+                                'Sistema gestione documentale: software intranet SharePoint con sezione "Sistema Gestione Qualità" accessibile a tutto il personale (login con credenziali aziendali). Documenti organizzati per categoria (Contesto, Leadership, Pianificazione, Supporto, Operative, Valutazione, Miglioramento). Funzionalità controllo versione automatico: ogni revisione archiviata con timestamp, autore modifica, log modifiche. Documenti obsoleti spostati in cartella "Archiviati" non editabile, visibile solo a RSGQ per storico.',
+                                'Elenco Documenti SGQ aggiornato a maggio 2025: 18 procedure, 32 istruzioni operative, 45 moduli, migliaia di registrazioni. Verificata distribuzione controllata: procedure stampate in reparto produzione sono copie controllate (timbro rosso "COPIA CONTROLLATA n.X"), aggiornate da RSGQ ogni revisione. Test accesso intranet: documenti scaricabili in PDF (sola lettura), revisione corrente sempre evidenziata. Registrazioni archiviate per 10 anni (periodo ritenzione definito in tabella PR01.02 allegato A). Ottimo: gestione documentale efficace e tracciabile.',
+                            ]
+                        },
+                        auditDate: '2025-06-20',
+                        linkedEvidences: ['ev-027-procedura-documenti', 'ev-028-elenco-documenti']
                     }
                 ]
             },
