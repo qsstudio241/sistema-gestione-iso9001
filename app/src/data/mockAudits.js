@@ -429,9 +429,52 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.NON_COMPLIANT,
                         score: 2,
                         notes: 'NC: Valutazione fornitori non effettuata per 3 nuovi fornitori materie prime inseriti nel 2024. Mancano audit/questionari valutazione.',
-                        evidenceRef: 'Albo Fornitori 2025',
+                        evidence: {
+                            mainDocumentRef: 'Albo Fornitori 2025, Registro Valutazioni Fornitori',
+                            detailedObservations: [
+                                'Esaminato Albo Fornitori aggiornato a giugno 2025: 28 fornitori attivi di cui 15 materie prime (acciaio, alluminio, ottone), 8 lavorazioni esterne (trattamenti termici, galvanica), 5 servizi (trasporti, tarature, consulenze). Verificata procedura PR06.02 Gestione Fornitori rev.4 che richiede valutazione iniziale prima inserimento albo tramite: audit seconda parte (per fornitori strategici fatturato >€50K/anno) oppure questionario autovalutazione + verifica certificati (ISO 9001, campioni prodotto, referenze).',
+                                'Rilevata NON CONFORMITÀ MAGGIORE: 3 nuovi fornitori materie prime inseriti in albo nel 2024 (Fornitore STEEL-NEW codice F-2024-08, Fornitore BRASS-SUPPLY codice F-2024-11, Fornitore ALU-TECH codice F-2024-12) NON hanno valutazione iniziale documentata. Registro Valutazioni Fornitori non riporta alcuna evidenza di audit, questionari, o verifiche preliminari. Ordini già emessi a questi fornitori per complessivi €38.000 nel 2024-2025 senza preventiva qualifica conforme al punto 8.4.1 della norma ISO 9001:2015.',
+                                'NC associata a gap procedurale: workflow approvvigionamenti permette inserimento fornitore in gestionale senza check obbligatorio su valutazione qualità. Raccomandazione urgente: blocco inserimento nuovi fornitori senza approvazione RSGQ, implementazione checklist qualifica obbligatoria, audit retrospettivo sui 3 fornitori non qualificati entro settembre 2025. Azione correttiva AC-2025-05 aperta con priorità ALTA, responsabile Responsabile Acquisti, deadline 30/09/2025.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-029-albo-fornitori', 'ev-030-nc-fornitori']
+                    },
+                    {
+                        id: 'q8.5',
+                        text: 'I requisiti per prodotti e servizi sono stati determinati e riesaminati?',
+                        clauseRef: '8.5',
+                        status: CHECKLIST_STATUS.COMPLIANT,
+                        score: 4,
+                        notes: 'Riesame contratti prima accettazione. Specifiche tecniche definite. Conferme d\'ordine con specifiche allegate.',
+                        evidence: {
+                            mainDocumentRef: 'PR05.01 Riesame Contratti rev. 3, Ordini Clienti 2025',
+                            detailedObservations: [
+                                'Esaminata procedura PR05.01 Riesame Contratti che definisce processo di acquisizione e riesame requisiti cliente. Per ogni richiesta offerta/ordine, l\'ufficio commerciale verifica: fattibilità tecnica (disponibilità stampi, capacità produttiva, specifiche materiale), conformità a standard applicabili (norme UNI, DIN, specifiche cliente), tempi consegna compatibili con pianificazione, pricing competitivo. Riesame formalizzato su Modulo MOD-COM-02 "Scheda Riesame Offerta" con firme Resp. Commerciale e Resp. Tecnico.',
+                                'Verificati 5 ordini clienti random emessi a giugno 2025. Ordine OC-2025-156 cliente XYZ Automotive per 5.000 pz raccordo cod. R-45B: scheda riesame compilata il 5 giugno, verificata disponibilità stampo S-45B, materiale acciaio C45 conforme specifica cliente, disegno tecnico rev.C ricevuto e archiviato, tolleranze dimensionali ±0.05mm verificate raggiungibili con attrezzature disponibili, tempo consegna 4 settimane accettato. Conferma d\'ordine emessa il 6 giugno con allegato: disegno, specifica materiale, certificato 3.1 richiesto.',
+                                'Positivo: processo riesame efficace, nessun ordine accettato senza verifica fattibilità. Tracciabilità completa da richiesta cliente a conferma ordine. Criticità minore: in 2 casi su 5 il riesame è stato formalizzato dopo invio conferma ordine (gap temporale 1-2 giorni), non conforme a requisito 8.2.3.2 che richiede riesame prima impegno con cliente. Suggerimento: blocco sistema gestionale che impedisce emissione conferma senza flag "Riesame Approvato". OSSERVAZIONE segnalata ma non NC.',
+                            ]
+                        },
+                        auditDate: '2025-06-20',
+                        linkedEvidences: ['ev-031-procedura-riesame', 'ev-032-ordini-clienti']
+                    },
+                    {
+                        id: 'q8.6',
+                        text: 'I processi produttivi sono pianificati e controllati?',
+                        clauseRef: '8.6',
+                        status: CHECKLIST_STATUS.COMPLIANT,
+                        score: 4,
+                        notes: 'Pianificazione produzione con software gestionale. Controlli in processo definiti. Istruzioni operative disponibili per tutti i processi.',
+                        evidence: {
+                            mainDocumentRef: 'Piano Produzione Settimanale, Istruzioni Operative Processo',
+                            detailedObservations: [
+                                'Verificata pianificazione e controllo processi produttivi. Pianificazione settimanale tramite software gestionale ERP con modulo MRP (Material Requirements Planning): ordini cliente inseriti, sistema calcola fabbisogni materiali, genera ordini produzione con sequenza ottimizzata per minimizzare setup cambio stampo. Piano produzione settimana 24-28 giugno visionato: 12 ordini produzione schedulati su 5 presse, priorità assegnata in base a data consegna cliente, buffer 2 giorni per controllo qualità e spedizione.',
+                                'Controlli in processo definiti in Istruzioni Operative specifiche per ogni fase. IO-PROD-01 "Pressatura Raccordi": definisce parametri processo (pressione 180 bar, temperatura stampo 25°C, ciclo 8 sec/pezzo), controlli dimensionali primo pezzo (calibro su diametro esterno, spessore parete, lunghezza), autocontrollo operatore ogni 50 pz (3 quote critiche con calibro passa/non passa), controllo 100% difetti visivi (bave, cricche, deformazioni). Visitata linea pressa P-02: operatore esegue autocontrollo, compila registro controllo, pezzi NC segregati in cassetta rossa.',
+                                'Istruzioni Operative disponibili e aggiornate per tutti i 15 processi produttivi (pressatura, tornitura, sbavatura, lavaggio, controllo qualità finale, imballaggio). Affisse a bordo macchina in buste plastificate, revisione corrente evidenziata. Intervistato operatore pressa: conosce parametri processo, sa come gestire NC (fermare produzione, chiamare capoturno, compilare modulo segnalazione). Positivo: processi ben controllati, istruzioni chiare, autocontrollo efficace.',
+                            ]
+                        },
+                        auditDate: '2025-06-20',
+                        linkedEvidences: ['ev-033-piano-produzione', 'ev-034-istruzioni-operative']
                     },
                     {
                         id: 'q8.7',
@@ -440,9 +483,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Procedura gestione NC output. Materiale NC segregato in area dedicata. Analisi cause e azioni correttive documentate.',
-                        evidenceRef: 'PR05.02 Gestione NC Output',
+                        evidence: {
+                            mainDocumentRef: 'PR05.02 Gestione NC Output rev. 4, Registro NC Output 2025',
+                            detailedObservations: [
+                                'Esaminata procedura PR05.02 Gestione Non Conformità Output che definisce: identificazione NC (operatore, controllo qualità, cliente), segregazione immediata (etichetta rossa, area quarantena), decisione trattamento (scarto, rilavorazione se possibile, deroga cliente se applicabile), analisi causa radice per NC ripetitive, azioni correttive se necessario. Responsabilità: identificazione operatore/CQ, decisione trattamento Responsabile Produzione, analisi cause RSGQ, approvazione deroga DG.',
+                                'Visitata area quarantena materiale NC: zona dedicata delimitata con nastro giallo-nero, cartello "MATERIALE NON CONFORME - NON UTILIZZARE". Al momento audit presenti 2 cassette con materiale NC: lotto L-2025-067 (50 pz raccordo con diametro fuori tolleranza +0.08mm, in attesa decisione se rilavorabile), lotto L-2025-071 (12 pz con bave eccessive, da scartare). Ogni cassetta con etichetta NC compilata: codice prodotto, lotto, data rilevazione, difetto, quantità, decisione (pending/scarto).',
+                                'Verificato Registro NC Output 2025: 23 NC registrate da gennaio a giugno, di cui 18 scartate (78%), 3 rilavorati (13%), 2 derogate da cliente (9%). NC più frequenti: difetti dimensionali 35%, difetti superficiali 30%, bave 20%, errore materiale 15%. Analisi 8D condotta su NC ricorrenti (esempio: NC ripetitiva su lotto raccordo R-33A per stampo usurato, azione: revisione stampo effettuata). Positivo: sistema NC ben strutturato, segregazione efficace, tracciabilità completa, analisi causa radice su NC significative.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-035-procedura-nc-output', 'ev-036-registro-nc']
                     }
                 ]
             },
@@ -458,9 +508,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'KPI definiti: OTD, NC interne, reclami clienti, scostamenti budget. Monitoraggio mensile tramite Cruscotto Indicatori PR02.07.',
-                        evidenceRef: 'PR02.07 Cruscotto Indicatori rev.2',
+                        evidence: {
+                            mainDocumentRef: 'PR02.07 Cruscotto Indicatori Qualità rev. 2, Report KPI Giugno 2025',
+                            detailedObservations: [
+                                'Esaminato sistema di monitoraggio e misurazione prestazioni SGQ tramite procedura PR02.07 Cruscotto Indicatori. Definiti 12 KPI strategici monitorati mensilmente: 1) OTD On-Time Delivery (target 95%, attuale 93.2%), 2) Tasso NC interne (target 1.5%, attuale 1.7%), 3) Reclami clienti (target 5/anno, attuale 3 da gen-giu), 4) Soddisfazione cliente (target 85%, attuale 82%), 5) Conformità fornitori (target 98%, attuale 96%), 6) Ore formazione/dipendente (target 16h/anno, attuale 9h a giugno), 7-12) altri KPI operativi.',
+                                'Report KPI giugno 2025 visionato: ogni indicatore presentato con grafico trend ultimi 12 mesi, valore corrente vs target, semaforo (verde/giallo/rosso), note su scostamenti. Esempio: OTD giugno 93.2% (target 95%) in giallo, causa principale ritardi approvvigionamento acciaio da fornitore strategico (5 ordini consegnati con 3-7 giorni ritardo). Azioni: sollecito fornitore, buffer stock +10% per articoli critici. Reclami clienti 3 da gennaio, tutti chiusi, trend positivo rispetto 8 reclami 2024.',
+                                'Analisi e valutazione: Report KPI presentato mensilmente in riunione management (1° lunedì del mese), discussi scostamenti significativi, definite azioni correttive se necessario. Dashboard KPI affisso in reparto produzione per condivisione con operatori. KPI integrati in MBO responsabili funzione (es. Resp. Produzione ha bonus collegato a riduzione NC interne). Positivo: sistema misurazione completo, analisi regolare, decisioni data-driven. Suggerimento: digitalizzare dashboard con aggiornamento real-time.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: ['ev-005-kpi-dashboard']
+                        linkedEvidences: ['ev-037-cruscotto-kpi', 'ev-038-report-giugno-2025']
                     },
                     {
                         id: 'q9.1.2',
@@ -469,9 +526,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.PARTIAL,
                         score: 3,
                         notes: 'OSS: Questionari soddisfazione inviati ma tasso risposta basso (35%). Migliorare follow-up e analisi feedback.',
-                        evidenceRef: 'Report Soddisfazione Cliente 2024',
+                        evidence: {
+                            mainDocumentRef: 'Report Soddisfazione Cliente 2024, Questionari 2025',
+                            detailedObservations: [
+                                'Esaminato sistema customer satisfaction. Questionari inviati annualmente a 45 clienti principali (fatturato >€20K/anno). Questionario strutturato su 5 aree: qualità prodotto (6 domande), puntualità consegne (4 domande), servizio commerciale (5 domande), assistenza tecnica (3 domande), rapporto qualità-prezzo (2 domande). Scala Likert 1-5 (1=molto insoddisfatto, 5=molto soddisfatto). Inviati via email a dicembre 2024, reminder dopo 15 giorni, chiusura raccolta gennaio 2025.',
+                                'Rilevata OSSERVAZIONE: tasso risposta 2024 solo 35% (16 questionari compilati su 45 inviati), in calo rispetto 67% del 2023 (30 su 45). Causa probabile: nessun follow-up telefonico, reminder email generica poco efficace, mancanza incentivo (es. sconto 2% per chi risponde). Rappresentatività campione compromessa: clienti soddisfatti tendono a non rispondere, rischio bias negativo. Raccomandazione: implementare follow-up telefonico personalizzato, questionario semplificato (max 10 domande), incentivo piccolo, frequenza semestrale invece che annuale.',
+                                'Risultati 2024 (16 risposte): soddisfazione media 4.1/5 (82%). Punti forza: qualità prodotto 4.5/5, assistenza tecnica 4.3/5. Criticità: puntualità consegne 3.8/5 (coerente con OTD 93%), rapporto qualità-prezzo 3.9/5. Feedback qualitativi: "prodotto eccellente ma tempi consegna migliorabili", "necessario portale online per tracking ordini". Azioni implementate: buffer stock, portale clienti in sviluppo (go-live previsto Q4-2025). Analisi presentata in Riesame Direzione febbraio 2025.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-007-questionari-2024', 'ev-039-report-customer-satisfaction']
                     },
                     {
                         id: 'q9.2',
@@ -480,9 +544,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Programma audit interni 2025 definito e rispettato. Audit Q1 e Q2 completati. Rapporti audit archiviati. Azioni correttive tracciate.',
-                        evidenceRef: 'PR04.01 Programma Audit 2025',
+                        evidence: {
+                            mainDocumentRef: 'PR04.01 Programma Audit Interni 2025, Rapporti Audit Q1-Q2',
+                            detailedObservations: [
+                                'Esaminato Programma Audit Interni 2025 approvato da DG il 15 gennaio 2025. Pianificati 4 audit interni annuali (frequenza trimestrale) per coprire tutte le clausole ISO 9001:2015 e tutti i processi aziendali. Audit Q1-2025 (25-26 marzo): clausole 4-5-6-7, processi Contesto/Leadership/Pianificazione/Supporto, auditor Marco C. (esterno) + Claudia P. (interna). Audit Q2-2025 (19-20 giugno): clausole 8-9-10, processi Operative/Valutazione/Miglioramento, stesso team. Audit Q3-Q4 pianificati per settembre e dicembre.',
+                                'Verificati Rapporti Audit Q1 e Q2. Rapporto Q1: audit durata 2 giorni, 12 interviste, 8 processi auditati, 0 NC maggiori, 2 NC minori (formazione operatori, taratura strumento), 5 OSS (opportunità miglioramento). Rapporto completo con: campo applicazione, metodologia, team audit, sintesi findings per clausola, dettaglio NC con evidenze, raccomandazioni. Rapporto Q2 (questo audit, 20 giugno): 1 NC maggiore (punto 8.4 fornitori), 3 OSS (punto 5.1.2 customer satisfaction, punto 9.1.2 tasso risposta questionari, altro).',
+                                'Gestione follow-up audit: ogni NC e OSS tracciata in Registro Azioni Correttive con responsabile, deadline, stato avanzamento. NC minori Q1 entrambe chiuse entro maggio 2025 con verifica efficacia: formazione operatori completata (corso 8 ore, 18 partecipanti), strumento ritarato presso LAT accreditato. Team auditor competente: Marco C. Lead Auditor certificato CEPAS, Claudia P. Internal Auditor corso 24h. Indipendenza garantita: auditor non auditano proprie aree. Ottimo: programma ben strutturato, audit efficaci, follow-up sistematico.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-040-programma-audit-2025', 'ev-041-rapporti-audit']
                     },
                     {
                         id: 'q9.3',
@@ -491,9 +562,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Riesami direzione trimestrali: 2024-Q4, 2025-Q1, 2025-Q2 completati. Input/output documentati. Decisioni registrate.',
-                        evidenceRef: 'Verbali Riesame Direzione 2025',
+                        evidence: {
+                            mainDocumentRef: 'Verbali Riesame Direzione 2024-Q4, 2025-Q1, 2025-Q2',
+                            detailedObservations: [
+                                'Esaminati Verbali Riesame Direzione trimestrale conforme al punto 9.3 norma ISO 9001:2015. Riesame Q4-2024 (15 dicembre 2024): presenti DG Claudia Pisani, RSGQ Claudia Pisani, Resp. Produzione E. Zanotti, Resp. Commerciale. Input trattati: stato azioni Riesame precedente, cambiamenti fattori esterni (aumento costo energia +15%, nuovi competitor), feedback clienti (8 reclami 2024), prestazioni processi (OTD 92%, NC 1.8%), audit interni Q3-Q4 (2 NC minori), conformità fornitori (96%). Output: approvazione investimento €45K strumentazione CQ, obiettivi 2025, budget SGQ €47K.',
+                                'Riesame Q1-2025 (20 marzo 2025): input aggiuntivi rispetto Q4 includono cambiamenti organizzativi (dimissioni Resp. Produzione, nomina interinale E. Zanotti), adeguatezza risorse (criticità: mancanza tecnico CQ, pianificata assunzione Q3), opportunità miglioramento (automazione taglio, digitalizzazione). Output: approvazione Piano Formazione 2025 €12K, definizione nuovi obiettivi MBO, rinvio certificazione ISO 14001 al 2026 per prioritizzare consolidamento ISO 9001.',
+                                'Riesame Q2-2025 (previsto 25 giugno, dopo questo audit): verranno trattati esiti audit interno 20 giugno (NC maggiore fornitori), andamento KPI primo semestre, avanzamento azioni Q1, adeguatezza risorse post-investimenti. Periodicità trimestrale superiore a requisito minimo norma (almeno annuale), dimostra impegno DG nel monitoraggio continuo SGQ. Verbali completi, decisioni tracciabili, follow-up sistematico. Ottimo: Management Review efficace come strumento di governance SGQ.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-005-verbale-riesame-q4-2024', 'ev-006-verbale-riesame-q1-2025']
                     }
                 ]
             },
@@ -509,9 +587,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Procedura gestione NC e AC operativa. NC 2024: 8 chiuse con efficacia verificata. NC 2025: 3 aperte in corso trattamento.',
-                        evidenceRef: 'Registro NC 2024-2025',
+                        evidence: {
+                            mainDocumentRef: 'PR04.02 Gestione NC e Azioni Correttive rev. 5, Registro NC 2024-2025',
+                            detailedObservations: [
+                                'Esaminata procedura PR04.02 Gestione Non Conformità e Azioni Correttive conforme al punto 10.2 norma. Processo strutturato in 6 step: 1) Reagire alla NC (controllo immediato, correzione se possibile, contenimento), 2) Valutare necessità AC (analisi impatto, NC isolata o sistemica, causa radice), 3) Attuare AC (piano azioni, responsabile, deadline, risorse), 4) Riesaminare efficacia AC (verifica dati dopo implementazione, chiusura o riapertura), 5) Aggiornare rischi/opportunità se NC evidenzia gap, 6) Modificare SGQ se necessario (procedure, risorse, controlli).',
+                                'Verificato Registro NC 2024-2025: anno 2024 registrate 8 NC di cui 5 interne (audit, controlli processo) e 3 esterne (reclami clienti, audit certificazione). Tutte le 8 NC 2024 chiuse con azioni correttive implementate e efficacia verificata. Esempio NC-2024-03: reclamo cliente per lotto difettoso (50 pz con diametro fuori tolleranza), causa radice stampo usurato, AC implementata revisione stampo + controllo 100% lotti successivi, efficacia verificata con zero reclami su quel codice prodotto per 6 mesi successivi.',
+                                'Anno 2025 (gen-giu): 4 NC aperte di cui 1 maggiore (fornitori, da questo audit), 3 minori (da audit Q1). NC minori Q1 già chiuse con efficacia verificata (formazione operatori effettuata, strumento ritarato). NC maggiore fornitori (NC-2025-05) aperta il 20 giugno, AC pianificata: procedura qualifica fornitori + audit retrospettivo 3 fornitori, responsabile Resp. Acquisti, deadline 30/09/2025, stato IN PROGRESS. Positivo: sistema AC ben strutturato, analisi causa radice sistematica (5 Why, Ishikawa), verifica efficacia rigorosa, tracciabilità completa.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-042-procedura-ac', 'ev-043-registro-nc']
                     },
                     {
                         id: 'q10.3',
@@ -520,9 +605,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Iniziative miglioramento: digitalizzazione ordini (+30% efficienza), formazione personale, riduzione tempi setup (-12%).',
-                        evidenceRef: 'Piano Miglioramento 2025',
+                        evidence: {
+                            mainDocumentRef: 'Piano Miglioramento 2025, Report Iniziative Miglioramento',
+                            detailedObservations: [
+                                'Esaminato Piano Miglioramento Continuo 2025 approvato in Riesame Direzione gennaio 2025. Identificate 8 iniziative strategiche: 1) Digitalizzazione processo ordini (implementazione portale web clienti per invio ordini online, tracking spedizioni real-time, upload certificati qualità), investimento €18K, go-live previsto Q4-2025, beneficio atteso +30% efficienza gestione ordini, riduzione errori data entry. 2) Automazione processo taglio barre (macchina taglio automatico con caricatore), investimento €80K rinviato al 2026 per priorità altre iniziative.',
+                                '3) Formazione continua personale: Piano Formazione 2025 con 16 ore medie/dipendente (+60% rispetto 2024), focus su competenze tecniche (SPC, lettura disegno, problem solving), sicurezza, qualità. Budget €12K. A giugno completate 9 ore medie/dipendente, on track per target annuale. 4) Riduzione tempi setup cambio produzione: progetto kaizen con team operatori, obiettivo -20% tempo setup (da 45 min a 36 min medi). Risultato parziale a giugno: -12% (40 min), azioni in corso per raggiungere target (preparazione stampi offline, standardizzazione sequenza operazioni).',
+                                '5) Implementazione SPC Statistical Process Control su 3 processi critici: monitoraggio real-time parametri processo, carte di controllo, allarmi automatici per deriva processo. Pilota avviato a maggio su pressa P-01, risultati positivi (+15% capacità processo Cp), estensione programmata Q3-2025 su altre presse. 6-8) altre iniziative minori. Positivo: cultura miglioramento continuo radicata, iniziative data-driven, coinvolgimento operatori, misurazione benefici. Evidenza efficacia: KPI in miglioramento (NC da 1.8% a 1.7%, OTD da 92% a 93.2%), incremento soddisfazione cliente.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-044-piano-miglioramento', 'ev-045-report-iniziative']
                     }
                 ]
             }
