@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import { useStorage } from "../contexts/StorageContext";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -14,6 +15,8 @@ import ChecklistModule from "./ChecklistModule";
 // import AuditOutcomeSection from './AuditOutcomeSection';
 
 function AuditAccordionLayout({ currentAudit, onUpdate }) {
+  const { initializeChecklist } = useStorage();
+
   // Stato per gestire quali sezioni sono aperte
   const [openSections, setOpenSections] = useState({
     "general-data": true, // Aperta di default
@@ -54,7 +57,32 @@ function AuditAccordionLayout({ currentAudit, onUpdate }) {
   };
 
   const handleStandardsUpdate = (updatedStandards) => {
+    const previousStandards = currentAudit.metadata.selectedStandards || [];
+
+    // Trova standard aggiunti
+    const addedStandards = updatedStandards.filter(
+      (std) => !previousStandards.includes(std)
+    );
+
+    // Trova standard rimossi
+    const removedStandards = previousStandards.filter(
+      (std) => !updatedStandards.includes(std)
+    );
+
+    // Aggiorna metadata
     onUpdate("selectedStandards", updatedStandards);
+
+    // Inizializza checklist per standard aggiunti
+    addedStandards.forEach((standard) => {
+      if (standard === "ISO_9001") {
+        // Auto-inizializza checklist ISO 9001
+        setTimeout(() => initializeChecklist("ISO_9001"), 100);
+      }
+      // TODO: Implementare ISO_14001 e ISO_45001 quando disponibili
+    });
+
+    // TODO: Rimuovere checklist per standard deselezionati
+    // (per ora lasciamo la checklist anche se deselezionato, per evitare perdita dati)
   };
 
   // Guardia: se currentAudit è null, mostra messaggio

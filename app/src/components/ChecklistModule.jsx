@@ -8,10 +8,17 @@ import React, { useState, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
+import { validateQuestion } from "../utils/checklistValidation";
 import "./ChecklistModule.css";
 
 function ChecklistModule() {
-  const { currentAudit, updateCurrentAudit } = useStorage();
+  const {
+    currentAudit,
+    updateCurrentAudit,
+    auditSaveStatus,
+    isSaving,
+    initializeChecklist,
+  } = useStorage();
 
   const [expandedClauses, setExpandedClauses] = useState(new Set(["4"]));
   const [selectedNorm, setSelectedNorm] = useState("ISO_9001");
@@ -73,10 +80,30 @@ function ChecklistModule() {
 
   const checklist = currentAudit.checklist?.[selectedNorm];
 
-  if (!checklist) {
+  // Verifica se checklist è vuota (non inizializzata)
+  const isChecklistEmpty = !checklist || Object.keys(checklist).length === 0;
+
+  if (isChecklistEmpty) {
     return (
       <div className="checklist-module empty">
-        <p>Checklist non disponibile per {selectedNorm}</p>
+        <div className="empty-checklist-card">
+          <div className="empty-icon">📋</div>
+          <h3>Checklist Non Inizializzata</h3>
+          <p>
+            Questo audit non ha ancora una checklist compilabile per la norma{" "}
+            <strong>{selectedNorm.replace("ISO_", "ISO ")}</strong>.
+          </p>
+          <p className="hint">
+            Clicca il pulsante qui sotto per inizializzare la struttura con le
+            26 domande previste dalla norma ISO 9001:2015 (clausole 4-10).
+          </p>
+          <button
+            className="btn btn-primary btn-large"
+            onClick={() => initializeChecklist(selectedNorm)}
+          >
+            ✨ Inizializza Checklist ISO 9001
+          </button>
+        </div>
       </div>
     );
   }
@@ -106,11 +133,53 @@ function ChecklistModule() {
   const handleQuestionUpdate = (clauseId, questionId, field, value) => {
     updateCurrentAudit((audit) => {
       const updatedAudit = { ...audit };
-      const clause = updatedAudit.checklist[selectedNorm].clauses[clauseId];
+
+      // Accesso corretto alla struttura: checklist[norm][clauseId]
+      const clause = updatedAudit.checklist[selectedNorm][clauseId];
+
+      if (!clause || !clause.questions) {
+        console.error(`Clausola ${clauseId} non trovata in ${selectedNorm}`);
+        return audit; // Ritorna audit non modificato
+      }
+
       const question = clause.questions.find((q) => q.id === questionId);
 
       if (question) {
-        question[field] = value;
+        // Sanitizza input prima del salvataggio
+        let sanitizedValue = value;
+
+        if (field === "notes" || field === "evidenceRef") {
+          // Trim whitespace per campi testo
+          sanitizedValue = typeof value === "string" ? value.trim() : value;
+
+          // Limita lunghezza (max 5000 caratteri per notes)
+          if (field === "notes" && sanitizedValue.length > 5000) {
+            console.warn(
+              `Note troppo lunghe (${sanitizedValue.length} caratteri), troncate a 5000`
+            );
+            sanitizedValue = sanitizedValue.substring(0, 5000);
+          }
+        }
+
+        if (field === "status") {
+          // Verifica che lo status sia valido
+          const validStatuses = Object.values(CHECKLIST_STATUS);
+          if (!validStatuses.includes(sanitizedValue)) {
+            console.error(`Status non valido: ${sanitizedValue}`);
+            return audit; // Non salvare se status invalido
+          }
+        }
+
+        question[field] = sanitizedValue;
+
+        // Valida domanda dopo modifica (solo warning, non blocca save)
+        const validation = validateQuestion(question);
+        if (!validation.isValid) {
+          console.warn(
+            `⚠️ Domanda ${questionId} validazione:`,
+            validation.errors
+          );
+        }
 
         // Aggiorna timestamp
         updatedAudit.metadata.lastModified = new Date().toISOString();
@@ -138,6 +207,11 @@ function ChecklistModule() {
           totalQuestions > 0
             ? Math.round((totalAnswered / totalQuestions) * 100)
             : 0;
+      } else {
+        console.error(
+          `Domanda ${questionId} non trovata nella clausola ${clauseId}`
+        );
+        return audit; // Ritorna audit non modificato
       }
 
       return updatedAudit;
@@ -148,28 +222,6 @@ function ChecklistModule() {
 
   return (
     <div className="checklist-module">
-      {/* Tabs norme (se multi-standard) */}
-      {availableNorms.length > 1 && (
-        <div className="norm-tabs">
-          {availableNorms.map((norm) => {
-            const normStats = calculateNormCompletion(
-              currentAudit.checklist,
-              norm
-            );
-            return (
-              <button
-                key={norm}
-                className={`norm-tab ${selectedNorm === norm ? "active" : ""}`}
-                onClick={() => setSelectedNorm(norm)}
-              >
-                <span className="norm-name">{norm.replace("_", " ")}</span>
-                <span className="norm-completion">{normStats.percentage}%</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Header con statistiche */}
       <div className="checklist-header">
         <div className="checklist-title-section">
@@ -177,6 +229,13 @@ function ChecklistModule() {
             <span className="stat-badge">
               {stats.answered}/{stats.total} domande
             </span>
+            {/* Auto-save indicator */}
+            {isSaving && (
+              <span className="stat-badge saving">💾 Salvataggio...</span>
+            )}
+            {auditSaveStatus === "saved" && (
+              <span className="stat-badge saved">✓ Salvato</span>
+            )}
           </div>
         </div>
 
@@ -367,7 +426,7 @@ function QuestionCard({ clauseId, question, onUpdate }) {
   return (
     <div className={`question-card status-${question.status}`}>
       <div className="question-header">
-        <span className="question-reference">{question.clauseReference}</span>
+        <span className="question-reference">{question.clauseRef}</span>
         <span className="question-text">{question.text}</span>
       </div>
 

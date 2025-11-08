@@ -14,6 +14,7 @@ import React, {
 import { MOCK_AUDITS } from "../data/mockAudits";
 import { createNewAudit, validateAuditSchema } from "../data/auditDataModel";
 import { useAutoSaveMultiple } from "../hooks/useAutoSave";
+import { initializeISO9001Checklist } from "../utils/checklistInitializer";
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -36,8 +37,12 @@ export function StorageProvider({ children, useMockData = true }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Audit corrente (computed)
-  const currentAudit = audits.find((a) => a.id === currentAuditId) || null;
+  // Audit corrente (computed) - supporta sia metadata.id che id top-level
+  const currentAudit =
+    audits.find((a) => {
+      const auditId = a.metadata?.id || a.id;
+      return auditId === currentAuditId;
+    }) || null;
 
   // DEBUG: Log per capire il problema
   useEffect(() => {
@@ -45,8 +50,8 @@ export function StorageProvider({ children, useMockData = true }) {
       auditsCount: audits.length,
       currentAuditId,
       currentAudit: currentAudit ? "FOUND" : "NULL",
-      firstAuditId: audits[0]?.id,
-      auditsIds: audits.map((a) => a.id),
+      firstAuditId: audits[0]?.metadata?.id || audits[0]?.id,
+      auditsIds: audits.map((a) => a.metadata?.id || a.id),
     });
   }, [audits, currentAuditId, currentAudit]);
 
@@ -74,7 +79,9 @@ export function StorageProvider({ children, useMockData = true }) {
       } else if (useMockData) {
         // Prima inizializzazione: usa mock data
         setAudits(MOCK_AUDITS);
-        setCurrentAuditId(MOCK_AUDITS[0]?.id || null);
+        const firstAuditId =
+          MOCK_AUDITS[0]?.metadata?.id || MOCK_AUDITS[0]?.id || null;
+        setCurrentAuditId(firstAuditId);
         console.log(`✅ Inizializzato con ${MOCK_AUDITS.length} mock audit`);
       } else {
         // Nessun dato
@@ -108,7 +115,8 @@ export function StorageProvider({ children, useMockData = true }) {
     (updater) => {
       setAudits((prevAudits) => {
         return prevAudits.map((audit) => {
-          if (audit.metadata.id === currentAuditId) {
+          const auditId = audit.metadata?.id || audit.id;
+          if (auditId === currentAuditId) {
             const updated =
               typeof updater === "function" ? updater(audit) : updater;
 
@@ -132,7 +140,10 @@ export function StorageProvider({ children, useMockData = true }) {
    */
   const switchAudit = useCallback(
     (auditId) => {
-      const audit = audits.find((a) => a.metadata.id === auditId);
+      const audit = audits.find((a) => {
+        const id = a.metadata?.id || a.id;
+        return id === auditId;
+      });
       if (audit) {
         setCurrentAuditId(auditId);
         console.log(`✅ Switched to audit: ${audit.metadata.auditNumber}`);
@@ -168,7 +179,10 @@ export function StorageProvider({ children, useMockData = true }) {
    */
   const duplicateAudit = useCallback(
     (auditId, newMetadata) => {
-      const sourcAudit = audits.find((a) => a.metadata.id === auditId);
+      const sourcAudit = audits.find((a) => {
+        const id = a.metadata?.id || a.id;
+        return id === auditId;
+      });
       if (!sourcAudit) {
         console.warn(`⚠️ Audit not found for duplication: ${auditId}`);
         return null;
@@ -205,20 +219,30 @@ export function StorageProvider({ children, useMockData = true }) {
    */
   const deleteAudit = useCallback(
     (auditId) => {
-      const audit = audits.find((a) => a.metadata.id === auditId);
+      const audit = audits.find((a) => {
+        const id = a.metadata?.id || a.id;
+        return id === auditId;
+      });
       if (!audit) {
         console.warn(`⚠️ Audit not found for deletion: ${auditId}`);
         return false;
       }
 
       setAudits((prevAudits) =>
-        prevAudits.filter((a) => a.metadata.id !== auditId)
+        prevAudits.filter((a) => {
+          const id = a.metadata?.id || a.id;
+          return id !== auditId;
+        })
       );
 
       // Se elimino audit corrente, switcha al primo disponibile
       if (auditId === currentAuditId) {
-        const remaining = audits.filter((a) => a.metadata.id !== auditId);
-        setCurrentAuditId(remaining[0]?.metadata.id || null);
+        const remaining = audits.filter((a) => {
+          const id = a.metadata?.id || a.id;
+          return id !== auditId;
+        });
+        const nextId = remaining[0]?.metadata?.id || remaining[0]?.id || null;
+        setCurrentAuditId(nextId);
       }
 
       // Rimuovi anche localStorage singolo audit
@@ -231,11 +255,66 @@ export function StorageProvider({ children, useMockData = true }) {
   );
 
   /**
+   * Inizializza checklist per una norma specifica
+   * @param {string} standard - ISO_9001, ISO_14001, ISO_45001
+   */
+  const initializeChecklist = useCallback(
+    (standard = "ISO_9001") => {
+      if (!currentAudit) {
+        console.warn("⚠️ No current audit to initialize checklist");
+        return false;
+      }
+
+      // Solo ISO 9001 supportato per ora
+      if (standard !== "ISO_9001") {
+        console.warn(`⚠️ Standard ${standard} not yet supported`);
+        return false;
+      }
+
+      updateCurrentAudit((audit) => {
+        const updatedAudit = { ...audit };
+
+        // Inizializza checklist ISO 9001 se non esiste
+        if (!updatedAudit.checklist) {
+          updatedAudit.checklist = {};
+        }
+
+        if (
+          !updatedAudit.checklist.ISO_9001 ||
+          Object.keys(updatedAudit.checklist.ISO_9001).length === 0
+        ) {
+          updatedAudit.checklist.ISO_9001 = initializeISO9001Checklist();
+          updatedAudit.metadata.lastModified = new Date().toISOString();
+
+          // Aggiorna metriche
+          const totalQuestions = Object.values(
+            updatedAudit.checklist.ISO_9001
+          ).reduce((sum, clause) => sum + (clause.questions?.length || 0), 0);
+          updatedAudit.metrics.totalQuestions = totalQuestions;
+
+          console.log(
+            `✅ Initialized ISO 9001 checklist (${totalQuestions} questions)`
+          );
+        } else {
+          console.log("ℹ️ Checklist already initialized");
+        }
+
+        return updatedAudit;
+      });
+
+      return true;
+    },
+    [currentAudit, updateCurrentAudit]
+  );
+
+  /**
    * Reset a mock data (per testing)
    */
   const resetToMockData = useCallback(() => {
     setAudits(MOCK_AUDITS);
-    setCurrentAuditId(MOCK_AUDITS[0]?.id || null);
+    const firstAuditId =
+      MOCK_AUDITS[0]?.metadata?.id || MOCK_AUDITS[0]?.id || null;
+    setCurrentAuditId(firstAuditId);
     localStorage.removeItem(STORAGE_KEYS.AUDITS);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_AUDIT_ID);
     console.log("✅ Reset to mock data");
@@ -316,6 +395,7 @@ export function StorageProvider({ children, useMockData = true }) {
     createAudit,
     duplicateAudit,
     deleteAudit,
+    initializeChecklist,
 
     // File System
     connectFileSystem,

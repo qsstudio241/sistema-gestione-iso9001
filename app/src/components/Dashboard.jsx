@@ -15,10 +15,17 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("accordion");
-  const { currentAudit, updateAuditMetadata } = useStorage();
+  const { currentAudit, updateCurrentAudit } = useStorage();
 
   const handleMetadataUpdate = (field, value) => {
-    updateAuditMetadata({ [field]: value });
+    updateCurrentAudit((audit) => ({
+      ...audit,
+      metadata: {
+        ...audit.metadata,
+        [field]: value,
+        lastModified: new Date().toISOString(),
+      },
+    }));
   };
 
   const handleClearStorage = () => {

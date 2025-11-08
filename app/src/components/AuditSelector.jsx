@@ -78,12 +78,15 @@ function AuditSelector() {
             onChange={handleAuditChange}
             className="audit-dropdown"
           >
-            {sortedAudits.map((audit) => (
-              <option key={audit.id} value={audit.id}>
-                {audit.metadata.auditNumber} - {audit.metadata.clientName} (
-                {audit.metadata.status})
-              </option>
-            ))}
+            {sortedAudits.map((audit) => {
+              const auditId = audit.metadata?.id || audit.id;
+              return (
+                <option key={auditId} value={auditId}>
+                  {audit.metadata.auditNumber} - {audit.metadata.clientName} (
+                  {audit.metadata.status})
+                </option>
+              );
+            })}
           </select>
 
           <button
@@ -289,7 +292,7 @@ function CreateAuditModal({ audits, onClose, onCreate }) {
           <div className="form-group">
             <label>Norme Applicabili *</label>
             <div className="checkbox-group">
-              <label className="checkbox-label">
+              <label key="ISO_9001" className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={formData.norms.includes("ISO_9001")}
@@ -297,7 +300,7 @@ function CreateAuditModal({ audits, onClose, onCreate }) {
                 />
                 <span>ISO 9001:2015 (Qualità)</span>
               </label>
-              <label className="checkbox-label">
+              <label key="ISO_14001" className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={formData.norms.includes("ISO_14001")}
@@ -305,7 +308,7 @@ function CreateAuditModal({ audits, onClose, onCreate }) {
                 />
                 <span>ISO 14001:2015 (Ambiente)</span>
               </label>
-              <label className="checkbox-label">
+              <label key="ISO_45001" className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={formData.norms.includes("ISO_45001")}
