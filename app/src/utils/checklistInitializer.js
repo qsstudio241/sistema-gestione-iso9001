@@ -242,7 +242,7 @@ export function initializeISO9001Checklist() {
             title: clauseTitle,
             questions: questions.map(q => ({
                 ...q,
-                status: CHECKLIST_STATUS.NOT_ANSWERED,
+                status: "NOT_ANSWERED", // Nuovo formato
                 score: 0,
                 notes: '',
                 evidence: {

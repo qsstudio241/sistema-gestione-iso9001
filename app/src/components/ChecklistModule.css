@@ -242,6 +242,10 @@
   background: #6c757d;
 }
 
+.legend-dot.om {
+  background: #17a2b8;
+}
+
 /* Empty Search */
 .empty-search {
   text-align: center;
@@ -384,6 +388,11 @@
   border-left: 4px solid #6c757d;
 }
 
+.question-card.status-om,
+.question-card.status-OM {
+  border-left: 4px solid #17a2b8;
+}
+
 .question-header {
   margin-bottom: 15px;
 }
@@ -477,6 +486,16 @@
   background: #6c757d;
   color: white;
   border-color: #6c757d;
+}
+
+.status-btn.om {
+  color: #17a2b8; /* Cyan/info color per OM */
+}
+
+.status-btn.om.active {
+  background: #17a2b8;
+  color: white;
+  border-color: #17a2b8;
 }
 
 .notes-toggle {

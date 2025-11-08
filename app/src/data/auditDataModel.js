@@ -249,7 +249,38 @@ export function createNewAudit(metadata) {
             createdAt: new Date().toISOString(),
             lastModified: new Date().toISOString(),
             fsConnected: false,
-            fsRootPath: null
+            fsRootPath: null,
+
+            // Tab 1 - Dati Generali
+            generalData: {
+                auditObject: '',
+                scope: '',
+                referenceDocuments: [],
+                auditDate: '',
+                processes: '',
+                programCommunicatedDate: '',
+                auditors: []
+            },
+
+            // Tab 2 - Obiettivo dell'Audit
+            auditObjective: {
+                description: '',
+                participants: [],
+                agenda: null
+            },
+
+            // Tab 11 - Esito dell'Audit
+            auditOutcome: {
+                conclusions: '',
+                emergingFindings: {
+                    summary: '',
+                    totalNC: 0,
+                    totalOSS: 0,
+                    totalOM: 0
+                },
+                attachments: [],
+                distribution: []
+            }
         },
         checklist: {},
         nonConformities: [],

@@ -12,7 +12,7 @@ import GeneralDataSection from "./GeneralDataSection";
 import AuditObjectiveSection from "./AuditObjectiveSection";
 import PendingIssuesCascade from "./PendingIssuesCascade";
 import ChecklistModule from "./ChecklistModule";
-// import AuditOutcomeSection from './AuditOutcomeSection';
+import AuditOutcomeSection from "./AuditOutcomeSection";
 
 function AuditAccordionLayout({ currentAudit, onUpdate }) {
   const { initializeChecklist } = useStorage();
@@ -54,6 +54,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate }) {
 
   const handleAuditObjectiveUpdate = (updatedData) => {
     onUpdate("auditObjective", updatedData);
+  };
+
+  const handleAuditOutcomeUpdate = (updatedData) => {
+    onUpdate("auditOutcome", updatedData);
   };
 
   const handleStandardsUpdate = (updatedStandards) => {
@@ -350,13 +354,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate }) {
 
           {openSections["outcome"] && (
             <div className="accordion-content">
-              <div className="outcome-placeholder">
-                <h3>Esito dell'Audit</h3>
-                <p>Componente AuditOutcomeSection in sviluppo</p>
-                <pre>
-                  {JSON.stringify(currentAudit.metadata.auditOutcome, null, 2)}
-                </pre>
-              </div>
+              <AuditOutcomeSection
+                auditOutcome={currentAudit.metadata.auditOutcome}
+                onUpdate={handleAuditOutcomeUpdate}
+              />
             </div>
           )}
         </div>

@@ -11,6 +11,16 @@ import { calculateNormCompletion } from "../utils/auditUtils";
 import { validateQuestion } from "../utils/checklistValidation";
 import "./ChecklistModule.css";
 
+// Nuovi status ISO 9001:2015 (sovrascrivono il legacy format)
+const STATUS = {
+  C: "C", // Conforme
+  NC: "NC", // Non Conforme
+  OSS: "OSS", // Osservazione (ex Parzialmente conforme)
+  OM: "OM", // Opportunità di Miglioramento
+  NA: "NA", // Non Applicabile
+  NOT_ANSWERED: "NOT_ANSWERED", // Non risposto (default)
+};
+
 function ChecklistModule() {
   const {
     currentAudit,
@@ -162,8 +172,11 @@ function ChecklistModule() {
         }
 
         if (field === "status") {
-          // Verifica che lo status sia valido
-          const validStatuses = Object.values(CHECKLIST_STATUS);
+          // Verifica che lo status sia valido (supporta nuovo formato + legacy)
+          const validStatuses = [
+            ...Object.values(CHECKLIST_STATUS), // Legacy: compliant, partial, non_compliant, not_applicable
+            ...Object.values(STATUS) // Nuovo: C, NC, OSS, OM, NA, NOT_ANSWERED
+          ];
           if (!validStatuses.includes(sanitizedValue)) {
             console.error(`Status non valido: ${sanitizedValue}`);
             return audit; // Non salvare se status invalido
@@ -277,20 +290,23 @@ function ChecklistModule() {
       {/* Legenda status */}
       <div className="status-legend">
         <span className="legend-item">
-          <span className="legend-dot compliant"></span>
-          Conforme
+          <span className="legend-dot compliant"></span>C - Conforme
         </span>
         <span className="legend-item">
           <span className="legend-dot partial"></span>
-          Parzialmente conforme
+          OSS - Osservazione
         </span>
         <span className="legend-item">
           <span className="legend-dot non-compliant"></span>
-          Non conforme
+          NC - Non Conforme
+        </span>
+        <span className="legend-item">
+          <span className="legend-dot om"></span>
+          OM - Opportunità Miglioramento
         </span>
         <span className="legend-item">
           <span className="legend-dot not-applicable"></span>
-          Non applicabile
+          NA - Non Applicabile
         </span>
       </div>
 
@@ -433,40 +449,39 @@ function QuestionCard({ clauseId, question, onUpdate }) {
       <div className="question-controls">
         <div className="status-buttons">
           <button
-            className={`status-btn compliant ${getStatusClass(
-              CHECKLIST_STATUS.COMPLIANT
-            )}`}
-            onClick={() => handleStatusChange(CHECKLIST_STATUS.COMPLIANT)}
+            className={`status-btn compliant ${getStatusClass(STATUS.C)}`}
+            onClick={() => handleStatusChange(STATUS.C)}
             title="Conforme"
           >
-            ✓
+            C
           </button>
           <button
-            className={`status-btn partial ${getStatusClass(
-              CHECKLIST_STATUS.PARTIAL
-            )}`}
-            onClick={() => handleStatusChange(CHECKLIST_STATUS.PARTIAL)}
-            title="Parzialmente conforme"
+            className={`status-btn non-compliant ${getStatusClass(STATUS.NC)}`}
+            onClick={() => handleStatusChange(STATUS.NC)}
+            title="Non Conforme"
           >
-            ~
+            NC
           </button>
           <button
-            className={`status-btn non-compliant ${getStatusClass(
-              CHECKLIST_STATUS.NON_COMPLIANT
-            )}`}
-            onClick={() => handleStatusChange(CHECKLIST_STATUS.NON_COMPLIANT)}
-            title="Non conforme"
+            className={`status-btn partial ${getStatusClass(STATUS.OSS)}`}
+            onClick={() => handleStatusChange(STATUS.OSS)}
+            title="Osservazione"
           >
-            ✕
+            OSS
           </button>
           <button
-            className={`status-btn not-applicable ${getStatusClass(
-              CHECKLIST_STATUS.NOT_APPLICABLE
-            )}`}
-            onClick={() => handleStatusChange(CHECKLIST_STATUS.NOT_APPLICABLE)}
-            title="Non applicabile"
+            className={`status-btn om ${getStatusClass(STATUS.OM)}`}
+            onClick={() => handleStatusChange(STATUS.OM)}
+            title="Opportunità di Miglioramento"
           >
-            N/A
+            OM
+          </button>
+          <button
+            className={`status-btn not-applicable ${getStatusClass(STATUS.NA)}`}
+            onClick={() => handleStatusChange(STATUS.NA)}
+            title="Non Applicabile"
+          >
+            NA
           </button>
         </div>
       </div>
