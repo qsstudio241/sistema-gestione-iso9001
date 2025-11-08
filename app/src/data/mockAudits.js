@@ -192,9 +192,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Direzione Generale partecipa attivamente: riesami direzione trimestrali, approvazione obiettivi, allocazione risorse.',
-                        evidenceRef: 'Verbali Riesame 2024-Q4, 2025-Q1',
+                        evidence: {
+                            mainDocumentRef: 'Verbali Riesame Direzione 2024-Q4, 2025-Q1',
+                            detailedObservations: [
+                                'Visti Verbali Riesame Direzione del Q4-2024 (15 dicembre 2024) e Q1-2025 (20 marzo 2025). In entrambi i riesami la Direzione Generale ha presieduto personalmente le riunioni, con partecipazione del RSGQ, Responsabile Produzione e Responsabile Commerciale. Ordine del giorno conforme al punto 9.3 della norma: analisi input (reclami, NC, audit, cambiamenti contesto), revisione obiettivi qualità, decisioni su miglioramento e allocazione risorse.',
+                                'Nel verbale Q4-2024 evidenziato impegno DG nell\'approvazione investimento €45.000 per nuova strumentazione controllo qualità (durometro digitale + proiettore di profili), con decisione formalizzata in delibera n.24/2024. Investimento finalizzato a ridurre tempi controllo e aumentare precisione misure, dimostrando assunzione responsabilità per efficacia SGQ.',
+                                'Nel verbale Q1-2025 la DG ha approvato Piano Formazione 2025 con budget €12.000, includendo corso ISO 9001:2015 per nuovo personale produzione e aggiornamento auditor interni. Inoltre stabiliti nuovi obiettivi qualità 2025: riduzione difettosità da 1.8% a 1.2%, miglioramento OTD (On-Time Delivery) da 92% a 95%. Obiettivi comunicati a tutti i reparti tramite bacheca aziendale e riunione plenaria del 25 marzo 2025.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-005-verbale-riesame-q4-2024', 'ev-006-verbale-riesame-q1-2025']
                     },
                     {
                         id: 'q5.1.2',
@@ -203,9 +210,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.PARTIAL,
                         score: 3,
                         notes: 'OSS: Sistema di rilevazione soddisfazione cliente presente ma analisi non sempre tempestiva. Migliorare frequenza analisi feedback.',
-                        evidenceRef: 'Questionari soddisfazione 2024',
+                        evidence: {
+                            mainDocumentRef: 'Questionari Soddisfazione Cliente 2024, Registro Reclami',
+                            detailedObservations: [
+                                'Esaminato sistema di customer satisfaction: questionari inviati a 45 clienti principali nel 2024 (fatturato >€20.000/anno). Tasso risposta 67% (30 questionari compilati). Risultati generalmente positivi: 87% soddisfatto/molto soddisfatto per qualità prodotto, 82% per puntualità consegne, 79% per servizio post-vendita. Analisi aggregata effettuata ma con ritardo: questionari raccolti a dicembre 2024, report finale solo a febbraio 2025.',
+                                'Rilevata OSSERVAZIONE: gap temporale tra raccolta feedback e analisi troppo ampio (2 mesi). Non conformità al requisito 9.1.2 che richiede monitoraggio tempestivo della soddisfazione cliente. Raccomandazione: implementare analisi trimestrale invece che annuale, con report entro 15 giorni dalla chiusura questionari. RSGQ ha accettato raccomandazione, azione correttiva AC-2025-02 aperta.',
+                                'Verificato Registro Reclami 2024: 8 reclami registrati su 230 ordini evasi (3.5%). Tutti i reclami gestiti entro 7 giorni con chiusura formalizzata e comunicazione al cliente. Positivo: 6 reclami su 8 hanno generato azioni correttive (analisi 8D). Tuttavia i dati dei reclami non sono stati utilizzati sistematicamente nei Riesami Direzione per identificare trend e opportunità di miglioramento. Suggerimento: creare dashboard reclami con grafici trend da presentare a ogni Riesame.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-007-questionari-2024', 'ev-008-registro-reclami']
                     },
                     {
                         id: 'q5.2',
@@ -214,9 +228,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Politica Qualità rev.3 del 2025 approvata da DG. Esposta in bacheca, disponibile su intranet, comunicata a tutti i dipendenti.',
-                        evidenceRef: 'Politica Qualità 2025 rev.3',
+                        evidence: {
+                            mainDocumentRef: 'Politica per la Qualità rev. 3 del 10/01/2025',
+                            detailedObservations: [
+                                'Esaminata Politica per la Qualità rev.3 approvata il 10 gennaio 2025 da Direzione Generale (firma autografa DG presente). Il documento è appropriato al contesto e allo scopo dell\'organizzazione: focalizzato su eccellenza produttiva, soddisfazione cliente, miglioramento continuo. Include impegno al rispetto requisiti applicabili (norma ISO 9001:2015, requisiti cliente, cogenti). Fornisce quadro per stabilire e riesaminare obiettivi qualità.',
+                                'Verificata comunicazione interna della Politica: documento esposto in bacheca reparto produzione, ufficio tecnico e ufficio commerciale (foto acquisite). Copia firmata disponibile su intranet aziendale (sezione "Sistema Qualità"). Sessione formativa sulla nuova Politica condotta il 15 gennaio 2025 con partecipazione 28 dipendenti su 32 (87% del personale). Verbale formazione con firme presenza acquisito come evidenza.',
+                                'Politica Qualità disponibile a parti interessate esterne: pubblicata su sito web aziendale (www.raccorderia.it/qualita), fornita a clienti principali su richiesta (evidenza: email invio a cliente XYZ del 22 gennaio 2025). Contenuto allineato ai principi della norma: approccio per processi, leadership, coinvolgimento persone, decisioni basate su evidenze.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-009-politica-qualita-rev3', 'ev-010-verbale-formazione']
                     },
                     {
                         id: 'q5.3',
@@ -225,9 +246,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Organigramma aggiornato. Mansionari disponibili per tutte le funzioni chiave. Job description per RSGQ, RPROD, RCOM, ACQ.',
-                        evidenceRef: 'PR01.05 Organigramma rev.6',
+                        evidence: {
+                            mainDocumentRef: 'PR01.05 Organigramma Aziendale rev. 6 del 15/03/2025',
+                            detailedObservations: [
+                                'Esaminato Organigramma Aziendale PR01.05 rev.6 aggiornato il 15 marzo 2025. Struttura organizzativa chiara con distinzione funzioni: Direzione Generale (Claudia Pisani), Responsabile SGQ (Claudia Pisani - ruolo duplice), Responsabile Produzione (da nominare - interinale E. Zanotti), Responsabile Commerciale (Claudia Pisani), Responsabile Tecnico (da definire), Responsabile Acquisti (da definire). Organigramma affisso in bacheca direzione e distribuito digitalmente a tutti i responsabili funzione.',
+                                'Verificati Mansionari e Job Description per ruoli chiave SGQ. Mansionario RSGQ (Responsabile Sistema Gestione Qualità) completo: responsabilità di pianificazione audit interni, gestione documentazione SGQ, interfaccia con ente certificazione, coordinamento azioni correttive, reporting a Direzione. Autorità definita: può fermare produzione in caso NC grave, può richiedere formazione personale, ha accesso diretto a DG per decisioni strategiche.',
+                                'Mansionario Responsabile Produzione interinale (E. Zanotti): responsabilità pianificazione produttiva, controllo qualità in processo, gestione non conformità prodotto, manutenzione impianti. Job description disponibili anche per operatori produzione, addetti controllo qualità, magazzinieri. Comunicazione ruoli formalizzata tramite: contratti lavoro (clausola mansioni), organigramma affisso, incontri formativi ad assunzione. Intervistati 5 dipendenti casuali: tutti consapevoli delle proprie responsabilità e della catena di reporting.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-011-organigramma-rev6', 'ev-012-mansionari-rsgq']
                     }
                 ]
             },
@@ -243,9 +271,16 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 4,
                         notes: 'Risk assessment condotto annualmente. Identificati rischi operativi, finanziari, reputazionali. Piano azioni preventive documentato.',
-                        evidenceRef: 'PR02.04 Risk Assessment 2025',
+                        evidence: {
+                            mainDocumentRef: 'PR02.04 Risk Assessment e Opportunità rev. 2 del 20/02/2025',
+                            detailedObservations: [
+                                'Esaminata procedura PR02.04 e Matrice Rischi/Opportunità 2025. Risk assessment condotto il 20 febbraio 2025 con metodo FMEA semplificato (Probabilità x Gravità). Identificati 12 rischi significativi (punteggio ≥6): rottura stampo critico (P4xG5=20), perdita fornitore acciaio strategico (P3xG4=12), turnover personale specializzato (P4xG3=12), obsolescenza macchinari (P3xG3=9). Ogni rischio associato ad azione preventiva con responsabile e scadenza.',
+                                'Analisi opportunità contestuale a risk assessment: identificate 5 opportunità strategiche tra cui automazione processo di taglio (investimento €80K, payback 18 mesi), certificazione ISO 14001 per accesso gare pubbliche, digitalizzazione controllo qualità con software SPC. Opportunità valutate con analisi costi-benefici. Decisione DG: priorità ad automazione taglio e digitalizzazione CQ, ISO 14001 rinviata al 2026.',
+                                'Piano Azioni Preventive 2025 include: manutenzione predittiva su 3 presse critiche (ogni 500 ore), qualifica fornitore acciaio alternativo (entro Q2-2025), programma retention con incentivi per operatori senior (budget €15K), budget manutenzione straordinaria €35K per aggiornamento CNC. Monitoraggio trimestrale efficacia azioni in Riesame Direzione. Positivo: approccio risk-based thinking integrato nella pianificazione strategica.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: ['ev-004-risk-matrix']
+                        linkedEvidences: ['ev-013-risk-matrix-2025', 'ev-014-piano-azioni-preventive']
                     },
                     {
                         id: 'q6.2',
@@ -254,9 +289,34 @@ export const AUDIT_RACCORDERIA_PIACENTINA = {
                         status: CHECKLIST_STATUS.COMPLIANT,
                         score: 5,
                         notes: 'Obiettivi 2025 definiti: riduzione NC interne -15%, miglioramento OTD +10%, riduzione reclami -20%. KPI monitorati mensilmente.',
-                        evidenceRef: 'PR02.05 rev.1 Obiettivi 2025',
+                        evidence: {
+                            mainDocumentRef: 'PR02.05 Obiettivi Qualità 2025 rev. 1 del 10/01/2025',
+                            detailedObservations: [
+                                'Esaminati Obiettivi Qualità 2025 approvati da DG il 10 gennaio 2025. Obiettivi SMART (Specifici, Misurabili, Raggiungibili, Rilevanti, Temporizzati) e coerenti con Politica Qualità. Obiettivo 1: Ridurre tasso NC interne da 1.8% (baseline 2024) a 1.5% entro dicembre 2025 (-15% relativo). Responsabile: Responsabile Produzione. Risorse: formazione operatori €5K, acquisto calibri digitali €3K. Indicatore: (pezzi scartati/pezzi prodotti) x 100, rilevazione mensile.',
+                                'Obiettivo 2: Migliorare On-Time Delivery (OTD) da 92% a 95% entro Q4-2025. Responsabile: Responsabile Commerciale + Produzione. Azioni: implementazione software pianificazione MRP (€12K), riduzione setup cambio produzione -20%, buffer stock semilavorati critici. Indicatore: (consegne in tempo/consegne totali) x 100. Target intermedi: Q1=93%, Q2=94%, Q3=94.5%, Q4=95%.',
+                                'Obiettivo 3: Ridurre reclami clienti da 8 (2024) a 5 (2025), -37.5%. Responsabile: RSGQ. Azioni: audit processo fornitore critico, introduzione controllo 100% su lotti produttivi nuovi clienti, analisi 8D su tutti i reclami con azioni correttive obbligatorie. Monitoraggio: dashboard reclami presentata a Riesame Direzione. Tutti gli obiettivi inseriti in MBO del personale chiave con bonus collegato a raggiungimento.',
+                            ]
+                        },
                         auditDate: '2025-06-20',
-                        linkedEvidences: []
+                        linkedEvidences: ['ev-015-obiettivi-2025', 'ev-016-dashboard-kpi']
+                    },
+                    {
+                        id: 'q6.3',
+                        text: 'La pianificazione delle modifiche al SGQ è gestita in modo controllato?',
+                        clauseRef: '6.3',
+                        status: CHECKLIST_STATUS.COMPLIANT,
+                        score: 4,
+                        notes: 'Modifiche SGQ gestite tramite procedura PR02.06. Change log mantenuto. Approvazione DG per modifiche significative.',
+                        evidence: {
+                            mainDocumentRef: 'PR02.06 Gestione Modifiche SGQ rev. 3, Change Log 2024-2025',
+                            detailedObservations: [
+                                'Esaminata procedura PR02.06 Gestione Modifiche SGQ rev.3 del marzo 2024. Definisce processo formale per modifiche: richiesta modifica (form RMOD), analisi impatto da RSGQ (risorse, processi, documentazione), approvazione DG se modifica strategica, implementazione controllata, verifica efficacia post-implementazione. Modifica considerata "significativa" se impatta più di 2 processi o richiede investimento >€10K.',
+                                'Verificato Change Log 2024-2025: registrate 6 modifiche. Modifica CM-2024-03 (novembre 2024): introduzione controllo durezza 100% su lotto clienti automotive. Impatto: aggiornamento istruzione operativa IO-CQ-05, formazione 3 operatori CQ, acquisto durometro portatile. Approvazione DG, implementazione entro 15 giorni. Verifica efficacia: audit interno dicembre 2024 confermò conformità.',
+                                'Modifica CM-2025-01 (gennaio 2025): revisione Politica Qualità da rev.2 a rev.3 per allineamento nuovi obiettivi strategici. Impatto: comunicazione a tutti i dipendenti, aggiornamento sito web, ripubblicazione intranet. Modifica CM-2025-02 (marzo 2025): aggiornamento organigramma per cambio Responsabile Produzione. Processo ben strutturato, positivo: tracciabilità completa delle modifiche e valutazione preventiva impatti.',
+                            ]
+                        },
+                        auditDate: '2025-06-20',
+                        linkedEvidences: ['ev-017-change-log', 'ev-018-procedura-modifiche']
                     }
                 ]
             },
