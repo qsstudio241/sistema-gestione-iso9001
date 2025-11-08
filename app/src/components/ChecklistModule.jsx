@@ -36,8 +36,9 @@ function ChecklistModule() {
       if (!clause.questions) return;
       const matchingQuestions = clause.questions.filter(
         (q) =>
-          q.text.toLowerCase().includes(search) ||
-          q.clauseReference.toLowerCase().includes(search)
+          q.text?.toLowerCase().includes(search) ||
+          q.clauseRef?.toLowerCase().includes(search) ||
+          q.title?.toLowerCase().includes(search)
       );
 
       if (matchingQuestions.length > 0) {
@@ -172,17 +173,9 @@ function ChecklistModule() {
       {/* Header con statistiche */}
       <div className="checklist-header">
         <div className="checklist-title-section">
-          <h3>Checklist Audit - {selectedNorm.replace("_", " ")}</h3>
           <div className="checklist-stats">
             <span className="stat-badge">
               {stats.answered}/{stats.total} domande
-            </span>
-            <span
-              className={`stat-badge ${
-                stats.percentage === 100 ? "complete" : ""
-              }`}
-            >
-              {stats.percentage}% completato
             </span>
           </div>
         </div>
