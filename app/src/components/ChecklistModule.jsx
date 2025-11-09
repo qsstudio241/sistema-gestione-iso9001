@@ -175,7 +175,7 @@ function ChecklistModule() {
           // Verifica che lo status sia valido (supporta nuovo formato + legacy)
           const validStatuses = [
             ...Object.values(CHECKLIST_STATUS), // Legacy: compliant, partial, non_compliant, not_applicable
-            ...Object.values(STATUS) // Nuovo: C, NC, OSS, OM, NA, NOT_ANSWERED
+            ...Object.values(STATUS), // Nuovo: C, NC, OSS, OM, NA, NOT_ANSWERED
           ];
           if (!validStatuses.includes(sanitizedValue)) {
             console.error(`Status non valido: ${sanitizedValue}`);

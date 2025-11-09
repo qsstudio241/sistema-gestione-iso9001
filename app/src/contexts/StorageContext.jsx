@@ -27,6 +27,65 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Helper: normalizza status checklist per compatibilità
+ * Assicura che tutti gli status siano in formato stringa corretto
+ */
+function normalizeChecklistStatus(checklist) {
+  if (!checklist) return checklist;
+
+  const normalized = {};
+
+  Object.entries(checklist).forEach(([normKey, normData]) => {
+    if (!normData || typeof normData !== "object") {
+      normalized[normKey] = normData;
+      return;
+    }
+
+    normalized[normKey] = {};
+
+    Object.entries(normData).forEach(([clauseKey, clause]) => {
+      if (!clause || !clause.questions) {
+        normalized[normKey][clauseKey] = clause;
+        return;
+      }
+
+      normalized[normKey][clauseKey] = {
+        ...clause,
+        questions: clause.questions.map((q) => ({
+          ...q,
+          // Normalizza status: accetta undefined, null, stringa vuota come NOT_ANSWERED
+          status: normalizeStatus(q.status),
+        })),
+      };
+    });
+  });
+
+  return normalized;
+}
+
+/**
+ * Helper: normalizza singolo status
+ */
+function normalizeStatus(status) {
+  if (!status || status === "") return "NOT_ANSWERED";
+
+  // Già in formato corretto
+  if (["C", "NC", "OSS", "OM", "NA", "NOT_ANSWERED"].includes(status)) {
+    return status;
+  }
+
+  // Legacy format → new format
+  const legacyMap = {
+    compliant: "C",
+    non_compliant: "NC",
+    partial: "OSS",
+    not_applicable: "NA",
+  };
+
+  return legacyMap[status] || "NOT_ANSWERED";
+}
+
+/**
  * Provider per gestione stato audit
  */
 export function StorageProvider({ children, useMockData = true }) {
@@ -71,11 +130,17 @@ export function StorageProvider({ children, useMockData = true }) {
         localStorage.getItem(STORAGE_KEYS.FS_CONNECTED) === "true";
 
       if (storedAudits) {
-        // Usa dati salvati
+        // Usa dati salvati - NORMALIZZA STATUS
         const parsedAudits = JSON.parse(storedAudits);
-        setAudits(parsedAudits);
+        const normalizedAudits = parsedAudits.map((audit) => ({
+          ...audit,
+          checklist: normalizeChecklistStatus(audit.checklist),
+        }));
+        setAudits(normalizedAudits);
         setCurrentAuditId(storedCurrentId);
-        console.log(`✅ Caricati ${parsedAudits.length} audit da localStorage`);
+        console.log(
+          `✅ Caricati ${normalizedAudits.length} audit da localStorage (status normalizzati)`
+        );
       } else if (useMockData) {
         // Prima inizializzazione: usa mock data
         setAudits(MOCK_AUDITS);

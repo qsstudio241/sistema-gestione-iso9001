@@ -372,6 +372,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Legacy format (backward compatibility) */
 .question-card.status-compliant {
   border-left: 4px solid #28a745;
 }
@@ -391,6 +392,31 @@
 .question-card.status-om,
 .question-card.status-OM {
   border-left: 4px solid #17a2b8;
+}
+
+/* New format (ISO 9001:2015) */
+.question-card.status-C {
+  border-left: 4px solid #28a745; /* Verde - Conforme */
+}
+
+.question-card.status-NC {
+  border-left: 4px solid #dc3545; /* Rosso - Non Conforme */
+}
+
+.question-card.status-OSS {
+  border-left: 4px solid #ffc107; /* Giallo - Osservazione */
+}
+
+.question-card.status-OM {
+  border-left: 4px solid #17a2b8; /* Blu - Opportunità Miglioramento */
+}
+
+.question-card.status-NA {
+  border-left: 4px solid #6c757d; /* Grigio - Non Applicabile */
+}
+
+.question-card.status-NOT_ANSWERED {
+  border-left: 4px solid #e9ecef; /* Grigio chiaro - Non risposto */
 }
 
 .question-header {
