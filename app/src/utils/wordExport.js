@@ -517,6 +517,7 @@ function createObjectiveSection(auditObjective) {
 /**
  * Helper: formatta le evidenze di una domanda in testo leggibile
  * Include: mainDocumentRef + detailedObservations + notes auditor
+ * NOTA: Gli allegati sono gestiti in riga separata (vedi createAttachmentRow)
  */
 function formatEvidenceText(evidence, auditorNotes) {
     let text = '';
@@ -547,8 +548,10 @@ function formatEvidenceText(evidence, auditorNotes) {
 /**
  * Helper: crea una singola riga tabella per una domanda
  */
-function createQuestionRow(question) {
+function createQuestionRow(question, auditAttachments = []) {
     const statusConfig = STATUS_CONFIG[question.status] || STATUS_CONFIG['NOT_ANSWERED'];
+
+    // NON passiamo più attachments a formatEvidenceText
     const evidenceText = formatEvidenceText(question.evidence, question.notes);
 
     // Costruisci testo con riferimento puntato (es. "4.1 - Comprendere l'Organizzazione...")
@@ -592,6 +595,58 @@ function createQuestionRow(question) {
                 width: { size: 35, type: WidthType.PERCENTAGE }
             })
         ]
+    });
+}
+
+/**
+ * Helper: crea righe dedicate per allegati di una domanda
+ * Restituisce un array di righe (una riga per ogni allegato)
+ * Layout a 2 colonne: "Allegato N" (45%) | Info file (55% = unione col 2+3)
+ */
+function createAttachmentRows(attachments) {
+    if (!attachments || attachments.length === 0) {
+        return [];
+    }
+
+    return attachments.map((att, index) => {
+        const sizeMB = ((att.size || 0) / (1024 * 1024)).toFixed(2);
+        const categoryLabel = att.category === 'foto' ? 'Foto' :
+            att.category === 'documenti' ? 'Documenti' :
+                att.category === 'verbali' ? 'Verbali' : att.category;
+
+        const fileName = att.fileName || att.name || 'File sconosciuto';
+        const uploadDate = att.uploadedAt || att.uploadDate;
+        const date = uploadDate ? new Date(uploadDate).toLocaleDateString('it-IT') : 'N/D';
+
+        return new TableRow({
+            children: [
+                // Colonna 1: "Allegato N" (45%, stessa larghezza di "Attività/processo")
+                new TableCell({
+                    children: [new Paragraph({
+                        text: `Allegato ${index + 1}`,
+                        bold: true,
+                        color: '1E40AF', // Blu scuro
+                        spacing: { before: 0, after: 0 }
+                    })],
+                    verticalAlign: VerticalAlign.TOP,
+                    margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                    width: { size: 45, type: WidthType.PERCENTAGE },
+                    shading: { fill: 'F3F4F6', type: ShadingType.CLEAR } // Grigio chiarissimo
+                }),
+                // Colonna 2: Info file (55%, unisce "Valutazione 20%" + "Dettaglio 35%")
+                new TableCell({
+                    children: [new Paragraph({
+                        text: `${fileName} (${categoryLabel}, ${sizeMB} MB) - ${date}`,
+                        spacing: { before: 0, after: 0 }
+                    })],
+                    verticalAlign: VerticalAlign.TOP,
+                    margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                    width: { size: 55, type: WidthType.PERCENTAGE },
+                    shading: { fill: 'F3F4F6', type: ShadingType.CLEAR },
+                    columnSpan: 2 // UNISCE colonne 2+3 (Valutazione + Dettaglio)
+                })
+            ]
+        });
     });
 }
 
@@ -640,7 +695,7 @@ function createTableHeaderRow() {
  * Helper: crea tabella completa per una clausola
  * SCALABILE: gestisce automaticamente qualsiasi numero di domande
  */
-function createClauseTable(questions) {
+function createClauseTable(questions, auditAttachments = []) {
     if (!questions || questions.length === 0) {
         return new Table({
             rows: [
@@ -669,13 +724,20 @@ function createClauseTable(questions) {
         });
     }
 
-    // Mappa tutte le domande in righe (SCALABILE: 1 domanda o 1000 domande)
-    const questionRows = questions.map(q => createQuestionRow(q));
+    // Mappa tutte le domande in righe + righe allegati (SCALABILE: 1 domanda o 1000 domande)
+    const allRows = [];
+    questions.forEach(q => {
+        // Riga domanda principale
+        allRows.push(createQuestionRow(q, auditAttachments));
 
-    return new Table({
+        // Righe allegati (una riga per file)
+        const questionAttachments = auditAttachments.filter(att => att.questionId === q.id);
+        const attachmentRows = createAttachmentRows(questionAttachments);
+        allRows.push(...attachmentRows); // Spread per aggiungere tutte le righe
+    }); return new Table({
         rows: [
             createTableHeaderRow(),
-            ...questionRows
+            ...allRows
         ],
         width: { size: 100, type: WidthType.PERCENTAGE },
         borders: {
@@ -693,7 +755,7 @@ function createClauseTable(questions) {
  * Crea la sezione "3 - CHECKLIST DI AUDIT" completa
  * VERSIONE SCALABILE: si adatta automaticamente a modifiche della checklist
  */
-function createChecklistSection(checklist) {
+function createChecklistSection(checklist, auditAttachments = []) {
     // Null guard
     if (!checklist || Object.keys(checklist).length === 0) {
         return [
@@ -759,7 +821,7 @@ function createChecklistSection(checklist) {
             // Tabella unica per la clausola con TUTTE le domande
             // Ogni riga avrà "4.1 - Testo domanda" nella prima colonna
             sections.push(
-                createClauseTable(clause.questions || []),
+                createClauseTable(clause.questions || [], auditAttachments), // PASS attachments
                 new Paragraph({
                     text: '',
                     spacing: { after: 300 }
@@ -1275,7 +1337,7 @@ export async function exportAuditToWord(audit) {
         ...createCoverPage(audit),
         ...createGeneralDataSection(metadata.generalData, metadata),
         ...createObjectiveSection(metadata.auditObjective),
-        ...createChecklistSection(audit.checklist),
+        ...createChecklistSection(audit.checklist, audit.attachments || []), // PASS attachments
         ...createOutcomeSection(metadata.auditOutcome, audit.checklist)
     ];
 
@@ -1412,7 +1474,7 @@ export async function exportAuditToFileSystem(audit) {
             ...createCoverPage(audit),
             ...createGeneralDataSection(metadata.generalData, metadata),
             ...createObjectiveSection(metadata.auditObjective),
-            ...createChecklistSection(audit.checklist),
+            ...createChecklistSection(audit.checklist, audit.attachments || []), // PASS attachments
             ...createOutcomeSection(metadata.auditOutcome, audit.checklist)
         ];
 
@@ -1440,5 +1502,57 @@ export async function exportAuditToFileSystem(audit) {
             throw new Error('Salvataggio annullato dall\'utente');
         }
         throw error;
+    }
+}
+
+/**
+ * Esporta report usando LocalFsProvider (struttura ISO 9001)
+ * @param {Object} audit - Audit corrente
+ * @param {LocalFsProvider} fsProvider - File System Provider
+ * @returns {Promise<Object>} Risultato con success/path/fileName
+ */
+export async function exportAuditToWorkspace(audit, fsProvider) {
+    if (!audit || !audit.metadata) {
+        throw new Error('Audit non valido: metadata mancante');
+    }
+
+    if (!fsProvider?.ready()) {
+        throw new Error('Nessuna cartella workspace collegata. Usa Impostazioni per configurare workspace.');
+    }
+
+    try {
+        // Genera documento (stessa logica di exportAuditToWord)
+        const { metadata } = audit;
+        const documentChildren = [
+            ...createCoverPage(audit),
+            ...createGeneralDataSection(metadata.generalData, metadata),
+            ...createObjectiveSection(metadata.auditObjective),
+            ...createChecklistSection(audit.checklist, audit.attachments || []), // PASS attachments
+            ...createOutcomeSection(metadata.auditOutcome, audit.checklist)
+        ];
+
+        const doc = new Document({
+            sections: [{ footers: createFooter(), children: documentChildren }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+
+        // Genera nome file
+        const auditNumber = metadata.auditNumber?.replace(/[^a-z0-9]/gi, '_') || 'N-A';
+        const clientName = metadata.clientName?.replace(/[^a-z0-9]/gi, '_') || 'Cliente';
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const fileName = `Audit_${auditNumber}_${clientName}_${timestamp}.docx`;
+
+        // Salva tramite LocalFsProvider (in Report/)
+        const result = await fsProvider.saveReport(blob, fileName);
+
+        return {
+            success: true,
+            path: result.path,
+            fileName: result.fileName
+        };
+    } catch (error) {
+        console.error('Errore export workspace:', error);
+        throw new Error(`Errore salvataggio report: ${error.message}`);
     }
 }

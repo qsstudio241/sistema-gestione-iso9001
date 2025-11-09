@@ -13,20 +13,22 @@ import AuditObjectiveSection from "./AuditObjectiveSection";
 import PendingIssuesCascade from "./PendingIssuesCascade";
 import ChecklistModule from "./ChecklistModule";
 import AuditOutcomeSection from "./AuditOutcomeSection";
+import ExportPanel from "./ExportPanel";
 
 function AuditAccordionLayout({ currentAudit, onUpdate }) {
   const { initializeChecklist } = useStorage();
 
   // Stato per gestire quali sezioni sono aperte
   const [openSections, setOpenSections] = useState({
-    "general-data": true, // Aperta di default
+    "general-data": false, // Chiusa di default
     checklist: false,
     outcome: false,
+    export: false, // NUOVO: sezione export
   });
 
   // Stato per gestire quali sotto-sezioni sono aperte
   const [openSubSections, setOpenSubSections] = useState({
-    "general-data-form": true,
+    "general-data-form": false, // Chiusa di default
     objective: false,
     "pending-issues": false,
     "iso-9001": false,
@@ -358,6 +360,28 @@ function AuditAccordionLayout({ currentAudit, onUpdate }) {
                 auditOutcome={currentAudit.metadata.auditOutcome}
                 onUpdate={handleAuditOutcomeUpdate}
               />
+            </div>
+          )}
+        </div>
+
+        {/* ==================== SEZIONE 4: EXPORT REPORT ==================== */}
+        <div className="accordion-section">
+          <button
+            className={`accordion-header ${
+              openSections["export"] ? "open" : ""
+            }`}
+            onClick={() => toggleSection("export")}
+          >
+            <span className="section-icon">📤</span>
+            <span className="section-title">Export Report</span>
+            <span className="section-arrow">
+              {openSections["export"] ? "▼" : "▶"}
+            </span>
+          </button>
+
+          {openSections["export"] && (
+            <div className="accordion-content">
+              <ExportPanel />
             </div>
           )}
         </div>

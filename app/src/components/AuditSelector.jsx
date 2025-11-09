@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
+import WorkspaceManager from "./WorkspaceManager";
 import "./AuditSelector.css";
 
 function AuditSelector() {
@@ -18,10 +19,12 @@ function AuditSelector() {
     createAudit,
     deleteAudit,
     isSaving,
+    fsProvider,
   } = useStorage();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [workspaceExpanded, setWorkspaceExpanded] = useState(false);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
@@ -78,6 +81,9 @@ function AuditSelector() {
             onChange={handleAuditChange}
             className="audit-dropdown"
           >
+            {/* Opzione vuota quando nessun audit selezionato */}
+            <option value="">-- Seleziona un audit --</option>
+
             {sortedAudits.map((audit) => {
               const auditId = audit.metadata?.id || audit.id;
               return (
@@ -109,6 +115,43 @@ function AuditSelector() {
 
         {isSaving && <span className="save-indicator">💾 Salvataggio...</span>}
       </div>
+
+      {/* Workspace Manager Section - Sempre visibile */}
+      <div className="workspace-section">
+        <button
+          className="workspace-toggle"
+          onClick={() => setWorkspaceExpanded(!workspaceExpanded)}
+        >
+          <span>⚙️ Impostazioni Workspace</span>
+          <span className="toggle-arrow">{workspaceExpanded ? "▼" : "▶"}</span>
+        </button>
+
+        {workspaceExpanded && (
+          <div className="workspace-content">
+            <WorkspaceManager compact={false} audit={currentAudit} />
+          </div>
+        )}
+      </div>
+
+      {/* Alert se audit selezionato ma workspace non connesso */}
+      {currentAudit && !fsProvider?.ready() && (
+        <div className="alert alert-warning">
+          <span className="alert-icon">⚠️</span>
+          <div className="alert-content">
+            <strong>Workspace non connesso</strong>
+            <p>
+              I dati dell'audit non verranno salvati su file system. Connetti
+              una cartella workspace per abilitare il salvataggio automatico.
+            </p>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setWorkspaceExpanded(true)}
+            >
+              📂 Connetti Workspace
+            </button>
+          </div>
+        </div>
+      )}
 
       {currentAudit && (
         <div className="audit-info-bar">

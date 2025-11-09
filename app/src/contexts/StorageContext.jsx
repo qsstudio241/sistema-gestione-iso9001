@@ -15,6 +15,7 @@ import { MOCK_AUDITS } from "../data/mockAudits";
 import { createNewAudit, validateAuditSchema } from "../data/auditDataModel";
 import { useAutoSaveMultiple } from "../hooks/useAutoSave";
 import { initializeISO9001Checklist } from "../utils/checklistInitializer";
+import { LocalFsProvider } from "../services/LocalFsProvider";
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -89,6 +90,14 @@ function normalizeStatus(status) {
  * Provider per gestione stato audit
  */
 export function StorageProvider({ children, useMockData = true }) {
+  // File System Provider (singleton)
+  const [fsProvider] = useState(() => new LocalFsProvider());
+  const [, forceUpdate] = useState({});
+
+  // Metodo per forzare re-render quando stato interno cambia
+  const triggerUpdate = () => forceUpdate({});
+  fsProvider._triggerUpdate = triggerUpdate;
+
   // Stato
   const [audits, setAudits] = useState([]);
   const [currentAuditId, setCurrentAuditId] = useState(null);
@@ -137,17 +146,19 @@ export function StorageProvider({ children, useMockData = true }) {
           checklist: normalizeChecklistStatus(audit.checklist),
         }));
         setAudits(normalizedAudits);
-        setCurrentAuditId(storedCurrentId);
+
+        // NON ripristinare audit selezionato - mostra sempre selector
+        setCurrentAuditId(null);
         console.log(
-          `✅ Caricati ${normalizedAudits.length} audit da localStorage (status normalizzati)`
+          `✅ Caricati ${normalizedAudits.length} audit da localStorage - selector mode`
         );
       } else if (useMockData) {
-        // Prima inizializzazione: usa mock data
+        // Prima inizializzazione: usa mock data MA NON selezionare automaticamente
         setAudits(MOCK_AUDITS);
-        const firstAuditId =
-          MOCK_AUDITS[0]?.metadata?.id || MOCK_AUDITS[0]?.id || null;
-        setCurrentAuditId(firstAuditId);
-        console.log(`✅ Inizializzato con ${MOCK_AUDITS.length} mock audit`);
+        setCurrentAuditId(null); // MODIFICATO: null invece di primo audit
+        console.log(
+          `✅ Inizializzato con ${MOCK_AUDITS.length} mock audit - selector mode`
+        );
       } else {
         // Nessun dato
         setAudits([]);
@@ -165,11 +176,12 @@ export function StorageProvider({ children, useMockData = true }) {
   }, [useMockData]);
 
   // === SALVA CURRENT AUDIT ID ===
-  useEffect(() => {
-    if (currentAuditId) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_AUDIT_ID, currentAuditId);
-    }
-  }, [currentAuditId]);
+  // RIMOSSO: Non salvare più currentAuditId - mostra sempre selector all'avvio
+  // useEffect(() => {
+  //   if (currentAuditId) {
+  //     localStorage.setItem(STORAGE_KEYS.CURRENT_AUDIT_ID, currentAuditId);
+  //   }
+  // }, [currentAuditId]);
 
   // === CRUD OPERATIONS ===
 
@@ -447,6 +459,9 @@ export function StorageProvider({ children, useMockData = true }) {
     fsConnected,
     isLoading,
     error,
+
+    // File System Provider
+    fsProvider,
 
     // Save status
     isSaving,

@@ -6,6 +6,8 @@
 
 import React, { useState, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAttachmentManager } from "../hooks/useAttachmentManager";
+import AttachmentSection from "./AttachmentSection";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { validateQuestion } from "../utils/checklistValidation";
@@ -30,9 +32,12 @@ function ChecklistModule() {
     initializeChecklist,
   } = useStorage();
 
-  const [expandedClauses, setExpandedClauses] = useState(new Set(["4"]));
+  const [expandedClauses, setExpandedClauses] = useState(new Set([])); // Tutti chiusi
   const [selectedNorm, setSelectedNorm] = useState("ISO_9001");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Hook gestione allegati
+  const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);
 
   // TUTTI gli hooks devono essere prima degli early returns
   const stats = useMemo(() => {
@@ -287,28 +292,7 @@ function ChecklistModule() {
         <span className="progress-bar-label">{stats.percentage}%</span>
       </div>
 
-      {/* Legenda status */}
-      <div className="status-legend">
-        <span className="legend-item">
-          <span className="legend-dot compliant"></span>C - Conforme
-        </span>
-        <span className="legend-item">
-          <span className="legend-dot partial"></span>
-          OSS - Osservazione
-        </span>
-        <span className="legend-item">
-          <span className="legend-dot non-compliant"></span>
-          NC - Non Conforme
-        </span>
-        <span className="legend-item">
-          <span className="legend-dot om"></span>
-          OM - Opportunità Miglioramento
-        </span>
-        <span className="legend-item">
-          <span className="legend-dot not-applicable"></span>
-          NA - Non Applicabile
-        </span>
-      </div>
+      {/* RIMOSSO: Legenda status (ora visualizzata nella sezione Esito Audit) */}
 
       {/* Accordion clausole */}
       <div className="checklist-accordion">
@@ -325,6 +309,7 @@ function ChecklistModule() {
               isExpanded={expandedClauses.has(clauseId)}
               onToggle={() => toggleClause(clauseId)}
               onQuestionUpdate={handleQuestionUpdate}
+              attachmentManager={attachments}
             />
           ))
         )}
@@ -341,6 +326,7 @@ function ClauseAccordion({
   isExpanded,
   onToggle,
   onQuestionUpdate,
+  attachmentManager,
 }) {
   // Calcola statistiche clausola
   const clauseStats = useMemo(() => {
@@ -382,6 +368,7 @@ function ClauseAccordion({
               clauseId={clauseId}
               question={question}
               onUpdate={onQuestionUpdate}
+              attachmentManager={attachmentManager}
             />
           ))}
         </div>
@@ -392,46 +379,13 @@ function ClauseAccordion({
 
 // === QUESTION CARD COMPONENT ===
 
-function QuestionCard({ clauseId, question, onUpdate }) {
+function QuestionCard({ clauseId, question, onUpdate, attachmentManager }) {
   const handleStatusChange = (status) => {
     onUpdate(clauseId, question.id, "status", status);
   };
 
   const handleNotesChange = (e) => {
     onUpdate(clauseId, question.id, "notes", e.target.value);
-  };
-
-  const handleEvidenceChange = (e) => {
-    // Supporto backward compatibility: se esiste evidence object, aggiorna quello
-    if (question.evidence && typeof question.evidence === "object") {
-      onUpdate(clauseId, question.id, "evidence", {
-        ...question.evidence,
-        mainDocumentRef: e.target.value,
-      });
-    } else {
-      // Fallback al vecchio formato stringa
-      onUpdate(clauseId, question.id, "evidenceRef", e.target.value);
-    }
-  };
-
-  // Helper per ottenere il valore da visualizzare nell'input evidence
-  const getEvidenceDisplayValue = () => {
-    if (question.evidence && typeof question.evidence === "object") {
-      return question.evidence.mainDocumentRef || "";
-    }
-    return question.evidenceRef || "";
-  };
-
-  // Helper per verificare se esiste evidenza
-  const hasEvidence = () => {
-    if (question.evidence && typeof question.evidence === "object") {
-      return (
-        question.evidence.mainDocumentRef ||
-        (question.evidence.detailedObservations &&
-          question.evidence.detailedObservations.length > 0)
-      );
-    }
-    return question.evidenceRef;
   };
 
   const getStatusClass = (status) => {
@@ -488,74 +442,25 @@ function QuestionCard({ clauseId, question, onUpdate }) {
 
       {/* Note e Evidenza sempre visibili */}
       <div className="question-details">
+        {/* Note/Osservazioni unificate */}
         <div className="question-field">
-          <label className="field-label">📝 Note</label>
+          <label className="field-label">📝 Note / Osservazioni</label>
           <textarea
             value={question.notes || ""}
             onChange={handleNotesChange}
-            placeholder="Inserisci note, osservazioni, dettagli della verifica..."
-            rows={2}
+            placeholder="Inserisci osservazioni, note e dettagli della verifica..."
+            rows={3}
             className="notes-textarea"
           />
         </div>
 
-        <div className="question-field">
-          <label className="field-label">📎 Evidenza</label>
-          <div className="evidence-field-wrapper">
-            <input
-              type="text"
-              value={getEvidenceDisplayValue()}
-              onChange={handleEvidenceChange}
-              placeholder="Es: PR02.01 rev.3 del 10/01/2025"
-              className="evidence-input"
-            />
-            <div className="evidence-actions">
-              <button
-                type="button"
-                className="btn-evidence-action add"
-                title="Aggiungi/Collega evidenza"
-                onClick={() =>
-                  alert(
-                    "Funzionalità in sviluppo: aprirà modal per selezionare/creare evidenza"
-                  )
-                }
-              >
-                ➕
-              </button>
-              {hasEvidence() && (
-                <button
-                  type="button"
-                  className="btn-evidence-action remove"
-                  title="Rimuovi riferimento evidenza"
-                  onClick={() =>
-                    handleEvidenceChange({ target: { value: "" } })
-                  }
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mostra osservazioni dettagliate se presenti nel nuovo formato */}
-        {question.evidence &&
-          question.evidence.detailedObservations &&
-          question.evidence.detailedObservations.length > 0 && (
-            <div className="question-field detailed-observations">
-              <label className="field-label">
-                🔍 Osservazioni Dettagliate Audit
-              </label>
-              <div className="observations-list">
-                {question.evidence.detailedObservations.map((obs, idx) => (
-                  <div key={idx} className="observation-item">
-                    <span className="observation-bullet">•</span>
-                    <p className="observation-text">{obs}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Evidenza = Allegati (no label wrapper, stats inline) */}
+        {attachmentManager && (
+          <AttachmentSection
+            questionId={question.id}
+            attachmentManager={attachmentManager}
+          />
+        )}
       </div>
     </div>
   );

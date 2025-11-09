@@ -136,6 +136,120 @@
   font-weight: 500;
 }
 
+/* ==================== FINDINGS METRICS COMPACT ==================== */
+
+.findings-metrics-compact {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.metric-compact {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: transform 0.2s ease;
+}
+
+.metric-compact:hover {
+  transform: scale(1.05);
+}
+
+.metric-compact.c {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.metric-compact.oss {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.metric-compact.nc-severe {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.metric-compact.om {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.metric-compact.na {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* ==================== FINDINGS LEGEND ==================== */
+
+.findings-legend {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.legend-title {
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.legend-items {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.legend-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.legend-badge.c {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.legend-badge.oss {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.legend-badge.nc {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.legend-badge.om {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.legend-badge.na {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
 /* ==================== FINDINGS LINK ==================== */
 
 .findings-link {

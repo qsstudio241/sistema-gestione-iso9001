@@ -9,11 +9,12 @@ import {
 import {
   exportAuditToWord,
   exportAuditToFileSystem,
+  exportAuditToWorkspace,
 } from "../utils/wordExport";
 import "./ExportPanel.css";
 
 const ExportPanel = () => {
-  const { currentAudit, audits } = useStorage();
+  const { currentAudit, audits, fsProvider } = useStorage();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
 
@@ -63,6 +64,25 @@ const ExportPanel = () => {
   const handleExportToFileSystem = async () => {
     if (!currentAudit) return;
 
+    // Se fsProvider è pronto, usa exportAuditToWorkspace (struttura ISO 9001)
+    if (fsProvider?.ready()) {
+      try {
+        setIsExporting(true);
+        const result = await exportAuditToWorkspace(currentAudit, fsProvider);
+        showMessage(
+          `✅ Report salvato in workspace: ${result.fileName}`,
+          "success"
+        );
+      } catch (error) {
+        console.error("Errore salvataggio workspace:", error);
+        showMessage(`❌ Errore: ${error.message}`, "error");
+      } finally {
+        setIsExporting(false);
+      }
+      return;
+    }
+
+    // Fallback: chiedi all'utente di selezionare cartella (vecchio comportamento)
     try {
       setIsExporting(true);
       const result = await exportAuditToFileSystem(currentAudit);
@@ -85,10 +105,7 @@ const ExportPanel = () => {
 
   return (
     <div className="export-panel">
-      <div className="export-header">
-        <h3>📤 Export Dati</h3>
-        <p>Esporta audit corrente o backup completo del database</p>
-      </div>
+      {/* Rimosso export-header duplicato - titolo già nell'accordion */}
 
       {/* Export Message Notification */}
       {exportMessage && (
@@ -125,19 +142,31 @@ const ExportPanel = () => {
                   onClick={handleExportToFileSystem}
                   disabled={isExporting}
                   className="btn btn-filesystem"
-                  title="Salva in cartella organizzata (File System Access API)"
+                  title={
+                    fsProvider?.ready()
+                      ? "Salva in workspace collegato (Report/)"
+                      : "Salva in cartella organizzata (File System Access API)"
+                  }
                 >
                   {isExporting
                     ? "⏳ Salvataggio..."
+                    : fsProvider?.ready()
+                    ? "✅ Salva in Workspace"
                     : "💾 Salva in File System"}
                 </button>
               </div>
               <p className="export-hint">
-                <strong>💡 Suggerimento:</strong> "File System" organizza
-                automaticamente in{" "}
-                <code>
-                  /Audit/{"{"}anno{"}"}-{"{"}cliente{"}"}/
-                </code>
+                {fsProvider?.ready() ? (
+                  <span>
+                    <strong>✅ Workspace collegato:</strong> Report salvato in{" "}
+                    <code>Report/{currentAudit.metadata.clientName}/</code>
+                  </span>
+                ) : (
+                  <span>
+                    <strong>💡 Suggerimento:</strong> Collega workspace in
+                    Impostazioni per salvataggio automatico
+                  </span>
+                )}
               </p>
             </>
           )}

@@ -15,16 +15,12 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
   const [conclusions, setConclusions] = useState(
     auditOutcome?.conclusions || ""
   );
-  const [emergingSummary, setEmergingSummary] = useState(
-    auditOutcome?.emergingFindings?.summary || ""
-  );
-  const [attachments, setAttachments] = useState(
-    auditOutcome?.attachments || []
-  );
+  // RIMOSSO: emergingSummary (Descrizione sintetica rilievi)
+  // RIMOSSO: attachments (allegati ora gestiti per domanda)
   const [distribution, setDistribution] = useState(
     auditOutcome?.distribution || []
   );
-  const [newAttachment, setNewAttachment] = useState("");
+  // RIMOSSO: newAttachment
   const [newDistribution, setNewDistribution] = useState("");
 
   // Calcola metriche real-time dalla checklist
@@ -75,40 +71,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
     });
   };
 
-  // Handler aggiornamento rilievi emergenti
-  const handleEmergingSummaryChange = (e) => {
-    const value = e.target.value;
-    setEmergingSummary(value);
-    onUpdate({
-      ...auditOutcome,
-      emergingFindings: {
-        ...auditOutcome?.emergingFindings,
-        summary: value,
-      },
-    });
-  };
-
-  // Handler aggiungi allegato
-  const handleAddAttachment = () => {
-    if (!newAttachment.trim()) return;
-    const updatedAttachments = [...attachments, newAttachment.trim()];
-    setAttachments(updatedAttachments);
-    setNewAttachment("");
-    onUpdate({
-      ...auditOutcome,
-      attachments: updatedAttachments,
-    });
-  };
-
-  // Handler rimuovi allegato
-  const handleRemoveAttachment = (index) => {
-    const updatedAttachments = attachments.filter((_, i) => i !== index);
-    setAttachments(updatedAttachments);
-    onUpdate({
-      ...auditOutcome,
-      attachments: updatedAttachments,
-    });
-  };
+  // RIMOSSO: handleEmergingSummaryChange
+  // RIMOSSO: handleAddAttachment, handleRemoveAttachment
 
   // Handler aggiungi destinatario
   const handleAddDistribution = () => {
@@ -172,43 +136,67 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
           Rilievi Emergenti
         </h3>
 
-        {/* Metriche findings */}
-        <div className="findings-metrics">
-          <div className="metric-card nc">
-            <div className="metric-value">{totalNC}</div>
-            <div className="metric-label">Non Conformità (NC)</div>
-          </div>
-          <div className="metric-card oss">
-            <div className="metric-value">{totalOSS}</div>
-            <div className="metric-label">Osservazioni (OSS)</div>
-          </div>
-          <div className="metric-card om">
-            <div className="metric-value">{totalOM}</div>
-            <div className="metric-label">
-              Opportunità di Miglioramento (OM)
-            </div>
+        {/* Metriche findings - COMPATTE SU UNA RIGA */}
+        <div className="findings-metrics-compact">
+          <span className="metric-compact nc">
+            <strong>C:</strong>{" "}
+            {currentAudit?.checklist
+              ? Object.values(currentAudit.checklist.ISO_9001 || {}).reduce(
+                  (total, clause) =>
+                    total +
+                    (clause.questions || []).filter((q) => q.status === "C")
+                      .length,
+                  0
+                )
+              : 0}
+          </span>
+          <span className="metric-compact oss">
+            <strong>OSS:</strong> {totalOSS}
+          </span>
+          <span className="metric-compact nc-severe">
+            <strong>NC:</strong> {totalNC}
+          </span>
+          <span className="metric-compact om">
+            <strong>OM:</strong> {totalOM}
+          </span>
+          <span className="metric-compact na">
+            <strong>NA:</strong>{" "}
+            {currentAudit?.checklist
+              ? Object.values(currentAudit.checklist.ISO_9001 || {}).reduce(
+                  (total, clause) =>
+                    total +
+                    (clause.questions || []).filter((q) => q.status === "NA")
+                      .length,
+                  0
+                )
+              : 0}
+          </span>
+        </div>
+
+        {/* LEGENDA (spostata da ChecklistModule) */}
+        <div className="findings-legend">
+          <p className="legend-title">Legenda:</p>
+          <div className="legend-items">
+            <span className="legend-item">
+              <span className="legend-badge c">C</span> Conforme
+            </span>
+            <span className="legend-item">
+              <span className="legend-badge oss">OSS</span> Osservazione
+            </span>
+            <span className="legend-item">
+              <span className="legend-badge nc">NC</span> Non Conformità
+            </span>
+            <span className="legend-item">
+              <span className="legend-badge om">OM</span> Opportunità
+              Miglioramento
+            </span>
+            <span className="legend-item">
+              <span className="legend-badge na">NA</span> Non Applicabile
+            </span>
           </div>
         </div>
 
-        {/* Sommario rilievi */}
-        <div className="form-group">
-          <label htmlFor="emerging-summary">
-            Descrizione sintetica dei rilievi emergenti
-          </label>
-          <textarea
-            id="emerging-summary"
-            className="outcome-textarea"
-            rows={4}
-            placeholder="Descrivere i principali rilievi identificati durante l'audit, con particolare attenzione alle aree di miglioramento..."
-            value={emergingSummary}
-            onChange={handleEmergingSummaryChange}
-          />
-          <p className="field-hint">
-            Esempio: "Durante l'audit sono stati identificati alcuni spunti di
-            miglioramento relativi alla gestione documentale e alla formazione
-            del personale."
-          </p>
-        </div>
+        {/* RIMOSSO: Descrizione sintetica rilievi emergenti */}
 
         {/* Link ai rilievi dettagliati */}
         <div className="findings-link">
@@ -219,141 +207,65 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
         </div>
       </div>
 
-      {/* ==================== ALLEGATI ==================== */}
-      <div className="outcome-block">
-        <h3 className="outcome-block-title">
-          <span className="block-icon">📎</span>
-          Allegati
-        </h3>
-
-        {/* Lista allegati */}
-        <div className="items-list">
-          {attachments.length === 0 ? (
-            <p className="empty-message">Nessun allegato inserito</p>
-          ) : (
-            <ul className="items-list-ul">
-              {attachments.map((attachment, index) => (
-                <li key={index} className="list-item">
-                  <span className="item-text">{attachment}</span>
-                  <button
-                    className="btn-remove-item"
-                    onClick={() => handleRemoveAttachment(index)}
-                    title="Rimuovi allegato"
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Aggiungi allegato */}
-        <div className="add-item-form">
-          <input
-            type="text"
-            className="add-item-input"
-            placeholder="Es: Check-list compilata, Evidenze fotografiche..."
-            value={newAttachment}
-            onChange={(e) => setNewAttachment(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddAttachment();
-              }
-            }}
-          />
-          <button
-            className="btn btn-primary btn-add-item"
-            onClick={handleAddAttachment}
-          >
-            + Aggiungi Allegato
-          </button>
-        </div>
-      </div>
+      {/* RIMOSSO: Sezione Allegati (ora gestiti per domanda nella checklist) */}
 
       {/* ==================== DISTRIBUZIONE ==================== */}
-      <div className="outcome-block">
-        <h3 className="outcome-block-title">
-          <span className="block-icon">📧</span>
-          Distribuzione Report
-        </h3>
+      {/* NASCOSTO: Funzionalità futura per invio email automatico */}
+      {false && (
+        <div className="outcome-block">
+          <h3 className="outcome-block-title">
+            <span className="block-icon">📧</span>
+            Distribuzione Report
+          </h3>
 
-        {/* Lista destinatari */}
-        <div className="items-list">
-          {distribution.length === 0 ? (
-            <p className="empty-message">Nessun destinatario inserito</p>
-          ) : (
-            <ul className="items-list-ul">
-              {distribution.map((recipient, index) => (
-                <li key={index} className="list-item">
-                  <span className="item-text">{recipient}</span>
-                  <button
-                    className="btn-remove-item"
-                    onClick={() => handleRemoveDistribution(index)}
-                    title="Rimuovi destinatario"
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          {/* Lista destinatari */}
+          <div className="items-list">
+            {distribution.length === 0 ? (
+              <p className="empty-message">Nessun destinatario inserito</p>
+            ) : (
+              <ul className="items-list-ul">
+                {distribution.map((recipient, index) => (
+                  <li key={index} className="list-item">
+                    <span className="item-text">{recipient}</span>
+                    <button
+                      className="btn-remove-item"
+                      onClick={() => handleRemoveDistribution(index)}
+                      title="Rimuovi destinatario"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-        {/* Aggiungi destinatario */}
-        <div className="add-item-form">
-          <input
-            type="text"
-            className="add-item-input"
-            placeholder="Es: Direzione Generale, Responsabile Qualità..."
-            value={newDistribution}
-            onChange={(e) => setNewDistribution(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddDistribution();
-              }
-            }}
-          />
-          <button
-            className="btn btn-primary btn-add-item"
-            onClick={handleAddDistribution}
-          >
-            + Aggiungi Destinatario
-          </button>
+          {/* Aggiungi destinatario */}
+          <div className="add-item-form">
+            <input
+              type="text"
+              className="add-item-input"
+              placeholder="Es: Direzione Generale, Responsabile Qualità..."
+              value={newDistribution}
+              onChange={(e) => setNewDistribution(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddDistribution();
+                }
+              }}
+            />
+            <button
+              className="btn btn-primary btn-add-item"
+              onClick={handleAddDistribution}
+            >
+              + Aggiungi Destinatario
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ==================== RIEPILOGO FINALE ==================== */}
-      <div className="outcome-summary">
-        <div className="summary-header">
-          <span className="summary-icon">✅</span>
-          <h3>Riepilogo Esito Audit</h3>
-        </div>
-        <div className="summary-stats">
-          <div className="summary-stat">
-            <span className="stat-label">Non Conformità:</span>
-            <span className="stat-value nc">{totalNC}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="stat-label">Osservazioni:</span>
-            <span className="stat-value oss">{totalOSS}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="stat-label">Opportunità Miglioramento:</span>
-            <span className="stat-value om">{totalOM}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="stat-label">Allegati:</span>
-            <span className="stat-value">{attachments.length}</span>
-          </div>
-          <div className="summary-stat">
-            <span className="stat-label">Destinatari:</span>
-            <span className="stat-value">{distribution.length}</span>
-          </div>
-        </div>
-      </div>
+      {/* RIMOSSO: Riepilogo Esito Audit (dati già visibili nelle metriche compatte sopra) */}
     </div>
   );
 }
