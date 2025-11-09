@@ -20,11 +20,14 @@ function AuditSelector() {
     deleteAudit,
     isSaving,
     fsProvider,
+    deviceInfo,
   } = useStorage();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [workspaceExpanded, setWorkspaceExpanded] = useState(false);
+
+  const isMobile = deviceInfo?.isMobile;
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
@@ -133,8 +136,8 @@ function AuditSelector() {
         )}
       </div>
 
-      {/* Alert se audit selezionato ma workspace non connesso */}
-      {currentAudit && !fsProvider?.ready() && (
+      {/* Alert se audit selezionato ma workspace non connesso - SOLO DESKTOP */}
+      {!isMobile && currentAudit && !fsProvider?.ready() && (
         <div className="alert alert-warning">
           <span className="alert-icon">⚠️</span>
           <div className="alert-content">

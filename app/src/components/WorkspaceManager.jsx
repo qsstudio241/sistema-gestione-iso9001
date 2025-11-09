@@ -189,7 +189,9 @@ export default function WorkspaceManager({ audit, compact = false }) {
   return (
     <div className="workspace-manager">
       <h4 className="workspace-title">
-        {isMobile ? "� Storage Dispositivo Mobile" : "�📁 Gestione Cartella Salvataggio"}
+        {isMobile
+          ? "� Storage Dispositivo Mobile"
+          : "�📁 Gestione Cartella Salvataggio"}
       </h4>
 
       {/* Mobile: Info e guida */}
@@ -198,11 +200,14 @@ export default function WorkspaceManager({ audit, compact = false }) {
           <div className="info-box mobile-info">
             <div className="info-header">📱 Modalità Mobile Attiva</div>
             <p>
-              I dati degli audit sono salvati <strong>localmente nel browser</strong> di questo dispositivo.
+              I dati degli audit sono salvati{" "}
+              <strong>localmente nel browser</strong> di questo dispositivo.
             </p>
             <p className="info-highlight">
-              💡 <strong>Importante:</strong> Effettua regolarmente il <strong>Backup Completo</strong> 
-              (vedi pannello "Export Report") per salvare i tuoi dati in modo permanente.
+              💡 <strong>Importante:</strong> Effettua regolarmente il{" "}
+              <strong>Backup Completo</strong>
+              (vedi pannello "Export Report") per salvare i tuoi dati in modo
+              permanente.
             </p>
           </div>
 
@@ -216,17 +221,23 @@ export default function WorkspaceManager({ audit, compact = false }) {
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Allegati:</span>
-                  <span className="stat-value">{storageStats.attachmentsCount}</span>
+                  <span className="stat-value">
+                    {storageStats.attachmentsCount}
+                  </span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Spazio usato:</span>
-                  <span className="stat-value">{storageStats.totalSizeMB.toFixed(2)} MB</span>
+                  <span className="stat-value">
+                    {storageStats.totalSizeMB.toFixed(2)} MB
+                  </span>
                 </div>
                 {storageStats.lastUpdate && (
                   <div className="stat-item">
                     <span className="stat-label">Ultimo salvataggio:</span>
                     <span className="stat-value">
-                      {new Date(storageStats.lastUpdate).toLocaleString('it-IT')}
+                      {new Date(storageStats.lastUpdate).toLocaleString(
+                        "it-IT"
+                      )}
                     </span>
                   </div>
                 )}
@@ -237,11 +248,12 @@ export default function WorkspaceManager({ audit, compact = false }) {
           <div className="info-box mobile-backup-reminder">
             <strong>🔐 Backup Periodico Consigliato</strong>
             <p>
-              Su dispositivi mobili i dati sono legati a questo browser. 
-              Se cancelli la cache o disinstalli l'app, i dati verranno persi.
+              Su dispositivi mobili i dati sono legati a questo browser. Se
+              cancelli la cache o disinstalli l'app, i dati verranno persi.
             </p>
             <p>
-              Vai a <strong>Export Report</strong> → <strong>Backup Completo</strong> 
+              Vai a <strong>Export Report</strong> →{" "}
+              <strong>Backup Completo</strong>
               per salvare tutti gli audit in formato JSON.
             </p>
           </div>
