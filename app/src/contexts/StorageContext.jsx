@@ -308,6 +308,50 @@ export function StorageProvider({ children, useMockData = true }) {
   );
 
   /**
+   * Importa backup JSON (ripristina audit da file)
+   */
+  const importBackup = useCallback(async (backupData) => {
+    try {
+      console.log('📥 Import backup iniziato...');
+      
+      // Valida struttura backup
+      if (!backupData.audits || !Array.isArray(backupData.audits)) {
+        throw new Error('Formato backup non valido');
+      }
+
+      // Importa ogni audit
+      for (const audit of backupData.audits) {
+        if (!validateAuditSchema(audit)) {
+          console.warn(`⚠️ Audit ${audit.metadata?.auditNumber} non valido, saltato`);
+          continue;
+        }
+
+        // Salva audit nel provider corrente (IndexedDB o LocalFs)
+        if (fsProvider?.saveAudit) {
+          await fsProvider.saveAudit(audit);
+        }
+
+        // Aggiungi a stato se non esiste già
+        setAudits((prev) => {
+          const exists = prev.some(a => a.metadata?.id === audit.metadata?.id);
+          if (exists) {
+            console.log(`ℹ️ Audit ${audit.metadata?.auditNumber} già esistente, aggiornato`);
+            return prev.map(a => a.metadata?.id === audit.metadata?.id ? audit : a);
+          }
+          return [...prev, audit];
+        });
+      }
+
+      console.log(`✅ Import completato: ${backupData.audits.length} audit ripristinati`);
+      return { success: true, count: backupData.audits.length };
+    } catch (err) {
+      console.error('❌ Errore import backup:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
+  }, [fsProvider]);
+
+  /**
    * Elimina audit
    */
   const deleteAudit = useCallback(
@@ -494,6 +538,7 @@ export function StorageProvider({ children, useMockData = true }) {
     duplicateAudit,
     deleteAudit,
     initializeChecklist,
+    importBackup,
 
     // File System
     connectFileSystem,
