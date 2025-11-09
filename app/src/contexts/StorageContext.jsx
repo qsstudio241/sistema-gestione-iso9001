@@ -15,7 +15,10 @@ import { MOCK_AUDITS } from "../data/mockAudits";
 import { createNewAudit, validateAuditSchema } from "../data/auditDataModel";
 import { useAutoSaveMultiple } from "../hooks/useAutoSave";
 import { initializeISO9001Checklist } from "../utils/checklistInitializer";
-import { LocalFsProvider } from "../services/LocalFsProvider";
+import {
+  createStorageProvider,
+  getDeviceInfo,
+} from "../services/storageAdapter";
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -90,13 +93,26 @@ function normalizeStatus(status) {
  * Provider per gestione stato audit
  */
 export function StorageProvider({ children, useMockData = true }) {
-  // File System Provider (singleton)
-  const [fsProvider] = useState(() => new LocalFsProvider());
+  // Storage Provider dinamico (LocalFs o IndexedDB)
+  const [fsProvider, setFsProvider] = useState(null);
+  const [deviceInfo] = useState(() => getDeviceInfo());
   const [, forceUpdate] = useState({});
 
-  // Metodo per forzare re-render quando stato interno cambia
-  const triggerUpdate = () => forceUpdate({});
-  fsProvider._triggerUpdate = triggerUpdate;
+  // Inizializza storage provider appropriato
+  useEffect(() => {
+    async function initStorage() {
+      const provider = await createStorageProvider();
+      setFsProvider(provider);
+
+      // Trigger update per componenti dipendenti
+      provider._triggerUpdate = () => forceUpdate({});
+
+      console.log(
+        `✅ Storage provider inizializzato: ${deviceInfo.recommendedStorage}`
+      );
+    }
+    initStorage();
+  }, [deviceInfo.recommendedStorage]);
 
   // Stato
   const [audits, setAudits] = useState([]);
@@ -459,9 +475,11 @@ export function StorageProvider({ children, useMockData = true }) {
     fsConnected,
     isLoading,
     error,
+    setFsConnected,
 
-    // File System Provider
+    // Provider
     fsProvider,
+    deviceInfo,
 
     // Save status
     isSaving,

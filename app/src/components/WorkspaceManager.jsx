@@ -16,22 +16,35 @@ export default function WorkspaceManager({ audit, compact = false }) {
   const [storageInfo, setStorageInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [storageStats, setStorageStats] = useState(null);
+
+  const isMobile = storage.deviceInfo?.isMobile;
+  const storageType = storage.deviceInfo?.recommendedStorage;
 
   // Aggiorna stato quando storage cambia
   useEffect(() => {
     const info = storage.fsProvider?.ready();
     setStorageInfo(info);
-  }, [storage]);
 
-  // Polling per aggiornare stato (caso permessi scaduti)
+    // Se IndexedDB, carica statistiche
+    if (storageType === "indexeddb" && storage.fsProvider?.getStorageStats) {
+      storage.fsProvider.getStorageStats().then(setStorageStats);
+    }
+  }, [storage, storageType]);
+
+  // Polling per aggiornare stato (caso permessi scaduti o IndexedDB stats)
   useEffect(() => {
     const interval = setInterval(() => {
       const info = storage.fsProvider?.ready();
       setStorageInfo(info);
+
+      if (storageType === "indexeddb" && storage.fsProvider?.getStorageStats) {
+        storage.fsProvider.getStorageStats().then(setStorageStats);
+      }
     }, 2000); // Controlla ogni 2 secondi
 
     return () => clearInterval(interval);
-  }, [storage]);
+  }, [storage, storageType]);
 
   const updateStorageInfo = () => {
     const info = storage.fsProvider?.ready();
@@ -123,6 +136,25 @@ export default function WorkspaceManager({ audit, compact = false }) {
 
   // Versione compatta per header
   if (compact) {
+    // Mobile: Mostra info IndexedDB invece di connessione File System
+    if (isMobile) {
+      return (
+        <div className="workspace-status mobile">
+          <span className="status-label">
+            📱 <strong>Storage Locale</strong>
+            {storageStats && (
+              <span className="stats-mini">
+                {" "}
+                ({storageStats.auditsCount} audit,{" "}
+                {storageStats.totalSizeMB.toFixed(1)} MB)
+              </span>
+            )}
+          </span>
+        </div>
+      );
+    }
+
+    // Desktop: UI normale con File System
     return (
       <div
         className={`workspace-status ${
@@ -156,10 +188,68 @@ export default function WorkspaceManager({ audit, compact = false }) {
   // Versione completa per settings panel
   return (
     <div className="workspace-manager">
-      <h4 className="workspace-title">📁 Gestione Cartella Salvataggio</h4>
+      <h4 className="workspace-title">
+        {isMobile ? "� Storage Dispositivo Mobile" : "�📁 Gestione Cartella Salvataggio"}
+      </h4>
 
-      {/* Status - Solo quando connessa */}
-      {storageInfo && (
+      {/* Mobile: Info e guida */}
+      {isMobile && (
+        <>
+          <div className="info-box mobile-info">
+            <div className="info-header">📱 Modalità Mobile Attiva</div>
+            <p>
+              I dati degli audit sono salvati <strong>localmente nel browser</strong> di questo dispositivo.
+            </p>
+            <p className="info-highlight">
+              💡 <strong>Importante:</strong> Effettua regolarmente il <strong>Backup Completo</strong> 
+              (vedi pannello "Export Report") per salvare i tuoi dati in modo permanente.
+            </p>
+          </div>
+
+          {storageStats && (
+            <div className="status-box mobile-stats">
+              <div className="status-header">📊 Statistiche Storage</div>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span className="stat-label">Audit salvati:</span>
+                  <span className="stat-value">{storageStats.auditsCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Allegati:</span>
+                  <span className="stat-value">{storageStats.attachmentsCount}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Spazio usato:</span>
+                  <span className="stat-value">{storageStats.totalSizeMB.toFixed(2)} MB</span>
+                </div>
+                {storageStats.lastUpdate && (
+                  <div className="stat-item">
+                    <span className="stat-label">Ultimo salvataggio:</span>
+                    <span className="stat-value">
+                      {new Date(storageStats.lastUpdate).toLocaleString('it-IT')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="info-box mobile-backup-reminder">
+            <strong>🔐 Backup Periodico Consigliato</strong>
+            <p>
+              Su dispositivi mobili i dati sono legati a questo browser. 
+              Se cancelli la cache o disinstalli l'app, i dati verranno persi.
+            </p>
+            <p>
+              Vai a <strong>Export Report</strong> → <strong>Backup Completo</strong> 
+              per salvare tutti gli audit in formato JSON.
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* Desktop: Status connessione - Solo quando connessa */}
+      {!isMobile && storageInfo && (
         <div className="status-box connected">
           <div className="status-header">✅ Cartella collegata</div>
           {storage.fsProvider?.rootPath && (
@@ -187,16 +277,16 @@ export default function WorkspaceManager({ audit, compact = false }) {
       {/* Errori */}
       {error && <div className="error-box">❌ {error}</div>}
 
-      {/* Info Browser Support */}
-      {!window.showDirectoryPicker && (
+      {/* Info Browser Support - Solo desktop senza File System API */}
+      {!isMobile && !window.showDirectoryPicker && (
         <div className="info-box">
           ℹ️ Il tuo browser non supporta il salvataggio su filesystem locale.
           Usa Chrome o Edge versione recente.
         </div>
       )}
 
-      {/* Azioni - Solo se audit selezionato e browser supporta */}
-      {audit && window.showDirectoryPicker && (
+      {/* Azioni - Solo desktop con audit selezionato e browser supporta */}
+      {!isMobile && audit && window.showDirectoryPicker && (
         <div className="actions-container">
           {!storageInfo ? (
             <>
@@ -244,8 +334,8 @@ export default function WorkspaceManager({ audit, compact = false }) {
         </div>
       )}
 
-      {/* Info struttura */}
-      {storageInfo && (
+      {/* Info struttura - Solo desktop */}
+      {!isMobile && storageInfo && (
         <details className="structure-details">
           <summary>ℹ️ Struttura Cartelle</summary>
           <pre className="structure-tree">

@@ -17,9 +17,9 @@ const ExportPanel = () => {
   const { currentAudit, audits, fsProvider } = useStorage();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
-  
+
   // Development mode - mostra formati avanzati JSON/CSV
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = process.env.NODE_ENV === "development";
 
   console.log(
     "ExportPanel - currentAudit:",
@@ -243,7 +243,8 @@ const ExportPanel = () => {
             </li>
             <li>
               <strong>Salva in Workspace:</strong> Organizzazione automatica in
-              cartelle strutturate per anno e cliente nella cartella workspace collegata
+              cartelle strutturate per anno e cliente nella cartella workspace
+              collegata
             </li>
             <li>
               <strong>Backup Completo:</strong> Tutti gli audit in formato JSON
@@ -256,8 +257,8 @@ const ExportPanel = () => {
                   (checklist, NC, evidenze, report)
                 </li>
                 <li>
-                  <strong>JSON Summary:</strong> Contiene solo metriche, NC summary
-                  e informazioni base
+                  <strong>JSON Summary:</strong> Contiene solo metriche, NC
+                  summary e informazioni base
                 </li>
                 <li>
                   <strong>CSV Summary:</strong> Formato tabellare per
