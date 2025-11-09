@@ -18,6 +18,9 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("accordion");
   const { currentAudit, updateCurrentAudit } = useStorage();
 
+  // Development mode - mostra tab legacy e debug
+  const isDev = process.env.NODE_ENV === "development";
+
   const handleMetadataUpdate = (field, value) => {
     updateCurrentAudit((audit) => ({
       ...audit,
@@ -53,30 +56,30 @@ const Dashboard = () => {
         >
           📱 Accordion Mobile-First
         </button>
-        <button
-          className={activeTab === "tabs" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("tabs")}
-        >
-          💻 Tabs Desktop (Old)
-        </button>
-        <button
-          className={activeTab === "audit" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("audit")}
-        >
-          🔍 Gestione Audit (Legacy)
-        </button>
-        <button
-          className={activeTab === "settings" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("settings")}
-        >
-          ⚙️ Impostazioni
-        </button>
-        <button
-          className={activeTab === "test" ? "tab active" : "tab"}
-          onClick={() => setActiveTab("test")}
-        >
-          🧪 Test Storage
-        </button>
+
+        {/* Tab Legacy - Solo in Development Mode */}
+        {isDev && (
+          <>
+            <button
+              className={activeTab === "tabs" ? "tab active" : "tab"}
+              onClick={() => setActiveTab("tabs")}
+            >
+              � Tabs Desktop (Old)
+            </button>
+            <button
+              className={activeTab === "audit" ? "tab active" : "tab"}
+              onClick={() => setActiveTab("audit")}
+            >
+              🔍 Gestione Audit (Legacy)
+            </button>
+            <button
+              className={activeTab === "test" ? "tab active" : "tab"}
+              onClick={() => setActiveTab("test")}
+            >
+              🧪 Test Storage
+            </button>
+          </>
+        )}
       </div>
 
       {/* Content Area */}
@@ -166,45 +169,6 @@ const Dashboard = () => {
               </button>
             </div>
             <StorageTestComponent />
-          </div>
-        )}
-
-        {activeTab === "settings" && (
-          <div className="settings-panel">
-            <h2>⚙️ Impostazioni Sistema</h2>
-            <p className="section-description">
-              Gestione cartella workspace e configurazioni avanzate
-            </p>
-
-            {/* Workspace Manager - Full mode */}
-            <section style={{ marginTop: "24px" }}>
-              <h3>📁 Gestione Cartella Workspace</h3>
-              <WorkspaceManager compact={false} audit={currentAudit} />
-            </section>
-
-            {/* Debug Tools */}
-            <section style={{ marginTop: "32px" }}>
-              <h3>🛠️ Strumenti di Debug</h3>
-              <button
-                onClick={handleClearStorage}
-                style={{
-                  padding: "12px 24px",
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                  background: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                }}
-                onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
-                onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
-              >
-                🗑️ Clear localStorage & Reload
-              </button>
-            </section>
           </div>
         )}
       </div>
