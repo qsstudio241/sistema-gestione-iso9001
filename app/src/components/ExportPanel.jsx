@@ -17,6 +17,9 @@ const ExportPanel = () => {
   const { currentAudit, audits, fsProvider } = useStorage();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
+  
+  // Development mode - mostra formati avanzati JSON/CSV
+  const isDev = process.env.NODE_ENV === 'development';
 
   console.log(
     "ExportPanel - currentAudit:",
@@ -172,42 +175,44 @@ const ExportPanel = () => {
           )}
         </div>
 
-        {/* Export JSON/CSV */}
-        <div className="export-section">
-          <h4>Formato Dati (JSON/CSV)</h4>
-          {!currentAudit ? (
-            <p className="export-info">
-              Seleziona un audit per abilitare export
-            </p>
-          ) : (
-            <>
+        {/* Export JSON/CSV - Solo Development Mode */}
+        {isDev && (
+          <div className="export-section">
+            <h4>Formato Dati (JSON/CSV)</h4>
+            {!currentAudit ? (
               <p className="export-info">
-                Esporta <strong>{currentAudit.metadata.auditNumber}</strong> -{" "}
-                {currentAudit.metadata.clientName}
+                Seleziona un audit per abilitare export
               </p>
-              <div className="export-buttons">
-                <button
-                  onClick={() => handleExportCurrent("json-full")}
-                  className="btn btn-primary"
-                >
-                  � JSON Completo
-                </button>
-                <button
-                  onClick={() => handleExportCurrent("json-summary")}
-                  className="btn btn-secondary"
-                >
-                  � JSON Summary
-                </button>
-                <button
-                  onClick={() => handleExportCurrent("csv")}
-                  className="btn btn-success"
-                >
-                  � CSV Summary
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <p className="export-info">
+                  Esporta <strong>{currentAudit.metadata.auditNumber}</strong> -{" "}
+                  {currentAudit.metadata.clientName}
+                </p>
+                <div className="export-buttons">
+                  <button
+                    onClick={() => handleExportCurrent("json-full")}
+                    className="btn btn-primary"
+                  >
+                    📊 JSON Completo
+                  </button>
+                  <button
+                    onClick={() => handleExportCurrent("json-summary")}
+                    className="btn btn-secondary"
+                  >
+                    📋 JSON Summary
+                  </button>
+                  <button
+                    onClick={() => handleExportCurrent("csv")}
+                    className="btn btn-success"
+                  >
+                    📈 CSV Summary
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Export Tutti */}
         <div className="export-section">
@@ -237,26 +242,29 @@ const ExportPanel = () => {
               rilievi emergenti
             </li>
             <li>
-              <strong>File System:</strong> Organizzazione automatica in
-              cartelle strutturate per anno e cliente (richiede permessi
-              browser)
-            </li>
-            <li>
-              <strong>JSON Completo:</strong> Include tutti i dati audit
-              (checklist, NC, evidenze, report)
-            </li>
-            <li>
-              <strong>JSON Summary:</strong> Contiene solo metriche, NC summary
-              e informazioni base
-            </li>
-            <li>
-              <strong>CSV Summary:</strong> Formato tabellare per
-              Excel/LibreOffice con metriche e NC
+              <strong>Salva in Workspace:</strong> Organizzazione automatica in
+              cartelle strutturate per anno e cliente nella cartella workspace collegata
             </li>
             <li>
               <strong>Backup Completo:</strong> Tutti gli audit in formato JSON
-              per ripristino completo
+              per ripristino completo del sistema
             </li>
+            {isDev && (
+              <>
+                <li>
+                  <strong>JSON Completo:</strong> Include tutti i dati audit
+                  (checklist, NC, evidenze, report)
+                </li>
+                <li>
+                  <strong>JSON Summary:</strong> Contiene solo metriche, NC summary
+                  e informazioni base
+                </li>
+                <li>
+                  <strong>CSV Summary:</strong> Formato tabellare per
+                  Excel/LibreOffice con metriche e NC
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
