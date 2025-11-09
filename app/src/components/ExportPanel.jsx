@@ -109,17 +109,17 @@ const ExportPanel = () => {
 
   const handleImportBackup = async () => {
     // Crea input file nascosto
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       try {
         setIsImporting(true);
-        showMessage('📥 Importazione backup in corso...', 'info');
+        showMessage("📥 Importazione backup in corso...", "info");
 
         // Leggi file JSON
         const text = await file.text();
@@ -129,13 +129,16 @@ const ExportPanel = () => {
         const result = await importBackup(backupData);
 
         if (result.success) {
-          showMessage(`✅ Import completato: ${result.count} audit ripristinati`, 'success');
+          showMessage(
+            `✅ Import completato: ${result.count} audit ripristinati`,
+            "success"
+          );
         } else {
-          showMessage(`❌ Errore import: ${result.error}`, 'error');
+          showMessage(`❌ Errore import: ${result.error}`, "error");
         }
       } catch (error) {
-        console.error('Errore lettura backup:', error);
-        showMessage(`❌ File non valido: ${error.message}`, 'error');
+        console.error("Errore lettura backup:", error);
+        showMessage(`❌ File non valido: ${error.message}`, "error");
       } finally {
         setIsImporting(false);
       }
@@ -273,7 +276,7 @@ const ExportPanel = () => {
               className="btn btn-info"
               title="Importa backup JSON per ripristinare audit"
             >
-              {isImporting ? '⏳ Importazione...' : '📥 Importa Backup'}
+              {isImporting ? "⏳ Importazione..." : "📥 Importa Backup"}
             </button>
           </div>
         </div>
@@ -297,8 +300,8 @@ const ExportPanel = () => {
               per ripristino completo del sistema
             </li>
             <li>
-              <strong>Importa Backup:</strong> Ripristina audit da file JSON di backup
-              (utile per sincronizzare dati tra dispositivi)
+              <strong>Importa Backup:</strong> Ripristina audit da file JSON di
+              backup (utile per sincronizzare dati tra dispositivi)
             </li>
             {isDev && (
               <>

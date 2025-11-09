@@ -204,7 +204,38 @@ function AddEvidenceModal({ onClose, onSave }) {
         }));
       };
       reader.readAsDataURL(file);
-    } else {
+    } 
+    // Crea preview per audio
+    else if (file.type.startsWith("audio/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+        setFormData((prev) => ({
+          ...prev,
+          fileData: reader.result,
+          fileSize: file.size,
+          category: EVIDENCE_CATEGORY.DOCUMENT, // o crea EVIDENCE_CATEGORY.AUDIO se vuoi
+          fileType: 'audio',
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+    // Crea preview per video
+    else if (file.type.startsWith("video/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+        setFormData((prev) => ({
+          ...prev,
+          fileData: reader.result,
+          fileSize: file.size,
+          category: EVIDENCE_CATEGORY.DOCUMENT,
+          fileType: 'video',
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+    else {
       setFormData((prev) => ({
         ...prev,
         fileSize: file.size,
@@ -238,7 +269,7 @@ function AddEvidenceModal({ onClose, onSave }) {
                 <input
                   type="file"
                   onChange={handleFileSelect}
-                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+                  accept="image/*,audio/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
                   style={{ display: "none" }}
                 />
               </label>
@@ -253,20 +284,51 @@ function AddEvidenceModal({ onClose, onSave }) {
                   style={{ display: "none" }}
                 />
               </label>
+
+              <label className="btn btn-success file-upload-btn">
+                🎤 Registra Audio
+                <input
+                  type="file"
+                  accept="audio/*"
+                  capture="user"
+                  onChange={handleFileSelect}
+                  style={{ display: "none" }}
+                />
+              </label>
             </div>
 
             {previewUrl && (
-              <div className="image-preview">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "200px",
-                    marginTop: "10px",
-                    borderRadius: "8px",
-                  }}
-                />
+              <div className="file-preview">
+                {formData.fileType === 'audio' ? (
+                  <audio controls style={{ width: '100%', marginTop: '10px' }}>
+                    <source src={previewUrl} />
+                    Il tuo browser non supporta l'elemento audio.
+                  </audio>
+                ) : formData.fileType === 'video' ? (
+                  <video 
+                    controls 
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '200px', 
+                      marginTop: '10px',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <source src={previewUrl} />
+                    Il tuo browser non supporta l'elemento video.
+                  </video>
+                ) : (
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "200px",
+                      marginTop: "10px",
+                      borderRadius: "8px",
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
