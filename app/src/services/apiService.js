@@ -317,6 +317,12 @@ class ApiService {
         return this.get(`/audits${query ? '?' + query : ''}`);
     }
 
+    async getNextAuditNumber(projectYear) {
+        const query = new URLSearchParams();
+        if (projectYear) query.set('project_year', String(projectYear));
+        return this.get(`/audits/next-number${query.toString() ? '?' + query.toString() : ''}`);
+    }
+
     async getAudit(id) {
         return this.get(`/audits/${id}`);
     }

@@ -14,6 +14,10 @@ router.use(authenticate);
 // GET /api/v1/audits - Lista audit con filtri e paginazione
 router.get('/audits', auditController.listAudits);
 
+// GET /api/v1/audits/next-number - prossimo numero audit disponibile
+// DEVE STARE PRIMA DI /audits/:id
+router.get('/audits/next-number', auditController.getNextAuditNumber);
+
 // GET /api/v1/audits/:id - Dettagli audit singolo
 router.get('/audits/:id', auditController.getAuditById);
 

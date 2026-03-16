@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
-import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
+import { getNextAuditNumber as getNextAuditNumberLocal, sortAuditsByNumber } from "../utils/auditUtils";
 import apiService from "../services/apiService";
 import "./AuditSelector.css";
 
@@ -234,7 +234,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     : user.allowed_standard_ids.length === 0
       ? []
       : AVAILABLE_STANDARDS.filter((s) => user.allowed_standard_ids.includes(s.standardId));
-  const nextNumber = getNextAuditNumber(audits, currentYear);
+  const localNextNumber = getNextAuditNumberLocal(audits, currentYear);
 
   // Pre-popola clientName, companyId, tipologia e fornitore se re-audit
   const initialClientName = isReaudit && currentAudit 
@@ -251,7 +251,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     : "";
 
   const [formData, setFormData] = useState({
-    auditNumber: nextNumber,
+    auditNumber: localNextNumber,
     clientName: initialClientName,
     companyId: initialCompanyId,
     auditPartyType: initialPartyType,
@@ -261,6 +261,30 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     norms: [],
     customChecklistId: null,
   });
+
+  // Numero audit autorevole: usa il server (univoco a livello organizzazione),
+  // fallback al calcolo locale se endpoint non raggiungibile.
+  useEffect(() => {
+    let isMounted = true;
+    apiService
+      .getNextAuditNumber(currentYear)
+      .then((res) => {
+        const nextServerNumber = res?.data?.next_audit_number;
+        if (!isMounted || !nextServerNumber) return;
+        setFormData((prev) => {
+          // Non sovrascrivere se l'utente ha già modificato manualmente il numero.
+          if (prev.auditNumber && prev.auditNumber !== localNextNumber) return prev;
+          return { ...prev, auditNumber: nextServerNumber };
+        });
+      })
+      .catch((err) => {
+        console.warn("Numero audit da server non disponibile, uso fallback locale:", err.message);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentYear, localNextNumber]);
 
   const [customChecklists, setCustomChecklists] = useState([]);
   useEffect(() => {

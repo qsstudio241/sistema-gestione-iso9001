@@ -149,6 +149,57 @@ async function listAudits(req, res) {
 }
 
 /**
+ * GET /api/v1/audits/next-number?project_year=2026
+ * Restituisce il prossimo numero audit disponibile per l'organizzazione corrente.
+ *
+ * Nota importante:
+ * - La numerazione è univoca a livello organization_id (non per auditor_org).
+ * - Questo endpoint evita collisioni quando un auditor non vede tutti gli audit.
+ */
+async function getNextAuditNumber(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const requestedYear = parseInt(req.query.project_year, 10);
+        const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100
+            ? requestedYear
+            : new Date().getFullYear();
+
+        const yearPrefix = `${year}-%`;
+
+        const result = await query(`
+      SELECT MAX(TRY_CAST(SUBSTRING(audit_number, 6, 10) AS INT)) AS max_progressive
+      FROM audits
+      WHERE organization_id = @organization_id
+        AND is_deleted = 0
+        AND audit_number LIKE @year_prefix
+        AND LEN(audit_number) >= 6
+    `, {
+            organization_id,
+            year_prefix: yearPrefix
+        });
+
+        const maxProgressive = result.recordset?.[0]?.max_progressive || 0;
+        const nextProgressive = maxProgressive + 1;
+        const nextAuditNumber = `${year}-${String(nextProgressive).padStart(2, '0')}`;
+
+        return res.json({
+            success: true,
+            data: {
+                project_year: year,
+                next_audit_number: nextAuditNumber,
+                next_progressive: nextProgressive
+            }
+        });
+    } catch (error) {
+        logger.error('[NEXT_AUDIT_NUMBER] Errore:', { message: error.message, stack: error.stack });
+        return res.status(500).json({
+            error: 'Errore durante il calcolo del prossimo numero audit',
+            code: 'NEXT_AUDIT_NUMBER_ERROR'
+        });
+    }
+}
+
+/**
  * GET /api/v1/audits/:id
  * Recupera dettagli di un singolo audit
  */
@@ -1011,6 +1062,22 @@ async function upsertAudit(req, res) {
         }
 
     } catch (error) {
+        // SQL Server unique violation (2601/2627): audit_number già esistente
+        // Risposta 409 esplicita per permettere al client di recuperare un numero nuovo.
+        if ((error.number === 2601 || error.number === 2627) && String(error.message || '').toLowerCase().includes('audit_number')) {
+            logger.warn('[UPSERT] Conflitto numero audit:', {
+                number: error.number,
+                message: error.message,
+                audit_number: req.body?.audit_number,
+                organization_id: req.user?.organization_id
+            });
+            return res.status(409).json({
+                error: 'Numero audit già esistente',
+                code: 'AUDIT_NUMBER_CONFLICT',
+                audit_number: req.body?.audit_number
+            });
+        }
+
         logger.error('[UPSERT] Errore upsert audit:', { message: error.message, stack: error.stack });
         return res.status(500).json({
             error: 'Errore server durante upsert audit',
@@ -1307,6 +1374,7 @@ async function getNcResponses(req, res) {
 
 module.exports = {
     listAudits,
+    getNextAuditNumber,
     getAuditById,
     createAudit,
     updateAudit,

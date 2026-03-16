@@ -365,13 +365,23 @@ export function StorageProvider({ children, useMockData = false }) {
             })
           : localAudits;
 
-        // Includi audit solo locali (non ancora sul server) nella lista finale
+        // Includi audit solo locali (non ancora sul server) nella lista finale.
+        // Regola:
+        // - online: includi SOLO audit con operazioni pendenti in sync queue (create/update),
+        //           così eviti "audit fantasma" non presenti sul server e non più sincronizzabili.
+        // - offline: includi tutti i locali non presenti sul server.
         let finalAudits = mergedAudits;
         if (serverAudits.length > 0 && mergedAudits.length > 0) {
           const mergedIds = new Set(mergedAudits.map((a) => a.metadata?.id || a.id));
-          const localOnly = localAudits.filter(
-            (la) => !mergedIds.has(la.metadata?.id || la.id)
-          );
+          const queuedUuids = navigator.onLine
+            ? new Set(await syncService.getQueuedAuditUuids())
+            : null;
+          const localOnly = localAudits.filter((la) => {
+            const uuid = la.metadata?.id || la.id;
+            if (mergedIds.has(uuid)) return false;
+            if (!navigator.onLine) return true;
+            return queuedUuids.has(uuid);
+          });
           if (localOnly.length > 0) {
             finalAudits = [...mergedAudits, ...localOnly];
             console.log(`📋 [MERGE] Aggiunti ${localOnly.length} audit solo locali alla lista`);
@@ -1190,6 +1200,37 @@ export function StorageProvider({ children, useMockData = false }) {
     };
     window.addEventListener('sgq:auditIdAssigned', handleAuditIdAssigned);
     return () => window.removeEventListener('sgq:auditIdAssigned', handleAuditIdAssigned);
+  }, []);
+
+  // Ascolta evento di riallineamento numero audit (es. conflitto numerazione risolto lato server)
+  useEffect(() => {
+    const handleAuditNumberAssigned = (e) => {
+      const { uuid, auditNumber } = e.detail || {};
+      if (!uuid || !auditNumber) return;
+
+      setAudits((prev) =>
+        prev.map((a) => {
+          const id = a.metadata?.id || a.id;
+          if (id !== uuid) return a;
+          if (a.metadata?.auditNumber === auditNumber) return a;
+          return {
+            ...a,
+            metadata: {
+              ...a.metadata,
+              auditNumber,
+              lastModified: new Date().toISOString(),
+            },
+          };
+        }),
+      );
+    };
+
+    window.addEventListener("sgq:auditNumberAssigned", handleAuditNumberAssigned);
+    return () =>
+      window.removeEventListener(
+        "sgq:auditNumberAssigned",
+        handleAuditNumberAssigned,
+      );
   }, []);
 
   /**

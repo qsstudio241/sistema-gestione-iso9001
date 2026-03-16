@@ -329,6 +329,7 @@ export class SyncService {
             delete mappedAudit.selectedStandards;
             delete mappedAudit.standardIds;
             delete mappedAudit.standardId;
+            delete mappedAudit.__auditNumberRetried;
 
             const result = await apiService.upsertAudit(mappedAudit);
 
@@ -355,6 +356,35 @@ export class SyncService {
 
             return result;
         } catch (error) {
+            // Conflitto numero audit (es. auditor non vede tutti gli audit dell'organizzazione):
+            // recupera un numero server-side e ritenta una sola volta.
+            if (error.status === 409 && error.code === 'AUDIT_NUMBER_CONFLICT' && !auditData.__auditNumberRetried) {
+                const projectYear = Number(auditData.project_year) || new Date().getFullYear();
+                const nextNumberRes = await apiService.getNextAuditNumber(projectYear);
+                const nextAuditNumber = nextNumberRes?.data?.next_audit_number;
+
+                if (nextAuditNumber && nextAuditNumber !== auditData.audit_number) {
+                    const retriedPayload = {
+                        ...auditData,
+                        audit_number: nextAuditNumber,
+                        updated_at: new Date().toISOString(),
+                        __auditNumberRetried: true
+                    };
+
+                    const retryResult = await this.syncUpsertAudit(retriedPayload);
+                    const auditUuid = auditData.audit_uuid || auditData.id;
+
+                    // Aggiorna il numero audit in memoria locale per allineare UI e server.
+                    window.dispatchEvent(
+                        new CustomEvent('sgq:auditNumberAssigned', {
+                            detail: { uuid: auditUuid, auditNumber: nextAuditNumber }
+                        })
+                    );
+
+                    return retryResult;
+                }
+            }
+
             // Conflict: server ha versione più recente (409)
             // FIX: usa error.status/code (fetch-based ApiError), NON error.response (Axios-style)
             if (error.status === 409 && error.code === 'AUDIT_CONFLICT') {
@@ -842,6 +872,35 @@ export class SyncService {
             // Non bloccante: se fallisce, il normale conflict-resolution gestisce tutto
             console.warn('⚠️ [SYNC] clearQueueForServerAudits fallito (non bloccante):', error.message);
             return 0;
+        }
+    }
+
+    /**
+     * Restituisce gli UUID audit presenti in queue (create/update),
+     * utile per distinguere audit locali "in attesa sync" da audit orfani.
+     * @returns {Promise<string[]>}
+     */
+    async getQueuedAuditUuids() {
+        try {
+            const db = await this.init();
+            const transaction = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+            const store = transaction.objectStore(SYNC_QUEUE_STORE);
+
+            const items = await new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            const uuids = items
+                .filter((item) => item.type === 'create_audit' || item.type === 'update_audit')
+                .map((item) => item.payload?.audit_uuid)
+                .filter(Boolean);
+
+            return [...new Set(uuids)];
+        } catch (error) {
+            console.warn('⚠️ [SYNC] getQueuedAuditUuids fallito (non bloccante):', error.message);
+            return [];
         }
     }
 
