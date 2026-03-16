@@ -170,7 +170,6 @@ async function getNextAuditNumber(req, res) {
       SELECT MAX(TRY_CAST(SUBSTRING(audit_number, 6, 10) AS INT)) AS max_progressive
       FROM audits
       WHERE organization_id = @organization_id
-        AND is_deleted = 0
         AND audit_number LIKE @year_prefix
         AND LEN(audit_number) >= 6
     `, {
@@ -1064,10 +1063,13 @@ async function upsertAudit(req, res) {
     } catch (error) {
         // SQL Server unique violation (2601/2627): audit_number già esistente
         // Risposta 409 esplicita per permettere al client di recuperare un numero nuovo.
-        if ((error.number === 2601 || error.number === 2627) && String(error.message || '').toLowerCase().includes('audit_number')) {
+        const errorMessage = String(error.message || '');
+        const isAuditNumberConstraint =
+            /UQ_audits_number/i.test(errorMessage) || /audit_number/i.test(errorMessage);
+        if ((error.number === 2601 || error.number === 2627) && isAuditNumberConstraint) {
             logger.warn('[UPSERT] Conflitto numero audit:', {
                 number: error.number,
-                message: error.message,
+                message: errorMessage,
                 audit_number: req.body?.audit_number,
                 organization_id: req.user?.organization_id
             });
