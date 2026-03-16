@@ -270,13 +270,34 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   }, []);
 
   // Carica aziende dall'anagrafica (Fase 1)
+  const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
+  const [auditorOrgs, setAuditorOrgs] = useState([]);
+  const [selectedAuditorOrgId, setSelectedAuditorOrgId] = useState(user?.auditor_org_id ?? null);
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
-  const effectiveOrgId = user?.auditor_org_id ?? null;
+  const effectiveOrgId =
+    user?.auditor_org_id ||
+    selectedAuditorOrgId ||
+    (isSuperadmin && auditorOrgs.length === 1 ? auditorOrgs[0].id : null);
+
+  const loadAuditorOrgs = useCallback(async () => {
+    if (!isSuperadmin) return;
+    try {
+      const res = await apiService.getAuditorOrgs();
+      setAuditorOrgs(res.data || []);
+    } catch (err) {
+      console.warn("Caricamento auditor org:", err.message);
+      setAuditorOrgs([]);
+    }
+  }, [isSuperadmin]);
 
   const loadCompanies = useCallback(async () => {
     const orgId = effectiveOrgId;
-    if (!orgId) return;
+    if (!orgId) {
+      setCompanies([]);
+      setCompaniesLoading(false);
+      return;
+    }
     setCompaniesLoading(true);
     try {
       const res = await apiService.getCompanies({ auditor_org_id: orgId });
@@ -288,6 +309,18 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       setCompaniesLoading(false);
     }
   }, [effectiveOrgId]);
+
+  useEffect(() => {
+    loadAuditorOrgs();
+  }, [loadAuditorOrgs]);
+
+  useEffect(() => {
+    if (user?.auditor_org_id) {
+      setSelectedAuditorOrgId(user.auditor_org_id);
+    } else if (isSuperadmin && auditorOrgs.length === 1) {
+      setSelectedAuditorOrgId(auditorOrgs[0].id);
+    }
+  }, [user?.auditor_org_id, isSuperadmin, auditorOrgs]);
 
   useEffect(() => {
     if (effectiveOrgId) loadCompanies();
@@ -511,6 +544,30 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             <small className="form-hint">Generato automaticamente</small>
           </div>
 
+          {!isReaudit && isSuperadmin && (
+            <div className="form-group">
+              <label htmlFor="auditorOrgSelect">Studio / Auditor org *</label>
+              <select
+                id="auditorOrgSelect"
+                value={selectedAuditorOrgId ?? ""}
+                onChange={(e) => {
+                  const orgId = e.target.value ? parseInt(e.target.value, 10) : null;
+                  setSelectedAuditorOrgId(orgId);
+                  setFormData((prev) => ({ ...prev, companyId: null, clientName: "" }));
+                }}
+                className="form-control"
+              >
+                <option value="">— Seleziona studio —</option>
+                {auditorOrgs.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+              <small className="form-hint">Serve per caricare l&apos;elenco aziende del committente.</small>
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="companySelect">Azienda committente *</label>
             {isReaudit ? (
@@ -521,6 +578,13 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                 value={formData.clientName || "—"}
                 className="form-control readonly"
               />
+            ) : !effectiveOrgId ? (
+              <>
+                <select id="companySelect" disabled className="form-control">
+                  <option>— Seleziona prima studio —</option>
+                </select>
+                <small className="form-hint">Seleziona uno studio per vedere l&apos;anagrafica aziende.</small>
+              </>
             ) : companies.length > 0 ? (
               <>
                 <select
