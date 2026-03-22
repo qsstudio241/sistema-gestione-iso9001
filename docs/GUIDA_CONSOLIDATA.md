@@ -113,6 +113,8 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 
 **Nota**: Netlify e GitHub Actions sono indipendenti; entrambi verdi = maggiore sicurezza prima del merge.
 
+_Test operativo Deploy Preview (mar 2026): branch `chore/verify-netlify-preview` — PR di prova verso `main`; rimuovere questa riga dopo verifica OK._
+
 ---
 
 **Backlog architetturale**: [adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md).
