@@ -723,23 +723,30 @@ echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend.service
 
 ---
 
-### 🚀 SPRINT 2B — Gestione file allegati (dopo Sprint 2)
+### ✅ SPRINT 2B — Gestione file allegati COMPLETATO (11/04/2026)
 
-**Decisione architetturale (10/04/2026)**:
+| Artefatto | Stato | Note |
+| --- | --- | --- |
+| `database/migrations/031_document_file_attachments.sql` | ✅ creato | Estende `attachments` con `document_id`, `doc_file_version`, `is_current_doc_version` |
+| `backend/scripts/run-migration-031.js` | ✅ creato | Script esecuzione migration |
+| `backend/src/config/multer.js` | ✅ aggiornato | `uploadDocFile` — blacklist eseguibili, 500 MB, path `uploads/docs/{org}/{docId}/` |
+| `backend/src/controllers/docfile.controller.js` | ✅ creato | listDocFiles, uploadDocFile, downloadDocFile |
+| `backend/src/routes/docfile.routes.js` | ✅ creato | GET/POST `/documents/:docId/file*` autenticati |
+| `backend/src/server.js` | ✅ aggiornato | `docfileRoutes` integrato |
+| `app/src/components/DocFileDialog.jsx` | ✅ creato | Dialog upload/download/versioning con storico |
+| `app/src/components/DocFileDialog.css` | ✅ creato | UI dialog file |
+| `app/src/components/DocumentRegistry.jsx` | ✅ aggiornato | Pulsante 📎 in ogni riga Catalogo |
+| `app/src/services/apiService.js` | ✅ aggiornato | getDocFiles, uploadDocFile, getDocFileDownloadUrl |
+| Nginx `client_max_body_size` | ✅ configurato | 500m in `/etc/nginx/nginx.conf` |
+| Migration 031 su DB | ✅ eseguita | Colonne aggiunte alla tabella `attachments` |
+| Build Vite | ✅ 0 errori | 239 moduli |
+| Commit `0be6b43` + push | ✅ su main | Netlify auto-deploy frontend OK |
+| Deploy backend VPS | ✅ completato | 11/04/2026 |
 
-- **Storage**: filesystem VPS — cartella `/uploads/{org_id}/{company_id}/{doc_id}/`
-- **Formati accettati**: qualsiasi, eccetto eseguibili (`.exe .bat .cmd .ps1 .sh .msi`) per sicurezza server
-- **Dimensione**: nessun limite fisso — configurabile per organizzazione, bounded solo dallo spazio disco VPS
-- **Lettura**: PDF → viewer browser nativo; altri formati → download, l'OS sceglie l'app
-- **Modifica**: flusso check-out (download + lock) → modifica locale con editor utente → check-in (upload nuova revisione)
-- **Cancellazione fisica**: non prevista — i documenti obsoleti restano per il periodo di retention
-
-**Passi**:
-
-1. Migration 031: `file_path`, `file_size`, `mime_type`, `version` su tabella `attachments` + collegamento a `document_registry`
-2. Backend: endpoint upload (multer, nessun filtro MIME tranne blacklist eseguibili) + download autenticato
-3. Frontend: pulsante "📄 Visualizza/Scarica" + dialog "🔄 Nuova revisione" con file picker
-4. Configurazione Nginx: `client_max_body_size` adeguato allo spazio disco disponibile
+**Formati accettati**: qualsiasi eccetto `.exe .bat .cmd .ps1 .sh .msi .vbs .jar .com .scr .pif .reg .dll .sys`  
+**Dimensione max**: 500 MB per file (configurabile aumentando il limite multer)  
+**Lettura PDF**: `?inline=1` nella URL → viewer browser nativo  
+**Storico versioni**: visibile nel dialog collassato  
 
 ---
 
