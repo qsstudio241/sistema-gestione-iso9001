@@ -293,8 +293,8 @@ export default function NCPage() {
   return (
     <div className="nc-page">
       <div className="nc-page-header">
-        <h1>\uD83D\uDEA8 Non Conformit\u00e0 & Azioni Correttive</h1>
-        <p className="nc-page-sub">ISO 9001:2015 \u00a78.7 + \u00a710.2 \u2014 Registro cross-audit</p>
+        <h1>🚨 Non Conformità & Azioni Correttive</h1>
+        <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 — Registro cross-audit</p>
       </div>
 
       {/* Stats bar */}
