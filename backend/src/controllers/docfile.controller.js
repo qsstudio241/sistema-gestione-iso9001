@@ -7,6 +7,12 @@
  *   POST /documents/:docId/file            → upload nuova versione
  *   GET  /documents/:docId/file/download   → download versione corrente (inline per PDF)
  *   GET  /documents/:docId/file/:attId/download → download versione specifica
+ *
+ * Note schema attachments:
+ *   PK  = attachment_id  (NON id)
+ *   col = storage_path   (NON file_path)
+ *   FK  = uploaded_by → users.user_id
+ *   usr = users.full_name (NON name)
  */
 
 const { getPool } = require('../config/database');
@@ -46,12 +52,17 @@ async function listDocFiles(req, res) {
         const r = await pool.request()
             .input('docId', docId)
             .query(`
-                SELECT a.id, a.file_name, a.file_path, a.file_size, a.mime_type,
-                       a.doc_file_version, a.is_current_doc_version,
+                SELECT a.attachment_id AS id,
+                       a.file_name,
+                       a.storage_path,
+                       a.file_size,
+                       a.mime_type,
+                       a.doc_file_version,
+                       a.is_current_doc_version,
                        a.created_at,
-                       u.name AS uploaded_by_name
+                       u.full_name AS uploaded_by_name
                 FROM attachments a
-                LEFT JOIN users u ON u.id = a.uploaded_by
+                LEFT JOIN users u ON u.user_id = a.uploaded_by
                 WHERE a.document_id = @docId
                 ORDER BY a.created_at DESC
             `);
@@ -83,13 +94,12 @@ async function uploadDocFile(req, res) {
 
         const pool    = await getPool();
         const orgId   = req.user.organization_id;
-        const userId  = req.user.id;
+        const userId  = req.user.user_id;
         const docId   = parseInt(req.params.docId);
         const version = (req.body.version || '').trim() || null;
 
         const doc = await getDocumentOrFail(pool, docId, orgId);
         if (!doc) {
-            // Rimuovi il file caricato se il documento non esiste
             fs.unlink(req.file.path, () => {});
             return res.status(404).json({ error: 'Documento non trovato.' });
         }
@@ -101,24 +111,24 @@ async function uploadDocFile(req, res) {
 
         // Inserisci il nuovo allegato
         const insertResult = await pool.request()
-            .input('orgId',    orgId)
             .input('docId',    docId)
             .input('userId',   userId)
             .input('fileName', req.file.originalname)
-            .input('filePath', req.file.path)
+            .input('storagePath', req.file.path)
             .input('fileSize', req.file.size)
+            .input('fileType', path.extname(req.file.originalname).toLowerCase())
             .input('mimeType', req.file.mimetype || null)
             .input('version',  version)
             .query(`
                 INSERT INTO attachments
-                    (organization_id, document_id, uploaded_by,
-                     file_name, file_path, file_size, mime_type,
+                    (document_id, uploaded_by,
+                     file_name, file_type, storage_path, file_size, mime_type,
                      doc_file_version, is_current_doc_version,
                      category, created_at)
-                OUTPUT INSERTED.id
+                OUTPUT INSERTED.attachment_id AS id
                 VALUES
-                    (@orgId, @docId, @userId,
-                     @fileName, @filePath, @fileSize, @mimeType,
+                    (@docId, @userId,
+                     @fileName, @fileType, @storagePath, @fileSize, @mimeType,
                      @version, 1,
                      'document', GETDATE())
             `);
@@ -155,20 +165,25 @@ async function downloadDocFile(req, res) {
         const doc = await getDocumentOrFail(pool, docId, orgId);
         if (!doc) return res.status(404).json({ error: 'Documento non trovato.' });
 
-        let query;
         const req2 = pool.request().input('docId', docId);
+        let sql;
         if (attId) {
             req2.input('attId', attId);
-            query = 'SELECT id, file_name, file_path, mime_type FROM attachments WHERE document_id=@docId AND id=@attId';
+            sql = `SELECT attachment_id AS id, file_name, storage_path, mime_type
+                   FROM attachments
+                   WHERE document_id=@docId AND attachment_id=@attId`;
         } else {
-            query = 'SELECT TOP 1 id, file_name, file_path, mime_type FROM attachments WHERE document_id=@docId AND is_current_doc_version=1 ORDER BY created_at DESC';
+            sql = `SELECT TOP 1 attachment_id AS id, file_name, storage_path, mime_type
+                   FROM attachments
+                   WHERE document_id=@docId AND is_current_doc_version=1
+                   ORDER BY created_at DESC`;
         }
 
-        const r = await req2.query(query);
+        const r = await req2.query(sql);
         if (!r.recordset.length) return res.status(404).json({ error: 'Nessun file allegato per questo documento.' });
 
         const att = r.recordset[0];
-        if (!fs.existsSync(att.file_path)) {
+        if (!fs.existsSync(att.storage_path)) {
             return res.status(410).json({ error: 'File non trovato sul server. Potrebbe essere stato spostato.' });
         }
 
@@ -179,7 +194,7 @@ async function downloadDocFile(req, res) {
 
         res.setHeader('Content-Disposition', disposition);
         if (att.mime_type) res.setHeader('Content-Type', att.mime_type);
-        res.sendFile(path.resolve(att.file_path));
+        res.sendFile(path.resolve(att.storage_path));
     } catch (err) {
         logger.error('downloadDocFile:', err.message);
         res.status(500).json({ error: err.message });
