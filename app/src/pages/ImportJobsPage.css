@@ -1,0 +1,192 @@
+.import-jobs-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.import-jobs-intro {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.import-jobs-error {
+  color: #b00020;
+  margin-bottom: 0.75rem;
+}
+
+.import-jobs-denied {
+  color: #666;
+}
+
+.import-jobs-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 2fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 800px) {
+  .import-jobs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.import-jobs-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.import-jobs-new input {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.45rem 0.6rem;
+}
+
+.import-jobs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.import-jobs-list li {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.job-row {
+  flex: 1;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.job-row.active {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.job-title {
+  display: block;
+  font-weight: 600;
+}
+
+.job-meta {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.btn-del {
+  width: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.import-jobs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.btn-file {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  background: #eee;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-file input {
+  display: none;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #1976d2;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #455a64;
+  color: #fff;
+}
+
+.import-file-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.file-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.file-status {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.file-conf {
+  font-size: 0.85rem;
+  color: #0d47a1;
+}
+
+.file-err {
+  color: #b00020;
+  font-size: 0.9rem;
+}
+
+.file-text {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.file-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn-small.primary {
+  background: #2e7d32;
+  color: #fff;
+  border-color: #2e7d32;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

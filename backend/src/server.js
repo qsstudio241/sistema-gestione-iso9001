@@ -37,6 +37,7 @@ const qualificationsRoutes  = require('./routes/qualifications.routes');
 const risksRoutes           = require('./routes/risks.routes');
 const complaintsRoutes      = require('./routes/complaints.routes');
 const suppliersRoutes       = require('./routes/suppliers.routes');
+const importJobsRoutes      = require('./routes/importJobs.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -146,6 +147,7 @@ app.use(API_BASE, qualificationsRoutes);
 app.use(API_BASE, risksRoutes);
 app.use(`${API_BASE}/complaints`, complaintsRoutes);
 app.use(`${API_BASE}/suppliers`, suppliersRoutes);
+app.use(API_BASE, importJobsRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 
 // Static files (uploads)

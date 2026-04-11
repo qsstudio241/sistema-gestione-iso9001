@@ -68,6 +68,7 @@ function buildNavItems(user, alerts = {}) {
         ...(isAdmin ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
+          { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),
         { to: "/settings/templates",        icon: "📝", label: "Template report" },

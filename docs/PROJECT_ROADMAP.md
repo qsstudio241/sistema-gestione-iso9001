@@ -653,6 +653,6 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 ---
 
 **Ultimo Aggiornamento**: 11 aprile 2026
-**Prossimo Step**: Sprint 9 — AI Import Pipeline (dopo stabilizzazione licenze in produzione)
+**Prossimo Step**: Sprint 10 — Estensioni import (OCR opzionale, classificazione record) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi).
 
-> Sprint 0-8: Sprint 7 (Reclami & Fornitori) e Sprint 8 (Licensing Engine: `organizations.licensed_modules`, API admin, gating UI/API) completati. Migrazioni fino a 037 su VPS. Verificare smoke dopo deploy: mount `/complaints` e `/suppliers`, pagina Impostazioni → Licenze moduli.
+> Sprint 0-9: Sprint 9 (Import batch PDF: job `import_jobs` / `import_job_files`, estrazione testo locale `pdf-parse`, confidence euristica, revisione umana, licenza `ai_import`, UI `/settings/import-jobs`) senza API esterne LLM. Migrazione `038` su VPS + `npm install` backend per `pdf-parse`.

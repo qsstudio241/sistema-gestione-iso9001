@@ -33,6 +33,7 @@ import NCPage from "./pages/NCPage";
 import RisksPage from "./pages/RisksPage";
 import ComplaintsPage from "./pages/ComplaintsPage";
 import LicensesSettingsPage from "./pages/LicensesSettingsPage";
+import ImportJobsPage from "./pages/ImportJobsPage";
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -168,6 +169,16 @@ function AppContent() {
             <BackWrapper>
               <LicensesSettingsPage />
             </BackWrapper>
+          }
+        />
+        <Route
+          path="/settings/import-jobs"
+          element={
+            <LicensedRoute moduleKey="ai_import">
+              <BackWrapper>
+                <ImportJobsPage />
+              </BackWrapper>
+            </LicensedRoute>
           }
         />
       </Routes>

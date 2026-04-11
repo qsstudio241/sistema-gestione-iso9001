@@ -16,6 +16,7 @@ const KNOWN_MODULE_KEYS = [
     'notifications',
     'sal',
     'saldatura',
+    'ai_import',
 ];
 
 const ALL_MODULES_DEFAULT = [...KNOWN_MODULE_KEYS];
@@ -30,6 +31,7 @@ const LABELS_IT = {
     notifications: 'Notifiche e alert email',
     sal: 'SAL — Riesame direzione',
     saldatura: 'Modulo saldatura ISO 3834',
+    ai_import: 'Import batch documenti (PDF)',
 };
 
 function parseLicensedModulesColumn(raw) {

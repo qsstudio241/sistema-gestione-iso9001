@@ -46,6 +46,19 @@ const MODULE_INFO = {
     sprint: "Sprint 5",
     eta: "Contatta l'amministratore",
   },
+  ai_import: {
+    icon: "📥",
+    title: "Import batch PDF",
+    description:
+      "Caricamento massivo di PDF con estrazione testo locale e revisione umana. Estensioni future: OCR e classificazione automatica.",
+    features: [
+      "Job con più file allegati",
+      "Anteprima testo estratto e punteggio attendibilità",
+      "Conferma revisione per riga",
+    ],
+    sprint: "Sprint 9",
+    eta: "Contatta l'amministratore",
+  },
   notifications: {
     icon: "🔔",
     title: "Notifiche email",

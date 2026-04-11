@@ -1107,6 +1107,49 @@ class ApiService {
     async patchAdminLicenses(body) {
         return this.patch('/admin/licenses', body);
     }
+
+    // ─── Import job PDF batch (Sprint 9) ─────────────────────────────────────
+    async getImportJobs() {
+        return this.get('/import-jobs');
+    }
+
+    async createImportJob(data) {
+        return this.post('/import-jobs', data || {});
+    }
+
+    async getImportJob(id) {
+        return this.get(`/import-jobs/${id}`);
+    }
+
+    async deleteImportJob(id) {
+        return this.delete(`/import-jobs/${id}`);
+    }
+
+    async uploadImportJobFiles(jobId, fileList) {
+        const formData = new FormData();
+        for (let i = 0; i < fileList.length; i++) {
+            formData.append('files', fileList[i]);
+        }
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/import-jobs/${jobId}/files`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: response.statusText }));
+            throw new Error(err.error || `Upload fallito (${response.status})`);
+        }
+        return response.json();
+    }
+
+    async processImportJob(id) {
+        return this.post(`/import-jobs/${id}/process`, {});
+    }
+
+    async patchImportJobFile(jobId, fileId, body) {
+        return this.patch(`/import-jobs/${jobId}/files/${fileId}`, body);
+    }
 }
 
 /**
