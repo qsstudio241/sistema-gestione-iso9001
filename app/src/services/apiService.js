@@ -1005,6 +1005,33 @@ class ApiService {
         }
         return `${base}/documents/${docId}/file/download?token=${token}${inlineParam}`;
     }
+
+    // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────
+
+    async getQualificationsStats() {
+        return this.get('/qualifications/stats');
+    }
+
+    async getQualifications(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/qualifications${qs ? '?' + qs : ''}`);
+    }
+
+    async getQualification(id) {
+        return this.get(`/qualifications/${id}`);
+    }
+
+    async createQualification(data) {
+        return this.post('/qualifications', data);
+    }
+
+    async updateQualification(id, data) {
+        return this.put(`/qualifications/${id}`, data);
+    }
+
+    async deleteQualification(id) {
+        return this.delete(`/qualifications/${id}`);
+    }
 }
 
 /**

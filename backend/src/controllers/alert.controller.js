@@ -55,12 +55,32 @@ async function getAlertCount(req, res) {
     }
 
     const docCount = docResult.recordset[0]?.cnt || 0;
-    const total = docCount + ncCount;
+
+    // Qualifiche scadute o in scadenza entro 30 giorni (Sprint 4)
+    let qualifCount = 0;
+    try {
+      const qualifResult = await pool.request()
+        .input('orgId', orgId)
+        .query(`
+          SELECT COUNT(*) AS cnt
+          FROM qualifications
+          WHERE organization_id = @orgId
+            AND status NOT IN ('revocata','sospesa')
+            AND expiry_date IS NOT NULL
+            AND expiry_date <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+        `);
+      qualifCount = qualifResult.recordset[0]?.cnt || 0;
+    } catch {
+      // Tabella qualifications non ancora creata — non bloccante
+    }
+
+    const total = docCount + ncCount + qualifCount;
 
     res.json({
       total,
       documents: docCount,
       nc: ncCount,
+      qualifications: qualifCount,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

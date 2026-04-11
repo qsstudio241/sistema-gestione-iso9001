@@ -1,0 +1,24 @@
+/* QualificationForm.css */
+.qf-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:1000; padding:16px; }
+.qf-modal { background:#fff; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.2); width:100%; max-width:660px; max-height:92vh; overflow-y:auto; display:flex; flex-direction:column; }
+.qf-header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px 14px; border-bottom:1px solid #e5e7eb; }
+.qf-title  { font-size:17px; font-weight:700; color:#1e3a5f; margin:0; }
+.qf-close  { background:none; border:none; font-size:18px; cursor:pointer; color:#9ca3af; }
+.qf-close:hover { color:#374151; }
+.qf-body   { padding:20px 24px; display:flex; flex-direction:column; gap:10px; }
+.qf-section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; border-bottom:1px solid #f3f4f6; padding-bottom:4px; }
+.qf-row    { display:flex; gap:12px; flex-wrap:wrap; }
+.qf-field  { display:flex; flex-direction:column; gap:4px; flex:1; min-width:160px; }
+.qf-flex2  { flex:2; }
+.qf-field label { font-size:12px; font-weight:500; color:#374151; }
+.qf-field input, .qf-field select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:14px; background:#f9fafb; }
+.qf-field input:focus, .qf-field select:focus { outline:none; border-color:#1e3a5f; background:#fff; }
+.req { color:#ef4444; }
+.qf-btn-link { background:none; border:none; color:#1e3a5f; font-size:12px; cursor:pointer; text-decoration:underline; white-space:nowrap; }
+.qf-error  { margin:0 24px 12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; }
+.qf-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
+.qf-btn-cancel { padding:9px 20px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; color:#374151; font-size:14px; cursor:pointer; }
+.qf-btn-save   { padding:9px 22px; border:none; border-radius:8px; background:#1e3a5f; color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
+.qf-btn-save:hover:not(:disabled) { background:#16304e; }
+.qf-btn-save:disabled { opacity:.6; cursor:not-allowed; }
+@media (max-width:500px) { .qf-row { flex-direction:column; } }

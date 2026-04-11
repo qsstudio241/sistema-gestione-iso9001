@@ -28,6 +28,7 @@ import UsersAdminPage from "./components/UsersAdminPage";
 import ReportTemplatesAdminPage from "./components/ReportTemplatesAdminPage";
 import CustomChecklistsPage from "./components/CustomChecklistsPage";
 import NotificationsSettingsPage from "./pages/NotificationsSettingsPage";
+import QualificationsPage from "./pages/QualificationsPage";
 import ModuleLocked from "./components/ModuleLocked";
 import Login from "./components/Login";
 import ConnectionStatus from "./components/ConnectionStatus";
@@ -93,7 +94,7 @@ function AppContent() {
         />
 
         {/* Moduli SGQ bloccati (Sprint 2-7) */}
-        <Route path="/qualifiche" element={<ModuleLocked module="qualifiche" />} />
+        <Route path="/qualifiche" element={<QualificationsPage />} />
         <Route path="/rischi"     element={<ModuleLocked module="rischi" />} />
         <Route path="/azioni"     element={<ModuleLocked module="azioni" />} />
         <Route path="/sal"        element={<ModuleLocked module="sal" />} />

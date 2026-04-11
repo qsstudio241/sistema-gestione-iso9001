@@ -1,0 +1,99 @@
+/* QualificationsPage.css */
+
+.sq-page { padding: 24px 28px; max-width: 1100px; }
+
+/* ── Header ───────────────── */
+.sq-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+.sq-title  { font-size:22px; font-weight:700; color:#1e3a5f; margin:0 0 4px; }
+.sq-subtitle { font-size:14px; color:#6b7280; margin:0; }
+.sq-btn-new { padding:9px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+.sq-btn-new:hover { background:#16304e; }
+.sq-btn-new-sm { margin-top:12px; padding:8px 18px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:13px; cursor:pointer; }
+
+/* ── Stats bar ────────────── */
+.sq-stats-bar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.sq-stat { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:10px 16px; display:flex; flex-direction:column; align-items:center; min-width:80px; }
+.sq-stat-num { font-size:22px; font-weight:700; color:#1e3a5f; }
+.sq-stat-lbl { font-size:11px; color:#6b7280; margin-top:2px; }
+.sq-stat-verde    { border-color:#bbf7d0; background:#f0fdf4; } .sq-stat-verde    .sq-stat-num { color:#16a34a; }
+.sq-stat-giallo   { border-color:#fde68a; background:#fffbeb; } .sq-stat-giallo   .sq-stat-num { color:#d97706; }
+.sq-stat-arancione{ border-color:#fed7aa; background:#fff7ed; } .sq-stat-arancione .sq-stat-num { color:#ea580c; }
+.sq-stat-rosso    { border-color:#fecaca; background:#fef2f2; } .sq-stat-rosso    .sq-stat-num { color:#dc2626; }
+
+/* ── Toolbar ──────────────── */
+.sq-toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.sq-search { flex:1; min-width:180px; padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; }
+.sq-select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; }
+.sq-btn-reload { padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:16px; }
+.sq-btn-reload:hover { background:#f3f4f6; }
+
+/* ── Error ────────────────── */
+.sq-error { margin-bottom:12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; display:flex; justify-content:space-between; }
+.sq-error button { background:none; border:none; cursor:pointer; color:#dc2626; font-size:16px; }
+
+/* ── Loading/Empty ────────── */
+.sq-loading { display:flex; align-items:center; gap:12px; padding:40px; color:#6b7280; }
+.sq-spinner { width:20px; height:20px; border:3px solid #e5e7eb; border-top-color:#1e3a5f; border-radius:50%; animation:sq-spin .7s linear infinite; }
+@keyframes sq-spin { to { transform:rotate(360deg); } }
+.sq-empty { text-align:center; padding:40px; color:#6b7280; }
+.sq-empty-icon { font-size:40px; display:block; margin-bottom:12px; }
+
+/* ── Table ────────────────── */
+.sq-table-wrap { overflow-x:auto; border:1px solid #e5e7eb; border-radius:10px; }
+.sq-table { width:100%; border-collapse:collapse; font-size:14px; }
+.sq-table th { background:#f9fafb; padding:10px 12px; text-align:left; font-size:12px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.sq-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
+.sq-row:last-child td { border-bottom:none; }
+.sq-row:hover td { background:#fafafa; }
+
+/* Colori riga per semaforo */
+.sq-row-rosso    td:first-child { border-left:3px solid #dc2626; }
+.sq-row-arancione td:first-child { border-left:3px solid #ea580c; }
+.sq-row-giallo   td:first-child { border-left:3px solid #d97706; }
+.sq-row-verde    td:first-child { border-left:3px solid #16a34a; }
+.sq-row-grigio   td:first-child { border-left:3px solid #9ca3af; }
+
+/* ── Semaforo tag ─────────── */
+.sq-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:600; white-space:nowrap; }
+.sq-verde    { background:#dcfce7; color:#166534; }
+.sq-giallo   { background:#fef9c3; color:#854d0e; }
+.sq-arancione{ background:#ffedd5; color:#9a3412; }
+.sq-rosso    { background:#fee2e2; color:#991b1b; }
+.sq-grigio   { background:#f3f4f6; color:#4b5563; }
+
+/* ── Colonne ──────────────── */
+.sq-col-semaforo { width:110px; }
+.sq-col-actions  { width:100px; white-space:nowrap; }
+.sq-person-name  { font-weight:600; color:#111827; }
+.sq-person-code  { font-size:12px; color:#6b7280; }
+.sq-person-company { font-size:12px; color:#9ca3af; }
+.sq-qual-type  { font-weight:500; }
+.sq-qual-std   { font-size:12px; color:#6b7280; }
+.sq-qual-scope { font-size:11px; color:#9ca3af; }
+.sq-issuer     { font-size:12px; color:#9ca3af; }
+.sq-expiry-date { font-weight:600; }
+.sq-expiry-rosso    { color:#dc2626; }
+.sq-expiry-arancione{ color:#ea580c; }
+.sq-expiry-giallo   { color:#d97706; }
+.sq-expiry-verde    { color:#16a34a; }
+.sq-expiry-none { color:#9ca3af; font-style:italic; }
+.sq-issue-date { font-size:12px; color:#9ca3af; }
+
+/* ── Azioni ───────────────── */
+.sq-btn-icon { background:none; border:none; font-size:16px; cursor:pointer; padding:4px 6px; border-radius:6px; }
+.sq-btn-icon:hover { background:#f3f4f6; }
+.sq-confirm { display:flex; align-items:center; gap:6px; font-size:12px; }
+.sq-confirm-yes { padding:3px 10px; background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
+.sq-confirm-no  { padding:3px 10px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
+
+/* ── Paginazione ──────────── */
+.sq-pagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:16px; font-size:13px; color:#6b7280; }
+.sq-pagination button { padding:6px 14px; border:1px solid #d1d5db; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.sq-pagination button:disabled { opacity:.4; cursor:not-allowed; }
+
+@media (max-width:700px) {
+  .sq-page { padding:14px; }
+  .sq-col-cert, .sq-col-cert th { display:none; }
+  .sq-stats-bar { gap:8px; }
+  .sq-stat { min-width:60px; padding:8px; }
+}
