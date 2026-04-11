@@ -2,11 +2,116 @@
 
 # Sistema Gestione ISO 9001 / 14001 / 45001
 
-> **Data handoff**: 2026-03-04 (sessione odierna)
-> **Da**: Sessione Cursor AI 04/03/2026  
-> **A**: Prossima sessione Cursor AI  
-> **Stato progetto**: Beta — **Fase 1 multi-tenant completata** — server come fonte di verità, dev locale robusto  
-> **Ultimo commit**: `7daf871` (branch `main`)
+> **Data handoff**: 2026-04-11 (sessione odierna)
+> **Da**: Sessione Cursor AI 11/04/2026
+> **A**: Prossima sessione (Gemini Pro o Cursor)
+> **Stato progetto**: ~75% completato — Sprint 0-6 COMPLETI, Sprint 7 (Reclami & Fornitori) è il prossimo
+> **Ultimo commit**: `707575e` (branch `main`) — brief test Sprint 5+6
+
+---
+
+## 🚀 STATO CORRENTE — 11/04/2026
+
+### Sprint completati in questa sessione
+
+| Sprint | Nome | Commit | Stato |
+|--------|------|--------|-------|
+| Sprint 0 | Navigation Foundation | precedente | ✅ |
+| Sprint 1 | Document Registry UX | precedente | ✅ |
+| Sprint 2 | Alert Engine (cron + email) | precedente | ✅ |
+| Sprint 2B | File allegati documenti (DocFileDialog 📎) | `0be6b43` + fix `e2d65db` | ✅ |
+| Sprint 3 | Notifiche & Alert UI | `08618e8` | ✅ |
+| Sprint 4 | Modulo Qualifiche (semaforo) | `0ec1a7b` | ✅ |
+| Sprint 5 | NC & Azioni Correttive | `e437e03` | ✅ |
+| Sprint 6 | Rischi & Obiettivi | `6c19fc2` | ✅ |
+
+### Migrazioni DB eseguite sul VPS
+
+| Migration | File | Stato VPS |
+|-----------|------|-----------|
+| 029 | `document_registry` | ✅ |
+| 030 | `notifications_config` | ✅ |
+| 031 | `attachments` — colonne doc_file | ✅ |
+| 032 | `qualifications` | ✅ |
+| 033 | `nc_actions` | ✅ |
+| 034 | `risks` + `objectives` | ✅ |
+
+### File nuovi/modificati significativi (sessione 11/04/2026)
+
+**Frontend** (`app/src/`):
+- `pages/NCPage.jsx` + `.css` — Registro NC cross-audit + azioni correttive
+- `pages/RisksPage.jsx` + `.css` — Registro Rischi + Obiettivi (tab unica)
+- `pages/QualificationsPage.jsx` + `.css` — Registro Qualifiche personale
+- `pages/QualificationForm.jsx` + `.css`
+- `pages/NotificationsSettingsPage.jsx` + `.css`
+- `components/DocFileDialog.jsx` + `.css` — upload/download/versioning file su doc registro
+- `components/DocumentRegistry.jsx` — aggiunto pulsante 📎 in CatalogView
+- `layouts/AppLayout.jsx` — voci NC, Rischi, Qualifiche attive in sidebar
+- `services/apiService.js` — +30 nuovi metodi (qualifiche, NC actions, risks, objectives, docfiles, notifications)
+
+**Backend** (`backend/src/`):
+- `controllers/qualifications.controller.js` — CRUD + semaforo
+- `controllers/nc.controller.js` — CRUD NC + 4 nuovi endpoint nc_actions
+- `controllers/risks.controller.js` — CRUD risks + objectives + stats
+- `controllers/docfile.controller.js` — upload/download file documenti (**fix colonne SQL 11/04**)
+- `controllers/alert.controller.js` — fix query NC (via JOIN audits), + qualifCount
+- `controllers/notifications.controller.js`
+- `routes/qualifications.routes.js`, `nc.routes.js` (esteso), `risks.routes.js`, `docfile.routes.js`, `notifications.routes.js`
+- `config/multer.js` — aggiunto `uploadDocFile` con blacklist eseguibili + 500MB limit
+- `routes/attachment.routes.js` — fix HTTP 415 (era 500) per tipo file non supportato
+- `server.js` — registrate tutte le nuove routes
+
+### Test deputy in corso
+
+Il deputy sta eseguendo il test combinato Sprint 2B (fix) + Sprint 5 + Sprint 6.
+Brief: `docs/agent-tasks/TEST_SPRINT5_6_nc_rischi.md`
+Report atteso: `docs/agent-tasks/REPORT_TEST_SPRINT5_6.md`
+
+Quando arriva il report:
+1. Eseguire "Squash and merge" del PR del deputy su GitHub
+2. Verificare i bug trovati e applicare fix
+3. Procedere con Sprint 7
+
+### PR aperto da chiudere
+
+- **PR #6** (`cursor/test-sprint2-3-alert-notifiche-c259`) — test Sprint 2B: **chiudere con "Close pull request"** (il fix è già su main, il report è in `docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md`)
+
+### Prossimo sprint
+
+**Sprint 7 — Reclami & Fornitori** (ISO 9001 §8.2.1 + §8.4):
+- Tabelle: `complaints` (reclami clienti), `suppliers` (anagrafica fornitori), `supplier_evaluations` (valutazioni periodiche)
+- Frontend: pagina Reclami (inserimento da azienda + stato) + pagina Fornitori (lista + valutazione)
+- Alert: reclami aperti da >X giorni nel badge
+
+### Accesso VPS (deploy manuale backend)
+
+```powershell
+# Copia file
+pscp -P 1122 -pw "Sistemi@2026" "file_locale" "spascarella@www.fr-busato.it:/var/www/sgq-backend/path/sul/server"
+# Restart backend
+plink -P 1122 -pw "Sistemi@2026" spascarella@www.fr-busato.it "echo Sistemi@2026 | sudo -S systemctl restart sgq-backend"
+# Health check
+plink -P 1122 -pw "Sistemi@2026" spascarella@www.fr-busato.it "curl -sk http://localhost:3000/api/v1/health"
+```
+
+### Pattern deployment Sprint (da ripetere ogni sprint)
+
+1. Migration SQL (script embedded in `run-migration-0NN.js` — NO path relativo al file .sql)
+2. `pscp` controller + routes + server.js su VPS
+3. `plink` run-migration + restart + health check
+4. `npm run build` app
+5. `git add -A && git commit && git push` (Netlify auto-deploya)
+
+---
+
+> **⚠️ NOTE CRITICHE PER PROSSIMA SESSIONE**
+> - La tabella `attachments` ha PK = `attachment_id` (NON `id`), path = `storage_path` (NON `file_path`), users join su `user_id`/`full_name`
+> - `req.user.user_id` (NON `req.user.id`) nei controller
+> - NC non ha `organization_id` diretto — sempre via `JOIN audits a ON nc.audit_id = a.audit_id` dove `a.organization_id = @orgId`
+> - Script migration: embeddare SQL inline nello script JS (no path relativo al .sql — la directory database/ non è presente sul VPS)
+> - PowerShell: usare `;` non `&&` per concatenare comandi
+
+---
 
 ---
 

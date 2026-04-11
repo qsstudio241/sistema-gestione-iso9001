@@ -652,5 +652,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 08 aprile 2026
-**Prossimo Step**: Sprint 0 — Navigation Foundation (React Router v6 + sidebar + home dashboard)
+**Ultimo Aggiornamento**: 11 aprile 2026
+**Prossimo Step**: Sprint 7 — Reclami & Fornitori (ISO 9001 §8.2.1 + §8.4)
+
+> Sprint 0-6 completati. Migrazioni 029-034 eseguite su VPS. Ultimo commit: `707575e`.
