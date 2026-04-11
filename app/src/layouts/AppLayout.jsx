@@ -19,7 +19,7 @@ import "./AppLayout.css";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
 
-function buildNavItems(user, alertCount = 0) {
+function buildNavItems(user, alerts = {}) {
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const canManage = ["admin", "auditor", "superadmin"].includes(user?.role);
 
@@ -36,10 +36,11 @@ function buildNavItems(user, alertCount = 0) {
     {
       group: "SGQ",
       items: [
-        { to: "/documents",   icon: "📄", label: "Documenti", badge: alertCount > 0 ? alertCount : null },
+        { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche" },
         { to: "/nc",          icon: "🚨", label: "Non Conformità" },
         { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi" },
+        { to: "/reclami",     icon: "📢", label: "Reclami & Fornitori", badge: alerts.complaints > 0 ? alerts.complaints : null },
         { to: "/sal",         icon: "📊", label: "SAL",         locked: true },
       ],
     },
@@ -172,25 +173,31 @@ function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [alertCount, setAlertCount] = useState(0);
+  const [alerts, setAlerts] = useState({ documents: 0, complaints: 0 });
 
   // Polling badge alert ogni 5 minuti
-  const loadAlertCount = useCallback(async () => {
+  const loadAlerts = useCallback(async () => {
     try {
-      const res = await apiService.getAlertCount();
-      setAlertCount(res.total || 0);
+      const [docsRes, compRes] = await Promise.all([
+        apiService.getAlertCount(),
+        apiService.getComplaintsStats()
+      ]);
+      setAlerts({
+        documents: docsRes.total || 0,
+        complaints: compRes.overdue_30_days || 0
+      });
     } catch {
       // non bloccante
     }
   }, []);
 
   useEffect(() => {
-    loadAlertCount();
-    const interval = setInterval(loadAlertCount, 5 * 60 * 1000);
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [loadAlertCount]);
+  }, [loadAlerts]);
 
-  const navGroups = buildNavItems(user, alertCount);
+  const navGroups = buildNavItems(user, alerts);
 
   return (
     <div className={`app-layout${sidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>

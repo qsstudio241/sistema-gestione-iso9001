@@ -31,6 +31,7 @@ import NotificationsSettingsPage from "./pages/NotificationsSettingsPage";
 import QualificationsPage from "./pages/QualificationsPage";
 import NCPage from "./pages/NCPage";
 import RisksPage from "./pages/RisksPage";
+import ComplaintsPage from "./pages/ComplaintsPage";
 import ModuleLocked from "./components/ModuleLocked";
 import Login from "./components/Login";
 import ConnectionStatus from "./components/ConnectionStatus";
@@ -99,6 +100,7 @@ function AppContent() {
         <Route path="/qualifiche" element={<QualificationsPage />} />
         <Route path="/nc"         element={<NCPage />} />
         <Route path="/rischi"     element={<RisksPage />} />
+        <Route path="/reclami"    element={<ComplaintsPage />} />
         <Route path="/sal"        element={<ModuleLocked module="sal" />} />
 
         {/* Modulo Saldatura bloccato (Sprint 5) */}

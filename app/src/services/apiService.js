@@ -1079,6 +1079,25 @@ class ApiService {
     async createObjective(data)     { return this.post('/objectives', data); }
     async updateObjective(id, data) { return this.put(`/objectives/${id}`, data); }
     async deleteObjective(id)       { return this.delete(`/objectives/${id}`); }
+
+    // ─── Complaints (Sprint 7) ───────────────────────────────────────────────
+    async getComplaintsStats()      { return this.get('/complaints/stats'); }
+    async getComplaints(params = {}){ const qs = new URLSearchParams(params).toString(); return this.get(`/complaints${qs ? '?' + qs : ''}`); }
+    async getComplaint(id)          { return this.get(`/complaints/${id}`); }
+    async createComplaint(data)     { return this.post('/complaints', data); }
+    async updateComplaint(id, data) { return this.put(`/complaints/${id}`, data); }
+    async deleteComplaint(id)       { return this.delete(`/complaints/${id}`); }
+
+    // ─── Suppliers & Evaluations (Sprint 7) ──────────────────────────────────
+    async getSuppliers(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/suppliers${qs ? '?' + qs : ''}`); }
+    async getSupplier(id)           { return this.get(`/suppliers/${id}`); }
+    async createSupplier(data)      { return this.post('/suppliers', data); }
+    async updateSupplier(id, data)  { return this.put(`/suppliers/${id}`, data); }
+    async deleteSupplier(id)        { return this.delete(`/suppliers/${id}`); }
+    
+    async getSupplierEvaluations(id){ return this.get(`/suppliers/${id}/evaluations`); }
+    async createSupplierEvaluation(id, data) { return this.post(`/suppliers/${id}/evaluations`, data); }
+    async deleteSupplierEvaluation(id, evalId) { return this.delete(`/suppliers/${id}/evaluations/${evalId}`); }
 }
 
 /**
