@@ -28,12 +28,32 @@ router.get('/attachments/:id/view', authenticateDownload, attachmentController.v
 
 // POST /api/v1/attachments/upload - Upload file
 // Nota: multer middleware 'upload.single('file')' gestisce multipart/form-data
-router.post('/attachments/upload', authenticate, upload.single('file'), attachmentController.uploadAttachment);
+router.post('/attachments/upload', authenticate, (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ error: 'File troppo grande (max 10MB)', code: 'FILE_TOO_LARGE' });
+            }
+            return res.status(415).json({ error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' });
+        }
+        next();
+    });
+}, attachmentController.uploadAttachment);
 
 // DELETE /api/v1/attachments/:id - Elimina allegato
 router.delete('/attachments/:id', authenticate, attachmentController.deleteAttachment);
 
 // PUT /api/v1/attachments/:id/replace - Sostituisce file allegato (desktop)
-router.put('/attachments/:id/replace', authenticate, upload.single('file'), attachmentController.replaceAttachment);
+router.put('/attachments/:id/replace', authenticate, (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ error: 'File troppo grande (max 10MB)', code: 'FILE_TOO_LARGE' });
+            }
+            return res.status(415).json({ error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' });
+        }
+        next();
+    });
+}, attachmentController.replaceAttachment);
 
 module.exports = router;
