@@ -7,6 +7,7 @@ const path = require('path');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
+const { extractStructuredFromText } = require('../services/importAiExtraction.service');
 
 async function listJobs(req, res) {
     try {
@@ -65,7 +66,8 @@ async function getJob(req, res) {
         const files = await query(
             `SELECT id, original_name, mime_type, file_size, status, confidence_score,
                     reviewed_by, reviewed_at, created_at,
-                    extracted_text, error_message, reviewer_notes
+                    extracted_text, error_message, reviewer_notes,
+                    ai_extraction_json, ai_extraction_error, ai_extraction_at, ai_model
              FROM import_job_files WHERE job_id = @id ORDER BY id`,
             { id }
         );
@@ -210,6 +212,82 @@ async function processJob(req, res) {
     }
 }
 
+async function suggestAiExtraction(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const jobId = parseInt(req.params.id, 10);
+        const fileId = parseInt(req.params.fileId, 10);
+        const j = await query(
+            `SELECT j.id, j.document_type_hint
+             FROM import_jobs j
+             WHERE j.id = @job_id AND j.organization_id = @organization_id`,
+            { job_id: jobId, organization_id }
+        );
+        if (!j.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+        const f = await query(
+            `SELECT id, status, extracted_text FROM import_job_files
+             WHERE id = @file_id AND job_id = @job_id`,
+            { file_id: fileId, job_id: jobId }
+        );
+        if (!f.recordset.length) return res.status(404).json({ error: 'File non trovato' });
+        const row = f.recordset[0];
+        if (!['extracted', 'reviewed'].includes(row.status)) {
+            return res.status(400).json({
+                error: 'Analisi AI disponibile solo dopo estrazione testo (stato extracted o reviewed).',
+                code: 'INVALID_FILE_STATUS',
+            });
+        }
+        const text = row.extracted_text;
+        if (!text || !String(text).trim()) {
+            return res.status(400).json({ error: 'Nessun testo estratto da inviare alla AI.', code: 'EMPTY_SOURCE_TEXT' });
+        }
+        let result;
+        try {
+            result = await extractStructuredFromText({
+                text,
+                documentTypeHint: j.recordset[0].document_type_hint || null,
+            });
+        } catch (e) {
+            const code = e.code || 'AI_ERROR';
+            if (code === 'AI_NOT_CONFIGURED') {
+                return res.status(503).json({
+                    error: e.message,
+                    code,
+                });
+            }
+            const msg = String(e.message || e).substring(0, 2000);
+            await query(
+                `UPDATE import_job_files SET ai_extraction_error = @err, updated_at = GETDATE()
+                 WHERE id = @file_id AND job_id = @job_id`,
+                { file_id: fileId, job_id: jobId, err: msg }
+            );
+            const status = e.status >= 400 && e.status < 600 ? e.status : 502;
+            return res.status(status).json({ error: msg, code });
+        }
+        const jsonStr = JSON.stringify(result.data);
+        await query(
+            `UPDATE import_job_files SET
+                ai_extraction_json = @json,
+                ai_extraction_error = NULL,
+                ai_extraction_at = GETDATE(),
+                ai_model = @model,
+                updated_at = GETDATE()
+             WHERE id = @file_id AND job_id = @job_id`,
+            { file_id: fileId, job_id: jobId, json: jsonStr, model: result.model }
+        );
+        res.json({
+            success: true,
+            data: {
+                model: result.model,
+                extraction: result.data,
+            },
+        });
+    } catch (err) {
+        logger.error('suggestAiExtraction', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 async function patchFile(req, res) {
     try {
         const { organization_id } = req.user;
@@ -275,4 +353,5 @@ module.exports = {
     uploadFiles,
     processJob,
     patchFile,
+    suggestAiExtraction,
 };

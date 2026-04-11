@@ -1,8 +1,8 @@
 # Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 05 aprile 2026
-> **Prossimo Step** (sessione successiva): (0) Dopo deploy: smoke lista audit mobile/desktop (stesso utente, >50 audit se possibile). (1) Smoke export Word — **verificatore** e **titoli senza mojibake**. (2) Smoke **NV** / **N.A.** + **`[LOGO]`**. (3) Smoke **pending issues** + riga **AP**. (4) Avvio “Flusso 2” (SAL/Sopralluoghi): definizione schema requisiti+stati + evidenze documentali + import CSV/Excel (senza AI). (5) Introduzione RAG come layer di retrieval (job asincrono) dopo che il document registry è stabile; backlog ADR-006, lock DB, template ISO 45001.
+> **Ultimo Aggiornamento**: 11 aprile 2026
+> **Prossimo Step** (sessione successiva): (0) Dopo deploy: smoke lista audit mobile/desktop (stesso utente, >50 audit se possibile). (1) Smoke export Word — **verificatore** e **titoli senza mojibake**. (2) Smoke **NV** / **N.A.** + **`[LOGO]`**. (3) Smoke **pending issues** + riga **AP**. (4) Avvio “Flusso 2” (SAL/Sopralluoghi): definizione schema requisiti+stati + evidenze documentali + import CSV/Excel (senza AI). (5) **Sprint 10**: staging tipizzato post-import (vedi tabella sprint). (6) Introduzione RAG come layer di retrieval (job asincrono) dopo che il document registry è stabile; backlog ADR-006, lock DB, template ISO 45001.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
@@ -546,10 +546,12 @@ PDF upload (batch) → rilevamento tipo documento → estrazione testo (pdf-pars
 | **B — Alert Engine + Document Browser** | Cron job backend + Nodemailer + `<DocumentBrowser />` navigazione cartelle | Notifiche email scadenze + esplorazione documenti per tipo | 1 settimana |
 | **C — Modulo SAL** | SAL tracker requisiti × stati + Word export SAL + colori standard | Camellini può fare SAL digitale per ISO 9001/14001/45001 | 1-2 settimane |
 | **D — Modulo Welding (ISO 3834)** | WPS/WPQR registry + qualifiche saldatori con alert + gestione commesse | Mason ha il registro completo ISO 3834 con scadenze | 2 settimane |
-| **E — AI Import Pipeline** | Upload batch PDF + LLM extraction + preview validazione | Import massivo patentini, WPS, WPQR, dichiarazioni CE | 1-2 settimane |
-| **F — RAG** | Indicizzazione vettoriale documenti + norm_excerpt + ricerca semantica | Ricerca "trova tutte le NC legate a clausola 8.4" | dopo Sprint E |
+| **E — AI Import Pipeline** | **v1 in produzione**: upload batch + `pdf-parse` + confidence + revisione umana + **estrazione JSON OpenAI opzionale** su testo estratto (tabella sprint **9**). **Fasi successive**: staging tipizzato (sprint **10**), poi OCR e agenti multi-step / commit registry | Import massivo patentini, WPS, WPQR, dichiarazioni CE (progressivo) | v1 fatto; estensioni 1-2 settimane a slice |
+| **F — RAG** | Indicizzazione vettoriale documenti + norm_excerpt + ricerca semantica | Ricerca "trova tutte le NC legate a clausola 8.4" | dopo registry + staging stabili |
 
-**Regola di sequenza**: ogni sprint è indipendente e consegna valore, ma A è prerequisito di tutti. B è prerequisito di C e D. E è prerequisito di F.
+**Regola di sequenza**: ogni sprint è indipendente e consegna valore, ma A è prerequisito di tutti. B è prerequisito di C e D. E (estensioni oltre v1) è prerequisito di F.
+
+**Nota allineamento (11/04/2026)**: la tabella numerata **Sprint 0–11** in basso è la **fonte di verità** per naming e prerequisiti; questa tabella A–F resta come macro-fasi di prodotto.
 
 ---
 
@@ -624,7 +626,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **RECLAMI** | Aziende | Reclami clienti (inserimento da azienda), NC interne, follow-up |
 | **SALDATURA** | Coordinatori / Aziende | WPS/WPQR, qualifiche saldatori, NDT, commesse ISO 3834 |
 | **ALERT** | Incluso in tutti | Email automatiche scadenze, dashboard semaforo |
-| **AI** | Add-on futuro | Import batch PDF, estrazione dati, ricerca semantica |
+| **AI** | Add-on | Import batch PDF (v1 testo locale), staging tipizzato (Sprint 10), ricerca semantica (backlog) |
+| **Commesse / Riesame contratto** | Add-on futuro | Workflow riesame requisiti §8.2 (pilota “ordine diretto”): stati, checklist, allegati — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
 
 ### Roadmap Sprint definitiva
 
@@ -639,7 +642,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **6** | Rischi + Obiettivi | Risk register §6.1, obiettivi §6.2 | Sprint 3 |
 | **7** | Reclami + Fornitori | Reclami clienti, valutazione fornitori | Sprint 3 |
 | **8** | Licensing Engine | Feature flags, pannello abbonamenti, UI locked | Sprint 0 |
-| **9** | AI Import Pipeline | OCR+LLM batch PDF, confidence score, revisione umana | Sprint 1 |
+| **9** | Import PDF **v1** (ingest + AI opzionale) | Job `import_jobs` / `import_job_files`, estrazione **testo locale** (`pdf-parse`), confidence euristica, revisione umana, licenza `ai_import`, UI `/settings/import-jobs`. **Analisi strutturata** (OpenAI JSON) su testo estratto: endpoint `POST .../files/:fileId/ai-extract`, migrazione **039**. **Fuori scope immediato**: OCR, agenti multi-tool, commit automatico in registry. Obiettivo: **fondazione ingest** + primo valore AI testabile in sicurezza (revisione umana). | Sprint 1 |
+| **10** | Import staging → registry | Da job file a **record di staging tipizzati** (`document_type` / form registry), commit umano verso persistenza documenti. Estensioni: OCR opzionale, classificazione assistita **dopo** registry stabile. | Sprint 9 |
+| **11** | Commesse / Riesame contratto | Modulo workflow §8.2 (pilota): stati, storico, checklist, allegati in/out; **separato** dalla sola pipeline PDF. Specifica: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). | Sprint 1, Sprint 10 (consigliato) |
 
 ### Copertura normativa per modulo SGQ
 
@@ -653,6 +658,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 ---
 
 **Ultimo Aggiornamento**: 11 aprile 2026
-**Prossimo Step**: Sprint 10 — Estensioni import (OCR opzionale, classificazione record) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi).
+**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). Modulo commerciale: backlog Sprint 11 + mini-specifica allegata.
 
-> Sprint 0-9: Sprint 9 (Import batch PDF: job `import_jobs` / `import_job_files`, estrazione testo locale `pdf-parse`, confidence euristica, revisione umana, licenza `ai_import`, UI `/settings/import-jobs`) senza API esterne LLM. Migrazione `038` su VPS + `npm install` backend per `pdf-parse`.
+> **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
+> **Sprint 10 (pianificato)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
+> **Sprint 11 (backlog)**: riesame requisiti contratto / ciclo commerciale — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md).

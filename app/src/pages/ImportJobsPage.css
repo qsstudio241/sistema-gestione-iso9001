@@ -38,6 +38,15 @@
   margin-bottom: 1rem;
 }
 
+.import-jobs-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
 .import-jobs-new input {
   flex: 1;
   min-width: 160px;
@@ -88,6 +97,50 @@
   border-radius: 6px;
   background: #fafafa;
   cursor: pointer;
+}
+
+.btn-ai {
+  border-color: #6b4fd6;
+  color: #4a2fa8;
+}
+
+.ai-extraction-panel {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f6f3ff;
+  border: 1px solid #dcd4f0;
+  border-radius: 8px;
+}
+
+.ai-extraction-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-model,
+.ai-at {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.ai-json {
+  margin: 0;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-err {
+  margin-top: 0.35rem;
 }
 
 .import-jobs-actions {

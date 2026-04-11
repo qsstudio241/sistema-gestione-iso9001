@@ -3,6 +3,7 @@
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
@@ -12,6 +13,15 @@ const { requireLicensedModule } = require('../middleware/moduleLicense.middlewar
 const ctrl = require('../controllers/importJobs.controller');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+
+/** Limita costi API OpenAI (per IP) */
+const aiExtractLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: parseInt(process.env.OPENAI_IMPORT_RATE_LIMIT_MAX, 10) || 24,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Troppe richieste analisi AI da questo IP. Riprova tra qualche minuto.', code: 'AI_RATE_LIMIT' },
+});
 
 function importDestination(req, file, cb) {
     try {
@@ -71,6 +81,7 @@ router.get('/import-jobs/:id', ctrl.getJob);
 router.delete('/import-jobs/:id', ctrl.deleteJob);
 router.post('/import-jobs/:id/files', uploadImportMiddleware, ctrl.uploadFiles);
 router.post('/import-jobs/:id/process', ctrl.processJob);
+router.post('/import-jobs/:id/files/:fileId/ai-extract', aiExtractLimiter, ctrl.suggestAiExtraction);
 router.patch('/import-jobs/:id/files/:fileId', ctrl.patchFile);
 
 module.exports = router;

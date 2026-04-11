@@ -1150,6 +1150,11 @@ class ApiService {
     async patchImportJobFile(jobId, fileId, body) {
         return this.patch(`/import-jobs/${jobId}/files/${fileId}`, body);
     }
+
+    /** Estrazione strutturata (OpenAI) su testo gia estratto dal PDF */
+    async postImportJobFileAiExtract(jobId, fileId) {
+        return this.post(`/import-jobs/${jobId}/files/${fileId}/ai-extract`, {});
+    }
 }
 
 /**

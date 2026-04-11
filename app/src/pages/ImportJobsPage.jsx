@@ -7,6 +7,28 @@ import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import "./ImportJobsPage.css";
 
+const DOC_TYPE_OPTIONS = [
+  { value: "", label: "Tipo documento (opz., guida la AI)" },
+  { value: "wps", label: "WPS" },
+  { value: "wpqr", label: "WPQR" },
+  { value: "patentino_saldatore", label: "Patentino saldatore" },
+  { value: "qualifica_operatore", label: "Qualifica operatore (14732)" },
+  { value: "cert_ndt", label: "Certificato NDT" },
+  { value: "dichiarazione_ce", label: "Dichiarazione CE" },
+  { value: "cert_taratura", label: "Certificato taratura" },
+  { value: "altro", label: "Altro / misto" },
+];
+
+function parseAiJson(val) {
+  if (val == null) return null;
+  if (typeof val === "object") return val;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return null;
+  }
+}
+
 export default function ImportJobsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
@@ -16,6 +38,7 @@ export default function ImportJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newTitle, setNewTitle] = useState("");
+  const [docTypeHint, setDocTypeHint] = useState("");
   const [busy, setBusy] = useState(false);
 
   const loadList = useCallback(async () => {
@@ -56,9 +79,13 @@ export default function ImportJobsPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await apiService.createImportJob({ title: newTitle || undefined });
+      const res = await apiService.createImportJob({
+        title: newTitle || undefined,
+        document_type_hint: docTypeHint || undefined,
+      });
       const id = res.data?.id;
       setNewTitle("");
+      setDocTypeHint("");
       await loadList();
       if (id) setSelectedId(id);
     } catch (e) {
@@ -115,6 +142,21 @@ export default function ImportJobsPage() {
     }
   }
 
+  async function handleAiExtract(fileId) {
+    if (!selectedId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiService.postImportJobFileAiExtract(selectedId, fileId);
+      await loadDetail(selectedId);
+    } catch (e) {
+      const msg = e?.data?.error || e.message || "Analisi AI fallita";
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleSaveText(fileId, text) {
     if (!selectedId) return;
     setBusy(true);
@@ -155,8 +197,9 @@ export default function ImportJobsPage() {
     <div className="import-jobs-page">
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
-        Crea un job, carica uno o più PDF, avvia l&apos;estrazione testo (solo strato testo del PDF, senza OCR).
-        Controlla il testo e segnala come revisionato. Estensioni OCR / classificazione in roadmap.
+        Crea un job (opzionale: tipo documento per guidare l&apos;AI), carica PDF, estrai testo in locale, poi opzionalmente
+        l&apos;<strong>analisi strutturata AI</strong> (OpenAI, richiede chiave sul server) per sintesi e campi chiave in JSON.
+        Nessun dato sensibile inviato oltre il testo già visibile in revisione. OCR e agenti multi-step in roadmap.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
 
@@ -170,6 +213,17 @@ export default function ImportJobsPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
             />
+            <select
+              className="import-jobs-select"
+              value={docTypeHint}
+              onChange={(e) => setDocTypeHint(e.target.value)}
+            >
+              {DOC_TYPE_OPTIONS.map((o) => (
+                <option key={o.value || "none"} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
             <button type="button" className="btn-primary" onClick={handleCreate} disabled={busy}>
               + Nuovo job
             </button>
@@ -278,7 +332,35 @@ export default function ImportJobsPage() {
                           )}
                         </>
                       )}
+                      {(f.status === "extracted" || f.status === "reviewed") && (
+                        <button
+                          type="button"
+                          className="btn-small btn-ai"
+                          disabled={busy}
+                          title="Richiede OPENAI_API_KEY sul backend"
+                          onClick={() => handleAiExtract(f.id)}
+                        >
+                          Analisi AI strutturata
+                        </button>
+                      )}
                     </div>
+                    {f.ai_extraction_error && (
+                      <p className="file-err ai-err">AI: {f.ai_extraction_error}</p>
+                    )}
+                    {parseAiJson(f.ai_extraction_json) && (
+                      <div className="ai-extraction-panel">
+                        <div className="ai-extraction-head">
+                          Estrazione AI
+                          {f.ai_model && <span className="ai-model">{f.ai_model}</span>}
+                          {f.ai_extraction_at && (
+                            <span className="ai-at">
+                              {new Date(f.ai_extraction_at).toLocaleString("it-IT")}
+                            </span>
+                          )}
+                        </div>
+                        <pre className="ai-json">{JSON.stringify(parseAiJson(f.ai_extraction_json), null, 2)}</pre>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

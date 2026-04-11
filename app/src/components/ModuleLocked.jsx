@@ -50,13 +50,14 @@ const MODULE_INFO = {
     icon: "📥",
     title: "Import batch PDF",
     description:
-      "Caricamento massivo di PDF con estrazione testo locale e revisione umana. Estensioni future: OCR e classificazione automatica.",
+      "Caricamento massivo di PDF con estrazione testo locale, revisione umana e analisi strutturata opzionale (OpenAI) sui campi chiave in JSON.",
     features: [
       "Job con più file allegati",
       "Anteprima testo estratto e punteggio attendibilità",
+      "Analisi AI strutturata (con chiave server) e tracciamento modello/data",
       "Conferma revisione per riga",
     ],
-    sprint: "Sprint 9",
+    sprint: "Sprint 9+",
     eta: "Contatta l'amministratore",
   },
   notifications: {
