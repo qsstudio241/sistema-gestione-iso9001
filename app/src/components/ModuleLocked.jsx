@@ -9,6 +9,52 @@ import React from "react";
 import "./ModuleLocked.css";
 
 const MODULE_INFO = {
+  documents: {
+    icon: "📄",
+    title: "Registro documenti",
+    description:
+      "Catalogo documenti, revisioni, scadenze ed export. Richiede licenza modulo Documenti.",
+    features: [
+      "Stati documento e responsabili",
+      "Alert scadenze in sidebar",
+      "Allegati e versioni file",
+    ],
+    sprint: "Sprint 1",
+    eta: "Contatta l'amministratore",
+  },
+  reclami: {
+    icon: "📢",
+    title: "Reclami e fornitori",
+    description:
+      "Registro reclami clienti (ISO 9001 §8.2.1) e valutazione fornitori (§8.4).",
+    features: [
+      "Workflow reclami e alert >30 giorni",
+      "Anagrafica fornitori e valutazioni",
+    ],
+    sprint: "Sprint 7",
+    eta: "Contatta l'amministratore",
+  },
+  nc: {
+    icon: "🚨",
+    title: "Non conformità",
+    description:
+      "Vista registro NC cross-audit, azioni correttive e workflow stati.",
+    features: [
+      "Filtri stato, severità, scadenze",
+      "Azioni correttive strutturate",
+    ],
+    sprint: "Sprint 5",
+    eta: "Contatta l'amministratore",
+  },
+  notifications: {
+    icon: "🔔",
+    title: "Notifiche email",
+    description:
+      "Configurazione SMTP organizzazione, template alert e invio di prova.",
+    features: ["Server mail e mittente", "Alert scadenze documenti e qualifiche"],
+    sprint: "Sprint 3",
+    eta: "Contatta l'amministratore",
+  },
   qualifiche: {
     icon: "🎓",
     title: "Qualifiche Personale",
@@ -76,7 +122,7 @@ const MODULE_INFO = {
   },
 };
 
-function ModuleLocked({ module }) {
+function ModuleLocked({ module, lockedByLicense = false }) {
   const info = MODULE_INFO[module] || {
     icon: "🔒",
     title: "Modulo non disponibile",
@@ -92,7 +138,9 @@ function ModuleLocked({ module }) {
         {/* Icona e badge */}
         <div className="module-locked-icon-wrap">
           <span className="module-locked-icon">{info.icon}</span>
-          <span className="module-locked-badge">In arrivo</span>
+          <span className="module-locked-badge">
+            {lockedByLicense ? "Non incluso nel piano" : "In arrivo"}
+          </span>
         </div>
 
         {/* Titolo e descrizione */}
@@ -114,16 +162,19 @@ function ModuleLocked({ module }) {
         )}
 
         {/* ETA */}
-        <div className="module-locked-eta">
-          <span className="eta-label">Rilascio previsto</span>
-          <span className="eta-value">{info.sprint} — {info.eta}</span>
-        </div>
+        {!lockedByLicense && (
+          <div className="module-locked-eta">
+            <span className="eta-label">Rilascio previsto</span>
+            <span className="eta-value">{info.sprint} — {info.eta}</span>
+          </div>
+        )}
 
         {/* CTA */}
         <div className="module-locked-cta">
           <p className="cta-note">
-            Questo modulo sarà disponibile come parte del piano di sviluppo.
-            Contatta QS Studio per informazioni sull'attivazione anticipata.
+            {lockedByLicense
+              ? "Il modulo non è abilitato per la tua organizzazione. Chiedi a un amministratore di attivarlo in Impostazioni → Licenze moduli."
+              : "Questo modulo sarà disponibile come parte del piano di sviluppo. Contatta QS Studio per informazioni sull'attivazione anticipata."}
           </p>
         </div>
       </div>

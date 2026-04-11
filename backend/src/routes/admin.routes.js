@@ -14,4 +14,7 @@ router.patch('/admin/users/:id', adminOnly, adminController.updateUser);
 router.delete('/admin/users/:id', adminOnly, adminController.deactivateUser);
 router.put('/admin/users/:id/standards', adminOnly, adminController.updateUserStandards);
 
+router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
+router.patch('/admin/licenses', adminOnly, adminController.updateOrgLicenses);
+
 module.exports = router;

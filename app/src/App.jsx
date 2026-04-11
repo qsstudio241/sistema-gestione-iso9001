@@ -32,7 +32,9 @@ import QualificationsPage from "./pages/QualificationsPage";
 import NCPage from "./pages/NCPage";
 import RisksPage from "./pages/RisksPage";
 import ComplaintsPage from "./pages/ComplaintsPage";
+import LicensesSettingsPage from "./pages/LicensesSettingsPage";
 import ModuleLocked from "./components/ModuleLocked";
+import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
 import ConnectionStatus from "./components/ConnectionStatus";
 import AuditLockBanner from "./components/AuditLockBanner";
@@ -90,21 +92,22 @@ function AppContent() {
         <Route
           path="/documents"
           element={
-            <BackWrapper>
-              <DocumentRegistry />
-            </BackWrapper>
+            <LicensedRoute moduleKey="documents">
+              <BackWrapper>
+                <DocumentRegistry />
+              </BackWrapper>
+            </LicensedRoute>
           }
         />
 
-        {/* Moduli SGQ bloccati (Sprint 2-7) */}
-        <Route path="/qualifiche" element={<QualificationsPage />} />
-        <Route path="/nc"         element={<NCPage />} />
-        <Route path="/rischi"     element={<RisksPage />} />
-        <Route path="/reclami"    element={<ComplaintsPage />} />
-        <Route path="/sal"        element={<ModuleLocked module="sal" />} />
+        {/* Moduli SGQ — gating licenza Sprint 8 */}
+        <Route path="/qualifiche" element={<LicensedRoute moduleKey="qualifiche"><QualificationsPage /></LicensedRoute>} />
+        <Route path="/nc"         element={<LicensedRoute moduleKey="nc"><NCPage /></LicensedRoute>} />
+        <Route path="/rischi"     element={<LicensedRoute moduleKey="rischi"><RisksPage /></LicensedRoute>} />
+        <Route path="/reclami"    element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
+        <Route path="/sal"        element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
-        {/* Modulo Saldatura bloccato (Sprint 5) */}
-        <Route path="/saldatura" element={<ModuleLocked module="saldatura" />} />
+        <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><ModuleLocked module="saldatura" /></LicensedRoute>} />
 
         {/* Gestione aziende */}
         <Route
@@ -152,8 +155,18 @@ function AppContent() {
         <Route
           path="/settings/notifications"
           element={
+            <LicensedRoute moduleKey="notifications">
+              <BackWrapper>
+                <NotificationsSettingsPage />
+              </BackWrapper>
+            </LicensedRoute>
+          }
+        />
+        <Route
+          path="/settings/licenses"
+          element={
             <BackWrapper>
-              <NotificationsSettingsPage />
+              <LicensesSettingsPage />
             </BackWrapper>
           }
         />

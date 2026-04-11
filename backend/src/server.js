@@ -144,8 +144,8 @@ app.use(API_BASE, notificationsRoutes);
 app.use(API_BASE, docfileRoutes);
 app.use(API_BASE, qualificationsRoutes);
 app.use(API_BASE, risksRoutes);
-app.use(API_BASE, complaintsRoutes);
-app.use(API_BASE, suppliersRoutes);
+app.use(`${API_BASE}/complaints`, complaintsRoutes);
+app.use(`${API_BASE}/suppliers`, suppliersRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 
 // Static files (uploads)

@@ -1098,6 +1098,15 @@ class ApiService {
     async getSupplierEvaluations(id){ return this.get(`/suppliers/${id}/evaluations`); }
     async createSupplierEvaluation(id, data) { return this.post(`/suppliers/${id}/evaluations`, data); }
     async deleteSupplierEvaluation(id, evalId) { return this.delete(`/suppliers/${id}/evaluations/${evalId}`); }
+
+    // ─── Licenze moduli (Sprint 8) ───────────────────────────────────────────
+    async getAdminLicenses() {
+        return this.get('/admin/licenses');
+    }
+
+    async patchAdminLicenses(body) {
+        return this.patch('/admin/licenses', body);
+    }
 }
 
 /**

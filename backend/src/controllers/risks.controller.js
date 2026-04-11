@@ -54,7 +54,7 @@ async function getRiskStats(req, res) {
         const r = await pool.request().input('orgId', orgId).query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open,
+                SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS [open],
                 SUM(CASE WHEN status = 'in_treatment' THEN 1 ELSE 0 END) AS in_treatment,
                 SUM(CASE WHEN status = 'mitigated' THEN 1 ELSE 0 END) AS mitigated,
                 SUM(CASE WHEN (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority

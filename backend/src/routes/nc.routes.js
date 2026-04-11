@@ -6,9 +6,11 @@ const express = require('express');
 const router = express.Router();
 const ncController = require('../controllers/nc.controller');
 const { authenticate } = require('../middleware/auth.middleware');
+const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 
 // Tutti gli endpoint richiedono autenticazione
 router.use(authenticate);
+router.use(requireLicensedModule('nc'));
 
 // GET /api/v1/non-conformities - Lista NC con filtri
 router.get('/non-conformities', ncController.listNonConformities);

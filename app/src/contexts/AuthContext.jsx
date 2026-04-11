@@ -231,6 +231,16 @@ export function AuthProvider({ children }) {
     return user?.role === USER_ROLES.ADMIN;
   }, [user]);
 
+  /** Sprint 8: moduli licenziati per organizzazione (assenza lista = tutti abilitati, retrocompatibilità) */
+  const hasLicensedModule = useCallback(
+    (moduleKey) => {
+      const m = user?.licensed_modules;
+      if (!m || !Array.isArray(m) || m.length === 0) return true;
+      return m.includes(moduleKey);
+    },
+    [user]
+  );
+
   // Valore context
   const value = {
     // Stato
@@ -248,6 +258,7 @@ export function AuthProvider({ children }) {
     hasRole,
     canEdit,
     isAdmin,
+    hasLicensedModule,
 
     // Costanti
     USER_ROLES,

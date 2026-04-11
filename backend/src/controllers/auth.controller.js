@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sgq-iso9001-secret-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
@@ -74,6 +75,7 @@ async function register(req, res) {
         // Genera token
         const token = generateToken({ user_id, email, role, organization_id });
         const refreshToken = generateRefreshToken({ user_id, organization_id });
+        const licensed_modules = await getLicensedModuleKeysForOrg(organization_id);
 
         logger.info(`✅ Utente registrato: ${email} (org: ${organization_id})`);
 
@@ -84,7 +86,8 @@ async function register(req, res) {
                 email,
                 full_name,
                 role,
-                organization_id
+                organization_id,
+                licensed_modules,
             },
             token,
             refreshToken
@@ -183,6 +186,7 @@ async function login(req, res) {
         });
 
         const allowed_standard_ids = await getAllowedStandardIds(user.user_id);
+        const licensed_modules = await getLicensedModuleKeysForOrg(user.organization_id);
 
         logger.info(`✅ Login: ${user.email} (org: ${user.organization_name})`);
 
@@ -196,7 +200,8 @@ async function login(req, res) {
                 organization_id: user.organization_id,
                 organization_name: user.organization_name,
                 auditor_org_id: user.auditor_org_id ?? null,
-                allowed_standard_ids
+                allowed_standard_ids,
+                licensed_modules,
             },
             token,
             refreshToken
@@ -319,7 +324,8 @@ async function getCurrentUser(req, res) {
 
         const userRow = result.recordset[0];
         const allowed_standard_ids = await getAllowedStandardIds(userId);
-        const user = { ...userRow, allowed_standard_ids };
+        const licensed_modules = await getLicensedModuleKeysForOrg(userRow.organization_id);
+        const user = { ...userRow, allowed_standard_ids, licensed_modules };
 
         res.json({
             success: true,

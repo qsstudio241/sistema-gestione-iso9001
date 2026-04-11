@@ -1,279 +1,190 @@
-# TEST Sprint 5+6 — NC & Azioni Correttive + Rischi & Obiettivi
+# Test Sprint 5 & 6 + Fix Sprint 2B — NC, Rischi, Allegati Documenti
 
-**Documento**: brief per agente deputy (Cursor web con Playwright MCP)
-**Data**: 11/04/2026
-**Sprint coperti**:
-- Sprint 2B FIX: verifica fix DocFileDialog (BUG-01 e BUG-02 risolti)
-- Sprint 5: NC & Azioni Correttive (`/nc`)
-- Sprint 6: Rischi & Obiettivi (`/rischi`)
+**Tipo**: Test funzionale E2E — produzione  
+**Data creazione brief**: 11 aprile 2026  
+**Preparato da**: agente master (sessione cloud)
 
 ---
 
-## Ambiente
+## 🌐 Ambiente
 
 | Parametro | Valore |
-|-----------|--------|
+|---|---|
 | URL app | `https://systemgest.netlify.app` |
 | Backend API | `https://www.fr-busato.it:8443/api/v1` |
-| Account | **Chiedere all'utente**: email + password account **admin** |
-
-> ⚠️ Prima di avviare chiedere email e password admin.
+| Credenziali | `admin@sgq.local` / `Admin123!` (da `PROJECT_CONTEXT.md`) |
 
 ---
 
-## BLOCCO A — Verifica fix Sprint 2B (pulsante 📎 DocFileDialog)
+## BLOCCO A — Fix Sprint 2B: Pulsante 📎 nel Registro Documenti
 
-> Obiettivo: confermare che i BUG-01 e BUG-02 sono risolti. Questi test erano FAIL nel test precedente.
+### Scenario A1 — Verifica pulsante 📎 nel tab Catalogo
 
-### A1 — Dialog file si apre senza errori
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| A1.1 | Login, vai a `/documents` | Registro Documenti caricato |
+| A1.2 | Clicca tab "Catalogo" | Griglia visibile |
+| A1.3 | Verifica colonna Azioni: pulsanti 📎, ✏️, 🗄️ | Tutti e 3 presenti |
+| A1.4 | Clicca 📎 sulla riga `test_doc_altro` | DocFileDialog si apre |
+| A1.5 | Verifica che il dialog NON mostri errore (fix BUG-01) | Dialog mostra lista file (vuota) senza errore SQL |
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| A1.1 | Login admin → sidebar "Documenti" → tab **Catalogo** | Tabella documenti visibile |
-| A1.2 | Clicca **📎** su qualsiasi documento | Dialog "📎 File allegato" si apre |
-| A1.3 | Il dialog mostra "Nessun file allegato ancora." | **Nessun errore 500**, nessun messaggio di errore rosso |
-| A1.4 | La sezione upload (campo File + Revisione + pulsante) è visibile | Form di upload presente |
-
-**PASS se**: dialog aperto senza errori, sezione upload visibile.
-
----
-
-### A2 — Upload PDF tramite dialog
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| A2.1 | Crea un file PDF minimale sul filesystem temporaneo (anche 1 pagina vuota) | File `test_doc.pdf` disponibile |
-| A2.2 | Nel dialog, clicca il campo "File" e seleziona il PDF | Nome file appare nel form |
-| A2.3 | Digita `Rev. TEST` nel campo Revisione | Testo inserito |
-| A2.4 | Clicca "Carica file" | Pulsante mostra "Caricamento..." poi messaggio verde successo |
-| A2.5 | Il dialog si aggiorna: sezione "File corrente" con nome file e badge "Rev. TEST" | File corrente visibile con metadati |
-| A2.6 | Pulsante "📄 Visualizza PDF" presente | Pulsante visibile (è un PDF) |
-
-**PASS se**: upload completato, file corrente visualizzato con metadati.
+**Esito atteso**: ✅ PASS (BUG-01 fixato: `GET /documents/:id/files` → 200)
 
 ---
 
-### A3 — Download PDF
+### Scenario A2 — Upload PDF via DocFileDialog
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| A3.1 | Clicca "⬇️ Scarica" sul file corrente | Browser scarica il file PDF |
-
-**PASS se**: download avviato senza errori.
-
----
-
-## BLOCCO B — Sprint 5: NC & Azioni Correttive
-
-### B1 — Voce sidebar e navigazione
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B1.1 | Verifica voce "🚨 Non Conformità" nella sidebar SGQ | Voce presente, NON ha lucchetto 🔒 |
-| B1.2 | Clicca "Non Conformità" | Navigazione a `/nc` |
-| B1.3 | Pagina "🚨 Non Conformità & Azioni Correttive" caricata | Header, barra statistiche, filtri visibili |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| A2.1 | Con DocFileDialog aperto, clicca pulsante upload/scegli file | File picker aperto |
+| A2.2 | Seleziona `doc_test_sprint2b.pdf` (600 bytes) | File selezionato |
+| A2.3 | Attendi completamento upload | Allegato appare nella lista |
+| A2.4 | Verifica nome file, dimensione, data nella lista | Metadati corretti |
 
 ---
 
-### B2 — Barra statistiche NC
+### Scenario A3 — Download e eliminazione allegato dal DocFileDialog
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B2.1 | Osserva la barra statistiche | 4 card: Aperte / In corso / Scadute / Totale |
-| B2.2 | I valori sono numerici (anche 0) | Numeri visibili, nessun NaN o undefined |
-
----
-
-### B3 — Filtri NC
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B3.1 | Dropdown "Tutti gli stati" → seleziona "Aperte" | Lista filtrata (o vuota con messaggio) |
-| B3.2 | Dropdown "Tutte le severità" → seleziona "Grave" | Lista filtrata |
-| B3.3 | Clicca "Reset filtri" | Tutti i filtri resettati, lista torna completa |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| A3.1 | Clicca download/preview sull'allegato | File scaricato/aperto |
+| A3.2 | Clicca elimina sull'allegato | Conferma eliminazione |
+| A3.3 | Conferma — allegato rimosso dalla lista | Lista allegati vuota |
 
 ---
 
-### B4 — Espansione card NC (se esistono NC)
+### Scenario A4 — Upload file .bat (tipo non ammesso)
 
-> Se non ci sono NC in produzione, salta B4 e B5 — documentare come "Nessuna NC presente".
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B4.1 | Clicca su una card NC per espanderla | Card si espande con: descrizione, pulsanti workflow, sezione "Azioni correttive" |
-| B4.2 | Sezione "Azioni correttive (N)" visibile | Header con contatore e pulsante "+ Aggiungi azione" |
-| B4.3 | Clicca "+ Aggiungi azione" | Form si apre con: Tipo, Descrizione, Responsabile, Scadenza |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| A4.1 | Clicca 📎, poi upload con file `.bat` | Errore tipo file non ammesso |
+| A4.2 | Verifica messaggio di errore nell'UI | Messaggio chiaro (non crash) |
+| A4.3 | Verifica HTTP status: 415 (non 500) | `POST /documents/:id/files` → 415 |
 
 ---
 
-### B5 — Crea azione correttiva
+## BLOCCO B — Sprint 5: Non Conformità & Azioni Correttive (`/nc`)
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B5.1 | Nel form azione: seleziona Tipo "Correttiva" | Selezionato |
-| B5.2 | Descrizione: "Azione di test creata da deputy 11/04/2026" | Testo inserito |
-| B5.3 | Responsabile: "Deputy Test" | Inserito |
-| B5.4 | Clicca "Salva azione" | Azione appare nell'elenco con stato "Aperta" |
-| B5.5 | La NC cambia stato a "In corso" automaticamente (se era "Aperta") | Badge della NC aggiornato |
+### Scenario B1 — Navigazione e struttura pagina
 
----
-
-### B6 — Workflow azione
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| B6.1 | Clicca "Avvia" sull'azione appena creata | Stato cambia a "In corso" |
-| B6.2 | Clicca "Completa" | Stato cambia a "Completata", mostra data completamento |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| B1.1 | Naviga a `/nc` | Pagina caricata senza errori |
+| B1.2 | Verifica titolo pagina | "Non Conformità & Azioni Correttive" o simile |
+| B1.3 | Verifica filtri presenti | Dropdown stato, severità, tipo |
+| B1.4 | Verifica messaggio lista vuota (se non ci sono NC) | "Nessuna non conformità trovata" |
+| B1.5 | Verifica pulsante "+ Nuova NC" o simile | Pulsante creazione presente |
 
 ---
 
-## BLOCCO C — Sprint 6: Rischi & Obiettivi
+### Scenario B2 — Creazione nuova NC
 
-### C1 — Voce sidebar e navigazione
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C1.1 | Verifica voce "⚠️ Rischi & Obiettivi" nella sidebar SGQ | Voce presente, NON ha lucchetto 🔒 |
-| C1.2 | Clicca "Rischi & Obiettivi" | Navigazione a `/rischi` |
-| C1.3 | Pagina "⚠️ Rischi & Obiettivi" caricata con 2 tab | Tab "🚧 Registro Rischi" + "🎯 Obiettivi Qualità" visibili |
-
----
-
-### C2 — Tab Rischi: crea nuovo rischio
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C2.1 | Clicca "+ Nuovo rischio" | Modal si apre |
-| C2.2 | Titolo: "Rischio test deputy - fornitori" | Inserito |
-| C2.3 | Contesto: "Esterno" | Selezionato |
-| C2.4 | Categoria: "operativo" | Inserito |
-| C2.5 | Probabilità: 3 (Alta) | Selezionato |
-| C2.6 | Impatto: 3 (Alto) | Selezionato |
-| C2.7 | Verifica score preview: deve mostrare **9** (rosso) | Badge rosso con "9" visibile |
-| C2.8 | Trattamento: "Mitiga" | Selezionato |
-| C2.9 | Azione di trattamento: "Qualifica fornitori critici" | Inserito |
-| C2.10 | Clicca "Salva" | Modal chiuso, card rischio appare in lista con badge score 9 rosso |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| B2.1 | Clicca "+ Nuova NC" | Form/dialog creazione NC |
+| B2.2 | Compila: Titolo "TEST NC Sprint 5", Severità "minor", Clausola "8.4" | Campi compilati |
+| B2.3 | Salva la NC | NC creata, appare in lista |
+| B2.4 | Verifica i campi nella card/riga NC | Titolo, severità, stato "aperta" visibili |
 
 ---
 
-### C3 — Card rischio visualizzazione
+### Scenario B3 — Modifica e cambio stato NC
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C3.1 | Verifica card rischio creata | Titolo, badge score, categoria, tag stato "Aperto" |
-| C3.2 | Info azione di trattamento visibile in fondo | "🛡️ Qualifica fornitori critici" |
-
----
-
-### C4 — Modifica rischio
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C4.1 | Clicca ✏️ sulla card | Modal si riapre con dati pre-compilati |
-| C4.2 | Cambia stato a "In trattamento" | Dropdown aggiornato |
-| C4.3 | Clicca "Salva" | Card aggiornata con tag "In trattamento" (giallo) |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| B3.1 | Clicca modifica/edit sulla NC creata | Form pre-compilato |
+| B3.2 | Cambia stato in "in_corso" | Stato aggiornato |
+| B3.3 | Salva | Card aggiornata con nuovo stato |
 
 ---
 
-### C5 — Tab Obiettivi: crea nuovo obiettivo
+### Scenario B4 — Filtri NC
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C5.1 | Clicca tab "🎯 Obiettivi Qualità" | Tab cambia |
-| C5.2 | Clicca "+ Nuovo obiettivo" | Modal si apre |
-| C5.3 | Titolo: "Riduzione NC ricorrenti 2026" | Inserito |
-| C5.4 | Clausola ISO: "10.2" | Inserito |
-| C5.5 | KPI: "N. NC ricorrenti sul totale NC" | Inserito |
-| C5.6 | Target: "< 10%" | Inserito |
-| C5.7 | Attuale: "15%" | Inserito |
-| C5.8 | Avanzamento: sposta slider a **40** | 40% visibile |
-| C5.9 | Responsabile: "QS Studio" | Inserito |
-| C5.10 | Clicca "Salva" | Modal chiuso, card obiettivo appare con progress bar al 40% |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| B4.1 | Filtra per stato "aperta" | Lista filtrata |
+| B4.2 | Filtra per severità "minor" | Risultati coerenti |
+| B4.3 | Reset filtri | Tutti i risultati ripristinati |
 
 ---
 
-### C6 — Progress bar e visualizzazione obiettivo
+### Scenario B5 — Eliminazione NC di test
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| C6.1 | Verifica card obiettivo | Titolo, "§10.2", progress bar blu al 40%, valori target/attuale |
-| C6.2 | Barra statistiche sopra: "Avanzamento medio" mostra valore % | Numero visibile |
-
----
-
-## Cleanup dati di test
-
-Al termine:
-1. Elimina il rischio "Rischio test deputy" con il pulsante 🗑️
-2. Elimina l'obiettivo "Riduzione NC ricorrenti 2026" con il pulsante 🗑️
-3. Il file PDF caricato nel Blocco A può restare (non blocca nulla)
-4. L'azione correttiva e la NC di test: se esiste una NC reale usata per B4-B6, lasciare invariata dopo cleanup (non eliminare NC reali)
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| B5.1 | Clicca elimina sulla NC "TEST NC Sprint 5" | Conferma eliminazione |
+| B5.2 | Conferma | NC rimossa dalla lista |
 
 ---
 
-## Output atteso
+## BLOCCO C — Sprint 6: Rischi & Obiettivi (`/rischi`)
 
-Crea `docs/agent-tasks/REPORT_TEST_SPRINT5_6.md` con:
+### Scenario C1 — Navigazione e struttura pagina
 
-```markdown
-# Report Test Sprint 5+6 — NC & Rischi
-
-Data: [data]
-URL: https://systemgest.netlify.app
-
-## Risultati
-
-| Blocco | Scenario | Descrizione | Esito | Note |
-|--------|----------|-------------|-------|------|
-| A | A1 | DocFileDialog si apre senza errori | PASS/FAIL | |
-| A | A2 | Upload PDF tramite dialog | PASS/FAIL | |
-| A | A3 | Download PDF | PASS/FAIL | |
-| B | B1 | Sidebar NC + navigazione | PASS/FAIL | |
-| B | B2 | Barra statistiche | PASS/FAIL | |
-| B | B3 | Filtri NC | PASS/FAIL | |
-| B | B4 | Espansione card NC | PASS/FAIL/SKIP | |
-| B | B5 | Crea azione correttiva | PASS/FAIL/SKIP | |
-| B | B6 | Workflow azione | PASS/FAIL/SKIP | |
-| C | C1 | Sidebar Rischi + navigazione | PASS/FAIL | |
-| C | C2 | Crea rischio | PASS/FAIL | |
-| C | C3 | Visualizza card rischio | PASS/FAIL | |
-| C | C4 | Modifica rischio | PASS/FAIL | |
-| C | C5 | Crea obiettivo | PASS/FAIL | |
-| C | C6 | Progress bar obiettivo | PASS/FAIL | |
-
-## Bug trovati
-
-[lista con severità 🔴 Critico / 🟡 Medio / 🟢 Basso]
-```
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C1.1 | Naviga a `/rischi` | Pagina caricata |
+| C1.2 | Verifica 2 tab: "Registro Rischi" e "Obiettivi Qualità" | Entrambi i tab presenti |
+| C1.3 | Verifica pulsante "+ Nuovo rischio" nel tab Rischi | Presente |
+| C1.4 | Clicca tab "Obiettivi" | Tab attivato con lista obiettivi |
+| C1.5 | Verifica pulsante "+ Nuovo obiettivo" | Presente |
 
 ---
 
-## Prompt da incollare in Cursor web
+### Scenario C2 — Creazione nuovo rischio
 
-```
-Sei un agente di test funzionale per l'app SGQ Studio.
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C2.1 | Clicca "+ Nuovo rischio" | Form/dialog creazione rischio |
+| C2.2 | Compila: Titolo "TEST Rischio QUI", Probabilità 2, Impatto 3, Clausola "6.1" | Campi compilati |
+| C2.3 | Salva | Rischio creato, appare in lista con Score P×I = 6 |
+| C2.4 | Verifica semaforo/colore in base al punteggio | Colore coerente con rischio medio (score 6) |
 
-PRIMA DI TUTTO: chiedimi email e password dell'account admin di test.
+---
 
-Devi eseguire i test descritti in:
-docs/agent-tasks/TEST_SPRINT5_6_nc_rischi.md
+### Scenario C3 — Modifica rischio
 
-I test coprono 3 aree:
-- BLOCCO A: verifica fix Sprint 2B (pulsante 📎 → upload PDF nel Registro Documenti)
-- BLOCCO B: Sprint 5 — pagina /nc (Non Conformità & Azioni Correttive)
-- BLOCCO C: Sprint 6 — pagina /rischi (Registro Rischi + Obiettivi Qualità)
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C3.1 | Clicca modifica sul rischio creato | Form pre-compilato |
+| C3.2 | Cambia probabilità a 4, impatto a 4 | Score diventa 16 |
+| C3.3 | Salva | Rischio aggiornato, score = 16, colore rosso (alto) |
 
-Strumenti: Playwright MCP per browser, click, upload, form, screenshot.
+---
 
-Regole:
-- Esegui TUTTI i blocchi nell'ordine A → B → C
-- Per il Blocco A scenario A2: crea un PDF minimale (anche solo bytes minimi validi) sul filesystem temporaneo
-- Per Blocco B: se non esistono NC in produzione, salta B4-B6 e documenta "Nessuna NC presente"
-- Screenshot a ogni PASS e FAIL
-- Non modificare codice, non committare
-- Crea docs/agent-tasks/REPORT_TEST_SPRINT5_6.md con i risultati
-- Al termine fai cleanup: elimina rischio e obiettivo creati
+### Scenario C4 — Creazione nuovo obiettivo
 
-URL: https://systemgest.netlify.app
-Backend: https://www.fr-busato.it:8443/api/v1
-```
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C4.1 | Clicca tab "Obiettivi", poi "+ Nuovo obiettivo" | Form creazione obiettivo |
+| C4.2 | Compila: Titolo "TEST Obiettivo Qualità", Target "95", Unità "%" | Campi compilati |
+| C4.3 | Salva | Obiettivo creato in lista |
+| C4.4 | Verifica: titolo, target, stato nella card | Dati corretti |
+
+---
+
+### Scenario C5 — Filtro rischi per stato
+
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C5.1 | Nel tab Rischi, usa filtro stato | Lista filtrata |
+| C5.2 | Reset filtro | Tutti i rischi visibili |
+
+---
+
+### Scenario C6 — Eliminazione dati di test (cleanup)
+
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| C6.1 | Elimina rischio "TEST Rischio QUI" | Rischio rimosso |
+| C6.2 | Elimina obiettivo "TEST Obiettivo Qualità" | Obiettivo rimosso |
+
+---
+
+## 📊 Riepilogo atteso
+
+| Blocco | Scenari | PASS | FAIL | Note |
+|--------|---------|------|------|------|
+| A — Fix Sprint 2B | A1–A4 | ___ | ___ | ___ |
+| B — Sprint 5 NC | B1–B5 | ___ | ___ | ___ |
+| C — Sprint 6 Rischi | C1–C6 | ___ | ___ | ___ |

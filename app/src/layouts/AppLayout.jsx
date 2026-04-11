@@ -19,9 +19,18 @@ import "./AppLayout.css";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
 
+function hasLicensedModule(user, key) {
+  const m = user?.licensed_modules;
+  if (!m || !Array.isArray(m) || m.length === 0) return true;
+  return m.includes(key);
+}
+
 function buildNavItems(user, alerts = {}) {
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const canManage = ["admin", "auditor", "superadmin"].includes(user?.role);
+
+  const filterByLicense = (items) =>
+    (items || []).filter((it) => !it.licenseKey || hasLicensedModule(user, it.licenseKey));
 
   return [
     // Gruppo principale
@@ -35,37 +44,38 @@ function buildNavItems(user, alerts = {}) {
     // Modulo SGQ
     {
       group: "SGQ",
-      items: [
-        { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null },
-        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche" },
-        { to: "/nc",          icon: "🚨", label: "Non Conformità" },
-        { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi" },
-        { to: "/reclami",     icon: "📢", label: "Reclami & Fornitori", badge: alerts.complaints > 0 ? alerts.complaints : null },
-        { to: "/sal",         icon: "📊", label: "SAL",         locked: true },
-      ],
+      items: filterByLicense([
+        { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
+        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
+        { to: "/nc",          icon: "🚨", label: "Non Conformità", licenseKey: "nc" },
+        { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", licenseKey: "rischi" },
+        { to: "/reclami",     icon: "📢", label: "Reclami & Fornitori", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
+        { to: "/sal",         icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
+      ]),
     },
     // Modulo Saldatura
     {
       group: "Saldatura",
-      items: [
-        { to: "/saldatura", icon: "🔧", label: "ISO 3834", locked: true },
-      ],
+      items: filterByLicense([
+        { to: "/saldatura", icon: "🔧", label: "ISO 3834", locked: true, licenseKey: "saldatura" },
+      ]),
     },
     // Gestione (solo admin/auditor)
     ...(canManage ? [{
       group: "Gestione",
-      items: [
+      items: filterByLicense([
         { to: "/companies",   icon: "🏢", label: "Aziende" },
         ...(isAdmin ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
+          { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),
         { to: "/settings/templates",        icon: "📝", label: "Template report" },
         { to: "/settings/custom-checklists",icon: "📋", label: "Checklist personalizzate" },
         ...(isAdmin ? [
-          { to: "/settings/notifications",  icon: "🔔", label: "Notifiche" },
+          { to: "/settings/notifications",  icon: "🔔", label: "Notifiche", licenseKey: "notifications" },
         ] : []),
-      ],
+      ]),
     }] : []),
   ];
 }
@@ -178,18 +188,26 @@ function AppLayout({ children }) {
   // Polling badge alert ogni 5 minuti
   const loadAlerts = useCallback(async () => {
     try {
+      const modules = user?.licensed_modules;
+      const hasReclami =
+        !modules || !Array.isArray(modules) || modules.length === 0 || modules.includes("reclami");
+      const compPromise = hasReclami
+        ? apiService.getComplaintsStats()
+        : Promise.resolve({ data: {} });
       const [docsRes, compRes] = await Promise.all([
         apiService.getAlertCount(),
-        apiService.getComplaintsStats()
+        compPromise,
       ]);
+      const overdue =
+        compRes?.data?.overdue_30_days ?? compRes?.overdue_30_days ?? 0;
       setAlerts({
         documents: docsRes.total || 0,
-        complaints: compRes.overdue_30_days || 0
+        complaints: overdue,
       });
     } catch {
       // non bloccante
     }
-  }, []);
+  }, [user?.licensed_modules]);
 
   useEffect(() => {
     loadAlerts();

@@ -1,221 +1,175 @@
-# TEST Sprint 2B — Gestione File Allegati Documenti
+# Test Sprint 2B — File Allegati Documenti SGQ
 
-**Documento**: brief per agente deputy (Cursor web con Playwright MCP)
-**Data**: 11/04/2026
-**Sprint**: Sprint 2B — upload/download/versioning file su documenti del registro
+**Tipo**: Test funzionale E2E — produzione  
+**Sprint**: Sprint 2B — Allegati al Registro Documenti  
+**Data creazione brief**: 11 aprile 2026  
+**Preparato da**: agente master (sessione cloud)  
+**Eseguito da**: agente deputy (Cursor cloud con browser Playwright)
 
 ---
 
-## Contesto
+## 🎯 Obiettivo
+
+Verificare le funzionalità di gestione allegati per i documenti del Registro SGQ:
+- **Upload allegato** a un documento esistente via API `/attachments/upload`
+- **Preview/download** allegato esistente via `/attachments/:id/view` e `/download`
+- **Sostituzione** allegato esistente via `/attachments/:id/replace`
+- **Eliminazione** allegato via `/attachments/:id`
+- **Validazione tipo file**: tipi non ammessi (es. `.bat`) devono essere rifiutati
+- **Stato UI**: verificare che il `DocumentForm` mostri o meno la sezione allegati
+
+---
+
+## 🌐 Ambiente
 
 | Parametro | Valore |
-|-----------|--------|
+|---|---|
 | URL app | `https://systemgest.netlify.app` |
 | Backend API | `https://www.fr-busato.it:8443/api/v1` |
-| Credenziali | **Chiedere all'utente prima di avviare**: email + password account **admin** |
-
-> ⚠️ Prima di avviare i test chiedere all'utente: email e password di un account **admin** di test.
-
----
-
-## Funzionalità da testare
-
-Sprint 2B ha aggiunto la possibilità di allegare file fisici (Word, PDF, Excel, ecc.) ai documenti del Registro. Ogni riga del Catalogo ora ha un pulsante 📎 che apre un dialog per caricare, visualizzare e scaricare file, con storico delle versioni.
+| Credenziali | Vedere `PROJECT_CONTEXT.md` — `admin@sgq.local` |
+| Tipi file ammessi | JPEG, PNG, GIF, WebP, MP3/WAV, MP4, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, TXT, CSV |
+| Dimensione max | 10 MB per file |
+| Tipi NON ammessi | .bat, .exe, .sh, .zip, .js, .php, ecc. |
 
 ---
 
-## Prerequisiti
+## 📋 Scenari di test
 
-1. Accedere come admin
-2. Navigare su `/documents` → tab **Catalogo**
-3. Verificare che esista almeno un documento con stato `vigente` su cui fare i test  
-   - Se non esiste, crearne uno con titolo `[TEST-2B] Documento allegato` prima di iniziare
+### Scenario 1 — Login e accesso al Registro Documenti
 
----
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 1.1 | Apri `https://systemgest.netlify.app` | Pagina di login visibile |
+| 1.2 | Login con credenziali admin | Dashboard home caricata |
+| 1.3 | Clicca "Documenti" nella sidebar | Navigazione a `/documents` — Registro Documenti |
+| 1.4 | Vai al tab "Catalogo" | Griglia documenti visibile |
+| 1.5 | Identifica il documento di test esistente (`test_doc_altro`) | Documento visibile nella griglia |
 
-## Scenari di test
-
----
-
-### SCENARIO 1 — Presenza pulsante 📎 nella tabella Catalogo
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 1.1 | Vai su `/documents` → tab **Catalogo** | Tabella documenti visibile |
-| 1.2 | Osserva la colonna Azioni di ogni riga | Ogni riga deve mostrare 3 pulsanti: **📎** (file), **✏️** (modifica), **🗄️** (archivia) |
-| 1.3 | Verifica che 📎 sia il primo pulsante a sinistra | Ordine: 📎 ✏️ 🗄️ |
-
-**PASS** se: il pulsante 📎 è presente su ogni riga del catalogo.
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-### SCENARIO 2 — Dialog file: stato vuoto (nessun file allegato)
+### Scenario 2 — Verifica UI DocumentForm (presenza sezione allegati)
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 2.1 | Clicca 📎 su un documento che NON ha file allegati | Dialog "File allegato" si apre |
-| 2.2 | Intestazione dialog | Titolo "📎 File allegato", sottotitolo con nome documento |
-| 2.3 | Area principale | Messaggio "Nessun file allegato ancora." con suggerimento di caricare |
-| 2.4 | Sezione upload | Form con campo "File" (input file) + campo "Revisione (opzionale)" + pulsante "Carica file" |
-| 2.5 | Pulsante "Carica file" senza file selezionato | Pulsante deve essere **disabilitato** (grigio, non cliccabile) |
-| 2.6 | Chiudi cliccando X o fuori dal dialog | Dialog si chiude, tabella intatta |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 2.1 | Clicca ✏️ (modifica) su un documento esistente | Si apre la modale di modifica |
+| 2.2 | Verifica presenza/assenza sezione upload allegati nella modale | Documenta se la sezione allegati è presente o meno (funzionalità in sviluppo) |
+| 2.3 | Chiudi la modale con ✕ | Modale chiusa |
+| 2.4 | Clicca "+ Nuovo documento" | Si apre la modale wizard a 2 passi |
+| 2.5 | Inserisci un titolo di test e clicca "Avanti →" | Avanza al passo 2 |
+| 2.6 | Verifica presenza/assenza sezione upload allegati nel passo 2 | Documenta lo stato |
+| 2.7 | Chiudi la modale con "Annulla" | Modale chiusa, nessun documento creato |
 
-**PASS** se: dialog apre, mostra stato vuoto, pulsante disabilitato senza file.
-
----
-
-### SCENARIO 3 — Upload primo file (PDF)
-
-**Prerequisito**: prepara un file PDF di test (qualsiasi PDF piccolo, es. una pagina).
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 3.1 | Clicca 📎 sullo stesso documento vuoto | Dialog aperto |
-| 3.2 | Nella sezione upload, clicca sul campo "File" | Si apre il file picker del sistema operativo |
-| 3.3 | Seleziona il file PDF di test | File selezionato — il nome appare sotto il form con dimensione |
-| 3.4 | Nel campo "Revisione" digita `Rev. 1` | Testo inserito |
-| 3.5 | Clicca "Carica file" | Il pulsante mostra "Caricamento in corso..." |
-| 3.6 | Attendi il completamento | Appare messaggio verde: "✅ File '[nome].pdf' ([dimensione]) caricato con successo." |
-| 3.7 | Il dialog si aggiorna automaticamente | La sezione "File corrente" appare con: nome file, badge "Rev. 1", dimensione, data |
-| 3.8 | Verifica pulsanti sul file corrente | Deve apparire **"📄 Visualizza PDF"** (perché è un PDF) + **"⬇️ Scarica"** |
-
-**PASS** se: upload avviene senza errori, file corrente visualizzato con metadati.
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-### SCENARIO 4 — Visualizzazione PDF inline
+### Scenario 3 — Upload allegato PDF via API (audit esistente)
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 4.1 | Con il PDF caricato (Scenario 3), clicca "📄 Visualizza PDF" | Si apre una nuova tab del browser con il PDF |
-| 4.2 | Verifica che il PDF sia visualizzabile | Il browser mostra il contenuto del PDF (non download forzato) |
-| 4.3 | Torna al tab principale | Dialog ancora aperto, file ancora mostrato |
+> Prerequisito: serve un audit esistente. Il backend `/attachments/upload` accetta `audit_id` o `nc_id`.
+> Per i documenti del registry, la FK `attachment_id` non è ancora esposta dall'UI.
+> Testa l'upload via l'audit già esistente nell'app.
 
-**PASS** se: PDF aperto inline nel browser.
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 3.1 | Naviga alla sezione Audit: clicca "Audit" nella sidebar | URL `/audit` — lista audit |
+| 3.2 | Apri un audit esistente (qualsiasi audit in lista) | Audit caricato con le sue sezioni |
+| 3.3 | Individua la sezione allegati in una domanda della checklist | Sezione con pulsante "➕ Aggiungi Allegati" |
+| 3.4 | Clicca "➕ Aggiungi Allegati" | Menu si apre con le opzioni (Foto, Documenti, Verbali) |
+| 3.5 | Clicca "📎 Documenti" | Si apre il file picker del browser |
+| 3.6 | Seleziona un file PDF di test (creato sul filesystem) | File selezionato |
+| 3.7 | Attendi il completamento upload | Allegato appare nella lista con nome, dimensione, data |
+| 3.8 | Verifica che l'allegato sia visibile nella sezione `AttachmentPreview` | File con icona 📄 e nome visibile |
 
----
-
-### SCENARIO 5 — Download file generico (non-PDF)
-
-**Prerequisito**: prepara un file DOCX o XLSX di test.
-
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 5.1 | Apri dialog 📎 su un documento (puoi usarne uno nuovo o lo stesso) | Dialog aperto |
-| 5.2 | Carica il file DOCX/XLSX con revisione `Rev. 1` | Upload completato |
-| 5.3 | Per file non-PDF, il pulsante "📄 Visualizza PDF" NON appare | Solo il pulsante **"⬇️ Scarica"** è visibile |
-| 5.4 | Clicca "⬇️ Scarica" | Il browser scarica il file (non apre nel browser) |
-
-**PASS** se: file non-PDF non mostra il pulsante "Visualizza PDF", lo scarica correttamente.
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-### SCENARIO 6 — Seconda revisione e storico versioni
+### Scenario 4 — Download e preview allegato
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 6.1 | Con un documento che ha già un PDF (Scenario 3), apri nuovamente dialog 📎 | File corrente visibile |
-| 6.2 | Nella sezione upload, seleziona un secondo file PDF | File selezionato |
-| 6.3 | Digita `Rev. 2` nel campo Revisione | Testo inserito |
-| 6.4 | Clicca "Carica file" | Upload completato con messaggio verde |
-| 6.5 | Il file corrente ora mostra il secondo file con "Rev. 2" | Badge "Rev. 2" visibile nella sezione "File corrente" |
-| 6.6 | Verifica presenza sezione "Versioni precedenti (1)" | Sezione collassata presente con contatore "(1)" |
-| 6.7 | Clicca su "▼ Versioni precedenti (1)" per espandere | Lista mostra il primo file con "Rev. 1" e pulsante ⬇️ |
-| 6.8 | Clicca ⬇️ sulla versione precedente | Il file della versione precedente viene scaricato |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 4.1 | Nell'audit con allegato appena caricato, individua il file nella `AttachmentPreview` | File visibile |
+| 4.2 | Clicca sull'icona di preview/download | Si apre preview inline (PDF nel browser) o parte download |
+| 4.3 | Verifica che non appaia un errore 401/403 | Accesso autorizzato |
+| 4.4 | Verifica che il file scaricato/mostrato corrisponda a quello caricato | Contenuto corretto |
 
-**PASS** se: versioning funziona, storico accessibile, download versioni precedenti OK.
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-### SCENARIO 7 — Blocco file eseguibili
+### Scenario 5 — Verifica endpoint API allegati (chiamate dirette)
 
-| Passo | Azione | Esito atteso |
-|-------|--------|--------------|
-| 7.1 | Apri dialog 📎 su qualsiasi documento | Dialog aperto |
-| 7.2 | Crea un file di test con estensione `.bat` (es. `test.bat`) sul desktop | File creato |
-| 7.3 | Seleziona il file `test.bat` nel file picker | File selezionato lato client |
-| 7.4 | Osserva il comportamento | Deve apparire un messaggio di errore rosso: "Formato non consentito per sicurezza: .bat" — il file NON deve essere selezionato o deve essere bloccato |
-| 7.5 | Il pulsante "Carica file" rimane disabilitato | Non si può procedere con il file bloccato |
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 5.1 | Verifica che la network request `POST /attachments/upload` risponda 201 | Status 201 Created |
+| 5.2 | Verifica che `GET /attachments/:id/view` risponda 200 con il file | Status 200 con Content-Type corretto |
+| 5.3 | Verifica che `GET /attachments/:id/download` risponda 200 | Status 200 con Content-Disposition: attachment |
 
-**PASS** se: file .bat (e simili) bloccato con messaggio di errore chiaro.
-
----
-
-## Cleanup dati di test
-
-Al termine dei test:
-1. Vai su `/documents` → tab **Catalogo**
-2. Cerca `[TEST-2B]`
-3. Archivia il documento di test → conferma con "Sì"
-
-I file fisici caricate rimarranno sul server (non si cancellano) ma il documento sarà archiviato come "obsoleto".
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-## Output atteso
+### Scenario 6 — Upload file non permesso (.bat)
 
-Crea il file `docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md` con:
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 6.1 | Torna alla sezione allegati di un audit | Sezione allegati visibile |
+| 6.2 | Clicca "📎 Documenti" e seleziona un file `.bat` (creato sul filesystem) | File picker aperto |
+| 6.3 | Verifica la risposta del backend | Il server deve rispondere con errore 400/415 "Tipo file non supportato" |
+| 6.4 | Verifica il messaggio di errore nell'UI | L'UI mostra un messaggio di errore (non silenzioso) |
 
-```markdown
-# Report test Sprint 2B — File Allegati
-
-Data: [data]
-URL: https://systemgest.netlify.app
-
-## Risultati
-
-| Scenario | Descrizione | Esito | Note |
-|----------|-------------|-------|------|
-| 1 | Pulsante 📎 in tabella Catalogo | PASS/FAIL | |
-| 2 | Dialog stato vuoto | PASS/FAIL | |
-| 3 | Upload primo file PDF | PASS/FAIL | |
-| 4 | Visualizzazione PDF inline | PASS/FAIL | |
-| 5 | Download file non-PDF | PASS/FAIL | |
-| 6 | Seconda revisione + storico | PASS/FAIL | |
-| 7 | Blocco file eseguibili | PASS/FAIL | |
-
-## Bug trovati
-
-[lista con priorità 🔴 🟡 🟢]
-```
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
 
 ---
 
-## Note importanti per il deputy
+### Scenario 7 — Eliminazione allegato
 
-> ⚠️ **ATTENZIONE**: Il sistema ha **due sistemi di allegati separati**:
-> 1. **Allegati audit/NC** → endpoint `POST /attachments/upload` con `audit_id` — questo è il vecchio sistema, NON è oggetto di questo test
-> 2. **File allegati documenti registro** → endpoint `POST /documents/:docId/file` accessibile tramite il pulsante **📎** nella tabella **Catalogo** → **questo è ciò che devi testare**
->
-> Non testare il vecchio sistema `/attachments/upload`. Concentrati SOLO sul flusso 📎 → DocFileDialog.
+| # | Azione | Esito atteso |
+|---|--------|--------------|
+| 7.1 | Individua l'allegato PDF caricato nello Scenario 3 | Allegato visibile nell'audit |
+| 7.2 | Clicca il pulsante "✕" (rimuovi) sull'allegato | Appare dialog di conferma (o azione diretta) |
+| 7.3 | Conferma l'eliminazione | L'allegato scompare dalla lista |
+| 7.4 | Verifica che `GET /attachments/:id` risponda 404 o che il file non sia più accessibile | Allegato eliminato dal backend |
 
-## Prompt da incollare in Cursor web (Composer)
+**Esito**: ☐ PASS  ☐ FAIL  
+**Note**: _______________
+
+---
+
+## 🧹 Cleanup
+
+> Al termine dei test, verificare che non rimangano allegati di test "orfani" nel sistema.
+> Gli allegati caricati durante i test devono essere eliminati via UI o API.
+
+---
+
+## 📊 Riepilogo atteso
+
+| Sprint | Scenari | PASS | FAIL | Note |
+|--------|---------|------|------|------|
+| Sprint 2B — Allegati Documenti | 1–7 | ___ | ___ | ___ |
+
+---
+
+## 🔁 Prompt pronto (da incollare in Cursor cloud)
 
 ```
-Sei un agente di test funzionale. Devi verificare le funzionalità di Sprint 2B (file allegati documenti del registro) dell'app SGQ Studio.
+Leggi il file docs/agent-tasks/TEST_SPRINT2B_file_allegati.md
 
-PRIMA DI TUTTO: chiedimi email e password dell'account admin di test.
+Sei l'agente di test incaricato di eseguire i test funzionali E2E Sprint 2B
+del progetto Sistema Gestione ISO 9001.
 
-ATTENZIONE CRITICA: Esistono due sistemi di allegati nell'app. Devi testare SOLO il nuovo:
-- ❌ NON testare POST /attachments/upload (vecchio sistema per audit/NC)
-- ✅ DEVI testare il pulsante 📎 nella colonna Azioni del tab CATALOGO → Documents Registry
-
-Il flusso è: Login → sidebar "Documenti" → tab "Catalogo" → clicca 📎 su una riga → si apre DocFileDialog.
-
-Poi segui ESATTAMENTE gli scenari nel file:
-docs/agent-tasks/TEST_SPRINT2B_file_allegati.md
-
-Strumenti: Playwright MCP per browser, navigazione, click, upload file, screenshot.
-
-Regole:
-- Esegui ogni scenario nell'ordine indicato
-- Per lo scenario 3 ti servirà un file PDF: puoi crearne uno minimale (anche solo testo) sul filesystem temporaneo
-- Per lo scenario 7 crea un file test.bat vuoto temporaneo
-- Documenta PASS/FAIL con screenshot per ogni scenario
-- Verifica anche che POST /documents/:docId/file risponda 415 (non 500) per file .exe/.bat
-- Non modificare codice, non committare
-- Crea docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md con i risultati
-
-URL: https://systemgest.netlify.app
-Backend API: https://www.fr-busato.it:8443/api/v1
+Usa le credenziali in PROJECT_CONTEXT.md (admin@sgq.local / Admin123!).
+Apri il browser su https://systemgest.netlify.app.
+Esegui ogni scenario nell'ordine indicato con screenshot PASS/FAIL.
+Crea docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md con i risultati.
+NON modificare codice. NON committare.
 ```

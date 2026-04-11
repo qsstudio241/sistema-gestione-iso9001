@@ -653,6 +653,6 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 ---
 
 **Ultimo Aggiornamento**: 11 aprile 2026
-**Prossimo Step**: Sprint 7 — Reclami & Fornitori (ISO 9001 §8.2.1 + §8.4)
+**Prossimo Step**: Sprint 9 — AI Import Pipeline (dopo stabilizzazione licenze in produzione)
 
-> Sprint 0-6 completati. Migrazioni 029-034 eseguite su VPS. Ultimo commit: `707575e`.
+> Sprint 0-8: Sprint 7 (Reclami & Fornitori) e Sprint 8 (Licensing Engine: `organizations.licensed_modules`, API admin, gating UI/API) completati. Migrazioni fino a 037 su VPS. Verificare smoke dopo deploy: mount `/complaints` e `/suppliers`, pagina Impostazioni → Licenze moduli.

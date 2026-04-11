@@ -5,6 +5,13 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    KNOWN_MODULE_KEYS,
+    LABELS_IT,
+    getLicensedModuleKeysForOrg,
+    setLicensedModulesForOrg,
+    clearLicensedModulesOverride,
+} = require('../services/moduleLicense.service');
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -510,10 +517,71 @@ async function updateUserStandards(req, res) {
     }
 }
 
+/**
+ * GET /api/v1/admin/licenses — moduli licenziati per l'organizzazione corrente (solo admin)
+ */
+async function getOrgLicenses(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const modules = await getLicensedModuleKeysForOrg(organization_id);
+        const r = await query(
+            `SELECT licensed_modules FROM organizations WHERE organization_id = @organization_id`,
+            { organization_id }
+        );
+        const raw = r.recordset[0]?.licensed_modules ?? null;
+        res.json({
+            success: true,
+            data: {
+                modules,
+                raw_override: raw,
+                available: KNOWN_MODULE_KEYS.map((key) => ({ key, label: LABELS_IT[key] || key })),
+            },
+        });
+    } catch (error) {
+        logger.error('Admin getOrgLicenses error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore lettura licenze' });
+    }
+}
+
+/**
+ * PATCH /api/v1/admin/licenses
+ * body: { modules: string[] } oppure { use_defaults: true } per tornare a NULL (tutti i moduli)
+ */
+async function updateOrgLicenses(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const { modules, use_defaults } = req.body || {};
+
+        if (use_defaults === true) {
+            await clearLicensedModulesOverride(organization_id);
+            const updated = await getLicensedModuleKeysForOrg(organization_id);
+            logger.info('Admin licenses reset to defaults', { organization_id });
+            return res.json({ success: true, data: { modules: updated } });
+        }
+
+        if (!Array.isArray(modules)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Campo "modules" deve essere un array di stringhe',
+                code: 'INVALID_BODY',
+            });
+        }
+
+        const updated = await setLicensedModulesForOrg(organization_id, modules);
+        logger.info('Admin licenses updated', { organization_id, modules: updated });
+        res.json({ success: true, data: { modules: updated } });
+    } catch (error) {
+        logger.error('Admin updateOrgLicenses error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore aggiornamento licenze' });
+    }
+}
+
 module.exports = {
     listUsers,
     createUser,
     updateUser,
     deactivateUser,
     updateUserStandards,
+    getOrgLicenses,
+    updateOrgLicenses,
 };
