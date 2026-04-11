@@ -181,12 +181,26 @@ URL: https://systemgest.netlify.app
 
 ---
 
+## Note importanti per il deputy
+
+> ⚠️ **ATTENZIONE**: Il sistema ha **due sistemi di allegati separati**:
+> 1. **Allegati audit/NC** → endpoint `POST /attachments/upload` con `audit_id` — questo è il vecchio sistema, NON è oggetto di questo test
+> 2. **File allegati documenti registro** → endpoint `POST /documents/:docId/file` accessibile tramite il pulsante **📎** nella tabella **Catalogo** → **questo è ciò che devi testare**
+>
+> Non testare il vecchio sistema `/attachments/upload`. Concentrati SOLO sul flusso 📎 → DocFileDialog.
+
 ## Prompt da incollare in Cursor web (Composer)
 
 ```
-Sei un agente di test funzionale. Devi verificare le funzionalità di Sprint 2B (file allegati documenti) dell'app SGQ Studio.
+Sei un agente di test funzionale. Devi verificare le funzionalità di Sprint 2B (file allegati documenti del registro) dell'app SGQ Studio.
 
 PRIMA DI TUTTO: chiedimi email e password dell'account admin di test.
+
+ATTENZIONE CRITICA: Esistono due sistemi di allegati nell'app. Devi testare SOLO il nuovo:
+- ❌ NON testare POST /attachments/upload (vecchio sistema per audit/NC)
+- ✅ DEVI testare il pulsante 📎 nella colonna Azioni del tab CATALOGO → Documents Registry
+
+Il flusso è: Login → sidebar "Documenti" → tab "Catalogo" → clicca 📎 su una riga → si apre DocFileDialog.
 
 Poi segui ESATTAMENTE gli scenari nel file:
 docs/agent-tasks/TEST_SPRINT2B_file_allegati.md
@@ -197,9 +211,11 @@ Regole:
 - Esegui ogni scenario nell'ordine indicato
 - Per lo scenario 3 ti servirà un file PDF: puoi crearne uno minimale (anche solo testo) sul filesystem temporaneo
 - Per lo scenario 7 crea un file test.bat vuoto temporaneo
-- Documenta PASS/FAIL con screenshot
+- Documenta PASS/FAIL con screenshot per ogni scenario
+- Verifica anche che POST /documents/:docId/file risponda 415 (non 500) per file .exe/.bat
 - Non modificare codice, non committare
 - Crea docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md con i risultati
 
 URL: https://systemgest.netlify.app
+Backend API: https://www.fr-busato.it:8443/api/v1
 ```
