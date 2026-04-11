@@ -39,7 +39,7 @@ function buildNavItems(user, alertCount = 0) {
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alertCount > 0 ? alertCount : null },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche" },
         { to: "/nc",          icon: "🚨", label: "Non Conformità" },
-        { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", locked: true },
+        { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi" },
         { to: "/sal",         icon: "📊", label: "SAL",         locked: true },
       ],
     },

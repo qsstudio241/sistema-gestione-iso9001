@@ -1,0 +1,282 @@
+/* RisksPage.css — Sprint 6: Rischi & Obiettivi */
+
+.risks-page { padding: 24px; max-width: 960px; margin: 0 auto; }
+.risks-page-header h1 { margin: 0 0 4px; font-size: 1.5rem; color: #1a202c; }
+.risks-page-sub { margin: 0 0 20px; color: #718096; font-size: 0.875rem; }
+
+/* Tabs */
+.risks-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+.risks-tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .2s;
+}
+.risks-tab-btn:hover { color: #2d3748; }
+.risks-tab-btn.active { color: #3182ce; border-bottom-color: #3182ce; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.stat-item {
+  flex: 1;
+  min-width: 80px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.stat-num { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: .05em; }
+.stat-open   .stat-num { color: #e53e3e; }
+.stat-treat  .stat-num { color: #d69e2e; }
+.stat-high   .stat-num { color: #c05621; }
+.stat-miti   .stat-num { color: #38a169; }
+.stat-prog   .stat-num { color: #3182ce; }
+
+/* Toolbar */
+.tab-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tab-toolbar select {
+  padding: 7px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+/* Score badge */
+.score-badge {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.risk-high   { background: #fed7d7; color: #742a2a; }
+.risk-medium { background: #fefcbf; color: #7b6002; }
+.risk-low    { background: #c6f6d5; color: #22543d; }
+
+/* Risk card */
+.risk-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid transparent;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.risk-high-border   { border-left-color: #e53e3e; }
+.risk-medium-border { border-left-color: #d69e2e; }
+.risk-low-border    { border-left-color: #38a169; }
+
+.risk-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.risk-card-title { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; }
+.risk-cat {
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+.risk-card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.risk-desc { font-size: 0.875rem; color: #4a5568; margin: 0 0 8px; }
+.risk-meta { display: flex; gap: 14px; font-size: 0.8rem; color: #718096; flex-wrap: wrap; margin-bottom: 4px; }
+.risk-prob-imp { font-weight: 600; }
+.risk-treatment { font-size: 0.85rem; color: #4a5568; margin: 6px 0 0; background: #f7fafc; padding: 6px 10px; border-radius: 4px; }
+
+/* Status tags */
+.status-tag {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.rs-open    { background: #fff5f5; color: #c53030; }
+.rs-treat   { background: #fffbeb; color: #b7791f; }
+.rs-miti    { background: #f0fff4; color: #276749; }
+.rs-closed  { background: #f7fafc; color: #718096; }
+.os-active    { background: #ebf8ff; color: #2b6cb0; }
+.os-achieved  { background: #f0fff4; color: #276749; }
+.os-paused    { background: #fffbeb; color: #b7791f; }
+.os-cancelled { background: #f7fafc; color: #718096; }
+
+/* Objective card */
+.obj-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.obj-card.obj-overdue { border-left: 4px solid #e53e3e; }
+
+.obj-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.obj-card-title { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.obj-clause {
+  background: #e9d8fd;
+  color: #44337a;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Progress bar */
+.obj-progress-wrap {
+  position: relative;
+  height: 16px;
+  background: #edf2f7;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.obj-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3182ce, #63b3ed);
+  border-radius: 8px;
+  transition: width .4s ease;
+  min-width: 4px;
+}
+.obj-progress-pct {
+  position: absolute;
+  right: 8px;
+  top: 0;
+  line-height: 16px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+.overdue-text { color: #e53e3e; font-weight: 600; }
+
+/* Buttons */
+.btn-primary {
+  padding: 8px 18px;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-primary:hover { background: #2b6cb0; }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-secondary {
+  padding: 8px 18px;
+  background: #edf2f7;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+.btn-icon:hover { background: #f7fafc; }
+.btn-del:hover { background: #fff5f5; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.modal-header h3 { margin: 0; font-size: 1.1rem; }
+.modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #718096; }
+
+/* Form */
+.risk-form { padding: 16px 20px; }
+.form-row { margin-bottom: 12px; }
+.form-row label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+.form-row textarea { resize: vertical; }
+.form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-row-2col label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+.form-row-2col input,
+.form-row-2col select { width: 100%; padding: 7px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.875rem; box-sizing: border-box; }
+.form-row-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-row-3col label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+.form-row-3col input,
+.form-row-3col select { width: 100%; padding: 7px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.875rem; box-sizing: border-box; }
+.score-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.score-preview label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; }
+.form-error { color: #c53030; font-size: 0.85rem; margin: 6px 0; }
+.form-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f4f8; }
+
+/* Lists */
+.risk-list, .obj-list { display: flex; flex-direction: column; }
+.loading-msg { text-align: center; padding: 40px; color: #718096; }
+.empty-state { text-align: center; padding: 40px; color: #718096; }
+
+@media (max-width: 640px) {
+  .risks-page { padding: 12px; }
+  .stats-bar { gap: 8px; }
+  .form-row-2col, .form-row-3col { grid-template-columns: 1fr; }
+  .risk-card-top { flex-direction: column; }
+}
