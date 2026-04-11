@@ -1,0 +1,300 @@
+/* DocFileDialog.css */
+
+.docfile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.docfile-modal {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.docfile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.docfile-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 4px;
+}
+.docfile-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  max-width: 380px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.docfile-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.docfile-close:hover { color: #374151; }
+
+/* ── Loading / Error ─────────────────────────────────── */
+.docfile-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+.docfile-spinner {
+  width: 20px; height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1e3a5f;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.docfile-error {
+  margin: 16px 24px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+/* ── Body ────────────────────────────────────────────── */
+.docfile-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── File corrente ───────────────────────────────────── */
+.docfile-current {
+  background: #f0f4fa;
+  border: 1px solid #c7d6e8;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.docfile-current-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.docfile-icon { font-size: 28px; flex-shrink: 0; }
+.docfile-meta { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.docfile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e3a5f;
+  word-break: break-all;
+}
+.docfile-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.docfile-badge {
+  background: #1e3a5f;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+.docfile-size, .docfile-date, .docfile-by {
+  font-size: 12px;
+  color: #6b7280;
+}
+.docfile-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.btn-docfile-view, .btn-docfile-download {
+  display: inline-block;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-docfile-view {
+  background: #fff;
+  border: 1.5px solid #1e3a5f;
+  color: #1e3a5f;
+}
+.btn-docfile-view:hover { background: #f0f4fa; }
+.btn-docfile-download {
+  background: #1e3a5f;
+  border: none;
+  color: #fff;
+}
+.btn-docfile-download:hover { background: #16304e; }
+
+/* ── Empty state ─────────────────────────────────────── */
+.docfile-empty {
+  text-align: center;
+  padding: 24px;
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+}
+.docfile-empty-icon { font-size: 36px; }
+.docfile-empty p { margin: 8px 0 0; font-size: 14px; color: #374151; }
+.docfile-empty-hint { font-size: 13px; color: #9ca3af !important; }
+
+/* ── Storico ─────────────────────────────────────────── */
+.docfile-history-section { border-top: 1px solid #e5e7eb; padding-top: 12px; }
+.docfile-history-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #6b7280;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.docfile-history-toggle:hover { color: #374151; }
+.docfile-history-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.docfile-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 7px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.docfile-history-name { flex: 1; color: #374151; word-break: break-all; min-width: 100px; }
+.docfile-badge-sm {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+.docfile-history-size, .docfile-history-date { color: #9ca3af; font-size: 12px; }
+.btn-docfile-hist-dl {
+  text-decoration: none;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #1e3a5f;
+  background: #fff;
+  border: 1px solid #c7d6e8;
+}
+.btn-docfile-hist-dl:hover { background: #f0f4fa; }
+
+/* ── Upload section ──────────────────────────────────── */
+.docfile-upload-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fafafa;
+}
+.docfile-upload-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 14px;
+}
+.docfile-upload-form { display: flex; flex-direction: column; gap: 12px; }
+.docfile-upload-row { display: flex; flex-direction: column; gap: 4px; }
+.docfile-label { font-size: 12px; font-weight: 500; color: #6b7280; }
+.docfile-file-input {
+  font-size: 14px;
+  padding: 6px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  cursor: pointer;
+}
+.docfile-version-input {
+  padding: 8px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 14px;
+  background: #fff;
+  max-width: 200px;
+}
+.docfile-version-input:focus { outline: none; border-color: #1e3a5f; }
+.docfile-selected {
+  font-size: 13px;
+  color: #374151;
+  padding: 8px 12px;
+  background: #f0f4fa;
+  border-radius: 6px;
+}
+.docfile-upload-error {
+  font-size: 13px;
+  color: #dc2626;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+}
+.docfile-upload-ok {
+  font-size: 13px;
+  color: #166534;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+}
+.btn-docfile-upload {
+  align-self: flex-start;
+  padding: 9px 22px;
+  background: #1e3a5f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+.btn-docfile-upload:hover:not(:disabled) { background: #16304e; }
+.btn-docfile-upload:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 560px) {
+  .docfile-current { flex-direction: column; }
+  .docfile-actions { width: 100%; justify-content: flex-start; }
+}

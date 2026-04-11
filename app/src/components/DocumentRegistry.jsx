@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentForm from "./DocumentForm";
+import DocFileDialog from "./DocFileDialog";
 import "./DocumentRegistry.css";
 
 // ─── Costanti ────────────────────────────────────────────────────────────────
@@ -252,7 +253,7 @@ function CatalogView({
   loading, error, onEdit, onArchive, archiveId, onConfirmArchive, onCancelArchive,
   onNewDoc, onReload,
   filters, setFilter, onExport,
-  companies,
+  companies, onFileDialog,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -401,6 +402,7 @@ function CatalogView({
                           </div>
                         ) : (
                           <>
+                            <button className="btn-icon" title="File allegato" onClick={() => onFileDialog(doc)}>📎</button>
                             <button className="btn-icon" title="Modifica" onClick={() => onEdit(doc)}>✏️</button>
                             {doc.status !== "obsoleto" && (
                               <button className="btn-icon" title="Archivia" onClick={() => onArchive(doc.id)}>🗄️</button>
@@ -467,6 +469,9 @@ function DocumentRegistry() {
   // Inline confirm archiving
   const [archiveId, setArchiveId] = useState(null);
   const [archiveError, setArchiveError] = useState(null);
+
+  // Dialog file allegato
+  const [fileDialogDoc, setFileDialogDoc] = useState(null);
 
   const LIMIT = 20;
 
@@ -667,6 +672,7 @@ function DocumentRegistry() {
           setFilter={setFilter}
           onExport={handleExport}
           companies={companies}
+          onFileDialog={setFileDialogDoc}
         />
       )}
 
@@ -678,6 +684,14 @@ function DocumentRegistry() {
           standards={standards}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
+        />
+      )}
+
+      {/* Dialog file allegato */}
+      {fileDialogDoc && (
+        <DocFileDialog
+          doc={fileDialogDoc}
+          onClose={() => setFileDialogDoc(null)}
         />
       )}
     </div>

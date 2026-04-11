@@ -129,3 +129,47 @@ const uploadTemplate = multer({
 });
 
 module.exports = { upload, uploadTemplate };
+
+// ─── Multer per file allegati a documenti del registro ──────────────────────
+// Approccio blacklist: accetta qualsiasi formato eccetto eseguibili.
+// Il percorso è organizzato per documento: uploads/docs/{org_id}/{doc_id}/
+
+const BLOCKED_EXTENSIONS = [
+    '.exe', '.bat', '.cmd', '.ps1', '.sh', '.msi', '.vbs', '.js',
+    '.jar', '.com', '.scr', '.pif', '.reg', '.dll', '.sys'
+];
+
+const docStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const orgId  = req.user?.organization_id || 'unknown';
+        const docId  = req.params.docId || 'misc';
+        const docPath = path.join(UPLOAD_DIR, 'docs', String(orgId), String(docId));
+        if (!fs.existsSync(docPath)) fs.mkdirSync(docPath, { recursive: true });
+        cb(null, docPath);
+    },
+    filename: function (req, file, cb) {
+        const timestamp    = Date.now();
+        const randomString = crypto.randomBytes(6).toString('hex');
+        const ext          = path.extname(file.originalname).toLowerCase();
+        const basename     = path.basename(file.originalname, ext)
+            .replace(/[^a-zA-Z0-9._\- ]/g, '_')
+            .substring(0, 80);
+        cb(null, `${timestamp}_${randomString}_${basename}${ext}`);
+    }
+});
+
+const docFileFilter = (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (BLOCKED_EXTENSIONS.includes(ext)) {
+        return cb(new Error(`Formato non consentito per sicurezza: ${ext}`), false);
+    }
+    cb(null, true);
+};
+
+const uploadDocFile = multer({
+    storage: docStorage,
+    fileFilter: docFileFilter,
+    limits: { fileSize: 500 * 1024 * 1024, files: 1 } // 500 MB — bounded da spazio disco VPS
+});
+
+module.exports = { upload, uploadTemplate, uploadDocFile };

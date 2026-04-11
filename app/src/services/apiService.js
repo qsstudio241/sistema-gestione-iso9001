@@ -969,6 +969,42 @@ class ApiService {
     async sendTestEmail() {
         return this.post('/notifications-config/test', {});
     }
+
+    // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
+
+    async getDocFiles(docId) {
+        return this.get(`/documents/${docId}/files`);
+    }
+
+    async uploadDocFile(docId, file, version = '') {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (version) formData.append('version', version);
+        const token = this.getToken();
+        const response = await fetch(
+            `${this.baseUrl}/documents/${docId}/file`,
+            {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData,
+            }
+        );
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: response.statusText }));
+            throw new Error(err.error || `Upload fallito (${response.status})`);
+        }
+        return response.json();
+    }
+
+    getDocFileDownloadUrl(docId, attId = null, inline = false) {
+        const base = this.baseUrl;
+        const token = this.getToken();
+        const inlineParam = inline ? '&inline=1' : '';
+        if (attId) {
+            return `${base}/documents/${docId}/file/${attId}/download?token=${token}${inlineParam}`;
+        }
+        return `${base}/documents/${docId}/file/download?token=${token}${inlineParam}`;
+    }
 }
 
 /**
