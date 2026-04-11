@@ -619,11 +619,232 @@ async function getNonConformitiesStatistics(req, res) {
     }
 }
 
+// ─── NC ACTIONS ─────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/v1/non-conformities/:id/actions
+ * Lista azioni correttive per una NC
+ */
+async function listNcActions(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id } = req.user;
+
+        // Verifica ownership NC
+        const ncCheck = await query(`
+            SELECT nc.nc_id FROM non_conformities nc
+            INNER JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (ncCheck.recordset.length === 0) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
+
+        const result = await query(`
+            SELECT a.*, u.full_name AS created_by_name
+            FROM nc_actions a
+            LEFT JOIN users u ON a.created_by = u.user_id
+            WHERE a.nc_id = @id
+            ORDER BY a.created_at ASC
+        `, { id: parseInt(id) });
+
+        res.json({ success: true, data: result.recordset });
+    } catch (error) {
+        logger.error('Error listing nc_actions', { error: error.message });
+        res.status(500).json({ error: 'Errore recupero azioni', code: 'NC_ACTIONS_LIST_ERROR' });
+    }
+}
+
+/**
+ * POST /api/v1/non-conformities/:id/actions
+ * Crea una nuova azione correttiva per una NC
+ */
+async function createNcAction(req, res) {
+    try {
+        const { id } = req.params;
+        const { user_id, organization_id } = req.user;
+        const { action_type = 'corrective', description, responsible, due_date } = req.body;
+
+        if (!description) {
+            return res.status(400).json({ error: 'Descrizione obbligatoria', code: 'VALIDATION_ERROR' });
+        }
+        if (!['immediate', 'corrective', 'preventive'].includes(action_type)) {
+            return res.status(400).json({
+                error: 'Tipo azione non valido',
+                code: 'VALIDATION_ERROR',
+                allowed: ['immediate', 'corrective', 'preventive']
+            });
+        }
+
+        // Verifica ownership NC
+        const ncCheck = await query(`
+            SELECT nc.nc_id FROM non_conformities nc
+            INNER JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (ncCheck.recordset.length === 0) {
+            return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
+
+        const result = await query(`
+            INSERT INTO nc_actions (nc_id, action_type, description, responsible, due_date, created_by)
+            OUTPUT INSERTED.action_id
+            VALUES (@nc_id, @action_type, @description, @responsible, @due_date, @created_by)
+        `, {
+            nc_id: parseInt(id),
+            action_type,
+            description,
+            responsible: responsible || null,
+            due_date: due_date || null,
+            created_by: user_id
+        });
+
+        // Auto-transizione NC a in_progress se era open
+        await query(`
+            UPDATE non_conformities
+            SET status = 'in_progress', updated_at = GETDATE()
+            WHERE nc_id = @id AND status = 'open'
+        `, { id: parseInt(id) });
+
+        logger.info('NC action created', { nc_id: id, action_id: result.recordset[0].action_id, organization_id });
+
+        res.status(201).json({ success: true, data: { action_id: result.recordset[0].action_id } });
+    } catch (error) {
+        logger.error('Error creating nc_action', { error: error.message });
+        res.status(500).json({ error: 'Errore creazione azione', code: 'NC_ACTION_CREATE_ERROR' });
+    }
+}
+
+/**
+ * PUT /api/v1/non-conformities/:id/actions/:actionId
+ * Aggiorna stato/dettagli di un'azione correttiva
+ */
+async function updateNcAction(req, res) {
+    try {
+        const { id, actionId } = req.params;
+        const { organization_id } = req.user;
+        const { status, description, responsible, due_date, verification_note } = req.body;
+
+        // Verifica ownership
+        const check = await query(`
+            SELECT a.action_id, a.status AS current_status
+            FROM nc_actions a
+            INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
+            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
+              AND au.organization_id = @organization_id
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id });
+
+        if (check.recordset.length === 0) {
+            return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
+        }
+
+        const updates = [];
+        const params = { actionId: parseInt(actionId) };
+
+        if (description !== undefined) { updates.push('description = @description'); params.description = description; }
+        if (responsible !== undefined) { updates.push('responsible = @responsible'); params.responsible = responsible; }
+        if (due_date !== undefined) { updates.push('due_date = @due_date'); params.due_date = due_date; }
+        if (verification_note !== undefined) { updates.push('verification_note = @verification_note'); params.verification_note = verification_note; }
+
+        if (status !== undefined) {
+            const validTransitions = {
+                'open': ['in_progress', 'completed'],
+                'in_progress': ['completed', 'open'],
+                'completed': ['verified', 'in_progress'],
+                'verified': []
+            };
+            const current = check.recordset[0].current_status;
+            if (!validTransitions[current]?.includes(status)) {
+                return res.status(400).json({
+                    error: `Transizione non valida: ${current} → ${status}`,
+                    code: 'INVALID_STATE_TRANSITION',
+                    allowedTransitions: validTransitions[current]
+                });
+            }
+            updates.push('status = @status');
+            params.status = status;
+            if (status === 'completed') {
+                updates.push('completed_at = GETDATE()');
+            }
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'Nessun campo da aggiornare', code: 'VALIDATION_ERROR' });
+        }
+        updates.push('updated_at = GETDATE()');
+
+        await query(`
+            UPDATE nc_actions SET ${updates.join(', ')}
+            WHERE action_id = @actionId
+        `, params);
+
+        // Se tutte le azioni sono verified → auto-chiudi NC
+        if (status === 'verified') {
+            const openActions = await query(`
+                SELECT COUNT(*) AS cnt FROM nc_actions
+                WHERE nc_id = @nc_id AND status NOT IN ('verified')
+            `, { nc_id: parseInt(id) });
+
+            if (openActions.recordset[0].cnt === 0) {
+                await query(`
+                    UPDATE non_conformities
+                    SET status = 'verified', updated_at = GETDATE()
+                    WHERE nc_id = @nc_id AND status NOT IN ('closed', 'verified')
+                `, { nc_id: parseInt(id) });
+            }
+        }
+
+        logger.info('NC action updated', { action_id: actionId, status, organization_id });
+        res.json({ success: true, message: 'Azione aggiornata' });
+    } catch (error) {
+        logger.error('Error updating nc_action', { error: error.message });
+        res.status(500).json({ error: 'Errore aggiornamento azione', code: 'NC_ACTION_UPDATE_ERROR' });
+    }
+}
+
+/**
+ * DELETE /api/v1/non-conformities/:id/actions/:actionId
+ * Elimina un'azione correttiva
+ */
+async function deleteNcAction(req, res) {
+    try {
+        const { id, actionId } = req.params;
+        const { organization_id } = req.user;
+
+        const check = await query(`
+            SELECT a.action_id FROM nc_actions a
+            INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
+            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
+              AND au.organization_id = @organization_id
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id });
+
+        if (check.recordset.length === 0) {
+            return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
+        }
+
+        await query(`DELETE FROM nc_actions WHERE action_id = @actionId`, { actionId: parseInt(actionId) });
+
+        logger.info('NC action deleted', { action_id: actionId, organization_id });
+        res.json({ success: true, message: 'Azione eliminata' });
+    } catch (error) {
+        logger.error('Error deleting nc_action', { error: error.message });
+        res.status(500).json({ error: 'Errore eliminazione azione', code: 'NC_ACTION_DELETE_ERROR' });
+    }
+}
+
 module.exports = {
     listNonConformities,
     getNonConformityById,
     createNonConformity,
     updateNonConformity,
     deleteNonConformity,
-    getNonConformitiesStatistics
+    getNonConformitiesStatistics,
+    listNcActions,
+    createNcAction,
+    updateNcAction,
+    deleteNcAction
 };

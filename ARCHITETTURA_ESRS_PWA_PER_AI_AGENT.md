@@ -752,6 +752,7 @@ export function downloadWordFallback(blob, filename) {
 
 ### 📋 Tipi di Export
 
+
 | Priority | Tipo      | Filename                                    | Contenuto                     |
 | -------- | --------- | ------------------------------------------- | ----------------------------- |
 | 01       | Checklist | `01_Checklist_Audit_YYYY-MM-DD.json`        | Domande + risposte + evidenze |
@@ -760,6 +761,7 @@ export function downloadWordFallback(blob, filename) {
 | 04       | Report    | `04_Report_Narrativo_YYYY-MM-DD.json`       | Capitoli testo                |
 | 05       | Backup    | `05_Audit_Backup_YYYY-MM-DD.json`           | Audit completo                |
 | -        | Word      | `Report_Audit_[Tipo]_[Cliente]_[Anno].docx` | Documento finale              |
+
 
 ---
 
@@ -1453,7 +1455,7 @@ netlify deploy --prod --dir=build
 
 ## 11. Prompt Finale per AI Agent
 
-````markdown
+```markdown
 # PROMPT PER AI AGENT: Crea React PWA per Audit ISO 9001
 
 ## Obiettivo
@@ -1577,7 +1579,7 @@ Implementa:
   }
 }
 ```
-````
+```
 
 ### Browser Support
 
@@ -1682,3 +1684,4 @@ Questa documentazione fornisce:
 **Data**: 2 Novembre 2025
 **Autore**: Sistema ESRS PWA Architecture Team
 ```
+

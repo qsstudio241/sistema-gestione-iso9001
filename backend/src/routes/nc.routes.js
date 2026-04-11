@@ -28,4 +28,18 @@ router.put('/non-conformities/:id', ncController.updateNonConformity);
 // DELETE /api/v1/non-conformities/:id - Elimina NC
 router.delete('/non-conformities/:id', ncController.deleteNonConformity);
 
+// ─── NC ACTIONS ───────────────────────────────────────────────────────────────
+
+// GET /api/v1/non-conformities/:id/actions - Lista azioni correttive
+router.get('/non-conformities/:id/actions', ncController.listNcActions);
+
+// POST /api/v1/non-conformities/:id/actions - Crea azione correttiva
+router.post('/non-conformities/:id/actions', ncController.createNcAction);
+
+// PUT /api/v1/non-conformities/:id/actions/:actionId - Aggiorna azione
+router.put('/non-conformities/:id/actions/:actionId', ncController.updateNcAction);
+
+// DELETE /api/v1/non-conformities/:id/actions/:actionId - Elimina azione
+router.delete('/non-conformities/:id/actions/:actionId', ncController.deleteNcAction);
+
 module.exports = router;

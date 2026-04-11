@@ -37,9 +37,9 @@ function buildNavItems(user, alertCount = 0) {
       group: "SGQ",
       items: [
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alertCount > 0 ? alertCount : null },
-        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche",  locked: true },
+        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche" },
+        { to: "/nc",          icon: "🚨", label: "Non Conformità" },
         { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", locked: true },
-        { to: "/azioni",      icon: "✅",  label: "Azioni",     locked: true },
         { to: "/sal",         icon: "📊", label: "SAL",         locked: true },
       ],
     },

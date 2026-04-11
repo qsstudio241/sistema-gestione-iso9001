@@ -604,6 +604,37 @@ class ApiService {
         return this.delete(`/nc/${id}`);
     }
 
+    // ─── NC cross-audit (Sprint 5) ───────────────────────────────────────────
+    async getAllNonConformities(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/non-conformities${qs ? '?' + qs : ''}`);
+    }
+
+    async getNcStats() {
+        return this.get('/non-conformities/statistics/overview');
+    }
+
+    async updateNcStatus(id, data) {
+        return this.put(`/non-conformities/${id}`, data);
+    }
+
+    // NC Actions
+    async getNcActions(ncId) {
+        return this.get(`/non-conformities/${ncId}/actions`);
+    }
+
+    async createNcAction(ncId, data) {
+        return this.post(`/non-conformities/${ncId}/actions`, data);
+    }
+
+    async updateNcAction(ncId, actionId, data) {
+        return this.put(`/non-conformities/${ncId}/actions/${actionId}`, data);
+    }
+
+    async deleteNcAction(ncId, actionId) {
+        return this.delete(`/non-conformities/${ncId}/actions/${actionId}`);
+    }
+
     // ==========================================
     // STANDARDS ENDPOINTS
     // ==========================================

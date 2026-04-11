@@ -37,21 +37,22 @@ async function getAlertCount(req, res) {
           AND expiry_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
       `);
 
-    // NC aperte da più di 30 giorni (se la tabella esiste)
+    // NC aperte da più di 30 giorni (join audits per organization_id)
     let ncCount = 0;
     try {
       const ncResult = await pool.request()
         .input('orgId', orgId)
         .query(`
           SELECT COUNT(*) AS cnt
-          FROM non_conformities
-          WHERE organization_id = @orgId
-            AND status NOT IN ('chiusa', 'annullata')
-            AND DATEDIFF(day, created_at, GETDATE()) > 30
+          FROM non_conformities nc
+          INNER JOIN audits a ON nc.audit_id = a.audit_id
+          WHERE a.organization_id = @orgId
+            AND nc.status NOT IN ('closed', 'verified')
+            AND DATEDIFF(day, nc.created_at, GETDATE()) > 30
         `);
       ncCount = ncResult.recordset[0]?.cnt || 0;
     } catch {
-      // La tabella NC potrebbe non avere la struttura attesa — non bloccante
+      // Non bloccante
     }
 
     const docCount = docResult.recordset[0]?.cnt || 0;
