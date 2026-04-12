@@ -98,6 +98,8 @@ Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiorn
 
 Eseguire questi controlli sulla **versione pubblicata** (URL del sito Netlify).
 
+Per **smoke estesi** (auth, licenze moduli, multi-tenant, sync, import PDF): usare la matrice in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sezione *Piano qualità: fasi di sviluppo e test di robustezza* (tabella “Matrice smoke robustezza”).
+
 - [ ] **Login**  
   Accesso con un utente reale; nessun errore in console.
 

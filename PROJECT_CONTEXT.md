@@ -2,6 +2,8 @@
 
 > Documento di orientamento rapido per l'AI agent. Da leggere all'inizio di ogni sessione.  
 > **Esperienza consolidata** (deploy, Word, sync): → [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md)  
+> **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
+> **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
 > Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md)
 
 ---
@@ -239,4 +241,4 @@ git push origin main
 
 ---
 
-*Aggiornato: 2026-03-15 — Release checklist custom, azienda anagrafica, sync UUID; deploy checklist e script VPS*
+*Aggiornato: 2026-04-12 — Piano qualità/test in GUIDA_CONSOLIDATA; puntatore da contesto sessione.*

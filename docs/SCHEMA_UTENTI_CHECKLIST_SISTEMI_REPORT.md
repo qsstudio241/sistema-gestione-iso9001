@@ -2,6 +2,8 @@
 
 Documento che integra **chi** (organization / user / ruolo), **checklist** (ISO e personalizzate), **sistemi/norme** e **report/template**, incluso il caso dipendente e cliente.
 
+> **Implementazione RBAC e scope API** (regole vincolanti, migrazione, sicurezza): vedere [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). Questo file resta orientato a **modello dati e diagrammi di prodotto**; dove divergono, prevale l’architettura RBAC fino ad allineamento del codice.
+
 ---
 
 ## Rappresentazione grafica gerarchica

@@ -1,7 +1,7 @@
 # Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 11 aprile 2026
+> **Ultimo Aggiornamento**: 12 aprile 2026
 > **Prossimo Step** (sessione successiva): (0) Dopo deploy: smoke lista audit mobile/desktop (stesso utente, >50 audit se possibile). (1) Smoke export Word — **verificatore** e **titoli senza mojibake**. (2) Smoke **NV** / **N.A.** + **`[LOGO]`**. (3) Smoke **pending issues** + riga **AP**. (4) Avvio “Flusso 2” (SAL/Sopralluoghi): definizione schema requisiti+stati + evidenze documentali + import CSV/Excel (senza AI). (5) **Sprint 10**: staging tipizzato post-import (vedi tabella sprint). (6) Introduzione RAG come layer di retrieval (job asincrono) dopo che il document registry è stabile; backlog ADR-006, lock DB, template ISO 45001.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
@@ -657,8 +657,52 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 11 aprile 2026
-**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). Modulo commerciale: backlog Sprint 11 + mini-specifica allegata.
+## Checklist sessioni — Licenze moduli, auth e allineamento API/UI
+
+> Obiettivo: chiudere i gap tra **pannello licenze**, **menu/route frontend** e **middleware backend**; robustezza credenziali. Spuntare le voci a fine sessione. (Revisione tecnica 12/04/2026.)
+
+**Test, DoD e smoke di release** (tutti i moduli, non solo licenze): piramide L1–L5, matrice manuale e Definition of Done in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sezione *Piano qualità: fasi di sviluppo e test di robustezza*.
+
+### Sessione A — Sessione utente e licenze “a caldo”
+
+- [ ] Dopo `PATCH /admin/licenses`: aggiornare `user` nel client (`GET /auth/me` o merge risposta) senza richiedere login manuale all’admin che salva.
+- [ ] Valutare propagazione agli altri utenti della stessa org (messaggio “riavvia sessione”, evento, o TTL breve token) — documentare scelta in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md).
+- [ ] `POST /auth/refresh`: includere snapshot minimo (`licensed_modules`, `allowed_standard_ids`) **oppure** interceptor che chiama `/auth/me` dopo refresh riuscito.
+
+### Sessione B — Enforcement backend coerente con il prodotto
+
+- [ ] Allineare **alert** (`GET /alerts`, `GET /alerts/count`): `requireLicensedModule` appropriato (es. `documents`) **oppure** modulo `notifications` / chiave dedicata — allineato alla tabella `KNOWN_MODULE_KEYS`.
+- [ ] Inventario route **solo `authenticate`**: custom-checklist, report-template, companies, sync, ecc. — decidere per ciascuna se resta inclusa nel modulo **audit** o merita `requireLicensedModule`.
+- [ ] Verificare assenza di endpoint “sensibili” scoperti rispetto al contratto licenze (registro in tabella o ADR breve).
+
+### Sessione C — UX e unicità codice frontend
+
+- [ ] Centralizzare `hasLicensedModule` (un solo hook o util condiviso da `LicensedRoute` e `AppLayout`).
+- [ ] Bottom nav mobile: nascondere o disabilitare voci verso moduli non licenziati (coerenza con sidebar).
+- [ ] Allineare `AuthContext.isAdmin()` a **admin + superadmin** se il context verrà usato per gating (oggi le pagine usano spesso il check inline).
+
+### Sessione D — Sicurezza credenziali e identità
+
+- [ ] **JWT_SECRET** (e segreti analoghi): fail-fast in avvio se mancante in produzione; nessun default nel bundle/server pubblicato.
+- [ ] Login con stessa **email su più organizzazioni**: obbligare `organization_id` o errore esplicito “account ambiguo” (no `recordset[0]` non deterministico).
+- [ ] Endpoint **`register`**: policy produzione (disabilitato, solo invito, solo superadmin) — allineare a modello commerciale.
+
+### Sessione E — Comportamento DB licenze (opzionale / hardening)
+
+- [ ] Documentare esplicitamente **fail-open** (`licensed_modules` NULL / JSON invalido = tutti i moduli) in guida deploy; se serve modello più stringente: modalità deny-by-default dietro flag o colonna ambiente.
+
+---
+
+## Architettura utenti e segregazione (riferimento unico)
+
+**Documento**: [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) — principi, livelli tenant→studio→azienda, catalogo ruoli, deleghe creazione utenti, scope per area, piano migrazione (fasi 0–4), DoD per modifiche RBAC.
+
+**Da implementare in codice** (priorità quando si lavora su auth/audit): fix `auditorOrg.controller` (`isOrgWideAdmin` vs `isSuperadmin`); allineare write path audit/NC/allegati allo stesso scope della lista; servizio centralizzato `assert*` / `get*ScopeWhereClause` come da doc.
+
+---
+
+**Ultimo Aggiornamento**: 12 aprile 2026
+**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). **Parallelamente**: checklist *Licenze moduli, auth e allineamento API/UI* (sessioni A→E) + hardening **RBAC** secondo [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). Modulo commerciale: backlog Sprint 11 + mini-specifica allegata.
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (pianificato)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  

@@ -1,6 +1,6 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-03-21.
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-12.
 
 ---
 
@@ -10,7 +10,8 @@
 |-------|------|------|
 | **Contesto progetto (AI / onboarding)** | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) (root) | Stack, infra, workflow deploy, regole operative |
 | **Roadmap e stato** | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, stato avanzamento |
-| **Esperienza operativa (unica guida)** | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Deploy, Word Verbale, DB/repro — aggiornare qui, non creare nuovi SESSION_NOTES |
+| **Mini-specifica commerciale / §8.2** | [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) | Pilota riesame requisiti contratto; stati, ruoli, integrazione ingest |
+| **Esperienza operativa (unica guida)** | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Deploy, Word Verbale, DB/repro; **sezione “Piano qualità”** = fasi sviluppo, DoD, piramide test e smoke robustezza — aggiornare qui, non creare nuovi SESSION_NOTES |
 | **Storico sessioni** | [archive/sessions/](archive/sessions/) | Solo consultazione |
 | **Schema DB** | [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Leggere prima di modificare il DB |
 | **Quick-ref DB e API** | [DATABASE.md](DATABASE.md), [BACKEND_API.md](BACKEND_API.md) | Riferimento rapido (spostati da root) |
@@ -18,6 +19,7 @@
 | **Checklist deploy release** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) | Passi per release (build, backend VPS, push, smoke test) |
 | **Perdita connessione (offline/mobile)** | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) | Comportamento offline, sync, health check, mobile |
 | **Utenti, checklist, sistemi, report** | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) | Organization/user, ruoli, checklist ISO e custom, template report, self-assessment |
+| **Architettura utenti e RBAC** | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) | Tenant → studio → azienda; ruoli canonici; deleghe; scope API; piano migrazione (fonte per hardening sicurezza) |
 | **Decisioni architetturali** | [adr/README.md](adr/README.md) | Indice ADR; dettaglio in `adr/ADR-*.md` |
 | **Manuali** | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) | Uso applicazione e procedure |
 | **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Mapping, sync, dettagli |
