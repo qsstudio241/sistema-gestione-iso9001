@@ -154,6 +154,12 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 
 ---
 
+## Workspace locale (consigliato)
+
+**Cursor / terminale:** aprire il repo come **`C:\ProgettoISO`** (percorso stabile). I file possono risiedere su **Google Drive** dietro **symlink o junction**: se l’unità cloud cambia lettera, si aggiorna solo il collegamento — le sessioni Cursor restano coerenti. Dettaglio: [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md) (sezione *Workspace consigliato — ponte C:\\ProgettoISO*).
+
+---
+
 ## Struttura repository (cartelle chiave)
 
 ```
