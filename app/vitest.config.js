@@ -49,7 +49,7 @@ export default defineConfig({
     // Global test configuration
     globals: true,
     
-    // Test file patterns
+    // Test file patterns (tutti sotto src/, inclusi test integrazione con mock in src/tests/integration/)
     include: ['src/**/*.{test,spec}.{js,jsx}'],
     
     // Enable JSX in test files
