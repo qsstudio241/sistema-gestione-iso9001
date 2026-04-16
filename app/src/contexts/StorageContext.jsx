@@ -21,7 +21,7 @@ import {
   getDeviceInfo,
 } from "../services/storageAdapter";
 import { syncService } from "../services/syncService";
-import apiService, { setAuditLockTokenForUuid } from "../services/apiService";
+import apiService, { setAuditLockTokensForAudit } from "../services/apiService";
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -183,6 +183,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
   const lockTokenRef = useRef(null);
   const lockUuidRef = useRef(null);
+  const lockNumericAuditIdRef = useRef(null);
   const lockHeartbeatRef = useRef(null);
   const lockWriteWarnTsRef = useRef(0);
 
@@ -220,9 +221,10 @@ export function StorageProvider({ children, useMockData = false }) {
       const u = lockUuidRef.current;
       const t = lockTokenRef.current;
       if (u && t) {
-        setAuditLockTokenForUuid(u, null);
+        setAuditLockTokensForAudit(u, lockNumericAuditIdRef.current, null);
         lockTokenRef.current = null;
         lockUuidRef.current = null;
+        lockNumericAuditIdRef.current = null;
         try {
           await apiService.releaseAuditLock(u);
         } catch {
@@ -264,9 +266,15 @@ export function StorageProvider({ children, useMockData = false }) {
         if (cancelled) return;
         const tok = res?.data?.lock_token;
         if (tok) {
-          setAuditLockTokenForUuid(uuid, tok);
+          const numericId =
+            res?.data?.audit_id ??
+            audit?.metadata?.auditId ??
+            audit?.audit_id ??
+            null;
+          setAuditLockTokensForAudit(uuid, numericId, tok);
           lockTokenRef.current = tok;
           lockUuidRef.current = uuid;
+          lockNumericAuditIdRef.current = numericId;
           setAuditLock({ mode: "owner", lockedByName: null, message: null });
           const hb = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
@@ -280,7 +288,12 @@ export function StorageProvider({ children, useMockData = false }) {
         const status = e?.status;
         const code = e?.code;
         if (status === 423 || code === "AUDIT_LOCKED") {
-          setAuditLockTokenForUuid(uuid, null);
+          const numClear =
+            audit?.metadata?.auditId ??
+            audit?.audit_id ??
+            lockNumericAuditIdRef.current;
+          setAuditLockTokensForAudit(uuid, numClear, null);
+          lockNumericAuditIdRef.current = null;
           setAuditLock({
             mode: "foreign",
             lockedByName: e?.data?.locked_by_name || "Altro utente",
@@ -311,9 +324,10 @@ export function StorageProvider({ children, useMockData = false }) {
       const u = lockUuidRef.current;
       const t = lockTokenRef.current;
       if (u && t) {
-        setAuditLockTokenForUuid(u, null);
+        setAuditLockTokensForAudit(u, lockNumericAuditIdRef.current, null);
         lockTokenRef.current = null;
         lockUuidRef.current = null;
+        lockNumericAuditIdRef.current = null;
         apiService.releaseAuditLock(u).catch(() => {});
       }
     };
@@ -338,9 +352,15 @@ export function StorageProvider({ children, useMockData = false }) {
             clearInterval(lockHeartbeatRef.current);
             lockHeartbeatRef.current = null;
           }
-          setAuditLockTokenForUuid(uuid, tok);
+          const numericId =
+            res?.data?.audit_id ??
+            audit?.metadata?.auditId ??
+            audit?.audit_id ??
+            null;
+          setAuditLockTokensForAudit(uuid, numericId, tok);
           lockTokenRef.current = tok;
           lockUuidRef.current = uuid;
+          lockNumericAuditIdRef.current = numericId;
           setAuditLock({ mode: "owner", lockedByName: null, message: null });
           lockHeartbeatRef.current = setInterval(() => {
             apiService.renewAuditLock(uuid).catch(() => {});
@@ -364,9 +384,10 @@ export function StorageProvider({ children, useMockData = false }) {
       const u = lockUuidRef.current;
       const t = lockTokenRef.current;
       if (u && t) {
-        setAuditLockTokenForUuid(u, null);
+        setAuditLockTokensForAudit(u, lockNumericAuditIdRef.current, null);
         lockTokenRef.current = null;
         lockUuidRef.current = null;
+        lockNumericAuditIdRef.current = null;
         apiService.releaseAuditLock(u).catch(() => {});
       }
       setAuditLock({ mode: "none", lockedByName: null, message: null });
@@ -386,7 +407,11 @@ export function StorageProvider({ children, useMockData = false }) {
       lockHeartbeatRef.current = null;
     }
     if (lockUuidRef.current && lockTokenRef.current) {
-      setAuditLockTokenForUuid(lockUuidRef.current, null);
+      setAuditLockTokensForAudit(
+        lockUuidRef.current,
+        lockNumericAuditIdRef.current,
+        null,
+      );
       try {
         await apiService.releaseAuditLock(lockUuidRef.current);
       } catch {
@@ -395,13 +420,20 @@ export function StorageProvider({ children, useMockData = false }) {
     }
     lockTokenRef.current = null;
     lockUuidRef.current = null;
+    lockNumericAuditIdRef.current = null;
     try {
       const res = await apiService.acquireAuditLock(uuid);
       const tok = res?.data?.lock_token;
       if (tok) {
-        setAuditLockTokenForUuid(uuid, tok);
+        const numericId =
+          res?.data?.audit_id ??
+          currentAudit?.metadata?.auditId ??
+          currentAudit?.audit_id ??
+          null;
+        setAuditLockTokensForAudit(uuid, numericId, tok);
         lockTokenRef.current = tok;
         lockUuidRef.current = uuid;
+        lockNumericAuditIdRef.current = numericId;
         setAuditLock({ mode: "owner", lockedByName: null, message: null });
         lockHeartbeatRef.current = setInterval(() => {
           apiService.renewAuditLock(uuid).catch(() => {});

@@ -30,17 +30,27 @@ const TOKEN_KEY = 'sgq_auth_token';
 const REFRESH_TOKEN_KEY = 'sgq_refresh_token';
 const USER_KEY = 'sgq_user';
 
-/** Token lock audit per UUID (header X-Audit-Lock-Token sulle scritture) */
+/** Token lock audit per UUID e per audit_id numerico (header X-Audit-Lock-Token sulle scritture) */
 const AUDIT_LOCK_TOKENS = new Map();
 
 /**
- * Registra il token lock server per un audit (UUID). Passa null per rimuovere.
+ * Registra il token lock per l'audit: stesso token sotto UUID (acquire) e sotto audit_id (PUT risposte / checklist custom).
+ * Passa token null per rimuovere entrambe le chiavi.
  */
-function setAuditLockTokenForUuid(auditUuid, token) {
+function setAuditLockTokensForAudit(auditUuid, serverAuditId, token) {
     if (!auditUuid) return;
-    const k = String(auditUuid);
-    if (token) AUDIT_LOCK_TOKENS.set(k, token);
-    else AUDIT_LOCK_TOKENS.delete(k);
+    const u = String(auditUuid);
+    if (token) {
+        AUDIT_LOCK_TOKENS.set(u, token);
+        if (serverAuditId != null && String(serverAuditId).trim() !== '') {
+            AUDIT_LOCK_TOKENS.set(String(serverAuditId), token);
+        }
+    } else {
+        AUDIT_LOCK_TOKENS.delete(u);
+        if (serverAuditId != null && String(serverAuditId).trim() !== '') {
+            AUDIT_LOCK_TOKENS.delete(String(serverAuditId));
+        }
+    }
 }
 
 function clearAllAuditLockTokens() {
@@ -1172,5 +1182,5 @@ class ApiError extends Error {
 
 // Singleton export
 const apiService = new ApiService();
-export { apiService, ApiError, config as apiConfig, setAuditLockTokenForUuid, clearAllAuditLockTokens };
+export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens };
 export default apiService;
