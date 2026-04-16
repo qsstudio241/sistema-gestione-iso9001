@@ -360,7 +360,9 @@ class ApiService {
     }
 
     async updateAudit(id, data) {
-        return this.put(`/audits/${id}`, data);
+        // Stesso lock delle risposte: PUT /audits/:id richiede assertWriteAllowed se esiste lock attivo
+        const lockKey = id != null && id !== '' ? String(id) : undefined;
+        return this.put(`/audits/${id}`, data, lockKey ? { lockAuditUuid: lockKey } : {});
     }
 
     /**
