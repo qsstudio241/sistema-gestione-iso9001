@@ -11,6 +11,7 @@
 | **Contesto progetto (AI / onboarding)** | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) (root) | Stack, infra, workflow deploy, regole operative |
 | **Roadmap e stato** | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, stato avanzamento |
 | **Mini-specifica commerciale / §8.2** | [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) | Pilota riesame requisiti contratto; stati, ruoli, integrazione ingest |
+| **Mini-specifica Office round-trip** | [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) | Editing Word/Excel desktop con WebDAV/Helper custom (Windows-first) |
 | **Esperienza operativa (unica guida)** | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Deploy, Word Verbale, DB/repro; **sezione “Piano qualità”** = fasi sviluppo, DoD, piramide test e smoke robustezza — aggiornare qui, non creare nuovi SESSION_NOTES |
 | **Storico sessioni** | [archive/sessions/](archive/sessions/) | Solo consultazione |
 | **Schema DB** | [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Leggere prima di modificare il DB |

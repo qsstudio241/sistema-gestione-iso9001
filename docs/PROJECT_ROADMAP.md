@@ -628,6 +628,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **ALERT** | Incluso in tutti | Email automatiche scadenze, dashboard semaforo |
 | **AI** | Add-on | Import batch PDF (v1 testo locale), staging tipizzato (Sprint 10), ricerca semantica (backlog) |
 | **Commesse / Riesame contratto** | Add-on futuro | Workflow riesame requisiti §8.2 (pilota “ordine diretto”): stati, checklist, allegati — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
+| **Office Round-trip (beta)** | Auditor / Aziende (desktop) | Apertura Word/Excel desktop e salvataggio diretto su server via WebDAV/Helper custom — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
 
 ### Roadmap Sprint definitiva
 
@@ -645,6 +646,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **9** | Import PDF **v1** (ingest + AI opzionale) | Job `import_jobs` / `import_job_files`, estrazione **testo locale** (`pdf-parse`), confidence euristica, revisione umana, licenza `ai_import`, UI `/settings/import-jobs`. **Analisi strutturata** (OpenAI JSON) su testo estratto: endpoint `POST .../files/:fileId/ai-extract`, migrazione **039**. **Fuori scope immediato**: OCR, agenti multi-tool, commit automatico in registry. Obiettivo: **fondazione ingest** + primo valore AI testabile in sicurezza (revisione umana). | Sprint 1 |
 | **10** | Import staging → registry | Da job file a **record di staging tipizzati** (`document_type` / form registry), commit umano verso persistenza documenti. Estensioni: OCR opzionale, classificazione assistita **dopo** registry stabile. | Sprint 9 |
 | **11** | Commesse / Riesame contratto | Modulo workflow §8.2 (pilota): stati, storico, checklist, allegati in/out; **separato** dalla sola pipeline PDF. Specifica: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). | Sprint 1, Sprint 10 (consigliato) |
+| **12** | Office Round-trip (PoC) | Tool desktop-first per documenti SGQ: link Office URI + endpoint `webdav-link` + WebDAV (GET/PUT/PROPFIND/LOCK/UNLOCK) + lock/versioning baseline. Specifica: [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md). | Sprint 1 |
 
 ### Copertura normativa per modulo SGQ
 
@@ -701,9 +703,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 12 aprile 2026
-**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). **Parallelamente**: checklist *Licenze moduli, auth e allineamento API/UI* (sessioni A→E) + hardening **RBAC** secondo [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). Modulo commerciale: backlog Sprint 11 + mini-specifica allegata.
+**Ultimo Aggiornamento**: 16 aprile 2026
+**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). **Parallelamente**: checklist *Licenze moduli, auth e allineamento API/UI* (sessioni A→E) + hardening **RBAC** secondo [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). Nuovo backlog rapido: **Sprint 12 Office Round-trip (PoC)** con mini-spec dedicata.
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (pianificato)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
 > **Sprint 11 (backlog)**: riesame requisiti contratto / ciclo commerciale — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md).
+> **Sprint 12 (nuovo backlog tecnico)**: Office Round-trip editing desktop (Windows + Office) con infrastruttura nostra WebDAV/Helper — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md).
