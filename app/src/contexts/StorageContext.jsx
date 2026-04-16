@@ -194,17 +194,6 @@ export function StorageProvider({ children, useMockData = false }) {
       return auditId === currentAuditId;
     }) || null;
 
-  // DEBUG: Log per capire il problema
-  useEffect(() => {
-    console.log("🔍 DEBUG StorageContext:", {
-      auditsCount: audits.length,
-      currentAuditId,
-      currentAudit: currentAudit ? "FOUND" : "NULL",
-      firstAuditId: audits[0]?.metadata?.id || audits[0]?.id,
-      auditsIds: audits.map((a) => a.metadata?.id || a.id),
-    });
-  }, [audits, currentAuditId, currentAudit]);
-
   // --- Lock audit server (multi-utente): acquisizione, heartbeat, rilascio ---
   useEffect(() => {
     let cancelled = false;
@@ -282,6 +271,8 @@ export function StorageProvider({ children, useMockData = false }) {
             });
           }, 60 * 1000);
           lockHeartbeatRef.current = hb;
+          // Sblocca subito la sync in coda che aveva fallito per lock non ancora pronto
+          syncService.processQueue().catch(() => {});
         }
       } catch (e) {
         if (cancelled) return;
@@ -366,6 +357,7 @@ export function StorageProvider({ children, useMockData = false }) {
             apiService.renewAuditLock(uuid).catch(() => {});
           }, 60 * 1000);
           clearInterval(timer);
+          syncService.processQueue().catch(() => {});
         }
       } catch {
         /* resta in pending_server */
@@ -438,6 +430,7 @@ export function StorageProvider({ children, useMockData = false }) {
         lockHeartbeatRef.current = setInterval(() => {
           apiService.renewAuditLock(uuid).catch(() => {});
         }, 60 * 1000);
+        syncService.processQueue().catch(() => {});
         return { ok: true };
       }
     } catch (e) {

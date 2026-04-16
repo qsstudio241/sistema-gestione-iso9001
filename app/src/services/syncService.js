@@ -186,15 +186,13 @@ export class SyncService {
                         code === 'AUDIT_LOCK_REQUIRED' ||
                         code === 'AUDIT_LOCK_INVALID';
                     if (lockDenied) {
-                        await this.removeFromQueue(item.id);
+                        // Non rimuovere la coda: spesso è una race con l'apertura audit (lock acquisito
+                        // subito dopo in StorageContext). Rimuovere + alert causava popup a ogni selezione e perdeva l'item.
+                        await this.updateRetryCount(item.id, error?.message || String(code));
                         console.warn(
-                            `⛔ [SYNC] Operazione rimossa dalla coda (lock audit): ${item.type}`,
+                            `[SYNC] Sync ritardato (lock audit), sarà riprovato: ${item.type}`,
+                            code,
                             error?.message,
-                        );
-                        window.dispatchEvent(
-                            new CustomEvent('sgq:auditLockSyncDenied', {
-                                detail: { type: item.type, code, message: error?.message },
-                            }),
                         );
                         continue;
                     }

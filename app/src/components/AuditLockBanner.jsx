@@ -2,24 +2,12 @@
  * Banner lock audit: avvisa quando un altro utente ha il lock o in attesa server.
  */
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useStorage } from "../contexts/StorageContext";
 import "./AuditLockBanner.css";
 
 export default function AuditLockBanner() {
   const { auditLock, refreshAuditLock, currentAudit } = useStorage();
-
-  useEffect(() => {
-    const onSyncDenied = (e) => {
-      const msg =
-        e.detail?.message ||
-        "Sincronizzazione bloccata: serve il lock sull'audit. Verifica che nessun altro utente lo stia modificando.";
-      // eslint-disable-next-line no-alert
-      window.alert(msg);
-    };
-    window.addEventListener("sgq:auditLockSyncDenied", onSyncDenied);
-    return () => window.removeEventListener("sgq:auditLockSyncDenied", onSyncDenied);
-  }, []);
 
   if (!currentAudit) return null;
   if (auditLock.mode === "none" || auditLock.mode === "owner") return null;
