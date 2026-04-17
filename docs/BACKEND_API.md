@@ -155,11 +155,12 @@ PORT=3000
 NODE_ENV=production
 API_BASE_PATH=/api/v1
 
-# DB SQL Server
-DB_SERVER=www.fr-busato.it,11043
-DB_NAME=SGQ_ISO9001
-DB_USER=sgq_app
-DB_PASSWORD=Sgq2024!App
+# DB SQL Server (override opzionali; vedi anche backend/config/database.json locale da .example)
+DB_SERVER=your-sql-host
+DB_PORT=1433
+DB_DATABASE=SGQ_ISO9001
+DB_USER=your_sql_user
+DB_PASSWORD=your_sql_password
 
 # JWT
 JWT_SECRET=<segreto>

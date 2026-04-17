@@ -97,13 +97,13 @@ API_BASE_PATH=/api/v1
 DB_SERVER=www.fr-busato.it
 DB_PORT=11043
 DB_DATABASE=SGQ_ISO9001
-DB_USER=pascarella
-DB_PASSWORD=#Gestione2025@
+DB_USER=your_sql_user
+DB_PASSWORD=__REPLACE_WITH_STRONG_SQL_PASSWORD__
 DB_ENCRYPT=true
 DB_TRUST_SERVER_CERTIFICATE=true
 
 # JWT Authentication
-JWT_SECRET=SuperSecretJWT_SGQ_ISO9001_Prod_2026_#ChangeThis!
+JWT_SECRET=__REPLACE_WITH_RANDOM_SECRET_MIN_32_CHARS__
 JWT_EXPIRES_IN=24h
 JWT_REFRESH_EXPIRES_IN=7d
 
@@ -183,19 +183,24 @@ Write-Host "[7/7] Test connessione database..." -ForegroundColor Yellow
 Push-Location $backendDir
 try {
     $testScript = @"
+require('dotenv').config();
 const sql = require('mssql');
 const config = {
-    server: 'www.fr-busato.it',
-    port: 11043,
-    database: 'SGQ_ISO9001',
-    user: 'pascarella',
-    password: '#Gestione2025@',
+    server: process.env.DB_SERVER || 'localhost',
+    port: parseInt(process.env.DB_PORT || '1433', 10),
+    database: process.env.DB_DATABASE || 'SGQ_ISO9001',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     options: {
         encrypt: true,
         trustServerCertificate: true,
         enableArithAbort: true
     }
 };
+if (!config.user || !config.password) {
+    console.error('Manca DB_USER o DB_PASSWORD nel file .env appena creato. Compila i placeholder e riesegui.');
+    process.exit(1);
+}
 sql.connect(config).then(pool => {
     console.log('✓ Connessione database OK');
     process.exit(0);

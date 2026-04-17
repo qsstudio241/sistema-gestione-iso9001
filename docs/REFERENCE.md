@@ -20,14 +20,14 @@ Health Check: https://www.fr-busato.it:8443/api/v1/health
 Host: www.fr-busato.it
 Port: 1122
 User: spascarella
-Password: Sistemi@2026
 Backend Path: /var/www/sgq-backend/
 ```
+
+**Autenticazione:** chiave SSH, **Pageant**, oppure sessione **PuTTY** salvata (variabile `SGQ_PUTTY_SESSION` nello script `backend/scripts/deploy-controllers-to-vps.ps1`). Non versionare password SSH.
 
 **Quick Connect:**
 ```bash
 ssh spascarella@www.fr-busato.it -p 1122
-# Password: Sistemi@2026
 ```
 
 ### Database (SQL Server Express)
@@ -100,7 +100,6 @@ ssh spascarella@www.fr-busato.it -p 1122 "cd /var/www/sgq-backend && pkill -f 'n
 **Transfer Single File:**
 ```bash
 scp -P 1122 backend/src/controllers/audit.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
-# Password: Sistemi@2026
 ```
 
 **Transfer Multiple Files:**
@@ -329,7 +328,7 @@ DELETE FROM rate_limit_store WHERE ip_address = 'YOUR_IP';
 
 **Prevention:**
 - Max 4 login attempts when testing
-- Use correct credentials: admin@sgq.local / Admin123!
+- Usa le credenziali di test corrette (utente `admin@sgq.local`; password solo da vault / amministratore, non in repo)
 
 ---
 
@@ -514,7 +513,7 @@ CONSTRAINT UQ_standards_name UNIQUE (name, version)
 ### Admin User (Testing)
 ```
 Email: admin@sgq.local
-Password: Admin123!
+Password: (ambiente di test — chiedere all'amministratore / vault, non in repository)
 Role: Amministratore SGQ
 Organization: QS Studio (organization_id = 1)
 ```

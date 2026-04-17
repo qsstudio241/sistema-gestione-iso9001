@@ -9,25 +9,33 @@
 
 | Parametro | Valore |
 |---|---|
-| **Host** | `www.fr-busato.it,11043` |
+| **Host** | `www.fr-busato.it,11043` (produzione; in sviluppo può differire) |
 | **Database** | `SGQ_ISO9001` |
 | **Driver** | `mssql` (Node.js) |
-| **Utente app** | `sgq_app` / `Sgq2024!App` |
-| **SSH** | `ssh spascarella@www.fr-busato.it -p 1122` / `Sistemi@2026` |
+| **Utente SQL** | Definito in `backend/config/database.json` (file **locale**, non in git) o tramite variabili `DB_USER` / `DB_PASSWORD`. |
+| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — password/chiave **non** in repository; preferire PuTTY session o chiave. |
+
+### Setup locale `database.json`
+
+1. Copia il template: `backend/config/database.json.example` → `backend/config/database.json`.
+2. Compila host, utente e password reali (il file è in `.gitignore` e non va committato).
+3. In alternativa o in aggiunta, sul server o in CI puoi impostare **`DB_SERVER`**, **`DB_PORT`**, **`DB_DATABASE`**, **`DB_USER`**, **`DB_PASSWORD`** (override rispetto al JSON).
+
+Script di utilità: **`NEW_ADMIN_PASSWORD`** per `reset-admin-password.js`; **`SGQ_TEST_ADMIN_PASSWORD`** per gli script di verifica API (`verify-fase1.js`, `verify-audit-2026-02.js`) — mai in repository.
 
 ### Accesso interattivo da terminale
 
 ```powershell
-# SSH tunnel
-plink -P 1122 -pw "Sistemi@2026" -batch spascarella@www.fr-busato.it
+# SSH (autenticazione interattiva o tramite chiave / Pageant)
+ssh -p 1122 spascarella@www.fr-busato.it
 
-# Da VPS — sqlcmd (SQL Server)
-sqlcmd -S localhost,11043 -U sgq_app -P Sgq2024!App -d SGQ_ISO9001
+# Da VPS — sqlcmd (sostituisci utente/password con quelli del tuo ambiente, non in repo)
+sqlcmd -S localhost,11043 -U YOUR_USER -d SGQ_ISO9001
 ```
 
 ### Script Node `backend/scripts/repro-custom-export.mjs`
 
-Legge l’audit `2026-06` dal DB e genera `app/tmp-audit-2026-06-repro.docx`. La connessione usa `backend/config/database.json`:
+Legge l’audit `2026-06` dal DB e genera `app/tmp-audit-2026-06-repro.docx`. La connessione usa `backend/config/database.json` (o override `DB_*`):
 
 | `NODE_ENV` | Effetto tipico |
 |---|---|

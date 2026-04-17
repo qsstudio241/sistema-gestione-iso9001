@@ -3,19 +3,11 @@
  * Eseguire: cd backend && NODE_ENV=production node scripts/run-migration-040.js
  */
 require('dotenv').config();
-const path = require('path');
-const configs = require(path.join(__dirname, '..', 'config', 'database.json'));
-let c = configs.production || configs.development;
-if (process.env.DB_SERVER) {
-  c = {
-    ...c,
-    server: process.env.DB_SERVER,
-    database: process.env.DB_DATABASE || c.database,
-    user: process.env.DB_USER || c.user,
-    password: process.env.DB_PASSWORD || c.password,
-  };
-}
+const { resolveDbSection } = require('./mergeDbEnv');
 const sql = require('mssql');
+
+const env = process.env.NODE_ENV || 'production';
+const c = resolveDbSection(env);
 
 const config = {
   server: c.server,
@@ -23,7 +15,7 @@ const config = {
   database: c.database,
   user: c.user,
   password: c.password,
-  options: { trustServerCertificate: true, encrypt: true },
+  options: c.options || { trustServerCertificate: true, encrypt: true },
 };
 
 const SQL_040 = `

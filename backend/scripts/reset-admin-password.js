@@ -22,7 +22,11 @@ const config = {
 };
 
 async function resetPassword() {
-    const newPassword = 'Admin123!';
+    const newPassword = process.env.NEW_ADMIN_PASSWORD;
+    if (!newPassword) {
+        console.error('Imposta la variabile d\'ambiente NEW_ADMIN_PASSWORD (non versionare).');
+        process.exit(1);
+    }
     const email = 'admin@sgq.local';
 
     try {

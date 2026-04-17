@@ -1,8 +1,13 @@
-# Deploy backend (controllers + routes + server.js) sul VPS
+# Deploy backend (controllers + routes + server.js + servizi correlati) sul VPS
 # Esegui da PowerShell nella root del repo.
 # Usa PuTTY (pscp/plink) in modalita' -batch per evitare prompt interattivi.
 # Nota: la prima volta potrebbe essere necessario accettare la host key manualmente (una sola volta),
 # poi -batch funzionera' senza blocchi.
+#
+# --- Autenticazione SSH (ordine consigliato, best practice) ---
+# 1) Variabile d'ambiente SGQ_PUTTY_SESSION = nome sessione PuTTY salvata (host, utente, chiave o password SOLO in PuTTY, mai in repo).
+# 2) Chiave SSH + Pageant / ssh-agent (pscp/plink senza -pw).
+# 3) Solo se inevitabile in CI isolato: SGQ_SSH_PASSWORD (compare in history processi: evitare su macchine condivise; ruotare se esposta).
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -71,6 +76,7 @@ if (-not $useSession) {
 
 # Controllers
 Copy-FileToVps "src/controllers/audit.controller.js" "$RemoteBase/src/controllers/audit.controller.js"
+Copy-FileToVps "src/controllers/sync.controller.js" "$RemoteBase/src/controllers/sync.controller.js"
 Copy-FileToVps "src/controllers/customChecklist.controller.js" "$RemoteBase/src/controllers/customChecklist.controller.js"
 Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controllers/admin.controller.js"
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
@@ -85,6 +91,7 @@ Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
 
 # Services richiesti dai controller (evita crash MODULE_NOT_FOUND su VPS)
 Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"
+Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/services/auditNumberAllocation.service.js"
 Copy-FileToVps "src/services/customChecklist.service.js" "$RemoteBase/src/services/customChecklist.service.js"
 Copy-FileToVps "src/services/reportTemplate.service.js" "$RemoteBase/src/services/reportTemplate.service.js"
 

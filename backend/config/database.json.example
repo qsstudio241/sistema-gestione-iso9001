@@ -1,10 +1,10 @@
 {
   "development": {
-    "server": "www.fr-busato.it",
-    "port": 11043,
+    "server": "YOUR_SQLSERVER_HOST",
+    "port": 1433,
     "database": "SGQ_ISO9001",
-    "user": "pascarella",
-    "password": "#Gestione2025@",
+    "user": "YOUR_SQL_USER",
+    "password": "YOUR_SQL_PASSWORD",
     "options": {
       "encrypt": true,
       "trustServerCertificate": true,
@@ -19,11 +19,11 @@
     }
   },
   "production": {
-    "server": "www.fr-busato.it",
-    "port": 11043,
+    "server": "YOUR_SQLSERVER_HOST",
+    "port": 1433,
     "database": "SGQ_ISO9001",
-    "user": "pascarella",
-    "password": "#Gestione2025@",
+    "user": "YOUR_SQL_USER",
+    "password": "YOUR_SQL_PASSWORD",
     "options": {
       "encrypt": true,
       "trustServerCertificate": true,
@@ -42,7 +42,7 @@
     "port": 1433,
     "database": "SGQ_ISO9001_Test",
     "user": "sgq_test_user",
-    "password": "TestPassword123!",
+    "password": "YOUR_TEST_SQL_PASSWORD",
     "options": {
       "encrypt": true,
       "trustServerCertificate": true,

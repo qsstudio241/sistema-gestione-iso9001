@@ -12,6 +12,9 @@ app/build/
 .env.development
 .env.production
 
+# Credenziali SQL locali / VPS clone (template versionato: backend/config/database.json.example)
+backend/config/database.json
+
 # IDE
 .vscode/
 .idea/

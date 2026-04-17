@@ -85,13 +85,12 @@ Quando arriva il report:
 
 ### Accesso VPS (deploy manuale backend)
 
+Preferire **`backend/scripts/deploy-controllers-to-vps.ps1`** con **`SGQ_PUTTY_SESSION`** (sessione PuTTY) o autenticazione a chiave — evitare password SSH sulla riga di comando (history / process list).
+
 ```powershell
-# Copia file
-pscp -P 1122 -pw "Sistemi@2026" "file_locale" "spascarella@www.fr-busato.it:/var/www/sgq-backend/path/sul/server"
-# Restart backend
-plink -P 1122 -pw "Sistemi@2026" spascarella@www.fr-busato.it "echo Sistemi@2026 | sudo -S systemctl restart sgq-backend"
-# Health check
-plink -P 1122 -pw "Sistemi@2026" spascarella@www.fr-busato.it "curl -sk http://localhost:3000/api/v1/health"
+cd C:\ProgettoISO
+$env:SGQ_PUTTY_SESSION = "nome-sessione-putty-salvata"
+powershell -File backend/scripts/deploy-controllers-to-vps.ps1
 ```
 
 ### Pattern deployment Sprint (da ripetere ogni sprint)
@@ -331,7 +330,7 @@ Vedere `[FASE_8_EXPORT_WORD.md](FASE_8_EXPORT_WORD.md)` per la spec completa.
 ## 🗄️ DATABASE — RIFERIMENTO RAPIDO
 
 **Connessione**: `www.fr-busato.it,11043` / DB: `SGQ_ISO9001`  
-**Credenziali**: `pascarella` / `#Gestione2025@` (in `.env`, MAI in repo)
+**Credenziali SQL**: `backend/config/database.json` (file locale da `database.json.example`, in `.gitignore`) e/o variabili `DB_*` sul server — **mai** in repository.
 
 ```sql
 -- conformity_status CHECK constraint (NON modificare mai)
@@ -413,7 +412,7 @@ GET    /standards/:id/questions           → domande checklist
 
 | Risorsa      | Dettaglio                                                      |
 | ------------ | -------------------------------------------------------------- |
-| SSH          | `ssh spascarella@www.fr-busato.it -p 1122` pwd: `Sistemi@2026` |
+| SSH          | `ssh -p 1122 spascarella@www.fr-busato.it` (chiave o PuTTY; vedi `deploy-controllers-to-vps.ps1`) |
 | Backend path | `/var/www/sgq-backend/`                                        |
 | Log backend  | `/var/www/sgq-backend/app.log`                                 |
 | Upload path  | `/var/www/sgq-backend/uploads/{year}/{month}/`                 |
@@ -429,12 +428,7 @@ sleep 4 && cat /var/www/sgq-backend/app.log
 
 ### Deploy Backend
 
-```bash
-# Upload singolo file
-pscp -P 1122 -pw "Sistemi@2026" "backend/src/controllers/auth.controller.js" \
-  spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/auth.controller.js
-# poi restart backend
-```
+Usa lo script PowerShell in repo (copia file previsti + restart) oppure `scp`/`pscp` **senza** password in chiaro sulla riga di comando (chiave SSH o sessione PuTTY).
 
 ### Deploy Frontend
 
@@ -561,7 +555,7 @@ Il backend gira come **servizio systemd** (`sgq-backend.service`).
 
 - ✅ Restart corretto: `sudo systemctl restart sgq-backend.service`
 - ❌ NON usare `fuser -k 3000/tcp` da solo — systemd lo rilancia immediatamente
-- Comando completo: `echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend.service`
+- Restart: `sudo systemctl restart sgq-backend.service` (su VPS con sudo **NOPASSWD** per l’utente deploy, oppure sessione SSH interattiva)
 
 ---
 
@@ -593,10 +587,10 @@ Il backend gira come **servizio systemd** (`sgq-backend.service`).
 # 1. Backend attivo?
 curl https://www.fr-busato.it:8443/health
 
-# 2. Login funziona?
+# 2. Login funziona? (sostituisci la password con quella reale dell’ambiente di test, mai in repo)
 curl -X POST https://www.fr-busato.it:8443/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@sgq.local","password":"Admin123!"}'
+  -d '{"email":"admin@sgq.local","password":"<PASSWORD_TEST_DA_VAULT>"}'
 
 # 3. Domande ISO 9001 nel DB (atteso: 35)
 # via SSMS o migration script Node.js:
@@ -766,7 +760,7 @@ cd /var/www/sgq-backend
 git pull origin main
 npm install node-schedule nodemailer --save
 node backend/scripts/run-migration-030.js
-echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend.service
+sudo systemctl restart sgq-backend.service
 ```
 
 **Configurazione SMTP (da aggiungere in .env sul VPS per attivare email):**
@@ -802,7 +796,7 @@ SMTP_FROM=SGQ Studio <alerts@qsstudio.it>
 ```bash
 cd /var/www/sgq-backend
 git pull origin main
-echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend.service
+sudo systemctl restart sgq-backend.service
 ```
 
 **Decisione architetturale**:

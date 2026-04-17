@@ -8,9 +8,16 @@ param(
     [string]$ServerInstance = "www.fr-busato.it,11043",
     [string]$Database = "SGQ_ISO9001",
     [string]$Username = "pascarella",
-    [string]$Password = "#Gestione2025@",
+    [string]$Password = "",
     [string]$OutputFile = "..\schema.sql"
 )
+
+if (-not $Password) {
+    $Password = $env:DB_PASSWORD
+}
+if (-not $Password) {
+    throw "Password SQL mancante: passa -Password oppure imposta variabile d'ambiente DB_PASSWORD (non versionare in repo)."
+}
 
 Write-Host ">> Export Schema Database: $Database" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan

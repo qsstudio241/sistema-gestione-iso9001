@@ -20,7 +20,7 @@ Sostituisce fogli Excel e documenti Word con un sistema centralizzato, tracciabi
 | Risorsa | Dettaglio |
 |---|---|
 | **VPS Backend** | `www.fr-busato.it` – Ubuntu, porta 3000 → HTTPS 8443 via Nginx |
-| **SSH** | `ssh spascarella@www.fr-busato.it -p 1122` / `Sistemi@2026` |
+| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — chiave SSH o PuTTY (`SGQ_PUTTY_SESSION`); non versionare password |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **Log** | `/var/www/sgq-backend/app.log` (NON `/var/log/`) |
 | **DB** | SQL Server `www.fr-busato.it,11043` / DB: `SGQ_ISO9001` |

@@ -584,7 +584,7 @@ SELECT notes FROM audit_responses;
 ## 📞 CONTATTI & RIFERIMENTI
 
 - **Database**: SQL Server Express 2022, localhost
-- **User**: sgq_app / Sgq2024!App
+- **User SQL**: definito in configurazione sicura (vault / `database.json` locale, non in repository)
 - **Database Name**: SGQ_ISO9001
 - **Port**: 1433
 

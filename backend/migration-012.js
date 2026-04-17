@@ -8,15 +8,21 @@
  */
 
 require('dotenv').config();
+const path = require('path');
 const sql = require('mssql');
+const { resolveDbSection } = require(path.join(__dirname, 'scripts', 'mergeDbEnv'));
+
+const env = process.env.NODE_ENV || 'production';
+const c = resolveDbSection(env);
 
 const config = {
-    user: process.env.DB_USER || 'pascarella',
-    password: process.env.DB_PASSWORD || '#Gestione2025@',
-    server: process.env.DB_SERVER || 'www.fr-busato.it',
-    port: parseInt(process.env.DB_PORT || '11043'),
-    database: process.env.DB_NAME || 'SGQ_ISO9001',
+    user: c.user,
+    password: c.password,
+    server: c.server,
+    port: c.port || 1433,
+    database: c.database,
     options: {
+        ...(c.options || {}),
         encrypt: true,
         trustServerCertificate: true,
         enableArithAbort: true,

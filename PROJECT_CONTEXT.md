@@ -40,11 +40,11 @@ Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conform
 | **API** | `https://www.fr-busato.it:8443/api/v1` |
 | **Frontend** | Netlify (auto-deploy da `main`) |
 | **VPS** | `www.fr-busato.it` — Ubuntu |
-| **SSH** | `ssh spascarella@www.fr-busato.it -p 1122` / `Sistemi@2026` |
+| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH** o sessione **PuTTY** salvata (`SGQ_PUTTY_SESSION` nello script deploy). **Non** versionare password SSH. |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **App log** | `/var/www/sgq-backend/app.log` |
 | **GitHub** | `qsstudio241/sistema-gestione-iso9001` |
-| **Credenziali test** | `admin@sgq.local` / `Admin123!` |
+| **Credenziali test** | Utente `admin@sgq.local` — password ambiente di test solo in vault / amministratore (non in repository). |
 
 ### Restart server (comandi separati — NON concatenare con `;` il tail)
 

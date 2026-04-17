@@ -7,16 +7,21 @@
  * 4. Eliminare (DELETE) dati dal database
  */
 
+require('dotenv').config();
 const sql = require('mssql');
+const path = require('path');
+const { resolveDbSection } = require(path.join(__dirname, 'scripts', 'mergeDbEnv'));
 
-// Configurazione database (da database.json)
+const env = process.env.NODE_ENV || 'development';
+const base = resolveDbSection(env);
+
 const config = {
-    server: 'www.fr-busato.it',
-    port: 11043,
-    database: 'SGQ_ISO9001',
-    user: 'pascarella',
-    password: '#Gestione2025@',
-    options: {
+    server: base.server,
+    port: base.port || 1433,
+    database: base.database,
+    user: base.user,
+    password: base.password,
+    options: base.options || {
         encrypt: true,
         trustServerCertificate: true,
         connectTimeout: 30000,

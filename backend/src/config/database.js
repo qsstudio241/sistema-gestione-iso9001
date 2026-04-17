@@ -5,16 +5,19 @@
 
 const sql = require('mssql');
 const logger = require('../utils/logger');
-const fs = require('fs');
 const path = require('path');
+const { mergeDbEnvFromProcessEnv, loadDatabaseJsonConfigs } = require(path.join(
+  __dirname,
+  '..',
+  '..',
+  'scripts',
+  'mergeDbEnv.js',
+));
 
-// Caricamento configurazione da file JSON
-const configPath = path.join(__dirname, '..', '..', 'config', 'database.json');
 let dbConfig;
 
 try {
-  const configFile = fs.readFileSync(configPath, 'utf8');
-  const configs = JSON.parse(configFile);
+  const configs = loadDatabaseJsonConfigs();
 
   // Seleziona ambiente (development, production, test)
   const environment = process.env.NODE_ENV || 'development';
@@ -24,14 +27,8 @@ try {
     throw new Error(`Configurazione per ambiente "${environment}" non trovata`);
   }
 
-  // Sostituisce placeholder con variabili d'ambiente (solo in production)
-  if (environment === 'production') {
-    dbConfig.server = process.env.DB_SERVER || dbConfig.server;
-    dbConfig.port = parseInt(process.env.DB_PORT) || dbConfig.port;
-    dbConfig.database = process.env.DB_DATABASE || dbConfig.database;
-    dbConfig.user = process.env.DB_USER || dbConfig.user;
-    dbConfig.password = process.env.DB_PASSWORD || dbConfig.password;
-  }
+  // Override da DB_* (qualsiasi ambiente): preferito su VPS/CI per non mettere secret nel file.
+  dbConfig = mergeDbEnvFromProcessEnv(dbConfig);
 
   logger.info(`📋 Configurazione database caricata per ambiente: ${environment}`);
 } catch (error) {

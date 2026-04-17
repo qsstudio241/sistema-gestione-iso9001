@@ -7,7 +7,11 @@ const https = require('https');
 
 const API_BASE = 'https://www.fr-busato.it:8443/api/v1';
 const LOGIN_EMAIL = 'admin@sgq.local';
-const LOGIN_PASSWORD = 'Admin123!';
+const LOGIN_PASSWORD = process.env.SGQ_TEST_ADMIN_PASSWORD;
+if (!LOGIN_PASSWORD) {
+  console.error('Imposta SGQ_TEST_ADMIN_PASSWORD (password ambiente di test, non in repo).');
+  process.exit(1);
+}
 
 function fetch(url, options = {}) {
   return new Promise((resolve, reject) => {
