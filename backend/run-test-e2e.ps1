@@ -4,8 +4,8 @@
 Write-Host "🚀 Avvio Test E2E Multi-Tenant" -ForegroundColor Cyan
 Write-Host ""
 
-# Percorso backend
-$backendPath = "c:\Users\pasca\OneDrive - QS Studio\Sistema Gestione ISO 9001\backend"
+# Percorso backend robusto: cartella dove si trova questo script
+$backendPath = $PSScriptRoot
 Set-Location $backendPath
 
 # Avvia server in background

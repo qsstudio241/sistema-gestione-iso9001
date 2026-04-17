@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
 /**
  * Vitest Configuration - SGQ ISO 9001:2015
@@ -12,6 +13,19 @@ import { fileURLToPath } from 'node:url';
  */
 export default defineConfig({
   plugins: [react()],
+  server: {
+    fs: {
+      strict: true,
+      allow: [process.cwd(), fs.realpathSync.native(process.cwd())],
+    },
+  },
+  resolve: {
+    // Evita che Vitest risolva il symlink sul path reale K:\...
+    preserveSymlinks: true,
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   
   test: {
     // Environment: jsdom for React component testing
@@ -62,22 +76,10 @@ export default defineConfig({
     
     // Parallel execution (faster CI)
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-      },
-    },
     
     // Mock reset between tests
     mockReset: true,
     restoreMocks: true,
     clearMocks: true,
-  },
-  
-  // Resolve aliases (same as vite.config.js)
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
   },
 });

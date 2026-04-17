@@ -9,7 +9,7 @@ Dopo aver aggiornato i controller (`audit.controller.js`, `sync.controller.js`) 
 Da **PowerShell** o **Prompt** nella root del progetto:
 
 ```powershell
-cd "c:\Users\pasca\OneDrive - QS Studio\Sistema Gestione ISO 9001"
+cd "C:\ProgettoISO"
 scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/sync.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
 ```
 

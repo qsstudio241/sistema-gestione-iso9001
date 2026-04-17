@@ -37,7 +37,7 @@ Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiorn
 - [ ] **Copia file backend sul VPS**  
   Da PowerShell nella root del progetto (sostituisci porta e utente se diversi):
   ```powershell
-  cd "c:\Users\pasca\OneDrive - QS Studio\Sistema Gestione ISO 9001"
+  cd "C:\ProgettoISO"
   scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
   ```
 

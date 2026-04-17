@@ -53,7 +53,7 @@ sudo chown -R $USER:$USER /var/www/sgq-iso9001
 
 # Copia file da Windows al server (usa SCP o SFTP)
 # Dalla tua macchina Windows:
-scp -r "C:\Users\pasca\OneDrive - QS Studio\Sistema Gestione ISO 9001\backend\*" \
+scp -r "C:\ProgettoISO\backend\*" \
   user@www.fr-busato.it:/var/www/sgq-iso9001/backend/
 ```
 
