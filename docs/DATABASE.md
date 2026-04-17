@@ -21,6 +21,8 @@
 2. Compila host, utente e password reali (il file è in `.gitignore` e non va committato).
 3. In alternativa o in aggiunta, sul server o in CI puoi impostare **`DB_SERVER`**, **`DB_PORT`**, **`DB_DATABASE`**, **`DB_USER`**, **`DB_PASSWORD`** (override rispetto al JSON).
 
+**VPS / clone con `git pull`:** se sul server esisteva già `config/database.json` proveniente solo dal repository, un `git pull` che smette di versionare quel file può **rimuoverlo** dalla working tree. Prima del pull: **`cp config/database.json /tmp/database.json.bak`** (o equivalente), poi ripristina o rigenera da `database.json.example`.
+
 Script di utilità: **`NEW_ADMIN_PASSWORD`** per `reset-admin-password.js`; **`SGQ_TEST_ADMIN_PASSWORD`** per gli script di verifica API (`verify-fase1.js`, `verify-audit-2026-02.js`) — mai in repository.
 
 ### Accesso interattivo da terminale
