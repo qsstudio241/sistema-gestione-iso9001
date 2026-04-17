@@ -5,6 +5,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 
 /**
  * POST /api/v1/sync/audits
@@ -167,7 +168,8 @@ async function updateSyncMetadata(req, res) {
  * Helper: Crea audit da sync
  */
 async function createAuditFromSync(clientAudit, userId, organizationId) {
-    // Insert audit (senza standard_id - deprecato)
+    const audit_number = await allocateAuditReportNumber(organizationId);
+    // Insert audit (senza standard_id - deprecato). Numero report server-side (allineato a POST /audits).
     const result = await query(`
     INSERT INTO audits (
       audit_uuid, audit_number, client_name, project_year,
@@ -182,7 +184,7 @@ async function createAuditFromSync(clientAudit, userId, organizationId) {
     SELECT SCOPE_IDENTITY() AS audit_id;
   `, {
         audit_uuid: clientAudit.id,
-        audit_number: clientAudit.auditNumber,
+        audit_number,
         client_name: clientAudit.clientName,
         project_year: clientAudit.projectYear,
         audit_date: clientAudit.auditDate,
@@ -222,7 +224,8 @@ async function createAuditFromSync(clientAudit, userId, organizationId) {
 
     return {
         audit_id: auditId,
-        audit_uuid: clientAudit.id
+        audit_uuid: clientAudit.id,
+        audit_number,
     };
 }
 

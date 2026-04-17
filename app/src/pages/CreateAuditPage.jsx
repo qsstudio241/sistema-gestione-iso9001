@@ -89,13 +89,10 @@ function CreateAuditPage({ onCancel, onSuccess }) {
         setError(null);
 
         try {
-            // Genera audit_number automatico se vuoto
-            const auditNumber = formData.audit_number || 
-                `AUD-${formData.project_year}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
-
+            // audit_number assegnato dal server (formato PREFISSO-YYMMDD-NN, vedi organizations.audit_report_prefix)
+            const { audit_number: _omitClientNumber, ...formWithoutNumber } = formData;
             const payload = {
-                ...formData,
-                audit_number: auditNumber,
+                ...formWithoutNumber,
                 standard_ids: formData.standard_ids // Array per multi-standard
             };
 

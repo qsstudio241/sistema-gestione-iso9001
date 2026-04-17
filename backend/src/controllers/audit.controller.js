@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const { hardDeleteAudit } = require('../services/auditMaintenance.service');
 const { getAllowedStandardIds } = require('./auth.controller');
 const { assertWriteAllowed, getLockTokenFromRequest } = require('../services/auditLock.service');
+const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 
 /**
  * GET /api/v1/audits
@@ -245,7 +246,6 @@ async function createAudit(req, res) {
     try {
         const { user_id, organization_id } = req.user;
         const {
-            audit_number,
             client_name,
             project_year,
             audit_date,
@@ -259,13 +259,32 @@ async function createAudit(req, res) {
             company_id
         } = req.body;
 
-        // Validazione campi obbligatori
-        if (!audit_number || !client_name || !project_year || !audit_date || !auditor_name || !audit_type) {
+        // Validazione campi obbligatori (audit_number assegnato server-side: formato PREFISSO-YYMMDD-NN)
+        if (!client_name || !project_year || !audit_date || !auditor_name || !audit_type) {
             return res.status(400).json({
                 error: 'Campi obbligatori mancanti',
                 code: 'VALIDATION_ERROR',
-                required: ['audit_number', 'client_name', 'project_year', 'audit_date', 'auditor_name', 'audit_type']
+                required: ['client_name', 'project_year', 'audit_date', 'auditor_name', 'audit_type']
             });
+        }
+
+        let audit_number;
+        const maxAttempts = 5;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            audit_number = await allocateAuditReportNumber(organization_id);
+            const dup = await query(`
+      SELECT audit_id FROM audits
+      WHERE audit_number = @audit_number
+        AND organization_id = @organization_id
+        AND is_deleted = 0
+    `, { audit_number, organization_id });
+            if (dup.recordset.length === 0) break;
+            if (attempt === maxAttempts - 1) {
+                return res.status(409).json({
+                    error: 'Impossibile assegnare un numero audit univoco',
+                    code: 'AUDIT_NUMBER_ALLOCATION_FAILED'
+                });
+            }
         }
 
         // Verifica: almeno standard_ids O custom_checklist_id
@@ -292,21 +311,6 @@ async function createAudit(req, res) {
                     });
                 }
             }
-        }
-
-        // Verifica unicità audit_number per organizzazione
-        const existingAudit = await query(`
-      SELECT audit_id FROM audits
-      WHERE audit_number = @audit_number 
-        AND organization_id = @organization_id
-        AND is_deleted = 0
-    `, { audit_number, organization_id });
-
-        if (existingAudit.recordset.length > 0) {
-            return res.status(409).json({
-                error: 'Numero audit già esistente',
-                code: 'AUDIT_NUMBER_DUPLICATE'
-            });
         }
 
         // Crea audit
