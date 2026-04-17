@@ -1,14 +1,19 @@
 /**
  * update-sw-version.js
- * Aggiorna BUILD_DATE nel service worker ad ogni build.
- * Eseguito automaticamente da npm via "prebuild" hook.
+ * Aggiorna BUILD_DATE solo nel file buildato (dist/service-worker.js).
+ * Eseguito automaticamente da npm via "postbuild" hook.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const swPath = path.join(__dirname, '../public/service-worker.js');
+const swPath = path.join(__dirname, '../dist/service-worker.js');
 const newDate = new Date().toISOString();
+
+if (!fs.existsSync(swPath)) {
+    console.log('[postbuild] dist/service-worker.js non trovato: skip version stamp');
+    process.exit(0);
+}
 
 let content = fs.readFileSync(swPath, 'utf8');
 content = content.replace(
@@ -17,4 +22,4 @@ content = content.replace(
 );
 
 fs.writeFileSync(swPath, content, 'utf8');
-console.log(`[prebuild] service-worker.js BUILD_DATE → ${newDate}`);
+console.log(`[postbuild] dist/service-worker.js BUILD_DATE → ${newDate}`);
