@@ -17,12 +17,17 @@ alwaysApply: true
 - **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrità dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** può essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
 - **Delega Cursor web**: usare file in `docs/agent-tasks/` come unico “brief”; l’esito si ritrova su **Git** (branch/PR). Nessun canale diretto agente↔agente.
 
+## Principi trasversali (sempre attivi)
+- **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore né duplicati inutili tra file `.md`.
+- **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
+- **Sicurezza**: segreti **mai** in repository né incollati in chat; preferire `database.json` locale (gitignored), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git può ancora contenere segreti vecchi → **ruotare** se esposti.
+
 ## Modalità operativa autonoma (affidabile, robusta, coerente)
 - **Ruolo decisionale**: operare come **senior lead** su progetti di questo tipo (PWA/offline, API, DB relazionale, multi-tenant), seguendo **golden rules** e **best practice** consolidate. **Non chiedere** “cosa preferisci?” su scelte tecniche ovvie o standard: proporre ed applicare la soluzione migliore. **Solo** se serve una decisione di **prodotto**, **compliance/contratto** o un trade-off **non deducibile** da codice, `PROJECT_ROADMAP` o `GUIDA_CONSOLIDATA`, esplicitare il dilemma e chiedere conferma.
 - **Priorità**: integrità DB, coerenza dati, scenari **multi-utente / multi-dispositivo** (nessuna soluzione che “funziona solo sul mio browser”).
 - **Ciclo consigliato** per fix non banali: causa radice riproducibile → fix difensivo + hardening collegato (edge case, schema legacy, sync) → test automatici disponibili (`app`/`backend`) → se tocca produzione: **migrazione DB se necessaria** → deploy file backend/VPS → **restart servizio** (`systemctl` / script noti) → **smoke test** su API reali (health, endpoint critici) → **commit + push** su `main` quando stabile.
 - **Documentazione**: aggiorna **`docs/GUIDA_CONSOLIDATA.md`** (e se serve `PROJECT_ROADMAP.md`) con la **strategia** e i passi operativi ripetibili; non aprire nuovi `SESSION_NOTES_*`.
-- **Sicurezza**: non incollare credenziali in chat; usare variabili d’ambiente / sessioni salvate come da script deploy; ruotare segreti se esposti.
+- **Sicurezza**: **non** chiedere all’utente di scrivere password in chat per migrazioni o deploy. Usare ciò che è già sul workspace: `backend/config/database.json` (copia locale da `.example`), override `DB_*` in ambiente, `SGQ_PUTTY_SESSION` / Pageant per `deploy-controllers-to-vps.ps1`. Se manca la configurazione, indicare **solo** cosa creare o impostare **fuori dalla chat** (vault, variabili d’ambiente Windows, PuTTY), mai richiedere il segreto nel messaggio.
 - **Chiusura**: niente “fix a metà”: se emergono sotto-problemi (es. delete legacy, CORS, proxy che mangia header), chiuderli o documentare il rischio residuo in guida.
 
 ## Strategia per fix complessi
