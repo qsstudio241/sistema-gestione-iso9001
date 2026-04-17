@@ -5,10 +5,10 @@ import fs from 'node:fs';
 
 /**
  * Vitest Configuration - SGQ ISO 9001:2015
- * 
+ *
  * Standard: ISO 9001:2015 punto 9.1 (Monitoring & Measurement)
  * Target Coverage: ≥80% (lines, functions, branches)
- * 
+ *
  * @see https://vitest.dev/config/
  */
 export default defineConfig({
@@ -26,14 +26,14 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  
+
   test: {
     // Environment: jsdom for React component testing
     environment: 'jsdom',
-    
+
     // Setup file: global test utilities
     setupFiles: ['./src/tests/setup.js'],
-    
+
     // Coverage configuration (ISO 9001 compliance)
     coverage: {
       provider: 'v8',
@@ -59,24 +59,24 @@ export default defineConfig({
         statements: 80,
       },
     },
-    
+
     // Global test configuration
     globals: true,
-    
+
     // Test file patterns (tutti sotto src/, inclusi test integrazione con mock in src/tests/integration/)
     include: ['src/**/*.{test,spec}.{js,jsx}'],
-    
+
     // Enable JSX in test files
     esbuild: {
       jsxInject: `import React from 'react'`,
     },
-    
+
     // Timeout for slow tests (e.g., Word export)
     testTimeout: 10000,
-    
+
     // Parallel execution (faster CI)
     pool: 'threads',
-    
+
     // Mock reset between tests
     mockReset: true,
     restoreMocks: true,

@@ -28,7 +28,25 @@ export default defineConfig({
     build: {
         rollupOptions: {
             // Evita che Rollup emetta un fileName assoluto su Windows+symlink.
-            input: 'index.html'
-        }
+            input: 'index.html',
+            output: {
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return;
+                    if (id.includes('react-dom') || id.includes('scheduler')) return 'vendor-react';
+                    if (id.includes('/react/') || id.includes('\\react\\')) return 'vendor-react';
+                    if (
+                        id.includes('docxtemplater') ||
+                        id.includes('pizzip') ||
+                        id.includes('/docx/') ||
+                        id.includes('\\docx\\')
+                    ) {
+                        return 'vendor-docx';
+                    }
+                    if (id.includes('jspdf')) return 'vendor-jspdf';
+                    if (id.includes('file-saver')) return 'vendor-files';
+                }
+            }
+        },
+        chunkSizeWarningLimit: 500
     }
 });

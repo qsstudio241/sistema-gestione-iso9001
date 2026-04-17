@@ -11,29 +11,29 @@
  * tramite URL (navigate('/audit'), navigate('/documents') ecc.)
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { RouterProvider, Routes, Route, useNavigate } from "./contexts/RouterContext";
 import { StorageProvider } from "./contexts/StorageContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/SharedComponents";
 import AppLayout from "./layouts/AppLayout";
 
-// Pagine e componenti
-import HomePage from "./pages/HomePage";
-import Dashboard from "./components/Dashboard";
-import DocumentRegistry from "./components/DocumentRegistry";
-import CompaniesPage from "./components/CompaniesPage";
-import ChecklistAdminPage from "./components/ChecklistAdminPage";
-import UsersAdminPage from "./components/UsersAdminPage";
-import ReportTemplatesAdminPage from "./components/ReportTemplatesAdminPage";
-import CustomChecklistsPage from "./components/CustomChecklistsPage";
-import NotificationsSettingsPage from "./pages/NotificationsSettingsPage";
-import QualificationsPage from "./pages/QualificationsPage";
-import NCPage from "./pages/NCPage";
-import RisksPage from "./pages/RisksPage";
-import ComplaintsPage from "./pages/ComplaintsPage";
-import LicensesSettingsPage from "./pages/LicensesSettingsPage";
-import ImportJobsPage from "./pages/ImportJobsPage";
+// Route-level lazy loading: riduce il bundle iniziale (code splitting)
+const HomePage = React.lazy(() => import("./pages/HomePage"));
+const Dashboard = React.lazy(() => import("./components/Dashboard"));
+const DocumentRegistry = React.lazy(() => import("./components/DocumentRegistry"));
+const CompaniesPage = React.lazy(() => import("./components/CompaniesPage"));
+const ChecklistAdminPage = React.lazy(() => import("./components/ChecklistAdminPage"));
+const UsersAdminPage = React.lazy(() => import("./components/UsersAdminPage"));
+const ReportTemplatesAdminPage = React.lazy(() => import("./components/ReportTemplatesAdminPage"));
+const CustomChecklistsPage = React.lazy(() => import("./components/CustomChecklistsPage"));
+const NotificationsSettingsPage = React.lazy(() => import("./pages/NotificationsSettingsPage"));
+const QualificationsPage = React.lazy(() => import("./pages/QualificationsPage"));
+const NCPage = React.lazy(() => import("./pages/NCPage"));
+const RisksPage = React.lazy(() => import("./pages/RisksPage"));
+const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
+const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
+const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -44,6 +44,15 @@ import { useCheckpointSaver } from "./hooks/useCheckpointSaver";
 import { checkAndMigrateStorage } from "./utils/storageVersion";
 import { useStorage } from "./contexts/StorageContext";
 import "./App.css";
+
+function RouteLoadingFallback() {
+  return (
+    <div className="app-loading">
+      <div className="loading-spinner"></div>
+      <p>Caricamento...</p>
+    </div>
+  );
+}
 
 // ─── Wrapper per componenti che usano onBack ──────────────────────────────────
 
@@ -82,6 +91,7 @@ function AppContent() {
       <ConnectionStatus />
       <AuditLockBanner />
 
+      <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
         {/* Home dashboard */}
         <Route path="/" element={<HomePage />} />
@@ -182,6 +192,7 @@ function AppContent() {
           }
         />
       </Routes>
+      </Suspense>
     </AppLayout>
   );
 }
