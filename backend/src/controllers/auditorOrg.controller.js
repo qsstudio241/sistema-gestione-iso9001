@@ -17,7 +17,7 @@ async function listAuditorOrgs(req, res) {
         const isOrgWideAdmin = (role === 'admin' || role === 'superadmin') && !auditor_org_id;
 
         let result;
-        if (isSuperadmin) {
+        if (isOrgWideAdmin) {
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
                        o.organization_name
