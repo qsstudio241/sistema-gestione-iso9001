@@ -1,53 +1,114 @@
-# Task — RBAC studio: dropdown vuoto e visibilità contenuti (2026-04-18)
+# Task — RBAC studio: dropdown vuoto (2026-04-18)
 
-## Contesto (sintesi)
+## In sintesi
 
-Segnalazione: più account vedono **tutti** i contenuti; in **Gestione utenti** il menu a tendina **Studio (auditor org)** non offre opzioni.
+| Problema | Effetto in UI |
+|----------|----------------|
+| Menu **Studio (auditor org)** in Gestione utenti senza voci | Solo “— Nessuno —”, anche quando in DB ci sono studi |
+| Utenti senza `auditor_org_id` | Vedono tutti gli audit dell’organizzazione (manca segregazione per studio) |
 
-## Verifica tecnica effettuata
+La causa principale era un **bug backend** (variabile sbagliata) + **catch silenzioso** nel frontend.
 
-### 1) Dropdown studio senza opzioni
+---
 
-- **Frontend** (`app/src/components/UsersAdminPage.jsx`): le opzioni derivano da `GET /api/v1/auditor-orgs`. In caricamento iniziale era presente `.catch(() => ({ data: [] }))` che **nascondeva qualsiasi errore API** e mostrava lista vuota → solo “— Nessuno —”.
-- **Backend** (`backend/src/controllers/auditorOrg.controller.js`): in `listAuditorOrgs` la condizione usava la variabile **`isSuperadmin`**, **non definita** nel file (dovrebbe usarsi `isOrgWideAdmin`, già calcolata). Risultato: **ReferenceError** → risposta **500** per gli admin org-wide che devono vedere tutti gli studi del tenant.
+## Cosa non andava (tecnico)
 
-### 2) “Tutti vedono tutti i contenuti”
+### Backend
 
-- Con `users.auditor_org_id` **NULL**, il filtro RBAC per studio sugli audit in `audit.controller.js` **non viene applicato** (condizione `if (!isSuperadmin && auditor_org_id)`). Resta il solo filtro `organization_id` → tutti gli utenti **della stessa organizzazione** senza studio assegnato vedono **tutti gli audit dell’org**.
-- Se il dropdown non permette di assegnare lo studio (punto 1), gli utenti restano senza `auditor_org_id` → effetto cumulativo: **nessuna segregazione per studio**.
+File: `backend/src/controllers/auditorOrg.controller.js`, funzione `listAuditorOrgs`.
 
-## Fix già applicati in repository (branch `cursor/fix-auditor-org-list-19a8`)
+- Era usata **`isSuperadmin`**, non definita in quel file.
+- Effetto: **ReferenceError** → risposta **500** su `GET /api/v1/auditor-orgs` per gli admin che devono vedere tutti gli studi del tenant.
+- Fix: usare **`isOrgWideAdmin`** (già calcolata nel controller).
 
-| Area | Modifica |
-|------|----------|
-| Backend | `listAuditorOrgs`: `if (isSuperadmin)` → `if (isOrgWideAdmin)` |
-| Frontend | Caricamento `getAuditorOrgs` senza mascherare l’errore; messaggio visibile se l’API studi fallisce; lista utenti resta utilizzabile se solo gli studi falliscono |
+### Frontend
 
-## Definition of Done per il master / agente desktop
+File: `app/src/components/UsersAdminPage.jsx`.
 
-- [x] Merge PR verso `main` dopo CI verde (workflow app su PR). — **Fatto** 2026-04-18 (PR #9 squash → `f0940b9`; PR era in bozza → `gh pr ready` poi merge).
-- [ ] **Deploy backend** su VPS: copiare `auditorOrg.controller.js` + restart servizio (vedi `docs/GUIDA_CONSOLIDATA.md` sezione deploy / `deploy-controllers-to-vps.ps1`). — **Da fare sul PC committente**: nell’ambiente agente Cursor non risulta `SGQ_PUTTY_SESSION` né chiave SSH batch; eseguire in PowerShell dalla root repo:
-  ```powershell
-  $env:SGQ_PUTTY_SESSION = "NOME_SESSIONE_PUTTY"   # come da guida / vault
-  .\backend\scripts\deploy-controllers-to-vps.ps1
-  ```
-- [x] **Deploy frontend** Netlify da `main` — **Automatico** al merge; smoke remoto 2026-04-18: `GET https://systemgest.netlify.app/` → **200** (bundle attuale es. `index-Gntmzb7e.js`). Verificare in dashboard Netlify che l’ultimo deploy da `main` sia *Published*.
-- [ ] **Smoke manuale** (L3): login come admin org-wide → **Gestione utenti** → dropdown Studio popolato con gli `auditor_orgs` dell’organizzazione; assegnare uno studio a un utente test → **logout/login** → verificare che la lista audit si limiti allo studio (cfr. matrice RBAC in `GUIDA_CONSOLIDATA.md`). — **Dopo** deploy VPS (senza fix backend l’API può ancora rispondere 500 agli admin org-wide autenticati).
-- [ ] **Dati**: se in DB non esistono righe in `auditor_orgs` per l’organizzazione, creare almeno uno studio (o script/migrazione) altrimenti il dropdown resterà vuoto per motivi legittimi.
+- C’era un `.catch(() => ({ data: [] }))` che **nascondeva** l’errore API.
+- Effetto: lista studi sempre vuota in UI, senza messaggio utile.
+- Fix: non mascherare l’errore; mostrare un messaggio se il caricamento studi fallisce.
 
-### Smoke parziale già eseguito (rete, senza login)
+### RBAC audit (contesto)
 
-| Controllo | Esito | Dettaglio |
-|-----------|-------|-----------|
-| `GET /api/v1/health` | OK | `status: healthy`, DB OK |
-| `GET /api/v1/auditor-orgs` senza cookie | OK | **401** `AUTH_TOKEN_MISSING` (rotta raggiungibile; non testa ancora `listAuditorOrgs` con admin) |
-| `GET https://systemgest.netlify.app/` | OK | **200** (su Windows usare `curl.exe --ssl-no-revoke` se schannel segnala errore revoca certificato) |
+Se `auditor_org_id` è **NULL**, il filtro per studio sugli audit spesso **non si applica** (resta il filtro per `organization_id`). Assegnare lo studio agli utenti è quindi importante; il dropdown deve funzionare.
+
+---
+
+## Fix in codice (già su `main`)
+
+| Layer | Modifica |
+|-------|----------|
+| Backend | `isSuperadmin` → `isOrgWideAdmin` in `listAuditorOrgs` |
+| Frontend | Caricamento `getAuditorOrgs` senza catch che azzera la lista |
+
+Merge: **PR #9** (squash), commit principale **`f0940b9`**.
+
+---
+
+## Stato rilascio e DoD
+
+| Voce | Stato | Note |
+|------|-------|------|
+| Merge su `main` | Fatto | PR #9, CI app verde sulla PR |
+| Deploy **Netlify** (frontend) | Automatico | Dopo ogni push su `main`; controllare dashboard *Published* |
+| Deploy **VPS** (backend) | Manuale | Obbligatorio per il fix su `auditor-orgs`: copia file + restart (vedi sotto) |
+| Smoke manuale L3 | Dopo VPS | Login admin → Gestione utenti → dropdown → assegna studio → verifica lista audit |
+
+### Deploy VPS — passi (PowerShell, root repo)
+
+**Opzione A — variabile d’ambiente**
+
+```powershell
+$env:SGQ_PUTTY_SESSION = "NomeSessioneSalvataInPuTTY"
+.\backend\scripts\deploy-controllers-to-vps.ps1
+```
+
+**Opzione B — file locale (una riga, non in Git)**
+
+1. Crea il file **`backend/config/.putty-session.local`** (è in `.gitignore`).
+2. Scrivi **solo** il nome della sessione PuTTY, una riga, senza virgolette.
+3. Esegui:
+
+```powershell
+.\backend\scripts\deploy-controllers-to-vps.ps1
+```
+
+Se vedi ancora errore *batch mode* / *password*: apri **Pageant** con la chiave, oppure verifica la sessione PuTTY (host `www.fr-busato.it`, porta **1122**, utente corretto).
+
+Dettaglio: `docs/GUIDA_CONSOLIDATA.md` (deploy) e `docs/DEPLOY_CHECKLIST_RELEASE.md`.
+
+---
+
+## Smoke già eseguibili senza login (solo rete)
+
+| Controllo | Risultato atteso |
+|-----------|------------------|
+| `GET https://www.fr-busato.it:8443/api/v1/health` | JSON `healthy`, DB OK |
+| `GET …/auditor-orgs` **senza** cookie | **401**, codice tipo `AUTH_TOKEN_MISSING` |
+| `GET https://systemgest.netlify.app/` | **200** (su Windows: `curl.exe --ssl-no-revoke …` se compare errore revoca certificato) |
+
+Questi controlli **non** sostituiscono lo smoke con login sull’endpoint `auditor-orgs` come admin org-wide.
+
+---
+
+## Smoke manuale L3 (dopo deploy VPS)
+
+1. Aprire `https://systemgest.netlify.app` (meglio finestra privata dopo deploy).
+2. Login come **admin org-wide**.
+3. **Gestione utenti** → aprire un utente → campo **Studio**: deve comparire l’elenco degli `auditor_orgs` (se esistono in DB).
+4. Salvare uno studio per un utente di prova.
+5. Logout, login con quell’utente: la **lista audit** deve rispettare lo scope studio (vedi `docs/GUIDA_CONSOLIDATA.md` e `docs/ARCHITETTURA_UTENTI_RBAC.md`).
+
+Se il dropdown è ancora vuoto **e** l’API risponde 200 con array vuoto: verificare che in tabella **`auditor_orgs`** esistano righe per l’organizzazione.
+
+---
 
 ## Riferimenti
 
-- `docs/ARCHITETTURA_UTENTI_RBAC.md` — scope, Fase 1 allineamento read/write.
-- `docs/GUIDA_CONSOLIDATA.md` — tabella problemi sezione A (riga aggiornata su `auditor-orgs`).
+- `docs/ARCHITETTURA_UTENTI_RBAC.md`
+- `docs/GUIDA_CONSOLIDATA.md` (sezione A, deploy)
 
-## Prompt pronto (delega)
+## Prompt delega (breve)
 
-> Leggi e segui `docs/agent-tasks/TASK_RBAC_STUDIO_DROPDOWN_2026-04-18.md`: merge, deploy backend+frontend, smoke dropdown e assegnazione studio.
+> Seguire `docs/agent-tasks/TASK_RBAC_STUDIO_DROPDOWN_2026-04-18.md`: deploy VPS, smoke Gestione utenti / studio.

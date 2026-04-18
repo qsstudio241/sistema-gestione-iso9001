@@ -15,6 +15,9 @@ app/build/
 # Credenziali SQL locali / VPS clone (template versionato: backend/config/database.json.example)
 backend/config/database.json
 
+# Nome sessione PuTTY per deploy script (solo etichetta sessione, mai password)
+backend/config/.putty-session.local
+
 # IDE
 .vscode/
 .idea/

@@ -19,6 +19,15 @@ $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
 $PuttySession = $env:SGQ_PUTTY_SESSION  # opzionale: nome sessione PuTTY salvata (consigliato)
 $SshPassword = $env:SGQ_SSH_PASSWORD    # opzionale: password SSH (sconsigliata; evita prompt in batch)
 
+# Opzionale: file locale gitignored — una sola riga = nome sessione PuTTY (stesso valore di SGQ_PUTTY_SESSION)
+$PuttySessionFile = Join-Path $BackendRoot "config\.putty-session.local"
+if (-not $PuttySession -and (Test-Path $PuttySessionFile)) {
+    $PuttySession = (Get-Content -LiteralPath $PuttySessionFile -Raw).Trim()
+    if ($PuttySession) {
+        Write-Host "Sessione PuTTY da backend/config/.putty-session.local" -ForegroundColor DarkGray
+    }
+}
+
 $Pscp = "C:\Program Files\PuTTY\pscp.exe"
 $Plink = "C:\Program Files\PuTTY\plink.exe"
 
@@ -70,7 +79,7 @@ if (-not $useSession) {
         & $Plink -batch -hostkey $HostKey -P $Port $VPS "exit" | Out-Null
     }
     if ($LASTEXITCODE -ne 0) {
-        throw "plink preflight fallito (exit $LASTEXITCODE). Probabile richiesta password SSH o chiave non configurata: serve autenticazione non-interattiva (chiave) oppure una sessione PuTTY valida via SGQ_PUTTY_SESSION."
+        throw "plink preflight fallito (exit $LASTEXITCODE). Serve autenticazione non-interattiva: SGQ_PUTTY_SESSION, oppure file backend/config/.putty-session.local (una riga, nome sessione PuTTY), oppure Pageant/chiave SSH."
     }
 }
 
