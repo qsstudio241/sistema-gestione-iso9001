@@ -36,6 +36,7 @@ export default function UsersAdminPage({ onBack }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [auditorOrgs, setAuditorOrgs] = useState([]);
+  const [auditorOrgsError, setAuditorOrgsError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [savingId, setSavingId] = useState(null);
@@ -84,10 +85,7 @@ export default function UsersAdminPage({ onBack }) {
       setLoading(true);
       setError(null);
       try {
-        const [usersRes, orgsRes] = await Promise.all([
-          apiService.getAdminUsers(),
-          apiService.getAuditorOrgs().catch(() => ({ data: [] })),
-        ]);
+        const usersRes = await apiService.getAdminUsers();
         if (cancelled) return;
         const list =
           usersRes?.data && Array.isArray(usersRes.data) ? usersRes.data : [];
@@ -97,9 +95,22 @@ export default function UsersAdminPage({ onBack }) {
           forms[u.user_id] = emptyEditForm(u);
         }
         setEditForms(forms);
-        const orgs =
-          orgsRes?.data && Array.isArray(orgsRes.data) ? orgsRes.data : [];
-        setAuditorOrgs(orgs);
+        try {
+          const orgsRes = await apiService.getAuditorOrgs();
+          if (cancelled) return;
+          const orgs =
+            orgsRes?.data && Array.isArray(orgsRes.data) ? orgsRes.data : [];
+          setAuditorOrgs(orgs);
+          setAuditorOrgsError(null);
+        } catch (orgErr) {
+          if (!cancelled) {
+            setAuditorOrgs([]);
+            setAuditorOrgsError(
+              orgErr?.message ||
+                "Impossibile caricare l'elenco studi (auditor org). Verifica API e backend."
+            );
+          }
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err.message || "Errore caricamento utenti");
@@ -393,6 +404,11 @@ export default function UsersAdminPage({ onBack }) {
 
       {loading && <p className="loading-message">Caricamento utenti...</p>}
       {error && <p className="error-message">{error}</p>}
+      {!loading && auditorOrgsError && (
+        <p className="error-message" role="alert">
+          {auditorOrgsError}
+        </p>
+      )}
 
       {!loading && !error && users.length === 0 && (
         <p className="no-data">Nessun utente trovato.</p>
