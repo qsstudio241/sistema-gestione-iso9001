@@ -25,11 +25,23 @@ Segnalazione: più account vedono **tutti** i contenuti; in **Gestione utenti** 
 
 ## Definition of Done per il master / agente desktop
 
-- [ ] Merge PR verso `main` dopo CI verde (workflow app su PR).
-- [ ] **Deploy backend** su VPS: copiare `auditorOrg.controller.js` + restart servizio (vedi `docs/GUIDA_CONSOLIDATA.md` sezione deploy / `deploy-controllers-to-vps.ps1`).
-- [ ] **Deploy frontend** Netlify da `main` (o preview PR).
-- [ ] **Smoke manuale** (L3): login come admin org-wide → **Gestione utenti** → dropdown Studio popolato con gli `auditor_orgs` dell’organizzazione; assegnare uno studio a un utente test → **logout/login** → verificare che la lista audit si limiti allo studio (cfr. matrice RBAC in `GUIDA_CONSOLIDATA.md`).
+- [x] Merge PR verso `main` dopo CI verde (workflow app su PR). — **Fatto** 2026-04-18 (PR #9 squash → `f0940b9`; PR era in bozza → `gh pr ready` poi merge).
+- [ ] **Deploy backend** su VPS: copiare `auditorOrg.controller.js` + restart servizio (vedi `docs/GUIDA_CONSOLIDATA.md` sezione deploy / `deploy-controllers-to-vps.ps1`). — **Da fare sul PC committente**: nell’ambiente agente Cursor non risulta `SGQ_PUTTY_SESSION` né chiave SSH batch; eseguire in PowerShell dalla root repo:
+  ```powershell
+  $env:SGQ_PUTTY_SESSION = "NOME_SESSIONE_PUTTY"   # come da guida / vault
+  .\backend\scripts\deploy-controllers-to-vps.ps1
+  ```
+- [x] **Deploy frontend** Netlify da `main` — **Automatico** al merge; smoke remoto 2026-04-18: `GET https://systemgest.netlify.app/` → **200** (bundle attuale es. `index-Gntmzb7e.js`). Verificare in dashboard Netlify che l’ultimo deploy da `main` sia *Published*.
+- [ ] **Smoke manuale** (L3): login come admin org-wide → **Gestione utenti** → dropdown Studio popolato con gli `auditor_orgs` dell’organizzazione; assegnare uno studio a un utente test → **logout/login** → verificare che la lista audit si limiti allo studio (cfr. matrice RBAC in `GUIDA_CONSOLIDATA.md`). — **Dopo** deploy VPS (senza fix backend l’API può ancora rispondere 500 agli admin org-wide autenticati).
 - [ ] **Dati**: se in DB non esistono righe in `auditor_orgs` per l’organizzazione, creare almeno uno studio (o script/migrazione) altrimenti il dropdown resterà vuoto per motivi legittimi.
+
+### Smoke parziale già eseguito (rete, senza login)
+
+| Controllo | Esito | Dettaglio |
+|-----------|-------|-----------|
+| `GET /api/v1/health` | OK | `status: healthy`, DB OK |
+| `GET /api/v1/auditor-orgs` senza cookie | OK | **401** `AUTH_TOKEN_MISSING` (rotta raggiungibile; non testa ancora `listAuditorOrgs` con admin) |
+| `GET https://systemgest.netlify.app/` | OK | **200** (su Windows usare `curl.exe --ssl-no-revoke` se schannel segnala errore revoca certificato) |
 
 ## Riferimenti
 
