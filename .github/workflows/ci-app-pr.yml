@@ -9,6 +9,7 @@ on:
     paths:
       - 'app/**'
       - 'netlify.toml'
+      - 'docs/agent-tasks/**'
       - '.github/workflows/ci-app-pr.yml'
 
 jobs:
