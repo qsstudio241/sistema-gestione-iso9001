@@ -23,7 +23,7 @@
 
 **VPS / clone con `git pull`:** se sul server esisteva già `config/database.json` proveniente solo dal repository, un `git pull` che smette di versionare quel file può **rimuoverlo** dalla working tree. Prima del pull: **`cp config/database.json /tmp/database.json.bak`** (o equivalente), poi ripristina o rigenera da `database.json.example`.
 
-Script di utilità (tutte **mai** in repository): **`NEW_ADMIN_PASSWORD`** (`reset-admin-password.js`); **`SGQ_TEST_ADMIN_PASSWORD`** (`verify-fase1.js`, `verify-audit-2026-02.js`, `test-patch-api.js`, `test-api.sh`); **`SGQ_TEST_USER_PASSWORD`** (`backend/tests/setup-test-user.js`); **`SGQ_TEST_REGISTER_PASSWORD`** (`backend/tests/test-server-connection.js`).
+Script di utilità (tutte **mai** in repository): **`NEW_ADMIN_PASSWORD`** (`reset-admin-password.js`); **`SGQ_TEST_ADMIN_PASSWORD`** (`verify-fase1.js`, `verify-audit-2026-02.js`, `test-patch-api.js`, `test-api.sh`); **`SGQ_TEST_USER_PASSWORD`** (`backend/tests/setup-test-user.js`); **`SGQ_TEST_REGISTER_PASSWORD`** (`backend/tests/test-server-connection.js`); **`SGQ_TEST_OFFLINE_SYNC_PASSWORD`** (`backend/tests/test-offline-conflict.js`); **`SGQ_TEST_MULTI_TENANT_PASSWORD_A`** / **`SGQ_TEST_MULTI_TENANT_PASSWORD_B`** (`backend/tests/test-multi-tenant.js`). **`backend/run-migration.js`** usa solo `backend/config/database.json` (o override **`DB_*`**), mai credenziali nel file.
 
 ### Accesso interattivo da terminale
 

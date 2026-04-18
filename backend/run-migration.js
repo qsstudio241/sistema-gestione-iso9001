@@ -4,17 +4,34 @@
  */
 
 require('dotenv').config();
+const path = require('path');
 const sql = require('mssql');
 
-// Usa credenziali funzionanti (da aggiornare nel .env)
+const configs = require(path.join(__dirname, 'config', 'database.json'));
+let c = configs.production || configs.development;
+if (process.env.DB_SERVER) {
+    c = {
+        ...c,
+        server: process.env.DB_SERVER,
+        port: parseInt(process.env.DB_PORT || c.port, 10),
+        database: process.env.DB_DATABASE || c.database,
+        user: process.env.DB_USER || c.user,
+        password: process.env.DB_PASSWORD || c.password
+    };
+}
+if (!c?.user || !c?.password) {
+    console.error('Configurare backend/config/database.json (gitignored) o variabili DB_* . Nessuna password in repository.');
+    process.exit(1);
+}
+
 const config = {
-    user: 'busaborl_admin',
-    password: 'Ag63.busato',
-    server: 'www.fr-busato.it',
-    port: 11043,
-    database: 'SGQ_ISO9001',
+    user: c.user,
+    password: c.password,
+    server: c.server,
+    port: c.port || 1433,
+    database: c.database,
     options: {
-        encrypt: false,
+        encrypt: true,
         trustServerCertificate: true,
         enableArithAbort: true
     },

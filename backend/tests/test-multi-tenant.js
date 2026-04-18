@@ -15,6 +15,13 @@
 
 const API_BASE = 'http://localhost:10443/api/v1';
 
+const pwA = process.env.SGQ_TEST_MULTI_TENANT_PASSWORD_A;
+const pwB = process.env.SGQ_TEST_MULTI_TENANT_PASSWORD_B;
+if (!pwA || !pwB) {
+    console.error('Imposta SGQ_TEST_MULTI_TENANT_PASSWORD_A e SGQ_TEST_MULTI_TENANT_PASSWORD_B (non in repository).');
+    process.exit(1);
+}
+
 // Usa organizzazioni esistenti
 const orgAId = 1; // DEFAULT_ORG (Organizzazione Predefinita)
 const orgBId = 2; // TEST_ORG_B (Organizzazione Test B)
@@ -23,13 +30,13 @@ const orgBId = 2; // TEST_ORG_B (Organizzazione Test B)
 const users = {
     userA: {
         email: 'user.a@default-org.test',
-        password: 'TestPassword123!',
+        password: pwA,
         full_name: 'Mario Rossi',
         role: 'auditor'
     },
     userB: {
         email: 'user.b@test-org-b.test',
-        password: 'TestPassword456!',
+        password: pwB,
         full_name: 'Luigi Bianchi',
         role: 'auditor'
     }

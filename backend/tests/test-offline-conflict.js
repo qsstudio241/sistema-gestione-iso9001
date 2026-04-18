@@ -21,6 +21,12 @@
 
 const API_BASE = 'http://localhost:10443/api/v1';
 
+const syncPassword = process.env.SGQ_TEST_OFFLINE_SYNC_PASSWORD;
+if (!syncPassword) {
+    console.error('Imposta SGQ_TEST_OFFLINE_SYNC_PASSWORD (password utenti di test sync, non in repository).');
+    process.exit(1);
+}
+
 // Test data
 let tokenA, tokenB;
 let userA, userB;
@@ -30,14 +36,14 @@ let initialUpdatedAt;
 const users = {
     userA: {
         email: 'sync.user.a@test.local',
-        password: 'TestSync123!',
+        password: syncPassword,
         full_name: 'Sync User A',
         role: 'auditor',
         organization_id: 1
     },
     userB: {
         email: 'sync.user.b@test.local',
-        password: 'TestSync123!',
+        password: syncPassword,
         full_name: 'Sync User B',
         role: 'auditor',
         organization_id: 1 // STESSA organizzazione
