@@ -105,10 +105,11 @@ export function testAuditUtils() {
     });
 
     tests.push({
-        name: 'isValidAuditNumber - valida formato',
+        name: 'isValidAuditNumber - valida formato legacy e Mason',
         test: () => {
             return isValidAuditNumber('2025-01') &&
                 isValidAuditNumber('2024-99') &&
+                isValidAuditNumber('MSN-260418-01') &&
                 !isValidAuditNumber('2025-1') &&
                 !isValidAuditNumber('25-01') &&
                 !isValidAuditNumber('invalid');

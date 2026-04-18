@@ -101,7 +101,12 @@ function buildTemplateData(audit) {
     const obj     = meta.auditObjective  || {};
     const outcome = meta.auditOutcome    || {};
     const m       = calculateMetrics(audit.checklist);
-    const seq     = (meta.auditNumber || '').split('-')[1] || '01';
+    // Mason: PREFISSO-YYMMDD-NN → usare NN (ultimo segmento); legacy YYYY-NN → stesso
+    const numRaw = (meta.auditNumber || '').trim();
+    const seq =
+        numRaw.includes('-')
+            ? numRaw.split('-').pop() || '01'
+            : '01';
 
     const isAuditorPlaceholder = (v) => {
         const t = String(v || '').trim().toLowerCase();

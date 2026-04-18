@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
-import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
+import { sortAuditsByNumber } from "../utils/auditUtils";
 import apiService from "../services/apiService";
 import "./AuditSelector.css";
 
@@ -227,14 +227,12 @@ function AuditSelector() {
 
 function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }) {
   const { user } = useAuth();
-  const currentYear = new Date().getFullYear();
   // Standard visibili in base a user_standards: se allowed_standard_ids presente, solo quelli
   const standardsForUser = !user?.allowed_standard_ids
     ? AVAILABLE_STANDARDS
     : user.allowed_standard_ids.length === 0
       ? []
       : AVAILABLE_STANDARDS.filter((s) => user.allowed_standard_ids.includes(s.standardId));
-  const nextNumber = getNextAuditNumber(audits, currentYear);
 
   // Pre-popola clientName, companyId, tipologia e fornitore se re-audit
   const initialClientName = isReaudit && currentAudit 
@@ -251,7 +249,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     : "";
 
   const [formData, setFormData] = useState({
-    auditNumber: nextNumber,
+    auditNumber: "",
     clientName: initialClientName,
     companyId: initialCompanyId,
     auditPartyType: initialPartyType,
@@ -503,10 +501,13 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
               name="auditNumber"
               value={formData.auditNumber}
               onChange={handleChange}
-              disabled
+              placeholder="Es. MSN-260418-01 (assegnato dal server alla sincronizzazione)"
+              readOnly
               className="form-control"
             />
-            <small className="form-hint">Generato automaticamente</small>
+            <small className="form-hint">
+              Numerazione Mason (PREFISSO-YYMMDD-NN) assegnata dal server al primo salvataggio online
+            </small>
           </div>
 
           <div className="form-group">

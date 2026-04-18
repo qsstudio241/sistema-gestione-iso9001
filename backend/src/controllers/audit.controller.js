@@ -797,12 +797,12 @@ async function upsertAudit(req, res) {
             ? standard_ids.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0)
             : (bodyHasStandardField ? [parseInt(standard_id) || 1] : []);
 
-        // Validazione campi obbligatori
-        if (!audit_uuid || !audit_number || !client_name) {
+        // Validazione campi obbligatori (audit_number in creazione: server-wins — vedi INSERT sotto)
+        if (!audit_uuid || !client_name) {
             return res.status(400).json({
                 error: 'Campi obbligatori mancanti',
                 code: 'VALIDATION_ERROR',
-                required: ['audit_uuid', 'audit_number', 'client_name']
+                required: ['audit_uuid', 'client_name']
             });
         }
 
@@ -1006,6 +1006,26 @@ async function upsertAudit(req, res) {
                 ? standardIdsToSync[0]
                 : (hasCustomChecklist ? null : 1);
 
+            // Server-wins (D5): numero report Mason generato lato server — ignora audit_number client/sync
+            let effective_audit_number = audit_number;
+            const maxAllocAttempts = 5;
+            for (let attempt = 0; attempt < maxAllocAttempts; attempt++) {
+                effective_audit_number = await allocateAuditReportNumber(organization_id);
+                const dupIns = await query(`
+      SELECT audit_id FROM audits
+      WHERE audit_number = @audit_number
+        AND organization_id = @organization_id
+        AND is_deleted = 0
+    `, { audit_number: effective_audit_number, organization_id });
+                if (dupIns.recordset.length === 0) break;
+                if (attempt === maxAllocAttempts - 1) {
+                    return res.status(409).json({
+                        error: 'Impossibile assegnare un numero audit univoco',
+                        code: 'AUDIT_NUMBER_ALLOCATION_FAILED'
+                    });
+                }
+            }
+
             // Usiamo table variable per OUTPUT (compatibilità trigger SQL Server)
             const result = await query(`
         DECLARE @out TABLE (audit_id INT, audit_uuid UNIQUEIDENTIFIER, updated_at DATETIME2);
@@ -1063,7 +1083,7 @@ async function upsertAudit(req, res) {
         SELECT audit_id, audit_uuid, updated_at FROM @out;
       `, {
                 audit_uuid: auditUuidStr,
-                audit_number,
+                audit_number: effective_audit_number,
                 client_name,
                 company_id: company_id || null,
                 project_year: project_year || new Date().getFullYear(),
@@ -1102,6 +1122,7 @@ async function upsertAudit(req, res) {
             return res.status(201).json({
                 audit_id: newAudit.audit_id,
                 audit_uuid: newAudit.audit_uuid,
+                audit_number: effective_audit_number,
                 action: 'created',
                 updated_at: newAudit.updated_at,
                 message: 'Audit creato con successo'

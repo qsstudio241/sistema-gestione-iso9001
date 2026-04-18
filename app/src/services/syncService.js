@@ -380,10 +380,14 @@ export class SyncService {
             // Aggiorna sync_metadata
             if (responseData.action === 'created') {
                 await this.updateSyncMetadataLocal('audit', auditUuid, responseData.audit_id);
-                // Notifica StorageContext del nuovo auditId numerico DB
+                // Notifica StorageContext del nuovo auditId numerico DB e del numero Mason server-side (D5)
                 if (responseData.audit_id) {
                     window.dispatchEvent(new CustomEvent('sgq:auditIdAssigned', {
-                        detail: { uuid: auditUuid, auditId: responseData.audit_id }
+                        detail: {
+                            uuid: auditUuid,
+                            auditId: responseData.audit_id,
+                            auditNumber: responseData.audit_number || null,
+                        }
                     }));
                 }
             }

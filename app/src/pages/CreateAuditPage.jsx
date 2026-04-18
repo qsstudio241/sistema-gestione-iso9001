@@ -10,7 +10,7 @@ import apiService from '../services/apiService';
 import './CreateAuditPage.css';
 
 function CreateAuditPage({ onCancel, onSuccess }) {
-    const { createNewAudit, loadAuditsFromAPI } = useStorage();
+    const { loadAuditsFromAPI } = useStorage();
     
     const [standards, setStandards] = useState([]);
     const [formData, setFormData] = useState({
@@ -20,7 +20,6 @@ function CreateAuditPage({ onCancel, onSuccess }) {
         standard_ids: [1], // Default ISO 9001
         auditor_name: '',
         project_year: new Date().getFullYear(),
-        audit_number: '', // Auto-generato
         notes: ''
     });
     
@@ -89,11 +88,15 @@ function CreateAuditPage({ onCancel, onSuccess }) {
         setError(null);
 
         try {
-            // audit_number assegnato dal server (formato PREFISSO-YYMMDD-NN, vedi organizations.audit_report_prefix)
-            const { audit_number: _omitClientNumber, ...formWithoutNumber } = formData;
+            // audit_number: solo server (Mason PREFISSO-YYMMDD-NN, organizations.audit_report_prefix)
             const payload = {
-                ...formWithoutNumber,
-                standard_ids: formData.standard_ids // Array per multi-standard
+                client_name: formData.client_name,
+                audit_date: formData.audit_date,
+                audit_type: formData.audit_type,
+                standard_ids: formData.standard_ids,
+                auditor_name: formData.auditor_name,
+                project_year: formData.project_year,
+                notes: formData.notes
             };
 
             console.log('[CreateAudit] Payload:', payload);
@@ -213,19 +216,12 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                         </div>
                     </div>
 
+                    <p className="form-hint" style={{ margin: "0 0 12px 0" }}>
+                        <strong>Numero rapporto (Mason):</strong> assegnato dal server al salvataggio
+                        (formato PREFISSO-YYMMDD-NN, es. MSN-260418-01). Prefisso organizzazione: colonna
+                        organizations.audit_report_prefix (default MSN).
+                    </p>
                     <div className="form-row">
-                        <div className="form-group">
-                            <label>Numero Audit</label>
-                            <input
-                                type="text"
-                                value={formData.audit_number}
-                                onChange={(e) => setFormData({ ...formData, audit_number: e.target.value })}
-                                placeholder="Lascia vuoto per auto-generare (AUD-2026-XXXX)"
-                                disabled={loading}
-                            />
-                            <small className="form-hint">Opzionale - Generato automaticamente se lasciato vuoto</small>
-                        </div>
-
                         <div className="form-group">
                             <label>Anno Progetto</label>
                             <input

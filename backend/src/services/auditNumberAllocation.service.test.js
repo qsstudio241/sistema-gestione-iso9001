@@ -2,7 +2,8 @@ const {
   sanitizePrefix,
   formatAuditNumber,
   getRomeCalendarParts,
-} = require('./auditNumberAllocation.service');
+  MASON_AUDIT_NUMBER_RE,
+} = require('./auditNumberAllocation.core');
 
 describe('auditNumberAllocation helpers', () => {
   test('sanitizePrefix default e pulizia', () => {
@@ -23,5 +24,10 @@ describe('auditNumberAllocation helpers', () => {
     const p = getRomeCalendarParts(new Date('2026-04-17T12:00:00Z'));
     expect(p.sqlDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(p.yymmdd).toMatch(/^\d{6}$/);
+  });
+
+  test('MASON_AUDIT_NUMBER_RE accetta formato task', () => {
+    expect(MASON_AUDIT_NUMBER_RE.test('MSN-260417-01')).toBe(true);
+    expect(MASON_AUDIT_NUMBER_RE.test('AUD-2026-01')).toBe(false);
   });
 });

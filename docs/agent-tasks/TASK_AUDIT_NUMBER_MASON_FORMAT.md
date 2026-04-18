@@ -229,3 +229,8 @@ Esegui localmente i comandi nella sezione “Verifica pre-merge obbligatoria” 
 ---
 
 *Task preparato per delega desktop → web. Aggiornare la sezione “Decisioni” quando il product owner conferma i valori definitivi.*
+
+### Nota sync offline (D5 / implementazione)
+
+- Audit creati in app (IndexedDB) e sincronizzati con `POST /audits/sync`: il primo **INSERT** ignora il numero locale e usa quello generato dal server; la risposta `201` espone `audit_number` e l’evento `sgq:auditIdAssigned` aggiorna `metadata.auditNumber` nel client.
+- In coda sync può comparire un placeholder (`PENDING-SERVER`) solo per superare la validazione della queue finché non parte la richiesta; il valore definitivo è sempre quello in risposta API.

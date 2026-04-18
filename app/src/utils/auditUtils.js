@@ -130,8 +130,8 @@ export function calculateNCStats(nonConformities) {
 // ============================================
 
 /**
- * Estrae anno da numero audit (formato: YYYY-NN)
- * @param {string} auditNumber - Numero audit (es. "2025-01")
+ * Estrae anno da numero audit (legacy YYYY-NN o Mason PREFISSO-YYMMDD-NN)
+ * @param {string} auditNumber - Numero audit
  * @returns {number|null} Anno o null se formato non valido
  */
 export function extractYearFromAuditNumber(auditNumber) {
@@ -139,13 +139,20 @@ export function extractYearFromAuditNumber(auditNumber) {
         return null;
     }
 
-    const match = auditNumber.match(/^(\d{4})-\d+$/);
-    return match ? parseInt(match[1], 10) : null;
+    const legacy = auditNumber.match(/^(\d{4})-\d+$/);
+    if (legacy) return parseInt(legacy[1], 10);
+
+    const mason = auditNumber.match(/^[A-Z0-9]+-(\d{2})(\d{2})(\d{2})-\d{2}$/);
+    if (mason) {
+        const yy = parseInt(mason[1], 10);
+        return 2000 + yy;
+    }
+    return null;
 }
 
 /**
- * Estrae progressivo da numero audit (formato: YYYY-NN)
- * @param {string} auditNumber - Numero audit (es. "2025-01")
+ * Estrae progressivo da numero audit (legacy YYYY-NN o Mason …-NN)
+ * @param {string} auditNumber - Numero audit
  * @returns {number|null} Progressivo o null se formato non valido
  */
 export function extractProgressiveFromAuditNumber(auditNumber) {
@@ -153,8 +160,12 @@ export function extractProgressiveFromAuditNumber(auditNumber) {
         return null;
     }
 
-    const match = auditNumber.match(/^\d{4}-(\d+)$/);
-    return match ? parseInt(match[1], 10) : null;
+    const legacy = auditNumber.match(/^\d{4}-(\d+)$/);
+    if (legacy) return parseInt(legacy[1], 10);
+
+    const mason = auditNumber.match(/^[A-Z0-9]+-\d{6}-(\d{2})$/);
+    if (mason) return parseInt(mason[1], 10);
+    return null;
 }
 
 /**
@@ -168,8 +179,8 @@ export function getNextAuditNumber(audits, year = new Date().getFullYear()) {
         return `${year}-01`;
     }
 
-    // Filtra audit dello stesso anno
-    const sameYearAudits = audits.filter(audit => {
+    // Filtra audit dello stesso anno (legacy YYYY-NN o Mason YY in …-YYMMDD-NN)
+    const sameYearAudits = audits.filter((audit) => {
         const auditYear = extractYearFromAuditNumber(audit.metadata?.auditNumber);
         return auditYear === year;
     });
@@ -178,7 +189,7 @@ export function getNextAuditNumber(audits, year = new Date().getFullYear()) {
         return `${year}-01`;
     }
 
-    // Trova progressivo massimo
+    // Trova progressivo massimo (solo legacy ha progressivo annuale significativo)
     const maxProgressive = sameYearAudits.reduce((max, audit) => {
         const progressive = extractProgressiveFromAuditNumber(audit.metadata?.auditNumber);
         return progressive !== null && progressive > max ? progressive : max;
@@ -198,7 +209,9 @@ export function isValidAuditNumber(auditNumber) {
         return false;
     }
 
-    return /^\d{4}-\d{2}$/.test(auditNumber);
+    const s = auditNumber.trim();
+    if (/^\d{4}-\d{2}$/.test(s)) return true;
+    return /^[A-Z0-9]+-\d{6}-\d{2}$/.test(s);
 }
 
 // ============================================

@@ -1254,9 +1254,14 @@ export function StorageProvider({ children, useMockData = false }) {
       // Enqueue sync se online — payload PIATTO (validateAuditPayload richiede audit_uuid, audit_number, client_name al root)
       if (navigator.onLine) {
         const m = newAudit.metadata;
+        // Placeholder: il server assegna Mason in POST /audits/sync (D5 server-wins)
+        const auditNumberForSync =
+          m.auditNumber && String(m.auditNumber).trim()
+            ? m.auditNumber
+            : "PENDING-SERVER";
         syncService.enqueue("create_audit", {
           audit_uuid:       m.id,
-          audit_number:     m.auditNumber,
+          audit_number:     auditNumberForSync,
           client_name:      m.clientName,
           company_id:       m.companyId ?? null,
           audit_party_type: m.auditPartyType || 'first_party',
@@ -1672,15 +1677,32 @@ export function StorageProvider({ children, useMockData = false }) {
   // Emesso da syncService.js dopo il primo upsert riuscito
   useEffect(() => {
     const handleAuditIdAssigned = (e) => {
-      const { uuid, auditId } = e.detail || {};
+      const { uuid, auditId, auditNumber } = e.detail || {};
       if (!uuid || !auditId) return;
       setAudits((prev) =>
         prev.map((a) => {
           const id = a.metadata?.id || a.id;
           if (id !== uuid) return a;
-          if (a.metadata?.auditId === auditId) return a; // già aggiornato
-          console.log(`[StorageContext] auditId numerico assegnato: ${uuid} → ${auditId}`);
-          return { ...a, metadata: { ...a.metadata, auditId } };
+          const sameId = a.metadata?.auditId === auditId;
+          const sameNum =
+            auditNumber == null ||
+            !String(auditNumber).trim() ||
+            a.metadata?.auditNumber === auditNumber;
+          if (sameId && sameNum) return a;
+          console.log(
+            `[StorageContext] audit server: ${uuid} → id ${auditId}` +
+              (auditNumber ? `, numero ${auditNumber}` : "")
+          );
+          return {
+            ...a,
+            metadata: {
+              ...a.metadata,
+              auditId,
+              ...(auditNumber != null && String(auditNumber).trim()
+                ? { auditNumber: String(auditNumber).trim() }
+                : {}),
+            },
+          };
         })
       );
     };
