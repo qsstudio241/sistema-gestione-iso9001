@@ -6,6 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
+const { studioScopeClause } = require('../services/auditListRbac.service');
 
 /**
  * POST /api/v1/sync/audits
@@ -21,6 +22,7 @@ async function syncAudits(req, res) {
         const { audits, lastSyncTimestamp } = req.body;
         const userId = req.user.user_id;
         const organizationId = req.user.organization_id;
+        const syncUser = req.user;
 
         if (!audits || !Array.isArray(audits)) {
             return res.status(400).json({
@@ -89,19 +91,26 @@ async function syncAudits(req, res) {
         // Ottieni audit modificati sul server dopo lastSyncTimestamp
         let serverChanges = [];
         if (lastSyncTimestamp) {
+            const scope = studioScopeClause(syncUser, 'audits');
+            let wherePart = `organization_id = @organization_id
+          AND updated_at > @last_sync
+          AND is_deleted = 0`;
+            const qParams = {
+                organization_id: organizationId,
+                last_sync: new Date(lastSyncTimestamp),
+            };
+            if (scope.clause) {
+                wherePart += ` AND ${scope.clause}`;
+                Object.assign(qParams, scope.params);
+            }
             const changesResult = await query(`
         SELECT 
           audit_id, audit_uuid, audit_number, client_name,
           audit_date, status, updated_at
         FROM audits
-        WHERE organization_id = @organization_id
-          AND updated_at > @last_sync
-          AND is_deleted = 0
+        WHERE ${wherePart}
         ORDER BY updated_at DESC
-      `, {
-                organization_id: organizationId,
-                last_sync: new Date(lastSyncTimestamp)
-            });
+      `, qParams);
 
             serverChanges = changesResult.recordset;
         }

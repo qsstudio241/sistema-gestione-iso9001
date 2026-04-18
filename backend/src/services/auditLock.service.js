@@ -6,6 +6,7 @@
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { studioScopeClause } = require('./auditListRbac.service');
 
 const TTL_MINUTES = parseInt(process.env.AUDIT_LOCK_TTL_MINUTES || '15', 10);
 
@@ -37,23 +38,14 @@ async function purgeExpiredLocks() {
  * @returns {Promise<{ audit_id: number, audit_uuid: string } | null>}
  */
 async function resolveAuditForUser(reqUser, auditRef) {
-    const { organization_id, user_id, role, auditor_org_id } = reqUser;
-    const isSuperadmin = role === 'admin' && !auditor_org_id;
+    const { organization_id } = reqUser;
     const ref = auditRef != null ? String(auditRef).trim() : '';
 
     if (!ref) return null;
 
-    let rbacSql = '';
-    const params = { organization_id, audit_ref: ref };
-
-    if (!isSuperadmin && auditor_org_id) {
-        rbacSql = ` AND (
-            a.company_id IN (SELECT id FROM companies WHERE auditor_org_id = @auditor_org_id)
-            OR (a.company_id IS NULL AND a.created_by = @user_id)
-        )`;
-        params.auditor_org_id = auditor_org_id;
-        params.user_id = user_id;
-    }
+    const scope = studioScopeClause(reqUser, 'a');
+    const rbacSql = scope.clause ? ` AND ${scope.clause}` : '';
+    const params = { organization_id, audit_ref: ref, ...scope.params };
 
     const result = await query(`
         SELECT a.audit_id, CAST(a.audit_uuid AS NVARCHAR(36)) AS audit_uuid

@@ -100,6 +100,8 @@ Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
 
 # Services richiesti dai controller (evita crash MODULE_NOT_FOUND su VPS)
 Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"
+Copy-FileToVps "src/services/auditListRbac.service.js" "$RemoteBase/src/services/auditListRbac.service.js"
+Copy-FileToVps "src/services/auditLock.service.js" "$RemoteBase/src/services/auditLock.service.js"
 Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/services/auditNumberAllocation.service.js"
 Copy-FileToVps "src/services/customChecklist.service.js" "$RemoteBase/src/services/customChecklist.service.js"
 Copy-FileToVps "src/services/reportTemplate.service.js" "$RemoteBase/src/services/reportTemplate.service.js"

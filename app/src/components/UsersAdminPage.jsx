@@ -17,7 +17,9 @@ const STANDARDS_LIST = [
 ];
 
 function userIsActive(u) {
-  return u.is_active === 1 || u.is_active === true;
+  if (!u) return false;
+  const v = u.is_active;
+  return v === true || v === 1 || v === "1" || v === "true";
 }
 
 function emptyEditForm(u) {
@@ -297,6 +299,9 @@ export default function UsersAdminPage({ onBack }) {
           Assegna gli standard ISO che ogni utente può usare negli audit. Nessuna
           assegnazione = tutti gli standard. Puoi creare utenti, collegarli a uno
           studio (auditor org), aggiornare ruolo e password, disattivare account.
+          Gli auditor e i viewer <strong>senza studio</strong> vedono in elenco solo gli
+          audit da loro creati, finché non assegni uno studio (evita vedere dati di altri
+          studi). L&apos;account si disattiva, non si elimina, per tracciabilità ISO.
         </p>
         <div className="users-admin-actions">
           {onBack && (
@@ -554,36 +559,40 @@ export default function UsersAdminPage({ onBack }) {
                   )}
                 </div>
 
-                <div className="user-standards-section">
-                  <span className="standards-label">Standard consentiti</span>
-                  <div className="standards-checkboxes">
-                    {STANDARDS_LIST.map((std) => {
-                      const effective = getEffectiveStandards(u);
-                      const checked = effective.includes(std.standard_id);
-                      return (
-                        <label key={std.standard_id} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={!active}
-                            onChange={() => toggleStandard(u.user_id, std.standard_id)}
-                          />
-                          <span>{std.label}</span>
-                        </label>
-                      );
-                    })}
+                <details className="user-standards-details">
+                  <summary className="standards-summary">
+                    Standard consentiti (clic per aprire o chiudere)
+                  </summary>
+                  <div className="user-standards-section-inner">
+                    <div className="standards-checkboxes">
+                      {STANDARDS_LIST.map((std) => {
+                        const effective = getEffectiveStandards(u);
+                        const checked = effective.includes(std.standard_id);
+                        return (
+                          <label key={std.standard_id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!active}
+                              onChange={() => toggleStandard(u.user_id, std.standard_id)}
+                            />
+                            <span>{std.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {dirty[u.user_id] && (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-save-standards"
+                        disabled={savingId === u.user_id || !active}
+                        onClick={() => saveUserStandards(u)}
+                      >
+                        {savingId === u.user_id ? "Salvataggio..." : "Salva standard"}
+                      </button>
+                    )}
                   </div>
-                  {dirty[u.user_id] && (
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-save-standards"
-                      disabled={savingId === u.user_id || !active}
-                      onClick={() => saveUserStandards(u)}
-                    >
-                      {savingId === u.user_id ? "Salvataggio..." : "Salva standard"}
-                    </button>
-                  )}
-                </div>
+                </details>
               </div>
             );
           })}

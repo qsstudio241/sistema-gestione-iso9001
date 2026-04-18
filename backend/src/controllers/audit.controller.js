@@ -9,6 +9,7 @@ const { hardDeleteAudit } = require('../services/auditMaintenance.service');
 const { getAllowedStandardIds } = require('./auth.controller');
 const { assertWriteAllowed, getLockTokenFromRequest } = require('../services/auditLock.service');
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
+const { studioScopeClause } = require('../services/auditListRbac.service');
 
 /**
  * GET /api/v1/audits
@@ -23,9 +24,6 @@ const { allocateAuditReportNumber } = require('../services/auditNumberAllocation
  */
 async function listAudits(req, res) {
     try {
-        const { organization_id, auditor_org_id, role } = req.user;
-        const isSuperadmin = role === 'admin' && !auditor_org_id;
-
         const {
             status,
             year,
@@ -40,15 +38,10 @@ async function listAudits(req, res) {
         let whereConditions = ['a.organization_id = @organization_id', 'a.is_deleted = 0'];
         let params = { organization_id, limit: parseInt(limit), offset };
 
-        // Filtro RBAC: auditor vede solo audit delle aziende del proprio studio o propri audit senza company
-        if (!isSuperadmin && auditor_org_id) {
-            const { user_id } = req.user;
-            whereConditions.push(`(
-                a.company_id IN (SELECT id FROM companies WHERE auditor_org_id = @auditor_org_id)
-                OR (a.company_id IS NULL AND a.created_by = @user_id)
-            )`);
-            params.auditor_org_id = auditor_org_id;
-            params.user_id = user_id;
+        const scope = studioScopeClause(req.user, 'a');
+        if (scope.clause) {
+            whereConditions.push(scope.clause);
+            Object.assign(params, scope.params);
         }
 
         if (status) {
@@ -158,17 +151,9 @@ async function listAudits(req, res) {
 async function getAuditById(req, res) {
     try {
         const { id } = req.params;
-        const { organization_id, auditor_org_id, role } = req.user;
-        const isSuperadmin = role === 'admin' && !auditor_org_id;
-
-        let whereExtra = '';
-        const params = { id: parseInt(id), organization_id };
-        if (!isSuperadmin && auditor_org_id) {
-            const { user_id } = req.user;
-            whereExtra = ' AND (a.company_id IN (SELECT id FROM companies WHERE auditor_org_id = @auditor_org_id) OR (a.company_id IS NULL AND a.created_by = @user_id))';
-            params.auditor_org_id = auditor_org_id;
-            params.user_id = user_id;
-        }
+        const scope = studioScopeClause(req.user, 'a');
+        let whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
+        const params = { id: parseInt(id), organization_id, ...scope.params };
 
         const result = await query(`
       SELECT 
