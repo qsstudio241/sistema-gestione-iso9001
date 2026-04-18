@@ -104,6 +104,14 @@ Se il dropdown è ancora vuoto **e** l’API risponde 200 con array vuoto: verif
 
 ---
 
+## Nota (chiarezza vs sicurezza)
+
+- La **riscrittura** di questo brief per renderlo più leggibile **non** era motivata da una vulnerabilità introdotta in questi task: serviva a struttura e tabellare i passi.
+- Il file opzionale **`backend/config/.putty-session.local`** contiene solo il **nome** della sessione PuTTY (etichetta in PuTTY), **non** la password SSH, ed è in `.gitignore`.
+- **Non** si inseriscono in repository password SSH, token o segreti per consentire deploy “in autonomia” all’agente: restano su vault / macchina committente (sessione PuTTY, Pageant, variabili d’ambiente). Se in passato sono finite password in chiaro in `docs/archive/` o in commit, **ruotare** le credenziali coinvolte; la storia Git può ancora contenerle fino a un eventuale rewrite esplicito della history.
+
+---
+
 ## Riferimenti
 
 - `docs/ARCHITETTURA_UTENTI_RBAC.md`

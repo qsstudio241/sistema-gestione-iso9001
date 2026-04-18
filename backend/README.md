@@ -394,7 +394,7 @@ curl -k -X POST https://www.fr-busato.it:8443/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@qsstudio.it",
-    "password": "Test123!",
+    "password": "<password-di-test>",
     "full_name": "Test User",
     "role": "auditor"
   }'
@@ -407,7 +407,7 @@ curl -k -X POST https://www.fr-busato.it:8443/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@qsstudio.it",
-    "password": "Test123!"
+    "password": "<password-di-test>"
   }'
 ```
 

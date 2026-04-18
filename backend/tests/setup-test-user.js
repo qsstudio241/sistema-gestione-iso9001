@@ -23,9 +23,12 @@ async function setupTestUser() {
             console.log('⚠️  Nessun utente trovato nel database\n');
         }
 
-        // Credenziali test user
         const testEmail = 'test@sgq.local';
-        const testPassword = 'Test123!';
+        const testPassword = process.env.SGQ_TEST_USER_PASSWORD;
+        if (!testPassword) {
+            console.error('Imposta SGQ_TEST_USER_PASSWORD (password utente di test, non in repository).');
+            process.exit(1);
+        }
         const testName = 'Test User';
 
         // Verifica se esiste già

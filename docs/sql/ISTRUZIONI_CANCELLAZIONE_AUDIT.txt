@@ -64,7 +64,7 @@ FASE 4 — RIMOZIONE FILE FISICI ALLEGATI (se presenti)
     Aprire un terminale PowerShell e digitare:
 
     ssh spascarella@www.fr-busato.it -p 1122
-    password: Sistemi@2026
+    (password SSH: solo da vault / amministratore — non documentare in repository)
 
 12. Per ogni storage_path elencato in FASE 2, eseguire:
 

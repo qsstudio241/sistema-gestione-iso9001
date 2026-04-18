@@ -12,7 +12,7 @@
 |---|---|
 | URL app | `https://systemgest.netlify.app` |
 | Backend API | `https://www.fr-busato.it:8443/api/v1` |
-| Credenziali | `admin@sgq.local` / `Admin123!` (da `PROJECT_CONTEXT.md`) |
+| Credenziali | Email di test da `PROJECT_CONTEXT.md`; password solo da vault (mai in repo) |
 
 ---
 

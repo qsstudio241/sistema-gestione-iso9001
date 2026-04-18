@@ -167,7 +167,7 @@ Leggi il file docs/agent-tasks/TEST_SPRINT2B_file_allegati.md
 Sei l'agente di test incaricato di eseguire i test funzionali E2E Sprint 2B
 del progetto Sistema Gestione ISO 9001.
 
-Usa le credenziali in PROJECT_CONTEXT.md (admin@sgq.local / Admin123!).
+Usa le credenziali dal vault / amministratore (email in `PROJECT_CONTEXT.md`; nessuna password in repository).
 Apri il browser su https://systemgest.netlify.app.
 Esegui ogni scenario nell'ordine indicato con screenshot PASS/FAIL.
 Crea docs/agent-tasks/REPORT_TEST_SPRINT2B_file_allegati.md con i risultati.

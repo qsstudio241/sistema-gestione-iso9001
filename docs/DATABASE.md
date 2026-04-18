@@ -23,7 +23,7 @@
 
 **VPS / clone con `git pull`:** se sul server esisteva già `config/database.json` proveniente solo dal repository, un `git pull` che smette di versionare quel file può **rimuoverlo** dalla working tree. Prima del pull: **`cp config/database.json /tmp/database.json.bak`** (o equivalente), poi ripristina o rigenera da `database.json.example`.
 
-Script di utilità: **`NEW_ADMIN_PASSWORD`** per `reset-admin-password.js`; **`SGQ_TEST_ADMIN_PASSWORD`** per gli script di verifica API (`verify-fase1.js`, `verify-audit-2026-02.js`) — mai in repository.
+Script di utilità (tutte **mai** in repository): **`NEW_ADMIN_PASSWORD`** (`reset-admin-password.js`); **`SGQ_TEST_ADMIN_PASSWORD`** (`verify-fase1.js`, `verify-audit-2026-02.js`, `test-patch-api.js`, `test-api.sh`); **`SGQ_TEST_USER_PASSWORD`** (`backend/tests/setup-test-user.js`); **`SGQ_TEST_REGISTER_PASSWORD`** (`backend/tests/test-server-connection.js`).
 
 ### Accesso interattivo da terminale
 

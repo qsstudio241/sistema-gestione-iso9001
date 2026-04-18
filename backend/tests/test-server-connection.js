@@ -9,12 +9,17 @@ async function testConnection() {
         console.log('🔍 Test connessione al server...\n');
         console.log(`   URL: ${API_BASE}/health (o qualsiasi endpoint)\n`);
 
+        const pwd = process.env.SGQ_TEST_REGISTER_PASSWORD;
+        if (!pwd) {
+            console.error('Imposta SGQ_TEST_REGISTER_PASSWORD (password solo per test locale, non in repository).');
+            process.exit(1);
+        }
         const resp = await fetch(`${API_BASE}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: 'test@test.com',
-                password: 'Test123!',
+                password: pwd,
                 full_name: 'Test User',
                 role: 'auditor',
                 organization_id: 1

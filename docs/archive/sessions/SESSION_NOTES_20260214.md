@@ -80,7 +80,7 @@ FROM audits ORDER BY audit_id;
 Host: www.fr-busato.it
 SSH Port: 1122 (NON 22!)
 Username: spascarella
-Password: Sistemi@2026
+Password SSH: solo da vault (valore storico rimosso dal repository)
 Backend Path: /var/www/sgq-backend/
 ```
 
@@ -312,7 +312,7 @@ Dropdown: ✅ 3 audit corretti
 ssh spascarella@www.fr-busato.it -p 1122
 
 # Password
-Sistemi@2026
+[SSH password — solo vault, non in repo]
 
 # Directories
 Backend: /var/www/sgq-backend/

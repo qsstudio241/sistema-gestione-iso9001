@@ -1,10 +1,19 @@
 #!/bin/bash
 # Test login + PATCH diretto su localhost:3000
+# Richiede: export SGQ_TEST_ADMIN_PASSWORD='...' (mai in repository)
+
+set -euo pipefail
+if [[ -z "${SGQ_TEST_ADMIN_PASSWORD:-}" ]]; then
+  echo "Imposta SGQ_TEST_ADMIN_PASSWORD (password test, non in repo)" >&2
+  exit 1
+fi
 
 echo "1. Login..."
+# shellcheck disable=SC2016
+JSON=$(printf '%s' "{\"username\":\"admin\",\"password\":$(node -e "console.log(JSON.stringify(process.env.SGQ_TEST_ADMIN_PASSWORD))")}")
 RESP=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"Admin@2024!"}')
+  -d "$JSON")
 echo "Risposta login: $RESP"
 
 TOKEN=$(echo "$RESP" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("token","NO_TOKEN"))' 2>/dev/null)

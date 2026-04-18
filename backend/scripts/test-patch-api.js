@@ -37,10 +37,15 @@ function request(method, path, body, token) {
 }
 
 (async () => {
+    const loginPassword = process.env.SGQ_TEST_ADMIN_PASSWORD;
+    if (!loginPassword) {
+        console.error('Imposta SGQ_TEST_ADMIN_PASSWORD (password ambiente di test, non in repository).');
+        process.exit(1);
+    }
     console.log('1. Login...');
     const login = await request('POST', '/api/v1/auth/login', {
         username: 'admin',
-        password: 'Admin@2024!'
+        password: loginPassword
     });
     console.log(`   Status: ${login.status}`);
     if (!login.body.token) {

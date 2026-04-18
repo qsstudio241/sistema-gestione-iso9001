@@ -321,7 +321,7 @@ Il campo `audits.standard_id` è legacy. Gli audit con più norme sono gestiti v
 ## 🔑 Riferimenti tecnici
 
 ```
-Server SSH:   ssh spascarella@www.fr-busato.it -p 1122 / Sistemi@2026
+Server SSH:   ssh spascarella@www.fr-busato.it -p 1122 (password: solo vault, non in repo)
 Backend:      /var/www/sgq-backend/  porta 3000
 API base:     https://www.fr-busato.it:8443/api/v1
 Frontend:     https://systemgest.netlify.app
@@ -333,7 +333,8 @@ Restart backend (3 comandi separati):
   sleep 4 && cat /var/www/sgq-backend/app.log
 
 Upload file:
-  pscp -P 1122 -pw "Sistemi@2026" "localfile" spascarella@www.fr-busato.it:/var/www/sgq-backend/path/
+  # Non usare -pw in documentazione: usare chiave SSH o sessione PuTTY salvata (vedi deploy-controllers-to-vps.ps1)
+  pscp -P 1122 … "localfile" spascarella@www.fr-busato.it:/var/www/sgq-backend/path/
 
 checklist_questions colonne:
   question_id, question_uuid, section_code, question_text,

@@ -40,7 +40,7 @@
 **SSH al server:**
 ```bash
 ssh spascarella@www.fr-busato.it -p 1122
-# Password: Sistemi@2026
+# Password SSH: solo da vault (rimossa da repo — non versionare segreti)
 ```
 
 **Check processo node:**
@@ -481,7 +481,7 @@ git push origin main
 **Browser:** https://systemgest.netlify.app  
 **Login:**
 - Email: `admin@sgq.local`
-- Password: `Admin123!`
+- Password ambiente di test: solo da vault (non in repository)
 
 **Verifica Console (F12):**
 ```
@@ -658,7 +658,7 @@ WHERE ar.audit_id = (SELECT audit_id FROM audits WHERE audit_number = '2026-03')
 
 **Login:**
 - Email: `admin@sgq.local`
-- Password: `Admin123!`
+- Password ambiente di test: solo da vault (non in repository)
 
 **Verifica Console (Eruda 🔧):**
 ```
@@ -1057,7 +1057,7 @@ Prima di chiudere sessione, verifica **TUTTI** questi punti:
 ### SSH Backend
 ```bash
 ssh spascarella@www.fr-busato.it -p 1122
-Password: Sistemi@2026
+Password SSH: solo da vault (non in repository)
 Path: /var/www/sgq-backend/
 ```
 

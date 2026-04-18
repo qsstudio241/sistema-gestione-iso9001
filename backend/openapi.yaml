@@ -74,7 +74,8 @@ paths:
                 password:
                   type: string
                   format: password
-                  example: Admin123!
+                  description: Password utente (mai un valore reale in documentazione)
+                  example: "<password-di-test>"
       responses:
         "200":
           description: Login successo

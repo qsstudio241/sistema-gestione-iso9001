@@ -128,19 +128,22 @@ function Login() {
           </button>
         </form>
 
-        {/* Credenziali demo */}
+        {/* Account di esempio: password solo da amministratore / vault (mai in repository) */}
         <div className="demo-credentials">
-          <p className="demo-title">🧪 Credenziali Demo:</p>
+          <p className="demo-title">🧪 Account di prova (email)</p>
           <div className="credentials-list">
             <div className="credential-item">
               <span className="role-badge admin">Admin</span>
-              <code>admin@sgq.local / Admin123!</code>
+              <code>admin@sgq.local</code>
             </div>
             <div className="credential-item">
               <span className="role-badge auditor">Test</span>
-              <code>test@sgq.local / Test123!</code>
+              <code>test@sgq.local</code>
             </div>
           </div>
+          <p className="demo-hint" style={{ fontSize: '0.85rem', marginTop: '0.5rem', opacity: 0.9 }}>
+            La password dell’ambiente di test non è pubblicata qui: chiedila al referente o usa il vault aziendale.
+          </p>
         </div>
 
         {/* Footer */}
