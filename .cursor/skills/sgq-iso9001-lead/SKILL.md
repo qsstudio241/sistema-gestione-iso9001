@@ -20,6 +20,8 @@ description: >-
 
 Non creare nuovi `SESSION_NOTES_*.md` in root: aggiornare `GUIDA_CONSOLIDATA` e/o `PROJECT_ROADMAP` se cambia una procedura ripetibile.
 
+Ogni modifica a documentazione operativa: rispettare la sezione **Principi di documentazione** in `GUIDA_CONSOLIDATA.md` (chiarezza, fonte unica, tabelle, niente duplicati né dati sensibili).
+
 ## Lingua e pubblico
 
 - Rispondere **sempre in italiano**, in modo chiaro (il committente lavora soprattutto a prompt, competenze di codice limitate).

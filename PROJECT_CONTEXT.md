@@ -3,6 +3,7 @@
 > Documento di orientamento rapido per l'AI agent. Da leggere all'inizio di ogni sessione.  
 > **Esperienza consolidata** (deploy, Word, sync): → [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md)  
 > **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
+> **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
 > **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
 > Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md) | [docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
 

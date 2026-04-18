@@ -25,6 +25,43 @@ Per **non dipendere dalla lettera disco di Google Drive** e mantenere stabile il
 
 ---
 
+## Principi di documentazione (chiarezza e best practice)
+
+> Riferimento incrociato: [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md). Allineamento a pratiche consolidate (*documentation-as-code*, struttura tipo **Diátaxis** — tutorial/how-to/reference dove ha senso). Obiettivo: chi apre un file capisce **scopo**, **pubblico** e **quando aggiornarlo** senza leggere tutto il repository.
+
+### Struttura e leggibilità
+
+1. **Sintesi in cima** (blocco `> …` o paragrafo breve): cosa contiene il documento e per chi è.
+2. **Gerarchia titoli coerente**: `##` per macro-sezioni, `###` per sotto-parti; evitare salti (`#` → `####` senza `##`).
+3. **Paragrafi brevi**; **elenchi numerati** per procedure ordinate; **tabelle** per ambienti, checklist, matrici decisionali.
+4. **Linguaggio operativo** nelle procedure: verbi chiari (*Apri…*, *Esegui…*, *Verifica…*). Alla prima occorrenza di un acronimo o termine di dominio, una riga di definizione o link a sezione/glossario.
+
+### Dove scrivere cosa (fonte unica — evitare duplicati)
+
+| Tipo di informazione | Dove vive |
+|----------------------|-----------|
+| Procedure ripetibili, lezioni da incidenti, smoke manuali, DoD operativi | **Questo file** (`GUIDA_CONSOLIDATA.md`) |
+| Priorità, fasi, backlog, “Prossimo step” macro | `PROJECT_ROADMAP.md` |
+| Stack, repo, flusso deploy ad alto livello | `PROJECT_CONTEXT.md` (root) |
+| Decisione architetturale non ovvia | `docs/adr/ADR-*.md` + link da guida/roadmap |
+| Incarico agente / deputy (scope, branch, DoD) | `docs/agent-tasks/*.md` |
+
+Se una informazione esiste già altrove: **un link + una riga di contesto**, non copincollare paragrafi interi in più file.
+
+### Manutenzione e review (come per il codice)
+
+- **Messaggi di commit** espliciti per doc (`docs: …`, `docs(smoke): …`) così la storia Git è navigabile.
+- **PR**: diff leggibile; per file molto lunghi valutare **indice** (TOC) a inizio documento o sezioni più piccole collegate.
+- **Dopo cambio di comportamento del sistema**: aggiornare nella stessa PR (o subito dopo) la doc che descrive quel flusso — doc obsoleta è peggio di assente.
+
+### Cosa evitare
+
+- Nuovi `SESSION_NOTES_*` per procedure operative (vanno in guida + roadmap).
+- **TODO** senza owner/data in doc “ufficiali”: meglio voce in roadmap o issue tracciata.
+- **Dati sensibili** in markdown versionato (credenziali, URL con segreti, nomi cliente in checklist pubbliche): anonimizzare; stesse regole del codice.
+
+---
+
 ## Piano qualità: fasi di sviluppo e test di robustezza
 
 > Obiettivo: **stessa fonte** per pianificare slice di sviluppo, criteri di chiusura e **prove ripetibili** (automatiche + smoke + hardening). Aggiornare questa sezione quando cambiano moduli critici (auth, licenze, sync, export).

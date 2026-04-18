@@ -19,7 +19,7 @@ alwaysApply: true
 - **Delega Cursor web**: usare file in `docs/agent-tasks/` come unico “brief”; l’esito si ritrova su **Git** (branch/PR). Nessun canale diretto agente↔agente.
 
 ## Principi trasversali (sempre attivi)
-- **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore né duplicati inutili tra file `.md`.
+- **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore né duplicati inutili tra file `.md`. **Chiarezza da best practice**: seguire la sezione *Principi di documentazione* in `docs/GUIDA_CONSOLIDATA.md` (gerarchia titoli, tabelle per checklist, fonte unica per tipo di informazione, link invece di copia, commit/PR con messaggi chiari anche per `.md`).
 - **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
 - **Sicurezza**: segreti **mai** in repository né incollati in chat; preferire `database.json` locale (gitignored), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git può ancora contenere segreti vecchi → **ruotare** se esposti.
 

@@ -1,6 +1,6 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-12.
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-18.
 
 ---
 
@@ -32,6 +32,8 @@
 
 Le **regole operative** e il **workflow deploy** stanno in **PROJECT_CONTEXT.md**.  
 L’**esperienza accumulata** (bug risolti, procedure) va in **`GUIDA_CONSOLIDATA.md`** — non creare nuovi `SESSION_NOTES_YYYYMMDD.md`.
+
+**Chiarezza e best practice sulla documentazione** (struttura, fonte unica, cosa evitare): sezione *Principi di documentazione* in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md).
 
 ---
 
