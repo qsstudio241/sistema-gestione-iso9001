@@ -13,8 +13,9 @@ alwaysApply: true
 - **Dialogo con l’utente**: privilegiare messaggi su **obiettivi**, **requisiti clienti**, **priorità**, **vincoli legali/commerciali**; evitare di usare il turno utente per operazioni ripetitive che l’agente può completare da solo.
 
 ## Approvazione esplicita dell’utente (solo eccezioni)
-- **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo.
+- **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purché non tocchino schema DB produzione, segreti o contratti API senza piano.
 - **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrità dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** può essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
+- **User rules globali in Cursor**: se una regola chat chiede “sempre approvazione prima di ogni modifica”, per **questo repository** prevale questa sezione (`alwaysApply: true`). Per ridurre attriti ripetuti, il committente può **restringere o rimuovere** quella user rule duplicata e lasciare qui la policy vincolante.
 - **Delega Cursor web**: usare file in `docs/agent-tasks/` come unico “brief”; l’esito si ritrova su **Git** (branch/PR). Nessun canale diretto agente↔agente.
 
 ## Principi trasversali (sempre attivi)
@@ -39,6 +40,11 @@ alwaysApply: true
 - Evita `&&` in PowerShell legacy: usa `;` + controllo `$LASTEXITCODE`.
 - Per test frontend imposta sempre `NODE_ENV=test` (evita errori React `act(...)`).
 - Per deploy VPS con PuTTY usa comandi non interattivi (`plink/pscp`) e gestisci `sudo -S` quando necessario.
+
+## Chunking (robustezza, stabilità, scalabilità)
+- Ogni attività spezzata in **slice verticali**: diagnosi → fix **minimo** → test **L1** (Vitest/build in `app/`) e, se il perimetro lo richiede, livelli **L2–L4** descritti in `docs/GUIDA_CONSOLIDATA.md` (*Piano qualità: fasi di sviluppo e test di robustezza* / piramide L1–L5). **Non** mescolare nella stessa consegna migrazioni DB, refactor ampi e smoke manuali senza una tappa intermedia committabile.
+- **Smoke manuali (L3/L4)**: non marcare OK in checklist senza evidenza (data, ambiente, note anonime); separare sempre “copertura L1 in CI / locale” da “esecuzione umana su preview/prod”.
+- **Scalabilità multi-tenant / sync**: nessuna modifica che bypassi `organization_id` / scope noti; preferire pattern già usati in `ARCHITETTURA_UTENTI_RBAC.md` e nei controller esistenti.
 
 ## Qualita e stabilita
 - Dopo modifiche sostanziali: esegui test mirati + suite disponibile.

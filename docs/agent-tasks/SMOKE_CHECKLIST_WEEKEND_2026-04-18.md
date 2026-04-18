@@ -6,15 +6,15 @@
 
 ---
 
-## Esito CI e preview (da compilare dopo apertura PR)
+## Esito CI e preview
 
 | Voce | Valore |
 |------|--------|
-| URL Deploy Preview Netlify | _incollare dopo generazione preview_ |
-| Workflow CI | `.github/workflows/ci-app-pr.yml` |
-| Esito CI (main check) | ☐ OK / ☐ KO |
-| Commit testato (SHA breve) | |
-| Data/ora esecuzione CI | |
+| URL Deploy Preview Netlify | **N/A** per il merge smoke su `main` senza PR dedicata — per smoke punti **1–3** usare il **Deploy Preview** della prossima PR che tocchi `app/**` oppure produzione Netlify, e incollare qui l’URL quando disponibile. |
+| Workflow CI | `.github/workflows/ci-app-pr.yml` (trigger: `pull_request` → `main`, path `app/**`, `docs/agent-tasks/**`, …) |
+| Esito CI (gate PR) | **L1**: verifica locale agente ☑ (tabella sotto). Il workflow GitHub Actions **non** gira su ogni push a `main`; per gate remoto serve una PR o run manuale *workflow_dispatch* se introdotto. |
+| Commit testato (SHA breve) | Lavoro smoke integrato in `main` (es. `22aa96f` checklist + commit successivi fino a merge licenze/aprile 2026). |
+| Data/ora esecuzione CI | Verifica locale documentata **2026-04-18**; CI su PR: vedi run collegati a branch che modificano gli stessi path. |
 
 ### Verifica locale (agente, pre-push)
 
@@ -85,7 +85,11 @@ Eseguire su **preview PR** (o produzione se preferite), stesso flusso export da 
 
 ## Definition of Done (brief)
 
-- [ ] Punti 0–3 eseguiti con esito e evidenza (questo file + descrizione PR).
-- [ ] CI verde sulla PR prima del merge.
-- [ ] Punto 4 esplicitato come N/A (sopra).
-- [ ] Nessun segreto in repository, checklist o PR.
+Stato al **2026-04-18** (chiusura tracciabile post-merge su `main`; smoke umani ancora da compilare quando eseguiti):
+
+- [ ] **Punti 0–3** — smoke **manuali** su produzione (0) e/o preview (1–3): tabella sopra **da compilare** con OK/KO, data, note anonime. *Non spuntare senza aver eseguito i passi.*
+- [x] **L1 (automatico)** — `npm run test:run` + `npm run build` in `app/`: eseguito in workspace pre-merge; vedi tabella «Verifica locale».
+- [x] **Punto 4** — N/A documentato (sopra).
+- [x] **Nessun segreto** in repository / checklist.
+- [x] **Traccia Git** — commit su `main` (branch `chore/weekend-smoke-2026-04-18` integrato senza PR aperta perché già antenato di `main`; branch remoto smoke eliminato dopo merge).
+- [ ] **PR / descrizione** — non applicabile al ramo smoke già fuso; per prossime tornate usare PR subito dopo il primo push (come da procedura deputy) così CI PR + Deploy Preview restano collegati al brief.

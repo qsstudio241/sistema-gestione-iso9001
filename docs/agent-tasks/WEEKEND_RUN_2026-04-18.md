@@ -46,11 +46,10 @@ Ordine consigliato (dalla roadmap):
 
 La sessione si considera **completata** quando:
 
-- [ ] Punti **0–3** della tabella obiettivi sono stati **eseguiti** su ambiente indicato in PR (locale + staging o produzione — specificare quale).
-- [ ] Per ogni punto: **esito** (OK / KO) e **evidenza** breve (screenshot oppure elenco passi + file Word campione **senza** dati sensibili, oppure note su audit di test anonimizzati).
-- [ ] Se ci sono fix codice: **PR** aperta, **CI verde**, descrizione PR in italiano con cause ed effetto.
-- [ ] Se solo verifica senza fix: **PR** di documentazione (es. aggiornamento guida “smoke eseguiti il …”) **oppure** commento strutturato in issue/PR collegata — comunque traccia su Git.
-- [ ] Punto **4** marcato esplicitamente come *N/A*, *in corso in altro branch*, o *completato* (una sola verità).
+- [ ] Punti **0–3** della tabella obiettivi sono stati **eseguiti** su ambiente indicato in PR (locale + staging o produzione — specificare quale). **Stato 2026-04-18**: ancora **aperti** per la parte umana / preview — dettaglio in [`SMOKE_CHECKLIST_WEEKEND_2026-04-18.md`](SMOKE_CHECKLIST_WEEKEND_2026-04-18.md) (tabelle 0–3). L1 locale e test Word in CI: **sì**.
+- [ ] Per ogni punto: **esito** (OK / KO) e **evidenza** breve (screenshot oppure elenco passi + file Word campione **senza** dati sensibili, oppure note su audit di test anonimizzati). *Da completare insieme alla tabella smoke.*
+- [x] **Fix codice / test**: integrati su `main` con commit tracciati; **PR** non aperta per il ramo smoke perché il contenuto era già antenato di `main` (nessun commit da unire) — vedi nota checklist DoD.
+- [x] **Traccia su Git**: checklist + brief + workflow CI path; punto **4** = **N/A** in [`SMOKE_CHECKLIST_WEEKEND_2026-04-18.md`](SMOKE_CHECKLIST_WEEKEND_2026-04-18.md).
 
 ---
 
