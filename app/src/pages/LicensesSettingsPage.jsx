@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import "./LicensesSettingsPage.css";
 
 export default function LicensesSettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [available, setAvailable] = useState([]);
   const [selected, setSelected] = useState(new Set());
   const [useDefaults, setUseDefaults] = useState(true);
@@ -58,10 +58,18 @@ export default function LicensesSettingsPage() {
     try {
       if (useDefaults) {
         await apiService.patchAdminLicenses({ use_defaults: true });
-        setMessage("Ripristinati tutti i moduli (comportamento predefinito). Ricarica la pagina o rifai login per aggiornare i permessi.");
       } else {
         await apiService.patchAdminLicenses({ modules: [...selected] });
-        setMessage("Licenze aggiornate. Ricarica la pagina o rifai login per applicare le modifiche ovunque.");
+      }
+      const updated = await refreshUser();
+      if (updated) {
+        setMessage(
+          "Licenze aggiornate e sessione aggiornata. Gli altri utenti dell’organizzazione vedono i nuovi moduli dopo logout/login o al prossimo refresh token.",
+        );
+      } else {
+        setMessage(
+          "Licenze salvate sul server. Ricarica la pagina o rifai login per aggiornare i permessi in questa sessione.",
+        );
       }
       await load();
     } catch (e) {

@@ -1,10 +1,12 @@
 # Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 12 aprile 2026
-> **Prossimo Step** (sessione successiva): (0) Dopo deploy: smoke lista audit mobile/desktop (stesso utente, >50 audit se possibile). (1) Smoke export Word — **verificatore** e **titoli senza mojibake**. (2) Smoke **NV** / **N.A.** + **`[LOGO]`**. (3) Smoke **pending issues** + riga **AP**. (4) Avvio “Flusso 2” (SAL/Sopralluoghi): definizione schema requisiti+stati + evidenze documentali + import CSV/Excel (senza AI). (5) **Sprint 10**: staging tipizzato post-import (vedi tabella sprint). (6) Introduzione RAG come layer di retrieval (job asincrono) dopo che il document registry è stabile; backlog ADR-006, lock DB, template ISO 45001.
+> **Ultimo Aggiornamento**: 18 aprile 2026
+> **Prossimo Step** (sessione successiva): (0–3) Completare smoke da [`docs/agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md`](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md) (punto 0 manuale produzione; 1–3 preview/deploy). Verificare su **DB produzione** migrazione **040** se non già eseguita (vedi [`GUIDA_CONSOLIDATA.md`](GUIDA_CONSOLIDATA.md)). Poi: (4) Flusso 2 SAL; (5) **Sprint 10** staging post-import **oppure** Fase 0.4 `norm_excerpt` (scegliere una traccia); (6) RAG dopo registry stabile; backlog ISO 45001 / ADR-006.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
+
+> **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
 
 ---
 
@@ -667,8 +669,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ### Sessione A — Sessione utente e licenze “a caldo”
 
-- [ ] Dopo `PATCH /admin/licenses`: aggiornare `user` nel client (`GET /auth/me` o merge risposta) senza richiedere login manuale all’admin che salva.
-- [ ] Valutare propagazione agli altri utenti della stessa org (messaggio “riavvia sessione”, evento, o TTL breve token) — documentare scelta in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md).
+- [x] Dopo `PATCH /admin/licenses`: aggiornare `user` nel client (`GET /auth/me` o merge risposta) senza richiedere login manuale all’admin che salva. *(Implementato: `refreshUser` in `AuthContext` + chiamata da `LicensesSettingsPage` dopo salvataggio — 2026-04-18.)*
+- [x] Valutare propagazione agli altri utenti della stessa org (messaggio “riavvia sessione”, evento, o TTL breve token) — documentare scelta in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md). *(Scelta attuale: niente push real-time; messaggio in UI dopo salvataggio + riga guida tabella A — 2026-04-18.)*
 - [ ] `POST /auth/refresh`: includere snapshot minimo (`licensed_modules`, `allowed_standard_ids`) **oppure** interceptor che chiama `/auth/me` dopo refresh riuscito.
 
 ### Sessione B — Enforcement backend coerente con il prodotto
@@ -681,7 +683,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 - [ ] Centralizzare `hasLicensedModule` (un solo hook o util condiviso da `LicensedRoute` e `AppLayout`).
 - [ ] Bottom nav mobile: nascondere o disabilitare voci verso moduli non licenziati (coerenza con sidebar).
-- [ ] Allineare `AuthContext.isAdmin()` a **admin + superadmin** se il context verrà usato per gating (oggi le pagine usano spesso il check inline).
+- [x] Allineare `AuthContext.isAdmin()` a **admin + superadmin** se il context verrà usato per gating (oggi le pagine usano spesso il check inline). *(2026-04-18: `isAdmin()` include `superadmin`.)*
 
 ### Sessione D — Sicurezza credenziali e identità
 
@@ -703,8 +705,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 16 aprile 2026
-**Prossimo Step**: Sprint 10 (staging tipizzato post-import) oppure Fase 0.4 `norm_excerpt` (vedi tabella fasi). **Parallelamente**: checklist *Licenze moduli, auth e allineamento API/UI* (sessioni A→E) + hardening **RBAC** secondo [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). Nuovo backlog rapido: **Sprint 12 Office Round-trip (PoC)** con mini-spec dedicata.
+**Ultimo Aggiornamento**: 18 aprile 2026
+**Prossimo Step**: allineare piè di roadmap all’header (smoke 0–3 + verifica migrazione **040** su DB prod se necessario). Poi **Sessione A** (resto) / **B–E** licenze+auth, **RBAC**, scelta traccia **Sprint 10** vs **`norm_excerpt`**. **Sprint 12** Office round-trip: task parallelo deputy — [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md).
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (pianificato)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  

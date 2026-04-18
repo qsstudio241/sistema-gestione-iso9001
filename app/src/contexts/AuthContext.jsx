@@ -228,8 +228,28 @@ export function AuthProvider({ children }) {
    * Verifica se è admin
    */
   const isAdmin = useCallback(() => {
-    return user?.role === USER_ROLES.ADMIN;
+    const r = user?.role;
+    return r === USER_ROLES.ADMIN || r === "superadmin";
   }, [user]);
+
+  /**
+   * Ricarica utente da `/auth/me` (es. dopo PATCH licenze) senza rifare login.
+   * Offline: no-op (mantiene cache).
+   */
+  const refreshUser = useCallback(async () => {
+    if (!apiService.getToken() || !navigator.onLine) return null;
+    try {
+      const serverUser = await apiService.checkSession();
+      if (serverUser) {
+        setUser(serverUser);
+        apiService.setStoredUser(serverUser);
+        return serverUser;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   /** Sprint 8: moduli licenziati per organizzazione (assenza lista = tutti abilitati, retrocompatibilità) */
   const hasLicensedModule = useCallback(
@@ -253,6 +273,7 @@ export function AuthProvider({ children }) {
     // Azioni
     login,
     logout,
+    refreshUser,
 
     // Permessi
     hasRole,
