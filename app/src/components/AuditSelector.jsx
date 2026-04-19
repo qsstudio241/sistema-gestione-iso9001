@@ -4,7 +4,7 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
@@ -33,6 +33,7 @@ function AuditSelector() {
     deleteAudit,
     isSaving,
   } = useStorage();
+  const { user } = useAuth();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
@@ -40,6 +41,15 @@ function AuditSelector() {
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
   const sortedAudits = sortAuditsByNumber(validAudits, false);
+
+  /** Impronta elenco audit: forza remount del <select> quando cambia lo scope (anche con stesso conteggio). */
+  const auditsMenuKey = useMemo(() => {
+    return audits
+      .map((a) => String(a?.metadata?.id || a?.id || ""))
+      .filter(Boolean)
+      .sort()
+      .join("|");
+  }, [audits]);
 
   // === HANDLERS ===
 
@@ -109,6 +119,7 @@ function AuditSelector() {
         <div className="audit-selector-controls">
           <select
             id="audit-select"
+            key={`audit-dd-${user?.user_id ?? "x"}-${user?.organization_id ?? "o"}-${user?.auditor_org_id ?? "ao"}-${auditsMenuKey}`}
             value={currentAuditId || ""}
             onChange={handleAuditChange}
             className="audit-dropdown"
@@ -522,6 +533,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             ) : companies.length > 0 ? (
               <>
                 <select
+                  key={`company-select-${effectiveOrgId ?? "none"}`}
                   id="companySelect"
                   value={companySelectValue}
                   onChange={handleCompanySelect}
