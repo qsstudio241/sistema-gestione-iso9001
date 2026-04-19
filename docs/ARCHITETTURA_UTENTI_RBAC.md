@@ -2,7 +2,7 @@
 
 > Documento di riferimento per rendere **robusta e affidabile** la gestione identità, deleghe e segregazione dati.  
 > **Allineare** implementazione (backend + UI) e **non** duplicare regole solo lato client.  
-> **Ultimo aggiornamento**: 2026-04-19.
+> **Ultimo aggiornamento**: 2026-04-20.
 
 **Correlati**: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (checklist licenze/sessioni), [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) (diagrammi obiettivo prodotto), [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (deploy e piano qualità).
 
@@ -137,6 +137,35 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 **No** sul modello **tenant → studio → company → user**: è allineato a SaaS B2B per consulenza e a ISO (tracciabilità, separazione). **Sì come debito** se il mercato richiede **subito** “un tenant per ogni studio” o “un tenant per ERAM” senza aver implementato **provisioning org** e **isolamento completo** su tutti i moduli: allora non è il modello dati ad essere sbagliato, ma **il perimetro di rilascio** rispetto all’obiettivo commerciale.
 
 **Prossima decisione prodotto** (da fissare con il committente): restare su **un tenant + più studi** oppure investire in **multi-org** (più righe `organizations`) **e** completare RBAC ovunque — le due strade possono coesistere nel tempo (prima coerenza scope, poi org aggiuntive).
+
+### 8.5 Modello committente — tre tenant (decisione 2026-04)
+
+**Premessa confermata**: esistono **tre tenant** distinti (tre abbonamenti / tre `organizations`). Le **licenze moduli** sono imputate al **tenant** (`organizations.licensed_modules`). **Camellini** lavora per **QS_Studio** (un solo `organization_id` per il suo account utente principale).
+
+#### Tabella di allineamento (tenant → pagamenti → utenti)
+
+| Tenant (esempio nome) | Ruolo commerciale | Licenze / abbonamento | Utenti tipici (esempi) | Nota prodotto / DB |
+|------------------------|-------------------|------------------------|-------------------------|-------------------|
+| **QS_Studio** | Tenant 1 | Moduli attivi su `organizations` dove `organization_id` = QS_Studio | **Camellini** (auditor, `users.organization_id` → QS_Studio); altri utenti QS | Account Camellini = **una** riga `users` con questo `organization_id`. |
+| **MASON_Srl** (o nome reale tenant Mason) | Tenant 2 | Licenze proprie, indipendenti da QS_Studio | Auditor Mason, staff Mason | Dati e audit **non** mescolati con QS_Studio senza secondo account o feature multi-org. |
+| **ERAM** | Tenant 3 | Licenze proprie | **Francioni** (auditor ERAM); utenti cliente ERAM (viewer, evoluzione) | Stesso principio: `organization_id` ERAM per Francioni. |
+
+#### Scenari trasversali (stesso nominativo su più tenant)
+
+| Esigenza | Approccio consigliato (oggi) | Se in futuro serve un solo login |
+|----------|------------------------------|-----------------------------------|
+| La stessa persona deve operare su **due** tenant (es. Camellini anche per lavori su MASON_Srl) | **Due account** (due righe `users`, eventualmente stessa email se il prodotto lo consente, o email distinte): `organization_id` diverso per ciascuno. | Membership multi-org (`user` ↔ più `organization_id`) + switch tenant in UI: **non** presente oggi; va progettato. |
+| Solo **consultazione** cross-tenant da parte vostra (QS Studio / piattaforma) | Ruolo **superadmin** o operatore con accesso documentato (fuori singolo tenant) | Policy dedicate, non mescolare con auditor cliente. |
+
+#### Checklist operativa DB (tre tenant reali)
+
+1. In `organizations` devono comparire **tre righe** (tre `organization_id`), con `organization_code` / `organization_name` univoci (es. QS_STUDIO, MASON_SRL, ERAM).
+2. Ogni utente “di quel cliente” ha `users.organization_id` uguale al tenant di riferimento.
+3. **Camellini** → solo righe utente con `organization_id` = **QS_Studio** (salvo secondo account se deve lavorare anche per un altro tenant).
+4. **Francioni** → `organization_id` = **ERAM** (o codice reale del terzo tenant).
+5. Licenze: `PATCH /admin/licenses` (o equivalente) **per org** — eseguito nell’ambito del tenant giusto (admin di quell’org).
+
+*Se in produzione compare ancora un solo `organization_id`, serve migrazione dati / creazione delle altre due org e riassegnazione utenti — operazione pianificata, non automatica.*
 
 ---
 
