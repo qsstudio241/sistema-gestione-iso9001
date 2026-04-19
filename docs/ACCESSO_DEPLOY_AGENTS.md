@@ -75,3 +75,7 @@ Riferimenti incrociati: [REFERENCE.md](REFERENCE.md), [DEPLOY_CHECKLIST_RELEASE.
 ## Limiti realistici
 
 Nessuna configurazione garantisce “zero errori di rete” al 100% (VPN, firewall, credenziali scadute). La combinazione **host key fissata nello script** + **auth non interattiva documentata** + **file locale gitignored** riduce al minimo gli errori ripetitivi di accesso per deploy e smoke.
+
+## Contesto fase sviluppo (priorità)
+
+Per iterazioni con **dati di prova** e obiettivo **velocità**, la policy operativa del repo (`.cursor/rules/sgq-operating-memory.mdc`) chiede all’agente di **non bloccare** deploy e commit per digressioni su sicurezza operativa quando l’accesso è risolvibile con i file locali gitignored sopra; resta il divieto di **committare** segreti nel repository.

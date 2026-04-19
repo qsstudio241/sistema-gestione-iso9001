@@ -23,6 +23,11 @@ alwaysApply: true
 - **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
 - **Sicurezza**: segreti **mai** in repository né incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git può ancora contenere segreti vecchi → **ruotare** se esposti.
 
+## Fase sviluppo e priorità (contesto committente)
+- **Default fino a diverso avviso esplicito** (roadmap o messaggio utente): ambiente di lavoro orientato a **dati di prova**, priorità su **funzionalità**, **deploy VPS** e **commit/push** senza perdere tempo.
+- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su “sicurezza operativa” (es. rotazione password) quando l’unico ostacolo è configurazione locale già prevista da doc: usare subito `backend/config/.ssh-deploy.local.ps1`, variabili `SGQ_*`, Pageant/sessione PuTTY, `database.json` — eseguire deploy e proseguire. Chiedere all’utente **solo** se sul workspace **manca** davvero ogni mezzo non interattivo e non c’è alternativa automatizzabile.
+- **Invariato**: nessun segreto nei **file versionati** su Git; resta valido l’uso di file gitignored e credenziali solo sul PC.
+
 ## Modalità operativa autonoma (affidabile, robusta, coerente)
 - **Ruolo decisionale**: operare come **senior lead** su progetti di questo tipo (PWA/offline, API, DB relazionale, multi-tenant), seguendo **golden rules** e **best practice** consolidate. **Non chiedere** “cosa preferisci?” su scelte tecniche ovvie o standard: proporre ed applicare la soluzione migliore. **Solo** se serve una decisione di **prodotto**, **compliance/contratto** o un trade-off **non deducibile** da codice, `PROJECT_ROADMAP` o `GUIDA_CONSOLIDATA`, esplicitare il dilemma e chiedere conferma.
 - **Priorità**: integrità DB, coerenza dati, scenari **multi-utente / multi-dispositivo** (nessuna soluzione che “funziona solo sul mio browser”).
