@@ -43,6 +43,7 @@ Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conform
 | **Frontend** | Netlify (auto-deploy da `main`) |
 | **VPS** | `www.fr-busato.it` — Ubuntu |
 | **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH** o sessione **PuTTY** salvata (`SGQ_PUTTY_SESSION` nello script deploy). **Non** versionare password SSH. |
+| **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md), [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md). |
 | **Assistente AI (Cursor)** | Non ha credenziali proprie né SSH «integrato»: usa `database.json` / `.env` **sul PC dove è aperto il repo**. Separare sempre SSH (1122, utente Linux) da SQL (11043, `DB_USER`). Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md) sezione *Assistente AI (Cursor) e accesso remoto*. |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **App log** | `/var/www/sgq-backend/app.log` |

@@ -30,6 +30,13 @@ Backend Path: /var/www/sgq-backend/
 ssh spascarella@www.fr-busato.it -p 1122
 ```
 
+### Backend applicativo sul VPS (`/var/www/sgq-backend`)
+
+- **Non è un repository Git**: non usare `git pull` in quella cartella per allineare il codice. L’aggiornamento avviene copiando i file dal repo locale (o da CI) sul server.
+- **Metodo supportato in progetto**: script PowerShell **`backend/scripts/deploy-controllers-to-vps.ps1`** (PuTTY `pscp`/`plink`, variabile `SGQ_PUTTY_SESSION` o `backend/config/.putty-session.local`). Dopo la copia esegue il restart del servizio **`sgq-backend`** (systemd).
+- **Riavvio manuale** (SSH): `sudo systemctl restart sgq-backend` — preferibile a `nohup` se il servizio systemd è già configurato (evita `EADDRINUSE` sulla porta 3000).
+- **Coerenza con GitHub**: dopo `git push` su `main`, Netlify aggiorna il frontend automaticamente; il backend richiede **sempre** un passo di deploy file sul VPS (script o `scp`).
+
 ### Database (SQL Server Express)
 ```
 Server: www.fr-busato.it,11043

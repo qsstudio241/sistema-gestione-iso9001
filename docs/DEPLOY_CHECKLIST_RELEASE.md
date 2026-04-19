@@ -4,6 +4,12 @@ Usa questa lista per mettere in produzione la nuova versione in modo ordinato e 
 
 **Ultimo deploy completato**: 15/03/2026 — release checklist custom, azienda da anagrafica, sync UUID; frontend su Netlify (main), backend VPS aggiornato con pscp/plink. Riferimento operativo: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (sez. A); storico in [archive/sessions/SESSION_NOTES_20260315.md](archive/sessions/SESSION_NOTES_20260315.md).
 
+### Allineamento VPS e Git (da ricordare sempre)
+
+- **`/var/www/sgq-backend` sul server non è un clone Git**: `git pull` lì **non** aggiorna il codice. La fonte di verità è **GitHub**; sul VPS arriva solo ciò che **copi** (script `backend/scripts/deploy-controllers-to-vps.ps1` con PuTTY/pscp, oppure `scp` manuale).
+- **Ordine consigliato**: `git push` su `main` → Netlify build (frontend) → **subito dopo** deploy file backend + **`sudo systemctl restart sgq-backend`** (il servizio systemd è il modo supportato di riavvio; evitare `nohup` parallelo se systemd è attivo).
+- **Verifica post-deploy**: `GET https://www.fr-busato.it:8443/api/v1/health` e, per feature nuove, l’endpoint specifico (es. `GET /api/v1/organizations/me` con Bearer → 401 senza token è normale; 404 = route/file non deployati).
+
 ---
 
 ## 1. Pre-deploy (locale)
@@ -32,29 +38,22 @@ Usa questa lista per mettere in produzione la nuova versione in modo ordinato e 
 
 ## 2. Deploy backend (VPS)
 
-Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiornato prima o insieme al frontend**, altrimenti le nuove funzionalità (UUID, sync create, ecc.) non funzioneranno.
+Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiornato prima o insieme al frontend**, altrimenti le nuove funzionalità non funzioneranno.
 
-- [ ] **Copia file backend sul VPS**  
-  Da PowerShell nella root del progetto (sostituisci porta e utente se diversi):
+- [ ] **Copia file backend sul VPS (metodo consigliato)**  
+  Da PowerShell nella **root del repo** (`C:\ProgettoISO`), con PuTTY installato e sessione o chiave configurata (vedi [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md)):
   ```powershell
   cd "C:\ProgettoISO"
-  scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+  $env:SGQ_PUTTY_SESSION = "NomeSessioneSalvataInPuTTY"   # oppure file backend/config/.putty-session.local
+  .\backend\scripts\deploy-controllers-to-vps.ps1
   ```
+  Lo script copia i controller/routes/service elencati nello script, inclusi **`organization`**, **`auth`**, **`server.js`**, e tenta **`systemctl restart sgq-backend`**.
 
-- [ ] **Riavvio servizio backend sul VPS**  
-  Connettiti in SSH e riavvia Node:
-  ```bash
-  ssh -p 1122 spascarella@www.fr-busato.it
-  # Sul server:
-  fuser -k 3000/tcp
-  sleep 2 && cd /var/www/sgq-backend && nohup node src/server.js > /var/www/sgq-backend/app.log 2>&1 &
-  sleep 4 && tail -30 /var/www/sgq-backend/app.log
-  exit
-  ```
-  Controlla che in `app.log` non ci siano errori di avvio.
+- [ ] **Riavvio (solo se non usi lo script)**  
+  Sul server: **`sudo systemctl restart sgq-backend`**. Evitare `nohup node ...` in parallelo a systemd (porta 3000 già occupata → `EADDRINUSE`).
 
 - [ ] **Verifica rapida API**  
-  Da browser o da Postman: `GET https://www.fr-busato.it:8443/api/v1/health` (o l’URL reale del backend). Deve rispondere 200.
+  `GET https://www.fr-busato.it:8443/api/v1/health` → 200. Per smoke mirati usare anche l’endpoint della feature (con token se serve).
 
 ---
 

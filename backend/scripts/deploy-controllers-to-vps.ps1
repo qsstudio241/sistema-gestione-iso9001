@@ -1,4 +1,9 @@
 # Deploy backend (controllers + routes + server.js + servizi correlati) sul VPS
+#
+# IMPORTANTE: /var/www/sgq-backend sul VPS e' una COPIA di file (deploy), non un repository Git.
+# Dopo `git push` su GitHub, Netlify aggiorna il frontend; il backend si aggiorna solo eseguendo questo script
+# (o copiando manualmente gli stessi file) + restart sgq-backend.
+#
 # Esegui da PowerShell nella root del repo.
 # Usa PuTTY (pscp/plink) in modalita' -batch per evitare prompt interattivi.
 # Nota: la prima volta potrebbe essere necessario accettare la host key manualmente (una sola volta),
@@ -89,11 +94,14 @@ Copy-FileToVps "src/controllers/sync.controller.js" "$RemoteBase/src/controllers
 Copy-FileToVps "src/controllers/customChecklist.controller.js" "$RemoteBase/src/controllers/customChecklist.controller.js"
 Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controllers/admin.controller.js"
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
+Copy-FileToVps "src/controllers/organization.controller.js" "$RemoteBase/src/controllers/organization.controller.js"
+Copy-FileToVps "src/controllers/auth.controller.js" "$RemoteBase/src/controllers/auth.controller.js"
 
 # Routes (necessarie per esporre gli endpoint custom-checklist-responses)
 Copy-FileToVps "src/routes/audit.routes.js" "$RemoteBase/src/routes/audit.routes.js"
 Copy-FileToVps "src/routes/customChecklist.routes.js" "$RemoteBase/src/routes/customChecklist.routes.js"
 Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes.js"
+Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
 
 # Entry point server (include customChecklistRoutes)
 Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
@@ -144,7 +152,9 @@ if [ "`$RESTARTED" != "1" ]; then
 fi
 systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 40 || true
 echo deploy_routes_preview_custom_checklist
-sed -n '1,28p' $RemoteBase/src/routes/customChecklist.routes.js || true
+sed -n '1,20p' $RemoteBase/src/routes/customChecklist.routes.js || true
+echo deploy_server_organization_mount
+grep -nE 'organizationRoutes|/organizations' $RemoteBase/src/server.js 2>/dev/null | head -n 12 || true
 tail -n 25 $RemoteBase/app.log || true
 '
 "@
