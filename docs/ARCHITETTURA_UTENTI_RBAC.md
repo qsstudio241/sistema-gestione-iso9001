@@ -167,6 +167,8 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 
 *Se in produzione compare ancora un solo `organization_id`, serve migrazione dati / creazione delle altre due org e riassegnazione utenti — operazione pianificata, non automatica.*
 
+**Piano operativo dettagliato** (inventario tabelle, fasi, query di controllo): [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md).
+
 ---
 
 ## 9. Definition of Done (modifiche che toccano RBAC)

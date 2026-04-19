@@ -1,6 +1,6 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-18.
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-20.
 
 ---
 
@@ -21,6 +21,7 @@
 | **Perdita connessione (offline/mobile)** | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) | Comportamento offline, sync, health check, mobile |
 | **Utenti, checklist, sistemi, report** | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) | Organization/user, ruoli, checklist ISO e custom, template report, self-assessment |
 | **Architettura utenti e RBAC** | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) | Tenant → studio → azienda; ruoli canonici; deleghe; scope API; piano migrazione (fonte per hardening sicurezza) |
+| **Migrazione DB: split tenant** | [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md) | Da un solo `organization_id` a più organizzazioni (QS_Studio, MASON, ERAM); fasi, inventario tabelle, checklist |
 | **Decisioni architetturali** | [adr/README.md](adr/README.md) | Indice ADR; dettaglio in `adr/ADR-*.md` |
 | **Manuali** | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) | Uso applicazione e procedure |
 | **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Mapping, sync, dettagli |
