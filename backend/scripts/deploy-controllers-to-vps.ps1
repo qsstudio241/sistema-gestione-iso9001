@@ -154,7 +154,7 @@ systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 40 
 echo deploy_routes_preview_custom_checklist
 sed -n '1,20p' $RemoteBase/src/routes/customChecklist.routes.js || true
 echo deploy_server_organization_mount
-grep -nE 'organizationRoutes|/organizations' $RemoteBase/src/server.js 2>/dev/null | head -n 12 || true
+grep -n -e organizationRoutes -e /organizations $RemoteBase/src/server.js 2>/dev/null | head -n 12 || true
 tail -n 25 $RemoteBase/app.log || true
 '
 "@
