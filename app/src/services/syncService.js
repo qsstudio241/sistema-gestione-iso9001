@@ -1009,6 +1009,35 @@ export class SyncService {
             request.onerror = () => reject(request.error);
         });
     }
+
+    /**
+     * Logout / cambio utente: svuota queue sync, metadata uuid→audit_id, blob allegati offline.
+     * Evita che un altro account sulla stessa macchina erediti operazioni o mapping del tenant precedente.
+     */
+    async clearSessionStoresOnLogout() {
+        try {
+            const db = await this.init();
+            const storeNames = [SYNC_QUEUE_STORE, STORE_SYNC_METADATA, ATTACHMENTS_BLOB_STORE].filter(
+                (n) => db.objectStoreNames.contains(n),
+            );
+            if (storeNames.length === 0) return;
+
+            const transaction = db.transaction(storeNames, 'readwrite');
+            await Promise.all(
+                storeNames.map(
+                    (name) =>
+                        new Promise((resolve, reject) => {
+                            const r = transaction.objectStore(name).clear();
+                            r.onsuccess = () => resolve();
+                            r.onerror = () => reject(r.error);
+                        }),
+                ),
+            );
+            console.log('🧹 [SYNC] Store sessione svuotati al logout (queue, sync_metadata, attachments_offline)');
+        } catch (error) {
+            console.warn('⚠️ [SYNC] clearSessionStoresOnLogout:', error?.message || error);
+        }
+    }
 }
 
 // Export singleton

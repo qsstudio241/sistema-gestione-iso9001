@@ -60,6 +60,9 @@ Gestisce multi-tenancy
 | ----------------- | ------------- | -------- | ----------------- |
 | organization_id   | INT IDENTITY  | NO       | PK                |
 | organization_name | NVARCHAR(255) | NO       | Unique            |
+| organization_code | NVARCHAR(50) | YES      | Codice tenant (split / mapping) |
+| vat_number        | NVARCHAR(32)  | YES      | Partita IVA tenant (report / UI) |
+| logo_url          | NVARCHAR(500) | YES      | Path relativo a `UPLOAD_DIR` (cartella `org-logos/`) |
 | created_at        | DATETIME2     | NO       | Default GETDATE() |
 | is_active         | BIT           | NO       | Default 1         |
 

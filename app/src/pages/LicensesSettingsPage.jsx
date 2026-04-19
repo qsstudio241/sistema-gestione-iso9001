@@ -16,6 +16,10 @@ export default function LicensesSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [orgVat, setOrgVat] = useState("");
+  const [orgLogoPreview, setOrgLogoPreview] = useState(null);
+  const [orgSaving, setOrgSaving] = useState(false);
+  const [orgMessage, setOrgMessage] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +42,42 @@ export default function LicensesSettingsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    setOrgVat(user?.organization_vat_number || "");
+  }, [user?.organization_vat_number]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrgLogo() {
+      if (!user?.organization_logo_url || !apiService.getToken()) {
+        setOrgLogoPreview(null);
+        return;
+      }
+      try {
+        const res = await fetch(apiService.getOrganizationLogoUrl(), {
+          headers: { Authorization: `Bearer ${apiService.getToken()}` },
+        });
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result);
+          fr.onerror = reject;
+          fr.readAsDataURL(blob);
+        });
+        if (!cancelled) setOrgLogoPreview(dataUrl);
+      } catch {
+        if (!cancelled) setOrgLogoPreview(null);
+      }
+    }
+
+    loadOrgLogo();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.organization_id, user?.organization_logo_url]);
 
   function toggle(key) {
     setUseDefaults(false);
@@ -81,6 +121,57 @@ export default function LicensesSettingsPage() {
 
   const canEditLicenses = user?.role === "admin" || user?.role === "superadmin";
 
+  async function handleSaveOrgVat() {
+    setOrgSaving(true);
+    setOrgMessage(null);
+    setError(null);
+    try {
+      const res = await apiService.patchMyOrganization({ vat_number: orgVat });
+      if (!res.success) throw new Error(res.error || "Errore salvataggio");
+      await refreshUser();
+      setOrgMessage("Partita IVA aggiornata.");
+    } catch (e) {
+      setError(e.message || "Salvataggio P.IVA non riuscito");
+    } finally {
+      setOrgSaving(false);
+    }
+  }
+
+  async function handleOrgLogoChange(ev) {
+    const file = ev.target.files?.[0];
+    ev.target.value = "";
+    if (!file) return;
+    setOrgSaving(true);
+    setOrgMessage(null);
+    setError(null);
+    try {
+      await apiService.uploadOrganizationLogo(file);
+      await refreshUser();
+      setOrgMessage("Logo organizzazione caricato.");
+    } catch (e) {
+      setError(e.message || "Upload logo non riuscito");
+    } finally {
+      setOrgSaving(false);
+    }
+  }
+
+  async function handleDeleteOrgLogo() {
+    if (!window.confirm("Rimuovere il logo dell’organizzazione dai report e dall’interfaccia?")) return;
+    setOrgSaving(true);
+    setOrgMessage(null);
+    setError(null);
+    try {
+      await apiService.deleteOrganizationLogo();
+      await refreshUser();
+      setOrgLogoPreview(null);
+      setOrgMessage("Logo rimosso.");
+    } catch (e) {
+      setError(e.message || "Eliminazione logo non riuscita");
+    } finally {
+      setOrgSaving(false);
+    }
+  }
+
   if (!canEditLicenses) {
     return (
       <div className="licenses-page">
@@ -109,6 +200,58 @@ export default function LicensesSettingsPage() {
 
       {error && <p className="licenses-error">{error}</p>}
       {message && <p className="licenses-ok">{message}</p>}
+
+      <section className="licenses-org-section" aria-labelledby="org-profile-heading">
+        <h2 id="org-profile-heading" className="licenses-org-title">
+          Anagrafica organizzazione
+        </h2>
+        <p className="licenses-org-intro">
+          Nome tenant: <strong>{user?.organization_name || "—"}</strong>. Partita IVA e logo compaiono nel banner
+          dell’app e nei report Word (segnaposto <code className="licenses-code">{"{organizationName}"}</code>,{" "}
+          <code className="licenses-code">{"{organizationVat}"}</code>; nel template Word anche il marker{" "}
+          <code className="licenses-code">[LOGO_ORG]</code> per il logo studio).
+        </p>
+        <div className="licenses-org-row">
+          <label htmlFor="org-vat" className="licenses-org-label">
+            Partita IVA
+          </label>
+          <input
+            id="org-vat"
+            type="text"
+            className="licenses-org-input"
+            maxLength={32}
+            value={orgVat}
+            onChange={(e) => setOrgVat(e.target.value)}
+            placeholder="es. IT01234567890"
+            disabled={orgSaving}
+          />
+          <button type="button" className="btn-secondary" onClick={handleSaveOrgVat} disabled={orgSaving}>
+            Salva P.IVA
+          </button>
+        </div>
+        <div className="licenses-org-logo-block">
+          <span className="licenses-org-label">Logo</span>
+          <div className="licenses-org-logo-preview">
+            {orgLogoPreview ? (
+              <img src={orgLogoPreview} alt="Logo organizzazione" className="licenses-org-logo-img" />
+            ) : (
+              <span className="licenses-org-logo-placeholder">Nessun logo</span>
+            )}
+          </div>
+          <div className="licenses-org-logo-actions">
+            <label className="btn-secondary licenses-file-label">
+              Carica immagine
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleOrgLogoChange} disabled={orgSaving} hidden />
+            </label>
+            {user?.organization_logo_url ? (
+              <button type="button" className="btn-secondary" onClick={handleDeleteOrgLogo} disabled={orgSaving}>
+                Rimuovi logo
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {orgMessage && <p className="licenses-ok licenses-org-msg">{orgMessage}</p>}
+      </section>
 
       <label className="licenses-defaults">
         <input

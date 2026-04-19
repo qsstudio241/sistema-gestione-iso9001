@@ -1,6 +1,6 @@
 # 📖 Sistema Gestione ISO 9001 - Reference Guide
 
-**Last Updated:** 2026-02-15  
+**Last Updated:** 2026-04-19  
 **Purpose:** Informazioni statiche riutilizzabili per operazioni comuni
 
 ---
@@ -34,14 +34,22 @@ ssh spascarella@www.fr-busato.it -p 1122
 ```
 Server: www.fr-busato.it,11043
 Database: SGQ_ISO9001
-Authentication: Windows Authentication
-User: spascarella
+Autenticazione: SQL Server (login + password — solo file locale / env, mai in repository)
 ```
 
-**SSMS Connection String:**
+**Credenziali SQL:** `backend/config/database.json` e/o variabili `DB_SERVER`, `DB_PORT`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD`. Il **nome utente SQL non è fissato in questo documento** (dipende da cosa è stato creato sul server; non va confuso con l’utente Linux SSH).
+
+**SSMS (schema tipico):**
 ```
-Server=www.fr-busato.it,11043;Database=SGQ_ISO9001;Integrated Security=false;User Id=spascarella;
+Server=www.fr-busato.it,11043;Database=SGQ_ISO9001;Integrated Security=False;User Id=<LOGIN_SQL>;Password=<SEGRETO>;
 ```
+
+### Assistente AI (Cursor) e accesso remoto
+
+- **Due canali distinti:** **SSH** (porta **1122**, utente Linux tipicamente `spascarella`) e **SQL Server** (porta **11043**, login in `database.json` / `DB_*`). Non sono intercambiabili.
+- **Cursor nell’IDE** non ha una «sessione SSH integrata» né riceve password dal cloud: può eseguire comandi (es. `node scripts/run-migration-041.js`) **solo sulla macchina del workspace**, usando i file `.env` / `database.json` presenti lì. Se il login SQL fallisce, la causa è sul server o nelle credenziali locali, non nella «modalità agente».
+- **Deploy non interattivo sul VPS:** chiave SSH, **Pageant**, sessione **PuTTY** (`SGQ_PUTTY_SESSION` → `backend/scripts/deploy-controllers-to-vps.ps1`). Prompt password / host key: vedi [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md).
+- Fonte operativa DB: [DATABASE.md](DATABASE.md).
 
 ### Netlify Deployment
 ```

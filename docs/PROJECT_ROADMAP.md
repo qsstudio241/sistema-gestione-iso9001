@@ -10,6 +10,19 @@
 
 ---
 
+## Open points e memoria trasversale (non perdere il filo)
+
+**Regola**: gli argomenti “aperti” che attraversano più sessioni vanno elencati **qui** (sintesi) e dettagliati nell’**ADR** o nel doc tecnico indicato. Le session AI devono leggere questa sezione + l’ADR collegato.
+
+| Tema | Sintesi | Tracciamento |
+|------|---------|----------------|
+| **Logout vs lavoro solo locale** | Oggi: pulizia IndexedDB + sync queue al logout (`sgq:userLoggedOut`) per sicurezza multi-tenant → bozze non ancora sul server **a rischio** se l’utente esce senza sync. Serve gate + export / sync forzato (vedi ADR). | [ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) (**Proposto**) |
+| **Mirror / cartella PC (backup bundle audit)** | Non attivo nel flusso principale (IndexedDB only, `storageAdapter.js`). Opzionale desktop in ADR Fase B. | Stesso **ADR-007** |
+| **Menu audit vs RBAC** | Fix merge: non reinserire in lista audit locali con `metadata.auditId` se assenti da `GET /audits`. Logout svuota cache. | `app/src/contexts/StorageContext.jsx` (`filterLocalAuditsAfterServerFetch`, listener logout); coerenza con [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+| **Disconnessione temporanea (non logout)** | Comportamento atteso: IndexedDB + coda; vedi doc dedicata. | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) |
+
+---
+
 ## Visione Strategica Aggiornata (07/03/2026) — 4 Scenari, 2 Clienti
 
 ### I 4 Scenari d'uso emersi

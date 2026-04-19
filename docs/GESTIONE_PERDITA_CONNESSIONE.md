@@ -10,7 +10,7 @@ L’app è progettata per **continuare a funzionare** quando la connessione al s
   - Eventi del browser `online` / `offline` (rete locale).
   - **Health check periodico** verso il **backend reale** (stesso URL delle API), ogni 30 secondi. Così si distingue “rete attiva” da “server effettivamente raggiungibile” (importante su mobile e quando frontend e API sono su domini diversi, es. Netlify + VPS).
 - **Indicatore in UI**: in alto a destra compare il messaggio **Offline** (rosso) con testo tipo “Modifiche salvate localmente” o “N in attesa di sync” se ci sono operazioni in coda.
-- **Dati**: tutto ciò che fai (nuovi audit, modifiche, risposte, allegati) viene salvato in **IndexedDB** e accodato per la sincronizzazione. Niente viene perso.
+- **Dati**: tutto ciò che fai (nuovi audit, modifiche, risposte, allegati) viene salvato in **IndexedDB** e accodato per la sincronizzazione. Finché non fai **logout** (vedi §5) e non cancelli i dati del sito, il lavoro resta recuperabile in locale.
 
 ---
 
@@ -44,7 +44,16 @@ L’app è progettata per **continuare a funzionare** quando la connessione al s
 
 ---
 
-## 5. Configurazione tecnica
+## 5. Logout vs disconnessione temporanea (open point)
+
+- **Solo rete assente**: come sopra — dati in IndexedDB, coda sync, nessuna perdita **se non** si cancellano i dati del sito.
+- **Logout esplicito o `sgq:userLoggedOut`**: l’app **svuota** la cache audit locale e gli store di sessione sync (sicurezza multi-tenant). Le bozze **non ancora sul server** possono andare perse se non sono state sincronizzate prima. **Non è lo stesso caso della perdita di connessione.**
+
+**Tracciamento requisito “robustezza logout”** (gate, export, mirror PC): [ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) + tabella *Open points* in [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
+
+---
+
+## 6. Configurazione tecnica
 
 - **Health check**: `GET {baseUrl}/health` (stesso `baseUrl` usato per le API, da env `VITE_API_URL` o default).
 - **Intervallo ping**: 30 secondi.
@@ -53,7 +62,7 @@ L’app è progettata per **continuare a funzionare** quando la connessione al s
 
 ---
 
-## 6. Cosa fare in caso di problemi
+## 7. Cosa fare in caso di problemi
 
 - **“Resto sempre Offline”**: verificare che il backend sia raggiungibile dall’ambiente in cui usi l’app (stesso URL configurato per le API). Da mobile, controllare che non ci siano blocchi (VPN, firewall, CORS).
 - **“Le modifiche non si sincronizzano”**: aprire la console del browser e cercare messaggi `[SYNC]`; verificare che non ci siano errori 4xx/5xx dal server. Se la coda è piena, l’indicatore mostra “N in attesa di sync”; al ritorno online la coda viene processata.
@@ -61,4 +70,4 @@ L’app è progettata per **continuare a funzionare** quando la connessione al s
 
 ---
 
-*Riferimenti: ADR-002 (offline-first sync), `ConnectionStatus.jsx`, `syncService.js`, `apiService.js`.*
+*Riferimenti: ADR-002 (offline-first sync), ADR-007 (logout / backup PC — proposto), `ConnectionStatus.jsx`, `syncService.js`, `apiService.js`, `StorageContext.jsx`.*

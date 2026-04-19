@@ -122,7 +122,10 @@ async function login(req, res) {
       SELECT 
         u.user_id, u.email, u.password_hash, u.full_name, u.role, 
         u.organization_id, u.auditor_org_id, u.is_active,
-        o.organization_code, o.organization_name, o.is_active AS org_active
+        o.organization_code, o.organization_name,
+        o.vat_number AS organization_vat_number,
+        o.logo_url AS organization_logo_url,
+        o.is_active AS org_active
       FROM users u
       INNER JOIN organizations o ON u.organization_id = o.organization_id
       WHERE u.email = @email
@@ -199,6 +202,8 @@ async function login(req, res) {
                 role: user.role,
                 organization_id: user.organization_id,
                 organization_name: user.organization_name,
+                organization_vat_number: user.organization_vat_number || '',
+                organization_logo_url: user.organization_logo_url || null,
                 auditor_org_id: user.auditor_org_id ?? null,
                 allowed_standard_ids,
                 licensed_modules,
@@ -309,7 +314,9 @@ async function getCurrentUser(req, res) {
       SELECT 
         u.user_id, u.email, u.full_name, u.role, 
         u.organization_id, u.auditor_org_id, u.created_at, u.last_login,
-        o.organization_code, o.organization_name
+        o.organization_code, o.organization_name,
+        o.vat_number AS organization_vat_number,
+        o.logo_url AS organization_logo_url
       FROM users u
       INNER JOIN organizations o ON u.organization_id = o.organization_id
       WHERE u.user_id = @user_id

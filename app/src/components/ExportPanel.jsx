@@ -295,6 +295,39 @@ const ExportPanel = () => {
     }
     auditForExport.embedCompanyLogo = embedCompanyLogo;
 
+    auditForExport.exportOrganizationBranding = {
+      name: user?.organization_name || "",
+      vat: user?.organization_vat_number || "",
+    };
+
+    let embedOrganizationLogo = null;
+    if (rawToken && user?.organization_logo_url) {
+      try {
+        const orgLogoRes = await fetch(apiService.getOrganizationLogoUrl(), {
+          headers: { Authorization: `Bearer ${rawToken}` },
+        });
+        if (orgLogoRes.ok) {
+          const blob = await orgLogoRes.blob();
+          const mime = (blob.type || "").split(";")[0].trim().toLowerCase();
+          const okMime = ["image/jpeg", "image/jpg", "image/png", "image/gif"].includes(mime);
+          if (okMime) {
+            embedOrganizationLogo = {
+              dataUrl: await new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result);
+                fr.onerror = reject;
+                fr.readAsDataURL(blob);
+              }),
+            };
+            console.log("📋 [EXPORT] Logo organizzazione caricato per embedding Word");
+          }
+        }
+      } catch (err) {
+        console.warn("[EXPORT] Logo organizzazione non incluso nel Word:", err.message);
+      }
+    }
+    auditForExport.embedOrganizationLogo = embedOrganizationLogo;
+
     const getViewUrl = rawToken
       ? (id) => `${apiService.baseUrl}/attachments/${id}/view?token=${encodeURIComponent(rawToken)}`
       : null;

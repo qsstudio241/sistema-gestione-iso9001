@@ -5,6 +5,7 @@
 > **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
 > **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
 > **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
+> **Open points trasversali** (logout vs bozze locali, mirror PC, coerenza cache menu audit): → [docs/PROJECT_ROADMAP.md](docs/PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).  
 > Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md) | [docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
 
 ---
@@ -42,6 +43,7 @@ Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conform
 | **Frontend** | Netlify (auto-deploy da `main`) |
 | **VPS** | `www.fr-busato.it` — Ubuntu |
 | **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH** o sessione **PuTTY** salvata (`SGQ_PUTTY_SESSION` nello script deploy). **Non** versionare password SSH. |
+| **Assistente AI (Cursor)** | Non ha credenziali proprie né SSH «integrato»: usa `database.json` / `.env` **sul PC dove è aperto il repo**. Separare sempre SSH (1122, utente Linux) da SQL (11043, `DB_USER`). Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md) sezione *Assistente AI (Cursor) e accesso remoto*. |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **App log** | `/var/www/sgq-backend/app.log` |
 | **GitHub** | `qsstudio241/sistema-gestione-iso9001` |
@@ -63,6 +65,7 @@ sleep 4 && cat /var/www/sgq-backend/app.log
 - **Conflict**: notifica utente + log persistente (tracciabilità ISO 9001:2015 §7.5/9.2/10.2)
 - **SyncService**: batch con retry + backoff esponenziale
 - **IndexedDB**: tutti gli audit/risposte cachati; sincronizzati in background al recupero connessione
+- **Logout**: pulizia cache locale + coda sync per multi-tenant — **open point** su bozze non ancora sul server e backup PC: vedi **ADR-007** e roadmap (non duplicare qui il dettaglio).
 
 ---
 
@@ -248,4 +251,4 @@ git push origin main
 
 ---
 
-*Aggiornato: 2026-04-12 — Piano qualità/test in GUIDA_CONSOLIDATA; puntatore da contesto sessione.*
+*Aggiornato: 2026-04-18 — Open points consolidati in PROJECT_ROADMAP + ADR-007; logout/cache audit.*

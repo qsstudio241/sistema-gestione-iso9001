@@ -117,15 +117,21 @@ function BottomNav({ navItems }) {
 
 // ─── Sidebar (desktop) ────────────────────────────────────────────────────────
 
-function Sidebar({ navGroups, collapsed, onToggle }) {
+function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
   return (
     <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`} aria-label="Menu laterale">
       {/* Logo / titolo */}
       <div className="sidebar-logo">
         {!collapsed && (
           <>
-            <span className="sidebar-logo-icon">⚙️</span>
-            <span className="sidebar-logo-text">SGQ Studio</span>
+            {orgLogoDataUrl ? (
+              <img src={orgLogoDataUrl} alt="" className="sidebar-org-logo" width={32} height={32} />
+            ) : (
+              <span className="sidebar-logo-icon">⚙️</span>
+            )}
+            <span className="sidebar-logo-text" title={orgName || ""}>
+              {orgName ? orgName : "SGQ Studio"}
+            </span>
           </>
         )}
         <button
@@ -174,6 +180,11 @@ function Sidebar({ navGroups, collapsed, onToggle }) {
           </div>
         ))}
       </nav>
+      {collapsed && orgLogoDataUrl ? (
+        <div className="sidebar-collapsed-brand" aria-hidden>
+          <img src={orgLogoDataUrl} alt="" className="sidebar-org-logo-sm" width={28} height={28} />
+        </div>
+      ) : null}
     </aside>
   );
 }
@@ -185,6 +196,39 @@ function AppLayout({ children }) {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [alerts, setAlerts] = useState({ documents: 0, complaints: 0 });
+  const [orgLogoDataUrl, setOrgLogoDataUrl] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrgLogo() {
+      if (!user?.organization_logo_url || !apiService.getToken()) {
+        setOrgLogoDataUrl(null);
+        return;
+      }
+      try {
+        const res = await fetch(apiService.getOrganizationLogoUrl(), {
+          headers: { Authorization: `Bearer ${apiService.getToken()}` },
+        });
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result);
+          fr.onerror = reject;
+          fr.readAsDataURL(blob);
+        });
+        if (!cancelled) setOrgLogoDataUrl(dataUrl);
+      } catch {
+        if (!cancelled) setOrgLogoDataUrl(null);
+      }
+    }
+
+    loadOrgLogo();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.organization_id, user?.organization_logo_url]);
 
   // Polling badge alert ogni 5 minuti
   const loadAlerts = useCallback(async () => {
@@ -225,6 +269,8 @@ function AppLayout({ children }) {
         navGroups={navGroups}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((v) => !v)}
+        orgLogoDataUrl={orgLogoDataUrl}
+        orgName={user?.organization_name || ""}
       />
 
       {/* Area destra: header + contenuto + footer */}
@@ -232,6 +278,9 @@ function AppLayout({ children }) {
         {/* Header */}
         <header className="layout-header">
           <div className="layout-header-left">
+            {orgLogoDataUrl ? (
+              <img src={orgLogoDataUrl} alt="" className="layout-header-org-logo" width={36} height={36} />
+            ) : null}
             <h1 className="layout-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
               SGQ — Sistema di Gestione
             </h1>
@@ -246,6 +295,18 @@ function AppLayout({ children }) {
             </button>
           </div>
         </header>
+
+        {user?.organization_name ? (
+          <div className="layout-org-banner" role="region" aria-label="Organizzazione attiva">
+            {orgLogoDataUrl ? (
+              <img src={orgLogoDataUrl} alt="" className="layout-org-banner-logo" width={28} height={28} />
+            ) : null}
+            <span className="layout-org-banner-name">{user.organization_name}</span>
+            {user.organization_vat_number ? (
+              <span className="layout-org-banner-vat">P.IVA {user.organization_vat_number}</span>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Contenuto principale */}
         <main className="layout-main">

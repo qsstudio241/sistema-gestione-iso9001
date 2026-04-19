@@ -101,3 +101,118 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Anagrafica organizzazione (P.IVA + logo) */
+.licenses-org-section {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1rem 1rem 1.1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.licenses-org-title {
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+}
+
+.licenses-org-intro {
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.licenses-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  background: #eee;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.licenses-org-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.licenses-org-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 5.5rem;
+}
+
+.licenses-org-input {
+  flex: 1 1 180px;
+  min-width: 140px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.licenses-org-logo-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
+}
+
+.licenses-org-logo-preview {
+  min-width: 120px;
+  min-height: 72px;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 6px;
+}
+
+.licenses-org-logo-img {
+  max-width: 200px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.licenses-org-logo-placeholder {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.licenses-org-logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.licenses-file-label {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.licenses-org-section .btn-secondary {
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #eee;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.licenses-org-section .btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.licenses-org-msg {
+  margin: 0.75rem 0 0;
+}

@@ -34,6 +34,8 @@ Tutti i documenti in `docs/adr/`. Per numeri con più file (es. due ADR-002, tre
 | [ADR-003-database-architecture-processes-analysis](./ADR-003-database-architecture-processes-analysis.md) | Database Architecture / Processi | Accettato |
 | [ADR-004-mobile-auth-localstorage](./ADR-004-mobile-auth-localstorage.md) | Auth mobile (localStorage JWT) | Accettato |
 | [ADR-005-attachment-storage-strategy](./ADR-005-attachment-storage-strategy.md) | Strategia storage allegati | Accettato |
+| [ADR-006-auto-reconcile-cache-sync](./ADR-006-auto-reconcile-cache-sync.md) | Auto-reconcile cache / multi-device | Proposta approvata |
+| [ADR-007-logout-offline-backup-e-mirror-cartella-pc](./ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Logout senza perdita lavoro locale + backup PC | Proposto |
 
 ## Convenzioni
 

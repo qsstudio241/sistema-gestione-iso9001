@@ -1,6 +1,6 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-20.
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-19.
 
 ---
 
@@ -18,13 +18,14 @@
 | **Quick-ref DB e API** | [DATABASE.md](DATABASE.md), [BACKEND_API.md](BACKEND_API.md) | Riferimento rapido (spostati da root) |
 | **Deploy Netlify** | [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) | Build, deploy, convenzioni Git |
 | **Checklist deploy release** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) | Passi per release (build, backend VPS, push, smoke test) |
-| **Perdita connessione (offline/mobile)** | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) | Comportamento offline, sync, health check, mobile |
+| **Perdita connessione (offline/mobile)** | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) | Comportamento offline, sync, health check, mobile; **§ Logout** = limiti vs ADR-007 |
+| **Open points: logout, backup PC, cache audit** | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Fonte unica per non “perdere” requisiti tra sessioni |
 | **Utenti, checklist, sistemi, report** | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) | Organization/user, ruoli, checklist ISO e custom, template report, self-assessment |
 | **Architettura utenti e RBAC** | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) | Tenant → studio → azienda; ruoli canonici; deleghe; scope API; piano migrazione (fonte per hardening sicurezza) |
 | **Migrazione DB: split tenant** | [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md) | Da un solo `organization_id` a più organizzazioni (QS_Studio, MASON, ERAM); fasi, inventario tabelle, checklist |
 | **Decisioni architetturali** | [adr/README.md](adr/README.md) | Indice ADR; dettaglio in `adr/ADR-*.md` |
 | **Manuali** | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) | Uso applicazione e procedure |
-| **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Mapping, sync, dettagli |
+| **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Infra prod., **SSH vs SQL**, ruolo assistente Cursor |
 | **Storico / archive** | [archive/](archive/) | CLEANUP_ROADMAP, ROADMAP_RESET_COMPLETO (doc storici) |
 
 ---

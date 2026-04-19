@@ -42,6 +42,7 @@ Per **non dipendere dalla lettera disco di Google Drive** e mantenere stabile il
 |----------------------|-----------|
 | Procedure ripetibili, lezioni da incidenti, smoke manuali, DoD operativi | **Questo file** (`GUIDA_CONSOLIDATA.md`) |
 | Priorità, fasi, backlog, “Prossimo step” macro | `PROJECT_ROADMAP.md` |
+| **Open points** che devono restare visibili tra sessioni AI (logout vs bozze, mirror PC, cache audit…) | `PROJECT_ROADMAP.md` — sezione **Open points e memoria trasversale** + ADR collegato (oggi [ADR-007](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md)) |
 | Stack, repo, flusso deploy ad alto livello | `PROJECT_CONTEXT.md` (root) |
 | Decisione architetturale non ovvia | `docs/adr/ADR-*.md` + link da guida/roadmap |
 | Incarico agente / deputy (scope, branch, DoD) | `docs/agent-tasks/*.md` |
@@ -70,7 +71,7 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 
 | Momento | Azione |
 |--------|--------|
-| **Inizio sprint o sessione** | Leggere [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (Prossimo step + checklist aperte) e, se il task tocca permessi o dati per studio/azienda, [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). |
+| **Inizio sprint o sessione** | Leggere [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (**Prossimo step**, **Open points e memoria trasversale**, checklist aperte) e, se il task tocca permessi o dati per studio/azienda, [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). |
 | **Durante lo sviluppo** | Ogni vertical slice: elencare in PR/commit **file toccati** + **test aggiunti o da eseguire manualmente** (non solo “build ok”). |
 | **Prima del merge su `main`** | CI app su PR ([`.github/workflows/ci-app-pr.yml`](../.github/workflows/ci-app-pr.yml)); localmente: sezione **D** (test + build). |
 | **Dopo deploy** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) + smoke tabella sotto; se tocca licenze/auth → anche righe “Sicurezza e licenze”. |

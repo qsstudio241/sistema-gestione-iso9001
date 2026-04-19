@@ -15,6 +15,8 @@
 | **Utente SQL** | Definito in `backend/config/database.json` (file **locale**, non in git) o tramite variabili `DB_USER` / `DB_PASSWORD`. |
 | **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — password/chiave **non** in repository; preferire PuTTY session o chiave. |
 
+**Nota (evitare perdite di tempo):** l’utente **Linux** usato in SSH **non è** necessariamente uguale a **`DB_USER`** per SQL Server. Sono due mondi separati (stesso host, porte e servizi diversi). Cosa può fare l’assistente in Cursor senza password interattive: → [REFERENCE.md](REFERENCE.md) sezione *Assistente AI (Cursor) e accesso remoto*.
+
 ### Setup locale `database.json`
 
 1. Copia il template: `backend/config/database.json.example` → `backend/config/database.json`.

@@ -469,6 +469,43 @@ class ApiService {
         return `${this.baseUrl}/companies/${id}/logo`;
     }
 
+    // ==========================================
+    // ORGANIZATION (tenant — P.IVA, logo)
+    // ==========================================
+
+    async getMyOrganization() {
+        return this.get('/organizations/me');
+    }
+
+    async patchMyOrganization(body) {
+        return this.patch('/organizations/me', body);
+    }
+
+    getOrganizationLogoUrl() {
+        return `${this.baseUrl}/organizations/me/logo`;
+    }
+
+    async uploadOrganizationLogo(file) {
+        const formData = new FormData();
+        formData.append('logo', file);
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(`${this.baseUrl}/organizations/me/logo`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Errore upload logo organizzazione' }));
+            throw new Error(err.error || `HTTP ${response.status}`);
+        }
+        return response.json();
+    }
+
+    async deleteOrganizationLogo() {
+        return this.delete('/organizations/me/logo');
+    }
+
     async getAuditorOrgs() {
         return this.get('/auditor-orgs');
     }

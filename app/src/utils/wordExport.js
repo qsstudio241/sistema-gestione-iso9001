@@ -122,7 +122,11 @@ function buildTemplateData(audit) {
         ? meta.fornitoreName
         : '';
 
+    const orgBrand = audit.exportOrganizationBranding || {};
+
     return {
+        organizationName:       orgBrand.name || '',
+        organizationVat:        orgBrand.vat || '',
         clientName:             meta.clientName  || 'Cliente',
         committenteName:        meta.clientName  || 'Cliente',
         auditPartyTypeLabel,
@@ -219,6 +223,7 @@ const SIMPLE_DOCXTEMPLATE_VAR_NAMES = [
     'committenteName', 'fornitoreName', 'procedureCode', 'auditNumber', 'auditObject',
     'clientName', 'processes', 'conclusions', 'summaryText',
     'auditor', 'scope', 'auditDate', 'cCount', 'ncCount', 'ossCount', 'omCount', 'nvCount', 'naCount',
+    'organizationName', 'organizationVat',
 ];
 
 /** proofErr è elemento vuoto: <w:proofErr w:type="spellStart"/>. */
@@ -371,9 +376,11 @@ function appendImageRelationship(relsXml, rId, targetFromWordFolder) {
 }
 
 /**
- * Sostituisce il paragrafo che contiene [LOGO] con lo stesso w:p (stile/allineamento) + run immagine.
+ * Sostituisce il paragrafo che contiene un marker testuale (es. [LOGO], [LOGO_ORG]) con run immagine.
  */
-function replaceLogoMarkerParagraph(xml, markerIndex, imageRunsXml) {
+function replaceLogoMarkerParagraph(xml, markerIndex, imageRunsXml, markerText) {
+    const marker = markerText || '[LOGO]';
+    const markerLen = marker.length;
     let pStart = markerIndex - 1;
     while (pStart >= 4) {
         if (
@@ -387,11 +394,11 @@ function replaceLogoMarkerParagraph(xml, markerIndex, imageRunsXml) {
     }
     const pEnd = xml.indexOf('</w:p>', markerIndex);
     if (pStart < 4 || pEnd < 0) {
-        return xml.slice(0, markerIndex) + imageRunsXml + xml.slice(markerIndex + '[LOGO]'.length);
+        return xml.slice(0, markerIndex) + imageRunsXml + xml.slice(markerIndex + markerLen);
     }
     const oldPara = xml.slice(pStart, pEnd + 6);
     const openM = oldPara.match(/^(<w:p[^>]*>)([\s\S]*)(<\/w:p>)$/);
-    if (!openM) return xml.slice(0, markerIndex) + imageRunsXml + xml.slice(markerIndex + '[LOGO]'.length);
+    if (!openM) return xml.slice(0, markerIndex) + imageRunsXml + xml.slice(markerIndex + markerLen);
     let inner = openM[2];
     let pPr = '';
     if (inner.startsWith('<w:pPr')) {
@@ -448,7 +455,57 @@ function injectCompanyLogoInZip(zip, dataUrl) {
         let imgIdLocal = 88001;
         while (xml.includes('[LOGO]')) {
             const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++);
-            xml = replaceLogoMarkerParagraph(xml, xml.indexOf('[LOGO]'), drawingRun);
+            xml = replaceLogoMarkerParagraph(xml, xml.indexOf('[LOGO]'), drawingRun, '[LOGO]');
+        }
+        zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
+    }
+}
+
+const ORG_LOGO_MARKER = '[LOGO_ORG]';
+
+/**
+ * Come injectCompanyLogoInZip ma per logo tenant (marker [LOGO_ORG] nei template Word).
+ */
+function injectOrganizationLogoInZip(zip, dataUrl) {
+    const parsed = parseImageDataUrl(dataUrl);
+    if (!parsed) {
+        console.warn('[wordExport] Logo org: data URL non valido.');
+        return;
+    }
+    const ext = wordEmbeddableExtFromMime(parsed.mime);
+    if (!ext) {
+        console.warn('[wordExport] Logo org: formato non embeddabile in Word:', parsed.mime);
+        return;
+    }
+    const mediaRelTarget = `media/org_logo_export.${ext}`;
+    const mediaPath = `word/${mediaRelTarget}`;
+    zip.file(mediaPath, parsed.base64, { base64: true });
+    ensureImageContentTypesInZip(zip, [ext]);
+
+    let rSeed = maxRIdNumericInZip(zip);
+
+    const partPaths = Object.keys(zip.files).filter((p) =>
+        /^word\/(document|header\d+|footer\d+)\.xml$/.test(p)
+    );
+
+    for (const partPath of partPaths) {
+        let xml = zip.files[partPath]?.asText();
+        if (!xml || !xml.includes(ORG_LOGO_MARKER)) continue;
+
+        rSeed += 1;
+        const rId = `rId${rSeed}`;
+        const relsPath = relsPathForWordPart(partPath);
+        if (!relsPath) continue;
+
+        let relsXml = zip.files[relsPath]?.asText();
+        relsXml = ensureRelationshipsXml(relsXml);
+        relsXml = appendImageRelationship(relsXml, rId, mediaRelTarget);
+        zip.file(relsPath, relsXml);
+
+        let imgIdLocal = 89001;
+        while (xml.includes(ORG_LOGO_MARKER)) {
+            const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++);
+            xml = replaceLogoMarkerParagraph(xml, xml.indexOf(ORG_LOGO_MARKER), drawingRun, ORG_LOGO_MARKER);
         }
         zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
     }
@@ -728,6 +785,15 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
             injectCompanyLogoInZip(processedZip, logoUrl);
         } catch (e) {
             console.warn('[wordExport] Inserimento logo fallito:', e.message);
+        }
+    }
+
+    const orgLogoUrl = auditForGen?.embedOrganizationLogo?.dataUrl;
+    if (orgLogoUrl) {
+        try {
+            injectOrganizationLogoInZip(processedZip, orgLogoUrl);
+        } catch (e) {
+            console.warn('[wordExport] Inserimento logo organizzazione fallito:', e.message);
         }
     }
 
