@@ -2,7 +2,7 @@
 
 > Documento di riferimento per rendere **robusta e affidabile** la gestione identità, deleghe e segregazione dati.  
 > **Allineare** implementazione (backend + UI) e **non** duplicare regole solo lato client.  
-> **Ultimo aggiornamento**: 2026-04-12.
+> **Ultimo aggiornamento**: 2026-04-19.
 
 **Correlati**: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (checklist licenze/sessioni), [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) (diagrammi obiettivo prodotto), [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (deploy e piano qualità).
 
@@ -94,7 +94,53 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 
 ---
 
-## 8. Definition of Done (modifiche che toccano RBAC)
+## 8. Strategia prodotto (best practice per questo SGQ)
+
+**Contesto**: PWA per consulenti ISO con **multi-tenant** a livello database (`organization_id`), **studi** operativi (`auditor_orgs`) e **clienti** auditable (`companies`). Obiettivo: **isolamento dati tra tenant**, **segregazione per studio** nella stessa org, **tracciabilità** (ISO), **minimo privilegio**.
+
+### 8.1 Come *dovrebbe* essere la struttura utenti (modello di riferimento)
+
+| Livello | Cosa rappresenta | Best practice |
+|--------|------------------|---------------|
+| **Tenant** (`organizations`) | Confine contrattuale e dati (es. “il cliente che paga il SaaS” o un’unica installazione). Gli utenti **non** attraversano mai due `organization_id` senza un ruolo di piattaforma esplicito (fuori scope MVP). | Un utente ha **sempre** un `organization_id`. Più tenant = più righe in `organizations` + provisioning (creazione org, primo admin). |
+| **Studio** (`auditor_orgs`) | Team / ragione sociale interna / linea di consulenza (es. Mason vs Camellini) **nello stesso tenant**. | Separazione operativa e anagrafiche clienti (`companies.auditor_org_id`), **non** sostituisce il tenant salvo decisione commerciale di “uno studio = un contratto separato”. |
+| **Azienda** (`companies`) | Cliente finale auditable. | Ogni company è legata a **uno** studio; gli audit puntano a `company_id` quando possibile. |
+| **Utente** (`users`) | Login; ruolo + opzionale `auditor_org_id` (perimetro studio). | **Org admin** (admin/superadmin senza studio): gestione org. **Utenti di studio** (auditor/viewer con studio): perimetro studio. **Viewer cliente** (evoluzione): perimetro `company` via `user_company_access` (vedi §7 Fase 4). |
+
+**Nota**: “Mason / Camellini / Franciosi” come **studi** sotto **un** `organization_id` è coerente con questo modello. Trasformarli in **tenant separati** (ciascuno con propria `organizations`) è un’**altra strategia commerciale** (multi-contratto): richiede più org nel DB + flussi di onboarding, non solo un campo in UI.
+
+### 8.2 Cosa c’è già (implementato)
+
+| Area | Stato |
+|------|--------|
+| Colonne `users.organization_id`, `users.auditor_org_id`, ruoli `admin` / `superadmin` / `auditor` / `viewer` | Presenti |
+| Tabelle `organizations`, `auditor_orgs`, `companies` con collegamenti | Presenti |
+| Autenticazione JWT, `GET /auth/me`, licenze moduli (`licensed_modules`) | Presenti |
+| UI **Gestione utenti**: creazione, assegnazione studio, standard consentiti, disattivazione | Presente |
+| Filtri RBAC su **lista/dettaglio/sync audit** e lock (predicati allineati al servizio `auditListRbac`) | Presente (da monitorare su deploy) |
+| Admin “elevato” (senza studio) può gestire utenti e ruoli sensibili | Presente (policy backend) |
+
+### 8.3 Cosa manca o è parziale (gap noti)
+
+| Gap | Priorità tipica | Riferimento |
+|-----|-----------------|-------------|
+| **Stesso predicato RBAC** su *tutte* le risorse (NC, allegati, registry, checklist custom, statistiche) dove ancora usano solo `organization_id` | Alta | §5–7 |
+| Ruolo **`studio_admin`** e API di delega “solo mio studio” | Media | §3–4, Fase 3 |
+| Tabella **`user_company_access`** + viewer **per azienda** (cliente ERAM in sola lettura / permessi granulari) | Media–alta se serve B2B2C | Fase 4 |
+| **Servizio centralizzato** `accessScope` / middleware unico su tutte le route | Alta man mano che cresce il codice | §6 |
+| **Provisioning multi-tenant** (creazione nuova `organizations` da UI + utente admin) se il prodotto deve vendere “un tenant per cliente finale” | Dipende dal business | Fuori §7 fino a decisione |
+| Flusso **invito email** invece di password condivise | Consigliato | §4 |
+| **Audit trail** modifiche ruoli/utenti (chi ha promosso chi) | Compliance | Da definire |
+
+### 8.4 “Abbiamo sbagliato strategia?”
+
+**No** sul modello **tenant → studio → company → user**: è allineato a SaaS B2B per consulenza e a ISO (tracciabilità, separazione). **Sì come debito** se il mercato richiede **subito** “un tenant per ogni studio” o “un tenant per ERAM” senza aver implementato **provisioning org** e **isolamento completo** su tutti i moduli: allora non è il modello dati ad essere sbagliato, ma **il perimetro di rilascio** rispetto all’obiettivo commerciale.
+
+**Prossima decisione prodotto** (da fissare con il committente): restare su **un tenant + più studi** oppure investire in **multi-org** (più righe `organizations`) **e** completare RBAC ovunque — le due strade possono coesistere nel tempo (prima coerenza scope, poi org aggiuntive).
+
+---
+
+## 9. Definition of Done (modifiche che toccano RBAC)
 
 - [ ] Stesso predicato di accesso su **tutti** i verbi HTTP per la stessa risorsa.
 - [ ] Test automatici o repro per “utente studio A non accede a audit studio B” (stessa org).
