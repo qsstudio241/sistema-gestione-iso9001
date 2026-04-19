@@ -496,9 +496,9 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 ### Chiusura sessione 19 aprile 2026 — RBAC lista audit (studio / tenant)
 
 - **Problema:** utente auditor (es. perimetro Mason) vedeva nel menu **tutti** gli audit del tenant se il ruolo nel JWT/DB non combaciava esattamente con le stringhe attese (`auditor` / `viewer`) oppure in casi limite: il predicato studio veniva omesso e restava solo il filtro `organization_id`.
-- **Backend (fonte di verità API):** `backend/src/services/auditListRbac.service.js` — normalizzazione ruolo, fallback minimo privilegi su `created_by`; `backend/src/middleware/auth.middleware.js` — `role` su `req.user` in minuscolo; `backend/src/controllers/audit.controller.js` — `organization_id` letto esplicitamente da `req.user` in `listAudits` e `getAuditById`. Test: `backend/src/services/auditListRbac.service.test.js` (`npm test` nella cartella `backend/`).
+- **Backend (fonte di verità API):** `backend/src/services/auditListRbac.service.js` — `studioScopeClause` / `normalizeRole`, fallback minimo privilegi su `created_by`; `backend/src/middleware/auth.middleware.js` — `role` su `req.user` in minuscolo dal JWT; `backend/src/controllers/audit.controller.js` — `organization_id` da `req.user` in `listAudits` / `getAuditById` + uso di `studioScopeClause`. Test: `backend/src/services/auditListRbac.service.test.js` (`cd backend` → `npx jest --no-coverage`, oppure `npm test` con coverage).
 - **Frontend:** remount controllato del `<select>` audit / aziende in `AuditSelector.jsx` (già su `main` in commit dedicato) per coerenza UI dopo cambio elenco.
-- **Deploy:** il comportamento in **produzione** dipende dall’**API sulla VPS** (Netlify aggiorna solo la PWA). Dopo `git pull` sul server e restart del processo Node, smoke riga tabella **RBAC / studio** in questa guida (due utenti, `auditor_org` diversi).
+- **Deploy:** il comportamento in **produzione** dipende dall’**API sulla VPS** (Netlify aggiorna solo la PWA). Sul server **non** basta `git pull` se la cartella è solo copia file: eseguire `backend/scripts/deploy-controllers-to-vps.ps1` (include controller, `auditListRbac.service.js`, **`auth.middleware.js`**) + restart; poi smoke riga tabella **RBAC / studio** in questa guida (due utenti, `auditor_org` diversi).
 
 ### Chiusura sessione 28 marzo 2026
 

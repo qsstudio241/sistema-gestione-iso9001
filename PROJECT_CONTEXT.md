@@ -231,7 +231,7 @@ git push origin main
 ```
 
 ### Backend (manuale SCP / script)
-Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.ps1` (usa pscp; richiede PuTTY). In alternativa, copia manualmente i controller modificati (es. `audit.controller.js`, `customChecklist.controller.js`) e riavvia Node sul VPS. Dettaglio: [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md).
+Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.ps1` (usa pscp; richiede PuTTY). Copia controller, route, `server.js`, servizi correlati e **`src/middleware/auth.middleware.js`** (RBAC / JWT). In alternativa, copia manualmente gli stessi file e riavvia Node sul VPS. Dettaglio: [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md).
 ```bash
 # 1. Copia i file (es. audit + customChecklist controller)
 scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js \
@@ -252,4 +252,4 @@ git push origin main
 
 ---
 
-*Aggiornato: 2026-04-18 — Open points consolidati in PROJECT_ROADMAP + ADR-007; logout/cache audit.*
+*Aggiornato: 2026-04-19 — RBAC lista audit (API): `auditListRbac` + `auth.middleware` + `audit.controller`; deploy VPS solo con script/scp + restart (vedi guida sezione E 19 aprile 2026).*

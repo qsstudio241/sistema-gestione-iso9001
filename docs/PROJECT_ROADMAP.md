@@ -149,7 +149,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
 | Campo norm_excerpt | Stralcio norma nel report Word | 🔲 Backlog |
 
-**Progress Overall**: ~85% funzionalità core Scenario 1
+**Progress Overall**: ~85% funzionalità core Scenario 1 · **Macro piattaforma** (SaaS completo, registry documenti, sprint collegati): indicativo **~65%**
 
 ---
 

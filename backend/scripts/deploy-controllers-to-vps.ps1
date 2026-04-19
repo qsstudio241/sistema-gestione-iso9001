@@ -1,4 +1,4 @@
-# Deploy backend (controllers + routes + server.js + servizi correlati) sul VPS
+# Deploy backend (controllers + routes + server.js + middleware auth + servizi correlati) sul VPS
 #
 # IMPORTANTE: /var/www/sgq-backend sul VPS e' una COPIA di file (deploy), non un repository Git.
 # Dopo `git push` su GitHub, Netlify aggiorna il frontend; il backend si aggiorna solo eseguendo questo script
@@ -125,6 +125,9 @@ Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organ
 
 # Entry point server (include customChecklistRoutes)
 Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
+
+# Middleware (JWT / req.user — es. normalizzazione ruolo per RBAC lista audit)
+Copy-FileToVps "src/middleware/auth.middleware.js" "$RemoteBase/src/middleware/auth.middleware.js"
 
 # Services richiesti dai controller (evita crash MODULE_NOT_FOUND su VPS)
 Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"

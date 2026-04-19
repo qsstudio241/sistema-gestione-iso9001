@@ -47,7 +47,7 @@ Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiorn
   $env:SGQ_PUTTY_SESSION = "NomeSessioneSalvataInPuTTY"   # oppure .putty-session.local / .ssh-deploy.local.ps1
   .\backend\scripts\deploy-controllers-to-vps.ps1
   ```
-  Lo script copia i controller/routes/service elencati nello script, inclusi **`organization`**, **`auth`**, **`server.js`**, e tenta **`systemctl restart sgq-backend`**.
+  Lo script copia i controller/routes/service elencati nello script, inclusi **`organization`**, **`auth`**, **`server.js`**, **`src/middleware/auth.middleware.js`** (JWT / ruolo per RBAC), e tenta **`systemctl restart sgq-backend`**.
 
 - [ ] **Riavvio (solo se non usi lo script)**  
   Sul server: **`sudo systemctl restart sgq-backend`**. Evitare `nohup node ...` in parallelo a systemd (porta 3000 già occupata → `EADDRINUSE`).
