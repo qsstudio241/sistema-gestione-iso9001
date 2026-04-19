@@ -37,8 +37,8 @@ Per endpoint `download`/`view` allegati usati in `<img src>` o `<iframe>`: passa
 
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| GET | `/audits` | JWT | Lista audit dell'organizzazione (`?status=`, `?standard_id=`) |
-| GET | `/audits/:id` | JWT | Dettaglio audit |
+| GET | `/audits` | JWT | Lista audit: `organization_id` da JWT + filtro studio/RBAC (`auditListRbac.studioScopeClause`; ruolo normalizzato in middleware). Query: `?status=`, `?standard_id=`, paginazione. |
+| GET | `/audits/:id` | JWT | Dettaglio audit (stesso scope lista) |
 | GET | `/audits/:id/statistics` | JWT | Statistiche conformità |
 | GET | `/audits/:id/pending-issues` | JWT | Rilievi pendenti da audit precedenti |
 | GET | `/audits/:id/nc-responses` | JWT | Risposte NC dell'audit |

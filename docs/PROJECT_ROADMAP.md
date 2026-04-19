@@ -1,7 +1,7 @@
 # Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 18 aprile 2026
+> **Ultimo Aggiornamento**: 19 aprile 2026
 > **Prossimo Step** (sessione successiva): (0–3) Completare smoke da [`docs/agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md`](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md) (punto 0 manuale produzione; 1–3 preview/deploy). Verificare su **DB produzione** migrazione **040** se non già eseguita (vedi [`GUIDA_CONSOLIDATA.md`](GUIDA_CONSOLIDATA.md)). Poi: (4) Flusso 2 SAL; (5) **Sprint 10** staging post-import **oppure** Fase 0.4 `norm_excerpt` (scegliere una traccia); (6) RAG dopo registry stabile; backlog ISO 45001 / ADR-006.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
@@ -18,7 +18,7 @@
 |------|---------|----------------|
 | **Logout vs lavoro solo locale** | Oggi: pulizia IndexedDB + sync queue al logout (`sgq:userLoggedOut`) per sicurezza multi-tenant → bozze non ancora sul server **a rischio** se l’utente esce senza sync. Serve gate + export / sync forzato (vedi ADR). | [ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) (**Proposto**) |
 | **Mirror / cartella PC (backup bundle audit)** | Non attivo nel flusso principale (IndexedDB only, `storageAdapter.js`). Opzionale desktop in ADR Fase B. | Stesso **ADR-007** |
-| **Menu audit vs RBAC** | Fix merge: non reinserire in lista audit locali con `metadata.auditId` se assenti da `GET /audits`. Logout svuota cache. | `app/src/contexts/StorageContext.jsx` (`filterLocalAuditsAfterServerFetch`, listener logout); coerenza con [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+| **Menu audit vs RBAC** | **Frontend:** merge IndexedDB + `filterLocalAuditsAfterServerFetch`, logout svuota cache; remount menu (`AuditSelector`). **Backend (richiede deploy VPS):** `GET /audits` e dettaglio filtrano con `studioScopeClause` (`auditListRbac.service.js`); ruolo JWT normalizzato in `auth.middleware.js`; ruoli non previsti → vincolo `created_by` (mai lista org-wide implicita); `organization_id` sempre da `req.user` in `listAudits` / `getAuditById`. Test Jest: `auditListRbac.service.test.js`. | `StorageContext.jsx`, `AuditSelector.jsx`, `backend/src/services/auditListRbac.service.js`, `backend/src/middleware/auth.middleware.js`, `backend/src/controllers/audit.controller.js`; [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
 | **Disconnessione temporanea (non logout)** | Comportamento atteso: IndexedDB + coda; vedi doc dedicata. | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) |
 
 ---

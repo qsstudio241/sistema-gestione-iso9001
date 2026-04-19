@@ -493,6 +493,13 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 **Ripresa suggerita:** `git pull`; leggere header [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md); smoke roadmap (0)–(3) se deploy recente; poi traccia **licenze/auth (sessioni A–E)** e **RBAC** come da checklist roadmap. Todo interne: D1 smoke, D2–D5 licenze, D6 RBAC, delega web (brief `docs/agent-tasks/`).
 
+### Chiusura sessione 19 aprile 2026 — RBAC lista audit (studio / tenant)
+
+- **Problema:** utente auditor (es. perimetro Mason) vedeva nel menu **tutti** gli audit del tenant se il ruolo nel JWT/DB non combaciava esattamente con le stringhe attese (`auditor` / `viewer`) oppure in casi limite: il predicato studio veniva omesso e restava solo il filtro `organization_id`.
+- **Backend (fonte di verità API):** `backend/src/services/auditListRbac.service.js` — normalizzazione ruolo, fallback minimo privilegi su `created_by`; `backend/src/middleware/auth.middleware.js` — `role` su `req.user` in minuscolo; `backend/src/controllers/audit.controller.js` — `organization_id` letto esplicitamente da `req.user` in `listAudits` e `getAuditById`. Test: `backend/src/services/auditListRbac.service.test.js` (`npm test` nella cartella `backend/`).
+- **Frontend:** remount controllato del `<select>` audit / aziende in `AuditSelector.jsx` (già su `main` in commit dedicato) per coerenza UI dopo cambio elenco.
+- **Deploy:** il comportamento in **produzione** dipende dall’**API sulla VPS** (Netlify aggiorna solo la PWA). Dopo `git pull` sul server e restart del processo Node, smoke riga tabella **RBAC / studio** in questa guida (due utenti, `auditor_org` diversi).
+
 ### Chiusura sessione 28 marzo 2026
 
 - **Lista audit all’avvio (tutte le piattaforme):** il primo download dopo l’avvio non usa più `GET /audits` senza paginazione (limite backend 50). Usa la stessa funzione della riconciliazione (`fetchAllServerAudits`, pagine da 200) **solo se** online e presente JWT (`apiService.getToken()`), così il DB/server è la fonte completa del menu audit anche senza attendere login o i 45s di intervallo.

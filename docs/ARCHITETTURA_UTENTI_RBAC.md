@@ -80,6 +80,8 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 3. **JWT** leggero (`user_id`, `organization_id`, `role`, `auditor_org_id`); permessi estesi opzionalmente da `GET /auth/me` (capabilities calcolate server-side).
 4. **UI**: menu e azioni da capabilities — evitare divergenza con API.
 
+**Stato attuale (lista/dettaglio audit, apr. 2026):** il predicato SQL condiviso per org + studio è in `backend/src/services/auditListRbac.service.js` (`studioScopeClause`, usato da `audit.controller` e da percorsi sync/lock collegati). Il middleware `authenticate` imposta `req.user.role` già **normalizzato in minuscolo** così varianti di casing dal DB o da token vecchi non fanno “cadere” l’utente nel ramo senza filtro studio. Ruoli non mappati esplicitamente non espandono mai la lettura a tutta l’organizzazione: default restrittivo su `created_by`.
+
 ---
 
 ## 7. Piano di migrazione (fasi)
