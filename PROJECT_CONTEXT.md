@@ -6,7 +6,7 @@
 > **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
 > **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
 > **Open points trasversali** (logout vs bozze locali, mirror PC, coerenza cache menu audit): → [docs/PROJECT_ROADMAP.md](docs/PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).  
-> Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md) | [docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
+> Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md) | [docs/ACCESSO_DEPLOY_AGENTS.md](docs/ACCESSO_DEPLOY_AGENTS.md) (API/SSH/deploy autonomo) | [docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
 
 ---
 
@@ -42,9 +42,9 @@ Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conform
 | **API** | `https://www.fr-busato.it:8443/api/v1` |
 | **Frontend** | Netlify (auto-deploy da `main`) |
 | **VPS** | `www.fr-busato.it` — Ubuntu |
-| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH** o sessione **PuTTY** salvata (`SGQ_PUTTY_SESSION` nello script deploy). **Non** versionare password SSH. |
+| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH**, sessione **PuTTY**, oppure file locale gitignored **`backend/config/.ssh-deploy.local.ps1`** (vedi `.ssh-deploy.local.ps1.example`). **Non** versionare password SSH. |
 | **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md), [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md). |
-| **Assistente AI (Cursor)** | Non ha credenziali proprie né SSH «integrato»: usa `database.json` / `.env` **sul PC dove è aperto il repo**. Separare sempre SSH (1122, utente Linux) da SQL (11043, `DB_USER`). Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md) sezione *Assistente AI (Cursor) e accesso remoto*. |
+| **Assistente AI (Cursor)** | Esegue comandi **solo sul PC del workspace**. Può lanciare deploy (`deploy-controllers-to-vps.ps1`) e migrazioni se esistono file locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, Pageant/sessione PuTTY). Dettaglio: [docs/ACCESSO_DEPLOY_AGENTS.md](docs/ACCESSO_DEPLOY_AGENTS.md) e [docs/REFERENCE.md](docs/REFERENCE.md) (*Assistente AI e accesso remoto*). |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **App log** | `/var/www/sgq-backend/app.log` |
 | **GitHub** | `qsstudio241/sistema-gestione-iso9001` |

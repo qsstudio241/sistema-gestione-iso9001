@@ -17,6 +17,8 @@ backend/config/database.json
 
 # Nome sessione PuTTY per deploy script (solo etichetta sessione, mai password)
 backend/config/.putty-session.local
+# Deploy SSH non interattivo (copiare da .ssh-deploy.local.ps1.example — mai committare)
+backend/config/.ssh-deploy.local.ps1
 
 # IDE
 .vscode/

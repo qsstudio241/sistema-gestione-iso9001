@@ -41,10 +41,10 @@ Usa questa lista per mettere in produzione la nuova versione in modo ordinato e 
 Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiornato prima o insieme al frontend**, altrimenti le nuove funzionalità non funzioneranno.
 
 - [ ] **Copia file backend sul VPS (metodo consigliato)**  
-  Da PowerShell nella **root del repo** (`C:\ProgettoISO`), con PuTTY installato e sessione o chiave configurata (vedi [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md)):
+  Da PowerShell nella **root del repo** (`C:\ProgettoISO`), con PuTTY installato (`pscp`/`plink`). Autenticazione: sessione PuTTY, Pageant, oppure file gitignored **`backend/config/.ssh-deploy.local.ps1`** (copia da `.ssh-deploy.local.ps1.example`) — vedi [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) e [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md).
   ```powershell
   cd "C:\ProgettoISO"
-  $env:SGQ_PUTTY_SESSION = "NomeSessioneSalvataInPuTTY"   # oppure file backend/config/.putty-session.local
+  $env:SGQ_PUTTY_SESSION = "NomeSessioneSalvataInPuTTY"   # oppure .putty-session.local / .ssh-deploy.local.ps1
   .\backend\scripts\deploy-controllers-to-vps.ps1
   ```
   Lo script copia i controller/routes/service elencati nello script, inclusi **`organization`**, **`auth`**, **`server.js`**, e tenta **`systemctl restart sgq-backend`**.

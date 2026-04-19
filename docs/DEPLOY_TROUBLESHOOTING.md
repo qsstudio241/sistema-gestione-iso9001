@@ -109,6 +109,19 @@ Poi lancia lo script con:
    `fuser -k 3000/tcp` → `sleep 2` → `cd /var/www/sgq-backend && nohup node src/server.js >> /var/www/sgq-backend/app.log 2>&1 &`  
    (stesso fallback eseguito dallo script se A e `sudo -n` non bastano).
 
+## 2.d) File locale sicuro per Cursor / deploy ripetibile (consigliato)
+
+**Problema:** password o sessione solo in variabili globali Windows, o sessione PuTTY salvata non aggiornata, mentre la password SSH funziona, oppure conflitto tra sessione `-load` e password.
+
+**Soluzione:**
+1. Copiare `backend/config/.ssh-deploy.local.ps1.example` in **`backend/config/.ssh-deploy.local.ps1`** (il secondo nome e' in `.gitignore`, non va su Git).
+2. Nel file `.ps1` impostare solo cio' che serve (es. `$env:SGQ_SSH_PASSWORD`, oppure `$env:SGQ_PUTTY_SESSION`, opzionale `$env:SGQ_SUDO_PASSWORD` per `systemctl`).
+3. Rilanciare `backend/scripts/deploy-controllers-to-vps.ps1`: lo script **carica automaticamente** `.ssh-deploy.local.ps1` se esiste.
+
+**Regola anti-conflitto:** se `SGQ_SSH_PASSWORD` e' valorizzata (env o file locale), lo script **ignora la sessione PuTTY** per quell'esecuzione e usa hostkey + `-pw`, cosi' non si resta bloccati su una sessione `-load` errata.
+
+Riepilogo URL e host: [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md).
+
 ## 3) PowerShell: `&&` non supportato
 
 **Sintomi**

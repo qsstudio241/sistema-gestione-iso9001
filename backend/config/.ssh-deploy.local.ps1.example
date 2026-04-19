@@ -1,0 +1,19 @@
+# Copia questo file in:  backend/config/.ssh-deploy.local.ps1
+# Il file .ps1 reale e' in .gitignore: non finira' mai su GitHub.
+#
+# Scopo: permettere a Cursor (sul tuo PC) di eseguire deploy/migration senza
+# incollare password in chat. Lo script deploy-controllers-to-vps.ps1 carica
+# automaticamente .ssh-deploy.local.ps1 all'avvio, se esiste.
+#
+# --- Opzione A (consigliata in produzione): solo sessione PuTTY + Pageant ---
+# $env:SGQ_PUTTY_SESSION = "SGQ-VPS"
+# $env:SGQ_SSH_PASSWORD = $null
+#
+# --- Opzione B: password SSH solo su questa macchina (meno sicura; ruotare se esposta) ---
+# $env:SGQ_PUTTY_SESSION = $null
+# $env:SGQ_SSH_PASSWORD = "LA_TUA_PASSWORD_SSH"
+#
+# --- Opzionale: sudo sul VPS per systemctl (evita solo fallback fuser/nohup) ---
+# $env:SGQ_SUDO_PASSWORD = "PASSWORD_SUDO_LINUX"
+#
+# Rimuovi i # dalle righe che ti servono. Non committare questo file dopo averlo copiato e riempito.

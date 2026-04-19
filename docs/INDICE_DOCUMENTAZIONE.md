@@ -26,6 +26,7 @@
 | **Decisioni architetturali** | [adr/README.md](adr/README.md) | Indice ADR; dettaglio in `adr/ADR-*.md` |
 | **Manuali** | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) | Uso applicazione e procedure |
 | **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Infra prod., **SSH vs SQL**, ruolo assistente Cursor |
+| **API/SSH e deploy da agente** | [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) | URL health, host SSH/SQL pubblici; credenziali solo file gitignored (`.ssh-deploy.local.ps1`, `database.json`) |
 | **Storico / archive** | [archive/](archive/) | CLEANUP_ROADMAP, ROADMAP_RESET_COMPLETO (doc storici) |
 
 ---

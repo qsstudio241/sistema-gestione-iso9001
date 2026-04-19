@@ -10,9 +10,11 @@
 # poi -batch funzionera' senza blocchi.
 #
 # --- Autenticazione SSH (ordine consigliato, best practice) ---
-# 1) Variabile d'ambiente SGQ_PUTTY_SESSION = nome sessione PuTTY salvata (host, utente, chiave o password SOLO in PuTTY, mai in repo).
-# 2) Chiave SSH + Pageant / ssh-agent (pscp/plink senza -pw).
-# 3) Solo se inevitabile in CI isolato: SGQ_SSH_PASSWORD (compare in history processi: evitare su macchine condivise; ruotare se esposta).
+# 1) File backend/config/.ssh-deploy.local.ps1 (gitignored; vedi .ssh-deploy.local.ps1.example) — imposta $env:SGQ_* senza chat/repo.
+# 2) Variabile SGQ_PUTTY_SESSION o file .putty-session.local — sessione PuTTY salvata + Pageant/chiave.
+# 3) Chiave SSH + Pageant senza sessione dedicata (plink/pscp -hostkey, nessun -pw).
+# 4) Solo se inevitabile: SGQ_SSH_PASSWORD (compare in history processi; ruotare se esposta).
+# Se SGQ_SSH_PASSWORD e' valorizzata, la sessione PuTTY viene ignorata per evitare batch falliti con sessioni obsolete.
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -21,6 +23,17 @@ $VPS = "spascarella@www.fr-busato.it"
 $Port = "1122"
 $RemoteBase = "/var/www/sgq-backend"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
+
+$DeployLocalPs1 = Join-Path $BackendRoot "config\.ssh-deploy.local.ps1"
+if (Test-Path -LiteralPath $DeployLocalPs1) {
+    try {
+        . $DeployLocalPs1
+        Write-Host "Caricato: backend/config/.ssh-deploy.local.ps1 (gitignored)" -ForegroundColor DarkGray
+    } catch {
+        throw "Errore eseguendo backend/config/.ssh-deploy.local.ps1: $_"
+    }
+}
+
 $PuttySession = $env:SGQ_PUTTY_SESSION  # opzionale: nome sessione PuTTY salvata (consigliato)
 $SshPassword = $env:SGQ_SSH_PASSWORD    # opzionale: password SSH (sconsigliata; evita prompt in batch)
 
@@ -31,6 +44,13 @@ if (-not $PuttySession -and (Test-Path $PuttySessionFile)) {
     if ($PuttySession) {
         Write-Host "Sessione PuTTY da backend/config/.putty-session.local" -ForegroundColor DarkGray
     }
+}
+
+if ($SshPassword) {
+    if ($PuttySession) {
+        Write-Host "SGQ_SSH_PASSWORD attiva: sessione PuTTY '$PuttySession' ignorata (deploy via hostkey + -pw)." -ForegroundColor DarkYellow
+    }
+    $PuttySession = $null
 }
 
 $Pscp = "C:\Program Files\PuTTY\pscp.exe"
@@ -84,7 +104,7 @@ if (-not $useSession) {
         & $Plink -batch -hostkey $HostKey -P $Port $VPS "exit" | Out-Null
     }
     if ($LASTEXITCODE -ne 0) {
-        throw "plink preflight fallito (exit $LASTEXITCODE). Serve autenticazione non-interattiva: SGQ_PUTTY_SESSION, oppure file backend/config/.putty-session.local (una riga, nome sessione PuTTY), oppure Pageant/chiave SSH."
+        throw "plink preflight fallito (exit $LASTEXITCODE). Serve autenticazione non-interattiva: backend/config/.ssh-deploy.local.ps1 (vedi .example), oppure SGQ_PUTTY_SESSION / .putty-session.local, oppure Pageant/chiave SSH."
     }
 }
 
@@ -145,7 +165,7 @@ fi
 if [ "`$RESTARTED" != "1" ]; then
   echo deploy_fallback_fuser_nohup
   fuser -k 3000/tcp 2>/dev/null || true
-  sleep 2
+  sleep 3
   cd $RemoteBase || exit 1
   nohup node src/server.js >> $RemoteBase/app.log 2>&1 &
   sleep 4

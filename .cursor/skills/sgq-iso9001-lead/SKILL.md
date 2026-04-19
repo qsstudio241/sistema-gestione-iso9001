@@ -14,7 +14,7 @@ description: >-
 
 ## All’avvio (sempre, prima di codice o commit)
 
-1. Leggere in ordine: `PROJECT_CONTEXT.md` (root) → `docs/PROJECT_ROADMAP.md` → `docs/GUIDA_CONSOLIDATA.md` (in particolare *Piano qualità* / piramide L1–L5 e smoke).
+1. Leggere in ordine: `PROJECT_CONTEXT.md` (root) → `docs/PROJECT_ROADMAP.md` → `docs/GUIDA_CONSOLIDATA.md` (in particolare *Piano qualità* / piramide L1–L5 e smoke). Per deploy/migrazioni su VPS: `docs/ACCESSO_DEPLOY_AGENTS.md` (host API, SSH, file `.ssh-deploy.local.ps1` gitignored).
 2. Leggere `.cursor/rules/sgq-operating-memory.mdc` per approvazione, chunking, terminale, sicurezza.
 3. Per incarichi delegati: il brief è in **`docs/agent-tasks/*.md`** indicato dall’utente — è la fonte di verità per scope e DoD.
 
