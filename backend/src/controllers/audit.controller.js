@@ -24,6 +24,7 @@ const { studioScopeClause } = require('../services/auditListRbac.service');
  */
 async function listAudits(req, res) {
     try {
+        const { organization_id } = req.user;
         const {
             status,
             year,
@@ -150,6 +151,7 @@ async function listAudits(req, res) {
  */
 async function getAuditById(req, res) {
     try {
+        const { organization_id } = req.user;
         const { id } = req.params;
         const scope = studioScopeClause(req.user, 'a');
         let whereExtra = scope.clause ? ` AND ${scope.clause}` : '';

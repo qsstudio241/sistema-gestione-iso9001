@@ -50,10 +50,11 @@ function authenticate(req, res, next) {
         }
 
         // Attacca dati utente alla request (auditor_org_id per RBAC Fase 1)
+        const rawRole = decoded.role || 'auditor';
         req.user = {
             user_id: decoded.user_id,
             email: decoded.email,
-            role: decoded.role || 'auditor',
+            role: String(rawRole).trim().toLowerCase(),
             organization_id: decoded.organization_id,
             auditor_org_id: decoded.auditor_org_id ?? null
         };
@@ -236,10 +237,11 @@ function authenticateDownload(req, res, next) {
             });
         }
 
+        const rawRole2 = decoded.role || 'auditor';
         req.user = {
             user_id: decoded.user_id,
             email: decoded.email,
-            role: decoded.role || 'auditor',
+            role: String(rawRole2).trim().toLowerCase(),
             organization_id: decoded.organization_id,
             auditor_org_id: decoded.auditor_org_id ?? null
         };

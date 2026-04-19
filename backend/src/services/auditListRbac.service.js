@@ -8,6 +8,11 @@ function hasNoStudio(auditorOrgId) {
     return auditorOrgId == null || auditorOrgId === '';
 }
 
+/** Ruolo JWT/DB normalizzato (evita match falliti su 'Auditor' vs 'auditor' → scope vuoto = tutta l'org). */
+function normalizeRole(role) {
+    return String(role || 'auditor').trim().toLowerCase();
+}
+
 /**
  * Admin o superadmin senza studio: visione org-wide (nessun filtro aggiuntivo).
  */
@@ -15,7 +20,8 @@ function isOrgWideAdmin(user) {
     if (!user) return false;
     const { role, auditor_org_id } = user;
     if (!hasNoStudio(auditor_org_id)) return false;
-    return role === 'admin' || role === 'superadmin';
+    const r = normalizeRole(role);
+    return r === 'admin' || r === 'superadmin';
 }
 
 /**
@@ -26,6 +32,7 @@ function isOrgWideAdmin(user) {
 function studioScopeClause(reqUser, tableAlias = 'a') {
     const t = tableAlias;
     const { auditor_org_id, role, user_id } = reqUser;
+    const r = normalizeRole(role);
 
     if (isOrgWideAdmin(reqUser)) {
         return { clause: '', params: {} };
@@ -41,18 +48,20 @@ function studioScopeClause(reqUser, tableAlias = 'a') {
         };
     }
 
-    if (role === 'auditor' || role === 'viewer') {
+    if (r === 'auditor' || r === 'viewer') {
         return {
             clause: `(${t}.created_by = @user_id)`,
             params: { user_id },
         };
     }
 
-    return { clause: '', params: {} };
+    // Ruolo non previsto: mai espandere a org-wide (fallisce chiuso sui propri record).
+    return { clause: `(${t}.created_by = @user_id)`, params: { user_id } };
 }
 
 module.exports = {
     isOrgWideAdmin,
     hasNoStudio,
+    normalizeRole,
     studioScopeClause,
 };
