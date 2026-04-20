@@ -46,6 +46,35 @@
 
 .section-title-urgent { color: #dc2626; border-color: #fecaca; }
 .section-title-warning { color: #d97706; border-color: #fde68a; }
+.section-title-setup { color: #0f766e; border-color: #99f6e4; }
+
+.home-org-setup {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #99f6e4;
+  background: #f0fdfa;
+}
+
+.home-org-setup-text {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.home-org-setup-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #0d9488;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.home-org-setup-btn:hover {
+  background: #0f766e;
+}
 
 /* ─── Alert cards ────────────────────────────────────────────────────────── */
 

@@ -67,6 +67,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/companies",   icon: "🏢", label: "Aziende" },
         ...(isAdmin ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
+          { to: "/settings/organization", icon: "🏛️", label: "Organizzazione" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },

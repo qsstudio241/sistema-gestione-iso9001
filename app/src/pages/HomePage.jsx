@@ -131,6 +131,11 @@ function HomePage() {
 
   const hasAlerts = expiredDocs.length > 0 || (ncStats?.overdue > 0) || (docStats?.scaduti > 0);
 
+  const isOrgAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const orgProfileIncomplete =
+    isOrgAdmin &&
+    (!String(user?.organization_vat_number || "").trim() || !user?.organization_logo_url);
+
   // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
@@ -148,6 +153,21 @@ function HomePage() {
             : "Tutto in ordine. Nessuna scadenza urgente."}
         </p>
       </div>
+
+      {!loading && orgProfileIncomplete && (
+        <section className="home-section home-org-setup" aria-labelledby="home-org-setup-title">
+          <h3 id="home-org-setup-title" className="section-title section-title-setup">
+            🏛️ Completa l&apos;anagrafica organizzazione
+          </h3>
+          <p className="home-org-setup-text">
+            Inserisci la partita IVA e il logo del tenant: compaiono nel banner, nei report Word e nei documenti
+            esportati. Solo gli amministratori possono modificarli.
+          </p>
+          <button type="button" className="home-org-setup-btn" onClick={() => navigate("/settings/organization")}>
+            Vai a Organizzazione →
+          </button>
+        </section>
+      )}
 
       {/* Sezione alert urgenti */}
       {!loading && hasAlerts && (

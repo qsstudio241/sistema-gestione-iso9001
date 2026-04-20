@@ -33,6 +33,22 @@ Per endpoint `download`/`view` allegati usati in `<img src>` o `<iframe>`: passa
 
 ---
 
+## Organizzazione (tenant) — `/api/v1`
+
+Anagrafica della **organizzazione** collegata al JWT (`organization_id`). Campi `vat_number` e `logo_url` sono inclusi anche in `GET /auth/me` come `organization_vat_number` e `organization_logo_url`.
+
+| Metodo | Path | Auth | Ruolo | Descrizione |
+|---|---|---|---|---|
+| GET | `/organizations/me` | JWT | Membro org | Dettaglio tenant (codice, nome, P.IVA, `logo_url` relativo) |
+| PATCH | `/organizations/me` | JWT | **admin** o **superadmin** org | Body: `{ "vat_number": "..." }` — aggiorna partita IVA |
+| GET | `/organizations/me/logo` | JWT | Membro org | Serve il file immagine (Bearer) |
+| POST | `/organizations/me/logo` | JWT | **admin** o **superadmin** org | Multipart campo `logo` (jpg/png/gif/webp/svg, max 2 MB) |
+| DELETE | `/organizations/me/logo` | JWT | **admin** o **superadmin** org | Rimuove logo da DB e file su disco |
+
+**UI**: Impostazioni → **Organizzazione** (`/settings/organization`); la stessa anagrafica è richiamabile anche da **Licenze moduli** per comodità.
+
+---
+
 ## Audit — `/api/v1`
 
 | Metodo | Path | Auth | Descrizione |
@@ -204,4 +220,4 @@ sleep 4 && cat /var/www/sgq-backend/app.log
 
 ---
 
-*Aggiornato: 2026-03-01*
+*Aggiornato: 2026-04-20 — sezione Organizzazione (tenant) e UI `/settings/organization`.*

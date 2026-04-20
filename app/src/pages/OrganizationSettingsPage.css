@@ -1,0 +1,33 @@
+.org-settings-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.org-settings-page h1 {
+  margin-bottom: 0.5rem;
+}
+
+.org-settings-lead {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.org-settings-denied {
+  color: #b00020;
+  line-height: 1.5;
+}
+
+.org-settings-footnote {
+  font-size: 0.88rem;
+  color: #666;
+  margin-top: 1.25rem;
+  line-height: 1.45;
+}
+
+.org-settings-link,
+.org-settings-link:visited {
+  color: #1565c0;
+}

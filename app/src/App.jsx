@@ -33,6 +33,7 @@ const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
+const OrganizationSettingsPage = React.lazy(() => import("./pages/OrganizationSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
@@ -171,6 +172,14 @@ function AppContent() {
                 <NotificationsSettingsPage />
               </BackWrapper>
             </LicensedRoute>
+          }
+        />
+        <Route
+          path="/settings/organization"
+          element={
+            <BackWrapper>
+              <OrganizationSettingsPage />
+            </BackWrapper>
           }
         />
         <Route
