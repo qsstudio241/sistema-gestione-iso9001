@@ -491,7 +491,7 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 **Documentazione (questa sessione):** sezione **Workspace consigliato — ponte `C:\ProgettoISO`** (symlink/junction verso Google Drive) per allineare Cursor, terminale e prossime sessioni.
 
-**Ripresa suggerita:** `git pull`; leggere header [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md); smoke roadmap (0)–(3) se deploy recente; poi traccia **licenze/auth (sessioni A–E)** e **RBAC** come da checklist roadmap. Todo interne: D1 smoke, D2–D5 licenze, D6 RBAC, delega web (brief `docs/agent-tasks/`).
+**Ripresa suggerita:** `git pull` **nel repository locale**; leggere header [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md); smoke roadmap (0)–(3) se deploy recente; poi traccia **licenze/auth (sessioni A–E)** e **RBAC** come da checklist roadmap. Todo interne: D1 smoke, D2–D5 licenze, D6 RBAC, delega web (brief `docs/agent-tasks/`).
 
 ### Chiusura sessione 19 aprile 2026 — RBAC lista audit (studio / tenant)
 
@@ -537,6 +537,29 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 2. **Logo report:** in anagrafica aziende il campo logo è valorizzato ma in export il placeholder **`[LOGO]`** in intestazione non mostra l’immagine — diagnosticare in `wordExport.js` / `wordExportHelpers.js` / `ExportPanel` (URL logo vs blob, header OOXML, sostituzione marker).
 3. Poi smoke **pending issues** + roadmap (0.2 ISO 14001 / `DATABASE_SCHEMA` `norm_excerpt`) come già indicato sotto.
 
+### Chiusura sessione 20 aprile 2026
+
+**Hardening audit visibility multi-tenant (commit `30fb6c0`):**
+- **Root cause**: audits sparivano dal menu dropdown per conflitto deduplica su `auditNumber` + cancellazione silenziosa item sync dopo max-retry + numerazione audit client-side non autoritativa.
+- **Fix applicati (4 file, build OK, Jest 16/16 PASS)**:
+  - `audit.controller.js`: `audit_number` server-authoritative al INSERT (`allocateAuditReportNumber` + retry anti-collisione); immutabile all'UPDATE.
+  - `syncService.js`: item stallati dopo max-retry marcati `isStalled` (non eliminati); `clearQueueForServerAudits` rimuove solo item con `audit_id` confermato.
+  - `StorageContext.jsx`: `dedupeAudits` e `filterLocalAuditsAfterServerFetch` usano UUID/audit_id come chiave stabile.
+  - `AuthContext.jsx`: guard anti-perdita al logout (flush sync + conferma esplicita se pendenti).
+- **Deploy**: backend VPS (pscp + systemd restart OK), frontend push `main` → Netlify.
+- **Smoke test**: health HTTP 200; Mason login OK (1 audit `2026-02`); Camellini login OK (3 audit: `2026-07`, `2026-04`, `2026-03`).
+- **Pendente approvazione**: `database/scripts/fix_visibility_audit_2026_04_to_mason_safe.sql` — sposta audit `2026-04` da tenant Camellini a Mason (operazione su dati, conferma esplicita richiesta).
+- **Pendente deputy**: `docs/agent-tasks/TASK_MASON_REPORT_ANOMALIE_2026-04-20.md` — fix Word export (foto embedded, intestazione dinamica, dati fornitore, data audit, ispettori).
+
+**All'inizio della prossima sessione (ordine consigliato):**
+1. Leggere `PROJECT_ROADMAP.md` + questa sezione.
+2. **Decisione**: applicare `fix_visibility_audit_2026_04_to_mason_safe.sql` per rendere `2026-04` visibile a Mason (richiede approvazione esplicita).
+3. **Deputy**: avviare task Word export `TASK_MASON_REPORT_ANOMALIE_2026-04-20.md`.
+4. Smoke test manuale UI: login Mason → dropdown → Export Word `2026-02`.
+5. Traccia sviluppo: **0.2 ISO 14001** vs aggiornare DATABASE_SCHEMA.
+
+---
+
 ### Chiusura sessione 22 marzo 2026
 
 **Consegnato su `main` (GitHub + Netlify al prossimo deploy):**
@@ -551,9 +574,10 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 4. Opzionale GitHub: eliminare branch remoto `docs/case-study-01-chiusura` (già mergiato in `main`).
 
 **Backlog invariato / ricorrente:**
-- [ ] ADR-006 (auto-reconcile cache) se non avviato.  
-- [ ] `DATABASE.md` / `database.json`: segreti — non in chat; ruotare se esposti.  
+- [ ] ADR-006 (auto-reconcile cache) se non avviato.
+- [ ] `DATABASE.md` / `database.json`: segreti — non in chat; ruotare se esposti.
 - [ ] Opzionale: `ExecStartPre` systemd non bloccante (vedi note deploy).
+- [ ] Eliminare branch remoto `docs/case-study-01-chiusura` (già mergiato in `main`).
 
 ---
 
