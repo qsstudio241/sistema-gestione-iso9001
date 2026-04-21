@@ -220,6 +220,10 @@ function xmlHyperlinkPara(url, displayText, opts = {}) {
 const IMAGE_EXTS = { 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' };
 const IMAGE_MIME_TYPES = new Set(Object.keys(IMAGE_EXTS));
 
+function normalizeMimeType(mimeType) {
+    return String(mimeType || '').split(';')[0].trim().toLowerCase();
+}
+
 /** Estensione media Word da Content-Type (solo formati embeddabili in modo affidabile). */
 export function wordEmbeddableExtFromMime(mime) {
     if (!mime) return null;
@@ -437,7 +441,7 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
                 const url  = (getViewUrl && aId) ? getViewUrl(aId) : null;
 
                 // Usa imageMimeType (verificato dal server) se disponibile, fallback a mimeType
-                const effectiveMime = a.imageMimeType || a.mimeType || '';
+                const effectiveMime = normalizeMimeType(a.imageMimeType || a.mimeType || '');
                 // Verifica doppia: tipo MIME è immagine E i dati base64 iniziano con data:image/
                 const hasValidImage = IMAGE_MIME_TYPES.has(effectiveMime)
                     && typeof a.imageBase64 === 'string'

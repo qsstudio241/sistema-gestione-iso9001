@@ -206,7 +206,10 @@ function GeneralDataSection({
 
         {/* Documenti di Riferimento */}
         <div className="form-field">
-          <label className="field-label">Documenti di Riferimento</label>
+          <label className="field-label">Documenti di Riferimento / Disegni-Specifiche</label>
+          <p className="field-hint">
+            Questo campo alimenta la voce report <strong>DISEGNI/SPECIFICHE DI RIFERIMENTO</strong> (es. disegno, WPS, specifica cliente, capitolato).
+          </p>
           {formData.referenceDocuments?.map((doc, index) => (
             <div key={index} className="array-item">
               <input
@@ -216,7 +219,7 @@ function GeneralDataSection({
                 onChange={(e) =>
                   handleArrayChange("referenceDocuments", index, e.target.value)
                 }
-                placeholder="Es: Norma ISO 9001 cap.4-10"
+                placeholder="Es: Disegno DRW-001 rev.B / WPS-141-07 / Specifica cliente SPC-22"
               />
               <button
                 type="button"

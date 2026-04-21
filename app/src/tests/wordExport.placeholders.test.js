@@ -99,4 +99,42 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         expect(xml).toContain("HYPERLINK");
         expect(xml).toContain("https://api.example.test/attachments/50101/view?token=TOK");
     });
+
+    it("checklist OOXML: embed foto anche con mime normalizzato", () => {
+        const imageRegistry = [];
+        const xml = buildChecklistSectionOoxml(
+            {
+                ISO_3834_2: {
+                    s1: {
+                        questions: [
+                            {
+                                questionId: 601,
+                                status: "C",
+                                text: "Foto controllo",
+                            },
+                        ],
+                    },
+                },
+            },
+            [
+                {
+                    questionId: 601,
+                    fileName: "foto1.jpg",
+                    serverAttachmentId: 60101,
+                    mimeType: "IMAGE/JPEG; charset=binary",
+                    imageBase64: "data:image/jpeg;base64,AAA",
+                },
+            ],
+            [],
+            (id) => `https://api.example.test/attachments/${id}/view?token=TOK`,
+            { photoMode: "preview" },
+            imageRegistry,
+            [],
+            {}
+        );
+
+        expect(imageRegistry).toHaveLength(1);
+        expect(imageRegistry[0].ext).toBe("jpg");
+        expect(xml).toContain("<w:drawing>");
+    });
 });

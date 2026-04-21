@@ -95,20 +95,23 @@ function formatDate(dateStr) {
     } catch { return String(dateStr); }
 }
 
+function normalizeMimeType(mimeType) {
+    return String(mimeType || '').split(';')[0].trim().toLowerCase();
+}
+
 function buildTemplateData(audit) {
     const meta    = audit.metadata       || {};
     const gd      = meta.generalData     || {};
     const obj     = meta.auditObjective  || {};
     const outcome = meta.auditOutcome    || {};
     const m       = calculateMetrics(audit.checklist);
-    const seq     = (meta.auditNumber || '').split('-')[1] || '01';
 
     const isAuditorPlaceholder = (v) => {
         const t = String(v || '').trim().toLowerCase();
         return !t || t === 'non specificato' || t === 'n/d' || t === 'n.d.' || t === 'nd';
     };
     const pickAuditorName = () => {
-        for (const v of [meta.auditorName, meta.auditors?.[0], meta.auditor]) {
+        for (const v of [meta.auditorName, gd.auditors?.[0], meta.auditors?.[0], meta.auditor]) {
             if (!isAuditorPlaceholder(v)) return String(v).trim();
         }
         return 'N/D';
@@ -118,34 +121,55 @@ function buildTemplateData(audit) {
     const auditPartyTypeLabel = auditPartyType === 'second_party'
         ? 'Seconda parte (fornitore)'
         : 'Prima parte (interno)';
-    const fornitoreName = auditPartyType === 'second_party' && meta.fornitoreName
-        ? meta.fornitoreName
+    const fornitoreNameRaw = auditPartyType === 'second_party'
+        ? String(meta.fornitoreName || meta.exportCompanyName || meta.clientName || '').trim()
         : '';
+    const fornitoreAddressRaw = auditPartyType === 'second_party'
+        ? String(meta.fornitoreAddress || meta.exportCompanyAddress || '').trim()
+        : '';
+    const fornitoreName = fornitoreNameRaw && fornitoreAddressRaw
+        ? `${fornitoreNameRaw} - ${fornitoreAddressRaw}`
+        : (fornitoreNameRaw || fornitoreAddressRaw);
+    const reportClientName = (auditPartyType === 'second_party' && fornitoreNameRaw)
+        ? fornitoreNameRaw
+        : (meta.clientName || 'Cliente');
+    const reportScope = auditPartyType === 'second_party'
+        ? (fornitoreAddressRaw || gd.scope || '—')
+        : (gd.scope || 'Sistema di Gestione per la Qualit\u00e0');
+    const primaryAuditor = pickAuditorName();
+    const fallbackParticipants = (gd.auditors || [])
+        .map((v) => String(v || '').trim())
+        .filter((v) => !isAuditorPlaceholder(v))
+        .filter((v) => v !== primaryAuditor)
+        .map((name) => ({ role: 'Ispettore affiancante', name }));
+    const participantList = (obj.participants || []).length > 0
+        ? (obj.participants || [])
+        : fallbackParticipants;
 
     const orgBrand = audit.exportOrganizationBranding || {};
 
     return {
         organizationName:       orgBrand.name || '',
         organizationVat:        orgBrand.vat || '',
-        clientName:             meta.clientName  || 'Cliente',
+        clientName:             reportClientName,
         committenteName:        meta.clientName  || 'Cliente',
         auditPartyTypeLabel,
         fornitoreName:          fornitoreName || '—',
         auditNumber:            meta.auditNumber || 'N/A',
-        procedureCode:          'PR' + seq + '.04',
-        auditDate:              formatDate(meta.auditDate),
+        procedureCode:          meta.procedureCode || '—',
+        auditDate:              formatDate(meta.auditDate || gd.auditDate),
         auditObject:            gd.auditObject   || 'Audit di Verifica ispettiva interna',
-        scope:                  gd.scope         || 'Sistema di Gestione per la Qualit\u00e0',
+        scope:                  reportScope,
         referenceDocuments:     Array.isArray(gd.referenceDocuments)
             ? gd.referenceDocuments.join(', ')
-            : (gd.referenceDocuments || 'UNI EN ISO 9001:2015'),
+            : (gd.referenceDocuments || '—'),
         processes:              gd.processes     || 'Tutti i processi aziendali',
         programCommunicatedDate: formatDate(gd.programCommunicatedDate),
-        auditor:                pickAuditorName(),
+        auditor:                primaryAuditor,
         objectiveDescription:   obj.description  ||
             'Verificare il grado di implementazione del Sistema di Gestione della Qualit\u00e0 ' +
             'secondo la norma UNI EN ISO 9001:2015.',
-        participants: (obj.participants || []).map(p => ({
+        participants: participantList.map(p => ({
             role: p.role || 'N/D',
             name: p.name || '',
         })),
@@ -816,7 +840,8 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
     await Promise.allSettled(
         attachments.map(async (att) => {
             // Prima verifica: tipo salvato nel DB
-            if (!imageTypes.includes(att.mimeType)) return;
+            const storedMimeType = normalizeMimeType(att.mimeType);
+            if (!imageTypes.includes(storedMimeType)) return;
             const id = att.serverAttachmentId || att.id;
             if (!id) return;
             try {
@@ -826,7 +851,7 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
                 const blob = await resp.blob();
                 // Seconda verifica: tipo REALE restituito dal server
                 // Se il server dice che è un PDF o altro, non lo trattiamo come immagine
-                const realMimeType = blob.type || att.mimeType;
+                const realMimeType = normalizeMimeType(blob.type || storedMimeType);
                 if (!imageTypes.includes(realMimeType)) {
                     console.warn('[wordExport] allegato ignorato: tipo reale non è immagine', { stored: att.mimeType, real: realMimeType, id });
                     return;

@@ -251,6 +251,8 @@ export function createNewAudit(metadata) {
             fornitoreName: metadata.fornitoreName || '',
             projectYear: metadata.projectYear || new Date().getFullYear(),
             auditNumber: metadata.auditNumber || '',
+            auditDate: metadata.auditDate || '',
+            auditorName: metadata.auditorName || metadata.auditor || '',
             status: AUDIT_STATUS.DRAFT,
             selectedStandards: metadata.selectedStandards || (metadata.customChecklistId ? [] : [ISO_STANDARDS.ISO_9001]),
             customChecklistId: metadata.customChecklistId ?? null,
@@ -266,10 +268,10 @@ export function createNewAudit(metadata) {
                 auditObject: '',
                 scope: '',
                 referenceDocuments: [],
-                auditDate: '',
+                auditDate: metadata.auditDate || '',
                 processes: '',
                 programCommunicatedDate: '',
-                auditors: []
+                auditors: metadata.auditorName ? [metadata.auditorName] : []
             },
 
             // Tab 2 - Obiettivo dell'Audit

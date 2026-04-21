@@ -107,6 +107,26 @@ const ExportPanel = () => {
       console.warn("[EXPORT] pending-issues API non disponibile:", err.message);
     }
 
+    // Dati azienda da anagrafica (nome+indirizzo): usati nel report fornitore quando disponibili
+    try {
+      const companyId = currentAudit?.metadata?.companyId;
+      if (companyId) {
+        const companyRes = await apiService.getCompany(companyId);
+        const company = companyRes?.data || companyRes || {};
+        const companyName = String(company?.name || "").trim();
+        const companyAddress = String(company?.address || "").trim();
+        if (companyName || companyAddress) {
+          auditForExport.metadata = {
+            ...(auditForExport.metadata || {}),
+            exportCompanyName: companyName || "",
+            exportCompanyAddress: companyAddress || "",
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("[EXPORT] anagrafica azienda non disponibile:", err.message);
+    }
+
     // 2) Fallback: rilievi da audit_responses ultimo audit stesso cliente (se pending_issues vuoto)
     try {
       if (!auditForExport.pendingIssues?.length) {
