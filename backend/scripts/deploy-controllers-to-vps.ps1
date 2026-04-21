@@ -111,6 +111,7 @@ if (-not $useSession) {
 # Controllers
 Copy-FileToVps "src/controllers/audit.controller.js" "$RemoteBase/src/controllers/audit.controller.js"
 Copy-FileToVps "src/controllers/sync.controller.js" "$RemoteBase/src/controllers/sync.controller.js"
+Copy-FileToVps "src/controllers/nc.controller.js" "$RemoteBase/src/controllers/nc.controller.js"
 Copy-FileToVps "src/controllers/customChecklist.controller.js" "$RemoteBase/src/controllers/customChecklist.controller.js"
 Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controllers/admin.controller.js"
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
