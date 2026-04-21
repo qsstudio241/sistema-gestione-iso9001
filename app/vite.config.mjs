@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+const isProd = mode === 'production';
+return {
     // Workspace "ponte" su C: e percorso reale Google Drive
     // entrambi ammessi per evitare errori su symlink/junction Windows.
     server: {
@@ -25,7 +27,19 @@ export default defineConfig({
         // Mantiene i path del workspace (C:\ProgettoISO) senza risolvere sul drive reale.
         preserveSymlinks: true
     },
+    // Strip debugger statements in produzione; console.log rimossi via define.
+    esbuild: {
+        drop: isProd ? ['debugger'] : [],
+    },
+    // In produzione: rimpiazza console.log/debug/info con no-op eliminato dal minifier.
+    // console.warn e console.error vengono preservati per visibilità errori reali.
+    define: isProd ? {
+        'console.log':   '(()=>{})',
+        'console.debug': '(()=>{})',
+        'console.info':  '(()=>{})',
+    } : {},
     build: {
+        sourcemap: false, // nessuna source map in produzione (no leakage codice sorgente)
         rollupOptions: {
             // Evita che Rollup emetta un fileName assoluto su Windows+symlink.
             input: 'index.html',
@@ -49,4 +63,5 @@ export default defineConfig({
         },
         chunkSizeWarningLimit: 500
     }
+};
 });

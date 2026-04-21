@@ -537,6 +537,46 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 2. **Logo report:** in anagrafica aziende il campo logo è valorizzato ma in export il placeholder **`[LOGO]`** in intestazione non mostra l’immagine — diagnosticare in `wordExport.js` / `wordExportHelpers.js` / `ExportPanel` (URL logo vs blob, header OOXML, sostituzione marker).
 3. Poi smoke **pending issues** + roadmap (0.2 ISO 14001 / `DATABASE_SCHEMA` `norm_excerpt`) come già indicato sotto.
 
+### Sessione 21 aprile 2026 — Robustezza e qualità del codice
+
+**Obiettivo**: ridurre superficie d'attacco, eliminare dead code, aumentare copertura test.
+
+**1. Strip log in produzione — Vite (frontend)**
+- `vite.config.mjs` convertito a forma funzione (`defineConfig(({ mode }) => {…})`).
+- In build `production`: `esbuild.drop: ['debugger']` (rimozione statement debugger) + `define` no-op per `console.log/debug/info`; `console.warn` e `console.error` preservati.
+- `build.sourcemap: false` — nessuna source map espostain produzione (riduce leakage codice sorgente).
+- Aggiunto `app/src/utils/clientLogger.js` — wrapper logger che è no-op in produzione; da usare in nuovi moduli al posto di `console.log` diretto.
+
+**2. Helmet Content Security Policy — backend**
+- `backend/src/server.js`: CSP abilitata con policy restrittiva (`defaultSrc: 'none'`, `imgSrc: self/data/blob`, `frameAncestors: none`, etc.).
+- Aggiunto `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }`.
+
+**3. Dead code rimosso**
+- Eliminati 3 file non referenziati da nessun import:
+  - `app/src/contexts/DataContext.jsx` (~263 righe — context localStorage pre-StorageContext)
+  - `app/src/components/NonConformitaForm.jsx` (~200 righe — form NC legacy)
+  - `app/src/utils/wordExport.backup.js` (~787 righe — backup obsoleto export Word)
+- Totale: ~−41 kB di codice morto.
+
+**4. Error handler backend standardizzato**
+- `backend/src/server.js`: tutti gli errori restituiscono `{ code, message }` con codici machine-readable coerenti (`NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `CONFLICT`, `RATE_LIMITED`, `INTERNAL_ERROR`, etc.).
+- Log `logger.error` per errori 5xx, `logger.warn` per 4xx.
+
+**5. Test frontend aggiunti**
+- `app/src/tests/storageContext.dedup.test.js` — **13 test** per `dedupeAudits` e `filterLocalAuditsAfterServerFetch` (coprono bug storici: stessa UUID non duplica, versione ricca vince, cross-tenant rimosso dopo server fetch).
+- `app/src/tests/syncService.stall.test.js` — **5 test** per `updateRetryCount` (stall capping a 5, evento `sgq:syncQueueStalled`) e `clearQueueForServerAudits` (rimuove solo UUID con server ID, mantiene bozze).
+- Totale: **+18 test** frontend; tutti PASS.
+
+**Deploy da eseguire:**
+- Backend (server.js con CSP + error handler): `.\backend\scripts\deploy-controllers-to-vps.ps1` + copia manuale `src/server.js` al VPS.
+- Frontend: push `main` → Netlify build automatica (vite.config.mjs + clientLogger).
+
+**Pendente immutato:**
+- Approvazione SQL `fix_visibility_audit_2026_04_to_mason_safe.sql` (audit `2026-04` → tenant Mason).
+- Smoke manuale: login Mason UI → dropdown → Export Word `2026-02`.
+
+---
+
 ### Chiusura sessione 20 aprile 2026
 
 **Hardening audit visibility multi-tenant (commit `30fb6c0`):**

@@ -49,8 +49,26 @@ const PORT = process.env.PORT || 10443;
 
 // Security headers
 app.use(helmet({
-    contentSecurityPolicy: false, // Configurare in produzione
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    // CSP: il server espone JSON API + static uploads (immagini/allegati).
+    // Non serve una policy HTML; blocchiamo tutto tranne gli asset necessari.
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc:      ["'none'"],
+            imgSrc:          ["'self'", "data:", "blob:"],   // allegati immagine via /uploads
+            mediaSrc:        ["'self'"],
+            connectSrc:      ["'self'"],
+            frameAncestors:  ["'none'"],                     // no clickjacking
+            formAction:      ["'none'"],
+            objectSrc:       ["'none'"],
+            scriptSrc:       ["'none'"],
+        },
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // necessario per immagini su frontend diverso
+    hsts: {
+        maxAge: 31536000,        // 1 anno
+        includeSubDomains: true,
+        preload: true,
+    },
 }));
 
 // Compression
@@ -180,16 +198,36 @@ app.use('/uploads', express.static(process.env.UPLOAD_DIR || './uploads'));
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint non trovato' });
+    res.status(404).json({ code: 'NOT_FOUND', message: 'Endpoint non trovato' });
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-    logger.error('Server Error:', err);
-    res.status(err.status || 500).json({
-        error: err.message || 'Errore interno del server',
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-    });
+// Global error handler — risposta strutturata coerente su tutti gli endpoint.
+// Campi fissi: code (machine-readable), message (human-readable).
+// In development aggiunge stack trace; in production solo code+message.
+app.use((err, req, res, _next) => {
+    const status  = err.status || err.statusCode || 500;
+    const code    = err.code   || (status === 400 ? 'BAD_REQUEST'
+                                 : status === 401 ? 'UNAUTHORIZED'
+                                 : status === 403 ? 'FORBIDDEN'
+                                 : status === 404 ? 'NOT_FOUND'
+                                 : status === 409 ? 'CONFLICT'
+                                 : status === 422 ? 'UNPROCESSABLE'
+                                 : status === 429 ? 'RATE_LIMITED'
+                                 : 'INTERNAL_ERROR');
+    const message = err.message || 'Errore interno del server';
+
+    if (status >= 500) {
+        logger.error(`[${code}] ${req.method} ${req.path} →`, err);
+    } else {
+        logger.warn(`[${code}] ${req.method} ${req.path} → ${message}`);
+    }
+
+    const body = { code, message };
+    if (process.env.NODE_ENV === 'development') {
+        body.stack = err.stack;
+    }
+
+    res.status(status).json(body);
 });
 
 // ==========================================
