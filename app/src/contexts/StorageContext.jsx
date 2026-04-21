@@ -469,7 +469,11 @@ export function StorageProvider({ children, useMockData = false }) {
           }
           setAudits([]);
           setCurrentAuditId(null);
-          console.log("✅ [LOGOUT] Cache locale audit + sync sessione azzerate");
+          // Reset flag di inizializzazione: garantisce che al prossimo login
+          // (stesso browser, senza page-refresh) loadAuditsFromIndexedDB
+          // venga rieseguito per il nuovo utente invece di usare la cache vuota.
+          setHasInitialized(false);
+          console.warn("[LOGOUT] Cache locale audit + sync sessione azzerate");
         } finally {
           sessionResetInProgressRef.current = false;
         }

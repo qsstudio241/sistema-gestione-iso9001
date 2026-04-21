@@ -126,7 +126,8 @@ async function updateRisk(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
 
         const sets = ['updated_at = GETDATE()'];
-        const req2 = pool.request().input('id', id);
+        // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
+        const req2 = pool.request().input('id', id).input('orgId', orgId);
         if (title         !== undefined) { sets.push('title = @title');                 req2.input('title', title); }
         if (description   !== undefined) { sets.push('description = @description');     req2.input('description', description); }
         if (context       !== undefined) { sets.push('context = @context');             req2.input('context', context); }
@@ -139,7 +140,7 @@ async function updateRisk(req, res) {
         if (review_date   !== undefined) { sets.push('review_date = @review_date');     req2.input('review_date', review_date); }
         if (status        !== undefined) { sets.push('status = @status');               req2.input('status', status); }
 
-        await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id`);
+        await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id AND organization_id = @orgId`);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -265,7 +266,8 @@ async function updateObjective(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Obiettivo non trovato' });
 
         const sets = ['updated_at = GETDATE()'];
-        const req2 = pool.request().input('id', id);
+        // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
+        const req2 = pool.request().input('id', id).input('orgId', orgId);
         if (title           !== undefined) { sets.push('title = @title');                       req2.input('title', title); }
         if (description     !== undefined) { sets.push('description = @description');           req2.input('description', description); }
         if (iso_clause      !== undefined) { sets.push('iso_clause = @iso_clause');             req2.input('iso_clause', iso_clause); }
@@ -277,7 +279,7 @@ async function updateObjective(req, res) {
         if (due_date        !== undefined) { sets.push('due_date = @due_date');                 req2.input('due_date', due_date); }
         if (status          !== undefined) { sets.push('status = @status');                     req2.input('status', status); }
 
-        await req2.query(`UPDATE objectives SET ${sets.join(', ')} WHERE objective_id = @id`);
+        await req2.query(`UPDATE objectives SET ${sets.join(', ')} WHERE objective_id = @id AND organization_id = @orgId`);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
