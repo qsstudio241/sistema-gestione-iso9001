@@ -763,11 +763,21 @@ export class SyncService {
             item.retryCount += 1;
             item.lastError = errorMessage;
 
-            // Rimuovi se troppi retry (>5)
+            // Hardening: non eliminare mai automaticamente item in errore.
+            // La rimozione silenziosa può causare perdita dati locale non sincronizzata.
             if (item.retryCount > 5) {
-                console.error(`❌ [SYNC] Troppi retry per ${itemId}, rimosso da queue`);
-                await this.removeFromQueue(itemId);
-                return;
+                item.retryCount = 5;
+                item.isStalled = true;
+                console.error(`❌ [SYNC] Item in stallo (retry max raggiunto), mantenuto in queue: ${itemId}`);
+                try {
+                    window.dispatchEvent(
+                        new CustomEvent('sgq:syncQueueStalled', {
+                            detail: { itemId, type: item.type, lastError: item.lastError },
+                        }),
+                    );
+                } catch {
+                    // no-op: ambiente non browser o evento non disponibile
+                }
             }
 
             await new Promise((resolve, reject) => {
@@ -941,8 +951,8 @@ export class SyncService {
     }
 
     /**
-     * Rimuove dalla sync queue tutte le operazioni create_audit / update_audit
-     * per gli audit già presenti sul server.
+     * Rimuove dalla sync queue operazioni create_audit / update_audit chiaramente stantie:
+     * solo se l'audit esiste sul server e ha mapping locale sync_metadata (uuid -> audit_id).
      *
      * Chiamare DOPO ogni download server riuscito: evita che operazioni
      * accumulatesi in sessioni precedenti (su questo o altri dispositivi)
@@ -977,6 +987,11 @@ export class SyncService {
 
                 const uuid = item.payload?.audit_uuid;
                 if (uuid && uuidSet.has(uuid)) {
+                    const mappedServerId = await this.getAuditIdForUuid(uuid);
+                    // Rimuovi solo item "acknowledged" dal server (evita perdita update non ancora confermati).
+                    if (mappedServerId == null || !Number.isFinite(Number(mappedServerId)) || Number(mappedServerId) <= 0) {
+                        continue;
+                    }
                     await this.removeFromQueue(item.id);
                     removedCount++;
                 }

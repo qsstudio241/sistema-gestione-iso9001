@@ -784,12 +784,12 @@ async function upsertAudit(req, res) {
             ? standard_ids.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0)
             : (bodyHasStandardField ? [parseInt(standard_id) || 1] : []);
 
-        // Validazione campi obbligatori
-        if (!audit_uuid || !audit_number || !client_name) {
+        // Validazione campi obbligatori minimi
+        if (!audit_uuid || !client_name) {
             return res.status(400).json({
                 error: 'Campi obbligatori mancanti',
                 code: 'VALIDATION_ERROR',
-                required: ['audit_uuid', 'audit_number', 'client_name']
+                required: ['audit_uuid', 'client_name']
             });
         }
 
@@ -826,7 +826,7 @@ async function upsertAudit(req, res) {
 
         // Check esistenza per audit_uuid
         const existing = await query(`
-      SELECT audit_id, updated_at, status, standard_id, custom_checklist_id
+      SELECT audit_id, audit_number, updated_at, status, standard_id, custom_checklist_id
       FROM audits
       WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id
     `, { audit_uuid, organization_id });
@@ -835,6 +835,17 @@ async function upsertAudit(req, res) {
             // ========== UPDATE ESISTENTE ==========
             const existingAudit = existing.recordset[0];
             const audit_id = existingAudit.audit_id;
+            const immutableAuditNumber = existingAudit.audit_number || audit_number;
+
+            // Hardening anti-corruzione: il numero audit è assegnato dal server e non modificabile dal client.
+            if (audit_number && immutableAuditNumber && String(audit_number).trim() !== String(immutableAuditNumber).trim()) {
+                logger.warn(`[UPSERT] Tentativo modifica audit_number ignorato`, {
+                    audit_id,
+                    organization_id,
+                    provided_audit_number: audit_number,
+                    immutable_audit_number: immutableAuditNumber
+                });
+            }
 
             const lockChk = await assertWriteAllowed(req.user, audit_id, getLockTokenFromRequest(req));
             if (!lockChk.ok) {
@@ -915,7 +926,7 @@ async function upsertAudit(req, res) {
         SELECT updated_at FROM @out;
       `, {
                 audit_id,
-                audit_number,
+                audit_number: immutableAuditNumber,
                 client_name,
                 company_id: company_id || null,
                 project_year: project_year || new Date().getFullYear(),
@@ -971,6 +982,26 @@ async function upsertAudit(req, res) {
                     error: 'audit_uuid obbligatorio per creare un audit',
                     code: 'VALIDATION_ERROR'
                 });
+            }
+
+            // Numerazione server-authoritative: il numero report viene sempre allocato lato backend.
+            let allocatedAuditNumber;
+            const maxAttempts = 5;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                allocatedAuditNumber = await allocateAuditReportNumber(organization_id);
+                const dup = await query(`
+      SELECT audit_id FROM audits
+      WHERE audit_number = @audit_number
+        AND organization_id = @organization_id
+        AND is_deleted = 0
+    `, { audit_number: allocatedAuditNumber, organization_id });
+                if (dup.recordset.length === 0) break;
+                if (attempt === maxAttempts - 1) {
+                    return res.status(409).json({
+                        error: 'Impossibile assegnare un numero audit univoco',
+                        code: 'AUDIT_NUMBER_ALLOCATION_FAILED'
+                    });
+                }
             }
 
             // Determina lo standard principale da salvare nella colonna standard_id:
@@ -1050,7 +1081,7 @@ async function upsertAudit(req, res) {
         SELECT audit_id, audit_uuid, updated_at FROM @out;
       `, {
                 audit_uuid: auditUuidStr,
-                audit_number,
+                audit_number: allocatedAuditNumber,
                 client_name,
                 company_id: company_id || null,
                 project_year: project_year || new Date().getFullYear(),
@@ -1089,6 +1120,7 @@ async function upsertAudit(req, res) {
             return res.status(201).json({
                 audit_id: newAudit.audit_id,
                 audit_uuid: newAudit.audit_uuid,
+                audit_number: allocatedAuditNumber,
                 action: 'created',
                 updated_at: newAudit.updated_at,
                 message: 'Audit creato con successo'

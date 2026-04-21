@@ -18,6 +18,7 @@ import React, {
   useCallback,
 } from "react";
 import apiService, { ApiError, clearAllAuditLockTokens } from "../services/apiService";
+import { syncService } from "../services/syncService";
 
 // Ruoli disponibili
 export const USER_ROLES = {
@@ -182,6 +183,40 @@ export function AuthProvider({ children }) {
    * Logout
    */
   const logout = useCallback(async () => {
+    // Guard anti-perdita: se ci sono operazioni pendenti in coda sync,
+    // tenta flush online e richiede conferma esplicita prima di procedere.
+    let pendingQueueItems = 0;
+    try {
+      pendingQueueItems = Number(await syncService.getQueueSize()) || 0;
+    } catch {
+      pendingQueueItems = 0;
+    }
+
+    if (pendingQueueItems > 0 && navigator.onLine) {
+      try {
+        await syncService.processQueue();
+      } catch {
+        // Non bloccare: si rivaluta la coda sotto.
+      }
+      try {
+        pendingQueueItems = Number(await syncService.getQueueSize()) || pendingQueueItems;
+      } catch {
+        // keep previous value
+      }
+    }
+
+    if (pendingQueueItems > 0) {
+      const proceed = window.confirm(
+        `Ci sono ancora ${pendingQueueItems} operazioni non sincronizzate.\n\n` +
+          `Se esci ora, le bozze solo locali potrebbero andare perse.\n` +
+          `Premi "Annulla" per restare dentro e completare la sincronizzazione.`
+      );
+      if (!proceed) {
+        setError("Logout annullato: completa prima la sincronizzazione per evitare perdita dati.");
+        return false;
+      }
+    }
+
     try {
       await apiService.logout();
     } catch (err) {
@@ -192,6 +227,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setError(null);
     console.log("👋 Logout effettuato");
+    return true;
   }, []);
 
   /**

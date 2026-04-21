@@ -108,9 +108,24 @@ function dedupeAudits(audits = []) {
   };
 
   const keyFor = (a) => {
+    const uuid = a?.metadata?.id || a?.id || a?.metadata?.audit_uuid || a?.audit_uuid;
+    if (uuid) return `uuid:${String(uuid).trim()}`;
+
+    const serverId = a?.metadata?.auditId ?? a?.audit_id ?? null;
+    if (
+      serverId != null &&
+      serverId !== "" &&
+      Number.isFinite(Number(serverId)) &&
+      Number(serverId) > 0
+    ) {
+      return `sid:${Number(serverId)}`;
+    }
+
     const num = a?.metadata?.auditNumber || a?.audit_number;
     if (num) return `num:${String(num).trim().toUpperCase()}`;
-    return `id:${a?.metadata?.id || a?.id}`;
+    return `anon:${String(a?.metadata?.clientName || a?.client_name || '')}:${String(
+      a?.metadata?.createdAt || a?.created_at || ''
+    )}`;
   };
 
   const byKey = new Map();
@@ -132,20 +147,31 @@ function dedupeAudits(audits = []) {
  */
 function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
   if (!Array.isArray(localAudits) || !Array.isArray(mergedFromServer)) return [];
-  const mergedIds = new Set(mergedFromServer.map((a) => a.metadata?.id || a.id));
-  const mergedNumbers = new Set(
+  const mergedIds = new Set(
     mergedFromServer
-      .map((a) => a.metadata?.auditNumber)
+      .map((a) => a.metadata?.id || a.id || a?.metadata?.audit_uuid || a?.audit_uuid)
       .filter(Boolean)
-      .map((n) => String(n).trim().toUpperCase())
+      .map((v) => String(v).trim())
+  );
+  const mergedServerIds = new Set(
+    mergedFromServer
+      .map((a) => a?.metadata?.auditId ?? a?.audit_id ?? null)
+      .filter((v) => v != null && v !== "" && Number.isFinite(Number(v)) && Number(v) > 0)
+      .map((v) => Number(v))
   );
   return localAudits.filter((la) => {
-    const localId = la.metadata?.id || la.id;
-    const localNumber = la.metadata?.auditNumber
-      ? String(la.metadata.auditNumber).trim().toUpperCase()
-      : null;
+    const localId = la.metadata?.id || la.id || la?.metadata?.audit_uuid || la?.audit_uuid;
+    const localServerId = la?.metadata?.auditId ?? la?.audit_id ?? null;
     if (mergedIds.has(localId)) return false;
-    if (localNumber && mergedNumbers.has(localNumber)) return false;
+    if (
+      localServerId != null &&
+      localServerId !== "" &&
+      Number.isFinite(Number(localServerId)) &&
+      Number(localServerId) > 0 &&
+      mergedServerIds.has(Number(localServerId))
+    ) {
+      return false;
+    }
 
     const aid = la.metadata?.auditId;
     const hasServerNumericId =
