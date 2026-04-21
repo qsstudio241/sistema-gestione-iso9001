@@ -537,6 +537,49 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 2. **Logo report:** in anagrafica aziende il campo logo è valorizzato ma in export il placeholder **`[LOGO]`** in intestazione non mostra l’immagine — diagnosticare in `wordExport.js` / `wordExportHelpers.js` / `ExportPanel` (URL logo vs blob, header OOXML, sostituzione marker).
 3. Poi smoke **pending issues** + roadmap (0.2 ISO 14001 / `DATABASE_SCHEMA` `norm_excerpt`) come già indicato sotto.
 
+### Sessione 21 aprile 2026 — Fix Word export ISO 3834 + toggle foto
+
+**Obiettivo**: correggere i 6 problemi segnalati da Mason sul report Word audit 2026-04 (MANITOU) e aggiungere scelta esplicita modalità foto.
+
+**Diagnosi da documento reale (`Audit_2026_04_MANITOU_ITALIA_SRL_ISO38342.docx`):**
+- `PR04.04` in intestazione → valore di `{procedureCode}` salvato da Mason nell'audit (corretto, non bug).
+- `N/D` in intestazione → `{auditDate}` mancante (dato non inserito nell'audit pre-fix).
+- `INDIRIZZO: Sistema di Gestione per la Qualità` → `{scope}` riceveva fallback letterale del testo italiano; fix: default cambiato in `'—'`.
+- `ISPETTORE: Tutti i processi aziendali` → template ISO3834 usava `{processes}` nella cella ISPETTORE; fix: nuovo placeholder `{ispettore}`.
+- Foto come testo → documento generato con codice precedente al fix photo-embedding; con codice corrente vengono incorporate.
+- Disegni/specifiche vuoti → campo non compilato nell'UI (non bug).
+
+**Fix 4 — `app/src/utils/wordExport.js`:**
+- Aggiunto campo `fornitoreIndirizzo: fornitoreAddressRaw || '—'` (valore diretto indirizzo fornitore, disponibile anche per audit non `second_party`).
+- Aggiunto campo `ispettore: primaryAuditor` (alias diretto del nome ispettore).
+- Eliminato fallback `'Sistema di Gestione per la Qualità'` per `scope`; ora sempre `gd.scope || '—'`.
+- `fornitoreAddressRaw` ora legge `meta.fornitoreAddress || meta.exportCompanyAddress` anche per audit first-party.
+- Aggiunti `fornitoreIndirizzo` e `ispettore` alla lista `SIMPLE_DOCXTEMPLATE_VAR_NAMES` (ricomposizione run spezzati).
+
+**Fix 6 — `app/public/templates/ISO3834-audit-report.docx`:**
+- `INDIRIZZO: {scope}` → `INDIRIZZO: {fornitoreIndirizzo}` (1 sostituzione in `<w:t>`).
+- `ISPETTORE: {processes}` → `ISPETTORE: {ispettore}` (testo `processes` nel run XML spezzato sostituito con `ispettore`).
+- Verifica: la sezione fornitore nel template ora mostra correttamente tutti i nuovi placeholder.
+
+**Toggle foto — `app/src/components/ExportPanel.jsx` + `ExportPanel.css`:**
+- Aggiunto stato `embedPhotos` (null = auto-detect, true = forza embed, false = forza link).
+- Helper `resolvePhotoMode(standardKey, customChecklistId)` centralizza la logica: rispetta scelta utente, altrimenti auto (ISO 3834 / checklist custom → embed).
+- Helper `auditHasPhotoStandard()` calcola valore di default del checkbox dal tipo di audit corrente.
+- Checkbox "Incorpora foto nel documento (auto)" con pulsante "ripristina auto" se manualmente modificato.
+- Testo informativo dinamico che avverte l'utente sull'impatto dimensionale.
+- Messaggi di avanzamento più chiari: "⏳ Caricamento immagini in corso..." durante preload foto.
+
+**Test:**
+- Aggiunto test `ISO3834 template: fornitoreIndirizzo e ispettore sostituiti correttamente` in `wordExport.placeholders.test.js`.
+- Suite L1: **48/48 PASS** (8 file, durata ~106 s).
+
+**Note deployment:**
+- Il template `ISO3834-audit-report.docx` è servito dal frontend (Netlify, path `/templates/`) — viene aggiornato con il prossimo push `main`.
+- Mason non ha template custom assegnati nel DB (org 1003, `report_template_assignments` vuota) → usa il template di sistema.
+- Nessuna modifica backend necessaria per questi fix.
+
+---
+
 ### Sessione 21 aprile 2026 — Robustezza e qualità del codice
 
 **Obiettivo**: ridurre superficie d'attacco, eliminare dead code, aumentare copertura test.

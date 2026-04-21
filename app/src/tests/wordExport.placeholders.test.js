@@ -100,6 +100,47 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         expect(xml).toContain("https://api.example.test/attachments/50101/view?token=TOK");
     });
 
+    it("ISO3834 template: fornitoreIndirizzo e ispettore sostituiti correttamente", () => {
+        const iso3834Path = path.join(__dirname, "../../public/templates/ISO3834-audit-report.docx");
+        const buf = fs.readFileSync(iso3834Path);
+        const z = new PizZip(buf);
+        for (const p of Object.keys(z.files).filter((x) =>
+            /^word\/(document|header\d+|footer\d+)\.xml$/.test(x)
+        )) {
+            z.file(p, repairDocxtemplaterFragmentedTags(z.files[p].asText()));
+        }
+        const d = new Docxtemplater(z, { paragraphLoop: true, linebreaks: true, nullGetter: () => "" });
+        d.render({
+            clientName:           "FORNIT TEST SRL",
+            fornitoreIndirizzo:   "Via Roma 1, 00100 Roma",
+            auditor:              "REFERENTE_TEST",
+            ispettore:            "ISPETTORE_TEST",
+            auditDate:            "01/05/2026",
+            auditObject:          "Audit saldatura",
+            auditNumber:          "2026-TEST",
+            procedureCode:        "PR04.04",
+            referenceDocuments:   "DWG-001",
+            processes:            "Tutti i processi",
+            objectiveDescription: "Verifica ISO 3834",
+            participants:         [{ role: "Tecnico", name: "Rossi" }],
+            conclusions:          "Esito positivo",
+            ncCount: "0", ossCount: "0", omCount: "0", nvCount: "0", naCount: "0", summaryText: "",
+            organizationName: "", organizationVat: "",
+            fornitoreName: "", committenteName: "", auditPartyTypeLabel: "", summaryText: "",
+            programCommunicatedDate: "—",
+        });
+        const docXml   = d.getZip().files["word/document.xml"].asText();
+        const docPlain = allWText(docXml);
+        expect(docPlain).toContain("Via Roma 1, 00100 Roma");
+        expect(docPlain).toContain("ISPETTORE_TEST");
+        expect(docPlain).toContain("REFERENTE_TEST");
+        // Nessun placeholder residuo visibile
+        expect(docPlain).not.toContain("{fornitoreIndirizzo}");
+        expect(docPlain).not.toContain("{ispettore}");
+        expect(docPlain).not.toContain("{processes}");
+        expect(docPlain).not.toContain("{scope}");
+    });
+
     it("checklist OOXML: embed foto anche con mime normalizzato", () => {
         const imageRegistry = [];
         const xml = buildChecklistSectionOoxml(

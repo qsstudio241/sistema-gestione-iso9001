@@ -1,5 +1,9 @@
 # Task deputy — anomalie report Mason (Audit 2026-04 MANITOU)
 
+> **Stato**: FIX APPLICATI (sessione 21 aprile 2026) — pronti per deploy frontend (Netlify push `main`).  
+> Smoke manuale pendente: Mason deve ri-generare il report con l'app aggiornata.  
+> Audit 2026-04 non più presente nel DB (creato prima del fix tenant) — Mason deve compilare un nuovo audit ISO 3834 per verificare tutti i punti.
+
 > Creato: 20 aprile 2026  
 > Priorità: alta (blocco primo rilascio report cliente)  
 > Ambito: export Word audit ISO 3834 + mapping campi UI/DB + smoke completo.

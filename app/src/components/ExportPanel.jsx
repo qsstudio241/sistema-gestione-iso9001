@@ -21,6 +21,33 @@ const ExportPanel = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
+  // null = auto-detect per standard (ISO 3834 → embed, altri → link)
+  // true/false = scelta esplicita dell'utente
+  const [embedPhotos, setEmbedPhotos] = useState(null);
+
+  const PHOTO_STANDARDS = ['ISO_3834', 'ISO_3834_2', 'ISO_3834_2_2021', 'RDP_MSN'];
+
+  /** Calcola il photoMode effettivo: rispetta la scelta utente, altrimenti auto. */
+  const resolvePhotoMode = (standardKey, customChecklistId) => {
+    if (embedPhotos === true)  return 'preview';
+    if (embedPhotos === false) return undefined;
+    // auto-detect
+    if (customChecklistId)    return 'preview';
+    if (!standardKey)         return undefined;
+    return (PHOTO_STANDARDS.includes(standardKey) || String(standardKey).includes('3834'))
+      ? 'preview' : undefined;
+  };
+
+  /** Restituisce true se l'audit corrente ha almeno uno standard con foto (auto). */
+  const auditHasPhotoStandard = () => {
+    const stds = currentAudit?.metadata?.selectedStandards || [];
+    const customId = currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id;
+    if (customId) return true;
+    return stds.some(s => PHOTO_STANDARDS.includes(s) || String(s).includes('3834'));
+  };
+
+  /** Valore effettivo del checkbox (considerando anche null = auto). */
+  const embedPhotosEffective = embedPhotos !== null ? embedPhotos : auditHasPhotoStandard();
 
   // Development mode - mostra formati avanzati JSON/CSV
   const isDev = process.env.NODE_ENV === "development";
@@ -364,10 +391,11 @@ const ExportPanel = () => {
       // Audit con checklist custom (senza standard ISO) → un solo report Word
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       if (customChecklistId && (!auditForExport.metadata?.selectedStandards?.length) && !Object.keys(auditForExport.checklist || {}).length) {
+        const photoMode = resolvePhotoMode(null, customChecklistId);
+        if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
         const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
           customChecklistId,
-          // Immagini jpg/png/gif incorporate nel DOCX (webp e PDF restano solo testo nome file, senza hyperlink).
-          photoMode: 'preview',
+          photoMode,
           getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
         });
         showMessage(`✅ Report Word generato: ${fileName}`, "success");
@@ -385,22 +413,22 @@ const ExportPanel = () => {
         return;
       }
 
+      const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
       if (activeStandards.length > 1) {
-        showMessage(`⏳ Generazione ${activeStandards.length} report...`, "info");
+        showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
+      } else if (willEmbedPhotos) {
+        showMessage("⏳ Caricamento immagini in corso...", "info");
       }
 
       const fileNames = [];
-      const photoPreviewStandards = ['ISO_3834', 'ISO_3834_2', 'ISO_3834_2_2021', 'RDP_MSN'];
       for (const stdKey of activeStandards) {
         if (fileNames.length > 0) await new Promise(r => setTimeout(r, 900));
-        const isPhotoPreview = photoPreviewStandards.includes(stdKey) || String(stdKey).includes('3834');
         const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
           standardKey: stdKey,
-          photoMode: isPhotoPreview ? 'preview' : undefined,
+          photoMode: resolvePhotoMode(stdKey, null),
           getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
         });
         fileNames.push(fileName);
-        console.log(`✅ [EXPORT] Generato: ${fileName}`);
       }
 
       showMessage(
@@ -427,11 +455,14 @@ const ExportPanel = () => {
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
 
       const stds = auditForExport.metadata?.selectedStandards || [];
-      const hasPhotoStd = stds.some(s => String(s).includes('3834') || s === 'RDP_MSN');
+      const firstStd = stds[0] || null;
+      const photoMode = resolvePhotoMode(hasCustomOnly ? null : firstStd, hasCustomOnly ? customChecklistId : null);
+      if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
       const exportOpts = {
-        // Anteprima/embedding immagini per checklist custom (verbale) o standard con foto (3834).
-        ...(hasPhotoStd || hasCustomOnly ? { photoMode: 'preview' } : {}),
-        ...(hasCustomOnly ? { customChecklistId, getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId) } : { getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId) }),
+        ...(photoMode ? { photoMode } : {}),
+        ...(hasCustomOnly
+          ? { customChecklistId, getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId) }
+          : { getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId) }),
       };
 
       if (fsProvider?.ready()) {
@@ -539,6 +570,38 @@ const ExportPanel = () => {
                 <strong>{currentAudit.metadata.auditNumber}</strong> -{" "}
                 {currentAudit.metadata.clientName}
               </p>
+              <div className="export-photo-toggle">
+                <label className="photo-toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={embedPhotosEffective}
+                    onChange={e => setEmbedPhotos(e.target.checked)}
+                    disabled={isExporting}
+                  />
+                  <span>
+                    Incorpora foto nel documento
+                    {embedPhotos === null && (
+                      <span className="photo-toggle-auto"> (auto)</span>
+                    )}
+                  </span>
+                </label>
+                {embedPhotos !== null && (
+                  <button
+                    className="photo-toggle-reset"
+                    onClick={() => setEmbedPhotos(null)}
+                    disabled={isExporting}
+                    title="Torna al comportamento automatico"
+                  >
+                    ripristina auto
+                  </button>
+                )}
+                <p className="photo-toggle-hint">
+                  {embedPhotosEffective
+                    ? "Le foto vengono scaricate e incorporate nel DOCX — file più grande, generazione più lenta."
+                    : "Le foto non vengono incorporate — solo il nome del file comparirà nel report."}
+                </p>
+              </div>
+
               <div className="export-buttons">
                 <button
                   onClick={handleExportWord}
@@ -546,7 +609,7 @@ const ExportPanel = () => {
                   className="btn btn-word"
                   title="Scarica report Word (browser download)"
                 >
-                  {isExporting ? "⏳ Generazione..." : "📄 Genera Report Word"}
+                  {isExporting ? "⏳ Generazione in corso..." : "📄 Genera Report Word"}
                 </button>
                 <button
                   onClick={handleExportToFileSystem}
@@ -559,7 +622,7 @@ const ExportPanel = () => {
                   }
                 >
                   {isExporting
-                    ? "⏳ Salvataggio..."
+                    ? "⏳ Salvataggio in corso..."
                     : fsProvider?.ready()
                     ? "✅ Salva in Workspace"
                     : "💾 Salva in File System"}

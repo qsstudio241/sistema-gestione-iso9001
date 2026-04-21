@@ -126,16 +126,14 @@ function buildTemplateData(audit) {
         : '';
     const fornitoreAddressRaw = auditPartyType === 'second_party'
         ? String(meta.fornitoreAddress || meta.exportCompanyAddress || '').trim()
-        : '';
+        : String(meta.fornitoreAddress || meta.exportCompanyAddress || '').trim();
     const fornitoreName = fornitoreNameRaw && fornitoreAddressRaw
         ? `${fornitoreNameRaw} - ${fornitoreAddressRaw}`
         : (fornitoreNameRaw || fornitoreAddressRaw);
     const reportClientName = (auditPartyType === 'second_party' && fornitoreNameRaw)
         ? fornitoreNameRaw
         : (meta.clientName || 'Cliente');
-    const reportScope = auditPartyType === 'second_party'
-        ? (fornitoreAddressRaw || gd.scope || '—')
-        : (gd.scope || 'Sistema di Gestione per la Qualit\u00e0');
+    const reportScope = gd.scope || '—';
     const primaryAuditor = pickAuditorName();
     const fallbackParticipants = (gd.auditors || [])
         .map((v) => String(v || '').trim())
@@ -155,6 +153,7 @@ function buildTemplateData(audit) {
         committenteName:        meta.clientName  || 'Cliente',
         auditPartyTypeLabel,
         fornitoreName:          fornitoreName || '—',
+        fornitoreIndirizzo:     fornitoreAddressRaw || '—',
         auditNumber:            meta.auditNumber || 'N/A',
         procedureCode:          meta.procedureCode || '—',
         auditDate:              formatDate(meta.auditDate || gd.auditDate),
@@ -164,6 +163,7 @@ function buildTemplateData(audit) {
             ? gd.referenceDocuments.join(', ')
             : (gd.referenceDocuments || '—'),
         processes:              gd.processes     || 'Tutti i processi aziendali',
+        ispettore:              primaryAuditor,
         programCommunicatedDate: formatDate(gd.programCommunicatedDate),
         auditor:                primaryAuditor,
         objectiveDescription:   obj.description  ||
@@ -244,8 +244,8 @@ function repairWordDocumentXmlMalformedAttrs(xml) {
  */
 const SIMPLE_DOCXTEMPLATE_VAR_NAMES = [
     'referenceDocuments', 'programCommunicatedDate', 'objectiveDescription', 'auditPartyTypeLabel',
-    'committenteName', 'fornitoreName', 'procedureCode', 'auditNumber', 'auditObject',
-    'clientName', 'processes', 'conclusions', 'summaryText',
+    'committenteName', 'fornitoreName', 'fornitoreIndirizzo', 'procedureCode', 'auditNumber', 'auditObject',
+    'clientName', 'processes', 'ispettore', 'conclusions', 'summaryText',
     'auditor', 'scope', 'auditDate', 'cCount', 'ncCount', 'ossCount', 'omCount', 'nvCount', 'naCount',
     'organizationName', 'organizationVat',
 ];
