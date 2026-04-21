@@ -9,36 +9,47 @@ alwaysApply: true
 - Leggi `PROJECT_CONTEXT.md` (root), poi `docs/PROJECT_ROADMAP.md`, poi **`docs/GUIDA_CONSOLIDATA.md`**.
 - **Non** creare nuovi `docs/sessions/SESSION_NOTES_*.md`: aggiorna `GUIDA_CONSOLIDATA.md` + roadmap.
 - Rispondi sempre in italiano, con spiegazioni semplici e operative.
-- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit su richiesta implicita di avanzare il task) **senza** chiedere all’utente di copiarli. Chiedi all’utente **solo** quando serve un’azione **fuori** dall’agente (login browser a servizi terzi, password VPS, scelta committente, approvazione eccezione alle golden rules). La regola “un comando alla volta” vale quando **l’utente** è l’unico che può lanciare quel comando sul suo ambiente — non come scusa per delegare al umano ciò che il terminale del workspace può fare.
-- **Dialogo con l’utente**: privilegiare messaggi su **obiettivi**, **requisiti clienti**, **priorità**, **vincoli legali/commerciali**; evitare di usare il turno utente per operazioni ripetitive che l’agente può completare da solo.
+- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit su richiesta implicita di avanzare il task) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** quando serve un'azione **fuori** dall'agente (login browser a servizi terzi, password VPS, scelta committente, approvazione eccezione alle golden rules). La regola "un comando alla volta" vale quando **l'utente** e' l'unico che puo' lanciare quel comando sul suo ambiente, non come scusa per delegare all'umano cio' che il terminale del workspace puo' fare.
+- **Dialogo con l'utente**: privilegiare messaggi su **obiettivi**, **requisiti clienti**, **priorita'**, **vincoli legali/commerciali**; evitare di usare il turno utente per operazioni ripetitive che l'agente puo' completare da solo.
 
-## Approvazione esplicita dell’utente (solo eccezioni)
-- **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purché non tocchino schema DB produzione, segreti o contratti API senza piano.
-- **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrità dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** può essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
-- **User rules globali in Cursor**: se una regola chat chiede “sempre approvazione prima di ogni modifica”, per **questo repository** prevale questa sezione (`alwaysApply: true`). Per ridurre attriti ripetuti, il committente può **restringere o rimuovere** quella user rule duplicata e lasciare qui la policy vincolante.
-- **Delega Cursor web**: usare file in `docs/agent-tasks/` come unico “brief”; l’esito si ritrova su **Git** (branch/PR). Nessun canale diretto agente↔agente.
+## Convenzione DEPUTYTASK (workflow delegato)
+- Il task corrente per il deputy risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
+- **Non proliferare** file `TASK_*.md` datati: la memoria dei task completati va in `docs/GUIDA_CONSOLIDATA.md` (sezione "Chiusura sessione").
+- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` con il nuovo brief e consegna all'utente questo comando standard da incollare nella finestra **Agents** di Cursor:
+
+  ```
+  Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+  ```
+
+- L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
+- **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
+
+## Approvazione esplicita dell'utente (solo eccezioni)
+- **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purche' non tocchino schema DB produzione, segreti o contratti API senza piano.
+- **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrita' dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** puo' essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
+- **User rules globali in Cursor**: se una regola chat chiede "sempre approvazione prima di ogni modifica", per **questo repository** prevale questa sezione (`alwaysApply: true`). Per ridurre attriti ripetuti, il committente puo' **restringere o rimuovere** quella user rule duplicata e lasciare qui la policy vincolante.
 
 ## Principi trasversali (sempre attivi)
-- **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore né duplicati inutili tra file `.md`. **Chiarezza da best practice**: seguire la sezione *Principi di documentazione* in `docs/GUIDA_CONSOLIDATA.md` (gerarchia titoli, tabelle per checklist, fonte unica per tipo di informazione, link invece di copia, commit/PR con messaggi chiari anche per `.md`).
+- **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore ne' duplicati inutili tra file `.md`. **Chiarezza da best practice**: seguire la sezione *Principi di documentazione* in `docs/GUIDA_CONSOLIDATA.md` (gerarchia titoli, tabelle per checklist, fonte unica per tipo di informazione, link invece di copia, commit/PR con messaggi chiari anche per `.md`).
 - **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
-- **Sicurezza**: segreti **mai** in repository né incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git può ancora contenere segreti vecchi → **ruotare** se esposti.
+- **Sicurezza**: segreti **mai** in repository ne' incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git puo' ancora contenere segreti vecchi, **ruotare** se esposti.
 
-## Fase sviluppo e priorità (contesto committente)
-- **Default fino a diverso avviso esplicito** (roadmap o messaggio utente): ambiente di lavoro orientato a **dati di prova**, priorità su **funzionalità**, **deploy VPS** e **commit/push** senza perdere tempo.
-- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su “sicurezza operativa” (es. rotazione password) quando l’unico ostacolo è configurazione locale già prevista da doc: usare subito `backend/config/.ssh-deploy.local.ps1`, variabili `SGQ_*`, Pageant/sessione PuTTY, `database.json` — eseguire deploy e proseguire. Chiedere all’utente **solo** se sul workspace **manca** davvero ogni mezzo non interattivo e non c’è alternativa automatizzabile.
-- **Invariato**: nessun segreto nei **file versionati** su Git; resta valido l’uso di file gitignored e credenziali solo sul PC.
+## Fase sviluppo e priorita' (contesto committente)
+- **Default fino a diverso avviso esplicito** (roadmap o messaggio utente): ambiente di lavoro orientato a **dati di prova**, priorita' su **funzionalita'**, **deploy VPS** e **commit/push** senza perdere tempo.
+- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su "sicurezza operativa" (es. rotazione password) quando l'unico ostacolo e' configurazione locale gia' prevista da doc: usare subito `backend/config/.ssh-deploy.local.ps1`, variabili `SGQ_*`, Pageant/sessione PuTTY, `database.json` — eseguire deploy e proseguire. Chiedere all'utente **solo** se sul workspace **manca** davvero ogni mezzo non interattivo e non c'e' alternativa automatizzabile.
+- **Invariato**: nessun segreto nei **file versionati** su Git; resta valido l'uso di file gitignored e credenziali solo sul PC.
 
-## Modalità operativa autonoma (affidabile, robusta, coerente)
-- **Ruolo decisionale**: operare come **senior lead** su progetti di questo tipo (PWA/offline, API, DB relazionale, multi-tenant), seguendo **golden rules** e **best practice** consolidate. **Non chiedere** “cosa preferisci?” su scelte tecniche ovvie o standard: proporre ed applicare la soluzione migliore. **Solo** se serve una decisione di **prodotto**, **compliance/contratto** o un trade-off **non deducibile** da codice, `PROJECT_ROADMAP` o `GUIDA_CONSOLIDATA`, esplicitare il dilemma e chiedere conferma.
-- **Priorità**: integrità DB, coerenza dati, scenari **multi-utente / multi-dispositivo** (nessuna soluzione che “funziona solo sul mio browser”).
-- **Ciclo consigliato** per fix non banali: causa radice riproducibile → fix difensivo + hardening collegato (edge case, schema legacy, sync) → test automatici disponibili (`app`/`backend`) → se tocca produzione: **migrazione DB se necessaria** → deploy file backend/VPS → **restart servizio** (`systemctl` / script noti) → **smoke test** su API reali (health, endpoint critici) → **commit + push** su `main` quando stabile.
+## Modalita' operativa autonoma (affidabile, robusta, coerente)
+- **Ruolo decisionale**: operare come **senior lead** su progetti di questo tipo (PWA/offline, API, DB relazionale, multi-tenant), seguendo **golden rules** e **best practice** consolidate. **Non chiedere** "cosa preferisci?" su scelte tecniche ovvie o standard: proporre ed applicare la soluzione migliore. **Solo** se serve una decisione di **prodotto**, **compliance/contratto** o un trade-off **non deducibile** da codice, `PROJECT_ROADMAP` o `GUIDA_CONSOLIDATA`, esplicitare il dilemma e chiedere conferma.
+- **Priorita'**: integrita' DB, coerenza dati, scenari **multi-utente / multi-dispositivo** (nessuna soluzione che "funziona solo sul mio browser").
+- **Ciclo consigliato** per fix non banali: causa radice riproducibile -> fix difensivo + hardening collegato (edge case, schema legacy, sync) -> test automatici disponibili (`app`/`backend`) -> se tocca produzione: **migrazione DB se necessaria** -> deploy file backend/VPS -> **restart servizio** (`systemctl` / script noti) -> **smoke test** su API reali (health, endpoint critici) -> **commit + push** su `main` quando stabile.
 - **Documentazione**: aggiorna **`docs/GUIDA_CONSOLIDATA.md`** (e se serve `PROJECT_ROADMAP.md`) con la **strategia** e i passi operativi ripetibili; non aprire nuovi `SESSION_NOTES_*`.
-- **Sicurezza**: **non** chiedere all’utente di scrivere password in chat per migrazioni o deploy. Usare ciò che è già sul workspace: `backend/config/database.json` (copia locale da `.example`), override `DB_*` in ambiente, `SGQ_PUTTY_SESSION` / Pageant per `deploy-controllers-to-vps.ps1`. Se manca la configurazione, indicare **solo** cosa creare o impostare **fuori dalla chat** (vault, variabili d’ambiente Windows, PuTTY), mai richiedere il segreto nel messaggio.
-- **Chiusura**: niente “fix a metà”: se emergono sotto-problemi (es. delete legacy, CORS, proxy che mangia header), chiuderli o documentare il rischio residuo in guida.
+- **Sicurezza**: **non** chiedere all'utente di scrivere password in chat per migrazioni o deploy. Usare cio' che e' gia' sul workspace: `backend/config/database.json` (copia locale da `.example`), override `DB_*` in ambiente, `SGQ_PUTTY_SESSION` / Pageant per `deploy-controllers-to-vps.ps1`. Se manca la configurazione, indicare **solo** cosa creare o impostare **fuori dalla chat** (vault, variabili d'ambiente Windows, PuTTY), mai richiedere il segreto nel messaggio.
+- **Chiusura**: niente "fix a meta'": se emergono sotto-problemi (es. delete legacy, CORS, proxy che mangia header), chiuderli o documentare il rischio residuo in guida.
 
 ## Strategia per fix complessi
 - Prima diagnosi riproducibile, poi hardening, poi test automatici.
-- Deploy, checklist custom, Word Verbale, DB/repro: tabelle e file in **`docs/GUIDA_CONSOLIDATA.md`** (sez. A–D).
+- Deploy, checklist custom, Word Verbale, DB/repro: tabelle e file in **`docs/GUIDA_CONSOLIDATA.md`** (sez. A-D).
 - Persistenza custom: merge local/server, `custom_checklist_id`, fallback ISO 9001.
 
 ## Regole operative terminale (Windows PowerShell)
@@ -46,12 +57,12 @@ alwaysApply: true
 - Per test frontend imposta sempre `NODE_ENV=test` (evita errori React `act(...)`).
 - Per deploy VPS con PuTTY usa comandi non interattivi (`plink/pscp`) e gestisci `sudo -S` quando necessario.
 
-## Chunking (robustezza, stabilità, scalabilità)
-- Ogni attività spezzata in **slice verticali**: diagnosi → fix **minimo** → test **L1** (Vitest/build in `app/`) e, se il perimetro lo richiede, livelli **L2–L4** descritti in `docs/GUIDA_CONSOLIDATA.md` (*Piano qualità: fasi di sviluppo e test di robustezza* / piramide L1–L5). **Non** mescolare nella stessa consegna migrazioni DB, refactor ampi e smoke manuali senza una tappa intermedia committabile.
-- **Smoke manuali (L3/L4)**: non marcare OK in checklist senza evidenza (data, ambiente, note anonime); separare sempre “copertura L1 in CI / locale” da “esecuzione umana su preview/prod”.
-- **Scalabilità multi-tenant / sync**: nessuna modifica che bypassi `organization_id` / scope noti; preferire pattern già usati in `ARCHITETTURA_UTENTI_RBAC.md` e nei controller esistenti.
+## Chunking (robustezza, stabilita', scalabilita')
+- Ogni attivita' spezzata in **slice verticali**: diagnosi -> fix **minimo** -> test **L1** (Vitest/build in `app/`) e, se il perimetro lo richiede, livelli **L2-L4** descritti in `docs/GUIDA_CONSOLIDATA.md` (*Piano qualita': fasi di sviluppo e test di robustezza* / piramide L1-L5). **Non** mescolare nella stessa consegna migrazioni DB, refactor ampi e smoke manuali senza una tappa intermedia committabile.
+- **Smoke manuali (L3/L4)**: non marcare OK in checklist senza evidenza (data, ambiente, note anonime); separare sempre "copertura L1 in CI / locale" da "esecuzione umana su preview/prod".
+- **Scalabilita' multi-tenant / sync**: nessuna modifica che bypassi `organization_id` / scope noti; preferire pattern gia' usati in `ARCHITETTURA_UTENTI_RBAC.md` e nei controller esistenti.
 
-## Qualita e stabilita
+## Qualita' e stabilita'
 - Dopo modifiche sostanziali: esegui test mirati + suite disponibile.
 - Aggiorna test per riprodurre bug reali (non test solo nominali).
 - Se utile, crea test di simulazione DOCX con template minimo in memoria.
@@ -60,4 +71,4 @@ alwaysApply: true
 1) Identifica causa reale (non solo sintomo).
 2) Applica fix robusto e difensivo.
 3) Esegui test automatici completi disponibili.
-4) Deploy produzione (se applicabile) + smoke; poi **commit e push** quando l’esito è positivo. In alternativa, commit prima del deploy se serve tracciare lo stato prima del rilascio — l’importante è non chiudere senza verifica e senza allineare repo e ambiente.
+4) Deploy produzione (se applicabile) + smoke; poi **commit e push** quando l'esito e' positivo. In alternativa, commit prima del deploy se serve tracciare lo stato prima del rilascio — l'importante e' non chiudere senza verifica e senza allineare repo e ambiente.
