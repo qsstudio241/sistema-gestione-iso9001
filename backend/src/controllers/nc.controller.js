@@ -270,14 +270,16 @@ async function createNonConformity(req, res) {
 
         const standard_id = standardResult.recordset[0].standard_id;
 
-        // Verifica unicità nc_number
+        // Verifica unicità nc_number nell'organizzazione (scoped per tenant)
         const existingNC = await query(`
-      SELECT nc_id FROM non_conformities WHERE nc_number = @nc_number
-    `, { nc_number });
+      SELECT nc.nc_id FROM non_conformities nc
+      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE nc.nc_number = @nc_number AND a.organization_id = @organization_id
+    `, { nc_number, organization_id });
 
         if (existingNC.recordset.length > 0) {
             return res.status(409).json({
-                error: 'Numero NC già esistente',
+                error: 'Numero NC già esistente in questa organizzazione',
                 code: 'NC_NUMBER_DUPLICATE'
             });
         }

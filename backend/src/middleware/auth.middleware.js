@@ -6,7 +6,28 @@
 const jwt = require('jsonwebtoken');
 const logger = require('../utils/logger');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sgq-iso9001-secret-change-in-production';
+// Fail-fast: il server NON deve avviarsi con un secret debole o assente.
+// In sviluppo locale impostare JWT_SECRET nel .env (mai in chiaro nel repo).
+const MIN_JWT_SECRET_LENGTH = 32;
+
+if (!process.env.JWT_SECRET) {
+    throw new Error(
+        '[auth.middleware] JWT_SECRET non configurato. ' +
+        'Impostare la variabile d\'ambiente JWT_SECRET (minimo 32 caratteri) prima di avviare il server.'
+    );
+}
+
+if (process.env.JWT_SECRET.length < MIN_JWT_SECRET_LENGTH) {
+    const msg =
+        `[auth.middleware] JWT_SECRET troppo corto (${process.env.JWT_SECRET.length} car., minimo ${MIN_JWT_SECRET_LENGTH}). ` +
+        'Usare un secret casuale robusto.';
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(msg);
+    }
+    logger.warn(msg + ' — tollerato solo in sviluppo locale.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Middleware: Verifica JWT e autentica utente

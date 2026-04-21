@@ -40,5 +40,20 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 40,
+        "functions": 40,
+        "lines": 40,
+        "statements": 40
+      }
+    },
+    "testTimeout": 15000
   }
 }

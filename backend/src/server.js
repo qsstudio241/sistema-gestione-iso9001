@@ -71,15 +71,34 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Rate limiting (disabilitato per testing locale - riabilitare in produzione)
-const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 min
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000, // Aumentato per testing locale (era 100)
-    message: 'Troppi request da questo IP, riprova più tardi',
+// Rate limiting — tiered per tipo di endpoint
+// Valori configurabili da env; default conservativi per produzione.
+// Per disabilitare in sviluppo locale: RATE_LIMIT_DISABLED=true nel .env
+const rateLimitDisabled = process.env.RATE_LIMIT_DISABLED === 'true';
+
+// Auth: anti brute-force (login/register) — stretto
+const authLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_AUTH_WINDOW_MS)  || 15 * 60 * 1000, // 15 min
+    max:      parseInt(process.env.RATE_LIMIT_AUTH_MAX)        || 20,
+    message:  { error: 'Troppi tentativi di accesso. Riprova tra 15 minuti.', code: 'RATE_LIMIT_AUTH' },
     standardHeaders: true,
-    legacyHeaders: false,
+    legacyHeaders:   false,
+    skip: () => rateLimitDisabled,
 });
-// app.use('/api/', limiter); // COMMENTATO per testing locale
+
+// API generale — moderato
+const apiLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS)       || 15 * 60 * 1000, // 15 min
+    max:      parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)    || 500,
+    message:  { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' },
+    standardHeaders: true,
+    legacyHeaders:   false,
+    skip: () => rateLimitDisabled,
+});
+
+if (rateLimitDisabled) {
+    logger.warn('[RateLimit] Rate limiting DISABILITATO (RATE_LIMIT_DISABLED=true). Solo per sviluppo locale.');
+}
 
 // Request logging
 app.use((req, res, next) => {
@@ -122,9 +141,13 @@ app.get('/health', healthCheckHandler);
 const API_BASE = process.env.API_BASE_PATH || '/api/v1';
 
 // Endpoint pubblici (no auth) - DEVONO venire PRIMA delle altre routes
-app.get(`${API_BASE}/health`, healthCheckHandler); // Health check API
+app.get(`${API_BASE}/health`, healthCheckHandler); // Health check API — escluso da rate limit
 const responseController = require('./controllers/response.controller');
 app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
+
+// Rate limiting applicato prima delle route
+app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
+app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
 
 // Endpoint autenticati
 app.use(API_BASE, authRoutes);
