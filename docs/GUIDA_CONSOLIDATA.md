@@ -620,6 +620,35 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 ---
 
+### Chiusura sessione 22 aprile 2026
+
+**P1 — Custom checklist outcome buttons (deputy + lead agent, commit `125131d` + merge `e1f3c5b`):**
+- **Funzionalità**: pulsanti esito C / OSS / NC / OM / NV / NA per checklist personalizzate con flag `has_outcome_buttons`.
+- **DB produzione (migrazione 043)**: `custom_checklists.has_outcome_buttons BIT DEFAULT 0` + `audit_custom_checklist_responses.status NVARCHAR(10) NULL` — applicata e verificata.
+- **Backend VPS**: `customChecklist.controller.js`, `customChecklist.service.js` aggiornati, deploy riuscito, servizio `active (running)` alle 17:08 UTC.
+- **Frontend**: `CustomChecklistAuditView.jsx` (pulsanti esito condizionali, CSS colori semantici), `CustomChecklistsPage.jsx` (toggle "Abilita valutazione"), `wordExport.js` + `wordExportHelpers.js` (badge [STATUS] + tabella riepilogo NC/OSS/OM nel Word).
+- **Test (deputy)**: 48/48 Vitest PASS; dev build OK; prod build fallisce per esbuild/node mismatch locale pre-esistente (non causato da queste modifiche; Netlify non impattato).
+- **Pendente (solo smoke manuale utente)**: L3 — creare checklist con flag, aprire in audit, cliccare pulsanti, verificare salvataggio + riepilogo Word export.
+
+**Bug fix — audit cancellato ricompare nel menu (commit `748e754`):**
+- `StorageContext.jsx`: `deleteAudit` ora chiama `fsProvider.deleteAudit(auditId)` (rimozione da IndexedDB) e registra in `recentlyDeletedRef` per bloccare il restore di Bug-5-Fix-B in `reconcileAuditsFromServer`.
+- Smoke DB: `LOCK-SMOKE-1774111224043` cancellato e verificato assente su SQL Server produzione.
+- `storageContext.dedup.test.js`: 2 nuovi test per documentare il comportamento corretto.
+
+**P2 — Sicurezza credenziali (commit `a579958`):**
+- `server.js`: fail-fast JWT_SECRET + CORS_ORIGIN in produzione.
+- `auth.controller.js`: JWT_SECRET fallback sicuro, gestione login email ambigua (400 `requires_organization_id`), register policy `superadmin_only` in produzione.
+- 3 nuovi test Jest in `auth-rbac.test.js`.
+
+**Prossima sessione — cosa fare (ordine):**
+1. Leggere `PROJECT_ROADMAP.md` + questa sezione.
+2. **Smoke L3 P1** (se non già fatto dall'utente): login Camellini → crea checklist con flag "Abilita valutazione" → audit → pulsanti → Word export.
+3. **P4 Sprint 0 Navigation Foundation**: React Router v6, sidebar, dashboard (vedi roadmap).
+4. Pulizia branch remoto `cursor/custom-checklist-outcome-buttons-bb01` (già mergiato).
+5. Pulizia script temporanei in `backend/scripts/` (diagnose-*, smoke-*, fix-mason-*, check-audit-*).
+
+---
+
 ### Chiusura sessione 20 aprile 2026
 
 **Hardening audit visibility multi-tenant (commit `30fb6c0`):**

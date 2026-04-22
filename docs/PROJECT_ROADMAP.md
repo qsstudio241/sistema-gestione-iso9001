@@ -1,8 +1,8 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 21 aprile 2026
-> **Prossimo Step** (sessione successiva): **P1** Deputy custom checklist outcome buttons (`TASK_CUSTOM_CHECKLIST_OUTCOME_BUTTONS.md`) + **P2** Sicurezza credenziali (noi — sessione D: JWT_SECRET fail-fast, login email ambiguo, register policy prod). Poi **P4** Sprint 0 Navigation Foundation (React Router v6 + sidebar + dashboard).
+> **Ultimo Aggiornamento**: 22 aprile 2026
+> **Prossimo Step** (sessione successiva): **Smoke L3 manuale P1** (utente: pulsanti esito custom checklist) — poi **P4 Sprint 0 Navigation Foundation** (React Router v6, sidebar, dashboard). Pulizia branch `cursor/custom-checklist-outcome-buttons-bb01` (già mergiato) e script temp in `backend/scripts/`.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
