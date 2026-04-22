@@ -69,15 +69,21 @@ export const ISO_9001_TEMPLATE = {
       sectionTitle: "8 – Attività Operative",
       displayOrder: 5,
       questions: [
+        { questionId: 168, clauseRef: "8.1",   questionText: "Pianificazione e controllo operativi", questionType: "conformity", isMandatory: true, displayOrder: 39 },
         { questionId: 106, clauseRef: "8.2",   questionText: "Requisiti per prodotti e servizi", questionType: "conformity", isMandatory: true, displayOrder: 23 },
         { questionId: 107, clauseRef: "8.2.3", questionText: "Riesame dei requisiti", questionType: "conformity", isMandatory: true, displayOrder: 24 },
         { questionId: 108, clauseRef: "8.3",   questionText: "Progettazione", questionType: "conformity", isMandatory: true, displayOrder: 25 },
         { questionId: 109, clauseRef: "8.4.1", questionText: "Valutazione, selezione, monitoraggio delle prestazioni e rivalutazione dei fornitori esterni", questionType: "conformity", isMandatory: true, displayOrder: 26 },
+        { questionId: 169, clauseRef: "8.4.2", questionText: "Tipo e grado di controllo dei processi, prodotti e servizi forniti esternamente", questionType: "conformity", isMandatory: true, displayOrder: 40 },
+        { questionId: 170, clauseRef: "8.4.3", questionText: "Informazioni ai fornitori esterni", questionType: "conformity", isMandatory: true, displayOrder: 41 },
+        { questionId: 171, clauseRef: "8.5.1", questionText: "Controllo della produzione e dell'erogazione del servizio", questionType: "conformity", isMandatory: true, displayOrder: 42 },
         { questionId: 110, clauseRef: "8.5.2", questionText: "Rintracciabilità degli output", questionType: "conformity", isMandatory: true, displayOrder: 27 },
         { questionId: 111, clauseRef: "8.5.3", questionText: "Proprietà del cliente/fornitore", questionType: "conformity", isMandatory: true, displayOrder: 28 },
+        { questionId: 172, clauseRef: "8.5.4", questionText: "Conservazione degli output", questionType: "conformity", isMandatory: true, displayOrder: 43 },
         { questionId: 112, clauseRef: "8.5.5", questionText: "Post vendita", questionType: "conformity", isMandatory: true, displayOrder: 29 },
         { questionId: 113, clauseRef: "8.5.6", questionText: "Controllo delle modifiche", questionType: "conformity", isMandatory: true, displayOrder: 30 },
         { questionId: 114, clauseRef: "8.6",   questionText: "Rilascio dei prodotti/servizi", questionType: "conformity", isMandatory: true, displayOrder: 31 },
+        { questionId: 173, clauseRef: "8.7.1", questionText: "Gestione degli output non conformi (azioni da intraprendere)", questionType: "conformity", isMandatory: true, displayOrder: 44 },
         { questionId: 115, clauseRef: "8.7.2", questionText: "Descrizione delle Non Conformità, Azioni adottate, concessioni ottenute", questionType: "conformity", isMandatory: true, displayOrder: 32 }
       ]
     },

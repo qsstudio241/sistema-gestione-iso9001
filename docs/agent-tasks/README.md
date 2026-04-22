@@ -16,3 +16,9 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 - Non introdurre segreti nel repo.
 - Preferire **PR** per modifiche non banali; merge su `main` solo con CI verde (o rischio documentato).
 - Backend/VPS: deploy separato; l’agente web non sostituisce operazioni che richiedono credenziali server.
+
+## Checklist rapida deputy
+
+- Per la revisione rapida del lavoro delegato usare: `docs/agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md`.
+- Per anomalie report cliente Mason (export Word): `docs/agent-tasks/TASK_MASON_REPORT_ANOMALIE_2026-04-20.md`.
+- Per audit non visibile in menu Mason (`2026-04`): `docs/agent-tasks/TASK_MASON_AUDIT_2026-04_VISIBILITY_2026-04-20.md`.

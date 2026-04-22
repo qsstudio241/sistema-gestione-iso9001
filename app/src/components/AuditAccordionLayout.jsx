@@ -76,10 +76,11 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
   // Stato per gestire quali sezioni sono aperte
   const [openSections, setOpenSections] = useState({
-    "general-data": false, // Chiusa di default
+    "general-data": false,
     checklist: false,
     outcome: false,
-    export: false, // NUOVO: sezione export
+    conclusions: false, // Bug 4: sezione 12 Conclusioni separata da Esito
+    export: false,
   });
 
   // Stato per gestire quali sotto-sezioni sono aperte.
@@ -259,10 +260,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             onClick={() => toggleSection("general-data")}
           >
             <span className="section-icon">📋</span>
-            <span className="section-title">1 – DATI GENERALI</span>
             <span className="section-arrow">
               {openSections["general-data"] ? "▼" : "▶"}
             </span>
+            <span className="section-title">1 – DATI GENERALI</span>
           </button>
 
           {openSections["general-data"] && (
@@ -276,10 +277,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   onClick={() => toggleSubSection("general-data-form")}
                 >
                   <span className="subsection-number">1.1</span>
-                  <span className="subsection-title">Informazioni di base sull'audit: oggetto, campo di applicazione, riferimenti documentali</span>
                   <span className="subsection-arrow">
                     {openSubSections["general-data-form"] ? "▼" : "▶"}
                   </span>
+                  <span className="subsection-title">Informazioni di base sull'audit: oggetto, campo di applicazione, riferimenti documentali</span>
                 </button>
 
                 {openSubSections["general-data-form"] && (
@@ -342,10 +343,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   onClick={() => toggleSubSection("objective")}
                 >
                   <span className="subsection-number">1.2</span>
-                  <span className="subsection-title">Obiettivo dell'Audit</span>
                   <span className="subsection-arrow">
                     {openSubSections["objective"] ? "▼" : "▶"}
                   </span>
+                  <span className="subsection-title">Obiettivo dell'Audit</span>
                 </button>
 
                 {openSubSections["objective"] && (
@@ -367,10 +368,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   onClick={() => toggleSubSection("pending-issues")}
                 >
                   <span className="subsection-number">1.3</span>
-                  <span className="subsection-title">Rilievi Pendenti</span>
                   <span className="subsection-arrow">
                     {openSubSections["pending-issues"] ? "▼" : "▶"}
                   </span>
+                  <span className="subsection-title">Rilievi Pendenti</span>
                 </button>
 
                 {openSubSections["pending-issues"] && (
@@ -387,10 +388,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   onClick={() => toggleSubSection("cert-findings")}
                 >
                   <span className="subsection-number">1.4</span>
-                  <span className="subsection-title">Rilievi dell'Ente Certificatore</span>
                   <span className="subsection-arrow">
                     {openSubSections["cert-findings"] ? "▼" : "▶"}
                   </span>
+                  <span className="subsection-title">Rilievi dell'Ente Certificatore</span>
                 </button>
                 {openSubSections["cert-findings"] && (
                   <div className="subsection-content">
@@ -415,10 +416,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             onClick={() => toggleSection("checklist")}
           >
             <span className="section-icon">✅</span>
-            <span className="section-title">Checklist</span>
             <span className="section-arrow">
               {openSections["checklist"] ? "▼" : "▶"}
             </span>
+            <span className="section-title">Checklist</span>
           </button>
 
           {openSections["checklist"] && (
@@ -434,10 +435,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                     onClick={() => toggleSubSection("custom-checklist")}
                   >
                     <span className="standard-icon">📋</span>
-                    <span className="subsection-title">Checklist personalizzata</span>
                     <span className="subsection-arrow">
                       {openSubSections["custom-checklist"] ? "\u25BC" : "\u25B6"}
                     </span>
+                    <span className="subsection-title">Checklist personalizzata</span>
                   </button>
                   {openSubSections["custom-checklist"] && (
                     <div className="subsection-content">
@@ -459,10 +460,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       onClick={() => toggleSubSection(subsId)}
                     >
                       <span className="standard-icon">{icon}</span>
-                      <span className="subsection-title">{label}</span>
                       <span className="subsection-arrow">
                         {openSubSections[subsId] ? "\u25BC" : "\u25B6"}
                       </span>
+                      <span className="subsection-title">{label}</span>
                     </button>
                     {openSubSections[subsId] && (
                       <div className="subsection-content">
@@ -488,7 +489,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           )}
         </div>
 
-        {/* ==================== SEZIONE 3: ESITO AUDIT ==================== */}
+        {/* ==================== SEZIONE 11: ESITO DELL'AUDIT (metriche NC/OSS/OM) ==================== */}
         <div className="accordion-section">
           <button
             className={`accordion-header ${
@@ -497,10 +498,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             onClick={() => toggleSection("outcome")}
           >
             <span className="section-icon">📊</span>
-            <span className="section-title">Esito Audit</span>
             <span className="section-arrow">
               {openSections["outcome"] ? "▼" : "▶"}
             </span>
+            <span className="section-title">11 – ESITO DELL'AUDIT</span>
           </button>
 
           {openSections["outcome"] && (
@@ -508,12 +509,39 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
               <AuditOutcomeSection
                 auditOutcome={currentAudit.metadata.auditOutcome}
                 onUpdate={handleAuditOutcomeUpdate}
+                showConclusions={false}
               />
             </div>
           )}
         </div>
 
-        {/* ==================== SEZIONE 4: EXPORT REPORT ==================== */}
+        {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
+        <div className="accordion-section">
+          <button
+            className={`accordion-header ${
+              openSections["conclusions"] ? "open" : ""
+            }`}
+            onClick={() => toggleSection("conclusions")}
+          >
+            <span className="section-icon">📝</span>
+            <span className="section-arrow">
+              {openSections["conclusions"] ? "▼" : "▶"}
+            </span>
+            <span className="section-title">12 – CONCLUSIONI</span>
+          </button>
+
+          {openSections["conclusions"] && (
+            <div className="accordion-content">
+              <AuditOutcomeSection
+                auditOutcome={currentAudit.metadata.auditOutcome}
+                onUpdate={handleAuditOutcomeUpdate}
+                showConclusions={true}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ==================== EXPORT REPORT ==================== */}
         <div className="accordion-section">
           <button
             className={`accordion-header ${
@@ -522,10 +550,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             onClick={() => toggleSection("export")}
           >
             <span className="section-icon">📤</span>
-            <span className="section-title">Export Report</span>
             <span className="section-arrow">
               {openSections["export"] ? "▼" : "▶"}
             </span>
+            <span className="section-title">Export Report</span>
           </button>
 
           {openSections["export"] && (

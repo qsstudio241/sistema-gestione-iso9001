@@ -1,9 +1,9 @@
-# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
+﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 19 aprile 2026
-> **Prossimo Step** (sessione successiva): (0–3) Completare smoke da [`docs/agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md`](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md) (punto 0 manuale produzione; 1–3 preview/deploy). Verificare su **DB produzione** migrazione **040** se non già eseguita (vedi [`GUIDA_CONSOLIDATA.md`](GUIDA_CONSOLIDATA.md)). Poi: (4) Flusso 2 SAL; (5) **Sprint 10** staging post-import **oppure** Fase 0.4 `norm_excerpt` (scegliere una traccia); (6) RAG dopo registry stabile; backlog ISO 45001 / ADR-006.
-> **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali)
+> **Ultimo Aggiornamento**: 21 aprile 2026
+> **Prossimo Step** (sessione successiva): **P1** Deputy custom checklist outcome buttons (`TASK_CUSTOM_CHECKLIST_OUTCOME_BUTTONS.md`) + **P2** Sicurezza credenziali (noi — sessione D: JWT_SECRET fail-fast, login email ambiguo, register policy prod). Poi **P4** Sprint 0 Navigation Foundation (React Router v6 + sidebar + dashboard).
+> **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
@@ -718,7 +718,21 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 18 aprile 2026
+**Ultimo Aggiornamento**: 21 aprile 2026
+
+### Sequenza priorita confermata (21 aprile 2026)
+
+| # | Task | Modalita | Stato |
+|---|---|---|---|
+| P0 | 5 bug Camellini ISO 9001 (accordion, race condition, domande mancanti, audit sparisce) | Deputy | In chiusura |
+| P1 | Custom checklist outcome buttons (C/OSS/NC su flag) | Deputy TASK_CUSTOM_CHECKLIST_OUTCOME_BUTTONS.md | Pronto |
+| P2 | Sicurezza credenziali: JWT_SECRET fail-fast, login email ambiguo, register prod | Noi — Sessione D | Prossima |
+| P3 | Sprint 0 — Navigation Foundation (React Router v6, sidebar, dashboard) | Noi + deputy | Dopo P2 |
+| P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog attivo |
+| P5 | Sessione A — JWT refresh con snapshot licenze | Noi | Backlog |
+| P6 | Sprint 2 — Qualifiche + Alert Engine scadenze | Deputy | Dipende Sprint 0 |
+
+Non attivare ancora: Sprint 10+, RAG, SAL, RDP completo — dipendono da Sprint 0.
 **Prossimo Step**: allineare piè di roadmap all’header (smoke 0–3 + verifica migrazione **040** su DB prod se necessario). Poi **Sessione A** (resto) / **B–E** licenze+auth, **RBAC**, scelta traccia **Sprint 10** vs **`norm_excerpt`**. **Sprint 12** Office round-trip: task parallelo deputy — [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md).
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  

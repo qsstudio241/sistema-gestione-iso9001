@@ -8,7 +8,11 @@ import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics } from "../utils/metricsCalculator";
 import "./AuditOutcomeSection.css";
 
-function AuditOutcomeSection({ auditOutcome, onUpdate }) {
+/**
+ * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
+ *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
+ */
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }) {
   const { currentAudit } = useStorage();
 
   // Stato locale per editing
@@ -72,7 +76,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
 
   return (
     <div className="audit-outcome-section">
-      {/* ==================== CONCLUSIONI DELL'AUDIT ==================== */}
+      {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
+      {showConclusions && (
       <div className="outcome-block">
         <h3 className="outcome-block-title">
           <span className="block-icon">📝</span>
@@ -97,8 +102,10 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
           </p>
         </div>
       </div>
+      )}
 
-      {/* ==================== RILIEVI EMERGENTI ==================== */}
+      {/* ==================== SEZIONE 11: RILIEVI EMERGENTI (metriche) ==================== */}
+      {!showConclusions && (
       <div className="outcome-block">
         <h3 className="outcome-block-title">
           <span className="block-icon">🔍</span>
@@ -196,10 +203,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate }) {
           </p>
         </div>
       </div>
-
-      {/* RIMOSSO: Sezione Allegati (ora gestiti per domanda nella checklist) */}
-
-      {/* Distribuzione Report: rimossa — funzionalità futura (invio email automatico) */}
+      )}
     </div>
   );
 }

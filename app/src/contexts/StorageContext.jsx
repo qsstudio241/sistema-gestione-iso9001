@@ -248,6 +248,12 @@ export function StorageProvider({ children, useMockData = false }) {
   const lockHeartbeatRef = useRef(null);
   const lockWriteWarnTsRef = useRef(0);
 
+  // Bug 5: ref stabile per currentAuditId (accessibile da callback senza stale closure)
+  const currentAuditIdRef = useRef(null);
+  useEffect(() => { currentAuditIdRef.current = currentAuditId; }, [currentAuditId]);
+  // Bug 2: debounce per fetchAndApplyServerResponses (evita riesecuzione entro 60s per stesso audit)
+  const fetchAndApplyLastRunRef = useRef({});
+
   // Audit corrente (computed) - supporta sia metadata.id che id top-level
   const currentAudit =
     audits.find((a) => {
@@ -656,6 +662,13 @@ export function StorageProvider({ children, useMockData = false }) {
       const localAudits = await fsProvider.loadAllAudits();
       const serverAudits = await fetchAllServerAudits();
 
+      // Bug 5 Fix A: se il server restituisce 0 audit (probabile errore API o RBAC temporaneo),
+      // non azzerare la lista locale — mantieni stato corrente e audit selezionato.
+      if (serverAudits.length === 0) {
+        console.warn("⚠️ [RECONCILE] Server ha restituito 0 audit — skip riconciliazione per evitare perdita audit corrente");
+        return { success: false, reason: "server_returned_empty_list" };
+      }
+
       if (serverAudits.length > 0) {
         const serverUuids = serverAudits.map((a) => a.metadata?.id || a.id).filter(Boolean);
         syncService.clearQueueForServerAudits(serverUuids).catch(() => {});
@@ -731,6 +744,21 @@ export function StorageProvider({ children, useMockData = false }) {
       const localOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
 
       let finalAudits = dedupeAudits(localOnly.length > 0 ? [...mergedAudits, ...localOnly] : mergedAudits);
+
+      // Bug 5 Fix B: se l'audit attualmente selezionato è stato escluso da finalAudits
+      // (il server non lo ha restituito, es. bug RBAC o paginazione incompleta),
+      // ripristinarlo dalla cache locale per evitare che scompaia dal menu.
+      const protectedId = currentAuditIdRef.current;
+      if (protectedId) {
+        const inFinal = finalAudits.some((a) => (a.metadata?.id || a.id) === protectedId);
+        if (!inFinal) {
+          const inLocal = localAudits.find((a) => (a.metadata?.id || a.id) === protectedId);
+          if (inLocal) {
+            console.warn(`⚠️ [RECONCILE] Audit corrente ${protectedId} non nel server response — ripristino dalla cache locale`);
+            finalAudits = dedupeAudits([...finalAudits, inLocal]);
+          }
+        }
+      }
 
       // Ripristina metadata.auditId da sync_metadata se disponibile
       for (let i = 0; i < finalAudits.length; i++) {
@@ -1682,6 +1710,15 @@ export function StorageProvider({ children, useMockData = false }) {
         console.log("📴 [HYDRATE] Offline — risposte non scaricate dal server");
         return;
       }
+
+      // Bug 2: debounce — non rieseguire se già eseguita nell'ultimo minuto per lo stesso audit
+      const lastRun = fetchAndApplyLastRunRef.current[numericAuditId];
+      if (lastRun && Date.now() - lastRun < 60000) {
+        console.log(`⏭️ [HYDRATE] Già eseguita per audit ${numericAuditId} nell'ultimo minuto — skip`);
+        return;
+      }
+      fetchAndApplyLastRunRef.current[numericAuditId] = Date.now();
+
       try {
         console.log(`🔄 [HYDRATE] Carico risposte server per audit ${numericAuditId}...`);
         const result = await apiService.getAuditResponses(numericAuditId);
@@ -1717,7 +1754,14 @@ export function StorageProvider({ children, useMockData = false }) {
               clauseData.questions = clauseData.questions.map((q) => {
                 if (q.questionId && responseMap[q.questionId]) {
                   applied++;
-                  return { ...q, ...responseMap[q.questionId] };
+                  const serverData = responseMap[q.questionId];
+                  // Bug 2: non sovrascrivere note già digitate dall'utente con quelle server.
+                  // Applica le note del server solo se il campo locale è vuoto/assente.
+                  const mergedNotes =
+                    q.notes && q.notes.trim() !== ""
+                      ? q.notes
+                      : serverData.notes || "";
+                  return { ...q, status: serverData.status, notes: mergedNotes };
                 }
                 return q;
               });
