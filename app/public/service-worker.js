@@ -54,34 +54,48 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(request.url);
 
     // BYPASS: Richieste API verso backend esterno (fr-busato.it)
-    // Lascia che il browser gestisca direttamente, senza intercettare
     if (url.hostname.includes('fr-busato.it') || url.port === '8443') {
-        console.log('[SW] Bypass API request to external backend:', url.href);
-        return; // Nessuna intercettazione, fetch nativa del browser
+        return;
     }
 
-    // API requests: BYPASS totale — non intercettare, lascia passare al browser
-    // (evita problemi con proxy Vite in dev e CORS)
+    // API requests: BYPASS totale
     if (url.pathname.startsWith('/api/')) {
         return;
     }
 
-    // Template Word: mai in cache — modifiche in app/public/templates/ devono riflettersi subito
+    // Template Word: mai in cache
     if (url.pathname.startsWith('/templates/') && url.pathname.endsWith('.docx')) {
         return;
     }
 
-    // Static assets: Cache-First
+    // Navigazione (HTML): Network-First — garantisce sempre il bundle più recente dopo un deploy.
+    // Fallback a cache solo se offline.
+    const isNavigate = request.mode === 'navigate' ||
+        url.pathname === '/' ||
+        url.pathname.endsWith('.html');
+
+    if (isNavigate) {
+        event.respondWith(
+            fetch(request).then((response) => {
+                if (response.ok) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+                }
+                return response;
+            }).catch(() => {
+                // Offline: servi da cache
+                return caches.match(request).then((cached) => cached || caches.match('/'));
+            })
+        );
+        return;
+    }
+
+    // Static assets (JS, CSS, immagini): Cache-First con fallback network
     event.respondWith(
         caches.match(request).then((cached) => {
-            if (cached) {
-                console.log('[SW] Serving from cache:', url.pathname);
-                return cached;
-            }
+            if (cached) return cached;
 
-            // Se non in cache, fetch from network
             return fetch(request).then((response) => {
-                // Cache solo successful responses
                 if (response.ok && request.method === 'GET') {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {

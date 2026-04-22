@@ -1,6 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
+import path from 'node:path';
+
+// Plugin: inietta BUILD_DATE reale in dist/service-worker.js dopo la build.
+// Più affidabile del postbuild npm script (che può fallire silenziosamente in CI).
+function stampServiceWorker() {
+    return {
+        name: 'stamp-service-worker',
+        writeBundle() {
+            const swPath = path.resolve('dist', 'service-worker.js');
+            if (!fs.existsSync(swPath)) return;
+            const buildDate = new Date().toISOString();
+            let content = fs.readFileSync(swPath, 'utf8');
+            content = content.replace(/__BUILD_DATE__/g, buildDate);
+            fs.writeFileSync(swPath, content, 'utf8');
+            console.log(`[vite:stamp-sw] BUILD_DATE → ${buildDate}`);
+        }
+    };
+}
 
 export default defineConfig(({ mode }) => {
 const isProd = mode === 'production';
@@ -22,22 +40,18 @@ return {
             }
         }
     },
-    plugins: [react()],
+    plugins: [react(), stampServiceWorker()],
     resolve: {
         // Mantiene i path del workspace (C:\ProgettoISO) senza risolvere sul drive reale.
         preserveSymlinks: true
     },
-    // Strip debugger statements in produzione; console.log rimossi via define.
+    // Strip debugger statements in produzione.
+    // console.log/debug/info marcati come "pure" → rimossi da tree-shaking (no side effects).
+    // console.warn/error preservati per visibilità errori reali.
     esbuild: {
         drop: isProd ? ['debugger'] : [],
+        pure: isProd ? ['console.log', 'console.debug', 'console.info'] : [],
     },
-    // In produzione: rimpiazza console.log/debug/info con no-op eliminato dal minifier.
-    // console.warn e console.error vengono preservati per visibilità errori reali.
-    define: isProd ? {
-        'console.log':   '(()=>{})',
-        'console.debug': '(()=>{})',
-        'console.info':  '(()=>{})',
-    } : {},
     build: {
         sourcemap: false, // nessuna source map in produzione (no leakage codice sorgente)
         rollupOptions: {
