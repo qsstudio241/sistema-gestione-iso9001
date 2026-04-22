@@ -65,6 +65,14 @@ const importJobsRoutes      = require('./routes/importJobs.routes');
 const app = express();
 const PORT = process.env.PORT || 10443;
 
+// Trust proxy: necessario perché il backend è dietro Nginx (proxy inverso).
+// Senza questa impostazione, express-rate-limit legge req.ip = '127.0.0.1' per
+// tutti gli utenti (IP del proxy) invece dell'IP reale dal header X-Forwarded-For,
+// e accumula il contatore di tutte le richieste su un unico "IP", saturando la
+// soglia anche con pochi utenti connessi (errore 429 "Troppe richieste").
+// Valore 1 = ci fidiamo di un solo livello di proxy (Nginx locale).
+app.set('trust proxy', 1);
+
 // ==========================================
 // MIDDLEWARE
 // ==========================================

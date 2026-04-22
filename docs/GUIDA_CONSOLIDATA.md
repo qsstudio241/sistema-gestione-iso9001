@@ -493,6 +493,16 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 **Ripresa suggerita:** `git pull` **nel repository locale**; leggere header [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md); smoke roadmap (0)–(3) se deploy recente; poi traccia **licenze/auth (sessioni A–E)** e **RBAC** come da checklist roadmap. Todo interne: D1 smoke, D2–D5 licenze, D6 RBAC, delega web (brief `docs/agent-tasks/`).
 
+### Fix 22 aprile 2026 — Errore 429 "Troppe richieste" per tutti gli utenti
+
+**Causa radice:** `express-rate-limit` identifica i client tramite `req.ip`. Senza `app.set('trust proxy', 1)`, Express ignora l'header `X-Forwarded-For` impostato da Nginx e considera tutti gli utenti come se provenissero dallo stesso IP (`127.0.0.1` del proxy locale). Il contatore del rate limiter accumulava **tutte le richieste di tutti gli utenti** come se arrivassero da un'unica fonte, saturando la soglia (aggravata da `RATE_LIMIT_MAX_REQUESTS=100` nel deploy script invece dei 500 del default).
+
+**Fix applicato (branch `cursor/fix-rate-limit-trust-proxy-9a6c`):**
+1. Aggiunto `app.set('trust proxy', 1)` in `backend/src/server.js` dopo la creazione di `app` e prima dei middleware (legge l'IP reale dal primo hop `X-Forwarded-For`).
+2. Corretta la soglia in `backend/deploy-production.ps1`: `RATE_LIMIT_MAX_REQUESTS=100` → `500`; aggiunto `RATE_LIMIT_AUTH_WINDOW_MS` e `RATE_LIMIT_AUTH_MAX=20` mancanti.
+
+**Deploy necessario:** copiare solo `backend/src/server.js` al VPS + restart `sgq-backend`. Nessuna migrazione DB. Soglie `.env` sul VPS da aggiornare manualmente (o rieseguire `deploy-production.ps1`).
+
 ### Chiusura sessione 19 aprile 2026 — RBAC lista audit (studio / tenant)
 
 - **Problema:** utente auditor (es. perimetro Mason) vedeva nel menu **tutti** gli audit del tenant se il ruolo nel JWT/DB non combaciava esattamente con le stringhe attese (`auditor` / `viewer`) oppure in casi limite: il predicato studio veniva omesso e restava solo il filtro `organization_id`.
