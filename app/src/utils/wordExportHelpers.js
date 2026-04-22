@@ -755,10 +755,14 @@ export function buildRileviSummaryOoxml(checklist, pendingIssues = []) {
  * @param {Object} options
  * @param {Array|null} imageRegistry
  */
-export function buildCustomChecklistSectionOoxml(customChecklist, customResponses = {}, auditAttachments = [], getViewUrl = null, options = {}, imageRegistry = null) {
+export function buildCustomChecklistSectionOoxml(customChecklist, customResponses = {}, auditAttachments = [], getViewUrl = null, options = {}, imageRegistry = null, customStatuses = {}) {
     if (!customChecklist?.sections?.length) {
         return xmlPara(xmlRun('Nessuna sezione nella checklist.', { ital: true }), { sa: 160 });
     }
+
+    const hasOutcomeButtons = Boolean(customChecklist?.has_outcome_buttons);
+    const STATUS_COLORS = { C: '166534', NC: '991B1B', OSS: '92400E', OM: '1E40AF', NV: '6B21A8', NA: '374151' };
+    const STATUS_BG    = { C: 'D1FAE5', NC: 'FEE2E2', OSS: 'FEF3C7', OM: 'DBEAFE', NV: 'F3E8FF', NA: 'E5E7EB' };
 
     // Layout: un'unica tabella Word continua (no tabelle separate per sezione).
     // - 4 colonne in griglia
@@ -849,16 +853,24 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                 const itemCode = String(item.code || '').trim() || '\u2014';
                 const itemTitle = String(item.title || '').trim();
 
+                const itemStatus = hasOutcomeButtons ? (customStatuses[item.id] || null) : null;
+                const badgeRun = itemStatus
+                    ? xmlRun(
+                        ' [' + itemStatus + ']',
+                        { bold: true, size: 18, color: STATUS_COLORS[itemStatus] || '374151' }
+                      )
+                    : '';
+
                 if (blocks.length === 0) {
+                    const titleContent = [
+                        xmlRun(itemTitle || 'Voce checklist', { bold: true, size: 18 }),
+                        badgeRun,
+                        xmlRun('\n\u2014 Nessuna evidenza compilata.', { ital: true, size: 18 }),
+                    ].join('');
+                    const badgeCellFill = (itemStatus && STATUS_BG[itemStatus]) ? STATUS_BG[itemStatus] : undefined;
                     allRows.push(xmlRow([
-                        xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top' }),
-                        xmlCell(
-                            xmlPara([
-                                xmlRun(itemTitle || 'Voce checklist', { bold: true, size: 18 }),
-                                xmlRun('\n\u2014 Nessuna evidenza compilata.', { ital: true, size: 18 }),
-                            ].join('')),
-                            { dxa: C[1], va: 'top', ml: 120 }
-                        ),
+                        xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top', ...(badgeCellFill ? { fill: badgeCellFill } : {}) }),
+                        xmlCell(xmlPara(titleContent), { dxa: C[1], va: 'top', ml: 120 }),
                         emptyCell(2),
                         emptyCell(3),
                     ]));
@@ -866,9 +878,13 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                 }
 
                 // Una sola riga per voce: colonna codice sempre itemCode (no 1.1.2, 1.1.3).
+                const badgeCellFill = (itemStatus && STATUS_BG[itemStatus]) ? STATUS_BG[itemStatus] : undefined;
                 let detail = '';
                 if (itemTitle) {
-                    detail += xmlPara(xmlRun(itemTitle, { bold: true, size: 18 }), { sa: 50, sb: 40 });
+                    detail += xmlPara(
+                        xmlRun(itemTitle, { bold: true, size: 18 }) + badgeRun,
+                        { sa: 50, sb: 40 }
+                    );
                 }
 
                 blocks.forEach((blk, i) => {
@@ -909,7 +925,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                 });
 
                 allRows.push(xmlRow([
-                    xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top' }),
+                    xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top', ...(badgeCellFill ? { fill: badgeCellFill } : {}) }),
                     xmlCell(detail, { dxa: C[1], va: 'top', ml: 120 }),
                     emptyCell(2),
                     emptyCell(3),
@@ -921,15 +937,62 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
 }
 
 /**
- * Riepilogo per checklist custom (sostituisce RILIEVI_MARKER quando non c'è CONF/NC/OSS/OM)
+ * Riepilogo per checklist custom (sostituisce RILIEVI_MARKER).
+ * Se has_outcome_buttons è attivo genera tabella riepilogo NC/OSS/OM per item.
+ * Altrimenti restituisce stringa vuota (riepilogo non applicabile).
  */
-export function buildCustomRileviSummaryOoxml(customChecklist, customResponses = {}) {
-    const totalItems = (customChecklist?.sections || []).reduce((s, sec) => s + (sec.items?.length || 0), 0);
-    const filledItems = Object.keys(customResponses).filter(k => (customResponses[k] || []).length > 0).length;
-    const totalBlocks = Object.values(customResponses).reduce((s, arr) => s + (arr || []).length, 0);
+export function buildCustomRileviSummaryOoxml(customChecklist, customResponses = {}, customStatuses = {}) {
+    const hasOutcomeButtons = Boolean(customChecklist?.has_outcome_buttons);
 
-    return xmlPara(
-        xmlRun('Checklist personalizzata: ' + totalItems + ' voci, ' + filledItems + ' compilate, ' + totalBlocks + ' evidenze.', { ital: true, size: 18 }),
-        { sa: 160 }
+    if (!hasOutcomeButtons) {
+        // Nessun riepilogo per checklist senza pulsanti esito: paragrafo vuoto
+        return xmlPara('', { sa: 0 });
+    }
+
+    const FILL = { CONF: 'D1FAE5', NC: 'FEE2E2', OSS: 'FEF3C7', OM: 'DBEAFE', 'N.A.': 'E5E7EB', NV: 'EDE9FE' };
+    const PCT = [50, 10, 10, 10, 10, 10];
+
+    const headerRow = xmlRow(
+        ['Voce / Domanda', 'C', 'NC', 'OSS', 'OM', 'N.A.'].map((h, i) =>
+            xmlCell(xmlPara(xmlRun(h, { bold: true, size: 18 }), { align: 'center' }),
+                { fill: 'E5E7EB', pct: PCT[i] })
+        ),
+        { header: true }
     );
+
+    const rows = [headerRow];
+
+    // Raccoglie tutti gli item con status valorizzato
+    (customChecklist?.sections || []).forEach((sec) => {
+        (sec.items || []).forEach((item) => {
+            const st = customStatuses[item.id] || null;
+            if (!st) return; // salta item senza valutazione
+            let col = '';
+            if      (st === 'C')   col = 'CONF';
+            else if (st === 'NC')  col = 'NC';
+            else if (st === 'OSS') col = 'OSS';
+            else if (st === 'OM')  col = 'OM';
+            else if (st === 'NA')  col = 'N.A.';
+
+            const label = escXml([item.code, item.title].filter(Boolean).join('  '));
+            rows.push(xmlRow([
+                xmlCell(label, { pct: PCT[0] }),
+                ...['CONF', 'NC', 'OSS', 'OM', 'N.A.'].map((k, i) =>
+                    col === k
+                        ? xmlCell(xmlPara(xmlRun('X', { bold: true }), { align: 'center' }),
+                            { fill: FILL[k], pct: PCT[i + 1] })
+                        : xmlCell(xmlPara(''), { pct: PCT[i + 1] })
+                ),
+            ]));
+        });
+    });
+
+    if (rows.length === 1) {
+        // Solo header, nessun item valutato
+        rows.push(xmlRow([
+            xmlCell(xmlPara(xmlRun('Nessuna domanda valutata.', { ital: true })), { span: 6, pct: 100 }),
+        ]));
+    }
+
+    return xmlTable(rows, PCT);
 }

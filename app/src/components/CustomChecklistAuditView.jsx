@@ -9,13 +9,16 @@ import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
 import "./CustomChecklistAuditView.css";
 
+const OUTCOME_CODES = ['C', 'OSS', 'NC', 'OM', 'NV', 'NA'];
+
 function CustomChecklistAuditView({ audit, onUpdate }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
   const { updateCurrentAudit } = useStorage();
 
   const [checklist, setChecklist] = useState(null);
-  const [responses, setResponses] = useState({}); // custom_item_id -> evidence_blocks
+  const [responses, setResponses] = useState({}); // custom_item_id -> evidence_blocks[]
+  const [statuses, setStatuses] = useState({}); // custom_item_id -> status string|null
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const enqueuedBlobKeysRef = useRef(new Set());
@@ -40,6 +43,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
 
       const respRes = await apiService.getCustomChecklistResponses(auditId);
       const serverByItem = {};
+      const serverStatuses = {};
       (respRes?.data ?? []).forEach((r) => {
         try {
           serverByItem[r.custom_item_id] = typeof r.evidence_blocks === "string"
@@ -48,6 +52,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
         } catch {
           serverByItem[r.custom_item_id] = [];
         }
+        if (r.status) serverStatuses[r.custom_item_id] = r.status;
       });
 
       // Merge: preserva localResponses per gli item che il server non ha (tipico durante offline)
@@ -57,6 +62,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
       });
 
       setResponses(merged);
+      setStatuses((prev) => ({ ...prev, ...serverStatuses }));
     } catch (err) {
       console.error("Errore caricamento checklist custom:", err);
     }
@@ -98,6 +104,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
         const payload = responseEntries.map(([customItemId, evidenceBlocks]) => ({
           custom_item_id: Number(customItemId),
           evidence_blocks: evidenceBlocks,
+          ...(statuses[customItemId] != null ? { status: statuses[customItemId] } : {}),
         }));
         try {
           await apiService.saveCustomChecklistResponses(auditId, payload);
@@ -133,10 +140,10 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
         console.warn("[CustomChecklistAuditView] flush custom checklist fallito:", err?.message || err);
       }
     })();
-  }, [auditId, customChecklistId, responses]);
+  }, [auditId, customChecklistId, responses, statuses]);
 
   const saveResponses = useCallback(
-    async (itemId, blocks) => {
+    async (itemId, blocks, statusOverride) => {
       try {
         setSaving(true);
         setResponses((prev) => ({ ...prev, [itemId]: blocks }));
@@ -156,10 +163,10 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
 
         // Se auditId esiste, prova a salvare anche su server
         if (auditId) {
+          const payload = { custom_item_id: itemId, evidence_blocks: blocks };
+          if (statusOverride !== undefined) payload.status = statusOverride;
           try {
-            await apiService.saveCustomChecklistResponses(auditId, [
-              { custom_item_id: itemId, evidence_blocks: blocks },
-            ]);
+            await apiService.saveCustomChecklistResponses(auditId, [payload]);
           } catch (err) {
             console.warn(
               "[CustomChecklistAuditView] save CustomChecklistResponses fallito, enqueue sync:",
@@ -168,7 +175,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
             try {
               await syncService.enqueue("save_custom_checklist_responses", {
                 auditId,
-                responses: [{ custom_item_id: itemId, evidence_blocks: blocks }],
+                responses: [payload],
               });
             } catch (enqueueErr) {
               console.error(
@@ -185,6 +192,33 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
       }
     },
     [auditId, updateCurrentAudit]
+  );
+
+  const handleStatusChange = useCallback(
+    async (itemId, code) => {
+      const newStatus = statuses[itemId] === code ? null : code;
+      setStatuses((prev) => ({ ...prev, [itemId]: newStatus }));
+
+      if (auditId) {
+        const blocks = responses[itemId] || [];
+        try {
+          await apiService.saveCustomChecklistResponses(auditId, [
+            { custom_item_id: itemId, evidence_blocks: blocks, status: newStatus },
+          ]);
+        } catch (err) {
+          console.warn("[CustomChecklistAuditView] salvataggio status fallito, enqueue:", err?.message || err);
+          try {
+            await syncService.enqueue("save_custom_checklist_responses", {
+              auditId,
+              responses: [{ custom_item_id: itemId, evidence_blocks: blocks, status: newStatus }],
+            });
+          } catch (enqueueErr) {
+            console.error("[CustomChecklistAuditView] enqueue status fallito:", enqueueErr);
+          }
+        }
+      }
+    },
+    [auditId, responses, statuses]
   );
 
   const updateBlock = (itemId, blockIndex, field, value) => {
@@ -393,6 +427,21 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
               <div className="custom-checklist-item-title">
                 {item.code} — {item.title}
               </div>
+              {checklist?.has_outcome_buttons && (
+                <div className="outcome-buttons">
+                  {OUTCOME_CODES.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      className={`outcome-btn outcome-btn--${code.toLowerCase()} ${statuses[item.id] === code ? "active" : ""}`}
+                      onClick={() => handleStatusChange(item.id, code)}
+                      title={code}
+                    >
+                      {code}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="custom-checklist-evidence-blocks">
                 {(responses[item.id] || []).map((block, idx) => (
                   <div key={idx} className="evidence-block">

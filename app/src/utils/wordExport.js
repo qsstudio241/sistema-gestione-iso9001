@@ -104,7 +104,31 @@ function buildTemplateData(audit) {
     const gd      = meta.generalData     || {};
     const obj     = meta.auditObjective  || {};
     const outcome = meta.auditOutcome    || {};
-    const m       = calculateMetrics(audit.checklist);
+
+    // Per custom checklist con has_outcome_buttons: calcola metriche dagli statuses
+    const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
+    const isCustomChecklist = customChecklistId && audit?.customChecklist;
+    const hasOutcomeButtons = isCustomChecklist && audit?.customChecklist?.has_outcome_buttons;
+    let m;
+    if (hasOutcomeButtons) {
+        const customStatuses = audit.customStatuses || {};
+        const counts = { totalC: 0, totalNC: 0, totalOSS: 0, totalOM: 0, totalNA: 0, totalNV: 0, totalNotAnswered: 0, total: 0, answered: 0 };
+        Object.values(customStatuses).forEach((s) => {
+            counts.total++;
+            switch (s) {
+                case 'C':   counts.totalC++;   counts.answered++; break;
+                case 'NC':  counts.totalNC++;  counts.answered++; break;
+                case 'OSS': counts.totalOSS++; counts.answered++; break;
+                case 'OM':  counts.totalOM++;  counts.answered++; break;
+                case 'NA':  counts.totalNA++;  counts.answered++; break;
+                case 'NV':  counts.totalNV++;  counts.answered++; break;
+                default:    counts.totalNotAnswered++;
+            }
+        });
+        m = counts;
+    } else {
+        m = calculateMetrics(audit.checklist);
+    }
 
     const isAuditorPlaceholder = (v) => {
         const t = String(v || '').trim().toLowerCase();
@@ -180,10 +204,14 @@ function buildTemplateData(audit) {
         omCount:     String(m.totalOM),
         nvCount:     String(m.totalNV),
         naCount:     String(m.totalNA),
-        summaryText: outcome.emergingFindings?.summary ||
-            'Totale: ' + m.total + ' | Risposte: ' + m.answered +
-            ' | NC: ' + m.totalNC + ' | OSS: ' + m.totalOSS + ' | OM: ' + m.totalOM +
-            ' | N.A.: ' + m.totalNA + ' | NV: ' + m.totalNV,
+        summaryText: hasOutcomeButtons
+            ? (outcome.emergingFindings?.summary ||
+                'C: ' + m.totalC + ' | NC: ' + m.totalNC + ' | OSS: ' + m.totalOSS +
+                ' | OM: ' + m.totalOM + ' | N.A.: ' + m.totalNA + ' | NV: ' + m.totalNV)
+            : (outcome.emergingFindings?.summary ||
+                'Totale: ' + m.total + ' | Risposte: ' + m.answered +
+                ' | NC: ' + m.totalNC + ' | OSS: ' + m.totalOSS + ' | OM: ' + m.totalOM +
+                ' | N.A.: ' + m.totalNA + ' | NV: ' + m.totalNV),
     };
 }
 
@@ -573,6 +601,7 @@ function injectOoxmlMarkers(zip, audit, getViewUrl, options = {}) {
     const isCustomChecklist = customChecklistId && audit?.customChecklist;
 
     if (isCustomChecklist) {
+        const customStatuses = audit.customStatuses || {};
         xml = replaceMarker(
             xml,
             'CHECKLIST_MARKER',
@@ -582,13 +611,14 @@ function injectOoxmlMarkers(zip, audit, getViewUrl, options = {}) {
                 audit.attachments || [],
                 getViewUrl,
                 options,
-                imageRegistry
+                imageRegistry,
+                customStatuses
             )
         );
         xml = replaceMarker(
             xml,
             'RILIEVI_MARKER',
-            buildCustomRileviSummaryOoxml(audit.customChecklist, audit.customResponses || {})
+            buildCustomRileviSummaryOoxml(audit.customChecklist, audit.customResponses || {}, customStatuses)
         );
     } else {
         xml = replaceMarker(

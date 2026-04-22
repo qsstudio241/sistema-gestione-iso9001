@@ -34,7 +34,7 @@ function buildChecklistScopeWhere(reqUser) {
 async function listChecklists(reqUser) {
   const scope = buildChecklistScopeWhere(reqUser);
   const result = await query(
-    `SELECT id, organization_id, auditor_org_id, name, description, is_active, default_report_template_id, custom_report_template_id, created_at, updated_at
+    `SELECT id, organization_id, auditor_org_id, name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id, created_at, updated_at
      FROM custom_checklists
      WHERE ${scope.where}
      ORDER BY name`,
@@ -47,21 +47,22 @@ async function listChecklists(reqUser) {
  * Crea checklist custom
  */
 async function createChecklist(reqUser, data) {
-  const { name, description = null, is_active = true, default_report_template_id = null, custom_report_template_id = null } = data;
+  const { name, description = null, is_active = true, has_outcome_buttons = false, default_report_template_id = null, custom_report_template_id = null } = data;
   const isOrgWideAdmin =
     (reqUser?.role === 'admin' || reqUser?.role === 'superadmin') &&
     (reqUser?.auditor_org_id == null);
   const scopedAuditorOrgId = isOrgWideAdmin ? null : (reqUser?.auditor_org_id ?? null);
   const result = await query(
-    `INSERT INTO custom_checklists (organization_id, auditor_org_id, name, description, is_active, default_report_template_id, custom_report_template_id, created_at, updated_at)
-     OUTPUT INSERTED.id, INSERTED.organization_id, INSERTED.auditor_org_id, INSERTED.name, INSERTED.description, INSERTED.is_active, INSERTED.created_at
-     VALUES (@organization_id, @auditor_org_id, @name, @description, @is_active, @default_report_template_id, @custom_report_template_id, GETDATE(), GETDATE())`,
+    `INSERT INTO custom_checklists (organization_id, auditor_org_id, name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id, created_at, updated_at)
+     OUTPUT INSERTED.id, INSERTED.organization_id, INSERTED.auditor_org_id, INSERTED.name, INSERTED.description, INSERTED.is_active, INSERTED.has_outcome_buttons, INSERTED.created_at
+     VALUES (@organization_id, @auditor_org_id, @name, @description, @is_active, @has_outcome_buttons, @default_report_template_id, @custom_report_template_id, GETDATE(), GETDATE())`,
     {
       organization_id: reqUser.organization_id,
       auditor_org_id: scopedAuditorOrgId,
       name,
       description,
       is_active: is_active ? 1 : 0,
+      has_outcome_buttons: has_outcome_buttons ? 1 : 0,
       default_report_template_id,
       custom_report_template_id,
     }
@@ -75,7 +76,7 @@ async function createChecklist(reqUser, data) {
 async function getChecklistById(id, reqUser) {
   const scope = buildChecklistScopeWhere(reqUser);
   const result = await query(
-    `SELECT id, organization_id, auditor_org_id, name, description, is_active, default_report_template_id, custom_report_template_id, created_at, updated_at
+    `SELECT id, organization_id, auditor_org_id, name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id, created_at, updated_at
      FROM custom_checklists
      WHERE id = @id AND ${scope.where}`,
     { id: parseInt(id, 10), ...scope.params }
@@ -87,7 +88,7 @@ async function getChecklistById(id, reqUser) {
  * Aggiorna checklist
  */
 async function updateChecklist(id, reqUser, data) {
-  const { name, description, is_active, default_report_template_id, custom_report_template_id } = data;
+  const { name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id } = data;
   const existing = await getChecklistById(id, reqUser);
   if (!existing) return null;
 
@@ -96,6 +97,7 @@ async function updateChecklist(id, reqUser, data) {
      SET name = COALESCE(@name, name),
          description = COALESCE(@description, description),
          is_active = COALESCE(@is_active, is_active),
+         has_outcome_buttons = COALESCE(@has_outcome_buttons, has_outcome_buttons),
          default_report_template_id = COALESCE(@default_report_template_id, default_report_template_id),
          custom_report_template_id = COALESCE(@custom_report_template_id, custom_report_template_id),
          updated_at = GETDATE()
@@ -105,6 +107,7 @@ async function updateChecklist(id, reqUser, data) {
       name: name ?? existing.name,
       description: description !== undefined ? description : existing.description,
       is_active: is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+      has_outcome_buttons: has_outcome_buttons !== undefined ? (has_outcome_buttons ? 1 : 0) : existing.has_outcome_buttons,
       default_report_template_id: default_report_template_id !== undefined ? default_report_template_id : existing.default_report_template_id,
       custom_report_template_id: custom_report_template_id !== undefined ? custom_report_template_id : existing.custom_report_template_id,
     }
