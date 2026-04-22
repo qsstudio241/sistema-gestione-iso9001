@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 22 aprile 2026
-> **Prossimo Step** (sessione successiva): **Smoke L3 manuale P1** (utente: pulsanti esito custom checklist) — poi **P4 Sprint 0 Navigation Foundation** (React Router v6, sidebar, dashboard). Pulizia branch `cursor/custom-checklist-outcome-buttons-bb01` (già mergiato) e script temp in `backend/scripts/`.
+> **Prossimo Step** (sessione corrente): **Smoke L3 manuale P1** (utente: verifica pulsanti esito custom checklist in produzione — vedi checklist sotto) — poi **Sprint 0 Navigation Foundation** (React Router v6, sidebar, dashboard). Branch `cursor/custom-checklist-outcome-buttons-bb01` eliminato. Script temp `backend/scripts/` eliminati.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
@@ -718,22 +718,35 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 21 aprile 2026
+**Ultimo Aggiornamento**: 22 aprile 2026
 
-### Sequenza priorita confermata (21 aprile 2026)
+### Sequenza priorità aggiornata (22 aprile 2026)
 
-| # | Task | Modalita | Stato |
+| # | Task | Modalità | Stato |
 |---|---|---|---|
-| P0 | 5 bug Camellini ISO 9001 (accordion, race condition, domande mancanti, audit sparisce) | Deputy | In chiusura |
-| P1 | Custom checklist outcome buttons (C/OSS/NC su flag) | Deputy TASK_CUSTOM_CHECKLIST_OUTCOME_BUTTONS.md | Pronto |
-| P2 | Sicurezza credenziali: JWT_SECRET fail-fast, login email ambiguo, register prod | Noi — Sessione D | Prossima |
-| P3 | Sprint 0 — Navigation Foundation (React Router v6, sidebar, dashboard) | Noi + deputy | Dopo P2 |
+| P0 | 5 bug Camellini ISO 9001 (accordion, race condition, domande mancanti, audit sparisce) | Deputy | ✅ Chiuso |
+| P1 | Custom checklist outcome buttons (C/OSS/NC/OM/NV/NA su flag) — migrazione 043, VPS, merge `e1f3c5b` | Deputy | ✅ Completato — Smoke L3 umano da fare |
+| P2 | Sicurezza credenziali: JWT_SECRET fail-fast, login email ambiguo, register prod | Sessione D | ✅ Completato |
+| Bug | Audit cancellati non ricompaiono nel menu dropdown (StorageContext.jsx + recentlyDeletedRef) | Fix mirato | ✅ Completato |
+| P3 | **Sprint 0 — Navigation Foundation** (React Router v6, sidebar, dashboard) | Noi + deputy | Prossima — dopo smoke L3 P1 |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog attivo |
 | P5 | Sessione A — JWT refresh con snapshot licenze | Noi | Backlog |
 | P6 | Sprint 2 — Qualifiche + Alert Engine scadenze | Deputy | Dipende Sprint 0 |
 
 Non attivare ancora: Sprint 10+, RAG, SAL, RDP completo — dipendono da Sprint 0.
-**Prossimo Step**: allineare piè di roadmap all’header (smoke 0–3 + verifica migrazione **040** su DB prod se necessario). Poi **Sessione A** (resto) / **B–E** licenze+auth, **RBAC**, scelta traccia **Sprint 10** vs **`norm_excerpt`**. **Sprint 12** Office round-trip: task parallelo deputy — [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md).
+**Prossimo Step**: attendere conferma **Smoke L3 P1** dall'utente; poi avviare **Sprint 0 Navigation Foundation**. Poi **Sessione A** (resto) / **B–E** licenze+auth, **RBAC**, scelta traccia **Sprint 10** vs **`norm_excerpt`**. **Sprint 12** Office round-trip: task parallelo deputy — [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md).
+
+#### Smoke L3 manuale P1 — checklist (utente, produzione)
+
+| # | Passo | Esito | Data | Note |
+|---|---|---|---|---|
+| 1 | Login Camellini | | | |
+| 2 | Crea/apri checklist personalizzata con flag "Abilita valutazione" | | | |
+| 3 | Aprila da dentro un audit | | | |
+| 4 | Clicca pulsanti esito (C / OSS / NC / OM / NV / NA) su almeno 3 domande | | | |
+| 5 | Salva e ricarica — esiti persistenti | | | |
+| 6 | Export Word — tabella checklist con colori corretti | | | |
+| 7 | Riepilogo Word — contatori NC/OSS/OM/NV corretti | | | |
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (pianificato)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
