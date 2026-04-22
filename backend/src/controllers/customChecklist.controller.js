@@ -25,11 +25,11 @@ async function listChecklists(req, res) {
 /**
  * POST /api/v1/custom-checklists
  * Crea checklist custom
- * Body: { name, description?, is_active?, default_report_template_id?, custom_report_template_id? }
+ * Body: { name, description?, is_active?, has_outcome_buttons?, default_report_template_id?, custom_report_template_id? }
  */
 async function createChecklist(req, res) {
   try {
-    const { name, description, is_active, default_report_template_id, custom_report_template_id } = req.body;
+    const { name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'name obbligatorio', code: 'VALIDATION_ERROR' });
@@ -39,6 +39,7 @@ async function createChecklist(req, res) {
       name: name.trim(),
       description: description || null,
       is_active,
+      has_outcome_buttons: has_outcome_buttons ? true : false,
       default_report_template_id: default_report_template_id ? parseInt(default_report_template_id, 10) : null,
       custom_report_template_id: custom_report_template_id ? parseInt(custom_report_template_id, 10) : null,
     });
@@ -77,12 +78,13 @@ async function getChecklist(req, res) {
 async function updateChecklist(req, res) {
   try {
     const { id } = req.params;
-    const { name, description, is_active, default_report_template_id, custom_report_template_id } = req.body;
+    const { name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id } = req.body;
 
     const data = await customChecklistService.updateChecklist(parseInt(id, 10), req.user, {
       name,
       description,
       is_active,
+      has_outcome_buttons: has_outcome_buttons !== undefined ? Boolean(has_outcome_buttons) : undefined,
       default_report_template_id: default_report_template_id !== undefined ? parseInt(default_report_template_id, 10) : undefined,
       custom_report_template_id: custom_report_template_id !== undefined ? parseInt(custom_report_template_id, 10) : undefined,
     });
@@ -393,7 +395,7 @@ async function getCustomChecklistResponses(req, res) {
     }
 
     const result = await query(
-      `SELECT id, custom_item_id, evidence_blocks, updated_at
+      `SELECT id, custom_item_id, evidence_blocks, status, updated_at
        FROM audit_custom_checklist_responses
        WHERE audit_id = @audit_id`,
       { audit_id: resolvedAuditId }
@@ -452,8 +454,10 @@ async function saveCustomChecklistResponses(req, res) {
 
     const checklistId = audit.custom_checklist_id;
 
+    const VALID_STATUSES = new Set(['C', 'OSS', 'NC', 'OM', 'NV', 'NA']);
+
     for (const r of responses) {
-      const { custom_item_id, evidence_blocks } = r;
+      const { custom_item_id, evidence_blocks, status } = r;
       if (!custom_item_id) continue;
 
       const cid = parseInt(custom_item_id, 10);
@@ -471,6 +475,9 @@ async function saveCustomChecklistResponses(req, res) {
       }
 
       const blocksJson = typeof evidence_blocks === 'string' ? evidence_blocks : JSON.stringify(evidence_blocks || []);
+      const safeStatus = (status && VALID_STATUSES.has(String(status).toUpperCase()))
+        ? String(status).toUpperCase()
+        : null;
 
       const existing = await query(
         `SELECT id FROM audit_custom_checklist_responses WHERE audit_id = @audit_id AND custom_item_id = @custom_item_id`,
@@ -479,19 +486,24 @@ async function saveCustomChecklistResponses(req, res) {
 
       if (existing.recordset.length > 0) {
         await query(
-          `UPDATE audit_custom_checklist_responses SET evidence_blocks = @evidence_blocks, updated_at = GETDATE() WHERE audit_id = @audit_id AND custom_item_id = @custom_item_id`,
-          { audit_id: resolvedAuditId, custom_item_id: cid, evidence_blocks: blocksJson }
+          `UPDATE audit_custom_checklist_responses
+           SET evidence_blocks = @evidence_blocks,
+               status = CASE WHEN @status IS NULL THEN status ELSE @status END,
+               updated_at = GETDATE()
+           WHERE audit_id = @audit_id AND custom_item_id = @custom_item_id`,
+          { audit_id: resolvedAuditId, custom_item_id: cid, evidence_blocks: blocksJson, status: safeStatus }
         );
       } else {
         await query(
-          `INSERT INTO audit_custom_checklist_responses (audit_id, custom_item_id, evidence_blocks, updated_at) VALUES (@audit_id, @custom_item_id, @evidence_blocks, GETDATE())`,
-          { audit_id: resolvedAuditId, custom_item_id: cid, evidence_blocks: blocksJson }
+          `INSERT INTO audit_custom_checklist_responses (audit_id, custom_item_id, evidence_blocks, status, updated_at)
+           VALUES (@audit_id, @custom_item_id, @evidence_blocks, @status, GETDATE())`,
+          { audit_id: resolvedAuditId, custom_item_id: cid, evidence_blocks: blocksJson, status: safeStatus }
         );
       }
     }
 
     const updated = await query(
-      `SELECT id, custom_item_id, evidence_blocks, updated_at FROM audit_custom_checklist_responses WHERE audit_id = @audit_id`,
+      `SELECT id, custom_item_id, evidence_blocks, status, updated_at FROM audit_custom_checklist_responses WHERE audit_id = @audit_id`,
       { audit_id: resolvedAuditId }
     );
 

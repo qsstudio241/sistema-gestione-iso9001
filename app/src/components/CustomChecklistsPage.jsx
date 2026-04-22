@@ -15,6 +15,7 @@ const CustomChecklistsPage = ({ onBack }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDesc, setCreateDesc] = useState("");
+  const [createOutcomeButtons, setCreateOutcomeButtons] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -54,9 +55,11 @@ const CustomChecklistsPage = ({ onBack }) => {
       await apiService.createCustomChecklist({
         name: createName.trim(),
         description: createDesc.trim() || null,
+        has_outcome_buttons: createOutcomeButtons,
       });
       setCreateName("");
       setCreateDesc("");
+      setCreateOutcomeButtons(false);
       setShowCreateForm(false);
       await loadChecklists();
     } catch (err) {
@@ -135,6 +138,14 @@ const CustomChecklistsPage = ({ onBack }) => {
             onChange={(e) => setCreateDesc(e.target.value)}
             placeholder="Descrizione (opzionale)"
           />
+          <label className="cc-toggle-label">
+            <input
+              type="checkbox"
+              checked={createOutcomeButtons}
+              onChange={(e) => setCreateOutcomeButtons(e.target.checked)}
+            />
+            {" "}Abilita valutazione (C / OSS / NC / OM / NV / NA)
+          </label>
           <div className="cc-form-actions">
             <button type="button" onClick={() => setShowCreateForm(false)}>Annulla</button>
             <button type="submit" disabled={saving}>{saving ? "Creazione..." : "Crea"}</button>
@@ -185,6 +196,7 @@ function CustomChecklistEditor({ checklist, onBack, onSaved }) {
   const [sections, setSections] = useState([]);
   const [checklistName, setChecklistName] = useState("");
   const [checklistDescription, setChecklistDescription] = useState("");
+  const [checklistOutcomeButtons, setChecklistOutcomeButtons] = useState(false);
   const [metaSaving, setMetaSaving] = useState(false);
   const [metaError, setMetaError] = useState(null);
   const [newSectionCode, setNewSectionCode] = useState("");
@@ -209,6 +221,7 @@ function CustomChecklistEditor({ checklist, onBack, onSaved }) {
     setSections(checklist?.sections ?? []);
     setChecklistName(checklist?.name ?? "");
     setChecklistDescription(checklist?.description ?? "");
+    setChecklistOutcomeButtons(checklist?.has_outcome_buttons ? true : false);
     setEditingSectionId(null);
     setEditingItemId(null);
     setMetaError(null);
@@ -243,6 +256,7 @@ function CustomChecklistEditor({ checklist, onBack, onSaved }) {
       await apiService.updateCustomChecklist(checklist.id, {
         name: checklistName.trim(),
         description: checklistDescription.trim() || null,
+        has_outcome_buttons: checklistOutcomeButtons,
       });
       onSaved?.();
     } catch (err) {
@@ -414,6 +428,14 @@ function CustomChecklistEditor({ checklist, onBack, onSaved }) {
               onChange={(e) => setChecklistDescription(e.target.value)}
               className="cc-meta-input"
             />
+          </label>
+          <label className="cc-toggle-label cc-meta-label">
+            <input
+              type="checkbox"
+              checked={checklistOutcomeButtons}
+              onChange={(e) => setChecklistOutcomeButtons(e.target.checked)}
+            />
+            {" "}Abilita valutazione (C / OSS / NC / OM / NV / NA) per ogni domanda
           </label>
           <button type="submit" disabled={metaSaving} className="btn-cc-save-meta">
             {metaSaving ? "Salvataggio…" : "Salva anagrafica"}
