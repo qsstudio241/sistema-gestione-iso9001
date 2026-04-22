@@ -662,7 +662,17 @@ export function StorageProvider({ children, useMockData = false }) {
       }
 
       const localAudits = await fsProvider.loadAllAudits();
-      const serverAudits = await fetchAllServerAudits();
+      const rawServerAudits = await fetchAllServerAudits();
+
+      // Fix delete: esclude dal merge gli audit appena eliminati dall'utente.
+      // Necessario perché processQueue() può avere la DELETE ancora in volo
+      // quando il GET /audits viene eseguito (race condition async), quindi il
+      // server può restituire ancora l'audit. recentlyDeletedRef garantisce che
+      // non venga re-inserito nel menu anche in questo caso.
+      const serverAudits = rawServerAudits.filter((a) => {
+        const uuid = a.metadata?.id || a.id;
+        return !uuid || !recentlyDeletedRef.current.has(uuid);
+      });
 
       // Bug 5 Fix A: se il server restituisce 0 audit (probabile errore API o RBAC temporaneo),
       // non azzerare la lista locale — mantieni stato corrente e audit selezionato.
@@ -743,7 +753,12 @@ export function StorageProvider({ children, useMockData = false }) {
         return merged;
       });
 
-      const localOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
+      // Fix delete: filtra anche gli audit solo-locali appena eliminati (race IDB async)
+      const rawLocalOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
+      const localOnly = rawLocalOnly.filter((a) => {
+        const uuid = a.metadata?.id || a.id;
+        return !uuid || !recentlyDeletedRef.current.has(uuid);
+      });
 
       let finalAudits = dedupeAudits(localOnly.length > 0 ? [...mergedAudits, ...localOnly] : mergedAudits);
 
@@ -870,10 +885,17 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
+        // Fix delete: filtra gli audit appena eliminati prima del merge (anche qui può esserci
+        // race condition se l'utente elimina durante il caricamento iniziale o reload rapido).
+        const filteredServerAudits = serverAudits.filter((a) => {
+          const uuid = a.metadata?.id || a.id;
+          return !uuid || !recentlyDeletedRef.current.has(uuid);
+        });
+
         // MERGE: Server-wins per metadata/checklist, preserva attachments e campi ricchi locali
         const auditsToUploadRichData = []; // audit locali con dati ricchi che il server non ha ancora
-        const mergedAudits = serverAudits.length > 0
-          ? serverAudits.map(serverAudit => {
+        const mergedAudits = filteredServerAudits.length > 0
+          ? filteredServerAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
               const localAudit = localAudits.find(la => (la.metadata?.id || la.id) === sid);
               
@@ -949,12 +971,21 @@ export function StorageProvider({ children, useMockData = false }) {
               
               return merged;
             })
-          : localAudits;
+          // Fallback offline/errore server: usa solo cache locale, escludendo audit appena eliminati.
+          : localAudits.filter((a) => {
+              const uuid = a.metadata?.id || a.id;
+              return !uuid || !recentlyDeletedRef.current.has(uuid);
+            });
 
-        // Includi audit solo locali (non ancora sul server) nella lista finale
+        // Includi audit solo locali (non ancora sul server) nella lista finale.
+        // Fix delete: esclude anche le bozze locali appena eliminate (race IDB async).
         let finalAudits = mergedAudits;
-        if (serverAudits.length > 0 && mergedAudits.length > 0) {
-          const localOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
+        if (filteredServerAudits.length > 0 && mergedAudits.length > 0) {
+          const rawLocalOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
+          const localOnly = rawLocalOnly.filter((a) => {
+            const uuid = a.metadata?.id || a.id;
+            return !uuid || !recentlyDeletedRef.current.has(uuid);
+          });
           if (localOnly.length > 0) {
             finalAudits = [...mergedAudits, ...localOnly];
             console.log(`📋 [MERGE] Aggiunti ${localOnly.length} audit solo locali (bozze senza auditId server) alla lista`);
@@ -1502,7 +1533,12 @@ export function StorageProvider({ children, useMockData = false }) {
       }
 
       // Segna come appena eliminato: il reconcile NON dovrà ripristinarlo dalla cache locale.
+      // TTL 90s: abbastanza da coprire 2 cicli di reconcile (45s cadauno) dopo i quali
+      // il server avrà già recepito la DELETE e non restituirà più l'audit.
       recentlyDeletedRef.current.add(auditId);
+      setTimeout(() => {
+        recentlyDeletedRef.current.delete(auditId);
+      }, 90000);
 
       // Rimuovi da React state
       setAudits((prevAudits) =>
