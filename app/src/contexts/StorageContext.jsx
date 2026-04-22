@@ -253,6 +253,8 @@ export function StorageProvider({ children, useMockData = false }) {
   useEffect(() => { currentAuditIdRef.current = currentAuditId; }, [currentAuditId]);
   // Bug 2: debounce per fetchAndApplyServerResponses (evita riesecuzione entro 60s per stesso audit)
   const fetchAndApplyLastRunRef = useRef({});
+  // Fix delete: Set degli audit appena eliminati — il reconcile NON deve ripristinarli dalla cache locale.
+  const recentlyDeletedRef = useRef(new Set());
 
   // Audit corrente (computed) - supporta sia metadata.id che id top-level
   const currentAudit =
@@ -748,8 +750,9 @@ export function StorageProvider({ children, useMockData = false }) {
       // Bug 5 Fix B: se l'audit attualmente selezionato è stato escluso da finalAudits
       // (il server non lo ha restituito, es. bug RBAC o paginazione incompleta),
       // ripristinarlo dalla cache locale per evitare che scompaia dal menu.
+      // ECCEZIONE: se l'audit è stato appena eliminato (recentlyDeletedRef), NON ripristinarlo.
       const protectedId = currentAuditIdRef.current;
-      if (protectedId) {
+      if (protectedId && !recentlyDeletedRef.current.has(protectedId)) {
         const inFinal = finalAudits.some((a) => (a.metadata?.id || a.id) === protectedId);
         if (!inFinal) {
           const inLocal = localAudits.find((a) => (a.metadata?.id || a.id) === protectedId);
@@ -1498,12 +1501,23 @@ export function StorageProvider({ children, useMockData = false }) {
         return false;
       }
 
+      // Segna come appena eliminato: il reconcile NON dovrà ripristinarlo dalla cache locale.
+      recentlyDeletedRef.current.add(auditId);
+
+      // Rimuovi da React state
       setAudits((prevAudits) =>
         prevAudits.filter((a) => {
           const id = a.metadata?.id || a.id;
           return id !== auditId;
         }),
       );
+
+      // Rimuovi da IndexedDB (fsProvider) — causa principale del bug di ricomparsa.
+      if (fsProvider && typeof fsProvider.deleteAudit === "function") {
+        fsProvider.deleteAudit(auditId).catch((err) => {
+          console.error("❌ [DELETE] Errore rimozione da IndexedDB:", err);
+        });
+      }
 
       // Enqueue sync se online
       if (navigator.onLine) {
@@ -1525,10 +1539,10 @@ export function StorageProvider({ children, useMockData = false }) {
       // Rimuovi anche localStorage singolo audit
       localStorage.removeItem(`audit_${auditId}`);
 
-      console.log(`✅ Deleted audit: ${audit.metadata.auditNumber}`);
+      console.log(`✅ Deleted audit: ${audit.metadata?.auditNumber || auditId}`);
       return true;
     },
-    [audits, currentAuditId],
+    [audits, currentAuditId, fsProvider],
   );
 
   /**

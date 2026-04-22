@@ -171,4 +171,28 @@ describe('filterLocalAuditsAfterServerFetch', () => {
     test('input non-array → lista vuota (defensive)', () => {
         expect(filterLocalAuditsAfterServerFetch(null, null)).toHaveLength(0);
     });
+
+    // Fix bug "audit cancellato ricompare nel menu":
+    // Un audit con auditId numerico eliminato lato server NON deve tornare nella lista locale.
+    // (La filterLocalAuditsAfterServerFetch già filtra per hasServerNumericId — verifica esplicita.)
+    test('audit cancellato (auditId numerico, non nel server) → rimosso dalla lista locale', () => {
+        // L'utente ha eliminato l'audit 42. Il server non lo restituisce più.
+        // IndexedDB lo ha ancora (se deleteAudit non ha fatto la pulizia).
+        const eliminato = { metadata: { id: 'uuid-del', auditId: 42, auditNumber: '2026-DEL' } };
+        // Il server restituisce solo altri audit
+        const altroAudit = { metadata: { id: 'uuid-altro', auditId: 99 } };
+        const result = filterLocalAuditsAfterServerFetch([eliminato], [altroAudit]);
+        // eliminato ha auditId numerico e non è nel server → deve essere rimosso
+        expect(result).toHaveLength(0);
+    });
+
+    // Fix bug "draft eliminato ricompare" — draft senza auditId ma nel recentlyDeleted:
+    // Il filtro puro non può saperlo (non ha l'auditId). La protezione è nel recentlyDeletedRef
+    // dentro reconcileAuditsFromServer (StorageContext). Questo test documenta il contrario:
+    // una bozza senza auditId che NON è stata eliminata viene mantenuta correttamente.
+    test('bozza senza auditId NON eliminata → rimane nella lista locale', () => {
+        const bozza = { metadata: { id: 'uuid-bozza-attiva' } };
+        const result = filterLocalAuditsAfterServerFetch([bozza], []);
+        expect(result).toHaveLength(1);
+    });
 });
