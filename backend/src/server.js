@@ -4,6 +4,28 @@
  */
 
 require('dotenv').config();
+
+// Fail-fast: variabili d'ambiente critiche mancanti in produzione.
+// Impedisce l'avvio con segreti di default o configurazione insicura.
+if (process.env.NODE_ENV === 'production') {
+    const DEV_JWT_SECRETS = [
+        'sgq-iso9001-secret-change-in-production',
+        'sgq-dev-only-secret-not-for-production',
+    ];
+    if (!process.env.JWT_SECRET || DEV_JWT_SECRETS.includes(process.env.JWT_SECRET)) {
+        // eslint-disable-next-line no-console
+        console.error('[FATAL] JWT_SECRET non configurato o usa un valore di default non sicuro. ' +
+            'Impostare JWT_SECRET nel file .env di produzione (min 32 caratteri, casuale). ' +
+            'Il server non si avvia.');
+        process.exit(1);
+    }
+    if (!process.env.CORS_ORIGIN) {
+        // eslint-disable-next-line no-console
+        console.error('[FATAL] CORS_ORIGIN non configurato in produzione. Il server non si avvia.');
+        process.exit(1);
+    }
+}
+
 const express = require('express');
 const https = require('https');
 const fs = require('fs');

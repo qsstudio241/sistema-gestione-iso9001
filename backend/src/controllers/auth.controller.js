@@ -14,9 +14,15 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sgq-iso9001-secret-change-in-production';
+// JWT_SECRET: fail-fast in produzione se mancante (vedi server.js).
+// In sviluppo/test il fallback è accettabile; in produzione il server non si avvia senza il segreto.
+const JWT_SECRET = process.env.JWT_SECRET || 'sgq-dev-only-secret-not-for-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
+
+// Policy registrazione: 'open' (dev/test), 'superadmin_only' (prod default), 'disabled'
+const REGISTER_POLICY = process.env.REGISTER_POLICY ||
+    (process.env.NODE_ENV === 'production' ? 'superadmin_only' : 'open');
 
 /**
  * POST /api/v1/auth/register
@@ -24,6 +30,40 @@ const REFRESH_TOKEN_EXPIRES_IN = '7d';
  */
 async function register(req, res) {
     try {
+        // Policy produzione: solo superadmin può registrare nuovi utenti.
+        // In sviluppo/test (REGISTER_POLICY='open') il controllo viene saltato.
+        if (REGISTER_POLICY !== 'open') {
+            if (REGISTER_POLICY === 'disabled') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Registrazione disabilitata su questo ambiente.'
+                });
+            }
+            // 'superadmin_only': verifica Bearer token con ruolo superadmin
+            const authHeader = req.headers.authorization || '';
+            const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+            if (!token) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Registrazione riservata ai superadmin: token di autenticazione mancante.'
+                });
+            }
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                if (decoded.role !== 'superadmin') {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Registrazione riservata ai superadmin.'
+                    });
+                }
+            } catch {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Registrazione riservata ai superadmin: token non valido.'
+                });
+            }
+        }
+
         const { email, password, full_name, organization_id, role = 'auditor' } = req.body;
 
         // Validazione
@@ -145,6 +185,16 @@ async function login(req, res) {
             return res.status(401).json({
                 success: false,
                 error: 'Credenziali non valide'
+            });
+        }
+
+        // Email ambigua: stessa email registrata in più organizzazioni e organization_id non specificato.
+        // Restituire un errore esplicito invece di prendere il primo record in modo non deterministico.
+        if (result.recordset.length > 1 && !organization_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Email associata a più organizzazioni. Specificare organization_id nel corpo della richiesta.',
+                requires_organization_id: true
             });
         }
 
