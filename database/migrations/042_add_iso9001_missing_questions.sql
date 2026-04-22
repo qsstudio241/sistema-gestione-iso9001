@@ -8,64 +8,40 @@
 -- Data: 2026-04-21
 -- ============================================================
 
--- 8.1 – Pianificazione e controllo operativi
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 168)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (168, 1, 'clause8', '8.1', 'Pianificazione e controllo operativi', 'conformity', 1, 39);
-END;
-GO
+-- Nota: la tabella checklist_questions non ha colonna clause_ref nel DB produzione.
+-- Il clauseRef (es. "8.1") è gestito solo nel template frontend (checklistTemplates.js).
+-- question_uuid è obbligatorio: NEWID() genera un UUID univoco per ogni riga.
+-- question_id: IDENTITY — usa SET IDENTITY_INSERT ON per inserire ID espliciti.
+-- IDs 194-199: gli ID 168-173 erano già occupati da domande ISO 3834.
 
--- 8.4.2 – Tipo e grado di controllo dei processi, prodotti e servizi forniti esternamente
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 169)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (169, 1, 'clause8', '8.4.2', 'Tipo e grado di controllo dei processi, prodotti e servizi forniti esternamente', 'conformity', 1, 40);
-END;
-GO
+-- Tutto in un unico batch: IDENTITY_INSERT deve essere attivo nello stesso batch degli INSERT
+SET IDENTITY_INSERT checklist_questions ON;
 
--- 8.4.3 – Informazioni ai fornitori esterni
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 170)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (170, 1, 'clause8', '8.4.3', 'Informazioni ai fornitori esterni', 'conformity', 1, 41);
-END;
-GO
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 194)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (194, NEWID(), 1, 'clause8', 'Pianificazione e controllo operativi', 'conformity', 1, 39);
 
--- 8.5.1 – Controllo della produzione e dell'erogazione del servizio
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 171)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (171, 1, 'clause8', '8.5.1', 'Controllo della produzione e dell''erogazione del servizio', 'conformity', 1, 42);
-END;
-GO
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 195)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (195, NEWID(), 1, 'clause8', 'Tipo e grado di controllo dei processi, prodotti e servizi forniti esternamente', 'conformity', 1, 40);
 
--- 8.5.4 – Conservazione degli output
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 172)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (172, 1, 'clause8', '8.5.4', 'Conservazione degli output', 'conformity', 1, 43);
-END;
-GO
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 196)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (196, NEWID(), 1, 'clause8', 'Informazioni ai fornitori esterni', 'conformity', 1, 41);
 
--- 8.7.1 – Gestione degli output non conformi (azioni da intraprendere)
-IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 173)
-BEGIN
-  INSERT INTO checklist_questions
-    (question_id, standard_id, section_code, clause_ref, question_text, question_type, is_mandatory, display_order)
-  VALUES
-    (173, 1, 'clause8', '8.7.1', 'Gestione degli output non conformi (azioni da intraprendere)', 'conformity', 1, 44);
-END;
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 197)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (197, NEWID(), 1, 'clause8', N'Controllo della produzione e dell''erogazione del servizio', 'conformity', 1, 42);
+
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 198)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (198, NEWID(), 1, 'clause8', 'Conservazione degli output', 'conformity', 1, 43);
+
+IF NOT EXISTS (SELECT 1 FROM checklist_questions WHERE question_id = 199)
+  INSERT INTO checklist_questions (question_id, question_uuid, standard_id, section_code, question_text, question_type, is_mandatory, display_order)
+  VALUES (199, NEWID(), 1, 'clause8', 'Gestione degli output non conformi (azioni da intraprendere)', 'conformity', 1, 44);
+
+SET IDENTITY_INSERT checklist_questions OFF;
 GO
 
 -- Verifica post-migrazione (eseguire separatamente per controllo)
