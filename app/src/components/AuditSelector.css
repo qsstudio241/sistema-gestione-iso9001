@@ -62,6 +62,11 @@
   font-size: 12px;
   color: #666;
   white-space: nowrap;
+  /* Nessuna animazione di default: solo lo stato "saving" pulsa */
+}
+
+/* Solo il salvataggio locale in corso pulsa */
+.save-indicator.saving {
   animation: pulse 1.5s infinite;
 }
 

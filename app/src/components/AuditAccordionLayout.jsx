@@ -76,7 +76,7 @@ const STANDARD_INIT_MAP = Object.fromEntries(
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus } = useStorage();
   const { user } = useAuth();
 
   // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
@@ -253,12 +253,19 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </button>
           )}
           <div className="audit-save-status">
-            {isSaving
-              ? <span className="save-indicator saving">⏳ Salvataggio...</span>
-              : allSaved
-                ? <span className="save-indicator saved">✓ Salvato</span>
-                : <span className="save-indicator pending">● In attesa</span>
-            }
+            {isSaving ? (
+              <span className="save-indicator saving">⏳ Salvataggio...</span>
+            ) : syncStatus?.isSyncing ? (
+              <span className="save-indicator syncing">📤 Sincronizzazione...</span>
+            ) : syncStatus?.queueSize > 0 ? (
+              <span className="save-indicator queued" title={`${syncStatus.queueSize} operazioni in attesa di essere inviate al server`}>
+                ⏰ In coda ({syncStatus.queueSize})
+              </span>
+            ) : allSaved ? (
+              <span className="save-indicator server-saved">✓ Sul server</span>
+            ) : (
+              <span className="save-indicator pending">● In attesa</span>
+            )}
           </div>
         </div>
         <div className="audit-header-main">

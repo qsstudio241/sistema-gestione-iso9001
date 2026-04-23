@@ -78,9 +78,24 @@
 
 .audit-save-status { font-size: 12px; }
 .save-indicator { padding: 3px 8px; border-radius: 10px; font-weight: 500; }
-.save-indicator.saving { color: #92400e; background: #fef3c7; }
-.save-indicator.saved   { color: #065f46; background: #d1fae5; }
-.save-indicator.pending { color: #6b7280; background: #f3f4f6; }
+
+/* Salvataggio locale in corso — giallo, pulsa */
+.save-indicator.saving        { color: #92400e; background: #fef3c7; animation: si-pulse 1.2s ease-in-out infinite; }
+/* Sync in corso verso il server — blu, pulsa lentamente */
+.save-indicator.syncing       { color: #1e40af; background: #dbeafe; animation: si-pulse 1.8s ease-in-out infinite; }
+/* Salvato localmente, in coda per il server — arancione, fermo */
+.save-indicator.queued        { color: #92400e; background: #ffedd5; }
+/* Confermato sul server — verde, nessuna animazione */
+.save-indicator.server-saved  { color: #065f46; background: #d1fae5; }
+/* Legacy: usato se il parent passa ancora allSaved senza syncStatus */
+.save-indicator.saved         { color: #065f46; background: #d1fae5; }
+/* In attesa di prima modifica */
+.save-indicator.pending       { color: #6b7280; background: #f3f4f6; }
+
+@keyframes si-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
 
 .audit-header-main {
   display: flex;
