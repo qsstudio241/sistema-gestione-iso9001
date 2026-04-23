@@ -174,6 +174,83 @@ Se stai applicando la terza variante dello stesso approccio senza risultato:
 
 ---
 
+---
+
+## Standard Operativo — Lavoro Parallelo Lead + Deputy
+
+> Adottato il 23 aprile 2026. Vale per lead e deputy su ogni sessione con più task in contemporanea.
+
+### Il modello
+
+```
+Lead (agente principale)    Deputy (agente delegato)
+─────────────────────       ──────────────────────────
+Sprint / architettura       Task circoscritti
+Decisioni di prodotto       Implementazione + unit test
+Review finale               Investigazione codice
+                            Verifica smoke (code-level)
+```
+
+### Quando delegare al deputy
+
+Delega se il task ha **tutte** queste caratteristiche:
+- Scope definito: max 2-3 file, obiettivo chiaro, nessuna decisione architetturale
+- Indipendente: non blocca il lavoro del lead (può partire in parallelo)
+- Verificabile L1: esiste un test automatico o si può scriverne uno
+- Non richiede contesto interattivo: niente browser, niente credenziali umane
+
+Non delegare se: il task richiede scelte che impattano altri moduli, tocca auth/DB/multi-tenant, o ha dipendenze dall'output del lead in corso.
+
+### Processo standard
+
+1. **Lead**: indaga velocemente il punto (5-10 min di grep/read) per capire scope reale
+2. **Lead**: scrive `docs/agent-tasks/DEPUTYTASK.md` con:
+   - Contesto (link a file, righe esatte)
+   - Soluzione da implementare (pseudocodice o pattern di riferimento già nel repo)
+   - Test L1 atteso
+   - Regole: diff minimo, commit separati, push su main, scrivi TASK CHIUSO
+3. **Utente**: incolla in Agents: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TASK CHIUSO o FIX NON APPLICABILE.`
+4. **Lead**: continua su Sprint / feature principale mentre il deputy lavora
+5. **Sync**: dopo che il deputy ha pushato, il lead fa `git log --oneline -5` e legge i commit
+
+### Cosa può fare il deputy (capacità reali)
+
+| Può fare | Non può fare |
+|---|---|
+| Leggere e modificare file | Aprire browser / vedere UI reale |
+| Scrivere unit test L1 | Testare endpoint di produzione con credenziali |
+| Implementare UI changes circoscritte | Prendere decisioni di prodotto |
+| Fare grep/read per investigazione | Vedere screenshot dell'app |
+| Commit + push | Accedere al VPS per deploy backend |
+
+### Template DEPUTYTASK.md
+
+```markdown
+# DEPUTYTASK — [nome breve]
+> Sessione: [data] | Lead: agente principale | Deputy: questo agente
+
+## Contesto
+Leggi PROJECT_CONTEXT.md, docs/PROJECT_ROADMAP.md, docs/GUIDA_CONSOLIDATA.md.
+
+## Task A — [nome]
+### Problema
+[cosa manca o è rotto, con file e righe esatte]
+
+### Soluzione
+[pseudocodice o pattern del repo da replicare]
+
+### Test L1
+[test da scrivere o aggiornare]
+
+## Regole operative deputy
+- Diff minimo: non toccare file non elencati
+- npm run test:run da app/ dopo ogni modifica
+- Commit separato per ogni task, push su main
+- Scrivi TASK CHIUSO nel commit message finale
+```
+
+---
+
 ## Anti-pattern da evitare (imparati in questa sessione)
 
 | Anti-pattern | Cosa fare invece |
