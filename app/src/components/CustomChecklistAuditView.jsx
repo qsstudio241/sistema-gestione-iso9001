@@ -17,6 +17,16 @@ import "./CustomChecklistAuditView.css";
 
 const OUTCOME_CODES = ['C', 'OSS', 'NC', 'OM', 'NV', 'NA'];
 
+// Mappa codice esito → classe CSS di ChecklistModule (status-btn system)
+const OUTCOME_CSS = {
+  C:   'compliant',
+  NC:  'non-compliant',
+  OSS: 'partial',
+  OM:  'om',
+  NA:  'not-applicable',
+  NV:  'not-verified',
+};
+
 // Blocco evidence di default (vuoto) — usato come segnaposto per render
 const EMPTY_BLOCK = { text: '', attachment_id: null };
 
@@ -385,12 +395,12 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
 
                 {/* Pulsanti esito (visibili solo se checklist ha valutazione) */}
                 {checklist?.has_outcome_buttons && (
-                  <div className="outcome-buttons">
+                  <div className="status-buttons">
                     {OUTCOME_CODES.map((code) => (
                       <button
                         key={code}
                         type="button"
-                        className={`outcome-btn outcome-btn--${code.toLowerCase()} ${statuses[item.id] === code ? "active" : ""}`}
+                        className={`status-btn ${OUTCOME_CSS[code]} ${statuses[item.id] === code ? "active" : ""}`}
                         onClick={() => handleStatusChange(item.id, code)}
                         title={code}
                       >
