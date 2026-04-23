@@ -1,0 +1,206 @@
+---
+description: Metodologia strutturata per investigare e risolvere bug nel progetto SGQ. Leggere PRIMA di toccare qualsiasi codice.
+globs:
+alwaysApply: false
+---
+
+# Metodologia Bug Fix — SGQ ISO 9001
+
+> Documento nato dalla sessione del 22-23 aprile 2026 (bug cancellazione audit).
+> Quello che sembrava un bug semplice è diventato un loop di fix fallimentari
+> perché mancavano evidenze empiriche e analisi strutturata dell'architettura a livelli.
+
+---
+
+## Regola zero: STOP prima di toccare il codice
+
+Prima di aprire qualsiasi file, rispondere a queste domande:
+
+1. **Qual è il comportamento esatto?** (descrizione dell'utente parola per parola)
+2. **Si riproduce dopo un page refresh?** → se sì, è un problema di persistenza, non solo di stato React
+3. **Quando è apparso?** (dopo quale commit/deploy)
+4. **È intermittente o sistematico?** → sistematico = causa strutturale, non race condition pura
+
+Se non si riesce a rispondere a tutte e 4, CHIEDERE all'utente prima di procedere.
+
+---
+
+## Fase 1 — Mappa i livelli coinvolti
+
+I bug di persistenza in questa app coinvolgono sempre più livelli:
+
+```
+[React state]  ← useState, useRef   — si azzera ad ogni page refresh
+      ↓
+[IndexedDB]    ← fsProvider         — persiste tra refresh, si azzera su clearAuditsStore
+      ↓
+[Sync queue]   ← IndexedDB store    — persiste tra refresh, fire-and-forget
+      ↓
+[Server API]   ← REST backend       — ground truth, unica fonte di verità
+      ↓
+[Netlify CDN]  ← build artifact     — ritardo deploy 2-3 minuti dopo ogni push
+```
+
+**Domande da farsi per ogni livello:**
+- A quale livello è stato aggiunto l'oggetto? (creazione)
+- A quale livello viene rimosso? (cancellazione)
+- A quale livello viene riletto? (page refresh / reconcile)
+
+Se eliminazione e lettura avvengono a livelli diversi → potenziale mismatch.
+
+---
+
+## Fase 2 — Raccolta evidenze empiriche (MAI saltarla)
+
+### 2a. Chiedi all'utente PRIMA di ipotizzare
+
+> "Apri DevTools (F12) → Network. Ripeti l'operazione. Cosa vedi nella lista delle richieste? C'è una chiamata DELETE? Che status restituisce (200, 404, 401…)?"
+
+> "Apri DevTools → Console. Ci sono errori rossi? Cosa stampa subito dopo aver cliccato Elimina?"
+
+### 2b. Distingui il tipo di bug
+
+| Comportamento | Diagnosi probabile |
+|---|---|
+| Bug visibile subito, scompare dopo refresh | Solo stato React (useState/useRef) |
+| Bug persiste dopo refresh ma scompare dopo logout | IndexedDB o localStorage |
+| Bug persiste sempre, anche su altri dispositivi | Server (DB, soft-delete, query) |
+| Bug sistematico + nessun errore visibile | Operazione async fire-and-forget mai eseguita |
+
+### 2c. Verifica il deploy SEMPRE
+
+Ogni volta che fai un push e dichiari "fix deployato":
+- Netlify impiega **2-3 minuti** per completare il build
+- Il Service Worker può servire JS vecchio per ore (Cache-First)
+- **Non dichiarare mai "fix pronto" senza confermare che il build sia completo**
+- Chiedere all'utente di attendere, poi fare hard-refresh (Ctrl+Shift+R) per sicurezza
+
+---
+
+## Fase 3 — Analisi del codice (solo dopo le evidenze)
+
+### 3a. Distingui in-memory da persistent
+
+| Tipo | Scope | Resiste a page refresh? |
+|---|---|---|
+| `useState` | componente/provider | NO |
+| `useRef` | componente/provider | NO |
+| `localStorage` | browser | SÌ |
+| `IndexedDB` | browser | SÌ |
+| Server DB | globale | SÌ |
+
+**Errore tipico di questa sessione**: `recentlyDeletedRef` (useRef) era usato come guardia per
+il reconcile, ma si azzerava ad ogni page refresh. L'audit tornava perché la guardia spariva.
+**Fix corretto**: tombstone su `localStorage` (`sgq_deleted_audit_tombstone`).
+
+### 3b. Distingui sync da async (fire-and-forget)
+
+Ogni operazione async non awaited è un **rischio di perdita silenziosa**:
+
+```javascript
+// PERICOLOSO — fire-and-forget:
+syncService.enqueue("delete_audit", { auditId }).catch(console.error);
+
+// SICURO — bloccante:
+await apiService.deleteAudit(auditId);
+```
+
+Per operazioni **critiche e irreversibili** (cancellazione, pagamenti, permessi):
+→ usare sempre `await` diretto, non la sync queue.
+
+### 3c. Race condition: chi vince tra operazioni concorrenti?
+
+Prima di toccare il codice, disegna la timeline:
+
+```
+T=0s  utente clicca "Elimina"
+T=0s  reconcile parte (timer 45s scattato)
+T=0s    → processQueue() legge la queue (delete non ancora in coda!)
+T=1s  deleteAudit: enqueue "delete_audit" (ora in coda, ma processQueue già finita)
+T=2s  reconcile: fetchAllServerAudits() → server restituisce ancora l'audit
+T=2s  setAudits(finalAudits) → audit torna nell'UI
+```
+
+Se due operazioni async competono sullo stesso stato → serve un lock o un filtro persistente.
+
+---
+
+## Fase 4 — Regole per il fix
+
+### 4a. Fix minimo, verificabile, reversibile
+
+- Un fix alla volta. Non "faccio anche X mentre ci sono".
+- Se un fix richiede 3 o più modifiche su file diversi → documentare il piano prima di iniziare.
+- Ogni fix deve avere un modo chiaro per verificare se ha funzionato (test L1 o test manuale specifico).
+
+### 4b. Belt and suspenders per operazioni critiche
+
+Per operazioni irreversibili (delete, hard reset, clear cache), usare più livelli indipendenti:
+
+```
+Livello 1: operazione diretta sul server (await, bloccante)
+Livello 2: operazione su IndexedDB (await, bloccante)
+Livello 3: tombstone persistente su localStorage (filtro fallback)
+```
+
+Ogni livello deve funzionare indipendentemente dagli altri.
+
+### 4c. Loop detector — fermati se ripeti lo stesso fix
+
+Se stai applicando la terza variante dello stesso approccio senza risultato:
+1. STOP. Non fare un quarto tentativo.
+2. Torna alla Fase 2: raccogli più evidenze empiriche.
+3. Riformula il modello mentale del bug da zero.
+4. Pensa a quale livello dell'architettura non hai ancora indagato.
+
+---
+
+## Fase 5 — Verifica dopo il fix
+
+### Checklist pre-commit
+
+- [ ] Test L1 (`npm run test:run`) → tutti verdi?
+- [ ] Il fix è minimale? (diff piccolo, nessuna modifica non correlata)
+- [ ] È possibile fare rollback facilmente?
+- [ ] Ci sono side-effect su altre funzionalità?
+
+### Checklist post-deploy (dopo Netlify)
+
+- [ ] Attendi 3-4 minuti dal push
+- [ ] Verifica il build su Netlify (nessun errore)
+- [ ] Chiedi all'utente di fare hard-refresh (Ctrl+Shift+R) per superare il SW cache
+- [ ] Chiedi all'utente di riprodurre il bug originale step by step
+- [ ] Chiedi all'utente di fare il page refresh per confermare la persistenza
+
+---
+
+## Anti-pattern da evitare (imparati in questa sessione)
+
+| Anti-pattern | Cosa fare invece |
+|---|---|
+| Analisi statica senza evidenze empiriche | Chiedere Network tab + Console prima |
+| Fix multipli senza verifica intermedia | Un fix alla volta, verifica dopo ogni deploy |
+| Dichiarare "fix deployato" subito dopo il push | Aspettare 3-4 min + confermare build Netlify |
+| Usare `useRef` come stato persistente cross-refresh | Usare `localStorage` o `IndexedDB` |
+| Fire-and-forget per operazioni critiche | `await` diretto per delete/auth/permessi |
+| Proteggere solo la sessione corrente | Proteggere anche dopo page refresh (tombstone) |
+| "Cambio strategia" senza diagnosi aggiornata | Raccogliere nuove evidenze prima di ogni nuovo tentativo |
+
+---
+
+## Template domande da fare all'utente
+
+```
+Per diagnosticare correttamente, ho bisogno di alcune informazioni:
+
+1. Apri DevTools (F12) → scheda "Network" → riproduci il bug.
+   - Vedi una chiamata DELETE? A quale URL? Che status restituisce?
+
+2. Apri DevTools → scheda "Console".
+   - Ci sono messaggi di errore (rossi)? Copia il testo.
+   - Vedi messaggi che iniziano con "✅ [DELETE]" o "❌ [DELETE]"?
+
+3. Il bug si riproduce sempre, o solo a volte?
+
+4. Si riproduce anche su un altro browser/dispositivo?
+```
