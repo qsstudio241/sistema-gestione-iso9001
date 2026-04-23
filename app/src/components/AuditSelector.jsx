@@ -620,7 +620,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
 
           {formData.auditPartyType === "second_party" && (
             <div className="form-group">
-              <label htmlFor="fornitoreSelect">Fornitore auditato</label>
+              <label htmlFor="fornitoreSelect">Azienda auditata</label>
               {companies.length > 0 ? (
                 <>
                   <select

@@ -79,23 +79,30 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses } = useStorage();
   const { user } = useAuth();
 
-  // Caricamento aziende per dropdown fornitore seconda parte
+  // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
-  const effectiveOrgId = user?.auditor_org_id ?? null;
+  const isSuperadmin = user?.role === 'admin' && !user?.auditor_org_id;
 
   const loadCompanies = useCallback(async () => {
     setCompaniesLoading(true);
     try {
-      const params = effectiveOrgId ? { auditor_org_id: effectiveOrgId } : {};
-      const res = await apiService.getCompanies(params);
+      let orgId = user?.auditor_org_id ?? null;
+      // Superadmin senza auditor_org_id: carica il primo auditor_org disponibile
+      if (!orgId && isSuperadmin) {
+        const orgsRes = await apiService.getAuditorOrgs();
+        const orgs = orgsRes?.data || orgsRes || [];
+        orgId = Array.isArray(orgs) && orgs.length > 0 ? orgs[0].id : null;
+      }
+      if (!orgId) { setCompanies([]); return; }
+      const res = await apiService.getCompanies({ auditor_org_id: orgId });
       setCompanies(res.data || []);
     } catch {
       setCompanies([]);
     } finally {
       setCompaniesLoading(false);
     }
-  }, [effectiveOrgId]);
+  }, [user?.auditor_org_id, isSuperadmin]);
 
   useEffect(() => {
     loadCompanies();
@@ -313,10 +320,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 {openSubSections["general-data-form"] && (
                   <div className="subsection-content">
                     {/* Blocco Tipologia audit: modifica dopo creazione */}
-                    <div className="general-data-tipologia-block" style={{ marginBottom: '1rem' }}>
-                      <label className="subsection-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Tipologia audit</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="tipologia-audit-block">
+                      <span className="tipologia-label">Tipologia audit</span>
+                      <div className="tipologia-audit-options">
+                        <label>
                           <input
                             type="radio"
                             name="auditPartyType"
@@ -325,7 +332,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                           />
                           Prima parte (interno)
                         </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label>
                           <input
                             type="radio"
                             name="auditPartyType"
@@ -336,8 +343,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                         </label>
                       </div>
                       {(currentAudit.metadata?.auditPartyType || 'first_party') === 'second_party' && (
-                        <div style={{ marginTop: '0.75rem' }}>
-                          <label className="subsection-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Fornitore auditato</label>
+                        <div className="tipologia-audit-fornitore">
+                          <label className="subsection-label">Azienda auditata</label>
                           {companies.length > 0 ? (
                             <>
                               <select
@@ -365,7 +372,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                 }}
                                 disabled={companiesLoading}
                               >
-                                <option value="">— Seleziona fornitore —</option>
+                                <option value="">— Seleziona azienda auditata —</option>
                                 <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
                                 {companies.map(c => (
                                   <option key={c.id} value={c.id}>
@@ -379,7 +386,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                   className="subsection-input"
                                   value={currentAudit.metadata?.fornitoreName || ''}
                                   onChange={(e) => onUpdate('fornitoreName', e.target.value)}
-                                  placeholder="Ragione sociale o denominazione fornitore"
+                                  placeholder="es. Fornitore XYZ Srl"
                                   style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem', marginTop: '0.4rem' }}
                                 />
                               )}
@@ -391,7 +398,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                               className="subsection-input"
                               value={currentAudit.metadata?.fornitoreName || ''}
                               onChange={(e) => onUpdate('fornitoreName', e.target.value)}
-                              placeholder="Ragione sociale o denominazione fornitore"
+                              placeholder="es. Fornitore XYZ Srl"
                               style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
                             />
                           )}
