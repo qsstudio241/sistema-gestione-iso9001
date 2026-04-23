@@ -141,7 +141,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Sync/API con UUID** | create/delete audit e custom-checklist-responses accettano UUID; merge preserva customChecklistId | ✅ Completato (15/03) |
 | **Deploy backend VPS** | pscp/plink per controller, script deploy-controllers-to-vps.ps1 | ✅ Completato (15/03) |
 | Export Word ISO 3834 | Da testare su produzione | 🔲 Da testare |
-| **Foto embedded in Word** | pic:cNvPr id duplicati → doc corrotto; da reimplementare | 🔲 Backlog tecnico |
+| **Foto embedded in Word** | pic:cNvPr id univoci per range separati (100+checklist ISO, 30000+custom, 88001+logo, 89001+logo org); fix già in produzione; checkbox UI "Incorpora foto" sempre visibile | ✅ Risolto (2026-04-23) |
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | Da norma PDF disponibile | 🔲 Prossima priorità |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
@@ -277,14 +277,7 @@ UI: nuovo componente RDPModule.jsx con form prove + EvidenceManager obbligatorio
 Word: template RDP con tabelle prove e galleria foto embedded
 ```
 
-> ⚠️ **Prerequisito bloccante**: Il modulo RDP richiede foto embedded nel Word.
-> Il codice di embedding (xmlImageOoxml) è stato disabilitato il 08/03/2026 per bug OOXML
-> (pic:cNvPr id duplicati → documento corrotto in Word).
-> **Da risolvere prima di sviluppare RDP**:
-> - Fix `xmlImageOoxml`: id univoci per ogni immagine (imgId su pic:cNvPr, non 0)
-> - Test end-to-end con allegati immagine reali su produzione
-> - Poi riabilitare `usePreview` in `wordExportHelpers.js` e `preloadImagesIntoAudit` in `wordExport.js`
-> - Stima fix: 2-3 ore (codice già scritto, solo bug da correggere + test)
+> ✅ **Bug foto embedded risolto (2026-04-23)**: Il codice di embedding (`xmlImageOoxml`) usa ora `imgId` univoci per range separati (100+ per checklist ISO, 30000+ per custom, 88001+ per logo azienda, 89001+ per logo organizzazione). `usePreview` e `preloadImagesIntoAudit` sono attivi. Il prerequisito per RDP è soddisfatto.
 
 #### Struttura `document_type` in `audits`
 ```sql
