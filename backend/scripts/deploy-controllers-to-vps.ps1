@@ -124,6 +124,10 @@ Copy-FileToVps "src/routes/customChecklist.routes.js" "$RemoteBase/src/routes/cu
 Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes.js"
 Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
 
+# Sprint 12-A: WebDAV Office Round-trip
+Copy-FileToVps "src/controllers/webdav.controller.js" "$RemoteBase/src/controllers/webdav.controller.js"
+Copy-FileToVps "src/routes/webdav.routes.js" "$RemoteBase/src/routes/webdav.routes.js"
+
 # Entry point server (include customChecklistRoutes)
 Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
 
