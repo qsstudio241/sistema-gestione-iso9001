@@ -70,7 +70,7 @@ function AuditSelector() {
     setShowCreateModal(true);
   };
 
-  const handleDeleteAudit = () => {
+  const handleDeleteAudit = async () => {
     if (!currentAudit) return;
     const num = currentAudit.metadata.auditNumber || "—";
     const client = currentAudit.metadata.clientName || "—";
@@ -82,7 +82,11 @@ function AuditSelector() {
       `⚠️ CONFERMA FINALE\n\nAudit "${num}" verrà eliminato in modo permanente.\nProcedere?`
     );
     if (!second) return;
-    deleteAudit(currentAuditId);
+    try {
+      await deleteAudit(currentAuditId);
+    } catch (err) {
+      alert(`Errore durante l'eliminazione dell'audit.\n${err?.message || "Riprova o contatta l'assistenza."}`);
+    }
   };
 
 

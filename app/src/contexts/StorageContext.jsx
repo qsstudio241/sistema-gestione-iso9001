@@ -1500,10 +1500,12 @@ export function StorageProvider({ children, useMockData = false }) {
   );
 
   /**
-   * Elimina audit
+   * Elimina audit — async, bloccante: prima elimina dal server, poi dall'IndexedDB, poi dallo stato.
+   * Non usa la sync queue per il delete: troppo fire-and-forget, il server non veniva raggiunto
+   * in modo affidabile prima di eventuali page refresh.
    */
   const deleteAudit = useCallback(
-    (auditId) => {
+    async (auditId) => {
       const audit = audits.find((a) => {
         const id = a.metadata?.id || a.id;
         return id === auditId;
@@ -1513,10 +1515,41 @@ export function StorageProvider({ children, useMockData = false }) {
         return false;
       }
 
-      // Segna come appena eliminato: il reconcile NON dovrà ripristinarlo dalla cache locale.
+      // Segna come appena eliminato: il reconcile NON dovrà ripristinarlo.
       recentlyDeletedRef.current.add(auditId);
 
-      // Rimuovi da React state
+      // 1. Elimina dal server direttamente (bloccante) per garantire la persistenza.
+      //    Se offline, accoda per retry futuro.
+      if (navigator.onLine) {
+        try {
+          await apiService.deleteAudit(auditId);
+          console.log(`✅ [DELETE] Server: audit ${auditId} eliminato`);
+        } catch (err) {
+          if (err?.status === 404) {
+            // Già eliminato lato server — procediamo comunque a pulire locale.
+            console.warn(`⚠️ [DELETE] Server: audit ${auditId} non trovato (già eliminato)`);
+          } else {
+            // Errore reale: rollback del flag e propagazione.
+            recentlyDeletedRef.current.delete(auditId);
+            console.error("❌ [DELETE] Errore eliminazione server:", err);
+            throw err;
+          }
+        }
+      } else {
+        // Offline: accoda per sync alla riconnessione.
+        syncService.enqueue("delete_audit", { auditId }).catch((err) => {
+          console.error("❌ [SYNC] Errore enqueue delete offline:", err);
+        });
+      }
+
+      // 2. Rimuovi da IndexedDB (atteso: elimina fisicamente dal browser).
+      if (fsProvider && typeof fsProvider.deleteAudit === "function") {
+        await fsProvider.deleteAudit(auditId).catch((err) => {
+          console.error("❌ [DELETE] Errore rimozione da IndexedDB:", err);
+        });
+      }
+
+      // 3. Rimuovi da React state.
       setAudits((prevAudits) =>
         prevAudits.filter((a) => {
           const id = a.metadata?.id || a.id;
@@ -1524,27 +1557,12 @@ export function StorageProvider({ children, useMockData = false }) {
         }),
       );
 
-      // Rimuovi da IndexedDB (fsProvider) — causa principale del bug di ricomparsa.
-      if (fsProvider && typeof fsProvider.deleteAudit === "function") {
-        fsProvider.deleteAudit(auditId).catch((err) => {
-          console.error("❌ [DELETE] Errore rimozione da IndexedDB:", err);
-        });
-      }
-
-      // Enqueue sync se online
-      if (navigator.onLine) {
-        syncService.enqueue("delete_audit", { auditId }).catch((err) => {
-          console.error("❌ [SYNC] Errore enqueue delete:", err);
-        });
-      }
-
-      // Dopo la cancellazione torna sempre allo stato vuoto (seleziona un audit),
-      // così l'utente ha conferma visiva che l'eliminazione è avvenuta.
+      // 4. Dopo la cancellazione torna sempre allo stato vuoto per conferma visiva.
       if (auditId === currentAuditId) {
         setCurrentAuditId(null);
       }
 
-      // Rimuovi anche localStorage singolo audit
+      // 5. Pulisci localStorage.
       localStorage.removeItem(`audit_${auditId}`);
 
       console.log(`✅ Deleted audit: ${audit.metadata?.auditNumber || auditId}`);
