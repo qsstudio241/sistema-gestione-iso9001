@@ -223,6 +223,18 @@
   background: #eee;
 }
 
+/* Errore inline nei form aggiungi sezione/sotto-punto (Bug 3 Fix) */
+.custom-checklist-form-error {
+  width: 100%;
+  padding: 6px 10px;
+  margin-top: 6px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  color: #991b1b;
+  font-size: 0.85rem;
+}
+
 /* Pulsanti esito C/OSS/NC/OM/NV/NA */
 .outcome-buttons {
   display: flex;
