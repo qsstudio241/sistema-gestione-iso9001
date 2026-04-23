@@ -1538,14 +1538,10 @@ export function StorageProvider({ children, useMockData = false }) {
         });
       }
 
-      // Se elimino audit corrente, switcha al primo disponibile
+      // Dopo la cancellazione torna sempre allo stato vuoto (seleziona un audit),
+      // così l'utente ha conferma visiva che l'eliminazione è avvenuta.
       if (auditId === currentAuditId) {
-        const remaining = audits.filter((a) => {
-          const id = a.metadata?.id || a.id;
-          return id !== auditId;
-        });
-        const nextId = remaining[0]?.metadata?.id || remaining[0]?.id || null;
-        setCurrentAuditId(nextId);
+        setCurrentAuditId(null);
       }
 
       // Rimuovi anche localStorage singolo audit
