@@ -949,11 +949,13 @@ export function buildCustomRileviSummaryOoxml(customChecklist, customResponses =
         return xmlPara('', { sa: 0 });
     }
 
-    const FILL = { CONF: 'D1FAE5', NC: 'FEE2E2', OSS: 'FEF3C7', OM: 'DBEAFE', 'N.A.': 'E5E7EB', NV: 'EDE9FE' };
-    const PCT = [50, 10, 10, 10, 10, 10];
+    // Colonne: label + C + NC + OSS + OM + N.A. + NV (tot 7, somma 100%)
+    const FILL = { C: 'D1FAE5', NC: 'FEE2E2', OSS: 'FEF3C7', OM: 'DBEAFE', 'N.A.': 'E5E7EB', NV: 'EDE9FE' };
+    const COLS = ['C', 'NC', 'OSS', 'OM', 'N.A.', 'NV'];
+    const PCT  = [46, 9, 9, 9, 9, 9, 9]; // 46+9*6=100
 
     const headerRow = xmlRow(
-        ['Voce / Domanda', 'C', 'NC', 'OSS', 'OM', 'N.A.'].map((h, i) =>
+        ['Voce / Domanda', ...COLS].map((h, i) =>
             xmlCell(xmlPara(xmlRun(h, { bold: true, size: 18 }), { align: 'center' }),
                 { fill: 'E5E7EB', pct: PCT[i] })
         ),
@@ -968,16 +970,17 @@ export function buildCustomRileviSummaryOoxml(customChecklist, customResponses =
             const st = customStatuses[item.id] || null;
             if (!st) return; // salta item senza valutazione
             let col = '';
-            if      (st === 'C')   col = 'CONF';
+            if      (st === 'C')   col = 'C';
             else if (st === 'NC')  col = 'NC';
             else if (st === 'OSS') col = 'OSS';
             else if (st === 'OM')  col = 'OM';
             else if (st === 'NA')  col = 'N.A.';
+            else if (st === 'NV')  col = 'NV';
 
             const label = escXml([item.code, item.title].filter(Boolean).join('  '));
             rows.push(xmlRow([
                 xmlCell(label, { pct: PCT[0] }),
-                ...['CONF', 'NC', 'OSS', 'OM', 'N.A.'].map((k, i) =>
+                ...COLS.map((k, i) =>
                     col === k
                         ? xmlCell(xmlPara(xmlRun('X', { bold: true }), { align: 'center' }),
                             { fill: FILL[k], pct: PCT[i + 1] })
@@ -990,7 +993,7 @@ export function buildCustomRileviSummaryOoxml(customChecklist, customResponses =
     if (rows.length === 1) {
         // Solo header, nessun item valutato
         rows.push(xmlRow([
-            xmlCell(xmlPara(xmlRun('Nessuna domanda valutata.', { ital: true })), { span: 6, pct: 100 }),
+            xmlCell(xmlPara(xmlRun('Nessuna domanda valutata.', { ital: true })), { span: 7, pct: 100 }),
         ]));
     }
 

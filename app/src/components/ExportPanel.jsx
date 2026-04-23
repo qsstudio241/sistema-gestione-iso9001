@@ -237,6 +237,7 @@ const ExportPanel = () => {
         ]);
         auditForExport.customChecklist = clRes?.data ?? null;
         const byItem = {};
+        const byStatus = {}; // fix: r.status era ignorato → export senza badge/riepilogo esiti
         (respRes?.data ?? []).forEach((r) => {
           try {
             byItem[r.custom_item_id] = typeof r.evidence_blocks === "string"
@@ -245,16 +246,19 @@ const ExportPanel = () => {
           } catch {
             byItem[r.custom_item_id] = [];
           }
+          if (r.status) byStatus[r.custom_item_id] = r.status;
         });
         auditForExport.customResponses = mergeCustomResponsesForExport(byItem);
+        auditForExport.customStatuses = byStatus;
         console.log(
-          `📋 [EXPORT] Checklist custom + server ${Object.keys(byItem).length} righe, merge con locale (${Object.keys(localCustomResponses).length} chiavi)`
+          `📋 [EXPORT] Checklist custom: ${Object.keys(byItem).length} righe, ${Object.keys(byStatus).length} esiti, merge locale (${Object.keys(localCustomResponses).length} chiavi)`
         );
       } catch (err) {
         console.warn('[EXPORT] Checklist custom non disp.:', err.message);
         auditForExport.customResponses = Object.keys(localCustomResponses).length
           ? localCustomResponses
           : (auditForExport.customResponses ?? {});
+        auditForExport.customStatuses = auditForExport.customStatuses ?? {};
       }
     }
 
