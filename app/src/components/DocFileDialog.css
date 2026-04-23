@@ -293,8 +293,65 @@
 .btn-docfile-upload:hover:not(:disabled) { background: #16304e; }
 .btn-docfile-upload:disabled { opacity: .55; cursor: not-allowed; }
 
+/* ── Pulsanti Office Round-trip (Sprint 12-A) ────────── */
+.btn-docfile-office {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .18s, opacity .18s;
+  white-space: nowrap;
+}
+.btn-docfile-office:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-docfile-office-word  { background: #2b579a; color: #fff; }
+.btn-docfile-office-word:hover:not(:disabled)  { background: #1e3f73; }
+
+.btn-docfile-office-excel { background: #217346; color: #fff; }
+.btn-docfile-office-excel:hover:not(:disabled) { background: #165a33; }
+
+.btn-docfile-office-view  { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.btn-docfile-office-view:hover:not(:disabled)  { background: #e5e7eb; }
+
+.docfile-office-loading {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 4px 8px;
+}
+
+.docfile-office-error {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  padding: 10px 14px;
+}
+.docfile-office-fallback {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #7f1d1d;
+}
+
+.docfile-office-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 7px 12px;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 560px) {
   .docfile-current { flex-direction: column; }
-  .docfile-actions { width: 100%; justify-content: flex-start; }
+  .docfile-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .btn-docfile-office { font-size: 12px; padding: 5px 10px; }
 }

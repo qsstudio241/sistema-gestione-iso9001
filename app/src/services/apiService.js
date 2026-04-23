@@ -1050,6 +1050,12 @@ class ApiService {
         return this.post('/notifications-config/test', {});
     }
 
+    // ─── WebDAV / Office Round-trip (Sprint 12-A) ────────────────────────────
+
+    async getWebdavLink(docId) {
+        return this.post(`/documents/${docId}/webdav-link`, {});
+    }
+
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
     async getDocFiles(docId) {

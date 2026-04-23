@@ -61,6 +61,7 @@ const risksRoutes           = require('./routes/risks.routes');
 const complaintsRoutes      = require('./routes/complaints.routes');
 const suppliersRoutes       = require('./routes/suppliers.routes');
 const importJobsRoutes      = require('./routes/importJobs.routes');
+const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -100,7 +101,7 @@ app.use(compression());
 const corsOptions = {
     origin: process.env.CORS_ORIGIN.split(','),
     credentials: process.env.CORS_CREDENTIALS === 'true',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Audit-Lock-Token'],
     preflightContinue: false,
     optionsSuccessStatus: 204
@@ -214,6 +215,9 @@ app.use(`${API_BASE}/complaints`, complaintsRoutes);
 app.use(`${API_BASE}/suppliers`, suppliersRoutes);
 app.use(API_BASE, importJobsRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
+// Sprint 12-A: WebDAV — endpoint REST (genera link) + endpoint WebDAV (Office R/W)
+app.use(API_BASE, webdavApiRoutes);
+app.use('/webdav', webdavRouter); // /webdav/ non sotto /api/v1/: Office non usa prefisso API
 
 // Static files (uploads)
 app.use('/uploads', express.static(process.env.UPLOAD_DIR || './uploads'));
