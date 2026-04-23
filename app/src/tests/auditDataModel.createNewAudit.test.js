@@ -16,4 +16,24 @@ describe("createNewAudit", () => {
     expect(audit.metadata.generalData.auditDate).toBe("2026-04-20");
     expect(audit.metadata.generalData.auditors).toEqual(["Ispettore Principale"]);
   });
+
+  it("createNewAudit con fornitoreCompanyId → preservato in metadata", () => {
+    const audit = createNewAudit({
+      auditPartyType: "second_party",
+      fornitoreName: "Acme Srl",
+      fornitoreCompanyId: 42,
+      clientName: "Committente SpA",
+      auditNumber: "2026-TEST",
+    });
+    expect(audit.metadata.fornitoreCompanyId).toBe(42);
+    expect(audit.metadata.fornitoreName).toBe("Acme Srl");
+  });
+
+  it("createNewAudit senza fornitoreCompanyId → default null", () => {
+    const audit = createNewAudit({
+      clientName: "Acme Srl",
+      auditNumber: "2026-01",
+    });
+    expect(audit.metadata.fornitoreCompanyId).toBeNull();
+  });
 });

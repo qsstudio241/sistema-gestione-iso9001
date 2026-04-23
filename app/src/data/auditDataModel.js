@@ -249,6 +249,7 @@ export function createNewAudit(metadata) {
             companyId: metadata.companyId ?? null,
             auditPartyType: metadata.auditPartyType || 'first_party',
             fornitoreName: metadata.fornitoreName || '',
+            fornitoreCompanyId: metadata.fornitoreCompanyId ?? null,
             projectYear: metadata.projectYear || new Date().getFullYear(),
             auditNumber: metadata.auditNumber || '',
             auditDate: metadata.auditDate || '',
