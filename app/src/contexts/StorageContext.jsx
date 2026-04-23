@@ -34,6 +34,44 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Tombstone persistente: UUID degli audit eliminati, sopravvive ai page refresh.
+ * Protegge reconcileAuditsFromServer dall'aggiungere di nuovo un audit appena cancellato,
+ * anche se il server lo restituisce ancora (es. soft-delete non ancora propagato).
+ * TTL: 7 giorni — poi la voce viene rimossa automaticamente.
+ */
+const TOMBSTONE_KEY = 'sgq_deleted_audit_tombstone';
+const TOMBSTONE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 giorni
+
+function getTombstone() {
+  try {
+    const raw = localStorage.getItem(TOMBSTONE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    // Filtra voci scadute
+    const cleaned = Object.fromEntries(
+      Object.entries(parsed).filter(([, ts]) => now - ts < TOMBSTONE_TTL_MS)
+    );
+    if (Object.keys(cleaned).length !== Object.keys(parsed).length) {
+      localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
+  } catch { return {}; }
+}
+
+function addToTombstone(auditId) {
+  try {
+    const tombstone = getTombstone();
+    tombstone[auditId] = Date.now();
+    localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(tombstone));
+  } catch { /* localStorage non disponibile */ }
+}
+
+function isInTombstone(auditId) {
+  return Boolean(getTombstone()[auditId]);
+}
+
+/**
  * Helper: normalizza status checklist per compatibilità
  * Assicura che tutti gli status siano in formato stringa corretto
  */
@@ -747,13 +785,23 @@ export function StorageProvider({ children, useMockData = false }) {
 
       let finalAudits = dedupeAudits(localOnly.length > 0 ? [...mergedAudits, ...localOnly] : mergedAudits);
 
-      // Race-condition delete vs reconcile: se l'utente ha appena eliminato un audit,
-      // il server potrebbe restituirlo ancora (il DELETE non è ancora stato processato).
-      // Rimuoviamo subito dall'elenco per evitare che ricompaia nell'UI.
+      // Filtro 1 — Race condition in-sessione: rimuove audit appena eliminati
+      // (recentlyDeletedRef è in memoria, protegge solo nella sessione corrente).
       if (recentlyDeletedRef.current.size > 0) {
         finalAudits = finalAudits.filter((a) => {
           const id = a.metadata?.id || a.id;
           return !recentlyDeletedRef.current.has(id);
+        });
+      }
+
+      // Filtro 2 — Tombstone persistente: sopravvive ai page refresh.
+      // Garantisce che un audit eliminato non ricompaia anche dopo ricarica della pagina,
+      // indipendentemente da cosa restituisce il server (soft-delete non ancora propagato, ecc.).
+      const tombstone = getTombstone();
+      if (Object.keys(tombstone).length > 0) {
+        finalAudits = finalAudits.filter((a) => {
+          const id = a.metadata?.id || a.id;
+          return !tombstone[id];
         });
       }
 
@@ -794,8 +842,8 @@ export function StorageProvider({ children, useMockData = false }) {
       setAudits(finalAudits);
       setCurrentAuditId((prev) => {
         if (!prev) return prev;
-        // Audit appena eliminato: azzera currentAuditId anche se prev è ancora valorizzato.
-        if (recentlyDeletedRef.current.has(prev)) return null;
+        // Audit eliminato (in-sessione o tombstone persistente): azzera currentAuditId.
+        if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
         const exists = finalAudits.some((a) => (a.metadata?.id || a.id) === prev);
         return exists ? prev : null;
       });
@@ -975,6 +1023,19 @@ export function StorageProvider({ children, useMockData = false }) {
 
         // Deduplica difensiva finale per evitare doppioni nel menu selector.
         finalAudits = dedupeAudits(finalAudits);
+
+        // Tombstone persistente: esclude audit eliminati anche dopo page refresh.
+        const initTombstone = getTombstone();
+        if (Object.keys(initTombstone).length > 0) {
+          const before = finalAudits.length;
+          finalAudits = finalAudits.filter((a) => {
+            const id = a.metadata?.id || a.id;
+            return !initTombstone[id];
+          });
+          if (finalAudits.length < before) {
+            console.log(`🪦 [TOMBSTONE] Filtrati ${before - finalAudits.length} audit eliminati dalla lista iniziale`);
+          }
+        }
 
         // Ripristina metadata.auditId da sync_metadata per audit che non ce l'hanno
         // (così il banner "non sincronizzato" scompare dopo una sync riuscita, anche dopo ricarica)
@@ -1541,6 +1602,9 @@ export function StorageProvider({ children, useMockData = false }) {
           console.error("❌ [SYNC] Errore enqueue delete offline:", err);
         });
       }
+
+      // Tombstone persistente: sopravvive ai page refresh e protegge reconcile.
+      addToTombstone(auditId);
 
       // 2. Rimuovi da IndexedDB (atteso: elimina fisicamente dal browser).
       if (fsProvider && typeof fsProvider.deleteAudit === "function") {
