@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 22 aprile 2026
-> **Prossimo Step** (sessione corrente): **Smoke L3 manuale P1** (utente: verifica pulsanti esito custom checklist in produzione — vedi checklist sotto) — poi **Sprint 0 Navigation Foundation** (React Router v6, sidebar, dashboard). Branch `cursor/custom-checklist-outcome-buttons-bb01` eliminato. Script temp `backend/scripts/` eliminati.
+> **Prossimo Step** (sessione corrente): **Smoke L3 manuale P1** (utente: verifica pulsanti esito custom checklist in produzione — vedi checklist sotto) — poi **Sprint 10** (collegare ingest PDF al document registry via staging tipizzato). Sprint 0-9 tutti ✅. Branch `cursor/custom-checklist-outcome-buttons-bb01` eliminato. Script temp `backend/scripts/` eliminati. Deputy task Mason in corso (dropdown seconda parte + foto Word OOXML).
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
@@ -728,13 +728,14 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P1 | Custom checklist outcome buttons (C/OSS/NC/OM/NV/NA su flag) — migrazione 043, VPS, merge `e1f3c5b` | Deputy | ✅ Completato — Smoke L3 umano da fare |
 | P2 | Sicurezza credenziali: JWT_SECRET fail-fast, login email ambiguo, register prod | Sessione D | ✅ Completato |
 | Bug | Audit cancellati non ricompaiono nel menu dropdown (StorageContext.jsx + recentlyDeletedRef) | Fix mirato | ✅ Completato |
-| P3 | **Sprint 0 — Navigation Foundation** (React Router v6, sidebar, dashboard) | Noi + deputy | Prossima — dopo smoke L3 P1 |
+| P3 | **Sprint 0–9** — Navigation, Registry, Alert, Notifiche, Qualifiche, NC, Rischi, Reclami, Licensing, Import PDF | Multi-sessione | ✅ Tutti completati |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog attivo |
-| P5 | Sessione A — JWT refresh con snapshot licenze | Noi | Backlog |
-| P6 | Sprint 2 — Qualifiche + Alert Engine scadenze | Deputy | Dipende Sprint 0 |
+| P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
+| P6 | **Sprint 10** — Ingest PDF → staging → document registry (commit umano) | Prossima sessione | Prossima — dopo Smoke L3 P1 |
+| P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
+| P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-Non attivare ancora: Sprint 10+, RAG, SAL, RDP completo — dipendono da Sprint 0.
-**Prossimo Step**: attendere conferma **Smoke L3 P1** dall'utente; poi avviare **Sprint 0 Navigation Foundation**. Poi **Sessione A** (resto) / **B–E** licenze+auth, **RBAC**, scelta traccia **Sprint 10** vs **`norm_excerpt`**. **Sprint 12** Office round-trip: task parallelo deputy — [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md).
+**Prossimo Step**: attendere conferma **Smoke L3 P1** dall'utente; poi avviare **Sprint 10** (staging → registry). Deputy in parallelo su task Mason.
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 
