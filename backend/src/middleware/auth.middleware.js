@@ -149,6 +149,9 @@ function authorize(...allowedRoles) {
 
         const userRole = req.user.role;
 
+        // superadmin ha accesso a qualsiasi route senza dover essere elencato esplicitamente
+        if (userRole === 'superadmin') return next();
+
         // Verifica ruolo
         if (!allowedRoles.includes(userRole)) {
             logger.warn('Authorize: Accesso negato', {

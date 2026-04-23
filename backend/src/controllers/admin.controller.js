@@ -44,20 +44,35 @@ function isElevatedAdmin(reqUser) {
  */
 async function listUsers(req, res) {
     try {
-        const { organization_id } = req.user;
+        const { organization_id, role } = req.user;
+        const isSuperadmin = role === 'superadmin';
 
-        const result = await query(`
-            SELECT 
-                u.user_id, u.email, u.full_name, u.role, u.auditor_org_id, u.is_active,
-                u.created_at, u.last_login,
-                o.organization_name,
-                ao.name AS auditor_org_name
-            FROM users u
-            INNER JOIN organizations o ON u.organization_id = o.organization_id
-            LEFT JOIN auditor_orgs ao ON u.auditor_org_id = ao.id
-            WHERE u.organization_id = @organization_id
-            ORDER BY u.full_name, u.email
-        `, { organization_id });
+        // superadmin: vede tutti gli utenti di tutte le organizzazioni (visione piattaforma)
+        // admin: vede solo gli utenti della propria organizzazione (isolamento multi-tenant)
+        const result = isSuperadmin
+            ? await query(`
+                SELECT 
+                    u.user_id, u.email, u.full_name, u.role, u.auditor_org_id, u.is_active,
+                    u.created_at, u.last_login, u.organization_id,
+                    o.organization_name,
+                    ao.name AS auditor_org_name
+                FROM users u
+                INNER JOIN organizations o ON u.organization_id = o.organization_id
+                LEFT JOIN auditor_orgs ao ON u.auditor_org_id = ao.id
+                ORDER BY o.organization_name, u.full_name, u.email
+            `, {})
+            : await query(`
+                SELECT 
+                    u.user_id, u.email, u.full_name, u.role, u.auditor_org_id, u.is_active,
+                    u.created_at, u.last_login, u.organization_id,
+                    o.organization_name,
+                    ao.name AS auditor_org_name
+                FROM users u
+                INNER JOIN organizations o ON u.organization_id = o.organization_id
+                LEFT JOIN auditor_orgs ao ON u.auditor_org_id = ao.id
+                WHERE u.organization_id = @organization_id
+                ORDER BY u.full_name, u.email
+            `, { organization_id });
 
         const users = result.recordset || [];
 
@@ -73,7 +88,7 @@ async function listUsers(req, res) {
             }
         }
 
-        logger.info('Admin list users', { organization_id, count: users.length });
+        logger.info('Admin list users', { organization_id, role, count: users.length, crossOrg: isSuperadmin });
 
         res.json({
             success: true,
