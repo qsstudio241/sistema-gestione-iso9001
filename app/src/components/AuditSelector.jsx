@@ -264,6 +264,9 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const initialFornitore = isReaudit && currentAudit?.metadata?.fornitoreName 
     ? currentAudit.metadata.fornitoreName 
     : "";
+  const initialFornitoreCompanyId = isReaudit && currentAudit?.metadata?.fornitoreCompanyId
+    ? currentAudit.metadata.fornitoreCompanyId
+    : null;
 
   const [formData, setFormData] = useState({
     auditNumber: nextNumber,
@@ -271,6 +274,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     companyId: initialCompanyId,
     auditPartyType: initialPartyType,
     fornitoreName: initialFornitore,
+    fornitoreCompanyId: initialFornitoreCompanyId,
     auditDate: new Date().toISOString().split("T")[0],
     auditorName: "",
     norms: [],
@@ -437,6 +441,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     // Mappa norms → selectedStandards (atteso da createNewAudit in auditDataModel.js)
     submitData.selectedStandards = formData.norms;
     submitData.companyId = formData.companyId || null;
+    submitData.fornitoreCompanyId = formData.fornitoreCompanyId || null;
     submitData.customChecklistId = formData.customChecklistId || null;
     if (pendingInfo?.issues?.length > 0) {
       submitData.pendingIssues = pendingInfo.issues
@@ -615,17 +620,70 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
 
           {formData.auditPartyType === "second_party" && (
             <div className="form-group">
-              <label htmlFor="fornitoreName">Fornitore auditato</label>
-              <input
-                type="text"
-                id="fornitoreName"
-                name="fornitoreName"
-                value={formData.fornitoreName}
-                onChange={handleChange}
-                className="form-control"
-                placeholder="es. Fornitore XYZ Srl"
-              />
-              <small className="form-hint">Azienda fornitore oggetto dell&apos;audit (seconda parte).</small>
+              <label htmlFor="fornitoreSelect">Fornitore auditato</label>
+              {companies.length > 0 ? (
+                <>
+                  <select
+                    id="fornitoreSelect"
+                    value={
+                      formData.fornitoreCompanyId
+                        ? String(formData.fornitoreCompanyId)
+                        : (formData.fornitoreName && !formData.fornitoreCompanyId ? MANUAL_COMPANY_VALUE : "")
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === MANUAL_COMPANY_VALUE) {
+                        setFormData(p => ({ ...p, fornitoreCompanyId: null }));
+                      } else if (val === "") {
+                        setFormData(p => ({ ...p, fornitoreCompanyId: null, fornitoreName: "" }));
+                      } else {
+                        const found = companies.find(c => String(c.id) === val);
+                        setFormData(p => ({
+                          ...p,
+                          fornitoreCompanyId: found ? found.id : null,
+                          fornitoreName: found ? found.name : p.fornitoreName,
+                        }));
+                      }
+                    }}
+                    className="form-control"
+                    disabled={companiesLoading}
+                  >
+                    <option value="">— Seleziona fornitore —</option>
+                    <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {(!formData.fornitoreCompanyId) && (
+                    <input
+                      type="text"
+                      id="fornitoreName"
+                      name="fornitoreName"
+                      value={formData.fornitoreName || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="es. Fornitore XYZ Srl"
+                      style={{ marginTop: "0.5rem" }}
+                    />
+                  )}
+                  <small className="form-hint">Scegli dall&apos;anagrafica o inserisci manualmente.</small>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    id="fornitoreName"
+                    name="fornitoreName"
+                    value={formData.fornitoreName || ""}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="es. Fornitore XYZ Srl"
+                  />
+                  <small className="form-hint">Azienda fornitore oggetto dell&apos;audit (seconda parte).</small>
+                </>
+              )}
             </div>
           )}
 
