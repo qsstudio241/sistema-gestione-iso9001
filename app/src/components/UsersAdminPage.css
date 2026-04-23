@@ -262,26 +262,21 @@
 }
 
 .standards-checkboxes {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  text-align: left;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.4rem 1rem;
+  padding: 0.5rem 0;
 }
 
 .standards-checkboxes .checkbox-label {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
   cursor: pointer;
-  text-align: left;
-  width: 100%;
 }
 
 .standards-checkboxes .checkbox-label span {
-  flex: 1;
   line-height: 1.35;
 }
 

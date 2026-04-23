@@ -219,7 +219,8 @@ async function createUser(req, res) {
  */
 async function updateUser(req, res) {
     try {
-        const { organization_id, user_id: actorId } = req.user;
+        const { organization_id: actorOrgId, user_id: actorId, role: actorRole } = req.user;
+        const isSuperadmin = actorRole === 'superadmin';
         const targetUserId = parseInt(req.params.id, 10);
         const { full_name, role, is_active, auditor_org_id, password } = req.body || {};
 
@@ -231,11 +232,18 @@ async function updateUser(req, res) {
             });
         }
 
-        const userCheck = await query(
-            `SELECT user_id, role, is_active FROM users
-             WHERE user_id = @user_id AND organization_id = @organization_id`,
-            { user_id: targetUserId, organization_id }
-        );
+        // superadmin: cerca senza filtro org; admin: solo nella propria org
+        const userCheck = isSuperadmin
+            ? await query(
+                `SELECT user_id, role, is_active, organization_id FROM users WHERE user_id = @user_id`,
+                { user_id: targetUserId }
+              )
+            : await query(
+                `SELECT user_id, role, is_active, organization_id FROM users
+                 WHERE user_id = @user_id AND organization_id = @organization_id`,
+                { user_id: targetUserId, organization_id: actorOrgId }
+              );
+
         if (userCheck.recordset.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -244,6 +252,8 @@ async function updateUser(req, res) {
             });
         }
 
+        // Usa sempre l'org del target per validazioni (non quella del superadmin chiamante)
+        const organization_id = userCheck.recordset[0].organization_id;
         const current = userCheck.recordset[0];
         const updates = [];
         const params = { user_id: targetUserId, organization_id };
@@ -262,7 +272,9 @@ async function updateUser(req, res) {
 
         if (role !== undefined) {
             const normalizedRole = String(role).toLowerCase().trim();
-            const allowed = ['auditor', 'viewer', 'admin'];
+            const allowed = isSuperadmin
+                ? ['auditor', 'viewer', 'admin', 'superadmin']
+                : ['auditor', 'viewer', 'admin'];
             if (!allowed.includes(normalizedRole)) {
                 return res.status(400).json({
                     success: false,
@@ -379,7 +391,8 @@ async function updateUser(req, res) {
  */
 async function deactivateUser(req, res) {
     try {
-        const { organization_id, user_id: actorId } = req.user;
+        const { user_id: actorId, role: actorRole } = req.user;
+        const isSuperadmin = actorRole === 'superadmin';
         const targetUserId = parseInt(req.params.id, 10);
 
         if (isNaN(targetUserId)) {
@@ -398,11 +411,17 @@ async function deactivateUser(req, res) {
             });
         }
 
-        const userCheck = await query(
-            `SELECT user_id, is_active FROM users
-             WHERE user_id = @user_id AND organization_id = @organization_id`,
-            { user_id: targetUserId, organization_id }
-        );
+        const userCheck = isSuperadmin
+            ? await query(
+                `SELECT user_id, is_active, organization_id FROM users WHERE user_id = @user_id`,
+                { user_id: targetUserId }
+              )
+            : await query(
+                `SELECT user_id, is_active, organization_id FROM users
+                 WHERE user_id = @user_id AND organization_id = @organization_id`,
+                { user_id: targetUserId, organization_id: req.user.organization_id }
+              );
+
         if (userCheck.recordset.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -410,6 +429,8 @@ async function deactivateUser(req, res) {
                 code: 'USER_NOT_FOUND',
             });
         }
+
+        const { organization_id } = userCheck.recordset[0];
 
         if (!userCheck.recordset[0].is_active) {
             return res.json({ success: true, message: 'Utente già disattivato' });
@@ -427,8 +448,8 @@ async function deactivateUser(req, res) {
         }
 
         await query(
-            `UPDATE users SET is_active = 0 WHERE user_id = @user_id AND organization_id = @organization_id`,
-            { user_id: targetUserId, organization_id }
+            `UPDATE users SET is_active = 0 WHERE user_id = @user_id`,
+            { user_id: targetUserId }
         );
 
         logger.info('Admin deactivate user', { target_user_id: targetUserId, organization_id, actorId });
@@ -463,11 +484,11 @@ async function updateUserStandards(req, res) {
             });
         }
 
-        // Verifica che l'utente target appartenga all'organizzazione
-        const userCheck = await query(`
-            SELECT user_id, full_name, email FROM users
-            WHERE user_id = @user_id AND organization_id = @organization_id
-        `, { user_id: targetUserId, organization_id });
+        // Verifica che l'utente target esista (superadmin: cross-org; admin: solo propria org)
+        const isSuperadmin = req.user.role === 'superadmin';
+        const userCheck = isSuperadmin
+            ? await query(`SELECT user_id, full_name, email FROM users WHERE user_id = @user_id`, { user_id: targetUserId })
+            : await query(`SELECT user_id, full_name, email FROM users WHERE user_id = @user_id AND organization_id = @organization_id`, { user_id: targetUserId, organization_id });
 
         if (userCheck.recordset.length === 0) {
             return res.status(404).json({
