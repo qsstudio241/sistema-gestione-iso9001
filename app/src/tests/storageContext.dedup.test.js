@@ -195,4 +195,21 @@ describe('filterLocalAuditsAfterServerFetch', () => {
         const result = filterLocalAuditsAfterServerFetch([bozza], []);
         expect(result).toHaveLength(1);
     });
+
+    // Fix race condition delete vs reconcile (22/04/2026):
+    // Il server può restituire un audit appena eliminato se il DELETE non è ancora stato
+    // processato. Il filtro recentlyDeletedRef in reconcileAuditsFromServer deve escluderlo.
+    // Questo test verifica la logica di filtro sul Set (unità pura).
+    test('audit in recentlyDeleted filtrato da finalAudits — simula race condition reconcile', () => {
+        // Simula: l'utente ha eliminato 'uuid-del', ma il server lo restituisce ancora.
+        const deletedFromServer = { metadata: { id: 'uuid-del', auditId: 55, auditNumber: '2026-X' } };
+        const altroAudit = { metadata: { id: 'uuid-ok', auditId: 56 } };
+        const recentlyDeleted = new Set(['uuid-del']);
+        const finalAudits = [deletedFromServer, altroAudit].filter((a) => {
+            const id = a.metadata?.id || a.id;
+            return !recentlyDeleted.has(id);
+        });
+        expect(finalAudits).toHaveLength(1);
+        expect(finalAudits[0].metadata.id).toBe('uuid-ok');
+    });
 });

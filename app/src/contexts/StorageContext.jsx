@@ -747,6 +747,16 @@ export function StorageProvider({ children, useMockData = false }) {
 
       let finalAudits = dedupeAudits(localOnly.length > 0 ? [...mergedAudits, ...localOnly] : mergedAudits);
 
+      // Race-condition delete vs reconcile: se l'utente ha appena eliminato un audit,
+      // il server potrebbe restituirlo ancora (il DELETE non è ancora stato processato).
+      // Rimuoviamo subito dall'elenco per evitare che ricompaia nell'UI.
+      if (recentlyDeletedRef.current.size > 0) {
+        finalAudits = finalAudits.filter((a) => {
+          const id = a.metadata?.id || a.id;
+          return !recentlyDeletedRef.current.has(id);
+        });
+      }
+
       // Bug 5 Fix B: se l'audit attualmente selezionato è stato escluso da finalAudits
       // (il server non lo ha restituito, es. bug RBAC o paginazione incompleta),
       // ripristinarlo dalla cache locale per evitare che scompaia dal menu.
@@ -784,6 +794,8 @@ export function StorageProvider({ children, useMockData = false }) {
       setAudits(finalAudits);
       setCurrentAuditId((prev) => {
         if (!prev) return prev;
+        // Audit appena eliminato: azzera currentAuditId anche se prev è ancora valorizzato.
+        if (recentlyDeletedRef.current.has(prev)) return null;
         const exists = finalAudits.some((a) => (a.metadata?.id || a.id) === prev);
         return exists ? prev : null;
       });
