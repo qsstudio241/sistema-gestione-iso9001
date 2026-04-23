@@ -66,6 +66,12 @@ const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.ro
 const app = express();
 const PORT = process.env.PORT || 10443;
 
+// Trust proxy: necessario quando Express è dietro Nginx/HAProxy sul VPS.
+// Senza questa riga req.ip sarebbe sempre l'IP del proxy (127.0.0.1) e il
+// rate limiter conterebbe TUTTI gli utenti nello stesso bucket → 429 falsi.
+// '1' = un solo livello di proxy di fiducia (Nginx locale).
+app.set('trust proxy', 1);
+
 // ==========================================
 // MIDDLEWARE
 // ==========================================
@@ -128,6 +134,10 @@ const authLimiter = rateLimit({
 });
 
 // API generale — moderato
+// keyGenerator: usa l'ID utente JWT (se già autenticato) oppure l'IP reale.
+// Così ogni utente ha il suo budget separato anche condividendo lo stesso IP
+// (uffici/NAT) e il bucket non è mai condiviso tra tutti come accadrebbe
+// usando solo req.ip senza trust proxy configurato.
 const apiLimiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS)       || 15 * 60 * 1000, // 15 min
     max:      parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)    || 500,
@@ -135,6 +145,21 @@ const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders:   false,
     skip: () => rateLimitDisabled,
+    keyGenerator: (req) => {
+        // JWT non ancora verificato qui (middleware auth viene dopo), ma se il
+        // token è presente in Authorization proviamo a leggere il sub in chiaro.
+        // In caso di token assente/malformato cade sull'IP reale.
+        try {
+            const auth = req.headers.authorization || '';
+            if (auth.startsWith('Bearer ')) {
+                const payload = JSON.parse(
+                    Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
+                );
+                if (payload.id || payload.sub) return `user:${payload.id || payload.sub}`;
+            }
+        } catch (_) { /* token assente o malformato: fallback su IP */ }
+        return req.ip;
+    },
 });
 
 if (rateLimitDisabled) {
