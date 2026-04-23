@@ -68,6 +68,21 @@ alwaysApply: true
 - Aggiorna test per riprodurre bug reali (non test solo nominali).
 - Se utile, crea test di simulazione DOCX con template minimo in memoria.
 
+## Riuso UI — regola "blocco unico" (best practice consolidata)
+Prima di implementare qualsiasi nuovo elemento UI (pulsante, textarea, sezione conteggio, allegati, menu esito) **verificare** se esiste gia' un componente o classe CSS nel codebase che svolge la stessa funzione. **Usare sempre quello esistente**, mai creare implementazioni parallele.
+
+Riferimento rapido — blocchi gia' collaudati da riutilizzare:
+
+| Elemento | Componente/classe da usare |
+|---|---|
+| Pulsanti esito C/NC/OSS/OM/NA/NV | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` + `.active` (`ChecklistModule.css`) |
+| Textarea note/evidenze | `className="notes-textarea"` (`ChecklistModule.css`) |
+| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook |
+| Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` |
+| Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` (`CustomChecklistAuditView.css`) |
+
+**Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
+
 ## Workflow default consigliato
 1) Identifica causa reale (non solo sintomo).
 2) Applica fix robusto e difensivo.

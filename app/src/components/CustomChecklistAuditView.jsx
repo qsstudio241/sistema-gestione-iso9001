@@ -415,6 +415,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
                   {displayBlocks.map((block, idx) => (
                     <div key={idx} className="evidence-block">
                       <textarea
+                        className="notes-textarea"
                         value={block.text || ""}
                         onChange={(e) => updateBlock(item.id, idx, "text", e.target.value)}
                         onBlur={() => {

@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { useStorage } from "../contexts/StorageContext";
-import { calculateFindingsMetrics } from "../utils/metricsCalculator";
+import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
 import "./AuditOutcomeSection.css";
 
 /**
@@ -29,10 +29,17 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }
   });
 
   useEffect(() => {
-    if (currentAudit?.checklist) {
-      const calculatedMetrics = calculateFindingsMetrics(
-        currentAudit.checklist
-      );
+    if (currentAudit?.checklist || currentAudit?.customStatuses) {
+      const standardMetrics = calculateFindingsMetrics(currentAudit.checklist);
+      // Se l'audit usa una custom checklist con pulsanti esito, somma quei conteggi
+      const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
+        ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
+        : { totalNC: 0, totalOSS: 0, totalOM: 0 };
+      const calculatedMetrics = {
+        totalNC: standardMetrics.totalNC + customMetrics.totalNC,
+        totalOSS: standardMetrics.totalOSS + customMetrics.totalOSS,
+        totalOM: standardMetrics.totalOM + customMetrics.totalOM,
+      };
       setMetrics({
         totalNC: calculatedMetrics.totalNC,
         totalOSS: calculatedMetrics.totalOSS,
@@ -57,7 +64,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }
         });
       }
     }
-  }, [currentAudit?.checklist, auditOutcome, onUpdate]);
+  }, [currentAudit?.checklist, currentAudit?.customStatuses, currentAudit?.customChecklist, auditOutcome, onUpdate]);
 
   // Handler aggiornamento conclusioni
   const handleConclusionsChange = (e) => {

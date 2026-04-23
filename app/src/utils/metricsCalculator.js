@@ -186,6 +186,25 @@ export function calculateClauseMetrics(clause) {
 }
 
 /**
+ * Calcola metriche findings da customStatuses (custom checklist con has_outcome_buttons).
+ * customStatuses: { [itemId]: 'C'|'NC'|'OSS'|'OM'|'NA'|'NV' }
+ * @returns {Object} { totalNC, totalOSS, totalOM }
+ */
+export function calculateCustomFindingsMetrics(customStatuses) {
+    if (!customStatuses || typeof customStatuses !== 'object') {
+        return { totalNC: 0, totalOSS: 0, totalOM: 0 };
+    }
+    let totalNC = 0, totalOSS = 0, totalOM = 0;
+    Object.values(customStatuses).forEach((status) => {
+        const findingType = STATUS_TO_FINDING[status];
+        if (findingType === 'NC') totalNC++;
+        else if (findingType === 'OSS') totalOSS++;
+        else if (findingType === 'OM') totalOM++;
+    });
+    return { totalNC, totalOSS, totalOM };
+}
+
+/**
  * Aggiorna metriche audit in base a checklist
  * @param {Object} audit - Audit completo
  * @returns {Object} Audit con metriche aggiornate
