@@ -3,8 +3,10 @@
  * Struttura ad albero verticale conforme al template Word
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
+import apiService from "../services/apiService";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -71,8 +73,33 @@ const STANDARD_INIT_MAP = Object.fromEntries(
   STANDARDS_CONFIG.map(({ key, codes }) => [key, codes])
 );
 
+const MANUAL_COMPANY_VALUE = "__manual__";
+
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
   const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses } = useStorage();
+  const { user } = useAuth();
+
+  // Caricamento aziende per dropdown fornitore seconda parte
+  const [companies, setCompanies] = useState([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const effectiveOrgId = user?.auditor_org_id ?? null;
+
+  const loadCompanies = useCallback(async () => {
+    setCompaniesLoading(true);
+    try {
+      const params = effectiveOrgId ? { auditor_org_id: effectiveOrgId } : {};
+      const res = await apiService.getCompanies(params);
+      setCompanies(res.data || []);
+    } catch {
+      setCompanies([]);
+    } finally {
+      setCompaniesLoading(false);
+    }
+  }, [effectiveOrgId]);
+
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
 
   // Stato per gestire quali sezioni sono aperte
   const [openSections, setOpenSections] = useState({
@@ -311,14 +338,63 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       {(currentAudit.metadata?.auditPartyType || 'first_party') === 'second_party' && (
                         <div style={{ marginTop: '0.75rem' }}>
                           <label className="subsection-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Fornitore auditato</label>
-                          <input
-                            type="text"
-                            className="subsection-input"
-                            value={currentAudit.metadata?.fornitoreName || ''}
-                            onChange={(e) => onUpdate('fornitoreName', e.target.value)}
-                            placeholder="Ragione sociale o denominazione fornitore"
-                            style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
-                          />
+                          {companies.length > 0 ? (
+                            <>
+                              <select
+                                className="subsection-input form-control"
+                                style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
+                                value={
+                                  currentAudit.metadata?.fornitoreCompanyId
+                                    ? String(currentAudit.metadata.fornitoreCompanyId)
+                                    : (currentAudit.metadata?.fornitoreName && !currentAudit.metadata?.fornitoreCompanyId
+                                        ? MANUAL_COMPANY_VALUE
+                                        : "")
+                                }
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === MANUAL_COMPANY_VALUE) {
+                                    onUpdate('fornitoreCompanyId', null);
+                                  } else if (val === "") {
+                                    onUpdate('fornitoreCompanyId', null);
+                                    onUpdate('fornitoreName', "");
+                                  } else {
+                                    const found = companies.find(c => String(c.id) === val);
+                                    onUpdate('fornitoreCompanyId', found ? found.id : null);
+                                    onUpdate('fornitoreName', found ? found.name : "");
+                                  }
+                                }}
+                                disabled={companiesLoading}
+                              >
+                                <option value="">— Seleziona fornitore —</option>
+                                <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
+                                {companies.map(c => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                                  </option>
+                                ))}
+                              </select>
+                              {!currentAudit.metadata?.fornitoreCompanyId && (
+                                <input
+                                  type="text"
+                                  className="subsection-input"
+                                  value={currentAudit.metadata?.fornitoreName || ''}
+                                  onChange={(e) => onUpdate('fornitoreName', e.target.value)}
+                                  placeholder="Ragione sociale o denominazione fornitore"
+                                  style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem', marginTop: '0.4rem' }}
+                                />
+                              )}
+                              <small style={{ color: '#6b7280', fontSize: '0.78rem' }}>Scegli dall&apos;anagrafica o inserisci manualmente.</small>
+                            </>
+                          ) : (
+                            <input
+                              type="text"
+                              className="subsection-input"
+                              value={currentAudit.metadata?.fornitoreName || ''}
+                              onChange={(e) => onUpdate('fornitoreName', e.target.value)}
+                              placeholder="Ragione sociale o denominazione fornitore"
+                              style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
