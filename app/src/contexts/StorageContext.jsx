@@ -291,6 +291,7 @@ export function StorageProvider({ children, useMockData = false }) {
   const lockNumericAuditIdRef = useRef(null);
   const lockHeartbeatRef = useRef(null);
   const lockWriteWarnTsRef = useRef(0);
+  const lockSyncWarnTsRef = useRef(0);
 
   // Bug 5: ref stabile per currentAuditId (accessibile da callback senza stale closure)
   const currentAuditIdRef = useRef(null);
@@ -1376,8 +1377,10 @@ export function StorageProvider({ children, useMockData = false }) {
                   : 0,
             };
 
-            // Enqueue sync audit metadata se online
-            if (navigator.onLine) {
+            // Enqueue sync audit metadata se online E lock owner attivo.
+            // Se il lock è scaduto/non riconosciuto, salvare comunque in locale ma NON accodare
+            // nuove write server (evita loop infinito AUDIT_LOCK_REQUIRED in console/queue).
+            if (navigator.onLine && auditLockRef.current.mode === "owner") {
               // Usa updated_at >= server_ts per evitare conflict ciclici:
               // se il server ha già una versione più recente (memorizzata in localStorage
               // da syncService dopo ogni sync riuscito/server-wins), il timestamp inviato
@@ -1436,6 +1439,15 @@ export function StorageProvider({ children, useMockData = false }) {
                   .catch((err) => {
                     console.error("❌ [SYNC] Errore enqueue risposte:", err);
                   });
+              }
+            } else if (navigator.onLine && auditLockRef.current.mode !== "owner") {
+              const now = Date.now();
+              if (now - lockSyncWarnTsRef.current > 5000) {
+                lockSyncWarnTsRef.current = now;
+                console.warn(
+                  "⏸️ [SYNC] enqueue write sospeso: lock audit non owner",
+                  auditLockRef.current.mode,
+                );
               }
             }
 

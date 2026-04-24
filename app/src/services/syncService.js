@@ -192,9 +192,12 @@ export class SyncService {
                         code === 'AUDIT_LOCK_REQUIRED' ||
                         code === 'AUDIT_LOCK_INVALID';
                     if (lockDenied) {
+                        const forceStall =
+                            code === 'AUDIT_LOCK_REQUIRED' &&
+                            /sessione di lock/i.test(String(error?.message || ''));
                         // Non rimuovere la coda: spesso è una race con l'apertura audit (lock acquisito
                         // subito dopo in StorageContext). Rimuovere + alert causava popup a ogni selezione e perdeva l'item.
-                        await this.updateRetryCount(item.id, error?.message || String(code));
+                        await this.updateRetryCount(item.id, error?.message || String(code), forceStall);
                         console.warn(
                             `[SYNC] Sync ritardato (lock audit), sarà riprovato: ${item.type}`,
                             code,
@@ -754,7 +757,7 @@ export class SyncService {
     /**
      * Aggiorna retry count
      */
-    async updateRetryCount(itemId, errorMessage) {
+    async updateRetryCount(itemId, errorMessage, forceStall = false) {
         const db = await this.init();
         const transaction = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
         const store = transaction.objectStore(SYNC_QUEUE_STORE);
@@ -771,7 +774,7 @@ export class SyncService {
 
             // Hardening: non eliminare mai automaticamente item in errore.
             // La rimozione silenziosa può causare perdita dati locale non sincronizzata.
-            if (item.retryCount > 5) {
+            if (forceStall || item.retryCount > 5) {
                 item.retryCount = 5;
                 item.isStalled = true;
                 console.error(`❌ [SYNC] Item in stallo (retry max raggiunto), mantenuto in queue: ${itemId}`);
