@@ -30,8 +30,41 @@ const TOKEN_KEY = 'sgq_auth_token';
 const REFRESH_TOKEN_KEY = 'sgq_refresh_token';
 const USER_KEY = 'sgq_user';
 
-/** Token lock audit per UUID e per audit_id numerico (header X-Audit-Lock-Token sulle scritture) */
+/**
+ * Token lock audit per UUID e per audit_id numerico (header X-Audit-Lock-Token sulle scritture).
+ *
+ * Persistenza sessionStorage: i token sopravvivono a page refresh e SW update
+ * all'interno della stessa tab del browser. Vengono eliminati alla chiusura tab
+ * o al logout (clearAllAuditLockTokens).
+ * Questo evita che la sync queue (IndexedDB) rimanga bloccata con AUDIT_LOCK_REQUIRED
+ * dopo un reload silenzioso causato da un aggiornamento del Service Worker.
+ */
+const LOCK_TOKEN_SS_KEY = 'sgq:lockTokens';
 const AUDIT_LOCK_TOKENS = new Map();
+
+/** Carica i token persistiti in sessionStorage (chiamato una sola volta all'avvio del modulo) */
+(function _restoreLockTokensFromSession() {
+    try {
+        const raw = sessionStorage.getItem(LOCK_TOKEN_SS_KEY);
+        if (!raw) return;
+        const obj = JSON.parse(raw);
+        for (const [k, v] of Object.entries(obj)) {
+            if (k && v) AUDIT_LOCK_TOKENS.set(k, v);
+        }
+    } catch {
+        // sessionStorage non disponibile o JSON malformato: non bloccare l'avvio
+    }
+})();
+
+/** Salva la mappa corrente in sessionStorage */
+function _persistLockTokens() {
+    try {
+        const obj = Object.fromEntries(AUDIT_LOCK_TOKENS);
+        sessionStorage.setItem(LOCK_TOKEN_SS_KEY, JSON.stringify(obj));
+    } catch {
+        // sessionStorage pieno o non disponibile: ignora (non bloccante)
+    }
+}
 
 /**
  * Registra il token lock per l'audit: stesso token sotto UUID (acquire) e sotto audit_id (PUT risposte / checklist custom).
@@ -51,10 +84,12 @@ function setAuditLockTokensForAudit(auditUuid, serverAuditId, token) {
             AUDIT_LOCK_TOKENS.delete(String(serverAuditId));
         }
     }
+    _persistLockTokens();
 }
 
 function clearAllAuditLockTokens() {
     AUDIT_LOCK_TOKENS.clear();
+    try { sessionStorage.removeItem(LOCK_TOKEN_SS_KEY); } catch { /* no-op */ }
 }
 
 /**
