@@ -51,22 +51,6 @@
       ]
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-checklist.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Checklist ISO 9001:2015 - Vista Desktop"
-    },
-    {
-      "src": "/screenshots/mobile-audit-list.png",
-      "sizes": "540x720",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Lista Audit - Vista Mobile"
-    }
-  ],
   "prefer_related_applications": false,
   "related_applications": [],
   "lang": "it",
