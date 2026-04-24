@@ -1011,7 +1011,7 @@ export class SyncService {
     }
 
     /**
-     * Conta item in queue
+     * Conta item in queue (tutti, inclusi stalled).
      */
     async getQueueSize() {
         const db = await this.init();
@@ -1023,6 +1023,25 @@ export class SyncService {
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
+    }
+
+    /**
+     * Conta solo item ATTIVI (non stalled) — usato dal guard di logout.
+     * Item in stallo permanente (isStalled: true) non possono essere recuperati
+     * e non devono bloccare l'uscita dell'utente.
+     */
+    async getActiveQueueSize() {
+        const db = await this.init();
+        const transaction = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+        const store = transaction.objectStore(SYNC_QUEUE_STORE);
+
+        const items = await new Promise((resolve, reject) => {
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        return items.filter((it) => !it.isStalled).length;
     }
 
     /**

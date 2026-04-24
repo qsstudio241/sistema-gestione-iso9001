@@ -11,11 +11,11 @@ import "./QualificationsPage.css";
 // ── Semaforo ────────────────────────────────────────────────────────────────
 
 const SEMAFORO_LABEL = {
-  verde:    { label: "Valida",         cls: "sq-verde",    icon: "\uD83D\uDFE2" },
-  giallo:   { label: "In scadenza",    cls: "sq-giallo",   icon: "\uD83D\uDFE1" },
-  arancione:{ label: "Urgente",        cls: "sq-arancione",icon: "\uD83D\uDFE0" },
-  rosso:    { label: "Scaduta",        cls: "sq-rosso",    icon: "\uD83D\uDD34" },
-  grigio:   { label: "Non attiva",     cls: "sq-grigio",   icon: "\u26AA" },
+  verde:    { label: "Valida",         cls: "sq-verde",    icon: "🟢" },
+  giallo:   { label: "In scadenza",    cls: "sq-giallo",   icon: "🟡" },
+  arancione:{ label: "Urgente",        cls: "sq-arancione",icon: "🟠" },
+  rosso:    { label: "Scaduta",        cls: "sq-rosso",    icon: "🔴" },
+  grigio:   { label: "Non attiva",     cls: "sq-grigio",   icon: "⚪" },
 };
 
 function SemaforoTag({ value }) {
@@ -24,7 +24,7 @@ function SemaforoTag({ value }) {
 }
 
 function formatDate(d) {
-  if (!d) return "\u2014";
+  if (!d) return "—";
   const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   return d;
@@ -130,7 +130,7 @@ function QualificationsPage() {
       {/* Header */}
       <div className="sq-header">
         <div>
-          <h2 className="sq-title">\uD83C\uDF93 Qualifiche Personale</h2>
+          <h2 className="sq-title">🎓 Qualifiche Personale</h2>
           <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
         </div>
         <button className="sq-btn-new" onClick={handleNew}>+ Nuova qualifica</button>
@@ -170,10 +170,10 @@ function QualificationsPage() {
           <option value="60">In scadenza entro 60 gg</option>
           <option value="90">In scadenza entro 90 gg</option>
         </select>
-        <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">\u21BB</button>
+        <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">↻</button>
       </div>
 
-      {error && <div className="sq-error">\u26A0\uFE0F {error} <button onClick={() => setError(null)}>&#x2715;</button></div>}
+      {error && <div className="sq-error">⚠️ {error} <button onClick={() => setError(null)}>&#x2715;</button></div>}
 
       {/* Tabella */}
       <div className="sq-table-wrap">
@@ -181,7 +181,7 @@ function QualificationsPage() {
           <div className="sq-loading"><div className="sq-spinner" /><span>Caricamento...</span></div>
         ) : qualifications.length === 0 ? (
           <div className="sq-empty">
-            <span className="sq-empty-icon">\uD83C\uDF93</span>
+            <span className="sq-empty-icon">🎓</span>
             <p>Nessuna qualifica trovata.</p>
             <button className="sq-btn-new-sm" onClick={handleNew}>Aggiungi la prima qualifica</button>
           </div>
@@ -214,7 +214,7 @@ function QualificationsPage() {
                     {q.scope_detail && <div className="sq-qual-scope">{q.scope_detail}</div>}
                   </td>
                   <td className="sq-col-cert">
-                    {q.certificate_number || "\u2014"}
+                    {q.certificate_number || "—"}
                     {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
                   </td>
                   <td className="sq-col-expiry">
@@ -228,14 +228,14 @@ function QualificationsPage() {
                     {deleteId === q.id ? (
                       <div className="sq-confirm">
                         <span>Revocare?</span>
-                        <button className="sq-confirm-yes" onClick={() => handleConfirmDelete(q.id)}>S\u00ec</button>
+                        <button className="sq-confirm-yes" onClick={() => handleConfirmDelete(q.id)}>Sì</button>
                         <button className="sq-confirm-no"  onClick={() => setDeleteId(null)}>No</button>
                       </div>
                     ) : (
                       <>
-                        <button className="sq-btn-icon" title="Modifica" onClick={() => handleEdit(q)}>\u270F\uFE0F</button>
+                        <button className="sq-btn-icon" title="Modifica" onClick={() => handleEdit(q)}>✏️</button>
                         {q.status !== "revocata" && (
-                          <button className="sq-btn-icon" title="Revoca" onClick={() => setDeleteId(q.id)}>\uD83D\uDEAB</button>
+                          <button className="sq-btn-icon" title="Revoca" onClick={() => setDeleteId(q.id)}>🚫</button>
                         )}
                       </>
                     )}

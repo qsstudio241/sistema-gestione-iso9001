@@ -183,11 +183,12 @@ export function AuthProvider({ children }) {
    * Logout
    */
   const logout = useCallback(async () => {
-    // Guard anti-perdita: se ci sono operazioni pendenti in coda sync,
-    // tenta flush online e richiede conferma esplicita prima di procedere.
+    // Guard anti-perdita: considera solo item ATTIVI (non in stallo permanente).
+    // Item con isStalled:true hanno già superato il max retry e non possono essere
+    // recuperati — non devono bloccare il logout dell'utente.
     let pendingQueueItems = 0;
     try {
-      pendingQueueItems = Number(await syncService.getQueueSize()) || 0;
+      pendingQueueItems = Number(await syncService.getActiveQueueSize()) || 0;
     } catch {
       pendingQueueItems = 0;
     }
@@ -199,7 +200,7 @@ export function AuthProvider({ children }) {
         // Non bloccare: si rivaluta la coda sotto.
       }
       try {
-        pendingQueueItems = Number(await syncService.getQueueSize()) || pendingQueueItems;
+        pendingQueueItems = Number(await syncService.getActiveQueueSize()) || pendingQueueItems;
       } catch {
         // keep previous value
       }
