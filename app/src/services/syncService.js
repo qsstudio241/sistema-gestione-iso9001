@@ -10,6 +10,7 @@
 
 import { getDatabase } from './IndexedDBProvider';
 import apiService from './apiService';
+import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
 const STORE_SYNC_METADATA = 'sync_metadata';  // Store per tracking sync status
@@ -513,7 +514,7 @@ export class SyncService {
 
         const result = await apiService.uploadAttachment(file, {
             auditId: payload.auditId,
-            questionId: payload.questionId,
+            questionId: toNumericChecklistQuestionId(payload.questionId),
             category: payload.category,
             description: payload.description
         });

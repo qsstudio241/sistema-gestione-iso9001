@@ -872,7 +872,7 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
             // Prima verifica: tipo salvato nel DB
             const storedMimeType = normalizeMimeType(att.mimeType);
             if (!imageTypes.includes(storedMimeType)) return;
-            const id = att.serverAttachmentId || att.id;
+            const id = att.serverAttachmentId ?? att.attachment_id ?? att.id;
             if (!id) return;
             try {
                 const url = getViewUrl(id);

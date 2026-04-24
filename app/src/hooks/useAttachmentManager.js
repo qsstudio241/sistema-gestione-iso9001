@@ -20,6 +20,7 @@ import { useState, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
+import { toNumericChecklistQuestionId } from "../utils/attachmentQuestionId";
 
 /**
  * Mappa categoria → subfolder
@@ -175,6 +176,7 @@ export function useAttachmentManager(audit, onUpdate) {
 
                     try {
                         const auditId = audit?.metadata?.auditId || audit?.metadata?.id || audit?.id;
+                        const serverQuestionId = toNumericChecklistQuestionId(questionId);
                         const metadata = await storage.fsProvider.saveAttachment(
                             file,
                             category,
@@ -212,7 +214,7 @@ export function useAttachmentManager(audit, onUpdate) {
                             try {
                                 const serverResult = await apiService.uploadAttachment(file, {
                                     auditId,
-                                    questionId: typeof questionId === 'number' ? questionId : undefined,
+                                    questionId: serverQuestionId,
                                     category: serverCategory,
                                     description: `${category} - ${questionId}`,
                                 });
@@ -231,7 +233,7 @@ export function useAttachmentManager(audit, onUpdate) {
                                     await syncService.enqueue('upload_attachment', {
                                         blobKey,
                                         auditId,
-                                        questionId,
+                                        questionId: serverQuestionId,
                                         category: serverCategory,
                                         description: `${category} - ${questionId}`,
                                         fileName: file.name,

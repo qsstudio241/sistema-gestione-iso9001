@@ -437,7 +437,8 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
         if (qAtts.length) {
             qAtts.forEach(a => {
                 const name = a.fileName || a.name || 'File';
-                const aId  = a.id || a.attachment_id || a.serverAttachmentId;
+                // Priorità ID server: link Word e preload immagini richiedono attachment_id numerico API
+                const aId  = a.serverAttachmentId ?? a.attachment_id ?? a.id;
                 const url  = (getViewUrl && aId) ? getViewUrl(aId) : null;
 
                 // Usa imageMimeType (verificato dal server) se disponibile, fallback a mimeType

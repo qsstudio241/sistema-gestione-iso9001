@@ -279,10 +279,17 @@ const ExportPanel = () => {
           description:        att.description,
           serverAttachmentId: att.attachment_id,
         }));
-        const serverQuestionIds = new Set(normalized.map(a => a.questionId).filter(Boolean));
-        const localOnly = (auditForExport.attachments || []).filter(
-          a => !serverQuestionIds.has(a.questionId)
+        // Normalizza question_id (server number vs locale stringa "87") per dedup merge
+        const serverQuestionIds = new Set(
+          normalized
+            .map((a) => (a.questionId != null ? Number(a.questionId) : NaN))
+            .filter((n) => Number.isFinite(n) && n > 0)
         );
+        const localOnly = (auditForExport.attachments || []).filter((a) => {
+          const q = a.questionId != null ? Number(a.questionId) : NaN;
+          if (!Number.isFinite(q) || q <= 0) return true;
+          return !serverQuestionIds.has(q);
+        });
         auditForExport.attachments = [...normalized, ...localOnly];
         console.log(`📎 [EXPORT] ${normalized.length} allegati da server + ${localOnly.length} solo locali`);
       }
