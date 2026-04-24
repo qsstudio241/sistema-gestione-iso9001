@@ -656,6 +656,9 @@ export function StorageProvider({ children, useMockData = false }) {
 
   // === INIZIALIZZAZIONE: MIGRAZIONE localStorage → IndexedDB + CARICAMENTO ===
   const [hasInitialized, setHasInitialized] = useState(false);
+  /** Incrementato dopo login: forza a ripetere loadAuditsFromIndexedDB (l'effect non si riattiva solo con hasInitialized=false). */
+  const [authReloadNonce, setAuthReloadNonce] = useState(0);
+  const lastLoadedAuthNonceRef = useRef(null);
   const isReconcilingRef = useRef(false);
   /** True mentre logout sta svuotando IDB: reconcile deve attendere (evita race login→lettura 11 audit vecchi). */
   const sessionResetInProgressRef = useRef(false);
@@ -667,7 +670,8 @@ export function StorageProvider({ children, useMockData = false }) {
   const fetchAllServerAudits = useCallback(async () => {
     const converter = await import('../utils/auditConverter');
     const first = await apiService.getAudits({ page: 1, limit: 200 });
-    const firstData = first?.data || [];
+    const rawFirst = first?.data ?? first?.audits ?? first?.items ?? [];
+    const firstData = Array.isArray(rawFirst) ? rawFirst : [];
     const totalPages = Number(first?.pagination?.totalPages || 1);
 
     if (totalPages <= 1) {
@@ -677,7 +681,8 @@ export function StorageProvider({ children, useMockData = false }) {
     const allBackendAudits = [...firstData];
     for (let page = 2; page <= totalPages; page++) {
       const next = await apiService.getAudits({ page, limit: 200 });
-      allBackendAudits.push(...(next?.data || []));
+      const raw = next?.data ?? next?.audits ?? next?.items ?? [];
+      allBackendAudits.push(...(Array.isArray(raw) ? raw : []));
     }
 
     return converter.convertAuditsFromBackend(allBackendAudits);
@@ -871,8 +876,8 @@ export function StorageProvider({ children, useMockData = false }) {
           return; // Non procedere se fsProvider non è inizializzato
         }
 
-        if (hasInitialized) {
-          console.log("⏭️ [LOAD] Già inizializzato, skip");
+        if (hasInitialized && lastLoadedAuthNonceRef.current === authReloadNonce) {
+          console.log("⏭️ [LOAD] Già inizializzato per questo authReloadNonce, skip");
           return;
         }
 
@@ -1147,6 +1152,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
         setIsLoading(false);
         setHasInitialized(true); // Marca come inizializzato
+        lastLoadedAuthNonceRef.current = authReloadNonce;
       } catch (err) {
         console.error("❌ Errore caricamento audit da IndexedDB:", err);
         setError("Errore caricamento dati");
@@ -1155,14 +1161,18 @@ export function StorageProvider({ children, useMockData = false }) {
     }
 
     loadAuditsFromIndexedDB();
-  }, [fsProvider, useMockData, fetchAllServerAudits]); // hasInitialized NON deve essere dependency (causa loop)
+  }, [fsProvider, useMockData, fetchAllServerAudits, authReloadNonce]); // authReloadNonce: dopo login forza reload lista
 
   // === RELOAD AUDIT DOPO LOGIN ===
   useEffect(() => {
     const handleLoginSuccess = async () => {
-      if (!fsProvider) return;
       console.log("🔄 [LOGIN] Avvio riconciliazione server/cache...");
-      await reconcileAuditsFromServer({ processQueueFirst: true });
+      if (fsProvider) {
+        await reconcileAuditsFromServer({ processQueueFirst: true });
+      }
+      // Sempre: dopo logout hasInitialized=false ma l'effect di load non riparte da solo;
+      // incrementando authReloadNonce si rifà il download/merge come al primo avvio.
+      setAuthReloadNonce((n) => n + 1);
     };
 
     window.addEventListener('auth:login', handleLoginSuccess);
