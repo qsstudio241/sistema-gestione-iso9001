@@ -1045,6 +1045,17 @@ export function StorageProvider({ children, useMockData = false }) {
           });
           if (staleLocals.length > 0) {
             console.log(`🧹 [CLEANUP] Rimozione ${staleLocals.length} audit stale da IndexedDB (non nel server né draft correnti)`);
+            const staleUuids = staleLocals
+              .map((a) => String(a.metadata?.id || a.id || "").trim())
+              .filter(Boolean);
+            const staleServerIds = staleLocals
+              .map((a) => Number(a?.metadata?.auditId))
+              .filter((n) => Number.isFinite(n) && n > 0);
+            // Pulisce anche la sync queue legata a questi audit, altrimenti il popup logout
+            // continua a mostrare operazioni "non sincronizzate" anche dopo la rimozione lista.
+            await syncService
+              .clearQueueForStaleAudits({ auditUuids: staleUuids, auditIds: staleServerIds })
+              .catch(() => {});
             for (const stale of staleLocals) {
               const sid = stale.metadata?.id || stale.id;
               if (sid && typeof fsProvider.deleteAudit === "function") {

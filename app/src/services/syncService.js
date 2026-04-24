@@ -1012,6 +1012,62 @@ export class SyncService {
     }
 
     /**
+     * Rimuove item di queue legati ad audit stale locali (es. LOCK-* test, bozze residue).
+     * Usa UUID audit e/o audit_id numerico per intercettare payload diversi:
+     * - create/update/delete_audit: payload.audit_uuid
+     * - upload/save responses: payload.auditId / payload.audit_id
+     *
+     * @param {{ auditUuids?: string[], auditIds?: number[] }} refs
+     * @returns {Promise<number>} Numero item rimossi
+     */
+    async clearQueueForStaleAudits(refs = {}) {
+        const uuidSet = new Set((refs.auditUuids || []).map((u) => String(u).trim()).filter(Boolean));
+        const idSet = new Set(
+            (refs.auditIds || [])
+                .map((n) => Number(n))
+                .filter((n) => Number.isFinite(n) && n > 0),
+        );
+        if (uuidSet.size === 0 && idSet.size === 0) return 0;
+
+        try {
+            const db = await this.init();
+            const transaction = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+            const store = transaction.objectStore(SYNC_QUEUE_STORE);
+            const items = await new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            let removedCount = 0;
+            for (const item of items) {
+                const payload = item?.payload || {};
+                const auditUuid = payload.audit_uuid || payload.auditUuid || null;
+                const auditIdRaw = payload.auditId ?? payload.audit_id ?? null;
+                const auditId = Number(auditIdRaw);
+
+                const matchUuid = auditUuid && uuidSet.has(String(auditUuid).trim());
+                const matchId = Number.isFinite(auditId) && auditId > 0 && idSet.has(auditId);
+                if (!matchUuid && !matchId) continue;
+
+                if (payload.blobKey) {
+                    await this.deleteBlobFromStore(payload.blobKey).catch(() => {});
+                }
+                await this.removeFromQueue(item.id);
+                removedCount++;
+            }
+
+            if (removedCount > 0) {
+                console.log(`🧹 [SYNC] Rimossi ${removedCount} item queue legati ad audit stale`);
+            }
+            return removedCount;
+        } catch (error) {
+            console.warn('⚠️ [SYNC] clearQueueForStaleAudits fallito (non bloccante):', error.message);
+            return 0;
+        }
+    }
+
+    /**
      * Conta item in queue (tutti, inclusi stalled).
      */
     async getQueueSize() {
