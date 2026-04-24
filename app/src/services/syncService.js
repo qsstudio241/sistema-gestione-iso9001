@@ -179,6 +179,18 @@ export class SyncService {
                     // altrimenti la console viene inondata di AUDIT_LOCK_REQUIRED.
                     continue;
                 }
+                // Fallback: salta anche item con lastError che indica lock perso (es. item pre-fix senza isStalled)
+                const lastErr = String(item?.lastError || '');
+                if (/AUDIT_LOCK_REQUIRED|sessione di lock/i.test(lastErr)) {
+                    // Marca retroattivamente come stalled per evitare log futuri
+                    if (!item.isStalled) {
+                        item.isStalled = true;
+                        item.retryCount = Math.max(item.retryCount || 0, 5);
+                        const txUpd = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                        txUpd.objectStore(SYNC_QUEUE_STORE).put(item);
+                    }
+                    continue;
+                }
                 try {
                     await this.syncItem(item);
                     await this.removeFromQueue(item.id);
@@ -409,20 +421,14 @@ export class SyncService {
             // FIX: usa error.status/code (fetch-based ApiError), NON error.response (Axios-style)
             if (error.status === 409 && error.code === 'AUDIT_CONFLICT') {
                 const auditUuid = auditData.audit_uuid || auditData.id;
-                console.warn('⚠️ [SYNC] Conflict server-wins per audit:', auditUuid);
+                console.debug('[SYNC] Conflict server-wins per audit:', auditUuid);
 
-                const serverData = error.data?.serverData; // error.data preserva il body completo del 409
+                const serverData = error.data?.serverData;
                 if (serverData?.audit_id) {
-                    // Aggiorna sync_metadata locale
                     await this.updateSyncMetadataLocal('audit', auditUuid, serverData.audit_id);
-
-                    // Memorizza server updated_at → evita conflict ciclici nei sync futuri
                     if (serverData.updated_at) {
                         localStorage.setItem(`sgq_srv_ts_${auditUuid}`, serverData.updated_at);
-                        console.log(`📌 [SYNC] Server updated_at memorizzato per ${auditUuid}: ${serverData.updated_at}`);
                     }
-
-                    // Server-wins: rimuovi dalla queue senza errore
                     return {
                         data: {
                             action: 'server_wins',
@@ -432,8 +438,15 @@ export class SyncService {
                     };
                 }
 
-                // serverData mancante: usa resolveConflict tradizionale
-                return await this.resolveConflict(auditData);
+                // serverData mancante: accetta server-wins e memorizza timestamp corrente
+                // per evitare conflict ciclici (meglio che richiamare resolveConflict che può fallire).
+                localStorage.setItem(`sgq_srv_ts_${auditUuid}`, new Date().toISOString());
+                return {
+                    data: {
+                        action: 'server_wins',
+                        message: 'Server più recente (serverData non disponibile), versione server mantenuta'
+                    }
+                };
             }
             throw error;
         }

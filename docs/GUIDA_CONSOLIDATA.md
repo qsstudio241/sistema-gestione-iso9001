@@ -649,6 +649,26 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 ---
 
+### Chiusura sessione 24 aprile 2026 (sera)
+
+**Hardening sync queue e console noise (commit corrente + deploy Netlify):**
+
+Problema residuo della sessione precedente: al login/logout/refresh, la console mostrava decine di warning `AUDIT_LOCK_REQUIRED` e `Conflict server-wins` in loop. Causa: tre meccanismi interagenti.
+
+- **Loop `auditsToUploadRichData`**: la migrazione dati ricchi (generalData, auditObjective, auditOutcome) ri-accodava `update_audit` ad ogni load perché il list endpoint `/audits` non restituisce quei campi → condizione sempre vera. Fix: `richDataMigrationDoneRef` (Set per sessione) impedisce ri-accodamento dello stesso UUID (`StorageContext.jsx`).
+- **409 conflict senza serverData**: quando il server rispondeva 409 ma `serverData.audit_id` era assente, il fallback `resolveConflict()` poteva fallire. Fix: accetta server-wins silenziosamente e salva timestamp corrente (`syncService.js`).
+- **Item pre-fix senza flag `isStalled`**: item nella coda creati prima del deploy con `lastError` contenente `AUDIT_LOCK_REQUIRED` non avevano il flag `isStalled`. Fix: `processQueue` ora controlla anche `lastError` via regex e marca retroattivamente (`syncService.js`).
+- **Log ridotti**: `console.warn` → `console.debug` per i conflict server-wins (non sono errori).
+
+File modificati: `app/src/contexts/StorageContext.jsx`, `app/src/services/syncService.js`.
+
+**Stato pendente per prossima sessione:**
+1. **Smoke test allegati**: upload PDF, upload foto, verifica link cliccabile nel Word, verifica foto incorporata nel Word export.
+2. Verificare console pulita dopo hard refresh (Ctrl+Shift+R).
+3. Warning `⚠️ Domanda qclause4_X validazione` e `aria-hidden` → non bloccanti, valutare fix cosmetico.
+
+---
+
 ### Chiusura sessione 24 aprile 2026
 
 **Bug critico risolto — Audit cancellati che ricompaiono nel menu (commit `b3961f5`):**

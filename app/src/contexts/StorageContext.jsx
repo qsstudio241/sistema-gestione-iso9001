@@ -332,6 +332,9 @@ export function StorageProvider({ children, useMockData = false }) {
   const fetchAndApplyLastRunRef = useRef({});
   // Fix delete: Set degli audit appena eliminati — il reconcile NON deve ripristinarli dalla cache locale.
   const recentlyDeletedRef = useRef(new Set());
+  // Guard per-sessione: evita di ri-accodare update_audit per rich-data migration
+  // sullo stesso UUID più di una volta nella stessa sessione browser.
+  const richDataMigrationDoneRef = useRef(new Set());
 
   // Audit corrente (computed) - supporta sia metadata.id che id top-level
   const currentAudit =
@@ -1136,27 +1139,38 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
         
-        // Carica i campi ricchi sul server per gli audit che lo richiedono (migrazione dati)
+        // Migrazione campi ricchi verso server: tentata UNA volta per UUID per sessione.
+        // Il list endpoint /audits non restituisce generalData/auditObjective/auditOutcome,
+        // quindi senza guard la condizione hasRichDataLocal && !hasRichDataServer è sempre vera
+        // e provoca loop infiniti (enqueue → 409 conflict → ri-enqueue al prossimo load).
         if (auditsToUploadRichData.length > 0) {
-          console.log(`📤 [MIGRATE] Sincronizzazione campi ricchi verso server per ${auditsToUploadRichData.length} audit...`);
-          for (const a of auditsToUploadRichData) {
-            syncService.enqueue("update_audit", {
-              audit_uuid: a.metadata?.id || a.id,
-              audit_number: a.metadata?.auditNumber,
-              client_name: a.metadata?.clientName,
-              company_id: a.metadata?.companyId ?? null,
-              audit_party_type: a.metadata?.auditPartyType ?? 'first_party',
-              fornitore_name: a.metadata?.fornitoreName ?? '',
-              project_year: a.metadata?.projectYear,
-              audit_date: a.metadata?.auditDate,
-              auditor_name: a.metadata?.auditorName,
-              audit_type: a.metadata?.auditType,
-              status: a.metadata?.status,
-              updated_at: new Date().toISOString(),
-              generalData: a.metadata?.generalData ?? a.generalData,
-              auditObjective: a.metadata?.auditObjective ?? a.auditObjective,
-              auditOutcome: a.metadata?.auditOutcome ?? a.auditOutcome,
-            }).catch(() => {});
+          const newMigrations = auditsToUploadRichData.filter((a) => {
+            const uuid = a.metadata?.id || a.id;
+            return uuid && !richDataMigrationDoneRef.current.has(uuid);
+          });
+          if (newMigrations.length > 0) {
+            console.log(`📤 [MIGRATE] Sincronizzazione campi ricchi verso server per ${newMigrations.length} audit...`);
+            for (const a of newMigrations) {
+              const uuid = a.metadata?.id || a.id;
+              richDataMigrationDoneRef.current.add(uuid);
+              syncService.enqueue("update_audit", {
+                audit_uuid: uuid,
+                audit_number: a.metadata?.auditNumber,
+                client_name: a.metadata?.clientName,
+                company_id: a.metadata?.companyId ?? null,
+                audit_party_type: a.metadata?.auditPartyType ?? 'first_party',
+                fornitore_name: a.metadata?.fornitoreName ?? '',
+                project_year: a.metadata?.projectYear,
+                audit_date: a.metadata?.auditDate,
+                auditor_name: a.metadata?.auditorName,
+                audit_type: a.metadata?.auditType,
+                status: a.metadata?.status,
+                updated_at: new Date().toISOString(),
+                generalData: a.metadata?.generalData ?? a.generalData,
+                auditObjective: a.metadata?.auditObjective ?? a.auditObjective,
+                auditOutcome: a.metadata?.auditOutcome ?? a.auditOutcome,
+              }).catch(() => {});
+            }
           }
         }
 
