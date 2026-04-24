@@ -394,11 +394,15 @@ export default function UsersAdminPage({ onBack }) {
               }
             >
               <option value="">— Nessuno —</option>
-              {auditorOrgs.map((ao) => (
-                <option key={ao.id} value={String(ao.id)}>
-                  {ao.name}
-                </option>
-              ))}
+              {auditorOrgs
+                .filter((ao) =>
+                  !user?.organization_id || ao.organization_id === user.organization_id
+                )
+                .map((ao) => (
+                  <option key={ao.id} value={String(ao.id)}>
+                    {ao.name}
+                  </option>
+                ))}
             </select>
             {isOrphanAuditor(createForm.role, createForm.auditor_org_id) && (
               <p className="form-hint warn">
@@ -532,11 +536,15 @@ export default function UsersAdminPage({ onBack }) {
                       disabled={!active || savingId === u.user_id}
                     >
                       <option value="">— Nessuno —</option>
-                      {auditorOrgs.map((ao) => (
-                        <option key={ao.id} value={String(ao.id)}>
-                          {ao.name}
-                        </option>
-                      ))}
+                      {auditorOrgs
+                        .filter((ao) =>
+                          !u.organization_id || ao.organization_id === u.organization_id
+                        )
+                        .map((ao) => (
+                          <option key={ao.id} value={String(ao.id)}>
+                            {ao.name}
+                          </option>
+                        ))}
                     </select>
                     {isOrphanAuditor(ef.role, ef.auditor_org_id) && (
                       <p className="form-hint warn">

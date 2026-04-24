@@ -14,10 +14,22 @@ const logger = require('../utils/logger');
 async function listAuditorOrgs(req, res) {
     try {
         const { organization_id, auditor_org_id, role } = req.user;
-        const isOrgWideAdmin = (role === 'admin' || role === 'superadmin') && !auditor_org_id;
+        const isSuperadmin   = role === 'superadmin';
+        const isOrgWideAdmin = role === 'admin' && !auditor_org_id;
 
         let result;
-        if (isOrgWideAdmin) {
+        if (isSuperadmin) {
+            // Superadmin (piattaforma): vede tutti gli studi di tutti i tenant
+            // — serve per assegnare correttamente gli auditor cross-tenant dalla UI
+            result = await query(`
+                SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
+                       o.organization_name
+                FROM auditor_orgs ao
+                INNER JOIN organizations o ON ao.organization_id = o.organization_id
+                ORDER BY o.organization_name, ao.name
+            `, {});
+        } else if (isOrgWideAdmin) {
+            // Admin org (senza studio): vede solo i studi del proprio tenant
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
                        o.organization_name
