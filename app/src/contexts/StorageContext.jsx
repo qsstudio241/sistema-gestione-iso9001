@@ -293,6 +293,38 @@ export function StorageProvider({ children, useMockData = false }) {
   const lockWriteWarnTsRef = useRef(0);
   const lockSyncWarnTsRef = useRef(0);
 
+  const demoteOwnerLockOnHeartbeatFailure = useCallback((reason = "") => {
+    if (lockHeartbeatRef.current) {
+      clearInterval(lockHeartbeatRef.current);
+      lockHeartbeatRef.current = null;
+    }
+    const u = lockUuidRef.current;
+    const numericId = lockNumericAuditIdRef.current;
+    if (u) {
+      setAuditLockTokensForAudit(u, numericId, null);
+    }
+    lockTokenRef.current = null;
+    lockUuidRef.current = null;
+    lockNumericAuditIdRef.current = null;
+
+    if (!navigator.onLine) {
+      setAuditLock({
+        mode: "offline",
+        lockedByName: null,
+        message:
+          "Connessione assente: lock server non rinnovabile. Riapri l'audit quando torni online.",
+      });
+      return;
+    }
+    setAuditLock({
+      mode: "pending_server",
+      lockedByName: null,
+      message:
+        reason ||
+        "Sessione lock non più valida. Riapri l'audit o attendi la riacquisizione automatica del lock.",
+    });
+  }, []);
+
   // Bug 5: ref stabile per currentAuditId (accessibile da callback senza stale closure)
   const currentAuditIdRef = useRef(null);
   useEffect(() => { currentAuditIdRef.current = currentAuditId; }, [currentAuditId]);
@@ -382,6 +414,7 @@ export function StorageProvider({ children, useMockData = false }) {
           const hb = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
               console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+              demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
           lockHeartbeatRef.current = hb;
@@ -468,7 +501,10 @@ export function StorageProvider({ children, useMockData = false }) {
           lockNumericAuditIdRef.current = numericId;
           setAuditLock({ mode: "owner", lockedByName: null, message: null });
           lockHeartbeatRef.current = setInterval(() => {
-            apiService.renewAuditLock(uuid).catch(() => {});
+            apiService.renewAuditLock(uuid).catch((e) => {
+              console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+              demoteOwnerLockOnHeartbeatFailure(e?.message);
+            });
           }, 60 * 1000);
           clearInterval(timer);
           syncService.processQueue().catch(() => {});
@@ -576,7 +612,10 @@ export function StorageProvider({ children, useMockData = false }) {
         lockNumericAuditIdRef.current = numericId;
         setAuditLock({ mode: "owner", lockedByName: null, message: null });
         lockHeartbeatRef.current = setInterval(() => {
-          apiService.renewAuditLock(uuid).catch(() => {});
+          apiService.renewAuditLock(uuid).catch((e) => {
+            console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+            demoteOwnerLockOnHeartbeatFailure(e?.message);
+          });
         }, 60 * 1000);
         syncService.processQueue().catch(() => {});
         return { ok: true };
@@ -629,7 +668,7 @@ export function StorageProvider({ children, useMockData = false }) {
         await syncService.processQueue();
 
         // Aggiorna queue size
-        const queueSize = await syncService.getQueueSize();
+        const queueSize = await syncService.getActiveQueueSize();
         setSyncStatus((prev) => ({
           ...prev,
           isSyncing: false,
@@ -2050,7 +2089,7 @@ export function StorageProvider({ children, useMockData = false }) {
       setSyncStatus((prev) => ({ ...prev, isSyncing: true }));
       await syncService.processQueue();
       await reconcileAuditsFromServer({ processQueueFirst: false });
-      const queueSize = await syncService.getQueueSize();
+      const queueSize = await syncService.getActiveQueueSize();
       setSyncStatus((prev) => ({
         ...prev,
         isSyncing: false,
