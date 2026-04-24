@@ -711,9 +711,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 22 aprile 2026
+**Ultimo Aggiornamento**: 24 aprile 2026
 
-### Sequenza priorità aggiornata (22 aprile 2026)
+### Sequenza priorità aggiornata (24 aprile 2026)
 
 | # | Task | Modalità | Stato |
 |---|---|---|---|
@@ -721,6 +721,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P1 | Custom checklist outcome buttons (C/OSS/NC/OM/NV/NA su flag) — migrazione 043, VPS, merge `e1f3c5b` | Deputy | ✅ Completato — Smoke L3 umano da fare |
 | P2 | Sicurezza credenziali: JWT_SECRET fail-fast, login email ambiguo, register prod | Sessione D | ✅ Completato |
 | Bug | Audit cancellati non ricompaiono nel menu dropdown (StorageContext.jsx + recentlyDeletedRef) | Fix mirato | ✅ Completato |
+| Bug | LOCK-* audit ricomparivano tra device — isIntentionalDraft + forceClearLocalCache | Fix mirato | ✅ Completato (24/04) |
 | P3 | **Sprint 0–9** — Navigation, Registry, Alert, Notifiche, Qualifiche, NC, Rischi, Reclami, Licensing, Import PDF | Multi-sessione | ✅ Tutti completati |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog attivo |
 | P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
@@ -728,7 +729,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: attendere conferma **Smoke L3 P1** dall'utente; poi avviare **Sprint 10** (staging → registry). Deputy in parallelo su task Mason.
+**Prossimo Step**: (1) Verificare che i LOCK audit siano spariti aprendo l'app (automatico, ≤ 45 sec). (2) Confermare **Smoke L3 P1**. (3) Poi avviare **Sprint 10** (staging → registry).
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 

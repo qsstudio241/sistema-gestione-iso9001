@@ -649,6 +649,29 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 ---
 
+### Chiusura sessione 24 aprile 2026
+
+**Bug critico risolto — Audit cancellati che ricompaiono nel menu (commit `b3961f5`):**
+
+Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" venivano preservate dal ciclo `reconcileAuditsFromServer` ogni 45 secondi, causando la ricomparsa infinita dei LOCK-* audit e differenze di contenuto tra device diversi.
+
+- **`auditDataModel.js`**: `createNewAudit` aggiunge `isIntentionalDraft: true` a ogni nuova bozza creata dall'utente.
+- **`StorageContext.jsx`**: `filterLocalAuditsAfterServerFetch` ora scarta bozze solo-locali senza `isIntentionalDraft` (= residui di sessioni vecchie / audit di test); nuova funzione `forceClearLocalCache` per reset manuale.
+- **`SyncStatusIndicator.jsx`**: pulsante rosso "🧹 Pulisci cache" per svuotare IndexedDB e riscaricare dal server — disponibile su qualsiasi device.
+- **Test**: 54/54 pass (suite completa). Tutti i LOCK-* audit spariscono al primo reconcile post-deploy (≤ 45 sec).
+
+**Diagnosi cross-device**: confermato che Mason (org 1003) vede solo i propri audit per RBAC (1 audit MANITOU 2026-02); il menu di PS_Admin (org 1001) mostrava in più i LOCK-* test stantii solo-locali, non dati di Mason. Non è un bug di visibilità ma di cache stantia.
+
+**I LOCK audit `LOCK-PUB-1774111423756`, `LOCK-LOCAL-1774111412500`, `LOCK-LOCAL-1774111266631` non esistono nel DB server** — erano solo nell'IndexedDB del browser. Spariscono automaticamente dopo il deploy senza intervento manuale.
+
+**All'inizio della prossima sessione:**
+1. Aprire l'app sul proprio PC e su quello di Mason — i LOCK spariscono entro 45 sec.
+2. Se si vuole forzare subito: cliccare "🧹 Pulisci cache" nel pannello sync.
+3. Verificare **Smoke L3 P1** (checklist custom con pulsanti esito) se non ancora completato.
+4. Decidere se procedere con **Sprint 10** (staging → document registry) o altro.
+
+---
+
 ### Chiusura sessione 20 aprile 2026
 
 **Hardening audit visibility multi-tenant (commit `30fb6c0`):**
