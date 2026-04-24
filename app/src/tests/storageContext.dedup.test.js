@@ -81,6 +81,9 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
         const aid = la.metadata?.auditId;
         const hasServerNumericId = aid != null && aid !== '' && Number.isFinite(Number(aid)) && Number(aid) > 0;
         if (hasServerNumericId) return false;
+        // Bozza solo-locale: conserva SOLO se contrassegnata come intenzionale.
+        // Flag isIntentionalDraft=true è aggiunto da createNewAudit da aprile 2026.
+        if (la.metadata?.isIntentionalDraft !== true) return false;
         return true;
     });
 }
@@ -152,11 +155,17 @@ describe('filterLocalAuditsAfterServerFetch', () => {
         expect(filterLocalAuditsAfterServerFetch(local, [serverAudit])).toHaveLength(0);
     });
 
-    test('bozza locale senza auditId → mantenuta (offline draft)', () => {
-        const draft = { metadata: { id: 'local-only-uuid' } };
+    test('bozza locale senza auditId con isIntentionalDraft=true → mantenuta (offline draft)', () => {
+        const draft = { metadata: { id: 'local-only-uuid', isIntentionalDraft: true } };
         const result = filterLocalAuditsAfterServerFetch([draft], [serverAudit]);
         expect(result).toHaveLength(1);
         expect(result[0].metadata.id).toBe('local-only-uuid');
+    });
+
+    test('bozza locale senza isIntentionalDraft → rimossa (residuo stantio/LOCK audit)', () => {
+        const stale = { metadata: { id: 'LOCK-PUB-123' } };
+        const result = filterLocalAuditsAfterServerFetch([stale], [serverAudit]);
+        expect(result).toHaveLength(0);
     });
 
     test('audit locale con auditId numerico non nel server → rimosso (obsoleto)', () => {
@@ -190,8 +199,8 @@ describe('filterLocalAuditsAfterServerFetch', () => {
     // Il filtro puro non può saperlo (non ha l'auditId). La protezione è nel recentlyDeletedRef
     // dentro reconcileAuditsFromServer (StorageContext). Questo test documenta il contrario:
     // una bozza senza auditId che NON è stata eliminata viene mantenuta correttamente.
-    test('bozza senza auditId NON eliminata → rimane nella lista locale', () => {
-        const bozza = { metadata: { id: 'uuid-bozza-attiva' } };
+    test('bozza con isIntentionalDraft=true NON eliminata → rimane nella lista locale', () => {
+        const bozza = { metadata: { id: 'uuid-bozza-attiva', isIntentionalDraft: true } };
         const result = filterLocalAuditsAfterServerFetch([bozza], []);
         expect(result).toHaveLength(1);
     });

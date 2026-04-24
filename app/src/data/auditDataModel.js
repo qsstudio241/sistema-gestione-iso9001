@@ -261,6 +261,7 @@ export function createNewAudit(metadata) {
             areaAuditata: metadata.areaAuditata || '',
             createdAt: new Date().toISOString(),
             lastModified: new Date().toISOString(),
+            isIntentionalDraft: true,
             fsConnected: false,
             fsRootPath: null,
 

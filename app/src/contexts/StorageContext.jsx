@@ -219,6 +219,12 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
       Number(aid) > 0;
     if (hasServerNumericId) return false;
 
+    // Bozza solo-locale: conserva SOLO se contrassegnata come intenzionale.
+    // Flag isIntentionalDraft=true è aggiunto da createNewAudit da aprile 2026.
+    // Bozze/residui da sessioni precedenti senza flag vengono rimossi al reconcile successivo,
+    // impedendo che test/LOCK-* tornino a comparire indefinitamente.
+    if (la.metadata?.isIntentionalDraft !== true) return false;
+
     return true;
   });
 }
@@ -2006,6 +2012,39 @@ export function StorageProvider({ children, useMockData = false }) {
   }, [reconcileAuditsFromServer]);
 
   /**
+   * Svuota la cache locale (IndexedDB) e risincronizza dal server.
+   * Utile quando il menu a tendina mostra audit obsoleti o duplicati
+   * che non esistono più sul server.
+   */
+  const forceClearLocalCache = useCallback(async () => {
+    if (!navigator.onLine) {
+      return { success: false, error: 'Offline: impossibile risincronizzare' };
+    }
+    try {
+      setSyncStatus((prev) => ({ ...prev, isSyncing: true }));
+      if (fsProvider && typeof fsProvider.clearAuditsStore === 'function') {
+        await fsProvider.clearAuditsStore();
+        console.log('🧹 [CACHE] IndexedDB svuotato');
+      }
+      // Rimuovi tombstone stantio per ripartire da zero
+      try { localStorage.removeItem(TOMBSTONE_KEY); } catch {}
+      // Ricarica solo da server
+      await reconcileAuditsFromServer({ processQueueFirst: false });
+      setSyncStatus((prev) => ({
+        ...prev,
+        isSyncing: false,
+        lastSync: new Date().toISOString(),
+      }));
+      console.log('✅ [CACHE] Cache locale ripulita e risincronizzata');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ [CACHE] Errore durante pulizia cache:', error);
+      setSyncStatus((prev) => ({ ...prev, isSyncing: false }));
+      return { success: false, error: error.message };
+    }
+  }, [fsProvider, reconcileAuditsFromServer]);
+
+  /**
    * Risolvi conflitto manualmente (scelta utente)
    */
   const resolveConflict = useCallback((choice) => {
@@ -2051,6 +2090,7 @@ export function StorageProvider({ children, useMockData = false }) {
     // Sync status
     syncStatus,
     triggerManualSync,
+    forceClearLocalCache,
     resolveConflict,
 
     // Lock audit (server)

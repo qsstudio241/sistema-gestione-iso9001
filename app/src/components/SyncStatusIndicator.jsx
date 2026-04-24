@@ -3,11 +3,12 @@
  * Mostra stato sincronizzazione e conflict dialog
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { useStorage } from "../contexts/StorageContext";
 
 export function SyncStatusIndicator() {
-  const { syncStatus, triggerManualSync, resolveConflict } = useStorage();
+  const { syncStatus, triggerManualSync, forceClearLocalCache, resolveConflict } = useStorage();
+  const [isClearing, setIsClearing] = useState(false);
 
   const handleManualSync = async () => {
     const result = await triggerManualSync();
@@ -18,12 +19,28 @@ export function SyncStatusIndicator() {
     }
   };
 
+  const handleClearCache = async () => {
+    if (!window.confirm(
+      'Questa operazione svuota la cache locale e riscarica i dati dal server.\n' +
+      'Usa questa funzione se vedi audit cancellati o duplicati nel menu.\n\n' +
+      'Continuare?'
+    )) return;
+    setIsClearing(true);
+    const result = await forceClearLocalCache();
+    setIsClearing(false);
+    if (result.success) {
+      alert('Cache locale ripulita. Il menu ora mostra solo i dati aggiornati dal server.');
+    } else {
+      alert(`Errore durante la pulizia: ${result.error}`);
+    }
+  };
+
   return (
     <div className="sync-status-indicator">
       {/* Indicator badge */}
       <div className="sync-badge">
-        {syncStatus.isSyncing ? (
-          <span className="syncing">🔄 Sincronizzazione...</span>
+        {syncStatus.isSyncing || isClearing ? (
+          <span className="syncing">🔄 {isClearing ? 'Pulizia in corso...' : 'Sincronizzazione...'}</span>
         ) : syncStatus.queueSize > 0 ? (
           <span
             className="pending"
@@ -46,11 +63,22 @@ export function SyncStatusIndicator() {
       {/* Manual sync button */}
       <button
         onClick={handleManualSync}
-        disabled={syncStatus.isSyncing || !navigator.onLine}
+        disabled={syncStatus.isSyncing || isClearing || !navigator.onLine}
         className="btn-sync-manual"
         title="Forza sincronizzazione manuale"
       >
         🔄 Sync
+      </button>
+
+      {/* Clear local cache button */}
+      <button
+        onClick={handleClearCache}
+        disabled={syncStatus.isSyncing || isClearing || !navigator.onLine}
+        className="btn-sync-manual"
+        style={{ marginLeft: '4px', background: '#e74c3c' }}
+        title="Svuota cache locale e riscarica dal server (usa se vedi audit cancellati o duplicati)"
+      >
+        🧹 Pulisci cache
       </button>
 
       {/* Conflict dialog */}
