@@ -1022,13 +1022,35 @@ export function StorageProvider({ children, useMockData = false }) {
             })
           : localAudits;
 
-        // Includi audit solo locali (non ancora sul server) nella lista finale
+        // Includi audit solo locali (non ancora sul server) nella lista finale.
+        // Gli audit locali NON inclusi nel merge (stale, senza isIntentionalDraft, o tombstoned)
+        // vengono eliminati da IndexedDB per evitare che riemergano al prossimo reload.
         let finalAudits = mergedAudits;
-        if (serverAudits.length > 0 && mergedAudits.length > 0) {
+        if (serverAudits.length > 0) {
           const localOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
           if (localOnly.length > 0) {
             finalAudits = [...mergedAudits, ...localOnly];
             console.log(`📋 [MERGE] Aggiunti ${localOnly.length} audit solo locali (bozze senza auditId server) alla lista`);
+          }
+
+          // Pulizia bozze stale da IndexedDB: audit locali che il server non ha restituito
+          // E non sono stati inclusi nel merge come draft intentionali.
+          // Impedisce che LOCK-*, ZZ_TEST_* e residui di sessioni precedenti ricompaiano.
+          const finalIds = new Set(
+            finalAudits.map((a) => String(a.metadata?.id || a.id)).filter(Boolean)
+          );
+          const staleLocals = localAudits.filter((la) => {
+            const lid = String(la.metadata?.id || la.id || "");
+            return lid && !finalIds.has(lid);
+          });
+          if (staleLocals.length > 0) {
+            console.log(`🧹 [CLEANUP] Rimozione ${staleLocals.length} audit stale da IndexedDB (non nel server né draft correnti)`);
+            for (const stale of staleLocals) {
+              const sid = stale.metadata?.id || stale.id;
+              if (sid && typeof fsProvider.deleteAudit === "function") {
+                fsProvider.deleteAudit(sid).catch(() => {});
+              }
+            }
           }
         }
 
