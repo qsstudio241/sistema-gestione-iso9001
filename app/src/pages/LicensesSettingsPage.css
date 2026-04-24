@@ -216,3 +216,30 @@
 .licenses-org-msg {
   margin: 0.75rem 0 0;
 }
+
+/* Vista sola lettura per admin non-superadmin */
+.licenses-list-readonly li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.licenses-list-readonly li.license-inactive {
+  opacity: 0.45;
+}
+
+.license-status-badge {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.license-inactive .license-status-badge {
+  background: #f3f4f6;
+  color: #6b7280;
+}

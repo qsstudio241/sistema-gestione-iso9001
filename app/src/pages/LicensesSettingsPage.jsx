@@ -119,7 +119,10 @@ export default function LicensesSettingsPage() {
     }
   }
 
-  const canEditLicenses = user?.role === "admin" || user?.role === "superadmin";
+  // Solo il superadmin (piattaforma) può modificare le licenze;
+  // l'admin dello studio le vede in sola lettura per sapere cosa è abilitato.
+  const canEditLicenses = user?.role === "superadmin";
+  const canViewLicenses = user?.role === "admin" || user?.role === "superadmin";
 
   async function handleSaveOrgVat() {
     setOrgSaving(true);
@@ -172,7 +175,7 @@ export default function LicensesSettingsPage() {
     }
   }
 
-  if (!canEditLicenses) {
+  if (!canViewLicenses) {
     return (
       <div className="licenses-page">
         <h1>Licenze moduli</h1>
@@ -192,11 +195,18 @@ export default function LicensesSettingsPage() {
   return (
     <div className="licenses-page">
       <h1>Licenze moduli</h1>
-      <p className="licenses-intro">
-        Seleziona quali moduli sono attivi per la tua organizzazione. Il modulo <strong>Audit</strong> resta
-        sempre abilitato. Valore vuoto sul database significa &quot;tutti i moduli&quot; (compatibilità con
-        installazioni esistenti).
-      </p>
+      {canEditLicenses ? (
+        <p className="licenses-intro">
+          Seleziona quali moduli sono attivi per la tua organizzazione. Il modulo <strong>Audit</strong> resta
+          sempre abilitato. Valore vuoto sul database significa &quot;tutti i moduli&quot; (compatibilità con
+          installazioni esistenti).
+        </p>
+      ) : (
+        <p className="licenses-intro">
+          Moduli attivi per la tua organizzazione (sola lettura). Per modificare le licenze contatta
+          l&apos;amministratore della piattaforma.
+        </p>
+      )}
 
       {error && <p className="licenses-error">{error}</p>}
       {message && <p className="licenses-ok">{message}</p>}
@@ -253,42 +263,58 @@ export default function LicensesSettingsPage() {
         {orgMessage && <p className="licenses-ok licenses-org-msg">{orgMessage}</p>}
       </section>
 
-      <label className="licenses-defaults">
-        <input
-          type="checkbox"
-          checked={useDefaults}
-          onChange={(e) => setUseDefaults(e.target.checked)}
-        />
-        Usa impostazione predefinita (tutti i moduli disponibili)
-      </label>
+      {canEditLicenses ? (
+        <>
+          <label className="licenses-defaults">
+            <input
+              type="checkbox"
+              checked={useDefaults}
+              onChange={(e) => setUseDefaults(e.target.checked)}
+            />
+            Usa impostazione predefinita (tutti i moduli disponibili)
+          </label>
 
-      {!useDefaults && (
-        <ul className="licenses-list">
+          {!useDefaults && (
+            <ul className="licenses-list">
+              {available.map(({ key, label }) => (
+                <li key={key}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(key)}
+                      disabled={key === "audit"}
+                      onChange={() => toggle(key)}
+                    />
+                    <span className="licenses-key">{key}</span>
+                    <span className="licenses-label">{label}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="licenses-actions">
+            <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? "Salvataggio…" : "Salva"}
+            </button>
+            <button type="button" className="btn-secondary" onClick={load} disabled={saving}>
+              Annulla modifiche locali
+            </button>
+          </div>
+        </>
+      ) : (
+        <ul className="licenses-list licenses-list-readonly">
           {available.map(({ key, label }) => (
-            <li key={key}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selected.has(key)}
-                  disabled={key === "audit"}
-                  onChange={() => toggle(key)}
-                />
-                <span className="licenses-key">{key}</span>
-                <span className="licenses-label">{label}</span>
-              </label>
+            <li key={key} className={selected.has(key) ? "license-active" : "license-inactive"}>
+              <span className="licenses-key">{key}</span>
+              <span className="licenses-label">{label}</span>
+              <span className="license-status-badge">
+                {selected.has(key) ? "✓ Attivo" : "— Non attivo"}
+              </span>
             </li>
           ))}
         </ul>
       )}
-
-      <div className="licenses-actions">
-        <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? "Salvataggio…" : "Salva"}
-        </button>
-        <button type="button" className="btn-secondary" onClick={load} disabled={saving}>
-          Annulla modifiche locali
-        </button>
-      </div>
     </div>
   );
 }
