@@ -178,4 +178,48 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         expect(imageRegistry[0].ext).toBe("jpg");
         expect(xml).toContain("<w:drawing>");
     });
+
+    it("foto embedded: imgId univoci nel documento OOXML con più allegati", () => {
+        const imageRegistry = [];
+        buildChecklistSectionOoxml(
+            {
+                ISO_9001: {
+                    s1: {
+                        questions: [
+                            { questionId: 701, status: "C", text: "Domanda A" },
+                            { questionId: 702, status: "NC", text: "Domanda B" },
+                        ],
+                    },
+                },
+            },
+            [
+                {
+                    questionId: 701,
+                    fileName: "foto1.jpg",
+                    serverAttachmentId: 70101,
+                    mimeType: "image/jpeg",
+                    imageBase64: "data:image/jpeg;base64,AAA",
+                },
+                {
+                    questionId: 702,
+                    fileName: "foto2.png",
+                    serverAttachmentId: 70201,
+                    mimeType: "image/png",
+                    imageBase64: "data:image/png;base64,BBB",
+                },
+            ],
+            [],
+            (id) => `https://api.example.test/attachments/${id}/view`,
+            { photoMode: "preview" },
+            imageRegistry,
+            [],
+            {}
+        );
+
+        expect(imageRegistry.length).toBeGreaterThanOrEqual(2);
+        const imgIds = imageRegistry.map((r) => r.imgId);
+        const rIds   = imageRegistry.map((r) => r.rId);
+        expect(new Set(imgIds).size).toBe(imgIds.length);
+        expect(new Set(rIds).size).toBe(rIds.length);
+    });
 });
