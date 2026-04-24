@@ -243,33 +243,56 @@ async function assertWriteAllowed(reqUser, auditIdNumeric, lockTokenHeader) {
     const holder = await query(`SELECT full_name, email FROM users WHERE user_id = @id`, { id: row.user_id });
     const holderName = holder.recordset?.[0]?.full_name || holder.recordset?.[0]?.email || `Utente #${row.user_id}`;
 
+    const isSameUser = row.user_id === reqUser.user_id;
+
     if (!token) {
+        // Distingui: lock di un ALTRO utente vs lock del PROPRIO utente (token perso dopo refresh).
+        // Il messaggio "attendi il rilascio" è corretto solo se è un altro utente.
+        if (isSameUser) {
+            return {
+                ok: false,
+                status: 423,
+                code: 'AUDIT_LOCK_REQUIRED',
+                message: 'La tua sessione di lock è scaduta o non è stata riconosciuta. Riapri l\'audit per continuare a modificarlo.',
+                locked_by_name: holderName,
+            };
+        }
         return {
             ok: false,
             status: 423,
             code: 'AUDIT_LOCK_REQUIRED',
-            message: 'Audit bloccato: serve lock attivo. Apri l\'audit da un dispositivo connesso o attendi il rilascio.',
+            message: `Audit in uso da ${holderName}. Attendi che venga rilasciato il lock prima di procedere.`,
             locked_by_name: holderName,
         };
     }
 
     const hash = hashToken(token);
     if (hash !== row.lock_token_hash) {
+        // Anche qui distingui: token sbagliato del proprietario vs token di un intruso.
+        if (isSameUser) {
+            return {
+                ok: false,
+                status: 423,
+                code: 'AUDIT_LOCK_INVALID',
+                message: 'La tua sessione di lock è scaduta. Riapri l\'audit per riacquisire il lock.',
+                locked_by_name: holderName,
+            };
+        }
         return {
             ok: false,
             status: 423,
             code: 'AUDIT_LOCK_INVALID',
-            message: 'Lock non valido o sessione scaduta. Ricarica la pagina per riacquisire il lock.',
+            message: `Audit bloccato da ${holderName}. Token non valido.`,
             locked_by_name: holderName,
         };
     }
 
-    if (row.user_id !== reqUser.user_id) {
+    if (!isSameUser) {
         return {
             ok: false,
             status: 423,
             code: 'AUDIT_LOCKED',
-            message: 'Audit in modifica da un altro utente',
+            message: `Audit in modifica da ${holderName}. Attendi il rilascio.`,
             locked_by_name: holderName,
         };
     }
