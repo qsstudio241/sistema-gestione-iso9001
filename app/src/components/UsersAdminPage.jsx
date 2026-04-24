@@ -34,6 +34,11 @@ function emptyEditForm(u) {
   };
 }
 
+/** Un auditor senza studio assegnato è "orfano" — configurazione incompleta */
+function isOrphanAuditor(role, auditor_org_id) {
+  return role === "auditor" && (auditor_org_id == null || auditor_org_id === "");
+}
+
 export default function UsersAdminPage({ onBack }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
@@ -375,7 +380,12 @@ export default function UsersAdminPage({ onBack }) {
             </select>
           </div>
           <div className="form-row">
-            <label htmlFor="create-ao">Studio (auditor org)</label>
+            <label htmlFor="create-ao">
+              Studio (auditor org)
+              {createForm.role === "auditor" && (
+                <span className="field-required"> *obbligatorio per Auditor</span>
+              )}
+            </label>
             <select
               id="create-ao"
               value={createForm.auditor_org_id}
@@ -390,6 +400,11 @@ export default function UsersAdminPage({ onBack }) {
                 </option>
               ))}
             </select>
+            {isOrphanAuditor(createForm.role, createForm.auditor_org_id) && (
+              <p className="form-hint warn">
+                Un Auditor deve appartenere a uno studio: seleziona uno studio per continuare.
+              </p>
+            )}
           </div>
           {!elevatedAdmin && createForm.role === "admin" && (
             <p className="form-hint warn">
@@ -400,7 +415,11 @@ export default function UsersAdminPage({ onBack }) {
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={createSubmitting || (!elevatedAdmin && createForm.role === "admin")}
+            disabled={
+              createSubmitting ||
+              (!elevatedAdmin && createForm.role === "admin") ||
+              isOrphanAuditor(createForm.role, createForm.auditor_org_id)
+            }
           >
             {createSubmitting ? "Creazione..." : "Crea utente"}
           </button>
@@ -439,10 +458,16 @@ export default function UsersAdminPage({ onBack }) {
                   {!active && (
                     <span className="user-status-badge inactive">Disattivato</span>
                   )}
-                  {u.auditor_org_name && (
+                  {u.auditor_org_name ? (
                     <span className="user-studio">
                       Studio: {u.auditor_org_name}
                     </span>
+                  ) : (
+                    u.role === "auditor" && (
+                      <span className="user-status-badge orphan-auditor" title="Auditor senza studio: configurazione incompleta">
+                        ⚠ Studio mancante
+                      </span>
+                    )
                   )}
                 </div>
 
@@ -493,7 +518,12 @@ export default function UsersAdminPage({ onBack }) {
                     </p>
                   )}
                   <div className="form-row compact">
-                    <label>Studio</label>
+                    <label>
+                      Studio
+                      {ef.role === "auditor" && (
+                        <span className="field-required"> *obbligatorio</span>
+                      )}
+                    </label>
                     <select
                       value={ef.auditor_org_id}
                       onChange={(e) =>
@@ -508,6 +538,11 @@ export default function UsersAdminPage({ onBack }) {
                         </option>
                       ))}
                     </select>
+                    {isOrphanAuditor(ef.role, ef.auditor_org_id) && (
+                      <p className="form-hint warn">
+                        Un Auditor deve appartenere a uno studio: assegna uno studio prima di salvare.
+                      </p>
+                    )}
                   </div>
                   <div className="form-row compact">
                     <label>Nuova password (opzionale)</label>
@@ -526,7 +561,11 @@ export default function UsersAdminPage({ onBack }) {
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
-                      disabled={!active || savingId === u.user_id}
+                      disabled={
+                        !active ||
+                        savingId === u.user_id ||
+                        isOrphanAuditor(ef.role, ef.auditor_org_id)
+                      }
                       onClick={() => saveUserProfile(u)}
                     >
                       {savingId === u.user_id ? "Salvataggio..." : "Salva dati utente"}

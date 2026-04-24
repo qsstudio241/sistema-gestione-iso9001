@@ -299,3 +299,19 @@
 .error-message {
   color: #c00;
 }
+
+/* Badge auditor senza studio (configurazione incompleta) */
+.user-status-badge.orphan-auditor {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  font-weight: 600;
+}
+
+/* Etichetta campo obbligatorio in base al ruolo */
+.field-required {
+  font-weight: 400;
+  color: #856404;
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+}
