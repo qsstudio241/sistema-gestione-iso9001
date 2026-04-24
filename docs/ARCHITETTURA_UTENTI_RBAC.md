@@ -2,7 +2,7 @@
 
 > Documento di riferimento per rendere **robusta e affidabile** la gestione identità, deleghe e segregazione dati.  
 > **Allineare** implementazione (backend + UI) e **non** duplicare regole solo lato client.  
-> **Ultimo aggiornamento**: 2026-04-20.
+> **Ultimo aggiornamento**: 2026-04-24.
 
 **Correlati**: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (checklist licenze/sessioni), [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) (diagrammi obiettivo prodotto), [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (deploy e piano qualità).
 
@@ -24,23 +24,21 @@
 |--------|--------|--------|
 | **L0** | `organizations` | Confine **tenant**: dati e utenti non attraversano `organization_id`. |
 | **L1** | `auditor_orgs` | Studio / team: insieme di consulenti e **aziende** collegate (`companies.auditor_org_id`). |
-| **L2** | `companies` | Cliente dello studio; `audits.company_id` collega l’attività all’azienda. |
+| **L2** | `companies` | Cliente dello studio; `audits.company_id` collega l'attività all'azienda. |
 | **L3** | `users` | Soggetto con login; sempre in un tenant; opzionalmente `auditor_org_id` e/o assegnazioni a company (vedi evoluzione). |
 
 **Regola di contenimento**: tutto ha `organization_id`. Ciò che è competenza dello studio deve essere filtrabile per `auditor_org_id` (e/o `company_id` dove applicabile) in modo **uniforme** su tutte le risorse (audit, NC, allegati, document registry — policy prodotto da decidere per il registry).
 
 ---
 
-## 3. Catalogo ruoli consigliato (canonico)
+## 3. Catalogo ruoli (canonico — verificato 2026-04-24)
 
-Mappatura evolutiva rispetto ai valori DB attuali (`admin`, `superadmin`, `auditor`, `viewer`):
-
-| Ruolo canonico | Ruolo DB / stato attuale | Scope |
-|----------------|-------------------------|--------|
-| **org_admin** | `admin` con `auditor_org_id` NULL (e policy per `superadmin` da uniformare) | Intero tenant; licenze; utenti globali; visione trasversale se richiesta dal business. |
-| **studio_admin** | *Da introdurre* oppure delega esplicita dall’org_admin | Solo `auditor_org_id` assegnato; gestione utenti dello studio e anagrafiche nel perimetro studio. |
-| **auditor** | `auditor` + `auditor_org_id` | Lavoro operativo: audit, checklist, export, NC nel perimetro dello studio (stesso predicato su lettura e scrittura). |
-| **company_viewer** | `viewer` (da specializzare) | Solo lettura su risorse legate a `company_id` assegnate (`user_company_access` quando attivo). |
+| Ruolo DB | Scope operativo | Note |
+|----------|-----------------|------|
+| **`superadmin`** | Piattaforma cross-tenant: vede tutti gli utenti e tutti gli studi di tutti i tenant. Unico che può modificare le licenze moduli (`PATCH /admin/licenses`). | Nessun `auditor_org_id`. |
+| **`admin`** | Intero tenant: gestisce utenti, vede le licenze in sola lettura, crea `auditor` e `viewer`. | Nessun `auditor_org_id` (admin "elevato"). |
+| **`auditor`** | Studio assegnato: audit, checklist, export, NC nel perimetro del proprio `auditor_org_id`. **Deve** avere `auditor_org_id` — validato in UI e consigliato in backend. | `auditor_org_id` obbligatorio. |
+| **`viewer`** | Sola lettura nel perimetro studio (oggi) o azienda (Fase 4). | `auditor_org_id` opzionale; scope azienda via `user_company_access` non ancora implementato. |
 
 **Nota**: evitare sinonimi ambigui tra codice e prodotto; documentare qui la mappa ufficiale ad ogni cambio ruoli.
 
@@ -50,11 +48,11 @@ Mappatura evolutiva rispetto ai valori DB attuali (`admin`, `superadmin`, `audit
 
 | Attore | Può creare o invitare |
 |--------|------------------------|
-| **org_admin** | Qualsiasi ruolo nel tenant (con policy per altri org_admin); assegnazione a `auditor_org`. |
-| **studio_admin** | Solo utenti nel proprio studio: `auditor`, `company_viewer` (mai org_admin salvo eccezione documentata). |
-| **auditor** | **Non** crea account utente; solo contenuti (audit, allegati, ecc.). |
+| **`superadmin`** | Qualsiasi utente in qualsiasi tenant (visione piattaforma). Unico che modifica licenze. |
+| **`admin`** | `auditor` e `viewer` nel proprio tenant. Può creare altri `admin` solo se è "elevated" (senza studio). |
+| **`auditor`** | **Non** crea account utente; solo contenuti (audit, allegati, ecc.). |
 
-**Best practice**: flusso a **invito** (token email + primo accesso) invece di password propagate dall’admin, quando si espone il self-service.
+**Best practice**: flusso a **invito** (token email + primo accesso) invece di password propagate dall'admin, quando si espone il self-service.
 
 ---
 
@@ -66,10 +64,10 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 |------|-----------|
 | Companies | Già legate a `auditor_org_id`; mantenere. |
 | Audits | Lista, dettaglio, **update**, delete, sync, lock — **stesso** filtro org + studio (+ eccezioni documentate). |
-| Responses, NC, pending, allegati | Derivano dall’audit; nessun accesso se l’audit non è nello scope utente. |
+| Responses, NC, pending, allegati | Derivano dall'audit; nessun accesso se l'audit non è nello scope utente. |
 | Document registry | Decisione prodotto: **solo org-wide** (solo org_admin) **oppure** filtro per studio/company — una sola policy, applicata ovunque. |
 | Checklist custom | Policy già presente (legacy vs `auditor_org_id`); formalizzare come regola versionata. |
-| Licenze moduli | Solo org_admin (allineato a Sprint 8). |
+| Licenze moduli | **Lettura**: `admin` org. **Modifica**: solo `superadmin` (piattaforma). `PATCH /admin/licenses` protetto da guard `superadminOnly`. Implementato 2026-04-24. |
 
 ---
 
@@ -80,19 +78,25 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 3. **JWT** leggero (`user_id`, `organization_id`, `role`, `auditor_org_id`); permessi estesi opzionalmente da `GET /auth/me` (capabilities calcolate server-side).
 4. **UI**: menu e azioni da capabilities — evitare divergenza con API.
 
-**Stato attuale (lista/dettaglio audit, apr. 2026):** il predicato SQL condiviso per org + studio è in `backend/src/services/auditListRbac.service.js` (`studioScopeClause`, usato da `audit.controller` e da percorsi sync/lock collegati). Il middleware `authenticate` imposta `req.user.role` già **normalizzato in minuscolo** così varianti di casing dal DB o da token vecchi non fanno “cadere” l’utente nel ramo senza filtro studio. Ruoli non mappati esplicitamente non espandono mai la lettura a tutta l’organizzazione: default restrittivo su `created_by`.
+**Stato attuale (24 apr. 2026):**
+- Predicato SQL org + studio condiviso in `auditListRbac.service.js` (list/dettaglio/sync/lock audit).
+- `authenticate` normalizza `role` in minuscolo; default restrittivo su `created_by`.
+- `GET /api/v1/auditor-orgs`: `superadmin` riceve studi **cross-tenant** (tutti i tenant); `admin` solo il proprio; `auditor` solo il proprio studio. Fix 2026-04-24.
+- `PATCH /admin/licenses`: guard `superadminOnly` — solo la piattaforma modifica le licenze; `admin` org legge in sola lettura. Fix 2026-04-24.
+- UI Gestione Utenti: dropdown Studio filtra per `organization_id` dell'utente in modifica. Fix 2026-04-24.
+- Auditor senza `auditor_org_id`: bloccato in UI (form crea + modifica) con badge visivo e tasto disabilitato. Fix 2026-04-24.
 
 ---
 
 ## 7. Piano di migrazione (fasi)
 
-| Fase | Contenuto |
-|------|-----------|
-| **0** | Questo documento + matrice permessi in roadmap; fix bug naming (`isOrgWideAdmin` vs `isSuperadmin` in auditor-org list). |
-| **1** | Allineare **write path** audit (PUT/DELETE/sync/statistiche) allo stesso scope della lista/dettaglio. |
-| **2** | Estendere assert scope a NC, allegati, response legate ad audit. |
-| **3** | Introdurre `studio_admin` e API creazione utenti per studio (se prodotto lo richiede). |
-| **4** | `user_company_access` + ruolo `company_viewer` per clienti finali. |
+| Fase | Contenuto | Stato |
+|------|-----------|-------|
+| **0** | Documento + matrice permessi; fix RBAC licenze e dropdown studio cross-tenant. | ✅ Completato 2026-04-24 |
+| **1** | Allineare **write path** audit (PUT/DELETE/sync/statistiche) allo stesso scope della lista/dettaglio. | In corso |
+| **2** | Estendere assert scope a NC, allegati, response legate ad audit. | Backlog |
+| **3** | Introdurre `studio_admin` e API creazione utenti per studio (se prodotto lo richiede). | Backlog |
+| **4** | `user_company_access` + ruolo `viewer` per azienda (clienti finali in sola lettura). | Backlog |
 
 ---
 
@@ -100,83 +104,63 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 
 **Contesto**: PWA per consulenti ISO con **multi-tenant** a livello database (`organization_id`), **studi** operativi (`auditor_orgs`) e **clienti** auditable (`companies`). Obiettivo: **isolamento dati tra tenant**, **segregazione per studio** nella stessa org, **tracciabilità** (ISO), **minimo privilegio**.
 
-### 8.1 Come *dovrebbe* essere la struttura utenti (modello di riferimento)
+### 8.1 Come è strutturata la gerarchia (verificato 2026-04-24)
 
-| Livello | Cosa rappresenta | Best practice |
-|--------|------------------|---------------|
-| **Tenant** (`organizations`) | Confine contrattuale e dati (es. “il cliente che paga il SaaS” o un’unica installazione). Gli utenti **non** attraversano mai due `organization_id` senza un ruolo di piattaforma esplicito (fuori scope MVP). | Un utente ha **sempre** un `organization_id`. Più tenant = più righe in `organizations` + provisioning (creazione org, primo admin). |
-| **Studio** (`auditor_orgs`) | Team / ragione sociale interna / linea di consulenza (es. Mason vs Camellini) **nello stesso tenant**. | Separazione operativa e anagrafiche clienti (`companies.auditor_org_id`), **non** sostituisce il tenant salvo decisione commerciale di “uno studio = un contratto separato”. |
-| **Azienda** (`companies`) | Cliente finale auditable. | Ogni company è legata a **uno** studio; gli audit puntano a `company_id` quando possibile. |
-| **Utente** (`users`) | Login; ruolo + opzionale `auditor_org_id` (perimetro studio). | **Org admin** (admin/superadmin senza studio): gestione org. **Utenti di studio** (auditor/viewer con studio): perimetro studio. **Viewer cliente** (evoluzione): perimetro `company` via `user_company_access` (vedi §7 Fase 4). |
+| Livello | Cosa rappresenta | Regola |
+|--------|------------------|--------|
+| **Tenant** (`organizations`) | Chi paga l'abbonamento SaaS. Confine contrattuale e dati. | Un utente ha **sempre** un `organization_id`. Licenze imputate qui. |
+| **Studio** (`auditor_orgs`) | Team operativo dentro il tenant. | Separazione anagrafiche clienti (`companies.auditor_org_id`). |
+| **Azienda** (`companies`) | Cliente finale auditable dello studio. | Legata a **uno** studio; gli audit puntano a `company_id`. |
+| **Utente** (`users`) | Login con ruolo + studio opzionale. | `auditor` deve avere studio. `viewer` scope azienda (Fase 4). |
 
-**Nota**: “Mason / Camellini / Franciosi” come **studi** sotto **un** `organization_id` è coerente con questo modello. Trasformarli in **tenant separati** (ciascuno con propria `organizations`) è un’**altra strategia commerciale** (multi-contratto): richiede più org nel DB + flussi di onboarding, non solo un campo in UI.
+**Caso ERAM (duplice ruolo — verificato e non bloccante)**: ERAM è sia tenant autonomo (con Franciosi come auditor interno) sia azienda cliente di Camellini (QS_Studio). Le due entità sono in tabelle separate senza FK diretta — convivono correttamente su binari paralleli.
 
-### 8.2 Cosa c’è già (implementato)
+### 8.2 Cosa c'è già (implementato — verificato 2026-04-24)
 
 | Area | Stato |
 |------|--------|
-| Colonne `users.organization_id`, `users.auditor_org_id`, ruoli `admin` / `superadmin` / `auditor` / `viewer` | Presenti |
-| Tabelle `organizations`, `auditor_orgs`, `companies` con collegamenti | Presenti |
-| Autenticazione JWT, `GET /auth/me`, licenze moduli (`licensed_modules`) | Presenti |
-| UI **Gestione utenti**: creazione, assegnazione studio, standard consentiti, disattivazione | Presente |
-| Filtri RBAC su **lista/dettaglio/sync audit** e lock (predicati allineati al servizio `auditListRbac`) | Presente (da monitorare su deploy) |
-| Admin “elevato” (senza studio) può gestire utenti e ruoli sensibili | Presente (policy backend) |
+| Colonne `users.organization_id`, `users.auditor_org_id`, ruoli `admin` / `superadmin` / `auditor` / `viewer` | ✅ Presenti |
+| Tabelle `organizations`, `auditor_orgs`, `companies` con collegamenti | ✅ Presenti |
+| Autenticazione JWT, `GET /auth/me`, licenze moduli (`licensed_modules`) | ✅ Presenti |
+| UI **Gestione utenti**: creazione, assegnazione studio, standard consentiti, disattivazione | ✅ Presente |
+| Filtri RBAC su **lista/dettaglio/sync audit** e lock (predicati allineati al servizio `auditListRbac`) | ✅ Presente e verificato |
+| `superadmin` senza studio: gestione utenti e ruoli sensibili cross-tenant | ✅ Presente |
+| **Licenze modificabili solo da `superadmin`** (`PATCH /admin/licenses` → guard `superadminOnly`) | ✅ Implementato 2026-04-24 |
+| **Dropdown Studio cross-tenant** per superadmin (filtra per tenant utente in modifica) | ✅ Implementato 2026-04-24 |
+| **Validazione auditor orfano** in UI (badge ⚠, tasto disabilitato se no studio) | ✅ Implementato 2026-04-24 |
 
 ### 8.3 Cosa manca o è parziale (gap noti)
 
-| Gap | Priorità tipica | Riferimento |
-|-----|-----------------|-------------|
-| **Stesso predicato RBAC** su *tutte* le risorse (NC, allegati, registry, checklist custom, statistiche) dove ancora usano solo `organization_id` | Alta | §5–7 |
-| Ruolo **`studio_admin`** e API di delega “solo mio studio” | Media | §3–4, Fase 3 |
-| Tabella **`user_company_access`** + viewer **per azienda** (cliente ERAM in sola lettura / permessi granulari) | Media–alta se serve B2B2C | Fase 4 |
+| Gap | Priorità | Riferimento |
+|-----|----------|-------------|
+| **Stesso predicato RBAC** su *tutte* le risorse (NC, allegati, registry, checklist custom, statistiche) | Alta | §5–7, Fase 2 |
+| Tabella **`user_company_access`** + viewer **per azienda** (clienti finali in sola lettura) | Media-alta | Fase 4 |
 | **Servizio centralizzato** `accessScope` / middleware unico su tutte le route | Alta man mano che cresce il codice | §6 |
-| **Provisioning multi-tenant** (creazione nuova `organizations` da UI + utente admin) se il prodotto deve vendere “un tenant per cliente finale” | Dipende dal business | Fuori §7 fino a decisione |
+| **Provisioning multi-tenant** (creazione nuova `organizations` da UI) | Dipende dal business | Fuori §7 fino a decisione |
 | Flusso **invito email** invece di password condivise | Consigliato | §4 |
 | **Audit trail** modifiche ruoli/utenti (chi ha promosso chi) | Compliance | Da definire |
 
-### 8.4 “Abbiamo sbagliato strategia?”
+### 8.4 Stato reale DB (verificato 2026-04-24 con query live)
 
-**No** sul modello **tenant → studio → company → user**: è allineato a SaaS B2B per consulenza e a ISO (tracciabilità, separazione). **Sì come debito** se il mercato richiede **subito** “un tenant per ogni studio” o “un tenant per ERAM” senza aver implementato **provisioning org** e **isolamento completo** su tutti i moduli: allora non è il modello dati ad essere sbagliato, ma **il perimetro di rilascio** rispetto all’obiettivo commerciale.
+| org_id | Codice | Nome | Auditor | Studio (auditor_org) |
+|--------|--------|------|---------|----------------------|
+| 1001 | ORG_00001 | Al.project | PS_Admin (superadmin) | AI.Admin |
+| 1002 | ORG_00002 | QS_Studio | Marco Camellini | QS Studio |
+| 1003 | ORG_00003 | MASON_Srl | Andrea Mason | Mason |
+| 1004 | ORG_00004 | ERAM | Mauro Franciosi | ERAM |
 
-**Prossima decisione prodotto** (da fissare con il committente): restare su **un tenant + più studi** oppure investire in **multi-org** (più righe `organizations`) **e** completare RBAC ovunque — le due strade possono coesistere nel tempo (prima coerenza scope, poi org aggiuntive).
+Tutti gli auditor hanno `auditor_org_id` assegnato correttamente. Nessun orfano. Tutte le aziende clienti assegnate allo studio corretto.
 
-### 8.5 Modello committente — tre tenant (decisione 2026-04)
+### 8.5 Prossima decisione prodotto
 
-**Premessa confermata**: esistono **tre tenant** distinti (tre abbonamenti / tre `organizations`). Le **licenze moduli** sono imputate al **tenant** (`organizations.licensed_modules`). **Camellini** lavora per **QS_Studio** (un solo `organization_id` per il suo account utente principale).
-
-#### Tabella di allineamento (tenant → pagamenti → utenti)
-
-| Tenant (esempio nome) | Ruolo commerciale | Licenze / abbonamento | Utenti tipici (esempi) | Nota prodotto / DB |
-|------------------------|-------------------|------------------------|-------------------------|-------------------|
-| **QS_Studio** | Tenant 1 | Moduli attivi su `organizations` dove `organization_id` = QS_Studio | **Camellini** (auditor, `users.organization_id` → QS_Studio); altri utenti QS | Account Camellini = **una** riga `users` con questo `organization_id`. |
-| **MASON_Srl** (o nome reale tenant Mason) | Tenant 2 | Licenze proprie, indipendenti da QS_Studio | Auditor Mason, staff Mason | Dati e audit **non** mescolati con QS_Studio senza secondo account o feature multi-org. |
-| **ERAM** | Tenant 3 | Licenze proprie | **Francioni** (auditor ERAM); utenti cliente ERAM (viewer, evoluzione) | Stesso principio: `organization_id` ERAM per Francioni. |
-
-#### Scenari trasversali (stesso nominativo su più tenant)
-
-| Esigenza | Approccio consigliato (oggi) | Se in futuro serve un solo login |
-|----------|------------------------------|-----------------------------------|
-| La stessa persona deve operare su **due** tenant (es. Camellini anche per lavori su MASON_Srl) | **Due account** (due righe `users`, eventualmente stessa email se il prodotto lo consente, o email distinte): `organization_id` diverso per ciascuno. | Membership multi-org (`user` ↔ più `organization_id`) + switch tenant in UI: **non** presente oggi; va progettato. |
-| Solo **consultazione** cross-tenant da parte vostra (QS Studio / piattaforma) | Ruolo **superadmin** o operatore con accesso documentato (fuori singolo tenant) | Policy dedicate, non mescolare con auditor cliente. |
-
-#### Checklist operativa DB (tre tenant reali)
-
-1. In `organizations` devono comparire **tre righe** (tre `organization_id`), con `organization_code` / `organization_name` univoci (es. QS_STUDIO, MASON_SRL, ERAM).
-2. Ogni utente “di quel cliente” ha `users.organization_id` uguale al tenant di riferimento.
-3. **Camellini** → solo righe utente con `organization_id` = **QS_Studio** (salvo secondo account se deve lavorare anche per un altro tenant).
-4. **Francioni** → `organization_id` = **ERAM** (o codice reale del terzo tenant).
-5. Licenze: `PATCH /admin/licenses` (o equivalente) **per org** — eseguito nell’ambito del tenant giusto (admin di quell’org).
-
-*Se in produzione compare ancora un solo `organization_id`, serve migrazione dati / creazione delle altre due org e riassegnazione utenti — operazione pianificata, non automatica.*
-
-**Piano operativo dettagliato** (inventario tabelle, fasi, query di controllo): [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md).
+**Restare su un tenant per studio** (modello attuale, corretto) **oppure** investire in provisioning multi-org da UI — le due strade coesistono nel tempo. Priorità attuale: completare RBAC su tutte le risorse (Fase 2) prima di aggiungere nuovi tenant.
 
 ---
 
 ## 9. Definition of Done (modifiche che toccano RBAC)
 
 - [ ] Stesso predicato di accesso su **tutti** i verbi HTTP per la stessa risorsa.
-- [ ] Test automatici o repro per “utente studio A non accede a audit studio B” (stessa org).
+- [ ] Test automatici o repro per "utente studio A non accede a audit studio B" (stessa org).
 - [ ] Aggiornamento di **questo file** e di [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (piano qualità / smoke) se cambiano smoke o deploy.
 
 ---
