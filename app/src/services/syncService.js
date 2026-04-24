@@ -174,6 +174,11 @@ export class SyncService {
             console.log(`📋 [SYNC] Trovati ${items.length} item in queue`);
 
             for (const item of items) {
+                if (item?.isStalled) {
+                    // Item già marcato in stallo permanente: non ritentare ad ogni timer,
+                    // altrimenti la console viene inondata di AUDIT_LOCK_REQUIRED.
+                    continue;
+                }
                 try {
                     await this.syncItem(item);
                     await this.removeFromQueue(item.id);

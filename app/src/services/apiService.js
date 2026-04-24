@@ -341,13 +341,10 @@ class ApiService {
      * Logout
      */
     async logout() {
-        try {
-            await this.post('/auth/logout', {});
-        } catch (error) {
-            console.warn('Logout API error (ignored):', error);
-        } finally {
-            this.clearToken();
-        }
+        // JWT stateless: logout server-side è no-op.
+        // Evita chiamate rete che possono generare rumore in console
+        // (es. 403 MODULE_NOT_LICENSED su ambienti con middleware non coerenti).
+        this.clearToken();
     }
 
     /**
