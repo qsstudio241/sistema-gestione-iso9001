@@ -44,6 +44,13 @@ export class SyncService {
         this.MIN_BACKOFF_MS = 1000;
         this.MAX_BACKOFF_MS = 60000;
 
+        // Backoff rete instabile: conta cicli consecutivi con soli errori di rete.
+        // Evita log e tentativi eccessivi quando la SIM è connessa ma le chiamate falliscono.
+        this.networkErrorCycles = 0;
+        this.MAX_NETWORK_ERROR_CYCLES = 3; // dopo 3 cicli tutti-rete, aspetta 2 minuti
+        this.NETWORK_BACKOFF_INTERVAL_MS = 120000; // 2 minuti
+        this._networkBackoffTimer = null;
+
         // Monitor connessione
         window.addEventListener('online', () => this.handleOnline());
         window.addEventListener('offline', () => this.handleOffline());
@@ -173,6 +180,9 @@ export class SyncService {
 
             console.log(`📋 [SYNC] Trovati ${items.length} item in queue`);
 
+            let successCount = 0;
+            let networkErrorCount = 0;
+
             for (const item of items) {
                 // Se la rete è caduta durante il ciclo, interrompi subito
                 if (!this.isOnline) {
@@ -199,6 +209,7 @@ export class SyncService {
                 try {
                     await this.syncItem(item);
                     await this.removeFromQueue(item.id);
+                    successCount++;
                     console.log(`✅ [SYNC] Completato: ${item.type} (${item.id})`);
                 } catch (error) {
                     const st = error?.status;
@@ -213,7 +224,11 @@ export class SyncService {
                         code === 'TIMEOUT' ||
                         st === 0;
                     if (isTransientNetwork) {
-                        console.warn(`[SYNC] Errore rete transitorio, item preservato per retry: ${item.type} (${item.id})`);
+                        networkErrorCount++;
+                        // Log solo per il primo errore di rete del ciclo (evita spam)
+                        if (networkErrorCount === 1) {
+                            console.warn(`[SYNC] Rete instabile — ${items.length} item in coda, saranno riprocessati quando la connessione stabilizzerà`);
+                        }
                         continue;
                     }
 
@@ -239,6 +254,19 @@ export class SyncService {
                     console.error(`❌ [SYNC] Errore: ${item.type} (${item.id})`, error);
                     await this.updateRetryCount(item.id, error.message);
                 }
+            }
+
+            // Backoff rete instabile: se il ciclo ha prodotto solo errori di rete,
+            // aumenta il contatore e rallenta l'intervallo per evitare spam.
+            const activeItems = items.filter(it => !it.isStalled).length;
+            if (networkErrorCount > 0 && successCount === 0 && activeItems > 0) {
+                this.networkErrorCycles++;
+                if (this.networkErrorCycles >= this.MAX_NETWORK_ERROR_CYCLES) {
+                    console.warn(`[SYNC] ${this.networkErrorCycles} cicli consecutivi con soli errori di rete — prossimo retry tra ${this.NETWORK_BACKOFF_INTERVAL_MS / 1000}s`);
+                    this._scheduleNetworkBackoffRetry();
+                }
+            } else if (successCount > 0 || networkErrorCount === 0) {
+                this.networkErrorCycles = 0;
             }
 
             // Aggiorna last sync timestamp
@@ -909,7 +937,13 @@ export class SyncService {
     handleOnline() {
         console.log('🌐 [SYNC] Connessione ripristinata');
         this.isOnline = true;
-        this.retryCount = 0; // Reset retry count
+        this.retryCount = 0;
+        this.networkErrorCycles = 0; // Reset backoff rete
+        // Cancella timer backoff se attivo
+        if (this._networkBackoffTimer) {
+            clearTimeout(this._networkBackoffTimer);
+            this._networkBackoffTimer = null;
+        }
 
         // Avvia sync automatica dopo 2 secondi.
         // Prima di processare, resuscita item stalled per errore di rete:
@@ -968,6 +1002,25 @@ export class SyncService {
             // Non bloccante: il normale ciclo sync gestisce tutto
             console.warn('⚠️ [SYNC] unstallNetworkErrorItems fallito (non bloccante):', error?.message);
         }
+    }
+
+    /**
+     * Schedula un retry ritardato (backoff rete instabile).
+     * Stoppa l'auto-sync corrente e lo fa ripartire dopo NETWORK_BACKOFF_INTERVAL_MS.
+     * All'evento 'online' il backoff viene azzerato da handleOnline.
+     */
+    _scheduleNetworkBackoffRetry() {
+        if (this._networkBackoffTimer) return; // già schedulato
+        this.stopAutoSync();
+        this._networkBackoffTimer = setTimeout(() => {
+            this._networkBackoffTimer = null;
+            this.networkErrorCycles = 0;
+            if (this.isOnline) {
+                console.log('[SYNC] Backoff rete scaduto — riprendo auto-sync');
+                this.startAutoSync();
+                this.processQueue().catch(() => {});
+            }
+        }, this.NETWORK_BACKOFF_INTERVAL_MS);
     }
 
     /**
