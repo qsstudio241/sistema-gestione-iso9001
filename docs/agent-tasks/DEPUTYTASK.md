@@ -1,202 +1,132 @@
-# DEPUTYTASK — Mason feature: seconda parte + foto Word
-> Sessione: 23 aprile 2026 | Lead: agente principale | Deputy: questo agente
+# DEPUTYTASK — Fix definitivo CORS: aggiorna .env sul VPS
+
+## Contesto e causa radice identificata
+
+L'app mostra `NETWORK_ERROR` (status: 0) su **tutte** le chiamate API da browser.
+Non è rete instabile: è un **blocco CORS** del browser.
+
+### Diagnosi esatta (già eseguita dal cloud agent)
+
+Chiamata preflight OPTIONS verificata:
+```
+curl -X OPTIONS https://www.fr-busato.it:8443/api/v1/audits/sync \
+  -H "Origin: https://sistema-gestione-iso9001.netlify.app" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token"
+```
+
+**Risposta attuale del server (SBAGLIATA):**
+```
+Access-Control-Allow-Origin: https://systemgest.netlify.app
+```
+
+Il dominio reale dell'app è `https://sistema-gestione-iso9001.netlify.app`.
+Il browser vede che l'Origin non corrisponde → blocca la risposta → `status: 0` → `NETWORK_ERROR`.
+
+### Dove si trova la configurazione sul VPS
+
+File: `/var/www/sgq-backend/.env`
+
+Riga attuale (da cambiare):
+```
+CORS_ORIGIN=https://systemgest.netlify.app,http://localhost:5173
+```
+
+Riga corretta:
+```
+CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173
+```
+
+Il codice in `backend/src/server.js` è già corretto (`X-Audit-Lock-Token` è già negli `allowedHeaders`, `CORS_ORIGIN` viene letto da env). Il problema è solo il valore della variabile sul VPS.
 
 ---
 
-## Contesto
-Leggi `PROJECT_CONTEXT.md` (root), poi `docs/PROJECT_ROADMAP.md` sezione Mason (Scenario 4), poi `docs/GUIDA_CONSOLIDATA.md`.
-Sei il deputy: implementi task circoscritti e ben definiti senza prendere decisioni architetturali.
-Chiudi con commit+push e scrivi `TASK CHIUSO` o `FIX NON APPLICABILE` con motivazione.
+## Cosa ha già fatto il cloud agent
+
+1. **Aggiornato `backend/.env.example`** con il dominio corretto (commit `be7ea01` su `main`) — questo è il template di riferimento per il VPS
+2. **Fix `syncService.js`** — errori `NETWORK_ERROR` non stallano più gli item della sync queue (commit `1a6729e` su `main`)
+3. **Fix `syncService.js`** — backoff automatico e log aggregato quando ci sono cicli consecutivi di errori di rete (commit `72f0ae2` su `main`)
+4. Deploy Netlify: tutti e tre i commit sono già su `main`, Netlify ha già rilasciato il frontend aggiornato
 
 ---
 
-## Task A — Fornitore seconda parte: dropdown da anagrafica
+## Task da completare (richiede accesso SSH al VPS)
 
-### Problema
-In `app/src/components/AuditSelector.jsx`, quando l'utente seleziona `auditPartyType === "second_party"`,
-appare un campo testo libero per `fornitoreName`. Mason chiede di poter selezionare il fornitore
-dall'elenco delle aziende in anagrafica (stesso pattern del dropdown "Azienda committente" già presente).
+### Step 1 — Aggiorna `.env` sul VPS
 
-### Soluzione da implementare
-
-**File**: `app/src/components/AuditSelector.jsx`
-
-Sostituisci il blocco alle righe 616-630 (il campo testo `fornitoreName` sotto il radio seconda parte):
-
-```jsx
-{formData.auditPartyType === "second_party" && (
-  <div className="form-group">
-    <label htmlFor="fornitoreName">Fornitore auditato</label>
-    <input type="text" id="fornitoreName" name="fornitoreName" ... />
-    <small>Azienda fornitore oggetto dell'audit (seconda parte).</small>
-  </div>
-)}
+Connettiti al VPS:
+```bash
+ssh -p 1122 spascarella@www.fr-busato.it
 ```
 
-Con questo pattern (identico al dropdown `companyId` già presente nel form, righe 537-584):
-
-```jsx
-{formData.auditPartyType === "second_party" && (
-  <div className="form-group">
-    <label htmlFor="fornitoreSelect">Fornitore auditato</label>
-    {companies.length > 0 ? (
-      <>
-        <select
-          id="fornitoreSelect"
-          value={
-            formData.fornitoreCompanyId
-              ? String(formData.fornitoreCompanyId)
-              : (formData.fornitoreName && !formData.fornitoreCompanyId ? MANUAL_COMPANY_VALUE : "")
-          }
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === MANUAL_COMPANY_VALUE) {
-              setFormData(p => ({ ...p, fornitoreCompanyId: null }));
-            } else if (val === "") {
-              setFormData(p => ({ ...p, fornitoreCompanyId: null, fornitoreName: "" }));
-            } else {
-              const found = companies.find(c => String(c.id) === val);
-              setFormData(p => ({
-                ...p,
-                fornitoreCompanyId: found ? found.id : null,
-                fornitoreName: found ? found.name : p.fornitoreName,
-              }));
-            }
-          }}
-          className="form-control"
-          disabled={companiesLoading}
-        >
-          <option value="">— Seleziona fornitore —</option>
-          <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
-          {companies.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
-            </option>
-          ))}
-        </select>
-        {/* Campo testo manuale: visibile solo se "Inserimento manuale" selezionato */}
-        {(!formData.fornitoreCompanyId && formData.fornitoreName !== undefined) &&
-          (formData.fornitoreName || !companies.find(c => String(c.id) === String(formData.fornitoreCompanyId))) && (
-          <input
-            type="text"
-            id="fornitoreName"
-            name="fornitoreName"
-            value={formData.fornitoreName || ""}
-            onChange={handleChange}
-            className="form-control"
-            placeholder="es. Fornitore XYZ Srl"
-            style={{ marginTop: "0.5rem" }}
-          />
-        )}
-        <small className="form-hint">Scegli dall&apos;anagrafica o inserisci manualmente.</small>
-      </>
-    ) : (
-      <>
-        <input
-          type="text"
-          id="fornitoreName"
-          name="fornitoreName"
-          value={formData.fornitoreName || ""}
-          onChange={handleChange}
-          className="form-control"
-          placeholder="es. Fornitore XYZ Srl"
-        />
-        <small className="form-hint">Azienda fornitore oggetto dell&apos;audit (seconda parte).</small>
-      </>
-    )}
-  </div>
-)}
+Aggiorna la riga CORS_ORIGIN:
+```bash
+sed -i 's|^CORS_ORIGIN=.*|CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173|' /var/www/sgq-backend/.env
 ```
 
-### Cosa aggiungere al formData initialState (cerca `formData` e `useState` nel form)
-Aggiungi `fornitoreCompanyId: null` all'oggetto formData iniziale.
-
-### Cosa passare a createAudit
-Nella chiamata `onCreate(...)` (cerca `handleCreate` o `onSubmit` nel form),
-aggiungi `fornitoreCompanyId: formData.fornitoreCompanyId` al payload metadata.
-
-### Cosa salvare in auditDataModel
-Nel file `app/src/data/auditDataModel.js`, nella funzione `createNewAudit`, aggiungi:
-```javascript
-fornitoreCompanyId: metadata.fornitoreCompanyId ?? null,
+Verifica che sia corretta:
+```bash
+grep CORS_ORIGIN /var/www/sgq-backend/.env
 ```
-accanto a `fornitoreName`.
 
-### Compatibilità Word export
-`fornitoreName` (stringa) è già usato nel template. Nessuna modifica a `wordExport.js`.
-Quando l'utente seleziona dal dropdown, `fornitoreName` viene popolato con `company.name`.
-Il campo manuale testuale rimane per retrocompatibilità.
+Output atteso:
+```
+CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173
+```
 
-### Test L1
-Aggiungi un test in `app/src/tests/` (o aggiungi a `auditDataModel.createNewAudit.test.js`):
-```javascript
-test('createNewAudit con fornitoreCompanyId → preservato in metadata', () => {
-  const audit = createNewAudit({
-    auditPartyType: 'second_party',
-    fornitoreName: 'Acme Srl',
-    fornitoreCompanyId: 42,
-    clientName: 'Committente SpA',
-    auditNumber: '2026-TEST',
-  });
-  expect(audit.metadata.fornitoreCompanyId).toBe(42);
-  expect(audit.metadata.fornitoreName).toBe('Acme Srl');
-});
+### Step 2 — Riavvia il servizio backend
+
+```bash
+sudo systemctl restart sgq-backend
+sleep 3
+sudo systemctl status sgq-backend | head -15
+```
+
+### Step 3 — Verifica CORS post-deploy
+
+```bash
+curl -s -X OPTIONS https://www.fr-busato.it:8443/api/v1/audits/sync \
+  -H "Origin: https://sistema-gestione-iso9001.netlify.app" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token" \
+  -D - 2>&1 | grep -E "Access-Control|HTTP/"
+```
+
+**Output atteso dopo il fix:**
+```
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Origin, X-Audit-Lock-Token
+```
+
+### Step 4 — Smoke test
+
+Apri l'app su `https://sistema-gestione-iso9001.netlify.app`, apri la console del browser e verifica che non compaiano più errori `NETWORK_ERROR` o `CORS policy` sulle chiamate API.
+
+Opzionalmente esegui anche il curl di health:
+```bash
+curl -sk https://www.fr-busato.it:8443/api/v1/health
 ```
 
 ---
 
-## Task B — Foto embedded Word: verifica bug OOXML e stato checkbox UI
+## Definition of Done
 
-### Problema
-La roadmap segnala "Foto embedded in Word (pic:cNvPr id duplicati → doc corrotto) 🔲 Backlog tecnico".
-Il codice sembra avere già la fix (`imgId = 100 + imageRegistry.length` incrementale).
-Bisogna verificare se il bug è risolto o se persiste in edge case.
-
-### Indagine da fare
-
-1. **Leggi** `app/src/utils/wordExportHelpers.js` — funzione `xmlImageOoxml` e tutti i punti
-   dove viene chiamata (cerca `xmlImageOoxml`). Traccia tutti i punti dove viene assegnato `imgId`.
-   Verifica che `imgId` sia univoco per TUTTI gli embedding nel documento:
-   - Allegati checklist ISO (buildChecklist section)
-   - Allegati checklist custom (buildCustomChecklist section)  
-   - Logo azienda (`injectCompanyLogoInZip`) — usa un rId separato? Quale id `pic:cNvPr`?
-   - Logo organizzazione (`injectOrganizationLogoInZip`) — idem
-
-2. **Verifica**: il `imageRegistry` è lo stesso array condiviso tra tutte le sezioni?
-   Oppure ogni sezione crea il proprio array? Se separati → possibili id duplicati.
-
-3. **Leggi** `app/src/utils/wordExport.js` — funzione `embedImagesInZip` e `injectOoxmlMarkers`.
-   Verifica che gli `rId` nel `document.xml.rels` siano coerenti con i `rId` nel `document.xml`.
-
-4. **Se trovi il bug**: correggi garantendo id univoci a livello di documento (es. contatore globale
-   partendo da `200` per i logo, `300+imgIdx` per gli allegati, o passa il registry ai logo).
-
-5. **Se il bug è già risolto**: aggiorna la roadmap rimuovendo la nota "🔲 Backlog tecnico"
-   su "Foto embedded in Word" e mettendo ✅ con data.
-
-6. **Verifica UI**: il checkbox "Incorpora foto" è visibile in `ExportPanel.jsx`?
-   - Leggi righe 560-600 circa
-   - Il toggle deve essere visibile per audit con allegati immagine
-   - Se è nascosto o manca, rendilo sempre visibile (non solo per RDP_MSN) con nota "auto per ISO 3834"
-
-### Test L1 da scrivere/aggiornare
-Aggiungi in `app/src/tests/wordExport.placeholders.test.js` un test che verifica
-che tutti gli `imgId` nel documento OOXML generato siano univoci:
-```javascript
-test('foto embedded: imgId univoci nel documento OOXML', async () => {
-  // usa generateWordBlob con photoMode: 'preview' e audit con >1 allegato immagine
-  // verifica che nel XML risultante non ci siano id duplicati su pic:cNvPr
-});
-```
-Se il test è difficile da scrivere (richiede ZIP parse), documenta come "da fare in L3 manuale".
+- [ ] `grep CORS_ORIGIN /var/www/sgq-backend/.env` mostra il dominio corretto
+- [ ] `sudo systemctl status sgq-backend` → `active (running)`
+- [ ] Il curl preflight risponde con `Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app`
+- [ ] Nessun `NETWORK_ERROR` in console browser sull'app Netlify
+- [ ] La sync queue si svuota correttamente (badge "In coda" scompare o si azzera)
 
 ---
 
-## Regole operative deputy
+## File coinvolti (per contesto)
 
-- Diff minimo: non toccare file non elencati
-- Test L1 dopo ogni modifica (`npm run test:run` da `app/`)
-- Commit separato per Task A e Task B
-- Push su `main` al termine
-- Scrivi `TASK CHIUSO` nel commit message o come messaggio finale
-- Se un task richiede decisioni architetturali → segnala nel commit message senza implementare
+| File | Stato |
+|------|-------|
+| `backend/.env.example` | ✅ Aggiornato su `main` (dominio corretto) |
+| `/var/www/sgq-backend/.env` sul VPS | ❌ Da aggiornare (richiede SSH) |
+| `app/src/services/syncService.js` | ✅ Fix già su `main` + Netlify |
+
+**Note di sicurezza**: non scrivere password o segreti nel file, non in chat. Usa la sessione PuTTY / Pageant / `backend/config/.ssh-deploy.local.ps1` (gitignored) come da `docs/ACCESSO_DEPLOY_AGENTS.md`.
