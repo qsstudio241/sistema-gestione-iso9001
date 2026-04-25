@@ -174,6 +174,11 @@ export class SyncService {
             console.log(`📋 [SYNC] Trovati ${items.length} item in queue`);
 
             for (const item of items) {
+                // Se la rete è caduta durante il ciclo, interrompi subito
+                if (!this.isOnline) {
+                    console.log('📵 [SYNC] Rete caduta durante il ciclo, interruzione');
+                    break;
+                }
                 if (item?.isStalled) {
                     // Item già marcato in stallo permanente: non ritentare ad ogni timer,
                     // altrimenti la console viene inondata di AUDIT_LOCK_REQUIRED.
@@ -198,6 +203,20 @@ export class SyncService {
                 } catch (error) {
                     const st = error?.status;
                     const code = error?.code;
+
+                    // Errori transitori di rete: non incrementare retryCount.
+                    // Il problema è la connessione mobile instabile, non il payload.
+                    // L'item verrà riprovato al prossimo ciclo senza consumare tentativi.
+                    const isTransientNetwork =
+                        code === 'NETWORK_ERROR' ||
+                        code === 'OFFLINE' ||
+                        code === 'TIMEOUT' ||
+                        st === 0;
+                    if (isTransientNetwork) {
+                        console.warn(`[SYNC] Errore rete transitorio, item preservato per retry: ${item.type} (${item.id})`);
+                        continue;
+                    }
+
                     const lockDenied =
                         st === 423 ||
                         code === 'AUDIT_LOCKED' ||
@@ -892,11 +911,63 @@ export class SyncService {
         this.isOnline = true;
         this.retryCount = 0; // Reset retry count
 
-        // Avvia sync automatica dopo 2 secondi
-        setTimeout(() => this.processQueue(), 2000);
+        // Avvia sync automatica dopo 2 secondi.
+        // Prima di processare, resuscita item stalled per errore di rete:
+        // questi non devono rimanere bloccati in eterno solo perché la rete
+        // mobile era instabile al momento del tentativo.
+        setTimeout(async () => {
+            await this.unstallNetworkErrorItems();
+            this.processQueue();
+        }, 2000);
 
         // Riavvia auto-sync se era stato fermato
         this.startAutoSync();
+    }
+
+    /**
+     * Resuscita item in stallo (isStalled=true) dovuti a errori transitori di rete.
+     * Vengono riportati in stato attivo (isStalled=false, retryCount azzerato) così
+     * il prossimo processQueue() li riprova correttamente.
+     *
+     * Gli item stalled per motivi non di rete (es. AUDIT_LOCK_REQUIRED con sessione di lock)
+     * non vengono toccati.
+     */
+    async unstallNetworkErrorItems() {
+        const NETWORK_ERROR_PATTERNS = /NETWORK_ERROR|OFFLINE|TIMEOUT|Connessione assente|Richiesta timeout|Failed to fetch|NetworkError/i;
+        try {
+            const db = await this.init();
+            const transaction = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+            const store = transaction.objectStore(SYNC_QUEUE_STORE);
+            const items = await new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            let unstaledCount = 0;
+            for (const item of items) {
+                if (!item.isStalled) continue;
+                const lastErr = String(item.lastError || '');
+                // Resuscita solo se l'ultimo errore noto era di rete
+                if (!NETWORK_ERROR_PATTERNS.test(lastErr)) continue;
+                // Non resuscitare item con lock perso (separazione esplicita)
+                if (/AUDIT_LOCK_REQUIRED|sessione di lock/i.test(lastErr)) continue;
+
+                const txUpd = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                item.isStalled = false;
+                item.retryCount = 0;
+                item.lastError = null;
+                txUpd.objectStore(SYNC_QUEUE_STORE).put(item);
+                unstaledCount++;
+            }
+
+            if (unstaledCount > 0) {
+                console.log(`♻️ [SYNC] Resuscitati ${unstaledCount} item stalled per errore di rete`);
+            }
+        } catch (error) {
+            // Non bloccante: il normale ciclo sync gestisce tutto
+            console.warn('⚠️ [SYNC] unstallNetworkErrorItems fallito (non bloccante):', error?.message);
+        }
     }
 
     /**
