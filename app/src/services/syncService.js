@@ -535,9 +535,9 @@ export class SyncService {
                     };
                 }
 
-                // serverData mancante: accetta server-wins e memorizza timestamp corrente
-                // per evitare conflict ciclici (meglio che richiamare resolveConflict che può fallire).
-                localStorage.setItem(`sgq_srv_ts_${auditUuid}`, new Date().toISOString());
+                // serverData mancante: accetta server-wins e memorizza timestamp FUTURO
+                // (Data.now() + 1s garantisce che il prossimo update sia sempre più recente).
+                localStorage.setItem(`sgq_srv_ts_${auditUuid}`, new Date(Date.now() + 1000).toISOString());
                 return {
                     data: {
                         action: 'server_wins',

@@ -21,7 +21,7 @@ import {
   getDeviceInfo,
 } from "../services/storageAdapter";
 import { syncService } from "../services/syncService";
-import apiService, { setAuditLockTokensForAudit } from "../services/apiService";
+import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from "../services/apiService";
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -923,6 +923,12 @@ export function StorageProvider({ children, useMockData = false }) {
           console.log("⏭️ [LOAD] Già inizializzato per questo authReloadNonce, skip");
           return;
         }
+
+        // Reset token di lock al primo caricamento: evita che token di sessioni precedenti
+        // (sopravvissuti in sessionStorage) permettano a update_audit stantii di tentare
+        // richieste che tornerebbero 409 in loop. I token vengono ri-settati quando
+        // il lock viene acquisito (openAudit → acquireAuditLock → setAuditLockTokensForAudit).
+        clearAllAuditLockTokens();
 
         setIsLoading(true);
 
