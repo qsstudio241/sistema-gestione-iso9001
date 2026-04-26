@@ -142,7 +142,32 @@ describe('SyncService.clearQueueForServerAudits', () => {
 
         expect(store._data.has('q1')).toBe(true);
     });
-});
+
+    test('rimuove update_audit in lock-stall anche senza server mapping', async () => {
+        const lockStall = makeQueueItem({
+            id: 'q-lock',
+            type: 'update_audit',
+            payload: { audit_uuid: 'uuid-lock-stall' },
+            isStalled: true,
+            lastError: 'AUDIT_LOCK_REQUIRED',
+        });
+        const fresh = makeQueueItem({
+            id: 'q-fresh',
+            type: 'update_audit',
+            payload: { audit_uuid: 'uuid-fresh' },
+        });
+        const { svc, db } = makeService([lockStall, fresh]);
+        const store = db.transaction(['syncQueue'], 'readwrite').objectStore('syncQueue');
+
+        svc.getAuditIdForUuid = async () => null; // nessun mapping
+        svc.removeFromQueue   = async (id) => { store._data.delete(id); };
+
+        // Entrambi i payload UUID sono nel set server → lockStall deve essere rimosso, fresh no
+        await svc.clearQueueForServerAudits(['uuid-lock-stall', 'uuid-fresh']);
+
+        expect(store._data.has('q-lock')).toBe(false);  // rimosso: stallo lock
+        expect(store._data.has('q-fresh')).toBe(true);  // mantenuto: update non ancora sync'd
+    });
 
 describe('SyncService.clearQueueForStaleAudits', () => {
     test('rimuove save_responses quando auditId è UUID (non solo audit_uuid)', async () => {

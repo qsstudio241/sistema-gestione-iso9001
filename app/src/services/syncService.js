@@ -1172,15 +1172,27 @@ export class SyncService {
                 if (item.type !== 'create_audit' && item.type !== 'update_audit') continue;
 
                 const uuid = item.payload?.audit_uuid;
-                if (uuid && uuidSet.has(uuid)) {
-                    const mappedServerId = await this.getAuditIdForUuid(uuid);
-                    // Rimuovi solo item "acknowledged" dal server (evita perdita update non ancora confermati).
-                    if (mappedServerId == null || !Number.isFinite(Number(mappedServerId)) || Number(mappedServerId) <= 0) {
-                        continue;
-                    }
-                    await this.removeFromQueue(item.id);
-                    removedCount++;
+                if (!uuid || !uuidSet.has(uuid)) continue;
+
+                // Rimuovi se:
+                // (a) già confermato dal server (sync_metadata presente) — l'update è ormai stantio
+                // (b) in stallo per lock scaduto — il server ha già i dati più recenti
+                //     (la riconciliazione appena finita ha scaricato lo stato server)
+                const mappedServerId = await this.getAuditIdForUuid(uuid);
+                const hasServerMapping =
+                    mappedServerId != null &&
+                    Number.isFinite(Number(mappedServerId)) &&
+                    Number(mappedServerId) > 0;
+                const isLockStall =
+                    item.isStalled ||
+                    /AUDIT_LOCK_REQUIRED|sessione di lock/i.test(String(item.lastError || ''));
+
+                if (!hasServerMapping && !isLockStall) {
+                    // Update non ancora mai sincronizzato e non in lock stall: mantieni
+                    continue;
                 }
+                await this.removeFromQueue(item.id);
+                removedCount++;
             }
 
             if (removedCount > 0) {
