@@ -93,6 +93,15 @@ function clearAllAuditLockTokens() {
 }
 
 /**
+ * Verifica se esiste un token di lock attivo per un audit UUID o ID.
+ * Usato da syncService per evitare di tentare update_audit senza lock → 423.
+ */
+function hasAuditLockToken(auditRef) {
+    if (!auditRef) return false;
+    return AUDIT_LOCK_TOKENS.has(String(auditRef));
+}
+
+/**
  * Classe API Client
  */
 class ApiService {
@@ -1259,5 +1268,5 @@ class ApiError extends Error {
 
 // Singleton export
 const apiService = new ApiService();
-export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens };
+export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens, hasAuditLockToken };
 export default apiService;

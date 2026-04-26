@@ -9,7 +9,7 @@
  */
 
 import { getDatabase } from './IndexedDBProvider';
-import apiService from './apiService';
+import apiService, { hasAuditLockToken } from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
@@ -207,6 +207,16 @@ export class SyncService {
                     continue;
                 }
                 try {
+                    // Guard: update_audit richiede un lock attivo sul server.
+                    // Se non c'è token in memoria, non tentare la rete — evita 423 a raffica
+                    // (es. migrazione dati ricchi al login prima che l'utente apra l'audit).
+                    // L'item resta in coda e verrà riprovato quando il lock sarà acquisito.
+                    if (item.type === 'update_audit') {
+                        const uuid = item.payload?.audit_uuid;
+                        if (uuid && !hasAuditLockToken(uuid)) {
+                            continue; // Nessun lock → salta silenziosamente
+                        }
+                    }
                     await this.syncItem(item);
                     await this.removeFromQueue(item.id);
                     successCount++;
