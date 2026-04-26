@@ -977,6 +977,22 @@ export function StorageProvider({ children, useMockData = false }) {
             serverAudits = await fetchAllServerAudits();
             console.log(`✅ [DOWNLOAD] Scaricati ${serverAudits.length} audit dal server`);
 
+            // SEED sgq_srv_ts: salva il timestamp server per ogni audit scaricato.
+            // Garantisce che la migrazione dati ricchi (update_audit) usi sempre
+            // updated_at >= server → nessun 409 da clock skew o da primo accesso.
+            for (const sa of serverAudits) {
+              const saUuid = sa.metadata?.id || sa.id;
+              const saUpdatedAt = sa.metadata?.updatedAt;
+              if (saUuid && saUpdatedAt) {
+                const stored = localStorage.getItem(`sgq_srv_ts_${saUuid}`);
+                const storedTs = stored ? new Date(stored).getTime() : 0;
+                const serverTs = new Date(saUpdatedAt).getTime();
+                if (serverTs > storedTs) {
+                  localStorage.setItem(`sgq_srv_ts_${saUuid}`, saUpdatedAt);
+                }
+              }
+            }
+
             // PULIZIA QUEUE STANTIA: rimuove dalla sync_queue le operazioni
             // create_audit / update_audit per audit già presenti sul server.
             // Impedisce che dati in cache di altri dispositivi sovrascrivano
@@ -1159,6 +1175,10 @@ export function StorageProvider({ children, useMockData = false }) {
             for (const a of newMigrations) {
               const uuid = a.metadata?.id || a.id;
               richDataMigrationDoneRef.current.add(uuid);
+              // Usa sempre un timestamp >= server per evitare 409 da "conflict" ciclici.
+              const storedServerTs = localStorage.getItem(`sgq_srv_ts_${uuid}`);
+              const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
+              const migrationUpdatedAt = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
               syncService.enqueue("update_audit", {
                 audit_uuid: uuid,
                 audit_number: a.metadata?.auditNumber,
@@ -1171,7 +1191,7 @@ export function StorageProvider({ children, useMockData = false }) {
                 auditor_name: a.metadata?.auditorName,
                 audit_type: a.metadata?.auditType,
                 status: a.metadata?.status,
-                updated_at: new Date().toISOString(),
+                updated_at: migrationUpdatedAt,
                 generalData: a.metadata?.generalData ?? a.generalData,
                 auditObjective: a.metadata?.auditObjective ?? a.auditObjective,
                 auditOutcome: a.metadata?.auditOutcome ?? a.auditOutcome,
