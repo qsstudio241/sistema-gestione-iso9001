@@ -1720,6 +1720,21 @@ export function StorageProvider({ children, useMockData = false }) {
       // Tombstone persistente: sopravvive ai page refresh e protegge reconcile.
       addToTombstone(auditId);
 
+      // 1b. Rimuovi dalla sync queue tutte le operazioni ancora pendenti per questo audit
+      // (save_responses usa payload.auditId = UUID — prima non matchava clearQueueForStaleAudits).
+      try {
+        const serverNum = audit?.metadata?.auditId ?? audit?.audit_id;
+        const n = Number(serverNum);
+        const auditIds =
+          Number.isFinite(n) && n > 0 ? [n] : [];
+        await syncService.clearQueueForStaleAudits({
+          auditUuids: [String(auditId)],
+          auditIds,
+        });
+      } catch {
+        /* non bloccante */
+      }
+
       // 2. Rimuovi da IndexedDB (atteso: elimina fisicamente dal browser).
       if (fsProvider && typeof fsProvider.deleteAudit === "function") {
         await fsProvider.deleteAudit(auditId).catch((err) => {

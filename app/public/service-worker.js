@@ -71,6 +71,7 @@ self.addEventListener('fetch', (event) => {
     // Navigazione (HTML): Network-First — garantisce sempre il bundle più recente dopo un deploy.
     // Fallback a cache solo se offline.
     const isNavigate = request.mode === 'navigate' ||
+        request.destination === 'document' ||
         url.pathname === '/' ||
         url.pathname.endsWith('.html');
 
@@ -83,8 +84,10 @@ self.addEventListener('fetch', (event) => {
                 }
                 return response;
             }).catch(() => {
-                // Offline: servi da cache
-                return caches.match(request).then((cached) => cached || caches.match('/'));
+                // Offline: servi da cache (stessa URL o shell SPA)
+                return caches.match(request).then((cached) =>
+                    cached || caches.match('/index.html') || caches.match('/'),
+                );
             })
         );
         return;
@@ -103,7 +106,10 @@ self.addEventListener('fetch', (event) => {
                     });
                 }
                 return response;
-            });
+            }).catch(() =>
+                // Evita "Uncaught (in promise) TypeError: Failed to fetch" in SW su rete assente
+                caches.match('/index.html').then((c) => c || caches.match('/')),
+            );
         })
     );
 });

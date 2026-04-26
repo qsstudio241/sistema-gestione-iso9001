@@ -143,3 +143,26 @@ describe('SyncService.clearQueueForServerAudits', () => {
         expect(store._data.has('q1')).toBe(true);
     });
 });
+
+describe('SyncService.clearQueueForStaleAudits', () => {
+    test('rimuove save_responses quando auditId è UUID (non solo audit_uuid)', async () => {
+        const targetUuid = '85EAF36B-0471-4D12-8245-1C8F98AEF1EC';
+        const saveResp = makeQueueItem({
+            id: 'sr1',
+            type: 'save_responses',
+            payload: { auditId: targetUuid, responses: [] },
+        });
+        const other = makeQueueItem({
+            id: 'sr2',
+            type: 'save_responses',
+            payload: { auditId: '00000000-0000-0000-0000-000000000001', responses: [] },
+        });
+        const { svc, db } = makeService([saveResp, other]);
+        const store = db.transaction(['syncQueue'], 'readwrite').objectStore('syncQueue');
+
+        await svc.clearQueueForStaleAudits({ auditUuids: [targetUuid], auditIds: [] });
+
+        expect(store._data.has('sr1')).toBe(false);
+        expect(store._data.has('sr2')).toBe(true);
+    });
+});

@@ -252,6 +252,27 @@ export class SyncService {
                         continue;
                     }
 
+                    // Audit eliminato sul server (o mai esistito per questo tenant): operazioni dipendenti
+                    // non avranno mai successo — rimuovi dalla coda invece di stall permanente + spam console.
+                    const orphanAuditQueueTypes = new Set([
+                        'save_responses',
+                        'save_custom_checklist_responses',
+                        'update_audit',
+                        'upload_attachment',
+                        'upload_custom_attachment_and_patch_custom_response',
+                    ]);
+                    if (
+                        st === 404 &&
+                        (code === 'AUDIT_NOT_FOUND' || code === 'NOT_FOUND') &&
+                        orphanAuditQueueTypes.has(item.type)
+                    ) {
+                        console.warn(
+                            `[SYNC] Audit assente sul server (404 ${code}): rimozione item obsoleto ${item.type} (${item.id})`,
+                        );
+                        await this.removeFromQueue(item.id);
+                        continue;
+                    }
+
                     // Errori permanenti di business logic (payload rifiutato dal server in modo definitivo):
                     // stall immediato senza consumare tutti e 5 i retry.
                     // Il payload non cambierà da solo: riprovare 5 volte non serve, genera solo spam.
@@ -1208,10 +1229,16 @@ export class SyncService {
                 const payload = item?.payload || {};
                 const auditUuid = payload.audit_uuid || payload.auditUuid || null;
                 const auditIdRaw = payload.auditId ?? payload.audit_id ?? null;
-                const auditId = Number(auditIdRaw);
+                const auditIdNum = Number(auditIdRaw);
 
-                const matchUuid = auditUuid && uuidSet.has(String(auditUuid).trim());
-                const matchId = Number.isFinite(auditId) && auditId > 0 && idSet.has(auditId);
+                // save_responses / upload usano spesso auditId = UUID stringa (non audit_uuid).
+                const matchUuid =
+                    (auditUuid && uuidSet.has(String(auditUuid).trim())) ||
+                    (typeof auditIdRaw === 'string' &&
+                        auditIdRaw.trim() &&
+                        uuidSet.has(String(auditIdRaw).trim()));
+                const matchId =
+                    Number.isFinite(auditIdNum) && auditIdNum > 0 && idSet.has(auditIdNum);
                 if (!matchUuid && !matchId) continue;
 
                 if (payload.blobKey) {
