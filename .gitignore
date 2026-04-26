@@ -23,6 +23,7 @@ backend/config/.ssh-deploy.local.ps1
 # IDE
 .vscode/
 .idea/
+.vs/
 *.swp
 *.swo
 *~
