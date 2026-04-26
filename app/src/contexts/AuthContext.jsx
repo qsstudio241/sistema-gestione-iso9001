@@ -218,12 +218,15 @@ export function AuthProvider({ children }) {
       }
     }
 
+    // Notifica StorageContext per rilasciare il lock PRIMA di cancellare il token JWT:
+    // onUserLoggedOut fa releaseAuditLock fire-and-forget con il token ancora valido.
+    window.dispatchEvent(new CustomEvent("sgq:userLoggedOut"));
+
     try {
-      await apiService.logout();
+      await apiService.logout(); // clearToken() avviene qui, dopo che il lock è già stato rilasciato
     } catch (err) {
       console.warn("Errore logout API:", err);
     }
-    window.dispatchEvent(new CustomEvent("sgq:userLoggedOut"));
     clearAllAuditLockTokens();
     setUser(null);
     setError(null);
