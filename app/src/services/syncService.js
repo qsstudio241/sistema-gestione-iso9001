@@ -489,6 +489,17 @@ export class SyncService {
             delete mappedAudit.standardIds;
             delete mappedAudit.standardId;
 
+            // Ricalcola updated_at al momento dell'invio (non all'enqueue).
+            // Gli item in coda possono avere un timestamp obsoleto se un altro item
+            // per lo stesso audit ha già ricevuto un 409 e aggiornato sgq_srv_ts.
+            // Usando Max(now, serverTs+1) qui, garantiamo sempre clientTs > serverTs.
+            const auditUuidForTs = auditData.audit_uuid || auditData.id;
+            if (auditUuidForTs) {
+                const storedTs = localStorage.getItem(`sgq_srv_ts_${auditUuidForTs}`);
+                const serverTsMs = storedTs ? new Date(storedTs).getTime() : 0;
+                mappedAudit.updated_at = new Date(Math.max(Date.now(), serverTsMs + 1)).toISOString();
+            }
+
             const result = await apiService.upsertAudit(mappedAudit);
 
             // Backend risponde con {audit_id, audit_uuid, action, updated_at}
