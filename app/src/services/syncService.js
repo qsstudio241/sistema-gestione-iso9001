@@ -251,6 +251,25 @@ export class SyncService {
                         );
                         continue;
                     }
+
+                    // Errori permanenti di business logic (payload rifiutato dal server in modo definitivo):
+                    // stall immediato senza consumare tutti e 5 i retry.
+                    // Il payload non cambierà da solo: riprovare 5 volte non serve, genera solo spam.
+                    const isPermanentError =
+                        (st === 403 && (
+                            code === 'STANDARDS_NOT_ALLOWED' ||
+                            code === 'MODULE_NOT_LICENSED' ||
+                            code === 'AUDIT_DEPRECATED' ||
+                            code === 'FORBIDDEN'
+                        )) ||
+                        (st === 400 && code === 'VALIDATION_ERROR') ||
+                        (st === 404 && code !== undefined); // risorsa non trovata con codice noto
+                    if (isPermanentError) {
+                        console.warn(`[SYNC] Errore permanente (${st} ${code}), item stalled: ${item.type} (${item.id})`);
+                        await this.updateRetryCount(item.id, error?.message || String(code), true); // forceStall=true
+                        continue;
+                    }
+
                     console.error(`❌ [SYNC] Errore: ${item.type} (${item.id})`, error);
                     await this.updateRetryCount(item.id, error.message);
                 }
