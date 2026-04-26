@@ -1299,6 +1299,8 @@ export class SyncService {
      * Conta solo item ATTIVI (non stalled) — usato dal guard di logout.
      * Item in stallo permanente (isStalled: true) non possono essere recuperati
      * e non devono bloccare l'uscita dell'utente.
+     * Item update_audit senza lock attivo sono "in pausa" (non verranno inviati finché
+     * l'utente non riapre l'audit) e non devono bloccare il logout.
      */
     async getActiveQueueSize() {
         const db = await this.init();
@@ -1311,7 +1313,15 @@ export class SyncService {
             request.onerror = () => reject(request.error);
         });
 
-        return items.filter((it) => !it.isStalled).length;
+        return items.filter((it) => {
+            if (it.isStalled) return false;
+            // update_audit senza lock attivo: in attesa di riapertura audit — non blocca logout
+            if (it.type === 'update_audit') {
+                const uuid = it.payload?.audit_uuid;
+                if (uuid && !hasAuditLockToken(uuid)) return false;
+            }
+            return true;
+        }).length;
     }
 
     /**
