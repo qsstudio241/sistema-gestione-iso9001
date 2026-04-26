@@ -691,10 +691,48 @@ File modificati: `app/src/contexts/StorageContext.jsx`, `app/src/services/syncSe
 
 - Dopo **Elimina audit** dalla UI, la sync queue non veniva svuotata per `save_responses` perché il payload usa `auditId` (UUID) e non `audit_uuid`: restavano `POST .../responses/bulk` → **404** e item in **stallo** con spam in console. Fix: `deleteAudit` chiama `clearQueueForStaleAudits` con l’UUID; `clearQueueForStaleAudits` considera anche `payload.auditId` stringa; su **404 `AUDIT_NOT_FOUND`** gli item `save_responses` / `update_audit` / upload collegati all’audit assente vengono **rimossi** dalla coda (non stallati). Service worker: fallback cache su `fetch` fallito per evitare rejection non gestita.
 
-**Stato pendente per prossima sessione:**
-1. **Smoke test allegati**: upload PDF, upload foto, verifica link cliccabile nel Word, verifica foto incorporata nel Word export.
-2. Verificare console pulita dopo hard refresh (Ctrl+Shift+R).
-3. Warning `⚠️ Domanda qclause4_X validazione` e `aria-hidden` → non bloccanti, valutare fix cosmetico.
+---
+
+### Chiusura sessione 26 aprile 2026
+
+**Problema principale risolto — 409 ciclici `POST /audits/sync` durante la compilazione:**
+
+Radice del problema in 2 strati:
+
+1. **Timestamp calcolato all'enqueue, non all'invio.** Quando più item `update_audit` venivano accodati in rapida successione, item #2 aveva nel payload un `updated_at` calcolato prima che item #1 ricevesse la risposta 409 e aggiornasse `sgq_srv_ts_<uuid>` in localStorage. Risultato: item #2 usava ancora il vecchio timestamp → altro 409 → loop.
+   - **Fix**: in `syncUpsertAudit` (`syncService.js`), `updated_at` viene **ricalcolato al momento dell'invio** con `Math.max(Date.now(), sgq_srv_ts + 1)`, sovrascrivendo il valore nel payload accumulato in IndexedDB.
+
+2. **Migrazione dati ricchi senza timestamp server.** La migrazione `generalData/auditObjective/auditOutcome` usava `new Date().toISOString()` invece di leggere `sgq_srv_ts`. Se il clock del SQL Server era anche solo pochi ms avanti rispetto al browser (o se il timestamp era già stato aggiornato da una sync precedente), il server restituiva 409 ad ogni apertura audit.
+   - **Fix A** (`StorageContext.jsx`): al download `fetchAllServerAudits`, si fa il **seeding di `sgq_srv_ts_<uuid>`** per ogni audit → la migrazione trova già il valore corretto.
+   - **Fix B** (`StorageContext.jsx`): la migrazione usa anch'essa `Math.max(Date.now(), serverTs + 1)`.
+
+**Problema risolto — `DELETE /lock 401` al logout:**
+
+Il flusso di logout in `AuthContext.jsx` chiamava `apiService.logout()` (che esegue `clearToken()`) e solo dopo sparava `sgq:userLoggedOut`. In `onUserLoggedOut` (StorageContext), la `releaseAuditLock` trovava già il token nullo → 401 → il gestore 401 di apiService sparava un nuovo `auth:logout` → doppio ciclo di pulizia e doppio log `[LOGOUT] Cache azzerate`.
+- **Fix** (`AuthContext.jsx`): `window.dispatchEvent("sgq:userLoggedOut")` spostato **prima** di `apiService.logout()` → `onUserLoggedOut` fa la `releaseAuditLock` fire-and-forget con token ancora valido, poi `clearToken()` viene chiamato.
+
+**File modificati in questa sessione:**
+
+| File | Modifica |
+|---|---|
+| `app/src/contexts/StorageContext.jsx` | Seeding `sgq_srv_ts` al download server; migrazione usa `Math.max` |
+| `app/src/services/syncService.js` | `updated_at` ricalcolato al momento dell'invio in `syncUpsertAudit` |
+| `app/src/contexts/AuthContext.jsx` | `sgq:userLoggedOut` prima di `clearToken()` al logout |
+
+**Stato console post-fix (bundle `index-BhKOBwrK`):**
+
+| Messaggio | Stato |
+|---|---|
+| `POST /audits/sync 409` | ✅ Eliminato |
+| `DELETE /lock 401` al logout | ✅ Eliminato |
+| `⏸️ enqueue write sospeso: lock non owner none` | ⬜ Normale — mouseup precede acquisizione lock di ~100ms; nessuna perdita dati |
+| `⚠️ Domanda qclauseX validazione` | ⬜ Non bloccante — validazione evidenza mancante; logica corretta |
+
+**All'inizio della prossima sessione:**
+
+1. **Smoke test allegati**: upload PDF, upload foto → verifica link cliccabile nel Word export, verifica foto incorporata.
+2. Valutare **Sprint 10** (ingest PDF → staging → document registry) vs fix cosmetic validazione evidenze.
+3. `DEPUTYTASK.md` attivo: fix CORS `.env` VPS (richiede accesso SSH — non bloccante perché l'app usa già `systemgest.netlify.app` configurato).
 
 ---
 

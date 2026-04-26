@@ -1,8 +1,8 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 22 aprile 2026
-> **Prossimo Step** (sessione corrente): **Smoke L3 manuale P1** (utente: verifica pulsanti esito custom checklist in produzione — vedi checklist sotto) — poi **Sprint 10** (collegare ingest PDF al document registry via staging tipizzato). Sprint 0-9 tutti ✅. Branch `cursor/custom-checklist-outcome-buttons-bb01` eliminato. Script temp `backend/scripts/` eliminati. Deputy task Mason in corso (dropdown seconda parte + foto Word OOXML).
+> **Ultimo Aggiornamento**: 26 aprile 2026
+> **Prossimo Step** (sessione corrente): **Smoke test allegati** (upload PDF/foto → link Word cliccabile + foto embedded nel report) → poi decidere tra **Sprint 10** (staging → document registry) e fix cosmetici validazione evidenze. Sprint 0-9 tutti ✅. Fix sincronizzazione completato (zero 409 ciclici, zero 401 al logout). `DEPUTYTASK.md` attivo: CORS `.env` VPS (`systemgest` → entrambi i domini Netlify) — non bloccante per uso corrente.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
