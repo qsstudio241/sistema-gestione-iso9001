@@ -115,6 +115,25 @@ Spuntare dopo deploy o prima di demo cliente. Adattare profondità al rischio de
 | **Import PDF (Sprint 9)** | Job + process + (opz.) AI extract con chiave | Licenza `ai_import`, privacy testo. |
 | **Admin** | CRUD utente o licenze come da ruolo | Solo admin/superadmin senza scope errato. |
 
+### Protocollo passo-passo — «il salvataggio arriva sul server?»
+
+> Uso tipico: **più utenti collegati su audit diversi** (probabile). **Due utenti sullo stesso audit** è raro in campo, ma resta utile il lock per **due schede dello stesso utente**, tablet + PC, o errore di assegnazione — evita dati mescolati.
+
+Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del successivo (non serve stress test finché i passi base non sono verdi).
+
+| # | Passo (cosa fare) | Risultato atteso | Test / evidenza |
+|---|---------------------|------------------|-----------------|
+| 1 | Login con utente reale | Dashboard senza errore rosso | — |
+| 2 | Aprire **lista audit** e scegliere un audit di prova | Lista coerente con ciò che ti aspetti dal server | Se dubbi: confronto con altra sessione o admin DB (solo chi autorizzato). |
+| 3 | **Selezionare** l’audit e aprirlo | Si vede il modulo audit; nessun loop di errori | Hard refresh una volta dopo deploy Netlify (`Ctrl+Shift+R`). |
+| 4 | Attendere 2–5 s (lock server) | Nessun messaggio permanente «lock non attivo» mentre lavori solo | Se compare spesso: verificare deploy **frontend + backend** allineati (guida sez. A). |
+| 5 | Modificare **una** voce (esito + nota/evidenza se richiesta) e attendere autosalvataggio | Indicatore salvataggio ok o assenza errori bloccanti | **DevTools → Rete**: una richiesta verso API `fr-busato` con **2xx** (non 401/423/404 ripetuti). |
+| 6 | **Ricaricare la pagina** (F5) con lo stesso audit | Le modifiche del passo 5 sono ancora lì | Se spariscono: problema sync/server o coda — non passare al passo 7. |
+| 7 | (Opz.) Secondo browser **stesso utente** su **altro** audit | Stesso comportamento | Copre «più utenti in lavoro» senza richiedere due persone sullo stesso file. |
+| 8 | Dopo **modifica al codice** in quest’area | Regressione assente | Su PC sviluppo: `cd app` → `NODE_ENV=test` → `npm run test:run` + `npm run build` (L1). |
+
+**Perché non sempre “hard test” automatici dall’agente in chat:** (1) sul workspace dell’agente spesso **manca** l’ambiente completo (`npm` in PATH, credenziali, divieto di bombardare la **produzione** senza esplicito ok); (2) i tool gratuiti (es. k6) vanno lanciati **sul vostro PC o in CI** con URL di **staging** o con limiti bassi sulla prod; (3) **prima** questo protocollo a passi — se il passo 5–6 fallisce, lo stress test non aggiunge diagnosi.
+
 ### Backlog test automatici (da tenere in roadmap)
 
 - E2E stabilizzati su Netlify preview (login + checklist + export) — oggi CI PR = build + unit test app.
