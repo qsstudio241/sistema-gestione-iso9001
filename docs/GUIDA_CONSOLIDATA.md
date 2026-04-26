@@ -668,6 +668,10 @@ Problema residuo della sessione precedente: al login/logout/refresh, la console 
 
 File modificati: `app/src/contexts/StorageContext.jsx`, `app/src/services/syncService.js`.
 
+**Aggiornamento 26 aprile 2026 — coda dopo eliminazione audit e 404 `responses/bulk`:**
+
+- Dopo **Elimina audit** dalla UI, la sync queue non veniva svuotata per `save_responses` perché il payload usa `auditId` (UUID) e non `audit_uuid`: restavano `POST .../responses/bulk` → **404** e item in **stallo** con spam in console. Fix: `deleteAudit` chiama `clearQueueForStaleAudits` con l’UUID; `clearQueueForStaleAudits` considera anche `payload.auditId` stringa; su **404 `AUDIT_NOT_FOUND`** gli item `save_responses` / `update_audit` / upload collegati all’audit assente vengono **rimossi** dalla coda (non stallati). Service worker: fallback cache su `fetch` fallito per evitare rejection non gestita.
+
 **Stato pendente per prossima sessione:**
 1. **Smoke test allegati**: upload PDF, upload foto, verifica link cliccabile nel Word, verifica foto incorporata nel Word export.
 2. Verificare console pulita dopo hard refresh (Ctrl+Shift+R).
