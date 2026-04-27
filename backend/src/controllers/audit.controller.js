@@ -1140,7 +1140,10 @@ async function upsertAudit(req, res) {
 
 /**
  * GET /api/v1/audits/:id/pending-issues
- * Recupera le pending issues (NC/OSS non risolte) dall'ultimo audit completato dello stesso cliente
+ * Restituisce i rilievi pendenti per il re-audit corrente.
+ * Funzionamento lazy: al primo accesso crea i record in pending_issues
+ * dalla tabella audit_responses dell'ultimo audit completato dello stesso cliente.
+ *
  * @route GET /api/v1/audits/:id/pending-issues
  * @access Private (require auth)
  */
@@ -1151,74 +1154,88 @@ async function getPendingIssues(req, res) {
     try {
         logger.info(`[PENDING_ISSUES] Audit ID: ${audit_id}`);
 
-        // Step 1: Trova il client_name dell'audit corrente
+        // Step 1: Trova audit corrente (target)
         const currentAuditResult = await query(`
             SELECT audit_id, client_name, audit_date
             FROM audits
-            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id) AND organization_id = @organization_id
+            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
         `, { audit_id, organization_id });
 
         if (!currentAuditResult.recordset || currentAuditResult.recordset.length === 0) {
-            logger.warn(`[PENDING_ISSUES] Audit ${audit_id} non trovato`);
-            return res.status(404).json({
-                error: 'Audit non trovato',
-                code: 'AUDIT_NOT_FOUND'
-            });
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
         }
 
-        const { client_name, audit_date: current_audit_date } = currentAuditResult.recordset[0];
-        logger.info(`[PENDING_ISSUES] Cliente: ${client_name}, Data: ${current_audit_date}`);
+        const { audit_id: target_audit_id, client_name, audit_date: current_audit_date } =
+            currentAuditResult.recordset[0];
 
-        // Step 2: Trova l'ultimo audit COMPLETATO dello stesso cliente (data precedente)
+        // Step 2: Trova l'ultimo audit COMPLETATO dello stesso cliente precedente
         const lastAuditResult = await query(`
             SELECT TOP 1 audit_id
             FROM audits
             WHERE organization_id = @organization_id
-            AND client_name = @client_name
-            AND audit_date < @current_audit_date
-            AND status IN ('completed', 'finalized')
-            ORDER BY audit_date DESC
-        `, { organization_id, client_name, current_audit_date });
+              AND client_name = @client_name
+              AND audit_id <> @target_audit_id
+              AND (audit_date < @current_audit_date OR @current_audit_date IS NULL)
+              AND status IN ('completed', 'finalized', 'approved')
+              AND is_deleted = 0
+            ORDER BY audit_date DESC, audit_id DESC
+        `, { organization_id, client_name, current_audit_date, target_audit_id });
 
-        // Se non esiste audit precedente → nessuna pending issue
         if (!lastAuditResult.recordset || lastAuditResult.recordset.length === 0) {
-            logger.info(`[PENDING_ISSUES] Nessun audit precedente per cliente ${client_name}`);
-            return res.json({
-                pending_issues: [],
-                source_audit_id: null,
-                message: 'Nessun audit precedente trovato per questo cliente'
-            });
+            return res.json({ pending_issues: [], source_audit_id: null, count: 0 });
         }
 
         const source_audit_id = lastAuditResult.recordset[0].audit_id;
-        logger.info(`[PENDING_ISSUES] Ultimo audit completato: ${source_audit_id}`);
+        logger.info(`[PENDING_ISSUES] Source audit: ${source_audit_id} → Target: ${target_audit_id}`);
 
-        // Step 3: Trova pending issues NON RISOLTE dall'ultimo audit
+        // Step 3: Lazy-init — inserisce pending_issues dalla audit_responses del source se non esistono
+        await query(`
+            MERGE [dbo].[pending_issues] AS tgt
+            USING (
+                SELECT ar.response_id, ar.question_id, ar.conformity_status
+                FROM audit_responses ar
+                WHERE ar.audit_id = @source_audit_id
+                  AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+            ) AS src
+            ON tgt.source_response_id = src.response_id
+               AND tgt.target_audit_id = @target_audit_id
+            WHEN NOT MATCHED THEN
+                INSERT (target_audit_id, source_audit_id, question_id, source_response_id,
+                        status, original_status, organization_id)
+                VALUES (@target_audit_id, @source_audit_id, src.question_id, src.response_id,
+                        'open', src.conformity_status, @organization_id);
+        `, { source_audit_id, target_audit_id, organization_id });
+
+        // Step 4: Leggi tutti i pending di questo target audit
         const pendingIssuesResult = await query(`
-            SELECT 
+            SELECT
                 pi.issue_id,
                 pi.source_audit_id,
-                pi.nc_id,
-                pi.status AS issue_status,
+                pi.target_audit_id,
+                pi.question_id,
+                pi.source_response_id,
+                pi.status        AS issue_status,
+                pi.original_status,
+                pi.resolution_notes,
                 pi.follow_up_notes,
                 pi.created_at,
                 pi.updated_at,
-                nc.nc_number,
-                nc.nc_type,
-                nc.description AS nc_description,
-                nc.severity,
-                nc.category,
-                nc.requirement_reference,
-                nc.section_id
+                ar.conformity_status,
+                ar.notes         AS source_notes,
+                cq.question_text,
+                cq.section_code
             FROM pending_issues pi
-            INNER JOIN non_conformities nc ON pi.nc_id = nc.nc_id
-            WHERE pi.source_audit_id = @source_audit_id
-            AND pi.status IN ('open', 'in_progress')
-            ORDER BY nc.severity DESC, pi.created_at DESC
-        `, { source_audit_id });
+            LEFT JOIN audit_responses  ar ON pi.source_response_id = ar.response_id
+            LEFT JOIN checklist_questions cq ON pi.question_id      = cq.question_id
+            WHERE pi.target_audit_id = @target_audit_id
+              AND pi.organization_id = @organization_id
+            ORDER BY pi.original_status, cq.section_code, pi.issue_id
+        `, { target_audit_id, organization_id });
 
         const pendingIssues = pendingIssuesResult.recordset || [];
-        logger.info(`[PENDING_ISSUES] Trovate ${pendingIssues.length} pending issues`);
+        logger.info(`[PENDING_ISSUES] Trovate ${pendingIssues.length} pending issues per target ${target_audit_id}`);
 
         return res.json({
             pending_issues: pendingIssues,
@@ -1230,6 +1247,150 @@ async function getPendingIssues(req, res) {
         logger.error('[PENDING_ISSUES] Errore:', error);
         return res.status(500).json({
             error: 'Errore server durante recupero pending issues',
+            code: 'SERVER_ERROR',
+            details: error.message
+        });
+    }
+}
+
+/**
+ * PUT /api/v1/audits/:id/pending-issues/:issueId
+ * Aggiorna lo stato di risoluzione di un rilievo pendente nel re-audit.
+ * Body: { status: 'resolved'|'persists'|'in_progress', resolution_notes?: string }
+ *
+ * @route PUT /api/v1/audits/:id/pending-issues/:issueId
+ * @access Private (require auth)
+ */
+async function updatePendingIssue(req, res) {
+    const { id: audit_id, issueId } = req.params;
+    const { organization_id } = req.user;
+    const { status, resolution_notes } = req.body;
+
+    const validStatuses = ['open', 'in_progress', 'resolved', 'persists'];
+    if (status && !validStatuses.includes(status)) {
+        return res.status(400).json({
+            error: `Status non valido: ${status}. Valori ammessi: ${validStatuses.join(', ')}`,
+            code: 'INVALID_STATUS'
+        });
+    }
+
+    try {
+        // Risolve audit_id (UUID o intero)
+        const auditRow = await query(`
+            SELECT audit_id FROM audits
+            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
+        `, { audit_id, organization_id });
+
+        if (!auditRow.recordset || auditRow.recordset.length === 0) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+        const target_audit_id = auditRow.recordset[0].audit_id;
+
+        const result = await query(`
+            UPDATE [dbo].[pending_issues]
+            SET
+                status           = COALESCE(@status, status),
+                resolution_notes = COALESCE(@resolution_notes, resolution_notes),
+                follow_up_notes  = COALESCE(@resolution_notes, follow_up_notes),
+                updated_at       = GETDATE()
+            OUTPUT
+                INSERTED.issue_id,
+                INSERTED.status,
+                INSERTED.original_status,
+                INSERTED.resolution_notes,
+                INSERTED.updated_at
+            WHERE issue_id        = @issueId
+              AND target_audit_id = @target_audit_id
+              AND organization_id = @organization_id
+        `, {
+            issueId: parseInt(issueId, 10),
+            target_audit_id,
+            organization_id,
+            status: status || null,
+            resolution_notes: resolution_notes !== undefined ? resolution_notes : null
+        });
+
+        if (!result.recordset || result.recordset.length === 0) {
+            return res.status(404).json({ error: 'Rilievo non trovato', code: 'ISSUE_NOT_FOUND' });
+        }
+
+        logger.info(`[PENDING_ISSUES] issue ${issueId} → status=${result.recordset[0].status}`);
+        return res.json({ pending_issue: result.recordset[0] });
+
+    } catch (error) {
+        logger.error('[PENDING_ISSUES] Errore updatePendingIssue:', error);
+        return res.status(500).json({
+            error: 'Errore server durante aggiornamento rilievo',
+            code: 'SERVER_ERROR',
+            details: error.message
+        });
+    }
+}
+
+/**
+ * POST /api/v1/audits/:id/complete
+ * Chiude formalmente l'audit: imposta status='completed' e completedAt.
+ * Non richiede lock attivo (la chiusura è un'operazione di finalizzazione).
+ *
+ * @route POST /api/v1/audits/:id/complete
+ * @access Private (require auth)
+ */
+async function completeAudit(req, res) {
+    const { id: audit_id } = req.params;
+    const { organization_id } = req.user;
+
+    try {
+        const existingResult = await query(`
+            SELECT audit_id, status, audit_extra_data
+            FROM audits
+            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
+        `, { audit_id, organization_id });
+
+        if (!existingResult.recordset || existingResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
+        const existing = existingResult.recordset[0];
+        const numeric_id = existing.audit_id;
+        const currentStatus = existing.status;
+
+        if (['approved', 'archived'].includes(currentStatus)) {
+            return res.status(409).json({
+                error: `Audit già in stato '${currentStatus}' — non può essere modificato`,
+                code: 'AUDIT_LOCKED'
+            });
+        }
+
+        // Merge completedAt in audit_extra_data
+        let extraData = {};
+        try { extraData = JSON.parse(existing.audit_extra_data || '{}'); } catch { /* noop */ }
+        extraData.completedAt = new Date().toISOString();
+
+        await query(`
+            UPDATE audits
+            SET status          = 'completed',
+                audit_extra_data = @extra_data,
+                updated_at      = GETDATE()
+            WHERE audit_id = @numeric_id
+              AND organization_id = @organization_id
+        `, { numeric_id, organization_id, extra_data: JSON.stringify(extraData) });
+
+        logger.info(`[COMPLETE_AUDIT] Audit ${numeric_id} completato`);
+        return res.json({
+            success: true,
+            audit_id: numeric_id,
+            status: 'completed',
+            completed_at: extraData.completedAt
+        });
+
+    } catch (error) {
+        logger.error('[COMPLETE_AUDIT] Errore:', error);
+        return res.status(500).json({
+            error: 'Errore server durante chiusura audit',
             code: 'SERVER_ERROR',
             details: error.message
         });
@@ -1257,6 +1418,8 @@ async function checkReaudit(req, res) {
         // 1. Trova il più recente audit dello stesso cliente che abbia almeno 1 NC/OSS/OM
         //    (non necessariamente l'ultimo in assoluto: un re-audit vuoto non deve
         //     nascondere le NC dell'audit ancora più precedente)
+        // Filtra solo audit completati/approvati — un audit ancora in bozza non
+        // deve comparire come sorgente di rilievi da re-auditare
         const lastAuditResult = await query(`
             SELECT TOP 1
                 a.audit_id,
@@ -1266,9 +1429,11 @@ async function checkReaudit(req, res) {
             FROM audits a
             JOIN audit_responses ar
               ON ar.audit_id = a.audit_id
-             AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+             AND ar.conformity_status IN ('NC', 'OSS', 'NV', 'OM')
             WHERE a.organization_id = @organization_id
               AND a.client_name = @client_name
+              AND a.status IN ('completed', 'finalized', 'approved')
+              AND a.is_deleted = 0
               AND (@exclude_uuid IS NULL OR a.audit_uuid <> TRY_CAST(@exclude_uuid AS UNIQUEIDENTIFIER))
             GROUP BY a.audit_id, a.audit_date, a.audit_number
             ORDER BY a.audit_date DESC, a.audit_id DESC
@@ -1383,8 +1548,10 @@ async function bulkSaveResponses(req, res) {
 
 /**
  * GET /api/v1/audits/:id/nc-responses
- * Restituisce le risposte NC/OSS/OM di un audit specifico (per pre-visualizzazione rilievi nel re-audit modal)
- * :id = audit_id INTEGER
+ * Restituisce le risposte NC/OSS/OM/NV di un audit specifico.
+ * Usato dal modal AuditSelector per pre-visualizzazione rilievi nel re-audit.
+ * Coerente con checkReaudit e pending_issues: include OM e NV.
+ * :id = audit_id INTEGER o UUID
  */
 async function getNcResponses(req, res) {
     const { id: audit_id } = req.params;
@@ -1405,7 +1572,7 @@ async function getNcResponses(req, res) {
              JOIN audits a ON ar.audit_id = a.audit_id
              WHERE (ar.audit_id = TRY_CAST(@audit_id AS INT) OR a.audit_uuid = @audit_id)
                AND a.organization_id = @organization_id
-               AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+               AND ar.conformity_status IN ('NC', 'OSS', 'NV', 'OM')
              ORDER BY ar.conformity_status, cq.section_code`,
             { audit_id: String(audit_id), organization_id }
         );
@@ -1422,6 +1589,74 @@ async function getNcResponses(req, res) {
     }
 }
 
+/**
+ * POST /api/v1/audits/:id/approve
+ * Approva l'audit completato: status → 'approved' (definitivamente bloccato).
+ * Solo da status 'completed'. Solo ruoli admin/responsabile (validazione in middleware se necessario).
+ *
+ * @route POST /api/v1/audits/:id/approve
+ * @access Private (require auth)
+ */
+async function approveAudit(req, res) {
+    const { id: audit_id } = req.params;
+    const { organization_id } = req.user;
+
+    try {
+        const existingResult = await query(`
+            SELECT audit_id, status, audit_extra_data
+            FROM audits
+            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
+        `, { audit_id, organization_id });
+
+        if (!existingResult.recordset || existingResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
+        const existing = existingResult.recordset[0];
+        const numeric_id = existing.audit_id;
+        const currentStatus = existing.status;
+
+        if (currentStatus !== 'completed') {
+            return res.status(409).json({
+                error: `L'audit deve essere in stato 'completed' per essere approvato (stato attuale: ${currentStatus})`,
+                code: 'INVALID_STATUS_TRANSITION'
+            });
+        }
+
+        let extraData = {};
+        try { extraData = JSON.parse(existing.audit_extra_data || '{}'); } catch { /* noop */ }
+        extraData.approvedAt = new Date().toISOString();
+        extraData.approvedBy = req.user?.username || req.user?.email || 'unknown';
+
+        await query(`
+            UPDATE audits
+            SET status          = 'approved',
+                audit_extra_data = @extra_data,
+                updated_at      = GETDATE()
+            WHERE audit_id = @numeric_id
+              AND organization_id = @organization_id
+        `, { numeric_id, organization_id, extra_data: JSON.stringify(extraData) });
+
+        logger.info(`[APPROVE_AUDIT] Audit ${numeric_id} approvato da ${extraData.approvedBy}`);
+        return res.json({
+            success: true,
+            audit_id: numeric_id,
+            status: 'approved',
+            approved_at: extraData.approvedAt
+        });
+
+    } catch (error) {
+        logger.error('[APPROVE_AUDIT] Errore:', error);
+        return res.status(500).json({
+            error: 'Errore server durante approvazione audit',
+            code: 'SERVER_ERROR',
+            details: error.message
+        });
+    }
+}
+
 module.exports = {
     listAudits,
     getAuditById,
@@ -1431,6 +1666,9 @@ module.exports = {
     getAuditStatistics,
     upsertAudit,
     getPendingIssues,
+    updatePendingIssue,
+    completeAudit,
+    approveAudit,
     checkReaudit,
     bulkSaveResponses,
     getNcResponses

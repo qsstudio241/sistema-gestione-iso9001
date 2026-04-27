@@ -266,3 +266,131 @@
 .stat-card.stat-nv  .stat-value { color: #6a1b9a; }
 .stat-card.stat-nv  .stat-label { color: #6a1b9a; }
 
+.stat-card.stat-resolved { border-color: #27ae60; }
+.stat-card.stat-resolved .stat-value { color: #27ae60; }
+.stat-card.stat-resolved .stat-label { color: #27ae60; }
+
+.stat-card.stat-persists { border-color: #e74c3c; }
+.stat-card.stat-persists .stat-value { color: #e74c3c; }
+.stat-card.stat-persists .stat-label { color: #e74c3c; }
+
+/* ============================================
+ * Badge stato corrente risoluzione
+ * ============================================ */
+.resolution-badge {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.resolution-badge--resolved    { background: #d4edda; color: #155724; }
+.resolution-badge--in_progress { background: #d1ecf1; color: #0c5460; }
+.resolution-badge--persists    { background: #f8d7da; color: #721c24; }
+
+/* ============================================
+ * Pulsanti risoluzione
+ * ============================================ */
+.resolution-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.resolution-label {
+  font-size: 0.82em;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.resolution-btn {
+  padding: 5px 12px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  font-size: 0.82em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  background: #f5f5f5;
+  color: #555;
+}
+
+.resolution-btn:hover:not(:disabled) { filter: brightness(0.92); }
+.resolution-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-resolved.active    { background: #d4edda; color: #155724; border-color: #28a745; }
+.btn-resolved           { border-color: #c3e6cb; }
+.btn-resolved:hover:not(:disabled) { background: #d4edda; }
+
+.btn-in-progress.active { background: #d1ecf1; color: #0c5460; border-color: #17a2b8; }
+.btn-in-progress        { border-color: #bee5eb; }
+.btn-in-progress:hover:not(:disabled) { background: #d1ecf1; }
+
+.btn-persists.active    { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+.btn-persists           { border-color: #f5c6cb; }
+.btn-persists:hover:not(:disabled) { background: #f8d7da; }
+
+/* ============================================
+ * Nota di risoluzione
+ * ============================================ */
+.resolution-note-block {
+  margin-top: 10px;
+}
+
+.resolution-note-label {
+  display: block;
+  font-size: 0.82em;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.resolution-note-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ============================================
+ * Messaggi issue
+ * ============================================ */
+.issue-saving {
+  margin-top: 8px;
+  font-size: 0.8em;
+  color: #888;
+}
+
+.issue-error {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #fff3f3;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 0.82em;
+  color: #c0392b;
+}
+
+.issue-persists-warning {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fff3f3;
+  border-left: 3px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 0.83em;
+  color: #922b21;
+}
+
+.issue-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+

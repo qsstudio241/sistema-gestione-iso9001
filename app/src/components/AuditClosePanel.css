@@ -1,0 +1,245 @@
+/**
+ * AuditClosePanel Styles
+ * Sistema Gestione ISO 9001 - QS Studio
+ */
+
+.close-panel {
+  padding: 24px;
+  background: #fff;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+}
+
+/* ??? Header ???????????????????????????????? */
+.close-panel__header {
+  margin-bottom: 20px;
+}
+
+.close-panel__header h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.3em;
+  color: #1a202c;
+}
+
+.close-panel__subtitle {
+  margin: 0;
+  color: #718096;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+/* ??? Barra completamento ??????????????????? */
+.close-completion {
+  margin-bottom: 20px;
+}
+
+.close-completion__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.9em;
+  color: #4a5568;
+}
+
+.close-completion__label strong.ok   { color: #276749; }
+.close-completion__label strong.fail { color: #c53030; }
+
+.close-completion__bar {
+  position: relative;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 5px;
+  overflow: visible;
+}
+
+.close-completion__fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.close-completion__fill.ok   { background: #48bb78; }
+.close-completion__fill.fail { background: #fc8181; }
+
+.close-completion__threshold {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: #2d3748;
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+
+/* ??? Checklist requisiti ??????????????????? */
+.close-checklist {
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.close-checklist h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.95em;
+}
+
+.close-checklist ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.close-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.88em;
+  line-height: 1.4;
+}
+
+.close-checklist--blockers {
+  background: #fff5f5;
+  border-color: #fc8181;
+  color: #742a2a;
+}
+
+.close-checklist--warnings {
+  background: #fffbeb;
+  border-color: #f6ad55;
+  color: #7b341e;
+}
+
+.close-checklist--ok {
+  background: #f0fff4;
+  border-color: #68d391;
+  color: #276749;
+}
+
+.close-checklist--ok p {
+  margin: 0;
+  font-size: 0.88em;
+}
+
+.blocker-icon  { color: #e53e3e; font-weight: 700; flex-shrink: 0; }
+.warning-icon  { color: #dd6b20; font-weight: 700; flex-shrink: 0; }
+
+/* ??? Errore API ???????????????????????????? */
+.close-api-error {
+  padding: 10px 14px;
+  background: #fff5f5;
+  border: 1px solid #fc8181;
+  border-radius: 6px;
+  color: #c53030;
+  font-size: 0.88em;
+  margin-bottom: 16px;
+}
+
+/* ??? Pulsanti ?????????????????????????????? */
+.close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.close-btn--primary {
+  background: #2b6cb0;
+  color: #fff;
+}
+
+.close-btn--primary:hover:not(:disabled) { background: #2c5282; }
+
+.close-btn--danger {
+  background: #e53e3e;
+  color: #fff;
+}
+
+.close-btn--danger:hover:not(:disabled) { background: #c53030; }
+
+.close-btn--secondary {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.close-btn--secondary:hover:not(:disabled) { background: #e2e8f0; }
+
+.close-btn--disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.close-btn--approve {
+  background: #276749;
+  color: #fff;
+}
+
+.close-btn--approve:hover:not(:disabled) { background: #22543d; }
+
+.close-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ??? Conferma ?????????????????????????????? */
+.close-confirm {
+  border: 2px solid #fc8181;
+  border-radius: 8px;
+  padding: 16px 18px;
+  background: #fff5f5;
+}
+
+.close-confirm__text {
+  margin: 0 0 14px 0;
+  color: #742a2a;
+  font-size: 0.92em;
+  line-height: 1.5;
+}
+
+.close-confirm__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ??? Stato giù chiuso ?????????????????????? */
+.close-panel--done {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.close-done-badge {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 1em;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.badge-completed { background: #ebf8ff; color: #2b6cb0; }
+.badge-approved  { background: #f0fff4; color: #276749; }
+.badge-archived  { background: #f7fafc; color: #718096; }
+
+.close-done-date {
+  margin: 0 0 10px 0;
+  color: #4a5568;
+  font-size: 0.9em;
+}
+
+.close-done-hint {
+  margin: 0;
+  color: #718096;
+  font-size: 0.85em;
+}

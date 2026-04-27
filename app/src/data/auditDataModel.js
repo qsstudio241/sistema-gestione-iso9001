@@ -18,6 +18,7 @@ export const AUDIT_STATUS = {
     IN_PROGRESS: 'in_progress',        // In corso di compilazione
     SUSPENDED: 'suspended',            // Sospeso temporaneamente
     COMPLETED: 'completed',            // Completato
+    APPROVED: 'approved',              // Approvato (definitivamente bloccato)
     ARCHIVED: 'archived'               // Archiviato
 };
 
@@ -342,15 +343,17 @@ export function createChecklistQuestion(id, text, clauseRef) {
  * Crea nuova non conformità con valori default
  * @param {string} norm - Norma ISO
  * @param {string} clause - Clausola
+ * @param {string} [category] - Categoria NC (NC_CATEGORY)
+ * @param {string} [description] - Descrizione NC
  * @returns {NonConformity} Nuova NC
  */
-export function createNonConformity(norm, clause) {
+export function createNonConformity(norm, clause, category, description) {
     return {
         id: crypto.randomUUID(),
-        norm,
-        clause,
-        category: NC_CATEGORY.MINOR,
-        description: '',
+        norm: norm || '',
+        clause: clause || '',
+        category: category || NC_CATEGORY.MINOR,
+        description: description || '',
         rootCause: '',
         evidenceId: null,
         correctiveAction: {

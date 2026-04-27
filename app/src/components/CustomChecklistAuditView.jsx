@@ -209,6 +209,13 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
       const newStatus = statuses[itemId] === code ? null : code;
       setStatuses((prev) => ({ ...prev, [itemId]: newStatus }));
 
+      // Sincronizza customStatuses su currentAudit in StorageContext
+      // → metriche sezione 11 e export Word usano questo campo
+      updateCurrentAudit((prev) => ({
+        ...prev,
+        customStatuses: { ...(prev.customStatuses || {}), [itemId]: newStatus },
+      }));
+
       if (auditId) {
         const blocks = responses[itemId] || [];
         try {
@@ -224,7 +231,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
         }
       }
     },
-    [auditId, responses, statuses]
+    [auditId, responses, statuses, updateCurrentAudit]
   );
 
   const updateBlock = (itemId, blockIndex, field, value) => {

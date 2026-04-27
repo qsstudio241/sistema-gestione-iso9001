@@ -219,8 +219,3 @@ describe('SyncService.getActiveQueueSize', () => {
         expect(activeCount).toBeLessThanOrEqual(1); // al più save_responses
     });
 });
-
-        expect(store._data.has('sr1')).toBe(false);
-        expect(store._data.has('sr2')).toBe(true);
-    });
-});

@@ -158,41 +158,53 @@ function xmlTable(rows, colWidths = [], pct = 100, useDxa = false) {
 }
 
 // ─── Rilievi pendenti ──────────────────────────────────────────────────────────
+// Mostra TUTTI i rilievi con relativo stato di risoluzione (risolto/persiste/in corso/aperto).
+// I rilievi risolti sono mostrati in verde per dare visibilita' al lavoro svolto nel re-audit.
 function buildPendingIssuesOoxml(pendingIssues = []) {
-    const open = (pendingIssues || []).filter(pi =>
-        (pi.status || pi.issue_status || 'open') !== 'resolved'
-    );
-    if (!open.length)
+    const all = pendingIssues || [];
+    if (!all.length)
         return xmlPara('Nessun rilievo pendente da audit precedenti.', { ital: true, sa: 400 });
 
     const S = {
         open:        { label: 'Aperto',      fill: 'FEE2E2', text: '991B1B' },
         in_progress: { label: 'In corso',    fill: 'FEF3C7', text: '92400E' },
-        persists:    { label: 'Persistente', fill: 'FEE2E2', text: '991B1B' },
+        persists:    { label: 'Persiste',    fill: 'FEE2E2', text: '991B1B' },
+        resolved:    { label: 'Risolto',     fill: 'D1FAE5', text: '065F46' },
     };
-    const PCT = [10, 46, 28, 16];
+    // Colonne: Rif. | Descrizione | Rilievo orig. | Audit sorg. | Stato risoluzione
+    const PCT = [8, 38, 10, 24, 20];
 
     const headerRow = xmlRow([
-        xmlCell(xmlPara(xmlRun('Rif.',           { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[0] }),
-        xmlCell(xmlPara(xmlRun('Descrizione',    { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[1] }),
-        xmlCell(xmlPara(xmlRun('Audit sorgente', { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[2] }),
-        xmlCell(xmlPara(xmlRun('Stato',          { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[3] }),
+        xmlCell(xmlPara(xmlRun('Rif.',              { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[0] }),
+        xmlCell(xmlPara(xmlRun('Descrizione',       { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[1] }),
+        xmlCell(xmlPara(xmlRun('Tipo',              { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[2] }),
+        xmlCell(xmlPara(xmlRun('Audit precedente',  { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[3] }),
+        xmlCell(xmlPara(xmlRun('Stato risoluzione', { bold: true }), { align: 'center' }), { fill: 'E5E7EB', pct: PCT[4] }),
     ], { header: true });
 
-    const dataRows = open.map(pi => {
-        const sCfg  = S[pi.status || pi.issue_status || 'open'] || S.open;
-        const notes = pi.resolutionNotes || pi.follow_up_notes || '';
-        const descBody = xmlPara(escXml(pi.description || pi.nc_description || 'N/D'))
-            + (notes ? xmlPara(xmlRun('\u21b3 ' + notes, { ital: true, color: '6B7280' }), { sb: 60, sa: 0 }) : '');
+    const dataRows = all.map(pi => {
+        const rawStatus = pi.issue_status || pi.status || 'open';
+        const sCfg      = S[rawStatus] || S.open;
+        const origType  = pi.original_status || pi.conformity_status || '';
+        const refNote   = pi.resolution_notes || pi.follow_up_notes || pi.resolutionNotes || '';
+        const sourceRef = pi.originAuditNumber || pi.source_audit_number ||
+                          (pi.source_audit_id ? 'Audit ID ' + pi.source_audit_id : '\u2014');
+
+        const descBody  = xmlPara(escXml(
+            pi.question_text || pi.description || pi.nc_description || 'N/D'
+        )) + (refNote
+            ? xmlPara(xmlRun('\u21b3 ' + refNote, { ital: true, color: '6B7280' }), { sb: 60, sa: 0 })
+            : '');
+
         return xmlRow([
-            xmlCell(xmlPara(escXml(pi.clause || pi.section_id || '\u2014'), { align: 'center' }), { pct: PCT[0] }),
+            xmlCell(xmlPara(escXml(pi.section_code || pi.clause || '\u2014'), { align: 'center' }), { pct: PCT[0] }),
             xmlCell(descBody, { pct: PCT[1] }),
-            xmlCell(xmlPara(escXml(
-                pi.originAuditNumber || pi.nc_number ||
-                (pi.source_audit_id ? 'ID ' + pi.source_audit_id : '\u2014')
-            ), { align: 'center' }), { pct: PCT[2] }),
-            xmlCell(xmlPara(xmlRun(sCfg.label, { bold: true, color: sCfg.text }), { align: 'center' }),
-                { fill: sCfg.fill, pct: PCT[3] }),
+            xmlCell(xmlPara(escXml(origType), { align: 'center' }), { pct: PCT[2] }),
+            xmlCell(xmlPara(escXml(sourceRef), { align: 'center' }), { pct: PCT[3] }),
+            xmlCell(
+                xmlPara(xmlRun(sCfg.label, { bold: true, color: sCfg.text }), { align: 'center' }),
+                { fill: sCfg.fill, pct: PCT[4] }
+            ),
         ]);
     });
 
@@ -668,9 +680,11 @@ export function buildRileviSummaryOoxml(checklist, pendingIssues = []) {
     const FILL = { CONF: 'D1FAE5', NC: 'FEE2E2', OSS: 'FEF3C7', OM: 'DBEAFE', 'N.A.': 'E5E7EB', NV: 'EDE9FE' };
     const PCT  = [34, 11, 11, 11, 11, 11, 11];
 
+    // La riga AP va in NC solo se almeno un rilievo "persiste" (carry-forward nel prossimo re-audit).
+    // Rilievi in_progress o open non ancora valutati non contano come NC definitiva.
     const hasOpenPending = (pendingIssues || []).some((pi) => {
-        const st = pi.status || pi.issue_status || 'open';
-        return st !== 'resolved' && st !== 'closed';
+        const st = pi.issue_status || pi.status || 'open';
+        return st === 'persists';
     });
 
     const headerRow = xmlRow(

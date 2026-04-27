@@ -18,6 +18,27 @@ import ChecklistModule from "./ChecklistModule";
 import CustomChecklistAuditView from "./CustomChecklistAuditView";
 import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
+import AuditClosePanel from "./AuditClosePanel";
+import NonConformitiesManager from "./NonConformitiesManager";
+
+/** Mappa status → etichetta italiana e classe CSS */
+const STATUS_LABELS = {
+  draft:       { label: "BOZZA",      cls: "draft"      },
+  in_progress: { label: "IN CORSO",   cls: "in-progress" },
+  suspended:   { label: "SOSPESO",    cls: "suspended"  },
+  completed:   { label: "COMPLETATO", cls: "completed"  },
+  approved:    { label: "APPROVATO",  cls: "approved"   },
+  archived:    { label: "ARCHIVIATO", cls: "archived"   },
+};
+
+function AuditStatusBadge({ status }) {
+  const cfg = STATUS_LABELS[status] || { label: (status || "").toUpperCase(), cls: "draft" };
+  return (
+    <span className={`audit-status-badge badge-status-${cfg.cls}`}>
+      {cfg.label}
+    </span>
+  );
+}
 
 /**
  * Configurazione centralizzata di tutti gli standard supportati.
@@ -112,8 +133,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const [openSections, setOpenSections] = useState({
     "general-data": false,
     checklist: false,
+    "nc-register": false,
     outcome: false,
-    conclusions: false, // Bug 4: sezione 12 Conclusioni separata da Esito
+    conclusions: false,
+    close: false,
     export: false,
   });
 
@@ -276,11 +299,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </span>
           </div>
           <div className="audit-meta">
-            <span
-              className={`audit-status status-${currentAudit.metadata.status.toLowerCase()}`}
-            >
-              {currentAudit.metadata.status}
-            </span>
+            <AuditStatusBadge status={currentAudit.metadata.status} />
             <span className="audit-date">
               {new Date(currentAudit.metadata.lastModified).toLocaleDateString(
                 "it-IT"
@@ -579,6 +598,26 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           )}
         </div>
 
+        {/* ==================== REGISTRO NC (NonConformitiesManager) ==================== */}
+        <div className="accordion-section">
+          <button
+            className={`accordion-header ${openSections["nc-register"] ? "open" : ""}`}
+            onClick={() => toggleSection("nc-register")}
+          >
+            <span className="section-icon">📋</span>
+            <span className="section-arrow">
+              {openSections["nc-register"] ? "▼" : "▶"}
+            </span>
+            <span className="section-title">Registro Non Conformità</span>
+          </button>
+
+          {openSections["nc-register"] && (
+            <div className="accordion-content">
+              <NonConformitiesManager />
+            </div>
+          )}
+        </div>
+
         {/* ==================== SEZIONE 11: ESITO DELL'AUDIT (metriche NC/OSS/OM) ==================== */}
         <div className="accordion-section">
           <button
@@ -626,6 +665,33 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 auditOutcome={currentAudit.metadata.auditOutcome}
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={true}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ==================== CHIUSURA AUDIT ==================== */}
+        <div className="accordion-section">
+          <button
+            className={`accordion-header ${openSections["close"] ? "open" : ""}`}
+            onClick={() => toggleSection("close")}
+          >
+            <span className="section-icon">🔒</span>
+            <span className="section-arrow">
+              {openSections["close"] ? "▼" : "▶"}
+            </span>
+            <span className="section-title">Chiusura Audit</span>
+          </button>
+
+          {openSections["close"] && (
+            <div className="accordion-content">
+              <AuditClosePanel
+                currentAudit={currentAudit}
+                onUpdate={onUpdate}
+                onCompleted={() => {
+                  // Ricarica la pagina per riflettere il nuovo stato read-only
+                  setOpenSections((prev) => ({ ...prev, close: false }));
+                }}
               />
             </div>
           )}

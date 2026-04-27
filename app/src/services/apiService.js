@@ -460,6 +460,28 @@ class ApiService {
         return this.get(`/audits/${auditId}/pending-issues`);
     }
 
+    /**
+     * Aggiorna stato di risoluzione di un rilievo pendente
+     * { status: 'resolved'|'persists'|'in_progress', resolution_notes?: string }
+     */
+    async updatePendingIssue(auditId, issueId, data) {
+        return this.put(`/audits/${auditId}/pending-issues/${issueId}`, data);
+    }
+
+    /**
+     * Chiude formalmente l'audit (status → completed)
+     */
+    async completeAudit(auditId) {
+        return this.post(`/audits/${auditId}/complete`, {});
+    }
+
+    /**
+     * Approva l'audit completato (status → approved, definitivamente bloccato)
+     */
+    async approveAudit(auditId) {
+        return this.post(`/audits/${auditId}/approve`, {});
+    }
+
     // ==========================================
     // COMPANIES (Fase 1 Multi-Tenant)
     // ==========================================

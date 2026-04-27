@@ -114,8 +114,8 @@ function normalizeChecklistStatus(checklist) {
 function normalizeStatus(status) {
   if (!status || status === "") return "NOT_ANSWERED";
 
-  // Già in formato corretto
-  if (["C", "NC", "OSS", "OM", "NA", "NOT_ANSWERED"].includes(status)) {
+  // Già in formato corretto (NV incluso)
+  if (["C", "NC", "OSS", "OM", "NA", "NV", "NOT_ANSWERED"].includes(status)) {
     return status;
   }
 
@@ -1433,8 +1433,20 @@ export function StorageProvider({ children, useMockData = false }) {
         return prevAudits.map((audit) => {
           const auditId = audit.metadata?.id || audit.id;
           if (auditId === currentAuditId) {
-            const updated =
+            let updated =
               typeof updater === "function" ? updater(audit) : updater;
+
+            // Transizione automatica draft → in_progress al primo salvataggio reale.
+            // Non avviene per aggiornamenti interni (es. hydrate questionIds, seeding timestamp).
+            if (
+              updated?.metadata?.status === "draft" &&
+              typeof updater === "function"
+            ) {
+              updated = {
+                ...updated,
+                metadata: { ...updated.metadata, status: "in_progress" },
+              };
+            }
 
             // Valida schema
             const validation = validateAuditSchema(updated);

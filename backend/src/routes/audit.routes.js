@@ -34,6 +34,15 @@ router.get('/audits/:id/statistics', auditController.getAuditStatistics);
 // GET /api/v1/audits/:id/pending-issues - Pending issues dall'ultimo audit completato stesso cliente
 router.get('/audits/:id/pending-issues', auditController.getPendingIssues);
 
+// PUT /api/v1/audits/:id/pending-issues/:issueId - Aggiorna risoluzione rilievo pendente
+router.put('/audits/:id/pending-issues/:issueId', auditController.updatePendingIssue);
+
+// POST /api/v1/audits/:id/complete - Chiusura formale audit (status → completed)
+router.post('/audits/:id/complete', auditController.completeAudit);
+
+// POST /api/v1/audits/:id/approve - Approvazione audit completato (status → approved)
+router.post('/audits/:id/approve', auditController.approveAudit);
+
 // POST /api/v1/audits/check-reaudit - Verifica rilievi pendenti da audit precedente stesso cliente
 // DEVE STARE PRIMA DI /audits/:id
 router.post('/audits/check-reaudit', auditController.checkReaudit);
