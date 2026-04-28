@@ -26,13 +26,15 @@ describe("buildRileviSummaryOoxml", () => {
   });
 
   it("riga AP: con rilievi aperti → X su colonna NC", () => {
+    // La riga AP va in rosso (NC) solo se il pending ha status 'persists'
+    // (nuovo comportamento da T10: rilievi 'open' o 'in_progress' non ancora valutati non contano)
     const xml = buildRileviSummaryOoxml(
       {
         ISO_9001: {
           s1: { questions: [{ status: "C", clauseRef: "1", title: "x" }] },
         },
       },
-      [{ status: "open", description: "NC vecchia" }]
+      [{ status: "persists", description: "NC vecchia carry-forward" }]
     );
     expect(xml).toContain("AP");
     const ncOpen = xml.indexOf("Azioni pendenti");
