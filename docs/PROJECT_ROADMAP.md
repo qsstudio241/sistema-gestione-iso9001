@@ -711,7 +711,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 24 aprile 2026
+**Ultimo Aggiornamento**: 28 aprile 2026
 
 ### Sequenza priorità aggiornata (24 aprile 2026)
 
@@ -729,7 +729,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: (1) Verificare che i LOCK audit siano spariti aprendo l'app (automatico, ≤ 45 sec). (2) Confermare **Smoke L3 P1**. (3) Poi avviare **Sprint 10** (staging → registry).
+**Prossimo Step**: (1) Smoke L3 manuale P1 (checklist custom outcome buttons). (2) Avviare **Sprint 10** (staging → registry). Deploy backend ora autonomo da Cloud Agent (script `deploy-to-vps.sh` + secret Cursor configurati 28/04/2026).
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 
