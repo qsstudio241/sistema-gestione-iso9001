@@ -1,7 +1,7 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 26 aprile 2026
+> **Ultimo Aggiornamento**: 28 aprile 2026
 > **Prossimo Step** (sessione corrente): **Smoke test allegati** (upload PDF/foto → link Word cliccabile + foto embedded nel report) → poi decidere tra **Sprint 10** (staging → document registry) e fix cosmetici validazione evidenze. Sprint 0-9 tutti ✅. Fix sincronizzazione completato (zero 409 ciclici, zero 401 al logout). `DEPUTYTASK.md` attivo: CORS `.env` VPS (`systemgest` → entrambi i domini Netlify) — non bloccante per uso corrente.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)

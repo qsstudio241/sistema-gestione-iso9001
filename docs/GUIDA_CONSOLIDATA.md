@@ -736,6 +736,18 @@ Il flusso di logout in `AuthContext.jsx` chiamava `apiService.logout()` (che ese
 
 ---
 
+### Chiusura sessione 28 aprile 2026
+
+**Contenuto sessione (operativo, nessun commit codice in questa conversazione):**
+
+- Verifica variabili d'ambiente `SGQ_*` e `DB_*` nel workspace (valori non loggati; solo elenco nomi).
+- Esecuzione **`bash backend/scripts/deploy-to-vps.sh`**: preflight SSH OK, copia controller/route/service/middleware e `server.js` su `www.fr-busato.it:/var/www/sgq-backend` (porta 1122, auth da `SGQ_SSH_KEY_B64`); riavvio `sgq-backend.service` **active (running)**; **Health API 200**; chiusura script "DEPLOY COMPLETATO". Verifica manuale opzionale: `GET https://www.fr-busato.it:8443/api/v1/health`.
+- **Nota VPS (log servizio)**: warning **AlertScheduler** — `node-schedule` / `nodemailer` assenti sul server (scheduler disabilitato); non introdotto in questa sessione.
+
+**All'inizio della prossima sessione:** come [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) — smoke allegati, scelta traccia Sprint 10 vs `norm_excerpt` / validazione evidenze, eventuale `DEPUTYTASK` CORS se si interviene su `.env` VPS.
+
+---
+
 ### Chiusura sessione 24 aprile 2026
 
 **Bug critico risolto — Audit cancellati che ricompaiono nel menu (commit `b3961f5`):**
