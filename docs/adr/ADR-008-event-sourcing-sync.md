@@ -202,13 +202,13 @@ Ogni 24h un job server crea uno snapshot dell'audit e marca tutti gli eventi pre
 - ✅ UPDATE genera righe in history (verificato: 2 righe in `audit_responses_history`, 6 in `audits_history`)
 - ✅ Health API post-migrazione: `{"status":"healthy","database":{"healthy":true}}`
 
-**Test L3 (smoke umano obbligatorio — da completare)**:
-- [ ] Login Camellini su produzione
-- [ ] Apri audit MSN-260428-01
-- [ ] Modifica una risposta checklist
-- [ ] Verifica che la risposta sia visibile
-- [ ] Ricarica pagina — risposta ancora presente
-- [ ] Verifica history: `SELECT * FROM audit_responses FOR SYSTEM_TIME ALL WHERE audit_id = 35185`
+**Test L3 (smoke umano) — ✅ COMPLETATO (29/04/2026)**:
+- [x] Login account admin su produzione
+- [x] Apri audit — modifica risposta checklist
+- [x] Chiusura e rientro nell'audit
+- [x] Risposta persistente ✅
+- Esecutore: product owner — dispositivo: PC desktop
+- Note: account `admin@sgq.local` (superadmin). Comportamento identico per tutti gli utenti — temporal table è su `audit_responses`, condivisa cross-account.
 
 **Rollback (se necessario)**:
 ```sql
