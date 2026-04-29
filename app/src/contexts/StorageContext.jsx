@@ -1551,39 +1551,17 @@ export function StorageProvider({ children, useMockData = false }) {
                   console.error("❌ [SYNC] Errore enqueue update:", err);
                 });
 
-              if (auditLockRef.current.mode !== "owner") {
-                const lockMode = auditLockRef.current.mode;
-                if (lockMode === "none") {
-                  // Lock in acquisizione (transitorio ~500ms): non bloccare,
-                  // riprova dopo 1.5s quando il lock dovrebbe essere pronto.
-                  // Nessun warning: è atteso nei primi istanti dopo selezione audit.
-                  setTimeout(() => {
-                    if (auditLockRef.current.mode === "owner") {
-                      syncService.enqueue("update_audit", {
-                        audit_uuid: updated.metadata?.id || updated.id,
-                        client_name: updated.metadata?.clientName,
-                        company_id: updated.metadata?.companyId ?? null,
-                        audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
-                        fornitore_name: updated.metadata?.fornitoreName ?? '',
-                        project_year: updated.metadata?.projectYear,
-                        audit_date: updated.metadata?.auditDate,
-                        auditor_name: updated.metadata?.auditorName,
-                        audit_type: updated.metadata?.auditType,
-                        status: updated.metadata?.status,
-                        notes: updated.metadata?.notes,
-                      }).catch(() => {});
-                    }
-                  }, 1500);
-                } else {
-                  // Lock foreign/stale: write bloccato — log visibile.
-                  const now = Date.now();
-                  if (now - lockSyncWarnTsRef.current > 5000) {
-                    lockSyncWarnTsRef.current = now;
-                    console.warn(
-                      "⏸️ [SYNC] update_audit sospeso: lock non owner",
-                      lockMode,
-                    );
-                  }
+              if (auditLockRef.current.mode !== "owner" && auditLockRef.current.mode !== "none") {
+                // Lock "foreign": write bloccato da altro utente — log visibile una volta ogni 5s.
+                // Lock "none" (transitorio, acquisizione in corso): nessun warning,
+                // l'item è già in coda e verrà inviato dal syncService appena il token arriva.
+                const now = Date.now();
+                if (now - lockSyncWarnTsRef.current > 5000) {
+                  lockSyncWarnTsRef.current = now;
+                  console.warn(
+                    "⏸️ [SYNC] update_audit sospeso: lock non owner",
+                    auditLockRef.current.mode,
+                  );
                 }
               }
             }
