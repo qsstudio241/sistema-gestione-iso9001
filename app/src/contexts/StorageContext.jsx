@@ -1496,18 +1496,24 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             }
 
-            // Enqueue sync audit metadata solo se il lock è owner attivo.
-            // update_audit richiede il lock (protezione concorrenza multi-utente):
-            // il syncService la reinvierà quando il lock verrà riacquisito.
-            if (navigator.onLine && auditLockRef.current.mode === "owner") {
-              // Usa updated_at >= server_ts per evitare conflict ciclici:
-              // se il server ha già una versione più recente (memorizzata in localStorage
-              // da syncService dopo ogni sync riuscito/server-wins), il timestamp inviato
-              // deve essere >= quella dello server altrimenti torna sempre 409.
+            // Enqueue sync audit metadata se online e lock NON foreign.
+            //
+            // Lock "foreign" = altro utente attivo → write già bloccato a monte (riga 1418).
+            // Lock "owner" / "pending_server" / "offline" / "error" → l'utente corrente è il
+            // legittimo proprietario dell'audit; il payload viene accodato sempre.
+            //
+            // Il syncService gestisce la guard di invio: salta update_audit senza token lock
+            // (evita 423 a raffica), ma l'item resta in coda e viene ritentato quando il lock
+            // viene riacquisito. In questo modo il lavoro non si perde mai in coda.
+            //
+            // Il backend gestisce il conflict con field-level merge: anche se server_ts > client_ts
+            // (heartbeat lock), i campi ricchi (notes, generalData, auditObjective, auditOutcome)
+            // vengono preservati se non vuoti nel payload.
+            if (navigator.onLine) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();
-              // +1ms garantisce client > server → nessun conflict
+              // +1ms garantisce client >= server per evitare conflict non necessari
               const syncUpdatedAt = new Date(Math.max(clientTsMs, serverTsMs + 1)).toISOString();
 
               syncService
@@ -1538,15 +1544,16 @@ export function StorageProvider({ children, useMockData = false }) {
                 .catch((err) => {
                   console.error("❌ [SYNC] Errore enqueue update:", err);
                 });
-            } else if (navigator.onLine && auditLockRef.current.mode !== "owner") {
-              const now = Date.now();
-              if (now - lockSyncWarnTsRef.current > 5000) {
-                lockSyncWarnTsRef.current = now;
-                console.warn(
-                  "⏸️ [SYNC] update_audit sospeso (lock non owner):",
-                  auditLockRef.current.mode,
-                  "— risposte checklist accodate comunque",
-                );
+
+              if (auditLockRef.current.mode !== "owner") {
+                const now = Date.now();
+                if (now - lockSyncWarnTsRef.current > 5000) {
+                  lockSyncWarnTsRef.current = now;
+                  console.warn(
+                    "⏸️ [SYNC] update_audit accodato (lock non owner, invio sospeso fino a riacquisizione):",
+                    auditLockRef.current.mode,
+                  );
+                }
               }
             }
 

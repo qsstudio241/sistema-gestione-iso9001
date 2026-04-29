@@ -713,7 +713,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 **Ultimo Aggiornamento**: 28 aprile 2026
 
-### Sequenza priorità aggiornata (24 aprile 2026)
+### Sequenza priorità aggiornata (29 aprile 2026)
+
+> **Priorità assoluta**: robustezza sync dati — nessuna perdita di lavoro in qualsiasi condizione di rete. Motivazione: bug Camellini 28/04/2026 (risposte checklist e testi mai sincronizzati per lock oscillante su rete mobile). L'affidabilità dell'app professionale viene prima di qualsiasi nuova funzionalità.
 
 | # | Task | Modalità | Stato |
 |---|---|---|---|
@@ -723,13 +725,18 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | Bug | Audit cancellati non ricompaiono nel menu dropdown (StorageContext.jsx + recentlyDeletedRef) | Fix mirato | ✅ Completato |
 | Bug | LOCK-* audit ricomparivano tra device — isIntentionalDraft + forceClearLocalCache | Fix mirato | ✅ Completato (24/04) |
 | P3 | **Sprint 0–9** — Navigation, Registry, Alert, Notifiche, Qualifiche, NC, Rischi, Reclami, Licensing, Import PDF | Multi-sessione | ✅ Tutti completati |
-| P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog attivo |
+| **🔴 SYNC-1** | **save_responses indipendente dal lock** — risposte checklist sempre accodate (bug Camellini) | Fix mirato | ✅ Completato (29/04) — PR #18 — deploy necessario |
+| **🔴 SYNC-2** | **Conflict resolution campo per campo** — testi/note non scartati da server-wins su updated_at | Fix mirato | 🔄 In corso |
+| **🔴 SYNC-3** | **Notifica esplicita perdita dati locali** — alert quando server-wins scarta modifiche locali | Fix mirato | ⏳ Dopo SYNC-2 |
+| **🔴 SYNC-4** | **Gate pre-logout con sync forzata** (ADR-007) — blocca logout se coda non svuotata | ADR-007 | ⏳ Dopo SYNC-3 |
+| **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ⏳ Backlog attivo |
+| P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog — dopo SYNC-3 |
 | P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
-| P6 | **Sprint 10** — Ingest PDF → staging → document registry (commit umano) | Prossima sessione | Prossima — dopo Smoke L3 P1 |
+| P6 | **Sprint 10** — Ingest PDF → staging → document registry (commit umano) | Prossima sessione | ⏳ Dopo SYNC-3 |
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: (1) Smoke L3 manuale P1 (checklist custom outcome buttons). (2) Avviare **Sprint 10** (staging → registry). Deploy backend ora autonomo da Cloud Agent (script `deploy-to-vps.sh` + secret Cursor configurati 28/04/2026).
+**Prossimo Step**: completare **SYNC-2** (conflict resolution campo per campo) → SYNC-3 → SYNC-4. Deploy SYNC-1 su VPS appena PR #18 approvata. Sprint 10 e nuove feature attendono la chiusura del blocco SYNC.
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 
