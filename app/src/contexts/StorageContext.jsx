@@ -1329,6 +1329,12 @@ export function StorageProvider({ children, useMockData = false }) {
 
     const intervalId = setInterval(async () => {
       if (!navigator.onLine) return;
+      // Se non c'è token (sessione scaduta o logout) ferma il timer immediatamente.
+      // Evita loop di 401 mentre il componente è ancora montato ma la sessione è già finita.
+      if (!apiService.getToken()) {
+        clearInterval(intervalId);
+        return;
+      }
       await reconcileAuditsFromServer({ processQueueFirst: true });
     }, 45000);
 
@@ -1338,6 +1344,7 @@ export function StorageProvider({ children, useMockData = false }) {
   // Riconciliazione immediata quando torna online.
   useEffect(() => {
     const onOnline = async () => {
+      if (!apiService.getToken()) return;
       await reconcileAuditsFromServer({ processQueueFirst: true });
     };
     window.addEventListener('online', onOnline);
