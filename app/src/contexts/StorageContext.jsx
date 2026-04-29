@@ -521,7 +521,13 @@ export function StorageProvider({ children, useMockData = false }) {
 
   // Rilascio lock server al logout + pulizia cache locale (IndexedDB audit + sync DB)
   useEffect(() => {
+    let logoutInProgress = false;
     const onUserLoggedOut = () => {
+      // Guard: evita doppia esecuzione se sgq:userLoggedOut arriva più volte
+      // (AuthContext emette da logout() e handleForceLogout, o StorageContext rimontato).
+      if (logoutInProgress) return;
+      logoutInProgress = true;
+
       if (lockHeartbeatRef.current) {
         clearInterval(lockHeartbeatRef.current);
         lockHeartbeatRef.current = null;
@@ -1546,13 +1552,38 @@ export function StorageProvider({ children, useMockData = false }) {
                 });
 
               if (auditLockRef.current.mode !== "owner") {
-                const now = Date.now();
-                if (now - lockSyncWarnTsRef.current > 5000) {
-                  lockSyncWarnTsRef.current = now;
-                  console.warn(
-                    "⏸️ [SYNC] update_audit accodato (lock non owner, invio sospeso fino a riacquisizione):",
-                    auditLockRef.current.mode,
-                  );
+                const lockMode = auditLockRef.current.mode;
+                if (lockMode === "none") {
+                  // Lock in acquisizione (transitorio ~500ms): non bloccare,
+                  // riprova dopo 1.5s quando il lock dovrebbe essere pronto.
+                  // Nessun warning: è atteso nei primi istanti dopo selezione audit.
+                  setTimeout(() => {
+                    if (auditLockRef.current.mode === "owner") {
+                      syncService.enqueue("update_audit", {
+                        audit_uuid: updated.metadata?.id || updated.id,
+                        client_name: updated.metadata?.clientName,
+                        company_id: updated.metadata?.companyId ?? null,
+                        audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
+                        fornitore_name: updated.metadata?.fornitoreName ?? '',
+                        project_year: updated.metadata?.projectYear,
+                        audit_date: updated.metadata?.auditDate,
+                        auditor_name: updated.metadata?.auditorName,
+                        audit_type: updated.metadata?.auditType,
+                        status: updated.metadata?.status,
+                        notes: updated.metadata?.notes,
+                      }).catch(() => {});
+                    }
+                  }, 1500);
+                } else {
+                  // Lock foreign/stale: write bloccato — log visibile.
+                  const now = Date.now();
+                  if (now - lockSyncWarnTsRef.current > 5000) {
+                    lockSyncWarnTsRef.current = now;
+                    console.warn(
+                      "⏸️ [SYNC] update_audit sospeso: lock non owner",
+                      lockMode,
+                    );
+                  }
                 }
               }
             }
