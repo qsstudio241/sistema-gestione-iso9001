@@ -1468,24 +1468,57 @@ export function StorageProvider({ children, useMockData = false }) {
                   : 0,
             };
 
-            // Enqueue sync audit metadata se online E lock owner attivo.
-            // Se il lock è scaduto/non riconosciuto, salvare comunque in locale ma NON accodare
-            // nuove write server (evita loop infinito AUDIT_LOCK_REQUIRED in console/queue).
-            if (navigator.onLine && auditLockRef.current.mode === "owner") {
-              // Usa updated_at >= server_ts per evitare conflict ciclici:
-              // se il server ha già una versione più recente (memorizzata in localStorage
-              // da syncService dopo ogni sync riuscito/server-wins), il timestamp inviato
-              // deve essere >= quella dello server altrimenti torna sempre 409.
-              const auditUuid = updated.id || updated.metadata?.id;
+            const auditUuid = updated.id || updated.metadata?.id;
+
+            // Le risposte checklist sono idempotenti e indipendenti dal lock:
+            // vengono accodate ogni volta che l'utente modifica una risposta,
+            // indipendentemente dallo stato del lock (owner / pending_server / offline).
+            // Il lock riguarda la coordinazione multi-utente, non il diritto dell'utente
+            // corrente di salvare il proprio lavoro su un audit che sta compilando.
+            // L'unico caso in cui NON si accoda è lock "foreign" (altro utente attivo):
+            // in quel caso updateCurrentAudit ha già bloccato la write a riga 1418.
+            if (navigator.onLine) {
+              const responses = extractChecklistResponses(updated);
+              if (responses.length > 0) {
+                syncService
+                  .enqueue("save_responses", {
+                    auditId: auditUuid,
+                    responses,
+                  })
+                  .then(() => {
+                    console.log(
+                      `📤 [SYNC] ${responses.length} risposte enqueued per sync`,
+                    );
+                  })
+                  .catch((err) => {
+                    console.error("❌ [SYNC] Errore enqueue risposte:", err);
+                  });
+              }
+            }
+
+            // Enqueue sync audit metadata se online e lock NON foreign.
+            //
+            // Lock "foreign" = altro utente attivo → write già bloccato a monte (riga 1418).
+            // Lock "owner" / "pending_server" / "offline" / "error" → l'utente corrente è il
+            // legittimo proprietario dell'audit; il payload viene accodato sempre.
+            //
+            // Il syncService gestisce la guard di invio: salta update_audit senza token lock
+            // (evita 423 a raffica), ma l'item resta in coda e viene ritentato quando il lock
+            // viene riacquisito. In questo modo il lavoro non si perde mai in coda.
+            //
+            // Il backend gestisce il conflict con field-level merge: anche se server_ts > client_ts
+            // (heartbeat lock), i campi ricchi (notes, generalData, auditObjective, auditOutcome)
+            // vengono preservati se non vuoti nel payload.
+            if (navigator.onLine) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();
-              // +1ms garantisce client > server → nessun conflict
+              // +1ms garantisce client >= server per evitare conflict non necessari
               const syncUpdatedAt = new Date(Math.max(clientTsMs, serverTsMs + 1)).toISOString();
 
               syncService
                 .enqueue("update_audit", {
-                  audit_uuid: auditUuid, // Backend richiede audit_uuid
+                  audit_uuid: auditUuid,
                   audit_number: updated.metadata?.auditNumber,
                   client_name: updated.metadata?.clientName,
                   company_id: updated.metadata?.companyId ?? null,
@@ -1497,15 +1530,13 @@ export function StorageProvider({ children, useMockData = false }) {
                   audit_type: updated.metadata?.auditType,
                   status: updated.metadata?.status,
                   notes: updated.metadata?.notes,
-                  ...calculatedMetrics, // Metriche calcolate da checklist
+                  ...calculatedMetrics,
                   selectedStandards: updated.metadata?.selectedStandards || [],
                   custom_checklist_id:
                     updated.metadata?.customChecklistId ??
                     updated.custom_checklist_id ??
                     null,
                   updated_at: syncUpdatedAt,
-                  // Campi ricchi: persistenza multi-device
-                  // Nota: Dashboard li salva dentro metadata (handleMetadataUpdate)
                   generalData: updated.metadata?.generalData ?? updated.generalData,
                   auditObjective: updated.metadata?.auditObjective ?? updated.auditObjective,
                   auditOutcome: updated.metadata?.auditOutcome ?? updated.auditOutcome,
@@ -1514,31 +1545,15 @@ export function StorageProvider({ children, useMockData = false }) {
                   console.error("❌ [SYNC] Errore enqueue update:", err);
                 });
 
-              // Enqueue sync risposte checklist
-              const responses = extractChecklistResponses(updated);
-              if (responses.length > 0) {
-                syncService
-                  .enqueue("save_responses", {
-                    auditId: updated.metadata?.id || updated.id,
-                    responses: responses,
-                  })
-                  .then(() => {
-                    console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync`,
-                    );
-                  })
-                  .catch((err) => {
-                    console.error("❌ [SYNC] Errore enqueue risposte:", err);
-                  });
-              }
-            } else if (navigator.onLine && auditLockRef.current.mode !== "owner") {
-              const now = Date.now();
-              if (now - lockSyncWarnTsRef.current > 5000) {
-                lockSyncWarnTsRef.current = now;
-                console.warn(
-                  "⏸️ [SYNC] enqueue write sospeso: lock audit non owner",
-                  auditLockRef.current.mode,
-                );
+              if (auditLockRef.current.mode !== "owner") {
+                const now = Date.now();
+                if (now - lockSyncWarnTsRef.current > 5000) {
+                  lockSyncWarnTsRef.current = now;
+                  console.warn(
+                    "⏸️ [SYNC] update_audit accodato (lock non owner, invio sospeso fino a riacquisizione):",
+                    auditLockRef.current.mode,
+                  );
+                }
               }
             }
 

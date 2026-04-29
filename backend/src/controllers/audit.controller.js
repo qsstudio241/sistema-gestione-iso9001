@@ -824,9 +824,10 @@ async function upsertAudit(req, res) {
             });
         }
 
-        // Check esistenza per audit_uuid
+        // Check esistenza per audit_uuid — include campi ricchi per il merge per campo
         const existing = await query(`
-      SELECT audit_id, audit_number, updated_at, status, standard_id, custom_checklist_id
+      SELECT audit_id, audit_number, updated_at, status, standard_id, custom_checklist_id,
+             notes, audit_extra_data
       FROM audits
       WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id
     `, { audit_uuid, organization_id });
@@ -879,26 +880,62 @@ async function upsertAudit(req, res) {
                 ? standard_ids.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0)
                 : (hasCustomChecklist ? [] : [bodyHasStandardField ? (parseInt(standard_id) || 1) : (existingAudit.standard_id || 1)]);
 
-            // Conflict detection: se server updated_at > client updated_at
+            // Conflict resolution per campo (field-level merge).
+            //
+            // Strategia: distinguiamo campi STRUTTURALI da campi RICCHI.
+            //
+            // Campi strutturali (status, metriche, standard) → server-wins se timestamp server > client.
+            // Questi campi sono aggregati/calcolati e un'eventuale sovrascrittura è accettabile.
+            //
+            // Campi ricchi (notes, generalData, auditObjective, auditOutcome) → merge:
+            // il client invia il suo valore; se non è vuoto, viene sempre scritto indipendentemente
+            // dal timestamp. Questo previene che un heartbeat lock (che aggiorna solo updated_at)
+            // cancelli testi scritti dall'utente su rete mobile instabile.
+            //
+            // Motivazione: il lock heartbeat aggiorna `updated_at` sul server ogni ~10 min anche
+            // senza modifiche reali. Questo rendeva il timestamp server sempre "più recente" di
+            // quello del client, causando il 409 a cascata e bloccando la sync dei testi.
             const serverTime = new Date(existingAudit.updated_at).getTime();
             const clientTime = updated_at ? new Date(updated_at).getTime() : 0;
+            const isConflict = serverTime > clientTime;
 
-            if (serverTime > clientTime && !req.body.force) {
-                logger.warn(`[UPSERT] Conflict rilevato per audit ${audit_uuid}: server=${serverTime}, client=${clientTime}`);
-                return res.status(409).json({
-                    error: 'Conflict',
-                    code: 'AUDIT_CONFLICT',
-                    message: 'Versione server più recente. Usa force=true per sovrascrivere.',
-                    serverData: {
-                        audit_id,
-                        updated_at: existingAudit.updated_at,
-                        status: existingAudit.status
-                    }
-                });
+            if (isConflict) {
+                logger.warn(`[UPSERT] Conflict rilevato per audit ${audit_uuid}: server=${serverTime}, client=${clientTime} — field-level merge applicato`);
             }
 
+            // Merge campi ricchi: il valore client prevale se non vuoto,
+            // altrimenti si preserva il valore corrente in DB.
+            let serverExtra = null;
+            if (existingAudit.audit_extra_data) {
+                try {
+                    serverExtra = typeof existingAudit.audit_extra_data === 'string'
+                        ? JSON.parse(existingAudit.audit_extra_data)
+                        : existingAudit.audit_extra_data;
+                } catch (_) { serverExtra = {}; }
+            }
+
+            // audit_extra_data: merge dei sotto-campi ricchi
+            // Se il client porta un campo non vuoto, prevale; altrimenti si usa il valore server.
+            const mergedExtra = { ...(serverExtra || {}), ...(audit_extra_data || {}) };
+            // Sotto-campi critici: se il server ha un valore e il client porta un oggetto vuoto,
+            // preserva il valore server (evita che un payload parziale azzeri testi validi).
+            for (const richField of ['generalData', 'auditObjective', 'auditOutcome']) {
+                const clientVal = audit_extra_data?.[richField];
+                const serverVal = serverExtra?.[richField];
+                const clientEmpty = !clientVal || (typeof clientVal === 'object' && Object.keys(clientVal).length === 0);
+                if (clientEmpty && serverVal) {
+                    mergedExtra[richField] = serverVal;
+                }
+            }
+
+            // notes: se il client porta un valore non vuoto, prevale; altrimenti preserva DB
+            const mergedNotes = (notes && String(notes).trim())
+                ? notes
+                : (existingAudit.notes || null);
+
             // UPDATE — SQL Server non supporta OUTPUT diretto su tabelle con trigger;
-            // usiamo una table variable come destinazione intermedia dell'OUTPUT clause
+            // usiamo una table variable come destinazione intermedia dell'OUTPUT clause.
+            // notes e audit_extra_data usano i valori merged (field-level merge, non server-wins).
             const updateResult = await query(`
         DECLARE @out TABLE (updated_at DATETIME2);
         UPDATE audits
@@ -934,7 +971,7 @@ async function upsertAudit(req, res) {
                 auditor_name: auditor_name || 'Non specificato',
                 audit_type: audit_type || 'internal',
                 status: status || 'draft',
-                notes: notes || null,
+                notes: mergedNotes,
                 total_questions: total_questions || 78,
                 answered_questions: answered_questions || 0,
                 conformities_count: conformities_count || 0,
@@ -942,11 +979,11 @@ async function upsertAudit(req, res) {
                 completion_percentage: completion_percentage || 0,
                 standard_id: standardIdsToSync.length > 0 ? standardIdsToSync[0] : null,
                 custom_checklist_id: effectiveCustomChecklistId,
-                audit_extra_data: audit_extra_data ? JSON.stringify(audit_extra_data) : null,
+                audit_extra_data: JSON.stringify(mergedExtra),
                 organization_id
             });
 
-            logger.info(`[UPSERT] Audit aggiornato: ${audit_id} (${audit_uuid})`);
+            logger.info(`[UPSERT] Audit aggiornato: ${audit_id} (${audit_uuid})${isConflict ? ' [field-merge]' : ''}`);
 
             // Aggiorna audit_standards: delete + reinsert per garantire coerenza con tutti gli standard selezionati
             try {
@@ -970,7 +1007,10 @@ async function upsertAudit(req, res) {
                 audit_uuid,
                 action: 'updated',
                 updated_at: serverUpdatedAt,
-                message: 'Audit aggiornato con successo'
+                merged: isConflict,
+                message: isConflict
+                    ? 'Audit aggiornato con field-level merge (conflitto timestamp risolto)'
+                    : 'Audit aggiornato con successo'
             });
 
         } else {
