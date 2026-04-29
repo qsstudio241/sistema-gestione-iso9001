@@ -354,6 +354,24 @@ let syncDbInstance = null;
  * Usato da syncService.js
  */
 export async function getDatabase() {
+    // Verifica che il singleton sia ancora in stato aperto.
+    // Dopo un clear data del browser, Chrome invalida la connessione
+    // senza chiamare onclose — il singleton punta a un oggetto stale
+    // che genera InvalidStateError su ogni transazione.
+    if (syncDbInstance) {
+        try {
+            // Prova a leggere readyState: se il DB è chiuso/invalido lancia
+            const stores = syncDbInstance.objectStoreNames;
+            if (!stores || syncDbInstance.version === 0) {
+                console.warn('⚠️ [IndexedDB] Singleton stale, riapertura...');
+                syncDbInstance = null;
+            }
+        } catch {
+            console.warn('⚠️ [IndexedDB] Singleton non valido, riapertura...');
+            syncDbInstance = null;
+        }
+    }
+
     if (syncDbInstance) {
         return syncDbInstance;
     }
@@ -368,6 +386,20 @@ export async function getDatabase() {
 
         request.onsuccess = () => {
             syncDbInstance = request.result;
+
+            // Ascolta la chiusura forzata del DB (es. clear data, upgrade versione).
+            // Azzera il singleton così la prossima getDatabase() lo riapre correttamente
+            // invece di usare un oggetto stale che genera InvalidStateError.
+            syncDbInstance.onclose = () => {
+                console.warn('⚠️ [IndexedDB] Connessione chiusa inaspettatamente — singleton azzerato');
+                syncDbInstance = null;
+            };
+            syncDbInstance.onversionchange = () => {
+                console.warn('⚠️ [IndexedDB] Versione cambiata — chiusura connessione corrente');
+                syncDbInstance.close();
+                syncDbInstance = null;
+            };
+
             console.log('✅ Sync database connesso');
             resolve(syncDbInstance);
         };

@@ -51,6 +51,12 @@ self.addEventListener('activate', (event) => {
 // Fetch: Strategia ibrida
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+
+    // Ignora richieste con schema non-HTTP (es. chrome-extension://, moz-extension://).
+    // La Cache API non supporta schemi diversi da http/https e genera TypeError
+    // per ogni estensione Chrome attiva nel browser (blocchi pub, password manager, ecc.).
+    if (!request.url.startsWith('http')) return;
+
     const url = new URL(request.url);
 
     // BYPASS: Richieste API verso backend esterno (fr-busato.it)
