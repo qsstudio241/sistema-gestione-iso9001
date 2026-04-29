@@ -1,72 +1,61 @@
-# DEPUTYTASK — Fix definitivo CORS: aggiorna .env sul VPS
+# DEPUTYTASK — Chiusura sprint sync: deploy backend + migrazione T1 + fix CORS
 
-## Contesto e causa radice identificata
-
-L'app mostra `NETWORK_ERROR` (status: 0) su **tutte** le chiamate API da browser.
-Non è rete instabile: è un **blocco CORS** del browser.
-
-### Diagnosi esatta (già eseguita dal cloud agent)
-
-Chiamata preflight OPTIONS verificata:
-```
-curl -X OPTIONS https://www.fr-busato.it:8443/api/v1/audits/sync \
-  -H "Origin: https://sistema-gestione-iso9001.netlify.app" \
-  -H "Access-Control-Request-Method: POST" \
-  -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token"
-```
-
-**Risposta attuale del server (SBAGLIATA):**
-```
-Access-Control-Allow-Origin: https://systemgest.netlify.app
-```
-
-Il dominio reale dell'app è `https://sistema-gestione-iso9001.netlify.app`.
-Il browser vede che l'Origin non corrisponde → blocca la risposta → `status: 0` → `NETWORK_ERROR`.
-
-### Dove si trova la configurazione sul VPS
-
-File: `/var/www/sgq-backend/.env`
-
-Riga attuale (da cambiare):
-```
-CORS_ORIGIN=https://systemgest.netlify.app,http://localhost:5173
-```
-
-Riga corretta:
-```
-CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173
-```
-
-Il codice in `backend/src/server.js` è già corretto (`X-Audit-Lock-Token` è già negli `allowedHeaders`, `CORS_ORIGIN` viene letto da env). Il problema è solo il valore della variabile sul VPS.
+> **Prerequisito**: i Cursor Cloud Secrets `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`,
+> `DB_SERVER`, `DB_PORT`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` devono essere
+> configurati (sono già stati impostati il 28/04/2026).
+>
+> Usa **`bash backend/scripts/deploy-to-vps.sh`** e
+> **`bash backend/scripts/run-migration-agent.sh <N>`** — non usare pscp/plink.
 
 ---
 
-## Cosa ha già fatto il cloud agent
+## Contesto
 
-1. **Aggiornato `backend/.env.example`** con il dominio corretto (commit `be7ea01` su `main`) — questo è il template di riferimento per il VPS
-2. **Fix `syncService.js`** — errori `NETWORK_ERROR` non stallano più gli item della sync queue (commit `1a6729e` su `main`)
-3. **Fix `syncService.js`** — backoff automatico e log aggregato quando ci sono cicli consecutivi di errori di rete (commit `72f0ae2` su `main`)
-4. Deploy Netlify: tutti e tre i commit sono già su `main`, Netlify ha già rilasciato il frontend aggiornato
+Tre operazioni in sospeso per chiudere lo sprint sync (SYNC-1/2/3/4 + T1):
+
+| # | Operazione | Perché serve |
+|---|---|---|
+| 1 | **Deploy backend** (`audit.controller.js`) | SYNC-2: field-level merge sul server — senza questo il 409 conflict scarta ancora i testi modificati |
+| 2 | **Migrazione DB 045** (temporal tables) | T1: storicizzazione automatica audit_responses + audits per compliance ISO §7.5 |
+| 3 | **Fix CORS su `.env` VPS** | Il dominio `sistema-gestione-iso9001.netlify.app` non è ancora nella lista CORS — blocca le chiamate API dal browser |
 
 ---
 
-## Task da completare (richiede accesso SSH al VPS)
+## Step 1 — Verifica segreti disponibili
 
-### Step 1 — Aggiorna `.env` sul VPS
-
-Connettiti al VPS:
 ```bash
-ssh -p 1122 spascarella@www.fr-busato.it
+env | grep -E "^(SGQ_|DB_)" | sed 's/=.*/=***/'
 ```
 
-Aggiorna la riga CORS_ORIGIN:
+Devono comparire tutti e 7. Se mancano, fermarsi e segnalarlo.
+
+---
+
+## Step 2 — Deploy backend (SYNC-2 + tutti i file aggiornati)
+
 ```bash
-sed -i 's|^CORS_ORIGIN=.*|CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173|' /var/www/sgq-backend/.env
+bash backend/scripts/deploy-to-vps.sh
 ```
 
-Verifica che sia corretta:
+Lo script copia `audit.controller.js` + tutti i controller/route/service/middleware
+e fa `systemctl restart sgq-backend`. Attendere la conferma `✓ Health API OK (200)`.
+
+---
+
+## Step 3 — Fix CORS nel `.env` sul VPS
+
+Dopo il deploy, aggiorna il file `.env` sul VPS via SSH:
+
 ```bash
-grep CORS_ORIGIN /var/www/sgq-backend/.env
+SGQ_KEY_FILE=$(mktemp /tmp/sgq_XXXXXX)
+chmod 600 "$SGQ_KEY_FILE"
+echo "$SGQ_SSH_KEY_B64" | base64 -d > "$SGQ_KEY_FILE"
+
+ssh -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new -p 1122 \
+  spascarella@www.fr-busato.it \
+  "sed -i 's|^CORS_ORIGIN=.*|CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173|' /var/www/sgq-backend/.env && grep CORS_ORIGIN /var/www/sgq-backend/.env"
+
+rm -f "$SGQ_KEY_FILE"
 ```
 
 Output atteso:
@@ -74,59 +63,75 @@ Output atteso:
 CORS_ORIGIN=https://sistema-gestione-iso9001.netlify.app,https://systemgest.netlify.app,http://localhost:5173
 ```
 
-### Step 2 — Riavvia il servizio backend
-
+Poi riavvia:
 ```bash
-sudo systemctl restart sgq-backend
-sleep 3
-sudo systemctl status sgq-backend | head -15
+SGQ_KEY_FILE=$(mktemp /tmp/sgq_XXXXXX)
+chmod 600 "$SGQ_KEY_FILE"
+echo "$SGQ_SSH_KEY_B64" | base64 -d > "$SGQ_KEY_FILE"
+ssh -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new -p 1122 \
+  spascarella@www.fr-busato.it \
+  "echo '$SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend.service && sleep 3 && sudo systemctl status sgq-backend | head -8"
+rm -f "$SGQ_KEY_FILE"
 ```
 
-### Step 3 — Verifica CORS post-deploy
+---
+
+## Step 4 — Migrazione DB 045 (temporal tables T1)
 
 ```bash
-curl -s -X OPTIONS https://www.fr-busato.it:8443/api/v1/audits/sync \
+bash backend/scripts/run-migration-agent.sh 045 production
+```
+
+La migrazione è idempotente (`IF NOT EXISTS`): se T1 era già stato eseguito, termina senza errori.
+
+Output atteso a fine script:
+```
+=== MIGRATION COMPLETATA ===
+```
+
+---
+
+## Step 5 — Verifica CORS post-deploy
+
+```bash
+curl -s -X OPTIONS "https://www.fr-busato.it:8443/api/v1/audits/sync" \
   -H "Origin: https://sistema-gestione-iso9001.netlify.app" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token" \
   -D - 2>&1 | grep -E "Access-Control|HTTP/"
 ```
 
-**Output atteso dopo il fix:**
+Output atteso:
 ```
 HTTP/1.1 204 No Content
 Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
-Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Origin, X-Audit-Lock-Token
 ```
 
-### Step 4 — Smoke test
+---
 
-Apri l'app su `https://sistema-gestione-iso9001.netlify.app`, apri la console del browser e verifica che non compaiano più errori `NETWORK_ERROR` o `CORS policy` sulle chiamate API.
+## Step 6 — Verifica field-level merge attivo sul VPS
 
-Opzionalmente esegui anche il curl di health:
 ```bash
-curl -sk https://www.fr-busato.it:8443/api/v1/health
+SGQ_KEY_FILE=$(mktemp /tmp/sgq_XXXXXX)
+chmod 600 "$SGQ_KEY_FILE"
+echo "$SGQ_SSH_KEY_B64" | base64 -d > "$SGQ_KEY_FILE"
+ssh -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new -p 1122 \
+  spascarella@www.fr-busato.it \
+  "grep -c 'field-level merge' /var/www/sgq-backend/src/controllers/audit.controller.js"
+rm -f "$SGQ_KEY_FILE"
 ```
+
+Output atteso: `3` o più (righe con "field-level merge" nel controller).
 
 ---
 
 ## Definition of Done
 
-- [ ] `grep CORS_ORIGIN /var/www/sgq-backend/.env` mostra il dominio corretto
-- [ ] `sudo systemctl status sgq-backend` → `active (running)`
-- [ ] Il curl preflight risponde con `Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app`
-- [ ] Nessun `NETWORK_ERROR` in console browser sull'app Netlify
-- [ ] La sync queue si svuota correttamente (badge "In coda" scompare o si azzera)
+- [ ] `deploy-to-vps.sh` → exit 0 + health 200
+- [ ] CORS_ORIGIN aggiornato sul VPS con entrambi i domini Netlify
+- [ ] `systemctl status sgq-backend` → `active (running)`
+- [ ] Migrazione 045 → `MIGRATION COMPLETATA` (o già presente)
+- [ ] `grep -c 'field-level merge' audit.controller.js` sul VPS → ≥ 3
+- [ ] CORS preflight risponde `Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app`
 
----
-
-## File coinvolti (per contesto)
-
-| File | Stato |
-|------|-------|
-| `backend/.env.example` | ✅ Aggiornato su `main` (dominio corretto) |
-| `/var/www/sgq-backend/.env` sul VPS | ❌ Da aggiornare (richiede SSH) |
-| `app/src/services/syncService.js` | ✅ Fix già su `main` + Netlify |
-
-**Note di sicurezza**: non scrivere password o segreti nel file, non in chat. Usa la sessione PuTTY / Pageant / `backend/config/.ssh-deploy.local.ps1` (gitignored) come da `docs/ACCESSO_DEPLOY_AGENTS.md`.
+Chiudi con **TEST OK** o **FIX NON APPLICABILI** elencando l'esito di ogni step.
