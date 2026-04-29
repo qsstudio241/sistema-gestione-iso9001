@@ -181,17 +181,28 @@ Ogni 24h un job server crea uno snapshot dell'audit e marca tutti gli eventi pre
 
 > **Regola**: ogni sprint è committabile indipendentemente. Nessuno sprint rompe il sistema corrente. Ogni sprint ha una procedura di rollback documentata.
 
-### T1 — Temporal tables + migration DB
+### T1 — Temporal tables + migration DB ✅ COMPLETATO (29/04/2026)
 
 **Obiettivo**: storicizzazione automatica di `audit_responses` e `audits` senza toccare codice applicativo.
 
-**Prerequisito**: creazione ambiente staging (DB separato, dati anonimi). Senza staging questo sprint non parte.
+**Prerequisito staging**: rivalutato il 29/04/2026 — gli audit presenti sono test/sviluppo, le anagrafiche (utenti, aziende, checklist, template) sono reali ma non toccate dalla migrazione. Il backup DB pre-migrazione (`SGQ_ISO9001_pre_T1_2026-04-29_13_06.bak`, 20MB) è sufficiente come rete di sicurezza. Staging formale da rivalutare prima di T3.
+
+**Eseguito**: migrazione `045_temporal_tables_T1.sql` — SQL Server 2025 Enterprise, history tables create, verificate, L1 90/90 green, health API OK post-migrazione.
 
 **File coinvolti**: solo `database/migrations/`
 
 **Test L1**: automatici — verifica che le query esistenti funzionino invariate dopo la migrazione.
 
-**Test L3 (smoke umano obbligatorio)**:
+**Test L1 automatici**: ✅ 90/90 — nessuna regressione post-migrazione (29/04/2026)
+
+**Test L2 (verifiche DB)**:
+- ✅ `audit_responses` e `audits` — `temporal_type = SYSTEM_VERSIONED`
+- ✅ `ValidFrom`/`ValidTo` nascoste (non appaiono in `SELECT *`)
+- ✅ `audit_responses_history` e `audits_history` create e attive
+- ✅ UPDATE genera righe in history (verificato: 2 righe in `audit_responses_history`, 6 in `audits_history`)
+- ✅ Health API post-migrazione: `{"status":"healthy","database":{"healthy":true}}`
+
+**Test L3 (smoke umano obbligatorio — da completare)**:
 - [ ] Login Camellini su produzione
 - [ ] Apri audit MSN-260428-01
 - [ ] Modifica una risposta checklist
@@ -199,7 +210,17 @@ Ogni 24h un job server crea uno snapshot dell'audit e marca tutti gli eventi pre
 - [ ] Ricarica pagina — risposta ancora presente
 - [ ] Verifica history: `SELECT * FROM audit_responses FOR SYSTEM_TIME ALL WHERE audit_id = 35185`
 
-**Rollback**: `ALTER TABLE audit_responses SET (SYSTEM_VERSIONING = OFF); ALTER TABLE audit_responses DROP PERIOD FOR SYSTEM_TIME; ALTER TABLE audit_responses DROP COLUMN ValidFrom, ValidTo;`
+**Rollback (se necessario)**:
+```sql
+ALTER TABLE audit_responses SET (SYSTEM_VERSIONING = OFF);
+ALTER TABLE audit_responses DROP PERIOD FOR SYSTEM_TIME;
+ALTER TABLE audit_responses DROP COLUMN ValidFrom, ValidTo;
+DROP TABLE IF EXISTS dbo.audit_responses_history;
+ALTER TABLE audits SET (SYSTEM_VERSIONING = OFF);
+ALTER TABLE audits DROP PERIOD FOR SYSTEM_TIME;
+ALTER TABLE audits DROP COLUMN ValidFrom, ValidTo;
+DROP TABLE IF EXISTS dbo.audits_history;
+```
 
 ---
 
