@@ -1,0 +1,108 @@
+.logout-sync-guard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: lsg-fadein 0.2s ease-out;
+}
+
+@keyframes lsg-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.logout-sync-guard-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem 1.75rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  text-align: center;
+  animation: lsg-slidein 0.2s ease-out;
+}
+
+@keyframes lsg-slidein {
+  from { transform: translateY(-16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.logout-sync-guard-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.logout-sync-guard-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 0.75rem;
+}
+
+.logout-sync-guard-body {
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.55;
+  margin: 0 0 1.5rem;
+}
+
+.logout-sync-guard-body strong {
+  color: #c05621;
+}
+
+.logout-sync-guard-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.logout-sync-guard-btn {
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.logout-sync-guard-btn:hover {
+  filter: brightness(1.08);
+}
+
+.logout-sync-guard-btn:active {
+  transform: scale(0.98);
+}
+
+.logout-sync-guard-btn.primary {
+  background: #2b6cb0;
+  color: #fff;
+}
+
+.logout-sync-guard-btn.danger {
+  background: #e53e3e;
+  color: #fff;
+}
+
+.logout-sync-guard-btn.secondary {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.logout-sync-guard-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #bee3f8;
+  border-top-color: #2b6cb0;
+  border-radius: 50%;
+  animation: lsg-spin 0.7s linear infinite;
+  margin: 0.5rem auto;
+}
+
+@keyframes lsg-spin {
+  to { transform: rotate(360deg); }
+}
