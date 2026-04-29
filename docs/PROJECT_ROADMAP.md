@@ -726,9 +726,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | Bug | LOCK-* audit ricomparivano tra device — isIntentionalDraft + forceClearLocalCache | Fix mirato | ✅ Completato (24/04) |
 | P3 | **Sprint 0–9** — Navigation, Registry, Alert, Notifiche, Qualifiche, NC, Rischi, Reclami, Licensing, Import PDF | Multi-sessione | ✅ Tutti completati |
 | **🔴 SYNC-1** | **save_responses indipendente dal lock** — risposte checklist sempre accodate (bug Camellini) | Fix mirato | ✅ Completato (29/04) — PR #18 — deploy necessario |
-| **🔴 SYNC-2** | **Conflict resolution campo per campo** — testi/note non scartati da server-wins su updated_at | Fix mirato | 🔄 In corso |
-| **🔴 SYNC-3** | **Notifica esplicita perdita dati locali** — alert quando server-wins scarta modifiche locali | Fix mirato | ⏳ Dopo SYNC-2 |
-| **🔴 SYNC-4** | **Gate pre-logout con sync forzata** (ADR-007) — blocca logout se coda non svuotata | ADR-007 | ⏳ Dopo SYNC-3 |
+| **🔴 SYNC-2** | **Conflict resolution campo per campo** — testi/note non scartati da server-wins su updated_at | Fix mirato | ✅ Completato (29/04) — PR #19 — deploy VPS fatto |
+| **🔴 SYNC-3** | **Banner merge dati** — `SyncMergeBanner` avvisa quando il backend applica field-level merge | Fix mirato | ✅ Completato (29/04) — solo frontend, Netlify |
+| **🔴 SYNC-4** | **Guard logout con modal React** — `LogoutSyncGuard` con attesa sync, spinner, 3 opzioni | ADR-007 | ✅ Completato (29/04) — solo frontend, Netlify |
 | **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ⏳ Backlog attivo |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog — dopo SYNC-3 |
 | P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
@@ -736,7 +736,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: completare **SYNC-2** (conflict resolution campo per campo) → SYNC-3 → SYNC-4. Deploy SYNC-1 su VPS appena PR #18 approvata. Sprint 10 e nuove feature attendono la chiusura del blocco SYNC.
+**Prossimo Step**: SYNC-1/2/3/4 tutti completati e in produzione (29/04/2026). Prossima priorità: **SYNC-5** (upload allegati offline) oppure **Sprint 10** (staging → registry). Decidere in base all'urgenza clienti.
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 
