@@ -417,6 +417,13 @@ export function StorageProvider({ children, useMockData = false }) {
           const hb = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
               console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+              // 401 = sessione scaduta: ferma heartbeat, non ha senso riprovare.
+              if (e?.status === 401) {
+                clearInterval(lockHeartbeatRef.current);
+                lockHeartbeatRef.current = null;
+                setAuditLock({ mode: "none", lockedByName: null, message: null });
+                return;
+              }
               demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
@@ -506,14 +513,26 @@ export function StorageProvider({ children, useMockData = false }) {
           lockHeartbeatRef.current = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
               console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+              if (e?.status === 401) {
+                clearInterval(lockHeartbeatRef.current);
+                lockHeartbeatRef.current = null;
+                setAuditLock({ mode: "none", lockedByName: null, message: null });
+                return;
+              }
               demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
           clearInterval(timer);
           syncService.processQueue().catch(() => {});
         }
-      } catch {
-        /* resta in pending_server */
+      } catch (err) {
+        // 401 = sessione scaduta: ferma il retry, il 401 interceptor gestirà il logout.
+        // Continuare a riprovare bombarderebbe il server con richieste inutili.
+        if (err?.status === 401) {
+          clearInterval(timer);
+          setAuditLock({ mode: "none", lockedByName: null, message: null });
+        }
+        // altri errori (404, 423, rete): resta in pending_server e riprova al prossimo tick
       }
     }, 5000);
     return () => clearInterval(timer);
@@ -623,6 +642,12 @@ export function StorageProvider({ children, useMockData = false }) {
         lockHeartbeatRef.current = setInterval(() => {
           apiService.renewAuditLock(uuid).catch((e) => {
             console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
+            if (e?.status === 401) {
+              clearInterval(lockHeartbeatRef.current);
+              lockHeartbeatRef.current = null;
+              setAuditLock({ mode: "none", lockedByName: null, message: null });
+              return;
+            }
             demoteOwnerLockOnHeartbeatFailure(e?.message);
           });
         }, 60 * 1000);
