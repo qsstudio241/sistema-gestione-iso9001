@@ -711,7 +711,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 28 aprile 2026
+**Ultimo Aggiornamento**: 29 aprile 2026
 
 ### Sequenza priorità aggiornata (29 aprile 2026)
 
@@ -732,7 +732,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ⏳ Backlog attivo |
 | **🔴 T0** | **Staging environment** — DB separato + dati anonimi. Valutato: **non necessario** per T1-T2 (migrazioni additive). Da rivalutare per T3. | Infra | ✅ Saltato (decisione 29/04) |
 | **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ✅ Completato (29/04/2026) — migration 045, backup pre-T1 ok |
-| **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ⏳ Dopo T1 stabile 48h |
+| **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ⏳ Avviare 30/04 (T1 stabile 24h) — DEPUTYTASK pronto |
 | **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ⏳ Dopo T2 stabile 1 sett. |
 | **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ⏳ Dopo T3 stabile 2 sett. |
 | **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ⏳ Dopo T4 stabile 2 sett. |
@@ -743,7 +743,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: SYNC-1/2/3/4 completati + T1 (temporal tables) in produzione (29/04/2026). Prossima sessione: **T2** (event store `audit_events` + endpoint `/events` + idempotency). SYNC-5 (allegati offline) in parallelo se urgente.
+**Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 temporal tables ✅, deploy VPS + CORS ✅ (29/04/2026). Prossima sessione: **T2** (event store `audit_events` + endpoint `/events` + idempotency) — da avviare dopo 24-48h di stabilità T1 in prod. DEPUTYTASK T2 già pronto.
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 
