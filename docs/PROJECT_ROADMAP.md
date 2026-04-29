@@ -730,13 +730,22 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 SYNC-3** | **Banner merge dati** — `SyncMergeBanner` avvisa quando il backend applica field-level merge | Fix mirato | ✅ Completato (29/04) — solo frontend, Netlify |
 | **🔴 SYNC-4** | **Guard logout con modal React** — `LogoutSyncGuard` con attesa sync, spinner, 3 opzioni | ADR-007 | ✅ Completato (29/04) — solo frontend, Netlify |
 | **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ⏳ Backlog attivo |
+| **🔴 T0** | **Staging environment** — DB separato + dati anonimi. Prerequisito obbligatorio per T1. | Infra | ⏳ Prima di T1 |
+| **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ⏳ Dopo T0 |
+| **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ⏳ Dopo T1 stabile 48h |
+| **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ⏳ Dopo T2 stabile 1 sett. |
+| **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ⏳ Dopo T3 stabile 2 sett. |
+| **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ⏳ Dopo T4 stabile 2 sett. |
+| **🔴 T6** | **Recovery UI + history API** + compaction job notturno — compliance ISO 9001 §7.5 | Full-stack | ⏳ Dopo T5 |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog — dopo SYNC-3 |
 | P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
 | P6 | **Sprint 10** — Ingest PDF → staging → document registry (commit umano) | Prossima sessione | ⏳ Dopo SYNC-3 |
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: SYNC-1/2/3/4 tutti completati e in produzione (29/04/2026). Prossima priorità: **SYNC-5** (upload allegati offline) oppure **Sprint 10** (staging → registry). Decidere in base all'urgenza clienti.
+**Prossimo Step**: SYNC-1/2/3/4 tutti completati e in produzione (29/04/2026). Architettura target event-sourced definita in [ADR-008](adr/ADR-008-event-sourcing-sync.md). Prossima priorità **T0** (staging environment, prerequisito obbligatorio per le temporal tables) + **SYNC-5** (upload allegati offline). Sprint 10 (registry) dopo T2.
+
+> **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 
 #### Smoke L3 manuale P1 — checklist (utente, produzione)
 

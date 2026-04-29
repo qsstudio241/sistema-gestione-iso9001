@@ -100,6 +100,67 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 | **L4 — Hardening** | Due sessioni, lock audit, licenze (`403 MODULE_NOT_LICENSED`), refresh sessione, PWA offline (cache vs server) | Dopo modifiche a `auth`, `moduleLicense`, `syncService`, `IndexedDB`, lock. |
 | **L5 — E2E / browser** (backlog prodotto) | Flussi completi su Netlify preview o staging | Pianificato in roadmap; non sostituisce L1–L4. |
 
+---
+
+## Architettura target sync — Event-Sourced (ADR-008)
+
+> **Da leggere prima di toccare qualsiasi codice di sincronizzazione, lock o audit_responses.**  
+> Riferimento completo: [docs/adr/ADR-008-event-sourcing-sync.md](adr/ADR-008-event-sourcing-sync.md)
+
+### Perché è stata presa questa decisione
+
+Il 28 aprile 2026 l'utente Camellini ha perso ore di lavoro su un audit reale. L'indagine ha dimostrato che il sistema inviava lo **stato corrente intero** dell'audit come payload unico — un approccio intrinsecamente fragile perché:
+- Il lock heartbeat aggiornava `updated_at` → il server rifiutava il payload come "obsoleto" (409)
+- La guard del lock bloccava le risposte checklist quando il lock oscillava su rete mobile
+- Nessuna storia delle modifiche: dato perso = dato irrecuperabile
+
+I fix SYNC-1/2/3/4 hanno risolto il problema immediato. L'architettura event-sourced lo elimina strutturalmente.
+
+### Regola vincolante (da ADR-008)
+
+**Nessuna nuova feature che tocca la sync può usare il modello "stato corrente intero".** Ogni modifica a un campo deve produrre un evento atomico con `idempotency_key`. Questo vale per audit, risposte, checklist custom, NC, allegati.
+
+### Stato sprint T e cosa NON fare in attesa
+
+| Sprint | Stato | Cosa NON fare prima che sia completato |
+|---|---|---|
+| **T0** — Staging environment | ⏳ Da avviare | Non eseguire T1 su produzione senza staging |
+| **T1** — Temporal tables | ⏳ Dopo T0 | Non aggiungere nuove tabelle senza temporal versioning |
+| **T2** — Event store + endpoint | ⏳ Dopo T1 | Non creare nuovi endpoint "sync stato intero" |
+| **T3** — Frontend save_responses eventi | ⏳ Dopo T2 | Non modificare la sync queue senza feature flag |
+| **T4** — Frontend campi ricchi eventi | ⏳ Dopo T3 stabile 2 sett. | Non toccare debounce/StorageContext senza allineamento ADR-008 |
+| **T5** — Lock opzionale | ⏳ Dopo T4 stabile 2 sett. | Non rimuovere lock prima di T4 |
+| **T6** — Recovery UI + compaction | ⏳ Dopo T5 | — |
+
+### Prerequisiti tecnici da documentare prima di T1
+
+Prima di avviare T1, l'amministratore di sistema deve completare e documentare qui:
+
+| Prerequisito | Chi fa | Dove documentare | Fatto? |
+|---|---|---|---|
+| DB staging creato (copia schema, dati anonimi) | Admin sistema | [DATABASE.md](DATABASE.md) sezione "Ambienti" | ☐ |
+| Connection string staging in `backend/config/database.json` con env `staging` | Admin sistema | File locale gitignored | ☐ |
+| Script di anonimizzazione dati (per GDPR) | Dev | `database/scripts/anonymize-staging.sql` | ☐ |
+| Policy retention event_store documentata | Product owner | ADR-008 sezione Compaction | ☐ |
+| Approvazione product owner su temporal tables | Product owner | Questo file, firma + data | ☐ |
+
+### Smoke L3 obbligatorio per ogni sprint T (chi / cosa / quando)
+
+Per ogni sprint T, il product owner (o un utente Camellini/Mason in campo) esegue la smoke checklist definita in ADR-008. Le checklist non possono essere delegate ad agenti AI perché richiedono accesso reale all'app su dispositivi mobili reali.
+
+**Formato dichiarazione completamento:**
+```
+Sprint T1 — Smoke L3 completato
+Data: ____  Esecutore: ____  Dispositivo: ____
+[ ] Login e visualizzazione audit
+[ ] Modifica risposta e verifica persistenza  
+[ ] Verifica history su DB staging
+[ ] Nessuna regressione sui flussi esistenti
+Note: ____
+```
+
+---
+
 ### Matrice smoke robustezza (checklist manuale ripetibile)
 
 Spuntare dopo deploy o prima di demo cliente. Adattare profondità al rischio della release.
