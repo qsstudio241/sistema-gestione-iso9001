@@ -39,6 +39,8 @@ import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
 import ConnectionStatus from "./components/ConnectionStatus";
 import AuditLockBanner from "./components/AuditLockBanner";
+import SyncMergeBanner from "./components/SyncMergeBanner";
+import LogoutSyncGuard from "./components/LogoutSyncGuard";
 
 import { useCheckpointSaver } from "./hooks/useCheckpointSaver";
 import { checkAndMigrateStorage } from "./utils/storageVersion";
@@ -90,6 +92,8 @@ function AppContent() {
     <AppLayout>
       <ConnectionStatus />
       <AuditLockBanner />
+      <SyncMergeBanner />
+      <LogoutSyncGuard />
 
       <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>

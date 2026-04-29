@@ -193,6 +193,7 @@ export function AuthProvider({ children }) {
       pendingQueueItems = 0;
     }
 
+    // Se online e ci sono item, tenta una sync rapida prima di chiedere all'utente
     if (pendingQueueItems > 0 && navigator.onLine) {
       try {
         await syncService.processQueue();
@@ -206,13 +207,30 @@ export function AuthProvider({ children }) {
       }
     }
 
+    // SYNC-4: se restano item attivi, chiedi conferma all'utente tramite modal dedicato.
+    // Si usa un evento custom per disaccoppiare AuthContext dal componente UI:
+    // LogoutSyncGuard ascolta sgq:logoutRequested e, se l'utente conferma, emette
+    // sgq:logoutConfirmed che viene raccolto qui tramite Promise.
     if (pendingQueueItems > 0) {
-      const proceed = window.confirm(
-        `Ci sono ancora ${pendingQueueItems} operazioni non sincronizzate.\n\n` +
-          `Se esci ora, le bozze solo locali potrebbero andare perse.\n` +
-          `Premi "Annulla" per restare dentro e completare la sincronizzazione.`
-      );
-      if (!proceed) {
+      const confirmed = await new Promise((resolve) => {
+        const onConfirm = () => {
+          window.removeEventListener("sgq:logoutConfirmed", onConfirm);
+          window.removeEventListener("sgq:logoutCancelled", onCancel);
+          resolve(true);
+        };
+        const onCancel = () => {
+          window.removeEventListener("sgq:logoutConfirmed", onConfirm);
+          window.removeEventListener("sgq:logoutCancelled", onCancel);
+          resolve(false);
+        };
+        window.addEventListener("sgq:logoutConfirmed", onConfirm, { once: true });
+        window.addEventListener("sgq:logoutCancelled", onCancel, { once: true });
+        window.dispatchEvent(new CustomEvent("sgq:logoutRequested", {
+          detail: { pendingCount: pendingQueueItems, isOnline: navigator.onLine }
+        }));
+      });
+
+      if (!confirmed) {
         setError("Logout annullato: completa prima la sincronizzazione per evitare perdita dati.");
         return false;
       }

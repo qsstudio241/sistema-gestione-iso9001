@@ -523,6 +523,19 @@ export class SyncService {
                 localStorage.setItem(`sgq_srv_ts_${auditUuid}`, responseData.updated_at);
             }
 
+            // SYNC-3: notifica UI quando il backend ha applicato un field-level merge.
+            // Il componente SyncMergeBanner ascolta questo evento e mostra un avviso
+            // discreto all'utente, senza bloccare il flusso di lavoro.
+            if (responseData.merged === true) {
+                window.dispatchEvent(new CustomEvent('sgq:auditMerged', {
+                    detail: {
+                        auditUuid,
+                        audit_id: responseData.audit_id,
+                        message: responseData.message,
+                    }
+                }));
+            }
+
             return result;
         } catch (error) {
             // Conflict: server ha versione più recente (409)
