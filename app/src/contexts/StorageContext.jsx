@@ -330,6 +330,9 @@ export function StorageProvider({ children, useMockData = false }) {
   useEffect(() => { currentAuditIdRef.current = currentAuditId; }, [currentAuditId]);
   // Bug 2: debounce per fetchAndApplyServerResponses (evita riesecuzione entro 60s per stesso audit)
   const fetchAndApplyLastRunRef = useRef({});
+  // Guard idratazione: true mentre fetchAndApplyServerResponses è in corso.
+  // Blocca save_responses durante il fetch iniziale per evitare sovrascrittura dati server.
+  const isHydratingRef = useRef(false);
   // Fix delete: Set degli audit appena eliminati — il reconcile NON deve ripristinarli dalla cache locale.
   const recentlyDeletedRef = useRef(new Set());
   // Guard per-sessione: evita di ri-accodare update_audit per rich-data migration
@@ -1512,11 +1515,10 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // Le risposte checklist sono idempotenti e indipendenti dal lock:
-            // vengono accodate ogni volta che l'utente modifica una risposta.
-            // skipSync=true inibisce l'enqueue: usato da initializeChecklist (template locale)
+            // skipSync=true o idratazione in corso → non accodare save_responses.
+            // Usato da initializeChecklist (template vuoto) e durante fetchAndApplyServerResponses
             // per evitare di sovrascrivere con NOT_ANSWERED dati già presenti sul server.
-            if (navigator.onLine && !skipSync) {
+            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
                 syncService
@@ -1535,8 +1537,8 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             }
 
-            // Enqueue sync audit metadata se online, lock NON foreign e skipSync=false.
-            if (navigator.onLine && !skipSync) {
+            // Enqueue sync audit metadata se online, lock NON foreign, skipSync=false e non in hydrating.
+            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();
@@ -1932,10 +1934,10 @@ export function StorageProvider({ children, useMockData = false }) {
       });
 
       // Aggiorna audit con checklist copiata.
-      // skipSync=true se l'audit esiste già sul server (ha auditId numerico):
-      // evita di accodare save_responses con NOT_ANSWERED sovrascrivendo dati reali.
-      // Le risposte reali arriveranno da fetchAndApplyServerResponses chiamata subito dopo.
-      const hasServerAuditId = !!(currentAudit?.metadata?.auditId);
+      // skipSync=true SEMPRE: initializeChecklist crea solo la struttura locale (template vuoto).
+      // Le risposte reali arrivano da fetchAndApplyServerResponses (chiamata subito dopo in
+      // AuditAccordionLayout) oppure dalle modifiche esplicite dell'utente.
+      // Non accodare MAI save_responses con NOT_ANSWERED — sovrascriverebbero i dati sul server.
       updateCurrentAudit((audit) => {
         const updatedAudit = { ...audit };
 
@@ -1948,7 +1950,7 @@ export function StorageProvider({ children, useMockData = false }) {
         updatedAudit.metrics.totalQuestions = totalQuestions;
 
         return updatedAudit;
-      }, { skipSync: hasServerAuditId });
+      }, { skipSync: true });
 
       console.log(
         `✅ Checklist ${standard} inizializzata da template (${totalQuestions} domande)`,
@@ -2040,6 +2042,7 @@ export function StorageProvider({ children, useMockData = false }) {
       fetchAndApplyLastRunRef.current[numericAuditId] = Date.now();
 
       try {
+        isHydratingRef.current = true;
         console.log(`🔄 [HYDRATE] Carico risposte server per audit ${numericAuditId}...`);
         const result = await apiService.getAuditResponses(numericAuditId);
         const rows = result?.data;
@@ -2093,6 +2096,8 @@ export function StorageProvider({ children, useMockData = false }) {
         });
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);
+      } finally {
+        isHydratingRef.current = false;
       }
     },
     [updateCurrentAudit],
