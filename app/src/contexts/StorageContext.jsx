@@ -1441,10 +1441,14 @@ export function StorageProvider({ children, useMockData = false }) {
   }
 
   /**
-   * Aggiorna audit corrente
+   * Aggiorna audit corrente.
+   * @param {Function|Object} updater
+   * @param {{ skipSync?: boolean }} opts — skipSync=true inibisce l'enqueue save_responses/update_audit.
+   *   Usare quando si aggiorna la struttura locale (es. init template) senza voler sovrascrivere
+   *   dati già presenti sul server.
    */
   const updateCurrentAudit = useCallback(
-    (updater) => {
+    (updater, { skipSync = false } = {}) => {
       setAudits((prevAudits) => {
         if (auditLockRef.current.mode === "foreign") {
           const now = Date.now();
@@ -1502,13 +1506,10 @@ export function StorageProvider({ children, useMockData = false }) {
             const auditUuid = updated.id || updated.metadata?.id;
 
             // Le risposte checklist sono idempotenti e indipendenti dal lock:
-            // vengono accodate ogni volta che l'utente modifica una risposta,
-            // indipendentemente dallo stato del lock (owner / pending_server / offline).
-            // Il lock riguarda la coordinazione multi-utente, non il diritto dell'utente
-            // corrente di salvare il proprio lavoro su un audit che sta compilando.
-            // L'unico caso in cui NON si accoda è lock "foreign" (altro utente attivo):
-            // in quel caso updateCurrentAudit ha già bloccato la write a riga 1418.
-            if (navigator.onLine) {
+            // vengono accodate ogni volta che l'utente modifica una risposta.
+            // skipSync=true inibisce l'enqueue: usato da initializeChecklist (template locale)
+            // per evitare di sovrascrivere con NOT_ANSWERED dati già presenti sul server.
+            if (navigator.onLine && !skipSync) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
                 syncService
@@ -1527,20 +1528,8 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             }
 
-            // Enqueue sync audit metadata se online e lock NON foreign.
-            //
-            // Lock "foreign" = altro utente attivo → write già bloccato a monte (riga 1418).
-            // Lock "owner" / "pending_server" / "offline" / "error" → l'utente corrente è il
-            // legittimo proprietario dell'audit; il payload viene accodato sempre.
-            //
-            // Il syncService gestisce la guard di invio: salta update_audit senza token lock
-            // (evita 423 a raffica), ma l'item resta in coda e viene ritentato quando il lock
-            // viene riacquisito. In questo modo il lavoro non si perde mai in coda.
-            //
-            // Il backend gestisce il conflict con field-level merge: anche se server_ts > client_ts
-            // (heartbeat lock), i campi ricchi (notes, generalData, auditObjective, auditOutcome)
-            // vengono preservati se non vuoti nel payload.
-            if (navigator.onLine) {
+            // Enqueue sync audit metadata se online, lock NON foreign e skipSync=false.
+            if (navigator.onLine && !skipSync) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();
@@ -1935,7 +1924,11 @@ export function StorageProvider({ children, useMockData = false }) {
         totalQuestions += section.questions.length;
       });
 
-      // Aggiorna audit con checklist copiata
+      // Aggiorna audit con checklist copiata.
+      // skipSync=true se l'audit esiste già sul server (ha auditId numerico):
+      // evita di accodare save_responses con NOT_ANSWERED sovrascrivendo dati reali.
+      // Le risposte reali arriveranno da fetchAndApplyServerResponses chiamata subito dopo.
+      const hasServerAuditId = !!(currentAudit?.metadata?.auditId);
       updateCurrentAudit((audit) => {
         const updatedAudit = { ...audit };
 
@@ -1948,7 +1941,7 @@ export function StorageProvider({ children, useMockData = false }) {
         updatedAudit.metrics.totalQuestions = totalQuestions;
 
         return updatedAudit;
-      });
+      }, { skipSync: hasServerAuditId });
 
       console.log(
         `✅ Checklist ${standard} inizializzata da template (${totalQuestions} domande)`,
