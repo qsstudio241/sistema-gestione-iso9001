@@ -1,385 +1,196 @@
-# DEPUTYTASK — T2: Event store audit_events + endpoint /events
+# DEPUTYTASK — T3: Frontend event-based per save_responses (feature flag)
 
-> **Prerequisito**: T1 (temporal tables, migrazione 045) in produzione stabile da almeno 24h ✅
-> **Quando lanciare**: 30 aprile 2026 o successivo
+> **Quando lanciare**: ~07/05/2026 (dopo 1 settimana stabilità T2 in produzione)
+> **Prerequisito**: T2 in prod ✅ (30/04/2026) — endpoint POST/GET /audits/:uuid/events operativo
+> **Riferimento architetturale**: `docs/adr/ADR-008-event-sourcing-sync.md` (sezione T3)
 >
-> **Segreti necessari** (già configurati il 28/04/2026):
-> `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `DB_SERVER`, `DB_PORT`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD`
->
-> Usa `bash backend/scripts/deploy-to-vps.sh` e `bash backend/scripts/run-migration-agent.sh`.
+> **Segreti necessari** (già configurati): `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`
+> **Migrazioni DB**: nessuna — T3 è solo frontend + feature flag
 
 ---
 
 ## Obiettivo
 
-Aggiungere la tabella `audit_events` (event store append-only) e il relativo endpoint
-`POST /audits/:uuid/events` sul backend. Il vecchio `/audits/sync` rimane invariato.
-Nessuna modifica al frontend in questo task — solo backend + DB.
+Ogni risposta checklist (click su C/NC/OSS/OM/NA/NV) genera un evento atomico
+`response_set` con `idempotency_key` univoco e lo invia a `POST /audits/:uuid/events`.
 
-Riferimento architetturale: `docs/adr/ADR-008-event-sourcing-sync.md` (sezione T2).
-
----
-
-## Step 1 — Verifica segreti
-
-```bash
-env | grep -E "^(SGQ_|DB_)" | sed 's/=.*/=***/'
-```
-
-Devono comparire tutti e 7. Se mancano, fermarsi.
+**Il vecchio `save_responses` (bulk) rimane attivo** — T3 aggiunge un percorso parallelo
+controllato da feature flag. Nessun utente vede differenze finché il flag non viene attivato.
 
 ---
 
-## Step 2 — Crea migrazione 046 (tabella audit_events)
+## Feature flag
 
-Crea il file `database/migrations/046_audit_events_T2.sql`:
-
-```sql
--- Migration 046: Event store audit_events (T2 — ADR-008)
--- Idempotente: IF NOT EXISTS su ogni oggetto.
-SET NOCOUNT ON;
-
-IF NOT EXISTS (
-    SELECT 1 FROM sys.tables WHERE name = 'audit_events' AND schema_id = SCHEMA_ID('dbo')
-)
-BEGIN
-    CREATE TABLE dbo.audit_events (
-        event_id         BIGINT IDENTITY(1,1) NOT NULL,
-        event_uuid       UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
-        audit_id         INT NOT NULL,
-        audit_uuid       UNIQUEIDENTIFIER NOT NULL,
-        event_type       NVARCHAR(50) NOT NULL,
-        field_path       NVARCHAR(200) NULL,
-        old_value        NVARCHAR(MAX) NULL,
-        new_value        NVARCHAR(MAX) NULL,
-        user_id          INT NOT NULL,
-        device_type      NVARCHAR(20) NULL,
-        client_ts        DATETIME2(7) NOT NULL,
-        client_ts_offset_ms INT NOT NULL DEFAULT 0,
-        server_ts        DATETIME2(7) NOT NULL DEFAULT SYSUTCDATETIME(),
-        idempotency_key  UNIQUEIDENTIFIER NOT NULL,
-        sync_batch_id    UNIQUEIDENTIFIER NULL,
-        organization_id  INT NOT NULL,
-        CONSTRAINT PK_audit_events PRIMARY KEY CLUSTERED (event_id),
-        CONSTRAINT UQ_audit_events_idempotency UNIQUE (idempotency_key),
-        CONSTRAINT CK_audit_events_type CHECK (event_type IN (
-            'audit_created', 'audit_status_changed',
-            'response_set', 'response_cleared',
-            'field_updated',
-            'attachment_added', 'attachment_removed',
-            'custom_response_set'
-        )),
-        CONSTRAINT FK_audit_events_audit FOREIGN KEY (audit_id)
-            REFERENCES dbo.audits(audit_id),
-        CONSTRAINT FK_audit_events_user FOREIGN KEY (user_id)
-            REFERENCES dbo.users(user_id)
-    );
-    PRINT 'Tabella audit_events creata.';
-END
-ELSE
-    PRINT 'Tabella audit_events già presente — skip.';
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_audit_events_audit_ts')
-    CREATE INDEX IX_audit_events_audit_ts   ON dbo.audit_events (audit_id, client_ts);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_audit_events_audit_uuid')
-    CREATE INDEX IX_audit_events_audit_uuid ON dbo.audit_events (audit_uuid, client_ts);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_audit_events_user_ts')
-    CREATE INDEX IX_audit_events_user_ts    ON dbo.audit_events (user_id, server_ts);
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_audit_events_org')
-    CREATE INDEX IX_audit_events_org        ON dbo.audit_events (organization_id, server_ts);
-
-PRINT 'Migration 046 completata.';
-```
+**Nome variabile**: `VITE_SYNC_MODE`
+**Valori**: `legacy` (default, comportamento attuale) | `events` (nuovo percorso T3)
+**Come attivare**: Netlify → Site configuration → Environment variables → `VITE_SYNC_MODE=events`
+**Rollback**: cambiare a `VITE_SYNC_MODE=legacy` su Netlify → zero deploy necessario
 
 ---
 
-## Step 3 — Crea script Node run-migration-046.js
+## Step 1 — Aggiungi generazione idempotency_key in syncService
 
-Crea `backend/scripts/run-migration-046.js` seguendo esattamente lo stesso pattern
-di `backend/scripts/run-migration-045.js` (stessa struttura, cambia solo numero e SQL).
-
-Il SQL da eseguire è quello della migration 046 sopra.
-
----
-
-## Step 4 — Crea controller auditEvents.controller.js
-
-Crea `backend/src/controllers/auditEvents.controller.js`:
+In `app/src/services/syncService.js`, aggiungi una funzione helper:
 
 ```javascript
 /**
- * POST /api/v1/audits/:uuid/events
- * Accetta un batch di eventi audit e li persiste in audit_events (append-only).
- * Idempotente: eventi con idempotency_key già presente vengono saltati (non errore).
+ * Genera idempotency_key deterministica per un evento risposta.
+ * Stessa coppia (auditUuid, questionId, timestamp_minuto) → stessa chiave.
+ * Garantisce che lo stesso evento non venga inserito due volte.
  */
-const { query } = require('../config/database');
-const logger = require('../utils/logger');
-
-async function postAuditEvents(req, res) {
-    try {
-        const { uuid } = req.params;
-        const { organization_id, user_id } = req.user;
-        const { events } = req.body;
-
-        if (!Array.isArray(events) || events.length === 0) {
-            return res.status(400).json({ error: 'events deve essere un array non vuoto', code: 'INVALID_PAYLOAD' });
-        }
-        if (events.length > 200) {
-            return res.status(400).json({ error: 'Massimo 200 eventi per batch', code: 'BATCH_TOO_LARGE' });
-        }
-
-        // Risolvi audit_id da UUID (verifica appartenenza org)
-        const auditRow = await query(
-            `SELECT audit_id FROM dbo.audits
-             WHERE audit_uuid = @uuid AND organization_id = @org AND is_deleted = 0`,
-            { uuid, org: organization_id }
-        );
-        if (!auditRow.recordset.length) {
-            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
-        }
-        const audit_id = auditRow.recordset[0].audit_id;
-
-        const VALID_TYPES = new Set([
-            'audit_created','audit_status_changed',
-            'response_set','response_cleared',
-            'field_updated',
-            'attachment_added','attachment_removed',
-            'custom_response_set'
-        ]);
-
-        let inserted = 0;
-        let skipped = 0;
-
-        for (const ev of events) {
-            if (!ev.idempotency_key || !ev.event_type || !ev.client_ts) {
-                return res.status(400).json({ error: 'Ogni evento richiede idempotency_key, event_type, client_ts', code: 'MISSING_FIELDS' });
-            }
-            if (!VALID_TYPES.has(ev.event_type)) {
-                return res.status(400).json({ error: `event_type non valido: ${ev.event_type}`, code: 'INVALID_EVENT_TYPE' });
-            }
-
-            try {
-                await query(`
-                    INSERT INTO dbo.audit_events
-                        (audit_id, audit_uuid, event_type, field_path, old_value, new_value,
-                         user_id, device_type, client_ts, client_ts_offset_ms,
-                         idempotency_key, sync_batch_id, organization_id)
-                    VALUES
-                        (@audit_id, @audit_uuid, @event_type, @field_path, @old_value, @new_value,
-                         @user_id, @device_type, @client_ts, @offset_ms,
-                         @idempotency_key, @sync_batch_id, @org_id)
-                `, {
-                    audit_id,
-                    audit_uuid: uuid,
-                    event_type: ev.event_type,
-                    field_path: ev.field_path ?? null,
-                    old_value: ev.old_value != null ? JSON.stringify(ev.old_value) : null,
-                    new_value: ev.new_value != null ? JSON.stringify(ev.new_value) : null,
-                    user_id,
-                    device_type: ev.device_type ?? null,
-                    client_ts: ev.client_ts,
-                    offset_ms: ev.client_ts_offset_ms ?? 0,
-                    idempotency_key: ev.idempotency_key,
-                    sync_batch_id: ev.sync_batch_id ?? null,
-                    org_id: organization_id,
-                });
-                inserted++;
-            } catch (err) {
-                // Unique constraint violation = idempotency_key già presente → skip
-                if (err.number === 2627 || err.number === 2601) {
-                    skipped++;
-                } else {
-                    throw err;
-                }
-            }
-        }
-
-        logger.info('Audit events saved', { audit_id, inserted, skipped, user_id });
-        return res.status(207).json({ inserted, skipped, total: events.length });
-
-    } catch (error) {
-        logger.error('Error saving audit events', { error: error.message });
-        return res.status(500).json({ error: 'Errore salvataggio eventi', code: 'EVENTS_SAVE_ERROR' });
+generateResponseEventKey(auditUuid, questionId) {
+    const minute = Math.floor(Date.now() / 60000); // granularità 1 minuto
+    const raw = `${auditUuid}:${questionId}:${minute}`;
+    // Versione semplice senza crypto (browser compatibile)
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+        hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+        hash |= 0;
     }
+    // Formato UUID v4-like da hash + timestamp per unicità
+    const ts = Date.now().toString(16).padStart(12, '0');
+    const h = Math.abs(hash).toString(16).padStart(8, '0');
+    return `${ts.slice(0,8)}-${ts.slice(8,12)}-4${h.slice(0,3)}-8${h.slice(3,6)}-${h.slice(6)}${ts}`.slice(0, 36);
 }
-
-async function getAuditEvents(req, res) {
-    try {
-        const { uuid } = req.params;
-        const { organization_id } = req.user;
-        const limit = Math.min(parseInt(req.query.limit) || 100, 500);
-        const since = req.query.since || null;
-
-        const rows = await query(`
-            SELECT TOP (@limit)
-                event_uuid, event_type, field_path,
-                new_value, user_id, device_type,
-                client_ts, server_ts
-            FROM dbo.audit_events
-            WHERE audit_uuid = @uuid
-              AND organization_id = @org
-              ${since ? 'AND server_ts > @since' : ''}
-            ORDER BY client_ts ASC, server_ts ASC
-        `, { uuid, org: organization_id, limit, ...(since ? { since } : {}) });
-
-        return res.json({ events: rows.recordset });
-    } catch (error) {
-        logger.error('Error fetching audit events', { error: error.message });
-        return res.status(500).json({ error: 'Errore lettura eventi', code: 'EVENTS_FETCH_ERROR' });
-    }
-}
-
-module.exports = { postAuditEvents, getAuditEvents };
 ```
 
 ---
 
-## Step 5 — Crea route auditEvents.routes.js
-
-Crea `backend/src/routes/auditEvents.routes.js`:
+## Step 2 — Aggiungi metodo enqueueResponseEvent in syncService
 
 ```javascript
-const express = require('express');
-const router = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
-const { postAuditEvents, getAuditEvents } = require('../controllers/auditEvents.controller');
-
-// POST /api/v1/audits/:uuid/events  — batch insert eventi
-router.post('/:uuid/events', authenticate, postAuditEvents);
-
-// GET  /api/v1/audits/:uuid/events  — lettura eventi (debug/smoke)
-router.get('/:uuid/events', authenticate, getAuditEvents);
-
-module.exports = router;
+/**
+ * Accoda un evento response_set per il nuovo percorso event-based (T3).
+ * Usato solo se VITE_SYNC_MODE === 'events'.
+ * @param {string} auditUuid
+ * @param {number} questionId
+ * @param {string} conformityStatus - 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
+ * @param {string|null} notes
+ */
+async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+    const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
+    const event = {
+        event_type: conformityStatus ? 'response_set' : 'response_cleared',
+        field_path: `responses.${questionId}`,
+        new_value: conformityStatus
+            ? JSON.stringify({ conformity_status: conformityStatus, notes })
+            : null,
+        client_ts: new Date().toISOString(),
+        client_ts_offset_ms: 0,
+        idempotency_key: idempotencyKey,
+        device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    };
+    return this.enqueue('send_audit_event', { auditUuid, event });
+}
 ```
 
 ---
 
-## Step 6 — Monta la route in server.js
+## Step 3 — Aggiungi handler 'send_audit_event' in processQueue
 
-Nel file `backend/src/server.js`, dopo le altre route audit esistenti, aggiungi:
+Nel metodo `syncItem` di `syncService.js`, aggiungi il caso:
 
 ```javascript
-const auditEventsRoutes = require('./routes/auditEvents.routes');
-// ... dopo il mount delle altre route audit:
-app.use('/api/v1/audits', auditEventsRoutes);
+case 'send_audit_event':
+    return await this.syncSendAuditEvent(payload);
 ```
 
-Verifica che non ci siano conflitti con route già esistenti su `/audits`.
+E il metodo:
+
+```javascript
+async syncSendAuditEvent(payload) {
+    const { auditUuid, event } = payload;
+    try {
+        await apiService.post(`/audits/${auditUuid}/events`, { events: [event] });
+        return { sent: true };
+    } catch (error) {
+        // 207 con skipped = idempotency già presente → ok, non è un errore
+        if (error?.status === 207) return { sent: true, skipped: true };
+        throw error;
+    }
+}
+```
 
 ---
 
-## Step 7 — Test L1
+## Step 4 — Integra in StorageContext (percorso events)
 
-Crea `backend/src/tests/auditEvents.test.js` con almeno questi casi:
-- POST batch valido → 207 con `inserted > 0`
-- POST stesso batch → 207 con `skipped = N, inserted = 0` (idempotency)
-- POST con `event_type` non valido → 400
-- POST senza `idempotency_key` → 400
-- POST su audit di altra org → 404
+In `app/src/contexts/StorageContext.jsx`, nella funzione che gestisce il cambio risposta
+(cerca il punto dove viene chiamato `updateCurrentAudit` con la nuova risposta),
+aggiungi dopo l'aggiornamento locale:
 
-Esegui i test: `cd app && NODE_ENV=test npm run test:run`
+```javascript
+// Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events
+if (import.meta.env.VITE_SYNC_MODE === 'events' && question.questionId) {
+    syncService.enqueueResponseEvent(
+        auditUuid,
+        question.questionId,
+        newStatus,
+        question.notes ?? null
+    ).catch(() => {});
+}
+```
+
+Individua il punto esatto leggendo il codice — cerca `conformity_status` o `status.*C\|NC\|OSS`
+in `StorageContext.jsx` o nel componente `ChecklistModule`/`Dashboard` che gestisce il click.
 
 ---
 
-## Step 8 — Commit e push
+## Step 5 — Test L1
+
+Crea `app/src/tests/syncService.eventBased.test.js`:
+
+Casi da coprire:
+- `enqueueResponseEvent` con status 'C' → tipo `send_audit_event`, `event_type: 'response_set'`
+- `enqueueResponseEvent` con status null → `event_type: 'response_cleared'`
+- Stessa coppia (auditUuid, questionId) entro 1 minuto → stessa `idempotency_key`
+- Coppie diverse → `idempotency_key` diverse
+
+Esegui: `cd app && NODE_ENV=test npm run test:run`
+
+---
+
+## Step 6 — Commit e push
 
 ```bash
-git add database/migrations/046_audit_events_T2.sql \
-        backend/scripts/run-migration-046.js \
-        backend/src/controllers/auditEvents.controller.js \
-        backend/src/routes/auditEvents.routes.js \
-        backend/src/server.js
-git commit -m "feat(events): T2 — tabella audit_events + endpoint POST/GET /audits/:uuid/events
+git add app/src/services/syncService.js app/src/contexts/StorageContext.jsx \
+        app/src/tests/syncService.eventBased.test.js
+git commit -m "feat(sync): T3 — percorso event-based per save_responses (feature flag VITE_SYNC_MODE)
 
-- Migration 046: audit_events append-only con idempotency_key unique,
-  FK su audits e users, CHECK su event_type (8 tipi da ADR-008)
-- auditEvents.controller: batch insert con skip su duplicate key (207),
-  GET per lettura con paginazione server_ts
-- auditEvents.routes: mount su /audits/:uuid/events (authenticate)
-- server.js: mount auditEventsRoutes
+- syncService: generateResponseEventKey, enqueueResponseEvent, syncSendAuditEvent
+- StorageContext: fork percorso events vs legacy su VITE_SYNC_MODE
+- Test L1: N/N green
 
-Backward compatible: /audits/sync invariato. Nessuna modifica frontend.
-Test L1: N/N green."
+Backward compatible: VITE_SYNC_MODE=legacy (default) = comportamento invariato.
+Attivare con VITE_SYNC_MODE=events su Netlify."
 git push -u origin main
 ```
 
 ---
 
-## Step 9 — Migrazione DB 046
+## Step 7 — Deploy VPS (solo server.js se modificato)
 
-```bash
-bash backend/scripts/run-migration-agent.sh 046 production
-```
-
-Output atteso: `Migration 046 completata.`
+Se `server.js` non è stato toccato, **nessun deploy VPS necessario** — T3 è solo frontend.
+Verifica con `git diff HEAD~1 backend/` — se vuoto, skip deploy.
 
 ---
 
-## Step 10 — Deploy VPS
+## Step 8 — Verifica Netlify
 
-```bash
-bash backend/scripts/deploy-to-vps.sh
-```
-
-Lo script include già `server.js`. Aggiungi manualmente al deploy i nuovi file
-se non coperti dallo script (vedi Step 11).
-
----
-
-## Step 11 — Copia manualmente i nuovi file sul VPS (se lo script non li include)
-
-```bash
-SGQ_KEY_FILE=$(mktemp /tmp/sgq_XXXXXX)
-chmod 600 "$SGQ_KEY_FILE"
-echo "$SGQ_SSH_KEY_B64" | base64 -d > "$SGQ_KEY_FILE"
-
-scp -P 1122 -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new \
-  backend/src/controllers/auditEvents.controller.js \
-  spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
-
-scp -P 1122 -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new \
-  backend/src/routes/auditEvents.routes.js \
-  spascarella@www.fr-busato.it:/var/www/sgq-backend/src/routes/
-
-rm -f "$SGQ_KEY_FILE"
-```
-
-Poi riavvia:
-```bash
-SGQ_KEY_FILE=$(mktemp /tmp/sgq_XXXXXX)
-chmod 600 "$SGQ_KEY_FILE"
-echo "$SGQ_SSH_KEY_B64" | base64 -d > "$SGQ_KEY_FILE"
-ssh -i "$SGQ_KEY_FILE" -o StrictHostKeyChecking=accept-new -p 1122 \
-  spascarella@www.fr-busato.it \
-  "echo '$SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend.service && sleep 3 && sudo systemctl status sgq-backend | head -5"
-rm -f "$SGQ_KEY_FILE"
-```
-
----
-
-## Step 12 — Smoke test endpoint
-
-```bash
-# Health
-curl -s https://www.fr-busato.it:8443/api/v1/health | python3 -m json.tool
-
-# Verifica route attiva (401 = route presente, auth richiesta)
-curl -s -o /dev/null -w "%{http_code}" \
-  https://www.fr-busato.it:8443/api/v1/audits/00000000-0000-0000-0000-000000000000/events
-# Atteso: 401
-```
+Dopo il push, attendere che Netlify completi il build (~2 min).
+**Non attivare** `VITE_SYNC_MODE=events` ancora — il flag resta `legacy` in produzione.
+Il smoke test L3 umano (con flag attivo) viene pianificato separatamente dal product owner.
 
 ---
 
 ## Definition of Done
 
-- [ ] Migration 046 → `MIGRATION COMPLETATA` sul DB prod
-- [ ] `audit_events` presente: `SELECT TOP 1 * FROM audit_events` (0 righe = ok, tabella esiste)
-- [ ] `POST /audits/:uuid/events` → 401 senza token, 404 con token su UUID inesistente
-- [ ] Idempotency: stesso batch inviato 2 volte → secondo `skipped = N`
-- [ ] `GET /api/v1/health` → 200 healthy
-- [ ] Test L1 tutti verdi (incluso il nuovo `auditEvents.test.js`)
-- [ ] Aggiorna roadmap: T2 ✅
+- [ ] `generateResponseEventKey` e `enqueueResponseEvent` in `syncService.js`
+- [ ] Handler `send_audit_event` in `processQueue`
+- [ ] Fork `VITE_SYNC_MODE` in `StorageContext`
+- [ ] Test L1 tutti verdi (inclusi nuovi `syncService.eventBased.test.js`)
+- [ ] Build Vite OK (0 errori)
+- [ ] `VITE_SYNC_MODE=legacy` (default) — comportamento produzione invariato
+- [ ] Aggiorna roadmap: T3 ✅ (o ⏳ se smoke L3 umano ancora da fare)
 
 Chiudi con **TEST OK** o **FIX NON APPLICABILI** elencando l'esito di ogni step.
