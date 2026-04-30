@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 30 aprile 2026
-> **Prossimo Step** (sessione corrente): **Smoke test allegati** (upload PDF/foto → link Word cliccabile + foto embedded nel report) → poi decidere tra **Sprint 10** (staging → document registry) e fix cosmetici validazione evidenze. Sprint 0-9 tutti ✅. Fix sincronizzazione completato (zero 409 ciclici, zero 401 al logout). `DEPUTYTASK.md` attivo: CORS `.env` VPS (`systemgest` → entrambi i domini Netlify) — non bloccante per uso corrente.
+> **Prossimo Step**: T3 ✅ (30/04/2026) — `VITE_SYNC_MODE=legacy` in prod (default). Smoke L3 umano con `VITE_SYNC_MODE=events` da pianificare prima di attivare in prod. Prossime priorità: smoke test allegati (upload PDF/foto → link Word + foto embedded), ISO 14001 checklist completa da norma PDF, T4 (campi ricchi event-based) dopo T3 stabile ~2 sett. Sprint 0-9 tutti ✅.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
@@ -733,7 +733,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 T0** | **Staging environment** — DB separato + dati anonimi. Valutato: **non necessario** per T1-T2 (migrazioni additive). Da rivalutare per T3. | Infra | ✅ Saltato (decisione 29/04) |
 | **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ✅ Completato (29/04/2026) — migration 045, backup pre-T1 ok |
 | **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ✅ Completato (30/04/2026) — migration 046, deploy VPS, smoke OK |
-| **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ⏳ Avviare ~07/05 (T2 stabile 1 sett.) |
+| **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ✅ Completato (30/04/2026) — `VITE_SYNC_MODE=legacy` default, smoke L3 umano da pianificare |
 | **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ⏳ Dopo T3 stabile 2 sett. |
 | **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ⏳ Dopo T4 stabile 2 sett. |
 | **🔴 T6** | **Recovery UI + history API** + compaction job notturno — compliance ISO 9001 §7.5 | Full-stack | ⏳ Dopo T5 |
@@ -743,7 +743,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
 
-**Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 temporal tables ✅, T2 event store ✅ (30/04/2026), deploy VPS + CORS ✅. T3 (frontend event-based per `save_responses`) da avviare ~07/05. **Nota infra**: `run-migration-agent.sh` non raggiunge il DB direttamente da cloud (DNS); le migrazioni vanno eseguite via SSH sul VPS (che ha accesso diretto). Documentare in ACCESSO_DEPLOY_AGENTS.md.
+**Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 ✅, T2 ✅, T3 ✅ (30/04/2026). `VITE_SYNC_MODE=legacy` default — nessuna variazione comportamento produzione. Smoke L3 umano con flag `events` da pianificare. **Nota infra**: `run-migration-agent.sh` non raggiunge il DB direttamente da cloud (DNS); le migrazioni vanno eseguite via SSH sul VPS (che ha accesso diretto). Documentare in ACCESSO_DEPLOY_AGENTS.md.
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

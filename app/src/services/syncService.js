@@ -270,6 +270,7 @@ export class SyncService {
                         'update_audit',
                         'upload_attachment',
                         'upload_custom_attachment_and_patch_custom_response',
+                        'send_audit_event',
                     ]);
                     if (
                         st === 404 &&
@@ -389,6 +390,9 @@ export class SyncService {
             // (usa pending_blobKey per riconoscere il blocco a cui associare attachment_id)
             case 'upload_custom_attachment_and_patch_custom_response':
                 return await this.syncUploadCustomAttachmentAndPatchCustomResponse(payload);
+
+            case 'send_audit_event':
+                return await this.syncSendAuditEvent(payload);
 
             default:
                 throw new Error(`Tipo sync non supportato: ${type}`);
@@ -591,6 +595,71 @@ export class SyncService {
         if (!Array.isArray(responses)) throw new Error('syncSaveCustomChecklistResponses: responses deve essere un array');
         return await apiService.saveCustomChecklistResponses(auditId, responses);
     }
+
+    // ─── T3: percorso event-based (VITE_SYNC_MODE=events) ───────────────────
+
+    /**
+     * Genera idempotency_key deterministica per un evento risposta.
+     * Stessa coppia (auditUuid, questionId) entro lo stesso minuto → stessa chiave.
+     * Garantisce che lo stesso evento non venga inserito due volte.
+     * @param {string} auditUuid
+     * @param {number|string} questionId
+     * @returns {string} chiave UUID-like (36 caratteri)
+     */
+    generateResponseEventKey(auditUuid, questionId) {
+        const minute = Math.floor(Date.now() / 60000); // granularità 1 minuto
+        const raw = `${auditUuid}:${questionId}:${minute}`;
+        let hash = 0;
+        for (let i = 0; i < raw.length; i++) {
+            hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+            hash |= 0;
+        }
+        const ts = Date.now().toString(16).padStart(12, '0');
+        const h = Math.abs(hash).toString(16).padStart(8, '0');
+        return `${ts.slice(0, 8)}-${ts.slice(8, 12)}-4${h.slice(0, 3)}-8${h.slice(3, 6)}-${h.slice(6)}${ts}`.slice(0, 36);
+    }
+
+    /**
+     * Accoda un evento response_set per il percorso event-based (T3).
+     * Usato solo se VITE_SYNC_MODE === 'events'.
+     * @param {string} auditUuid
+     * @param {number|string} questionId
+     * @param {string|null} conformityStatus - 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
+     * @param {string|null} notes
+     */
+    async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+        const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
+        const event = {
+            event_type: conformityStatus ? 'response_set' : 'response_cleared',
+            field_path: `responses.${questionId}`,
+            new_value: conformityStatus
+                ? JSON.stringify({ conformity_status: conformityStatus, notes })
+                : null,
+            client_ts: new Date().toISOString(),
+            client_ts_offset_ms: 0,
+            idempotency_key: idempotencyKey,
+            device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        };
+        return this.enqueue('send_audit_event', { auditUuid, event });
+    }
+
+    /**
+     * Invia un singolo evento audit al server.
+     * Risposta 207 con "skipped" = idempotency già presente → ok.
+     */
+    async syncSendAuditEvent(payload) {
+        const { auditUuid, event } = payload;
+        try {
+            await apiService.post(`/audits/${auditUuid}/events`, { events: [event] });
+            return { sent: true };
+        } catch (error) {
+            // 207 con skipped = idempotency già registrata → non è un errore
+            if (error?.status === 207) return { sent: true, skipped: true };
+            throw error;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Risolve conflict timestamp-based (last-write-wins)
