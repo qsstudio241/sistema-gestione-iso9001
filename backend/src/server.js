@@ -62,6 +62,7 @@ const complaintsRoutes      = require('./routes/complaints.routes');
 const suppliersRoutes       = require('./routes/suppliers.routes');
 const importJobsRoutes      = require('./routes/importJobs.routes');
 const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.routes');
+const auditEventsRoutes = require('./routes/auditEvents.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -219,6 +220,7 @@ app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
 app.use(API_BASE, authRoutes);
 app.use(API_BASE, attachmentRoutes); // Prima degli altri: authenticateDownload accetta ?token=, i router successivi hanno router.use(authenticate) globale che bloccherebbe le richieste senza Bearer
 app.use(API_BASE, auditRoutes);
+app.use(`${API_BASE}/audits`, auditEventsRoutes);
 app.use(API_BASE, responseRoutes);
 app.use(API_BASE, ncRoutes);
 app.use(API_BASE, checklistRoutes);
