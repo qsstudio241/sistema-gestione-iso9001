@@ -15,6 +15,21 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 29–30 aprile 2026
+
+**Sprint sync + storicizzazione completato (25 commit):**
+- SYNC-1/2/3/4: save_responses indipendente dal lock, field-level merge, banner merge UI, guard logout modal
+- T1: temporal tables `audit_responses`/`audits` — storicizzazione automatica SQL Server (migration 045)
+- T2: event store `audit_events` + endpoint `POST/GET /audits/:uuid/events` + idempotency (migration 046, 9 test L1)
+- Fix multi-device: `initializeChecklist` non sovrascrive più risposte server; `isHydratingRef` blocca save durante hydrate
+- Fix loop 401: heartbeat lock e reconcile interval si fermano a sessione scaduta
+- Pulizia sync queue: `clearQueueForUnknownAudits` rimuove ghost UUID (es. `2E59A341`) al login/reconcile
+- Banner stato caricamento: `serverDataStatus` idle→loading→ready/error con animazione
+- Deploy autonomo cloud agent: `deploy-to-vps.sh` + `run-migration-agent.sh` (nota: DNS blocca DB da cloud, migrazioni via SSH sul VPS)
+- Segreti Cursor configurati: `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `DB_*`
+
+**Prossimo**: T3 frontend event-based `save_responses` (feature flag `VITE_SYNC_MODE`) — DEPUTYTASK pronto, lanciare ~07/05 dopo 1 sett. stabilità T2.
+
 ### Workspace consigliato — ponte `C:\ProgettoISO` (Cursor / terminale)
 
 Per **non dipendere dalla lettera disco di Google Drive** e mantenere stabile il percorso visto da Cursor (chat, indici, terminale):
