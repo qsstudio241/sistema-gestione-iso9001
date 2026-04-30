@@ -811,6 +811,9 @@ export function StorageProvider({ children, useMockData = false }) {
       if (serverAudits.length > 0) {
         const serverUuids = serverAudits.map((a) => a.metadata?.id || a.id).filter(Boolean);
         syncService.clearQueueForServerAudits(serverUuids).catch(() => {});
+        // Rimuove dalla queue tutti gli item di audit che il server non conosce
+        // (audit eliminati, UUID ghost da sessioni precedenti come 2E59A341).
+        syncService.clearQueueForUnknownAudits(serverUuids).catch(() => {});
       }
 
       const mergedAudits = serverAudits.map((serverAudit) => {
@@ -1045,6 +1048,9 @@ export function StorageProvider({ children, useMockData = false }) {
             if (serverAudits.length > 0) {
               const serverUuids = serverAudits.map(a => a.metadata?.id || a.id).filter(Boolean);
               syncService.clearQueueForServerAudits(serverUuids).catch(() => {});
+              // Pulizia queue al login: rimuove item di audit eliminati o sconosciuti al server.
+              // Elimina definitivamente i ghost UUID (es. 2E59A341) accumulati da sessioni precedenti.
+              syncService.clearQueueForUnknownAudits(serverUuids).catch(() => {});
             }
           } catch (err) {
             console.warn("⚠️ [DOWNLOAD] Errore download server, uso cache locale:", err.message);

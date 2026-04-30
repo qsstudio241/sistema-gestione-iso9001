@@ -1305,6 +1305,71 @@ export class SyncService {
     }
 
     /**
+     * Rimuove dalla sync queue tutti gli item relativi ad audit che il server
+     * non conosce (UUID non presenti nella lista server post-reconcile).
+     * Protegge i draft intenzionali (isIntentionalDraft) e i create_audit
+     * non ancora confermati (potrebbero essere in volo).
+     *
+     * @param {string[]} knownServerUuids - UUID restituiti dal server nell'ultimo fetch
+     * @returns {Promise<number>} Numero item rimossi
+     */
+    async clearQueueForUnknownAudits(knownServerUuids = []) {
+        if (!knownServerUuids.length) return 0;
+        const knownSet = new Set(knownServerUuids.map((u) => String(u).trim()));
+
+        try {
+            const db = await this.init();
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+            const store = tx.objectStore(SYNC_QUEUE_STORE);
+            const items = await new Promise((resolve, reject) => {
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+
+            let removed = 0;
+            for (const item of items) {
+                const payload = item?.payload || {};
+
+                // Estrai UUID dell'audit a cui appartiene questo item
+                const auditUuid = String(
+                    payload.audit_uuid || payload.auditId || payload.auditUuid || ''
+                ).trim();
+                if (!auditUuid) continue;
+
+                // UUID noto al server → mantieni
+                if (knownSet.has(auditUuid)) continue;
+
+                // create_audit non ancora confermato: potrebbe essere in volo → mantieni
+                if (item.type === 'create_audit') continue;
+
+                // delete_audit: il server potrebbe già averlo eliminato → rimuovi dalla queue
+                // (è già sparito dal server, il delete è implicitamente completato)
+                if (item.type === 'delete_audit') {
+                    await this.removeFromQueue(item.id);
+                    removed++;
+                    continue;
+                }
+
+                // save_responses / update_audit / upload per UUID sconosciuto → stale
+                if (payload.blobKey) {
+                    await this.deleteBlobFromStore(payload.blobKey).catch(() => {});
+                }
+                await this.removeFromQueue(item.id);
+                removed++;
+            }
+
+            if (removed > 0) {
+                console.log(`🧹 [SYNC] Rimossi ${removed} item queue per audit sconosciuti al server`);
+            }
+            return removed;
+        } catch (err) {
+            console.warn('⚠️ [SYNC] clearQueueForUnknownAudits fallito (non bloccante):', err.message);
+            return 0;
+        }
+    }
+
+    /**
      * Conta item in queue (tutti, inclusi stalled).
      */
     async getQueueSize() {
