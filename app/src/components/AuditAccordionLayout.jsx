@@ -97,7 +97,18 @@ const STANDARD_INIT_MAP = Object.fromEntries(
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus } = useStorage();
+  // Il banner "ready" sparisce dopo 3 secondi
+  const [showReadyBanner, setShowReadyBanner] = useState(false);
+  useEffect(() => {
+    if (serverDataStatus === 'ready') {
+      setShowReadyBanner(true);
+      const t = setTimeout(() => setShowReadyBanner(false), 3000);
+      return () => clearTimeout(t);
+    } else {
+      setShowReadyBanner(false);
+    }
+  }, [serverDataStatus]);
   const { user } = useAuth();
 
   // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
@@ -308,6 +319,26 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           </div>
         </div>
       </div>
+
+      {/* Banner stato caricamento dati dal server */}
+      {serverDataStatus === 'loading' && (
+        <div className="server-data-banner server-data-banner--loading">
+          <span className="server-data-banner__spinner" aria-hidden="true">⏳</span>
+          <span>Caricamento risposte dal server in corso — le modifiche sono disabilitate temporaneamente…</span>
+        </div>
+      )}
+      {showReadyBanner && (
+        <div className="server-data-banner server-data-banner--ready">
+          <span aria-hidden="true">✅</span>
+          <span>Dati aggiornati dal server — puoi modificare</span>
+        </div>
+      )}
+      {serverDataStatus === 'error' && (
+        <div className="server-data-banner server-data-banner--error">
+          <span aria-hidden="true">⚠️</span>
+          <span>Impossibile caricare le risposte dal server — vengono mostrati i dati locali. Ricarica per riprovare.</span>
+        </div>
+      )}
 
       {/* Accordion Content */}
       <div className="accordion-container">

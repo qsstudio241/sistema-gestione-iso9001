@@ -270,6 +270,13 @@ export function StorageProvider({ children, useMockData = false }) {
     conflictData: null,
   });
 
+  /**
+   * Stato caricamento risposte dal server per l'audit corrente.
+   * idle → loading → ready | error
+   * Usato dal banner di caricamento in AuditAccordionLayout.
+   */
+  const [serverDataStatus, setServerDataStatus] = useState('idle');
+
   /** Lock pessimistico audit (server): owner | foreign | pending_server | offline | error */
   const [auditLock, setAuditLock] = useState({
     mode: "none",
@@ -327,7 +334,11 @@ export function StorageProvider({ children, useMockData = false }) {
 
   // Bug 5: ref stabile per currentAuditId (accessibile da callback senza stale closure)
   const currentAuditIdRef = useRef(null);
-  useEffect(() => { currentAuditIdRef.current = currentAuditId; }, [currentAuditId]);
+  useEffect(() => {
+    currentAuditIdRef.current = currentAuditId;
+    // Reset stato caricamento dati server ad ogni cambio audit
+    setServerDataStatus(currentAuditId ? 'idle' : 'idle');
+  }, [currentAuditId]);
   // Bug 2: debounce per fetchAndApplyServerResponses (evita riesecuzione entro 60s per stesso audit)
   const fetchAndApplyLastRunRef = useRef({});
   // Guard idratazione: true mentre fetchAndApplyServerResponses è in corso.
@@ -2043,6 +2054,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
       try {
         isHydratingRef.current = true;
+        setServerDataStatus('loading');
         console.log(`🔄 [HYDRATE] Carico risposte server per audit ${numericAuditId}...`);
         const result = await apiService.getAuditResponses(numericAuditId);
         const rows = result?.data;
@@ -2094,8 +2106,10 @@ export function StorageProvider({ children, useMockData = false }) {
           console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte`);
           return updatedAudit;
         });
+        setServerDataStatus('ready');
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);
+        setServerDataStatus('error');
       } finally {
         isHydratingRef.current = false;
       }
@@ -2307,6 +2321,9 @@ export function StorageProvider({ children, useMockData = false }) {
     triggerManualSync,
     forceClearLocalCache,
     resolveConflict,
+
+    // Stato caricamento dati server per audit corrente: 'idle' | 'loading' | 'ready' | 'error'
+    serverDataStatus,
 
     // Lock audit (server)
     auditLock,
