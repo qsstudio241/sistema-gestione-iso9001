@@ -97,7 +97,7 @@ const STANDARD_INIT_MAP = Object.fromEntries(
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus } = useStorage();
   // Il banner "ready" sparisce dopo 3 secondi
   const [showReadyBanner, setShowReadyBanner] = useState(false);
   useEffect(() => {
@@ -208,11 +208,17 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     });
 
     // Idrata risposte dal server per TUTTI gli standard (audit esistente con auditId).
-    // Il piccolo delay garantisce che React abbia processato gli setState di initializeChecklist
-    // prima che le risposte vengano applicate alla checklist (evita race condition).
+    // Il banner loading parte subito (setServerDataStatus), poi fetchAndApplyServerResponses
+    // aggiorna il banner a 'ready' o 'error' al termine del fetch.
+    // Il delay garantisce che React abbia processato gli setState di initializeChecklist
+    // prima che le risposte vengano applicate (evita race condition).
     const numericId = currentAudit.metadata?.auditId;
     if (numericId) {
+      setServerDataStatus('loading');
       setTimeout(() => fetchAndApplyServerResponses(numericId), 150);
+    } else {
+      // Audit solo locale (non ancora sul server): nessun fetch, stato idle
+      setServerDataStatus('idle');
     }
   }, [currentAudit?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

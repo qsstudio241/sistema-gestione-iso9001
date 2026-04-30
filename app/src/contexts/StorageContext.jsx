@@ -2041,6 +2041,7 @@ export function StorageProvider({ children, useMockData = false }) {
       if (!numericAuditId) return;
       if (!navigator.onLine) {
         console.log("📴 [HYDRATE] Offline — risposte non scaricate dal server");
+        setServerDataStatus('error');
         return;
       }
 
@@ -2048,6 +2049,8 @@ export function StorageProvider({ children, useMockData = false }) {
       const lastRun = fetchAndApplyLastRunRef.current[numericAuditId];
       if (lastRun && Date.now() - lastRun < 60000) {
         console.log(`⏭️ [HYDRATE] Già eseguita per audit ${numericAuditId} nell'ultimo minuto — skip`);
+        // I dati erano già stati caricati: porta il banner a 'ready' invece di lasciarlo in 'loading'
+        setServerDataStatus('ready');
         return;
       }
       fetchAndApplyLastRunRef.current[numericAuditId] = Date.now();
@@ -2324,6 +2327,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
     // Stato caricamento dati server per audit corrente: 'idle' | 'loading' | 'ready' | 'error'
     serverDataStatus,
+    setServerDataStatus,
 
     // Lock audit (server)
     auditLock,
