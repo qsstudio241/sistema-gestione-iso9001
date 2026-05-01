@@ -185,14 +185,20 @@ echo "Riavvio backend (sgq-backend.service)..."
 RESTART_CMD='
 set -e
 cd '"${REMOTE_BASE}"'
+OLD_PID=$(systemctl show sgq-backend.service --property=MainPID --value 2>/dev/null || echo 0)
+echo "  PID attuale: ${OLD_PID}"
+
 RESTARTED=0
-if sudo -n systemctl restart sgq-backend.service 2>/dev/null; then
-    echo deploy_systemctl_nopass_ok
-    RESTARTED=1
-fi
-if [ "$RESTARTED" != "1" ] && [ -n "'"${SGQ_SUDO_PASSWORD:-}"'" ]; then
+# Tenta prima con password (più affidabile del nopass: evita race systemd)
+if [ -n "'"${SGQ_SUDO_PASSWORD:-}"'" ]; then
     echo "'"${SGQ_SUDO_PASSWORD:-}"'" | sudo -S systemctl restart sgq-backend.service && {
         echo deploy_systemctl_password_ok
+        RESTARTED=1
+    }
+fi
+if [ "$RESTARTED" != "1" ]; then
+    sudo -n systemctl restart sgq-backend.service 2>/dev/null && {
+        echo deploy_systemctl_nopass_ok
         RESTARTED=1
     }
 fi
@@ -203,8 +209,18 @@ if [ "$RESTARTED" != "1" ]; then
     nohup node src/server.js >> '"${REMOTE_BASE}"'/app.log 2>&1 &
     sleep 4
 fi
-systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -20 || true
-tail -20 '"${REMOTE_BASE}"'/app.log || true
+
+sleep 3
+NEW_PID=$(systemctl show sgq-backend.service --property=MainPID --value 2>/dev/null || echo 0)
+echo "  PID dopo restart: ${NEW_PID}"
+if [ "$OLD_PID" = "$NEW_PID" ] && [ "$OLD_PID" != "0" ]; then
+    echo "  ⚠ ATTENZIONE: PID invariato — il processo potrebbe non essersi riavviato!"
+else
+    echo "  ✓ Processo riavviato correttamente"
+fi
+
+systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -10 || true
+tail -10 '"${REMOTE_BASE}"'/app.log || true
 '
 
 ssh_run "bash -s" <<< "${RESTART_CMD}" || {
