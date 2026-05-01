@@ -13,7 +13,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
-import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard } from "./QuestionCard";
 import "./CustomChecklistAuditView.css";
 
@@ -37,17 +36,22 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
   const { updateCurrentAudit } = useStorage();
 
-  // Gestione allegati con lo stesso hook della checklist standard
-  const attachmentManager = useAttachmentManager(audit, updateCurrentAudit);
+  // attachmentManager ISO non si usa per la custom: gli allegati custom vanno
+  // in evidence_blocks (handleFileSelect). Il hook è comunque importato per
+  // futura migrazione completa degli allegati custom al modello ISO.
 
   const [checklist, setChecklist] = useState(null);
   const [responses, setResponses] = useState({}); // custom_item_id -> evidence_blocks[]
+  const responsesRef = useRef({}); // ref aggiornato per accesso in closure debounce
   const [statuses, setStatuses] = useState({}); // custom_item_id -> status string|null
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const enqueuedBlobKeysRef = useRef(new Set());
   const lastFlushedAuditIdRef = useRef(null);
   const notesDebounceRef = useRef({});
+
+  // Mantieni ref aggiornato per accesso in closure (debounce onNotesChange)
+  useEffect(() => { responsesRef.current = responses; }, [responses]);
 
   // Stato form "Aggiungi sezione" (in fondo alla lista)
   const [addingSection, setAddingSection] = useState(false);
@@ -426,15 +430,16 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
                   if (notesDebounceRef.current[debKey]) clearTimeout(notesDebounceRef.current[debKey]);
                   notesDebounceRef.current[debKey] = setTimeout(() => {
                     delete notesDebounceRef.current[debKey];
-                    setResponses((prev) => {
-                      const blocks = prev[item.id] || [];
-                      saveResponses(item.id, blocks.length > 0 ? blocks : [{ text, attachment_id: null }]);
-                      return prev;
-                    });
+                    // Leggi il valore corrente dal ref (non dallo state che potrebbe essere stale nel closure)
+                    const currentBlocks = (responsesRef.current[item.id] || []);
+                    const updatedBlocks = currentBlocks.length > 0
+                      ? currentBlocks.map((b, i) => i === 0 ? { ...b, text } : b)
+                      : [{ text, attachment_id: null }];
+                    saveResponses(item.id, updatedBlocks);
                   }, 800);
                 }}
-                attachmentManager={attachmentManager}
-                auditId={auditId}
+                attachmentManager={null}
+                auditId={null}
               >
                 {/* Blocchi evidenza aggiuntivi (dal secondo in poi) */}
                 {extraBlocks.length > 0 && (
