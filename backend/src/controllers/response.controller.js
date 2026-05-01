@@ -393,14 +393,11 @@ async function bulkSaveResponses(req, res) {
             auditIdNumeric = parsedId;
         }
 
-        const lockBulk = await assertWriteAllowed(req.user, auditIdNumeric, getLockTokenFromRequest(req));
-        if (!lockBulk.ok) {
-            return res.status(lockBulk.status).json({
-                error: lockBulk.message,
-                code: lockBulk.code,
-                locked_by_name: lockBulk.locked_by_name,
-            });
-        }
+        // Lock check rimosso da bulkSaveResponses per coerenza con T3 (eventi response_set).
+        // T3 bypassa già il lock per i click stato — bloccare solo le note creerebbe un'asimmetria:
+        // stesso audit con status scritto e note bloccate. L'integrità è garantita dal MERGE
+        // last-write-wins su audit_responses. Il lock rimane informativo (banner UI) ma non blocca.
+        // Questo anticipa T5 (lock opzionale) della roadmap ADR-008.
 
         const results = {
             saved: 0,
