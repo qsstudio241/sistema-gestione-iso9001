@@ -148,6 +148,7 @@ scp_file "${BACKEND_ROOT}/src/controllers/auditorOrg.controller.js"    "${REMOTE
 scp_file "${BACKEND_ROOT}/src/controllers/organization.controller.js"  "${REMOTE_BASE}/src/controllers/organization.controller.js"
 scp_file "${BACKEND_ROOT}/src/controllers/auth.controller.js"          "${REMOTE_BASE}/src/controllers/auth.controller.js"
 scp_file "${BACKEND_ROOT}/src/controllers/auditEvents.controller.js"   "${REMOTE_BASE}/src/controllers/auditEvents.controller.js"
+scp_file "${BACKEND_ROOT}/src/controllers/response.controller.js"      "${REMOTE_BASE}/src/controllers/response.controller.js"
 
 # Routes
 scp_file "${BACKEND_ROOT}/src/routes/audit.routes.js"                  "${REMOTE_BASE}/src/routes/audit.routes.js"
