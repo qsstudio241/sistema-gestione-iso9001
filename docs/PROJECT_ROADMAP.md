@@ -163,7 +163,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | 0.2 | ISO 14001 checklist da norma PDF | DB migration + `checklistTemplates.js` | Norma già disponibile e leggibile |
 | 0.3 | ISO 45001 checklist da norma PDF | DB migration + `checklistTemplates.js` | Norma già disponibile e leggibile |
 | 0.4 | Campo norm_excerpt in checklist_questions | DB + wordExportHelpers.js | Alto impatto, bassa complessità |
-| 0.5 | Rilievi pendenti reali in Word | `ExportPanel.jsx`, `wordExport.js`, `wordExportHelpers.js` | **Export**: prima `GET /audits/:id/pending-issues`, poi fallback `checkReaudit`+`nc-responses`; tabella AP in `RILIEVI_MARKER` marca **NC** se pending aperti (mar 2026) |
+| 0.5 | Rilievi pendenti reali in Word | `ExportPanel.jsx`, `wordExport.js`, `wordExportHelpers.js` | ✅ Già implementato — `GET /audits/:id/pending-issues` + fallback `checkReaudit` in ExportPanel.jsx |
 | 0.6 | Fix Auth Mobile (ADR-004) | `auth.controller.js`, `apiService.js` | localStorage JWT — prerequisito per mobile |
 
 ---
@@ -734,8 +734,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ✅ Completato (29/04/2026) — migration 045, backup pre-T1 ok |
 | **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ✅ Completato (30/04/2026) — migration 046, deploy VPS, smoke OK |
 | **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ✅ Completato + Smoke L3 ✅ (01/05/2026) — status + note multi-device verificati su prod, `VITE_SYNC_MODE=events` attivo |
-| **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ⏳ Dopo T3 stabile 2 sett. |
-| **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ⏳ Dopo T4 stabile 2 sett. |
+| **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ✅ Completato (01/05/2026) — generalData/auditObjective/auditOutcome/notes con debounce 500ms |
+| **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ✅ Completato (01/05/2026) — assertWriteAllowed rimosso da audit/response/customChecklist/attachment controller |
 | **🔴 T6** | **Recovery UI + history API** + compaction job notturno — compliance ISO 9001 §7.5 | Full-stack | ⏳ Dopo T5 |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog — dopo SYNC-3 |
 | P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
