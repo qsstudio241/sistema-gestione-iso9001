@@ -7,13 +7,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
-import AttachmentSection from "./AttachmentSection";
-import AttachmentPreview from "./AttachmentPreview";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { validateQuestion } from "../utils/checklistValidation";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
+import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import "./ChecklistModule.css";
 
 /**
@@ -542,118 +541,27 @@ function ClauseAccordion({
   );
 }
 
-// === QUESTION CARD COMPONENT ===
+// === QUESTION CARD — wrapper ISO che delega al componente universale ===
+// Mantiene l'interfaccia (clauseId, onUpdate) per compatibilità con ClauseAccordion.
 
 function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId }) {
-  // Incrementato dopo ogni upload per forzare re-fetch in AttachmentPreview
-  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
-
   // Numerazione: per ISO 3834/RDP solo numero (displayOrder), per 9001/14001 clauseRef (es. 4.1)
   const isSimpleNumbering = ['ISO_3834_2', 'RDP_MSN'].includes(checklistKey);
   const displayRef = isSimpleNumbering && question.displayOrder != null
     ? String(question.displayOrder)
     : (question.clauseRef || '');
 
-  const handleStatusChange = (status) => {
-    onUpdate(clauseId, question.id, "status", status);
-  };
-
-  const handleNotesChange = (e) => {
-    onUpdate(clauseId, question.id, "notes", e.target.value);
-  };
-
-  const getStatusClass = (status) => {
-    if (question.status === status) return "active";
-    return "";
-  };
-
   return (
-    <div className={`question-card status-${question.status} standard-${checklistKey.toLowerCase().replace(/_/g, '-')}`}>
-      <div className="question-header">
-        <span className="question-reference">{displayRef}</span>
-        <span className="question-text">{question.text}</span>
-      </div>
-
-      <div className="question-controls">
-        <div className="status-buttons">
-          <button
-            className={`status-btn compliant ${getStatusClass(STATUS.C)}`}
-            onClick={() => handleStatusChange(STATUS.C)}
-            title="Conforme"
-          >
-            C
-          </button>
-          <button
-            className={`status-btn non-compliant ${getStatusClass(STATUS.NC)}`}
-            onClick={() => handleStatusChange(STATUS.NC)}
-            title="Non Conforme"
-          >
-            NC
-          </button>
-          <button
-            className={`status-btn partial ${getStatusClass(STATUS.OSS)}`}
-            onClick={() => handleStatusChange(STATUS.OSS)}
-            title="Osservazione"
-          >
-            OSS
-          </button>
-          <button
-            className={`status-btn om ${getStatusClass(STATUS.OM)}`}
-            onClick={() => handleStatusChange(STATUS.OM)}
-            title="Opportunità di Miglioramento"
-          >
-            OM
-          </button>
-          <button
-            className={`status-btn not-applicable ${getStatusClass(STATUS.NA)}`}
-            onClick={() => handleStatusChange(STATUS.NA)}
-            title="Non Applicabile"
-          >
-            NA
-          </button>
-          <button
-            className={`status-btn not-verified ${getStatusClass(STATUS.NV)}`}
-            onClick={() => handleStatusChange(STATUS.NV)}
-            title="Non Verificato"
-          >
-            NV
-          </button>
-        </div>
-      </div>
-
-      {/* Note e Evidenza sempre visibili */}
-      <div className="question-details">
-        {/* Note/Osservazioni unificate */}
-        <div className="question-field">
-          <label className="field-label">📝 Note / Osservazioni</label>
-          <textarea
-            value={question.notes || ""}
-            onChange={handleNotesChange}
-            placeholder="Inserisci osservazioni, note e dettagli della verifica..."
-            rows={3}
-            className="notes-textarea"
-          />
-        </div>
-
-        {/* Evidenza = Allegati locali (upload) */}
-        {/* questionId: numeric INT (question.questionId) se disponibile, fallback stringa locale */}
-        {attachmentManager && (
-          <AttachmentSection
-            questionId={question.questionId || question.id}
-            attachmentManager={attachmentManager}
-            onUploadSuccess={() => setAttachmentRefreshKey(k => k + 1)}
-          />
-        )}
-
-        {/* Allegati già sul server (preview inline immagini/PDF) */}
-        {/* Richiede questionId numerico INT — non renderizza se null (ISO 14001/45001) */}
-        <AttachmentPreview
-          auditId={auditId}
-          questionId={question.questionId || null}
-          refreshKey={attachmentRefreshKey}
-        />
-      </div>
-    </div>
+    <UniversalQuestionCard
+      question={question}
+      displayRef={displayRef}
+      checklistKey={checklistKey}
+      showStatusButtons
+      onStatusChange={(status) => onUpdate(clauseId, question.id, "status", status)}
+      onNotesChange={(notes) => onUpdate(clauseId, question.id, "notes", notes)}
+      attachmentManager={attachmentManager}
+      auditId={auditId}
+    />
   );
 }
 

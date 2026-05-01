@@ -13,6 +13,8 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
+import { useAttachmentManager } from "../hooks/useAttachmentManager";
+import { QuestionCard } from "./QuestionCard";
 import "./CustomChecklistAuditView.css";
 
 const OUTCOME_CODES = ['C', 'OSS', 'NC', 'OM', 'NV', 'NA'];
@@ -35,6 +37,9 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
   const { updateCurrentAudit } = useStorage();
 
+  // Gestione allegati con lo stesso hook della checklist standard
+  const attachmentManager = useAttachmentManager(audit, updateCurrentAudit);
+
   const [checklist, setChecklist] = useState(null);
   const [responses, setResponses] = useState({}); // custom_item_id -> evidence_blocks[]
   const [statuses, setStatuses] = useState({}); // custom_item_id -> status string|null
@@ -42,6 +47,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const enqueuedBlobKeysRef = useRef(new Set());
   const lastFlushedAuditIdRef = useRef(null);
+  const notesDebounceRef = useRef({});
 
   // Stato form "Aggiungi sezione" (in fondo alla lista)
   const [addingSection, setAddingSection] = useState(false);
@@ -389,99 +395,93 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
           </h4>
 
           {(sec.items || []).map((item) => {
-            // Bug 1 Fix: mostra sempre almeno 1 textarea — anche se non ci sono ancora blocchi salvati
+            // Adatta item custom → forma question attesa da QuestionCard
+            const question = {
+              id: item.id,
+              text: `${item.code} — ${item.title}`,
+              status: statuses[item.id] || null,
+              // notes: primo blocco testo (campo principale item custom)
+              notes: responses[item.id]?.[0]?.text || "",
+              questionId: null, // custom items non hanno questionId numerico ISO
+            };
+
+            // Blocchi evidenza (dal secondo in poi) — restano come contenuto aggiuntivo
             const displayBlocks = responses[item.id]?.length > 0
               ? responses[item.id]
               : [EMPTY_BLOCK];
+            const extraBlocks = displayBlocks.slice(1); // primo blocco è gestito da QuestionCard come notes
 
             return (
-              <div key={item.id} className="custom-checklist-item">
-                <div className="custom-checklist-item-title">
-                  {item.code} — {item.title}
-                </div>
-
-                {/* Pulsanti esito (visibili solo se checklist ha valutazione) */}
-                {checklist?.has_outcome_buttons && (
-                  <div className="status-buttons">
-                    {OUTCOME_CODES.map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        className={`status-btn ${OUTCOME_CSS[code]} ${statuses[item.id] === code ? "active" : ""}`}
-                        onClick={() => handleStatusChange(item.id, code)}
-                        title={code}
-                      >
-                        {code}
-                      </button>
-                    ))}
+              <QuestionCard
+                key={item.id}
+                question={question}
+                displayRef=""
+                checklistKey="custom"
+                showStatusButtons={!!checklist?.has_outcome_buttons}
+                onStatusChange={(code) => handleStatusChange(item.id, code)}
+                onNotesChange={(text) => {
+                  updateBlock(item.id, 0, "text", text);
+                  // Salva con debounce 800ms: evita una chiamata API per ogni tasto
+                  const debKey = `notes_${item.id}`;
+                  if (notesDebounceRef.current[debKey]) clearTimeout(notesDebounceRef.current[debKey]);
+                  notesDebounceRef.current[debKey] = setTimeout(() => {
+                    delete notesDebounceRef.current[debKey];
+                    setResponses((prev) => {
+                      const blocks = prev[item.id] || [];
+                      saveResponses(item.id, blocks.length > 0 ? blocks : [{ text, attachment_id: null }]);
+                      return prev;
+                    });
+                  }, 800);
+                }}
+                attachmentManager={attachmentManager}
+                auditId={auditId}
+              >
+                {/* Blocchi evidenza aggiuntivi (dal secondo in poi) */}
+                {extraBlocks.length > 0 && (
+                  <div className="custom-checklist-evidence-blocks extra-blocks">
+                    {extraBlocks.map((block, extraIdx) => {
+                      const idx = extraIdx + 1;
+                      return (
+                        <div key={idx} className="evidence-block">
+                          <textarea
+                            className="notes-textarea"
+                            value={block.text || ""}
+                            onChange={(e) => updateBlock(item.id, idx, "text", e.target.value)}
+                            onBlur={() => {
+                              const currentBlocks = responses[item.id];
+                              if (currentBlocks?.length > 0) saveResponses(item.id, currentBlocks);
+                            }}
+                            placeholder="Evidenza aggiuntiva..."
+                            rows={3}
+                          />
+                          <div className="evidence-block-actions">
+                            <label className="btn-attach">
+                              📎 Allega
+                              <input
+                                type="file"
+                                accept="image/*,.pdf,.doc,.docx"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleFileSelect(item.id, idx, f);
+                                  e.target.value = "";
+                                }}
+                                style={{ display: "none" }}
+                              />
+                            </label>
+                            {block.attachment_id && (
+                              <a href={apiService.getAttachmentViewUrl(block.attachment_id)} target="_blank" rel="noopener noreferrer" className="link-preview">Vedi allegato</a>
+                            )}
+                            <button type="button" className="btn-remove" onClick={() => removeBlock(item.id, idx)}>Rimuovi</button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-
-                {/* Blocchi evidenza — sempre almeno 1 textarea visibile */}
-                <div className="custom-checklist-evidence-blocks">
-                  {displayBlocks.map((block, idx) => (
-                    <div key={idx} className="evidence-block">
-                      <textarea
-                        className="notes-textarea"
-                        value={block.text || ""}
-                        onChange={(e) => updateBlock(item.id, idx, "text", e.target.value)}
-                        onBlur={() => {
-                          const currentBlocks = responses[item.id];
-                          if (currentBlocks?.length > 0) {
-                            saveResponses(item.id, currentBlocks);
-                          }
-                        }}
-                        placeholder={checklist?.has_outcome_buttons
-                          ? "Osservazioni, evidenze, riferimenti normativi..."
-                          : "Testo evidenza (usa ** per grassetto)"}
-                        rows={3}
-                      />
-                      <div className="evidence-block-actions">
-                        <label className="btn-attach">
-                          📎 Allega foto/documento
-                          <input
-                            type="file"
-                            accept="image/*,.pdf,.doc,.docx"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) handleFileSelect(item.id, idx, f);
-                              e.target.value = "";
-                            }}
-                            style={{ display: "none" }}
-                          />
-                        </label>
-                        {block.attachment_id && (
-                          <a
-                            href={apiService.getAttachmentViewUrl(block.attachment_id)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="link-preview"
-                          >
-                            Vedi allegato
-                          </a>
-                        )}
-                        {/* Mostra "Rimuovi" solo se ci sono più blocchi o il blocco ha contenuto */}
-                        {(displayBlocks.length > 1 || block.text || block.attachment_id) && (
-                          <button
-                            type="button"
-                            className="btn-remove"
-                            onClick={() => removeBlock(item.id, idx)}
-                          >
-                            Rimuovi
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn-add-evidence"
-                    onClick={() => addBlock(item.id)}
-                  >
-                    ➕ Aggiungi evidenza
-                  </button>
-                </div>
-              </div>
+                <button type="button" className="btn-add-evidence" onClick={() => addBlock(item.id)}>
+                  ➕ Aggiungi evidenza
+                </button>
+              </QuestionCard>
             );
           })}
 
