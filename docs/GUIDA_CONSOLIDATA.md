@@ -27,8 +27,9 @@
 - Banner stato caricamento: `serverDataStatus` idle→loading→ready/error con animazione
 - Deploy autonomo cloud agent: `deploy-to-vps.sh` + `run-migration-agent.sh` (nota: DNS blocca DB da cloud, migrazioni via SSH sul VPS)
 - Segreti Cursor configurati: `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `DB_*`
+- **T3**: percorso event-based per `save_responses` — `generateResponseEventKey`, `enqueueResponseEvent`, `syncSendAuditEvent`, fork `VITE_SYNC_MODE` in StorageContext e ChecklistModule (9/9 test L1, build OK). Produzione: `VITE_SYNC_MODE=legacy` (default, comportamento invariato).
 
-**Prossimo**: T3 frontend event-based `save_responses` (feature flag `VITE_SYNC_MODE`) — DEPUTYTASK pronto, lanciare ~07/05 dopo 1 sett. stabilità T2.
+**Prossimo**: smoke L3 umano T3 con `VITE_SYNC_MODE=events` su Netlify (da pianificare). Poi: smoke test allegati, ISO 14001 checklist, T4 (campi ricchi event-based).
 
 ### Workspace consigliato — ponte `C:\ProgettoISO` (Cursor / terminale)
 

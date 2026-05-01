@@ -13,6 +13,7 @@ import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { validateQuestion } from "../utils/checklistValidation";
 import apiService from "../services/apiService";
+import { syncService } from "../services/syncService";
 import "./ChecklistModule.css";
 
 /**
@@ -249,6 +250,30 @@ function ChecklistModule({ defaultNorm = "ISO_9001" }) {
   };
 
   const handleQuestionUpdate = (clauseId, questionId, field, value) => {
+    // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
+    // Ogni cambio di status genera un evento atomico inviato a POST /audits/:uuid/events.
+    // Il bulk save_responses è disabilitato in StorageContext quando events è attivo.
+    if (
+      field === 'status' &&
+      import.meta.env.VITE_SYNC_MODE === 'events'
+    ) {
+      const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
+      // questionId numerico dal dato della domanda (idratato da hydrateQuestionIds)
+      const numericQId = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+        ?.questions?.find((q) => q.id === questionId)?.questionId ?? null;
+      if (auditUuidForEvent && numericQId != null) {
+        const currentNotes = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+          ?.questions?.find((q) => q.id === questionId)?.notes ?? null;
+        const newStatus = value === 'NOT_ANSWERED' ? null : value;
+        syncService.enqueueResponseEvent(
+          auditUuidForEvent,
+          numericQId,
+          newStatus,
+          currentNotes,
+        ).catch(() => {});
+      }
+    }
+
     updateCurrentAudit((audit) => {
       const updatedAudit = { ...audit };
 
