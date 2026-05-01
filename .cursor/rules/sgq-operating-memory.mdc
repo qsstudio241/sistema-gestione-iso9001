@@ -43,8 +43,11 @@ alwaysApply: true
 - **Ruolo decisionale**: operare come **senior lead** su progetti di questo tipo (PWA/offline, API, DB relazionale, multi-tenant), seguendo **golden rules** e **best practice** consolidate. **Non chiedere** "cosa preferisci?" su scelte tecniche ovvie o standard: proporre ed applicare la soluzione migliore. **Solo** se serve una decisione di **prodotto**, **compliance/contratto** o un trade-off **non deducibile** da codice, `PROJECT_ROADMAP` o `GUIDA_CONSOLIDATA`, esplicitare il dilemma e chiedere conferma.
 - **Priorita'**: integrita' DB, coerenza dati, scenari **multi-utente / multi-dispositivo** (nessuna soluzione che "funziona solo sul mio browser").
 - **Ciclo consigliato** per fix non banali: causa radice riproducibile -> fix difensivo + hardening collegato (edge case, schema legacy, sync) -> test automatici disponibili (`app`/`backend`) -> se tocca produzione: **migrazione DB se necessaria** -> deploy file backend/VPS -> **restart servizio** (`systemctl` / script noti) -> **smoke test** su API reali (health, endpoint critici) -> **commit + push** su `main` quando stabile.
+- **Deploy VPS — verifica PID obbligatoria**: dopo `systemctl restart`, leggere `MainPID` prima e dopo — se uguale il processo **non si è riavviato** (systemd ottimizza se già in run). Lo script `backend/scripts/deploy-to-vps.sh` include già questa verifica; usare sempre quello script, non comandi manuali. Se il PID è invariato, forzare con `echo $SGQ_SUDO_PASSWORD | sudo -S systemctl restart sgq-backend.service`.
 - **Documentazione**: aggiorna **`docs/GUIDA_CONSOLIDATA.md`** (e se serve `PROJECT_ROADMAP.md`) con la **strategia** e i passi operativi ripetibili; non aprire nuovi `SESSION_NOTES_*`.
 - **Migrazioni DB**: **eseguire in autonomia** usando `backend/config/database.json` (gitignored, già presente sul workspace con credenziali di produzione). Non delegare all'utente né segnalarle come "da fare manualmente": lanciare lo script SQL con `sqlcmd` o equivalente, verificare l'esito e registrare nella guida. Richiedere intervento umano **solo** se `database.json` risulta assente o non configurato — in quel caso indicare solo quale file creare/aggiornare fuori dalla chat.
+- **Migrazioni DB — Cloud Agent (Cursor web)**: il cloud agent **non raggiunge SQL Server direttamente** (DNS non risolve l'host del DB). Usare sempre questo pattern: (1) scrivi `backend/scripts/run-migration-NNN-vps.js` con `require('/var/www/sgq-backend/src/config/database')`; (2) `scp -P 1122 -i $KEY script.js spascarella@www.fr-busato.it:/tmp/`; (3) `ssh node /tmp/script.js`. **Non tentare** `bash backend/scripts/run-migration-agent.sh NNN` dal cloud — fallisce sempre per DNS.
+- **SQL Server FK**: `ON DELETE SET NULL` / `ON DELETE CASCADE` possono fallire con "Could not create constraint". Usare statement separati per ALTER TABLE (colonna), ADD CONSTRAINT (FK senza clausole ON DELETE), CREATE INDEX. Verificare ogni step con SELECT prima del successivo.
 - **Sicurezza**: **non** chiedere all'utente di scrivere password in chat per migrazioni o deploy. Usare cio' che e' gia' sul workspace: `backend/config/database.json` (copia locale da `.example`), override `DB_*` in ambiente, `SGQ_PUTTY_SESSION` / Pageant per `deploy-controllers-to-vps.ps1`. Se manca la configurazione, indicare **solo** cosa creare o impostare **fuori dalla chat** (vault, variabili d'ambiente Windows, PuTTY), mai richiedere il segreto nel messaggio.
 - **Chiusura**: niente "fix a meta'": se emergono sotto-problemi (es. delete legacy, CORS, proxy che mangia header), chiuderli o documentare il rischio residuo in guida.
 
@@ -52,6 +55,13 @@ alwaysApply: true
 - Prima diagnosi riproducibile, poi hardening, poi test automatici.
 - Deploy, checklist custom, Word Verbale, DB/repro: tabelle e file in **`docs/GUIDA_CONSOLIDATA.md`** (sez. A-D).
 - Persistenza custom: merge local/server, `custom_checklist_id`, fallback ISO 9001.
+
+## Sync multi-device — regole vincolanti (da ADR-008 + esperienza 01/05/2026)
+- **Server-wins all'apertura**: `fetchAndApplyServerResponses` e `reconcileAuditsFromServer` usano sempre i dati server. Il locale prevale ONLY se il server non ha mai ricevuto quei dati (audit draft puro, `audit_extra_data` null).
+- **Debounce hydrate**: `fetchAndApplyLastRunRef` deve essere resettato ad ogni cambio `currentAuditId` — altrimenti le modifiche di un secondo device restano invisibili per 60 secondi. Debounce attuale: 10s (solo protezione doppio mount React).
+- **Coerenza percorsi di scrittura**: se esiste più di un percorso (es. T3 eventi + bulk save_responses), devono comportarsi identicamente rispetto a lock, retry, offline. Non disabilitare mai un percorso senza che l'altro lo sostituisca completamente.
+- **Lock solo UX (T5)**: `assertWriteAllowed` rimosso da tutti gli endpoint di scrittura. Il lock acquisisce il token e mostra il banner "in uso da", ma non blocca. Integrità garantita da MERGE last-write-wins + audit_events.
+- **Nuovi percorsi di sync**: seguire ADR-008 — ogni nuovo endpoint che accetta "stato corrente intero" deve avere un event log parallelo.
 
 ## Regole operative terminale (Windows PowerShell)
 - Evita `&&` in PowerShell legacy: usa `;` + controllo `$LASTEXITCODE`.
@@ -77,7 +87,9 @@ Riferimento rapido — blocchi gia' collaudati da riutilizzare:
 |---|---|
 | Pulsanti esito C/NC/OSS/OM/NA/NV | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` + `.active` (`ChecklistModule.css`) |
 | Textarea note/evidenze | `className="notes-textarea"` (`ChecklistModule.css`) |
-| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook |
+| **Domanda checklist (qualsiasi tipo)** | **`QuestionCard.jsx`** — props: `question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `auditId`, `customItemId`; slot `children` per contenuto extra. Usare per ISO, custom e qualsiasi futuro tipo di domanda. |
+| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook — supporta `customItemId` (migration 047) |
+| Preview allegati server | `AttachmentPreview.jsx` — supporta `questionId` (ISO) e `customItemId` (custom) |
 | Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` (`CustomChecklistAuditView.css`) |
 
