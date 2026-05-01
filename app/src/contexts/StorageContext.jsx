@@ -1553,10 +1553,10 @@ export function StorageProvider({ children, useMockData = false }) {
             // skipSync=true o idratazione in corso → non accodare save_responses.
             // Usato da initializeChecklist (template vuoto) e durante fetchAndApplyServerResponses
             // per evitare di sovrascrivere con NOT_ANSWERED dati già presenti sul server.
-            // Con VITE_SYNC_MODE=events il percorso event-based (T3) gestisce le singole risposte
-            // atomicamente da ChecklistModule: non ripetiamo il bulk save_responses qui.
-            const isBulkSyncEnabled = import.meta.env.VITE_SYNC_MODE !== 'events';
-            if (navigator.onLine && !skipSync && !isHydratingRef.current && isBulkSyncEnabled) {
+            // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) sono AGGIUNTIVI al bulk
+            // save_responses — non lo sostituiscono. save_responses è l'unico percorso che salva
+            // le note/evidenze digitate nelle textarea; T3 gestisce solo i click sui pulsanti stato.
+            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
                 syncService
