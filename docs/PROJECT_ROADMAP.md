@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 30 aprile 2026
-> **Prossimo Step**: T3 ✅ (30/04/2026) — `VITE_SYNC_MODE=legacy` in prod (default). Smoke L3 umano con `VITE_SYNC_MODE=events` da pianificare prima di attivare in prod. Prossime priorità: smoke test allegati (upload PDF/foto → link Word + foto embedded), ISO 14001 checklist completa da norma PDF, T4 (campi ricchi event-based) dopo T3 stabile ~2 sett. Sprint 0-9 tutti ✅.
+> **Prossimo Step (post sessione 01/05)**: T3 smoke L3 ✅, T4 ✅, T5 ✅, allegati custom unificati ✅. Prossime sessioni: (1) smoke test allegati (upload PDF/foto → link Word cliccabile + foto embedded nel report), (2) P1 smoke L3 custom checklist (DEPUTYTASK pronto), (3) ISO 14001 checklist completa da norma PDF via deputy. SYNC-5 (allegati offline) in backlog attivo.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 

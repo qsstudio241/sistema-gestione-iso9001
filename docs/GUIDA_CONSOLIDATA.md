@@ -15,6 +15,65 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 01 maggio 2026
+
+**Sprint audit completato — modulo audit sostanzialmente chiuso (T3→T5, refactoring, allegati unificati):**
+
+**Lezioni apprese — approcci vincenti da riusare:**
+
+#### Pattern server-wins al reconcile (multi-device)
+Il bug multi-device (modifiche del Device 2 non visibili su Device 1) aveva **due cause distinte** da correggere insieme:
+1. **Debounce 60s su `fetchAndApplyServerResponses`**: non veniva resettato al cambio audit → il fetch veniva saltato e si usavano i dati IndexedDB locali. Fix: `useEffect` su `currentAuditId` che azzera `fetchAndApplyLastRunRef`; debounce ridotto a 10s (solo per doppio mount React).
+2. **Merge "locale prevale se non vuoto"** in `fetchAndApplyServerResponses` e in entrambi i blocchi di `reconcileAuditsFromServer`: le note/evidenze locali (vecchie) vincevano sulle note server (più recenti). Fix: server-wins incondizionato all'apertura audit; fallback locale SOLO se il server non ha mai ricevuto quei dati (draft puro, `audit_extra_data` vuoto).
+- **Regola**: al reconcile/hydrate il server è fonte di verità. Il locale prevale SOLO offline o per dati mai sincronizzati.
+- **File**: `StorageContext.jsx` — `fetchAndApplyServerResponses`, `reconcileAuditsFromServer` (due blocchi identici da tenere allineati).
+
+#### Coerenza percorsi di scrittura (T3/T4/T5)
+Quando si introduce un nuovo percorso di scrittura (T3: eventi atomici), il vecchio percorso (bulk `save_responses`) non va disabilitato ma reso parallelo/additivo. Se si disabilita uno dei percorsi si crea asimmetria (status scritto, note bloccate). Analogamente il lock non deve bloccare un percorso e lasciarne un altro libero.
+- **Regola**: tutti i percorsi di scrittura devono avere lo stesso comportamento rispetto a lock, retry e error handling.
+- **T5**: rimosso `assertWriteAllowed` da `audit.controller`, `response.controller`, `customChecklist.controller`, `attachment.controller`. Lock ora solo UX (banner).
+
+#### Riuso componenti UI — "QuestionCard universale"
+Prima di implementare qualsiasi nuovo widget di domanda/item, verificare se esiste già un componente equivalente. La checklist custom era stata scritta da zero invece di riusare `QuestionCard` della ISO, causando tre gap (layout, allegati, contatori). Il refactoring ha estratto `QuestionCard.jsx` standalone con props universali e slot `children` per contenuto aggiuntivo.
+- **Regola**: `QuestionCard` è il componente canonico per qualsiasi tipo di domanda — non creare wrapper paralleli.
+- **Pattern**: props universali (`question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `customItemId`) + slot `children` per contenuto specifico.
+
+#### Deploy VPS — verifica PID riavvio
+`systemctl restart` può restituire exit 0 senza riavviare davvero il processo (ottimizzazione systemd se il servizio è già running). Il deploy script ora:
+1. Legge `OLD_PID` prima del restart
+2. Esegue restart **con password** (più affidabile di `sudo -n`)
+3. Verifica `NEW_PID != OLD_PID` — se uguale stampa warning esplicito
+- **File**: `backend/scripts/deploy-to-vps.sh`
+- **Conseguenza**: senza questa verifica il VPS girava con file JS vecchi in memoria nonostante il deploy.
+
+#### Migration DB via SSH (non via cloud agent)
+Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risolve il server). Pattern consolidato:
+1. Scrivi script `run-migration-NNN-vps.js` che usa `require('/var/www/sgq-backend/src/config/database')`
+2. `scp` dello script sul VPS via `$SGQ_SSH_KEY_B64`
+3. `ssh` + `node /tmp/run-migration-NNN-vps.js`
+- **Nota SQL Server**: `ON DELETE SET NULL` in FK non è sempre supportato. Verificare con istruzione separata prima di aggiungere clausole ON DELETE/UPDATE.
+
+#### Unificazione allegati ISO e custom (migration 047)
+`evidence_blocks` della custom già referenziava `attachment_id` dalla tabella `attachments` — erano già unificati a livello DB. Il gap era solo nel frontend: `AttachmentSection`/`AttachmentPreview` non sapevano filtrare per `custom_item_id`. Soluzione minima: aggiungere `custom_item_id` nullable a `attachments` + propagare il param nei 4 punti frontend.
+- **Beneficio**: tutte le feature future sugli allegati (download token, Office round-trip, Word embedding, offline sync) funzionano automaticamente anche per la custom.
+
+---
+
+**Task completati questa sessione:**
+- T3 smoke L3 ✅ (status + note multi-device su prod)
+- T4: `enqueueFieldUpdatedEvent` con debounce 500ms per generalData/auditObjective/auditOutcome/notes ✅
+- T5: lock solo UX, rimosso da tutti gli endpoint ✅
+- Rilievi pendenti Word 0.5 ✅ (già implementato in ExportPanel)
+- Refactoring `QuestionCard` universale (standard + custom) ✅
+- Fix contatori C/NA/NV in `AuditOutcomeSection` includono `customStatuses` ✅
+- Migration 047: `custom_item_id` in `attachments` + `useAttachmentManager` nella custom ✅
+- Fix deploy VPS: verifica PID + `response.controller.js` nello script ✅
+- Fix multi-device: server-wins su tutti i campi (status, note, generalData, obiettivo, conclusioni) ✅
+
+**Prossimo**: smoke test allegati (upload PDF/foto → link Word cliccabile + foto embedded), ISO 14001 checklist completa, P1 smoke L3 custom checklist (DEPUTYTASK pronto).
+
+---
+
 ### Chiusura sessione 29–30 aprile 2026
 
 **Sprint sync + storicizzazione completato (25 commit):**
