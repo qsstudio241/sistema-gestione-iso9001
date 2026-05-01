@@ -837,24 +837,34 @@ export function StorageProvider({ children, useMockData = false }) {
       const mergedAudits = serverAudits.map((serverAudit) => {
         const sid = serverAudit.metadata?.id || serverAudit.id;
         const localAudit = localAudits.find((la) => (la.metadata?.id || la.id) === sid);
+
+        // SERVER-WINS su tutti i campi: il server è fonte di verità al reconcile.
+        // Garantisce che le modifiche di un secondo device siano sempre visibili
+        // quando si riapre l'app o si cambia audit.
         let merged = { ...serverAudit };
 
-        // Preserva contenuti ricchi locali se il server non li ha ancora
-        const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
-        const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
-        const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
-        const hasRichDataLocal = localGD || localAO || localAOut;
-        const hasRichDataServer = serverAudit?.generalData || serverAudit?.auditObjective || serverAudit?.auditOutcome;
-        if (hasRichDataLocal && !hasRichDataServer) {
-          merged.metadata = {
-            ...merged.metadata,
-            generalData: localGD,
-            auditObjective: localAO,
-            auditOutcome: localAOut,
-          };
+        // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome).
+        // Il server li ha SEMPRE in audit_extra_data se mai sincronizzati.
+        // Fallback al locale SOLO se il server non li ha (audit appena creato, mai sincronizzato).
+        const serverGD = serverAudit?.generalData || serverAudit?.metadata?.generalData;
+        const serverAO = serverAudit?.auditObjective || serverAudit?.metadata?.auditObjective;
+        const serverAOut = serverAudit?.auditOutcome || serverAudit?.metadata?.auditOutcome;
+        if (!serverGD && !serverAO && !serverAOut && localAudit) {
+          // Server non ha mai ricevuto i dati ricchi: usa locale (draft non ancora sincronizzato)
+          const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
+          const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
+          const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
+          if (localGD || localAO || localAOut) {
+            merged.metadata = {
+              ...merged.metadata,
+              generalData: localGD,
+              auditObjective: localAO,
+              auditOutcome: localAOut,
+            };
+          }
         }
 
-        // Preserva custom checklist locale in caso di payload server incompleto
+        // Eccezione 2: customChecklistId — preserva locale se server incompleto
         const localCustomId = localAudit?.metadata?.customChecklistId ?? localAudit?.custom_checklist_id;
         const serverCustomId = serverAudit?.metadata?.customChecklistId ?? serverAudit?.custom_checklist_id;
         if (localCustomId != null && localCustomId !== '' && (serverCustomId == null || serverCustomId === '')) {
@@ -866,14 +876,15 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.checklist = localAudit?.checklist ?? {};
         }
 
-        // Preserva selectedStandards locale se più completo
+        // Eccezione 3: selectedStandards — preserva locale se più completo (standard aggiunti offline)
         const localStds = localAudit?.metadata?.selectedStandards;
         const serverStds = serverAudit?.metadata?.selectedStandards || [];
         if (localStds && localStds.length > serverStds.length) {
           merged.metadata = { ...merged.metadata, selectedStandards: localStds };
         }
 
-        // Preserva checklist locale se server non contiene struttura utile
+        // Eccezione 4: checklist struttura — preserva locale se server ha solo template vuoto
+        // (il server non salva la struttura checklist, solo le risposte via audit_responses)
         const localChecklist = localAudit?.checklist;
         const serverChecklistKeys = Object.keys(serverAudit?.checklist || {});
         const localChecklistKeys = Object.keys(localChecklist || {});
@@ -887,10 +898,12 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.checklist = localChecklist;
         }
 
+        // Eccezione 5: allegati — preserva locale se server non li include nel payload list
         if (localAudit?.attachments?.length > 0 && !(serverAudit?.attachments?.length > 0)) {
           merged.attachments = localAudit.attachments;
         }
 
+        // Eccezione 6: customResponses — non arrivano da getAudits, preserva locale
         const localCustomResponses = localAudit?.customResponses;
         const hasLocalCustomResponses = localCustomResponses && Object.keys(localCustomResponses).length > 0;
         const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
@@ -1075,38 +1088,36 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
-        // MERGE: Server-wins per metadata/checklist, preserva attachments e campi ricchi locali
-        const auditsToUploadRichData = []; // audit locali con dati ricchi che il server non ha ancora
+        // MERGE: SERVER-WINS su tutti i campi — il server è fonte di verità.
+        // Garantisce che le modifiche di un secondo device siano visibili al login/reconcile.
+        const auditsToUploadRichData = []; // audit locali con dati ricchi mai inviati al server
         const mergedAudits = serverAudits.length > 0
           ? serverAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
               const localAudit = localAudits.find(la => (la.metadata?.id || la.id) === sid);
-              
-              // Se il server non ha ancora generalData ma il locale sì, preserva il locale
-              // e marca per upload immediato verso il server
-              // Nota: i campi ricchi possono essere sia nel top-level che dentro metadata
-              const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
-              const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
-              const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
-              const hasRichDataLocal = localGD || localAO || localAOut;
-              const hasRichDataServer = serverAudit?.generalData || serverAudit?.auditObjective || serverAudit?.auditOutcome;
-              
               let merged = { ...serverAudit };
-              
-              if (hasRichDataLocal && !hasRichDataServer) {
-                // Server non ha ancora i dati: usa locale e pianifica sync verso server
-                // Ripristina dentro metadata (dove Dashboard si aspetta di trovarli)
-                merged.metadata = {
-                  ...merged.metadata,
-                  generalData: localGD,
-                  auditObjective: localAO,
-                  auditOutcome: localAOut,
-                };
-                auditsToUploadRichData.push(merged);
+
+              // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome).
+              // Fallback al locale SOLO se il server non li ha (draft mai sincronizzato).
+              const serverGD = serverAudit?.generalData || serverAudit?.metadata?.generalData;
+              const serverAO = serverAudit?.auditObjective || serverAudit?.metadata?.auditObjective;
+              const serverAOut = serverAudit?.auditOutcome || serverAudit?.metadata?.auditOutcome;
+              if (!serverGD && !serverAO && !serverAOut && localAudit) {
+                const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
+                const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
+                const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
+                if (localGD || localAO || localAOut) {
+                  merged.metadata = {
+                    ...merged.metadata,
+                    generalData: localGD,
+                    auditObjective: localAO,
+                    auditOutcome: localAOut,
+                  };
+                  auditsToUploadRichData.push(merged);
+                }
               }
-              
-              // Preserva customChecklistId e selectedStandards dalla versione locale se l'audit
-              // è "solo checklist custom" (evita che server con standard_id default sovrascriva e perda dati)
+
+              // Eccezione 2: customChecklistId — preserva locale se server incompleto
               const localCustomId = localAudit?.metadata?.customChecklistId ?? localAudit?.custom_checklist_id;
               const serverCustomId = serverAudit?.metadata?.customChecklistId ?? serverAudit?.custom_checklist_id;
               if (localCustomId != null && localCustomId !== '' && (serverCustomId == null || serverCustomId === '')) {
@@ -1118,16 +1129,14 @@ export function StorageProvider({ children, useMockData = false }) {
                 merged.checklist = localAudit?.checklist ?? {};
               }
 
-              // Preserva selectedStandards dalla versione locale se è più completa di quella server
-              // (es: sync precedente incompleta, oppure standard aggiunti offline)
+              // Eccezione 3: selectedStandards — preserva locale se più completo (standard aggiunti offline)
               const localStds = localAudit?.metadata?.selectedStandards;
               const serverStds = serverAudit?.metadata?.selectedStandards || [];
               if (localStds && localStds.length > serverStds.length) {
                 merged.metadata = { ...merged.metadata, selectedStandards: localStds };
               }
 
-              // Preserva checklist dalla versione locale se il server ha solo ISO_9001 vuoto
-              // (il server non salva la checklist, quindi quella locale è sempre più completa)
+              // Eccezione 4: checklist struttura — preserva locale se server ha solo template vuoto
               const localChecklist = localAudit?.checklist;
               const serverChecklistKeys = Object.keys(serverAudit?.checklist || {});
               const localChecklistKeys = Object.keys(localChecklist || {});
@@ -1138,20 +1147,19 @@ export function StorageProvider({ children, useMockData = false }) {
                 merged.checklist = localChecklist;
               }
 
-              // Preserva allegati locali se il server non li include
+              // Eccezione 5: allegati — preserva locale se server non li include nel payload list
               if (localAudit?.attachments?.length > 0 && !(serverAudit?.attachments?.length > 0)) {
                 merged.attachments = localAudit.attachments;
               }
 
-              // Preserva evidenze checklist custom se il server non le include
-              // (server->frontend via getAudits non carica customResponses; quindi se esistono in locale vanno mantenute)
+              // Eccezione 6: customResponses — non arrivano da getAudits, preserva locale
               const localCustomResponses = localAudit?.customResponses;
               const hasLocalCustomResponses = localCustomResponses && Object.keys(localCustomResponses).length > 0;
               const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
               if (hasLocalCustomResponses && !serverHasCustomResponses) {
                 merged.customResponses = localCustomResponses;
               }
-              
+
               return merged;
             })
           : localAudits;
