@@ -87,9 +87,12 @@ describe('SyncService — T3 event-based', () => {
         });
 
         it('stessa coppia entro lo stesso minuto → stessa chiave', () => {
-            // Stesso minuto: floor(Date.now()/60000) non cambia entro il test
+            // Fissa il tempo a metà minuto per evitare instabilità al confine del minuto
+            const fixedTs = Math.floor(Date.now() / 60000) * 60000 + 30000;
+            vi.setSystemTime(fixedTs);
             const k1 = service.generateResponseEventKey('uuid-Y', 99);
             const k2 = service.generateResponseEventKey('uuid-Y', 99);
+            vi.useRealTimers();
             expect(k1).toBe(k2);
         });
 

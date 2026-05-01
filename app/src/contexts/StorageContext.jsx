@@ -347,6 +347,8 @@ export function StorageProvider({ children, useMockData = false }) {
   // finché non trascorre 1 minuto.
   const fetchAndApplyLastRunRef = useRef({});
   const prevAuditIdForHydrateRef = useRef(null);
+  // T4: debounce timer per eventi field_updated (generalData, auditObjective, auditOutcome, notes)
+  const fieldUpdatedDebounceRef = useRef({});
   useEffect(() => {
     if (currentAuditId !== prevAuditIdForHydrateRef.current) {
       // Audit cambiato: cancella il debounce per il nuovo audit (e per quello precedente)
@@ -1619,6 +1621,30 @@ export function StorageProvider({ children, useMockData = false }) {
                 .catch((err) => {
                   console.error("❌ [SYNC] Errore enqueue update:", err);
                 });
+
+              // T4: eventi field_updated con debounce 500ms per campi testo ricchi.
+              // Ogni modifica a generalData / auditObjective / auditOutcome / notes genera un evento
+              // atomico su POST /audits/:uuid/events — garantisce server-wins anche su questi campi
+              // in scenario multi-device, esattamente come T3 per le risposte checklist.
+              if (import.meta.env.VITE_SYNC_MODE === 'events') {
+                const richFields = [
+                  { key: 'generalData',    value: updated.metadata?.generalData ?? updated.generalData },
+                  { key: 'auditObjective', value: updated.metadata?.auditObjective ?? updated.auditObjective },
+                  { key: 'auditOutcome',   value: updated.metadata?.auditOutcome ?? updated.auditOutcome },
+                  { key: 'notes',          value: updated.metadata?.notes ?? null },
+                ];
+                richFields.forEach(({ key, value }) => {
+                  if (value === undefined) return;
+                  const debounceKey = `${auditUuid}:${key}`;
+                  if (fieldUpdatedDebounceRef.current[debounceKey]) {
+                    clearTimeout(fieldUpdatedDebounceRef.current[debounceKey]);
+                  }
+                  fieldUpdatedDebounceRef.current[debounceKey] = setTimeout(() => {
+                    delete fieldUpdatedDebounceRef.current[debounceKey];
+                    syncService.enqueueFieldUpdatedEvent(auditUuid, key, value).catch(() => {});
+                  }, 500);
+                });
+              }
 
               if (auditLockRef.current.mode !== "owner" && auditLockRef.current.mode !== "none") {
                 // Lock "foreign": write bloccato da altro utente — log visibile una volta ogni 5s.

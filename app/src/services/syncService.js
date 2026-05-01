@@ -644,6 +644,37 @@ export class SyncService {
     }
 
     /**
+     * T4: accoda un evento field_updated per un campo testo ricco dell'audit.
+     * Chiamato con debounce 500ms da StorageContext.
+     * @param {string} auditUuid
+     * @param {string} fieldKey - es. 'generalData', 'auditObjective', 'auditOutcome', 'notes'
+     * @param {any} value - valore attuale del campo (oggetto o stringa)
+     */
+    async enqueueFieldUpdatedEvent(auditUuid, fieldKey, value) {
+        const ts = Date.now().toString(16).padStart(12, '0');
+        // Idempotency: stessa chiave per stesso audit+campo entro 1 secondo → deduplica
+        const rawKey = `${auditUuid}:field:${fieldKey}:${Math.floor(Date.now() / 1000)}`;
+        let hash = 0;
+        for (let i = 0; i < rawKey.length; i++) {
+            hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+            hash |= 0;
+        }
+        const h = Math.abs(hash).toString(16).padStart(8, '0');
+        const idempotencyKey = `${ts.slice(0, 8)}-${ts.slice(8, 12)}-4${h.slice(0, 3)}-8${h.slice(3, 6)}-${h.slice(6)}${ts}`.slice(0, 36);
+
+        const event = {
+            event_type: 'field_updated',
+            field_path: `audit.${fieldKey}`,
+            new_value: value != null ? JSON.stringify(value) : null,
+            client_ts: new Date().toISOString(),
+            client_ts_offset_ms: 0,
+            idempotency_key: idempotencyKey,
+            device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        };
+        return this.enqueue('send_audit_event', { auditUuid, event });
+    }
+
+    /**
      * Invia un singolo evento audit al server.
      * Risposta 207 con "skipped" = idempotency già presente → ok.
      */

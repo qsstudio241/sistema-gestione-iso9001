@@ -435,14 +435,7 @@ async function saveCustomChecklistResponses(req, res) {
     const audit = auditCheck.recordset[0];
     const resolvedAuditId = audit.audit_id;
 
-    const lockC = await assertWriteAllowed(req.user, resolvedAuditId, getLockTokenFromRequest(req));
-    if (!lockC.ok) {
-      return res.status(lockC.status).json({
-        error: lockC.message,
-        code: lockC.code,
-        locked_by_name: lockC.locked_by_name,
-      });
-    }
+    // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
 
     if (!audit.custom_checklist_id) {
       return res.status(400).json({ error: 'Audit senza checklist custom', code: 'NO_CUSTOM_CHECKLIST' });

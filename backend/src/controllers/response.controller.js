@@ -186,14 +186,7 @@ async function saveResponse(req, res) {
             }
         }
 
-        const lockSingle = await assertWriteAllowed(req.user, auditIdNumeric, getLockTokenFromRequest(req));
-        if (!lockSingle.ok) {
-            return res.status(lockSingle.status).json({
-                error: lockSingle.message,
-                code: lockSingle.code,
-                locked_by_name: lockSingle.locked_by_name,
-            });
-        }
+        // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
 
         // Verifica che question esista
         const questionCheck = await query(`

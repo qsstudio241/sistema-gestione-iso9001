@@ -443,14 +443,8 @@ async function updateAudit(req, res) {
             });
         }
 
-        const lockChkUpd = await assertWriteAllowed(req.user, parseInt(id, 10), getLockTokenFromRequest(req));
-        if (!lockChkUpd.ok) {
-            return res.status(lockChkUpd.status).json({
-                error: lockChkUpd.message,
-                code: lockChkUpd.code,
-                locked_by_name: lockChkUpd.locked_by_name,
-            });
-        }
+        // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
+        // L'integrità è garantita da field-level merge + event log (ADR-008).
 
         // Conflict detection: verifica timestamp client vs server
         const currentUpdatedAt = existingAudit.recordset[0].updated_at;
@@ -848,14 +842,7 @@ async function upsertAudit(req, res) {
                 });
             }
 
-            const lockChk = await assertWriteAllowed(req.user, audit_id, getLockTokenFromRequest(req));
-            if (!lockChk.ok) {
-                return res.status(lockChk.status).json({
-                    error: lockChk.message,
-                    code: lockChk.code,
-                    locked_by_name: lockChk.locked_by_name,
-                });
-            }
+            // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
 
             // Determina il custom checklist effettivo:
             // - se payload include custom_checklist_id, usa quel valore (anche null per "stacco")

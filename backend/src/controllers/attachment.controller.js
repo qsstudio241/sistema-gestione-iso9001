@@ -285,15 +285,7 @@ async function uploadAttachment(req, res) {
             // Sostituisci audit_id con il valore numerico risolto (usato nell'INSERT)
             req.body.audit_id = resolvedAuditId;
 
-            const lockUp = await assertWriteAllowed(req.user, resolvedAuditId, getLockTokenFromRequest(req));
-            if (!lockUp.ok) {
-                await fs.unlink(req.file.path).catch(() => { });
-                return res.status(lockUp.status).json({
-                    error: lockUp.message,
-                    code: lockUp.code,
-                    locked_by_name: lockUp.locked_by_name,
-                });
-            }
+            // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
 
             // Se custom_item_id: verifica che l'audit abbia checklist custom e che l'item appartenga a quella checklist
             if (custom_item_id) {

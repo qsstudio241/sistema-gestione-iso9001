@@ -733,7 +733,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 T0** | **Staging environment** — DB separato + dati anonimi. Valutato: **non necessario** per T1-T2 (migrazioni additive). Da rivalutare per T3. | Infra | ✅ Saltato (decisione 29/04) |
 | **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ✅ Completato (29/04/2026) — migration 045, backup pre-T1 ok |
 | **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ✅ Completato (30/04/2026) — migration 046, deploy VPS, smoke OK |
-| **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ✅ Completato (30/04/2026) — `VITE_SYNC_MODE=legacy` default, smoke L3 umano da pianificare |
+| **🔴 T3** | **Frontend event-based** per `save_responses` — ogni risposta = evento atomico (feature flag) | Frontend | ✅ Completato + Smoke L3 ✅ (01/05/2026) — status + note multi-device verificati su prod, `VITE_SYNC_MODE=events` attivo |
 | **🔴 T4** | **Frontend event-based** per campi ricchi — `field_updated` con debounce 500ms | Frontend | ⏳ Dopo T3 stabile 2 sett. |
 | **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ⏳ Dopo T4 stabile 2 sett. |
 | **🔴 T6** | **Recovery UI + history API** + compaction job notturno — compliance ISO 9001 §7.5 | Full-stack | ⏳ Dopo T5 |
