@@ -339,8 +339,26 @@ export function StorageProvider({ children, useMockData = false }) {
     // Reset stato caricamento dati server ad ogni cambio audit
     setServerDataStatus(currentAuditId ? 'idle' : 'idle');
   }, [currentAuditId]);
-  // Bug 2: debounce per fetchAndApplyServerResponses (evita riesecuzione entro 60s per stesso audit)
+  // Debounce per fetchAndApplyServerResponses (evita riesecuzione rapida dello stesso audit
+  // in scenari di mount/unmount React — es. StrictMode, hot-reload locale).
+  // Il ref viene resettato ad ogni cambio audit: garantisce che il fetch sia eseguito
+  // ogni volta che l'utente apre un audit, anche entro 60 secondi dall'ultima esecuzione.
+  // Senza questo reset, le modifiche fatte da un secondo device non sarebbero visibili
+  // finché non trascorre 1 minuto.
   const fetchAndApplyLastRunRef = useRef({});
+  const prevAuditIdForHydrateRef = useRef(null);
+  useEffect(() => {
+    if (currentAuditId !== prevAuditIdForHydrateRef.current) {
+      // Audit cambiato: cancella il debounce per il nuovo audit (e per quello precedente)
+      if (prevAuditIdForHydrateRef.current) {
+        delete fetchAndApplyLastRunRef.current[prevAuditIdForHydrateRef.current];
+      }
+      // Nota: non cancellare il nuovo auditId — potrebbe essere numericId ancora non noto.
+      // Il reset completo garantisce il fetch al prossimo ingresso in qualunque audit.
+      fetchAndApplyLastRunRef.current = {};
+      prevAuditIdForHydrateRef.current = currentAuditId;
+    }
+  }, [currentAuditId]);
   // Guard idratazione: true mentre fetchAndApplyServerResponses è in corso.
   // Blocca save_responses durante il fetch iniziale per evitare sovrascrittura dati server.
   const isHydratingRef = useRef(false);
@@ -2054,11 +2072,13 @@ export function StorageProvider({ children, useMockData = false }) {
         return;
       }
 
-      // Bug 2: debounce — non rieseguire se già eseguita nell'ultimo minuto per lo stesso audit
+      // Debounce breve (10s): protegge solo da doppio mount React (StrictMode/HMR).
+      // Il ref viene resettato ad ogni cambio audit (vedi useEffect su currentAuditId),
+      // quindi non blocca mai il fetch quando l'utente apre un audit diverso o rientra
+      // dopo aver lavorato su un secondo device.
       const lastRun = fetchAndApplyLastRunRef.current[numericAuditId];
-      if (lastRun && Date.now() - lastRun < 60000) {
-        console.log(`⏭️ [HYDRATE] Già eseguita per audit ${numericAuditId} nell'ultimo minuto — skip`);
-        // I dati erano già stati caricati: porta il banner a 'ready' invece di lasciarlo in 'loading'
+      if (lastRun && Date.now() - lastRun < 10000) {
+        console.log(`⏭️ [HYDRATE] Già eseguita per audit ${numericAuditId} negli ultimi 10s — skip (doppio mount)`);
         setServerDataStatus('ready');
         return;
       }
