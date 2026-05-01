@@ -79,8 +79,54 @@ async function postAuditEvents(req, res) {
                 // Unique constraint violation = idempotency_key già presente → skip
                 if (err.number === 2627 || err.number === 2601) {
                     skipped++;
+                    continue;
                 } else {
                     throw err;
+                }
+            }
+
+            // Proiezione immediata su audit_responses per response_set / response_cleared.
+            // Garantisce che fetchAndApplyServerResponses (che legge audit_responses) trovi i dati
+            // anche con VITE_SYNC_MODE=events, senza attendere un job di compaction asincrono.
+            if (ev.event_type === 'response_set' || ev.event_type === 'response_cleared') {
+                // field_path è "responses.<question_id>" (es. "responses.87")
+                const questionId = ev.field_path ? parseInt(ev.field_path.split('.')[1], 10) : null;
+                if (questionId && Number.isFinite(questionId)) {
+                    let conformityStatus = null;
+                    let notes = null;
+                    if (ev.event_type === 'response_set' && ev.new_value) {
+                        try {
+                            // new_value è una stringa JSON: {"conformity_status":"C","notes":"..."}
+                            const parsed = JSON.parse(ev.new_value);
+                            conformityStatus = parsed.conformity_status ?? null;
+                            notes = parsed.notes ?? null;
+                        } catch {
+                            // new_value malformato: lascia null
+                        }
+                    }
+                    // UPSERT: aggiorna se esiste, inserisce se non esiste
+                    await query(`
+                        MERGE dbo.audit_responses AS target
+                        USING (SELECT @audit_id AS audit_id, @question_id AS question_id) AS source
+                        ON target.audit_id = source.audit_id AND target.question_id = source.question_id
+                        WHEN MATCHED THEN
+                            UPDATE SET
+                                conformity_status = @conformity_status,
+                                notes = @notes,
+                                is_answered = @is_answered,
+                                answered_at = GETDATE(),
+                                updated_at = GETDATE()
+                        WHEN NOT MATCHED THEN
+                            INSERT (audit_id, question_id, conformity_status, notes, is_answered, answered_at, created_by, created_at, updated_at)
+                            VALUES (@audit_id, @question_id, @conformity_status, @notes, @is_answered, GETDATE(), @user_id, GETDATE(), GETDATE());
+                    `, {
+                        audit_id,
+                        question_id: questionId,
+                        conformity_status: conformityStatus,
+                        notes: notes,
+                        is_answered: conformityStatus ? 1 : 0,
+                        user_id,
+                    });
                 }
             }
         }

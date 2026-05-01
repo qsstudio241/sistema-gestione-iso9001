@@ -2072,6 +2072,7 @@ export function StorageProvider({ children, useMockData = false }) {
         const rows = result?.data;
         if (!rows || rows.length === 0) {
           console.log(`ℹ️ [HYDRATE] Nessuna risposta trovata per audit ${numericAuditId}`);
+          setServerDataStatus('ready');
           return;
         }
 
