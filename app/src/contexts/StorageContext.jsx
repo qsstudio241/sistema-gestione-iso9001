@@ -2123,13 +2123,11 @@ export function StorageProvider({ children, useMockData = false }) {
                 if (q.questionId && responseMap[q.questionId]) {
                   applied++;
                   const serverData = responseMap[q.questionId];
-                  // Bug 2: non sovrascrivere note già digitate dall'utente con quelle server.
-                  // Applica le note del server solo se il campo locale è vuoto/assente.
-                  const mergedNotes =
-                    q.notes && q.notes.trim() !== ""
-                      ? q.notes
-                      : serverData.notes || "";
-                  return { ...q, status: serverData.status, notes: mergedNotes };
+                  // All'apertura dell'audit (hydrate iniziale) il server è fonte di verità:
+                  // sovrascriviamo sempre sia status che notes con i dati server.
+                  // Questo garantisce che le modifiche fatte su un altro device siano visibili
+                  // immediatamente quando si riapre l'audit (scenario multi-device).
+                  return { ...q, status: serverData.status, notes: serverData.notes || "" };
                 }
                 return q;
               });
