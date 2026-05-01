@@ -12,7 +12,7 @@
 import React, { useState } from "react";
 import "./AttachmentSection.css";
 
-function AttachmentSection({ questionId, attachmentManager, onUploadSuccess }) {
+function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, customItemId = null }) {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
 
   // Mostra solo allegati NON ancora confermati sul server (pendingSync=true o senza serverAttachmentId)
@@ -32,7 +32,8 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess }) {
     const result = await attachmentManager.openFilePicker(
       questionId,
       category,
-      source
+      source,
+      customItemId ? { customItemId } : {}
     );
 
     if (!result.success) {

@@ -774,11 +774,12 @@ class ApiService {
     /**
      * Lista allegati per audit (+ filtro opzionale per question_id o nc_id)
      */
-    async getAttachments(auditId = null, ncId = null, questionId = null) {
+    async getAttachments(auditId = null, ncId = null, questionId = null, customItemId = null) {
         const params = new URLSearchParams();
         if (auditId) params.append('audit_id', auditId);
         if (ncId) params.append('nc_id', ncId);
         if (questionId) params.append('question_id', questionId);
+        if (customItemId) params.append('custom_item_id', customItemId);
         return this.get(`/attachments${params.toString() ? '?' + params.toString() : ''}`);
     }
 

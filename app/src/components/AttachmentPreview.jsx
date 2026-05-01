@@ -44,17 +44,20 @@ function formatSize(bytes) {
 
 // ---- component --------------------------------------------------------------
 
-function AttachmentPreview({ auditId, questionId, refreshKey = 0 }) {
+function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId = null }) {
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [opening, setOpening] = useState(null);
   const [replacing, setReplacing] = useState(null);
 
   const fetchAttachments = useCallback(async () => {
-    if (!auditId || !questionId) return;
+    // Richiede auditId e almeno uno tra questionId e customItemId
+    if (!auditId || (!questionId && !customItemId)) return;
     setLoading(true);
     try {
-      const result = await apiService.getAttachments(auditId, null, questionId);
+      const result = customItemId
+        ? await apiService.getAttachments(auditId, null, null, customItemId)
+        : await apiService.getAttachments(auditId, null, questionId);
       const data = result?.data ?? result ?? [];
       setAttachments(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -63,7 +66,7 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0 }) {
     } finally {
       setLoading(false);
     }
-  }, [auditId, questionId]);
+  }, [auditId, questionId, customItemId]);
 
   useEffect(() => {
     fetchAttachments();
@@ -140,7 +143,7 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0 }) {
     input.click();
   }, [fetchAttachments]);
 
-  if (!auditId || !questionId) return null;
+  if (!auditId || (!questionId && !customItemId)) return null;
 
   if (loading && attachments.length === 0) {
     return (

@@ -13,6 +13,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
+import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard } from "./QuestionCard";
 import "./CustomChecklistAuditView.css";
 
@@ -36,9 +37,10 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
   const { updateCurrentAudit } = useStorage();
 
-  // attachmentManager ISO non si usa per la custom: gli allegati custom vanno
-  // in evidence_blocks (handleFileSelect). Il hook è comunque importato per
-  // futura migrazione completa degli allegati custom al modello ISO.
+  // Gestione allegati unificata: stesso hook della checklist ISO.
+  // Ora che attachments ha custom_item_id (migration 047), ogni item custom
+  // può usare AttachmentSection/AttachmentPreview esattamente come la ISO.
+  const attachmentManager = useAttachmentManager(audit, updateCurrentAudit);
 
   const [checklist, setChecklist] = useState(null);
   const [responses, setResponses] = useState({}); // custom_item_id -> evidence_blocks[]
@@ -438,8 +440,9 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
                     saveResponses(item.id, updatedBlocks);
                   }, 800);
                 }}
-                attachmentManager={null}
-                auditId={null}
+                attachmentManager={attachmentManager}
+                auditId={auditId}
+                customItemId={item.id}
               >
                 {/* Blocchi evidenza aggiuntivi (dal secondo in poi) */}
                 {extraBlocks.length > 0 && (

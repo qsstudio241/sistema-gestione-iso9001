@@ -122,13 +122,14 @@ export function useAttachmentManager(audit, onUpdate) {
     /**
      * Aggiunge allegati per una domanda
      * 
-     * @param {String} questionId - ID domanda (es. "4.1", "7.5.3")
+     * @param {String} questionId - ID domanda ISO (es. "4.1") oppure custom_item_id come stringa
      * @param {String} category - Categoria ("foto", "documenti", "verbali")
      * @param {FileList|Array} fileList - File da caricare
+     * @param {{ customItemId?: number }} opts - Opzioni extra (per item checklist custom)
      * @returns {Promise<Object>} Risultato con success/error
      */
     const addAttachments = useCallback(
-        async (questionId, category, fileList) => {
+        async (questionId, category, fileList, opts = {}) => {
             if (questionId == null || questionId === '') {
                 return {
                     success: false,
@@ -211,13 +212,12 @@ export function useAttachmentManager(audit, onUpdate) {
                         const serverCategory = CATEGORY_MAP[category] || 'evidence';
 
                         if (auditId) {
+                            // Per item checklist custom: usa customItemId invece di questionId
+                            const uploadParams = opts.customItemId
+                                ? { auditId, customItemId: opts.customItemId, category: serverCategory, description: `${category} - ${questionId}` }
+                                : { auditId, questionId: serverQuestionId, category: serverCategory, description: `${category} - ${questionId}` };
                             try {
-                                const serverResult = await apiService.uploadAttachment(file, {
-                                    auditId,
-                                    questionId: serverQuestionId,
-                                    category: serverCategory,
-                                    description: `${category} - ${questionId}`,
-                                });
+                                const serverResult = await apiService.uploadAttachment(file, uploadParams);
                                 attachment.serverAttachmentId = serverResult?.data?.attachment_id || null;
                                 console.log(`☁️ [UPLOAD] File ${file.name} caricato su server`);
                             } catch (uploadErr) {
@@ -233,7 +233,9 @@ export function useAttachmentManager(audit, onUpdate) {
                                     await syncService.enqueue('upload_attachment', {
                                         blobKey,
                                         auditId,
-                                        questionId: serverQuestionId,
+                                        ...(opts.customItemId
+                                            ? { customItemId: opts.customItemId }
+                                            : { questionId: serverQuestionId }),
                                         category: serverCategory,
                                         description: `${category} - ${questionId}`,
                                         fileName: file.name,
@@ -351,7 +353,7 @@ export function useAttachmentManager(audit, onUpdate) {
      * @returns {Promise<Object>} Risultato upload
      */
     const openFilePicker = useCallback(
-        (questionId, category = "documenti", source = "gallery") => {
+        (questionId, category = "documenti", source = "gallery", opts = {}) => {
             return new Promise((resolve) => {
                 const input = document.createElement("input");
                 input.type = "file";
@@ -365,7 +367,7 @@ export function useAttachmentManager(audit, onUpdate) {
 
                 input.onchange = async (e) => {
                     const fileList = e.target.files;
-                    const result = await addAttachments(questionId, category, fileList);
+                    const result = await addAttachments(questionId, category, fileList, opts);
 
                     // Cleanup input element (non lasciare in DOM)
                     document.body.removeChild(input);

@@ -39,6 +39,7 @@ export function QuestionCard({
   checklistKey = "",
   attachmentManager = null,
   auditId = null,
+  customItemId = null,
   children,
 }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
@@ -91,20 +92,22 @@ export function QuestionCard({
         {/* Slot per contenuto extra (blocchi evidenza custom) */}
         {children}
 
-        {/* Allegati upload (standard ISO) */}
+        {/* Allegati upload */}
         {attachmentManager && (
           <AttachmentSection
             questionId={question.questionId || question.id}
             attachmentManager={attachmentManager}
             onUploadSuccess={() => setAttachmentRefreshKey((k) => k + 1)}
+            customItemId={customItemId}
           />
         )}
 
-        {/* Preview allegati già sul server */}
-        {auditId && (question.questionId || null) && (
+        {/* Preview allegati già sul server (ISO: per questionId, custom: per customItemId) */}
+        {auditId && (question.questionId || customItemId) && (
           <AttachmentPreview
             auditId={auditId}
             questionId={question.questionId || null}
+            customItemId={customItemId}
             refreshKey={attachmentRefreshKey}
           />
         )}
