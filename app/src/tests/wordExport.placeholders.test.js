@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { repairDocxtemplaterFragmentedTags } from "../utils/wordExport.js";
-import { buildChecklistSectionOoxml } from "../utils/wordExportHelpers.js";
+import { buildChecklistSectionOoxml, buildCustomChecklistSectionOoxml } from "../utils/wordExportHelpers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const tmplPath = path.join(__dirname, "../../public/templates/ISO9001-audit-report.docx");
@@ -98,6 +98,88 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         );
         expect(xml).toContain("HYPERLINK");
         expect(xml).toContain("https://api.example.test/attachments/50101/view?token=TOK");
+    });
+
+    it("checklist custom OOXML: link allegato con HYPERLINK (attachment_id senza serverAttachmentId)", () => {
+        const xml = buildCustomChecklistSectionOoxml(
+            {
+                has_outcome_buttons: false,
+                sections: [
+                    {
+                        code: "S1",
+                        title: "Sezione test",
+                        display_order: 0,
+                        items: [
+                            {
+                                id: "item-uuid-1",
+                                code: "1.1",
+                                title: "Voce test",
+                                display_order: 0,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                "item-uuid-1": [{ text: "Nota evidenza", attachment_id: 88001 }],
+            },
+            [
+                {
+                    attachment_id: 88001,
+                    fileName: "scheda.pdf",
+                    mimeType: "application/pdf",
+                },
+            ],
+            (id) => `https://api.example.test/attachments/${id}/view?token=TOK`,
+            {},
+            null,
+            {}
+        );
+        expect(xml).toContain("HYPERLINK");
+        expect(xml).toContain("https://api.example.test/attachments/88001/view?token=TOK");
+    });
+
+    it("checklist custom OOXML: embed foto + link sotto in modalità preview", () => {
+        const imageRegistry = [];
+        const xml = buildCustomChecklistSectionOoxml(
+            {
+                has_outcome_buttons: false,
+                sections: [
+                    {
+                        code: "S1",
+                        title: "Sezione",
+                        display_order: 0,
+                        items: [
+                            {
+                                id: "it1",
+                                code: "1",
+                                title: "Foto",
+                                display_order: 0,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                it1: [{ attachment_id: 99001 }],
+            },
+            [
+                {
+                    attachment_id: 99001,
+                    fileName: "foto.jpg",
+                    mimeType: "image/jpeg",
+                    imageBase64: "data:image/jpeg;base64,AAA",
+                },
+            ],
+            (id) => `https://api.example.test/attachments/${id}/view`,
+            { photoMode: "preview" },
+            imageRegistry,
+            {}
+        );
+        expect(imageRegistry).toHaveLength(1);
+        expect(xml).toContain("<w:drawing>");
+        expect(xml).toContain("HYPERLINK");
+        expect(xml).toContain("https://api.example.test/attachments/99001/view");
     });
 
     it("ISO3834 template: fornitoreIndirizzo e ispettore sostituiti correttamente", () => {

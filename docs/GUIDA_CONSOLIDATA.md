@@ -70,7 +70,9 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 - Fix deploy VPS: verifica PID + `response.controller.js` nello script ✅
 - Fix multi-device: server-wins su tutti i campi (status, note, generalData, obiettivo, conclusioni) ✅
 
-**Prossimo**: smoke test allegati (upload PDF/foto → link Word cliccabile + foto embedded), ISO 14001 checklist completa, P1 smoke L3 custom checklist (DEPUTYTASK pronto).
+**Prossimo**: smoke test allegati su produzione (upload PDF/foto → verifica link + embed); ISO 14001 checklist completa; P1 smoke L3 custom checklist (DEPUTYTASK pronto).
+
+**Nota 02/05/2026 — Word checklist custom**: gli allegati nelle `evidence_blocks` ora generano **HYPERLINK** cliccabile (come checklist ISO) quando è disponibile `getViewUrl`; in modalità **Incorpora foto** sotto l’immagine compare anche il link. La mappa allegati usa `attachment_id` / `serverAttachmentId` / `id`.
 
 ---
 

@@ -761,6 +761,17 @@ export function buildRileviSummaryOoxml(checklist, pendingIssues = []) {
 }
 
 // ─── Checklist custom (Phase 7) ─────────────────────────────────────────────────
+/** Indice allegati per id server (attachment_id / serverAttachmentId / id). */
+function attachmentMapByServerId(auditAttachments) {
+    const map = new Map();
+    (auditAttachments || []).forEach((a) => {
+        const sid = a?.serverAttachmentId ?? a?.attachment_id ?? a?.id;
+        if (sid == null) return;
+        map.set(Number(sid), a);
+    });
+    return map;
+}
+
 /**
  * Costruisce OOXML per checklist personalizzata: sezioni, voci, evidence_blocks.
  * @param {Object} customChecklist - { sections: [{ id, code, title, items: [{ id, code, title }] }] }
@@ -787,11 +798,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
     const secSpanDxa = C[1] + C[2] + C[3];
     const usePreview = options.photoMode === 'preview';
 
-    const attById = new Map();
-    (auditAttachments || []).forEach(a => {
-        const id = a.serverAttachmentId ?? a.id;
-        if (id != null) attById.set(Number(id), a);
-    });
+    const attById = attachmentMapByServerId(auditAttachments);
 
     /**
      * Converte una singola riga in sequenza di w:r (senza w:p).
@@ -917,6 +924,10 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                     }
 
                     if (attId != null) {
+                        const viewId = att?.serverAttachmentId ?? att?.attachment_id ?? att?.id ?? attId;
+                        const url = getViewUrl && viewId != null ? getViewUrl(viewId) : null;
+                        const fnameBase = att?.fileName || att?.name || 'Allegato';
+
                         if (usePreview && imageRegistry && IMAGE_MIME_TYPES.has(mimeType) && att?.imageBase64?.startsWith('data:image/')) {
                             const imgIdx = imageRegistry.length;
                             const imgId = 30000 + imgIdx;
@@ -924,8 +935,13 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                             const ext = IMAGE_EXTS[mimeType] || 'jpg';
                             imageRegistry.push({ rId, imgId, base64: att.imageBase64, mimeType, ext });
                             fragment += xmlPara(xmlImageOoxml(rId, imgId), { sa: 60, sb: 60 });
+                            if (url) {
+                                fragment += xmlHyperlinkPara(url, '\uD83D\uDD17 ' + fnameBase, { color: '1E40AF', size: 18 });
+                            }
+                        } else if (url) {
+                            fragment += xmlHyperlinkPara(url, '\uD83D\uDCCE ' + fnameBase, { color: '1E40AF', size: 18 });
                         } else {
-                            const fname = escXml(att?.fileName || att?.name || 'Allegato');
+                            const fname = escXml(fnameBase);
                             fragment += xmlPara(
                                 xmlRun('\uD83D\uDCCE ' + fname, { size: 18, ital: true, color: '64748B' }),
                                 { sa: 40 }
