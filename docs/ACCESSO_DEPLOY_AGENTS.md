@@ -100,6 +100,12 @@ base64 -w0 ~/.ssh/id_ed25519_sgq
 
 Il valore base64 (una sola riga lunga) va incollato integralmente nel campo `SGQ_SSH_KEY_B64`.
 
+#### Runtime Node: Cloud Agent, CI e VPS
+
+Il **Cloud Agent** può non avere `node`/`npm` installati nel workspace Linux. In quel caso non perdere tempo a installarli solo per verificare il frontend: usare la **CI GitHub** della PR (`test-and-build`) e la preview Netlify come prova L1/L3.
+
+Per operazioni server, deploy e script eseguiti sul backend, usare invece il **VPS via SSH**: su `/var/www/sgq-backend` Node è già installato e il servizio `sgq-backend.service` gira con quel runtime. Le credenziali non interattive per SSH/DB sono le **Cursor Cloud Secrets** elencate sopra.
+
 #### Script disponibili per il Cloud Agent
 
 | Script | Cosa fa |
