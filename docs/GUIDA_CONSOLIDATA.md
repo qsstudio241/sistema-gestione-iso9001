@@ -15,6 +15,15 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 02 maggio 2026
+
+**Sessione chiusa**: smoke allegati Word custom completato in produzione con esito positivo; branch `cursor/custom-word-attachments-smoke-f2f0` e PR #23 aggiornati con evidenza video e documentazione.
+
+**Prompt consigliato per ripresa lavori**:
+`Riprendi dal repository SGQ: leggi PROJECT_CONTEXT.md, docs/PROJECT_ROADMAP.md e docs/GUIDA_CONSOLIDATA.md. Considera chiuso lo smoke produzione allegati Word custom del 02/05 (upload PDF/foto → link inline + immagine embedded OK). Prossima priorità: P1 smoke L3 custom checklist con DEPUTYTASK pronto; in alternativa ISO 14001 checklist completa o SYNC-5 allegati offline. Usa il metodo Cloud Agent per smoke autenticati documentato in GUIDA_CONSOLIDATA e non stampare segreti.`
+
+---
+
 ### Chiusura sessione 01 maggio 2026
 
 **Sprint audit completato — modulo audit sostanzialmente chiuso (T3→T5, refactoring, allegati unificati):**
