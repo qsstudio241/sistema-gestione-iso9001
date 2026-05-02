@@ -74,6 +74,8 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 
 **Nota 02/05/2026 — Word checklist custom**: gli allegati nelle `evidence_blocks` ora generano **HYPERLINK** cliccabile (come checklist ISO) quando è disponibile `getViewUrl`; in modalità **Incorpora foto** sotto l’immagine compare anche il link. La mappa allegati usa `attachment_id` / `serverAttachmentId` / `id`.
 
+**Smoke 02/05/2026 — allegati Word custom in produzione**: eseguito con variabili `SGQ_APP_EMAIL` e `SGQ_APP_PASSWORD` presenti (valori non stampati). Su audit custom `2026-06` sono stati caricati un PDF e una PNG su item custom, salvate le evidenze e generato il Word con **Incorpora foto** attivo. Verifica DOCX: testi evidenza presenti, link inline verso entrambi gli allegati presenti, immagine embedded presente, nessun pattern `<w:p>` annidato rilevato. Artefatto video: `/opt/cursor/artifacts/sgq_custom_word_attachments_export_smoke.mp4`.
+
 ---
 
 ### Chiusura sessione 29–30 aprile 2026
