@@ -76,6 +76,8 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 
 **Smoke 02/05/2026 — allegati Word custom in produzione**: eseguito con variabili `SGQ_APP_EMAIL` e `SGQ_APP_PASSWORD` presenti (valori non stampati). Su audit custom `2026-06` sono stati caricati un PDF e una PNG su item custom, salvate le evidenze e generato il Word con **Incorpora foto** attivo. Verifica DOCX: testi evidenza presenti, link inline verso entrambi gli allegati presenti, immagine embedded presente, nessun pattern `<w:p>` annidato rilevato. Artefatto video: `/opt/cursor/artifacts/sgq_custom_word_attachments_export_smoke.mp4`.
 
+**Metodo vincente Cloud Agent per smoke autenticati**: non digitare credenziali nella UI se sono disponibili `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD`. Verificare solo la presenza delle variabili, fare login via API in memoria, inizializzare Chrome con DevTools (`--remote-allow-origins=* --remote-debugging-port=9222`), inserire token e utente in `localStorage` senza stamparli, poi usare la UI reale solo per il flusso da dimostrare. Lezioni: `node` può mancare nel Cloud Agent; `xdotool` è fragile per il focus dei campi; Chrome DevTools senza `remote-allow-origins` rifiuta il websocket; per Word validare il `.docx` come ZIP (`word/document.xml`, media embedded, hyperlink inline) senza stampare URL con token.
+
 ---
 
 ### Chiusura sessione 29–30 aprile 2026
