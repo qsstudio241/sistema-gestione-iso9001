@@ -1,283 +1,33 @@
 ---
-description: Metodologia strutturata per investigare e risolvere bug nel progetto SGQ. Leggere PRIMA di toccare qualsiasi codice.
-globs:
+description: Metodologia strutturata per investigare e risolvere bug complessi (persistenza, sync, race conditions). Attiva questa regola quando l'utente segnala un errore o un malfunzionamento.
+globs: "**/*"
 alwaysApply: false
 ---
 
 # Metodologia Bug Fix — SGQ ISO 9001
 
-> Documento nato dalla sessione del 22-23 aprile 2026 (bug cancellazione audit).
-> Quello che sembrava un bug semplice è diventato un loop di fix fallimentari
-> perché mancavano evidenze empiriche e analisi strutturata dell'architettura a livelli.
-
----
-
 ## Regola zero: STOP prima di toccare il codice
-
 Prima di aprire qualsiasi file, rispondere a queste domande:
-
 1. **Qual è il comportamento esatto?** (descrizione dell'utente parola per parola)
-2. **Si riproduce dopo un page refresh?** → se sì, è un problema di persistenza, non solo di stato React
-3. **Quando è apparso?** (dopo quale commit/deploy)
-4. **È intermittente o sistematico?** → sistematico = causa strutturale, non race condition pura
-
-Se non si riesce a rispondere a tutte e 4, CHIEDERE all'utente prima di procedere.
-
----
+2. **Si riproduce dopo un page refresh?** → persistenza vs stato React.
+3. **Quando è apparso?** (quale commit/deploy).
+4. **È intermittente o sistematico?**
 
 ## Fase 1 — Mappa i livelli coinvolti
-
-I bug di persistenza in questa app coinvolgono sempre più livelli:
-
-```
-[React state]  ← useState, useRef   — si azzera ad ogni page refresh
-      ↓
-[IndexedDB]    ← fsProvider         — persiste tra refresh, si azzera su clearAuditsStore
-      ↓
-[Sync queue]   ← IndexedDB store    — persiste tra refresh, fire-and-forget
-      ↓
-[Server API]   ← REST backend       — ground truth, unica fonte di verità
-      ↓
-[Netlify CDN]  ← build artifact     — ritardo deploy 2-3 minuti dopo ogni push
-```
-
-**Domande da farsi per ogni livello:**
-- A quale livello è stato aggiunto l'oggetto? (creazione)
-- A quale livello viene rimosso? (cancellazione)
-- A quale livello viene riletto? (page refresh / reconcile)
-
-Se eliminazione e lettura avvengono a livelli diversi → potenziale mismatch.
-
----
-
-## Fase 2 — Raccolta evidenze empiriche (MAI saltarla)
-
-### 2a. Chiedi all'utente PRIMA di ipotizzare
-
-> "Apri DevTools (F12) → Network. Ripeti l'operazione. Cosa vedi nella lista delle richieste? C'è una chiamata DELETE? Che status restituisce (200, 404, 401…)?"
-
-> "Apri DevTools → Console. Ci sono errori rossi? Cosa stampa subito dopo aver cliccato Elimina?"
-
-### 2b. Distingui il tipo di bug
-
-| Comportamento | Diagnosi probabile |
-|---|---|
-| Bug visibile subito, scompare dopo refresh | Solo stato React (useState/useRef) |
-| Bug persiste dopo refresh ma scompare dopo logout | IndexedDB o localStorage |
-| Bug persiste sempre, anche su altri dispositivi | Server (DB, soft-delete, query) |
-| Bug sistematico + nessun errore visibile | Operazione async fire-and-forget mai eseguita |
-
-### 2c. Verifica il deploy SEMPRE
-
-Ogni volta che fai un push e dichiari "fix deployato":
-- Netlify impiega **2-3 minuti** per completare il build
-- Il Service Worker può servire JS vecchio per ore (Cache-First)
-- **Non dichiarare mai "fix pronto" senza confermare che il build sia completo**
-- Chiedere all'utente di attendere, poi fare hard-refresh (Ctrl+Shift+R) per sicurezza
-
----
-
-## Fase 3 — Analisi del codice (solo dopo le evidenze)
-
-### 3a. Distingui in-memory da persistent
-
-| Tipo | Scope | Resiste a page refresh? |
-|---|---|---|
-| `useState` | componente/provider | NO |
-| `useRef` | componente/provider | NO |
-| `localStorage` | browser | SÌ |
-| `IndexedDB` | browser | SÌ |
-| Server DB | globale | SÌ |
-
-**Errore tipico di questa sessione**: `recentlyDeletedRef` (useRef) era usato come guardia per
-il reconcile, ma si azzerava ad ogni page refresh. L'audit tornava perché la guardia spariva.
-**Fix corretto**: tombstone su `localStorage` (`sgq_deleted_audit_tombstone`).
-
-### 3b. Distingui sync da async (fire-and-forget)
-
-Ogni operazione async non awaited è un **rischio di perdita silenziosa**:
-
-```javascript
-// PERICOLOSO — fire-and-forget:
-syncService.enqueue("delete_audit", { auditId }).catch(console.error);
-
-// SICURO — bloccante:
-await apiService.deleteAudit(auditId);
-```
-
-Per operazioni **critiche e irreversibili** (cancellazione, pagamenti, permessi):
-→ usare sempre `await` diretto, non la sync queue.
-
-### 3c. Race condition: chi vince tra operazioni concorrenti?
-
-Prima di toccare il codice, disegna la timeline:
-
-```
-T=0s  utente clicca "Elimina"
-T=0s  reconcile parte (timer 45s scattato)
-T=0s    → processQueue() legge la queue (delete non ancora in coda!)
-T=1s  deleteAudit: enqueue "delete_audit" (ora in coda, ma processQueue già finita)
-T=2s  reconcile: fetchAllServerAudits() → server restituisce ancora l'audit
-T=2s  setAudits(finalAudits) → audit torna nell'UI
-```
-
-Se due operazioni async competono sullo stesso stato → serve un lock o un filtro persistente.
-
----
-
-## Fase 4 — Regole per il fix
-
-### 4a. Fix minimo, verificabile, reversibile
-
-- Un fix alla volta. Non "faccio anche X mentre ci sono".
-- Se un fix richiede 3 o più modifiche su file diversi → documentare il piano prima di iniziare.
-- Ogni fix deve avere un modo chiaro per verificare se ha funzionato (test L1 o test manuale specifico).
-
-### 4b. Belt and suspenders per operazioni critiche
-
-Per operazioni irreversibili (delete, hard reset, clear cache), usare più livelli indipendenti:
-
-```
-Livello 1: operazione diretta sul server (await, bloccante)
-Livello 2: operazione su IndexedDB (await, bloccante)
-Livello 3: tombstone persistente su localStorage (filtro fallback)
-```
-
-Ogni livello deve funzionare indipendentemente dagli altri.
-
-### 4c. Loop detector — fermati se ripeti lo stesso fix
-
-Se stai applicando la terza variante dello stesso approccio senza risultato:
-1. STOP. Non fare un quarto tentativo.
-2. Torna alla Fase 2: raccogli più evidenze empiriche.
-3. Riformula il modello mentale del bug da zero.
-4. Pensa a quale livello dell'architettura non hai ancora indagato.
-
----
-
-## Fase 5 — Verifica dopo il fix
-
-### Checklist pre-commit
-
-- [ ] Test L1 (`npm run test:run`) → tutti verdi?
-- [ ] Il fix è minimale? (diff piccolo, nessuna modifica non correlata)
-- [ ] È possibile fare rollback facilmente?
-- [ ] Ci sono side-effect su altre funzionalità?
-
-### Checklist post-deploy (dopo Netlify)
-
-- [ ] Attendi 3-4 minuti dal push
-- [ ] Verifica il build su Netlify (nessun errore)
-- [ ] Chiedi all'utente di fare hard-refresh (Ctrl+Shift+R) per superare il SW cache
-- [ ] Chiedi all'utente di riprodurre il bug originale step by step
-- [ ] Chiedi all'utente di fare il page refresh per confermare la persistenza
-
----
-
----
-
-## Standard Operativo — Lavoro Parallelo Lead + Deputy
-
-> Adottato il 23 aprile 2026. Vale per lead e deputy su ogni sessione con più task in contemporanea.
-
-### Il modello
-
-```
-Lead (agente principale)    Deputy (agente delegato)
-─────────────────────       ──────────────────────────
-Sprint / architettura       Task circoscritti
-Decisioni di prodotto       Implementazione + unit test
-Review finale               Investigazione codice
-                            Verifica smoke (code-level)
-```
-
-### Quando delegare al deputy
-
-Delega se il task ha **tutte** queste caratteristiche:
-- Scope definito: max 2-3 file, obiettivo chiaro, nessuna decisione architetturale
-- Indipendente: non blocca il lavoro del lead (può partire in parallelo)
-- Verificabile L1: esiste un test automatico o si può scriverne uno
-- Non richiede contesto interattivo: niente browser, niente credenziali umane
-
-Non delegare se: il task richiede scelte che impattano altri moduli, tocca auth/DB/multi-tenant, o ha dipendenze dall'output del lead in corso.
-
-### Processo standard
-
-1. **Lead**: indaga velocemente il punto (5-10 min di grep/read) per capire scope reale
-2. **Lead**: scrive `docs/agent-tasks/DEPUTYTASK.md` con:
-   - Contesto (link a file, righe esatte)
-   - Soluzione da implementare (pseudocodice o pattern di riferimento già nel repo)
-   - Test L1 atteso
-   - Regole: diff minimo, commit separati, push su main, scrivi TASK CHIUSO
-3. **Utente**: incolla in Agents: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TASK CHIUSO o FIX NON APPLICABILE.`
-4. **Lead**: continua su Sprint / feature principale mentre il deputy lavora
-5. **Sync**: dopo che il deputy ha pushato, il lead fa `git log --oneline -5` e legge i commit
-
-### Cosa può fare il deputy (capacità reali)
-
-| Può fare | Non può fare |
-|---|---|
-| Leggere e modificare file | Aprire browser / vedere UI reale |
-| Scrivere unit test L1 | Testare endpoint di produzione con credenziali |
-| Implementare UI changes circoscritte | Prendere decisioni di prodotto |
-| Fare grep/read per investigazione | Vedere screenshot dell'app |
-| Commit + push | Accedere al VPS per deploy backend |
-
-### Template DEPUTYTASK.md
-
-```markdown
-# DEPUTYTASK — [nome breve]
-> Sessione: [data] | Lead: agente principale | Deputy: questo agente
-
-## Contesto
-Leggi PROJECT_CONTEXT.md, docs/PROJECT_ROADMAP.md, docs/GUIDA_CONSOLIDATA.md.
-
-## Task A — [nome]
-### Problema
-[cosa manca o è rotto, con file e righe esatte]
-
-### Soluzione
-[pseudocodice o pattern del repo da replicare]
-
-### Test L1
-[test da scrivere o aggiornare]
-
-## Regole operative deputy
-- Diff minimo: non toccare file non elencati
-- npm run test:run da app/ dopo ogni modifica
-- Commit separato per ogni task, push su main
-- Scrivi TASK CHIUSO nel commit message finale
-```
-
----
-
-## Anti-pattern da evitare (imparati in questa sessione)
-
-| Anti-pattern | Cosa fare invece |
-|---|---|
-| Analisi statica senza evidenze empiriche | Chiedere Network tab + Console prima |
-| Fix multipli senza verifica intermedia | Un fix alla volta, verifica dopo ogni deploy |
-| Dichiarare "fix deployato" subito dopo il push | Aspettare 3-4 min + confermare build Netlify |
-| Usare `useRef` come stato persistente cross-refresh | Usare `localStorage` o `IndexedDB` |
-| Fire-and-forget per operazioni critiche | `await` diretto per delete/auth/permessi |
-| Proteggere solo la sessione corrente | Proteggere anche dopo page refresh (tombstone) |
-| "Cambio strategia" senza diagnosi aggiornata | Raccogliere nuove evidenze prima di ogni nuovo tentativo |
-
----
-
-## Template domande da fare all'utente
-
-```
-Per diagnosticare correttamente, ho bisogno di alcune informazioni:
-
-1. Apri DevTools (F12) → scheda "Network" → riproduci il bug.
-   - Vedi una chiamata DELETE? A quale URL? Che status restituisce?
-
-2. Apri DevTools → scheda "Console".
-   - Ci sono messaggi di errore (rossi)? Copia il testo.
-   - Vedi messaggi che iniziano con "✅ [DELETE]" o "❌ [DELETE]"?
-
-3. Il bug si riproduce sempre, o solo a volte?
-
-4. Si riproduce anche su un altro browser/dispositivo?
-```
+I bug in questa app coinvolgono: [React state] ↔ [IndexedDB] ↔ [Sync queue] ↔ [Server API].
+Distingui sempre:
+- **In-memory**: `useState`, `useRef` (si azzerano al refresh).
+- **Persistent**: `localStorage`, `IndexedDB`, `Server DB` (resistono al refresh).
+
+## Fase 2 — Raccolta evidenze (MAI saltarla)
+- Chiedi all'utente: "Cosa vedi in DevTools -> Network? C'è un errore rosso in Console?".
+- Verifica il deploy: Netlify impiega 2-3 minuti. Hard-refresh (Ctrl+Shift+R) obbligatorio.
+
+## Fase 3 — Regole per il fix
+- **Fix minimo**: Una modifica alla volta.
+- **Belt and suspenders**: Per cancellazioni critiche, usa più livelli (Server + IndexedDB + Tombstone locale).
+- **Loop detector**: Se stai ripetendo lo stesso fix per la terza volta, FERMATI. Cambia strategia.
+
+## Workflow parallelo Lead + Deputy
+- **Lead**: Architettura e decisioni. Prepara `docs/agent-tasks/DEPUTYTASK.md`.
+- **Deputy**: Implementazione task circoscritti e Unit Test L1.

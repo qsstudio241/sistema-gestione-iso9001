@@ -1,0 +1,24 @@
+---
+description: Skill specializzata per l'elaborazione di documenti Word (.docx), Excel (.xlsx) e PDF tramite librerie Python locali (python-docx, pandas, openpyxl, pdfplumber).
+globs: "**/*.{docx,xlsx,pdf,py,md}"
+---
+
+# Istruzioni Elaborazione Documenti Multi-Formato (SGQ)
+
+## Librerie Autorizzate (Ambiente Locale)
+- **Microsoft Word (.docx)**: Usa `python-docx` per creare verbali e certificati ISO.
+- **Microsoft Excel (.xlsx)**: 
+  - Usa `openpyxl` per formattazione e template.
+  - Usa `pandas` per analisi dati e tabelle massive.
+- **File PDF (.pdf)**: 
+  - Usa `pypdf` per lettura generale.
+  - Usa `pdfplumber` per estrazione tabelle (fondamentale per importare vecchie checklist).
+
+## Vincoli Operativi (Sicurezza ISO 9001)
+1. **No API Esterne**: Non usare servizi cloud o conversioni online. Tutto deve restare locale.
+2. **No Pip Install**: Le librerie sono già presenti nell'ambiente.
+3. **Automazione**: Quando l'utente chiede analisi o report su file, scrivi ed esegui script Python che usino queste librerie.
+
+## Workflow
+- Se l'utente carica un file Word/PDF: attiva questa regola.
+- Se l'utente chiede un export: proponi lo script Python corrispondente.

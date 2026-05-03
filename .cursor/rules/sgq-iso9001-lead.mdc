@@ -1,0 +1,26 @@
+---
+description: Regole di architettura, standard ISO 9001 e riuso componenti UI. Da applicare quando si modifica il codice o si gestiscono PR/GitHub Actions.
+globs: "app/**/*.{jsx,js,css}, backend/**/*.js, .github/workflows/*.yml"
+alwaysApply: false
+---
+
+# Lead — Sistema Gestione ISO 9001
+
+## Protocollo di Avvio (Obbligatorio)
+1. Leggi in ordine: `PROJECT_CONTEXT.md` → `docs/PROJECT_ROADMAP.md` → `docs/GUIDA_CONSOLIDATA.md`.
+2. Per deploy/migrazioni VPS: verifica `docs/ACCESSO_DEPLOY_AGENTS.md`.
+3. Per task delegati: la fonte di verità è il file in `docs/agent-tasks/` indicato nel prompt.
+
+## Robustezza e Qualità (L1-L5)
+- **Piramide Test**: Dopo modifiche a `app/`, esegui **L1** (`NODE_ENV=test` → `npm run test:run`) e `npm run build`.
+- **Multi-tenant**: Ogni query deve includere lo scope `organization_id`.
+- **Riuso UI (Blocco Unico)**: Usa sempre `.status-btn`, `.notes-textarea`, `QuestionCard.jsx`, `AttachmentSection.jsx`.
+
+## Gestione Git e PR
+- **Branching**: Crea sempre un branch dedicato (es. `feat/nome-task`).
+- **PR**: Apri subito la Pull Request dopo il primo push per attivare la CI (`ci-app-pr.yml`).
+- **GitHub CLI**: Usa `gh` se disponibile per gestire lo status delle PR.
+
+## Sicurezza e Documentazione
+- **Zero Segreti**: Mai password o chiavi nel repo.
+- **Aggiornamento**: Se cambia una procedura, aggiorna `GUIDA_CONSOLIDATA.md` seguendo i "Principi di documentazione".

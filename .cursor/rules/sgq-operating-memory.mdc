@@ -1,5 +1,6 @@
 ---
-description: 
+description: Protocollo decisionale, gestione terminale e workflow DEPUTYTASK per l'agente Senior Lead. Gestisce l'autonomia operativa e la comunicazione con il committente.
+globs: "**/*"
 alwaysApply: true
 ---
 
@@ -9,17 +10,17 @@ alwaysApply: true
 - Leggi `PROJECT_CONTEXT.md` (root), poi `docs/PROJECT_ROADMAP.md`, poi **`docs/GUIDA_CONSOLIDATA.md`**.
 - **Non** creare nuovi `docs/sessions/SESSION_NOTES_*.md`: aggiorna `GUIDA_CONSOLIDATA.md` + roadmap.
 - Rispondi sempre in italiano, con spiegazioni semplici e operative.
-- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit su richiesta implicita di avanzare il task) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** quando serve un'azione **fuori** dall'agente (login browser a servizi terzi, password VPS, scelta committente, approvazione eccezione alle golden rules). La regola "un comando alla volta" vale quando **l'utente** e' l'unico che puo' lanciare quel comando sul suo ambiente, non come scusa per delegare all'umano cio' che il terminale del workspace puo' fare.
-- **Dialogo con l'utente**: privilegiare messaggi su **obiettivi**, **requisiti clienti**, **priorita'**, **vincoli legali/commerciali**; evitare di usare il turno utente per operazioni ripetitive che l'agente puo' completare da solo.
+- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** per azioni **fuori** dall'agente (password, login terzi, scelte di business).
+- **Dialogo**: privilegiare obiettivi e requisiti; evita di usare il turno utente per operazioni ripetitive che puoi completare da solo.
 
 ## Convenzione DEPUTYTASK (workflow delegato)
-- Il task corrente per il deputy risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
-- **Non proliferare** file `TASK_*.md` datati: la memoria dei task completati va in `docs/GUIDA_CONSOLIDATA.md` (sezione "Chiusura sessione").
-- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` con il nuovo brief e consegna all'utente questo comando standard da incollare nella finestra **Agents** di Cursor:
+- Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
+- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:
+  `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
-  ```
-  Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-  ```
+## Approvazione esplicita dell'utente
+- **Default**: esegui task in **autonomia** se rispetti golden rules e pattern del repo.
+- **Chiedere conferma solo se**: (1) strategia che contraddice best practice; (2) breaking change senza rollback; (3) decisione commerciale/legal non scritta; (4) azioni irreversibili (purge dati).
 
 - L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
 - **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.

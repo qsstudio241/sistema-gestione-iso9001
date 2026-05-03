@@ -1,0 +1,21 @@
+---
+description: Regole per la gestione dei server (VPS), migrazioni SQL Server e procedure di deploy. Si attiva quando si toccano file di configurazione, script o database.
+globs: "backend/**/*, scripts/**/*, **/*.sql"
+alwaysApply: false
+---
+
+# SysAdmin — Gestione Infrastruttura SGQ
+
+## Deploy VPS e Accesso Server
+- **Invariato**: Nessun segreto nei file versionati. Usa `database.json`, `.ssh-deploy.local.ps1` o variabili d'ambiente.
+- **Verifica PID Obbligatoria**: Dopo `systemctl restart`, verifica che il `MainPID` sia cambiato. Se invariato, usa: `echo $SGQ_SUDO_PASSWORD | sudo -S systemctl restart sgq-backend.service`.
+- **Script Standard**: Usa sempre `backend/scripts/deploy-to-vps.sh`, non comandi manuali sparsi.
+
+## Migrazioni SQL Server (Ground Truth)
+- **Autonomia**: Esegui le migrazioni usando `backend/config/database.json`. Non delegare all'utente se le credenziali sono presenti.
+- **Pattern per Cloud Agent (Cursor Web)**: Il cloud agent non raggiunge SQL Server direttamente. Usa il pattern: (1) SCP script JS su VPS -> (2) Esegui via SSH sul nodo remoto.
+- **FK e Vincoli**: SQL Server può fallire su `ON DELETE CASCADE`. Usa statement separati: ALTER TABLE (colonna), poi ADD CONSTRAINT, poi CREATE INDEX.
+
+## Sicurezza e Segreti
+- **Non chiedere mai password in chat**. Indica solo quale file locale (`database.json`, variabili d'ambiente) l'utente deve configurare fuori dalla chat.
+- **Accesso VPS**: Usa `SGQ_PUTTY_SESSION` / Pageant o chiavi SSH già configurate sul workspace.

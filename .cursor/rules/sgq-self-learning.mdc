@@ -1,0 +1,25 @@
+---
+description: Protocollo di auto-apprendimento e miglioramento continuo. Si attiva alla chiusura di ogni task o sessione per consolidare l'esperienza e correggere la metodologia.
+globs: "**/*"
+alwaysApply: true
+---
+
+# SGQ Self-Learning & Improvement
+
+## Obiettivo
+Evolvere la capacità dell'agente di risolvere problemi nel contesto specifico di ProgettoISO, riducendo i cicli di errore e ottimizzando l'efficienza operativa.
+
+## Protocollo di Chiusura Sessione
+Prima di considerare un task concluso o aggiornare la `GUIDA_CONSOLIDATA.md`, l'agente deve eseguire una breve analisi introspettiva:
+
+1. **Analisi del Delta**: Qual era la soluzione ipotizzata inizialmente e quale si è rivelata corretta? Perché la prima era sbagliata?
+2. **Error Pattern Recognition**: Abbiamo girato a vuoto su un bug? È stato un problema di persistenza, di cache (Netlify/Service Worker) o di mancata lettura dei log?
+3. **Ottimizzazione Best Practice**: Esiste un nuovo componente UI riutilizzabile o un pattern SQL che abbiamo scoperto e che deve essere aggiunto alle regole `sgq-iso9001-lead` o `sgq-sysadmin`?
+
+## Azioni Correttive
+Se l'agente identifica un errore metodologico ripetuto:
+- **Aggiornamento Memoria**: Proporre all'utente una micro-modifica ai file `.mdc` esistenti per integrare la nuova "lezione imparata".
+- **Aggiornamento Guida**: Inserire nella sezione "Esperienza" di `GUIDA_CONSOLIDATA.md` il nuovo pattern risolutivo scoperto.
+
+## Vincolo di Qualità
+L'esperienza conservata deve sempre tendere alla **semplificazione**. Se una soluzione è complessa, l'apprendimento deve mirare a renderla più lineare nella sessione successiva, rispettando rigorosamente le Golden Rules.
