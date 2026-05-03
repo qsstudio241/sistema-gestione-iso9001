@@ -40,6 +40,8 @@ export default function ImportJobsPage() {
   const [newTitle, setNewTitle] = useState("");
   const [docTypeHint, setDocTypeHint] = useState("");
   const [busy, setBusy] = useState(false);
+  const [commitDialog, setCommitDialog] = useState(null); // { file, form }
+  const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -166,6 +168,45 @@ export default function ImportJobsPage() {
       await loadDetail(selectedId);
     } catch (e) {
       setError(e.message || "Salvataggio testo fallito");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleOpenCommit(file) {
+    const ai = parseAiJson(file.ai_extraction_json) || {};
+    setCommitDialog({
+      file,
+      form: {
+        title: ai.title || file.original_name || "",
+        doc_type: ai.document_type || "",
+        responsible: ai.person_name || ai.responsible || "",
+        issue_date: ai.issue_date || "",
+        expiry_date: ai.expiry_date || "",
+        doc_code: ai.doc_code || ai.code || "",
+        revision: ai.revision || "",
+        notes: "",
+      },
+    });
+    setCommitResult(null);
+  }
+
+  async function handleCommitConfirm() {
+    if (!commitDialog || !selectedId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await apiService.commitImportJobFileToRegistry(
+        selectedId,
+        commitDialog.file.id,
+        commitDialog.form
+      );
+      const regId = res.data?.registry_document_id;
+      setCommitResult({ fileId: commitDialog.file.id, registryId: regId });
+      setCommitDialog(null);
+      await loadDetail(selectedId);
+    } catch (e) {
+      setError(e?.data?.error || e.message || "Commit fallito");
     } finally {
       setBusy(false);
     }
@@ -343,6 +384,23 @@ export default function ImportJobsPage() {
                           Analisi AI strutturata
                         </button>
                       )}
+                      {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
+                        <button
+                          type="button"
+                          className="btn-small btn-commit"
+                          disabled={busy}
+                          title="Crea un record nel registro documenti da questo file"
+                          onClick={() => handleOpenCommit(f)}
+                        >
+                          Commit al Registry
+                        </button>
+                      )}
+                      {f.status === "committed" && (
+                        <span className="file-committed-badge">
+                          ✓ In Registry{commitResult?.fileId === f.id && commitResult.registryId
+                            ? ` #${commitResult.registryId}` : ""}
+                        </span>
+                      )}
                     </div>
                     {f.ai_extraction_error && (
                       <p className="file-err ai-err">AI: {f.ai_extraction_error}</p>
@@ -368,6 +426,94 @@ export default function ImportJobsPage() {
           )}
         </section>
       </div>
+
+      {/* Sprint 10 — Dialog commit al registry */}
+      {commitDialog && (
+        <div className="commit-dialog-overlay" onClick={() => setCommitDialog(null)}>
+          <div className="commit-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Commit al Registry documenti</h3>
+            <p className="commit-dialog-file">File: <strong>{commitDialog.file.original_name}</strong></p>
+            <div className="commit-form">
+              <label>Titolo *
+                <input
+                  type="text"
+                  value={commitDialog.form.title}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, title: e.target.value } }))}
+                />
+              </label>
+              <label>Tipo documento
+                <select
+                  value={commitDialog.form.doc_type}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_type: e.target.value } }))}
+                >
+                  {DOC_TYPE_OPTIONS.map((o) => (
+                    <option key={o.value || "none"} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>Codice doc.
+                <input
+                  type="text"
+                  value={commitDialog.form.doc_code}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_code: e.target.value } }))}
+                />
+              </label>
+              <label>Revisione
+                <input
+                  type="text"
+                  value={commitDialog.form.revision}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, revision: e.target.value } }))}
+                />
+              </label>
+              <label>Responsabile
+                <input
+                  type="text"
+                  value={commitDialog.form.responsible}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, responsible: e.target.value } }))}
+                />
+              </label>
+              <label>Data emissione
+                <input
+                  type="date"
+                  value={commitDialog.form.issue_date}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, issue_date: e.target.value } }))}
+                />
+              </label>
+              <label>Scadenza
+                <input
+                  type="date"
+                  value={commitDialog.form.expiry_date}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, expiry_date: e.target.value } }))}
+                />
+              </label>
+              <label>Note
+                <textarea
+                  rows={3}
+                  value={commitDialog.form.notes}
+                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, notes: e.target.value } }))}
+                />
+              </label>
+            </div>
+            <p className="commit-dialog-hint">
+              Il documento verrà creato come bozza AI (<em>ai_draft</em>) nel Registro Documenti.
+              Potrai validarlo dalla pagina Documenti.
+            </p>
+            <div className="commit-dialog-actions">
+              <button type="button" className="btn-secondary" onClick={() => setCommitDialog(null)} disabled={busy}>
+                Annulla
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleCommitConfirm}
+                disabled={busy || !commitDialog.form.title.trim()}
+              >
+                {busy ? "Salvataggio…" : "Conferma e salva nel Registry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

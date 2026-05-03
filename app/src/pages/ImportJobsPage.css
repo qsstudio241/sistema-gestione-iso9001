@@ -243,3 +243,87 @@ button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* Sprint 10 — Commit to Registry */
+.btn-small.btn-commit {
+  background: #1565c0;
+  color: #fff;
+  border-color: #1565c0;
+}
+
+.file-committed-badge {
+  font-size: 0.82rem;
+  color: #2e7d32;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+/* Dialog overlay */
+.commit-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.commit-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 520px;
+  width: 92%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+}
+
+.commit-dialog h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.commit-dialog-file {
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.commit-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.commit-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.88rem;
+  font-weight: 500;
+  gap: 0.25rem;
+}
+
+.commit-form input,
+.commit-form select,
+.commit-form textarea {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.commit-dialog-hint {
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0.75rem 0;
+}
+
+.commit-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}

@@ -83,5 +83,7 @@ router.post('/import-jobs/:id/files', uploadImportMiddleware, ctrl.uploadFiles);
 router.post('/import-jobs/:id/process', ctrl.processJob);
 router.post('/import-jobs/:id/files/:fileId/ai-extract', aiExtractLimiter, ctrl.suggestAiExtraction);
 router.patch('/import-jobs/:id/files/:fileId', ctrl.patchFile);
+// Sprint 10: commit file processato al document_registry
+router.post('/import-jobs/:id/files/:fileId/commit-to-registry', ctrl.commitToRegistry);
 
 module.exports = router;

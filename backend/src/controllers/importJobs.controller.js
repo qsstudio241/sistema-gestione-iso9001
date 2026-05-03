@@ -345,6 +345,125 @@ async function patchFile(req, res) {
     }
 }
 
+/**
+ * Sprint 10 — Commit di un file processato al document_registry.
+ *
+ * Il frontend invia i campi del documento (pre-compilati dall'AI, editabili dall'utente).
+ * Il backend crea un record document_registry con import_status='ai_draft',
+ * poi segna il file come 'committed' e salva il link registry_document_id.
+ *
+ * POST /import-jobs/:id/files/:fileId/commit-to-registry
+ */
+async function commitToRegistry(req, res) {
+    try {
+        const { organization_id, user_id } = req.user;
+        const jobId = parseInt(req.params.id, 10);
+        const fileId = parseInt(req.params.fileId, 10);
+
+        // Verifica job appartenente all'org
+        const j = await query(
+            `SELECT j.id, j.company_id FROM import_jobs j
+             WHERE j.id = @job_id AND j.organization_id = @organization_id`,
+            { job_id: jobId, organization_id }
+        );
+        if (!j.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+
+        // Verifica file e stato
+        const f = await query(
+            `SELECT id, status, original_name, ai_extraction_json, registry_document_id
+             FROM import_job_files WHERE id = @file_id AND job_id = @job_id`,
+            { file_id: fileId, job_id: jobId }
+        );
+        if (!f.recordset.length) return res.status(404).json({ error: 'File non trovato' });
+        const file = f.recordset[0];
+
+        if (file.registry_document_id) {
+            return res.status(409).json({
+                error: 'File già committato nel registry',
+                code: 'ALREADY_COMMITTED',
+                registry_document_id: file.registry_document_id,
+            });
+        }
+        if (!['extracted', 'reviewed'].includes(file.status)) {
+            return res.status(400).json({
+                error: 'Il file deve essere in stato extracted o reviewed per il commit.',
+                code: 'INVALID_FILE_STATUS',
+            });
+        }
+
+        // Legge eventuali valori dall'AI extraction come fallback
+        let aiData = {};
+        try {
+            if (file.ai_extraction_json) {
+                aiData = typeof file.ai_extraction_json === 'object'
+                    ? file.ai_extraction_json
+                    : JSON.parse(file.ai_extraction_json);
+            }
+        } catch (_) { /* ignore malformed */ }
+
+        // Campi del documento — priorità: body utente > AI > fallback
+        const body = req.body || {};
+        const title = String(body.title || aiData.title || file.original_name || 'Documento importato').substring(0, 500);
+        const doc_type = String(body.doc_type || aiData.document_type || j.recordset[0].document_type_hint || 'altro').substring(0, 50);
+        const doc_code = body.doc_code != null ? String(body.doc_code).substring(0, 100) : (aiData.doc_code || aiData.code || null);
+        const revision = body.revision != null ? String(body.revision).substring(0, 20) : (aiData.revision || null);
+        const responsible = body.responsible != null ? String(body.responsible).substring(0, 255) : (aiData.person_name || aiData.responsible || null);
+        const issue_date = body.issue_date || aiData.issue_date || null;
+        const expiry_date = body.expiry_date || aiData.expiry_date || null;
+        const clause_ref = body.clause_ref != null ? String(body.clause_ref).substring(0, 30) : null;
+        const standard_id = body.standard_id ? parseInt(body.standard_id, 10) : null;
+        const company_id = body.company_id ? parseInt(body.company_id, 10) : (j.recordset[0].company_id || null);
+        const notes = body.notes != null ? String(body.notes).substring(0, 2000) : null;
+
+        // Crea record document_registry
+        const ins = await query(
+            `INSERT INTO document_registry
+             (organization_id, company_id, standard_id, clause_ref, doc_type, doc_code,
+              title, revision, status, issue_date, expiry_date, responsible,
+              import_status, extraction_confidence, notes, created_by, created_at, updated_at)
+             OUTPUT INSERTED.id
+             VALUES
+             (@organization_id, @company_id, @standard_id, @clause_ref, @doc_type, @doc_code,
+              @title, @revision, 'in_approvazione', @issue_date, @expiry_date, @responsible,
+              'ai_draft', @confidence, @notes, @created_by, GETDATE(), GETDATE())`,
+            {
+                organization_id,
+                company_id,
+                standard_id,
+                clause_ref,
+                doc_type,
+                doc_code,
+                title,
+                revision,
+                issue_date: issue_date || null,
+                expiry_date: expiry_date || null,
+                responsible,
+                confidence: file.confidence_score || null,
+                notes,
+                created_by: user_id || null,
+            }
+        );
+        const registryId = ins.recordset[0].id;
+
+        // Aggiorna il file: committed + link al registry
+        await query(
+            `UPDATE import_job_files
+             SET status = 'committed', registry_document_id = @reg_id, updated_at = GETDATE()
+             WHERE id = @file_id AND job_id = @job_id`,
+            { file_id: fileId, job_id: jobId, reg_id: registryId }
+        );
+
+        logger.info(`commitToRegistry: file ${fileId} → document_registry #${registryId} (org ${organization_id})`);
+        res.status(201).json({
+            success: true,
+            data: { registry_document_id: registryId, doc_type, title },
+        });
+    } catch (err) {
+        logger.error('commitToRegistry', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     listJobs,
     createJob,
@@ -354,4 +473,5 @@ module.exports = {
     processJob,
     patchFile,
     suggestAiExtraction,
+    commitToRegistry,
 };

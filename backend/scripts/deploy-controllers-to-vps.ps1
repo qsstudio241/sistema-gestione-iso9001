@@ -124,6 +124,12 @@ Copy-FileToVps "src/routes/customChecklist.routes.js" "$RemoteBase/src/routes/cu
 Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes.js"
 Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
 
+# Sprint 9/10: Import batch PDF → staging → document registry
+Copy-FileToVps "src/controllers/importJobs.controller.js" "$RemoteBase/src/controllers/importJobs.controller.js"
+Copy-FileToVps "src/routes/importJobs.routes.js" "$RemoteBase/src/routes/importJobs.routes.js"
+Copy-FileToVps "src/services/importAiExtraction.service.js" "$RemoteBase/src/services/importAiExtraction.service.js"
+Copy-FileToVps "src/utils/importPdfText.js" "$RemoteBase/src/utils/importPdfText.js"
+
 # Sprint 12-A: WebDAV Office Round-trip
 Copy-FileToVps "src/controllers/webdav.controller.js" "$RemoteBase/src/controllers/webdav.controller.js"
 Copy-FileToVps "src/routes/webdav.routes.js" "$RemoteBase/src/routes/webdav.routes.js"

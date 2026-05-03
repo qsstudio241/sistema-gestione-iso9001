@@ -1274,6 +1274,11 @@ class ApiService {
     async postImportJobFileAiExtract(jobId, fileId) {
         return this.post(`/import-jobs/${jobId}/files/${fileId}/ai-extract`, {});
     }
+
+    /** Sprint 10: commit file processato al document_registry */
+    async commitImportJobFileToRegistry(jobId, fileId, data) {
+        return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-registry`, data);
+    }
 }
 
 /**
