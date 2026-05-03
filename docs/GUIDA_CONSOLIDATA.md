@@ -70,7 +70,14 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 - Fix deploy VPS: verifica PID + `response.controller.js` nello script ✅
 - Fix multi-device: server-wins su tutti i campi (status, note, generalData, obiettivo, conclusioni) ✅
 
-**Prossimo**: smoke test allegati su produzione (upload PDF/foto → verifica link + embed); ISO 14001 checklist completa; P1 smoke L3 custom checklist (DEPUTYTASK pronto).
+**Prossimo**: smoke test allegati su produzione (upload PDF/foto → verifica link + embed); ISO 14001 checklist completa.
+
+**Nota 03/05/2026 — Smoke L3 P1 custom checklist (COMPLETATO):**
+Test eseguito su produzione con utente Camellini (marcocamellini@gmail.com):
+- Checklist "Test Smoke L3 - Pulsanti Esito" (id 13, `has_outcome_buttons: true`) — pulsanti C/NC/OSS/OM/NV/NA visibili per ogni domanda ✅
+- Esito C su domanda 1.1 → auto-save → ricarica → persistenza confermata via API (`GET /audits/35187/custom-checklist-responses` → `status: "C"`) ✅
+- Export Word: pulsante presente in UI; l'export è frontend-only (browser) e richiede sezioni obbligatorie compilate ✅ (comportamento corretto, non bug)
+- **2 note backlog**: (1) export Word non testato end-to-end con audit completo in questa sessione; (2) solo 1 domanda di test — test con NC/OSS/OM multipli da eseguire con audit reale di Camellini.
 
 **Nota 02/05/2026 — Word checklist custom**: gli allegati nelle `evidence_blocks` ora generano **HYPERLINK** cliccabile (come checklist ISO) quando è disponibile `getViewUrl`; in modalità **Incorpora foto** sotto l’immagine compare anche il link. La mappa allegati usa `attachment_id` / `serverAttachmentId` / `id`.
 
