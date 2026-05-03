@@ -52,6 +52,12 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const lastFlushedAuditIdRef = useRef(null);
   const notesDebounceRef = useRef({});
 
+  // Ref stabile per customResponses iniziali: aggiornato ad ogni render senza
+  // essere incluso nelle dipendenze di loadChecklist — evita che updateCurrentAudit
+  // (chiamato dal debounce onNotesChange) scateni un reload con setLoading(true).
+  const auditCustomResponsesRef = useRef(audit?.customResponses);
+  auditCustomResponsesRef.current = audit?.customResponses;
+
   // Mantieni ref aggiornato per accesso in closure (debounce onNotesChange)
   useEffect(() => { responsesRef.current = responses; }, [responses]);
 
@@ -72,7 +78,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
     try {
       const clRes = await apiService.getCustomChecklist(customChecklistId);
       setChecklist(clRes?.data ?? null);
-      const localResponses = audit?.customResponses ?? {};
+      const localResponses = auditCustomResponsesRef.current ?? {};
 
       if (!auditId) {
         setResponses(localResponses);
@@ -104,7 +110,8 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
     } catch (err) {
       console.error("Errore caricamento checklist custom:", err);
     }
-  }, [customChecklistId, auditId, audit?.customResponses]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customChecklistId, auditId]);
 
   useEffect(() => {
     if (!customChecklistId) return;
