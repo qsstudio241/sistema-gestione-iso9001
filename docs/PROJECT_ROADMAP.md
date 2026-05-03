@@ -1,8 +1,8 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 30 aprile 2026
-> **Prossimo Step (post sessione 01/05)**: T3 smoke L3 ✅, T4 ✅, T5 ✅, allegati custom unificati ✅. Export Word checklist custom: hyperlink allegati (PDF/foto) allineato a ISO ✅ (02/05). Prossime sessioni: (1) smoke test allegati su produzione (upload → link + embed), (2) P1 smoke L3 custom checklist (DEPUTYTASK pronto), (3) ISO 14001 checklist completa da norma PDF via deputy. SYNC-5 (allegati offline) in backlog attivo.
+> **Ultimo Aggiornamento**: 3 maggio 2026 (sessione pomeriggio)
+> **Prossimo Step**: Sprint 10 ✅ implementato e in produzione. Commit `939af59`: endpoint `POST /import-jobs/:id/files/:fileId/commit-to-registry`, migration 048 (registry_document_id + status committed), migration 039 applicata su DB prod (colonne AI), UI dialog form pre-compilato da AI, deploy script aggiornato. **Azione utente richiesta**: (1) Smoke L3 P1 — DEPUTYTASK.md (custom checklist outcome buttons — produzione), (2) Smoke Mason report anomalie ISO 3834, (3) Build frontend + deploy Netlify per attivare UI Sprint 10.
 > **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
