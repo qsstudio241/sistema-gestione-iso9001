@@ -1,4 +1,4 @@
-# Guida consolidata — SGQ ISO 9001
+﻿# Guida consolidata — SGQ ISO 9001
 
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
@@ -869,7 +869,7 @@ Il flusso di logout in `AuthContext.jsx` chiamava `apiService.logout()` (che ese
 **All'inizio della prossima sessione:**
 
 1. **Smoke test allegati**: upload PDF, upload foto → verifica link cliccabile nel Word export, verifica foto incorporata.
-2. Valutare **Sprint 10** (ingest PDF → staging → document registry) vs fix cosmetic validazione evidenze.
+2. ~~Valutare Sprint 10~~ → **✅ Sprint 10 implementato** (03/05/2026) — commit `939af59`, migration 048.
 3. `DEPUTYTASK.md` attivo: fix CORS `.env` VPS (richiede accesso SSH — non bloccante perché l'app usa già `systemgest.netlify.app` configurato).
 
 ---
@@ -893,7 +893,7 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 1. Aprire l'app sul proprio PC e su quello di Mason — i LOCK spariscono entro 45 sec.
 2. Se si vuole forzare subito: cliccare "🧹 Pulisci cache" nel pannello sync.
 3. Verificare **Smoke L3 P1** (checklist custom con pulsanti esito) se non ancora completato.
-4. Decidere se procedere con **Sprint 10** (staging → document registry) o altro.
+4. ~~Decidere Sprint 10~~ → **✅ Sprint 10 completato** (03/05/2026).
 
 ---
 
@@ -952,3 +952,5 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 ---
 
 **Cursor — regola utente**: se nelle impostazioni è ancora scritto “leggi `SESSION_NOTES_20260301`”, sostituiscilo con **`docs/GUIDA_CONSOLIDATA.md`**.
+
+
