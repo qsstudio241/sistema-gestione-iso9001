@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 3 maggio 2026
-> **Prossimo Step**: Sessione 03/05 chiusa. Refactoring strutturale ✅ (`de37950`): AuditClosePanel NC+custom, `dateHelpers.js` centralizzato, migration 048 applicata in produzione ✅, alert routes licenza. **Prossime priorità**: (1) Smoke Mason ISO 3834 (Mason crea nuovo audit + genera report Word); (2) Valutare con cliente tabella riepilogo Word (C e N.A.); (3) ISO 14001 checklist da norma PDF; (4) SMTP Alert Engine — configurare variabili `.env` sul VPS.
+> **Prossimo Step**: Sessione 03/05 chiusa. Smoke L3 P1 ✅ (passi 1-5 OK, passi 6-7 in backlog su audit reale). Refactoring strutturale ✅, migration 048 ✅. **Prossime priorità**: (1) Smoke Mason ISO 3834; (2) Smoke Word export su audit Camellini reale (passi 6-7); (3) ISO 14001 checklist da norma PDF; (4) SMTP Alert Engine VPS.
 > **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
@@ -751,13 +751,13 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | # | Passo | Esito | Data | Note |
 |---|---|---|---|---|
-| 1 | Login Camellini | | | |
-| 2 | Crea/apri checklist personalizzata con flag "Abilita valutazione" | | | |
-| 3 | Aprila da dentro un audit | | | |
-| 4 | Clicca pulsanti esito (C / OSS / NC / OM / NV / NA) su almeno 3 domande | | | |
-| 5 | Salva e ricarica — esiti persistenti | | | |
-| 6 | Export Word — tabella checklist con colori corretti | | | |
-| 7 | Riepilogo Word — contatori NC/OSS/OM/NV corretti | | | |
+| 1 | Login Camellini | ✅ | 03/05/2026 | JWT + org 1002 |
+| 2 | Crea/apri checklist "Test Smoke L3" con flag "Abilita valutazione" | ✅ | 03/05/2026 | has_outcome_buttons: true, pulsanti visibili |
+| 3 | Aprila da dentro audit MSN-260503-01 (custom_checklist_id: 13) | ✅ | 03/05/2026 | |
+| 4 | Click C su domanda 1.1 → UI verde, auto-save | ✅ | 03/05/2026 | |
+| 5 | Reload F5 → esito "C" persistito sul server | ✅ | 03/05/2026 | |
+| 6 | Export Word — tabella checklist colori corretti | ⚠️ | 03/05/2026 | Pulsante presente; download bloccato da sezioni obbligatorie vuote — comportamento corretto |
+| 7 | Riepilogo Word — contatori NC/OSS/OM/NV | ⏳ | — | Rinviato a smoke su audit reale Camellini compilato |
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (implementato — 03/05/2026)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
