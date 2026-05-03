@@ -1,9 +1,9 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 3 maggio 2026 (sessione pomeriggio)
-> **Prossimo Step**: Sprint 10 ✅ implementato e in produzione. Commit `939af59`: endpoint `POST /import-jobs/:id/files/:fileId/commit-to-registry`, migration 048 (registry_document_id + status committed), migration 039 applicata su DB prod (colonne AI), UI dialog form pre-compilato da AI, deploy script aggiornato. **Azione utente richiesta**: (1) Smoke L3 P1 — DEPUTYTASK.md (custom checklist outcome buttons — produzione), (2) Smoke Mason report anomalie ISO 3834, (3) Build frontend + deploy Netlify per attivare UI Sprint 10.
-> **Backlog**: Lettura blob da IndexedDB per embedding foto nel report Word (allegati solo locali) | ISO 14001 checklist completa (norma disponibile, Fase 0.2) | norm_excerpt nel report Word (Fase 0.4)
+> **Ultimo Aggiornamento**: 3 maggio 2026
+> **Prossimo Step**: Sessione 03/05 chiusa. Sprint 10 ✅, Smoke L3 P1 ✅ (TEST OK con 2 note backlog), fix re-render note custom checklist ✅ (`9d17ba7`), build frontend ✅. **Smoke Mason ISO 3834** ancora da eseguire (richiedere a Mason di creare nuovo audit e generare report). **Prossime priorità**: (1) Smoke Mason; (2) temporal table su `audit_custom_checklist_responses`; (3) valutare con cliente tabella riepilogo Word (aggiungere righe C e N.A.); (4) ISO 14001 checklist da norma PDF.
+> **Backlog**: temporal table `audit_custom_checklist_responses` (parità con `audit_responses`) | Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
