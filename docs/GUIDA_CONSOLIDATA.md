@@ -15,6 +15,36 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 03 maggio 2026
+
+**Refactoring strutturale + storicizzazione completati (commit `de37950`, `16e7b14`, `f8f4720`):**
+
+#### Gap chiusi in questa sessione
+
+| Fix | Dettaglio |
+|-----|-----------|
+| `AuditClosePanel` metriche NC | Warning ora somma ISO + custom checklist (`isoMetrics + customMetrics`) |
+| `dateHelpers.js` | `formatDate` centralizzata — rimossa da `NCPage`, `RisksPage`, `QualificationsPage`, `DocumentRegistry` |
+| Migration 048 | Temporal table su `audit_custom_checklist_responses` — applicata in produzione. DB: tutte e 3 le tabelle audit ora SYSTEM_VERSIONED |
+| `alert.routes.js` | Protetto con `requireLicensedModule('documents')` |
+| Alert Engine SMTP | Documentato setup VPS in GUIDA_CONSOLIDATA (sezione Alert Engine) |
+
+#### Lezione — verifica prima di riscrivere
+
+Prima di includere un fix in DEPUTYTASK, **leggere la funzione target**. In questa sessione `handleFileSelect` in `CustomChecklistAuditView.jsx` era già corretto (usa `apiService.uploadAttachment` + `syncService.enqueue` offline) — il fix era stato inserito nel task per errore di analisi statica superficiale. La lettura del codice ha evitato una modifica inutile.
+
+**Regola**: ogni "gap" ipotizzato dall'analisi va verificato con una lettura delle righe effettive prima di essere inserito nel DEPUTYTASK.
+
+#### Stato global moduli al 03/05/2026
+
+- **Modulo Audit**: chiuso (T1–T5, temporal tables, event store, refactoring)
+- **Gestione Documentale**: `DocumentRegistry` + Sprint 10 completati
+- **Scadenziari**: `QualificationsPage` + `alertScheduler` pronti (SMTP da configurare manualmente)
+- **NC/Rischi/Reclami**: Sprint 3/6/7 completati
+- **Storicizzazione DB**: `audits`, `audit_responses`, `audit_custom_checklist_responses` — tutte SYSTEM_VERSIONED
+
+---
+
 ### Chiusura sessione 01 maggio 2026
 
 **Sprint audit completato — modulo audit sostanzialmente chiuso (T3→T5, refactoring, allegati unificati):**

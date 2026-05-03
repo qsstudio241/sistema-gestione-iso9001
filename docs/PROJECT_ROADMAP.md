@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 3 maggio 2026
-> **Prossimo Step**: Sessione 03/05 chiusa. Refactoring strutturale ✅ (`de37950`): AuditClosePanel metriche NC+custom, `dateHelpers.js` centralizzato, migration 048 temporal table custom checklist, alert routes licenza. **Smoke Mason ISO 3834** ancora da eseguire. **Prossime priorità**: (1) Applicare migration 048 su VPS; (2) Smoke Mason; (3) valutare con cliente tabella riepilogo Word (C e N.A.); (4) ISO 14001 checklist da norma PDF.
+> **Prossimo Step**: Sessione 03/05 chiusa. Refactoring strutturale ✅ (`de37950`): AuditClosePanel NC+custom, `dateHelpers.js` centralizzato, migration 048 applicata in produzione ✅, alert routes licenza. **Prossime priorità**: (1) Smoke Mason ISO 3834 (Mason crea nuovo audit + genera report Word); (2) Valutare con cliente tabella riepilogo Word (C e N.A.); (3) ISO 14001 checklist da norma PDF; (4) SMTP Alert Engine — configurare variabili `.env` sul VPS.
 > **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
