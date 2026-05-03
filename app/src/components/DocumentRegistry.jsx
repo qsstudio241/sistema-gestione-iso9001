@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
+import { formatDate } from "../utils/dateHelpers";
 import "./DocumentRegistry.css";
 
 // ─── Costanti ────────────────────────────────────────────────────────────────
@@ -42,21 +43,6 @@ const DOC_STATUS_LABELS = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(dateStr) {
-  if (!dateStr) return "—";
-  // Estrae YYYY-MM-DD evitando problemi di timezone/parsing ISO
-  const s = typeof dateStr === "string" ? dateStr : String(dateStr);
-  const match = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    const [, y, m, d] = match;
-    return `${d}/${m}/${y}`;
-  }
-  // Fallback per formati non standard
-  const dt = new Date(dateStr);
-  if (isNaN(dt.getTime())) return "—";
-  return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
 
 function daysUntil(dateStr) {
   if (!dateStr) return null;

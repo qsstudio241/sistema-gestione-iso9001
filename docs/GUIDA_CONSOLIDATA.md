@@ -621,6 +621,33 @@ ISO 3834 ha struttura diversa (specifica di processo, non di sistema) ma condivi
 | Requisito SAL in ritardo | `due_date` < oggi | 7 giorni 🟡 |
 | Abbonamento standard | `valid_to` | 30 giorni 🟡 |
 
+#### Alert Engine — configurazione SMTP sul VPS
+
+Il cron job (`alertScheduler.js`) si avvia automaticamente all'avvio del backend (ogni giorno alle 08:00).
+È disabilitato (con log warning) se `node-schedule` o `nodemailer` non sono installati.
+Le rotte `/alerts` e `/alerts/count` richiedono licenza modulo `documents`.
+
+**Installazione dipendenze sul VPS** (se non già fatto):
+```bash
+cd /opt/sgq-backend && npm install node-schedule nodemailer
+systemctl restart sgq-backend
+```
+
+**Variabili `.env` da configurare manualmente sul VPS** (non committare nel repo):
+
+| Variabile | Esempio | Note |
+|-----------|---------|------|
+| `ALERT_ENABLED` | `true` | Abilita invio email |
+| `SMTP_HOST` | `smtp.gmail.com` | Host server SMTP |
+| `SMTP_PORT` | `587` | Porta SMTP (587 = TLS) |
+| `SMTP_USER` | `alerts@qsstudio.it` | Account mittente |
+| `SMTP_PASS` | `<app-password>` | App-password Gmail o token SMTP |
+| `SMTP_FROM` | `SGQ Studio <alerts@qsstudio.it>` | Nome visualizzato |
+
+**Test rapido**: `GET /alerts` con utente autenticato con licenza `documents` → deve restituire lista scadenze entro 60 giorni.
+
+**Soglie attive**: 30 giorni (prima soglia) e 7 giorni (seconda soglia) — configurabili in `alertScheduler.js` (`ALERT_DAYS_1`, `ALERT_DAYS_2`).
+
 ### Pipeline AI import documenti
 
 Ogni documento normativo ha struttura definita dalla norma → estrazione deterministica possibile:

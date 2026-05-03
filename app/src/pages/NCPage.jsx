@@ -6,16 +6,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { formatDate } from "../utils/dateHelpers";
 import "./NCPage.css";
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatDate(d) {
-  if (!d) return "\u2014";
-  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  return d;
-}
 
 const NC_STATUS_CFG = {
   open:        { label: "Aperta",     cls: "nc-open",        icon: "\uD83D\uDD34" },

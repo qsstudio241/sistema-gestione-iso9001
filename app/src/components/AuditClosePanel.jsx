@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AuditClosePanel - Pannello chiusura formale audit
  *
  * Mostra checklist pre-chiusura, validazione guidata e pulsante "Chiudi Audit".
@@ -10,7 +10,7 @@
 import React, { useState, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
-import { calculateFindingsMetrics } from "../utils/metricsCalculator";
+import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
 import "./AuditClosePanel.css";
 
 /** Soglia minima completamento checklist per poter chiudere (%) */
@@ -72,10 +72,19 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       }
     }
 
-    const metrics = calculateFindingsMetrics(currentAudit?.checklist);
+    const isoMetrics = calculateFindingsMetrics(currentAudit?.checklist);
+    const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
+      ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
+      : { totalNC: 0, totalOSS: 0, totalOM: 0 };
+    const metrics = {
+      totalNC:  isoMetrics.totalNC  + customMetrics.totalNC,
+      totalOSS: isoMetrics.totalOSS + customMetrics.totalOSS,
+      totalOM:  isoMetrics.totalOM  + customMetrics.totalOM,
+    };
+
     if (metrics.totalNC > 0) {
       warnings.push(
-        `${metrics.totalNC} Non Conformita' rilevate � verificare note e azioni correttive`
+        `${metrics.totalNC} Non Conformit\u00e0 rilevate \u2014 verificare note e azioni correttive`
       );
     }
 

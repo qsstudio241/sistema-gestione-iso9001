@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import QualificationForm from "./QualificationForm";
+import { formatDate } from "../utils/dateHelpers";
 import "./QualificationsPage.css";
 
 // ── Semaforo ────────────────────────────────────────────────────────────────
@@ -21,13 +22,6 @@ const SEMAFORO_LABEL = {
 function SemaforoTag({ value }) {
   const s = SEMAFORO_LABEL[value] || SEMAFORO_LABEL.grigio;
   return <span className={`sq-tag ${s.cls}`}>{s.icon} {s.label}</span>;
-}
-
-function formatDate(d) {
-  if (!d) return "—";
-  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  return d;
 }
 
 // ── Barra statistiche ────────────────────────────────────────────────────────
