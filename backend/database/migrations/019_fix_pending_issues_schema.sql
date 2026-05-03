@@ -45,7 +45,7 @@ BEGIN
 END
 ELSE
 BEGIN
-    PRINT '??  target_audit_id già nullable - skip';
+    PRINT '??  target_audit_id giï¿½ nullable - skip';
 END
 GO
 
@@ -84,7 +84,7 @@ BEGIN
 END
 ELSE
 BEGIN
-    PRINT '??  follow_up_notes già presente - skip';
+    PRINT '??  follow_up_notes giï¿½ presente - skip';
 END
 GO
 

@@ -75,7 +75,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
     const metrics = calculateFindingsMetrics(currentAudit?.checklist);
     if (metrics.totalNC > 0) {
       warnings.push(
-        `${metrics.totalNC} Non Conformita' rilevate — verificare note e azioni correttive`
+        `${metrics.totalNC} Non Conformita' rilevate ï¿½ verificare note e azioni correttive`
       );
     }
 
@@ -175,7 +175,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
           </p>
         )}
 
-        {/* Pulsante Approva — solo da completed, per ruolo responsabile/admin */}
+        {/* Pulsante Approva ï¿½ solo da completed, per ruolo responsabile/admin */}
         {status === "completed" && !approving && (
           <button
             className="close-btn close-btn--approve"
@@ -220,7 +220,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
         )}
         {status === "approved" && (
           <p className="close-done-hint" style={{ marginTop: "12px" }}>
-            Audit approvato — nessuna modifica consentita.
+            Audit approvato ï¿½ nessuna modifica consentita.
           </p>
         )}
       </div>

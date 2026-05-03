@@ -1526,9 +1526,14 @@ export function StorageProvider({ children, useMockData = false }) {
             let updated =
               typeof updater === "function" ? updater(audit) : updater;
 
-            // Transizione automatica draft → in_progress al primo salvataggio reale.
-            // Non avviene per aggiornamenti interni (es. hydrate questionIds, seeding timestamp).
+            // Transizione automatica draft → in_progress solo su edit esplicito utente.
+            // Le chiamate di sistema (initializeChecklist, hydrateQuestionIds,
+            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true
+            // oppure aggiornano solo checklist/metrics senza toccare i campi utente —
+            // qui controlliamo che l'updater NON sia contrassegnato come system call.
+            const isSystemCall = typeof updater === "function" && updater._systemCall === true;
             if (
+              !isSystemCall &&
               updated?.metadata?.status === "draft" &&
               typeof updater === "function"
             ) {

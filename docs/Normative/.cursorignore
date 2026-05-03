@@ -1,19 +1,33 @@
-# File pesanti da ignorare
-*.pdf
-*.zip
-*.rar
-*.exe
-*.mp4
-*.mp3
-*.png
-*.jpg
-*.jpeg
-
-# Cartelle da ignorare
+# --- CARTELLE PESANTI (DA IGNORARE SEMPRE) ---
 node_modules/
 .git/
 dist/
 build/
+app/dist/
+backend/node_modules/
+
+# --- FILE DI CACHE E IDE (Dalla tua Guida Consolidata) ---
+.vs/
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# --- ASSET BINARI (Appesantiscono l'indice inutilmente) ---
+*.pdf
+*.zip
+*.rar
+*.exe
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.mp4
+*.mp3
+
+# --- ALTRE CARTELLE TECNICHE ---
+coverage/
 __pycache__/
 .next/
-coverage/
+.serverless/
