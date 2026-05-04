@@ -108,11 +108,109 @@ Ogni slice: **un PR**, test L1 dove esiste pattern, aggiornamento **una riga** i
 
 ---
 
+## 9. Analisi S-A4 — Pending Issues: ordinamento + deep-link domanda
+
+### Stato attuale (codice letto 04/05/2026)
+
+`PendingIssuesCascade.jsx` è un componente standalone, riceve i dati da `GET /audits/:id/pending-issues`.  
+Il backend ordina già per `original_status, section_code` (NC → OSS → NV per ordine alfabetico DB).  
+Il frontend mostra le card senza link alla domanda corrispondente nella checklist.
+
+**Gap precisi**:
+
+| # | Gap | Impatto |
+|---|-----|---------|
+| G2a | Ordinamento frontend non garantisce NC→OSS→NV (dipende dall'ordine DB, che è alfabetico `NC`>`NV`>`OSS`) | UX — NC non sempre in cima |
+| G2b | Nessun pulsante "Vai alla domanda" — l'auditor non può saltare alla clausola per rileggere il contesto | UX — flusso spezzato |
+| G2c | Messaggio "zero pendenze" assente — se `issues.length === 0` il componente ritorna `null` silenziosamente | UX — nessun feedback positivo |
+
+### Dati disponibili
+
+La risposta API contiene già `section_code` (es. `"9001_s4_1"`) e `question_id`.  
+Il frontend ha `openSubSections` in `AuditAccordionLayout` ma `PendingIssuesCascade` non lo riceve.
+
+### Soluzione S-A4
+
+**Step 1 — Ordinamento frontend** (in `PendingIssuesCascade.jsx`, prima del render):
+```javascript
+const STATUS_ORDER = { NC: 0, OSS: 1, NV: 2 };
+const sortedIssues = [...issues].sort((a, b) =>
+  (STATUS_ORDER[a.original_status] ?? 9) - (STATUS_ORDER[b.original_status] ?? 9)
+);
+// Usare sortedIssues al posto di issues nel .map()
+```
+
+**Step 2 — Messaggio zero pendenze** (sostituire il `return null`):
+```javascript
+if (!loading && issues.length === 0 && !error) {
+  return (
+    <div className="pending-cascade pending-cascade--empty">
+      <p>✅ Nessun rilievo pendente dall'audit precedente.</p>
+    </div>
+  );
+}
+```
+
+**Step 3 — Deep-link domanda**:  
+`PendingIssuesCascade` deve ricevere una prop `onGoToQuestion(sectionCode, questionId)` da `AuditAccordionLayout`.  
+In `AuditAccordionLayout`, la callback apre la sottosezione dello standard corrispondente:
+```javascript
+// In AuditAccordionLayout — nuova callback:
+const handleGoToQuestion = useCallback((sectionCode, questionId) => {
+  // Trova quale standard contiene questa section_code
+  const stdEntry = STANDARDS_CONFIG.find(({ key }) => {
+    // section_code tipo "9001_s4_1" → chiave ISO_9001
+    const lower = sectionCode?.toLowerCase() || '';
+    return lower.includes('9001') && key === 'ISO_9001'
+      || lower.includes('14001') && key === 'ISO_14001'
+      || lower.includes('45001') && key === 'ISO_45001'
+      || lower.includes('3834')  && key === 'ISO_3834_2';
+  });
+  if (!stdEntry) return;
+  // Apri sezione checklist + sottosezione standard
+  setOpenSections(prev => ({ ...prev, checklist: true }));
+  setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
+  // Scroll verso l'elemento (opzionale — fare dopo apertura accordion)
+  setTimeout(() => {
+    const el = document.getElementById(`question-${questionId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}, []);
+
+// Passare a PendingIssuesCascade:
+<PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
+```
+
+In `PendingIssuesCascade`, nella card del rilievo aggiungere il pulsante:
+```jsx
+{onGoToQuestion && issue.section_code && (
+  <button
+    className="issue-goto-btn"
+    onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
+    title="Vai alla domanda nella checklist"
+  >
+    🔍 Vai alla domanda
+  </button>
+)}
+```
+
+**Nota**: `question_id` è già restituito dall'API (vedi `getPendingIssues` → `pi.question_id`).  
+`ChecklistModule` deve avere `id={question-${question_id}}` sui wrapper domanda — verificare in `QuestionCard.jsx`.
+
+### Dipendenze
+
+- S-A4 è **indipendente** da S-A1/S-A2/S-A3 — può essere deployato su Netlify senza backend.
+- Nessuna migrazione DB necessaria.
+- L'`id` sul wrapper `QuestionCard` potrebbe non esistere — il deputy deve verificarlo e aggiungerlo se mancante.
+
+---
+
 ## 8. Changelog brief
 
 | Data | Autore | Modifica |
 |------|--------|----------|
 | 2026-05-04 | Agent | Creazione brief da analisi gap modulo audit + flusso committente + matrice GA/ottimale. |
+| 2026-05-04 | Agent | Aggiunta analisi S-A4 (pending deep-link) con soluzione completa. |
 
 ---
 
