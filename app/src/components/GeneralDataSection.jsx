@@ -54,6 +54,7 @@ function GeneralDataSection({
   customChecklistId = null,
   onUpdate,
   onStandardsUpdate,
+  readOnly = false,
 }) {
   const [availableStandards, setAvailableStandards] =
     useState(FALLBACK_STANDARDS);
@@ -126,7 +127,7 @@ function GeneralDataSection({
   };
 
   return (
-    <div className="general-data-section">
+    <div className={`general-data-section${readOnly ? ' readonly-mode' : ''}`}>
       <form className="general-data-form">
         {/* NUOVO: Selezione Standard */}
         <div className="form-field standards-selection">
@@ -154,9 +155,9 @@ function GeneralDataSection({
                     <input
                       type="checkbox"
                       checked={selectedStandards.includes(stdId) || hasData}
-                      disabled={hasData}
+                      disabled={hasData || readOnly}
                       onChange={(e) => {
-                        if (hasData) return;
+                        if (hasData || readOnly) return;
                         const updated = e.target.checked
                           ? [...selectedStandards, stdId]
                           : selectedStandards.filter((s) => s !== stdId);
@@ -189,6 +190,7 @@ function GeneralDataSection({
             value={formData.auditObject}
             onChange={(e) => handleChange("auditObject", e.target.value)}
             placeholder="Es: Audit di Verifica ispettiva interna RP"
+            disabled={readOnly}
           />
         </div>
 
@@ -201,6 +203,7 @@ function GeneralDataSection({
             value={formData.scope}
             onChange={(e) => handleChange("scope", e.target.value)}
             placeholder="Es: Sistema di Gestione per la Qualità RP: Contesto, Pianificazione, Supporto..."
+            disabled={readOnly}
           />
         </div>
 
@@ -220,23 +223,27 @@ function GeneralDataSection({
                   handleArrayChange("referenceDocuments", index, e.target.value)
                 }
                 placeholder="Es: Disegno DRW-001 rev.B / WPS-141-07 / Specifica cliente SPC-22"
+                disabled={readOnly}
               />
               <button
                 type="button"
                 className="btn-remove"
                 onClick={() => removeArrayItem("referenceDocuments", index)}
+                disabled={readOnly}
               >
                 ✕
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            className="btn-add"
-            onClick={() => addArrayItem("referenceDocuments")}
-          >
-            ➕ Aggiungi Documento
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn-add"
+              onClick={() => addArrayItem("referenceDocuments")}
+            >
+              ➕ Aggiungi Documento
+            </button>
+          )}
         </div>
 
         {/* Date */}
@@ -248,6 +255,7 @@ function GeneralDataSection({
               className="field-input"
               value={formData.auditDate}
               onChange={(e) => handleChange("auditDate", e.target.value)}
+              disabled={readOnly}
             />
           </div>
 
@@ -260,6 +268,7 @@ function GeneralDataSection({
               onChange={(e) =>
                 handleChange("programCommunicatedDate", e.target.value)
               }
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -273,6 +282,7 @@ function GeneralDataSection({
             value={formData.processes}
             onChange={(e) => handleChange("processes", e.target.value)}
             placeholder="Es: vari"
+            disabled={readOnly}
           />
         </div>
 
@@ -289,23 +299,27 @@ function GeneralDataSection({
                   handleArrayChange("auditors", index, e.target.value)
                 }
                 placeholder="Es: MARCO CAMELLINI (EXT AUDITOR)"
+                disabled={readOnly}
               />
               <button
                 type="button"
                 className="btn-remove"
                 onClick={() => removeArrayItem("auditors", index)}
+                disabled={readOnly}
               >
                 ✕
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            className="btn-add"
-            onClick={() => addArrayItem("auditors")}
-          >
-            ➕ Aggiungi Verificatore
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn-add"
+              onClick={() => addArrayItem("auditors")}
+            >
+              ➕ Aggiungi Verificatore
+            </button>
+          )}
         </div>
       </form>
     </div>

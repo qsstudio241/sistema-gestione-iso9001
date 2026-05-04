@@ -428,9 +428,9 @@ async function updateAudit(req, res) {
             fornitore_name
         } = req.body;
 
-        // Verifica esistenza e ownership (con timestamp e audit_extra_data per merge)
+        // Verifica esistenza e ownership (con timestamp, status e audit_extra_data per merge)
         const existingAudit = await query(`
-      SELECT audit_id, updated_at, audit_extra_data FROM audits
+      SELECT audit_id, status, updated_at, audit_extra_data FROM audits
       WHERE audit_id = @id 
         AND organization_id = @organization_id
         AND is_deleted = 0
@@ -440,6 +440,14 @@ async function updateAudit(req, res) {
             return res.status(404).json({
                 error: 'Audit non trovato',
                 code: 'AUDIT_NOT_FOUND'
+            });
+        }
+
+        const currentStatus = existingAudit.recordset[0].status;
+        if (['completed', 'approved', 'archived'].includes(currentStatus)) {
+            return res.status(403).json({
+                error: `Audit in stato '${currentStatus}' — sola lettura. Contatta il responsabile per modifiche.`,
+                code: 'AUDIT_READ_ONLY'
             });
         }
 

@@ -111,6 +111,9 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   }, [serverDataStatus]);
   const { user } = useAuth();
 
+  const LOCKED_STATUSES = ['completed', 'approved', 'archived'];
+  const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status);
+
   // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
@@ -326,6 +329,14 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         </div>
       </div>
 
+      {/* Banner read-only — visibile quando audit è in stato bloccato */}
+      {isReadOnly && (
+        <div className="audit-readonly-banner">
+          🔒 Audit in sola lettura — stato: <strong>{currentAudit.metadata.status?.toUpperCase()}</strong>.
+          Nessuna modifica consentita.
+        </div>
+      )}
+
       {/* Banner stato caricamento dati dal server */}
       {serverDataStatus === 'loading' && (
         <div className="server-data-banner server-data-banner--loading">
@@ -392,6 +403,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                             name="auditPartyType"
                             checked={(currentAudit.metadata?.auditPartyType || 'first_party') === 'first_party'}
                             onChange={() => onUpdate('auditPartyType', 'first_party')}
+                            disabled={isReadOnly}
                           />
                           Prima parte (interno)
                         </label>
@@ -401,6 +413,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                             name="auditPartyType"
                             checked={(currentAudit.metadata?.auditPartyType || 'first_party') === 'second_party'}
                             onChange={() => onUpdate('auditPartyType', 'second_party')}
+                            disabled={isReadOnly}
                           />
                           Seconda parte (fornitore)
                         </label>
@@ -433,7 +446,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                     onUpdate('fornitoreName', found ? found.name : "");
                                   }
                                 }}
-                                disabled={companiesLoading}
+                                disabled={isReadOnly || companiesLoading}
                               >
                                 <option value="">— Seleziona azienda auditata —</option>
                                 <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
@@ -451,6 +464,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                   onChange={(e) => onUpdate('fornitoreName', e.target.value)}
                                   placeholder="es. Fornitore XYZ Srl"
                                   style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem', marginTop: '0.4rem' }}
+                                  disabled={isReadOnly}
                                 />
                               )}
                               <small style={{ color: '#6b7280', fontSize: '0.78rem' }}>Scegli dall&apos;anagrafica o inserisci manualmente.</small>
@@ -463,6 +477,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                               onChange={(e) => onUpdate('fornitoreName', e.target.value)}
                               placeholder="es. Fornitore XYZ Srl"
                               style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
+                              disabled={isReadOnly}
                             />
                           )}
                         </div>
@@ -475,6 +490,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       customChecklistId={currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id}
                       onUpdate={handleGeneralDataUpdate}
                       onStandardsUpdate={handleStandardsUpdate}
+                      readOnly={isReadOnly}
                     />
                   </div>
                 )}
@@ -500,6 +516,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                     <AuditObjectiveSection
                       auditObjective={currentAudit.metadata.auditObjective}
                       onUpdate={handleAuditObjectiveUpdate}
+                      readOnly={isReadOnly}
                     />
                   </div>
                 )}
@@ -588,7 +605,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   </button>
                   {openSubSections["custom-checklist"] && (
                     <div className="subsection-content">
-                      <CustomChecklistAuditView audit={currentAudit} />
+                      <CustomChecklistAuditView audit={currentAudit} readOnly={isReadOnly} />
                     </div>
                   )}
                 </div>
@@ -613,7 +630,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                     </button>
                     {openSubSections[subsId] && (
                       <div className="subsection-content">
-                        <ChecklistModule defaultNorm={key} />
+                        <ChecklistModule defaultNorm={key} readOnly={isReadOnly} />
                       </div>
                     )}
                   </div>
@@ -650,7 +667,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
           {openSections["nc-register"] && (
             <div className="accordion-content">
-              <NonConformitiesManager />
+              <NonConformitiesManager readOnly={isReadOnly} />
             </div>
           )}
         </div>
@@ -676,6 +693,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 auditOutcome={currentAudit.metadata.auditOutcome}
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={false}
+                readOnly={isReadOnly}
               />
             </div>
           )}
@@ -702,6 +720,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 auditOutcome={currentAudit.metadata.auditOutcome}
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={true}
+                readOnly={isReadOnly}
               />
             </div>
           )}

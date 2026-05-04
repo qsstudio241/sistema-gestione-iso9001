@@ -12,7 +12,7 @@ import "./AuditOutcomeSection.css";
  * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
  *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
  */
-function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }) {
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false }) {
   const { currentAudit } = useStorage();
 
   // Stato locale per editing
@@ -82,7 +82,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }
   const totalOM = metrics.totalOM;
 
   return (
-    <div className="audit-outcome-section">
+    <div className={`audit-outcome-section${readOnly ? ' readonly-mode' : ''}`}>
       {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
       {showConclusions && (
       <div className="outcome-block">
@@ -101,6 +101,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false }
             placeholder="Descrivere le conclusioni generali dell'audit, il livello di conformità del sistema di gestione, e il giudizio complessivo sull'efficacia dei processi..."
             value={conclusions}
             onChange={handleConclusionsChange}
+            disabled={readOnly}
           />
           <p className="field-hint">
             Esempio: "Il sistema di gestione per la qualità risulta

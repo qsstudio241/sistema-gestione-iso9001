@@ -6,7 +6,7 @@
 import { useState } from "react";
 import "./AuditObjectiveSection.css";
 
-function AuditObjectiveSection({ auditObjective, onUpdate }) {
+function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
   const [formData, setFormData] = useState(
     auditObjective || {
       description: "",
@@ -43,7 +43,7 @@ function AuditObjectiveSection({ auditObjective, onUpdate }) {
   };
 
   return (
-    <div className="audit-objective-section">
+    <div className={`audit-objective-section${readOnly ? ' readonly-mode' : ''}`}>
       <form className="audit-objective-form">
         {/* Descrizione Obiettivo */}
         <div className="form-field">
@@ -54,6 +54,7 @@ function AuditObjectiveSection({ auditObjective, onUpdate }) {
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
             placeholder="Es: Verificare il grado di implementazione del Sistema di Gestione della Qualità secondo la norma UNI EN ISO 9001:2015 e il rispetto delle procedure interne.&#10;&#10;Verificare la completezza documentale e l'efficacia dei processi."
+            disabled={readOnly}
           />
           <span className="field-hint">
             Descrivi gli obiettivi principali dell'audit e i criteri di verifica
@@ -74,6 +75,7 @@ function AuditObjectiveSection({ auditObjective, onUpdate }) {
                   onChange={(e) =>
                     handleParticipantChange(index, "role", e.target.value)
                   }
+                  disabled={readOnly}
                 />
                 <input
                   type="text"
@@ -83,21 +85,26 @@ function AuditObjectiveSection({ auditObjective, onUpdate }) {
                   onChange={(e) =>
                     handleParticipantChange(index, "name", e.target.value)
                   }
+                  disabled={readOnly}
                 />
-                <button
-                  type="button"
-                  className="btn-remove-participant"
-                  onClick={() => removeParticipant(index)}
-                  title="Rimuovi partecipante"
-                >
-                  ✕
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    className="btn-remove-participant"
+                    onClick={() => removeParticipant(index)}
+                    title="Rimuovi partecipante"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))}
           </div>
-          <button type="button" className="btn-add" onClick={addParticipant}>
-            ➕ Aggiungi Partecipante
-          </button>
+          {!readOnly && (
+            <button type="button" className="btn-add" onClick={addParticipant}>
+              ➕ Aggiungi Partecipante
+            </button>
+          )}
         </div>
 
         {/* Agenda (opzionale) */}
@@ -111,6 +118,7 @@ function AuditObjectiveSection({ auditObjective, onUpdate }) {
             value={formData.agenda || ""}
             onChange={(e) => handleChange("agenda", e.target.value)}
             placeholder="Es:&#10;09:00 - Riunione di apertura&#10;09:30 - Verifica documentale&#10;11:00 - Audit processi operativi&#10;15:00 - Riunione di chiusura"
+            disabled={readOnly}
           />
         </div>
       </form>

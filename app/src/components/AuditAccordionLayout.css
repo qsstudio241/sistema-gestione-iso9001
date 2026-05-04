@@ -634,3 +634,28 @@
   border: 1px solid #fde68a;
   color: #92400e;
 }
+
+/* ─── Audit Read-Only ─────────────────────────────────────────────────────── */
+
+.audit-readonly-banner {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.readonly-mode {
+  opacity: 0.75;
+  pointer-events: none;
+  user-select: none;
+}
+
+.readonly-mode button,
+.readonly-mode input,
+.readonly-mode textarea,
+.readonly-mode select {
+  cursor: not-allowed;
+}

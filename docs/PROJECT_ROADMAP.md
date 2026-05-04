@@ -742,6 +742,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | P6 | **Sprint 10** - Ingest PDF → staging → document registry (commit umano) | Agente | ✅ Completato (03/05/2026) - commit `939af59` |
 | P7 | Sprint 11 — Riesame contratto / commesse | Backlog | Dipende Sprint 10 |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |
+| **S-A1** | **Gate read-only UI** — banner + disabilitazione tutti i controlli per audit `completed`/`approved`/`archived` | Deputy (04/05/2026) | ✅ Completato |
+| **S-A2** | **Policy API `AUDIT_READ_ONLY`** — guard HTTP 403 su `saveResponse`, `bulkSaveResponses`, `updateAudit`; stall permanente in syncService | Deputy (04/05/2026) | ✅ Completato |
+| **S-A3** | **ClosePanel custom completion** — blocco chiusura audit solo-custom senza risposte | Deputy (04/05/2026) | ✅ Completato |
 
 **Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 ✅, T2 ✅, T3 ✅ (30/04/2026). `VITE_SYNC_MODE=legacy` default — nessuna variazione comportamento produzione. Smoke L3 umano con flag `events` da pianificare. **Nota infra**: `run-migration-agent.sh` non raggiunge il DB direttamente da cloud (DNS); le migrazioni vanno eseguite via SSH sul VPS (che ha accesso diretto). Documentare in ACCESSO_DEPLOY_AGENTS.md.
 
