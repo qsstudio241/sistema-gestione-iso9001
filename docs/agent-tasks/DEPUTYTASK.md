@@ -1,330 +1,239 @@
-# DEPUTYTASK — Chiusura Modulo Audit: Gate Read-Only + Policy API
+# DEPUTYTASK — S-A4: Pending Issues — ordinamento + deep-link domanda + zero-state
 
 > **Data**: 04/05/2026  
 > **Autore**: Lead Agent  
-> **Riferimento**: `docs/agent-tasks/AUDIT_MODULE_LEAD_BRIEF.md` (slice S-A1, S-A2, S-A3)  
-> **Tipo**: Feature + Fix + Hardening  
-> **Priorità**: P0 (compliance ISO §7.5 — immutabilità record)  
-> **Branch**: `feat/audit-read-only-gate-92ab` da `main`  
-> **Chiusura attesa**: TEST OK per ogni fase
+> **Riferimento**: `docs/agent-tasks/AUDIT_MODULE_LEAD_BRIEF.md` §9 (slice S-A4)  
+> **Tipo**: UX improvement — solo frontend  
+> **Branch**: `feat/pending-deeplink-sa4-92ab` da `main`  
+> **Nessuna migrazione DB. Nessun deploy backend.**  
+> **Chiusura attesa**: TEST OK
 
 ---
 
 ## Contesto
 
-L'investigazione del codice (04/05/2026) ha rivelato che un audit in stato `completed` o `approved` è ancora pienamente modificabile sia da UI che da API. Questo viola ISO 9001:2015 §7.5 (immutabilità delle registrazioni di qualità) e rende inaffidabili tutti i moduli a valle (NC, SAL, documentale, RAG).
+`PendingIssuesCascade.jsx` mostra i rilievi pendenti dal re-audit precedente ma ha 3 gap UX:
+1. **Ordinamento**: il DB restituisce NC/NV/OSS in ordine alfabetico → `NV` precede `OSS` visivamente
+2. **Zero-state silenzioso**: se non ci sono rilievi il componente ritorna `null` senza feedback
+3. **Nessun link domanda**: l'auditor non può saltare alla clausola corrispondente nella checklist
 
 ---
 
-## Decisioni di prodotto (policy — non modificare senza approvazione lead)
+## FASE 1 — `PendingIssuesCascade.jsx`
 
-| Stato audit | Risposte checklist | Metadati audit (PUT /audits/:id) | Note |
-|------------|-------------------|----------------------------------|------|
-| `draft` / `in_progress` | ✅ Modificabili | ✅ Modificabili | Normale |
-| `completed` | ❌ Bloccate | ⚠️ Consentiti solo campi `notes`, `audit_extra_data` | Checklist bloccata, l'auditor può correggere conclusioni prima dell'approvazione |
-| `approved` | ❌ Bloccate | ❌ Bloccato tutto | Definitivamente immutabile |
-| `archived` | ❌ Bloccate | ❌ Bloccato tutto | Identico ad `approved` |
+### 1A — Ordinamento NC → OSS → NV
 
-**Codice errore standard per write su audit chiuso**: `403 AUDIT_READ_ONLY`  
-**Messaggio**: `"Audit in stato '${status}' — sola lettura. Contatta il responsabile per modifiche."`
-
----
-
-## FASE 1 — Backend: policy API (S-A2)
-
-### 1A — `backend/src/controllers/response.controller.js`
-
-In **entrambe** le funzioni `saveResponse` e `bulkSaveResponses`, subito dopo la verifica ownership audit, aggiungere il check di status:
+Aggiungere subito dopo la dichiarazione degli `useState`, prima del `return`:
 
 ```javascript
-// In saveResponse — dopo il lookup auditIdNumeric (riga ~187):
-const auditStatusCheck = await query(`
-    SELECT status FROM audits
-    WHERE audit_id = @audit_id AND organization_id = @organization_id
-`, { audit_id: auditIdNumeric, organization_id });
-const auditStatus = auditStatusCheck.recordset[0]?.status;
-if (['completed', 'approved', 'archived'].includes(auditStatus)) {
-    return res.status(403).json({
-        error: `Audit in stato '${auditStatus}' — sola lettura. Contatta il responsabile per modifiche.`,
-        code: 'AUDIT_READ_ONLY'
-    });
-}
+// Ordinamento esplicito: NC prima, poi OSS, poi NV
+const STATUS_ORDER = { NC: 0, OSS: 1, NV: 2 };
+const sortedIssues = [...issues].sort(
+  (a, b) => (STATUS_ORDER[a.original_status] ?? 9) - (STATUS_ORDER[b.original_status] ?? 9)
+);
 ```
 
-Per `bulkSaveResponses` il check è identico — aggiungere subito dopo la determinazione di `auditIdNumeric` (prima del `for (const resp of responses)`).
+Nel JSX, sostituire ogni `issues.map(...)` con `sortedIssues.map(...)`.  
+I contatori `ncCount`, `ossCount`, `nvCount`, `resolvedCount`, `persistsCount` restano su `issues` (contano il totale, non l'ordinato — corretto).
 
-**ATTENZIONE**: in `bulkSaveResponses` il lookup `audit_id` è già fatto (righe ~360-387); recuperare `status` in quella stessa query aggiungendo `status` alla SELECT, non con una seconda query separata:
-```javascript
-// Modifica la query di lookup UUID:
-SELECT audit_id, status FROM audits
-WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0
-// e la query di verifica numerico:
-SELECT audit_id, status FROM audits
-WHERE audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0
-```
-Salvare lo status in `const auditCurrentStatus = ...recordset[0].status` e fare il check subito dopo.
+### 1B — Zero-state esplicito
 
-### 1B — `backend/src/controllers/audit.controller.js` → `updateAudit`
-
-Dopo il check `existingAudit.recordset.length === 0` (riga ~439), prima del conflict detection, aggiungere:
-
-```javascript
-// Recupera status corrente (già incluso nel SELECT — aggiungere status alla SELECT esistente):
-// Modifica la query a riga ~432:
-SELECT audit_id, status, updated_at, audit_extra_data FROM audits ...
-
-// Poi:
-const currentStatus = existingAudit.recordset[0].status;
-if (['approved', 'archived'].includes(currentStatus)) {
-    return res.status(403).json({
-        error: `Audit in stato '${currentStatus}' — sola lettura.`,
-        code: 'AUDIT_READ_ONLY'
-    });
-}
-// NB: 'completed' → consentiti solo campi limitati. Per semplicità in questa slice
-// bloccare TUTTO per completed/approved/archived — è la scelta più sicura.
-// Il campo notes/conclusions può essere modificato solo prima di completare.
-```
-
-**Nota**: bloccare anche `completed` rende la policy uniforme e più semplice. Se il requisito futuro fosse "allow corrections on completed", si apre come eccezione separata.
-
-### 1C — `app/src/services/syncService.js`
-
-Aggiungere `'AUDIT_READ_ONLY'` alla lista dei codici 403 che causano stall permanente (riga ~291):
+Sostituire il `return null` (riga ~173):
 
 ```javascript
 // PRIMA:
-(st === 403 && (
-    code === 'STANDARDS_NOT_ALLOWED' ||
-    code === 'MODULE_NOT_LICENSED' ||
-    code === 'AUDIT_DEPRECATED' ||
+if (!loading && issues.length === 0 && !error) return null;
 
 // DOPO:
-(st === 403 && (
-    code === 'STANDARDS_NOT_ALLOWED' ||
-    code === 'MODULE_NOT_LICENSED' ||
-    code === 'AUDIT_DEPRECATED' ||
-    code === 'AUDIT_READ_ONLY' ||
+if (!loading && issues.length === 0 && !error) {
+  // Mostra messaggio positivo solo se l'audit ha un clientName (= re-audit reale, non audit nuovo)
+  if (!clientName) return null;
+  return (
+    <div className="pending-cascade pending-cascade--empty">
+      <p className="pending-empty-msg">✅ Nessun rilievo pendente dall'audit precedente.</p>
+    </div>
+  );
+}
 ```
 
-Questo impedisce che item in coda su audit ormai chiusi rientrino in retry infinito dopo il deploy.
+### 1C — Prop `onGoToQuestion` + pulsante "Vai alla domanda"
 
----
-
-## FASE 2 — Frontend: gate read-only UI (S-A1)
-
-### 2A — `app/src/components/AuditAccordionLayout.jsx`
-
-**Step 1**: Calcolare il predicato `isReadOnly` una sola volta, vicino all'inizio del componente (dopo i `useStorage`/`useAuth`):
+**Step 1**: Aggiungere la prop alla firma del componente:
 
 ```javascript
-// Aggiungi subito dopo la riga const { user } = useAuth();
-const LOCKED_STATUSES = ['completed', 'approved', 'archived'];
-const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status);
+// PRIMA:
+function PendingIssuesCascade() {
+
+// DOPO:
+function PendingIssuesCascade({ onGoToQuestion }) {
 ```
 
-**Step 2**: Mostrare un banner informativo sotto l'header quando `isReadOnly`:
+**Step 2**: Nella card di ogni rilievo (subito dopo `<div className="issue-header">`), aggiungere il pulsante solo se la prop è presente e `section_code` è disponibile:
 
 ```jsx
-{/* Banner read-only — mostrare subito sotto audit-header, prima dei banner server-data */}
-{isReadOnly && (
-  <div className="audit-readonly-banner">
-    🔒 Audit in sola lettura — stato: <strong>{currentAudit.metadata.status?.toUpperCase()}</strong>.
-    Nessuna modifica consentita.
-  </div>
+{/* Pulsante deep-link domanda */}
+{onGoToQuestion && issue.section_code && (
+  <button
+    className="issue-goto-btn"
+    type="button"
+    onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
+    title={`Vai alla clausola ${issue.section_code} nella checklist`}
+  >
+    🔍 Vai alla domanda
+  </button>
 )}
 ```
 
-**Step 3**: Passare `readOnly={isReadOnly}` a tutti i componenti di editing:
+Posizionarlo dentro `<div className="issue-title-section">`, dopo `<h4 className="issue-title">`.
 
-```jsx
-// GeneralDataSection (riga ~471):
-<GeneralDataSection
-  ...props esistenti...
-  readOnly={isReadOnly}
-/>
+### 1D — CSS in `PendingIssuesCascade.css`
 
-// AuditObjectiveSection (riga ~500):
-<AuditObjectiveSection
-  auditObjective={currentAudit.metadata.auditObjective}
-  onUpdate={handleAuditObjectiveUpdate}
-  readOnly={isReadOnly}
-/>
-
-// ChecklistModule (riga ~616):
-<ChecklistModule defaultNorm={key} readOnly={isReadOnly} />
-
-// CustomChecklistAuditView (riga ~591):
-<CustomChecklistAuditView audit={currentAudit} readOnly={isReadOnly} />
-
-// NonConformitiesManager (riga ~653):
-<NonConformitiesManager readOnly={isReadOnly} />
-
-// AuditOutcomeSection — entrambe le istanze (sez. 11 e 12):
-<AuditOutcomeSection
-  auditOutcome={currentAudit.metadata.auditOutcome}
-  onUpdate={handleAuditOutcomeUpdate}
-  showConclusions={false}
-  readOnly={isReadOnly}
-/>
-```
-
-**Step 4**: Nel blocco `<div className="tipologia-audit-block">` (selezione fornitore, riga ~386), disabilitare i controlli quando `isReadOnly`:
-```jsx
-<input type="radio" ... disabled={isReadOnly} />
-<select ... disabled={isReadOnly || companiesLoading} >
-<input type="text" ... disabled={isReadOnly} />
-```
-
-### 2B — Applicare `readOnly` nei componenti figli
-
-Per ogni componente elencato sotto, il deputy deve:
-1. **Leggere** il file prima di modificarlo (golden rule)
-2. Aggiungere `readOnly = false` come prop con default (retrocompatibile)
-3. Disabilitare gli input/textarea/pulsanti quando `readOnly` è true
-
-**Elenco componenti + pattern da applicare:**
-
-| Componente | Cosa disabilitare |
-|-----------|-------------------|
-| `GeneralDataSection.jsx` | Tutti gli `<input>`, `<textarea>`, `<select>`, checkbox standard |
-| `AuditObjectiveSection.jsx` | La textarea `description` |
-| `ChecklistModule.jsx` | I pulsanti stato (`status-btn`), le textarea note/evidenze |
-| `CustomChecklistAuditView.jsx` | I pulsanti esito, le textarea note, i blocchi evidenza |
-| `NonConformitiesManager.jsx` | Form aggiunta NC, pulsanti modifica/elimina |
-| `AuditOutcomeSection.jsx` | Textarea conclusioni, campi partecipanti |
-
-**Pattern CSS**: aggiungere classe `readonly-mode` al wrapper più esterno di ogni componente quando `readOnly` è true, per styling unificato (es. cursore `not-allowed`, opacity ridotta):
-```jsx
-<div className={`componente-wrapper ${readOnly ? 'readonly-mode' : ''}`}>
-```
-
-**Pattern pulsanti**: `disabled={readOnly}` su ogni pulsante che scrive dati.
-
-**Pattern textarea/input**: `disabled={readOnly}` o `readOnly={readOnly}` (usare `disabled` per evitare invio form accidentale).
-
-### 2C — CSS: aggiungere stile `readonly-mode`
-
-In `AuditAccordionLayout.css` (o nel file CSS più appropriato), aggiungere:
+Aggiungere in fondo al file:
 
 ```css
-/* Stile audit read-only */
-.audit-readonly-banner {
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: 6px;
-  padding: 10px 16px;
-  margin: 8px 0;
+/* Zero-state */
+.pending-cascade--empty {
+  padding: 12px 16px;
+}
+.pending-empty-msg {
+  color: #16a34a;
   font-size: 0.9rem;
-  color: #92400e;
+  margin: 0;
 }
 
-.readonly-mode {
-  opacity: 0.75;
-  pointer-events: none;
-  user-select: none;
+/* Deep-link pulsante */
+.issue-goto-btn {
+  background: none;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  color: #6366f1;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  margin-top: 4px;
+  transition: background 0.15s;
 }
-
-.readonly-mode button,
-.readonly-mode input,
-.readonly-mode textarea,
-.readonly-mode select {
-  cursor: not-allowed;
+.issue-goto-btn:hover {
+  background: #eef2ff;
 }
 ```
 
 ---
 
-## FASE 3 — Fix AuditClosePanel: completamento custom (S-A3)
+## FASE 2 — `AuditAccordionLayout.jsx`
 
-**File**: `app/src/components/AuditClosePanel.jsx`
+### 2A — Callback `handleGoToQuestion`
 
-**Problema**: audit con solo checklist custom (`currentAudit.checklist` vuoto → `hasIsoChecklist = false`) bypassa la soglia di completamento. Il pannello chiusura non mostra alcuna percentuale e non ha blockers.
-
-**Fix** (nel `useMemo` di validazione, dopo il blocco `hasIsoChecklist`):
+Aggiungere dopo le dichiarazioni `handleGeneralDataUpdate`, `handleAuditObjectiveUpdate`, ecc.:
 
 ```javascript
-// Aggiungere dopo il blocco if (hasIsoChecklist) { ... }:
-const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
-if (hasCustomChecklist && !hasIsoChecklist) {
-  // Audit solo-custom: verifica che ci siano almeno alcune risposte
-  const customStatuses = currentAudit?.customStatuses || {};
-  const customTotal = Object.keys(customStatuses).length;
-  const customAnswered = Object.values(customStatuses).filter(s => s && s !== 'NOT_ANSWERED').length;
-  if (customTotal === 0) {
-    blockers.push("Nessuna risposta registrata nella checklist personalizzata");
-  } else {
-    const customPct = Math.round((customAnswered / customTotal) * 100);
-    if (customPct < COMPLETION_THRESHOLD) {
-      blockers.push(
-        `Checklist personalizzata completata al ${customPct}% (minimo richiesto: ${COMPLETION_THRESHOLD}%)`
-      );
-    }
+/**
+ * Deep-link: apre la sezione checklist e la sottosezione dello standard
+ * che contiene section_code, poi scrolla alla domanda tramite id DOM.
+ */
+const handleGoToQuestion = useCallback((sectionCode, questionId) => {
+  if (!sectionCode) return;
+  const lower = sectionCode.toLowerCase();
+
+  // Trova lo standard in STANDARDS_CONFIG che corrisponde al section_code
+  const stdEntry = STANDARDS_CONFIG.find(({ key }) => {
+    if (key === 'ISO_9001'   && lower.includes('9001')) return true;
+    if (key === 'ISO_14001'  && lower.includes('14001')) return true;
+    if (key === 'ISO_45001'  && lower.includes('45001')) return true;
+    if (key === 'ISO_3834_2' && (lower.includes('3834') || lower.includes('rdp'))) return true;
+    return false;
+  });
+
+  // Apri sezione "Checklist" + sottosezione standard (o custom se non trovato)
+  setOpenSections(prev => ({ ...prev, checklist: true }));
+  if (stdEntry) {
+    setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
   }
-}
+
+  // Scroll alla domanda dopo che React ha re-renderizzato l'accordion aperto
+  if (questionId) {
+    setTimeout(() => {
+      const el = document.getElementById(`question-${questionId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 350);
+  }
+}, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili
+```
+
+### 2B — Passare la callback a `PendingIssuesCascade`
+
+Trovare il punto dove viene renderizzato `<PendingIssuesCascade />` (riga ~525) e aggiungere la prop:
+
+```jsx
+// PRIMA:
+<PendingIssuesCascade />
+
+// DOPO:
+<PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
 ```
 
 ---
 
-## Riepilogo attività
+## FASE 3 — `QuestionCard.jsx`
 
-| # | Fase | File | Priorità | Note |
-|---|------|------|----------|------|
-| 1A | Guard responses API | `response.controller.js` | **P0** | saveResponse + bulkSaveResponses |
-| 1B | Guard updateAudit API | `audit.controller.js` | **P0** | Solo `approved`/`archived` (vedi policy) |
-| 1C | SyncService AUDIT_READ_ONLY | `syncService.js` | **P0** | Aggiungere a lista stall permanenti |
-| 2A | predicato isReadOnly + banner | `AuditAccordionLayout.jsx` | **P0** | Propagare a tutti i figli |
-| 2B | readOnly prop nei figli | 6 componenti (vedi lista) | **P0** | Leggere file prima di modificare |
-| 2C | CSS readonly-mode | `AuditAccordionLayout.css` | P1 | Styling unificato |
-| 3 | Completamento custom in ClosePanel | `AuditClosePanel.jsx` | P1 | Blocco chiusura audit solo-custom |
+Aggiungere `id` sul wrapper div per permettere lo scroll:
 
----
+```jsx
+// PRIMA (riga ~57):
+<div className={cardClass}>
 
-## Deploy
+// DOPO:
+<div
+  className={cardClass}
+  id={question.questionId ? `question-${question.questionId}` : undefined}
+>
+```
 
-- **Backend**: dopo il commit, deploy via SSH VPS (`deploy-to-vps.sh` o scp manuale dei controller modificati + restart). **Nessuna migrazione DB necessaria** per questa slice.
-- **Frontend**: Netlify auto-deploy da `main`.
-- **Ordine**: deployare backend **prima** del frontend. Se il frontend read-only viene deployato prima del backend guard, l'utente vede i campi disabilitati ma l'API accetta ancora scritture (temporaneamente accettabile). Il contrario (backend guard senza frontend read-only) può causare errori 403 visibili — da evitare.
+`question.questionId` è il campo numerico idratato dal server (già usato da `AttachmentPreview`).  
+Se `questionId` non è disponibile (domanda non ancora idratata o custom), l'`id` resta assente — lo scroll silenziosamente non trova il target, senza errori.
 
 ---
 
-## Test attesi (verifica pre-merge obbligatoria)
+## Riepilogo file toccati
+
+| File | Modifica |
+|------|----------|
+| `app/src/components/PendingIssuesCascade.jsx` | Ordinamento, zero-state, prop `onGoToQuestion`, pulsante "Vai alla domanda" |
+| `app/src/components/PendingIssuesCascade.css` | Stili zero-state + pulsante |
+| `app/src/components/AuditAccordionLayout.jsx` | `handleGoToQuestion` callback + passa prop |
+| `app/src/components/QuestionCard.jsx` | `id={question-${questionId}}` sul wrapper |
+
+**Nessun file backend. Nessuna migrazione.**
+
+---
+
+## Vincoli
+
+- `PendingIssuesCascade` deve restare retrocompatibile: se `onGoToQuestion` non viene passata, il pulsante non compare (già gestito con `onGoToQuestion &&`).
+- `handleGoToQuestion` usa `useCallback` con deps vuote (funzioni setter React sono stabili).
+- Lo scroll avviene dopo 350ms per dare tempo a React di aprire l'accordion — non usare ref o layout effect per semplicità.
+- Diff minimo: non toccare altri file, non refactoring estetici.
+
+---
+
+## Test attesi
 
 ```bash
 cd app
-NODE_ENV=test npm run test:run
+NODE_ENV=test npx vitest run
 npm run build
 ```
 
-**Test L1 da aggiungere o verificare**:
-- `syncService.js`: test che `AUDIT_READ_ONLY` causa stall permanente (pattern già esistente per `MODULE_NOT_LICENSED`)
-- Se esistono test per `response.controller`: aggiungere scenario audit `completed` → expect 403
-
-**Smoke manuale** (da documentare in PR):
-1. Aprire audit in stato `in_progress` → modificare risposta → salva OK
-2. Chiudere l'audit (ClosePanel) → stato diventa `completed`
-3. Tentare modifica checklist → UI disabilitata + banner read-only
-4. Tentare POST `/responses` via DevTools → risposta 403 `AUDIT_READ_ONLY`
-5. Reload pagina → stato read-only persiste
-6. Audit solo-custom vuoto → ClosePanel mostra blocker "Nessuna risposta registrata"
-
----
-
-## Vincoli obbligatori
-
-- **Diff minimo**: toccare solo i file elencati. Nessun refactor estetico.
-- **Retrocompatibilità**: tutti i componenti che ricevono `readOnly` devono avere `readOnly = false` come default → zero breaking change su altri usi.
-- **Multi-tenant**: le query di check status usano già `organization_id` — non rimuoverlo.
-- **Nessun segreto** nel diff.
-- **CI verde**: `ci-app-pr.yml` deve passare.
+**Smoke manuale** (documentare in PR):
+1. Aprire un re-audit con rilievi pendenti → verificare ordine: NC prima, poi OSS, poi NV
+2. Aprire un audit senza rilievi pendenti → verificare comparsa messaggio "✅ Nessun rilievo pendente"
+3. Click "🔍 Vai alla domanda" su un rilievo NC → verificare apertura accordion checklist + scroll alla domanda
+4. Aprire un audit nuovo (non re-audit) → verificare che nessun messaggio compaia (clientName presente ma nessun audit precedente → `null`)
 
 ---
 
 ## Chiusura
 
-Rispondere **TEST OK** con PR aperta + link, oppure per ogni fase non eseguita: **FIX NON APPLICABILE — [motivo]**.
+Rispondere **TEST OK** con PR aperta + link, oppure **FIX NON APPLICABILE — [motivo]** per ogni fase non eseguita.
 
-Aggiornare `docs/PROJECT_ROADMAP.md` aggiungendo sotto la tabella sequenza priorità:
-- `S-A1 Gate read-only UI` ✅
-- `S-A2 Policy API AUDIT_READ_ONLY` ✅  
-- `S-A3 ClosePanel custom completion` ✅
+Aggiornare `docs/PROJECT_ROADMAP.md` aggiungendo `S-A4 Pending deep-link` ✅ nella tabella priorità.
