@@ -15,6 +15,27 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 04 maggio 2026
+
+**Gate read-only modulo audit — S-A1/S-A2/S-A3 (PR #25, merge su main, deploy VPS 04/05/2026):**
+
+| Fix | File | Dettaglio |
+|-----|------|-----------|
+| Policy API `AUDIT_READ_ONLY` | `response.controller.js` | `saveResponse` + `bulkSaveResponses`: guard 403 su audit `completed`/`approved`/`archived` |
+| Policy API `updateAudit` | `audit.controller.js` | Guard 403 per `completed`/`approved`/`archived` — status letto dalla SELECT esistente, zero query extra |
+| Sync queue stall permanente | `syncService.js` | `AUDIT_READ_ONLY` aggiunto ai codici 403 che causano stall definitivo (no retry infinito) |
+| Gate UI read-only | `AuditAccordionLayout.jsx` | Predicato `isReadOnly`, banner ambra, propagazione `readOnly` a tutti i 6 figli |
+| Figli read-only | `GeneralDataSection`, `AuditObjectiveSection`, `AuditOutcomeSection`, `ChecklistModule`, `CustomChecklistAuditView`, `NonConformitiesManager` | Prop `readOnly=false` (retrocompatibile), `disabled` su input/pulsanti |
+| CSS | `AuditAccordionLayout.css` | `.audit-readonly-banner`, `.readonly-mode` |
+| ClosePanel custom | `AuditClosePanel.jsx` | Blocco chiusura audit solo-custom: soglia 80% applicata anche a risposte custom |
+
+**Test**: 101/101 Vitest PASS, build Vite OK.  
+**Deploy**: SCP `response.controller.js` + `audit.controller.js` sul VPS → restart sgq-backend → PID 263552→271427 ✅ → health OK.
+
+**Prossima slice**: S-A4 (pending deep-link + ordinamento NC/OSS/NV) — analisi già in `AUDIT_MODULE_LEAD_BRIEF.md` §9.
+
+---
+
 ### Chiusura sessione 03 maggio 2026
 
 **Refactoring strutturale + storicizzazione completati (commit `de37950`, `16e7b14`, `f8f4720`):**
