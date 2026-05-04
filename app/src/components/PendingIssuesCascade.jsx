@@ -32,7 +32,7 @@ const RESOLUTION_ACTIONS = [
   { status: "persists",    label: "❌ Persiste",     cls: "btn-persists"    },
 ];
 
-function PendingIssuesCascade() {
+function PendingIssuesCascade({ onGoToQuestion }) {
   const { currentAudit } = useStorage();
 
   const [issues, setIssues]                   = useState([]);
@@ -169,8 +169,21 @@ function PendingIssuesCascade() {
     }
   }, [auditId, auditUuid, notes]);
 
+  // ─── Ordinamento esplicito: NC prima, poi OSS, poi NV ───────────────────────
+  const STATUS_ORDER = { NC: 0, OSS: 1, NV: 2 };
+  const sortedIssues = [...issues].sort(
+    (a, b) => (STATUS_ORDER[a.original_status] ?? 9) - (STATUS_ORDER[b.original_status] ?? 9)
+  );
+
   // ─── Sezione nascosta se nessun rilievo ─────────────────────────────────────
-  if (!loading && issues.length === 0 && !error) return null;
+  if (!loading && issues.length === 0 && !error) {
+    if (!clientName) return null;
+    return (
+      <div className="pending-cascade pending-cascade--empty">
+        <p className="pending-empty-msg">✅ Nessun rilievo pendente dall'audit precedente.</p>
+      </div>
+    );
+  }
 
   const ncCount      = issues.filter((r) => r.original_status === "NC").length;
   const ossCount     = issues.filter((r) => r.original_status === "OSS").length;
@@ -244,7 +257,7 @@ function PendingIssuesCascade() {
 
           {/* Lista rilievi */}
           <div className="issues-list">
-            {issues.map((issue) => {
+            {sortedIssues.map((issue) => {
               const cfg         = ORIGIN_STATUS_CONFIG[issue.original_status] || null;
               const clauseLabel = issue.section_code || null;
               const description = issue.question_text || clauseLabel || `Risposta #${issue.source_response_id}`;
@@ -269,6 +282,16 @@ function PendingIssuesCascade() {
                         {clauseLabel && <span className="issue-clause">{clauseLabel}</span>}
                         <h4 className="issue-title">{description}</h4>
                       </div>
+                      {onGoToQuestion && issue.section_code && (
+                        <button
+                          className="issue-goto-btn"
+                          type="button"
+                          onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
+                          title={`Vai alla clausola ${issue.section_code} nella checklist`}
+                        >
+                          🔍 Vai alla domanda
+                        </button>
+                      )}
                     </div>
                     {/* Badge stato corrente */}
                     {curStatus !== "open" && (

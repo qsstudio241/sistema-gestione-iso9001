@@ -1,7 +1,7 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 3 maggio 2026
+> **Ultimo Aggiornamento**: 4 maggio 2026
 > **Prossimo Step**: Sessione 03/05 chiusa. Smoke L3 P1 ✅ (passi 1-5 OK, passi 6-7 in backlog su audit reale). Refactoring strutturale ✅, migration 048 ✅. **Prossime priorità**: (1) Smoke Mason ISO 3834; (2) Smoke Word export su audit Camellini reale (passi 6-7); (3) ISO 14001 checklist da norma PDF; (4) SMTP Alert Engine VPS.
 > **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
@@ -745,6 +745,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **S-A1** | **Gate read-only UI** — banner + disabilitazione tutti i controlli per audit `completed`/`approved`/`archived` | Deputy (04/05/2026) | ✅ Completato |
 | **S-A2** | **Policy API `AUDIT_READ_ONLY`** — guard HTTP 403 su `saveResponse`, `bulkSaveResponses`, `updateAudit`; stall permanente in syncService | Deputy (04/05/2026) | ✅ Completato |
 | **S-A3** | **ClosePanel custom completion** — blocco chiusura audit solo-custom senza risposte | Deputy (04/05/2026) | ✅ Completato |
+| **S-A4** | **Pending deep-link** — ordinamento NC→OSS→NV, zero-state esplicito, pulsante "Vai alla domanda" con scroll accordion | Deputy (04/05/2026) | ✅ Completato |
 
 **Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 ✅, T2 ✅, T3 ✅ (30/04/2026). `VITE_SYNC_MODE=legacy` default — nessuna variazione comportamento produzione. Smoke L3 umano con flag `events` da pianificare. **Nota infra**: `run-migration-agent.sh` non raggiunge il DB direttamente da cloud (DNS); le migrazioni vanno eseguite via SSH sul VPS (che ha accesso diretto). Documentare in ACCESSO_DEPLOY_AGENTS.md.
 

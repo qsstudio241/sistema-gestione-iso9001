@@ -191,6 +191,35 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     onUpdate("auditOutcome", updatedData);
   };
 
+  /**
+   * Deep-link: apre la sezione checklist e la sottosezione dello standard
+   * che contiene section_code, poi scrolla alla domanda tramite id DOM.
+   */
+  const handleGoToQuestion = useCallback((sectionCode, questionId) => {
+    if (!sectionCode) return;
+    const lower = sectionCode.toLowerCase();
+
+    const stdEntry = STANDARDS_CONFIG.find(({ key }) => {
+      if (key === 'ISO_9001'   && lower.includes('9001')) return true;
+      if (key === 'ISO_14001'  && lower.includes('14001')) return true;
+      if (key === 'ISO_45001'  && lower.includes('45001')) return true;
+      if (key === 'ISO_3834_2' && (lower.includes('3834') || lower.includes('rdp'))) return true;
+      return false;
+    });
+
+    setOpenSections(prev => ({ ...prev, checklist: true }));
+    if (stdEntry) {
+      setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
+    }
+
+    if (questionId) {
+      setTimeout(() => {
+        const el = document.getElementById(`question-${questionId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    }
+  }, []); // setOpenSections e setOpenSubSections sono stabili (React setter)
+
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {
     if (!currentAudit) return;
@@ -539,7 +568,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
                 {openSubSections["pending-issues"] && (
                   <div className="subsection-content">
-                    <PendingIssuesCascade />
+                    <PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
                   </div>
                 )}
               </div>
