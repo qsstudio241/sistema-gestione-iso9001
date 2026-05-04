@@ -19,6 +19,19 @@ Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conform
 - **Modello**: Multi-tenant SaaS — isolamento su `organization_id`
 - **Standard**: ISO 9001:2015 (attivo) → ISO 14001:2015 e ISO 45001:2018 (backlog)
 
+### Percorsi di lavoro locale (Windows) — evitare confusione tra drive
+
+Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che percorsi diversi siano automaticamente la stessa cartella o lo stesso stato Git.
+
+| Percorso | Significato tipico |
+|---|---|
+| **`C:\ProgettoISO`** | Spesso è una **junction** (reparse point) verso la cartella reale sotto **Google Drive** — es. `G:\Il mio Drive\Sistema Gestione ISO 9001`. Comandi Git e file system operano su **quella** destinazione. |
+| **`...\OneDrive - ...\Sistema Gestione ISO 9001`** (o altre cartelle) | Possibile **secondo checkout**, copia o mirror: stesso nome ma **working tree separato**. Lo stato (`git log`, modifiche locali) può **divergere** da `C:\ProgettoISO`. |
+
+**Fonte di verità** per il codice condiviso: il remoto GitHub **`origin`**, branch tipicamente **`main`** — non il nome letterale della cartella sotto `C:` o `G:`.
+
+**Regola operativa** (agent / sviluppatore): nella cartella effettivamente aperta in Cursor eseguire `git fetch` e `git status` / `git pull` prima di affermare di essere allineati a `main`.
+
 ---
 
 ## Stack
