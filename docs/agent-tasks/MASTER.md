@@ -1,4 +1,11 @@
-# MASTER — Fix definitivo CORS: aggiorna .env sul VPS
+# MASTER — Fix CORS: ✅ RISOLTO (verificato 04/05/2026)
+
+> **STATO**: CHIUSO. Il VPS risponde già con `Access-Control-Allow-Origin: https://sistema-gestione-iso9001.netlify.app`.
+> Verifica: `curl -s -X OPTIONS "https://www.fr-busato.it:8443/api/v1/audits/sync" -H "Origin: https://sistema-gestione-iso9001.netlify.app" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token" -D - 2>&1 | grep -E "Access-Control|HTTP/"`
+
+---
+
+# (storico) Fix CORS: aggiorna .env sul VPS
 
 ## Contesto e causa radice identificata
 

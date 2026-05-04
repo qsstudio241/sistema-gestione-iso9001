@@ -35,9 +35,35 @@ alwaysApply: true
 - **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
 - **Sicurezza**: segreti **mai** in repository ne' incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git puo' ancora contenere segreti vecchi, **ruotare** se esposti.
 
+## Accesso SSH al VPS (pattern autonomo — usare SEMPRE senza chiedere)
+
+Le credenziali SSH sono disponibili come variabili d'ambiente nel cloud agent. Pattern standard:
+
+```bash
+# Setup chiave (una volta per sessione shell)
+echo "$SGQ_SSH_KEY_B64" | base64 -d > /tmp/sgq_key && chmod 600 /tmp/sgq_key
+
+# Eseguire comando remoto
+ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it "comando"
+
+# Copiare file sul VPS
+scp -i /tmp/sgq_key -P 1122 -o StrictHostKeyChecking=no file.js spascarella@www.fr-busato.it:/tmp/
+
+# Restart backend con verifica PID
+ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it \
+  "echo '$SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend.service && sleep 3 && sudo systemctl status sgq-backend | head -5"
+```
+
+**Regola VERIFICA PRIMA DI AGIRE**: prima di qualsiasi intervento VPS, verificare lo stato attuale:
+- CORS: `curl -s -X OPTIONS "https://www.fr-busato.it:8443/api/v1/audits/sync" -H "Origin: https://sistema-gestione-iso9001.netlify.app" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type,Authorization,X-Audit-Lock-Token" -D - 2>&1 | grep -E "Access-Control|HTTP/"`
+- Backend health: `curl -sk https://www.fr-busato.it:8443/api/v1/health`
+- Stato servizio: SSH → `sudo systemctl status sgq-backend | head -10`
+
+Se la verifica mostra che il problema non esiste, **non fare nulla** e aggiornare la doc come risolto.
+
 ## Fase sviluppo e priorita' (contesto committente)
 - **Default fino a diverso avviso esplicito** (roadmap o messaggio utente): ambiente di lavoro orientato a **dati di prova**, priorita' su **funzionalita'**, **deploy VPS** e **commit/push** senza perdere tempo.
-- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su "sicurezza operativa" (es. rotazione password) quando l'unico ostacolo e' configurazione locale gia' prevista da doc: usare subito `backend/config/.ssh-deploy.local.ps1`, variabili `SGQ_*`, Pageant/sessione PuTTY, `database.json` — eseguire deploy e proseguire. Chiedere all'utente **solo** se sul workspace **manca** davvero ogni mezzo non interattivo e non c'e' alternativa automatizzabile.
+- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su "sicurezza operativa" (es. rotazione password) quando l'unico ostacolo e' configurazione locale gia' prevista da doc: usare subito variabili `SGQ_SSH_KEY_B64` + `SGQ_SUDO_PASSWORD` (vedi sezione sopra), `database.json` — eseguire deploy e proseguire. Chiedere all'utente **solo** se le variabili SGQ_* risultano vuote/assenti.
 - **Invariato**: nessun segreto nei **file versionati** su Git; resta valido l'uso di file gitignored e credenziali solo sul PC.
 
 ## Modalita' operativa autonoma (affidabile, robusta, coerente)
