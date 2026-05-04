@@ -40,6 +40,72 @@
   display: flex;
   gap: 10px;
   flex: 1;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.audit-selector-filters {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  min-width: 220px;
+}
+
+.audit-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.audit-filter-field-grow {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.audit-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.audit-filter-label-spacer {
+  visibility: hidden;
+  user-select: none;
+  line-height: 1;
+  min-height: 1em;
+}
+
+.audit-company-select {
+  min-width: 160px;
+}
+
+.audit-show-closed-wrap {
+  min-width: 200px;
+}
+
+.audit-show-closed-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background: #fafafa;
+  user-select: none;
+}
+
+.audit-show-closed-label input {
+  cursor: pointer;
 }
 
 .audit-dropdown {

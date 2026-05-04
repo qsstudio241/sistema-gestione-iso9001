@@ -138,6 +138,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Checklist personalizzate** | Sezioni/items dinamici, evidenze, template report assegnabile, migrazioni 025-026 | ✅ Completato (15/03) |
 | **Report template per custom** | Risoluzione template, VerbaleVisita-generic, assegnazione in CustomChecklistsPage | ✅ Completato (15/03) |
 | **Azienda committente da anagrafica** | Menu a tendina da companies (AuditSelector) | ✅ Completato (15/03) |
+| **AuditSelector Q2+Q3** | Nascondi audit chiusi (default) + filtro azienda → audit; `auditsMenuKey` sul select audit | ✅ Completato (04/05/2026) |
 | **Sync/API con UUID** | create/delete audit e custom-checklist-responses accettano UUID; merge preserva customChecklistId | ✅ Completato (15/03) |
 | **Deploy backend VPS** | pscp/plink per controller, script deploy-controllers-to-vps.ps1 | ✅ Completato (15/03) |
 | Export Word ISO 3834 | Da testare su produzione | 🔲 Da testare |

@@ -23,6 +23,16 @@ const AVAILABLE_STANDARDS = [
   { code: "RDP_MSN",    label: "RDP Mason \u2014 Audit di Sistema Saldatura (ISO 3834-2)", standardId: 7 },
 ];
 
+const CLOSED_AUDIT_STATUSES = new Set(["completed", "approved", "archived"]);
+
+function auditRowId(audit) {
+  return audit.metadata?.id || audit.id;
+}
+
+function isClosedAuditStatus(status) {
+  return CLOSED_AUDIT_STATUSES.has(String(status || "").toLowerCase());
+}
+
 function AuditSelector() {
   const {
     audits,
@@ -37,12 +47,14 @@ function AuditSelector() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [showClosedAudits, setShowClosedAudits] = useState(false);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
   const validAudits = audits.filter((audit) => audit && audit.metadata);
   const sortedAudits = sortAuditsByNumber(validAudits, false);
 
-  /** Impronta elenco audit: forza remount del <select> quando cambia lo scope (anche con stesso conteggio). */
+  /** Impronta elenco audit: forza remount del secondo <select> quando cambia lo scope (RBAC/reconcile). */
   const auditsMenuKey = useMemo(() => {
     return audits
       .map((a) => String(a?.metadata?.id || a?.id || ""))
@@ -51,12 +63,84 @@ function AuditSelector() {
       .join("|");
   }, [audits]);
 
+const hasAnyClosedAudit = useMemo(
+    () => sortedAudits.some((a) => isClosedAuditStatus(a.metadata?.status)),
+    [sortedAudits]
+  );
+
+  const companyOptions = useMemo(() => {
+    const seen = new Map();
+    for (const a of sortedAudits) {
+      const raw = a.metadata?.clientName;
+      if (raw == null) continue;
+      const norm = String(raw).trim();
+      if (!norm) continue;
+      if (!seen.has(norm)) seen.set(norm, String(raw).trim());
+    }
+    return Array.from(seen.entries()).sort((a, b) => a[0].localeCompare(b[0], "it-IT"));
+  }, [sortedAudits]);
+
+  const buildAuditsForSecondSelect = useCallback(
+    (companyNorm, includeClosed) => {
+      const forCo = companyNorm
+        ? sortedAudits.filter(
+            (a) => String(a.metadata?.clientName || "").trim() === companyNorm
+          )
+        : sortedAudits;
+      let list = includeClosed
+        ? forCo
+        : forCo.filter((a) => !isClosedAuditStatus(a.metadata?.status));
+      const cur =
+        currentAuditId &&
+        validAudits.find((a) => auditRowId(a) === currentAuditId);
+      if (cur && !list.some((a) => auditRowId(a) === currentAuditId)) {
+        const inCompany =
+          !companyNorm ||
+          String(cur.metadata?.clientName || "").trim() === companyNorm;
+        const excludedOnlyByClosed =
+          inCompany &&
+          !includeClosed &&
+          isClosedAuditStatus(cur.metadata?.status);
+        if (excludedOnlyByClosed) {
+          list = [cur, ...list];
+        }
+      }
+      return list;
+    },
+    [sortedAudits, validAudits, currentAuditId]
+  );
+
+  const auditsForSecondSelect = useMemo(
+    () => buildAuditsForSecondSelect(selectedCompany, showClosedAudits),
+    [buildAuditsForSecondSelect, selectedCompany, showClosedAudits]
+  );
+
   // === HANDLERS ===
 
   const handleAuditChange = (e) => {
     const auditId = e.target.value;
     if (auditId) {
       switchAudit(auditId);
+    }
+  };
+
+  const handleCompanyChange = (e) => {
+    const nextCompany = e.target.value;
+    setSelectedCompany(nextCompany);
+    const nextList = buildAuditsForSecondSelect(nextCompany, showClosedAudits);
+    const still = currentAuditId && nextList.some((a) => auditRowId(a) === currentAuditId);
+    if (!still && nextList.length > 0) {
+      switchAudit(auditRowId(nextList[0]));
+    }
+  };
+
+  const handleShowClosedAuditsChange = (e) => {
+    const checked = e.target.checked;
+    setShowClosedAudits(checked);
+    const nextList = buildAuditsForSecondSelect(selectedCompany, checked);
+    const still = currentAuditId && nextList.some((a) => auditRowId(a) === currentAuditId);
+    if (!still && nextList.length > 0) {
+      switchAudit(auditRowId(nextList[0]));
     }
   };
 
@@ -121,26 +205,65 @@ function AuditSelector() {
     <div className="audit-selector">
       <div className="audit-selector-header">
         <div className="audit-selector-controls">
-          <select
-            id="audit-select"
-            key={`audit-dd-${user?.user_id ?? "x"}-${user?.organization_id ?? "o"}-${user?.auditor_org_id ?? "ao"}-${auditsMenuKey}`}
-            value={currentAuditId || ""}
-            onChange={handleAuditChange}
-            className="audit-dropdown"
-          >
-            {/* Opzione vuota quando nessun audit selezionato */}
-            <option value="">-- Seleziona un audit --</option>
-
-            {sortedAudits.map((audit) => {
-              const auditId = audit.metadata?.id || audit.id;
-              return (
-                <option key={auditId} value={auditId}>
-                  {audit.metadata.auditNumber} - {audit.metadata.clientName} (
-                  {audit.metadata.status})
-                </option>
-              );
-            })}
-          </select>
+<div className="audit-selector-filters">
+            <div className="audit-filter-field">
+              <label htmlFor="audit-company-select" className="audit-filter-label">
+                Azienda
+              </label>
+              <select
+                id="audit-company-select"
+                value={selectedCompany}
+                onChange={handleCompanyChange}
+                className="audit-dropdown audit-company-select"
+              >
+                <option value="">— Tutte le aziende —</option>
+                {companyOptions.map(([norm, label]) => (
+                  <option key={norm} value={norm}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="audit-filter-field audit-filter-field-grow">
+              <label htmlFor="audit-select" className="audit-filter-label">
+                Audit
+              </label>
+              <select
+                id="audit-select"
+                key={`audit-dd-${user?.user_id ?? "x"}-${user?.organization_id ?? "o"}-${user?.auditor_org_id ?? "ao"}-${auditsMenuKey}`}
+                value={currentAuditId || ""}
+                onChange={handleAuditChange}
+                className="audit-dropdown"
+              >
+                <option value="">-- Seleziona un audit --</option>
+                {auditsForSecondSelect.map((audit) => {
+                  const auditId = audit.metadata?.id || audit.id;
+                  return (
+                    <option key={auditId} value={auditId}>
+                      {audit.metadata.auditNumber} - {audit.metadata.clientName} (
+                      {audit.metadata.status})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            {hasAnyClosedAudit && (
+              <div className="audit-filter-field audit-show-closed-wrap">
+                <span className="audit-filter-label audit-filter-label-spacer" aria-hidden="true">
+                  &nbsp;
+                </span>
+                <label htmlFor="audit-show-closed" className="audit-show-closed-label">
+                  <input
+                    id="audit-show-closed"
+                    type="checkbox"
+                    checked={showClosedAudits}
+                    onChange={handleShowClosedAuditsChange}
+                  />
+                  <span>Mostra audit completati / approvati</span>
+                </label>
+              </div>
+            )}
+          </div>
 
           {/* Due pulsanti distinti: Nuovo Audit vs Re-Audit */}
           <button
