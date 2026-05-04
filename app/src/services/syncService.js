@@ -292,6 +292,7 @@ export class SyncService {
                             code === 'STANDARDS_NOT_ALLOWED' ||
                             code === 'MODULE_NOT_LICENSED' ||
                             code === 'AUDIT_DEPRECATED' ||
+                            code === 'AUDIT_READ_ONLY' ||
                             code === 'FORBIDDEN'
                         )) ||
                         (st === 400 && code === 'VALIDATION_ERROR') ||

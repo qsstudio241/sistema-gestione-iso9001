@@ -13,7 +13,7 @@ import {
 } from "../data/auditDataModel";
 import "./NonConformitiesManager.css";
 
-function NonConformitiesManager() {
+function NonConformitiesManager({ readOnly = false }) {
   const { currentAudit, updateCurrentAudit } = useStorage();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -80,7 +80,7 @@ function NonConformitiesManager() {
   };
 
   return (
-    <div className="nc-manager">
+    <div className={`nc-manager${readOnly ? ' readonly-mode' : ''}`}>
       <div className="nc-header">
         <div className="nc-title-section">
           <h3>Gestione Non Conformità (Punto 10.2)</h3>
@@ -90,9 +90,11 @@ function NonConformitiesManager() {
           </p>
         </div>
 
-        <button onClick={handleCreateNC} className="btn btn-primary">
-          ➕ Nuova Non Conformità
-        </button>
+        {!readOnly && (
+          <button onClick={handleCreateNC} className="btn btn-primary">
+            ➕ Nuova Non Conformità
+          </button>
+        )}
       </div>
 
       {/* Statistiche */}
@@ -171,6 +173,7 @@ function NonConformitiesManager() {
               nc={nc}
               onEdit={() => handleEditNC(nc)}
               onDelete={() => handleDeleteNC(nc.id)}
+              readOnly={readOnly}
               onUpdateStatus={(status) => {
                 updateCurrentAudit((audit) => ({
                   ...audit,
@@ -240,7 +243,7 @@ function NonConformitiesManager() {
 
 // === NC CARD ===
 
-function NCCard({ nc, onEdit, onDelete, onUpdateStatus }) {
+function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getCategoryClass = () => {
@@ -338,6 +341,7 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus }) {
                 value={nc.status}
                 onChange={(e) => onUpdateStatus(e.target.value)}
                 className="status-select"
+                disabled={readOnly}
               >
                 <option value={NC_STATUS.OPEN}>Aperta</option>
                 <option value={NC_STATUS.IN_PROGRESS}>In Corso</option>
@@ -347,14 +351,16 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus }) {
               </select>
             </div>
 
-            <div className="nc-buttons">
-              <button onClick={onEdit} className="btn btn-sm btn-secondary">
-                ✏️ Modifica
-              </button>
-              <button onClick={onDelete} className="btn btn-sm btn-danger">
-                🗑️ Elimina
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="nc-buttons">
+                <button onClick={onEdit} className="btn btn-sm btn-secondary">
+                  ✏️ Modifica
+                </button>
+                <button onClick={onDelete} className="btn btn-sm btn-danger">
+                  🗑️ Elimina
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

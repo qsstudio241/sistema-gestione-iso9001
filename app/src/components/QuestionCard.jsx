@@ -40,6 +40,7 @@ export function QuestionCard({
   attachmentManager = null,
   auditId = null,
   customItemId = null,
+  readOnly = false,
   children,
 }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
@@ -48,6 +49,7 @@ export function QuestionCard({
     "question-card",
     question.status ? `status-${question.status}` : "",
     checklistKey ? `standard-${checklistKey.toLowerCase().replace(/_/g, "-")}` : "",
+    readOnly ? "readonly-mode" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -69,6 +71,7 @@ export function QuestionCard({
                 className={`status-btn ${className}${question.status === code ? " active" : ""}`}
                 onClick={() => onStatusChange?.(code)}
                 title={label}
+                disabled={readOnly}
               >
                 {code}
               </button>
@@ -86,6 +89,7 @@ export function QuestionCard({
             placeholder="Inserisci osservazioni, note e dettagli della verifica..."
             rows={3}
             className="notes-textarea"
+            disabled={readOnly}
           />
         </div>
 

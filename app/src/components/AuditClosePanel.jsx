@@ -72,6 +72,23 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       }
     }
 
+    const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
+    if (hasCustomChecklist && !hasIsoChecklist) {
+      const customStatuses = currentAudit?.customStatuses || {};
+      const customTotal = Object.keys(customStatuses).length;
+      const customAnswered = Object.values(customStatuses).filter((s) => s && s !== 'NOT_ANSWERED').length;
+      if (customTotal === 0) {
+        blockers.push("Nessuna risposta registrata nella checklist personalizzata");
+      } else {
+        const customPct = Math.round((customAnswered / customTotal) * 100);
+        if (customPct < COMPLETION_THRESHOLD) {
+          blockers.push(
+            `Checklist personalizzata completata al ${customPct}% (minimo richiesto: ${COMPLETION_THRESHOLD}%)`
+          );
+        }
+      }
+    }
+
     const isoMetrics = calculateFindingsMetrics(currentAudit?.checklist);
     const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
       ? calculateCustomFindingsMetrics(currentAudit.customStatuses)

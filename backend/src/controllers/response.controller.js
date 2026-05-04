@@ -167,6 +167,7 @@ async function saveResponse(req, res) {
 
         // Verifica ownership audit (ID numerico o UUID)
         let auditIdNumeric = parseInt(auditId, 10);
+        let auditStatus;
         if (isNaN(auditIdNumeric)) {
             const uuidLookup = await query(`
                 SELECT audit_id, status FROM audits
@@ -176,6 +177,7 @@ async function saveResponse(req, res) {
                 return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
             }
             auditIdNumeric = uuidLookup.recordset[0].audit_id;
+            auditStatus = uuidLookup.recordset[0].status;
         } else {
             const auditCheck = await query(`
                 SELECT audit_id, status FROM audits
@@ -184,6 +186,14 @@ async function saveResponse(req, res) {
             if (auditCheck.recordset.length === 0) {
                 return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
             }
+            auditStatus = auditCheck.recordset[0].status;
+        }
+
+        if (['completed', 'approved', 'archived'].includes(auditStatus)) {
+            return res.status(403).json({
+                error: `Audit in stato '${auditStatus}' — sola lettura. Contatta il responsabile per modifiche.`,
+                code: 'AUDIT_READ_ONLY'
+            });
         }
 
         // Lock check rimosso (T5): il lock è solo UX informativo, non blocca scrittura.
@@ -354,12 +364,13 @@ async function bulkSaveResponses(req, res) {
 
         // Lookup audit_id: supporta sia UUID che ID numerico
         let auditIdNumeric;
+        let auditCurrentStatus;
         const parsedId = parseInt(auditId);
 
         if (isNaN(parsedId)) {
             // È un UUID stringa → lookup audit_id
             const uuidLookup = await query(`
-                SELECT audit_id FROM audits
+                SELECT audit_id, status FROM audits
                 WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0
             `, { audit_uuid: auditId, organization_id });
 
@@ -370,10 +381,11 @@ async function bulkSaveResponses(req, res) {
                 });
             }
             auditIdNumeric = uuidLookup.recordset[0].audit_id;
+            auditCurrentStatus = uuidLookup.recordset[0].status;
         } else {
             // È già un ID numerico → verifica ownership
             const auditCheck = await query(`
-                SELECT audit_id FROM audits
+                SELECT audit_id, status FROM audits
                 WHERE audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0
             `, { audit_id: parsedId, organization_id });
 
@@ -384,6 +396,14 @@ async function bulkSaveResponses(req, res) {
                 });
             }
             auditIdNumeric = parsedId;
+            auditCurrentStatus = auditCheck.recordset[0].status;
+        }
+
+        if (['completed', 'approved', 'archived'].includes(auditCurrentStatus)) {
+            return res.status(403).json({
+                error: `Audit in stato '${auditCurrentStatus}' — sola lettura. Contatta il responsabile per modifiche.`,
+                code: 'AUDIT_READ_ONLY'
+            });
         }
 
         // Lock check rimosso da bulkSaveResponses per coerenza con T3 (eventi response_set).

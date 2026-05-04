@@ -32,7 +32,7 @@ const OUTCOME_CSS = {
 // Blocco evidence di default (vuoto) — usato come segnaposto per render
 const EMPTY_BLOCK = { text: '', attachment_id: null };
 
-function CustomChecklistAuditView({ audit, onUpdate }) {
+function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
   const { updateCurrentAudit } = useStorage();
@@ -384,7 +384,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
   const hasNoSections = !(checklist?.sections?.length > 0);
 
   return (
-    <div className="custom-checklist-audit-view">
+    <div className={`custom-checklist-audit-view${readOnly ? ' readonly-mode' : ''}`}>
       {!auditId && (
         <div className="custom-checklist-no-audit-id-hint">
           L&apos;audit non è ancora sincronizzato con il server. La struttura è visibile; il salvataggio delle evidenze sarà disponibile dopo la sincronizzazione.
@@ -431,6 +431,7 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
                 displayRef=""
                 checklistKey="custom"
                 showStatusButtons={!!checklist?.has_outcome_buttons}
+                readOnly={readOnly}
                 onStatusChange={(code) => handleStatusChange(item.id, code)}
                 onNotesChange={(text) => {
                   updateBlock(item.id, 0, "text", text);
@@ -468,146 +469,158 @@ function CustomChecklistAuditView({ audit, onUpdate }) {
                             }}
                             placeholder="Evidenza aggiuntiva..."
                             rows={3}
+                            disabled={readOnly}
                           />
-                          <div className="evidence-block-actions">
-                            <label className="btn-attach">
-                              📎 Allega
-                              <input
-                                type="file"
-                                accept="image/*,.pdf,.doc,.docx"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) handleFileSelect(item.id, idx, f);
-                                  e.target.value = "";
-                                }}
-                                style={{ display: "none" }}
-                              />
-                            </label>
-                            {block.attachment_id && (
+                          {!readOnly && (
+                            <div className="evidence-block-actions">
+                              <label className="btn-attach">
+                                📎 Allega
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf,.doc,.docx"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleFileSelect(item.id, idx, f);
+                                    e.target.value = "";
+                                  }}
+                                  style={{ display: "none" }}
+                                />
+                              </label>
+                              {block.attachment_id && (
+                                <a href={apiService.getAttachmentViewUrl(block.attachment_id)} target="_blank" rel="noopener noreferrer" className="link-preview">Vedi allegato</a>
+                              )}
+                              <button type="button" className="btn-remove" onClick={() => removeBlock(item.id, idx)}>Rimuovi</button>
+                            </div>
+                          )}
+                          {readOnly && block.attachment_id && (
+                            <div className="evidence-block-actions">
                               <a href={apiService.getAttachmentViewUrl(block.attachment_id)} target="_blank" rel="noopener noreferrer" className="link-preview">Vedi allegato</a>
-                            )}
-                            <button type="button" className="btn-remove" onClick={() => removeBlock(item.id, idx)}>Rimuovi</button>
-                          </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 )}
-                <button type="button" className="btn-add-evidence" onClick={() => addBlock(item.id)}>
-                  ➕ Aggiungi evidenza
-                </button>
+                {!readOnly && (
+                  <button type="button" className="btn-add-evidence" onClick={() => addBlock(item.id)}>
+                    ➕ Aggiungi evidenza
+                  </button>
+                )}
               </QuestionCard>
             );
           })}
 
-          {/* Form aggiungi sotto-punto — in fondo alla sezione */}
-          {addingItemBySection[sec.id] ? (
-            <form
-              onSubmit={(e) => handleAddItem(e, sec.id)}
-              className="custom-checklist-add-item-form"
-            >
-              <input
-                type="text"
-                value={newItemBySection[sec.id]?.code ?? ""}
-                onChange={(e) => setNewItemBySection((prev) => ({
-                  ...prev,
-                  [sec.id]: { ...(prev[sec.id] || {}), code: e.target.value },
-                }))}
-                placeholder="Codice (es. 1.1)"
-                required
-                style={{ width: "70px" }}
-                autoFocus
-              />
-              <input
-                type="text"
-                value={newItemBySection[sec.id]?.title ?? ""}
-                onChange={(e) => setNewItemBySection((prev) => ({
-                  ...prev,
-                  [sec.id]: { ...(prev[sec.id] || {}), title: e.target.value },
-                }))}
-                placeholder="Titolo sotto-punto"
-                required
-                style={{ flex: 1 }}
-              />
-              <button type="submit" disabled={saving}>Aggiungi</button>
+          {/* Form aggiungi sotto-punto — in fondo alla sezione (solo se non readOnly) */}
+          {!readOnly && (
+            addingItemBySection[sec.id] ? (
+              <form
+                onSubmit={(e) => handleAddItem(e, sec.id)}
+                className="custom-checklist-add-item-form"
+              >
+                <input
+                  type="text"
+                  value={newItemBySection[sec.id]?.code ?? ""}
+                  onChange={(e) => setNewItemBySection((prev) => ({
+                    ...prev,
+                    [sec.id]: { ...(prev[sec.id] || {}), code: e.target.value },
+                  }))}
+                  placeholder="Codice (es. 1.1)"
+                  required
+                  style={{ width: "70px" }}
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  value={newItemBySection[sec.id]?.title ?? ""}
+                  onChange={(e) => setNewItemBySection((prev) => ({
+                    ...prev,
+                    [sec.id]: { ...(prev[sec.id] || {}), title: e.target.value },
+                  }))}
+                  placeholder="Titolo sotto-punto"
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" disabled={saving}>Aggiungi</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingItemBySection((p) => ({ ...p, [sec.id]: false }));
+                    setNewItemBySection((p) => { const n = { ...p }; delete n[sec.id]; return n; });
+                    setItemErrors((p) => ({ ...p, [sec.id]: null }));
+                  }}
+                >
+                  Annulla
+                </button>
+                {itemErrors[sec.id] && (
+                  <div className="custom-checklist-form-error">⚠️ {itemErrors[sec.id]}</div>
+                )}
+              </form>
+            ) : (
               <button
                 type="button"
-                onClick={() => {
-                  setAddingItemBySection((p) => ({ ...p, [sec.id]: false }));
-                  setNewItemBySection((p) => { const n = { ...p }; delete n[sec.id]; return n; });
-                  setItemErrors((p) => ({ ...p, [sec.id]: null }));
-                }}
+                className="btn-add-item"
+                onClick={() => setAddingItemBySection((prev) => ({ ...prev, [sec.id]: true }))}
               >
-                Annulla
+                ➕ Aggiungi sotto-punto
               </button>
-              {/* Bug 3 Fix: errore visibile all'utente */}
-              {itemErrors[sec.id] && (
-                <div className="custom-checklist-form-error">⚠️ {itemErrors[sec.id]}</div>
-              )}
-            </form>
-          ) : (
-            <button
-              type="button"
-              className="btn-add-item"
-              onClick={() => setAddingItemBySection((prev) => ({ ...prev, [sec.id]: true }))}
-            >
-              ➕ Aggiungi sotto-punto
-            </button>
+            )
           )}
         </div>
       ))}
 
-      {/* Bug 2 Fix: bottone "Aggiungi sezione" IN FONDO alla lista (non in cima) */}
-      {addingSection ? (
-        <form
-          ref={addSectionFormRef}
-          onSubmit={handleAddSection}
-          className="custom-checklist-add-section-form"
-        >
-          <input
-            type="text"
-            value={newSectionCode}
-            onChange={(e) => setNewSectionCode(e.target.value)}
-            placeholder="Codice (es. 1.0)"
-            required
-            style={{ width: "80px" }}
-            autoFocus
-          />
-          <input
-            type="text"
-            value={newSectionTitle}
-            onChange={(e) => setNewSectionTitle(e.target.value)}
-            placeholder="Titolo sezione"
-            required
-            style={{ flex: 1 }}
-          />
-          <button type="submit" disabled={saving}>
-            {saving ? "Creazione..." : "Crea sezione"}
-          </button>
+      {/* Bottone "Aggiungi sezione" IN FONDO alla lista (solo se non readOnly) */}
+      {!readOnly && (
+        addingSection ? (
+          <form
+            ref={addSectionFormRef}
+            onSubmit={handleAddSection}
+            className="custom-checklist-add-section-form"
+          >
+            <input
+              type="text"
+              value={newSectionCode}
+              onChange={(e) => setNewSectionCode(e.target.value)}
+              placeholder="Codice (es. 1.0)"
+              required
+              style={{ width: "80px" }}
+              autoFocus
+            />
+            <input
+              type="text"
+              value={newSectionTitle}
+              onChange={(e) => setNewSectionTitle(e.target.value)}
+              placeholder="Titolo sezione"
+              required
+              style={{ flex: 1 }}
+            />
+            <button type="submit" disabled={saving}>
+              {saving ? "Creazione..." : "Crea sezione"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAddingSection(false);
+                setNewSectionCode("");
+                setNewSectionTitle("");
+                setSectionError(null);
+              }}
+            >
+              Annulla
+            </button>
+            {sectionError && (
+              <div className="custom-checklist-form-error">⚠️ {sectionError}</div>
+            )}
+          </form>
+        ) : (
           <button
             type="button"
-            onClick={() => {
-              setAddingSection(false);
-              setNewSectionCode("");
-              setNewSectionTitle("");
-              setSectionError(null);
-            }}
+            className="btn-add-section"
+            onClick={() => { setAddingSection(true); setSectionError(null); }}
           >
-            Annulla
+            ➕ Aggiungi sezione
           </button>
-          {/* Bug 3 Fix: errore visibile all'utente */}
-          {sectionError && (
-            <div className="custom-checklist-form-error">⚠️ {sectionError}</div>
-          )}
-        </form>
-      ) : (
-        <button
-          type="button"
-          className="btn-add-section"
-          onClick={() => { setAddingSection(true); setSectionError(null); }}
-        >
-          ➕ Aggiungi sezione
-        </button>
+        )
       )}
     </div>
   );

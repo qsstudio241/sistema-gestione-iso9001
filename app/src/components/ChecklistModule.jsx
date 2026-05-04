@@ -40,7 +40,7 @@ const STATUS = {
   NOT_ANSWERED: "NOT_ANSWERED", // Non risposto (default)
 };
 
-function ChecklistModule({ defaultNorm = "ISO_9001" }) {
+function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
   const {
     currentAudit,
     updateCurrentAudit,
@@ -376,7 +376,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001" }) {
   // === RENDER ===
 
   return (
-    <div className="checklist-module">
+    <div className={`checklist-module${readOnly ? ' readonly-mode' : ''}`}>
       {/* Header con statistiche */}
       <div className="checklist-header">
         <div className="checklist-title-section">
@@ -469,6 +469,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001" }) {
               onQuestionUpdate={handleQuestionUpdate}
               attachmentManager={attachments}
               auditId={auditId}
+              readOnly={readOnly}
             />
           ))
         )}
@@ -488,6 +489,7 @@ function ClauseAccordion({
   onQuestionUpdate,
   attachmentManager,
   auditId,
+  readOnly = false,
 }) {
   // Calcola statistiche clausola
   const clauseStats = useMemo(() => {
@@ -533,6 +535,7 @@ function ClauseAccordion({
               onUpdate={onQuestionUpdate}
               attachmentManager={attachmentManager}
               auditId={auditId}
+              readOnly={readOnly}
             />
           ))}
         </div>
@@ -544,7 +547,7 @@ function ClauseAccordion({
 // === QUESTION CARD — wrapper ISO che delega al componente universale ===
 // Mantiene l'interfaccia (clauseId, onUpdate) per compatibilità con ClauseAccordion.
 
-function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId }) {
+function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, readOnly = false }) {
   // Numerazione: per ISO 3834/RDP solo numero (displayOrder), per 9001/14001 clauseRef (es. 4.1)
   const isSimpleNumbering = ['ISO_3834_2', 'RDP_MSN'].includes(checklistKey);
   const displayRef = isSimpleNumbering && question.displayOrder != null
@@ -561,6 +564,7 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       onNotesChange={(notes) => onUpdate(clauseId, question.id, "notes", notes)}
       attachmentManager={attachmentManager}
       auditId={auditId}
+      readOnly={readOnly}
     />
   );
 }
