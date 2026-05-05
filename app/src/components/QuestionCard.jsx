@@ -55,7 +55,10 @@ export function QuestionCard({
     .join(" ");
 
   return (
-    <div className={cardClass}>
+    <div
+      className={cardClass}
+      id={question.questionId ? `question-${question.questionId}` : undefined}
+    >
       <div className="question-header">
         {displayRef && <span className="question-reference">{displayRef}</span>}
         <span className="question-text">{question.text}</span>

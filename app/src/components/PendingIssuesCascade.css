@@ -394,3 +394,28 @@
   gap: 10px;
 }
 
+/* Zero-state */
+.pending-cascade--empty {
+  padding: 12px 16px;
+}
+.pending-empty-msg {
+  color: #16a34a;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Deep-link pulsante */
+.issue-goto-btn {
+  background: none;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  color: #6366f1;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  margin-top: 4px;
+  transition: background 0.15s;
+}
+.issue-goto-btn:hover {
+  background: #eef2ff;
+}
