@@ -17,6 +17,31 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 05 maggio 2026
+
+**Completamento gap modulo audit: S-A5 + documentazione S-A6:**
+
+| Fix | File | Dettaglio |
+|-----|------|-----------|
+| S-A5 — Preserva `pendingIssues` al reconcile | `StorageContext.jsx` | Eccezione 7 in `reconcileAuditsFromServer`: se il locale ha `pendingIssues.length > 0` e il server restituisce array vuoto (come atteso: `auditConverter` imposta sempre `[]`), si mantiene il locale. Evita perdita rilievi pendenti copia-al-creazione re-audit ad ogni page refresh. |
+| S-A5 — Eccezione coerente con pattern esistente | `StorageContext.jsx` | Allineata alle Eccezioni 1-6 già presenti nel blocco `mergedAudits.map(...)`. |
+| S-A6 — Decisione di prodotto documentata | `AUDIT_MODULE_LEAD_BRIEF.md §10` | 3 opzioni (A depreca, B sync server, C stub monodirezionale). Default consigliato: C. Attendere risposta committente prima di avviare il task. |
+
+**Stato matrice gap modulo audit al 05/05/2026:**
+
+| Gap | Stato |
+|-----|-------|
+| G1 Post-chiusura (S-A1/S-A2) | ✅ |
+| G4 Chiusura custom (S-A3) | ✅ |
+| G2 Pending UX (S-A4) | ✅ |
+| G3 Pending creazione vs DB (S-A5) | ✅ |
+| G6 NC audit vs modulo (S-A6) | ⏳ Decisione committente |
+| G5/G7/G9 P2 | Backlog |
+
+**Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
+
+---
+
 ### Chiusura sessione 04 maggio 2026
 
 **Gate read-only modulo audit — S-A1/S-A2/S-A3 (PR #25, merge su main, deploy VPS 04/05/2026):**

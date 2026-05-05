@@ -205,12 +205,38 @@ In `PendingIssuesCascade`, nella card del rilievo aggiungere il pulsante:
 
 ---
 
+## 10. Decisione pendente — S-A6: NC in audit vs modulo NC
+
+### Problema (G6)
+
+Esiste una sovrapposizione tra:
+- **`NonConformitiesManager` in audit** — registro locale in `currentAudit.nonConformities` (modello ricco: `auditDataModel.js`), **non sincronizzato con il server** (`auditConverter` imposta sempre `nonConformities: []` ad ogni fetch).
+- **Modulo `/nc`** — tabella `non_conformities` sul server, CRUD completo, tenant-isolated.
+
+Il contatore `non_conformities_count` nell'audit viene da metriche checklist (quante risposte "NC"), **non** dal registro `NonConformitiesManager`.
+
+### Opzioni disponibili
+
+| Opzione | Descrizione | Effort | Rischio |
+|---------|-------------|--------|---------|
+| A) Depreca registro in audit | Rimuovi `NonConformitiesManager` dall'accordion, mostra link "Vai al modulo NC" | Basso | Perdita dati locali utenti che lo usano già |
+| B) Sincronizza registro lato server | `POST /nc` al salvataggio NC in audit + `GET /audits/:id/nc` al caricamento; `auditConverter` popola `nonConformities` da server | Alto | Migrazione dati esistenti |
+| C) Stub monodirezionale | Pulsante "Crea NC organizzativa" nel `NonConformitiesManager` → crea in `/nc` senza sostituire il registro locale | Medio | Doppia fonte, accettabile se le NC di audit sono "bozze" |
+
+### Decisione committente richiesta
+
+Scegliere **A**, **B** o **C** prima che il deputy avvii S-A6.  
+Default consigliato se nessuna preferenza: **C** (stub monodirezionale) — zero rischio dati, zero refactoring, valore immediato.
+
+---
+
 ## 8. Changelog brief
 
 | Data | Autore | Modifica |
 |------|--------|----------|
 | 2026-05-04 | Agent | Creazione brief da analisi gap modulo audit + flusso committente + matrice GA/ottimale. |
 | 2026-05-04 | Agent | Aggiunta analisi S-A4 (pending deep-link) con soluzione completa. |
+| 2026-05-05 | Agent | S-A5 fix reconcile pendingIssues. Aggiunta sezione §10 decisione S-A6 (opzioni A/B/C). |
 
 ---
 

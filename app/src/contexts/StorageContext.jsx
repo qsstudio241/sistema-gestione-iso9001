@@ -913,6 +913,14 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.customResponses = localCustomResponses;
         }
 
+        // Eccezione 7: pendingIssues — il converter li imposta sempre a []; il server non li include
+        // nel payload GET /audits. Preserva il locale se non vuoto (sono stati copiati al momento
+        // della creazione del re-audit e non hanno una fonte server nel flusso di reconcile).
+        const localPending = localAudit?.pendingIssues;
+        if (Array.isArray(localPending) && localPending.length > 0 && !(merged?.pendingIssues?.length > 0)) {
+          merged.pendingIssues = localPending;
+        }
+
         return merged;
       });
 
