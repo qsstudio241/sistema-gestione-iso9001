@@ -40,6 +40,22 @@
 
 **Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
 
+#### SSL Let's Encrypt (rinnovo certificato `www.fr-busato.it` — 05/05/2026)
+
+| Evidenza | Dettaglio |
+|----------|-----------|
+| Scadenza cert | `notAfter=May 5 11:32:22 2026 GMT` su `https://www.fr-busato.it:8443` |
+| Tentativo `certbot renew` sul VPS (`fr-sql1`) | Let's Encrypt risponde **HTTP-01 unauthorized**: risposta **404** su `https://www.fr-busato.it/.well-known/acme-challenge/...` |
+| Causa radice | Il traffico **pubblico** sulla porta **80** (e la redirect HTTPS) arriva ad **Apache su Raspbian** (`Server: Apache/2.4.66`), non all'**Nginx** del VPS Ubuntu dove gira Certbot. Il backend API è corretto su **8443** (Nginx → Node), ma il validatore ACME non colpisce quel Nginx. |
+| Correzione sul VPS | Rimossa riga errata in `/etc/hosts`: `127.0.0.1 www.fr-busato.it` (faceva risolvere il dominio in loopback sul server; backup: `/etc/hosts.bak`). **Non** risolve da sola il 404 esterno. |
+
+**Cosa serve per sbloccare il rinnovo** (una delle due strade, a cura di chi gestisce router / Raspberry):
+
+1. **Port forwarding WAN:80 → IP interno del VPS `fr-sql1`:80** (e, se si usa HTTPS redirect verso `.well-known`, allineare anche **443** o evitare redirect HTTP→HTTPS per il path `/.well-known/acme-challenge/` sull'host che risponde per primo), **oppure**
+2. **Completare HTTP-01 su Apache** (stesso host che oggi risponde sulla 80 pubblica): `Alias` o `location` per `/.well-known/acme-challenge/` verso una directory scrivibile, poi `certbot certonly --webroot` lì **oppure** script che copia il token verso quel webroot dal VPS.
+
+Dopo che `curl -sI http://www.fr-busato.it/.well-known/acme-challenge/test` (da rete esterna) non resta un 404 verso Apache senza token, sul VPS: `sudo certbot renew --force-renewal` (o `certbot install` se si usa solo webroot sul Pi) e **`sudo systemctl reload nginx`** (e verifica `openssl s_client -connect 127.0.0.1:8443` date).
+
 ---
 
 ### Chiusura sessione 04 maggio 2026
