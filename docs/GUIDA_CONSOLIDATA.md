@@ -48,13 +48,16 @@
 | Tentativo `certbot renew` sul VPS (`fr-sql1`) | Let's Encrypt risponde **HTTP-01 unauthorized**: risposta **404** su `https://www.fr-busato.it/.well-known/acme-challenge/...` |
 | Causa radice | Il traffico **pubblico** sulla porta **80** (e la redirect HTTPS) arriva ad **Apache su Raspbian** (`Server: Apache/2.4.66`), non all'**Nginx** del VPS Ubuntu dove gira Certbot. Il backend API è corretto su **8443** (Nginx → Node), ma il validatore ACME non colpisce quel Nginx. |
 | Correzione sul VPS | Rimossa riga errata in `/etc/hosts`: `127.0.0.1 www.fr-busato.it` (faceva risolvere il dominio in loopback sul server; backup: `/etc/hosts.bak`). **Non** risolve da sola il 404 esterno. |
+| **Porta 10880 (Nginx sul VPS)** | Aggiunto virtual host dedicato: file `acme-challenge-10880.conf` in `sites-available` (symlink in `sites-enabled`). **Listen 10880** — solo `/.well-known/acme-challenge/` da `root /var/www/html`; resto **404**. Obiettivo: **port forwarding del router WAN TCP 80 → IP_LAN_VPS:10880** (Let's Encrypt contatta sempre la **80 pubblica**; la 10880 è solo destinazione interna). Verifica da Internet: `curl -s http://www.fr-busato.it:10880/.well-known/acme-challenge/probe-10880` → `probe-10880`. |
+| **Certbot (rinnovo)** | In `/etc/letsencrypt/renewal/www.fr-busato.it.conf` impostati `authenticator = webroot` e `webroot_path = /var/www/html` (niente plugin nginx al renew). Backup del `.conf` precedente sul server con suffisso `.bak.<timestamp>`. Dopo che la **80 pubblica** arriva al VPS: `sudo certbot renew --force-renewal` poi `sudo systemctl reload nginx`. |
 
-**Cosa serve per sbloccare il rinnovo** (una delle due strade, a cura di chi gestisce router / Raspberry):
+**Cosa serve per sbloccare il rinnovo** (una delle strade, a cura di chi gestisce router / Raspberry):
 
-1. **Port forwarding WAN:80 → IP interno del VPS `fr-sql1`:80** (e, se si usa HTTPS redirect verso `.well-known`, allineare anche **443** o evitare redirect HTTP→HTTPS per il path `/.well-known/acme-challenge/` sull'host che risponde per primo), **oppure**
-2. **Completare HTTP-01 su Apache** (stesso host che oggi risponde sulla 80 pubblica): `Alias` o `location` per `/.well-known/acme-challenge/` verso una directory scrivibile, poi `certbot certonly --webroot` lì **oppure** script che copia il token verso quel webroot dal VPS.
+1. **Consigliata con 10880:** sul router **WAN:80 → IP LAN del VPS `fr-sql1`:10880** (TCP). Let's Encrypt userà sempre `http://www.fr-busato.it/.well-known/...` sulla porta **80**; il forward interno manda il traffico al listener Nginx sulla **10880**. Evitare che un altro host (es. Raspberry) intercetti ancora la 80 in ingresso senza forward.
+2. **Alternativa:** **WAN:80 → VPS:80** (se Nginx ascolta sulla 80 standard invece che 10880).
+3. **Oppure** completare HTTP-01 **solo su Apache** (host che oggi risponde sulla 80 pubblica): webroot o proxy verso `/var/www/html` del VPS.
 
-Dopo che `curl -sI http://www.fr-busato.it/.well-known/acme-challenge/test` (da rete esterna) non resta un 404 verso Apache senza token, sul VPS: `sudo certbot renew --force-renewal` (o `certbot install` se si usa solo webroot sul Pi) e **`sudo systemctl reload nginx`** (e verifica `openssl s_client -connect 127.0.0.1:8443` date).
+Dopo che da rete esterna `curl -s http://www.fr-busato.it/.well-known/acme-challenge/probe-10880` restituisce `probe-10880` (e non **301** Apache verso HTTPS sulla sola porta **80**), sul VPS: `sudo certbot renew --force-renewal` e **`sudo systemctl reload nginx`** (verifica date cert: `echo | openssl s_client -connect 127.0.0.1:8443 -servername www.fr-busato.it 2>/dev/null | openssl x509 -noout -dates`).
 
 ---
 
