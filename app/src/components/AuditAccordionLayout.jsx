@@ -218,7 +218,11 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 350);
     }
+<<<<<<< HEAD
   }, []); // setOpenSections e setOpenSubSections sono stabili (React setter)
+=======
+  }, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili
+>>>>>>> e5fc864 (feat(S-A4): pending issues - ordinamento NC/OSS/NV, zero-state, deep-link domanda)
 
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {

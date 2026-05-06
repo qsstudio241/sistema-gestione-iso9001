@@ -746,9 +746,13 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **S-A1** | **Gate read-only UI** — banner + disabilitazione tutti i controlli per audit `completed`/`approved`/`archived` | Deputy (04/05/2026) | ✅ Completato |
 | **S-A2** | **Policy API `AUDIT_READ_ONLY`** — guard HTTP 403 su `saveResponse`, `bulkSaveResponses`, `updateAudit`; stall permanente in syncService | Deputy (04/05/2026) | ✅ Completato |
 | **S-A3** | **ClosePanel custom completion** — blocco chiusura audit solo-custom senza risposte | Deputy (04/05/2026) | ✅ Completato |
+<<<<<<< HEAD
 | **S-A4** | **Pending deep-link** — ordinamento NC→OSS→NV, zero-state esplicito, pulsante "Vai alla domanda" con scroll accordion | Deputy (04/05/2026) | ✅ Completato |
 | **S-A5** | **Preserva pendingIssues al reconcile** — Eccezione 7 in `StorageContext.reconcileAuditsFromServer`: locale non azzerato a ogni fetch | Deputy (05/05/2026) | ✅ Completato |
 | **S-A6** | **NC audit vs modulo NC** — decisione di prodotto pendente (opzioni A/B/C documentate in `AUDIT_MODULE_LEAD_BRIEF.md §10`) | In attesa decisione committente | ⏳ Blocked |
+=======
+| **S-A4** | **Pending deep-link** — ordinamento NC→OSS→NV, zero-state esplicito, pulsante "Vai alla domanda" con scroll accordion | Deputy (06/05/2026) | ✅ Completato |
+>>>>>>> e5fc864 (feat(S-A4): pending issues - ordinamento NC/OSS/NV, zero-state, deep-link domanda)
 
 **Prossimo Step**: Sprint sync chiuso — SYNC-1/2/3/4 ✅, T1 ✅, T2 ✅, T3 ✅ (30/04/2026). `VITE_SYNC_MODE=legacy` default — nessuna variazione comportamento produzione. Smoke L3 umano con flag `events` da pianificare. **Nota infra**: `run-migration-agent.sh` non raggiunge il DB direttamente da cloud (DNS); le migrazioni vanno eseguite via SSH sul VPS (che ha accesso diretto). Documentare in ACCESSO_DEPLOY_AGENTS.md.
 
