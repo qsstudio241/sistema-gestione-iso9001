@@ -587,10 +587,11 @@ function buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUr
         if (!clause || typeof clause !== 'object') return;
         const sectionTitle = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '').toUpperCase();
 
-        // Titolo1 per la sezione (con interruzione di pagina)
+        // Titolo1 per la sezione — senza pageBreakBefore: un break per ogni sezione
+        // creava pagine quasi vuote (il template Titolo1 può già avere spaziatura forte).
         xml += xmlPara(
             xmlRun(`${sectionNum} \u2014 ${sectionTitle}`, { bold: true, size: 24, color: '1D4ED8' }),
-            { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
+            { style: 'Titolo1', pageBreak: false, sb: 120, sa: 160 }
         );
         sectionNum++;
 
@@ -606,7 +607,8 @@ function buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUr
 
             // Tabella a riga singola (header + 1 domanda + eventuale stralcio)
             xml += buildClauseTableOoxml([q], auditAttachments, getViewUrl, options, imageRegistry, normExcerpts);
-            xml += xmlPara('', { sa: 160 });
+            // Piccolo respiro dopo la tabella (evita paragrafi vuoti con sa molto alto = buchi nel PDF/Word)
+            xml += xmlPara('', { sa: 80, sb: 0 });
         });
     });
 
@@ -660,12 +662,14 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
                 if (!clause || typeof clause !== 'object') return;
                 const num   = extractSectionNum(clauseKey);
                 const title = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '');
+                // Nessun pageBreakBefore su ogni clausola: evita pagine quasi vuote tra sezioni.
+                // L'unica interruzione forte resta su "3 — RILIEVI PENDENTI" (sopra).
                 xml += xmlPara(
                     xmlRun(num + ' \u2014 ' + title.toUpperCase(), { bold: true, size: 24, color: '1D4ED8' }),
-                    { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
+                    { style: 'Titolo1', pageBreak: false, sb: 80, sa: 160 }
                 );
                 xml += buildClauseTableOoxml(clause.questions || [], auditAttachments, getViewUrl, options, imageRegistry, normExcerpts);
-                xml += xmlPara('', { sa: 300 });
+                xml += xmlPara('', { sa: 120, sb: 0 });
             });
     });
 
