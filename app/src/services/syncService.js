@@ -51,6 +51,10 @@ export class SyncService {
         this.NETWORK_BACKOFF_INTERVAL_MS = 120000; // 2 minuti
         this._networkBackoffTimer = null;
 
+        /** Pausa globale dopo HTTP 429: nessun item consuma retry; stop burst verso l'API. */
+        this._globalRateLimitUntil = 0;
+        this._rateLimitTimer = null;
+
         // Monitor connessione
         window.addEventListener('online', () => this.handleOnline());
         window.addEventListener('offline', () => this.handleOffline());
@@ -163,6 +167,11 @@ export class SyncService {
             return;
         }
 
+        if (Date.now() < this._globalRateLimitUntil) {
+            this._scheduleRateLimitProcessQueue();
+            return;
+        }
+
         this.isSyncing = true;
         console.log('🔄 [SYNC] Inizio processamento queue...');
 
@@ -240,6 +249,29 @@ export class SyncService {
                             console.warn(`[SYNC] Rete instabile — ${items.length} item in coda, saranno riprocessati quando la connessione stabilizzerà`);
                         }
                         continue;
+                    }
+
+                    const rateLimited =
+                        st === 429 ||
+                        code === 'RATE_LIMIT_API' ||
+                        code === 'RATE_LIMIT_AUTH';
+                    if (rateLimited) {
+                        const hint = Number.isFinite(error?.data?.retryAfterMs)
+                            ? error.data.retryAfterMs
+                            : 60000;
+                        this._enterGlobalRateLimit(hint);
+                        const waitSec = Math.max(1, Math.round((this._globalRateLimitUntil - Date.now()) / 1000));
+                        console.warn(
+                            `[SYNC] Rate limit server (429) — pausa globale ~${waitSec}s, item in coda non penalizzati`,
+                        );
+                        try {
+                            window.dispatchEvent(
+                                new CustomEvent('sgq:syncRateLimited', {
+                                    detail: { resumeAt: this._globalRateLimitUntil },
+                                }),
+                            );
+                        } catch (_) { /* ambiente senza window */ }
+                        break;
                     }
 
                     const lockDenied =
@@ -1196,6 +1228,36 @@ export class SyncService {
                 this.processQueue().catch(() => {});
             }
         }, this.NETWORK_BACKOFF_INTERVAL_MS);
+    }
+
+    /**
+     * Dopo 429: estende la finestra di pausa globale e schedula un processQueue al termine.
+     * Non consuma retry degli item (evita stalli falsi sotto stress).
+     */
+    _enterGlobalRateLimit(delayMs) {
+        const minWait = 5000;
+        const maxWait = 15 * 60 * 1000;
+        const d = Math.min(Math.max(Number(delayMs) || 60000, minWait), maxWait);
+        const until = Date.now() + d;
+        if (until > this._globalRateLimitUntil) {
+            this._globalRateLimitUntil = until;
+        }
+        this._scheduleRateLimitProcessQueue();
+    }
+
+    _scheduleRateLimitProcessQueue() {
+        if (this._rateLimitTimer) {
+            clearTimeout(this._rateLimitTimer);
+            this._rateLimitTimer = null;
+        }
+        const delay = Math.max(0, this._globalRateLimitUntil - Date.now()) + 50;
+        this._rateLimitTimer = setTimeout(() => {
+            this._rateLimitTimer = null;
+            this._globalRateLimitUntil = 0;
+            if (this.isOnline) {
+                this.processQueue().catch(() => {});
+            }
+        }, delay);
     }
 
     /**

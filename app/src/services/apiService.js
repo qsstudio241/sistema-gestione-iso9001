@@ -42,6 +42,34 @@ const USER_KEY = 'sgq_user';
 const LOCK_TOKEN_SS_KEY = 'sgq:lockTokens';
 const AUDIT_LOCK_TOKENS = new Map();
 
+/**
+ * Millisecondi di attesa consigliati da una risposta HTTP 429.
+ * Usa Retry-After (secondi) se presente; altrimenti RateLimit-Reset (Unix secondi, draft standard).
+ * Clamp 5s … 15 min per evitare sia burst sia attese infinite.
+ */
+function parseHttp429RetryAfterMs(response) {
+    const minWait = 5000;
+    const maxWait = 15 * 60 * 1000;
+    const ra = response.headers?.get?.('retry-after');
+    if (ra != null && String(ra).trim() !== '') {
+        const sec = parseFloat(String(ra).trim());
+        if (Number.isFinite(sec)) {
+            return Math.min(Math.max(sec * 1000, minWait), maxWait);
+        }
+    }
+    const rlReset = response.headers?.get?.('ratelimit-reset');
+    if (rlReset != null && String(rlReset).trim() !== '') {
+        const n = parseInt(String(rlReset).trim(), 10);
+        if (!Number.isFinite(n)) return 60000;
+        if (n > 1e9) {
+            const ms = n * 1000 - Date.now();
+            return Math.min(Math.max(ms, minWait), maxWait);
+        }
+        return Math.min(Math.max(n * 1000, minWait), maxWait);
+    }
+    return 60000;
+}
+
 /** Carica i token persistiti in sessionStorage (chiamato una sola volta all'avvio del modulo) */
 (function _restoreLockTokensFromSession() {
     try {
@@ -220,11 +248,16 @@ class ApiService {
                 }
 
                 const errorData = await response.json().catch(() => ({}));
+                let errorPayload = errorData;
+                if (response.status === 429) {
+                    const retryAfterMs = parseHttp429RetryAfterMs(response);
+                    errorPayload = { ...errorData, retryAfterMs };
+                }
                 throw new ApiError(
                     errorData.error || `HTTP ${response.status}`,
                     response.status,
                     errorData.code || 'API_ERROR',
-                    errorData // ← preserva serverData, conflict info, ecc.
+                    errorPayload // ← preserva serverData, conflict info, retryAfterMs su 429
                 );
             }
 
