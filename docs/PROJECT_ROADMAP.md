@@ -1,12 +1,70 @@
 ﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
-> **Ultimo Aggiornamento**: 4 maggio 2026
-> **Prossimo Step**: Sessione 03/05 chiusa. Smoke L3 P1 ✅ (passi 1-5 OK, passi 6-7 in backlog su audit reale). Refactoring strutturale ✅, migration 048 ✅. **Prossime priorità**: (1) Smoke Mason ISO 3834; (2) Smoke Word export su audit Camellini reale (passi 6-7); (3) ISO 14001 checklist da norma PDF; (4) SMTP Alert Engine VPS.
-> **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026)
+> **Ultimo Aggiornamento**: 6 maggio 2026
+> **Prossimo Step**: Sessione 06/05 — fix sync performance (PR #31 pronto), fix 429 (PR #30 mergiato). S-A6 deputy in corso. **Prossimi traguardi prodotto**: (1) chiusura consolidata modulo audit (roadmap §AUDIT-CLOSE); (2) modulo NC organizzativo; (3) modulo documentale + qualifiche.
+> **Backlog strutturato**: vedi sezione **Debito Tecnico Strutturato** in fondo.
+
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
-> **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
+---
+
+## ROADMAP PRODOTTO — Moduli in sequenza
+
+### Fase AUDIT-CLOSE — Chiusura consolidata modulo audit
+
+Obiettivo: modulo audit professionale e completo. Prerequisito per avviare modulo NC.
+
+| ID | Item | Dettaglio tecnico | Priorità |
+|----|------|-------------------|----------|
+| **AC-1** | **Conclusioni obbligatorie prima dell'export** | UX gap: `AuditClosePanel` già blocca se `conclusions` vuote, ma l'utente non viene guidato alla Sezione 12. Fix: apertura automatica Sezione 12 se vuota quando si apre il pannello di chiusura; oppure inline nel pannello di chiusura. | P0 — segnalato da Camellini |
+| **AC-2** | **Report Word: conclusioni e sommario completo** | Il campo `outcome.conclusions` già mappato nel template (`wordExport.js:200`). Verifica che il marker `{conclusions}` sia presente nel template `.docx` Camellini; se assente, aggiungerlo. Aggiungere anche sezione "Rilievi emersi" con colonne C e N.A. (da confermare con cliente). | P0 |
+| **AC-3** | **Nomenclatura documenti personalizzata** | Proposta approvata: `[PREFISSO_STUDIO]-[AZIENDA]-[ANNO]-[NN]` es. `QSS-Camellini-2026-003.docx`. Implementazione: (a) campo `document_prefix` su `organizations`; (b) tab **Impostazioni** nello studio (o sezione nell'admin anagrafica); (c) `generateDocumentName(audit, orgSettings)` in `wordExport.js`; (d) fallback al numero audit esistente se prefisso non configurato. | P1 |
+| **AC-4** | **Logo studio nei report** | Parzialmente implementato: API `POST /organizations/me/logo` ✅, `organization_logo_url` in JWT ✅, `injectOrgLogoInZip` in `wordExport.js` ✅. **Gap**: (a) UI per upload logo studio non esposta nello Settings; (b) marker `[LOGO_ORG]` deve essere presente nel template Word; (c) logo azienda auditata da admin alla creazione anagrafica (`companies.logo_url` già in DB) — verifica che appaia nel Word. | P1 |
+| **AC-5** | **S-A6: rimozione `NonConformitiesManager`** | Deputy in corso (vedi `DEPUTYTASK.md`). | P1 — in corso |
+| **AC-6** | **Sezione 11 Esito: aggrega anche risposte custom** | `AuditOutcomeSection` non calcola metriche custom se `has_outcome_buttons`. Fix in `metricsCalculator.js` + hook `useAuditMetrics`. | P1 |
+| **AC-7** | **ISO 14001 checklist completa** | 46 domande già in DB. Verifica completezza + `norm_excerpt` come colonna opzionale. | P1 |
+| **AC-8** | **`norm_excerpt` nel report Word** | Colonna `norm_excerpt NVARCHAR(MAX)` in `checklist_questions` + populate da norma PDF + inject in `wordExportHelpers.js` sotto ogni clausola. Alto impatto, bassa complessità. | P2 |
+| **AC-9** | **SYNC-5: allegati offline** | Vedi sezione debito tecnico sotto. Contestuale anche alla standardizzazione allegati custom. | P2 — con debito tecnico |
+
+---
+
+### Fase NC — Modulo gestione Non Conformità organizzativo
+
+Prerequisito: AC-5 (S-A6) completato (rimozione registro NC da audit).
+
+| ID | Item | Dettaglio tecnico | Priorità |
+|----|------|-------------------|----------|
+| **NC-1** | **CRUD NC base** | Tabella `non_conformities` già in DB. UI: lista NC per organizzazione con filtri (audit, stato, responsabile, scadenza). Pagina già esiste (`/nc`), verificare completezza. | P0 |
+| **NC-2** | **Flusso stati NC** | `aperta → in corso → chiusa (verificata / rifiutata)`. Azioni correttive con responsabile + scadenza. Tracking modifiche via temporal table (già presente in altri moduli). | P0 |
+| **NC-3** | **Ponte «Importa NC da audit»** | API: `GET /audits/:uuid/nc-candidates` → lista punti con esito NC + note + allegati collegati. UI: wizard in `/nc` "Nuova NC da audit" → precompila campi da punto checklist. Vincolo anti-duplicazione: `audit_id + question_id → nc_id` (un solo record per punto per audit). | P1 |
+| **NC-4** | **Alert scadenze azioni correttive** | Estende Alert Engine SMTP già parzialmente pianificato: cron job notturno → email responsabile se scadenza NC entro N giorni. | P2 |
+| **NC-5** | **Report NC Word/PDF** | Template dedicato per report NC organizzativo (non legato al verbale audit). | P2 |
+
+---
+
+### Fase DOC — Modulo documentale + qualifiche
+
+Prerequisito: Sprint 10 (ingest PDF → staging → registry) già completato ✅.
+
+| ID | Item | Dettaglio tecnico | Priorità |
+|----|------|-------------------|----------|
+| **DOC-1** | **Registry documenti operativo** | Document registry già parzialmente implementato (Sprint 10). Completare: approvazione, revisione, scadenze, notifiche. | P0 |
+| **DOC-2** | **Collegamento audit → documentale** | Export Word genera automaticamente bozza documento in staging registry con metadati audit (numero, data, azienda, standard). Azione "Registra" da `ExportPanel`. | P1 |
+| **DOC-3** | **Qualifiche personale** | Modulo separato: personale qualificato (ISO 9712, EN 9606 per Mason, ISO 17024). Scadenze + alert. Struttura: `qualifications(person_id, standard_code, level, expiry_date, certificate_url)`. | P1 — Mason urgente |
+| **DOC-4** | **Office Round-trip WebDAV** | Sprint 12 già specificato. Editing Word → salvataggio diretto nel registry. | P2 |
+
+---
+
+## Debito Tecnico Strutturato (da pianificare con SYNC-5)
+
+| Debito | Componenti coinvolti | Rischio attuale | Piano |
+|--------|----------------------|-----------------|-------|
+| **SYNC-5 — allegati offline** | `SyncService`, `useAttachmentManager`, `CustomChecklistAuditView` | Perdita allegati se utente carica foto offline | Implementare flush blob `attachments_offline → upload` al reconnect. Prerequisito per tutti gli altri. Pianificare come slice autonoma. |
+| **Doppio percorso allegati custom** | `CustomChecklistAuditView.handleFileSelect` vs `AttachmentSection + useAttachmentManager` | Bug fix su hook non si propaga ai blocchi extra; no validazione limiti; no progress bar | Estendere `useAttachmentManager` con `openFilePickerForBlock(itemId, blockIndex)` + eliminare `handleFileSelect`. Abbinare a SYNC-5 (stesso componente). |
+| **Debounce note duplicato** | `CustomChecklistAuditView.notesDebounceRef` vs `StorageContext.fieldUpdatedDebounceRef` | Comportamento leggermente diverso (800ms vs 500ms), nessun coordinamento | Unificare in StorageContext o estrarre in hook condiviso. Bassa urgenza ma fonte di bug futuri. |
+| **Nomenclatura documenti non standard** | `ExportPanel`, `wordExport.js`, tabella `organizations` | Nomi file non professionali; impossibile tracciare serie documentale | Vedi AC-3. Schema: `[prefix]-[company]-[year]-[seq]`. Campo `document_prefix` su `organizations` + Settings UI. |
+| **Logo studio non esposto in Settings** | `organization.controller.js` (API ✅), `ExportPanel.jsx` (scarica ✅), template Word (marker ✅) | Logo non appare nei report perché nessuno lo carica dall'UI | Aggiungere tab/sezione "Identità studio" nel settings con upload logo + anteprima. |
 
 ---
 

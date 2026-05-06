@@ -17,6 +17,27 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 06 maggio 2026
+
+**Fix performance sync + roadmap strutturata prodotto:**
+
+| Fix | Dettaglio |
+|-----|-----------|
+| Fix 429 global rate limit (PR #30 → main) | `apiService.js` + `syncService.js` — pausa globale coda su HTTP 429, nessun consumo retry |
+| Debounce `save_responses` 1500ms (PR #31) | `StorageContext.jsx` — risolve coda 10 min Camellini; N click = 1 item |
+| `enqueueOrReplace` su `update_audit` (PR #31) | `SyncService.js` — payload in-place, coda dimensione 1 per audit |
+| Roadmap AUDIT-CLOSE / NC / DOC strutturata | `PROJECT_ROADMAP.md` — fasi AC-1…AC-9, NC-1…NC-5, DOC-1…DOC-4, debito tecnico |
+
+**Gap audit diagnosticati (segnalazione Camellini):**
+
+| Problema | Causa radice | Fix pianificato |
+|----------|-------------|-----------------|
+| Conclusioni assenti nel Word | UX: Sezione 12 non compilata prima dell'export. Blocker già in `AuditClosePanel` ma non viene mostrato durante il flusso. | AC-1: guida UX a Sezione 12 alla chiusura |
+| Logo studio non nel report | API + `wordExport.js` già pronti; manca UI Settings per upload. | AC-4: tab "Identità studio" nel setup |
+| Nome file non professionale | Nessun `document_prefix` in `organizations`. | AC-3: schema `[prefix]-[company]-[year]-[seq]` |
+
+---
+
 ### Chiusura sessione 05 maggio 2026
 
 **Completamento gap modulo audit: S-A5 + documentazione S-A6:**
