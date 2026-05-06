@@ -95,6 +95,28 @@
 
 ---
 
+### Lezioni / Pattern trasversali sessione 06/05/2026
+
+#### Pattern SYNC — Deduplicazione enqueue (da `enqueueOrReplace`)
+Qualsiasi `enqueue` di un tipo che porta **stato completo** (es. `update_audit`, `save_responses`) è candidato alla deduplicazione in-place:
+- Se il payload è sempre un **snapshot dell'intero stato**, N item dello stesso tipo per lo stesso audit sono ridondanti: il server riceve solo l'ultimo.
+- Usare `enqueueOrReplace(type, auditUuid, payload)` invece di `enqueue(type, payload)` per questi tipi.
+- Usare `debounce` (ref pattern: `fieldUpdatedDebounceRef`, `saveResponsesDebounceRef`) per tipi triggered da ogni interazione UI.
+- **Regola pratica**: se il percorso `updateCurrentAudit → enqueue` può essere chiamato più di 5 volte in 10 secondi dallo stesso utente → applicare debounce + dedup.
+
+#### Pattern WORD — Layout da codice, non da template
+Prima di aprire il template `.docx` per diagnosticare problemi di layout (page break, spazi vuoti):
+1. Cercare `pageBreak`, `sa:`, `sb:` in `wordExportHelpers.js` — il layout è generato via `xmlPara` con `opts`.
+2. `w:pageBreakBefore` su ogni `Titolo1` con molte sezioni = pagine quasi vuote tra clausole.
+3. `xmlPara('', { sa: 300 })` = paragrafo vuoto con spaziatura 15pt sotto = riga bianca visibile.
+- Il template `.docx` influenza solo stili globali e struttura iniziale, non il contenuto iniettato via marker.
+
+#### Pattern DEPUTYTASK — Sovrascrivere subito dopo la decisione
+Il deputy lavora sul `DEPUTYTASK.md` più recente che trova. Se la decisione di prodotto cambia (es. opzione D per S-A6) e il DEPUTYTASK non viene **sovrascritto immediatamente**, il deputy riprende il task precedente o un residuo.
+- **Regola**: la sovrascrittura di `DEPUTYTASK.md` deve avvenire **nello stesso turno** in cui si prendela decisione, non in un PR di documentazione separato.
+
+---
+
 ### Chiusura sessione 04 maggio 2026
 
 **Gate read-only modulo audit — S-A1/S-A2/S-A3 (PR #25, merge su main, deploy VPS 04/05/2026):**

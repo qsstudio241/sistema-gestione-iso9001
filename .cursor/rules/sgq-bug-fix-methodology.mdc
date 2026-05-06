@@ -13,6 +13,12 @@ Prima di aprire qualsiasi file, rispondere a queste domande:
 3. **Quando è apparso?** (quale commit/deploy).
 4. **È intermittente o sistematico?**
 
+## Regola uno: NON dichiarare P0 senza leggere il codice
+Prima di assegnare priorità alta a un problema segnalato dall'utente:
+- **Leggi il percorso completo** dal frontend al backend: se il campo esiste nel modello, nel converter e nel template, il problema potrebbe essere UX (non compilato) non tecnico (assente).
+- **Word/PDF**: problemi di layout (page break, spazi vuoti) → cercare prima in `wordExportHelpers.js` (`pageBreak`, `sa:`, `sb:`), non nel template `.docx`.
+- **Sync lenta**: verificare quanti item vengono accodati per ogni interazione prima di ipotizzare problemi di rete.
+
 ## Fase 1 — Mappa i livelli coinvolti
 I bug in questa app coinvolgono: [React state] ↔ [IndexedDB] ↔ [Sync queue] ↔ [Server API].
 Distingui sempre:
@@ -27,7 +33,9 @@ Distingui sempre:
 - **Fix minimo**: Una modifica alla volta.
 - **Belt and suspenders**: Per cancellazioni critiche, usa più livelli (Server + IndexedDB + Tombstone locale).
 - **Loop detector**: Se stai ripetendo lo stesso fix per la terza volta, FERMATI. Cambia strategia.
+- **Sync enqueue frequente**: se `enqueue` può essere chiamato >5 volte in 10s → applicare debounce + `enqueueOrReplace`. Pattern in `GUIDA_CONSOLIDATA.md` §Lezioni 06/05.
 
 ## Workflow parallelo Lead + Deputy
 - **Lead**: Architettura e decisioni. Prepara `docs/agent-tasks/DEPUTYTASK.md`.
 - **Deputy**: Implementazione task circoscritti e Unit Test L1.
+- **Regola DEPUTYTASK**: sovrascrivere `DEPUTYTASK.md` **nello stesso turno** della decisione — non in un PR separato. Il deputy lavora sul file più recente.
