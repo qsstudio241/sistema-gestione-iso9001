@@ -11,8 +11,8 @@
 | Voce | Contenuto |
 |------|-------------|
 | **Stato complessivo** | Nucleo audit **operativo**: checklist ISO/custom, allegati, sync multi-device (server-wins), lock solo UX, temporal DB, export Word, pending issues su DB, chiusura/approvazione API. |
-| **Gap verso “professionale” al 100%** | Read-only post-chiusura **non** uniforme su UI; API risposte **non** blocca audit `completed`; re-audit: UX pendenze **diversa** dalla checklist, senza deep-link domanda; chiusura **80%** ignora completamento **solo custom**; registro NC in audit **disallineato** da backend converter e da modulo `/nc`; allegati offline **SYNC-5** backlog; Word/security token allegati in roadmap. |
-| **Decisione prodotto da fissare** | Registro NC **in audit** vs **modulo NC organizzazione** (fonti multiple) e ponte **audit → documentale**. |
+| **Gap verso “professionale” al 100%** | Storico: vedi matrice §4 (molte voci P0–P1 già chiuse in sessioni 04–05/05). Restano: **S-A6** pulizia registro NC in audit (decisione **D**); allegati offline **SYNC-5**; Word/token allegati; backlog §4 P2. |
+| **Decisione prodotto (S-A6)** | **Opzione D** approvata (06/05/2026): nessun registro NC dedicato nel modulo audit; **modulo NC** autonomo con ponte **«Importa NC da audit»** (dettaglio in §10). |
 
 ---
 
@@ -21,9 +21,9 @@
 1. Creazione audit → compilazione checklist (C/NC/OSS/OM/NA/NV + note + allegati) per ogni requisito.  
 2. Esito metriche + conclusioni → chiusura formale → export Word (con/senza foto) → rifinitura esterna → **carico manuale** in modulo Documenti.  
 3. Anno successivo: **re-audit** con pendenze da audit precedente, **stessa UX** checklist in lettura mirata, verifica efficacia, chiusura pendenze, ripetizione ciclo.  
-4. NC organizzative: modulo **dedicato** (`/nc`) con possibile **ingresso automatico** dagli audit (non duplicare senza regole).
+4. NC organizzative: modulo **dedicato** (`/nc`); origine da audit solo tramite flusso **import** (lista punti NC checklist / pendenze), senza sezione «registro NC» nell’accordion verbale.
 
-Il codice oggi copre bene **1** e in parte **2**–**3**; **4** è parzialmente sovrapposto (`NonConformitiesManager` in audit).
+Il codice oggi copre bene **1** e in parte **2**–**3**; **4** richiede ancora **rimozione legacy** (`NonConformitiesManager`) e poi implementazione ponte lato modulo NC (task separato).
 
 ---
 
@@ -40,7 +40,7 @@ Il codice oggi copre bene **1** e in parte **2**–**3**; **4** è parzialmente 
 | Rilievi certificatore | `app/src/components/CertificationFindingsSection.jsx` |
 | Checklist ISO | `app/src/components/ChecklistModule.jsx`, `QuestionCard.jsx` |
 | Checklist custom | `app/src/components/CustomChecklistAuditView.jsx` |
-| NC in audit (registro locale) | `app/src/components/NonConformitiesManager.jsx` |
+| ~~NC in audit (registro locale)~~ **da rimuovere (S-A6)** | `NonConformitiesManager.jsx` (deprecato) |
 | Esito / conclusioni | `app/src/components/AuditOutcomeSection.jsx` |
 | Chiusura | `app/src/components/AuditClosePanel.jsx` |
 | Export | `app/src/components/ExportPanel.jsx`, `app/src/utils/wordExport.js`, `wordExportHelpers.js` |
@@ -63,7 +63,7 @@ Legenda priorità: **P0** bloccante per coerenza/rischio | **P1** UX o allineame
 | G3 | Creazione audit vs DB pending | Modal re-audit: `checkReaudit` + `getNcResponses` → copia `pendingIssues` locale (**OM esclusi**). DB lazy-init può **divergere** dalla copia iniziale. | **Una fonte**: dopo creazione, sempre GET pending; oppure server crea righe e FE non duplica logica. | P1 |
 | G4 | `AuditClosePanel` completamento | Soglia **80%** su `currentAudit.checklist` (struttura ISO); audit **solo custom** può avere `checklist` vuota → soglia bypassata. | Regola per **solo ISO / solo custom / misto**; blockers allineati al perimetro reale. | P1 |
 | G5 | Sezione 11 | Metriche ISO + custom (`has_outcome_buttons`); testo “dettaglio in checklist”. | Drill-down lista; roadmap: Word tabella rilievi **C/NA** (decisione cliente). | P2 |
-| G6 | `NonConformitiesManager` | Modello ricco (10.2) in `currentAudit.nonConformities`; `backendToFrontend` imposta **`nonConformities: []`**; `non_conformities_count` da **metriche checklist** (NC come esito). | O separare metriche (“NC checklist”) da registro, o persistere registro server + sync; ponte opzionale a `POST /nc`. | P1 |
+| G6 | `NonConformitiesManager` | Modello ricco (10.2) in `currentAudit.nonConformities`; **non** allineato al server; contatore DB = **NC come esito checklist**. | **D — Modulo NC unico + import da audit**: rimuovere registro in audit; metriche NC = checklist; ponte `POST`/wizard in `/nc` (slice successiva). | P1 |
 | G7 | Export Word | Prepara audit + pending + allegati; JWT in URL allegati. | Token download **monouso** (roadmap 0.B); allineamento template backlog. | P2 |
 | G8 | Documenti | Nessun collegamento automatico da export. | Azione “Registra in documentale” con metadati/versione. | P2 |
 | G9 | Offline allegati | SYNC-5 backlog (roadmap). | Blob IndexedDB → upload reconnect con stato UI. | P2 |
@@ -76,12 +76,12 @@ Ogni slice: **un PR**, test L1 dove esiste pattern, aggiornamento **una riga** i
 
 | Slice ID | Titolo | Perimetro | Accettazione minima |
 |----------|--------|-----------|---------------------|
-| **S-A1** | Gate read-only UI post-stato | `AuditAccordionLayout`, figli che editano (`GeneralDataSection`, `ChecklistModule`, `CustomChecklistAuditView`, `NonConformitiesManager`, …) | Se `metadata.status` ∈ `completed`/`approved`/`archived` → disabilitare edit salvo policy esplicita (es. solo admin). |
+| **S-A1** | Gate read-only UI post-stato | `AuditAccordionLayout`, figli che editano (`GeneralDataSection`, `ChecklistModule`, `CustomChecklistAuditView`, …) | Se `metadata.status` ∈ `completed`/`approved`/`archived` → disabilitare edit salvo policy esplicita (es. solo admin). |
 | **S-A2** | Policy API scrittura checklist | `response.controller.js` (+ test Jest se presenti) | `PUT`/`bulk` risposte rifiutati se audit `approved` (definire se anche `completed`). |
 | **S-A3** | Chiusura: completamento custom | `AuditClosePanel.jsx` + eventuale helper metriche custom | Audit solo custom: blockers coerenti (% o “tutti item con esito”). |
 | **S-A4** | Pending: ordinamento + deep link | `PendingIssuesCascade.jsx` + routing interno accordion (stato `openSubSections`) | Ordine NC→OSS→NV; click apre checklist alla domanda (`questionId` / `custom_item_id` se in payload). |
 | **S-A5** | Allineare pending creazione vs DB | `AuditSelector.jsx` (CreateAuditModal) + backend se necessario | Nessuna doppia logica incoerente; documentare flusso in 2 righe qui sotto changelog. |
-| **S-A6** | NC audit vs modulo NC | design minimo + opzionale implementazione | Documento decisione: depreca registro in audit / sync server / “Crea NC” verso API. |
+| **S-A6** | Pulizia audit: rimuovi registro NC locale | `AuditAccordionLayout`, `NonConformitiesManager*`, metriche/export/test che dipendono da `audit.nonConformities[]` | Nessuna sezione registro NC in `/audit`; contatori NC da **checklist** / `metrics.nonConformitiesCount`; test L1 verdi. Ponte «Importa da audit» = **task successivo** (modulo `/nc`). |
 | **S-A7** | Export → documentale | `ExportPanel` + `DocumentRegistry` (se API esiste) | Solo se product conferma: stub o integrazione reale. |
 
 **Dipendenze suggerite**: S-A2 dipende da decisione policy (completed vs approved). S-A4 può richiedere campi aggiuntivi in `GET pending-issues`. S-A5 può toccare `audit.controller` (init pending).
@@ -205,28 +205,31 @@ In `PendingIssuesCascade`, nella card del rilievo aggiungere il pulsante:
 
 ---
 
-## 10. Decisione pendente — S-A6: NC in audit vs modulo NC
+## 10. Decisione prodotto — S-A6: opzione **D** (modulo NC unico + import da audit)
 
-### Problema (G6)
+### Problema risolto in architettura (G6)
 
-Esiste una sovrapposizione tra:
-- **`NonConformitiesManager` in audit** — registro locale in `currentAudit.nonConformities` (modello ricco: `auditDataModel.js`), **non sincronizzato con il server** (`auditConverter` imposta sempre `nonConformities: []` ad ogni fetch).
-- **Modulo `/nc`** — tabella `non_conformities` sul server, CRUD completo, tenant-isolated.
+Prima esisteva una **doppia semantica**: registro locale `NonConformitiesManager` / `currentAudit.nonConformities` (mai sincronizzato con `GET /audits`) vs **NC come esito checklist** (contatore `non_conformities_count` da risposte) vs modulo **`/nc`** sul server.
 
-Il contatore `non_conformities_count` nell'audit viene da metriche checklist (quante risposte "NC"), **non** dal registro `NonConformitiesManager`.
+### Decisione approvata (committente, 06/05/2026) — **Opzione D**
 
-### Opzioni disponibili
+| Elemento | Comportamento |
+|----------|----------------|
+| **Modulo audit** | Registra **solo** esiti checklist (incluso stato **NC** sui punti), note, allegati, pendenze DB, export Word. **Nessuna** sezione dedicata al workflow NC (10.2) dentro l’accordion verbale. |
+| **Modulo NC** (`/nc`) | Unica sede per **registro NC**, stati, azioni correttive, chiusura. |
+| **Ponte** | Azione **«Importa NC da audit»** nel modulo NC: elenco punti con esito NC (e/o pendenze collegate, da definire in mini-spec) → precompilazione nuova NC + tracciabilità `audit_id` / `question_id` (o equivalente). **Non** implementata in questo slice S-A6. |
 
-| Opzione | Descrizione | Effort | Rischio |
-|---------|-------------|--------|---------|
-| A) Depreca registro in audit | Rimuovi `NonConformitiesManager` dall'accordion, mostra link "Vai al modulo NC" | Basso | Perdita dati locali utenti che lo usano già |
-| B) Sincronizza registro lato server | `POST /nc` al salvataggio NC in audit + `GET /audits/:id/nc` al caricamento; `auditConverter` popola `nonConformities` da server | Alto | Migrazione dati esistenti |
-| C) Stub monodirezionale | Pulsante "Crea NC organizzativa" nel `NonConformitiesManager` → crea in `/nc` senza sostituire il registro locale | Medio | Doppia fonte, accettabile se le NC di audit sono "bozze" |
+### Opzioni A / B / C (archivio — sostituite da D)
 
-### Decisione committente richiesta
+| Opzione | Nota |
+|---------|------|
+| A | Depreca solo UI registro in audit — D estende con ponte lato `/nc` invece del semplice link. |
+| B | Sync bidirezionale del vecchio registro in audit — **non** percorso scelto. |
+| C | Doppia fonte locale + `/nc` — **non** percorso scelto. |
 
-Scegliere **A**, **B** o **C** prima che il deputy avvii S-A6.  
-Default consigliato se nessuna preferenza: **C** (stub monodirezionale) — zero rischio dati, zero refactoring, valore immediato.
+### Prossimo task (fuori da S-A6 “pulizia audit”)
+
+Mini-spec o task deputy: **API + UI** per lista “NC da audit” (query su `audit_responses` / join audit) e creazione NC con payload di prefill; vincolo anti-duplicazione (stesso punto → una NC collegata o flag “già importato”).
 
 ---
 
@@ -237,6 +240,7 @@ Default consigliato se nessuna preferenza: **C** (stub monodirezionale) — zero
 | 2026-05-04 | Agent | Creazione brief da analisi gap modulo audit + flusso committente + matrice GA/ottimale. |
 | 2026-05-04 | Agent | Aggiunta analisi S-A4 (pending deep-link) con soluzione completa. |
 | 2026-05-05 | Agent | S-A5 fix reconcile pendingIssues. Aggiunta sezione §10 decisione S-A6 (opzioni A/B/C). |
+| 2026-05-06 | Lead / committente | **Opzione D** adottata: §10 riscritta; S-A6 = pulizia audit senza registro NC; ponte import in task modulo `/nc`. |
 
 ---
 

@@ -1,222 +1,140 @@
-# DEPUTYTASK — S-A4: Pending Issues — ordinamento + deep-link domanda + zero-state
+# DEPUTYTASK — S-A6: Pulizia modulo audit (opzione D — senza registro NC locale)
 
-> **Data**: 04/05/2026  
+> **Data**: 06/05/2026  
 > **Autore**: Lead Agent  
-> **Riferimento**: `docs/agent-tasks/AUDIT_MODULE_LEAD_BRIEF.md` §9 (slice S-A4)  
-> **Tipo**: UX improvement — solo frontend  
-> **Branch**: `feat/pending-deeplink-sa4-92ab` da `main`  
-> **Nessuna migrazione DB. Nessun deploy backend.**  
-> **Chiusura attesa**: TEST OK
+> **Riferimento**: `docs/agent-tasks/AUDIT_MODULE_LEAD_BRIEF.md` §10 (opzione **D**) + tabella slice §5  
+> **Tipo**: Frontend (+ test/mock); **nessun deploy backend obbligatorio** per questo slice  
+> **Fuori scope**: implementazione **«Importa NC da audit»** nel modulo `/nc` (task successivo dopo chiusura S-A6)  
+> **Chiusura attesa**: **TEST OK** oppure **FIX NON APPLICABILI — [motivo]**
 
 ---
 
-## Contesto
+## Obiettivo prodotto
 
-`PendingIssuesCascade.jsx` mostra i rilievi pendenti dal re-audit precedente ma ha 3 gap UX:
-1. **Ordinamento**: il DB restituisce NC/NV/OSS in ordine alfabetico → `NV` precede `OSS` visivamente
-2. **Zero-state silenzioso**: se non ci sono rilievi il componente ritorna `null` senza feedback
-3. **Nessun link domanda**: l'auditor non può saltare alla clausola corrispondente nella checklist
-
----
-
-## FASE 1 — `PendingIssuesCascade.jsx`
-
-### 1A — Ordinamento NC → OSS → NV
-
-Aggiungere subito dopo la dichiarazione degli `useState`, prima del `return`:
-
-```javascript
-// Ordinamento esplicito: NC prima, poi OSS, poi NV
-const STATUS_ORDER = { NC: 0, OSS: 1, NV: 2 };
-const sortedIssues = [...issues].sort(
-  (a, b) => (STATUS_ORDER[a.original_status] ?? 9) - (STATUS_ORDER[b.original_status] ?? 9)
-);
-```
-
-Nel JSX, sostituire ogni `issues.map(...)` con `sortedIssues.map(...)`.  
-I contatori `ncCount`, `ossCount`, `nvCount`, `resolvedCount`, `persistsCount` restano su `issues` (contano il totale, non l'ordinato — corretto).
-
-### 1B — Zero-state esplicito
-
-Sostituire il `return null` (riga ~173):
-
-```javascript
-// PRIMA:
-if (!loading && issues.length === 0 && !error) return null;
-
-// DOPO:
-if (!loading && issues.length === 0 && !error) {
-  // Mostra messaggio positivo solo se l'audit ha un clientName (= re-audit reale, non audit nuovo)
-  if (!clientName) return null;
-  return (
-    <div className="pending-cascade pending-cascade--empty">
-      <p className="pending-empty-msg">✅ Nessun rilievo pendente dall'audit precedente.</p>
-    </div>
-  );
-}
-```
-
-### 1C — Prop `onGoToQuestion` + pulsante "Vai alla domanda"
-
-**Step 1**: Aggiungere la prop alla firma del componente:
-
-```javascript
-// PRIMA:
-function PendingIssuesCascade() {
-
-// DOPO:
-function PendingIssuesCascade({ onGoToQuestion }) {
-```
-
-**Step 2**: Nella card di ogni rilievo (subito dopo `<div className="issue-header">`), aggiungere il pulsante solo se la prop è presente e `section_code` è disponibile:
-
-```jsx
-{/* Pulsante deep-link domanda */}
-{onGoToQuestion && issue.section_code && (
-  <button
-    className="issue-goto-btn"
-    type="button"
-    onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
-    title={`Vai alla clausola ${issue.section_code} nella checklist`}
-  >
-    🔍 Vai alla domanda
-  </button>
-)}
-```
-
-Posizionarlo dentro `<div className="issue-title-section">`, dopo `<h4 className="issue-title">`.
-
-### 1D — CSS in `PendingIssuesCascade.css`
-
-Aggiungere in fondo al file:
-
-```css
-/* Zero-state */
-.pending-cascade--empty {
-  padding: 12px 16px;
-}
-.pending-empty-msg {
-  color: #16a34a;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-/* Deep-link pulsante */
-.issue-goto-btn {
-  background: none;
-  border: 1px solid #6366f1;
-  border-radius: 4px;
-  color: #6366f1;
-  cursor: pointer;
-  font-size: 0.78rem;
-  padding: 2px 8px;
-  margin-top: 4px;
-  transition: background 0.15s;
-}
-.issue-goto-btn:hover {
-  background: #eef2ff;
-}
-```
+- Nel **modulo audit** non deve esistere una sezione dedicata al **registro NC** (`NonConformitiesManager`): le non conformità “da gestione” vivono solo nel **modulo NC** (`/nc`).
+- In audit restano: **esito NC sui punti checklist** (già presente), **metriche** allineate al server (`non_conformities_count` da risposte), **pendenze**, export Word/JSON come oggi.
+- **Rischio accettato**: eventuali dati inseriti solo in `currentAudit.nonConformities` (IndexedDB, mai sincronizzati) **non saranno più accessibili** dall’UI dopo questo PR (stesso rischio già documentato per opzione A). Mitigazione consigliata: export JSON audit prima del merge in produzione, se serve recupero manuale.
 
 ---
 
-## FASE 2 — `AuditAccordionLayout.jsx`
+## FASE 0 — Inventario (grep prima di modificare)
 
-### 2A — Callback `handleGoToQuestion`
+Eseguire ricerca su `nonConformities` / `NonConformitiesManager` e annotare ogni occorrenza. File già noti al lead (lista non esaustiva se grep trova altro):
 
-Aggiungere dopo le dichiarazioni `handleGeneralDataUpdate`, `handleAuditObjectiveUpdate`, ecc.:
+| Area | File |
+|------|------|
+| UI accordion | `app/src/components/AuditAccordionLayout.jsx` |
+| Componente da rimuovere | `app/src/components/NonConformitiesManager.jsx`, `NonConformitiesManager.css` |
+| Metriche dashboard | `app/src/components/MetricsDashboard.jsx` |
+| Hook metriche | `app/src/hooks/useAuditMetrics.js` |
+| Utilità audit | `app/src/utils/auditUtils.js` (`calculateNCStats`, `validateAudit`, `canArchiveAudit`, `exportAuditSummary`, `getAggregateStats`, …) |
+| Export summary | `app/src/utils/exportManager.js` (`exportAuditSummary`) |
+| Modello dati / factory | `app/src/data/auditDataModel.js` (tipo `NonConformity`, `createEmpty…`, validazione `nonConformities must be array`) |
+| Converter | `app/src/utils/auditConverter.js` (oggi `nonConformities: []` — valutare se lasciare array vuoto fisso o documentare) |
+| Mock / test | `app/src/data/mockAudits.js`, `testMockData.js`, `testAuditUtils.js`, `testStorageLayer.js` |
+| Altri test | ogni `*.test.*` / `*.spec.*` che importa NC registro |
 
-```javascript
-/**
- * Deep-link: apre la sezione checklist e la sottosezione dello standard
- * che contiene section_code, poi scrolla alla domanda tramite id DOM.
- */
-const handleGoToQuestion = useCallback((sectionCode, questionId) => {
-  if (!sectionCode) return;
-  const lower = sectionCode.toLowerCase();
-
-  // Trova lo standard in STANDARDS_CONFIG che corrisponde al section_code
-  const stdEntry = STANDARDS_CONFIG.find(({ key }) => {
-    if (key === 'ISO_9001'   && lower.includes('9001')) return true;
-    if (key === 'ISO_14001'  && lower.includes('14001')) return true;
-    if (key === 'ISO_45001'  && lower.includes('45001')) return true;
-    if (key === 'ISO_3834_2' && (lower.includes('3834') || lower.includes('rdp'))) return true;
-    return false;
-  });
-
-  // Apri sezione "Checklist" + sottosezione standard (o custom se non trovato)
-  setOpenSections(prev => ({ ...prev, checklist: true }));
-  if (stdEntry) {
-    setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
-  }
-
-  // Scroll alla domanda dopo che React ha re-renderizzato l'accordion aperto
-  if (questionId) {
-    setTimeout(() => {
-      const el = document.getElementById(`question-${questionId}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 350);
-  }
-}, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili
-```
-
-### 2B — Passare la callback a `PendingIssuesCascade`
-
-Trovare il punto dove viene renderizzato `<PendingIssuesCascade />` (riga ~525) e aggiungere la prop:
-
-```jsx
-// PRIMA:
-<PendingIssuesCascade />
-
-// DOPO:
-<PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
-```
+**Regola**: ogni file toccato deve compilare; nessun import orfano a `NonConformitiesManager`.
 
 ---
 
-## FASE 3 — `QuestionCard.jsx`
+## FASE 1 — Rimuovere UI registro NC dall’audit
 
-Aggiungere `id` sul wrapper div per permettere lo scroll:
+### 1A — `AuditAccordionLayout.jsx`
 
-```jsx
-// PRIMA (riga ~57):
-<div className={cardClass}>
+- Rimuovere `import NonConformitiesManager`.
+- Rimuovere il blocco JSX della sezione **Registro NC** (accordion item + contenuto che renderizza `<NonConformitiesManager … />`).
+- Se esiste voce di menu/ stato `openSubSections` / chiavi legate solo a quella sezione, rimuoverle o ripulire i default iniziali coerentemente (nessuna sezione fantasma).
+- **Opzionale (UX)**: sotto **Esito audit** o in testa accordion, una riga testuale + link React Router verso `/nc` del tipo: *«Registro NC e azioni correttive: modulo Non conformità »* (solo se il tab `/nc` è già raggiungibile per l’utente; altrimenti omettere o nascondere con stesso gate del menu NC).
 
-// DOPO:
-<div
-  className={cardClass}
-  id={question.questionId ? `question-${question.questionId}` : undefined}
->
-```
+### 1B — Eliminare file componente
 
-`question.questionId` è il campo numerico idratato dal server (già usato da `AttachmentPreview`).  
-Se `questionId` non è disponibile (domanda non ancora idratata o custom), l'`id` resta assente — lo scroll silenziosamente non trova il target, senza errori.
+- Eliminare `app/src/components/NonConformitiesManager.jsx`.
+- Eliminare `app/src/components/NonConformitiesManager.css`.
 
 ---
 
-## Riepilogo file toccati
+## FASE 2 — Allineare metriche e validazioni al “solo checklist”
 
-| File | Modifica |
-|------|----------|
-| `app/src/components/PendingIssuesCascade.jsx` | Ordinamento, zero-state, prop `onGoToQuestion`, pulsante "Vai alla domanda" |
-| `app/src/components/PendingIssuesCascade.css` | Stili zero-state + pulsante |
-| `app/src/components/AuditAccordionLayout.jsx` | `handleGoToQuestion` callback + passa prop |
-| `app/src/components/QuestionCard.jsx` | `id={question-${questionId}}` sul wrapper |
+### 2A — `MetricsDashboard.jsx`
 
-**Nessun file backend. Nessuna migrazione.**
+- La card **«Non Conformità»** deve riflettere **`metrics.nonConformitiesCount`** (o conteggio da checklist con stesso valore), **non** `currentAudit.nonConformities.length`.
+- Rimuovere breakdown Major/Minor/Osservazione **se** derivato solo dal registro locale. Sostituzione minima accettabile:
+  - mostrare **un solo numero** = NC checklist + sottotesto esplicativo: *«Esiti NC sui punti checklist (gestione nel modulo NC)»*, oppure
+  - se si vuole mantenere qualcosa di più ricco: calcolare **solo** da checklist (conteggio `q.status === CHECKLIST_STATUS.NON_COMPLIANT` / `'NC'`) senza usare `audit.nonConformities[]`.
+
+### 2B — `useAuditMetrics.js`
+
+- `ncStats` basato su `audit.nonConformities` va **rimosso o sostituito** con statistiche da checklist (es. conteggio risposte `NC`).
+- `syncCheck.ncCountMatch`: oggi confronta `metrics.nonConformitiesCount` con `ncStats.total` del registro — **incoerente** dopo D. Impostare confronto coerente (es. entrambi da checklist / `metrics`) oppure rimuovere quel check se non più significativo.
+- Verificare che nessun consumatore si aspetti ancora `ncStats.byCategory` dal registro.
+
+### 2C — `auditUtils.js`
+
+- **`calculateNCStats`**: deprecare o reimplementare come **conteggio esiti NC sulla checklist** (restituire oggetto con `total` = numero domande con status NC, altri campi a 0 o rimossi se nessun chiamante).
+- **`validateAudit`**: regole 4, 8, 9 che usano `audit.nonConformities` per “NC aperte” / azioni correttive / evidenze — **adeguare o rimuovere**. Dopo D, “NC aperte” nel senso registro **non esistono** in audit: usare solo metriche checklist o togliere il warning se fuorviante.
+- **`canArchiveAudit`**: il blocco “NC ancora aperte” basato su `nonConformities` va rimosso o sostituito con policy definita dal lead (suggerimento: **non** bloccare archiviazione per il vecchio registro; eventuale blocco solo su pendenze DB non risolte, già presente).
+- **`exportAuditSummary`** (in `auditUtils.js`): `majorNC` / `minorNC` / `observations` da registro → sostituire con **`nonConformitiesCount`** da `metrics` e/o conteggio checklist; eliminare dipendenza da `audit.nonConformities`.
+- **`getAggregateStats`**: `totalNC` deve sommare **metriche checklist** (es. `audit.metrics?.nonConformitiesCount`), non `audit.nonConformities.length`.
+
+### 2D — `exportManager.js` — `exportAuditSummary`
+
+- Sezione `nonConformities`: non usare `audit.nonConformities` (può essere `[]` o assente). Usare `audit.metrics.nonConformitiesCount` e, se serve una lista, **derivarla dalla checklist** (clause + testo domanda + note) oppure esporre solo totali + nota *«dettaglio nel modulo NC»*.
+
+---
+
+## FASE 3 — Modello dati e persistenza
+
+### 3A — `auditDataModel.js`
+
+- Mantenere `nonConformities: []` negli audit creati **per compatibilità schema** finché non si fa refactoring profondo, **oppure** rimuovere il campo se nessun codice lo richiede più (preferenza: **mantenere array vuoto** + JSDoc *deprecated / non usato in UI* per non rompere JSON vecchi in IndexedDB).
+- Aggiornare commenti `@property` su `nonConformities` → *legacy, non usato; NC gestite in modulo `/nc`*.
+- Validazione: se `nonConformities must be array` resta, accettare sempre `[]` da merge.
+
+### 3B — `auditConverter.js`
+
+- Nessun cambio funzionale obbligatorio se resta `nonConformities: []`; aggiungere commento una riga che rimanda a opzione D.
+
+### 3C — `StorageContext.jsx` (se presente)
+
+- Cercare aggiornamenti a `nonConformities` nella `updateCurrentAudit` / sync: rimuere rami morti o lasciare no-op se il campo resta sempre `[]`.
+
+---
+
+## FASE 4 — Mock, fixture, test automatici
+
+- Aggiornare `mockAudits.js` / `testMockData.js` / `testAuditUtils.js` / `testStorageLayer.js`: rimuovere oggetti NC ricchi nel registro in audit **oppure** lasciarli come `[]` e spostare i casi d’uso verso checklist con status `NC` dove servono test.
+- Eseguire `NODE_ENV=test npx vitest run` in `app/` e correggere **tutti** i test rossi.
+- Aggiungere almeno **un test mirato** (es. helper o `MetricsDashboard` / `useAuditMetrics`) che verifica: *assenza registro* → conteggio NC = **metriche checklist** o `metrics.nonConformitiesCount`.
+
+---
+
+## FASE 5 — Verifica manuale minima (L3 leggero)
+
+1. Aprire un audit con risposte **NC** su checklist: dashboard / metriche mostrano conteggio coerente, **nessuna** sezione registro NC in accordion.  
+2. Read-only post-chiusura: nessun errore console per componente mancante.  
+3. Export summary / JSON (se esposto in UI): nessun crash; sezione NC sensata.  
+4. Menu `/nc`: raggiungibile come prima (nessuna regressione routing).
+
+---
+
+## FASE 6 — Documentazione post-merge
+
+- Aggiornare riga **S-A6** in `docs/PROJECT_ROADMAP.md` a **Completato** con data.  
+- In `docs/GUIDA_CONSOLIDATA.md` (sessione 06/05 o nota breve): S-A6 implementato — registro NC rimosso da audit; ponte import = task successivo.  
+- In `AUDIT_MODULE_LEAD_BRIEF.md` changelog §8: chiusura slice S-A6.
 
 ---
 
 ## Vincoli
 
-- `PendingIssuesCascade` deve restare retrocompatibile: se `onGoToQuestion` non viene passata, il pulsante non compare (già gestito con `onGoToQuestion &&`).
-- `handleGoToQuestion` usa `useCallback` con deps vuote (funzioni setter React sono stabili).
-- Lo scroll avviene dopo 350ms per dare tempo a React di aprire l'accordion — non usare ref o layout effect per semplicità.
-- Diff minimo: non toccare altri file, non refactoring estetici.
+- **Un PR** focalizzato; niente implementazione «Importa da audit» in questo PR.  
+- **Diff minimo** fuori dal perimetro NC-audit (no refactor estetici non richiesti).  
+- Rispettare **ADR-008** per eventuali nuovi endpoint (non richiesti qui).
 
 ---
 
-## Test attesi
+## Comandi test
 
 ```bash
 cd app
@@ -224,16 +142,10 @@ NODE_ENV=test npx vitest run
 npm run build
 ```
 
-**Smoke manuale** (documentare in PR):
-1. Aprire un re-audit con rilievi pendenti → verificare ordine: NC prima, poi OSS, poi NV
-2. Aprire un audit senza rilievi pendenti → verificare comparsa messaggio "✅ Nessun rilievo pendente"
-3. Click "🔍 Vai alla domanda" su un rilievo NC → verificare apertura accordion checklist + scroll alla domanda
-4. Aprire un audit nuovo (non re-audit) → verificare che nessun messaggio compaia (clientName presente ma nessun audit precedente → `null`)
-
 ---
 
 ## Chiusura
 
-Rispondere **TEST OK** con PR aperta + link, oppure **FIX NON APPLICABILE — [motivo]** per ogni fase non eseguita.
+Rispondere **TEST OK** (con PR / branch) oppure **FIX NON APPLICABILI — [motivo]**.
 
-Aggiornare `docs/PROJECT_ROADMAP.md` aggiungendo `S-A4 Pending deep-link` ✅ nella tabella priorità.
+**Per il committente (Cursor Agents)**: dopo merge, se serve recupero dati vecchi dal registro locale, usare backup export JSON **prima** del rilascio in produzione.

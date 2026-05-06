@@ -17,6 +17,18 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 06 maggio 2026
+
+**Decisione prodotto S-A6 — Opzione D (modulo NC unico + import da audit):**
+
+| Voce | Dettaglio |
+|------|-----------|
+| Architettura | Nessun registro NC dedicato nel modulo `/audit`; le NC si gestiscono nel modulo `/nc`; in audit restano solo **esiti checklist** (stato NC sui punti), pendenze, export. |
+| Ponte | Funzione **«Importa NC da audit»** lato modulo NC (task separato dopo pulizia S-A6). |
+| Documentazione | `docs/agent-tasks/AUDIT_MODULE_LEAD_BRIEF.md` §10 aggiornata; `DEPUTYTASK.md` = slice pulizia audit. |
+
+---
+
 ### Chiusura sessione 05 maggio 2026
 
 **Completamento gap modulo audit: S-A5 + documentazione S-A6:**
@@ -25,7 +37,7 @@
 |-----|------|-----------|
 | S-A5 — Preserva `pendingIssues` al reconcile | `StorageContext.jsx` | Eccezione 7 in `reconcileAuditsFromServer`: se il locale ha `pendingIssues.length > 0` e il server restituisce array vuoto (come atteso: `auditConverter` imposta sempre `[]`), si mantiene il locale. Evita perdita rilievi pendenti copia-al-creazione re-audit ad ogni page refresh. |
 | S-A5 — Eccezione coerente con pattern esistente | `StorageContext.jsx` | Allineata alle Eccezioni 1-6 già presenti nel blocco `mergedAudits.map(...)`. |
-| S-A6 — Decisione di prodotto documentata | `AUDIT_MODULE_LEAD_BRIEF.md §10` | 3 opzioni (A depreca, B sync server, C stub monodirezionale). Default consigliato: C. Attendere risposta committente prima di avviare il task. |
+| S-A6 — Decisione di prodotto | `AUDIT_MODULE_LEAD_BRIEF.md §10` | **Opzione D** (modulo NC unico + import da audit). A/B/C archiviate. Implementazione: slice pulizia audit in `DEPUTYTASK.md`. |
 
 **Stato matrice gap modulo audit al 05/05/2026:**
 
@@ -35,7 +47,7 @@
 | G4 Chiusura custom (S-A3) | ✅ |
 | G2 Pending UX (S-A4) | ✅ |
 | G3 Pending creazione vs DB (S-A5) | ✅ |
-| G6 NC audit vs modulo (S-A6) | ⏳ Decisione committente |
+| G6 NC audit vs modulo (S-A6) | ⏳ Opzione **D** — implementazione pulizia audit (deputy) + poi ponte `/nc` |
 | G5/G7/G9 P2 | Backlog |
 
 **Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
