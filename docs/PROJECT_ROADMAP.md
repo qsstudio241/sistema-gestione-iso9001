@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 6 maggio 2026
-> **Prossimo Step**: Sessione 06/05 — fix sync performance (PR #31 pronto), fix 429 (PR #30 mergiato). S-A6 deputy in corso. **Prossimi traguardi prodotto**: (1) chiusura consolidata modulo audit (roadmap §AUDIT-CLOSE); (2) modulo NC organizzativo; (3) modulo documentale + qualifiche.
+> **Prossimo Step**: Sessione 06/05 chiusa. Deputy S-A6 in corso. PR #31 (sync perf + Word fix) pronto per merge. **Priorità 07/05**: (1) verifica deputy S-A6 + merge; (2) merge PR #31 + smoke Word; (3) AC-4 logo studio Settings; (4) AC-3 nomenclatura documenti.
 > **Backlog strutturato**: vedi sezione **Debito Tecnico Strutturato** in fondo.
 
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)

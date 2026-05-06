@@ -19,22 +19,54 @@
 
 ### Chiusura sessione 06 maggio 2026
 
-**Fix performance sync + roadmap strutturata prodotto:**
+**Attività svolte:**
 
-| Fix | Dettaglio |
-|-----|-----------|
-| Fix 429 global rate limit (PR #30 → main) | `apiService.js` + `syncService.js` — pausa globale coda su HTTP 429, nessun consumo retry |
-| Debounce `save_responses` 1500ms (PR #31) | `StorageContext.jsx` — risolve coda 10 min Camellini; N click = 1 item |
-| `enqueueOrReplace` su `update_audit` (PR #31) | `SyncService.js` — payload in-place, coda dimensione 1 per audit |
-| Roadmap AUDIT-CLOSE / NC / DOC strutturata | `PROJECT_ROADMAP.md` — fasi AC-1…AC-9, NC-1…NC-5, DOC-1…DOC-4, debito tecnico |
+| Attività | File/PR | Esito |
+|----------|---------|-------|
+| Decisione S-A6 **Opzione D** — modulo NC autonomo + ponte «Importa da audit» | `AUDIT_MODULE_LEAD_BRIEF.md §10`, `DEPUTYTASK.md`, `PROJECT_ROADMAP.md` | ✅ Documentato, deputy avviato |
+| Fix HTTP 429 global rate limit — nessun consumo retry, pausa globale, evento UI | `apiService.js`, `syncService.js` (PR #30 → **main**) | ✅ Mergiato |
+| Fix performance sync — debounce `save_responses` 1500ms + `enqueueOrReplace` `update_audit` | `StorageContext.jsx`, `syncService.js`, test L1 (PR #31) | ✅ 107/107, in PR |
+| Roadmap strutturata AUDIT-CLOSE / NC / DOC + tabella debito tecnico (SYNC-5) | `PROJECT_ROADMAP.md` | ✅ Committed |
+| Fix Word: rimossi `pageBreakBefore` ridondanti e spaziatori vuoti nelle clausole checklist | `wordExportHelpers.js` | ✅ 10/10 test, in PR #31 |
+| Conclusioni Word — verificate OK da Camellini; AC-1 declassato P2 | `PROJECT_ROADMAP.md` | ✅ |
+| Debito tecnico allegati custom documentato | `PROJECT_ROADMAP.md` (tabella debito) | ✅ |
 
-**Gap audit diagnosticati (segnalazione Camellini):**
+**PR aperti da mergiare:**
 
-| Problema | Causa radice | Fix pianificato |
-|----------|-------------|-----------------|
-| Conclusioni assenti nel Word | UX: Sezione 12 non compilata prima dell'export. Blocker già in `AuditClosePanel` ma non viene mostrato durante il flusso. | AC-1: guida UX a Sezione 12 alla chiusura |
-| Logo studio non nel report | API + `wordExport.js` già pronti; manca UI Settings per upload. | AC-4: tab "Identità studio" nel setup |
-| Nome file non professionale | Nessun `document_prefix` in `organizations`. | AC-3: schema `[prefix]-[company]-[year]-[seq]` |
+| PR | Branch | Contenuto | Azione richiesta |
+|----|--------|-----------|-----------------|
+| **#31** | `cursor/sync-queue-debounce-dedup-6fad` | Fix performance sync + fix Word page break | Merge su `main` + deploy Netlify |
+| **#29** | `cursor/sa6-option-d-deputytask-6fad` | Solo doc S-A6 opzione D | Merge su `main` (solo doc) |
+
+**Stato deputy S-A6:** avviato, attendi esito `TEST OK` sul branch del deputy prima di mergiare PR #29.
+
+**Smoke manuali ancora da eseguire (richiede tuo intervento su produzione):**
+
+| Smoke | Cosa fare |
+|-------|-----------|
+| Word ISO 3834 su audit Mason reale | Esporta Word → controlla layout, foto, placeholder |
+| Word ISO 9001 Camellini: passo 6-7 | Esporta Word su audit reale compilato → verifica colori + contatori NC/OSS |
+| Verifica page break Word ridotti | Dopo merge PR #31 + deploy Netlify, riesporta lo stesso audit di oggi |
+
+---
+
+### Sessione 07 maggio 2026 — Brief di avvio
+
+**Priorità domani (in ordine):**
+
+1. **Verifica deputy S-A6** — controllare se ha terminato con TEST OK; se sì, mergiare PR relativo e allineare main.
+2. **Merge PR #31** su main → deploy Netlify automatico → smoke Word (passo 6-7 Camellini + layout page break).
+3. **AC-4 Logo studio** — già tutto pronto lato backend/Word; manca solo la UI Settings. Task semplice, alto impatto visivo per i clienti.
+4. **AC-3 Nomenclatura documenti** — campo `document_prefix` su `organizations` (migrazione DB leggera) + `generateDocumentName()` in `wordExport.js` + Settings UI.
+5. Se i smoke ISO 3834 Mason rivelano problemi → fix immediato prima di altri task.
+
+**Decisioni prodotto ancora aperte:**
+
+| Decisione | Contesto |
+|-----------|---------|
+| Tabella rilievi Word: aggiungere colonne C e N.A.? | Roadmap backlog — decidere con Camellini |
+| Nomenclatura documenti: prefisso fisso o configurabile per studio? | AC-3 — già proposta schema `[prefix]-[azienda]-[anno]-[NN]` |
+| Fumetto "in attesa di upload" per allegati offline (SYNC-5)? | Pianificare abbinato a standardizzazione allegati custom |
 
 ---
 
