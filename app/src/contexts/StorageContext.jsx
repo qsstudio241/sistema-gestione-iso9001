@@ -349,6 +349,9 @@ export function StorageProvider({ children, useMockData = false }) {
   const prevAuditIdForHydrateRef = useRef(null);
   // T4: debounce timer per eventi field_updated (generalData, auditObjective, auditOutcome, notes)
   const fieldUpdatedDebounceRef = useRef({});
+  // PERF: debounce per save_responses — evita N item in coda per N click rapidi sulla checklist.
+  // L'ultimo snapshot (più recente) viene accodato 1500ms dopo l'ultima modifica.
+  const saveResponsesDebounceRef = useRef({});
   useEffect(() => {
     if (currentAuditId !== prevAuditIdForHydrateRef.current) {
       // Audit cambiato: cancella il debounce per il nuovo audit (e per quello precedente)
@@ -1579,26 +1582,43 @@ export function StorageProvider({ children, useMockData = false }) {
             // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) sono AGGIUNTIVI al bulk
             // save_responses — non lo sostituiscono. save_responses è l'unico percorso che salva
             // le note/evidenze digitate nelle textarea; T3 gestisce solo i click sui pulsanti stato.
+            //
+            // PERF: debounce 1500ms — riduce la coda da N item (uno per click) a 1 item per sessione
+            // di compilazione. Il timeout viene resettato ad ogni modifica; quando l'utente si ferma
+            // per ≥1.5s viene accodato l'unico snapshot più recente (che include già tutte le modifiche
+            // precedenti, perché extractChecklistResponses legge lo stato aggiornato al momento del fire).
             if (navigator.onLine && !skipSync && !isHydratingRef.current) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
-                syncService
-                  .enqueue("save_responses", {
-                    auditId: auditUuid,
-                    responses,
-                  })
-                  .then(() => {
-                    console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync`,
-                    );
-                  })
-                  .catch((err) => {
-                    console.error("❌ [SYNC] Errore enqueue risposte:", err);
-                  });
+                const debounceKey = auditUuid;
+                if (saveResponsesDebounceRef.current[debounceKey]) {
+                  clearTimeout(saveResponsesDebounceRef.current[debounceKey]);
+                }
+                // Cattura snapshot risposte al momento del debounce (stato più aggiornato).
+                const responsesSnapshot = responses;
+                saveResponsesDebounceRef.current[debounceKey] = setTimeout(() => {
+                  delete saveResponsesDebounceRef.current[debounceKey];
+                  syncService
+                    .enqueue("save_responses", {
+                      auditId: auditUuid,
+                      responses: responsesSnapshot,
+                    })
+                    .then(() => {
+                      console.log(
+                        `📤 [SYNC] ${responsesSnapshot.length} risposte enqueued (debounced)`,
+                      );
+                    })
+                    .catch((err) => {
+                      console.error("❌ [SYNC] Errore enqueue risposte:", err);
+                    });
+                }, 1500);
               }
             }
 
             // Enqueue sync audit metadata se online, lock NON foreign, skipSync=false e non in hydrating.
+            // PERF: usa enqueueOrReplace — se esiste già un update_audit non-stalled per questo audit,
+            // aggiorna il payload in-place invece di aggiungere un nuovo item. Coda sempre a dimensione 1
+            // per update_audit indipendentemente dalla velocità dell'utente.
             if (navigator.onLine && !skipSync && !isHydratingRef.current) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
@@ -1607,7 +1627,7 @@ export function StorageProvider({ children, useMockData = false }) {
               const syncUpdatedAt = new Date(Math.max(clientTsMs, serverTsMs + 1)).toISOString();
 
               syncService
-                .enqueue("update_audit", {
+                .enqueueOrReplace("update_audit", auditUuid, {
                   audit_uuid: auditUuid,
                   audit_number: updated.metadata?.auditNumber,
                   client_name: updated.metadata?.clientName,

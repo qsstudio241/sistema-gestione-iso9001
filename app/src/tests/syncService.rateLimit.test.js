@@ -8,6 +8,10 @@ class FakeStore {
     constructor() {
         this._data = new Map();
     }
+    add(item) {
+        this._data.set(item.id, item);
+        return this._req(item.id);
+    }
     get(id) {
         return this._req(this._data.get(id));
     }
@@ -157,5 +161,93 @@ describe('SyncService rate limit (429)', () => {
             svc._rateLimitTimer = null;
         }
         svc._globalRateLimitUntil = 0;
+    });
+});
+
+describe('SyncService enqueueOrReplace — deduplicazione update_audit', () => {
+    test('primo enqueueOrReplace: crea nuovo item', async () => {
+        const { svc, db } = makeService([]);
+        svc.isOnline = false; // non triggerare processQueue
+
+        const id = await svc.enqueueOrReplace('update_audit', 'uuid-audit-1', {
+            audit_uuid: 'uuid-audit-1',
+            audit_number: 'AU-001',
+            client_name: 'Camellini',
+        });
+
+        const store = db.transaction(['syncQueue'], 'readonly').objectStore('syncQueue');
+        const all = [...store._data.values()];
+        expect(all).toHaveLength(1);
+        expect(all[0].id).toBe(id);
+        expect(all[0].payload.client_name).toBe('Camellini');
+    });
+
+    test('secondo enqueueOrReplace: sostituisce in-place (coda resta a 1 item)', async () => {
+        const existing = makeQueueItem({
+            id: 'item-upd-1',
+            type: 'update_audit',
+            payload: { audit_uuid: 'uuid-audit-1', audit_number: 'AU-001', client_name: 'Vecchio' },
+        });
+        const { svc, db } = makeService([existing]);
+        svc.isOnline = false;
+
+        const id = await svc.enqueueOrReplace('update_audit', 'uuid-audit-1', {
+            audit_uuid: 'uuid-audit-1',
+            audit_number: 'AU-001',
+            client_name: 'Nuovo',
+        });
+
+        const store = db.transaction(['syncQueue'], 'readonly').objectStore('syncQueue');
+        const all = [...store._data.values()];
+        // deve restare 1 solo item (non aggiunto nuovo)
+        expect(all).toHaveLength(1);
+        // stesso id dell'item originale
+        expect(id).toBe('item-upd-1');
+        // payload aggiornato
+        expect(all[0].payload.client_name).toBe('Nuovo');
+    });
+
+    test('item stalled non viene sostituito: crea nuovo item', async () => {
+        const stalled = makeQueueItem({
+            id: 'item-stalled',
+            type: 'update_audit',
+            payload: { audit_uuid: 'uuid-audit-1', audit_number: 'AU-001', client_name: 'Stalled' },
+            isStalled: true,
+        });
+        const { svc, db } = makeService([stalled]);
+        svc.isOnline = false;
+
+        await svc.enqueueOrReplace('update_audit', 'uuid-audit-1', {
+            audit_uuid: 'uuid-audit-1',
+            audit_number: 'AU-001',
+            client_name: 'Nuovo',
+        });
+
+        const store = db.transaction(['syncQueue'], 'readonly').objectStore('syncQueue');
+        const all = [...store._data.values()];
+        // lo stalled è rimasto + uno nuovo è stato aggiunto
+        expect(all).toHaveLength(2);
+        const newItem = all.find((i) => !i.isStalled);
+        expect(newItem.payload.client_name).toBe('Nuovo');
+    });
+
+    test('N modifiche rapide allo stesso audit → 1 solo item in coda (simulazione click multipli)', async () => {
+        const { svc, db } = makeService([]);
+        svc.isOnline = false;
+
+        // Simula 10 update_audit consecutivi (un click per domanda)
+        for (let i = 1; i <= 10; i++) {
+            await svc.enqueueOrReplace('update_audit', 'uuid-audit-1', {
+                audit_uuid: 'uuid-audit-1',
+                audit_number: 'AU-001',
+                client_name: 'Camellini',
+                non_conformities_count: i,
+            });
+        }
+
+        const store = db.transaction(['syncQueue'], 'readonly').objectStore('syncQueue');
+        const all = [...store._data.values()];
+        expect(all).toHaveLength(1);
+        expect(all[0].payload.non_conformities_count).toBe(10); // payload più recente
     });
 });

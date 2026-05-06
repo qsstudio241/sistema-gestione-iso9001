@@ -130,6 +130,56 @@ export class SyncService {
     }
 
     /**
+     * Accoda un item sostituendo in-place qualsiasi item non-stalled dello stesso tipo
+     * per lo stesso auditId. Usato per update_audit: la coda resta a dimensione 1 per
+     * audit indipendentemente da quante modifiche l'utente fa in rapida successione.
+     *
+     * Strategia last-write-wins: il payload più recente contiene sempre lo stato completo
+     * dell'audit, quindi sostituire il vecchio item è semanticamente equivalente a inviare
+     * solo l'ultimo stato (il server riceve una sola chiamata invece di N).
+     *
+     * @param {string} type - tipo coda (es. 'update_audit')
+     * @param {string} auditUuid - UUID dell'audit (usato come chiave di deduplicazione)
+     * @param {Object} payload - payload da inviare
+     */
+    async enqueueOrReplace(type, auditUuid, payload) {
+        const db = await this.init();
+
+        // Cerca item esistente non-stalled dello stesso tipo per lo stesso audit
+        const items = await new Promise((resolve, reject) => {
+            const tx = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+            const req = tx.objectStore(SYNC_QUEUE_STORE).index('timestamp').getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+
+        const existing = items.find(
+            (i) =>
+                i.type === type &&
+                !i.isStalled &&
+                (i.payload?.audit_uuid === auditUuid || i.payload?.auditId === auditUuid),
+        );
+
+        if (existing) {
+            // Aggiorna payload in-place — rinnova timestamp per mantenere ordine FIFO corretto
+            existing.payload = payload;
+            existing.timestamp = Date.now();
+            await new Promise((resolve, reject) => {
+                const tx2 = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                const req = tx2.objectStore(SYNC_QUEUE_STORE).put(existing);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+            console.log(`♻️ [SYNC QUEUE] Sostituito in-place: ${type} (${existing.id})`);
+            if (this.isOnline) this.processQueue();
+            return existing.id;
+        }
+
+        // Nessun item esistente → coda normale
+        return this.enqueue(type, payload);
+    }
+
+    /**
      * Verifica se un'entità è stata sincronizzata al server
      * @param {string} entityType - Tipo entità ('audit', 'response')
      * @param {string} localId - ID locale dell'entità
