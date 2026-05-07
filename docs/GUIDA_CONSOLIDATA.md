@@ -17,6 +17,32 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 07 maggio 2026 — Pomeriggio parte B (Cloud Agent)
+
+**Branch**: `cursor/iso45001-checklist-migration-65f4`
+
+#### Attività eseguite
+1. **Migration 051 — ISO 45001:2018 checklist completa**: 53 domande con `norm_excerpt` incluso nell'INSERT (nessuna migration 052 separata). 7 sezioni `45001_c4..c10`. Soft-delete delle sezioni/domande placeholder precedenti (`clause4..clause10` con `questionId: null`). Stato produzione: 7 sezioni, 53 domande, 53 `norm_excerpt` popolati. Script: `backend/scripts/run-migration-051-vps.js`.
+2. **`checklistTemplates.js` aggiornato**: section codes ISO 45001 allineati al DB (`45001_c4..c10`), 53 domande complete (da 28 placeholder), titoli sezioni aggiornati. Il template offline è ora coerente con il DB per nuovi audit.
+
+#### Stato norma ISO 45001 al 07/05/2026
+
+| Layer | Stato |
+|-------|-------|
+| DB (standard_id=3) | ✅ 7 sezioni, 53 domande, 53 norm_excerpt (migration 051, produzione) |
+| Frontend template fallback | ✅ checklistTemplates.js allineato a 53 domande, sezioni `45001_c4..c10` |
+| Word export ISO 45001 | 🔲 Backlog (template .docx separato da creare) |
+
+#### Prossime priorità (al termine di questa sessione)
+
+| # | Task | Note |
+|---|------|------|
+| P1 | G5 Sezione 11 — drill-down NC/OSS per clausola | Solo frontend |
+| P2 | norm_excerpt ISO 9001 (standard_id=1, question_id 87-121) | Backlog bassa priorità |
+| P3 | Word export ISO 45001 | Template .docx da creare |
+
+---
+
 ### Ripresa sessione 07 maggio 2026 (Cloud Agent — pomeriggio)
 
 **Branch ISO 14001**: `cursor/iso14001-checklist-completa-3f67`

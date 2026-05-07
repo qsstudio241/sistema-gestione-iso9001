@@ -2,8 +2,8 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 7 maggio 2026
-> **Prossimo Step**: Fine giornata 07/05/2026 — tutto su `main`. **PR #33 mergiata**, VPS deployato (fix crash routes + 4 controller), **Migration 049** (ISO 14001 53 domande, produzione), **Migration 050** (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026). Alert Engine: dipendenze installate, mancano credenziali SMTP reali. **Azioni committente pendenti**: (1) Smoke Mason ISO 3834 passi 6-7 (L3); (2) Smoke Word export Camellini (L3); (3) Compilare SMTP vars nel `.env` VPS + `ALERT_ENABLED=true` + restart. **Prossime priorità agent**: G5 Sezione 11 drill-down; ISO 45001 checklist (norma disponibile); norm_excerpt ISO 9001 (backlog).
-> **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026) | ✅ migration 049 applicata (ISO 14001 53 domande complete — prod 07/05/2026) | ✅ migration 050 applicata (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026)
+> **Prossimo Step**: Fine giornata 07/05/2026 — tutto su `main`. **PR #33 mergiata**, VPS deployato (fix crash routes + 4 controller), **Migration 049** (ISO 14001 53 domande, produzione), **Migration 050** (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026), **Migration 051** (ISO 45001:2018 53 domande + norm_excerpt — prod 07/05/2026). Alert Engine: dipendenze installate, mancano credenziali SMTP reali. **Azioni committente pendenti**: (1) Smoke Mason ISO 3834 passi 6-7 (L3); (2) Smoke Word export Camellini (L3); (3) Compilare SMTP vars nel `.env` VPS + `ALERT_ENABLED=true` + restart. **Prossime priorità agent**: G5 Sezione 11 drill-down; norm_excerpt ISO 9001 (backlog).
+> **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026) | ✅ migration 049 applicata (ISO 14001 53 domande complete — prod 07/05/2026) | ✅ migration 050 applicata (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026) | ✅ migration 051 applicata (ISO 45001:2018 53 domande + norm_excerpt — prod 07/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
@@ -145,7 +145,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Foto embedded in Word** | pic:cNvPr id univoci per range separati (100+checklist ISO, 30000+custom, 88001+logo, 89001+logo org); fix già in produzione; checkbox UI "Incorpora foto" sempre visibile | ✅ Risolto (2026-04-23) |
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
-| ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
+| ISO 45001 checklist | 53 domande in 7 sezioni + norm_excerpt (migration 051, prod 07/05/2026) | ✅ Completato |
 | Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini | 🔲 Backlog |
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
@@ -162,7 +162,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 |---|---|---|---|
 | 0.1 | Test export Word ISO 9001 sommario | produzione | Verificare cap. 1→11, colonne, margini |
 | 0.2 | ISO 14001 checklist da norma PDF | DB migration + `checklistTemplates.js` | Norma già disponibile e leggibile |
-| 0.3 | ISO 45001 checklist da norma PDF | DB migration + `checklistTemplates.js` | Norma già disponibile e leggibile |
+| 0.3 | ISO 45001 checklist da norma PDF | DB migration + `checklistTemplates.js` | ✅ Completato (07/05/2026) — migration 051, 53 domande con norm_excerpt |
 | 0.4 | Campo norm_excerpt in checklist_questions | DB + wordExportHelpers.js | Alto impatto, bassa complessità |
 | 0.5 | Rilievi pendenti reali in Word | `ExportPanel.jsx`, `wordExport.js`, `wordExportHelpers.js` | ✅ Già implementato — `GET /audits/:id/pending-issues` + fallback `checkReaudit` in ExportPanel.jsx |
 | 0.6 | Fix Auth Mobile (ADR-004) | `auth.controller.js`, `apiService.js` | localStorage JWT — prerequisito per mobile |
