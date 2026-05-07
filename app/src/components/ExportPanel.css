@@ -484,3 +484,32 @@
   display: flex; gap: 12px; justify-content: flex-end;
 }
 .photo-dialog-actions .btn { padding: 9px 20px; font-size: 14px; }
+
+/* Collegamento al registro documenti post-export */
+.export-docregistry-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  color: #166534;
+}
+
+.export-docregistry-link {
+  background: none;
+  border: none;
+  color: #15803d;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  font-weight: 600;
+}
+
+.export-docregistry-link:hover {
+  color: #14532d;
+}

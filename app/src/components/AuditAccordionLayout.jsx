@@ -772,9 +772,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <div className="accordion-content">
               <AuditClosePanel
                 currentAudit={currentAudit}
-                onUpdate={onUpdate}
                 onCompleted={() => {
-                  // Ricarica la pagina per riflettere il nuovo stato read-only
                   setOpenSections((prev) => ({ ...prev, close: false }));
                 }}
               />
