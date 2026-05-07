@@ -17,6 +17,21 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Ripresa sessione 07 maggio 2026 (Cloud Agent — pomeriggio)
+
+**Branch ISO 14001**: `cursor/iso14001-checklist-completa-3f67`
+
+#### Attività eseguite
+1. **Merge PR #33** → `main` con git merge --no-ff; push su origin → Netlify auto-deploy avviato.
+2. **Deploy backend VPS**: 4 controller (audit/attachment/customChecklist/response) + `audit.routes.js` copiati via SCP. Fix bug critico: `audit.routes.js` sul VPS aveva route `POST /audits/:auditId/promote-nc → promoteAuditNcToModule` (funzione mai esistita nel controller locale) che mandava in crash il server; rimossa deployando il file locale canonico.
+3. **Migration 049 — ISO 14001 checklist completa**: 53 domande che coprono tutti i sotto-requisiti per clausola (§4→§10), suddivise in 7 sezioni `14001_c4..c10`. Soft-delete delle 46 domande legislative precedenti; sezioni legacy `14001_s4/s5` disattivate. Pattern esecuzione VPS: `DB_SERVER=localhost DB_PORT=11043 ... NODE_ENV=production node /tmp/run-migration-049-vps.js`.
+4. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
+
+#### Nota deploy VPS: bug route promoteAuditNcToModule
+La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al file `audit.routes.js` sul VPS in una sessione precedente senza corrispondente commit git. Il controller non esportava `promoteAuditNcToModule`. Fix: deployato il `audit.routes.js` locale (canonico), che non ha quella route. La funzionalità S-A6-C ("Registra nel modulo NC") è implementata solo nel frontend (navigazione React Router) e non richiede un endpoint backend dedicato.
+
+---
+
 ### Chiusura sessione 07 maggio 2026 (completa)
 
 **Branch**: `cursor/audit-module-gap-fixes-7b2a` → **PR #33**  
