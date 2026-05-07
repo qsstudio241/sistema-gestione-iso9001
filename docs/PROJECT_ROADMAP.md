@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 7 maggio 2026
-> **Prossimo Step**: Sessione 07/05 — S-A1÷S-A6 tutti ✅. Conflitti Git irrisolti rimossi (build bloccata), S-A6 Opzione C implementata (stub NC→modulo), `updateAuditMetrics` ISO+custom, route `createNonConformity` corretta. **Prossime priorità**: (1) Smoke Mason ISO 3834 (passi 6-7 smoke L3); (2) Smoke Word export Camellini audit reale; (3) ISO 14001 checklist completa da norma PDF (P4); (4) SMTP Alert Engine VPS (variabili env).
+> **Prossimo Step**: Sessione 07/05 chiusa. **14 fix in PR #33** (`cursor/audit-module-gap-fixes-7b2a`): conflitti Git, S-A6-C, SYNC-5, lock accesso concorrente, offline-first completo — 103/103 Vitest. **Azione richiesta per deploy**: (1) merge PR #33 su main → Netlify auto-deploy; (2) SCP 4 controller backend (audit/attachment/customChecklist/response) + restart VPS per cleanup import. **Prossime priorità**: (1) Smoke Mason ISO 3834 (passi 6-7 smoke L3); (2) Smoke Word export Camellini audit reale; (3) ISO 14001 checklist completa da norma PDF (P4); (4) SMTP Alert Engine VPS (variabili env).
 > **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | ISO 14001 checklist completa (norma disponibile) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
