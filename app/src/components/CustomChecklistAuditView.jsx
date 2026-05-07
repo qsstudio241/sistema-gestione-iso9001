@@ -77,7 +77,18 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
     if (!customChecklistId) return;
     try {
       const clRes = await apiService.getCustomChecklist(customChecklistId);
-      setChecklist(clRes?.data ?? null);
+      const clData = clRes?.data ?? null;
+      setChecklist(clData);
+
+      // Propaga il template nell'audit globale: metricsCalculator e AuditOutcomeSection
+      // usano currentAudit.customChecklist.has_outcome_buttons per decidere se sommare
+      // i conteggi custom. Senza questa propagazione, sezione 11 mostra sempre 0.
+      if (clData) {
+        const propagate = (prev) => ({ ...prev, customChecklist: clData });
+        propagate._systemCall = true;
+        updateCurrentAudit(propagate, { skipSync: true });
+      }
+
       const localResponses = auditCustomResponsesRef.current ?? {};
 
       if (!auditId) {
@@ -111,7 +122,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
       console.error("Errore caricamento checklist custom:", err);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customChecklistId, auditId]);
+  }, [customChecklistId, auditId, updateCurrentAudit]);
 
   useEffect(() => {
     if (!customChecklistId) return;

@@ -87,34 +87,29 @@ const hasAnyClosedAudit = useMemo(
             (a) => String(a.metadata?.clientName || "").trim() === companyNorm
           )
         : sortedAudits;
-      let list = includeClosed
+      const filtered = includeClosed
         ? forCo
         : forCo.filter((a) => !isClosedAuditStatus(a.metadata?.status));
       const cur =
         currentAuditId &&
         validAudits.find((a) => auditRowId(a) === currentAuditId);
-      if (cur && !list.some((a) => auditRowId(a) === currentAuditId)) {
-        const inCompany =
-          !companyNorm ||
-          String(cur.metadata?.clientName || "").trim() === companyNorm;
-        const excludedOnlyByClosed =
-          inCompany &&
-          !includeClosed &&
-          isClosedAuditStatus(cur.metadata?.status);
-        if (excludedOnlyByClosed) {
-          list = [cur, ...list];
-        }
-      }
-      return list;
+      // L'audit corrente è sempre incluso nella lista, indipendentemente dal filtro attivo.
+      // Se è stato escluso dai filtri, viene aggiunto in testa e marcato come fuori filtro.
+      const forcedCurrent =
+        !!cur && !filtered.some((a) => auditRowId(a) === currentAuditId);
+      return {
+        list: forcedCurrent ? [cur, ...filtered] : filtered,
+        currentOutsideFilter: forcedCurrent,
+      };
     },
     [sortedAudits, validAudits, currentAuditId]
   );
 
-  const auditsForSecondSelect = useMemo(
+  const { list: auditsForSecondSelect, currentOutsideFilter } = useMemo(
     () => buildAuditsForSecondSelect(selectedCompany, showClosedAudits),
     [buildAuditsForSecondSelect, selectedCompany, showClosedAudits]
   );
-
+
   // === HANDLERS ===
 
   const handleAuditChange = (e) => {
@@ -125,23 +120,14 @@ const hasAnyClosedAudit = useMemo(
   };
 
   const handleCompanyChange = (e) => {
-    const nextCompany = e.target.value;
-    setSelectedCompany(nextCompany);
-    const nextList = buildAuditsForSecondSelect(nextCompany, showClosedAudits);
-    const still = currentAuditId && nextList.some((a) => auditRowId(a) === currentAuditId);
-    if (!still && nextList.length > 0) {
-      switchAudit(auditRowId(nextList[0]));
-    }
+    setSelectedCompany(e.target.value);
+    // Il filtro restringe la lista visibile ma non cambia l'audit attivo.
+    // Se l'audit corrente è fuori filtro, rimane selezionato e appare in testa con indicatore.
   };
 
   const handleShowClosedAuditsChange = (e) => {
-    const checked = e.target.checked;
-    setShowClosedAudits(checked);
-    const nextList = buildAuditsForSecondSelect(selectedCompany, checked);
-    const still = currentAuditId && nextList.some((a) => auditRowId(a) === currentAuditId);
-    if (!still && nextList.length > 0) {
-      switchAudit(auditRowId(nextList[0]));
-    }
+    setShowClosedAudits(e.target.checked);
+    // Il filtro restringe la lista visibile ma non cambia l'audit attivo.
   };
 
   const handleCreateNewAudit = () => {
@@ -238,10 +224,14 @@ const hasAnyClosedAudit = useMemo(
                 <option value="">-- Seleziona un audit --</option>
                 {auditsForSecondSelect.map((audit) => {
                   const auditId = audit.metadata?.id || audit.id;
+                  const outsideFilter =
+                    currentOutsideFilter && auditId === currentAuditId;
                   return (
                     <option key={auditId} value={auditId}>
+                      {outsideFilter ? "⚠ " : ""}
                       {audit.metadata.auditNumber} - {audit.metadata.clientName} (
                       {audit.metadata.status})
+                      {outsideFilter ? " — fuori filtro" : ""}
                     </option>
                   );
                 })}

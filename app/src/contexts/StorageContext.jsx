@@ -2187,10 +2187,74 @@ export function StorageProvider({ children, useMockData = false }) {
         isHydratingRef.current = true;
         setServerDataStatus('loading');
         console.log(`🔄 [HYDRATE] Carico risposte server per audit ${numericAuditId}...`);
+
+        // ── Custom checklist hydration (server-wins, indipendente dall'ISO) ──────────
+        // Eseguita prima della early-return ISO per coprire anche audit solo-custom.
+        const auditForHydrate =
+          auditsRef.current.find((a) => a.metadata?.auditId === numericAuditId) ||
+          auditsRef.current.find(
+            (a) => (a.metadata?.id || a.id) === currentAuditIdRef.current,
+          );
+        const customChecklistId =
+          auditForHydrate?.metadata?.customChecklistId ??
+          auditForHydrate?.custom_checklist_id ??
+          null;
+
+        if (customChecklistId) {
+          try {
+            const [clRes, respRes] = await Promise.all([
+              apiService.getCustomChecklist(customChecklistId),
+              apiService.getCustomChecklistResponses(numericAuditId),
+            ]);
+            const clTemplate = clRes?.data ?? null;
+            const serverStatuses = {};
+            const serverResponses = {};
+            (respRes?.data ?? []).forEach((r) => {
+              if (r.status) serverStatuses[r.custom_item_id] = r.status;
+              try {
+                serverResponses[r.custom_item_id] =
+                  typeof r.evidence_blocks === 'string'
+                    ? JSON.parse(r.evidence_blocks || '[]')
+                    : r.evidence_blocks || [];
+              } catch {
+                serverResponses[r.custom_item_id] = [];
+              }
+            });
+
+            const customUpdater = (audit) => {
+              // Server-wins per status; evidence: server se non vuoto, altrimenti locale
+              const mergedResponses = { ...(audit.customResponses || {}) };
+              Object.entries(serverResponses).forEach(([k, blocks]) => {
+                if ((blocks || []).length > 0) mergedResponses[k] = blocks;
+              });
+              return {
+                ...audit,
+                customChecklist: clTemplate,
+                customStatuses:
+                  Object.keys(serverStatuses).length > 0
+                    ? { ...(audit.customStatuses || {}), ...serverStatuses }
+                    : audit.customStatuses || {},
+                customResponses: mergedResponses,
+              };
+            };
+            customUpdater._systemCall = true;
+            updateCurrentAudit(customUpdater, { skipSync: true });
+
+            console.log(
+              `✅ [HYDRATE] Custom checklist "${clTemplate?.name}": ` +
+                `${Object.keys(serverStatuses).length} esiti, ` +
+                `${Object.keys(serverResponses).length} risposte`,
+            );
+          } catch (clErr) {
+            console.warn('⚠️ [HYDRATE] Custom checklist non disponibile:', clErr.message);
+          }
+        }
+        // ── Fine custom checklist hydration ──────────────────────────────────────────
+
         const result = await apiService.getAuditResponses(numericAuditId);
         const rows = result?.data;
         if (!rows || rows.length === 0) {
-          console.log(`ℹ️ [HYDRATE] Nessuna risposta trovata per audit ${numericAuditId}`);
+          console.log(`ℹ️ [HYDRATE] Nessuna risposta ISO trovata per audit ${numericAuditId}`);
           setServerDataStatus('ready');
           return;
         }
