@@ -921,6 +921,14 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.pendingIssues = localPending;
         }
 
+        // Eccezione 8: nonConformities — il converter li imposta sempre a []; il server non li serve
+        // nel payload GET /audits. Preserva il locale se non vuoto, in particolare per conservare
+        // i campi promotedNcId/promotedNcNumber aggiunti da S-A6 ("Aggiungi al registro NC").
+        const localNCs = localAudit?.nonConformities;
+        if (Array.isArray(localNCs) && localNCs.length > 0 && !(merged?.nonConformities?.length > 0)) {
+          merged.nonConformities = localNCs;
+        }
+
         return merged;
       });
 

@@ -395,8 +395,8 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus, onPromote, hasNcModule =
             <div className="nc-buttons">
               {/* Pulsante promozione al registro NC (S-A6) — sempre visibile come indicatore */}
               {nc.promotedNcId ? (
-                <span className="nc-promoted-badge" title={`Promossa nel registro NC come ${nc.promotedNcNumber}`}>
-                  ✅ Promossa ({nc.promotedNcNumber})
+                <span className="nc-promoted-badge" title={`Aggiunta al registro NC come ${nc.promotedNcNumber}`}>
+                  ✅ Aggiunta al registro NC ({nc.promotedNcNumber})
                 </span>
               ) : (
                 <button
@@ -406,10 +406,10 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus, onPromote, hasNcModule =
                   title={
                     !hasNcModule
                       ? 'Richiede licenza Modulo NC'
-                      : 'Promuovi questa NC al registro NC dell\'organizzazione'
+                      : 'Aggiungi questa NC al registro NC dell\'organizzazione'
                   }
                 >
-                  {promoting ? '⏳ Promozione...' : '📤 Promuovi al registro NC'}
+                  {promoting ? '⏳ Salvataggio...' : '📋 Aggiungi al registro NC'}
                 </button>
               )}
 
