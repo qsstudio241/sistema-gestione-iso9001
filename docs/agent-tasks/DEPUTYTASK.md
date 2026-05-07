@@ -1,4 +1,12 @@
-# DEPUTYTASK — S-A4: Pending Issues — ordinamento + deep-link domanda + zero-state
+# DEPUTYTASK — NESSUN TASK ATTIVO (07/05/2026)
+
+> S-A4 completata (PR mergiata). Nessun task attualmente delegato al deputy.
+> Prossima sessione: leggere `docs/agent-tasks/RIPRESA_SESSIONE_2026-05-07-B.md`.
+
+---
+
+<!-- archivio S-A4 -->
+# [ARCHIVIATO] S-A4: Pending Issues — ordinamento + deep-link domanda + zero-state
 
 > **Data**: 04/05/2026  
 > **Autore**: Lead Agent  
