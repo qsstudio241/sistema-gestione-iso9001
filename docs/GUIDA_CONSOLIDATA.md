@@ -17,6 +17,36 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 07 maggio 2026
+
+**Analisi gap modulo audit + 5 fix (branch `cursor/audit-module-gap-fixes-7b2a`):**
+
+| Fix | File | Dettaglio |
+|-----|------|-----------|
+| FIX-1 — Conflitto Git irrisolto | `AuditAccordionLayout.jsx`, `PendingIssuesCascade.jsx`, `PendingIssuesCascade.css` | 4 blocchi `<<<<<<<` lasciati da merge `e5fc864` (S-A4) — bloccavano la build Vite. Risolti scegliendo la versione con il commento più completo. |
+| FIX-2 — Route NC errata | `apiService.js` | `createNonConformity` usava `/nc` (rotta inesistente); corretto in `/non-conformities`. |
+| FIX-3 — S-A6 Opzione C | `NonConformitiesManager.jsx`, `.css` | Pulsante "Registra nel modulo NC" su ogni NC locale: chiama `POST /non-conformities` con mapping categoria→severity. Flag `registeredToOrg` persistito nell'audit locale. Gestione 403/MODULE_NOT_LICENSED. |
+| FIX-4 — metriche ISO+custom | `metricsCalculator.js` | `updateAuditMetrics` ora somma ISO + custom (se `has_outcome_buttons`), coerente con `AuditOutcomeSection`. |
+| FIX-5 — ellissi NC preview | `NonConformitiesManager.jsx` | `nc-description-preview` aggiungeva `...` sempre; ora solo se description > 80 caratteri. |
+| Bonus — NV in STATUS_TO_FINDING | `metricsCalculator.js` | Aggiunto `NV: null` esplicitamente per chiarezza (era già gestito come `undefined → null` ma non documentato). |
+
+**Risultati test post-fix**: 103/103 Vitest ✅ · build Vite ✅
+
+**Stato gap modulo audit aggiornato al 07/05/2026:**
+
+| Gap | Stato |
+|-----|-------|
+| G1 Post-chiusura (S-A1/S-A2) | ✅ |
+| G4 Chiusura custom (S-A3) | ✅ |
+| G2 Pending UX (S-A4) | ✅ |
+| G3 Pending creazione vs DB (S-A5) | ✅ |
+| G6 NC audit vs modulo (S-A6) | ✅ Opzione C implementata |
+| G5/G7/G9 P2 | Backlog |
+
+**Lezione**: I conflitti Git da merge non risolto possono sopravvivere inosservati se i file risultanti sono sintatticamente validi in un branch ma la build lato Vite li rileva solo al primo `npm run build`. Pattern da aggiungere in CI: `git grep -l "^<<<<<<<" -- '*.jsx' '*.js' '*.css'` → fail se trovato.
+
+---
+
 ### Chiusura sessione 05 maggio 2026
 
 **Completamento gap modulo audit: S-A5 + documentazione S-A6:**

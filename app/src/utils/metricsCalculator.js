@@ -9,11 +9,12 @@
  */
 const STATUS_TO_FINDING = {
     // Nuovo formato (ChecklistModule)
-    NC: "NC", // Non Conformità
-    OSS: "OSS", // Osservazione
-    OM: "OM", // Opportunità di Miglioramento
-    C: null, // Conforme - nessun finding
-    NA: null, // Non Applicabile - nessun finding
+    NC: "NC",    // Non Conformità
+    OSS: "OSS",  // Osservazione
+    OM: "OM",    // Opportunità di Miglioramento
+    C: null,     // Conforme - nessun finding
+    NA: null,    // Non Applicabile - nessun finding
+    NV: null,    // Non Verificato - nessun finding (da non contare come NC)
     NOT_ANSWERED: null, // Non risposto - nessun finding
 
     // Legacy formato (mock data auditDataModel.js)
@@ -205,12 +206,22 @@ export function calculateCustomFindingsMetrics(customStatuses) {
 }
 
 /**
- * Aggiorna metriche audit in base a checklist
+ * Aggiorna metriche audit in base a checklist ISO e (se attiva) checklist custom.
+ * Somma i findings di entrambe le fonti, coerente con AuditOutcomeSection.
  * @param {Object} audit - Audit completo
  * @returns {Object} Audit con metriche aggiornate
  */
 export function updateAuditMetrics(audit) {
-    const metrics = calculateFindingsMetrics(audit.checklist);
+    const isoMetrics = calculateFindingsMetrics(audit.checklist);
+
+    const hasCustomOutcome = audit?.customChecklist?.has_outcome_buttons;
+    const customMetrics = hasCustomOutcome
+        ? calculateCustomFindingsMetrics(audit.customStatuses)
+        : { totalNC: 0, totalOSS: 0, totalOM: 0 };
+
+    const totalNC = isoMetrics.totalNC + customMetrics.totalNC;
+    const totalOSS = isoMetrics.totalOSS + customMetrics.totalOSS;
+    const totalOM = isoMetrics.totalOM + customMetrics.totalOM;
 
     return {
         ...audit,
@@ -220,20 +231,19 @@ export function updateAuditMetrics(audit) {
                 ...audit.metadata.auditOutcome,
                 emergingFindings: {
                     ...audit.metadata.auditOutcome?.emergingFindings,
-                    totalNC: metrics.totalNC,
-                    totalOSS: metrics.totalOSS,
-                    totalOM: metrics.totalOM,
+                    totalNC,
+                    totalOSS,
+                    totalOM,
                 },
             },
         },
         metrics: {
             ...audit.metrics,
-            totalQuestions: metrics.totalQuestions,
-            answeredQuestions: metrics.answeredQuestions,
+            totalQuestions: isoMetrics.totalQuestions,
+            answeredQuestions: isoMetrics.answeredQuestions,
             completionPercentage: calculateCompletionPercentage(audit.checklist),
-            totalNC: metrics.totalNC,
-            observationsNC: metrics.totalOSS, // OSS mappato a observationsNC
-            // OM non ha campo dedicato in metrics, solo in auditOutcome
+            totalNC,
+            observationsNC: totalOSS,
         },
     };
 }

@@ -10,9 +10,9 @@
 
 | Voce | Contenuto |
 |------|-------------|
-| **Stato complessivo** | Nucleo audit **operativo**: checklist ISO/custom, allegati, sync multi-device (server-wins), lock solo UX, temporal DB, export Word, pending issues su DB, chiusura/approvazione API. |
-| **Gap verso “professionale” al 100%** | Read-only post-chiusura **non** uniforme su UI; API risposte **non** blocca audit `completed`; re-audit: UX pendenze **diversa** dalla checklist, senza deep-link domanda; chiusura **80%** ignora completamento **solo custom**; registro NC in audit **disallineato** da backend converter e da modulo `/nc`; allegati offline **SYNC-5** backlog; Word/security token allegati in roadmap. |
-| **Decisione prodotto da fissare** | Registro NC **in audit** vs **modulo NC organizzazione** (fonti multiple) e ponte **audit → documentale**. |
+| **Stato complessivo** | Nucleo audit **operativo**: checklist ISO/custom, allegati, sync multi-device (server-wins), lock solo UX, temporal DB, export Word, pending issues su DB, chiusura/approvazione API. S-A1÷S-A6 tutti ✅ (07/05/2026). |
+| **Gap residui (P2)** | Sezione 11 drill-down NC/OSS (G5); token monouso allegati Word (G7); "Registra in documentale" da export (G8); allegati offline SYNC-5 (G9). |
+| **Decisione prodotto da fissare** | Nessuna — S-A6 implementata con Opzione C (stub monodirezionale, pulsante "Registra nel modulo NC"). |
 
 ---
 
@@ -237,6 +237,7 @@ Default consigliato se nessuna preferenza: **C** (stub monodirezionale) — zero
 | 2026-05-04 | Agent | Creazione brief da analisi gap modulo audit + flusso committente + matrice GA/ottimale. |
 | 2026-05-04 | Agent | Aggiunta analisi S-A4 (pending deep-link) con soluzione completa. |
 | 2026-05-05 | Agent | S-A5 fix reconcile pendingIssues. Aggiunta sezione §10 decisione S-A6 (opzioni A/B/C). |
+| 2026-05-07 | Agent | FIX-1: Risolti 4 conflitti Git irrisolti (build bloccata). FIX-2: Corretta route `createNonConformity` (`/nc`→`/non-conformities`). FIX-3 S-A6 Opzione C: pulsante "Registra nel modulo NC". FIX-4: `updateAuditMetrics` somma ISO+custom. FIX-5: ellissi preview NC solo se >80 char. |
 
 ---
 

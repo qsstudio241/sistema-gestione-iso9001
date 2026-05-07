@@ -169,11 +169,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
     }
   }, [auditId, auditUuid, notes]);
 
-<<<<<<< HEAD
-  // ─── Ordinamento esplicito: NC prima, poi OSS, poi NV ───────────────────────
-=======
   // Ordinamento esplicito: NC prima, poi OSS, poi NV
->>>>>>> e5fc864 (feat(S-A4): pending issues - ordinamento NC/OSS/NV, zero-state, deep-link domanda)
   const STATUS_ORDER = { NC: 0, OSS: 1, NV: 2 };
   const sortedIssues = [...issues].sort(
     (a, b) => (STATUS_ORDER[a.original_status] ?? 9) - (STATUS_ORDER[b.original_status] ?? 9)
@@ -286,10 +282,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                         {clauseLabel && <span className="issue-clause">{clauseLabel}</span>}
                         <h4 className="issue-title">{description}</h4>
                       </div>
-<<<<<<< HEAD
-=======
                       {/* Pulsante deep-link domanda */}
->>>>>>> e5fc864 (feat(S-A4): pending issues - ordinamento NC/OSS/NV, zero-state, deep-link domanda)
                       {onGoToQuestion && issue.section_code && (
                         <button
                           className="issue-goto-btn"
