@@ -39,9 +39,10 @@
 |---|----------|------|------|
 | 1 | 🔴 Media | **Sezione 11 — drill-down NC/OSS per clausola (G5)** | Solo frontend, non bloccante per produzione |
 | 2 | 🔴 Media | **ISO 45001 checklist** | Norma disponibile in `docs/Normative/Normative NORMA_00002_ UNI ISO 45001_2018 Rev. 0.md` — stesso pattern migration 049 |
-| 3 | 🟡 Bassa | **`norm_excerpt` nel report Word** | Aggiungere colonna `norm_excerpt` in `checklist_questions` + Word export |
-| 4 | 🟡 Bassa | **Token monouso allegati Word (G7)** | Sicurezza, non urgente |
-| 5 | 🟢 Backlog | **G8 — Registrazione Word in DocumentRegistry** | Stub link già presente in ExportPanel |
+| 3 | ~~`norm_excerpt` ISO 14001~~ | ✅ **COMPLETATO** (migration 050, PR #34, 07/05/2026) | 53 stralci popolati, Word export funzionante |
+| 4 | 🟡 Bassa | **norm_excerpt ISO 9001** | standard_id=1, question_id 87–121 — stralci da estrarre da `docs/Normative/UNI EN ISO 9001_2015 Rev. 0.md` |
+| 5 | 🟡 Bassa | **Token monouso allegati Word (G7)** | Sicurezza, non urgente |
+| 6 | 🟢 Backlog | **G8 — Registrazione Word in DocumentRegistry** | Stub link già presente in ExportPanel |
 
 ---
 

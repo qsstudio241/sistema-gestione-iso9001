@@ -1,4 +1,12 @@
-# DEPUTYTASK — Migration 050: norm_excerpt ISO 14001:2015 (stralci normativi per Word export)
+# DEPUTYTASK — NESSUN TASK ATTIVO (07/05/2026 sera)
+
+> Migration 050 completata (TEST OK). Nessun task attualmente delegato al deputy.
+> Prossima sessione: leggere `docs/agent-tasks/RIPRESA_SESSIONE_2026-05-07-B.md`.
+
+---
+
+<!-- archivio Migration 050 — norm_excerpt ISO 14001 — COMPLETATA -->
+# [ARCHIVIATO] Migration 050: norm_excerpt ISO 14001:2015 (stralci normativi per Word export)
 
 > **Data**: 07/05/2026  
 > **Autore**: Lead Agent  
