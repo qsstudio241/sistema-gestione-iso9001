@@ -48,7 +48,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
 
-  // ??? Validazioni pre-chiusura ????????????????????????????????????????????????
+  // ─── Validazioni pre-chiusura ───────────────────────────────────────────────
   const validation = useMemo(() => {
     const blockers = [];
     const warnings = [];
@@ -115,7 +115,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
 
   const canClose = validation.blockers.length === 0;
 
-  // ??? Chiusura ????????????????????????????????????????????????????????????????
+  // ─── Chiusura ────────────────────────────────────────────────────────────────
   async function handleConfirmClose() {
     setLoading(true);
     setError(null);
@@ -143,7 +143,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
     }
   }
 
-  // ??? Approvazione ????????????????????????????????????????????????????????????
+  // ─── Approvazione ────────────────────────────────────────────────────────────
   async function handleApprove() {
     setApproveLoading(true);
     setApproveError(null);
@@ -167,7 +167,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
     }
   }
 
-  // ??? Render: audit gia' chiuso ???????????????????????????????????????????????
+  // ─── Render: audit già chiuso ────────────────────────────────────────────────
   if (isAlreadyClosed) {
     const statusLabels = {
       completed: { label: "COMPLETATO", cls: "completed" },
@@ -179,9 +179,9 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
     return (
       <div className="close-panel close-panel--done">
         <div className={`close-done-badge badge-${s.cls}`}>
-          {status === "completed" && "?"} 
-          {status === "approved"  && "??"} 
-          {status === "archived"  && "??"} Audit {s.label}
+          {status === "completed" && "✅ "}
+          {status === "approved"  && "✅ "}
+          {status === "archived"  && "📁 "}Audit {s.label}
         </div>
 
         {currentAudit?.metadata?.completedAt && (
@@ -208,7 +208,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
             style={{ marginTop: "16px" }}
             onClick={() => setApproving(true)}
           >
-            ?? Approva Audit
+            ✅ Approva Audit
           </button>
         )}
 
@@ -219,14 +219,14 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
               <br />
               L'audit sara' definitivamente bloccato e non potra' essere modificato.
             </p>
-            {approveError && <div className="close-api-error">?? {approveError}</div>}
+            {approveError && <div className="close-api-error">⚠️ {approveError}</div>}
             <div className="close-confirm__actions">
               <button
                 className="close-btn close-btn--approve"
                 disabled={approveLoading}
                 onClick={handleApprove}
               >
-                {approveLoading ? "Approvazione..." : "?? Si', approva"}
+                {approveLoading ? "Approvazione..." : "✅ Sì, approva"}
               </button>
               <button
                 className="close-btn close-btn--secondary"
@@ -253,11 +253,11 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
     );
   }
 
-  // ??? Render: pannello pre-chiusura ???????????????????????????????????????????
+  // ─── Render: pannello pre-chiusura ─────────────────────────────────────────
   return (
     <div className="close-panel">
       <div className="close-panel__header">
-        <h3>?? Chiusura Audit</h3>
+        <h3>🔒 Chiusura Audit</h3>
         <p className="close-panel__subtitle">
           Verifica i requisiti prima di chiudere formalmente l'audit.
           Dopo la chiusura l'audit sara' in sola lettura.
@@ -292,11 +292,11 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       {/* Blockers */}
       {validation.blockers.length > 0 && (
         <div className="close-checklist close-checklist--blockers">
-          <h4>? Requisiti mancanti (da completare)</h4>
+          <h4>❌ Requisiti mancanti (da completare)</h4>
           <ul>
             {validation.blockers.map((b, i) => (
               <li key={i} className="blocker-item">
-                <span className="blocker-icon">?</span> {b}
+                <span className="blocker-icon">❌</span> {b}
               </li>
             ))}
           </ul>
@@ -306,7 +306,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       {/* Warnings */}
       {validation.warnings.length > 0 && (
         <div className="close-checklist close-checklist--warnings">
-          <h4>?? Attenzione (non bloccante)</h4>
+          <h4>⚠️ Attenzione (non bloccante)</h4>
           <ul>
             {validation.warnings.map((w, i) => (
               <li key={i} className="warning-item">
@@ -320,12 +320,12 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       {/* Tutto OK */}
       {canClose && validation.warnings.length === 0 && (
         <div className="close-checklist close-checklist--ok">
-          <h4>? Audit pronto per la chiusura</h4>
+          <h4>✅ Audit pronto per la chiusura</h4>
           <p>Tutti i requisiti obbligatori sono soddisfatti.</p>
         </div>
       )}
 
-      {error && <div className="close-api-error">?? {error}</div>}
+      {error && <div className="close-api-error">⚠️ {error}</div>}
 
       {/* Azioni */}
       {!confirming ? (
@@ -334,7 +334,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
           disabled={!canClose || loading}
           onClick={() => setConfirming(true)}
         >
-          ?? Chiudi Audit
+          🔒 Chiudi Audit
         </button>
       ) : (
         <div className="close-confirm">
@@ -349,7 +349,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
               disabled={loading}
               onClick={handleConfirmClose}
             >
-              {loading ? "Chiusura in corso..." : "? Si', chiudi audit"}
+              {loading ? "Chiusura in corso..." : "✓ Sì, chiudi audit"}
             </button>
             <button
               className="close-btn close-btn--secondary"

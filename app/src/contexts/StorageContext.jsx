@@ -515,6 +515,56 @@ export function StorageProvider({ children, useMockData = false }) {
     };
   }, [currentAuditId]);
 
+  // Auto-retry lock quando un altro utente lo detiene (mode "foreign"):
+  // riprova ogni 30s — al TTL (15 min) o al rilascio esplicito di A, B acquisisce il lock
+  // automaticamente senza richiedere azione manuale.
+  useEffect(() => {
+    if (auditLock.mode !== "foreign" || !currentAuditId || !navigator.onLine) {
+      return undefined;
+    }
+    const timer = setInterval(async () => {
+      const audit = auditsRef.current.find(
+        (a) => (a.metadata?.id || a.id) === currentAuditId,
+      );
+      const uuid = audit?.metadata?.id || audit?.id;
+      if (!uuid) return;
+      try {
+        const res = await apiService.acquireAuditLock(uuid);
+        const tok = res?.data?.lock_token;
+        if (tok) {
+          clearInterval(timer);
+          if (lockHeartbeatRef.current) {
+            clearInterval(lockHeartbeatRef.current);
+            lockHeartbeatRef.current = null;
+          }
+          const numericId =
+            res?.data?.audit_id ??
+            audit?.metadata?.auditId ??
+            audit?.audit_id ??
+            null;
+          setAuditLockTokensForAudit(uuid, numericId, tok);
+          lockTokenRef.current = tok;
+          lockUuidRef.current = uuid;
+          lockNumericAuditIdRef.current = numericId;
+          setAuditLock({ mode: "owner", lockedByName: null, message: null });
+          lockHeartbeatRef.current = setInterval(() => {
+            apiService.renewAuditLock(uuid).catch((e) => {
+              demoteOwnerLockOnHeartbeatFailure(e?.message);
+            });
+          }, 60 * 1000);
+          syncService.processQueue().catch(() => {});
+        }
+      } catch (err) {
+        if (err?.status === 401) {
+          clearInterval(timer);
+          setAuditLock({ mode: "none", lockedByName: null, message: null });
+        }
+        // 423: lock ancora in uso da A — riprova al prossimo tick (30s)
+      }
+    }, 30 * 1000);
+    return () => clearInterval(timer);
+  }, [auditLock.mode, currentAuditId]);
+
   // Ritenta lock quando l'audit compare sul server (stesso audit selezionato)
   useEffect(() => {
     if (auditLock.mode !== "pending_server" || !currentAuditId || !navigator.onLine) {
@@ -1513,7 +1563,11 @@ export function StorageProvider({ children, useMockData = false }) {
   const updateCurrentAudit = useCallback(
     (updater, { skipSync = false } = {}) => {
       setAudits((prevAudits) => {
-        if (auditLockRef.current.mode === "foreign") {
+        // Determina PRIMA se è una chiamata di sistema (idratazione, reconcile, init checklist):
+        // queste devono bypassare il blocco lock per garantire server-wins anche per l'utente B.
+        const isSystemCall = typeof updater === "function" && updater._systemCall === true;
+
+        if (!isSystemCall && auditLockRef.current.mode === "foreign") {
           const now = Date.now();
           if (now - lockWriteWarnTsRef.current > 5000) {
             lockWriteWarnTsRef.current = now;
@@ -1536,10 +1590,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
             // Transizione automatica draft → in_progress solo su edit esplicito utente.
             // Le chiamate di sistema (initializeChecklist, hydrateQuestionIds,
-            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true
-            // oppure aggiornano solo checklist/metrics senza toccare i campi utente —
-            // qui controlliamo che l'updater NON sia contrassegnato come system call.
-            const isSystemCall = typeof updater === "function" && updater._systemCall === true;
+            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true.
             if (
               !isSystemCall &&
               updated?.metadata?.status === "draft" &&
@@ -1573,13 +1624,13 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // skipSync=true o idratazione in corso → non accodare save_responses.
-            // Usato da initializeChecklist (template vuoto) e durante fetchAndApplyServerResponses
-            // per evitare di sovrascrivere con NOT_ANSWERED dati già presenti sul server.
+            // Accoda save_responses se non è hydration/init e non è una chiamata di sistema.
+            // La guardia navigator.onLine è RIMOSSA: i dati vengono accodati anche offline e
+            // processati automaticamente al reconnect (ADR-008 / offline-first).
             // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) sono AGGIUNTIVI al bulk
             // save_responses — non lo sostituiscono. save_responses è l'unico percorso che salva
             // le note/evidenze digitate nelle textarea; T3 gestisce solo i click sui pulsanti stato.
-            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
+            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
                 syncService
@@ -1589,7 +1640,7 @@ export function StorageProvider({ children, useMockData = false }) {
                   })
                   .then(() => {
                     console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync`,
+                      `📤 [SYNC] ${responses.length} risposte enqueued per sync (online: ${navigator.onLine})`,
                     );
                   })
                   .catch((err) => {
@@ -1598,8 +1649,9 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             }
 
-            // Enqueue sync audit metadata se online, lock NON foreign, skipSync=false e non in hydrating.
-            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
+            // Enqueue update_audit anche offline: la guardia navigator.onLine è rimossa.
+            // L'item resta in coda finché non torna la connessione; il sync processa allora.
+            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();
@@ -2221,6 +2273,36 @@ export function StorageProvider({ children, useMockData = false }) {
     };
     window.addEventListener('sgq:auditIdAssigned', handleAuditIdAssigned);
     return () => window.removeEventListener('sgq:auditIdAssigned', handleAuditIdAssigned);
+  }, []);
+
+  /**
+   * SYNC-5: Listener sgq:attachmentSynced
+   * Emesso da syncService.syncUploadAttachment dopo upload offline riuscito.
+   * Aggiorna l'allegato locale: rimuove pendingSync/blobKey, imposta serverAttachmentId.
+   */
+  useEffect(() => {
+    const handleAttachmentSynced = (event) => {
+      const { blobKey, serverAttachmentId } = event.detail || {};
+      if (!blobKey || !serverAttachmentId) return;
+      setAudits((prev) =>
+        prev.map((a) => {
+          const attachments = a.attachments;
+          if (!attachments?.length) return a;
+          const idx = attachments.findIndex((att) => att.blobKey === blobKey);
+          if (idx === -1) return a;
+          const updated = [...attachments];
+          updated[idx] = {
+            ...updated[idx],
+            serverAttachmentId,
+            pendingSync: false,
+            blobKey: null,
+          };
+          return { ...a, attachments: updated };
+        })
+      );
+    };
+    window.addEventListener('sgq:attachmentSynced', handleAttachmentSynced);
+    return () => window.removeEventListener('sgq:attachmentSynced', handleAttachmentSynced);
   }, []);
 
   /**

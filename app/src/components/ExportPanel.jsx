@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useStorage } from "../contexts/StorageContext";
 import apiService from "../services/apiService";
@@ -16,8 +17,9 @@ import {
 import "./ExportPanel.css";
 
 const ExportPanel = () => {
-  const { user } = useAuth();
+  const { user, hasLicensedModule } = useAuth();
   const { currentAudit, audits, fsProvider, importBackup } = useStorage();
+  const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -51,11 +53,6 @@ const ExportPanel = () => {
 
   // Development mode - mostra formati avanzati JSON/CSV
   const isDev = process.env.NODE_ENV === "development";
-
-  console.log(
-    "ExportPanel - currentAudit:",
-    currentAudit ? "presente" : "null"
-  );
 
   const showMessage = (message, type = "success") => {
     setExportMessage({ text: message, type });
@@ -652,6 +649,25 @@ const ExportPanel = () => {
                   </span>
                 )}
               </p>
+
+              {/* Collegamento documentale — visibile per audit completati/approvati */}
+              {["completed", "approved"].includes(currentAudit?.metadata?.status) &&
+                hasLicensedModule?.("documents") && (
+                <div className="export-docregistry-hint">
+                  <span>📂</span>
+                  <span>
+                    Dopo aver generato il report Word, registralo nella{" "}
+                    <button
+                      type="button"
+                      className="export-docregistry-link"
+                      onClick={() => navigate("/documents")}
+                    >
+                      Gestione Documentale
+                    </button>{" "}
+                    per archiviarlo con versione e metadati.
+                  </span>
+                </div>
+              )}
             </>
           )}
         </div>

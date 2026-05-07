@@ -4,8 +4,10 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
+import apiService from "../services/apiService";
 import {
   NC_CATEGORY,
   NC_STATUS,
@@ -13,13 +15,56 @@ import {
 } from "../data/auditDataModel";
 import "./NonConformitiesManager.css";
 
+const CATEGORY_TO_SEVERITY = {
+  [NC_CATEGORY.MAJOR]: "major",
+  [NC_CATEGORY.MINOR]: "minor",
+  [NC_CATEGORY.OBSERVATION]: "observation",
+};
+
 function NonConformitiesManager({ readOnly = false }) {
   const { currentAudit, updateCurrentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedNC, setSelectedNC] = useState(null);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [registeringNcId, setRegisteringNcId] = useState(null);
+  const [registerError, setRegisterError] = useState(null);
+
+  const handleRegisterToOrg = useCallback(async (nc) => {
+    if (!currentAudit?.metadata?.auditId) {
+      setRegisterError("Audit non ancora salvato sul server — salva prima di registrare.");
+      return;
+    }
+    setRegisteringNcId(nc.id);
+    setRegisterError(null);
+    try {
+      const ncNumber = `${currentAudit.metadata.auditNumber || 'AUD'}-NC-${Date.now()}`;
+      await apiService.createNonConformity({
+        audit_id: currentAudit.metadata.auditId,
+        nc_number: ncNumber,
+        section_code: nc.clauseReference || "9999",
+        description: nc.description,
+        severity: CATEGORY_TO_SEVERITY[nc.category] || "minor",
+      });
+      updateCurrentAudit((audit) => ({
+        ...audit,
+        nonConformities: audit.nonConformities.map((item) =>
+          item.id === nc.id ? { ...item, registeredToOrg: true } : item
+        ),
+      }));
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      if (code === "MODULE_NOT_LICENSED" || err?.response?.status === 403) {
+        setRegisterError("Il modulo NC non è attivato per questo account. Attivarlo dalla sezione Licenze.");
+      } else {
+        setRegisterError("Errore durante la registrazione. Riprova.");
+      }
+    } finally {
+      setRegisteringNcId(null);
+    }
+  }, [currentAudit, updateCurrentAudit]);
 
   if (!currentAudit) {
     return (
@@ -155,6 +200,18 @@ function NonConformitiesManager({ readOnly = false }) {
         </div>
       </div>
 
+      {/* Errore registrazione NC organizzativa */}
+      {registerError && (
+        <div className="nc-register-error">
+          ⚠️ {registerError}
+          <button
+            className="nc-register-error-close"
+            onClick={() => setRegisterError(null)}
+            aria-label="Chiudi messaggio"
+          >✕</button>
+        </div>
+      )}
+
       {/* Lista NC */}
       <div className="nc-list">
         {filteredNCs.length === 0 ? (
@@ -174,6 +231,8 @@ function NonConformitiesManager({ readOnly = false }) {
               onEdit={() => handleEditNC(nc)}
               onDelete={() => handleDeleteNC(nc.id)}
               readOnly={readOnly}
+              isRegistering={registeringNcId === nc.id}
+              onRegisterToOrg={!readOnly && hasLicensedModule ? () => handleRegisterToOrg(nc) : null}
               onUpdateStatus={(status) => {
                 updateCurrentAudit((audit) => ({
                   ...audit,
@@ -243,7 +302,7 @@ function NonConformitiesManager({ readOnly = false }) {
 
 // === NC CARD ===
 
-function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
+function NCCard({ nc, onEdit, onDelete, onUpdateStatus, onRegisterToOrg, isRegistering, readOnly = false }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getCategoryClass = () => {
@@ -291,7 +350,9 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
           <span className="nc-norm-badge">{nc.norm.replace("_", " ")}</span>
           <span className="nc-clause">{nc.clauseReference}</span>
           <span className="nc-description-preview">
-            {nc.description.substring(0, 80)}...
+            {nc.description.length > 80
+              ? nc.description.substring(0, 80) + "…"
+              : nc.description}
           </span>
         </div>
 
@@ -359,6 +420,20 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
                 <button onClick={onDelete} className="btn btn-sm btn-danger">
                   🗑️ Elimina
                 </button>
+                {nc.registeredToOrg ? (
+                  <span className="nc-registered-badge" title="Già registrata nel modulo NC organizzativo">
+                    ✅ Registrata
+                  </span>
+                ) : onRegisterToOrg ? (
+                  <button
+                    onClick={onRegisterToOrg}
+                    className="btn btn-sm btn-outline-primary"
+                    disabled={isRegistering}
+                    title="Registra questa NC nel modulo NC organizzativo (punto 10.2)"
+                  >
+                    {isRegistering ? "⏳ Registrazione…" : "📋 Registra nel modulo NC"}
+                  </button>
+                ) : null}
               </div>
             )}
           </div>

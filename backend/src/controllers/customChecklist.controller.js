@@ -6,7 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const customChecklistService = require('../services/customChecklist.service');
-const { assertWriteAllowed, getLockTokenFromRequest } = require('../services/auditLock.service');
+// assertWriteAllowed rimosso in T5 (lock solo UX)
 
 /**
  * GET /api/v1/custom-checklists

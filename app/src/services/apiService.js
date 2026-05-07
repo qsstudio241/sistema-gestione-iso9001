@@ -738,7 +738,7 @@ class ApiService {
     }
 
     async createNonConformity(data) {
-        return this.post('/nc', data);
+        return this.post('/non-conformities', data);
     }
 
     async updateNonConformity(id, data) {

@@ -207,6 +207,14 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
                     title={attachment.storedName}
                   >
                     {attachment.name}
+                    {attachment.pendingSync && (
+                      <span
+                        className="attachment-pending-badge"
+                        title="In attesa di upload al server — verrà caricato al ripristino della connessione"
+                      >
+                        ⏳
+                      </span>
+                    )}
                   </span>
                   <span className="attachment-meta">
                     {formatSize(attachment.size)} •{" "}

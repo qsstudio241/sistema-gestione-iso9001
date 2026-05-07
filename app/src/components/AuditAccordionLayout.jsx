@@ -97,7 +97,7 @@ const STANDARD_INIT_MAP = Object.fromEntries(
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus, auditLock } = useStorage();
   // Il banner "ready" sparisce dopo 3 secondi
   const [showReadyBanner, setShowReadyBanner] = useState(false);
   useEffect(() => {
@@ -112,7 +112,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const { user } = useAuth();
 
   const LOCKED_STATUSES = ['completed', 'approved', 'archived'];
-  const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status);
+  // Read-only se: audit formalmente chiuso/approvato OPPURE lock in uso da altro utente
+  const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status) || auditLock?.mode === 'foreign';
 
   // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
   const [companies, setCompanies] = useState([]);
@@ -218,11 +219,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 350);
     }
-<<<<<<< HEAD
-  }, []); // setOpenSections e setOpenSubSections sono stabili (React setter)
-=======
-  }, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili
->>>>>>> e5fc864 (feat(S-A4): pending issues - ordinamento NC/OSS/NV, zero-state, deep-link domanda)
+  }, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili (React setter)
 
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {
@@ -776,9 +773,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <div className="accordion-content">
               <AuditClosePanel
                 currentAudit={currentAudit}
-                onUpdate={onUpdate}
                 onCompleted={() => {
-                  // Ricarica la pagina per riflettere il nuovo stato read-only
                   setOpenSections((prev) => ({ ...prev, close: false }));
                 }}
               />
