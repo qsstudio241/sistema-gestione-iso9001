@@ -691,6 +691,38 @@ export class SyncService {
     }
 
     /**
+     * GAP-B3: accoda un evento custom_response_set per il percorso event-based T3 custom.
+     * Analogo a enqueueResponseEvent ma per audit_custom_checklist_responses.
+     * Usato solo se VITE_SYNC_MODE === 'events'.
+     * @param {string} auditUuid
+     * @param {number|string} itemId  — custom_item_id
+     * @param {string|null} status    — 'C'|'NC'|'OSS'|'OM'|'NA'|'NV'|null
+     * @param {Array|null} evidenceBlocks
+     */
+    async enqueueCustomResponseEvent(auditUuid, itemId, status, evidenceBlocks = null) {
+        const rawKey = `${auditUuid}:custom:${itemId}`;
+        let hash = 0;
+        for (let i = 0; i < rawKey.length; i++) {
+            hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+            hash |= 0;
+        }
+        const ts = Date.now().toString(16).padStart(12, '0');
+        const h = Math.abs(hash).toString(16).padStart(8, '0');
+        const idempotencyKey = `${ts.slice(0, 8)}-${ts.slice(8, 12)}-4${h.slice(0, 3)}-8${h.slice(3, 6)}-${h.slice(6)}${ts}`.slice(0, 36);
+
+        const event = {
+            event_type: 'custom_response_set',
+            field_path: `custom_responses.${itemId}`,
+            new_value: JSON.stringify({ status, evidence_blocks: evidenceBlocks }),
+            client_ts: new Date().toISOString(),
+            client_ts_offset_ms: 0,
+            idempotency_key: idempotencyKey,
+            device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        };
+        return this.enqueue('send_audit_event', { auditUuid, event });
+    }
+
+    /**
      * T4: accoda un evento field_updated per un campo testo ricco dell'audit.
      * Chiamato con debounce 500ms da StorageContext.
      * @param {string} auditUuid

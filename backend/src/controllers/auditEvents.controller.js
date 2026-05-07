@@ -88,6 +88,38 @@ async function postAuditEvents(req, res) {
             // Proiezione immediata su audit_responses per response_set / response_cleared.
             // Garantisce che fetchAndApplyServerResponses (che legge audit_responses) trovi i dati
             // anche con VITE_SYNC_MODE=events, senza attendere un job di compaction asincrono.
+            // GAP-B3: proiezione analoga per custom_response_set su audit_custom_checklist_responses.
+            if (ev.event_type === 'custom_response_set') {
+                const itemId = ev.field_path ? parseInt(ev.field_path.split('.')[1], 10) : null;
+                if (itemId && Number.isFinite(itemId)) {
+                    let status = null;
+                    let evidenceBlocks = null;
+                    if (ev.new_value) {
+                        try {
+                            const parsed = JSON.parse(ev.new_value);
+                            status = parsed.status ?? null;
+                            evidenceBlocks = parsed.evidence_blocks != null
+                                ? JSON.stringify(parsed.evidence_blocks)
+                                : null;
+                        } catch {
+                            // new_value malformato: lascia null
+                        }
+                    }
+                    await query(`
+                        MERGE dbo.audit_custom_checklist_responses AS target
+                        USING (SELECT @audit_id AS audit_id, @custom_item_id AS custom_item_id) AS source
+                        ON target.audit_id = source.audit_id AND target.custom_item_id = source.custom_item_id
+                        WHEN MATCHED THEN
+                            UPDATE SET
+                                status = @status,
+                                evidence_blocks = @evidence_blocks,
+                                updated_at = GETDATE()
+                        WHEN NOT MATCHED THEN
+                            INSERT (audit_id, custom_item_id, status, evidence_blocks, updated_at)
+                            VALUES (@audit_id, @custom_item_id, @status, @evidence_blocks, GETDATE());
+                    `, { audit_id, custom_item_id: itemId, status, evidence_blocks: evidenceBlocks });
+                }
+            }
             if (ev.event_type === 'response_set' || ev.event_type === 'response_cleared') {
                 // field_path è "responses.<question_id>" (es. "responses.87")
                 const questionId = ev.field_path ? parseInt(ev.field_path.split('.')[1], 10) : null;

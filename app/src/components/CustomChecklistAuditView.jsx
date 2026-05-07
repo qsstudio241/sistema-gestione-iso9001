@@ -246,6 +246,17 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
         customStatuses: { ...(prev.customStatuses || {}), [itemId]: newStatus },
       }));
 
+      // GAP-B3: percorso event-based T3 per risposte custom.
+      // Attivo solo con VITE_SYNC_MODE=events; il percorso legacy (save_custom_checklist_responses)
+      // rimane sempre come fallback e path principale in produzione (SYNC_MODE=legacy).
+      if (import.meta.env.VITE_SYNC_MODE === 'events') {
+        const auditUuidForEvent = audit?.id || audit?.metadata?.id;
+        if (auditUuidForEvent) {
+          const blocks = responses[itemId] || [];
+          syncService.enqueueCustomResponseEvent(auditUuidForEvent, itemId, newStatus, blocks).catch(() => {});
+        }
+      }
+
       if (auditId) {
         const blocks = responses[itemId] || [];
         try {
@@ -261,7 +272,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
         }
       }
     },
-    [auditId, responses, statuses, updateCurrentAudit]
+    [audit, auditId, responses, statuses, updateCurrentAudit]
   );
 
   const updateBlock = (itemId, blockIndex, field, value) => {
