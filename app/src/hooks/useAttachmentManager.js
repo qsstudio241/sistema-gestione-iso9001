@@ -233,6 +233,7 @@ export function useAttachmentManager(audit, onUpdate) {
                                     await syncService.enqueue('upload_attachment', {
                                         blobKey,
                                         auditId,
+                                        auditUuid: audit?.id || audit?.metadata?.id || null,
                                         ...(opts.customItemId
                                             ? { customItemId: opts.customItemId }
                                             : { questionId: serverQuestionId }),
@@ -312,7 +313,7 @@ export function useAttachmentManager(audit, onUpdate) {
             const attachment = attachments[attachmentIndex];
 
             try {
-                // Rimuovi da metadata audit (file fisico rimane su disco per tracciabilità)
+                // Rimuovi da metadata audit locale (file fisico rimane su disco per tracciabilità)
                 if (onUpdate) {
                     await onUpdate((prev) => {
                         const updatedAttachments = (prev.attachments || []).filter(
@@ -324,14 +325,42 @@ export function useAttachmentManager(audit, onUpdate) {
                     });
                 }
 
-                // Copia percorso in clipboard per riferimento (pattern ESG)
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(attachment.path);
+                // Pulizia blob offline se l'allegato non era mai stato caricato sul server
+                if (attachment.blobKey && !attachment.serverAttachmentId) {
+                    try {
+                        await syncService.deleteBlobFromStore(attachment.blobKey);
+                    } catch (blobErr) {
+                        console.warn('[ATTACHMENT] Errore pulizia blob offline:', blobErr.message);
+                    }
+                }
+
+                // Cancella allegato dal server (se già caricato)
+                if (attachment.serverAttachmentId) {
+                    if (navigator.onLine) {
+                        try {
+                            await apiService.deleteAttachment(attachment.serverAttachmentId);
+                        } catch (delErr) {
+                            const status = delErr?.response?.status;
+                            if (status === 404) {
+                                // Già eliminato sul server — ok
+                            } else {
+                                // Errore di rete o altro: accoda per sync futuro
+                                console.warn('[ATTACHMENT] Delete fallita, accodo in sync:', delErr.message);
+                                await syncService.enqueue('delete_attachment', {
+                                    attachmentId: attachment.serverAttachmentId,
+                                });
+                            }
+                        }
+                    } else {
+                        await syncService.enqueue('delete_attachment', {
+                            attachmentId: attachment.serverAttachmentId,
+                        });
+                    }
                 }
 
                 return {
                     success: true,
-                    message: `Allegato rimosso (file preservato in: ${attachment.path})`,
+                    message: `Allegato rimosso`,
                 };
             } catch (err) {
                 console.error("Errore rimozione allegato:", err);

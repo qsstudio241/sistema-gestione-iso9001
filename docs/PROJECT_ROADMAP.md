@@ -730,7 +730,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 SYNC-2** | **Conflict resolution campo per campo** — testi/note non scartati da server-wins su updated_at | Fix mirato | ✅ Completato (29/04) — PR #19 — deploy VPS fatto |
 | **🔴 SYNC-3** | **Banner merge dati** — `SyncMergeBanner` avvisa quando il backend applica field-level merge | Fix mirato | ✅ Completato (29/04) — solo frontend, Netlify |
 | **🔴 SYNC-4** | **Guard logout con modal React** — `LogoutSyncGuard` con attesa sync, spinner, 3 opzioni | ADR-007 | ✅ Completato (29/04) — solo frontend, Netlify |
-| **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ⏳ Backlog attivo |
+| **🟡 SYNC-5** | **Upload allegati offline** — blob in IndexedDB → upload automatico al reconnect | SyncService v3 | ✅ Completato (07/05/2026) — `syncUploadAttachment` fix customItemId, evento `sgq:attachmentSynced`, `delete_attachment` in coda, badge ⏳ UI |
 | **🔴 T0** | **Staging environment** — DB separato + dati anonimi. Valutato: **non necessario** per T1-T2 (migrazioni additive). Da rivalutare per T3. | Infra | ✅ Saltato (decisione 29/04) |
 | **🔴 T1** | **Temporal tables** su `audit_responses` + `audits` — storicizzazione automatica nativa SQL Server | DB migration | ✅ Completato (29/04/2026) — migration 045, backup pre-T1 ok |
 | **🔴 T2** | **Event store** + tabella `audit_events` + endpoint `POST /audits/:uuid/events` + idempotency | Backend | ✅ Completato (30/04/2026) — migration 046, deploy VPS, smoke OK |

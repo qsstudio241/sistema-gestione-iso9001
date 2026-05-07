@@ -21,12 +21,22 @@ const ATTACHMENTS_BLOB_STORE = 'attachments_offline'; // Store blob per upload o
  * Struttura SyncQueueItem
  * {
  *   id: string (UUID),
- *   type: 'create_audit' | 'update_audit' | 'delete_audit' | 'upload_attachment',
+ *   type: 'create_audit' | 'update_audit' | 'delete_audit'
+ *       | 'upload_attachment' | 'delete_attachment'
+ *       | 'save_responses' | 'save_custom_checklist_responses'
+ *       | 'upload_custom_attachment_and_patch_custom_response'
+ *       | 'send_audit_event',
  *   payload: any,
  *   timestamp: number,
  *   retryCount: number,
  *   lastError: string
  * }
+ *
+ * Payload 'upload_attachment':
+ *   { blobKey, auditId, auditUuid, questionId?, customItemId?, category, description, fileName }
+ *
+ * Payload 'delete_attachment':
+ *   { attachmentId }
  */
 
 export class SyncService {
@@ -301,6 +311,7 @@ export class SyncService {
                         'save_custom_checklist_responses',
                         'update_audit',
                         'upload_attachment',
+                        'delete_attachment',
                         'upload_custom_attachment_and_patch_custom_response',
                         'send_audit_event',
                     ]);
@@ -411,6 +422,9 @@ export class SyncService {
 
             case 'upload_attachment':
                 return await this.syncUploadAttachment(payload);
+
+            case 'delete_attachment':
+                return await this.syncDeleteAttachment(payload);
 
             case 'save_responses':
                 return await this.syncSaveResponses(payload);
@@ -771,28 +785,33 @@ export class SyncService {
 
     /**
      * Sync: Upload attachment
-     * Supporta sia payload.file (diretto) che payload.blobKey (da IDB)
+     * Supporta sia payload.file (diretto) che payload.blobKey (da IDB).
+     * Gestisce sia allegati ISO (questionId) che custom (customItemId).
      */
     async syncUploadAttachment(payload) {
         let file = payload.file;
 
-        // Se abbiamo un blobKey, recupera il blob da IDB
         if (!file && payload.blobKey) {
             const blobData = await this.getFileBlob(payload.blobKey);
             if (!blobData) {
                 throw new Error(`Blob non trovato in IDB per key: ${payload.blobKey}`);
             }
             file = new Blob([blobData.arrayBuffer], { type: blobData.mimeType });
-            // Aggiungi nome al blob (richiesto da uploadAttachment)
             file = new File([file], blobData.fileName || 'upload', { type: blobData.mimeType });
         }
 
-        const result = await apiService.uploadAttachment(file, {
+        const uploadParams = {
             auditId: payload.auditId,
-            questionId: toNumericChecklistQuestionId(payload.questionId),
             category: payload.category,
-            description: payload.description
-        });
+            description: payload.description,
+        };
+        if (payload.customItemId) {
+            uploadParams.customItemId = payload.customItemId;
+        } else {
+            uploadParams.questionId = toNumericChecklistQuestionId(payload.questionId);
+        }
+
+        const result = await apiService.uploadAttachment(file, uploadParams);
 
         // Pulizia blob da IDB dopo upload riuscito
         if (payload.blobKey) {
@@ -800,7 +819,28 @@ export class SyncService {
             console.log(`🗑️ [OFFLINE BLOB] Blob rimosso da IDB dopo sync: ${payload.blobKey}`);
         }
 
+        // Notifica l'app che l'allegato ha un serverAttachmentId definitivo
+        const serverAttachmentId = result?.data?.attachment_id || result?.attachment_id;
+        if (serverAttachmentId && payload.blobKey) {
+            window.dispatchEvent(new CustomEvent('sgq:attachmentSynced', {
+                detail: {
+                    blobKey: payload.blobKey,
+                    serverAttachmentId,
+                    auditUuid: payload.auditUuid || null,
+                },
+            }));
+        }
+
         return result;
+    }
+
+    /**
+     * Sync: Delete attachment
+     * Elimina un allegato già caricato sul server.
+     */
+    async syncDeleteAttachment(payload) {
+        if (!payload.attachmentId) throw new Error('syncDeleteAttachment: attachmentId mancante');
+        return await apiService.deleteAttachment(payload.attachmentId);
     }
 
     /**

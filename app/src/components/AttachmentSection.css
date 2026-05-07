@@ -343,3 +343,18 @@
     background: #2d3748;
   }
 }
+
+/* Badge allegato in attesa di upload (SYNC-5) */
+.attachment-pending-badge {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 0.85em;
+  vertical-align: middle;
+  opacity: 0.8;
+  animation: pending-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pending-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}

@@ -2224,6 +2224,36 @@ export function StorageProvider({ children, useMockData = false }) {
   }, []);
 
   /**
+   * SYNC-5: Listener sgq:attachmentSynced
+   * Emesso da syncService.syncUploadAttachment dopo upload offline riuscito.
+   * Aggiorna l'allegato locale: rimuove pendingSync/blobKey, imposta serverAttachmentId.
+   */
+  useEffect(() => {
+    const handleAttachmentSynced = (event) => {
+      const { blobKey, serverAttachmentId } = event.detail || {};
+      if (!blobKey || !serverAttachmentId) return;
+      setAudits((prev) =>
+        prev.map((a) => {
+          const attachments = a.attachments;
+          if (!attachments?.length) return a;
+          const idx = attachments.findIndex((att) => att.blobKey === blobKey);
+          if (idx === -1) return a;
+          const updated = [...attachments];
+          updated[idx] = {
+            ...updated[idx],
+            serverAttachmentId,
+            pendingSync: false,
+            blobKey: null,
+          };
+          return { ...a, attachments: updated };
+        })
+      );
+    };
+    window.addEventListener('sgq:attachmentSynced', handleAttachmentSynced);
+    return () => window.removeEventListener('sgq:attachmentSynced', handleAttachmentSynced);
+  }, []);
+
+  /**
    * Reset a mock data (per testing)
    */
   const resetToMockData = useCallback(() => {
