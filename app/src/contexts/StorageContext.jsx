@@ -515,6 +515,56 @@ export function StorageProvider({ children, useMockData = false }) {
     };
   }, [currentAuditId]);
 
+  // Auto-retry lock quando un altro utente lo detiene (mode "foreign"):
+  // riprova ogni 30s — al TTL (15 min) o al rilascio esplicito di A, B acquisisce il lock
+  // automaticamente senza richiedere azione manuale.
+  useEffect(() => {
+    if (auditLock.mode !== "foreign" || !currentAuditId || !navigator.onLine) {
+      return undefined;
+    }
+    const timer = setInterval(async () => {
+      const audit = auditsRef.current.find(
+        (a) => (a.metadata?.id || a.id) === currentAuditId,
+      );
+      const uuid = audit?.metadata?.id || audit?.id;
+      if (!uuid) return;
+      try {
+        const res = await apiService.acquireAuditLock(uuid);
+        const tok = res?.data?.lock_token;
+        if (tok) {
+          clearInterval(timer);
+          if (lockHeartbeatRef.current) {
+            clearInterval(lockHeartbeatRef.current);
+            lockHeartbeatRef.current = null;
+          }
+          const numericId =
+            res?.data?.audit_id ??
+            audit?.metadata?.auditId ??
+            audit?.audit_id ??
+            null;
+          setAuditLockTokensForAudit(uuid, numericId, tok);
+          lockTokenRef.current = tok;
+          lockUuidRef.current = uuid;
+          lockNumericAuditIdRef.current = numericId;
+          setAuditLock({ mode: "owner", lockedByName: null, message: null });
+          lockHeartbeatRef.current = setInterval(() => {
+            apiService.renewAuditLock(uuid).catch((e) => {
+              demoteOwnerLockOnHeartbeatFailure(e?.message);
+            });
+          }, 60 * 1000);
+          syncService.processQueue().catch(() => {});
+        }
+      } catch (err) {
+        if (err?.status === 401) {
+          clearInterval(timer);
+          setAuditLock({ mode: "none", lockedByName: null, message: null });
+        }
+        // 423: lock ancora in uso da A — riprova al prossimo tick (30s)
+      }
+    }, 30 * 1000);
+    return () => clearInterval(timer);
+  }, [auditLock.mode, currentAuditId]);
+
   // Ritenta lock quando l'audit compare sul server (stesso audit selezionato)
   useEffect(() => {
     if (auditLock.mode !== "pending_server" || !currentAuditId || !navigator.onLine) {
@@ -1513,7 +1563,11 @@ export function StorageProvider({ children, useMockData = false }) {
   const updateCurrentAudit = useCallback(
     (updater, { skipSync = false } = {}) => {
       setAudits((prevAudits) => {
-        if (auditLockRef.current.mode === "foreign") {
+        // Determina PRIMA se è una chiamata di sistema (idratazione, reconcile, init checklist):
+        // queste devono bypassare il blocco lock per garantire server-wins anche per l'utente B.
+        const isSystemCall = typeof updater === "function" && updater._systemCall === true;
+
+        if (!isSystemCall && auditLockRef.current.mode === "foreign") {
           const now = Date.now();
           if (now - lockWriteWarnTsRef.current > 5000) {
             lockWriteWarnTsRef.current = now;
@@ -1536,10 +1590,7 @@ export function StorageProvider({ children, useMockData = false }) {
 
             // Transizione automatica draft → in_progress solo su edit esplicito utente.
             // Le chiamate di sistema (initializeChecklist, hydrateQuestionIds,
-            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true
-            // oppure aggiornano solo checklist/metrics senza toccare i campi utente —
-            // qui controlliamo che l'updater NON sia contrassegnato come system call.
-            const isSystemCall = typeof updater === "function" && updater._systemCall === true;
+            // fetchAndApplyServerResponses) usano updater con proprietà _systemCall=true.
             if (
               !isSystemCall &&
               updated?.metadata?.status === "draft" &&

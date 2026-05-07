@@ -7,7 +7,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { hardDeleteAudit } = require('../services/auditMaintenance.service');
 const { getAllowedStandardIds } = require('./auth.controller');
-const { assertWriteAllowed, getLockTokenFromRequest } = require('../services/auditLock.service');
+// assertWriteAllowed rimosso in T5 (lock solo UX, non blocca le scritture sul server)
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 const { studioScopeClause } = require('../services/auditListRbac.service');
 

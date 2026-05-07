@@ -97,7 +97,7 @@ const STANDARD_INIT_MAP = Object.fromEntries(
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus, auditLock } = useStorage();
   // Il banner "ready" sparisce dopo 3 secondi
   const [showReadyBanner, setShowReadyBanner] = useState(false);
   useEffect(() => {
@@ -112,7 +112,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const { user } = useAuth();
 
   const LOCKED_STATUSES = ['completed', 'approved', 'archived'];
-  const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status);
+  // Read-only se: audit formalmente chiuso/approvato OPPURE lock in uso da altro utente
+  const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status) || auditLock?.mode === 'foreign';
 
   // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
   const [companies, setCompanies] = useState([]);
