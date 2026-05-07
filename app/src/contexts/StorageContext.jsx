@@ -1624,13 +1624,13 @@ export function StorageProvider({ children, useMockData = false }) {
 
             const auditUuid = updated.id || updated.metadata?.id;
 
-            // skipSync=true o idratazione in corso → non accodare save_responses.
-            // Usato da initializeChecklist (template vuoto) e durante fetchAndApplyServerResponses
-            // per evitare di sovrascrivere con NOT_ANSWERED dati già presenti sul server.
+            // Accoda save_responses se non è hydration/init e non è una chiamata di sistema.
+            // La guardia navigator.onLine è RIMOSSA: i dati vengono accodati anche offline e
+            // processati automaticamente al reconnect (ADR-008 / offline-first).
             // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) sono AGGIUNTIVI al bulk
             // save_responses — non lo sostituiscono. save_responses è l'unico percorso che salva
             // le note/evidenze digitate nelle textarea; T3 gestisce solo i click sui pulsanti stato.
-            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
+            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
                 syncService
@@ -1640,7 +1640,7 @@ export function StorageProvider({ children, useMockData = false }) {
                   })
                   .then(() => {
                     console.log(
-                      `📤 [SYNC] ${responses.length} risposte enqueued per sync`,
+                      `📤 [SYNC] ${responses.length} risposte enqueued per sync (online: ${navigator.onLine})`,
                     );
                   })
                   .catch((err) => {
@@ -1649,8 +1649,9 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             }
 
-            // Enqueue sync audit metadata se online, lock NON foreign, skipSync=false e non in hydrating.
-            if (navigator.onLine && !skipSync && !isHydratingRef.current) {
+            // Enqueue update_audit anche offline: la guardia navigator.onLine è rimossa.
+            // L'item resta in coda finché non torna la connessione; il sync processa allora.
+            if (!skipSync && !isHydratingRef.current && !isSystemCall) {
               const storedServerTs = localStorage.getItem(`sgq_srv_ts_${auditUuid}`);
               const serverTsMs = storedServerTs ? new Date(storedServerTs).getTime() : 0;
               const clientTsMs = Date.now();

@@ -20,6 +20,8 @@ function ConnectionStatus() {
     const [lastSync, setLastSync] = useState(null);
     const [showIndicator, setShowIndicator] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
+    // Mostra "Sincronizzazione in corso..." per 4s dopo il reconnect se c'erano item in coda
+    const [syncing, setSyncing] = useState(false);
 
     const checkHealth = useCallback(async () => {
         try {
@@ -39,11 +41,26 @@ function ConnectionStatus() {
     }, []);
 
     useEffect(() => {
-        const handleOnline = () => {
+        const handleOnline = async () => {
+            // Controlla se c'erano operazioni in coda prima di andare online
+            let hadPending = false;
+            try {
+                const n = await syncService.getQueueSize();
+                hadPending = n > 0;
+            } catch { /* ignore */ }
+
             setIsOnline(true);
             setShowIndicator(true);
+            if (hadPending) {
+                setSyncing(true);
+                setTimeout(() => {
+                    setSyncing(false);
+                    setShowIndicator(false);
+                }, 4000);
+            } else {
+                setTimeout(() => setShowIndicator(false), 3000);
+            }
             console.log('🟢 Connessione ripristinata');
-            setTimeout(() => setShowIndicator(false), 3000);
         };
 
         const handleOffline = () => {
@@ -60,9 +77,16 @@ function ConnectionStatus() {
             if (ok) {
                 setLastSync(new Date());
                 if (!isOnline) {
+                    let hadPending = false;
+                    try { hadPending = (await syncService.getQueueSize()) > 0; } catch { /* ignore */ }
                     setIsOnline(true);
                     setShowIndicator(true);
-                    setTimeout(() => setShowIndicator(false), 3000);
+                    if (hadPending) {
+                        setSyncing(true);
+                        setTimeout(() => { setSyncing(false); setShowIndicator(false); }, 4000);
+                    } else {
+                        setTimeout(() => setShowIndicator(false), 3000);
+                    }
                 }
             } else {
                 setIsOnline(false);
@@ -111,13 +135,13 @@ function ConnectionStatus() {
         <div className={`connection-status ${isOnline ? 'online' : 'offline'}`}>
             {isOnline ? (
                 <>
-                    <span className="status-icon">🟢</span>
-                    <span className="status-text">Online</span>
-                    {lastSync && (
+                    <span className="status-icon">{syncing ? '⏫' : '🟢'}</span>
+                    <span className="status-text">{syncing ? 'Sincronizzazione...' : 'Online'}</span>
+                    {!syncing && lastSync && (
                         <span className="last-sync">
-                            {lastSync.toLocaleTimeString('it-IT', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
+                            {lastSync.toLocaleTimeString('it-IT', {
+                                hour: '2-digit',
+                                minute: '2-digit',
                             })}
                         </span>
                     )}
@@ -127,9 +151,11 @@ function ConnectionStatus() {
                     <span className="status-icon">🔴</span>
                     <span className="status-text">Offline</span>
                     {pendingCount > 0 ? (
-                        <span className="offline-hint">{pendingCount} in attesa di sync</span>
+                        <span className="offline-hint">
+                            {pendingCount} modifi{pendingCount === 1 ? 'ca' : 'che'} in coda — invio automatico al reconnect
+                        </span>
                     ) : (
-                        <span className="offline-hint">Modifiche salvate localmente</span>
+                        <span className="offline-hint">Lavoro salvato localmente — invio automatico al reconnect</span>
                     )}
                 </>
             )}
