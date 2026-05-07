@@ -17,6 +17,29 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 07 maggio 2026
+
+**S-A6 — NC audit vs modulo NC: pulsante "Promuovi al registro NC" (opzione C)**
+
+| Fix | File | Dettaglio |
+|-----|------|-----------|
+| Endpoint `POST /audits/:auditId/promote-nc` | `audit.controller.js`, `audit.routes.js` | Risolve `section_code` dalla `clauseRef` (es. "8.4.1" → `clause8`); auto-genera `nc_number` univoco; idempotenza via `promoted_local_nc_id` |
+| Migrazione 049 | `database/migrations/049_nc_promote_local_id.sql` | `ALTER TABLE non_conformities ADD promoted_local_nc_id NVARCHAR(36) NULL` — applicata in produzione |
+| Pulsante "Promuovi al registro NC" | `NonConformitiesManager.jsx` | In `NCCard`: pulsante `📤 Promuovi` se non ancora promossa, badge `✅ Promossa (NC-xxx)` dopo promozione; disabilitato se licenza modulo NC non attiva |
+| CSS | `NonConformitiesManager.css` | `.btn-promote` + `.nc-promoted-badge` |
+| `apiService.promoteAuditNcToModule` | `apiService.js` | `POST /audits/:auditId/promote-nc` |
+| Fix conflitti merge residui | `AuditAccordionLayout.jsx`, `PendingIssuesCascade.jsx`, `PendingIssuesCascade.css` | Conflitti di merge da S-A4 non risolti correttamente — rimossi |
+
+**Decisione architetturale S-A6 (opzione C — stub monodirezionale)**:
+- Il registro `NonConformitiesManager` nell'audit rimane una "bozza di lavoro" locale
+- L'auditor decide quali NC ufficializzare premendo "Promuovi" → `POST /non_conformities` via endpoint dedicato
+- Zero rischio dati, zero refactoring al registro esistente
+- Il badge "Promossa ✓" è solo in memoria React (non persistito al ricaricamento) — da migliorare in una fase successiva se richiesto
+
+**Test**: 103/103 Vitest PASS, build OK. Deploy VPS: migrazione 049 applicata + `audit.controller.js` + `audit.routes.js` copiati + `sgq-backend` riavviato (health `uptime 14s`).
+
+---
+
 ### Chiusura sessione 05 maggio 2026
 
 **Completamento gap modulo audit: S-A5 + documentazione S-A6:**
