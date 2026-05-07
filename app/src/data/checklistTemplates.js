@@ -385,8 +385,8 @@ export const ISO_3834_TEMPLATE = {
 
 /**
  * Template ISO 45001:2018 (Sistema di Gestione per la Salute e Sicurezza sul Lavoro)
- * Clausole 4-10 — 35 domande di audit
- * questionId: null = domande non ancora nel DB (sync silenzioso)
+ * Clausole 4-10 — 53 domande di audit (migration 051, sezioni 45001_c4..c10)
+ * questionId: null = le domande reali vengono caricate dal DB via API
  */
 export const ISO_45001_TEMPLATE = {
   standardId: 3,
@@ -394,80 +394,105 @@ export const ISO_45001_TEMPLATE = {
   standardName: "ISO 45001:2018",
   sections: [
     {
-      sectionCode: "clause4",
-      sectionTitle: "Contesto dell'Organizzazione",
+      sectionCode: "45001_c4",
+      sectionTitle: "4 - Contesto dell'Organizzazione",
       displayOrder: 1,
       questions: [
-        { questionId: null, questionText: "Comprensione del contesto dell'organizzazione e fattori che influenzano la SSL (4.1)", questionType: "conformity", isMandatory: true, displayOrder: 1 },
-        { questionId: null, questionText: "Identificazione delle parti interessate rilevanti e dei loro requisiti SSL (4.2)", questionType: "conformity", isMandatory: true, displayOrder: 2 },
-        { questionId: null, questionText: "Campo di applicazione del SGSSL definito, confini e applicabilità documentati (4.3)", questionType: "conformity", isMandatory: true, displayOrder: 3 },
-        { questionId: null, questionText: "Il SGSSL e le sue interazioni con i processi aziendali sono definiti (4.4)", questionType: "conformity", isMandatory: true, displayOrder: 4 }
+        { questionId: null, questionText: "4.1 - Fattori esterni e interni pertinenti alle finalità del SGSSL e alla capacità di conseguire i risultati attesi determinati?", questionType: "conformity", isMandatory: true, displayOrder: 1 },
+        { questionId: null, questionText: "4.2 - Parti interessate (lavoratori + altri) pertinenti al SGSSL, esigenze/aspettative e quali diventano requisiti legali determinati?", questionType: "conformity", isMandatory: true, displayOrder: 2 },
+        { questionId: null, questionText: "4.3 - Campo di applicazione del SGSSL determinato (fattori 4.1, requisiti 4.2, attività correlate al lavoro); disponibile come informazione documentata?", questionType: "conformity", isMandatory: true, displayOrder: 3 },
+        { questionId: null, questionText: "4.3 - Il SGSSL include le attività, prodotti e servizi nell'ambito del controllo o dell'influenza dell'organizzazione con impatto sulla SSL?", questionType: "conformity", isMandatory: true, displayOrder: 4 },
+        { questionId: null, questionText: "4.4 - Il SGSSL è stabilito, attuato, mantenuto e migliorato in modo continuo, compresi i processi necessari e le loro interazioni?", questionType: "conformity", isMandatory: true, displayOrder: 5 }
       ]
     },
     {
-      sectionCode: "clause5",
-      sectionTitle: "Leadership e Partecipazione dei Lavoratori",
+      sectionCode: "45001_c5",
+      sectionTitle: "5 - Leadership e Partecipazione dei Lavoratori",
       displayOrder: 2,
       questions: [
-        { questionId: null, questionText: "L'alta direzione dimostra leadership e impegno verso il SGSSL (5.1)", questionType: "conformity", isMandatory: true, displayOrder: 5 },
-        { questionId: null, questionText: "Politica per la SSL stabilita, comunicata e accessibile (5.2)", questionType: "conformity", isMandatory: true, displayOrder: 6 },
-        { questionId: null, questionText: "Ruoli, responsabilità e autorità per il SGSSL assegnati e comunicati (5.3)", questionType: "conformity", isMandatory: true, displayOrder: 7 },
-        { questionId: null, questionText: "Consultazione e partecipazione dei lavoratori nei processi del SGSSL (5.4)", questionType: "conformity", isMandatory: true, displayOrder: 8 }
+        { questionId: null, questionText: "5.1 - Alta direzione: piena responsabilità per prevenzione lesioni/malattie, risorse assicurate, SSL integrata nei processi di business, importanza SSL comunicata, risultati attesi conseguiti?", questionType: "conformity", isMandatory: true, displayOrder: 6 },
+        { questionId: null, questionText: "5.1 - Alta direzione: guida persone verso l'efficacia SGSSL, promuove miglioramento continuo, sviluppa cultura SSL, protegge lavoratori da ritorsioni, assicura processi di consultazione e partecipazione?", questionType: "conformity", isMandatory: true, displayOrder: 7 },
+        { questionId: null, questionText: "5.2 - Politica per la SSL stabilita: impegno a condizioni sicure/salubri, quadro per obiettivi SSL, impegno a requisiti legali, eliminazione pericoli, miglioramento continuo, consultazione/partecipazione lavoratori?", questionType: "conformity", isMandatory: true, displayOrder: 8 },
+        { questionId: null, questionText: "5.2 - Politica SSL disponibile come informazione documentata, comunicata internamente e disponibile alle parti interessate?", questionType: "conformity", isMandatory: true, displayOrder: 9 },
+        { questionId: null, questionText: "5.3 - Responsabilità e autorità per ruoli SGSSL assegnate, comunicate a tutti i livelli e mantenute come informazioni documentate? I lavoratori assumono responsabilità sugli aspetti che controllano?", questionType: "conformity", isMandatory: true, displayOrder: 10 },
+        { questionId: null, questionText: "5.3 - Responsabilità e autorità specifiche assegnate per: conformità sistema alla norma; riferire all'alta direzione sulle prestazioni del SGSSL?", questionType: "conformity", isMandatory: true, displayOrder: 11 },
+        { questionId: null, questionText: "5.4 - Processi per consultazione e partecipazione lavoratori a tutti i livelli stabiliti; modalità/tempo/formazione/risorse fornite, accesso a informazioni chiare garantito, ostacoli alla partecipazione eliminati?", questionType: "conformity", isMandatory: true, displayOrder: 12 },
+        { questionId: null, questionText: "5.4 - Favorita consultazione lavoratori senza funzioni manageriali su: parti interessate, politica SSL, ruoli, requisiti legali, obiettivi SSL, controlli appaltatori, monitoraggio, programma audit, miglioramento continuo?", questionType: "conformity", isMandatory: true, displayOrder: 13 },
+        { questionId: null, questionText: "5.4 - Favorita partecipazione lavoratori in: modalità consultazione/partecipazione, identificazione pericoli/valutazione rischi, azioni eliminazione pericoli, competenze, comunicazione, misure di controllo, investigazione incidenti/NC?", questionType: "conformity", isMandatory: true, displayOrder: 14 }
       ]
     },
     {
-      sectionCode: "clause6",
-      sectionTitle: "Pianificazione",
+      sectionCode: "45001_c6",
+      sectionTitle: "6 - Pianificazione",
       displayOrder: 3,
       questions: [
-        { questionId: null, questionText: "Identificazione dei pericoli e valutazione dei rischi per la SSL (6.1.2)", questionType: "conformity", isMandatory: true, displayOrder: 9 },
-        { questionId: null, questionText: "Identificazione delle opportunità per il miglioramento della SSL (6.1.2.3)", questionType: "conformity", isMandatory: true, displayOrder: 10 },
-        { questionId: null, questionText: "Determinazione e accesso ai requisiti legali e altri applicabili alla SSL (6.1.3)", questionType: "conformity", isMandatory: true, displayOrder: 11 },
-        { questionId: null, questionText: "Pianificazione delle azioni per affrontare rischi e opportunità SSL (6.1.4)", questionType: "conformity", isMandatory: true, displayOrder: 12 },
-        { questionId: null, questionText: "Obiettivi SSL stabiliti, misurabili, monitorati con piani d'azione (6.2)", questionType: "conformity", isMandatory: true, displayOrder: 13 }
+        { questionId: null, questionText: "6.1.1 - Determinati rischi e opportunità da affrontare per: assicurare risultati attesi SGSSL, prevenire effetti indesiderati, conseguire miglioramento continuo?", questionType: "conformity", isMandatory: true, displayOrder: 15 },
+        { questionId: null, questionText: "6.1.1 - Rischi/opportunità valutati per cambiamenti pianificati prima dell'attuazione; informazioni documentate conservate su rischi/opportunità e processi/azioni per affrontarli?", questionType: "conformity", isMandatory: true, displayOrder: 16 },
+        { questionId: null, questionText: "6.1.2.1 - Processi per identificazione continua e proattiva dei pericoli: fattori sociali, lavoro di routine e non, incidenti, emergenze, persone nel luogo di lavoro stabiliti?", questionType: "conformity", isMandatory: true, displayOrder: 17 },
+        { questionId: null, questionText: "6.1.2.1 - Identificazione pericoli considera: progettazione aree/processi/attrezzature, cambiamenti nell'organizzazione, cambiamenti nella conoscenza dei pericoli?", questionType: "conformity", isMandatory: true, displayOrder: 18 },
+        { questionId: null, questionText: "6.1.2.2 - Processi per valutare rischi SSL dai pericoli identificati e altri rischi SGSSL; metodologie e criteri per la valutazione definiti, documentati, proattivi e sistematici?", questionType: "conformity", isMandatory: true, displayOrder: 19 },
+        { questionId: null, questionText: "6.1.2.3 - Processi per valutare opportunità SSL (miglioramento prestazioni, adattamento lavoro ai lavoratori, eliminazione pericoli) e altre opportunità di miglioramento SGSSL stabiliti?", questionType: "conformity", isMandatory: true, displayOrder: 20 },
+        { questionId: null, questionText: "6.1.3 - Requisiti legali aggiornati e altri requisiti applicabili ai pericoli/rischi SSL determinati e accessibili; tenuti in conto nel SGSSL; mantenuti come informazioni documentate aggiornate?", questionType: "conformity", isMandatory: true, displayOrder: 21 },
+        { questionId: null, questionText: "6.1.4 - Pianificate azioni per rischi/opportunità, requisiti legali e preparazione emergenze; modalità per integrarle, attuarle e valutarne l'efficacia definite (gerarchia misure considerata)?", questionType: "conformity", isMandatory: true, displayOrder: 22 },
+        { questionId: null, questionText: "6.2.1 - Obiettivi SSL stabiliti per funzioni/livelli: coerenti con politica, misurabili, tengono conto di requisiti/valutazioni rischi/consultazione lavoratori; monitorati, comunicati, aggiornati, documentati?", questionType: "conformity", isMandatory: true, displayOrder: 23 },
+        { questionId: null, questionText: "6.2.2 - Per ciascun obiettivo SSL determinato: cosa/risorse/responsabile/tempi/valutazione risultati (indicatori monitoraggio) e integrazione nei processi di business; documentato?", questionType: "conformity", isMandatory: true, displayOrder: 24 }
       ]
     },
     {
-      sectionCode: "clause7",
-      sectionTitle: "Supporto",
+      sectionCode: "45001_c7",
+      sectionTitle: "7 - Supporto",
       displayOrder: 4,
       questions: [
-        { questionId: null, questionText: "Risorse necessarie per il SGSSL disponibili (7.1)", questionType: "conformity", isMandatory: true, displayOrder: 14 },
-        { questionId: null, questionText: "Competenze del personale per le attività con impatto sulla SSL (7.2)", questionType: "conformity", isMandatory: true, displayOrder: 15 },
-        { questionId: null, questionText: "Consapevolezza del personale su politica, pericoli, rischi e gestione emergenze (7.3)", questionType: "conformity", isMandatory: true, displayOrder: 16 },
-        { questionId: null, questionText: "Comunicazione interna ed esterna sulle tematiche SSL (7.4)", questionType: "conformity", isMandatory: true, displayOrder: 17 },
-        { questionId: null, questionText: "Informazioni documentate richieste dalla norma controllate e disponibili (7.5)", questionType: "conformity", isMandatory: true, displayOrder: 18 }
+        { questionId: null, questionText: "7.1 - Risorse necessarie per istituzione, attuazione, mantenimento e miglioramento continuo del SGSSL determinate e fornite?", questionType: "conformity", isMandatory: true, displayOrder: 25 },
+        { questionId: null, questionText: "7.2 - Competenze lavoratori determinate (inclusa identificazione pericoli); assicurate da istruzione/formazione/esperienza; azioni per acquisirle con valutazione efficacia; evidenze documentate conservate?", questionType: "conformity", isMandatory: true, displayOrder: 26 },
+        { questionId: null, questionText: "7.3 - Lavoratori consapevoli di: politica/obiettivi SSL, contributo all'efficacia SGSSL, implicazioni NC, incidenti, pericoli/rischi SSL, capacità di allontanarsi da pericolo grave e immediato?", questionType: "conformity", isMandatory: true, displayOrder: 27 },
+        { questionId: null, questionText: "7.4.1 - Processi comunicazione interna/esterna pertinenti al SGSSL (cosa/quando/con chi/come) stabiliti; diversità considerata; informazioni SSL coerenti e affidabili; comunicazioni documentate?", questionType: "conformity", isMandatory: true, displayOrder: 28 },
+        { questionId: null, questionText: "7.4.2 - Comunicazione interna assicura diffusione informazioni SSL tra livelli/funzioni (compresi cambiamenti); lavoratori possono contribuire al miglioramento continuo?", questionType: "conformity", isMandatory: true, displayOrder: 29 },
+        { questionId: null, questionText: "7.4.3 - Comunicazione esterna pertinente al SGSSL avviene in conformità ai processi comunicativi e ai requisiti legali e altri requisiti?", questionType: "conformity", isMandatory: true, displayOrder: 30 },
+        { questionId: null, questionText: "7.5.1 - SGSSL comprende informazioni documentate richieste dalla norma e aggiuntive necessarie per l'efficacia del sistema?", questionType: "conformity", isMandatory: true, displayOrder: 31 },
+        { questionId: null, questionText: "7.5.2 - Nella creazione/aggiornamento informazioni documentate assicurati: identificazione e descrizione, formato e supporto, riesame e approvazione?", questionType: "conformity", isMandatory: true, displayOrder: 32 },
+        { questionId: null, questionText: "7.5.3 - Informazioni documentate SGSSL tenute sotto controllo (disponibili, protette, distribuzione/accesso/archiviazione/versioni/conservazione assicurati); informazioni esterne identificate e controllate?", questionType: "conformity", isMandatory: true, displayOrder: 33 }
       ]
     },
     {
-      sectionCode: "clause8",
-      sectionTitle: "Attività Operative",
+      sectionCode: "45001_c8",
+      sectionTitle: "8 - Attività Operative",
       displayOrder: 5,
       questions: [
-        { questionId: null, questionText: "Pianificazione e controllo operativo dei rischi SSL (gerarchia dei controlli) (8.1.2)", questionType: "conformity", isMandatory: true, displayOrder: 19 },
-        { questionId: null, questionText: "Gestione del cambiamento (modifiche temporanee e permanenti) (8.1.3)", questionType: "conformity", isMandatory: true, displayOrder: 20 },
-        { questionId: null, questionText: "Controllo dei fornitori, appaltatori e lavoratori autonomi in area aziendale (8.1.4)", questionType: "conformity", isMandatory: true, displayOrder: 21 },
-        { questionId: null, questionText: "Preparazione e risposta alle emergenze SSL (procedure, esercitazioni) (8.2)", questionType: "conformity", isMandatory: true, displayOrder: 22 }
+        { questionId: null, questionText: "8.1.1 - Processi per soddisfare requisiti SGSSL pianificati, attuati, controllati, mantenuti: criteri definiti, controllo attuato, informazioni documentate conservate, lavoro adattato ai lavoratori?", questionType: "conformity", isMandatory: true, displayOrder: 34 },
+        { questionId: null, questionText: "8.1.1 - Nei luoghi di lavoro con più datori di lavoro: parti pertinenti del SGSSL coordinate con le altre organizzazioni?", questionType: "conformity", isMandatory: true, displayOrder: 35 },
+        { questionId: null, questionText: "8.1.2 - Processi per eliminazione pericoli e riduzione rischi SSL applicando gerarchia misure: eliminazione, sostituzione, ingegneristiche, amministrative/formazione, DPI stabiliti?", questionType: "conformity", isMandatory: true, displayOrder: 36 },
+        { questionId: null, questionText: "8.1.3 - Processi per modifiche temporanee/permanenti pianificate con impatto SSL (nuovi prodotti/servizi, cambiamenti requisiti, conoscenza pericoli, tecnologia); conseguenze cambiamenti involontari riesaminate con azioni?", questionType: "conformity", isMandatory: true, displayOrder: 37 },
+        { questionId: null, questionText: "8.1.4.1/8.1.4.2 - Processi per controllo approvvigionamento prodotti/servizi stabiliti; coordinamento con appaltatori per identificare pericoli e valutare/controllare rischi SSL?", questionType: "conformity", isMandatory: true, displayOrder: 38 },
+        { questionId: null, questionText: "8.1.4.2/8.1.4.3 - Requisiti SGSSL soddisfatti da appaltatori; criteri SSL applicati nella selezione; funzioni affidate all'esterno tenute sotto controllo coerentemente con requisiti legali?", questionType: "conformity", isMandatory: true, displayOrder: 39 },
+        { questionId: null, questionText: "8.2 - Processi per preparazione e risposta emergenze: risposta pianificata (primo soccorso), formazione, prove/esercitazioni periodiche, revisione dopo prove/emergenze, comunicazione a lavoratori/appaltatori/autorità?", questionType: "conformity", isMandatory: true, displayOrder: 40 },
+        { questionId: null, questionText: "8.2 - Esigenze e capacità parti interessate considerate nello sviluppo della risposta pianificata; informazioni documentate sui processi e piani di risposta alle emergenze conservate?", questionType: "conformity", isMandatory: true, displayOrder: 41 },
+        { questionId: null, questionText: "8.2 - Comunicazioni pertinenti sulle emergenze fornite anche a appaltatori, visitatori, servizi di emergenza, autorità governative e comunità locale?", questionType: "conformity", isMandatory: true, displayOrder: 42 }
       ]
     },
     {
-      sectionCode: "clause9",
-      sectionTitle: "Valutazione delle Prestazioni",
+      sectionCode: "45001_c9",
+      sectionTitle: "9 - Valutazione delle Prestazioni",
       displayOrder: 6,
       questions: [
-        { questionId: null, questionText: "Monitoraggio, misurazione e analisi delle prestazioni del SGSSL (9.1.1)", questionType: "conformity", isMandatory: true, displayOrder: 23 },
-        { questionId: null, questionText: "Valutazione della conformità ai requisiti legali SSL (9.1.2)", questionType: "conformity", isMandatory: true, displayOrder: 24 },
-        { questionId: null, questionText: "Programma di audit interno SSL attuato con obiettività (9.2)", questionType: "conformity", isMandatory: true, displayOrder: 25 },
-        { questionId: null, questionText: "Riesame della direzione SSL con input/output documentati e azioni definite (9.3)", questionType: "conformity", isMandatory: true, displayOrder: 26 }
+        { questionId: null, questionText: "9.1.1 - Determinati: cosa monitorare/misurare (requisiti legali, pericoli/rischi/opportunità, obiettivi SSL, efficacia controlli), metodi, criteri valutazione prestazioni SSL, frequenza, quando analizzare/comunicare risultati?", questionType: "conformity", isMandatory: true, displayOrder: 43 },
+        { questionId: null, questionText: "9.1.1 - Apparecchiature monitoraggio/misurazione tarate o verificate e mantenute; evidenze documentate di risultati, manutenzione e taratura/verifica conservate?", questionType: "conformity", isMandatory: true, displayOrder: 44 },
+        { questionId: null, questionText: "9.1.2 - Processi per valutare conformità a requisiti legali e altri requisiti: frequenza/metodi determinati, conformità valutata con azioni se necessario, stato conformità mantenuto, evidenze documentate conservate?", questionType: "conformity", isMandatory: true, displayOrder: 45 },
+        { questionId: null, questionText: "9.2.1 - Audit interni condotti a intervalli pianificati per accertare conformità ai requisiti propri dell'organizzazione e alla norma, ed efficace attuazione e mantenimento del SGSSL?", questionType: "conformity", isMandatory: true, displayOrder: 46 },
+        { questionId: null, questionText: "9.2.2 - Programma audit interno comprende: frequenza/metodi/responsabilità/consultazione/pianificazione/reporting; criteri e campo definiti; auditor obiettivi e imparziali; risultati riportati a manager e lavoratori; NC affrontate; evidenze documentate?", questionType: "conformity", isMandatory: true, displayOrder: 47 },
+        { questionId: null, questionText: "9.3 - Alta direzione riesamina SGSSL a intervalli pianificati considerando: azioni precedenti, cambiamenti interni/esterni, politica/obiettivi SSL, prestazioni (incidenti/NC/monitoraggio/audit/consultazione), risorse, comunicazioni, miglioramento?", questionType: "conformity", isMandatory: true, displayOrder: 48 },
+        { questionId: null, questionText: "9.3 - Output riesame direzione documentati su: idoneità/adeguatezza/efficacia SGSSL, miglioramento continuo, modifiche sistema, risorse, azioni, integrazione processi business, implicazioni strategiche; risultati comunicati ai lavoratori?", questionType: "conformity", isMandatory: true, displayOrder: 49 }
       ]
     },
     {
-      sectionCode: "clause10",
-      sectionTitle: "Miglioramento",
+      sectionCode: "45001_c10",
+      sectionTitle: "10 - Miglioramento",
       displayOrder: 7,
       questions: [
-        { questionId: null, questionText: "Gestione di incidenti, non conformità e azioni correttive SSL (10.2)", questionType: "conformity", isMandatory: true, displayOrder: 27 },
-        { questionId: null, questionText: "Miglioramento continuo del SGSSL con evidenze di progressi (10.3)", questionType: "conformity", isMandatory: true, displayOrder: 28 }
+        { questionId: null, questionText: "10.1 - Opportunità di miglioramento (da punto 9) determinate; azioni necessarie per conseguire risultati attesi del SGSSL intraprese?", questionType: "conformity", isMandatory: true, displayOrder: 50 },
+        { questionId: null, questionText: "10.2 - Processi per determinare e gestire incidenti e NC: reazione tempestiva, valutazione azioni correttive con coinvolgimento lavoratori, riesame valutazioni rischi, gerarchia misure applicata, efficacia azioni riesaminata, modifiche SGSSL se necessario?", questionType: "conformity", isMandatory: true, displayOrder: 51 },
+        { questionId: null, questionText: "10.2 - Azioni correttive proporzionate agli effetti; evidenze documentate conservate (natura NC/incidenti, azioni, risultati/efficacia); informazioni comunicate ai lavoratori e rappresentanti?", questionType: "conformity", isMandatory: true, displayOrder: 52 },
+        { questionId: null, questionText: "10.3 - Miglioramento continuo SGSSL mediante: miglioramento prestazioni SSL, promozione cultura SSL, partecipazione lavoratori, comunicazione risultati, conservazione evidenze documentate del miglioramento?", questionType: "conformity", isMandatory: true, displayOrder: 53 }
       ]
     }
   ]
