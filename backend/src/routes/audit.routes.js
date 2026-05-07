@@ -64,6 +64,9 @@ router.delete('/audits/:id', auditController.deleteAudit);
 // GET /api/v1/audits/:id/nc-responses - NC/OSS/OM risposte per re-audit preview
 router.get('/audits/:id/nc-responses', auditController.getNcResponses);
 
+// POST /api/v1/audits/:auditId/promote-nc - Promuovi NC locale al registro NC (S-A6)
+router.post('/audits/:auditId/promote-nc', auditController.promoteAuditNcToModule);
+
 // NOTA: POST /audits/:id/responses/bulk è gestito da response.routes.js
 // (implementazione più completa: UUID/ID, conflict detection, validazione status)
 

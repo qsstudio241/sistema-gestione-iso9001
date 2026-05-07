@@ -4,8 +4,10 @@
  * Sistema Gestione ISO 9001 - QS Studio
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
+import apiService from "../services/apiService";
 import {
   NC_CATEGORY,
   NC_STATUS,
@@ -15,6 +17,8 @@ import "./NonConformitiesManager.css";
 
 function NonConformitiesManager({ readOnly = false }) {
   const { currentAudit, updateCurrentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
+  const hasNcModule = hasLicensedModule('nc');
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedNC, setSelectedNC] = useState(null);
@@ -78,6 +82,34 @@ function NonConformitiesManager({ readOnly = false }) {
       }));
     }
   };
+
+  const handlePromoteNC = useCallback(async (nc) => {
+    const auditId = currentAudit?.metadata?.id;
+    if (!auditId) return;
+
+    try {
+      const result = await apiService.promoteAuditNcToModule(auditId, {
+        localNcId: nc.id,
+        description: nc.description,
+        severity: nc.category,
+        clauseRef: nc.clauseReference || nc.clause || '',
+        norm: currentAudit.metadata?.selectedStandards?.[0] || ''
+      });
+
+      updateCurrentAudit((audit) => ({
+        ...audit,
+        nonConformities: audit.nonConformities.map((item) =>
+          item.id === nc.id
+            ? { ...item, promotedNcId: result.nc_id, promotedNcNumber: result.nc_number }
+            : item
+        ),
+        metadata: { ...audit.metadata, lastModified: new Date().toISOString() }
+      }));
+    } catch (err) {
+      const msg = err?.response?.data?.error || err.message || 'Errore durante la promozione';
+      window.alert(`Impossibile promuovere la NC al registro:\n${msg}`);
+    }
+  }, [currentAudit, updateCurrentAudit]);
 
   return (
     <div className={`nc-manager${readOnly ? ' readonly-mode' : ''}`}>
@@ -173,6 +205,8 @@ function NonConformitiesManager({ readOnly = false }) {
               nc={nc}
               onEdit={() => handleEditNC(nc)}
               onDelete={() => handleDeleteNC(nc.id)}
+              onPromote={() => handlePromoteNC(nc)}
+              hasNcModule={hasNcModule}
               readOnly={readOnly}
               onUpdateStatus={(status) => {
                 updateCurrentAudit((audit) => ({
@@ -243,8 +277,15 @@ function NonConformitiesManager({ readOnly = false }) {
 
 // === NC CARD ===
 
-function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
+function NCCard({ nc, onEdit, onDelete, onUpdateStatus, onPromote, hasNcModule = true, readOnly = false }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [promoting, setPromoting] = useState(false);
+
+  const handlePromoteClick = async () => {
+    if (!onPromote) return;
+    setPromoting(true);
+    try { await onPromote(); } finally { setPromoting(false); }
+  };
 
   const getCategoryClass = () => {
     switch (nc.category) {
@@ -351,16 +392,38 @@ function NCCard({ nc, onEdit, onDelete, onUpdateStatus, readOnly = false }) {
               </select>
             </div>
 
-            {!readOnly && (
-              <div className="nc-buttons">
-                <button onClick={onEdit} className="btn btn-sm btn-secondary">
-                  ✏️ Modifica
+            <div className="nc-buttons">
+              {/* Pulsante promozione al registro NC (S-A6) — sempre visibile come indicatore */}
+              {nc.promotedNcId ? (
+                <span className="nc-promoted-badge" title={`Promossa nel registro NC come ${nc.promotedNcNumber}`}>
+                  ✅ Promossa ({nc.promotedNcNumber})
+                </span>
+              ) : (
+                <button
+                  onClick={handlePromoteClick}
+                  className="btn btn-sm btn-promote"
+                  disabled={promoting || !hasNcModule}
+                  title={
+                    !hasNcModule
+                      ? 'Richiede licenza Modulo NC'
+                      : 'Promuovi questa NC al registro NC dell\'organizzazione'
+                  }
+                >
+                  {promoting ? '⏳ Promozione...' : '📤 Promuovi al registro NC'}
                 </button>
-                <button onClick={onDelete} className="btn btn-sm btn-danger">
-                  🗑️ Elimina
-                </button>
-              </div>
-            )}
+              )}
+
+              {!readOnly && (
+                <>
+                  <button onClick={onEdit} className="btn btn-sm btn-secondary">
+                    ✏️ Modifica
+                  </button>
+                  <button onClick={onDelete} className="btn btn-sm btn-danger">
+                    🗑️ Elimina
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

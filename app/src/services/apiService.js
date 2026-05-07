@@ -741,6 +741,15 @@ class ApiService {
         return this.post('/nc', data);
     }
 
+    /**
+     * Promuove una NC locale dell'audit al registro NC dell'organizzazione (S-A6).
+     * @param {string|number} auditId - UUID o ID numerico dell'audit
+     * @param {{ localNcId, description, severity, clauseRef, norm }} payload
+     */
+    async promoteAuditNcToModule(auditId, payload) {
+        return this.post(`/audits/${auditId}/promote-nc`, payload);
+    }
+
     async updateNonConformity(id, data) {
         return this.put(`/nc/${id}`, data);
     }

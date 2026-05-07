@@ -1692,6 +1692,163 @@ async function approveAudit(req, res) {
     }
 }
 
+/**
+ * POST /api/v1/audits/:auditId/promote-nc
+ * Promuove una NC locale dell'audit al registro NC dell'organizzazione (S-A6).
+ *
+ * Body: { localNcId, description, severity, clauseRef, norm }
+ *   - localNcId:   UUID locale (React) — conservato in promoted_local_nc_id per idempotenza
+ *   - description: testo NC
+ *   - severity:    'major' | 'minor' | 'observation'
+ *   - clauseRef:   es. "8.4.1" (testo libero della clausola)
+ *   - norm:        es. "ISO_9001" (nome standard front-end)
+ *
+ * Risposta: { nc_id, nc_uuid, nc_number, section_code }
+ */
+async function promoteAuditNcToModule(req, res) {
+    const { auditId } = req.params;
+    const { organization_id } = req.user;
+    const { localNcId, description, severity, clauseRef, norm } = req.body;
+
+    if (!description || !severity) {
+        return res.status(400).json({
+            error: 'Campi obbligatori mancanti: description, severity',
+            code: 'VALIDATION_ERROR'
+        });
+    }
+    if (!['major', 'minor', 'observation'].includes(severity)) {
+        return res.status(400).json({ error: 'Severità non valida', code: 'VALIDATION_ERROR', allowed: ['major', 'minor', 'observation'] });
+    }
+
+    try {
+        // 1. Verifica audit
+        const auditResult = await query(`
+            SELECT audit_id, audit_number, status
+            FROM audits
+            WHERE (audit_id = TRY_CAST(@auditId AS INT) OR audit_uuid = @auditId)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
+        `, { auditId, organization_id });
+
+        if (!auditResult.recordset.length) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
+        const { audit_id: numeric_id, audit_number } = auditResult.recordset[0];
+
+        // 2. Idempotenza: se questa NC locale è già stata promossa, restituisci quella esistente
+        if (localNcId) {
+            const existingPromo = await query(`
+                SELECT nc_id, nc_uuid, nc_number, section_code
+                FROM non_conformities
+                WHERE audit_id = @audit_id AND promoted_local_nc_id = @localNcId
+            `, { audit_id: numeric_id, localNcId });
+            if (existingPromo.recordset.length) {
+                return res.json({ ...existingPromo.recordset[0], alreadyExists: true });
+            }
+        }
+
+        // 3. Recupera standard_id — preferisce il norm passato, altrimenti prende il primo
+        const normCodeMap = {
+            'ISO_9001': 'ISO 9001:2015',
+            'ISO_14001': 'ISO 14001:2015',
+            'ISO_45001': 'ISO 45001:2018',
+            'ISO_3834_2': 'ISO 3834-2',
+            'ISO_3834_3': 'ISO 3834-3'
+        };
+        const normName = normCodeMap[norm] || null;
+        let standardResult;
+        if (normName) {
+            standardResult = await query(`
+                SELECT ads.standard_id FROM audit_standards ads
+                INNER JOIN standards s ON s.standard_id = ads.standard_id
+                WHERE ads.audit_id = @audit_id AND s.standard_code LIKE @normLike
+            `, { audit_id: numeric_id, normLike: `%${normName.split(':')[0]}%` });
+        }
+        if (!standardResult || !standardResult.recordset.length) {
+            standardResult = await query(`
+                SELECT TOP 1 standard_id FROM audit_standards WHERE audit_id = @audit_id
+            `, { audit_id: numeric_id });
+        }
+        if (!standardResult.recordset.length) {
+            return res.status(400).json({ error: 'Audit senza standard associati', code: 'NO_STANDARDS_FOUND' });
+        }
+        const standard_id = standardResult.recordset[0].standard_id;
+
+        // 4. Risolve section_code dalla clauseRef
+        //    Strategia: per ISO 9001 le sezioni sono 'clause4'…'clause10'
+        //    Per gli altri standard prende il primo section_code disponibile.
+        let section_code = null;
+        if (clauseRef) {
+            const topClause = parseInt(clauseRef.split('.')[0], 10);
+            if (!isNaN(topClause)) {
+                const codeGuess = `clause${topClause}`;
+                const guess = await query(`
+                    SELECT section_code FROM checklist_sections
+                    WHERE standard_id = @standard_id AND section_code = @codeGuess
+                `, { standard_id, codeGuess });
+                if (guess.recordset.length) section_code = guess.recordset[0].section_code;
+            }
+        }
+        if (!section_code) {
+            const fallback = await query(`
+                SELECT TOP 1 section_code FROM checklist_sections
+                WHERE standard_id = @standard_id ORDER BY display_order
+            `, { standard_id });
+            if (fallback.recordset.length) section_code = fallback.recordset[0].section_code;
+        }
+        if (!section_code) {
+            return res.status(400).json({ error: 'Nessuna sezione disponibile per questo standard', code: 'NO_SECTION_FOUND' });
+        }
+
+        // 5. Auto-genera nc_number univoco per l'organizzazione
+        const ts = Date.now();
+        const base = `NC-${audit_number || numeric_id}-${ts}`;
+        const nc_number = base.length > 50 ? base.substring(0, 50) : base;
+
+        // 6. Crea NC nel modulo
+        const insertResult = await query(`
+            INSERT INTO non_conformities (
+                audit_id, standard_id, nc_number, section_code,
+                description, severity, status, created_at, updated_at,
+                promoted_local_nc_id
+            )
+            OUTPUT INSERTED.nc_id, INSERTED.nc_uuid
+            VALUES (
+                @audit_id, @standard_id, @nc_number, @section_code,
+                @description, @severity, 'open', GETDATE(), GETDATE(),
+                @localNcId
+            )
+        `, {
+            audit_id: numeric_id,
+            standard_id,
+            nc_number,
+            section_code,
+            description,
+            severity,
+            localNcId: localNcId || null
+        });
+
+        const created = insertResult.recordset[0];
+        logger.info(`[PROMOTE_NC] Audit ${numeric_id} → NC ${created.nc_id} (${nc_number})`);
+
+        return res.status(201).json({
+            nc_id: created.nc_id,
+            nc_uuid: created.nc_uuid,
+            nc_number,
+            section_code
+        });
+
+    } catch (error) {
+        // Se nc_number duplicato (race condition), ritenta con suffisso
+        if (error.message && error.message.includes('NC_NUMBER_DUPLICATE')) {
+            return res.status(409).json({ error: 'Numero NC già esistente, riprova', code: 'NC_NUMBER_DUPLICATE' });
+        }
+        logger.error('[PROMOTE_NC] Errore:', error);
+        return res.status(500).json({ error: 'Errore server durante promozione NC', code: 'SERVER_ERROR', details: error.message });
+    }
+}
+
 module.exports = {
     listAudits,
     getAuditById,
@@ -1706,5 +1863,6 @@ module.exports = {
     approveAudit,
     checkReaudit,
     bulkSaveResponses,
-    getNcResponses
+    getNcResponses,
+    promoteAuditNcToModule
 };
