@@ -2,8 +2,8 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 7 maggio 2026
-> **Prossimo Step**: Fine giornata 07/05/2026 — tutto su `main`. **PR #33 mergiata**, VPS deployato (fix crash routes + 4 controller), **Migration 049** (ISO 14001 53 domande, produzione). Alert Engine: dipendenze installate, mancano credenziali SMTP reali. **Azioni committente pendenti**: (1) Smoke Mason ISO 3834 passi 6-7 (L3); (2) Smoke Word export Camellini (L3); (3) Compilare SMTP vars nel `.env` VPS + `ALERT_ENABLED=true` + restart. **Prossime priorità agent**: G5 Sezione 11 drill-down; ISO 45001 checklist (norma disponibile); norm_excerpt Word.
-> **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt nel report Word | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026) | ✅ migration 049 applicata (ISO 14001 53 domande complete — prod 07/05/2026)
+> **Prossimo Step**: Fine giornata 07/05/2026 — tutto su `main`. **PR #33 mergiata**, VPS deployato (fix crash routes + 4 controller), **Migration 049** (ISO 14001 53 domande, produzione), **Migration 050** (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026). Alert Engine: dipendenze installate, mancano credenziali SMTP reali. **Azioni committente pendenti**: (1) Smoke Mason ISO 3834 passi 6-7 (L3); (2) Smoke Word export Camellini (L3); (3) Compilare SMTP vars nel `.env` VPS + `ALERT_ENABLED=true` + restart. **Prossime priorità agent**: G5 Sezione 11 drill-down; ISO 45001 checklist (norma disponibile); norm_excerpt ISO 9001 (backlog).
+> **Backlog**: Sezione 11 "Esito Audit" non aggrega risposte custom | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | SYNC-5 allegati offline | ✅ migration 048 applicata (temporal table custom_checklist_responses — prod 03/05/2026) | ✅ migration 049 applicata (ISO 14001 53 domande complete — prod 07/05/2026) | ✅ migration 050 applicata (norm_excerpt ISO 14001 53 stralci — prod 07/05/2026)
 > **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
 
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
@@ -148,7 +148,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
 | Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini | 🔲 Backlog |
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
-| Campo norm_excerpt | Stralcio norma nel report Word | 🔲 Backlog |
+| Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
 **Progress Overall**: ~85% funzionalità core Scenario 1 · **Macro piattaforma** (SaaS completo, registry documenti, sprint collegati): indicativo **~65%**
 
