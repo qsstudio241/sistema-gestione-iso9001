@@ -73,6 +73,27 @@ function isInTombstone(auditId) {
 }
 
 /**
+ * Controlla se un campo ricco (generalData / auditObjective / auditOutcome)
+ * contiene dati significativi, cioè almeno una stringa non vuota o un array
+ * non vuoto tra i suoi valori.
+ *
+ * Necessario perché {} e { description: '', participants: [] } sono oggetti
+ * truthy ma di fatto vuoti: usarli in un semplice `!serverField` non protegge
+ * il dato locale che invece ha contenuto.
+ */
+function hasRichContent(obj) {
+  if (!obj) return false;
+  if (typeof obj !== 'object') return String(obj).trim() !== '';
+  if (Array.isArray(obj)) return obj.length > 0;
+  return Object.values(obj).some((v) => {
+    if (v === null || v === undefined) return false;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return hasRichContent(v);
+    return String(v).trim() !== '';
+  });
+}
+
+/**
  * Helper: normalizza status checklist per compatibilità
  * Assicura che tutti gli status siano in formato stringa corretto
  */
@@ -896,24 +917,26 @@ export function StorageProvider({ children, useMockData = false }) {
         // quando si riapre l'app o si cambia audit.
         let merged = { ...serverAudit };
 
-        // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome).
-        // Il server li ha SEMPRE in audit_extra_data se mai sincronizzati.
-        // Fallback al locale SOLO se il server non li ha (audit appena creato, mai sincronizzato).
-        const serverGD = serverAudit?.generalData || serverAudit?.metadata?.generalData;
-        const serverAO = serverAudit?.auditObjective || serverAudit?.metadata?.auditObjective;
-        const serverAOut = serverAudit?.auditOutcome || serverAudit?.metadata?.auditOutcome;
-        if (!serverGD && !serverAO && !serverAOut && localAudit) {
-          // Server non ha mai ricevuto i dati ricchi: usa locale (draft non ancora sincronizzato)
-          const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
-          const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
-          const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
-          if (localGD || localAO || localAOut) {
-            merged.metadata = {
-              ...merged.metadata,
-              generalData: localGD,
-              auditObjective: localAO,
-              auditOutcome: localAOut,
-            };
+        // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome) — per-campo.
+        // Problema: il server può restituire oggetti "vuoti" ({} o { description: '' })
+        // che sono truthy in JS ma non contengono dati reali. Un controllo !serverField
+        // fallisce in quel caso e server-wins sovrascrive il dato locale compilato.
+        // Fix: usare hasRichContent() che verifica se ci sono stringhe/array non vuoti.
+        // Per ogni campo: se il server non ha contenuto reale ma il locale sì → usa locale.
+        // Se entrambi hanno contenuto → server wins (multi-device corretto).
+        if (localAudit) {
+          const serverGD   = serverAudit?.generalData   ?? serverAudit?.metadata?.generalData;
+          const serverAO   = serverAudit?.auditObjective ?? serverAudit?.metadata?.auditObjective;
+          const serverAOut = serverAudit?.auditOutcome   ?? serverAudit?.metadata?.auditOutcome;
+          const localGD   = localAudit?.metadata?.generalData   ?? localAudit?.generalData;
+          const localAO   = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
+          const localAOut = localAudit?.metadata?.auditOutcome   ?? localAudit?.auditOutcome;
+          const patchMeta = {};
+          if (!hasRichContent(serverGD)   && hasRichContent(localGD))   patchMeta.generalData    = localGD;
+          if (!hasRichContent(serverAO)   && hasRichContent(localAO))   patchMeta.auditObjective = localAO;
+          if (!hasRichContent(serverAOut) && hasRichContent(localAOut)) patchMeta.auditOutcome   = localAOut;
+          if (Object.keys(patchMeta).length > 0) {
+            merged.metadata = { ...merged.metadata, ...patchMeta };
           }
         }
 
@@ -1158,22 +1181,24 @@ export function StorageProvider({ children, useMockData = false }) {
               const localAudit = localAudits.find(la => (la.metadata?.id || la.id) === sid);
               let merged = { ...serverAudit };
 
-              // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome).
-              // Fallback al locale SOLO se il server non li ha (draft mai sincronizzato).
-              const serverGD = serverAudit?.generalData || serverAudit?.metadata?.generalData;
-              const serverAO = serverAudit?.auditObjective || serverAudit?.metadata?.auditObjective;
-              const serverAOut = serverAudit?.auditOutcome || serverAudit?.metadata?.auditOutcome;
-              if (!serverGD && !serverAO && !serverAOut && localAudit) {
-                const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
-                const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
-                const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
-                if (localGD || localAO || localAOut) {
-                  merged.metadata = {
-                    ...merged.metadata,
-                    generalData: localGD,
-                    auditObjective: localAO,
-                    auditOutcome: localAOut,
-                  };
+              // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome) — per-campo.
+              // Stessa logica di reconcileAuditsFromServer: usa hasRichContent() per non
+              // confondere oggetti vuoti ({} / {description:''}) con dati reali.
+              if (localAudit) {
+                const serverGD   = serverAudit?.generalData   ?? serverAudit?.metadata?.generalData;
+                const serverAO   = serverAudit?.auditObjective ?? serverAudit?.metadata?.auditObjective;
+                const serverAOut = serverAudit?.auditOutcome   ?? serverAudit?.metadata?.auditOutcome;
+                const localGD   = localAudit?.metadata?.generalData   ?? localAudit?.generalData;
+                const localAO   = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
+                const localAOut = localAudit?.metadata?.auditOutcome   ?? localAudit?.auditOutcome;
+                const patchMeta = {};
+                if (!hasRichContent(serverGD)   && hasRichContent(localGD))   patchMeta.generalData    = localGD;
+                if (!hasRichContent(serverAO)   && hasRichContent(localAO))   patchMeta.auditObjective = localAO;
+                if (!hasRichContent(serverAOut) && hasRichContent(localAOut)) patchMeta.auditOutcome   = localAOut;
+                if (Object.keys(patchMeta).length > 0) {
+                  merged.metadata = { ...merged.metadata, ...patchMeta };
+                  // Programma sincronizzazione verso server solo per campi mai inviati
+                  // (condizione invariata: almeno un campo mancava sul server)
                   auditsToUploadRichData.push(merged);
                 }
               }
