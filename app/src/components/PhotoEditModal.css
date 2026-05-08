@@ -1,0 +1,302 @@
+/**
+ * PhotoEditModal.css — Stili modal editing foto
+ * Mobile-first: ottimizzato per touch screen (target button ≥ 44px)
+ */
+
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+.photo-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* ── Modal container ────────────────────────────────────────────────────── */
+.photo-edit-modal {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  width: 100%;
+  max-width: 600px;
+  max-height: 96dvh;
+  overflow: hidden;
+  color: #e2e8f0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.pem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #16213e;
+  border-bottom: 1px solid #2d3748;
+  flex-shrink: 0;
+}
+
+.pem-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #e2e8f0;
+}
+
+.pem-counter {
+  font-size: 0.85rem;
+  color: #90cdf4;
+  background: #2d3748;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.pem-btn-close {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.pem-btn-close:hover {
+  color: #fc8181;
+  background: rgba(252, 129, 129, 0.12);
+}
+
+/* ── Area crop ────────────────────────────────────────────────────────────
+   Altezza fissa: si adatta tra header/controls/footer lasciando spazio sufficiente
+   al Cropper che richiede position relative con altezza definita. */
+.pem-crop-area {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  max-height: 55dvh;
+  background: #111;
+  overflow: hidden;
+}
+
+/* react-easy-crop si posiziona absolute fill sul container */
+.pem-crop-area .reactEasyCrop_Container {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Controlli ───────────────────────────────────────────────────────────── */
+.pem-controls {
+  padding: 10px 14px;
+  background: #16213e;
+  border-top: 1px solid #2d3748;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pem-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pem-control-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #90cdf4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.pem-btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pem-btn {
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #2d3748;
+  color: #e2e8f0;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 36px;
+}
+
+.pem-btn:hover {
+  background: #3d4f69;
+  border-color: #63b3ed;
+}
+
+.pem-btn.active {
+  background: #2b6cb0;
+  border-color: #63b3ed;
+  color: #ebf8ff;
+}
+
+.pem-rotation-badge {
+  font-size: 0.8rem;
+  color: #f6e05e;
+  background: #744210;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* Aspect ratio: bottoni più compatti */
+.pem-aspect-row .pem-btn-aspect {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+/* Zoom slider */
+.pem-zoom-group {
+  flex-wrap: nowrap;
+}
+
+.pem-zoom-slider {
+  flex: 1;
+  height: 6px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.pem-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #16213e;
+  border-top: 1px solid #2d3748;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pem-footer-right {
+  display: flex;
+  gap: 8px;
+}
+
+.pem-btn-footer {
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px; /* touch target minimo */
+  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.pem-btn-footer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pem-btn-footer:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.pem-btn-cancel {
+  background: #2d3748;
+  color: #fc8181;
+  border: 1px solid #fc8181;
+}
+
+.pem-btn-cancel:not(:disabled):hover {
+  background: rgba(252, 129, 129, 0.15);
+}
+
+.pem-btn-skip {
+  background: #2d3748;
+  color: #a0aec0;
+  border: 1px solid #4a5568;
+}
+
+.pem-btn-skip:not(:disabled):hover {
+  background: #3d4f69;
+  color: #e2e8f0;
+}
+
+.pem-btn-confirm {
+  background: #2b6cb0;
+  color: #ebf8ff;
+}
+
+.pem-btn-confirm:not(:disabled):hover {
+  background: #2c5282;
+}
+
+/* ── Filename (sotto il footer) ──────────────────────────────────────────── */
+.pem-filename {
+  padding: 5px 14px 7px;
+  font-size: 0.75rem;
+  color: #718096;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  background: #16213e;
+  border-top: 1px solid #2d3748;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .photo-edit-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .photo-edit-modal {
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    max-height: 98dvh;
+  }
+
+  .pem-controls {
+    gap: 8px;
+  }
+
+  .pem-control-label {
+    min-width: 58px;
+    font-size: 0.72rem;
+  }
+
+  .pem-footer {
+    flex-direction: column;
+  }
+
+  .pem-btn-cancel {
+    width: 100%;
+    order: 2;
+  }
+
+  .pem-footer-right {
+    width: 100%;
+    order: 1;
+  }
+
+  .pem-btn-skip,
+  .pem-btn-confirm {
+    flex: 1;
+  }
+}
