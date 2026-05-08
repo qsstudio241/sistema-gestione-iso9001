@@ -5,6 +5,58 @@
  * Converte tra formato backend (snake_case, flat) e frontend (camelCase, nested)
  */
 
+import { getChecklistTemplate } from '../data/checklistTemplates';
+
+// Mappa norm-key normalizzata → standard_id usato da getChecklistTemplate.
+// Allineata con la mappa in StorageContext.initializeChecklist.
+const NORM_KEY_TO_STANDARD_ID = {
+    ISO_9001:    1,
+    ISO_14001:   2,
+    ISO_45001:   3,
+    ISO_3834_2:  6,
+    RDP_MSN:     7,
+};
+
+/**
+ * Costruisce la struttura checklist da template (sincrono, deterministico).
+ * Usata sia dal converter che da initializeChecklist per garantire una struttura
+ * uniforme: in questo modo il primo render di ChecklistModule trova sempre
+ * la checklist pronta, eliminando la race window con l'auto-init useEffect.
+ * @param {string} normKey - Chiave normalizzata (ISO_9001, ISO_14001, ...)
+ * @returns {Object} Oggetto { clauseId: { id, title, questions[] } } o {} se template assente
+ */
+export function buildChecklistFromTemplate(normKey) {
+    const standardId = NORM_KEY_TO_STANDARD_ID[normKey];
+    if (!standardId) return {};
+    const template = getChecklistTemplate(standardId);
+    if (!template || !Array.isArray(template.sections) || template.sections.length === 0) {
+        return {};
+    }
+
+    const checklistObj = {};
+    template.sections.forEach((section) => {
+        const clauseId = section.sectionCode;
+        checklistObj[clauseId] = {
+            id: clauseId,
+            title: section.sectionTitle,
+            questions: (section.questions || []).map((q, idx) => ({
+                id: `q${section.sectionCode}_${idx + 1}`,
+                title: q.questionText,
+                text: q.questionText,
+                questionId: q.questionId,
+                displayOrder: q.displayOrder ?? idx + 1,
+                clauseRef: q.clauseRef || (q.displayOrder ? String(q.displayOrder) : `${section.sectionCode}.${idx + 1}`),
+                status: 'NOT_ANSWERED',
+                score: null,
+                notes: '',
+                evidence: [],
+                evidenceUrls: [],
+            })),
+        };
+    });
+    return checklistObj;
+}
+
 /**
  * Converte audit dal formato backend a frontend
  * @param {Object} backendAudit - Audit dal server (snake_case)
@@ -73,19 +125,48 @@ export function backendToFrontend(backendAudit) {
             ...(extraData.auditOutcome   ? { auditOutcome:   extraData.auditOutcome   } : {}),
         },
         checklist: (() => {
+            // 1) audit_extra_data.checklist = struttura già completa (legacy o riferimento PC con
+            //    risposte serializzate inline): la usiamo così com'è.
             const fromExtra = extraData.checklist;
-            if (fromExtra && typeof fromExtra === 'object') return fromExtra;
+            if (fromExtra && typeof fromExtra === 'object' && Object.keys(fromExtra).length > 0) {
+                const hasAnyClause = Object.values(fromExtra).some(
+                    (norm) => norm && typeof norm === 'object' && Object.keys(norm).length > 0
+                );
+                if (hasAnyClause) return fromExtra;
+            }
+
+            // 2) Determina gli standard normalizzati dell'audit
+            const NORMALIZE = {
+                ISO_9001_2015: 'ISO_9001', ISO_9001: 'ISO_9001',
+                ISO_14001_2015: 'ISO_14001', ISO_14001: 'ISO_14001',
+                ISO_45001_2018: 'ISO_45001', ISO_45001: 'ISO_45001',
+                ISO_3834_2: 'ISO_3834_2', ISO_3834_2_2021: 'ISO_3834_2', ISO_3834: 'ISO_3834_2',
+                RDP_MSN: 'RDP_MSN',
+            };
             const stds = (() => {
-                const NORMALIZE = { ISO_9001_2015: 'ISO_9001', ISO_9001: 'ISO_9001', ISO_14001_2015: 'ISO_14001', ISO_14001: 'ISO_14001', ISO_45001_2018: 'ISO_45001', ISO_45001: 'ISO_45001', ISO_3834_2: 'ISO_3834_2', ISO_3834_2_2021: 'ISO_3834_2', RDP_MSN: 'RDP_MSN' };
                 if (backendAudit.standards) {
-                    const codes = Array.isArray(backendAudit.standards) ? backendAudit.standards.map(s => s.standard_code || String(s)) : String(backendAudit.standards).split(',').map(s => s.trim()).filter(Boolean);
-                    return codes.length ? codes.map(s => NORMALIZE[s] || s) : [];
+                    const codes = Array.isArray(backendAudit.standards)
+                        ? backendAudit.standards.map(s => s.standard_code || String(s))
+                        : String(backendAudit.standards).split(',').map(s => s.trim()).filter(Boolean);
+                    if (codes.length > 0) {
+                        const norm = codes.map(s => NORMALIZE[s] || s).filter(Boolean);
+                        if (norm.length > 0) return norm;
+                    }
                 }
-                if (backendAudit.custom_checklist_id) return [];
+                if (backendAudit.custom_checklist_id) return []; // solo custom: nessuna ISO
+                // Audit legacy senza audit_standards e senza custom: fallback ISO 9001
                 return ['ISO_9001'];
             })();
+
+            // 3) Popola la checklist con il template completo per ogni standard.
+            //    Robustezza: il primo render trova sempre la struttura pronta, anche se
+            //    l'utente apre l'audit prima che l'useEffect di auto-init scatti.
+            //    Le risposte server vengono applicate da fetchAndApplyServerResponses.
             const obj = {};
-            stds.forEach(s => { obj[s] = {}; });
+            stds.forEach((normKey) => {
+                const tpl = buildChecklistFromTemplate(normKey);
+                obj[normKey] = Object.keys(tpl).length > 0 ? tpl : {};
+            });
             return obj;
         })(),
         nonConformities: [],

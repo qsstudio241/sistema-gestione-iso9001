@@ -55,6 +55,10 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [responseOptions, setResponseOptions] = useState(null); // Opzioni dal backend
   const [loadingOptions, setLoadingOptions] = useState(true);
+  // Mostra il fallback "Checklist Non Inizializzata" SOLO dopo un breve grace period:
+  // entro questo tempo l'auto-init di AuditAccordionLayout o l'effect locale (riga 100)
+  // popolano la struttura. Evita lampeggi e diagnosi confondenti per l'utente.
+  const [showEmptyFallback, setShowEmptyFallback] = useState(false);
 
   // Hook gestione allegati
   const attachments = useAttachmentManager(currentAudit, updateCurrentAudit);
@@ -127,6 +131,17 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
       }
     });
   }, [currentAudit?.id]); // Esegui solo al cambio audit (non ad ogni update)
+
+  // Grace period: se la checklist arriva vuota, attendi 1.5s prima di mostrare il
+  // fallback "Non Inizializzata". In quel lasso di tempo l'auto-init (in questo
+  // modulo o in AuditAccordionLayout) ha già popolato la struttura nel 99% dei casi.
+  // Reset ad ogni cambio audit per non riusare un timer di un'altra sessione.
+  useEffect(() => {
+    setShowEmptyFallback(false);
+    if (!currentAudit) return undefined;
+    const t = setTimeout(() => setShowEmptyFallback(true), 1500);
+    return () => clearTimeout(t);
+  }, [currentAudit?.id, selectedNorm]);
 
   // Idrata questionId per ISO 3834/RDP quando il modulo è visibile (allegati e risposte)
   useEffect(() => {
@@ -202,6 +217,26 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
   const isChecklistEmpty = !checklist || Object.keys(checklist).length === 0;
 
   if (isChecklistEmpty) {
+    // Durante il grace period mostra uno stato di caricamento neutro:
+    // l'auto-init è in volo (template viene copiato + risposte server idratano).
+    if (!showEmptyFallback) {
+      return (
+        <div className="checklist-module empty">
+          <div className="empty-checklist-card">
+            <div className="empty-icon">⏳</div>
+            <h3>Caricamento checklist…</h3>
+            <p>
+              Sto preparando la checklist per la norma{" "}
+              <strong>{checklistKey.replace("ISO_", "ISO ")}</strong> e
+              recupero le risposte dal server.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // Fallback dopo il grace period: l'auto-init non è scattato per qualche motivo
+    // (template assente, standard non riconosciuto, errore React). Diamo all'utente
+    // il pulsante per forzare l'inizializzazione manuale.
     return (
       <div className="checklist-module empty">
         <div className="empty-checklist-card">
@@ -214,6 +249,8 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
           <p className="hint">
             Clicca il pulsante qui sotto per inizializzare la struttura con le
             domande previste dalla norma {checklistKey.replace(/_/g, " ")}.
+            Le risposte già salvate sul server verranno ripristinate
+            automaticamente.
           </p>
           <button
             className="btn btn-primary btn-large"
