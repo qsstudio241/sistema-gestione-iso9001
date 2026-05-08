@@ -959,18 +959,23 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.metadata = { ...merged.metadata, selectedStandards: localStds };
         }
 
-        // Eccezione 4: checklist struttura — preserva locale se server ha solo template vuoto
-        // (il server non salva la struttura checklist, solo le risposte via audit_responses)
+        // Eccezione 4: checklist struttura — preserva locale se server ha solo strutture vuote.
+        // Il server non salva la struttura checklist né le risposte inline: le risposte arrivano
+        // da fetchAndApplyServerResponses (audit_responses). Il converter popola le chiavi norma
+        // con {} vuoto per ogni standard. Preservare il locale evita che il reconcile periodico
+        // (ogni 45s) sovrascriva la checklist idratata con template NOT_ANSWERED.
+        // Fix rispetto alla versione precedente: rimosso il controllo hardcoded per singolo
+        // standard ISO_9001. Ora funziona per audit con qualsiasi numero di standard selezionati
+        // (es. ISO_9001 + ISO_14001). Condizione: tutte le norme nel payload server sono {} vuote.
         const localChecklist = localAudit?.checklist;
-        const serverChecklistKeys = Object.keys(serverAudit?.checklist || {});
+        const serverChecklistEntries = Object.entries(serverAudit?.checklist || {});
         const localChecklistKeys = Object.keys(localChecklist || {});
-        if (
-          localChecklistKeys.length > 0 &&
-          (serverChecklistKeys.length === 0 ||
-            (serverChecklistKeys.length === 1 &&
-              serverChecklistKeys[0] === 'ISO_9001' &&
-              Object.keys(serverAudit?.checklist?.ISO_9001 || {}).length === 0))
-        ) {
+        const serverHasOnlyEmptyNorms = serverChecklistEntries.length > 0 &&
+          serverChecklistEntries.every(([, normData]) =>
+            !normData || typeof normData !== 'object' || Object.keys(normData).length === 0
+          );
+        if (localChecklistKeys.length > 0 &&
+            (serverChecklistEntries.length === 0 || serverHasOnlyEmptyNorms)) {
           merged.checklist = localChecklist;
         }
 
@@ -1222,14 +1227,17 @@ export function StorageProvider({ children, useMockData = false }) {
                 merged.metadata = { ...merged.metadata, selectedStandards: localStds };
               }
 
-              // Eccezione 4: checklist struttura — preserva locale se server ha solo template vuoto
+              // Eccezione 4 (loadAuditsFromIndexedDB) — stessa logica di reconcileAuditsFromServer:
+              // preserva locale se server ha solo strutture vuote (qualsiasi numero di standard).
               const localChecklist = localAudit?.checklist;
-              const serverChecklistKeys = Object.keys(serverAudit?.checklist || {});
+              const serverChecklistEntries = Object.entries(serverAudit?.checklist || {});
               const localChecklistKeys = Object.keys(localChecklist || {});
+              const serverHasOnlyEmptyNorms = serverChecklistEntries.length > 0 &&
+                serverChecklistEntries.every(([, normData]) =>
+                  !normData || typeof normData !== 'object' || Object.keys(normData).length === 0
+                );
               if (localChecklistKeys.length > 0 &&
-                  (serverChecklistKeys.length === 0 ||
-                   (serverChecklistKeys.length === 1 && serverChecklistKeys[0] === 'ISO_9001' &&
-                    Object.keys(serverAudit?.checklist?.ISO_9001 || {}).length === 0))) {
+                  (serverChecklistEntries.length === 0 || serverHasOnlyEmptyNorms)) {
                 merged.checklist = localChecklist;
               }
 
