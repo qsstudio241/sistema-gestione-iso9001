@@ -8,11 +8,17 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { backendToFrontend } from '../utils/auditConverter';
+import { backendToFrontend, buildChecklistFromTemplate } from '../utils/auditConverter';
 
 describe('Multi-device — Camellini SIGHINOLFI scenario', () => {
-  it('audit scaricato su mobile per la prima volta → ChecklistModule trova struttura non vuota al primo render', () => {
+  it('audit scaricato su mobile per la prima volta → converter produce chiavi norma, initializeChecklist popola la struttura', () => {
     // Payload identico a quello restituito dall'API in produzione (id=35191)
+    // NOTA: il converter restituisce {ISO_9001:{}, ISO_14001:{}} (chiavi presenti, struttura vuota).
+    // ChecklistModule mostra "⏳ Caricamento checklist…" per 1.5s (grace period).
+    // AuditAccordionLayout.useEffect chiama initializeChecklist → template popola la struttura.
+    // fetchAndApplyServerResponses → applica le 17 risposte dal server.
+    // Pre-popolare il template nel converter causerebbe Exception4 di reconcile a non scattare
+    // → le risposte verrebbero sovrascritte con NOT_ANSWERED ad ogni reconcile (ogni 45s).
     const serverPayload = {
       audit_id: 35191,
       audit_uuid: 'FE8167F8-521D-48E2-B5A9-6C9E222B363C',
@@ -51,33 +57,31 @@ describe('Multi-device — Camellini SIGHINOLFI scenario', () => {
 
     const audit = backendToFrontend(serverPayload);
 
-    // Replica l'asserzione fatta da ChecklistModule riga ~204:
-    //   isChecklistEmpty = !checklist || Object.keys(checklist).length === 0
-    // Per la norma di default (ISO_9001) deve essere FALSE.
-    const checklistDefault = audit.checklist?.ISO_9001;
-    const isChecklistEmpty =
-      !checklistDefault || Object.keys(checklistDefault).length === 0;
+    // Converter restituisce chiavi norma presenti (necessario per selectedStandards e auto-init)
+    expect(Object.keys(audit.checklist)).toContain('ISO_9001');
+    expect(Object.keys(audit.checklist)).toContain('ISO_14001');
 
-    expect(isChecklistEmpty).toBe(false);
+    // La struttura interna è VUOTA — verrà popolata da initializeChecklist.
+    // ChecklistModule.showEmptyFallback ha grace period 1.5s: durante quel tempo
+    // AuditAccordionLayout.useEffect scatta e chiama initializeChecklist.
+    expect(audit.checklist.ISO_9001).toEqual({});
+    expect(audit.checklist.ISO_14001).toEqual({});
 
-    // Anche per la seconda norma selezionata
-    const iso14001 = audit.checklist?.ISO_14001;
-    expect(iso14001).toBeTruthy();
-    expect(Object.keys(iso14001).length).toBeGreaterThan(0);
-
-    // selectedStandards corretti per AuditAccordionLayout (dropdown norme)
+    // selectedStandards corretti per AuditAccordionLayout (auto-init + dropdown norme)
     expect(audit.metadata.selectedStandards).toEqual(['ISO_9001', 'ISO_14001']);
 
-    // questionId integri: necessari per fetchAndApplyServerResponses (idratazione 17 risposte)
-    const allQuestions = Object.values(audit.checklist.ISO_9001).flatMap(
-      (clause) => clause.questions || []
-    );
-    const withQuestionId = allQuestions.filter((q) => q.questionId);
-    expect(withQuestionId.length).toBe(allQuestions.length);
-    expect(allQuestions.length).toBeGreaterThanOrEqual(35);
+    // buildChecklistFromTemplate separato verifica che il template sia disponibile
+    // (usato da initializeChecklist in StorageContext)
+    const tpl9001 = buildChecklistFromTemplate('ISO_9001');
+    expect(Object.keys(tpl9001).length).toBeGreaterThan(0);
+    const firstClause = tpl9001[Object.keys(tpl9001)[0]];
+    expect(firstClause.questions.length).toBeGreaterThan(0);
+    expect(firstClause.questions.length).toBeGreaterThanOrEqual(1);
+    const totalQuestions = Object.values(tpl9001).reduce((s, c) => s + (c.questions?.length || 0), 0);
+    expect(totalQuestions).toBeGreaterThanOrEqual(35);
   });
 
-  it('audit con un solo standard ISO 14001 (solo "ISO_14001_2015") → checklist 14001 popolata, no fallback ISO 9001', () => {
+  it('audit con un solo standard ISO 14001 → checklist ha chiave ISO_14001 (no ISO_9001)', () => {
     const serverPayload = {
       audit_id: 100,
       audit_uuid: 'uuid-14001-only',
@@ -90,11 +94,11 @@ describe('Multi-device — Camellini SIGHINOLFI scenario', () => {
     };
     const audit = backendToFrontend(serverPayload);
     expect(audit.metadata.selectedStandards).toEqual(['ISO_14001']);
-    expect(Object.keys(audit.checklist.ISO_14001).length).toBeGreaterThan(0);
+    expect('ISO_14001' in audit.checklist).toBe(true);
     expect(audit.checklist.ISO_9001).toBeUndefined();
   });
 
-  it('audit con array di oggetti standards (formato getAuditById) → checklist popolata', () => {
+  it('audit con array di oggetti standards (formato getAuditById) → checklist ha entrambe le chiavi', () => {
     const serverPayload = {
       audit_id: 200,
       audit_uuid: 'uuid-array',
@@ -110,7 +114,8 @@ describe('Multi-device — Camellini SIGHINOLFI scenario', () => {
     };
     const audit = backendToFrontend(serverPayload);
     expect(audit.metadata.selectedStandards).toEqual(['ISO_9001', 'ISO_14001']);
-    expect(Object.keys(audit.checklist.ISO_9001).length).toBeGreaterThan(0);
-    expect(Object.keys(audit.checklist.ISO_14001).length).toBeGreaterThan(0);
+    // Chiavi presenti, struttura vuota → initializeChecklist le popola
+    expect('ISO_9001' in audit.checklist).toBe(true);
+    expect('ISO_14001' in audit.checklist).toBe(true);
   });
 });

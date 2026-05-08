@@ -125,8 +125,8 @@ export function backendToFrontend(backendAudit) {
             ...(extraData.auditOutcome   ? { auditOutcome:   extraData.auditOutcome   } : {}),
         },
         checklist: (() => {
-            // 1) audit_extra_data.checklist = struttura già completa (legacy o riferimento PC con
-            //    risposte serializzate inline): la usiamo così com'è.
+            // audit_extra_data.checklist = struttura già completa con risposte inline (legacy):
+            // la usiamo così com'è solo se contiene effettivamente delle clausole.
             const fromExtra = extraData.checklist;
             if (fromExtra && typeof fromExtra === 'object' && Object.keys(fromExtra).length > 0) {
                 const hasAnyClause = Object.values(fromExtra).some(
@@ -135,7 +135,7 @@ export function backendToFrontend(backendAudit) {
                 if (hasAnyClause) return fromExtra;
             }
 
-            // 2) Determina gli standard normalizzati dell'audit
+            // Determina gli standard normalizzati dell'audit
             const NORMALIZE = {
                 ISO_9001_2015: 'ISO_9001', ISO_9001: 'ISO_9001',
                 ISO_14001_2015: 'ISO_14001', ISO_14001: 'ISO_14001',
@@ -154,19 +154,20 @@ export function backendToFrontend(backendAudit) {
                     }
                 }
                 if (backendAudit.custom_checklist_id) return []; // solo custom: nessuna ISO
-                // Audit legacy senza audit_standards e senza custom: fallback ISO 9001
-                return ['ISO_9001'];
+                return ['ISO_9001']; // audit legacy senza audit_standards: fallback ISO 9001
             })();
 
-            // 3) Popola la checklist con il template completo per ogni standard.
-            //    Robustezza: il primo render trova sempre la struttura pronta, anche se
-            //    l'utente apre l'audit prima che l'useEffect di auto-init scatti.
-            //    Le risposte server vengono applicate da fetchAndApplyServerResponses.
+            // Restituisce oggetto con chiavi norma presenti ma struttura clausole VUOTA.
+            // Importante: il converter NON pre-popola il template (was buildChecklistFromTemplate).
+            // Motivo: la Exception 4 di reconcileAuditsFromServer preserva il localChecklist
+            // quando il server ha struttura vuota; se il converter restituisse il template pieno
+            // (NOT_ANSWERED), Exception 4 non si attiverebbe più e le risposte idratate da
+            // fetchAndApplyServerResponses verrebbero sovrascritte ad ogni reconcile (ogni 45s).
+            // La struttura viene popolata da initializeChecklist (auto-init in AuditAccordionLayout)
+            // e le risposte vengono ripristinate da fetchAndApplyServerResponses.
+            // Il grace period 1.5s in ChecklistModule copre la breve finestra di inizializzazione.
             const obj = {};
-            stds.forEach((normKey) => {
-                const tpl = buildChecklistFromTemplate(normKey);
-                obj[normKey] = Object.keys(tpl).length > 0 ? tpl : {};
-            });
+            stds.forEach(s => { obj[s] = {}; });
             return obj;
         })(),
         nonConformities: [],
