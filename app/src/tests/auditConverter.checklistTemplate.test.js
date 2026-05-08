@@ -13,8 +13,15 @@
 import { describe, it, expect } from 'vitest';
 import { backendToFrontend, buildChecklistFromTemplate } from '../utils/auditConverter';
 
-describe('auditConverter — checklist popolata da template', () => {
-  it('audit con due standard (ISO 9001 + ISO 14001) → checklist popolata per entrambi', () => {
+/**
+ * Il converter restituisce checklist con chiavi norma PRESENTI ma struttura interna VUOTA ({}).
+ * Questo è intenzionale: il template viene popolato da initializeChecklist (AuditAccordionLayout)
+ * e le risposte da fetchAndApplyServerResponses. Pre-popolare il template nel converter causerebbe
+ * Exception 4 di reconcileAuditsFromServer a non attivarsi mai, sovrascrivendo le risposte
+ * idratate con NOT_ANSWERED ad ogni reconcile (ogni 45s).
+ */
+describe('auditConverter — struttura checklist dal converter', () => {
+  it('audit con due standard → checklist contiene entrambe le chiavi norma (struttura vuota)', () => {
     const backendAudit = {
       audit_id: 35191,
       audit_uuid: 'FE8167F8-521D-48E2-B5A9-6C9E222B363C',
@@ -37,27 +44,14 @@ describe('auditConverter — checklist popolata da template', () => {
 
     expect(result).toBeTruthy();
     expect(result.metadata.selectedStandards).toEqual(['ISO_9001', 'ISO_14001']);
-
     expect(result.checklist).toBeTypeOf('object');
-    expect(Object.keys(result.checklist)).toEqual(['ISO_9001', 'ISO_14001']);
-
-    const iso9001 = result.checklist.ISO_9001;
-    expect(Object.keys(iso9001).length).toBeGreaterThan(0);
-    const firstClause = iso9001[Object.keys(iso9001)[0]];
-    expect(firstClause).toHaveProperty('id');
-    expect(firstClause).toHaveProperty('title');
-    expect(Array.isArray(firstClause.questions)).toBe(true);
-    expect(firstClause.questions.length).toBeGreaterThan(0);
-    expect(firstClause.questions[0]).toMatchObject({
-      status: 'NOT_ANSWERED',
-      notes: '',
-    });
-
-    const iso14001 = result.checklist.ISO_14001;
-    expect(Object.keys(iso14001).length).toBeGreaterThan(0);
+    // Converter restituisce CHIAVI presenti, struttura VUOTA (verrà popolata da initializeChecklist)
+    expect(Object.keys(result.checklist)).toEqual(expect.arrayContaining(['ISO_9001', 'ISO_14001']));
+    expect(result.checklist.ISO_9001).toEqual({});
+    expect(result.checklist.ISO_14001).toEqual({});
   });
 
-  it('audit con audit_extra_data.checklist non vuoto → preserva struttura legacy', () => {
+  it('audit con audit_extra_data.checklist non vuoto → preserva struttura legacy con risposte', () => {
     const fakeChecklist = {
       ISO_9001: {
         clause4: {
@@ -97,7 +91,7 @@ describe('auditConverter — checklist popolata da template', () => {
     expect(result.checklist).toEqual({});
   });
 
-  it('audit legacy senza standards e senza custom → fallback ISO_9001 popolato', () => {
+  it('audit legacy senza standards → fallback ISO_9001 con chiave presente (struttura vuota)', () => {
     const backendAudit = {
       audit_id: 3,
       audit_uuid: 'uuid-3',
@@ -109,10 +103,12 @@ describe('auditConverter — checklist popolata da template', () => {
     };
     const result = backendToFrontend(backendAudit);
     expect(result.metadata.selectedStandards).toEqual(['ISO_9001']);
-    expect(Object.keys(result.checklist.ISO_9001).length).toBeGreaterThan(0);
+    // Chiave presente, struttura vuota → initializeChecklist la popola
+    expect('ISO_9001' in result.checklist).toBe(true);
+    expect(result.checklist.ISO_9001).toEqual({});
   });
 
-  it('audit_extra_data.checklist vuoto ({}) → ricostruisce da template (no struttura silente vuota)', () => {
+  it('audit_extra_data.checklist={} vuoto → struttura vuota (non pre-popola da template)', () => {
     const backendAudit = {
       audit_id: 4,
       audit_uuid: 'uuid-4',
@@ -123,7 +119,9 @@ describe('auditConverter — checklist popolata da template', () => {
       audit_extra_data: { checklist: {} },
     };
     const result = backendToFrontend(backendAudit);
-    expect(Object.keys(result.checklist.ISO_9001).length).toBeGreaterThan(0);
+    // {} vuoto in extra_data: non viene considerata struttura valida → ricostruisce con chiave vuota
+    expect('ISO_9001' in result.checklist).toBe(true);
+    expect(result.checklist.ISO_9001).toEqual({});
   });
 });
 
