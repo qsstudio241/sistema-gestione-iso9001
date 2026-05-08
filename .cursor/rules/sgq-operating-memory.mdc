@@ -17,6 +17,7 @@ alwaysApply: true
 - Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
 - Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:
   `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+- **Regola pulizia `docs/agent-tasks/`**: l'unico file ammesso è `DEPUTYTASK.md`. **Non creare** mai altri file in questa cartella (niente TASK_*.md, RIPRESA_*.md, REPORT_*.md, SMOKE_*.md, TEST_*.md). Tutta l'esperienza va in `GUIDA_CONSOLIDATA.md`; lo storico task completati va in `docs/archive/agent-tasks-2026/`. Se a fine sessione `docs/agent-tasks/` contiene file oltre a `DEPUTYTASK.md`, spostarli in archive come azione di chiusura.
 
 ## Approvazione esplicita dell'utente
 - **Default**: esegui task in **autonomia** se rispetti golden rules e pattern del repo.
