@@ -861,7 +861,9 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
 
 /**
  * Pre-carica le immagini degli allegati come base64 per l'embedding nel Word.
- * Modifica audit.attachments in-place aggiungendo imageBase64.
+ * Salva anche imageWidth e imageHeight (dimensioni originali) per il proporzionamento OOXML.
+ * Modifica audit.attachments in-place aggiungendo imageBase64, imageMimeType,
+ * imageWidth e imageHeight.
  */
 async function preloadImagesIntoAudit(audit, getViewUrl) {
     // Word support affidabile: evita webp in embedding, mantiene fallback a link.
@@ -880,7 +882,6 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
                 if (!resp.ok) return;
                 const blob = await resp.blob();
                 // Seconda verifica: tipo REALE restituito dal server
-                // Se il server dice che è un PDF o altro, non lo trattiamo come immagine
                 const realMimeType = normalizeMimeType(blob.type || storedMimeType);
                 if (!imageTypes.includes(realMimeType)) {
                     console.warn('[wordExport] allegato ignorato: tipo reale non è immagine', { stored: att.mimeType, real: realMimeType, id });
@@ -888,6 +889,20 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
                 }
                 att.imageBase64   = await blobToBase64(blob);
                 att.imageMimeType = realMimeType;
+
+                // Misura dimensioni originali per calcolo proporzionale in OOXML
+                await new Promise((res) => {
+                    const img = new Image();
+                    const blobUrl = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        att.imageWidth  = img.naturalWidth  || 0;
+                        att.imageHeight = img.naturalHeight || 0;
+                        URL.revokeObjectURL(blobUrl);
+                        res();
+                    };
+                    img.onerror = () => { URL.revokeObjectURL(blobUrl); res(); };
+                    img.src = blobUrl;
+                });
             } catch (e) {
                 console.warn('[wordExport] preload image failed for att', id, e.message);
             }

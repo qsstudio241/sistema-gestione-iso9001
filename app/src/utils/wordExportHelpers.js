@@ -243,12 +243,57 @@ export function wordEmbeddableExtFromMime(mime) {
     return IMAGE_EXTS[m] || null;
 }
 
-/** Run OOXML con immagine inline (stesso schema delle foto in checklist). */
+/**
+ * Limiti dimensioni immagine embedded nelle tabelle Word (EMU; 1cm ≈ 360000 EMU).
+ *
+ * ISO checklist (riga span=3, tabella 10473 DXA ≈ 18.5cm):
+ *   maxW = 10cm — foto occupano ~54% della larghezza cella, leggibili e non invasive.
+ *
+ * Custom checklist (colonna C[1] = 6400 DXA ≈ 11.3cm):
+ *   maxW = 7cm — proporzione sicura con margini cella.
+ *
+ * maxH = 7cm per entrambi — limita foto portrait (9:16) a un'altezza gestibile.
+ * Rapporto d'aspetto reale viene sempre rispettato (calcImageEmuFit).
+ */
+const PHOTO_MAX_W_ISO_EMU    = 10 * 360000;  // 3 600 000 EMU = 10 cm
+const PHOTO_MAX_W_CUSTOM_EMU =  7 * 360000;  // 2 520 000 EMU =  7 cm
+const PHOTO_MAX_H_EMU        =  7 * 360000;  // 2 520 000 EMU =  7 cm
+
+/**
+ * Calcola le dimensioni EMU di un'immagine fittando nel box (maxWidthEmu × maxHeightEmu)
+ * mantenendo il rapporto d'aspetto originale.
+ * Se naturalWidth/naturalHeight non sono disponibili assume ratio 4:3.
+ *
+ * @param {number} naturalWidth  - larghezza pixel originale (0 = ignota)
+ * @param {number} naturalHeight - altezza pixel originale  (0 = ignota)
+ * @param {number} maxWidthEmu
+ * @param {number} maxHeightEmu
+ * @returns {{ w: number, h: number }} dimensioni EMU finali
+ */
+function calcImageEmuFit(naturalWidth, naturalHeight, maxWidthEmu, maxHeightEmu) {
+    const ratio = (naturalWidth && naturalHeight)
+        ? (naturalWidth / naturalHeight)
+        : (4 / 3); // fallback 4:3 standard
+
+    let w = maxWidthEmu;
+    let h = Math.round(w / ratio);
+
+    if (h > maxHeightEmu) {
+        h = maxHeightEmu;
+        w = Math.round(h * ratio);
+    }
+    // Sicurezza finale: non eccedere mai il maxWidth
+    if (w > maxWidthEmu) { w = maxWidthEmu; h = Math.round(w / ratio); }
+
+    return { w, h };
+}
+
+/** Run OOXML con immagine inline (usato per logo azienda — dimensioni fisse). */
 export function buildWordInlineImageRun(rId, imgId, widthEmu = 1905000, heightEmu = 1428750) {
     return xmlImageOoxml(rId, imgId, widthEmu, heightEmu);
 }
 
-/** Genera OOXML per un'immagine embedded (200x150px → 1905000x1428750 EMU) */
+/** Genera OOXML per un'immagine embedded (default 200x150px = 1905000x1428750 EMU) */
 function xmlImageOoxml(rId, imgId, widthEmu = 1905000, heightEmu = 1428750) {
     const name = `img${imgId}`;
     // cNvPr id deve essere univoco nel documento: usare imgId (non 0 fisso).
@@ -468,7 +513,13 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
                     const ext   = IMAGE_EXTS[effectiveMime] || 'jpg';
                     imageRegistry.push({ rId, imgId, base64: a.imageBase64, mimeType: effectiveMime, ext });
 
-                    const imgXml  = xmlImageOoxml(rId, imgId);
+                    const { w: iW, h: iH } = calcImageEmuFit(
+                        a.imageWidth  || 0,
+                        a.imageHeight || 0,
+                        PHOTO_MAX_W_ISO_EMU,
+                        PHOTO_MAX_H_EMU
+                    );
+                    const imgXml  = xmlImageOoxml(rId, imgId, iW, iH);
                     const linkRow = url
                         ? xmlHyperlinkPara(url, '\uD83D\uDD17 ' + name, { color: '1E40AF', size: 18 })
                         : xmlPara(xmlRun(escXml('\uD83D\uDD17 ' + name), { color: '1E40AF', size: 18 }), { sa: 0 });
@@ -923,7 +974,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                         fragment += textToRichParagraphs(text);
                     }
 
-                    if (attId != null) {
+                        if (attId != null) {
                         const viewId = att?.serverAttachmentId ?? att?.attachment_id ?? att?.id ?? attId;
                         const url = getViewUrl && viewId != null ? getViewUrl(viewId) : null;
                         const fnameBase = att?.fileName || att?.name || 'Allegato';
@@ -934,7 +985,13 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                             const rId = `rId${imgId}`;
                             const ext = IMAGE_EXTS[mimeType] || 'jpg';
                             imageRegistry.push({ rId, imgId, base64: att.imageBase64, mimeType, ext });
-                            fragment += xmlPara(xmlImageOoxml(rId, imgId), { sa: 60, sb: 60 });
+                            const { w: iW, h: iH } = calcImageEmuFit(
+                                att.imageWidth  || 0,
+                                att.imageHeight || 0,
+                                PHOTO_MAX_W_CUSTOM_EMU,
+                                PHOTO_MAX_H_EMU
+                            );
+                            fragment += xmlPara(xmlImageOoxml(rId, imgId, iW, iH), { sa: 60, sb: 60 });
                             if (url) {
                                 fragment += xmlHyperlinkPara(url, '\uD83D\uDD17 ' + fnameBase, { color: '1E40AF', size: 18 });
                             }
