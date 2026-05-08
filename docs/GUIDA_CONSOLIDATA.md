@@ -17,6 +17,29 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Chiusura sessione 08 maggio 2026 — mattina (Cloud Agent)
+
+**Branch**: `cursor/image-compress-word-resize-f765` → **PR #38** (draft, da mergiare + deploy Netlify)
+
+#### Attività eseguite
+1. **Compressione foto lato client** (`useAttachmentManager.js`): aggiunta `compressImageFile()` via Canvas API — max 1600px lato lungo, qualità JPEG 0.82, skip se < 300KB, solo categoria `foto`. La compressione avviene prima di `saveAttachment` e `apiService.uploadAttachment`. Metadati attachment aggiornati con nome/tipo/size del file compresso.
+2. **Proporzionamento immagini Word** (`wordExport.js` + `wordExportHelpers.js`): `preloadImagesIntoAudit` ora salva `imageWidth`/`imageHeight` via `Image.naturalWidth`. Aggiunto `calcImageEmuFit(w, h, maxW, maxH)` che scala proporzionalmente rispettando il box colonna. Costanti: `PHOTO_MAX_W_ISO_EMU=10cm`, `PHOTO_MAX_W_CUSTOM_EMU=7cm`, `PHOTO_MAX_H_EMU=7cm`. Risolve deformazione di foto portrait (9:16) e landscape (16:9) che prima venivano sempre inserite in un box fisso 4:3.
+3. **PhotoEditModal** (`PhotoEditModal.jsx` + `PhotoEditModal.css`): modal di editing foto basato su `react-easy-crop` v5.5.7. Intercettato in `AttachmentSection.jsx` per categoria `foto` — un hidden input ref raccoglie i file, poi apre il modal (invece di chiamare direttamente `openFilePicker`). Funzionalità: crop drag/pinch, rotazione ±90°, 5 preset aspect ratio (Libero/1:1/4:3/16:9/3:4), zoom slider 1×–3×, elaborazione sequenziale selezioni multiple, tasto "Salta" per foto senza modifiche. Canvas apply produce File JPEG a 0.92 qualità; poi `addAttachments` applica ulteriore compressione 0.82. UI: dark modal, bottom sheet su mobile.
+
+#### Lezioni apprese
+- **Compressione Canvas + proporzionamento OOXML si integrano** senza interferenze: il Canvas produce il File che viene poi compresso da `addAttachments`, e le dimensioni OOXML vengono calcolate dal blob scaricato dal server durante il preload del Word export. I due flussi sono indipendenti.
+- **`buildWordInlineImageRun` (logo)** rimane con dimensioni default fissi (non toccare): è usato per i logo azienda/organizzazione e deve mantenere comportamento stabile. Solo le chiamate a `xmlImageOoxml` nelle funzioni checklist usano il nuovo `calcImageEmuFit`.
+- **Hidden input ref per foto è il pattern corretto** rispetto a delegare tutto a `openFilePicker`: permette di intercettare i file prima del processing senza toccare l'hook, e mantiene documenti/verbali sul flusso `openFilePicker` invariato.
+- **`react-easy-crop` v5** ha breaking change rispetto a v4: non esportare `getCroppedImg` helper nella libreria — va implementato manualmente via Canvas (vedi `buildCroppedFile` in `PhotoEditModal.jsx`).
+
+#### Stato PR #38
+- Branch: `cursor/image-compress-word-resize-f765`
+- Build: ✅ 0 errori | Test: ✅ 103/103 | Test manuale: ✅ video demo disponibile
+- **Non deployato su VPS** (nessuna modifica backend in questa sessione — solo frontend)
+- **Da fare**: merge PR #38 → `main` → Netlify auto-deploy (~2min)
+
+---
+
 ### Chiusura sessione 07 maggio 2026 — tarda sera (Cloud Agent)
 
 **Branch**: `cursor/custom-checklist-gap-fixes-3f28` (PR da creare → merge in main + deploy)
