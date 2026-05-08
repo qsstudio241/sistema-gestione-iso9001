@@ -32,11 +32,10 @@
 - **Hidden input ref per foto è il pattern corretto** rispetto a delegare tutto a `openFilePicker`: permette di intercettare i file prima del processing senza toccare l'hook, e mantiene documenti/verbali sul flusso `openFilePicker` invariato.
 - **`react-easy-crop` v5** ha breaking change rispetto a v4: non esportare `getCroppedImg` helper nella libreria — va implementato manualmente via Canvas (vedi `buildCroppedFile` in `PhotoEditModal.jsx`).
 
-#### Stato PR #38
-- Branch: `cursor/image-compress-word-resize-f765`
-- Build: ✅ 0 errori | Test: ✅ 103/103 | Test manuale: ✅ video demo disponibile
-- **Non deployato su VPS** (nessuna modifica backend in questa sessione — solo frontend)
-- **Da fare**: merge PR #38 → `main` → Netlify auto-deploy (~2min)
+#### Aggiornamento 08/05/2026 — pulizia documentazione
+- **`docs/agent-tasks/`** ripulita: archiviati 25 file obsoleti in `docs/archive/agent-tasks-2026/`; `DEPUTYTASK.md` ridotto a solo intestazione "NESSUN TASK ATTIVO".
+- **`PROJECT_ROADMAP.md`** aggiornato a oggi.
+- **`sgq-operating-memory.mdc`** rafforzato: aggiunto vincolo esplicito "solo DEPUTYTASK.md in agent-tasks — mai altri file".
 
 ---
 
