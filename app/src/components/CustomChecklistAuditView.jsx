@@ -17,20 +17,6 @@ import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard } from "./QuestionCard";
 import "./CustomChecklistAuditView.css";
 
-const OUTCOME_CODES = ['C', 'OSS', 'NC', 'OM', 'NV', 'NA'];
-
-// Mappa codice esito → classe CSS di ChecklistModule (status-btn system)
-const OUTCOME_CSS = {
-  C:   'compliant',
-  NC:  'non-compliant',
-  OSS: 'partial',
-  OM:  'om',
-  NA:  'not-applicable',
-  NV:  'not-verified',
-};
-
-// Blocco evidence di default (vuoto) — usato come segnaposto per render
-const EMPTY_BLOCK = { text: '', attachment_id: null };
 
 function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
@@ -246,6 +232,17 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
         customStatuses: { ...(prev.customStatuses || {}), [itemId]: newStatus },
       }));
 
+      // GAP-B3: percorso event-based T3 per risposte custom.
+      // Attivo solo con VITE_SYNC_MODE=events; il percorso legacy (save_custom_checklist_responses)
+      // rimane sempre come fallback e path principale in produzione (SYNC_MODE=legacy).
+      if (import.meta.env.VITE_SYNC_MODE === 'events') {
+        const auditUuidForEvent = audit?.id || audit?.metadata?.id;
+        if (auditUuidForEvent) {
+          const blocks = responses[itemId] || [];
+          syncService.enqueueCustomResponseEvent(auditUuidForEvent, itemId, newStatus, blocks).catch(() => {});
+        }
+      }
+
       if (auditId) {
         const blocks = responses[itemId] || [];
         try {
@@ -261,7 +258,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
         }
       }
     },
-    [auditId, responses, statuses, updateCurrentAudit]
+    [audit, auditId, responses, statuses, updateCurrentAudit]
   );
 
   const updateBlock = (itemId, blockIndex, field, value) => {
@@ -271,63 +268,6 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
     setResponses((prev) => ({ ...prev, [itemId]: blocks }));
   };
 
-  const addBlock = (itemId) => {
-    const blocks = [...(responses[itemId] || []), { text: "", attachment_id: null }];
-    setResponses((prev) => ({ ...prev, [itemId]: blocks }));
-    saveResponses(itemId, blocks);
-  };
-
-  const removeBlock = (itemId, blockIndex) => {
-    const blocks = (responses[itemId] || []).filter((_, i) => i !== blockIndex);
-    setResponses((prev) => ({ ...prev, [itemId]: blocks }));
-    saveResponses(itemId, blocks);
-  };
-
-  const handleFileSelect = async (itemId, blockIndex, file) => {
-    if (!file) return;
-    const blocks = [...(responses[itemId] || [])];
-    if (!blocks[blockIndex]) blocks[blockIndex] = { text: "", attachment_id: null };
-
-    if (!auditId) {
-      try {
-        const buffer = await file.arrayBuffer();
-        const blobKey = `customAtt_${Date.now()}_${file.name}`;
-        await syncService.storeFileBlob(blobKey, buffer, { mimeType: file.type, fileName: file.name });
-        blocks[blockIndex].pending_blobKey = blobKey;
-        blocks[blockIndex].attachment_id = null;
-        setResponses((prev) => ({ ...prev, [itemId]: blocks }));
-        await saveResponses(itemId, blocks);
-      } catch (err) { console.error("Errore allegato offline:", err); }
-      return;
-    }
-
-    try {
-      const res = await apiService.uploadAttachment(file, { auditId, customItemId: itemId, category: "evidence" });
-      const attId = res?.data?.attachment_id ?? res?.attachment_id;
-      if (attId) {
-        blocks[blockIndex].attachment_id = attId;
-        delete blocks[blockIndex].pending_blobKey;
-        setResponses((prev) => ({ ...prev, [itemId]: blocks }));
-        await saveResponses(itemId, blocks);
-      }
-    } catch (err) {
-      try {
-        const buffer = await file.arrayBuffer();
-        const blobKey = `customAtt_${Date.now()}_${file.name}`;
-        await syncService.storeFileBlob(blobKey, buffer, { mimeType: file.type, fileName: file.name });
-        blocks[blockIndex].pending_blobKey = blobKey;
-        blocks[blockIndex].attachment_id = null;
-        setResponses((prev) => ({ ...prev, [itemId]: blocks }));
-        await saveResponses(itemId, blocks);
-        await syncService.enqueue("upload_custom_attachment_and_patch_custom_response", {
-          auditId, customItemId: itemId, blobKey,
-          blockText: blocks[blockIndex]?.text || "",
-          category: "evidence",
-          description: "custom checklist evidence",
-        });
-      } catch (syncErr) { console.error("Errore upload allegato (offline):", err, syncErr); }
-    }
-  };
 
   // ─── Aggiungi sezione ──────────────────────────────────────────────────────
 
@@ -429,12 +369,6 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
               questionId: null, // custom items non hanno questionId numerico ISO
             };
 
-            // Blocchi evidenza (dal secondo in poi) — restano come contenuto aggiuntivo
-            const displayBlocks = responses[item.id]?.length > 0
-              ? responses[item.id]
-              : [EMPTY_BLOCK];
-            const extraBlocks = displayBlocks.slice(1); // primo blocco è gestito da QuestionCard come notes
-
             return (
               <QuestionCard
                 key={item.id}
@@ -462,63 +396,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 attachmentManager={attachmentManager}
                 auditId={auditId}
                 customItemId={item.id}
-              >
-                {/* Blocchi evidenza aggiuntivi (dal secondo in poi) */}
-                {extraBlocks.length > 0 && (
-                  <div className="custom-checklist-evidence-blocks extra-blocks">
-                    {extraBlocks.map((block, extraIdx) => {
-                      const idx = extraIdx + 1;
-                      return (
-                        <div key={idx} className="evidence-block">
-                          <textarea
-                            className="notes-textarea"
-                            value={block.text || ""}
-                            onChange={(e) => updateBlock(item.id, idx, "text", e.target.value)}
-                            onBlur={() => {
-                              const currentBlocks = responses[item.id];
-                              if (currentBlocks?.length > 0) saveResponses(item.id, currentBlocks);
-                            }}
-                            placeholder="Evidenza aggiuntiva..."
-                            rows={3}
-                            disabled={readOnly}
-                          />
-                          {!readOnly && (
-                            <div className="evidence-block-actions">
-                              <label className="btn-attach">
-                                📎 Allega
-                                <input
-                                  type="file"
-                                  accept="image/*,.pdf,.doc,.docx"
-                                  onChange={(e) => {
-                                    const f = e.target.files?.[0];
-                                    if (f) handleFileSelect(item.id, idx, f);
-                                    e.target.value = "";
-                                  }}
-                                  style={{ display: "none" }}
-                                />
-                              </label>
-                              {block.attachment_id && (
-                                <a href={apiService.getAttachmentViewUrl(block.attachment_id)} target="_blank" rel="noopener noreferrer" className="link-preview">Vedi allegato</a>
-                              )}
-                              <button type="button" className="btn-remove" onClick={() => removeBlock(item.id, idx)}>Rimuovi</button>
-                            </div>
-                          )}
-                          {readOnly && block.attachment_id && (
-                            <div className="evidence-block-actions">
-                              <a href={apiService.getAttachmentViewUrl(block.attachment_id)} target="_blank" rel="noopener noreferrer" className="link-preview">Vedi allegato</a>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {!readOnly && (
-                  <button type="button" className="btn-add-evidence" onClick={() => addBlock(item.id)}>
-                    ➕ Aggiungi evidenza
-                  </button>
-                )}
-              </QuestionCard>
+              />
             );
           })}
 

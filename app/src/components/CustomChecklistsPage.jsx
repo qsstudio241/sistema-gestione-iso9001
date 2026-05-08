@@ -11,6 +11,7 @@ const CustomChecklistsPage = ({ onBack }) => {
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
+  const [editingActiveAuditCount, setEditingActiveAuditCount] = useState(0);
   const [checklistDetail, setChecklistDetail] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -84,12 +85,15 @@ const CustomChecklistsPage = ({ onBack }) => {
   };
 
   const handleOpenEditor = (id) => {
+    const found = checklists.find((c) => c.id === id);
     setEditingId(id);
+    setEditingActiveAuditCount(found?.active_audit_count ?? 0);
     loadChecklistDetail(id);
   };
 
   const handleCloseEditor = () => {
     setEditingId(null);
+    setEditingActiveAuditCount(0);
     setChecklistDetail(null);
   };
 
@@ -97,6 +101,7 @@ const CustomChecklistsPage = ({ onBack }) => {
     return (
       <CustomChecklistEditor
         checklist={checklistDetail}
+        activeAuditCount={editingActiveAuditCount}
         onBack={handleCloseEditor}
         onSaved={() => loadChecklistDetail(editingId)}
       />
@@ -172,6 +177,11 @@ const CustomChecklistsPage = ({ onBack }) => {
               <div className="cc-item-main">
                 <span className="cc-item-name">{c.name}</span>
                 {c.description && <span className="cc-item-desc">{c.description}</span>}
+                {c.active_audit_count > 0 && (
+                  <span className="cc-item-active-badge" title={`${c.active_audit_count} audit attivi usano questo template`}>
+                    {c.active_audit_count} audit attivi
+                  </span>
+                )}
               </div>
               <div className="cc-item-actions">
                 <button type="button" className="btn-edit" onClick={() => handleOpenEditor(c.id)} title="Modifica">
@@ -192,7 +202,7 @@ const CustomChecklistsPage = ({ onBack }) => {
 /**
  * Editor sezioni e voci (Phase 6.2) + Template report (Phase 7.4)
  */
-function CustomChecklistEditor({ checklist, onBack, onSaved }) {
+function CustomChecklistEditor({ checklist, activeAuditCount = 0, onBack, onSaved }) {
   const [sections, setSections] = useState([]);
   const [checklistName, setChecklistName] = useState("");
   const [checklistDescription, setChecklistDescription] = useState("");
@@ -404,6 +414,15 @@ function CustomChecklistEditor({ checklist, onBack, onSaved }) {
         </button>
         <h2>{checklistName || checklist?.name || "Editor"}</h2>
       </div>
+
+      {activeAuditCount > 0 && (
+        <div className="cc-shared-template-warning">
+          <strong>Attenzione:</strong> questo template è usato da {activeAuditCount} audit attivi.
+          Qualsiasi modifica a sezioni o voci sarà visibile immediatamente in tutti quegli audit.
+          Le risposte già inserite non vengono cancellate, ma eventuali voci rimosse potrebbero
+          non essere più valorizzabili.
+        </div>
+      )}
 
       <div className="cc-meta-section">
         <h3>Anagrafica checklist</h3>

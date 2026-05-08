@@ -34,10 +34,17 @@ function buildChecklistScopeWhere(reqUser) {
 async function listChecklists(reqUser) {
   const scope = buildChecklistScopeWhere(reqUser);
   const result = await query(
-    `SELECT id, organization_id, auditor_org_id, name, description, is_active, has_outcome_buttons, default_report_template_id, custom_report_template_id, created_at, updated_at
-     FROM custom_checklists
+    `SELECT cc.id, cc.organization_id, cc.auditor_org_id, cc.name, cc.description,
+            cc.is_active, cc.has_outcome_buttons,
+            cc.default_report_template_id, cc.custom_report_template_id,
+            cc.created_at, cc.updated_at,
+            (SELECT COUNT(*) FROM dbo.audits a
+             WHERE a.custom_checklist_id = cc.id
+               AND a.is_deleted = 0
+               AND a.status NOT IN ('completed', 'approved', 'archived')) AS active_audit_count
+     FROM custom_checklists cc
      WHERE ${scope.where}
-     ORDER BY name`,
+     ORDER BY cc.name`,
     scope.params
   );
   return result.recordset;

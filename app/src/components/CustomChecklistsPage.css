@@ -351,3 +351,30 @@
   cursor: pointer;
   margin: 0.25rem 0;
 }
+
+/* GAP-B1: badge audit attivi nella lista template */
+.cc-item-active-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  border-radius: 10px;
+  padding: 1px 8px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+/* GAP-B1: banner warning nel template editor quando ci sono audit attivi */
+.cc-shared-template-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-left: 4px solid #e6a817;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  color: #664d03;
+  line-height: 1.5;
+}

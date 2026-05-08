@@ -20,6 +20,7 @@ import {
   createStorageProvider,
   getDeviceInfo,
 } from "../services/storageAdapter";
+import { calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
 import { syncService } from "../services/syncService";
 import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from "../services/apiService";
 
@@ -1608,13 +1609,19 @@ export function StorageProvider({ children, useMockData = false }) {
               console.warn("⚠️ Schema validation errors:", validation.errors);
             }
 
-            // Calcola metriche da checklist per sync accurato
+            // Calcola metriche da checklist per sync accurato.
+            // GAP-B2: somma anche le metriche custom (NC/OSS/OM) se has_outcome_buttons è attivo,
+            // così non_conformities_count sul server riflette il totale reale (ISO + custom).
             const metrics = calculateChecklistMetrics(updated.checklist);
+            const customMetrics =
+              updated?.customChecklist?.has_outcome_buttons
+                ? calculateCustomFindingsMetrics(updated?.customStatuses || {})
+                : { totalNC: 0, totalOSS: 0, totalOM: 0 };
             const calculatedMetrics = {
               total_questions: metrics.total,
               answered_questions: metrics.answered,
               conformities_count: metrics.conformities,
-              non_conformities_count: metrics.nonConformities,
+              non_conformities_count: metrics.nonConformities + customMetrics.totalNC,
               completion_percentage:
                 metrics.total > 0
                   ? Math.round((metrics.answered / metrics.total) * 100 * 100) /
