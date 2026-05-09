@@ -180,35 +180,27 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }));
   };
 
-  // Listener: sgq:openAndScrollToSection — emesso da useGuidedCompletion / AuditClosePanel
-  useEffect(() => {
-    const handler = (e) => {
-      const { sectionId, fieldId } = e.detail || {};
-      if (!sectionId) return;
+  // Callback diretta per guided close — passata come prop a AuditClosePanel
+  const navigateToSection = useCallback((sectionId, fieldId) => {
+    // 1. Apre la sezione accordion target
+    setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
 
-      // Apre la sezione accordion target
-      setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
+    // 2. Attende il re-render React, poi scrolla e focalizza
+    setTimeout(() => {
+      const target = fieldId
+        ? document.getElementById(fieldId)
+        : document.getElementById(`sgq-section-${sectionId}`);
+      if (!target) return;
 
-      // Attende il re-render React (apertura accordion), poi scrolla e focalizza
-      setTimeout(() => {
-        const target = fieldId
-          ? document.getElementById(fieldId)
-          : document.getElementById(`sgq-section-${sectionId}`);
-        if (!target) return;
+      // Scrolla la finestra (non un container interno)
+      const rect = target.getBoundingClientRect();
+      const absoluteTop = rect.top + window.scrollY - 100;
+      window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
 
-        // Scrolla la finestra (non il container) per garantire visibilità
-        const rect = target.getBoundingClientRect();
-        const absoluteTop = rect.top + window.scrollY - 100;
-        window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
-
-        // Focus sul campo (per textarea/input) + highlight temporaneo
-        try { target.focus({ preventScroll: true }); } catch (_) {}
-        target.classList.add("sgq-guided-highlight");
-        setTimeout(() => target.classList.remove("sgq-guided-highlight"), 1800);
-      }, 320);
-    };
-    window.addEventListener("sgq:openAndScrollToSection", handler);
-    return () => window.removeEventListener("sgq:openAndScrollToSection", handler);
+      try { target.focus({ preventScroll: true }); } catch (_) {}
+      target.classList.add("sgq-guided-highlight");
+      setTimeout(() => target.classList.remove("sgq-guided-highlight"), 1800);
+    }, 320);
   }, []);
 
   const handleGeneralDataUpdate = (updatedData) => {
@@ -804,6 +796,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <div className="accordion-content">
               <AuditClosePanel
                 currentAudit={currentAudit}
+                onNavigateTo={navigateToSection}
                 onCompleted={() => {
                   setOpenSections((prev) => ({ ...prev, close: false }));
                 }}
