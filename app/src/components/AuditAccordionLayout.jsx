@@ -182,29 +182,35 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }));
   };
 
-  // Callback diretta per guided close — passata come prop a AuditClosePanel
-  // sectionId: chiave di openSections (es. "general-data")
-  // subSectionId: chiave di openSubSections (es. "general-data-form", "objective") o null
-  // fieldId: id DOM del campo target (es. "field-auditObject") o null per scorrere alla sezione
-  const navigateToSection = useCallback((sectionId, subSectionId, fieldId) => {
-    // Apre sezione principale e sotto-sezione in un unico batch React 18
-    setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
-    if (subSectionId) {
-      setOpenSubSections((prev) => ({ ...prev, [subSectionId]: true }));
-    }
-    // Se la destinazione è dentro la checklist, espande tutte le clausole del modulo target
-    if (sectionId === "checklist" && fieldId?.startsWith("question-")) {
-      setChecklistExpandTrigger((prev) => prev + 1);
-    }
+  /**
+   * navigateTo(path, fieldId) — apre tutti i livelli accordion dichiarati in path[],
+   * poi scrolla al fieldId. Aggiungere un nuovo tipo a PathStep è sufficiente
+   * per supportare qualsiasi futura struttura annidata senza modificare i chiamanti.
+   *
+   * Tipi PathStep supportati:
+   *   { type: 'section',      key }  → openSections[key] = true
+   *   { type: 'subsection',   key }  → openSubSections[key] = true
+   *   { type: 'clauseExpand'      }  → checklistExpandTrigger++ (apre tutte le clausole)
+   */
+  const navigateTo = useCallback((path, fieldId) => {
+    // Applica tutti i passi del path in un unico batch React 18
+    (path ?? []).forEach((step) => {
+      if (step.type === "section" && step.key)
+        setOpenSections((prev) => ({ ...prev, [step.key]: true }));
+      else if (step.type === "subsection" && step.key)
+        setOpenSubSections((prev) => ({ ...prev, [step.key]: true }));
+      else if (step.type === "clauseExpand")
+        setChecklistExpandTrigger((prev) => prev + 1);
+    });
 
-    // Attende il re-render (apertura accordion), poi scorre e focalizza
+    // Attende che React re-renda tutti i livelli, poi scrolla e focalizza
     setTimeout(() => {
+      const firstSectionKey = (path ?? []).find((s) => s.type === "section")?.key;
       const target = fieldId
         ? document.getElementById(fieldId)
-        : document.getElementById(`sgq-section-${sectionId}`);
+        : document.getElementById(`sgq-section-${firstSectionKey}`);
       if (!target) return;
 
-      // scrollIntoView funziona su qualsiasi container scrollabile (window o div)
       target.scrollIntoView({ behavior: "smooth", block: "center" });
       try { target.focus({ preventScroll: true }); } catch (_) {}
       target.classList.add("sgq-guided-highlight");
@@ -812,7 +818,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <div className="accordion-content">
               <AuditClosePanel
                 currentAudit={currentAudit}
-                onNavigateTo={navigateToSection}
+                onNavigateTo={navigateTo}
                 onCompleted={() => {
                   setOpenSections((prev) => ({ ...prev, close: false }));
                 }}
