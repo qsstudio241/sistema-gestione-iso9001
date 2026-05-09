@@ -39,47 +39,21 @@ export function validateQuestion(question) {
         errors.push(`Status non valido: ${question.status}`);
     }
 
-    // Se status è COMPLIANT/C o PARTIAL/OSS, dovrebbe avere evidenza
-    const conformantStatuses = [CHECKLIST_STATUS.COMPLIANT, 'C', CHECKLIST_STATUS.PARTIAL, 'OSS'];
-    if (conformantStatuses.includes(question.status) && !hasEvidence(question)) {
-        errors.push('Manca evidenza per domanda conforme/parzialmente conforme');
-    }
-
-    // Se status è NON_COMPLIANT/NC, dovrebbe avere note
-    const nonConformantStatuses = [CHECKLIST_STATUS.NON_COMPLIANT, 'NC'];
-    if (nonConformantStatuses.includes(question.status) &&
+    // Note obbligatorie per NC e OSS (non per C, OM, NA, NV — allegato mai obbligatorio)
+    const statusesRequiringNotes = [CHECKLIST_STATUS.NON_COMPLIANT, 'NC', CHECKLIST_STATUS.PARTIAL, 'OSS'];
+    if (statusesRequiringNotes.includes(question.status) &&
         (!question.notes || question.notes.trim() === '')
     ) {
-        errors.push('Mancano note per domanda non conforme');
+        const label = ['NC', CHECKLIST_STATUS.NON_COMPLIANT].includes(question.status)
+            ? 'non conforme'
+            : 'osservazione';
+        errors.push(`Mancano note per domanda ${label}`);
     }
 
     return {
         isValid: errors.length === 0,
         errors
     };
-}
-
-/**
- * Verifica se una domanda ha evidenza documentata
- * @param {Object} question - Domanda da verificare
- * @returns {boolean}
- */
-function hasEvidence(question) {
-    // Nuovo formato evidence object
-    if (question.evidence && typeof question.evidence === 'object') {
-        return !!(
-            question.evidence.mainDocumentRef ||
-            (question.evidence.detailedObservations &&
-                question.evidence.detailedObservations.length > 0)
-        );
-    }
-
-    // Vecchio formato evidenceRef string
-    if (question.evidenceRef && question.evidenceRef.trim() !== '') {
-        return true;
-    }
-
-    return false;
 }
 
 /**
