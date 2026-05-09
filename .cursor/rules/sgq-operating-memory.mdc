@@ -25,6 +25,15 @@ alwaysApply: true
 - L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
 - **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
 
+## Decisioni tecniche autonome — mai chiedere al committente
+Per qualsiasi scelta tecnica con una best practice consolidata, applicarla direttamente senza chiedere conferma. Esempi vincolanti:
+- **Form validation UX**: validare su cambio stato/blur, mai su ogni keystroke (input).
+- **Console noise**: rimuovere sempre log di debug da codice produzione.
+- **Allegati/evidenze**: mai obbligatori nei flussi di compilazione ISO — solo note per NC e OSS.
+- **Graceful degradation**: un catch con fallback vuoto è sempre preferibile a un blocco UI.
+- **Fix a basso rischio** (1-2 file, nessuna logica sync/DB): commit diretto senza smoke L3 manuale.
+Sollevare al committente SOLO: decisioni di prodotto, breaking change senza rollback, costi commerciali.
+
 ## Approvazione esplicita dell'utente (solo eccezioni)
 - **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purche' non tocchino schema DB produzione, segreti o contratti API senza piano.
 - **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrita' dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** puo' essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
