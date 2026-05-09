@@ -1,5 +1,5 @@
 /**
- * StudioSettingsPage ù Impostazioni Studio (anagrafica, documenti, notifiche)
+ * StudioSettingsPage - Impostazioni Studio (anagrafica, documenti, notifiche)
  * Route: /settings/studio
  */
 
@@ -18,7 +18,7 @@ const DOC_TYPES = [
   "Manuale",
 ];
 
-// ??? Tab Anagrafica ???????????????????????????????????????????????????????????
+// --- Tab Anagrafica ---
 
 function TabAnagrafica() {
   const [org, setOrg] = useState(null);
@@ -41,9 +41,11 @@ function TabAnagrafica() {
     setError(null);
     try {
       const res = await apiService.getMyOrganization();
-      setOrg(res);
+      // Il backend risponde { success: true, data: { ... } }
+      const orgData = res?.data ?? res;
+      setOrg(orgData);
       setForm({
-        audit_report_prefix: res.audit_report_prefix || "",
+        audit_report_prefix: orgData?.audit_report_prefix || "",
       });
     } catch (err) {
       setError("Errore caricamento dati studio: " + err.message);
@@ -132,8 +134,8 @@ function TabAnagrafica() {
     <div className="studio-tab-content">
       {error && (
         <div className="studio-error">
-          ?? {error}
-          <button onClick={() => setError(null)}>?</button>
+          {error}
+          <button onClick={() => setError(null)}>x</button>
         </div>
       )}
 
@@ -151,7 +153,7 @@ function TabAnagrafica() {
               />
             ) : (
               <div className="studio-logo-placeholder">
-                <span>??</span>
+                <span className="studio-logo-placeholder-icon">&#128247;</span>
                 <span className="studio-logo-placeholder-text">Nessun logo</span>
               </div>
             )}
@@ -169,7 +171,7 @@ function TabAnagrafica() {
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingLogo}
             >
-              {uploadingLogo ? "Caricamento..." : "?? Carica logo"}
+              {uploadingLogo ? "Caricamento..." : "Carica logo"}
             </button>
             {org?.logo_url && (
               <button
@@ -177,10 +179,10 @@ function TabAnagrafica() {
                 onClick={handleLogoDelete}
                 disabled={uploadingLogo}
               >
-                ??? Elimina logo
+                Elimina logo
               </button>
             )}
-            <span className="studio-logo-hint">PNG, JPG o SVG ù max 2 MB</span>
+            <span className="studio-logo-hint">PNG, JPG o SVG &mdash; max 2 MB</span>
           </div>
         </div>
         {logoError && (
@@ -188,11 +190,11 @@ function TabAnagrafica() {
         )}
       </div>
 
-      {/* Dati tenant ó sola lettura, gestiti dal superadmin */}
+      {/* Dati tenant - sola lettura, gestiti dal superadmin */}
       <div className="studio-card">
         <h3 className="studio-card-title">Dati Anagrafici</h3>
         <p className="studio-hint" style={{ marginBottom: 12 }}>
-          Questi dati sono gestiti dall'amministratore di sistema e non sono modificabili da qui.
+          Questi dati sono gestiti dall&apos;amministratore di sistema e non sono modificabili da qui.
         </p>
 
         <div className="studio-field">
@@ -219,14 +221,14 @@ function TabAnagrafica() {
           <label>Partita IVA</label>
           <input
             type="text"
-            value={org?.vat_number || "ó"}
+            value={org?.vat_number || ""}
             readOnly
             className="studio-input-disabled"
           />
         </div>
       </div>
 
-      {/* Personalizzazioni tenant ó editabili */}
+      {/* Personalizzazioni tenant - editabili */}
       <div className="studio-card">
         <h3 className="studio-card-title">Personalizzazioni</h3>
 
@@ -240,7 +242,7 @@ function TabAnagrafica() {
             maxLength={8}
           />
           <span className="studio-hint">
-            Max 8 caratteri. Es. "RAP" &rarr; RAP-2026-001
+            Max 8 caratteri &mdash; es. &quot;RAP&quot; &rarr; RAP-2026-001
           </span>
         </div>
       </div>
@@ -259,7 +261,7 @@ function TabAnagrafica() {
   );
 }
 
-// ??? Tab Documenti ????????????????????????????????????????????????????????????
+// --- Tab Documenti ---
 
 function TabDocumenti() {
   const [rows, setRows] = useState([]);
@@ -329,15 +331,15 @@ function TabDocumenti() {
     <div className="studio-tab-content">
       {error && (
         <div className="studio-error">
-          ?? {error}
-          <button onClick={() => setError(null)}>?</button>
+          {error}
+          <button onClick={() => setError(null)}>x</button>
         </div>
       )}
 
       <div className="studio-card">
         <h3 className="studio-card-title">Prefissi per tipo documento</h3>
         <p className="studio-card-desc">
-          Configura il prefisso usato nella numerazione automatica dei documenti (es. "PG" ? PG-001).
+          Configura il prefisso usato nella numerazione automatica dei documenti (es. &quot;PG&quot; &rarr; PG-001).
         </p>
 
         <table className="studio-doc-table">
@@ -376,7 +378,7 @@ function TabDocumenti() {
       </div>
 
       <div className="studio-actions">
-        {saved && <span className="studio-saved">? Configurazione salvata</span>}
+        {saved && <span className="studio-saved">&#10003; Configurazione salvata</span>}
         <button
           className="btn-studio-primary"
           onClick={handleSave}
@@ -389,13 +391,12 @@ function TabDocumenti() {
   );
 }
 
-// ??? Tab Notifiche ????????????????????????????????????????????????????????????
+// --- Tab Notifiche ---
 
 function TabNotifiche() {
   return (
     <div className="studio-tab-content">
       <div className="studio-card studio-notif-link-card">
-        <span className="studio-notif-link-icon">??</span>
         <div>
           <h3 className="studio-card-title" style={{ marginBottom: 6 }}>
             Configurazione Notifiche
@@ -404,7 +405,7 @@ function TabNotifiche() {
             Le impostazioni delle notifiche email (destinatari, soglie, orari) sono disponibili nella pagina dedicata.
           </p>
           <Link to="/settings/notifications" className="btn-studio-primary" style={{ display: "inline-block", marginTop: 12 }}>
-            Vai a Impostazioni Notifiche ?
+            Vai a Impostazioni Notifiche &rarr;
           </Link>
         </div>
       </div>
@@ -412,12 +413,12 @@ function TabNotifiche() {
   );
 }
 
-// ??? Pagina principale ????????????????????????????????????????????????????????
+// --- Pagina principale ---
 
 const TABS = [
-  { id: "anagrafica", label: "?? Anagrafica" },
-  { id: "documenti",  label: "?? Documenti" },
-  { id: "notifiche",  label: "?? Notifiche" },
+  { id: "anagrafica", label: "Anagrafica" },
+  { id: "documenti",  label: "Documenti" },
+  { id: "notifiche",  label: "Notifiche" },
 ];
 
 function StudioSettingsPage() {
@@ -426,9 +427,9 @@ function StudioSettingsPage() {
   return (
     <div className="studio-page">
       <div className="studio-header">
-        <h2 className="studio-title">?? Il mio Studio</h2>
+        <h2 className="studio-title">Il mio Studio</h2>
         <p className="studio-subtitle">
-          Personalizza anagrafica, logo e configurazione del tuo studio di consulenza.
+          Personalizza logo e configurazione del tuo studio di consulenza.
         </p>
       </div>
 
