@@ -17,6 +17,41 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 09 maggio 2026 (sera) — Fix validazione, guided close, collapse button
+
+**Struttura accordion AuditAccordionLayout — mappa completa (da NON ri-esplorare):**
+
+| openSections key | Titolo UI | Contiene sub-sezioni (openSubSections key) |
+|---|---|---|
+| `"general-data"` | 1 – Dati Generali | `"general-data-form"` (1.1), `"objective"` (1.2), `"pending-issues"` (1.3), `"cert-findings"` (1.4) |
+| `"checklist"` | Checklist | `"custom-checklist"` + chiavi per ogni standard (da STANDARDS_CONFIG) |
+| `"nc-register"` | Registro NC | — |
+| `"outcome"` | 11 – Esito Audit | — |
+| `"conclusions"` | 12 – Conclusioni | — |
+| `"close"` | Chiusura Audit | — (contiene AuditClosePanel) |
+| `"export"` | Export Report | — |
+
+**Field ID navigabili (guided close `useGuidedCompletion`):**
+
+| Campo | sectionId | subSectionId | fieldId |
+|---|---|---|---|
+| Oggetto audit | `general-data` | `general-data-form` | `field-auditObject` |
+| Campo applicazione | `general-data` | `general-data-form` | `field-scope` |
+| Obiettivo audit | `general-data` | `objective` | `field-auditDescription` |
+| Conclusioni | `conclusions` | null | `conclusions` |
+| % checklist | `checklist` | null | null |
+
+**Pattern `navigateToSection(sectionId, subSectionId, fieldId)`** — callback diretta da `AuditAccordionLayout` → `AuditClosePanel`. NON usare event bus (`window.dispatchEvent`) per componenti parent→child.
+
+**Commits chiave sessione 09/05 sera:**
+- `4505490` Fix validazione: rimozione obbligo evidence, note solo per NC/OSS
+- `3c8f509` Regola autonomia decisioni tecniche in operating-memory
+- `cbf4a37` Guided close v3: callback diretta  
+- `b862da5` Guided close v4: apertura sub-sezioni annidate
+- `a8a701b` Collapse button in fondo ad ogni accordion aperto
+
+---
+
 ### Sessione 09 maggio 2026 (sera) — Fix validazione checklist + pattern Node cloud agent
 
 **Commit**: `4505490` su `main` — deploy Netlify automatico.
