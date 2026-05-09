@@ -43,6 +43,9 @@
 
 **Pattern `navigateToSection(sectionId, subSectionId, fieldId)`** — callback diretta da `AuditAccordionLayout` → `AuditClosePanel`. NON usare event bus (`window.dispatchEvent`) per componenti parent→child.
 
+**Ottimizzazione backlog — navigazione accordion auto-discovery:**
+Attualmente il `path[]` di ogni campo deve essere dichiarato esplicitamente. Un futuro miglioramento renderebbe il sistema completamente automatico: aggiungere `data-accordion-key="nome-sezione"` a ogni wrapper accordion nel DOM + un walker che risale l'albero dal campo target verso il root aprendo ogni livello trovato. Richiede di instrumentare tutti gli accordion ma eliminerebbe la necessità di aggiornare i `path[]` quando cambia la struttura. **Da valutare solo se i livelli di annidamento crescono oltre 3-4 o se si aggiungono molti nuovi moduli con accordion propri.**
+
 **Commits chiave sessione 09/05 sera:**
 - `4505490` Fix validazione: rimozione obbligo evidence, note solo per NC/OSS
 - `3c8f509` Regola autonomia decisioni tecniche in operating-memory
