@@ -95,6 +95,22 @@ Se la verifica mostra che il problema non esiste, **non fare nulla** e aggiornar
 - Per test frontend imposta sempre `NODE_ENV=test` (evita errori React `act(...)`).
 - Per deploy VPS con PuTTY usa comandi non interattivi (`plink/pscp`) e gestisci `sudo -S` quando necessario.
 
+### Node/npm nel cloud agent (pattern da usare SUBITO senza esplorare)
+`npm` NON e' nel PATH. Usare questi alias fissi — verificati 09/05/2026:
+```powershell
+$node = "c:\Users\AI.Project\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe"
+
+# Test L1 (block_until_ms: 300000 — la suite completa 125 test richiede ~4-5 min)
+$env:NODE_ENV = "test"; Set-Location "C:\ProgettoISO\app"; & $node "node_modules\vitest\vitest.mjs" run 2>&1 | Select-Object -Last 30
+
+# Build Vite
+Set-Location "C:\ProgettoISO\app"; & $node "node_modules\vite\bin\vite.js" build 2>&1 | Select-Object -Last 20
+
+# Alternativa rapida per fix a basso rischio: skip test locale, affidati a Netlify CI
+# (push su main → Netlify build automatica ~2 min — equivalente a build L1)
+```
+**Regola**: per modifiche a 1-2 file a basso rischio (es. rimozione di un console.log, fix una condizione), e' accettabile saltare i test locali e affidarsi al build Netlify come verifica. Usare il runner locale solo se si toccano logiche di sync, metriche o converter.
+
 ## Chunking (robustezza, stabilita', scalabilita')
 - Ogni attivita' spezzata in **slice verticali**: diagnosi -> fix **minimo** -> test **L1** (Vitest/build in `app/`) e, se il perimetro lo richiede, livelli **L2-L4** descritti in `docs/GUIDA_CONSOLIDATA.md` (*Piano qualita': fasi di sviluppo e test di robustezza* / piramide L1-L5). **Non** mescolare nella stessa consegna migrazioni DB, refactor ampi e smoke manuali senza una tappa intermedia committabile.
 - **Smoke manuali (L3/L4)**: non marcare OK in checklist senza evidenza (data, ambiente, note anonime); separare sempre "copertura L1 in CI / locale" da "esecuzione umana su preview/prod".

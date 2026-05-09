@@ -17,25 +17,278 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
-### Chiusura sessione 08 maggio 2026 — Export Word ISO 14001 completo
+### Sessione 09 maggio 2026 (sera) — Fix validazione checklist + pattern Node cloud agent
 
-**Branch**: `cursor/word-export-iso14001-v1` — PR aperta su GitHub verso `main`.  
-**Netlify**: auto-deploy si attiva al merge della PR.  
-**DB / VPS**: nessuna modifica (migration 049 + 050 già in prod dal 07/05/2026).
+**Commit**: `4505490` su `main` — deploy Netlify automatico.
+
+**Fix**: `checklistValidation.js` + `ChecklistModule.jsx`
+- Rimossa regola che richiedeva `evidence.mainDocumentRef` per domande C/OSS (falso positivo — l'utente non compila mai quel campo legacy; scrivere nella textarea `notes` non soddisfaceva la condizione)
+- Note obbligatorie ora solo per NC e OSS (non per C, OM, NA, NV); allegato mai obbligatorio
+- Rimosso `console.log` debug `🔍 [VALIDATION]` in `ChecklistModule.jsx`
+- 403 su `GET /companies/:id/certification-findings?standard_id=2`: gestito silenziosamente da ExportPanel (fallback `[]`); il VPS ha probabilmente la route con `requireLicensedModule` non presente nel repo — da allineare al prossimo deploy backend
+
+**Lezione operativa — Node/npm nel cloud agent (09/05/2026)**:
+`npm` non è nel PATH in questa sessione Cursor. Soluzione trovata dopo ~10 tentativi — ora scritta in `sgq-operating-memory.mdc` per evitare esplorazione futile:
+```powershell
+$node = "c:\Users\AI.Project\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe"
+# Test: & $node "node_modules\vitest\vitest.mjs" run  (block_until_ms: 300000)
+# Build: & $node "node_modules\vite\bin\vite.js" build
+```
+Per fix a basso rischio (1-2 file, nessuna logica sync/metriche): saltare il test locale e affidarsi al build Netlify come verifica L1 equivalente.
+
+---
+
+### Sessione 08-09 maggio 2026 — Maratona stabilizzazione multi-standard + ADR-009 strategico
+
+**Branch principali mergiati in main**:
+- `cursor/checklist-empty-fallback-fix-06dc` (PR #39)
+- `cursor/module-license-admin-bypass-06dc`
+- `cursor/fix-rich-fields-empty-on-load-06dc`
+- `cursor/fix-checklist-responses-overwrite-reconcile-06dc`
+- `cursor/fix-exception4-multi-standard-06dc`
+- `cursor/adr009-multi-standard-architettura-06dc`
+
+**Test L1**: 125/125 PASS · Build Vite OK · Service worker rigenerato (`BUILD_DATE` 2026-05-08T18:55Z) · Deploy Netlify confermato online.
+
+#### 6 fix consecutivi su 4 ore (08/05/2026 13:20→18:55 UTC)
+
+| # | Bug osservato | Causa radice | File | Fix |
+|---|---|---|---|---|
+| 1 | "Checklist Non Inizializzata" Sighinolfi su passaggio PC→cellulare | Race rendering: converter restituiva `{ISO_9001:{}}` vuoto, useEffect post-mount riempiva il template ma fra 1° render e effect appariva il fallback | `auditConverter.js`, `ChecklistModule.jsx` | Pre-popolazione template + grace period 1.5s prima di mostrare fallback |
+| 2 | Admin riceveva "Modulo non abilitato per la tua organizzazione" su `/non-conformities` e altri | `requireLicensedModule` ignorava il ruolo, controllava solo `licensed_modules` | `backend/src/middleware/moduleLicense.middleware.js` | Bypass per `superadmin` e `admin` (allineato a `authorize()`). Auditor restano vincolati. |
+| 3 | Caselle testo Note/Osservazioni si svuotavano dopo qualche secondo dall'apertura audit | Exception 1 in `reconcileAuditsFromServer` usava `!serverField` per oggetti che potevano essere `{description:''}` truthy ma vuoti → server-wins con dati vuoti | `StorageContext.jsx` | Helper `hasRichContent()` che distingue `{}` da contenuto reale; logica per-campo invece di all-or-nothing |
+| 4 | Risposte/note checklist si azzeravano ogni 45 secondi | Exception 4 reintrodotto dal fix #1: il converter pre-popolava il template, Exception 4 non scattava più (vedeva struttura non-vuota), reconcile sovrascriveva con NOT_ANSWERED ad ogni ciclo | `auditConverter.js` | Reverting pre-popolazione: converter torna a restituire `{ISO_9001:{}}` (chiave presente, struttura vuota). Grace period 1.5s gestisce la finestra. |
+| 5 | Stesso messaggio "Checklist Non Inizializzata" dopo 1.5s su audit con 2+ norme | Exception 4 hardcoded `serverChecklistKeys[0] === 'ISO_9001'` → audit con 2 standard `length=2` faceva fallire la condizione `=== 1` | `StorageContext.jsx` (Exception 4 in `reconcileAuditsFromServer` + `loadAuditsFromIndexedDB`) | Generalizzato: preserva locale se TUTTE le norme nel payload server hanno struttura `{}` vuota — funziona per 1, 2, N standard |
+| 6 | Errori CORS in console su allegati durante restart server | nginx proxy_pass restituiva 502 muto senza header CORS quando Node.js era in restart (~10s window) | `/etc/nginx/sites-enabled/sgq-backend` (VPS) | OPTIONS preflight gestito da nginx direttamente + fallback `@backend_down` con 503 + header CORS quando upstream non raggiungibile |
+
+**Tutti gli audit di Camellini in produzione integri** (verificato `audit_id 35191` SIGHINOLFI: `audit_standards` ✅ ISO_9001+ISO_14001, 17 risposte in `audit_responses`, `audit_extra_data` con `generalData/objective/outcome` ok). Nessun fix DB necessario.
+
+#### Lezioni apprese (08/05/2026)
+
+- **`{}` è truthy in JS**: ogni controllo di "presenza dato ricco" deve usare `hasRichContent()` o equivalente, mai `!field` su oggetti.
+- **Race rendering React**: dato sincronamente disponibile (template hardcoded) deve essere popolato nel converter, non delegato a `useEffect` post-mount. **Eccezione**: se la pre-popolazione rompe altre logiche di merge (Exception 4!), serve un grace period UX nel componente che renderizza.
+- **Hardcoded `=== 'ISO_9001'`**: ogni occorrenza di questo pattern nel codice è un bug architetturale. Generalizzare con iterazione su `selectedStandards`.
+- **Bypass licenze per admin**: comportamento atteso dagli operatori (allineato a `authorize()` per superadmin). I controlli licenza sono **per organizzazione** (modello SaaS), il ruolo è **per utente** — sono due assi distinti.
+- **CORS quando il backend è down**: mai delegare gli header CORS solo all'app Express. nginx (o reverse proxy equivalente) deve poterli emettere autonomamente per OPTIONS preflight e fallback errori upstream. Pattern documentato in config.
+- **Verifica DB prima del codice**: pattern `node + dotenv` su VPS confermò in 2 secondi che i dati erano integri lato server. Bug era 100% client-side. Risparmiati ore di refactor backend inutile. Da riusare per ogni bug "i dati spariscono" multi-device.
+
+#### Decisione strategica — ADR-009 (08-09/05/2026)
+
+I 6 fix sono sintomi della stessa debolezza: app nata mono-standard con ISO 14001/45001/3834/RDP/Custom appiccicati sopra. Discussione product owner-Lead su come rendere l'app **veramente scalabile** per:
+- 5 standard ISO già a DB (9001 41Q, 14001 53Q, 45001 53Q, 3834-2 22Q, RDP Mason 0Q)
+- Custom checklist (variabili)
+- Future: ISO 27001, 50001, 13485, ecc.
+- Nuovi tipi documento: SAL, RDP, riesame contratto §8.2, rapporti VT/MT/PT
+
+**Decisioni vincolanti** (vedi [ADR-009](adr/ADR-009-multi-standard-architettura-per-norma.md)):
+
+1. **Modello a 2 assi**: `document_type` × `selectedStandards[]`
+2. **Modello dati `byStandard[key]`**: tutto ciò che è per-norma vive sotto chiave dello standard, persistenza in `audit_extra_data.byStandard`
+3. **`STANDARDS_REGISTRY` centralizzato** (`app/src/data/standardsRegistry.js`) come Source of Truth, sostituisce `STANDARDS_CONFIG` locale
+4. **Flag `isIntegratedSystem`**: valido solo per `kind='iso_hls'` (9001/14001/45001), immutabile dopo prima risposta compilata, modificabile in draft puro
+5. **RDP** = specializzazione custom checklist (`has_outcome_buttons=false`, `requires_photos=true`), esposto come `document_type='rdp'` (scorciatoia di prodotto)
+6. **SAL** = modulo gestionale separato, riusa `document_registry` con overlay stato implementazione
+7. **Custom checklist** = "norma virtuale" `CUSTOM_<id>` pari grado a una ISO
+8. **Componenti UI modulari**: `<NormConclusionsBlock>`, `<MetricsByStandardChip>`, `<EvidenceGallery>`, `<DocumentRegistryGrid>`, `<NormExcerptInline>` come hook per AI futura
+9. **Audit pilota di `document_registry`**: audit chiuso sarà documento del registro con scadenza prossima sorveglianza
+10. **AI come licenza separata**: comportamento UI "B" (nascosta se off, riconsiderazione futura per upselling)
+
+**Test di scalabilità (criterio di accettazione)**: aggiungere un nuovo standard ISO (es. ISO 27001) deve richiedere SOLO 1 INSERT DB + 1 riga registro + (opz.) 1 template Word, **zero altre modifiche**.
+
+**Implementazione 5 fasi pianificate** (incrementali, ognuna committabile separatamente). **Avvio Fase 1 condizionato** a 24-48h di stabilità conclamata in produzione (zero segnalazioni Camellini).
+
+---
+
+### Sessione 08 maggio 2026 — Fix "Checklist Non Inizializzata" su passaggio device (Cloud Agent)
+
+**Branch**: `cursor/checklist-empty-fallback-fix-06dc`
+**Test**: 110/110 Vitest PASS · build Vite OK · service worker rigenerato (BUILD_DATE 2026-05-08).
+
+#### Caso utente
+Camellini avvia audit "IDRAULICA SIGHINOLFI" (audit_id 35191) su PC con due norme (ISO 9001 + ISO 14001). Compila 17 risposte, sincronizza, chiude. Apre la stessa app sul cellulare → comparsa la schermata "Checklist Non Inizializzata".
+
+#### Verifica DB produzione (script `/tmp/diag-sighinolfi.js` sul VPS)
+- `audit_standards`: ✅ righe per `ISO_9001_2015` (id 1) e `ISO_14001_2015` (id 2).
+- `audit_responses`: ✅ 17 risposte answered (last_update 2026-05-08 12:27).
+- `audit_extra_data`: contiene `generalData / auditObjective / auditOutcome` ma **non** la struttura `checklist` (per design: il server salva risposte in `audit_responses`, non template).
+- Audit "rotti" (no `audit_standards`, no `custom_checklist_id`): **0**.
+
+I dati lato server erano integri: nessun fix DB necessario.
+
+#### Causa radice
+`auditConverter.backendToFrontend` restituiva `checklist: { ISO_9001: {}, ISO_14001: {} }` — chiavi presenti ma senza clausole. Tra il primo render di `ChecklistModule` e l'esecuzione del `useEffect [currentAudit?.id]` di `AuditAccordionLayout` (che chiama `initializeChecklist` per ogni standard) c'è un **race window** di almeno un frame in cui il modulo ISO mostra il fallback "Checklist Non Inizializzata". Su mobile lento o cache PWA stantia, il fallback restava visibile abbastanza da spaventare l'utente.
+
+#### Fix applicati (belt and suspenders, 3 livelli)
+| Livello | File | Azione |
+|---|---|---|
+| 1. Pre-popolamento sincrono | `app/src/utils/auditConverter.js` | Nuovo helper `buildChecklistFromTemplate(normKey)` — popola la struttura clausole+domande dal template ISO **già nel converter**. Il primo render trova checklist pronta. Anche `audit_extra_data.checklist` esistente ma vuoto (`{}`) viene ricostruito invece di essere preservato silenziosamente. |
+| 2. Grace period UX | `app/src/components/ChecklistModule.jsx` | Nuovo state `showEmptyFallback`: se la checklist arriva vuota, mostra "⏳ Caricamento checklist…" per 1.5s prima di esporre il fallback "Non Inizializzata". Reset a ogni cambio audit/norma. |
+| 3. Fallback manuale rinforzato | `app/src/components/ChecklistModule.jsx` | Pulsante "✨ Inizializza Checklist" sempre disponibile dopo il grace period, con messaggio aggiornato che chiarisce: "Le risposte già salvate sul server verranno ripristinate automaticamente". |
+
+I due useEffect di auto-init (in `ChecklistModule` e in `AuditAccordionLayout`) restano come ulteriore rete di sicurezza per audit caricati da IndexedDB (cache locale del PC) o standard aggiunti durante la sessione.
+
+#### Test L1 aggiunti
+- `app/src/tests/auditConverter.checklistTemplate.test.js` (7 test): converter pre-popola template per 1/2 standard, preserva `audit_extra_data.checklist` legacy, ricostruisce su `{}` vuoto, fallback ISO 9001 per audit legacy senza standards né custom.
+- `app/src/tests/multiDeviceChecklistInit.test.js` (3 test): scenario reale Camellini SIGHINOLFI — payload server replicato 1:1, asserzione che `Object.keys(audit.checklist.ISO_9001).length > 0` al primo render. Test parametrizzato anche per `standards` come stringa CSV (lista) e come array di oggetti (`getAuditById`).
+
+#### Lezioni apprese (08/05/2026)
+- **Race window di rendering React**: `useState({})` o struttura vuota messa a disposizione di un componente che la renderizza subito è una **bomba a tempo**. Se è disponibile sincronamente (template hardcoded), popolare nel converter elimina la classe di bug per sempre. Non delegare l'inizializzazione a un `useEffect` post-mount per dati ottenibili sincronamente.
+- **Fallback "vuoto" rumoroso**: una schermata "Non Inizializzata" che compare anche solo per 200ms genera un sospetto di perdita dati. Tre livelli sono il minimo: (a) struttura pronta nel converter, (b) grace period con stato neutro `⏳ Caricamento`, (c) pulsante manuale come ultima risorsa.
+- **Verifica DB prima del codice**: script `node` con `NODE_ENV=production` + `dotenv` su `/var/www/sgq-backend/src/config/database.js` ha confermato in 2 secondi che il problema NON era nel DB. Risparmiati ore di refactor backend inutile. Pattern da riusare per ogni bug "i dati spariscono" multi-device.
+- **`audit_extra_data` non è source-of-truth della checklist**: il server salva in `audit_responses` (righe per question). Il converter deve essere autosufficiente nel popolare la struttura template — non aspettarsi mai `extraData.checklist` non vuoto da `getAudits`.
+
+#### Cosa NON è stato fatto (non necessario)
+- Nessun fix backend: il server restituisce esattamente quello che deve restituire. La query `getAudits` con `STRING_AGG(s.standard_code)` da `audit_standards` è coerente con il converter dopo questo fix.
+- Nessuna migrazione DB: 0 audit "rotti" in produzione.
+- Nessun deploy VPS: cambiamenti solo lato `app/` (frontend), Netlify si occupa del rilascio.
+
+---
+
+### Chiusura sessione 07 maggio 2026 — tarda sera (Cloud Agent)
+
+**Branch**: `cursor/custom-checklist-gap-fixes-3f28` (PR da creare → merge in main + deploy)
+
+#### Attività eseguite
+1. **Merge PR #36** (`cursor/audit-filter-no-autoswitch-e3df`) → `main`. Push su origin → Netlify auto-deploy.
+2. **GAP-B1 Template condiviso**: `customChecklist.service.listChecklists` ora restituisce `active_audit_count` (subquery su `audits` status non closed). `CustomChecklistsPage`: badge "N audit attivi" nella lista; banner arancione nell'editor quando `active_audit_count > 0`. VPS deployato (customChecklist.service.js).
+3. **GAP-B2 Metriche custom nel payload**: `StorageContext.updateCurrentAudit` ora importa `calculateCustomFindingsMetrics` e aggiunge `customMetrics.totalNC` a `non_conformities_count` nel payload `update_audit`. Il server riceve il conteggio reale ISO + custom.
+4. **GAP-B3 T3 event-based custom**: `syncService.enqueueCustomResponseEvent` aggiunto (event_type=`custom_response_set`, field_path=`custom_responses.{itemId}`). `CustomChecklistAuditView.handleStatusChange` lo chiama quando `VITE_SYNC_MODE=events`. Backend `auditEvents.controller`: proiezione immediata `MERGE` su `audit_custom_checklist_responses` per `custom_response_set`. VPS deployato.
+
+#### Lezioni apprese
+- **`calculateCustomFindingsMetrics` esiste già** in `metricsCalculator.js` — prima di duplicare logica di calcolo, cercare sempre in quel file.
+- **`auditEvents.controller` già accettava `custom_response_set`** nel whitelist `VALID_TYPES` ma mancava solo la proiezione immediata su `audit_custom_checklist_responses`. Il backend era "mezzo pronto" — controllare sempre il controller intero prima di aggiungere endpoint.
+- **Pattern SCP: due directory diverse** — quando si copia controller + service nello stesso SCP, verificare i path destinazione separatamente. Copiare tutto in `controllers/` per errore è un rischio.
+
+---
+
+### Chiusura sessione 07 maggio 2026 — sera (Cloud Agent)
+
+**Branch**: `cursor/audit-filter-no-autoswitch-e3df` → **PR #36**  
+**Commit**: 2 commit — 103/103 Vitest PASS, build Vite OK.
+
+#### Fix eseguiti
+
+| # | Fix | File | Area |
+|---|-----|------|------|
+| FILTER-1 | Auto-switch silenzioso rimosso da `handleCompanyChange` / `handleShowClosedAuditsChange`; `buildAuditsForSecondSelect` restituisce `{ list, currentOutsideFilter }`; audit fuori-filtro visibile in testa con etichetta `⚠ … — fuori filtro` | `AuditSelector.jsx` | UX/Bug |
+| CUSTOM-1 | `loadChecklist` propaga `customChecklist` nell'audit globale (`_systemCall=true`, `skipSync=true`) → sezione 11 somma correttamente NC/OSS/OM custom | `CustomChecklistAuditView.jsx` | Bug critico |
+| CUSTOM-2 | `fetchAndApplyServerResponses` idrata anche custom checklist (template + statuses + risposte) prima dell'early-return ISO → copre audit solo-custom e scenario multi-device | `StorageContext.jsx` | Bug critico |
+
+#### Lezioni apprese (07/05/2026 sera)
+
+- **I filtri non devono mai cambiare la selezione attiva**: principio UX fondamentale violato dall'auto-switch. Pattern corretto: filtro restringe la lista, l'oggetto selezionato resta finché l'utente non cambia esplicitamente.
+- **`_systemCall=true` è il pattern per hydration che bypassa lock e `draft→in_progress`**: usarlo su ogni updater che porta dati dal server (reconcile, hydrate, init). Il ref `isHydratingRef.current` protegge solo la coda sync, non la transizione di stato.
+- **L'early-return ISO in `fetchAndApplyServerResponses` blocca la hydration degli audit solo-custom**: inserire sempre la hydration custom PRIMA della guard `rows.length === 0`.
+- **`updateAuditMetrics` in `metricsCalculator.js` è dead code**: la logica effettiva per sezione 11 è in `AuditOutcomeSection.jsx` (useEffect con dep `currentAudit?.customChecklist`). Non aggiungere nuova logica a `updateAuditMetrics`.
+
+#### Gap custom checklist rimanenti (media/bassa priorità)
+
+| Gap | File | Priorità |
+|-----|------|----------|
+| Modifica template durante audit aggiorna il template condiviso (impatta altri audit della stessa org) | `CustomChecklistAuditView.jsx` | 🟡 Media |
+| `update_audit` invia al server solo metriche ISO (completamento custom invisibile al server) | `StorageContext.jsx` | 🟡 Media |
+| Sync event-based (T3): ISO usa T3, custom no | `ChecklistModule.jsx`, `CustomChecklistAuditView.jsx` | 🟡 Media |
+| Deep-link "vai alla domanda" risolve solo clausole ISO | `AuditAccordionLayout.jsx` | 🟢 Bassa |
+| Doppio naming `customChecklistId` vs `custom_checklist_id` | tutto il codebase | 🟢 Bassa |
+
+---
+
+### Ripresa sessione 07 maggio 2026 (Cloud Agent — pomeriggio)
+
+**Branch ISO 14001**: `cursor/iso14001-checklist-completa-3f67`
+
+#### Attività eseguite
+1. **Merge PR #33** → `main` con git merge --no-ff; push su origin → Netlify auto-deploy avviato.
+2. **Deploy backend VPS**: 4 controller (audit/attachment/customChecklist/response) + `audit.routes.js` copiati via SCP. Fix bug critico: `audit.routes.js` sul VPS aveva route `POST /audits/:auditId/promote-nc → promoteAuditNcToModule` (funzione mai esistita nel controller locale) che mandava in crash il server; rimossa deployando il file locale canonico.
+3. **Migration 049 — ISO 14001 checklist completa**: 53 domande che coprono tutti i sotto-requisiti per clausola (§4→§10), suddivise in 7 sezioni `14001_c4..c10`. Soft-delete delle 46 domande legislative precedenti; sezioni legacy `14001_s4/s5` disattivate. Pattern esecuzione VPS: `DB_SERVER=localhost DB_PORT=11043 ... NODE_ENV=production node /tmp/run-migration-049-vps.js`.
+4. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
+
+#### Nota deploy VPS: bug route promoteAuditNcToModule
+La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al file `audit.routes.js` sul VPS in una sessione precedente senza corrispondente commit git. Il controller non esportava `promoteAuditNcToModule`. Fix: deployato il `audit.routes.js` locale (canonico), che non ha quella route. La funzionalità S-A6-C ("Registra nel modulo NC") è implementata solo nel frontend (navigazione React Router) e non richiede un endpoint backend dedicato.
+
+---
+
+### Chiusura sessione 07 maggio 2026 (completa)
+
+**Branch**: `cursor/audit-module-gap-fixes-7b2a` → **PR #33**  
+**Commit**: 5 commit, 14 fix totali — 103/103 Vitest PASS, build Vite OK in tutti i commit.
+
+#### Tabella completa fix sessione 07/05/2026
+
+| # | Fix | File | Area |
+|---|-----|------|------|
+| FIX-1 | Conflitti Git irrisolti (build bloccata) | `AuditAccordionLayout.jsx`, `PendingIssuesCascade.jsx/.css` | Infra |
+| FIX-2 | Route NC errata: `/nc` → `/non-conformities` | `apiService.js` | Bug |
+| FIX-3 (S-A6-C) | Pulsante "Registra nel modulo NC" + flag `registeredToOrg` + gestione 403 | `NonConformitiesManager.jsx/.css` | Feature |
+| FIX-4 | `updateAuditMetrics` somma ISO+custom; `NV: null` esplicito | `metricsCalculator.js` | Bug |
+| FIX-5 | Ellissi NC preview solo se description > 80 char | `NonConformitiesManager.jsx` | UX |
+| FIX-6 | Emoji/caratteri corrotti `?`/`??` → ✅🔒❌⚠️ | `AuditClosePanel.jsx` | UX |
+| FIX-7 | Prop morta `onUpdate` rimossa; `console.log` produzione rimosso | `AuditAccordionLayout.jsx`, `ExportPanel.jsx` | Cleanup |
+| FIX-8 (G8 stub) | Link "Gestione Documentale" dopo export per audit completed/approved | `ExportPanel.jsx/.css` | Feature |
+| SYNC-5-A | `syncUploadAttachment`: fix `customItemId`, emette `sgq:attachmentSynced` | `syncService.js` | Bug/Feature |
+| SYNC-5-B | `delete_attachment` in coda; `removeAttachment` chiama DELETE API | `syncService.js`, `useAttachmentManager.js` | Feature |
+| SYNC-5-C | `StorageContext` listener `sgq:attachmentSynced` — patch allegato locale | `StorageContext.jsx` | Feature |
+| SYNC-5-D | Badge ⏳ animato su allegati `pendingSync: true` | `AttachmentSection.jsx/.css` | UX |
+| FIX-LOCK-1 | `updateCurrentAudit`: `isSystemCall` valutato prima del blocco lock foreign → hydration server-wins per utente B | `StorageContext.jsx` | Bug critico |
+| FIX-LOCK-2 | `isReadOnly` include `auditLock.mode==='foreign'`: controlli disabilitati per utente B | `AuditAccordionLayout.jsx` | UX |
+| FIX-LOCK-3 | Auto-retry lock ogni 30s in stato `foreign` → acquisizione automatica quando A rilascia | `StorageContext.jsx` | Feature |
+| FIX-LOCK-4 | Import morti `assertWriteAllowed`/`getLockTokenFromRequest` rimossi da 4 controller | `audit/attachment/customChecklist/response.controller.js` | Cleanup |
+| FIX-OFFLINE-1 | `save_responses` + `update_audit` accodati **anche offline** (rimossa guard `navigator.onLine`) | `StorageContext.jsx` | Bug critico |
+| FIX-OFFLINE-2 | Hint offline: "N modifiche in coda — invio automatico al reconnect"; ⏫ "Sincronizzazione..." al reconnect | `ConnectionStatus.jsx` | UX |
+
+#### Lezioni apprese (07/05/2026)
+
+- **Guard `navigator.onLine` su enqueue è un anti-pattern offline-first**: la coda IndexedDB è persistente e progettata per l'offline — la guardia eliminava silenziosamente dati che l'utente riteneva salvati. Regola: non aggiungere mai `if (navigator.onLine)` prima di un `syncService.enqueue`.
+- **`isSystemCall` deve precedere qualsiasi blocco di policy**: il check lock-foreign in `updateCurrentAudit` bloccava anche le chiamate di hydration marcate `_systemCall=true`, causando dati obsoleti per l'utente B in sola lettura. Pattern: determinare `isSystemCall` come prima istruzione del blocco, poi applicare le policy.
+- **Conflitti Git sopravvivono inosservati**: i marker `<<<<<<<` possono passare nei commit se non c'è CI che esegue `git grep` o una build obbligatoria. Regola da aggiungere in CI: `git grep -l "^<<<<<<<" -- "*.jsx" "*.js" "*.css"` → fail se trovato.
+- **Lock auto-retry**: il pattern `setInterval` su `mode === 'foreign'` è già usato per `pending_server` (ogni 5s) — replicarlo per `foreign` (ogni 30s) è stata la scelta ovvia e corretta.
+
+#### Stato gap modulo audit al 07/05/2026
+
+| Gap | Stato |
+|-----|-------|
+| G1 Post-chiusura (S-A1/S-A2) | ✅ |
+| G4 Chiusura custom (S-A3) | ✅ |
+| G2 Pending UX (S-A4) | ✅ |
+| G3 Pending creazione vs DB (S-A5) | ✅ |
+| G6 NC audit vs modulo (S-A6-C) | ✅ |
+| SYNC-5 Allegati offline | ✅ |
+| Accesso concorrente lock | ✅ migliorato (3 fix) |
+| Offline-first completo | ✅ |
+| G5 Sezione 11 drill-down | Backlog P2 |
+| G7 Token monouso allegati Word | Backlog P2 |
+| G8 Registra in Documentale | Stub ✅ (link nav) / piena integrazione Backlog P2 |
+| G9 Upload offline | ✅ SYNC-5 |
+
+---
+
+### Chiusura sessione 07 maggio 2026 — Prima parte (ore 08:36–09:05)
+
+**Analisi gap modulo audit + 5 fix (branch `cursor/audit-module-gap-fixes-7b2a`):**
 
 | Fix | File | Dettaglio |
 |-----|------|-----------|
-| Numerazione capitoli ISO 14001 | `wordExportHelpers.js` | `buildISO14001Ooxml`: usa `parseInt(extractSectionNum(sectionKey))` invece del contatore sequenziale. `14001_c10` → titolo "10 — TITOLO" anche con sezioni sparse. |
-| Obiettivo audit dinamico | `wordExport.js` | `objectiveDescription` ora auto-rileva ISO 14001 / 45001 / 9001 dalle chiavi del checklist dell'audit. |
-| Test L1 ISO 14001 | `wordExport.placeholders.test.js` | +3 scenari: (1) marker CHECKLIST/RILIEVI sopravvivono al rendering, (2) OOXML multi-clausola c4-c10 con Titolo1/Titolo2/norm_excerpt e colori esito, (3) tabella rilievi con label standard e flag X. |
-| Fix encoding commenti | `dateHelpers.js`, `migration 048` | Caratteri accentati Mojibake corretti (solo commenti, nessun impatto runtime). |
+| FIX-1 — Conflitto Git irrisolto | `AuditAccordionLayout.jsx`, `PendingIssuesCascade.jsx`, `PendingIssuesCascade.css` | 4 blocchi `<<<<<<<` lasciati da merge `e5fc864` (S-A4) — bloccavano la build Vite. Risolti scegliendo la versione con il commento più completo. |
+| FIX-2 — Route NC errata | `apiService.js` | `createNonConformity` usava `/nc` (rotta inesistente); corretto in `/non-conformities`. |
+| FIX-3 — S-A6 Opzione C | `NonConformitiesManager.jsx`, `.css` | Pulsante "Registra nel modulo NC" su ogni NC locale: chiama `POST /non-conformities` con mapping categoria→severity. Flag `registeredToOrg` persistito nell'audit locale. Gestione 403/MODULE_NOT_LICENSED. |
+| FIX-4 — metriche ISO+custom | `metricsCalculator.js` | `updateAuditMetrics` ora somma ISO + custom (se `has_outcome_buttons`), coerente con `AuditOutcomeSection`. |
+| FIX-5 — ellissi NC preview | `NonConformitiesManager.jsx` | `nc-description-preview` aggiungeva `...` sempre; ora solo se description > 80 caratteri. |
+| Bonus — NV in STATUS_TO_FINDING | `metricsCalculator.js` | Aggiunto `NV: null` esplicitamente per chiarezza (era già gestito come `undefined → null` ma non documentato). |
 
-**Risultato test L1**: 10/10 passati. **Build produzione**: OK (Vite 5.4.21, 262 moduli, zero errori).
+**Risultati test post-fix**: 103/103 Vitest ✅ · build Vite ✅
 
-**Smoke L3 da eseguire (committente)**: dopo merge PR, aprire un audit ISO 14001 reale → ExportPanel → "Scarica Word" → verificare che il documento contenga sezioni c4-c10, `norm_excerpt` sotto ogni domanda, tabella rilievi con colori corretti.
+**Stato gap modulo audit aggiornato al 07/05/2026:**
 
-**Pattern appreso — numerazione sezioni ISO**:  
-Quando si itera `normData` con chiavi sparse (es. `14001_c4`, `14001_c10`), non usare un contatore locale (`sectionNum++`) per il numero capitolo nel titolo OOXML: estrarre sempre il numero reale con `parseInt(extractSectionNum(sectionKey))`. Lo stesso principio vale per futuri standard (ISO 45001 con sezioni c4-c10).
+| Gap | Stato |
+|-----|-------|
+| G1 Post-chiusura (S-A1/S-A2) | ✅ |
+| G4 Chiusura custom (S-A3) | ✅ |
+| G2 Pending UX (S-A4) | ✅ |
+| G3 Pending creazione vs DB (S-A5) | ✅ |
+| G6 NC audit vs modulo (S-A6) | ✅ Opzione C implementata |
+| G5/G7/G9 P2 | Backlog |
+
+**Lezione**: I conflitti Git da merge non risolto possono sopravvivere inosservati se i file risultanti sono sintatticamente validi in un branch ma la build lato Vite li rileva solo al primo `npm run build`. Pattern da aggiungere in CI: `git grep -l "^<<<<<<<" -- '*.jsx' '*.js' '*.css'` → fail se trovato.
 
 ---
 
@@ -189,6 +442,7 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 - Deploy autonomo cloud agent: `deploy-to-vps.sh` + `run-migration-agent.sh` (nota: DNS blocca DB da cloud, migrazioni via SSH sul VPS)
 - Segreti Cursor configurati: `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `DB_*`
 - **T3**: percorso event-based per `save_responses` — `generateResponseEventKey`, `enqueueResponseEvent`, `syncSendAuditEvent`, fork `VITE_SYNC_MODE` in StorageContext e ChecklistModule (9/9 test L1, build OK). Produzione: `VITE_SYNC_MODE=legacy` (default, comportamento invariato).
+- **429 (stress API)**: `syncService` applica **pausa globale** sulla coda (nessun incremento `retryAfter` sugli item), legge `retryAfterMs` da `ApiError.data` (header `Retry-After` o `RateLimit-Reset` in `apiService`), schedula `processQueue` al termine ed emette evento `sgq:syncRateLimited` per eventuale banner UI. Per carichi molto alti in produzione: valutare `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_MS` sul backend (env già supportate in `server.js`).
 
 **Prossimo**: smoke L3 umano T3 con `VITE_SYNC_MODE=events` su Netlify (da pianificare). Poi: smoke test allegati, ISO 14001 checklist, T4 (campi ricchi event-based).
 
@@ -399,7 +653,7 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | Admin: creare / modificare utenti | UI `UsersAdminPage` + API `POST /admin/users`, `PATCH /admin/users/:id`, `DELETE /admin/users/:id` (`admin.controller` / `admin.routes`). Solo **admin/superadmin senza** `auditor_org_id` può creare o promuovere **admin**; non si può disattivare sé stessi né l’**ultimo admin attivo** dell’org. Deploy VPS: script `backend/scripts/deploy-controllers-to-vps.ps1` include anche `admin.controller.js`, `admin.routes.js`, `auditorOrg.controller.js` + restart `sgq-backend`. |
 | `GET /auditor-orgs` 500 / menu Studio vuoto in Gestione utenti | Bug: in `listAuditorOrgs` si usava `isSuperadmin` **non definito** (ReferenceError) invece di `isOrgWideAdmin` già calcolato → 500; la UI mascherava con `catch(() => ({ data: [] }))` e il dropdown restava senza opzioni. Fix backend: condizione su `isOrgWideAdmin`; fix UI: non ingoiare l’errore silenziosamente, mostrare messaggio se il caricamento studi fallisce. |
 | Checklist custom visibili tra studi diversi | Fix scope per `auditor_org_id` in `custom_checklists` (migrazione `028_custom_checklists_auditor_org_scope.sql` + service/controller). Policy **B**: checklist legacy (`auditor_org_id NULL`) visibili a tutti gli auditor; nuove checklist create da auditor legate al proprio studio. |
-| **Licenze moduli (Sprint 8)** | Colonna `organizations.licensed_modules` (JSON array di chiavi modulo; **NULL** = tutti i moduli attivi, retrocompatibile). API: `GET/PATCH /admin/licenses` (solo admin/superadmin org). Backend: `moduleLicense.service.js`, `requireLicensedModule` su documenti/allegati doc, NC, rischi, qualifiche, reclami+fornitori, notifiche. Login e `GET /auth/me` includono `licensed_modules`. Frontend: `LicensedRoute.jsx`, pagina **Impostazioni → Licenze moduli** (`/settings/licenses`), sidebar filtra voci senza licenza. Deploy VPS: `run-migration-037.js` + copiare service/middleware/controller/routes interessati + `server.js` (mount API su `/complaints` e `/suppliers`) + restart. |
+| **Licenze moduli (Sprint 8)** | Colonna `organizations.licensed_modules` (JSON array di chiavi modulo; **NULL** = tutti i moduli attivi, retrocompatibile). API: `GET/PATCH /admin/licenses` (solo admin/superadmin org). Backend: `moduleLicense.service.js`, `requireLicensedModule` su documenti/allegati doc, NC, rischi, qualifiche, reclami+fornitori, notifiche. Login e `GET /auth/me` includono `licensed_modules`. Frontend: `LicensedRoute.jsx`, pagina **Impostazioni → Licenze moduli** (`/settings/licenses`), sidebar filtra voci senza licenza. Deploy VPS: `run-migration-037.js` + copiare service/middleware/controller/routes interessati + `server.js` (mount API su `/complaints` e `/suppliers`) + restart. **`requireLicensedModule` (2026-05-08)**: utenti con ruolo JWT **`superadmin`** o **`admin`** bypassano il controllo licenze sulle API (stesso spirito di `authorize()` per `superadmin`), così admin non riceve più `403 MODULE_NOT_LICENSED` durante collaudo o salvataggio impostazioni; gli **auditor** restano vincolati a `licensed_modules`. |
 | **Licenze: admin salva ma UI non cambia** | Dopo `PATCH /admin/licenses` la sessione locale deve aggiornare `user` con `GET /auth/me`: usare `refreshUser()` da `AuthContext` (chiamato da `LicensesSettingsPage` dopo salvataggio). **Altri utenti** della stessa org: niente push automatico; vedono i moduli aggiornati al **prossimo login** o al **refresh token** / nuova chiamata `/auth/me` — documentare messaggio in UI (vedi roadmap Sessione A). |
 | **Import PDF batch (Sprint 9)** | Tabelle `import_jobs`, `import_job_files`; API `GET/POST/PATCH/DELETE /import-jobs`, upload `POST .../files` (multipart `files`), `POST .../process` usa `pdf-parse` + `confidenceFromTextLength` (euristica). **`POST .../files/:fileId/ai-extract`**: estrazione JSON strutturata via OpenAI sul testo già estratto (richiede `OPENAI_API_KEY` sul server; rate limit dedicato). Colonne file: `ai_extraction_json`, `ai_extraction_error`, `ai_extraction_at`, `ai_model` (migrazione **039**). Licenza modulo **`ai_import`**. UI admin: **Impostazioni → Import PDF** (`/settings/import-jobs`). Deploy VPS: `run-migration-038.js` + **`run-migration-039.js`**, **`npm install`** nella cartella backend (dipendenza `pdf-parse`), copiare `importJobs.controller.js`, `importJobs.routes.js`, `importPdfText.js`, **`importAiExtraction.service.js`**, `server.js`, `moduleLicense.service.js` + restart. **Privacy**: il testo inviato all’API è lo stesso mostrato in schermata revisione; valutare accordo/DPA OpenAI per l’organizzazione. |
 | **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
@@ -1067,18 +1321,6 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 - [ ] Eliminare branch remoto `docs/case-study-01-chiusura` (già mergiato in `main`).
 
 ---
-
-## G. Impostazioni Studio — backend (09/05/2026)
-
-| Cosa | Dove / pattern |
-|------|---------------|
-| `audit_report_prefix` esposto in API | `getMyOrganization` + `patchMyOrganization` in `organization.controller.js` — campo già in DB da migration 040. `PATCH /organizations/me` ora accetta sia `vat_number` che `audit_report_prefix` con SET clause dinamico. |
-| Tabella `doc_type_config` (migration 051) | `database/migrations/051_doc_type_config.sql` — idempotente (IF NOT EXISTS). Colonne: `id, organization_id, doc_type, prefix, auto_number`. FK su `organizations`. |
-| `GET /doc-type-config` | Restituisce array `{ doc_type, prefix, auto_number }` per org corrente. |
-| `PUT /doc-type-config` | Body = array; DELETE + INSERT per organizzazione (upsert semplice). Solo admin. |
-| Route aggiunte | `organization.routes.js` — sotto `router.use(authenticate)` → `router.get/put('/doc-type-config', ...)`. |
-| Script migrazione VPS | `backend/scripts/run-migration-051-vps.js` — usa `require('/var/www/sgq-backend/src/config/database')` (pattern standard). |
-| Deploy eseguito | 09/05/2026 — controller + routes copiati via `pscp`, migrazione eseguita, backend riavviato PID nuovo, health OK, `GET /doc-type-config` risponde 401 (route attiva). |
 
 ## File spesso toccati (Word + export)
 
