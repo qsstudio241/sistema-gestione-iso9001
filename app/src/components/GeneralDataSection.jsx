@@ -185,6 +185,7 @@ function GeneralDataSection({
         <div className="form-field">
           <label className="field-label">Oggetto</label>
           <input
+            id="field-auditObject"
             type="text"
             className="field-input"
             value={formData.auditObject}
@@ -198,6 +199,7 @@ function GeneralDataSection({
         <div className="form-field">
           <label className="field-label">Campo Applicazione</label>
           <textarea
+            id="field-scope"
             className="field-textarea"
             rows={3}
             value={formData.scope}

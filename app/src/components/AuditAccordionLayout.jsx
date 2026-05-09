@@ -180,6 +180,26 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }));
   };
 
+  // Listener: sgq:openAndScrollToSection — emesso da AuditClosePanel per guided close
+  useEffect(() => {
+    const handler = (e) => {
+      const { sectionId, fieldId } = e.detail || {};
+      if (!sectionId) return;
+      setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
+      setTimeout(() => {
+        const target = fieldId
+          ? document.getElementById(fieldId)
+          : document.getElementById(`sgq-section-${sectionId}`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          try { target.focus(); } catch (_) {}
+        }
+      }, 180);
+    };
+    window.addEventListener("sgq:openAndScrollToSection", handler);
+    return () => window.removeEventListener("sgq:openAndScrollToSection", handler);
+  }, []);
+
   const handleGeneralDataUpdate = (updatedData) => {
     onUpdate("generalData", updatedData);
   };
@@ -390,7 +410,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       {/* Accordion Content */}
       <div className="accordion-container">
         {/* ==================== SEZIONE 1: DATI GENERALI ==================== */}
-        <div className="accordion-section">
+        <div id="sgq-section-general-data" className="accordion-section">
           <button
             className={`accordion-header ${
               openSections["general-data"] ? "open" : ""
@@ -601,7 +621,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         </div>
 
         {/* ==================== SEZIONE 2: CHECKLIST ==================== */}
-        <div className="accordion-section">
+        <div id="sgq-section-checklist" className="accordion-section">
           <button
             className={`accordion-header ${
               openSections["checklist"] ? "open" : ""
@@ -730,7 +750,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         </div>
 
         {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
-        <div className="accordion-section">
+        <div id="sgq-section-conclusions" className="accordion-section">
           <button
             className={`accordion-header ${
               openSections["conclusions"] ? "open" : ""
