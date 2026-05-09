@@ -40,7 +40,8 @@ const STATUS = {
   NOT_ANSWERED: "NOT_ANSWERED", // Non risposto (default)
 };
 
-function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
+// forceExpandTrigger: quando > 0 apre tutte le clausole (usato da guided close)
+function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpandTrigger = 0 }) {
   const {
     currentAudit,
     updateCurrentAudit,
@@ -202,6 +203,13 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
 
   // Chiave normalizzata per accesso ai dati (ISO_9001_2015 → ISO_9001, ecc.)
   const checklistKey = normalizeChecklistKey(selectedNorm);
+
+  // Apre tutte le clausole quando il parent richiede navigazione guidata
+  useEffect(() => {
+    if (forceExpandTrigger === 0) return;
+    const clauseIds = Object.keys(currentAudit?.checklist?.[checklistKey] || {});
+    if (clauseIds.length > 0) setExpandedClauses(new Set(clauseIds));
+  }, [forceExpandTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-select prima norma disponibile se quella selezionata (normalizzata) non ha dati
   if (

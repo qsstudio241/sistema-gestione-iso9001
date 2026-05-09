@@ -145,6 +145,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   }, [loadCompanies]);
 
   // Stato per gestire quali sezioni sono aperte
+  const [checklistExpandTrigger, setChecklistExpandTrigger] = useState(0);
+
   const [openSections, setOpenSections] = useState({
     "general-data": false,
     checklist: false,
@@ -189,6 +191,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
     if (subSectionId) {
       setOpenSubSections((prev) => ({ ...prev, [subSectionId]: true }));
+    }
+    // Se la destinazione è dentro la checklist, espande tutte le clausole del modulo target
+    if (sectionId === "checklist" && fieldId?.startsWith("question-")) {
+      setChecklistExpandTrigger((prev) => prev + 1);
     }
 
     // Attende il re-render (apertura accordion), poi scorre e focalizza
@@ -690,7 +696,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                     </button>
                     {openSubSections[subsId] && (
                       <div className="subsection-content">
-                        <ChecklistModule defaultNorm={key} readOnly={isReadOnly} />
+                        <ChecklistModule defaultNorm={key} readOnly={isReadOnly} forceExpandTrigger={checklistExpandTrigger} />
                       </div>
                     )}
                   </div>

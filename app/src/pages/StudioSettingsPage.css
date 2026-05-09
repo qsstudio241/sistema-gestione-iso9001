@@ -191,8 +191,8 @@
 }
 .studio-input-disabled {
   background: #f3f4f6 !important;
-  color: #9ca3af !important;
-  cursor: not-allowed;
+  color: #374151 !important;
+  cursor: default;
 }
 .studio-hint {
   font-size: 12px;
