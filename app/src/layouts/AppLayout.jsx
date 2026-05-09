@@ -64,9 +64,7 @@ function buildNavItems(user, alerts = {}) {
     ...(canManage ? [{
       group: "Gestione",
       items: filterByLicense([
-        ...(isAdmin ? [
-          { to: "/settings/studio", icon: "🏢", label: "Il mio Studio" },
-        ] : []),
+        { to: "/settings/studio", icon: "🏢", label: "Il mio Studio" },
         { to: "/companies",   icon: "🏢", label: "Aziende" },
         ...(isAdmin ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
