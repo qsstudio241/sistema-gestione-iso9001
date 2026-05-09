@@ -49,6 +49,32 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
 
+  // ─── Mappa standard → subsId accordion (speculare a STANDARDS_CONFIG in AuditAccordionLayout) ──
+  const STANDARD_TO_SUBSID = {
+    ISO_9001: "iso-9001", ISO_9001_2015: "iso-9001",
+    ISO_14001: "iso-14001", ISO_14001_2015: "iso-14001",
+    ISO_45001: "iso-45001", ISO_45001_2018: "iso-45001",
+    ISO_3834_2: "iso-3834", ISO_3834: "iso-3834",
+    RDP_MSN: "rdp-msn",
+  };
+
+  // Trova la prima domanda non risposta: ritorna { subsId, fieldId }
+  function getFirstUnansweredTarget(checklist) {
+    for (const [normKey, normData] of Object.entries(checklist || {})) {
+      if (!normData || typeof normData !== "object") continue;
+      for (const clause of Object.values(normData)) {
+        for (const q of (clause?.questions || [])) {
+          if (!q.status || q.status === "NOT_ANSWERED") {
+            const subsId = STANDARD_TO_SUBSID[normKey] ?? null;
+            const fieldId = q.questionId ? `question-${q.questionId}` : null;
+            return { subsId, fieldId };
+          }
+        }
+      }
+    }
+    return { subsId: null, fieldId: null };
+  }
+
   // ─── Descrittori campi obbligatori (fonte unica, riusabile via useGuidedCompletion) ──
   const gd = currentAudit?.metadata?.generalData    || {};
   const ao = currentAudit?.metadata?.auditObjective || {};
@@ -70,7 +96,12 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     { id: "auditDescription",   text: "Obiettivo dell'audit",     sectionId: "general-data", subSectionId: "objective",         fieldId: "field-auditDescription", isMissing: !ao.description?.trim() },
     { id: "conclusions",        text: "Conclusioni (Sezione 12)", sectionId: "conclusions",  subSectionId: null,                fieldId: "conclusions",            isMissing: !oc.conclusions?.trim() },
     { id: "checklistPct",       text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      sectionId: "checklist", subSectionId: null, fieldId: null,
+      sectionId: "checklist",
+      ...(() => {
+        if (!(hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)) return { subSectionId: null, fieldId: null };
+        const { subsId, fieldId } = getFirstUnansweredTarget(currentAudit?.checklist);
+        return { subSectionId: subsId, fieldId };
+      })(),
       isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD },
     { id: "customChecklistPct", text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
       sectionId: "checklist", subSectionId: null, fieldId: null,
