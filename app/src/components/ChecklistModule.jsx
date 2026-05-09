@@ -356,13 +356,12 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false }) {
 
         question[field] = sanitizedValue;
 
-        // Valida domanda dopo modifica (solo warning, non blocca save)
-        const validation = validateQuestion(question);
-        if (!validation.isValid) {
-          console.warn(
-            `⚠️ Domanda ${questionId} validazione:`,
-            validation.errors
-          );
+        // Valida solo al cambio di status (non ad ogni tasto nelle note)
+        if (field === "status") {
+          const validation = validateQuestion(question);
+          if (!validation.isValid) {
+            console.warn(`⚠️ Domanda ${questionId}:`, validation.errors);
+          }
         }
 
         // Aggiorna timestamp
