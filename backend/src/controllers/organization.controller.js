@@ -14,6 +14,10 @@ if (!fsSync.existsSync(LOGO_DIR_ORG)) fsSync.mkdirSync(LOGO_DIR_ORG, { recursive
 function isOrgAdmin(role) {
     return role === 'admin' || role === 'superadmin';
 }
+// Personalizzazioni leggere (audit_report_prefix) accessibili a tutti i membri org
+function isOrgMember(role) {
+    return role === 'admin' || role === 'superadmin' || role === 'auditor';
+}
 
 /**
  * GET /api/v1/organizations/me
@@ -58,8 +62,8 @@ async function getMyOrganization(req, res) {
  */
 async function patchMyOrganization(req, res) {
     try {
-        if (!isOrgAdmin(req.user.role)) {
-            return res.status(403).json({ success: false, error: 'Solo amministratori', code: 'FORBIDDEN' });
+        if (!isOrgMember(req.user.role)) {
+            return res.status(403).json({ success: false, error: 'Accesso non autorizzato', code: 'FORBIDDEN' });
         }
         const orgId = req.user.organization_id;
         const { vat_number, audit_report_prefix } = req.body || {};
