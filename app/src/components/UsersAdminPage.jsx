@@ -375,8 +375,8 @@ export default function UsersAdminPage({ onBack }) {
               }
             >
               <option value="auditor">Auditor</option>
+              {elevatedAdmin && <option value="admin">Admin Studio</option>}
               <option value="viewer">Viewer (sola lettura)</option>
-              {elevatedAdmin && <option value="admin">Admin organizzazione</option>}
             </select>
           </div>
           <div className="form-row">
@@ -506,12 +506,12 @@ export default function UsersAdminPage({ onBack }) {
                       ) : (
                         <>
                           <option value="auditor">Auditor</option>
-                          <option value="viewer">Viewer</option>
                           {(elevatedAdmin ||
                             u.role === "admin" ||
                             u.role === "superadmin") && (
-                            <option value="admin">Admin</option>
+                            <option value="admin">Admin Studio</option>
                           )}
+                          <option value="viewer">Viewer</option>
                         </>
                       )}
                     </select>

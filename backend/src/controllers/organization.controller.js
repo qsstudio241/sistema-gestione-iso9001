@@ -74,13 +74,17 @@ async function patchMyOrganization(req, res) {
         const setClauses = [];
         const params = { organization_id: orgId };
 
-        if (vat_number !== undefined) {
+        if (vat_number !== undefined && isOrgAdmin(req.user.role)) {
             setClauses.push('vat_number = @vat_number');
             params.vat_number = vat_number == null ? null : String(vat_number).trim().slice(0, 32) || null;
         }
         if (audit_report_prefix !== undefined) {
             setClauses.push('audit_report_prefix = @audit_report_prefix');
             params.audit_report_prefix = audit_report_prefix == null ? null : String(audit_report_prefix).trim().slice(0, 16) || null;
+        }
+
+        if (setClauses.length === 0) {
+            return res.status(400).json({ success: false, error: 'Nessun campo aggiornabile', code: 'NO_FIELDS' });
         }
 
         await query(

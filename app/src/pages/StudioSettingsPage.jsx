@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "../contexts/RouterContext";
+import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import "./StudioSettingsPage.css";
 
@@ -21,6 +22,9 @@ const DOC_TYPES = [
 // --- Tab Anagrafica ---
 
 function TabAnagrafica() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
   const [org, setOrg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,6 +36,7 @@ function TabAnagrafica() {
 
   const [form, setForm] = useState({
     audit_report_prefix: "",
+    vat_number: "",
   });
 
   const fileInputRef = useRef(null);
@@ -41,11 +46,11 @@ function TabAnagrafica() {
     setError(null);
     try {
       const res = await apiService.getMyOrganization();
-      // Il backend risponde { success: true, data: { ... } }
       const orgData = res?.data ?? res;
       setOrg(orgData);
       setForm({
         audit_report_prefix: orgData?.audit_report_prefix || "",
+        vat_number: orgData?.vat_number || "",
       });
     } catch (err) {
       setError("Errore caricamento dati studio: " + err.message);
@@ -68,9 +73,13 @@ function TabAnagrafica() {
     setError(null);
     setSaved(false);
     try {
-      await apiService.patchMyOrganization({
+      const payload = {
         audit_report_prefix: form.audit_report_prefix.trim() || null,
-      });
+      };
+      if (isAdmin) {
+        payload.vat_number = form.vat_number.trim() || null;
+      }
+      await apiService.patchMyOrganization(payload);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       await loadOrg();
@@ -219,12 +228,22 @@ function TabAnagrafica() {
 
         <div className="studio-field">
           <label>Partita IVA</label>
-          <input
-            type="text"
-            value={org?.vat_number || ""}
-            readOnly
-            className="studio-input-disabled"
-          />
+          {isAdmin ? (
+            <input
+              type="text"
+              value={form.vat_number}
+              onChange={handleChange("vat_number")}
+              placeholder="es. IT12345678901"
+              maxLength={32}
+            />
+          ) : (
+            <input
+              type="text"
+              value={org?.vat_number || ""}
+              readOnly
+              className="studio-input-disabled"
+            />
+          )}
         </div>
       </div>
 
