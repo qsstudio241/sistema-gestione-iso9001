@@ -97,6 +97,29 @@
   50%       { opacity: 0.55; }
 }
 
+/* Pulsante "Chiudi sezione" in fondo ad ogni accordion aperto */
+.accordion-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  color: #9ca3af;
+  font-size: 0.82em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  border-radius: 0 0 8px 8px;
+}
+.accordion-collapse-btn:hover {
+  color: #4b5563;
+  background: #f9fafb;
+}
+
 /* Highlight temporaneo per navigazione guidata (useGuidedCompletion) */
 @keyframes sgq-guided-pulse {
   0%   { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.5); outline: 2px solid transparent; }

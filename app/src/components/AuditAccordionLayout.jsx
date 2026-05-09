@@ -450,6 +450,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 {openSubSections["general-data-form"] && (
                   <div className="subsection-content">
                     {/* Blocco Tipologia audit: modifica dopo creazione */}
+
                     <div className="tipologia-audit-block">
                       <span className="tipologia-label">Tipologia audit</span>
                       <div className="tipologia-audit-options">
@@ -548,6 +549,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       onStandardsUpdate={handleStandardsUpdate}
                       readOnly={isReadOnly}
                     />
+                    <button className="accordion-collapse-btn" onClick={() => toggleSubSection("general-data-form")}>▲ Chiudi 1.1</button>
                   </div>
                 )}
               </div>
@@ -574,6 +576,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       onUpdate={handleAuditObjectiveUpdate}
                       readOnly={isReadOnly}
                     />
+                    <button className="accordion-collapse-btn" onClick={() => toggleSubSection("objective")}>▲ Chiudi 1.2</button>
                   </div>
                 )}
               </div>
@@ -622,6 +625,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   </div>
                 )}
               </div>
+              <button className="accordion-collapse-btn" onClick={() => toggleSection("general-data")}>▲ Chiudi sezione 1</button>
             </div>
           )}
         </div>
@@ -724,6 +728,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           {openSections["nc-register"] && (
             <div className="accordion-content">
               <NonConformitiesManager readOnly={isReadOnly} />
+              <button className="accordion-collapse-btn" onClick={() => toggleSection("nc-register")}>▲ Chiudi sezione</button>
             </div>
           )}
         </div>
@@ -751,6 +756,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={false}
                 readOnly={isReadOnly}
               />
+              <button className="accordion-collapse-btn" onClick={() => toggleSection("outcome")}>▲ Chiudi sezione 11</button>
             </div>
           )}
         </div>
@@ -778,6 +784,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={true}
                 readOnly={isReadOnly}
               />
+              <button className="accordion-collapse-btn" onClick={() => toggleSection("conclusions")}>▲ Chiudi sezione 12</button>
             </div>
           )}
         </div>
@@ -826,6 +833,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           {openSections["export"] && (
             <div className="accordion-content">
               <ExportPanel />
+              <button className="accordion-collapse-btn" onClick={() => toggleSection("export")}>▲ Chiudi sezione</button>
             </div>
           )}
         </div>
