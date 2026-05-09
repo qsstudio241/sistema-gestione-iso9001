@@ -97,6 +97,17 @@
   50%       { opacity: 0.55; }
 }
 
+/* Highlight temporaneo per navigazione guidata (useGuidedCompletion) */
+@keyframes sgq-guided-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.5); outline: 2px solid transparent; }
+  30%  { box-shadow: 0 0 0 6px rgba(229, 62, 62, 0.25); outline: 2px solid #e53e3e; }
+  100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); outline: 2px solid transparent; }
+}
+.sgq-guided-highlight {
+  animation: sgq-guided-pulse 1.8s ease forwards;
+  border-radius: 4px;
+}
+
 .audit-header-main {
   display: flex;
   justify-content: space-between;

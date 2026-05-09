@@ -180,21 +180,32 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }));
   };
 
-  // Listener: sgq:openAndScrollToSection — emesso da AuditClosePanel per guided close
+  // Listener: sgq:openAndScrollToSection — emesso da useGuidedCompletion / AuditClosePanel
   useEffect(() => {
     const handler = (e) => {
       const { sectionId, fieldId } = e.detail || {};
       if (!sectionId) return;
+
+      // Apre la sezione accordion target
       setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
+
+      // Attende il re-render React (apertura accordion), poi scrolla e focalizza
       setTimeout(() => {
         const target = fieldId
           ? document.getElementById(fieldId)
           : document.getElementById(`sgq-section-${sectionId}`);
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "center" });
-          try { target.focus(); } catch (_) {}
-        }
-      }, 180);
+        if (!target) return;
+
+        // Scrolla la finestra (non il container) per garantire visibilità
+        const rect = target.getBoundingClientRect();
+        const absoluteTop = rect.top + window.scrollY - 100;
+        window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
+
+        // Focus sul campo (per textarea/input) + highlight temporaneo
+        try { target.focus({ preventScroll: true }); } catch (_) {}
+        target.classList.add("sgq-guided-highlight");
+        setTimeout(() => target.classList.remove("sgq-guided-highlight"), 1800);
+      }, 320);
     };
     window.addEventListener("sgq:openAndScrollToSection", handler);
     return () => window.removeEventListener("sgq:openAndScrollToSection", handler);
