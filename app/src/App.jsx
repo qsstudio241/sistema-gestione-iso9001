@@ -33,6 +33,7 @@ const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
+const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
@@ -130,6 +131,16 @@ function AppContent() {
           element={
             <BackWrapper>
               <CompaniesPage />
+            </BackWrapper>
+          }
+        />
+
+        {/* Impostazioni studio */}
+        <Route
+          path="/settings/studio"
+          element={
+            <BackWrapper>
+              <StudioSettingsPage />
             </BackWrapper>
           }
         />

@@ -24,7 +24,7 @@ async function getMyOrganization(req, res) {
         const result = await query(
             `
             SELECT organization_id, organization_code, organization_name,
-                   vat_number, logo_url, is_active
+                   vat_number, logo_url, is_active, audit_report_prefix
             FROM dbo.organizations
             WHERE organization_id = @organization_id
             `,
@@ -43,6 +43,7 @@ async function getMyOrganization(req, res) {
                 vat_number: row.vat_number || '',
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
+                audit_report_prefix: row.audit_report_prefix || null,
             },
         });
     } catch (error) {
@@ -53,7 +54,7 @@ async function getMyOrganization(req, res) {
 
 /**
  * PATCH /api/v1/organizations/me
- * Body: { vat_number?: string }
+ * Body: { vat_number?: string, audit_report_prefix?: string|null }
  */
 async function patchMyOrganization(req, res) {
     try {
@@ -61,18 +62,31 @@ async function patchMyOrganization(req, res) {
             return res.status(403).json({ success: false, error: 'Solo amministratori', code: 'FORBIDDEN' });
         }
         const orgId = req.user.organization_id;
-        const { vat_number } = req.body || {};
-        if (vat_number === undefined) {
+        const { vat_number, audit_report_prefix } = req.body || {};
+        if (vat_number === undefined && audit_report_prefix === undefined) {
             return res.status(400).json({ success: false, error: 'Nessun campo da aggiornare', code: 'NO_FIELDS' });
         }
-        const vat = vat_number == null ? null : String(vat_number).trim().slice(0, 32);
+
+        const setClauses = [];
+        const params = { organization_id: orgId };
+
+        if (vat_number !== undefined) {
+            setClauses.push('vat_number = @vat_number');
+            params.vat_number = vat_number == null ? null : String(vat_number).trim().slice(0, 32) || null;
+        }
+        if (audit_report_prefix !== undefined) {
+            setClauses.push('audit_report_prefix = @audit_report_prefix');
+            params.audit_report_prefix = audit_report_prefix == null ? null : String(audit_report_prefix).trim().slice(0, 16) || null;
+        }
+
         await query(
-            `UPDATE dbo.organizations SET vat_number = @vat_number WHERE organization_id = @organization_id`,
-            { organization_id: orgId, vat_number: vat || null }
+            `UPDATE dbo.organizations SET ${setClauses.join(', ')} WHERE organization_id = @organization_id`,
+            params
         );
         const refreshed = await query(
             `
-            SELECT organization_id, organization_code, organization_name, vat_number, logo_url, is_active
+            SELECT organization_id, organization_code, organization_name,
+                   vat_number, logo_url, is_active, audit_report_prefix
             FROM dbo.organizations WHERE organization_id = @organization_id
             `,
             { organization_id: orgId }
@@ -87,6 +101,7 @@ async function patchMyOrganization(req, res) {
                 vat_number: row.vat_number || '',
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
+                audit_report_prefix: row.audit_report_prefix || null,
             },
         });
     } catch (error) {
@@ -204,10 +219,95 @@ async function deleteLogo(req, res) {
     }
 }
 
+/**
+ * GET /api/v1/doc-type-config
+ * Restituisce la configurazione prefissi per tipo documento dell'organizzazione.
+ */
+async function getDocTypeConfig(req, res) {
+    try {
+        const orgId = req.user.organization_id;
+        const result = await query(
+            `SELECT doc_type, prefix, auto_number
+             FROM dbo.doc_type_config
+             WHERE organization_id = @organization_id
+             ORDER BY doc_type`,
+            { organization_id: orgId }
+        );
+        res.json({
+            success: true,
+            data: result.recordset.map(r => ({
+                doc_type: r.doc_type,
+                prefix: r.prefix || null,
+                auto_number: !!r.auto_number,
+            })),
+        });
+    } catch (error) {
+        logger.error('[ORG] getDocTypeConfig error:', error);
+        res.status(500).json({ success: false, error: 'Errore recupero configurazione tipi documento', code: 'SERVER_ERROR' });
+    }
+}
+
+/**
+ * PUT /api/v1/doc-type-config
+ * Body: Array di { doc_type, prefix, auto_number }
+ * Upsert completo per l'organizzazione (DELETE + INSERT per semplicità e idempotenza).
+ */
+async function saveDocTypeConfig(req, res) {
+    try {
+        if (!isOrgAdmin(req.user.role)) {
+            return res.status(403).json({ success: false, error: 'Solo amministratori', code: 'FORBIDDEN' });
+        }
+        const orgId = req.user.organization_id;
+        const items = req.body;
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ success: false, error: 'Body deve essere un array', code: 'INVALID_BODY' });
+        }
+
+        // Elimina le righe esistenti e reinserisce (upsert atomico)
+        await query(
+            `DELETE FROM dbo.doc_type_config WHERE organization_id = @organization_id`,
+            { organization_id: orgId }
+        );
+
+        for (const item of items) {
+            if (!item.doc_type) continue;
+            const docType = String(item.doc_type).trim().slice(0, 50);
+            const prefix = item.prefix == null ? null : String(item.prefix).trim().slice(0, 20) || null;
+            const autoNumber = item.auto_number == null ? true : !!item.auto_number;
+            await query(
+                `INSERT INTO dbo.doc_type_config (organization_id, doc_type, prefix, auto_number)
+                 VALUES (@organization_id, @doc_type, @prefix, @auto_number)`,
+                { organization_id: orgId, doc_type: docType, prefix, auto_number: autoNumber ? 1 : 0 }
+            );
+        }
+
+        const refreshed = await query(
+            `SELECT doc_type, prefix, auto_number
+             FROM dbo.doc_type_config
+             WHERE organization_id = @organization_id
+             ORDER BY doc_type`,
+            { organization_id: orgId }
+        );
+        res.json({
+            success: true,
+            data: refreshed.recordset.map(r => ({
+                doc_type: r.doc_type,
+                prefix: r.prefix || null,
+                auto_number: !!r.auto_number,
+            })),
+        });
+    } catch (error) {
+        logger.error('[ORG] saveDocTypeConfig error:', error);
+        res.status(500).json({ success: false, error: 'Errore salvataggio configurazione tipi documento', code: 'SERVER_ERROR' });
+    }
+}
+
 module.exports = {
     getMyOrganization,
     patchMyOrganization,
     uploadLogo,
     getLogo,
     deleteLogo,
+    getDocTypeConfig,
+    saveDocTypeConfig,
 };

@@ -37,4 +37,7 @@ router.get('/organizations/me/logo', organizationController.getLogo);
 router.post('/organizations/me/logo', uploadLogo.single('logo'), organizationController.uploadLogo);
 router.delete('/organizations/me/logo', organizationController.deleteLogo);
 
+router.get('/doc-type-config', organizationController.getDocTypeConfig);
+router.put('/doc-type-config', organizationController.saveDocTypeConfig);
+
 module.exports = router;
