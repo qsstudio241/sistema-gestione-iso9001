@@ -181,26 +181,29 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   };
 
   // Callback diretta per guided close — passata come prop a AuditClosePanel
-  const navigateToSection = useCallback((sectionId, fieldId) => {
-    // 1. Apre la sezione accordion target
+  // sectionId: chiave di openSections (es. "general-data")
+  // subSectionId: chiave di openSubSections (es. "general-data-form", "objective") o null
+  // fieldId: id DOM del campo target (es. "field-auditObject") o null per scorrere alla sezione
+  const navigateToSection = useCallback((sectionId, subSectionId, fieldId) => {
+    // Apre sezione principale e sotto-sezione in un unico batch React 18
     setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
+    if (subSectionId) {
+      setOpenSubSections((prev) => ({ ...prev, [subSectionId]: true }));
+    }
 
-    // 2. Attende il re-render React, poi scrolla e focalizza
+    // Attende il re-render (apertura accordion), poi scorre e focalizza
     setTimeout(() => {
       const target = fieldId
         ? document.getElementById(fieldId)
         : document.getElementById(`sgq-section-${sectionId}`);
       if (!target) return;
 
-      // Scrolla la finestra (non un container interno)
-      const rect = target.getBoundingClientRect();
-      const absoluteTop = rect.top + window.scrollY - 100;
-      window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
-
+      // scrollIntoView funziona su qualsiasi container scrollabile (window o div)
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
       try { target.focus({ preventScroll: true }); } catch (_) {}
       target.classList.add("sgq-guided-highlight");
       setTimeout(() => target.classList.remove("sgq-guided-highlight"), 1800);
-    }, 320);
+    }, 400);
   }, []);
 
   const handleGeneralDataUpdate = (updatedData) => {

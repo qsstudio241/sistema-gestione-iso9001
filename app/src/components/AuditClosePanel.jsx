@@ -64,12 +64,17 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
 
   const fieldDescriptors = [
-    { id: "auditObject",      text: "Oggetto dell'audit",         sectionId: "general-data",  fieldId: "field-auditObject",      isMissing: !gd.auditObject?.trim() },
-    { id: "scope",            text: "Campo di applicazione",      sectionId: "general-data",  fieldId: "field-scope",            isMissing: !gd.scope?.trim() },
-    { id: "auditDescription", text: "Obiettivo dell'audit",       sectionId: "general-data",  fieldId: "field-auditDescription", isMissing: !ao.description?.trim() },
-    { id: "conclusions",      text: "Conclusioni (Sezione 12)",   sectionId: "conclusions",   fieldId: "conclusions",            isMissing: !oc.conclusions?.trim() },
-    { id: "checklistPct",     text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,          sectionId: "checklist", fieldId: null, isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD },
-    { id: "customChecklistPct", text: hasCustomChecklist && customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`, sectionId: "checklist", fieldId: null, isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD) },
+    // sectionId = chiave openSections, subSectionId = chiave openSubSections (null se non annidato)
+    { id: "auditObject",        text: "Oggetto dell'audit",       sectionId: "general-data", subSectionId: "general-data-form", fieldId: "field-auditObject",      isMissing: !gd.auditObject?.trim() },
+    { id: "scope",              text: "Campo di applicazione",    sectionId: "general-data", subSectionId: "general-data-form", fieldId: "field-scope",            isMissing: !gd.scope?.trim() },
+    { id: "auditDescription",   text: "Obiettivo dell'audit",     sectionId: "general-data", subSectionId: "objective",         fieldId: "field-auditDescription", isMissing: !ao.description?.trim() },
+    { id: "conclusions",        text: "Conclusioni (Sezione 12)", sectionId: "conclusions",  subSectionId: null,                fieldId: "conclusions",            isMissing: !oc.conclusions?.trim() },
+    { id: "checklistPct",       text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+      sectionId: "checklist", subSectionId: null, fieldId: null,
+      isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD },
+    { id: "customChecklistPct", text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+      sectionId: "checklist", subSectionId: null, fieldId: null,
+      isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD) },
   ];
 
   const { missingFields, currentIndex, navigateToFirst, navigateToNext } =
