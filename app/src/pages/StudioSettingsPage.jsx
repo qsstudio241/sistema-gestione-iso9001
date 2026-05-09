@@ -1,5 +1,5 @@
 /**
- * StudioSettingsPage ó Impostazioni Studio (anagrafica, documenti, notifiche)
+ * StudioSettingsPage ù Impostazioni Studio (anagrafica, documenti, notifiche)
  * Route: /settings/studio
  */
 
@@ -31,7 +31,6 @@ function TabAnagrafica() {
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
 
   const [form, setForm] = useState({
-    vat_number: "",
     audit_report_prefix: "",
   });
 
@@ -44,7 +43,6 @@ function TabAnagrafica() {
       const res = await apiService.getMyOrganization();
       setOrg(res);
       setForm({
-        vat_number: res.vat_number || "",
         audit_report_prefix: res.audit_report_prefix || "",
       });
     } catch (err) {
@@ -69,7 +67,6 @@ function TabAnagrafica() {
     setSaved(false);
     try {
       await apiService.patchMyOrganization({
-        vat_number: form.vat_number.trim() || null,
         audit_report_prefix: form.audit_report_prefix.trim() || null,
       });
       setSaved(true);
@@ -183,7 +180,7 @@ function TabAnagrafica() {
                 ??? Elimina logo
               </button>
             )}
-            <span className="studio-logo-hint">PNG, JPG o SVG ó max 2 MB</span>
+            <span className="studio-logo-hint">PNG, JPG o SVG ù max 2 MB</span>
           </div>
         </div>
         {logoError && (
@@ -191,20 +188,21 @@ function TabAnagrafica() {
         )}
       </div>
 
-      {/* Anagrafica */}
+      {/* Dati tenant ó sola lettura, gestiti dal superadmin */}
       <div className="studio-card">
-        <h3 className="studio-card-title">Dati Anagrafica</h3>
+        <h3 className="studio-card-title">Dati Anagrafici</h3>
+        <p className="studio-hint" style={{ marginBottom: 12 }}>
+          Questi dati sono gestiti dall'amministratore di sistema e non sono modificabili da qui.
+        </p>
 
         <div className="studio-field">
           <label>Nome Studio</label>
           <input
             type="text"
             value={org?.organization_name || ""}
-            disabled
+            readOnly
             className="studio-input-disabled"
-            title="Il nome studio Ë gestito dall'amministratore di sistema"
           />
-          <span className="studio-hint">Campo gestito dall'amministratore di sistema</span>
         </div>
 
         <div className="studio-field">
@@ -212,46 +210,49 @@ function TabAnagrafica() {
           <input
             type="text"
             value={org?.organization_code || ""}
-            disabled
+            readOnly
             className="studio-input-disabled"
           />
         </div>
 
-        <div className="studio-row">
-          <div className="studio-field">
-            <label>Partita IVA</label>
-            <input
-              type="text"
-              value={form.vat_number}
-              onChange={handleChange("vat_number")}
-              placeholder="es. IT01234567890"
-              maxLength={20}
-            />
-          </div>
-          <div className="studio-field">
-            <label>Prefisso numerazione audit</label>
-            <input
-              type="text"
-              value={form.audit_report_prefix}
-              onChange={handleChange("audit_report_prefix")}
-              placeholder="es. RAP"
-              maxLength={8}
-            />
-            <span className="studio-hint">
-              Max 8 caratteri. Es. "RAP" ? RAP-2026-001
-            </span>
-          </div>
+        <div className="studio-field">
+          <label>Partita IVA</label>
+          <input
+            type="text"
+            value={org?.vat_number || "ó"}
+            readOnly
+            className="studio-input-disabled"
+          />
+        </div>
+      </div>
+
+      {/* Personalizzazioni tenant ó editabili */}
+      <div className="studio-card">
+        <h3 className="studio-card-title">Personalizzazioni</h3>
+
+        <div className="studio-field">
+          <label>Prefisso numerazione audit</label>
+          <input
+            type="text"
+            value={form.audit_report_prefix}
+            onChange={handleChange("audit_report_prefix")}
+            placeholder="es. RAP"
+            maxLength={8}
+          />
+          <span className="studio-hint">
+            Max 8 caratteri. Es. "RAP" &rarr; RAP-2026-001
+          </span>
         </div>
       </div>
 
       <div className="studio-actions">
-        {saved && <span className="studio-saved">? Dati salvati</span>}
+        {saved && <span className="studio-saved">&#10003; Personalizzazioni salvate</span>}
         <button
           className="btn-studio-primary"
           onClick={handleSave}
           disabled={saving}
         >
-          {saving ? "Salvataggio..." : "Salva anagrafica"}
+          {saving ? "Salvataggio..." : "Salva personalizzazioni"}
         </button>
       </div>
     </div>
