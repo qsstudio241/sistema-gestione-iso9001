@@ -33,7 +33,7 @@ function calcCompletion(checklist) {
   return total === 0 ? 0 : Math.round((answered / total) * 100);
 }
 
-function AuditClosePanel({ currentAudit, onCompleted }) {
+function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const { updateCurrentAudit } = useStorage();
 
   // Stato chiusura
@@ -73,7 +73,7 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
   ];
 
   const { missingFields, currentIndex, navigateToFirst, navigateToNext } =
-    useGuidedCompletion(fieldDescriptors);
+    useGuidedCompletion(fieldDescriptors, onNavigateTo);
 
   // ─── Warnings e metriche (solo informativi, non bloccanti) ─────────────────
   const warnings = useMemo(() => {

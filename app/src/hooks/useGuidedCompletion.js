@@ -1,66 +1,45 @@
 /**
- * useGuidedCompletion — hook riusabile per navigazione guidata ai campi obbligatori mancanti.
+ * useGuidedCompletion — navigazione guidata ai campi obbligatori mancanti.
  *
- * Riceve un array di descrittori di campo:
- *   { id, text, sectionId, fieldId, isMissing: boolean }
+ * Riceve:
+ *   fieldDescriptors: Array<{ id, text, sectionId, fieldId, isMissing }>
+ *   onNavigateTo: (sectionId, fieldId) => void  — callback dal layout padre
  *
  * Espone:
- *   - missingFields: array dei soli campi non compilati
- *   - currentIndex: indice del campo correntemente evidenziato (navigazione sequenziale)
- *   - navigateTo(sectionId, fieldId): salta a una sezione+campo specifici
- *   - navigateToNext(): avanza al prossimo campo mancante
- *   - navigateToCurrent(): ri-naviga al campo corrente
+ *   missingFields     — solo i campi con isMissing === true
+ *   currentIndex      — indice del campo corrente nella navigazione sequenziale
+ *   navigateToFirst() — vai al primo campo mancante
+ *   navigateToNext()  — vai al successivo (ciclico)
  *
- * Il hook usa l'evento DOM personalizzato `sgq:openAndScrollToSection`
- * intercettato da AuditAccordionLayout (e da qualsiasi altro layout che lo supporti).
- *
- * Pattern di utilizzo in qualsiasi pannello di chiusura/verifica:
- *   const { missingFields, navigateToNext, currentIndex } = useGuidedCompletion(fieldDescriptors);
+ * Riusabile in qualsiasi pannello di verifica completezza:
+ *   const { missingFields, navigateToFirst, navigateToNext, currentIndex } =
+ *     useGuidedCompletion(fieldDescriptors, onNavigateTo);
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
-function fireNavigationEvent(sectionId, fieldId) {
-  window.dispatchEvent(
-    new CustomEvent("sgq:openAndScrollToSection", {
-      detail: { sectionId, fieldId },
-    })
-  );
-}
-
-export function useGuidedCompletion(fieldDescriptors) {
-  const missingFields = fieldDescriptors.filter((f) => f.isMissing);
+export function useGuidedCompletion(fieldDescriptors, onNavigateTo) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const navigateTo = useCallback((sectionId, fieldId) => {
-    fireNavigationEvent(sectionId, fieldId);
-  }, []);
-
-  const navigateToCurrent = useCallback(() => {
-    const field = missingFields[currentIndex];
-    if (field) fireNavigationEvent(field.sectionId, field.fieldId);
-  }, [missingFields, currentIndex]);
-
-  const navigateToNext = useCallback(() => {
-    if (missingFields.length === 0) return;
-    const nextIndex = (currentIndex + 1) % missingFields.length;
-    setCurrentIndex(nextIndex);
-    const field = missingFields[nextIndex];
-    if (field) fireNavigationEvent(field.sectionId, field.fieldId);
-  }, [missingFields, currentIndex]);
+  const missingFields = useMemo(
+    () => fieldDescriptors.filter((f) => f.isMissing),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(fieldDescriptors.map((f) => ({ id: f.id, isMissing: f.isMissing })))]
+  );
 
   const navigateToFirst = useCallback(() => {
-    if (missingFields.length === 0) return;
+    if (!missingFields.length || !onNavigateTo) return;
     setCurrentIndex(0);
-    const field = missingFields[0];
-    if (field) fireNavigationEvent(field.sectionId, field.fieldId);
-  }, [missingFields]);
+    const f = missingFields[0];
+    onNavigateTo(f.sectionId, f.fieldId);
+  }, [missingFields, onNavigateTo]);
 
-  return {
-    missingFields,
-    currentIndex,
-    navigateTo,
-    navigateToCurrent,
-    navigateToNext,
-    navigateToFirst,
-  };
+  const navigateToNext = useCallback(() => {
+    if (!missingFields.length || !onNavigateTo) return;
+    const next = (currentIndex + 1) % missingFields.length;
+    setCurrentIndex(next);
+    const f = missingFields[next];
+    onNavigateTo(f.sectionId, f.fieldId);
+  }, [missingFields, currentIndex, onNavigateTo]);
+
+  return { missingFields, currentIndex, navigateToFirst, navigateToNext };
 }
