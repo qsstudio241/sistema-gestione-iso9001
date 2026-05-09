@@ -11,6 +11,7 @@ import React, { useState, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
+import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
 /** Soglia minima completamento checklist per poter chiudere (%) */
@@ -48,88 +49,47 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
 
-  // ─── Navigazione guidata ai campi mancanti ──────────────────────────────────
-  function navigateTo(sectionId, fieldId) {
-    window.dispatchEvent(
-      new CustomEvent("sgq:openAndScrollToSection", { detail: { sectionId, fieldId } })
-    );
-  }
+  // ─── Descrittori campi obbligatori (fonte unica, riusabile via useGuidedCompletion) ──
+  const gd = currentAudit?.metadata?.generalData    || {};
+  const ao = currentAudit?.metadata?.auditObjective || {};
+  const oc = currentAudit?.metadata?.auditOutcome   || {};
 
-  // ─── Validazioni pre-chiusura ───────────────────────────────────────────────
-  const validation = useMemo(() => {
-    // Ogni blocker ha: text, sectionId, fieldId (per navigazione guidata)
-    const blockers = [];
-    const warnings = [];
+  const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
+  const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
 
-    const gd = currentAudit?.metadata?.generalData || {};
-    const ao = currentAudit?.metadata?.auditObjective || {};
-    const oc = currentAudit?.metadata?.auditOutcome || {};
+  const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
+  const customStatuses    = currentAudit?.customStatuses || {};
+  const customTotal       = Object.keys(customStatuses).length;
+  const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
+  const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
 
-    if (!gd.auditObject?.trim())
-      blockers.push({ text: "Oggetto dell'audit mancante", sectionId: "general-data", fieldId: "field-auditObject" });
-    if (!gd.scope?.trim())
-      blockers.push({ text: "Campo di applicazione mancante", sectionId: "general-data", fieldId: "field-scope" });
-    if (!ao.description?.trim())
-      blockers.push({ text: "Obiettivo dell'audit mancante", sectionId: "general-data", fieldId: "field-auditDescription" });
-    if (!oc.conclusions?.trim())
-      blockers.push({ text: "Conclusioni mancanti (Sezione 12)", sectionId: "conclusions", fieldId: "conclusions" });
+  const fieldDescriptors = [
+    { id: "auditObject",      text: "Oggetto dell'audit",         sectionId: "general-data",  fieldId: "field-auditObject",      isMissing: !gd.auditObject?.trim() },
+    { id: "scope",            text: "Campo di applicazione",      sectionId: "general-data",  fieldId: "field-scope",            isMissing: !gd.scope?.trim() },
+    { id: "auditDescription", text: "Obiettivo dell'audit",       sectionId: "general-data",  fieldId: "field-auditDescription", isMissing: !ao.description?.trim() },
+    { id: "conclusions",      text: "Conclusioni (Sezione 12)",   sectionId: "conclusions",   fieldId: "conclusions",            isMissing: !oc.conclusions?.trim() },
+    { id: "checklistPct",     text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,          sectionId: "checklist", fieldId: null, isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD },
+    { id: "customChecklistPct", text: hasCustomChecklist && customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`, sectionId: "checklist", fieldId: null, isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD) },
+  ];
 
-    const hasIsoChecklist = Object.keys(currentAudit?.checklist || {}).length > 0;
-    if (hasIsoChecklist) {
-      const pct = calcCompletion(currentAudit.checklist);
-      if (pct < COMPLETION_THRESHOLD) {
-        blockers.push({
-          text: `Checklist completata al ${pct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-          sectionId: "checklist",
-          fieldId: null,
-        });
-      }
-    }
+  const { missingFields, currentIndex, navigateToFirst, navigateToNext } =
+    useGuidedCompletion(fieldDescriptors);
 
-    const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
-    if (hasCustomChecklist && !hasIsoChecklist) {
-      const customStatuses = currentAudit?.customStatuses || {};
-      const customTotal = Object.keys(customStatuses).length;
-      const customAnswered = Object.values(customStatuses).filter((s) => s && s !== 'NOT_ANSWERED').length;
-      if (customTotal === 0) {
-        blockers.push({ text: "Nessuna risposta nella checklist personalizzata", sectionId: "checklist", fieldId: null });
-      } else {
-        const customPct = Math.round((customAnswered / customTotal) * 100);
-        if (customPct < COMPLETION_THRESHOLD) {
-          blockers.push({
-            text: `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-            sectionId: "checklist",
-            fieldId: null,
-          });
-        }
-      }
-    }
-
-    const isoMetrics = calculateFindingsMetrics(currentAudit?.checklist);
+  // ─── Warnings e metriche (solo informativi, non bloccanti) ─────────────────
+  const warnings = useMemo(() => {
+    const ws = [];
+    const isoMetrics  = calculateFindingsMetrics(currentAudit?.checklist);
     const customMetrics = currentAudit?.customChecklist?.has_outcome_buttons
       ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
-      : { totalNC: 0, totalOSS: 0, totalOM: 0 };
-    const metrics = {
-      totalNC:  isoMetrics.totalNC  + customMetrics.totalNC,
-      totalOSS: isoMetrics.totalOSS + customMetrics.totalOSS,
-      totalOM:  isoMetrics.totalOM  + customMetrics.totalOM,
-    };
-
-    if (metrics.totalNC > 0) {
-      warnings.push(
-        `${metrics.totalNC} Non Conformit\u00e0 rilevate \u2014 verificare note e azioni correttive`
-      );
-    }
-
-    return {
-      blockers,
-      warnings,
-      completion: hasIsoChecklist ? calcCompletion(currentAudit.checklist) : null,
-      metrics,
-    };
+      : { totalNC: 0 };
+    const totalNC = isoMetrics.totalNC + customMetrics.totalNC;
+    if (totalNC > 0)
+      ws.push(`${totalNC} Non Conformità rilevate — verificare note e azioni correttive`);
+    return ws;
   }, [currentAudit]);
 
-  const canClose = validation.blockers.length === 0;
+  const canClose = missingFields.length === 0;
+  const completionPct = hasIsoChecklistForGuide ? checklistPct : null;
 
   // ─── Chiusura ────────────────────────────────────────────────────────────────
   async function handleConfirmClose() {
@@ -281,20 +241,18 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
       </div>
 
       {/* Barra completamento checklist */}
-      {validation.completion !== null && (
+      {completionPct !== null && (
         <div className="close-completion">
           <div className="close-completion__label">
             <span>Completamento checklist</span>
-            <strong className={validation.completion >= COMPLETION_THRESHOLD ? "ok" : "fail"}>
-              {validation.completion}%
+            <strong className={completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>
+              {completionPct}%
             </strong>
           </div>
           <div className="close-completion__bar">
             <div
-              className={`close-completion__fill ${
-                validation.completion >= COMPLETION_THRESHOLD ? "ok" : "fail"
-              }`}
-              style={{ width: `${Math.min(validation.completion, 100)}%` }}
+              className={`close-completion__fill ${completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}`}
+              style={{ width: `${Math.min(completionPct, 100)}%` }}
             />
             <div
               className="close-completion__threshold"
@@ -305,34 +263,27 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
         </div>
       )}
 
-      {/* Blockers con navigazione guidata */}
-      {validation.blockers.length > 0 && (
+      {/* Campi obbligatori mancanti — lista semplice, navigazione via pulsante principale */}
+      {missingFields.length > 0 && (
         <div className="close-checklist close-checklist--blockers">
           <h4>❌ Campi obbligatori mancanti</h4>
           <ul>
-            {validation.blockers.map((b, i) => (
-              <li key={i} className="blocker-item">
+            {missingFields.map((f, i) => (
+              <li key={f.id} className={`blocker-item ${i === currentIndex ? "blocker-item--current" : ""}`}>
                 <span className="blocker-icon">❌</span>
-                <span className="blocker-text">{b.text}</span>
-                <button
-                  className="blocker-goto-btn"
-                  title="Vai al campo"
-                  onClick={() => navigateTo(b.sectionId, b.fieldId)}
-                >
-                  Vai →
-                </button>
+                <span className="blocker-text">{f.text}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Warnings */}
-      {validation.warnings.length > 0 && (
+      {/* Warnings non bloccanti */}
+      {warnings.length > 0 && (
         <div className="close-checklist close-checklist--warnings">
           <h4>⚠️ Attenzione (non bloccante)</h4>
           <ul>
-            {validation.warnings.map((w, i) => (
+            {warnings.map((w, i) => (
               <li key={i} className="warning-item">
                 <span className="warning-icon">!</span> {w}
               </li>
@@ -366,12 +317,11 @@ function AuditClosePanel({ currentAudit, onCompleted }) {
             <>
               <button
                 className="close-btn close-btn--navigate"
-                onClick={() => {
-                  const first = validation.blockers[0];
-                  if (first) navigateTo(first.sectionId, first.fieldId);
-                }}
+                onClick={currentIndex === 0 ? navigateToFirst : navigateToNext}
               >
-                📍 Vai al primo campo da completare ({validation.blockers.length})
+                📍 {currentIndex === 0
+                  ? `Vai al primo campo da completare (${missingFields.length})`
+                  : `Vai al campo ${currentIndex + 1} di ${missingFields.length} →`}
               </button>
               <button
                 className="close-btn close-btn--force"

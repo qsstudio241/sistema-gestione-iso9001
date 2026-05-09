@@ -128,20 +128,9 @@
 .blocker-icon  { color: #e53e3e; font-weight: 700; flex-shrink: 0; }
 .warning-icon  { color: #dd6b20; font-weight: 700; flex-shrink: 0; }
 
-.blocker-item  { display: flex; align-items: center; gap: 8px; }
+.blocker-item  { display: flex; align-items: center; gap: 8px; border-radius: 4px; padding: 2px 4px; }
+.blocker-item--current { background: #fed7d7; font-weight: 600; }
 .blocker-text  { flex: 1; }
-.blocker-goto-btn {
-  flex-shrink: 0;
-  background: none;
-  border: 1px solid #fc8181;
-  color: #c53030;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 0.82em;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.blocker-goto-btn:hover { background: #fed7d7; }
 
 .close-actions { display: flex; flex-direction: column; gap: 8px; }
 
