@@ -89,23 +89,49 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
 
+  // Target dinamico per checklist ISO (prima domanda non risposta)
+  const firstUnanswered = (hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
+    ? getFirstUnansweredTarget(currentAudit?.checklist) : { subsId: null, fieldId: null };
+
   const fieldDescriptors = [
-    // sectionId = chiave openSections, subSectionId = chiave openSubSections (null se non annidato)
-    { id: "auditObject",        text: "Oggetto dell'audit",       sectionId: "general-data", subSectionId: "general-data-form", fieldId: "field-auditObject",      isMissing: !gd.auditObject?.trim() },
-    { id: "scope",              text: "Campo di applicazione",    sectionId: "general-data", subSectionId: "general-data-form", fieldId: "field-scope",            isMissing: !gd.scope?.trim() },
-    { id: "auditDescription",   text: "Obiettivo dell'audit",     sectionId: "general-data", subSectionId: "objective",         fieldId: "field-auditDescription", isMissing: !ao.description?.trim() },
-    { id: "conclusions",        text: "Conclusioni (Sezione 12)", sectionId: "conclusions",  subSectionId: null,                fieldId: "conclusions",            isMissing: !oc.conclusions?.trim() },
-    { id: "checklistPct",       text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      sectionId: "checklist",
-      ...(() => {
-        if (!(hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)) return { subSectionId: null, fieldId: null };
-        const { subsId, fieldId } = getFirstUnansweredTarget(currentAudit?.checklist);
-        return { subSectionId: subsId, fieldId };
-      })(),
-      isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD },
-    { id: "customChecklistPct", text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      sectionId: "checklist", subSectionId: null, fieldId: null,
-      isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD) },
+    {
+      id: "auditObject", text: "Oggetto dell'audit", isMissing: !gd.auditObject?.trim(),
+      fieldId: "field-auditObject",
+      path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "general-data-form" }],
+    },
+    {
+      id: "scope", text: "Campo di applicazione", isMissing: !gd.scope?.trim(),
+      fieldId: "field-scope",
+      path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "general-data-form" }],
+    },
+    {
+      id: "auditDescription", text: "Obiettivo dell'audit", isMissing: !ao.description?.trim(),
+      fieldId: "field-auditDescription",
+      path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "objective" }],
+    },
+    {
+      id: "conclusions", text: "Conclusioni (Sezione 12)", isMissing: !oc.conclusions?.trim(),
+      fieldId: "conclusions",
+      path: [{ type: "section", key: "conclusions" }],
+    },
+    {
+      id: "checklistPct",
+      text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+      isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD,
+      fieldId: firstUnanswered.fieldId,
+      path: [
+        { type: "section",      key: "checklist" },
+        { type: "subsection",   key: firstUnanswered.subsId },
+        { type: "clauseExpand" },               // apre tutte le clausole del ChecklistModule
+      ].filter((s) => !(s.type === "subsection" && !s.key)),
+    },
+    {
+      id: "customChecklistPct",
+      text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+      isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD),
+      fieldId: null,
+      path: [{ type: "section", key: "checklist" }, { type: "subsection", key: "custom-checklist" }],
+    },
   ];
 
   const { missingFields, currentIndex, navigateToFirst, navigateToNext } =
