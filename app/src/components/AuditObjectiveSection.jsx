@@ -49,6 +49,7 @@ function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
         <div className="form-field">
           <label className="field-label">Descrizione Obiettivo</label>
           <textarea
+            id="field-auditDescription"
             className="field-textarea large"
             rows={6}
             value={formData.description}
