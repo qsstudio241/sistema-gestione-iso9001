@@ -17,29 +17,33 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
-### Sessione 11 maggio 2026 — Fix sync-queue storm: deduplicazione save_responses / update_audit
+### Sessione 10 maggio 2026 — ADR-009 Fase 1: registro standard + metriche per-norma
 
-**Branch**: `cursor/fix-sync-queue-dedup-storm-6ad0`  
-**Sintomo segnalato**: Console Eruda su mobile Camellini mostrava 6+ warning `[SYNC] Audit assente sul server (404 AUDIT_NOT_FOUND): rimozione item obsoleto save_responses (UUID)`.
+**Branch / PR**: `cursor/adr009-fase1-registro-standard-52c5` → PR #40 (draft).
+**Tipo intervento**: refactor frontend-only, zero backend, zero migrazioni DB.
 
-**Diagnosi** (verificata su DB e log VPS):
-- Audit QS-260511-01 (audit_id 35192, UUID `79697DAD-...`) correttamente sul server con 6 risposte salvate. **Nessuna perdita di dati**.
-- I warning 404 erano per item `save_responses` di UUID **fantasma** (sessioni precedenti del device mobile), rimossi correttamente dalla coda dal meccanismo self-healing esistente.
-- **Root cause reale**: il log VPS mostrava storm di ~40 chiamate `POST /api/v1/audits/sync` in 10 secondi e ~287 chiamate `POST .../responses/bulk` in 3 minuti per lo stesso audit. La coda IndexedDB accumulava un item per ogni modifica offline; al reconnect sparavano tutte in sequenza.
+**Cosa è stato consegnato (DoD ADR-009 Fase 1, tutti i punti rispettati):**
+- ✅ Source of Truth standard centralizzata in **`app/src/data/standardsRegistry.js`** (`STANDARDS_REGISTRY` + helper `getStandardByKey/Code`, `getSelectedStandardEntries`, `isAllHls`, mappe derivate `STANDARDS_LIST` / `STANDARD_INIT_MAP` / `CODE_TO_KEY` / `STANDARD_TO_SUBSID`).
+- ✅ `STANDARDS_CONFIG` locale rimosso da `AuditAccordionLayout.jsx` (~50 righe in meno) + duplicato `STANDARD_TO_SUBSID` rimosso da `AuditClosePanel.jsx` (era già marcato "speculare a STANDARDS_CONFIG" — ora SoT unica).
+- ✅ Nuovo componente riusabile **`MetricsByStandardChip.jsx`** (+ `.css`): mostra "9001: 2 NC · 14001: 1 NC · totale 3 NC" nell'header audit (`.audit-meta`). Mono-standard mostra solo "N NC". Opzioni `includeOss`/`includeOm` per Fase 2.
+- ✅ `metricsCalculator.js` esteso con **`calculateByStandardMetrics()`**; `updateAuditMetrics` popola `metrics.byStandard[normKey]` SENZA toccare i campi legacy (totalNC/observationsNC/totalQuestions/emergingFindings restano).
+- ✅ Test L1 nuovi: 31/31 PASS (`standardsRegistry.test.js` 19, `metricsByStandard.test.js` 6, `MetricsByStandardChip.test.jsx` 6). Suite completa post-refactor: 153 PASS / 3 fail (i 3 fail sono `wordExport.*` pre-esistenti su main, fuori scope Fase 1, zero regressioni introdotte).
+- ✅ Build Vite pulita (1.76s, 0 warning).
 
-**Fix applicato** (`app/src/services/syncService.js`):
-- Nuovo metodo `_deduplicateQueueItem(type, payloadKey, payloadValue)` — usa una singola transazione `readwrite` IDB: `getAll` + `delete` per tutti gli item non-stalled dello stesso tipo+auditId.
-- `enqueue()` chiama `_deduplicateQueueItem` **prima** di aggiungere il nuovo item per i tipi coalescenti: `save_responses` (key: `auditId`), `save_custom_checklist_responses` (key: `auditId`), `update_audit` (key: `audit_uuid`).
-- Tipi **non** deduplicati (ogni operazione è atomica): `create_audit`, `delete_audit`, `send_audit_event`, `upload_attachment`, `delete_attachment`.
-- Confronto UUID **case-insensitive** (`.toLowerCase()`) per coprire mismatch upper/lower tra server e device.
-- **10 test L1** in `syncService.dedup.test.js` — tutti PASS.
+**Test di scalabilità (criterio di accettazione ADR-009)**: aggiungere ISO 27001 al registry richiederà SOLO 1 INSERT DB + 1 riga in `STANDARDS_REGISTRY` + (opz.) template Word. Coperto da test `MetricsByStandardChip.test.jsx` "aggiunge ISO 45001 al registry → il chip lo mostra senza modifiche al componente" + `standardsRegistry.test.js` (mappe derivate sempre coerenti con SoT).
 
-**Lezione appresa (11/05/2026)**:
-- **Pattern "accumula tutto, manda tutto"** è il default della sync queue: ogni edit utente = 1 item. Su sessioni offline lunghe (ore) = centinaia di item identici. La coalescenza (replace invece di append) per i tipi idempotenti è la soluzione minima e sicura.
-- **Log VPS sono essenziali**: il logger Winston va su `journalctl` (non su `app.log` se girato come systemd). Usare `sudo journalctl -u sgq-backend -o cat | sed 's/\x1b\[[0-9;]*m//g'` per i log leggibili.
-- **404 AUDIT_NOT_FOUND in console mobile**: warning attesi e innocui quando il device ha code item di audit non più presenti sul server. Non confondere con errori reali — verificare sempre se `payload.auditId` corrisponde a un UUID esistente sul server prima di intervenire.
-- **`kQuotaBytes quota exceeded` = IDB piena**: causato dalla combinazione di (a) 287+ `save_responses` in coda (risolto con dedup) + (b) `saveAudit` che rigettava invece di fare recovery. Pattern fix: `_recoverFromQuota()` (svuota allegati poi audit vecchi) + retry, infine graceful resolve se ancora piena. Stesso pattern in `enqueue()` per `store.add()`.
-- **`parseInt('79697DAD-...') = 79697` (non NaN!)**: `parseInt` legge solo i digit iniziali e si ferma. Vecchi UUID iniziavano con lettere hex → parseInt = NaN → funzionavano. UUID `79697DAD-...` inizia con "79697" → parseInt = 79697 → branch numerico → lookup audit_id=79697 → 404 → note non salvate. **Fix sempre**: usare `Number(auditId)` + `Number.isInteger()` nei controller che distinguono UUID/numericId.
+**Scelte tecniche autonome (decisione lead, no escalation utente):**
+- **Pulled in `AuditClosePanel.jsx`**: oltre al perimetro Fase 1 dichiarato, ho rimosso anche la duplicazione `STANDARD_TO_SUBSID` locale per evitare divergenze future con il registry (era già marcato come duplicato nel codice).
+- **`handleGoToQuestion` deep-link generico**: sostituito match hardcoded `9001/14001/45001/3834` con substring-match sui `codes` del registry — pattern scalabile per qualsiasi nuova norma aggiunta.
+- **Chip nel `.audit-meta` dell'header**: l'audit non ha una sidebar laterale dedicata; l'header sticky è la "sidebar" di fatto. Posizionato accanto al badge status (allineamento naturale con metadata audit).
+- **`metrics.byStandard` additivo**: nessun tocco ai campi legacy → gli audit pre-ADR-009 in produzione continuano a funzionare senza modifiche (retrocompatibilità totale).
+
+**Architettura abilitata per Fase 2 (sezione 11 + close panel per-norma + flag SGI integrato):**
+- Helper `isAllHls(selectedStandards)` già pronto nel registry per validare il flag `isIntegratedSystem`.
+- `metrics.byStandard[key]` già disponibile per i tab conclusioni per-norma.
+- `STANDARDS_REGISTRY[key].templateExport` già dichiarato per Fase 3 (export Word per-norma).
+
+**Pendenti**: nessuno per Fase 1. Prossimo step: stabilità conclamata 24-48h post-merge → Fase 2 (`AuditOutcomeSection` per-norma + flag SGI).
 
 ---
 
