@@ -45,6 +45,9 @@
 
 **Pendenti**: nessuno per Fase 1. Prossimo step: stabilità conclamata 24-48h post-merge → Fase 2 (`AuditOutcomeSection` per-norma + flag SGI).
 
+**Lezione imparata — Rules of Hooks (commit `ce0e15d`)**:
+Errore "Rendered more hooks than during the previous render" emerso al primo apri-audit dopo il merge in dev. Causa: `useMemo(calculateByStandardMetrics)` inserito DOPO `if (!currentAudit) return` → il numero di hook chiamati cambiava fra render quando `currentAudit` passava da null a oggetto. **Regola da rispettare sempre in `AuditAccordionLayout` (e in qualsiasi componente con guard precoce)**: TUTTI gli hook (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, custom) devono stare PRIMA di qualsiasi `if/return` condizionale. In questo file il guard è `if (!currentAudit) return <NoAudit/>` — dopo il commit `ce0e15d` ci sono 10 hook tutti raggruppati ai primi ~115 righe, prima del guard a riga ~303. Quando aggiungi un nuovo hook in futuro, mettilo lì.
+
 ---
 
 ### Sessione 09 maggio 2026 (sera) — Fix validazione, guided close, collapse button
