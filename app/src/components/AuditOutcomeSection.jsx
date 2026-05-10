@@ -3,16 +3,17 @@
  * Componente per la gestione dell'esito finale dell'audit
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
-import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
+import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
+import MetricsByStandardChip from "./MetricsByStandardChip";
 import "./AuditOutcomeSection.css";
 
 /**
  * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
  *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
  */
-function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false }) {
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards }) {
   const { currentAudit } = useStorage();
 
   // Stato locale per editing
@@ -76,10 +77,15 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     });
   };
 
-  // Calcola metriche da checklist (passate come prop o calcolate)
   const totalNC = metrics.totalNC;
   const totalOSS = metrics.totalOSS;
   const totalOM = metrics.totalOM;
+
+  const byStandard = useMemo(
+    () => calculateByStandardMetrics(currentAudit?.checklist),
+    [currentAudit?.checklist]
+  );
+  const isMultiStandard = selectedStandards && selectedStandards.length > 1;
 
   return (
     <div className={`audit-outcome-section${readOnly ? ' readonly-mode' : ''}`}>
@@ -157,6 +163,16 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
             </div>
           );
         })()}
+
+        {/* Dettaglio per norma — visibile solo per audit multi-standard */}
+        {isMultiStandard && (
+          <MetricsByStandardChip
+            selectedStandards={selectedStandards}
+            byStandard={byStandard}
+            includeOss
+            includeOm
+          />
+        )}
 
         {/* LEGENDA (spostata da ChecklistModule) */}
         <div className="findings-legend">

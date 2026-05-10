@@ -3,7 +3,7 @@
  * Struttura ad albero verticale conforme al template Word
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
@@ -11,7 +11,6 @@ import {
   STANDARDS_LIST,
   STANDARD_INIT_MAP,
 } from "../data/standardsRegistry";
-import { calculateByStandardMetrics } from "../utils/metricsCalculator";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -25,7 +24,6 @@ import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
 import AuditClosePanel from "./AuditClosePanel";
 import NonConformitiesManager from "./NonConformitiesManager";
-import MetricsByStandardChip from "./MetricsByStandardChip";
 
 /** Mappa status → etichetta italiana e classe CSS */
 const STATUS_LABELS = {
@@ -104,13 +102,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   // Metriche per-norma in tempo reale (ADR-009 Fase 1).
   // Il chip header le legge per mostrare "9001: 2 NC · 14001: 1 NC · totale 3".
   // Calcolato a livello top del componente (PRIMA del guard `if (!currentAudit)`)
-  // per rispettare le Rules of Hooks: il numero di hook chiamati DEVE restare
-  // costante fra render, anche quando currentAudit passa da null a oggetto.
-  const metricsByStandard = useMemo(
-    () => calculateByStandardMetrics(currentAudit?.checklist),
-    [currentAudit?.checklist],
-  );
-
   // Stato per gestire quali sezioni sono aperte
   const [checklistExpandTrigger, setChecklistExpandTrigger] = useState(0);
 
@@ -360,10 +351,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           </div>
           <div className="audit-meta">
             <AuditStatusBadge status={currentAudit.metadata.status} />
-            <MetricsByStandardChip
-              selectedStandards={selectedStandards}
-              byStandard={metricsByStandard}
-            />
             <span className="audit-date">
               {new Date(currentAudit.metadata.lastModified).toLocaleDateString(
                 "it-IT"
@@ -743,6 +730,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={false}
                 readOnly={isReadOnly}
+                selectedStandards={selectedStandards}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("outcome")}>▲ Chiudi sezione 11</button>
             </div>
