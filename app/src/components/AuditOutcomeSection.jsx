@@ -96,29 +96,15 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
       {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
       {showConclusions && (
       <div className="outcome-block">
-        <h3 className="outcome-block-title">
-          <span className="block-icon">📝</span>
-          Conclusioni dell'Audit
-        </h3>
-        <div className="form-group">
-          <label htmlFor="conclusions">
-            Sintesi generale dell'esito dell'audit
-          </label>
-          <textarea
-            id="conclusions"
-            className="outcome-textarea"
-            rows={6}
-            placeholder="Descrivere le conclusioni generali dell'audit, il livello di conformità del sistema di gestione, e il giudizio complessivo sull'efficacia dei processi..."
-            value={conclusions}
-            onChange={handleConclusionsChange}
-            disabled={readOnly}
-          />
-          <p className="field-hint">
-            Esempio: "Il sistema di gestione per la qualità risulta
-            complessivamente efficace e conforme ai requisiti della norma UNI EN
-            ISO 9001:2015..."
-          </p>
-        </div>
+        <textarea
+          id="conclusions"
+          className="outcome-textarea"
+          rows={6}
+          placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
+          value={conclusions}
+          onChange={handleConclusionsChange}
+          disabled={readOnly}
+        />
       </div>
       )}
 
