@@ -2,24 +2,32 @@
   position: relative;
 }
 
-.auto-textarea-wrapper .outcome-textarea {
+/* La textarea dentro il wrapper non deve avere resize manuale e
+   lascia spazio per il pulsante mic a destra */
+.auto-textarea-wrapper textarea {
   resize: none;
   overflow: hidden;
-  transition: height 0.1s ease;
-  padding-right: 2.8rem; /* spazio per il bottone mic */
+  padding-right: 2.8rem;
+  background: #ffffff;
 }
 
+/* Placeholder leggibile — contrasto WCAG AA su sfondo bianco */
+.auto-textarea-wrapper textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+/* ---- Pulsante microfono ---- */
 .voice-btn {
   position: absolute;
   top: 8px;
   right: 8px;
   width: 2rem;
   height: 2rem;
-  border: none;
+  border: 1px solid #e5e7eb;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: #f9fafb;
   color: #6b7280;
-  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -35,6 +43,7 @@
 
 .voice-btn--active {
   background: #fee2e2;
+  border-color: #fca5a5;
   color: #dc2626;
   animation: pulse-mic 1.2s ease-in-out infinite;
 }

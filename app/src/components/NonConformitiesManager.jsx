@@ -6,6 +6,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import AutoTextarea from "./AutoTextarea";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import {
@@ -543,11 +544,10 @@ function NCModal({ nc, audit, onClose, onSave }) {
 
           <div className="form-group">
             <label>Descrizione Non Conformità *</label>
-            <textarea
+            <AutoTextarea
               value={formData.description}
               onChange={(e) => handleChange("description", e.target.value)}
               placeholder="Descrivi la non conformità rilevata..."
-              rows={5}
               className={`form-control ${errors.description ? "error" : ""}`}
             />
             {errors.description && (

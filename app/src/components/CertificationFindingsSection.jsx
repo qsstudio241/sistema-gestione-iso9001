@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import AutoTextarea from "./AutoTextarea";
 import "./CertificationFindingsSection.css";
 
 const FINDING_TYPES = {
@@ -248,7 +249,7 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
 
               <div className="form-group full-width">
                 <label>Descrizione del Rilievo *</label>
-                <textarea rows={3} placeholder="Descrivi il rilievo emesso dall'ente certificatore..."
+                <AutoTextarea placeholder="Descrivi il rilievo emesso dall'ente certificatore..."
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
               </div>
@@ -274,7 +275,7 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
 
               <div className="form-group full-width">
                 <label>Azione Correttiva Intrapresa</label>
-                <textarea rows={2} placeholder="Descrivi le azioni correttive adottate dall'azienda..."
+                <AutoTextarea placeholder="Descrivi le azioni correttive adottate dall'azienda..."
                   value={form.corrective_action}
                   onChange={e => setForm(f => ({ ...f, corrective_action: e.target.value }))} />
               </div>

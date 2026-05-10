@@ -16,6 +16,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import apiService from "../services/apiService";
+import AutoTextarea from "./AutoTextarea";
 import "./PendingIssuesCascade.css";
 
 /** Config badge per status originale rilievo */
@@ -330,9 +331,8 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                   {curStatus !== "open" && (
                     <div className="resolution-note-block">
                       <label className="resolution-note-label">Note di risoluzione:</label>
-                      <textarea
+                      <AutoTextarea
                         className="resolution-note-textarea notes-textarea"
-                        rows={2}
                         placeholder="Descrivi come il rilievo è stato verificato..."
                         value={notes[issue.issue_id] || ""}
                         onChange={(e) => handleNoteChange(issue.issue_id, e.target.value)}

@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import AutoTextarea from "./AutoTextarea";
 import "./AuditObjectiveSection.css";
 
 function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
@@ -48,13 +49,12 @@ function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
         {/* Descrizione Obiettivo */}
         <div className="form-field">
           <label className="field-label">Descrizione Obiettivo</label>
-          <textarea
+          <AutoTextarea
             id="field-auditDescription"
             className="field-textarea large"
-            rows={6}
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
-            placeholder="Es: Verificare il grado di implementazione del Sistema di Gestione della Qualità secondo la norma UNI EN ISO 9001:2015 e il rispetto delle procedure interne.&#10;&#10;Verificare la completezza documentale e l'efficacia dei processi."
+            placeholder="Es: Verificare il grado di implementazione del Sistema di Gestione della Qualità e il rispetto delle procedure interne."
             disabled={readOnly}
           />
           <span className="field-hint">
@@ -113,12 +113,11 @@ function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
           <label className="field-label">
             Agenda Audit <span className="optional">(opzionale)</span>
           </label>
-          <textarea
+          <AutoTextarea
             className="field-textarea"
-            rows={4}
             value={formData.agenda || ""}
             onChange={(e) => handleChange("agenda", e.target.value)}
-            placeholder="Es:&#10;09:00 - Riunione di apertura&#10;09:30 - Verifica documentale&#10;11:00 - Audit processi operativi&#10;15:00 - Riunione di chiusura"
+            placeholder="Es: 09:00 Riunione apertura · 09:30 Verifica documentale · 15:00 Chiusura"
             disabled={readOnly}
           />
         </div>
