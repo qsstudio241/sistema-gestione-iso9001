@@ -58,6 +58,19 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     RDP_MSN: "rdp-msn",
   };
 
+  // Trova il primo item custom senza status: ritorna il customItemId o null
+  function getFirstUnansweredCustomItem(audit) {
+    const sections = audit?.customChecklist?.sections || [];
+    const statuses = audit?.customStatuses || {};
+    for (const sec of sections) {
+      for (const item of (sec.items || [])) {
+        const s = statuses[item.id];
+        if (!s || s === "NOT_ANSWERED") return item.id;
+      }
+    }
+    return null;
+  }
+
   // Trova la prima domanda non risposta: ritorna { subsId, fieldId }
   function getFirstUnansweredTarget(checklist) {
     for (const [normKey, normData] of Object.entries(checklist || {})) {
@@ -128,9 +141,12 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     {
       id: "customChecklistPct",
       text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      // Bloccante indipendentemente dalla presenza di standard ISO
       isMissing: hasCustomChecklist && (customTotal === 0 || customPct < COMPLETION_THRESHOLD),
-      fieldId: "sgq-subsection-custom-checklist",
+      fieldId: (() => {
+        if (!(hasCustomChecklist && (customTotal === 0 || customPct < COMPLETION_THRESHOLD))) return null;
+        const itemId = getFirstUnansweredCustomItem(currentAudit);
+        return itemId ? `custom-item-${itemId}` : "sgq-subsection-custom-checklist";
+      })(),
       path: [{ type: "section", key: "checklist" }, { type: "subsection", key: "custom-checklist" }],
     },
   ];

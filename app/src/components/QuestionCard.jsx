@@ -57,7 +57,11 @@ export function QuestionCard({
   return (
     <div
       className={cardClass}
-      id={question.questionId ? `question-${question.questionId}` : undefined}
+      id={
+        question.questionId   ? `question-${question.questionId}`
+        : customItemId        ? `custom-item-${customItemId}`
+        : undefined
+      }
     >
       <div className="question-header">
         {displayRef && <span className="question-reference">{displayRef}</span>}
