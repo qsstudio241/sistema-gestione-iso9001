@@ -132,6 +132,30 @@ export function calculateNormMetrics(normChecklist) {
 }
 
 /**
+ * Calcola metriche findings per ogni norma presente nella checklist.
+ *
+ * ADR-009 Fase 1: separa i conteggi totali (che restano in `metrics.totalNC` ecc.)
+ * dalla scomposizione per-norma necessaria per i certificatori
+ * (per il certificatore di 9001 contano solo le NC 9001).
+ *
+ * @param {Object} checklist - es. { ISO_9001: {...}, ISO_14001: {...} }
+ * @returns {Object} Mappa { [normKey]: { totalNC, totalOSS, totalOM,
+ *                                        totalQuestions, answeredQuestions,
+ *                                        completionPercentage } }
+ *                   Le norme assenti o vuote sono incluse con conteggi 0
+ *                   (per uniformità nei consumer di UI).
+ */
+export function calculateByStandardMetrics(checklist) {
+    const out = {};
+    if (!checklist || typeof checklist !== 'object') return out;
+
+    for (const [normKey, normData] of Object.entries(checklist)) {
+        out[normKey] = calculateNormMetrics(normData);
+    }
+    return out;
+}
+
+/**
  * Calcola metriche per singola clausola
  * @param {Object} clause - Clausola checklist (es. clause4_Context)
  * @returns {Object} Metriche clausola
@@ -213,6 +237,7 @@ export function calculateCustomFindingsMetrics(customStatuses) {
  */
 export function updateAuditMetrics(audit) {
     const isoMetrics = calculateFindingsMetrics(audit.checklist);
+    const byStandard = calculateByStandardMetrics(audit.checklist);
 
     const hasCustomOutcome = audit?.customChecklist?.has_outcome_buttons;
     const customMetrics = hasCustomOutcome
@@ -244,6 +269,7 @@ export function updateAuditMetrics(audit) {
             completionPercentage: calculateCompletionPercentage(audit.checklist),
             totalNC,
             observationsNC: totalOSS,
+            byStandard,
         },
     };
 }

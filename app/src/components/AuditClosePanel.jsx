@@ -11,6 +11,7 @@ import React, { useState, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
+import { STANDARD_TO_SUBSID } from "../data/standardsRegistry";
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
@@ -49,14 +50,9 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
 
-  // ─── Mappa standard → subsId accordion (speculare a STANDARDS_CONFIG in AuditAccordionLayout) ──
-  const STANDARD_TO_SUBSID = {
-    ISO_9001: "iso-9001", ISO_9001_2015: "iso-9001",
-    ISO_14001: "iso-14001", ISO_14001_2015: "iso-14001",
-    ISO_45001: "iso-45001", ISO_45001_2018: "iso-45001",
-    ISO_3834_2: "iso-3834", ISO_3834: "iso-3834",
-    RDP_MSN: "rdp-msn",
-  };
+  // Mappa standard → subsId accordion: importata da `data/standardsRegistry.js`
+  // (ADR-009 Fase 1). Aggiungere uno standard al registry aggiorna in
+  // automatico la guided close senza modifiche qui.
 
   // Trova il primo item custom senza status: ritorna il customItemId o null
   function getFirstUnansweredCustomItem(audit) {
