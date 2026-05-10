@@ -15,8 +15,8 @@ import { STANDARD_TO_SUBSID, getSelectedStandardEntries } from "../data/standard
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
-/** Soglia minima completamento checklist per poter chiudere (%) */
-const COMPLETION_THRESHOLD = 80;
+/** Tutti i punti norma devono essere valutati (anche NA/NV contano come risposta) */
+const COMPLETION_THRESHOLD = 100;
 
 function calcNormCompletion(normData) {
   if (!normData || typeof normData !== "object") return 0;
@@ -356,6 +356,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   // ─── Render: pannello pre-chiusura ─────────────────────────────────────────
   return (
     <div className="close-panel">
+      <p className="close-panel__subtitle">Elenco informazioni mancanti. Dopo la chiusura l'audit sarà in sola lettura.</p>
 
       {/* Barre completamento: una per norma (multi) o unica (mono) */}
       {hasIsoChecklistForGuide && (isMultiStandard ? normCompletions.filter(n => n.hasDomande) : [{ shortLabel: "Checklist", pct: checklistPct }]).map(({ shortLabel, pct }, i) => (
