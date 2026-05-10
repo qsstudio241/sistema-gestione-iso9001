@@ -142,22 +142,11 @@
   flex-shrink: 0;
 }
 
-.standard-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
 .standard-label {
   font-size: 15px;
   font-weight: 500;
   color: #1d1d1f;
-}
-
-.standard-description {
-  font-size: 13px;
-  color: #86868b;
+  flex: 1;
 }
 
 /* ============================================
@@ -234,42 +223,26 @@
   font-style: italic;
 }
 
-/* Border accents by category */
+/* Sfondo + bordo sinistro per categoria — etichetta su riga singola */
 .standard-checkbox.category-quality {
   border-left: 4px solid #0071e3;
+  background-color: #f0f7ff;
 }
 
 .standard-checkbox.category-environment {
   border-left: 4px solid #34c759;
+  background-color: #f0faf2;
 }
 
 .standard-checkbox.category-safety {
   border-left: 4px solid #ff9500;
+  background-color: #fff8f0;
 }
 
-/* Category badge colors in description */
-.category-badge-quality {
-  background: #e3f2fd;
-  color: #1565c0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.category-badge-environment {
-  background: #e8f5e9;
-  color: #2e7d32;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.category-badge-safety {
-  background: #fff3e0;
-  color: #e65100;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 500;
+.standard-checkbox.category-process,
+.standard-checkbox.category-rdp {
+  border-left: 4px solid #8b5cf6;
+  background-color: #f5f3ff;
 }
 
 /* ============================================

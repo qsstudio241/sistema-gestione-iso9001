@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from "react";
 import { fetchStandards } from "../services/standardsService";
+import { getStandardByCode } from "../data/standardsRegistry";
+import AutoTextarea from "./AutoTextarea";
 import "./GeneralDataSection.css";
 
 // Fallback standard se API non disponibile
@@ -150,7 +152,7 @@ function GeneralDataSection({
                   <label
                     key={stdId}
                     className={`standard-checkbox category-${standard.category}${hasData ? " has-data" : ""}`}
-                    title={hasData ? `${standard.standard_name}: impossibile deselezionare, esistono già risposte nella checklist` : ""}
+                    title={hasData ? `Impossibile deselezionare: esistono già risposte nella checklist` : ""}
                   >
                     <input
                       type="checkbox"
@@ -164,16 +166,9 @@ function GeneralDataSection({
                         onStandardsUpdate(updated);
                       }}
                     />
-                    <div className="standard-info">
-                      <span className="standard-label">
-                        {standard.standard_name || standard.label}
-                      </span>
-                      <span
-                        className={`standard-description category-badge-${standard.category}`}
-                      >
-                        {standard.description}
-                      </span>
-                    </div>
+                    <span className="standard-label">
+                      {getStandardByCode(stdId)?.label || `${standard.standard_name}${standard.description ? ` — ${standard.description}` : ""}`}
+                    </span>
                   </label>
                 );
               })}
@@ -198,13 +193,12 @@ function GeneralDataSection({
         {/* Campo Applicazione */}
         <div className="form-field">
           <label className="field-label">Campo Applicazione</label>
-          <textarea
+          <AutoTextarea
             id="field-scope"
             className="field-textarea"
-            rows={3}
             value={formData.scope}
             onChange={(e) => handleChange("scope", e.target.value)}
-            placeholder="Es: Sistema di Gestione per la Qualità RP: Contesto, Pianificazione, Supporto..."
+            placeholder="Es: Sistema di Gestione per la Qualità — Contesto, Pianificazione, Supporto..."
             disabled={readOnly}
           />
         </div>
