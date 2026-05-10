@@ -978,7 +978,7 @@ export async function exportAuditToFileSystem(audit, getViewUrl = null, options 
 
 export async function exportAuditToWorkspace(audit, fsProvider, getViewUrl = null, options = {}) {
     if (!audit?.metadata) throw new Error('Audit non valido: metadata mancante');
-    if (!window.showDirectoryPicker || !fsProvider?.ready()) {
+    if (!window.showDirectoryPicker || !fsProvider?.ready() || typeof fsProvider.saveReport !== 'function') {
         const fileName = await exportAuditToWord(audit, getViewUrl, options);
         return { success: true, path: 'Download/' + fileName, fileName, fallback: true };
     }
