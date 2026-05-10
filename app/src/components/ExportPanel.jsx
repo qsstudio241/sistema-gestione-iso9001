@@ -355,9 +355,15 @@ const ExportPanel = () => {
       vat: user?.organization_vat_number || "",
     };
 
+    // Fetch org: logo studio + prefisso numerazione (non dipendere dal JWT che può essere stale)
     let embedOrganizationLogo = null;
-    if (rawToken && user?.organization_logo_url) {
+    let auditReportPrefix = null;
+    if (rawToken) {
       try {
+        const orgRes = await apiService.getMyOrganization();
+        const orgData = orgRes?.data ?? orgRes;
+        auditReportPrefix = orgData?.audit_report_prefix || null;
+
         const orgLogoRes = await fetch(apiService.getOrganizationLogoUrl(), {
           headers: { Authorization: `Bearer ${rawToken}` },
         });
@@ -378,7 +384,7 @@ const ExportPanel = () => {
           }
         }
       } catch (err) {
-        console.warn("[EXPORT] Logo organizzazione non incluso nel Word:", err.message);
+        console.warn("[EXPORT] Logo/prefisso organizzazione non incluso:", err.message);
       }
     }
     auditForExport.embedOrganizationLogo = embedOrganizationLogo;
@@ -387,14 +393,14 @@ const ExportPanel = () => {
       ? (id) => `${apiService.baseUrl}/attachments/${id}/view?token=${encodeURIComponent(rawToken)}`
       : null;
 
-    return { auditForExport, getViewUrl };
+    return { auditForExport, getViewUrl, auditReportPrefix };
   };
 
   const handleExportWord = async () => {
     if (!currentAudit) return;
     try {
       setIsExporting(true);
-      const { auditForExport, getViewUrl } = await prepareAuditForExport();
+      const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
 
       // Audit con checklist custom (senza standard ISO) → un solo report Word
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
@@ -404,6 +410,7 @@ const ExportPanel = () => {
         const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
           customChecklistId,
           photoMode,
+          auditReportPrefix,
           getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
         });
         showMessage(`✅ Report Word generato: ${fileName}`, "success");
@@ -434,6 +441,7 @@ const ExportPanel = () => {
         const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
           standardKey: stdKey,
           photoMode: resolvePhotoMode(stdKey, null),
+          auditReportPrefix,
           getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
         });
         fileNames.push(fileName);
@@ -457,7 +465,7 @@ const ExportPanel = () => {
     if (!currentAudit) return;
     try {
       setIsExporting(true);
-      const { auditForExport, getViewUrl } = await prepareAuditForExport();
+      const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
 
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
@@ -467,6 +475,7 @@ const ExportPanel = () => {
       const photoMode = resolvePhotoMode(hasCustomOnly ? null : firstStd, hasCustomOnly ? customChecklistId : null);
       if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
       const exportOpts = {
+        auditReportPrefix,
         ...(photoMode ? { photoMode } : {}),
         ...(hasCustomOnly
           ? { customChecklistId, getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId) }

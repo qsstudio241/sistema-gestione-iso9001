@@ -922,11 +922,12 @@ function blobToBase64(blob) {
     });
 }
 
-function buildFileName(audit, standardKey = null) {
+function buildFileName(audit, standardKey = null, prefix = null) {
     const client = (audit.metadata?.clientName  || 'Cliente').replace(/[^a-z0-9]/gi, '_');
     const number = (audit.metadata?.auditNumber || 'N-A').replace(/[^a-z0-9]/gi, '_');
     const stdSuffix = standardKey ? '_' + standardKey.replace(/^ISO_/, 'ISO').replace(/_/g, '') : '';
-    return 'Audit_' + number + '_' + client + stdSuffix + '.docx';
+    const p = prefix ? String(prefix).replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') : 'Audit';
+    return p + '_' + number + '_' + client + stdSuffix + '.docx';
 }
 
 // ─── API pubblica (firma invariata rispetto alla versione precedente) ─────────
@@ -934,7 +935,7 @@ function buildFileName(audit, standardKey = null) {
 export async function exportAuditToWord(audit, getViewUrl = null, options = {}) {
     if (!audit?.metadata) throw new Error('Audit non valido: metadata mancante');
     const blob     = await generateDocxBlob(audit, getViewUrl, options);
-    const fileName = buildFileName(audit, options.standardKey || null);
+    const fileName = buildFileName(audit, options.standardKey || null, options.auditReportPrefix || null);
     saveAs(blob, fileName);
     return fileName;
 }
