@@ -11,7 +11,7 @@ import React, { useState, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
-import { STANDARD_TO_SUBSID } from "../data/standardsRegistry";
+import { STANDARD_TO_SUBSID, getSelectedStandardEntries } from "../data/standardsRegistry";
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
@@ -88,6 +88,9 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const gd = currentAudit?.metadata?.generalData    || {};
   const ao = currentAudit?.metadata?.auditObjective || {};
   const oc = currentAudit?.metadata?.auditOutcome   || {};
+  const selectedStandards = currentAudit?.metadata?.selectedStandards || [];
+  const standardEntries   = getSelectedStandardEntries(selectedStandards);
+  const isMultiStandard   = standardEntries.length > 1;
 
   const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
   const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
@@ -118,11 +121,21 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       fieldId: "field-auditDescription",
       path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "objective" }],
     },
-    {
-      id: "conclusions", text: "Conclusioni (Sezione 12)", isMissing: !oc.conclusions?.trim(),
-      fieldId: "conclusions",
-      path: [{ type: "section", key: "conclusions" }],
-    },
+    // Conclusioni: per multi-standard una voce per norma, per singolo una voce unica
+    ...(isMultiStandard
+      ? standardEntries.map(({ key, shortLabel }) => ({
+          id: `conclusions-${key}`,
+          text: `Conclusioni ${shortLabel} (Sezione 12)`,
+          isMissing: !oc.byStandard?.[key]?.conclusions?.trim(),
+          fieldId: `conclusions-${key}`,
+          path: [{ type: "section", key: "conclusions" }],
+        }))
+      : [{
+          id: "conclusions", text: "Conclusioni (Sezione 12)", isMissing: !oc.conclusions?.trim(),
+          fieldId: "conclusions",
+          path: [{ type: "section", key: "conclusions" }],
+        }]
+    ),
     {
       id: "checklistPct",
       text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
@@ -307,13 +320,9 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   // ─── Render: pannello pre-chiusura ─────────────────────────────────────────
   return (
     <div className="close-panel">
-      <div className="close-panel__header">
-        <h3>🔒 Chiusura Audit</h3>
-        <p className="close-panel__subtitle">
-          Verifica i requisiti prima di chiudere formalmente l'audit.
-          Dopo la chiusura l'audit sara' in sola lettura.
-        </p>
-      </div>
+      <p className="close-panel__subtitle">
+        Verifica i requisiti prima di chiudere. Dopo la chiusura l'audit sarà in sola lettura.
+      </p>
 
       {/* Barra completamento checklist */}
       {completionPct !== null && (
