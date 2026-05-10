@@ -109,7 +109,7 @@ function normalizeMimeType(mimeType) {
     return String(mimeType || '').split(';')[0].trim().toLowerCase();
 }
 
-function buildTemplateData(audit) {
+function buildTemplateData(audit, normKey = null) {
     const meta    = audit.metadata       || {};
     const gd      = meta.generalData     || {};
     const obj     = meta.auditObjective  || {};
@@ -207,7 +207,9 @@ function buildTemplateData(audit) {
             role: p.role || 'N/D',
             name: p.name || '',
         })),
-        conclusions: outcome.conclusions || 'Nessuna conclusione documentata.',
+        conclusions: (normKey && outcome.byStandard?.[normKey]?.conclusions?.trim())
+            || outcome.conclusions
+            || 'Nessuna conclusione documentata.',
         cCount:      String(m.totalC),
         ncCount:     String(m.totalNC),
         ossCount:    String(m.totalOSS),
@@ -836,7 +838,8 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
         nullGetter()   { return ''; },
     });
 
-    doc.render(buildTemplateData(auditForGen));
+    const exportNormKey = options.standardKey ? normalizeStdKey(options.standardKey) : null;
+    doc.render(buildTemplateData(auditForGen, exportNormKey));
     const processedZip = doc.getZip();
     // Dopo il render il template puo reintrodurre w:p annidati o attributi senza quote.
     if (processedZip.files[docPath]) {
