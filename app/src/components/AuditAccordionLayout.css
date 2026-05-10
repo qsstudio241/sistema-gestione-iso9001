@@ -360,17 +360,24 @@
   background-color: #D1FAE5;
 }
 
-.standard-section.standard-iso-3834,
+.standard-section.standard-iso-3834 {
+  border-left-color: #f97316;
+}
+.standard-section.standard-iso-3834 .accordion-subheader {
+  background-color: #FFF7ED;
+}
+.standard-section.standard-iso-3834 .accordion-subheader.open {
+  background-color: #FFEDD5;
+}
+
 .standard-section.standard-rdp-msn {
-  border-left-color: #8b5cf6;
+  border-left-color: #d1d5db;
 }
-.standard-section.standard-iso-3834 .accordion-subheader,
 .standard-section.standard-rdp-msn .accordion-subheader {
-  background-color: #f5f3ff;
+  background-color: #ffffff;
 }
-.standard-section.standard-iso-3834 .accordion-subheader.open,
 .standard-section.standard-rdp-msn .accordion-subheader.open {
-  background-color: #ede9fe;
+  background-color: #f9fafb;
 }
 
 .standard-section.standard-iso-45001 {

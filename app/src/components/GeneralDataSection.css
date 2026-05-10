@@ -239,10 +239,14 @@
   background-color: #fff8f0;
 }
 
-.standard-checkbox.category-process,
+.standard-checkbox.category-process {
+  border-left: 4px solid #f97316;
+  background-color: #FFF7ED;
+}
+
 .standard-checkbox.category-rdp {
-  border-left: 4px solid #8b5cf6;
-  background-color: #f5f3ff;
+  border-left: 4px solid #d1d5db;
+  background-color: #ffffff;
 }
 
 /* ============================================
