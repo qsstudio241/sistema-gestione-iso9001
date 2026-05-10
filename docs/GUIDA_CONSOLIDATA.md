@@ -54,6 +54,11 @@ Attualmente il `path[]` di ogni campo deve essere dichiarato esplicitamente. Un 
 - `65514d4` Hotfix: `validation is not defined` in AuditClosePanel
 - `commit`  Guided close v9: `id="custom-item-{id}"` in QuestionCard + primo item custom incompleto
 
+**Pendenti committente chiusi al 10/05/2026:**
+- ✅ SMTP + ALERT_ENABLED=true attivo e verificato con e-mail di test
+- ✅ Smoke L3 Mason passi 6-7: colori checklist e contatori Word verificati
+- ✅ Camellini: nessuna segnalazione da campo da venerdì 08/05
+
 **Stato guided close al 10/05/2026:**
 - ✅ ISO checklist (9001/14001/45001): trova prima domanda NOT_ANSWERED → apre section+subsection+clausole → scroll+focus
 - ✅ Custom checklist: trova primo item incompleto → apre section+subsection → scroll+focus
