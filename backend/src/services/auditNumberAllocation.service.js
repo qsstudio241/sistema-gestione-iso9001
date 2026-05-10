@@ -7,7 +7,7 @@ const sql = require('mssql');
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
 
-const DEFAULT_PREFIX = 'MSN';
+const DEFAULT_PREFIX = 'AUD'; // fallback generico — ogni org deve impostare audit_report_prefix
 
 /**
  * Data calendario a Europe/Rome come parti YYYY, MM, DD

@@ -922,12 +922,17 @@ function blobToBase64(blob) {
     });
 }
 
+// Ordine ottimale per trovare l'ultimo report per azienda nel file system:
+// {prefix}_{cliente}_{numero_audit}_{standard}.docx
+// - ordine alfabetico raggruppa per cliente
+// - numero_audit (es. QS260510_01) porta la data → ordine cronologico dentro ogni cliente
+// - standard in coda (meno variabile)
 function buildFileName(audit, standardKey = null, prefix = null) {
     const client = (audit.metadata?.clientName  || 'Cliente').replace(/[^a-z0-9]/gi, '_');
     const number = (audit.metadata?.auditNumber || 'N-A').replace(/[^a-z0-9]/gi, '_');
     const stdSuffix = standardKey ? '_' + standardKey.replace(/^ISO_/, 'ISO').replace(/_/g, '') : '';
     const p = prefix ? String(prefix).replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') : 'Audit';
-    return p + '_' + number + '_' + client + stdSuffix + '.docx';
+    return p + '_' + client + '_' + number + stdSuffix + '.docx';
 }
 
 // ─── API pubblica (firma invariata rispetto alla versione precedente) ─────────
@@ -959,7 +964,7 @@ export async function exportAuditToFileSystem(audit, getViewUrl = null, options 
         const clientName   = (audit.metadata.clientName || 'Cliente').replace(/[^a-z0-9]/gi, '_');
         const clientFolder = await auditFolder.getDirectoryHandle(year + '-' + clientName, { create: true });
         const blob         = await generateDocxBlob(audit, getViewUrl, options);
-        const fileName     = buildFileName(audit);
+        const fileName     = buildFileName(audit, options.standardKey || null, options.auditReportPrefix || null);
         const fileHandle   = await clientFolder.getFileHandle(fileName, { create: true });
         const writable     = await fileHandle.createWritable();
         await writable.write(blob);
