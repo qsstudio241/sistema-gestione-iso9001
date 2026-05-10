@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
 import { getSelectedStandardEntries } from "../data/standardsRegistry";
+import AutoTextarea from "./AutoTextarea";
 import "./AuditOutcomeSection.css";
 
 /**
@@ -111,13 +112,11 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
       <div className="outcome-block">
         {/* Standard singolo: una textarea */}
         {!isMultiStandard && (
-          <textarea
+          <AutoTextarea
             id="conclusions"
-            className="outcome-textarea"
-            rows={6}
-            placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
             value={conclusions}
             onChange={handleConclusionsChange}
+            placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
             disabled={readOnly}
           />
         )}
@@ -128,13 +127,11 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
             <span className="findings-per-standard__label">
               {shortLabel} — {label.split(" \u2014 ")[1] || label}
             </span>
-            <textarea
+            <AutoTextarea
               id={`conclusions-${key}`}
-              className="outcome-textarea"
-              rows={5}
-              placeholder={`Conclusioni per ${label.split(" \u2014 ")[0] || label}…`}
               value={conclusionsByKey[key] ?? ""}
               onChange={(e) => handleConclusionsByKeyChange(key, e.target.value)}
+              placeholder={`Conclusioni per ${label.split(" \u2014 ")[0] || label}…`}
               disabled={readOnly}
             />
           </div>

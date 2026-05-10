@@ -1,0 +1,45 @@
+.auto-textarea-wrapper {
+  position: relative;
+}
+
+.auto-textarea-wrapper .outcome-textarea {
+  resize: none;
+  overflow: hidden;
+  transition: height 0.1s ease;
+  padding-right: 2.8rem; /* spazio per il bottone mic */
+}
+
+.voice-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+  z-index: 1;
+}
+
+.voice-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.voice-btn--active {
+  background: #fee2e2;
+  color: #dc2626;
+  animation: pulse-mic 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}
