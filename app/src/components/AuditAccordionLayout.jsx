@@ -662,7 +662,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
               {/* Sezioni checklist generate dinamicamente da STANDARDS_CONFIG */}
               {/* Checklist personalizzata (Phase 6) */}
               {(currentAudit?.metadata?.customChecklistId || currentAudit?.custom_checklist_id) && (
-                <div className="accordion-subsection standard-section custom-checklist-section">
+                <div id="sgq-subsection-custom-checklist" className="accordion-subsection standard-section custom-checklist-section">
                   <button
                     className={`accordion-subheader standard-header ${
                       openSubSections["custom-checklist"] ? "open" : ""

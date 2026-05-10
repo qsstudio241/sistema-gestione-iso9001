@@ -128,8 +128,9 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     {
       id: "customChecklistPct",
       text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      isMissing: hasCustomChecklist && !hasIsoChecklistForGuide && (customTotal === 0 || customPct < COMPLETION_THRESHOLD),
-      fieldId: null,
+      // Bloccante indipendentemente dalla presenza di standard ISO
+      isMissing: hasCustomChecklist && (customTotal === 0 || customPct < COMPLETION_THRESHOLD),
+      fieldId: "sgq-subsection-custom-checklist",
       path: [{ type: "section", key: "checklist" }, { type: "subsection", key: "custom-checklist" }],
     },
   ];
