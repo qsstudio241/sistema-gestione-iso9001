@@ -179,10 +179,10 @@ function GeneralDataSection({
         {/* Oggetto */}
         <div className="form-field">
           <label className="field-label">Oggetto</label>
-          <input
+          <AutoTextarea
             id="field-auditObject"
-            type="text"
-            className="field-input"
+            className="field-textarea"
+            rows={1}
             value={formData.auditObject}
             onChange={(e) => handleChange("auditObject", e.target.value)}
             placeholder="Es: Audit di Verifica ispettiva interna RP"
@@ -272,12 +272,12 @@ function GeneralDataSection({
         {/* Processi/Funzioni */}
         <div className="form-field">
           <label className="field-label">Processi/Funzioni</label>
-          <input
-            type="text"
-            className="field-input"
+          <AutoTextarea
+            className="field-textarea"
+            rows={1}
             value={formData.processes}
             onChange={(e) => handleChange("processes", e.target.value)}
-            placeholder="Es: vari"
+            placeholder="Es: Progettazione, Produzione, Qualità..."
             disabled={readOnly}
           />
         </div>
