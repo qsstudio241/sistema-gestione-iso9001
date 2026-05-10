@@ -33,9 +33,9 @@ async function userIsAdminRole(userId, organizationId) {
     return ADMIN_ROLES.includes(role);
 }
 
-/** Admin senza studio (auditor_org_id null) può creare/promuovere altri admin org. */
+/** Superadmin o admin possono promuovere altri admin org. */
 function isElevatedAdmin(reqUser) {
-    return (reqUser.role === 'admin' || reqUser.role === 'superadmin') && (reqUser.auditor_org_id == null);
+    return reqUser.role === 'admin' || reqUser.role === 'superadmin';
 }
 
 /**
