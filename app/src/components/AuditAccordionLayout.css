@@ -360,17 +360,17 @@
   background-color: #D1FAE5;
 }
 
-.standard-section.standard-iso-3834-2,
+.standard-section.standard-iso-3834,
 .standard-section.standard-rdp-msn {
-  border-left-color: #f97316;
+  border-left-color: #8b5cf6;
 }
-.standard-section.standard-iso-3834-2 .accordion-subheader,
+.standard-section.standard-iso-3834 .accordion-subheader,
 .standard-section.standard-rdp-msn .accordion-subheader {
-  background-color: #FFF7ED;
+  background-color: #f5f3ff;
 }
-.standard-section.standard-iso-3834-2 .accordion-subheader.open,
+.standard-section.standard-iso-3834 .accordion-subheader.open,
 .standard-section.standard-rdp-msn .accordion-subheader.open {
-  background-color: #FFEDD5;
+  background-color: #ede9fe;
 }
 
 .standard-section.standard-iso-45001 {

@@ -305,11 +305,18 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   // Verifica quali standard sono selezionati
   const selectedStandards = currentAudit.metadata.selectedStandards || [];
 
-  // Calcola quali standard hanno già risposte nella checklist locale
-  // (usato da GeneralDataSection per bloccare la deselezione e proteggere i dati)
+  // Blocca la deselezione solo se almeno una domanda ha ricevuto una valutazione.
+  // Clausole vuote o con sole domande NOT_ANSWERED non contano come "dati".
   const standardsWithData = Object.entries(currentAudit.checklist || {})
-    .filter(([, data]) => data && Object.keys(data).length > 0)
-    .map(([key]) => key); // es. ["ISO_9001", "ISO_14001"]
+    .filter(([, normData]) =>
+      normData &&
+      Object.values(normData).some((clause) =>
+        clause?.questions?.some(
+          (q) => q.status && q.status !== "NOT_ANSWERED"
+        )
+      )
+    )
+    .map(([key]) => key);
 
   return (
     <div className="audit-accordion-layout">
@@ -759,6 +766,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={true}
                 readOnly={isReadOnly}
+                selectedStandards={selectedStandards}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("conclusions")}>▲ Chiudi sezione 12</button>
             </div>
