@@ -18,10 +18,21 @@ import "./AuditClosePanel.css";
 /** Soglia minima completamento checklist per poter chiudere (%) */
 const COMPLETION_THRESHOLD = 80;
 
+function calcNormCompletion(normData) {
+  if (!normData || typeof normData !== "object") return 0;
+  let total = 0, answered = 0;
+  Object.values(normData).forEach((clause) => {
+    (clause?.questions || []).forEach((q) => {
+      total++;
+      if (q.status && q.status !== "NOT_ANSWERED") answered++;
+    });
+  });
+  return total === 0 ? 0 : Math.round((answered / total) * 100);
+}
+
 function calcCompletion(checklist) {
   if (!checklist || typeof checklist !== "object") return 0;
-  let total = 0;
-  let answered = 0;
+  let total = 0, answered = 0;
   Object.values(checklist).forEach((norm) => {
     if (!norm || typeof norm !== "object") return;
     Object.values(norm).forEach((clause) => {
@@ -95,14 +106,25 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
   const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
 
+  // Completamento per-norma (usato per barre multi-standard e fieldDescriptors)
+  const normCompletions = standardEntries.map(({ key, shortLabel, label }) => {
+    const normData = currentAudit?.checklist?.[key];
+    const pct = normData ? calcNormCompletion(normData) : 0;
+    const hasDomande = normData && Object.values(normData).some(c => (c?.questions?.length ?? 0) > 0);
+    const firstUnansweredNorm = (hasDomande && pct < COMPLETION_THRESHOLD)
+      ? getFirstUnansweredTarget({ [key]: normData })
+      : { subsId: null, fieldId: null };
+    return { key, shortLabel, label, pct, hasDomande, firstUnansweredNorm };
+  });
+
   const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
   const customStatuses    = currentAudit?.customStatuses || {};
   const customTotal       = Object.keys(customStatuses).length;
   const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
 
-  // Target dinamico per checklist ISO (prima domanda non risposta)
-  const firstUnanswered = (hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
+  // Per audit mono-standard: target dinamico legacy
+  const firstUnanswered = (!isMultiStandard && hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
     ? getFirstUnansweredTarget(currentAudit?.checklist) : { subsId: null, fieldId: null };
 
   const fieldDescriptors = [
@@ -136,17 +158,31 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
           path: [{ type: "section", key: "conclusions" }],
         }]
     ),
-    {
-      id: "checklistPct",
-      text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD,
-      fieldId: firstUnanswered.fieldId,
-      path: [
-        { type: "section",      key: "checklist" },
-        { type: "subsection",   key: firstUnanswered.subsId },
-        { type: "clauseExpand" },               // apre tutte le clausole del ChecklistModule
-      ].filter((s) => !(s.type === "subsection" && !s.key)),
-    },
+    // Completamento per-norma (multi-standard) o unico (mono)
+    ...(isMultiStandard
+      ? normCompletions.filter(n => n.hasDomande).map(({ key, shortLabel, pct, firstUnansweredNorm }) => ({
+          id: `checklistPct-${key}`,
+          text: `${shortLabel}: checklist al ${pct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+          isMissing: pct < COMPLETION_THRESHOLD,
+          fieldId: firstUnansweredNorm.fieldId,
+          path: [
+            { type: "section", key: "checklist" },
+            { type: "subsection", key: firstUnansweredNorm.subsId },
+            { type: "clauseExpand" },
+          ].filter((s) => !(s.type === "subsection" && !s.key)),
+        }))
+      : hasIsoChecklistForGuide ? [{
+          id: "checklistPct",
+          text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+          isMissing: checklistPct < COMPLETION_THRESHOLD,
+          fieldId: firstUnanswered.fieldId,
+          path: [
+            { type: "section", key: "checklist" },
+            { type: "subsection", key: firstUnanswered.subsId },
+            { type: "clauseExpand" },
+          ].filter((s) => !(s.type === "subsection" && !s.key)),
+        }] : []
+    ),
     {
       id: "customChecklistPct",
       text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
@@ -320,32 +356,20 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   // ─── Render: pannello pre-chiusura ─────────────────────────────────────────
   return (
     <div className="close-panel">
-      <p className="close-panel__subtitle">
-        Verifica i requisiti prima di chiudere. Dopo la chiusura l'audit sarà in sola lettura.
-      </p>
 
-      {/* Barra completamento checklist */}
-      {completionPct !== null && (
-        <div className="close-completion">
+      {/* Barre completamento: una per norma (multi) o unica (mono) */}
+      {hasIsoChecklistForGuide && (isMultiStandard ? normCompletions.filter(n => n.hasDomande) : [{ shortLabel: "Checklist", pct: checklistPct }]).map(({ shortLabel, pct }, i) => (
+        <div key={i} className="close-completion">
           <div className="close-completion__label">
-            <span>Completamento checklist</span>
-            <strong className={completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>
-              {completionPct}%
-            </strong>
+            <span>{isMultiStandard ? shortLabel : "Completamento checklist"}</span>
+            <strong className={pct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>{pct}%</strong>
           </div>
           <div className="close-completion__bar">
-            <div
-              className={`close-completion__fill ${completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}`}
-              style={{ width: `${Math.min(completionPct, 100)}%` }}
-            />
-            <div
-              className="close-completion__threshold"
-              style={{ left: `${COMPLETION_THRESHOLD}%` }}
-              title={`Soglia minima: ${COMPLETION_THRESHOLD}%`}
-            />
+            <div className={`close-completion__fill ${pct >= COMPLETION_THRESHOLD ? "ok" : "fail"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+            <div className="close-completion__threshold" style={{ left: `${COMPLETION_THRESHOLD}%` }} title={`Soglia: ${COMPLETION_THRESHOLD}%`} />
           </div>
         </div>
-      )}
+      ))}
 
       {/* Campi obbligatori mancanti — lista semplice, navigazione via pulsante principale */}
       {missingFields.length > 0 && (
