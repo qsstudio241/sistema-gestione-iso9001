@@ -144,14 +144,17 @@ function GeneralDataSection({
           ) : (
             <div className="standards-grid">
               {availableStandards.map((standard) => {
-                // Normalizza verso forma canonica senza anno (es. "ISO_9001_2015" → "ISO_9001")
-                // per essere coerente con selectedStandards che usa la forma corta
                 const stdId = NORMALIZE_STD[standard.standard_code] || standard.standard_code || standard.id;
                 const hasData = standardsWithData.includes(stdId);
+                // Usa il kind del registry per determinare il colore — ignora il category dell'API
+                // che può essere errato per ISO 3834 e RDP
+                const registryEntry = getStandardByCode(stdId);
+                const kindToCategory = { iso_hls: standard.category || "quality", iso_process: "process", rdp: "rdp" };
+                const categoryClass = kindToCategory[registryEntry?.kind] ?? (standard.category || "quality");
                 return (
                   <label
                     key={stdId}
-                    className={`standard-checkbox category-${standard.category}${hasData ? " has-data" : ""}`}
+                    className={`standard-checkbox category-${categoryClass}${hasData ? " has-data" : ""}`}
                     title={hasData ? `Impossibile deselezionare: esistono già risposte nella checklist` : ""}
                   >
                     <input
