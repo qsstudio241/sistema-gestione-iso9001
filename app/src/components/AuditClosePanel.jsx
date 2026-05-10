@@ -356,7 +356,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       )}
 
       {/* Tutto OK */}
-      {canClose && validation.warnings.length === 0 && (
+      {canClose && warnings.length === 0 && (
         <div className="close-checklist close-checklist--ok">
           <h4>✅ Audit pronto per la chiusura</h4>
           <p>Tutti i requisiti obbligatori sono soddisfatti.</p>
