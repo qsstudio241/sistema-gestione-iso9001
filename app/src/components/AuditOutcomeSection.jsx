@@ -130,40 +130,27 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           Rilievi Emergenti
         </h3>
 
-        {/* Metriche findings - COMPATTE SU UNA RIGA — somma TUTTI gli standard + custom */}
-        {(() => {
-          // Conta C/NA/NV da checklist ISO
+        {/* Standard singolo: riga totale (è già il dato del report).
+            Multi-standard: non ha senso un aggregato — ogni norma ha il suo report. */}
+        {!isMultiStandard && (() => {
           const allQuestions = currentAudit?.checklist
             ? Object.values(currentAudit.checklist).flatMap(cl =>
                 Object.values(cl || {}).flatMap(clause => clause.questions || [])
               )
             : [];
           const countISO = (s) => allQuestions.filter((q) => q.status === s).length;
-          // Conta C/NA/NV da customStatuses (se checklist custom con pulsanti)
           const customSts = currentAudit?.customChecklist?.has_outcome_buttons
             ? Object.values(currentAudit.customStatuses || {})
             : [];
           const countCustom = (s) => customSts.filter((v) => v === s).length;
           return (
             <div className="findings-metrics-compact">
-              <span className="metric-compact nc">
-                <strong>C:</strong> {countISO("C") + countCustom("C")}
-              </span>
-              <span className="metric-compact oss">
-                <strong>OSS:</strong> {totalOSS}
-              </span>
-              <span className="metric-compact nc-severe">
-                <strong>NC:</strong> {totalNC}
-              </span>
-              <span className="metric-compact om">
-                <strong>OM:</strong> {totalOM}
-              </span>
-              <span className="metric-compact na">
-                <strong>NA:</strong> {countISO("NA") + countCustom("NA")}
-              </span>
-              <span className="metric-compact nv">
-                <strong>NV:</strong> {countISO("NV") + countCustom("NV")}
-              </span>
+              <span className="metric-compact nc"><strong>C:</strong> {countISO("C") + countCustom("C")}</span>
+              <span className="metric-compact oss"><strong>OSS:</strong> {totalOSS}</span>
+              <span className="metric-compact nc-severe"><strong>NC:</strong> {totalNC}</span>
+              <span className="metric-compact om"><strong>OM:</strong> {totalOM}</span>
+              <span className="metric-compact na"><strong>NA:</strong> {countISO("NA") + countCustom("NA")}</span>
+              <span className="metric-compact nv"><strong>NV:</strong> {countISO("NV") + countCustom("NV")}</span>
             </div>
           );
         })()}
