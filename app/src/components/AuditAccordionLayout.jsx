@@ -101,6 +101,16 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     loadCompanies();
   }, [loadCompanies]);
 
+  // Metriche per-norma in tempo reale (ADR-009 Fase 1).
+  // Il chip header le legge per mostrare "9001: 2 NC · 14001: 1 NC · totale 3".
+  // Calcolato a livello top del componente (PRIMA del guard `if (!currentAudit)`)
+  // per rispettare le Rules of Hooks: il numero di hook chiamati DEVE restare
+  // costante fra render, anche quando currentAudit passa da null a oggetto.
+  const metricsByStandard = useMemo(
+    () => calculateByStandardMetrics(currentAudit?.checklist),
+    [currentAudit?.checklist],
+  );
+
   // Stato per gestire quali sezioni sono aperte
   const [checklistExpandTrigger, setChecklistExpandTrigger] = useState(0);
 
@@ -309,13 +319,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const standardsWithData = Object.entries(currentAudit.checklist || {})
     .filter(([, data]) => data && Object.keys(data).length > 0)
     .map(([key]) => key); // es. ["ISO_9001", "ISO_14001"]
-
-  // Metriche per-norma in tempo reale (ADR-009 Fase 1).
-  // Il chip header le legge per mostrare "9001: 2 NC · 14001: 1 NC · totale 3".
-  const metricsByStandard = useMemo(
-    () => calculateByStandardMetrics(currentAudit?.checklist),
-    [currentAudit?.checklist],
-  );
 
   return (
     <div className="audit-accordion-layout">
