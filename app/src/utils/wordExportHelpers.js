@@ -641,10 +641,9 @@ function buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUr
         if (!clause || typeof clause !== 'object') return;
         const sectionTitle = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '').toUpperCase();
 
-        // Titolo1 per la sezione (con interruzione di pagina)
         xml += xmlPara(
             xmlRun(`${sectionNum} \u2014 ${sectionTitle}`, { bold: true, size: 24, color: '1D4ED8' }),
-            { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
+            { style: 'Titolo1', pageBreak: false, sb: 400, sa: 200 }
         );
         sectionNum++;
 
@@ -716,7 +715,7 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
                 const title = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '');
                 xml += xmlPara(
                     xmlRun(num + ' \u2014 ' + title.toUpperCase(), { bold: true, size: 24, color: '1D4ED8' }),
-                    { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
+                    { style: 'Titolo1', pageBreak: false, sb: 400, sa: 200 }
                 );
                 xml += buildClauseTableOoxml(clause.questions || [], auditAttachments, getViewUrl, options, imageRegistry, normExcerpts);
                 xml += xmlPara('', { sa: 300 });
