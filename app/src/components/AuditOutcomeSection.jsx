@@ -201,13 +201,6 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
 
         {/* RIMOSSO: Descrizione sintetica rilievi emergenti */}
 
-        {/* Link ai rilievi dettagliati */}
-        <div className="findings-link">
-          <p className="info-message">
-            ℹ️ I rilievi dettagliati (NC, OSS, OM) sono compilati nella sezione{" "}
-            <strong>Checklist</strong> per ogni domanda normativa
-          </p>
-        </div>
       </div>
       )}
     </div>
