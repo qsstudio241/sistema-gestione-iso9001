@@ -63,8 +63,7 @@ export default function UsersAdminPage({ onBack }) {
   const [editForms, setEditForms] = useState({});
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  const elevatedAdmin =
-    isAdmin && (user?.auditor_org_id == null || user?.auditor_org_id === "");
+  const elevatedAdmin = isAdmin;
 
   const reloadUsers = useCallback(async () => {
     if (!isAdmin) return;
