@@ -40,6 +40,35 @@ function TabAnagrafica() {
   });
 
   const fileInputRef = useRef(null);
+  const [logoBlobUrl, setLogoBlobUrl] = useState(null);
+  const logoBlobRef = useRef(null);
+
+  // Fetch logo con auth token e crea blob URL (il tag <img> non può inviare JWT)
+  useEffect(() => {
+    if (!org?.logo_url) {
+      if (logoBlobRef.current) { URL.revokeObjectURL(logoBlobRef.current); logoBlobRef.current = null; }
+      setLogoBlobUrl(null);
+      return;
+    }
+    let active = true;
+    const token = apiService.getToken ? apiService.getToken() : (localStorage.getItem('sgq_auth_token'));
+    fetch(apiService.getOrganizationLogoUrl() + `?t=${logoTimestamp}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
+      .then(blob => {
+        if (!active) return;
+        if (logoBlobRef.current) URL.revokeObjectURL(logoBlobRef.current);
+        const url = URL.createObjectURL(blob);
+        logoBlobRef.current = url;
+        setLogoBlobUrl(url);
+        setLogoError(null);
+      })
+      .catch(() => { if (active) { setLogoBlobUrl(null); setLogoError("Impossibile caricare il logo."); } });
+    return () => {
+      active = false;
+    };
+  }, [org?.logo_url, logoTimestamp]);
 
   const loadOrg = useCallback(async () => {
     setLoading(true);
@@ -126,9 +155,7 @@ function TabAnagrafica() {
     }
   };
 
-  const logoUrl = org?.logo_url
-    ? `${apiService.getOrganizationLogoUrl()}?t=${logoTimestamp}`
-    : null;
+  // logoUrl non più usato direttamente come src (il blob viene caricato via useEffect autenticato)
 
   if (loading) {
     return (
@@ -153,12 +180,11 @@ function TabAnagrafica() {
         <h3 className="studio-card-title">Logo Studio</h3>
         <div className="studio-logo-section">
           <div className="studio-logo-preview">
-            {logoUrl ? (
+            {logoBlobUrl ? (
               <img
-                src={logoUrl}
+                src={logoBlobUrl}
                 alt="Logo studio"
                 className="studio-logo-img"
-                onError={() => setLogoError("Impossibile caricare il logo.")}
               />
             ) : (
               <div className="studio-logo-placeholder">
