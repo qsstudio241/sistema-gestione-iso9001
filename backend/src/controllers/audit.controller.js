@@ -1243,7 +1243,9 @@ async function getPendingIssues(req, res) {
                         'open', src.conformity_status, @organization_id);
         `, { source_audit_id, target_audit_id, organization_id });
 
-        // Step 4: Leggi tutti i pending di questo target audit
+        // Step 4: Leggi tutti i pending di questo target audit + (se presente) stato corrente NC
+        // dal modulo NC organizzativo. Permette al re-audit di leggere automaticamente lo stato di
+        // risoluzione gestito nel modulo NC senza richiedere data entry duplicata.
         const pendingIssuesResult = await query(`
             SELECT
                 pi.issue_id,
@@ -1255,6 +1257,12 @@ async function getPendingIssues(req, res) {
                 pi.original_status,
                 pi.resolution_notes,
                 pi.follow_up_notes,
+                pi.nc_id,
+                nc.nc_number,
+                nc.status        AS nc_status,
+                nc.severity      AS nc_severity,
+                nc.corrective_action AS nc_corrective_action,
+                nc.verification_notes AS nc_verification_notes,
                 pi.created_at,
                 pi.updated_at,
                 ar.conformity_status,
@@ -1262,8 +1270,9 @@ async function getPendingIssues(req, res) {
                 cq.question_text,
                 cq.section_code
             FROM pending_issues pi
-            LEFT JOIN audit_responses  ar ON pi.source_response_id = ar.response_id
+            LEFT JOIN audit_responses  ar  ON pi.source_response_id = ar.response_id
             LEFT JOIN checklist_questions cq ON pi.question_id      = cq.question_id
+            LEFT JOIN non_conformities nc  ON pi.nc_id              = nc.nc_id
             WHERE pi.target_audit_id = @target_audit_id
               AND pi.organization_id = @organization_id
             ORDER BY pi.original_status, cq.section_code, pi.issue_id

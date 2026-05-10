@@ -780,6 +780,21 @@ class ApiService {
         return this.delete(`/non-conformities/${ncId}/actions/${actionId}`);
     }
 
+    // ─── Audit -> Registro NC (push bulk con undo) ────────────────────────────
+    // Trasferisce tutte le NC/OSS rilevate nella checklist di un audit al modulo
+    // organizzativo non_conformities. Idempotente (skip se gia presenti per
+    // stessa coppia audit_id + question_id).
+    async pushAuditToNcRegister(auditRef) {
+        return this.post(`/audits/${auditRef}/push-to-nc-register`, {});
+    }
+
+    // Annulla push: elimina le NC create con source_type 'audit_nc'/'audit_oss'
+    // ancora in stato 'open' e senza azioni correttive. Usato dalla UI per
+    // l'undo entro 10 secondi dalla pressione del pulsante.
+    async undoPushAuditToNcRegister(auditRef) {
+        return this.delete(`/audits/${auditRef}/push-to-nc-register`);
+    }
+
     // ==========================================
     // STANDARDS ENDPOINTS
     // ==========================================

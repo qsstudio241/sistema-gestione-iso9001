@@ -838,6 +838,295 @@ async function deleteNcAction(req, res) {
     }
 }
 
+/**
+ * POST /api/v1/audits/:auditRef/push-to-nc-register
+ * Trasferisce automaticamente NC e OSS rilevate nella checklist di un audit
+ * dentro al modulo organizzativo NC (non_conformities), creando un record per ogni
+ * domanda con conformity_status IN ('NC','OSS').
+ *
+ * Idempotente: se per (audit_id, source_question_id) esiste gia una NC, viene saltata
+ * (indice univoco IX_nc_audit_question_unique).
+ *
+ * Restituisce { created: [...], skipped: [...] } cosi la UI puo mostrare riepilogo.
+ *
+ * NOTE: l'endpoint richiede la licenza modulo 'nc' (gia applicata via router).
+ */
+async function pushAuditToNcRegister(req, res) {
+    try {
+        const { auditRef } = req.params;
+        const { organization_id, user_id } = req.user;
+
+        // Risoluzione audit (INT o UUID)
+        const auditRow = await query(`
+            SELECT a.audit_id, a.audit_number, a.organization_id
+            FROM audits a
+            WHERE (a.audit_id = TRY_CAST(@auditRef AS INT) OR a.audit_uuid = @auditRef)
+              AND a.organization_id = @organization_id
+              AND a.is_deleted = 0
+        `, { auditRef, organization_id });
+
+        if (!auditRow.recordset || auditRow.recordset.length === 0) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+        const audit_id = auditRow.recordset[0].audit_id;
+        const audit_number = auditRow.recordset[0].audit_number;
+
+        // Prendi tutte le risposte NC/OSS dell'audit, con dettaglio domanda
+        const findingsRes = await query(`
+            SELECT
+                ar.response_id,
+                ar.question_id,
+                ar.conformity_status,
+                ar.notes,
+                cq.section_code,
+                cq.question_text
+            FROM audit_responses ar
+            INNER JOIN checklist_questions cq ON ar.question_id = cq.question_id
+            WHERE ar.audit_id = @audit_id
+              AND ar.conformity_status IN ('NC', 'OSS')
+              AND ar.is_deleted = 0
+            ORDER BY cq.section_code, ar.question_id
+        `, { audit_id });
+
+        const findings = findingsRes.recordset || [];
+
+        // Standard di riferimento (primo della junction)
+        const standardRes = await query(`
+            SELECT TOP 1 standard_id FROM audit_standards WHERE audit_id = @audit_id
+        `, { audit_id });
+        const standard_id = standardRes.recordset?.[0]?.standard_id || null;
+
+        // Recupera nc_id gia esistenti per questo audit (idempotenza)
+        const existingNcRes = await query(`
+            SELECT source_question_id, nc_id, nc_number, status
+            FROM non_conformities
+            WHERE audit_id = @audit_id AND source_question_id IS NOT NULL
+        `, { audit_id });
+        const existingByQid = {};
+        (existingNcRes.recordset || []).forEach(r => {
+            if (r.source_question_id != null) existingByQid[r.source_question_id] = r;
+        });
+
+        // Conta NC esistenti dell'organizzazione (per generare nc_number incrementale)
+        const countRes = await query(`
+            SELECT COUNT(*) AS cnt
+            FROM non_conformities nc
+            INNER JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE a.organization_id = @organization_id
+        `, { organization_id });
+        let nextSeq = (countRes.recordset?.[0]?.cnt || 0) + 1;
+
+        const created = [];
+        const skipped = [];
+
+        for (const f of findings) {
+            if (existingByQid[f.question_id]) {
+                skipped.push({
+                    question_id: f.question_id,
+                    section_code: f.section_code,
+                    reason: 'already_pushed',
+                    nc_id: existingByQid[f.question_id].nc_id,
+                    nc_number: existingByQid[f.question_id].nc_number,
+                });
+                continue;
+            }
+
+            const isOss = f.conformity_status === 'OSS';
+            const severity = isOss ? 'observation' : 'minor';
+            const source_type = isOss ? 'audit_oss' : 'audit_nc';
+
+            // Genera nc_number unico nella org (NC-<num_audit>-<seq>)
+            let nc_number = '';
+            let inserted = null;
+            for (let attempt = 0; attempt < 10; attempt++) {
+                nc_number = `NC-${audit_number || audit_id}-${String(nextSeq).padStart(3, '0')}`;
+                try {
+                    const ins = await query(`
+                        INSERT INTO non_conformities (
+                            audit_id, standard_id, nc_number, section_code, description, severity,
+                            status, source_type, source_question_id, source_response_id,
+                            created_at, updated_at
+                        )
+                        OUTPUT INSERTED.nc_id, INSERTED.nc_uuid
+                        VALUES (
+                            @audit_id, @standard_id, @nc_number, @section_code, @description, @severity,
+                            'open', @source_type, @source_question_id, @source_response_id,
+                            GETDATE(), GETDATE()
+                        )
+                    `, {
+                        audit_id,
+                        standard_id,
+                        nc_number,
+                        section_code: f.section_code || '0.0',
+                        description: (f.notes && String(f.notes).trim()) || `Rilievo ${f.conformity_status} su domanda "${(f.question_text || '').slice(0, 200)}"`,
+                        severity,
+                        source_type,
+                        source_question_id: f.question_id,
+                        source_response_id: f.response_id || null,
+                    });
+                    inserted = ins.recordset[0];
+                    break;
+                } catch (err) {
+                    // Conflitto su nc_number unique -> incrementa e ritenta
+                    if (err.number === 2627 || err.number === 2601 || /UNIQUE|duplicate/i.test(err.message)) {
+                        nextSeq++;
+                        continue;
+                    }
+                    throw err;
+                }
+            }
+
+            if (!inserted) {
+                logger.warn('[NC_PUSH] impossibile generare nc_number unico dopo 10 tentativi', { audit_id, question_id: f.question_id });
+                continue;
+            }
+
+            // Link bidirezionale: se esiste pending_issue con stesso source_response_id, aggiorna nc_id
+            await query(`
+                UPDATE pending_issues
+                SET nc_id = @nc_id, updated_at = GETDATE()
+                WHERE source_response_id = @source_response_id
+                  AND organization_id = @organization_id
+                  AND nc_id IS NULL
+            `, {
+                nc_id: inserted.nc_id,
+                source_response_id: f.response_id,
+                organization_id,
+            });
+
+            created.push({
+                nc_id: inserted.nc_id,
+                nc_number,
+                question_id: f.question_id,
+                section_code: f.section_code,
+                source_type,
+                severity,
+            });
+            nextSeq++;
+        }
+
+        // Aggiorna contatore NC nell'audit (solo NC, escluse osservazioni)
+        await query(`
+            UPDATE audits
+            SET non_conformities_count = (
+                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND severity != 'observation'
+            ),
+            updated_at = GETDATE()
+            WHERE audit_id = @audit_id
+        `, { audit_id });
+
+        logger.info('NC bulk push completed', {
+            audit_id,
+            user_id,
+            organization_id,
+            created_count: created.length,
+            skipped_count: skipped.length,
+        });
+
+        res.status(201).json({
+            success: true,
+            audit_id,
+            created,
+            skipped,
+            summary: {
+                created_count: created.length,
+                skipped_count: skipped.length,
+                total_findings: findings.length,
+            },
+        });
+
+    } catch (error) {
+        logger.error('Error in pushAuditToNcRegister', { error: error.message, stack: error.stack });
+        res.status(500).json({
+            error: 'Errore durante trasferimento al modulo NC',
+            code: 'NC_PUSH_ERROR',
+            details: error.message,
+        });
+    }
+}
+
+/**
+ * DELETE /api/v1/audits/:auditRef/push-to-nc-register
+ * Annulla push: elimina tutte le NC create con source_type='audit_nc'|'audit_oss' per quell'audit.
+ * Usato dal toast "undo" nella UI (entro 10 secondi dalla creazione).
+ *
+ * Per sicurezza: elimina SOLO se non sono state aggiunte azioni correttive (nc_actions) o
+ * cambiato lo stato dal default 'open'. Tutela: una volta che la NC e' stata presa in carico,
+ * va eliminata manualmente dal modulo NC.
+ */
+async function undoPushAuditToNcRegister(req, res) {
+    try {
+        const { auditRef } = req.params;
+        const { organization_id, user_id } = req.user;
+
+        const auditRow = await query(`
+            SELECT audit_id FROM audits
+            WHERE (audit_id = TRY_CAST(@auditRef AS INT) OR audit_uuid = @auditRef)
+              AND organization_id = @organization_id
+              AND is_deleted = 0
+        `, { auditRef, organization_id });
+
+        if (!auditRow.recordset || auditRow.recordset.length === 0) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+        const audit_id = auditRow.recordset[0].audit_id;
+
+        // Trova NC eliminabili: status='open', source_type IN ('audit_nc','audit_oss'),
+        // senza nc_actions
+        const eligibleRes = await query(`
+            SELECT nc.nc_id
+            FROM non_conformities nc
+            WHERE nc.audit_id = @audit_id
+              AND nc.source_type IN ('audit_nc', 'audit_oss')
+              AND nc.status = 'open'
+              AND NOT EXISTS (SELECT 1 FROM nc_actions a WHERE a.nc_id = nc.nc_id)
+        `, { audit_id });
+
+        const eligibleIds = (eligibleRes.recordset || []).map(r => r.nc_id);
+
+        if (eligibleIds.length === 0) {
+            return res.json({
+                success: true,
+                deleted_count: 0,
+                message: 'Nessuna NC eliminabile (gia in lavorazione o assente).',
+            });
+        }
+
+        // Rimuovi link da pending_issues (FK SET NULL non e' disponibile per evitare cascade cycle)
+        const idList = eligibleIds.join(',');
+        await query(`UPDATE pending_issues SET nc_id = NULL WHERE nc_id IN (${idList})`);
+
+        // Elimina le NC
+        const delRes = await query(`DELETE FROM non_conformities WHERE nc_id IN (${idList})`);
+
+        // Aggiorna contatore audit
+        await query(`
+            UPDATE audits
+            SET non_conformities_count = (
+                SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id AND severity != 'observation'
+            ),
+            updated_at = GETDATE()
+            WHERE audit_id = @audit_id
+        `, { audit_id });
+
+        logger.info('NC bulk push UNDO completed', { audit_id, user_id, organization_id, deleted_count: eligibleIds.length });
+
+        res.json({
+            success: true,
+            deleted_count: eligibleIds.length,
+            deleted_ids: eligibleIds,
+        });
+
+    } catch (error) {
+        logger.error('Error in undoPushAuditToNcRegister', { error: error.message });
+        res.status(500).json({
+            error: 'Errore durante annullamento push',
+            code: 'NC_PUSH_UNDO_ERROR',
+            details: error.message,
+        });
+    }
+}
+
 module.exports = {
     listNonConformities,
     getNonConformityById,
@@ -848,5 +1137,7 @@ module.exports = {
     listNcActions,
     createNcAction,
     updateNcAction,
-    deleteNcAction
+    deleteNcAction,
+    pushAuditToNcRegister,
+    undoPushAuditToNcRegister,
 };

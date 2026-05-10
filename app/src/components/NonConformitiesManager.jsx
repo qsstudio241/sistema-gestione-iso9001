@@ -233,7 +233,7 @@ function NonConformitiesManager({ readOnly = false }) {
               onDelete={() => handleDeleteNC(nc.id)}
               readOnly={readOnly}
               isRegistering={registeringNcId === nc.id}
-              onRegisterToOrg={!readOnly && hasLicensedModule ? () => handleRegisterToOrg(nc) : null}
+              onRegisterToOrg={!readOnly && hasLicensedModule("nc") ? () => handleRegisterToOrg(nc) : null}
               onUpdateStatus={(status) => {
                 updateCurrentAudit((audit) => ({
                   ...audit,

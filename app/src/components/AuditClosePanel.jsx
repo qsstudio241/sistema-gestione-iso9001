@@ -7,13 +7,17 @@
  *
  * Sistema Gestione ISO 9001 - QS Studio
  */
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
 import { STANDARD_TO_SUBSID, getSelectedStandardEntries } from "../data/standardsRegistry";
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
+
+/** Finestra di grazia (secondi) per annullare il trasferimento delle NC al modulo organizzativo. */
+const NC_PUSH_UNDO_SECONDS = 10;
 
 /** Tutti i punti norma devono essere valutati (anche NA/NV contano come risposta) */
 const COMPLETION_THRESHOLD = 100;
@@ -47,6 +51,7 @@ function calcCompletion(checklist) {
 
 function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const { updateCurrentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
 
   // Stato chiusura
   const [confirming, setConfirming] = useState(false);
@@ -57,6 +62,24 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const [approving, setApproving]         = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
   const [approveError, setApproveError]   = useState(null);
+
+  // Stato push NC verso modulo organizzativo (solo con licenza 'nc')
+  // Fasi: idle -> pushing -> pushed (con countdown undo) -> finalized / undone
+  const [ncPushState, setNcPushState] = useState({
+    phase: "idle", // 'idle' | 'pushing' | 'pushed' | 'undoing' | 'finalized' | 'undone' | 'error'
+    countdown: 0,
+    summary: null, // { created_count, skipped_count, total_findings }
+    error: null,
+  });
+  const ncPushTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (ncPushTimerRef.current) clearInterval(ncPushTimerRef.current);
+    };
+  }, []);
+
+  const hasNcLicense = hasLicensedModule("nc");
 
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
@@ -243,6 +266,83 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     }
   }
 
+  // ─── Trasferimento NC/OSS al modulo organizzativo (richiede licenza 'nc') ──
+  // Conteggio rilievi disponibili per il push (NC + OSS sia ISO sia custom)
+  const ncPushAvailable = useMemo(() => {
+    const isoM = calculateFindingsMetrics(currentAudit?.checklist);
+    const cuM  = currentAudit?.customChecklist?.has_outcome_buttons
+      ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
+      : { totalNC: 0, totalOSS: 0 };
+    return {
+      nc:  (isoM.totalNC  || 0) + (cuM.totalNC  || 0),
+      oss: (isoM.totalOSS || 0) + (cuM.totalOSS || 0),
+    };
+  }, [currentAudit]);
+
+  const ncPushTotal = ncPushAvailable.nc + ncPushAvailable.oss;
+
+  async function handleNcPush() {
+    const auditRef = currentAudit?.metadata?.auditId ?? currentAudit?.audit_id
+                  ?? currentAudit?.metadata?.id     ?? currentAudit?.id;
+    if (!auditRef) {
+      setNcPushState((s) => ({ ...s, phase: "error", error: "ID audit non disponibile" }));
+      return;
+    }
+    setNcPushState({ phase: "pushing", countdown: 0, summary: null, error: null });
+    try {
+      const res = await apiService.pushAuditToNcRegister(auditRef);
+      const data = res?.data || res || {};
+      const summary = data.summary || {
+        created_count: (data.created || []).length,
+        skipped_count: (data.skipped || []).length,
+        total_findings: 0,
+      };
+
+      // Avvia countdown undo
+      let secs = NC_PUSH_UNDO_SECONDS;
+      setNcPushState({ phase: "pushed", countdown: secs, summary, error: null });
+      if (ncPushTimerRef.current) clearInterval(ncPushTimerRef.current);
+      ncPushTimerRef.current = setInterval(() => {
+        secs -= 1;
+        if (secs <= 0) {
+          clearInterval(ncPushTimerRef.current);
+          ncPushTimerRef.current = null;
+          setNcPushState((s) => ({ ...s, phase: "finalized", countdown: 0 }));
+        } else {
+          setNcPushState((s) => ({ ...s, countdown: secs }));
+        }
+      }, 1000);
+    } catch (err) {
+      setNcPushState({
+        phase: "error",
+        countdown: 0,
+        summary: null,
+        error: err?.response?.data?.error || err?.message || "Errore durante il trasferimento.",
+      });
+    }
+  }
+
+  async function handleNcPushUndo() {
+    const auditRef = currentAudit?.metadata?.auditId ?? currentAudit?.audit_id
+                  ?? currentAudit?.metadata?.id     ?? currentAudit?.id;
+    if (!auditRef) return;
+    if (ncPushTimerRef.current) {
+      clearInterval(ncPushTimerRef.current);
+      ncPushTimerRef.current = null;
+    }
+    setNcPushState((s) => ({ ...s, phase: "undoing" }));
+    try {
+      await apiService.undoPushAuditToNcRegister(auditRef);
+      setNcPushState((s) => ({ ...s, phase: "undone", countdown: 0 }));
+    } catch (err) {
+      setNcPushState((s) => ({
+        ...s,
+        phase: "error",
+        error: err?.response?.data?.error || err?.message || "Impossibile annullare il trasferimento.",
+      }));
+    }
+  }
+
   // ─── Approvazione ────────────────────────────────────────────────────────────
   async function handleApprove() {
     setApproveLoading(true);
@@ -406,6 +506,95 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
         <div className="close-checklist close-checklist--ok">
           <h4>✅ Audit pronto per la chiusura</h4>
           <p>Tutti i requisiti obbligatori sono soddisfatti.</p>
+        </div>
+      )}
+
+      {/* ─── Trasferimento al modulo NC (solo con licenza 'nc') ───────────── */}
+      {hasNcLicense && ncPushTotal > 0 && (
+        <div className="close-checklist close-nc-push">
+          <h4>📋 Trasferimento al modulo Non Conformità</h4>
+          {ncPushState.phase === "idle" && (
+            <>
+              <p className="close-nc-push__text">
+                Rilevate <strong>{ncPushAvailable.nc} NC</strong>
+                {ncPushAvailable.oss > 0 && (
+                  <> e <strong>{ncPushAvailable.oss} OSS</strong></>
+                )}.
+                Trasferiscile al modulo organizzativo per gestire azioni correttive,
+                responsabili e verifiche di efficacia.
+              </p>
+              <button
+                className="close-btn close-btn--secondary"
+                onClick={handleNcPush}
+                title="Trasferisce NC e OSS al registro organizzativo (potrai annullare entro 10 secondi)"
+              >
+                📤 Trasferisci NC e OSS al modulo NC
+              </button>
+            </>
+          )}
+          {ncPushState.phase === "pushing" && (
+            <p className="close-nc-push__text">⏳ Trasferimento in corso...</p>
+          )}
+          {ncPushState.phase === "pushed" && (
+            <div className="close-nc-push__toast">
+              <p>
+                ✅ <strong>Trasferiti {ncPushState.summary?.created_count ?? 0} rilievi</strong>
+                {ncPushState.summary?.skipped_count > 0 && (
+                  <> ({ncPushState.summary.skipped_count} già presenti, saltati)</>
+                )} al modulo NC.
+              </p>
+              <p className="close-nc-push__countdown">
+                Annullabile entro <strong>{ncPushState.countdown}s</strong>
+              </p>
+              <button
+                className="close-btn close-btn--force"
+                onClick={handleNcPushUndo}
+              >
+                ↩ Annulla trasferimento
+              </button>
+            </div>
+          )}
+          {ncPushState.phase === "undoing" && (
+            <p className="close-nc-push__text">⏳ Annullamento in corso...</p>
+          )}
+          {ncPushState.phase === "finalized" && (
+            <p className="close-nc-push__text close-nc-push__text--ok">
+              ✅ Trasferimento completato. {ncPushState.summary?.created_count ?? 0} NC/OSS
+              ora gestibili dal <a href="/nc" target="_blank" rel="noreferrer">modulo NC</a>.
+              Per modifiche o eliminazioni, agire dal modulo NC.
+            </p>
+          )}
+          {ncPushState.phase === "undone" && (
+            <p className="close-nc-push__text close-nc-push__text--ok">
+              ✅ Trasferimento annullato. Le NC/OSS sono state rimosse dal modulo.
+              {" "}
+              <button
+                className="close-link-btn"
+                onClick={() => setNcPushState({ phase: "idle", countdown: 0, summary: null, error: null })}
+              >
+                Riprova
+              </button>
+            </p>
+          )}
+          {ncPushState.phase === "error" && (
+            <p className="close-api-error">⚠️ {ncPushState.error}</p>
+          )}
+        </div>
+      )}
+
+      {/* Nota informativa quando la licenza NC NON e' attiva: il flusso pending_issues
+          resta comunque attivo, le NC/OSS verranno presentate al re-audit successivo. */}
+      {!hasNcLicense && ncPushTotal > 0 && (
+        <div className="close-checklist close-checklist--info">
+          <h4>ℹ️ Gestione rilievi senza modulo NC</h4>
+          <p>
+            Le <strong>{ncPushAvailable.nc} NC</strong>
+            {ncPushAvailable.oss > 0 && (
+              <> e <strong>{ncPushAvailable.oss} OSS</strong></>
+            )} rilevate saranno automaticamente presentate come <strong>rilievi pendenti</strong>
+            nel prossimo audit dello stesso cliente. Attiva il modulo "Non Conformità" per
+            gestire azioni correttive, responsabili e verifiche di efficacia in modo strutturato.
+          </p>
         </div>
       )}
 

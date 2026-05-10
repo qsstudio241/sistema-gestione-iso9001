@@ -15,9 +15,22 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import AutoTextarea from "./AutoTextarea";
 import "./PendingIssuesCascade.css";
+
+/** Stati NC del modulo organizzativo che indicano risoluzione (suggerimento UI). */
+const NC_RESOLVED_STATUSES = new Set(["resolved", "verified", "closed"]);
+
+/** Etichette stato NC dal modulo organizzativo. */
+const NC_STATUS_LABELS = {
+  open:        { label: "Aperta",     cls: "nc-open"        },
+  in_progress: { label: "In corso",   cls: "nc-in-progress" },
+  resolved:    { label: "Risolta",    cls: "nc-resolved"    },
+  verified:    { label: "Verificata", cls: "nc-verified"    },
+  closed:      { label: "Chiusa",     cls: "nc-closed"      },
+};
 
 /** Config badge per status originale rilievo */
 const ORIGIN_STATUS_CONFIG = {
@@ -35,6 +48,8 @@ const RESOLUTION_ACTIONS = [
 
 function PendingIssuesCascade({ onGoToQuestion }) {
   const { currentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
+  const hasNcLicense = hasLicensedModule("nc");
 
   const [issues, setIssues]                   = useState([]);
   const [sourceAuditNumber, setSourceAuditNumber] = useState(null);
@@ -310,6 +325,36 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                     <strong>Note originali:</strong>{" "}
                     {issue.source_notes || <em>Nessuna nota registrata</em>}
                   </div>
+
+                  {/* Stato dal modulo NC organizzativo (solo se licenza attiva e linkato) */}
+                  {hasNcLicense && issue.nc_id && issue.nc_status && (
+                    <div className={`issue-nc-link ${NC_STATUS_LABELS[issue.nc_status]?.cls || ""}`}>
+                      <span className="issue-nc-icon">📋</span>
+                      <span className="issue-nc-text">
+                        Gestita nel modulo NC come{" "}
+                        <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
+                        {" — stato attuale: "}
+                        <strong>{NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}</strong>
+                      </span>
+                      {NC_RESOLVED_STATUSES.has(issue.nc_status) && curStatus === "open" && (
+                        <span className="issue-nc-suggest">
+                          ✓ Suggerimento: NC risolta dal modulo → conferma "Risolto" qui sotto
+                        </span>
+                      )}
+                      {issue.nc_corrective_action && (
+                        <div className="issue-nc-corrective">
+                          <strong>Azione correttiva intrapresa:</strong>{" "}
+                          {issue.nc_corrective_action}
+                        </div>
+                      )}
+                      {issue.nc_verification_notes && (
+                        <div className="issue-nc-verification">
+                          <strong>Verifica efficacia:</strong>{" "}
+                          {issue.nc_verification_notes}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Pulsanti risoluzione */}
                   <div className="resolution-actions">
