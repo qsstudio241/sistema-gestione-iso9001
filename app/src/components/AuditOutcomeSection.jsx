@@ -16,11 +16,17 @@ import "./AuditOutcomeSection.css";
 function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards }) {
   const { currentAudit } = useStorage();
 
-  // Stato locale per editing
-  const [conclusions, setConclusions] = useState(
-    auditOutcome?.conclusions || ""
+  // Conclusione unica (standard singolo)
+  const [conclusions, setConclusions] = useState(auditOutcome?.conclusions || "");
+
+  // Conclusioni per norma (multi-standard) — chiave: normKey, valore: testo
+  const [conclusionsByKey, setConclusionsByKey] = useState(
+    () => Object.fromEntries(
+      Object.keys(auditOutcome?.byStandard || {}).map((key) => [
+        key, auditOutcome?.byStandard?.[key]?.conclusions || ""
+      ])
+    )
   );
-  // RIMOSSO: emergingSummary, attachments, distribution (funzionalità future)
 
   // Calcola metriche real-time dalla checklist
   const [metrics, setMetrics] = useState({
@@ -67,13 +73,20 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     }
   }, [currentAudit?.checklist, currentAudit?.customStatuses, currentAudit?.customChecklist, auditOutcome, onUpdate]);
 
-  // Handler aggiornamento conclusioni
   const handleConclusionsChange = (e) => {
     const value = e.target.value;
     setConclusions(value);
+    onUpdate({ ...auditOutcome, conclusions: value });
+  };
+
+  const handleConclusionsByKeyChange = (key, value) => {
+    setConclusionsByKey((prev) => ({ ...prev, [key]: value }));
     onUpdate({
       ...auditOutcome,
-      conclusions: value,
+      byStandard: {
+        ...auditOutcome?.byStandard,
+        [key]: { ...auditOutcome?.byStandard?.[key], conclusions: value },
+      },
     });
   };
 
@@ -96,15 +109,36 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
       {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
       {showConclusions && (
       <div className="outcome-block">
-        <textarea
-          id="conclusions"
-          className="outcome-textarea"
-          rows={6}
-          placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
-          value={conclusions}
-          onChange={handleConclusionsChange}
-          disabled={readOnly}
-        />
+        {/* Standard singolo: una textarea */}
+        {!isMultiStandard && (
+          <textarea
+            id="conclusions"
+            className="outcome-textarea"
+            rows={6}
+            placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
+            value={conclusions}
+            onChange={handleConclusionsChange}
+            disabled={readOnly}
+          />
+        )}
+
+        {/* Multi-standard: una textarea per norma con intestazione */}
+        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => (
+          <div key={key} className="findings-per-standard">
+            <span className="findings-per-standard__label">
+              {shortLabel} — {label.split(" \u2014 ")[1] || label}
+            </span>
+            <textarea
+              id={`conclusions-${key}`}
+              className="outcome-textarea"
+              rows={5}
+              placeholder={`Conclusioni per ${label.split(" \u2014 ")[0] || label}…`}
+              value={conclusionsByKey[key] ?? ""}
+              onChange={(e) => handleConclusionsByKeyChange(key, e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        ))}
       </div>
       )}
 
