@@ -175,6 +175,13 @@ function TabAnagrafica() {
         </div>
       )}
 
+      {!loading && !form.audit_report_prefix && (
+        <div className="studio-warning-banner">
+          &#9888;&#65039; Prefisso numerazione non impostato &mdash; i nuovi audit useranno il codice generico <strong>AUD</strong>.
+          Imposta un prefisso breve (es. <strong>QSS</strong>) per identificare lo studio nei documenti generati.
+        </div>
+      )}
+
       {/* Logo */}
       <div className="studio-card">
         <h3 className="studio-card-title">Logo Studio</h3>
