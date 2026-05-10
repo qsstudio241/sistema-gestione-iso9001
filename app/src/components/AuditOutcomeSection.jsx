@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
-import MetricsByStandardChip from "./MetricsByStandardChip";
+import { getSelectedStandardEntries } from "../data/standardsRegistry";
 import "./AuditOutcomeSection.css";
 
 /**
@@ -85,7 +85,11 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     () => calculateByStandardMetrics(currentAudit?.checklist),
     [currentAudit?.checklist]
   );
-  const isMultiStandard = selectedStandards && selectedStandards.length > 1;
+  const standardEntries = useMemo(
+    () => getSelectedStandardEntries(selectedStandards || []),
+    [selectedStandards]
+  );
+  const isMultiStandard = standardEntries.length > 1;
 
   return (
     <div className={`audit-outcome-section${readOnly ? ' readonly-mode' : ''}`}>
@@ -165,14 +169,22 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
         })()}
 
         {/* Dettaglio per norma — visibile solo per audit multi-standard */}
-        {isMultiStandard && (
-          <MetricsByStandardChip
-            selectedStandards={selectedStandards}
-            byStandard={byStandard}
-            includeOss
-            includeOm
-          />
-        )}
+        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => {
+          const m = byStandard[key] || {};
+          return (
+            <div key={key} className="findings-per-standard">
+              <span className="findings-per-standard__label">{shortLabel} — {label.split(" \u2014 ")[1] || label}</span>
+              <div className="findings-metrics-compact">
+                <span className="metric-compact nc"><strong>C:</strong> {m.totalC ?? 0}</span>
+                <span className="metric-compact oss"><strong>OSS:</strong> {m.totalOSS ?? 0}</span>
+                <span className="metric-compact nc-severe"><strong>NC:</strong> {m.totalNC ?? 0}</span>
+                <span className="metric-compact om"><strong>OM:</strong> {m.totalOM ?? 0}</span>
+                <span className="metric-compact na"><strong>NA:</strong> {m.totalNA ?? 0}</span>
+                <span className="metric-compact nv"><strong>NV:</strong> {m.totalNV ?? 0}</span>
+              </div>
+            </div>
+          );
+        })}
 
         {/* LEGENDA (spostata da ChecklistModule) */}
         <div className="findings-legend">

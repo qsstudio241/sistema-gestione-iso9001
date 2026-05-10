@@ -109,25 +109,36 @@ export function calculateCompletionPercentage(checklist) {
 export function calculateNormMetrics(normChecklist) {
     if (!normChecklist || typeof normChecklist !== "object") {
         return {
-            totalNC: 0,
-            totalOSS: 0,
-            totalOM: 0,
-            totalQuestions: 0,
-            answeredQuestions: 0,
-            completionPercentage: 0,
+            totalC: 0, totalNC: 0, totalOSS: 0, totalOM: 0,
+            totalNA: 0, totalNV: 0,
+            totalQuestions: 0, answeredQuestions: 0, completionPercentage: 0,
         };
     }
 
-    // Wrappa in oggetto per riutilizzare calculateFindingsMetrics
-    const wrappedChecklist = { NORM: normChecklist };
-    const metrics = calculateFindingsMetrics(wrappedChecklist);
+    let totalC = 0, totalNC = 0, totalOSS = 0, totalOM = 0, totalNA = 0, totalNV = 0;
+    let totalQuestions = 0, answeredQuestions = 0;
+
+    Object.values(normChecklist).forEach((clause) => {
+        if (!clause?.questions || !Array.isArray(clause.questions)) return;
+        clause.questions.forEach((question) => {
+            totalQuestions++;
+            const s = question.status;
+            if (s && s !== "NOT_ANSWERED" && s !== "not_applicable") answeredQuestions++;
+            if (s === "C" || s === "compliant")      totalC++;
+            else if (s === "NC" || s === "non_compliant") totalNC++;
+            else if (s === "OSS" || s === "partial") totalOSS++;
+            else if (s === "OM")                     totalOM++;
+            else if (s === "NA" || s === "not_applicable") totalNA++;
+            else if (s === "NV")                     totalNV++;
+        });
+    });
 
     return {
-        ...metrics,
-        completionPercentage:
-            metrics.totalQuestions > 0
-                ? Math.round((metrics.answeredQuestions / metrics.totalQuestions) * 100)
-                : 0,
+        totalC, totalNC, totalOSS, totalOM, totalNA, totalNV,
+        totalQuestions, answeredQuestions,
+        completionPercentage: totalQuestions > 0
+            ? Math.round((answeredQuestions / totalQuestions) * 100)
+            : 0,
     };
 }
 
