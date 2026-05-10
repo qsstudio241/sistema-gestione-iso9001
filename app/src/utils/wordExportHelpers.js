@@ -248,6 +248,60 @@ export function buildWordInlineImageRun(rId, imgId, widthEmu = 1905000, heightEm
     return xmlImageOoxml(rId, imgId, widthEmu, heightEmu);
 }
 
+/**
+ * Legge dimensioni pixel da base64 di immagine PNG o JPEG (sincrono, senza DOM).
+ * Ritorna { w, h } o null se formato non riconosciuto.
+ */
+export function getImagePixelDimensions(base64Data, mime) {
+    try {
+        const binary = atob(base64Data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const m = String(mime || '').split(';')[0].trim().toLowerCase();
+
+        if (m === 'image/png') {
+            if (bytes.length < 24) return null;
+            const w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+            const h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+            return { w: w >>> 0, h: h >>> 0 };
+        }
+        if (m === 'image/jpeg' || m === 'image/jpg') {
+            let i = 0;
+            while (i < bytes.length - 10) {
+                if (bytes[i] !== 0xFF) { i++; continue; }
+                const marker = bytes[i + 1];
+                if (marker >= 0xC0 && marker <= 0xC3) {
+                    return { w: (bytes[i + 7] << 8) | bytes[i + 8], h: (bytes[i + 5] << 8) | bytes[i + 6] };
+                }
+                if (marker === 0xD8 || marker === 0xFF) { i++; continue; }
+                const segLen = (bytes[i + 2] << 8) | bytes[i + 3];
+                i += 2 + (segLen > 0 ? segLen : 1);
+            }
+            return null;
+        }
+        return null;
+    } catch { return null; }
+}
+
+/**
+ * Scala EMU mantenendo le proporzioni originali entro maxWidthEmu e maxHeightEmu.
+ * Se le dimensioni reali non sono disponibili usa il fallback (rapporto 4:3).
+ */
+export function scaleImageToMaxEmu(pixW, pixH, maxWidthEmu, maxHeightEmu) {
+    if (!pixW || !pixH || pixW <= 0 || pixH <= 0) {
+        const cy = Math.min(Math.round(maxWidthEmu * 0.75), maxHeightEmu);
+        return { cx: maxWidthEmu, cy };
+    }
+    const ratio = pixH / pixW;
+    let cx = maxWidthEmu;
+    let cy = Math.round(cx * ratio);
+    if (cy > maxHeightEmu) {
+        cy = maxHeightEmu;
+        cx = Math.round(cy / ratio);
+    }
+    return { cx, cy };
+}
+
 /** Genera OOXML per un'immagine embedded (200x150px → 1905000x1428750 EMU) */
 function xmlImageOoxml(rId, imgId, widthEmu = 1905000, heightEmu = 1428750) {
     const name = `img${imgId}`;

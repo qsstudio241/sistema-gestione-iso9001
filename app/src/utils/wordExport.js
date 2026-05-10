@@ -39,7 +39,17 @@ import {
     buildWordInlineImageRun,
     calculateMetrics,
     wordEmbeddableExtFromMime,
+    getImagePixelDimensions,
+    scaleImageToMaxEmu,
 } from './wordExportHelpers.js';
+
+// Dimensioni massime loghi intestazione (da layout template — celle tabella header2.xml)
+// Cella [LOGO]     (cliente): 1.59 cm wide → max 1.50 cm = 540000 EMU
+// Cella [LOGO_ORG] (studio) : 2.38 cm wide → max 2.20 cm = 792000 EMU
+// Altezza cap: 1.50 cm = 540000 EMU (mantiene geometria riga intestazione)
+const LOGO_CLIENT_MAX_W_EMU = 540000;
+const LOGO_ORG_MAX_W_EMU    = 792000;
+const LOGO_MAX_H_EMU        = 540000;
 
 // ─── Mappa standard → template ────────────────────────────────────────────────
 // PER AGGIUNGERE UNA NUOVA NORMA: inserire qui la coppia chiave→percorso template.
@@ -504,9 +514,13 @@ function injectCompanyLogoInZip(zip, dataUrl) {
         relsXml = appendImageRelationship(relsXml, rId, mediaRelTarget);
         zip.file(relsPath, relsXml);
 
+        const dims = getImagePixelDimensions(parsed.base64, parsed.mime);
+        const { cx: logoCx, cy: logoCy } = scaleImageToMaxEmu(
+            dims?.w, dims?.h, LOGO_CLIENT_MAX_W_EMU, LOGO_MAX_H_EMU
+        );
         let imgIdLocal = 88001;
         while (xml.includes('[LOGO]')) {
-            const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++);
+            const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++, logoCx, logoCy);
             xml = replaceLogoMarkerParagraph(xml, xml.indexOf('[LOGO]'), drawingRun, '[LOGO]');
         }
         zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
@@ -555,8 +569,12 @@ function injectOrganizationLogoInZip(zip, dataUrl) {
         zip.file(relsPath, relsXml);
 
         let imgIdLocal = 89001;
+        const orgDims = getImagePixelDimensions(parsed.base64, parsed.mime);
+        const { cx: orgCx, cy: orgCy } = scaleImageToMaxEmu(
+            orgDims?.w, orgDims?.h, LOGO_ORG_MAX_W_EMU, LOGO_MAX_H_EMU
+        );
         while (xml.includes(ORG_LOGO_MARKER)) {
-            const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++);
+            const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++, orgCx, orgCy);
             xml = replaceLogoMarkerParagraph(xml, xml.indexOf(ORG_LOGO_MARKER), drawingRun, ORG_LOGO_MARKER);
         }
         zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
