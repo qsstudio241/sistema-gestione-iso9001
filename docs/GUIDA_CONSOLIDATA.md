@@ -46,12 +46,21 @@
 **Ottimizzazione backlog — navigazione accordion auto-discovery:**
 Attualmente il `path[]` di ogni campo deve essere dichiarato esplicitamente. Un futuro miglioramento renderebbe il sistema completamente automatico: aggiungere `data-accordion-key="nome-sezione"` a ogni wrapper accordion nel DOM + un walker che risale l'albero dal campo target verso il root aprendo ogni livello trovato. Richiede di instrumentare tutti gli accordion ma eliminerebbe la necessità di aggiornare i `path[]` quando cambia la struttura. **Da valutare solo se i livelli di annidamento crescono oltre 3-4 o se si aggiungono molti nuovi moduli con accordion propri.**
 
-**Commits chiave sessione 09/05 sera:**
+**Commits chiave sessione 09-10/05:**
 - `4505490` Fix validazione: rimozione obbligo evidence, note solo per NC/OSS
 - `3c8f509` Regola autonomia decisioni tecniche in operating-memory
-- `cbf4a37` Guided close v3: callback diretta  
-- `b862da5` Guided close v4: apertura sub-sezioni annidate
-- `a8a701b` Collapse button in fondo ad ogni accordion aperto
+- `db32a05` Guided close v7: path-based definitivo (section→subsection→clauseExpand)
+- `a8a701b` Collapse button "▲ Chiudi" in fondo ad ogni accordion aperto
+- `65514d4` Hotfix: `validation is not defined` in AuditClosePanel
+- `commit`  Guided close v9: `id="custom-item-{id}"` in QuestionCard + primo item custom incompleto
+
+**Stato guided close al 10/05/2026:**
+- ✅ ISO checklist (9001/14001/45001): trova prima domanda NOT_ANSWERED → apre section+subsection+clausole → scroll+focus
+- ✅ Custom checklist: trova primo item incompleto → apre section+subsection → scroll+focus
+- ✅ Campi testuali (auditObject, scope, description, conclusions): naviga correttamente
+- ✅ Pulsante "▲ Chiudi" in fondo ad ogni accordion
+- ✅ Hook `useGuidedCompletion` riusabile per futuri moduli
+- ⚠️ NC/OSS senza note non ancora nei blockers (da aggiungere in ADR-009 Fase 2)
 
 ---
 
