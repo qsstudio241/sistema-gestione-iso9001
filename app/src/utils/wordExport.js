@@ -923,16 +923,16 @@ function blobToBase64(blob) {
 }
 
 // Ordine ottimale per trovare l'ultimo report per azienda nel file system:
-// {prefix}_{cliente}_{numero_audit}_{standard}.docx
+// {cliente}_{numero_audit}_{standard}.docx
 // - ordine alfabetico raggruppa per cliente
-// - numero_audit (es. QS260510_01) porta la data → ordine cronologico dentro ogni cliente
+// - numero_audit (es. QS_260510_01) include già il prefisso dello studio e porta la data
 // - standard in coda (meno variabile)
-function buildFileName(audit, standardKey = null, prefix = null) {
+// Il parametro prefix non viene più usato nel nome file (è già embedded nel numero audit)
+function buildFileName(audit, standardKey = null, _prefix = null) {
     const client = (audit.metadata?.clientName  || 'Cliente').replace(/[^a-z0-9]/gi, '_');
     const number = (audit.metadata?.auditNumber || 'N-A').replace(/[^a-z0-9]/gi, '_');
     const stdSuffix = standardKey ? '_' + standardKey.replace(/^ISO_/, 'ISO').replace(/_/g, '') : '';
-    const p = prefix ? String(prefix).replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') : 'Audit';
-    return p + '_' + client + '_' + number + stdSuffix + '.docx';
+    return client + '_' + number + stdSuffix + '.docx';
 }
 
 // ─── API pubblica (firma invariata rispetto alla versione precedente) ─────────
