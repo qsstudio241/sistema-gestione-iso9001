@@ -547,6 +547,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.status-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
 }
 
 .status-btn:hover {
