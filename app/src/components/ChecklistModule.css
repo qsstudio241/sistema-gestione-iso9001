@@ -548,7 +548,16 @@
   align-items: center;
   justify-content: center;
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Impedisce che il browser sovrascriva il background nei pulsanti non selezionati */
+.status-btn:not(.active):focus,
+.status-btn:not(.active):active {
+  background: white;
+  border-color: #ddd;
 }
 
 .status-btn:focus-visible {
