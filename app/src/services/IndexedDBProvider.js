@@ -16,6 +16,23 @@ export class IndexedDBProvider {
     }
 
     /**
+     * Verifica se un errore IDB è dovuto a quota storage esaurita.
+     * @param {any} error
+     * @returns {boolean}
+     */
+    static _isQuotaError(error) {
+        if (!error) return false;
+        const name = String(error?.name || '');
+        const msg  = String(error?.message || error || '');
+        return (
+            name === 'QuotaExceededError' ||
+            msg.includes('kQuotaBytes') ||
+            msg.includes('QuotaExceeded') ||
+            msg.includes('quota exceeded')
+        );
+    }
+
+    /**
      * Inizializza database IndexedDB
      */
     async initialize() {
@@ -74,28 +91,53 @@ export class IndexedDBProvider {
     }
 
     /**
-     * Salva audit completo
+     * Salva audit completo.
+     * In caso di QuotaExceededError tenta recovery (svuota allegati + audit vecchi)
+     * e riprova una volta. Se ancora fallisce, risolve silenziosamente —
+     * i dati sono sul server e verranno ricaricati al prossimo fetch.
      */
     async saveAudit(audit) {
         if (!this.db) throw new Error('Database non inizializzato');
 
+        try {
+            return await this._saveAuditOnce(audit);
+        } catch (error) {
+            if (IndexedDBProvider._isQuotaError(error)) {
+                console.warn('[IndexedDB] saveAudit: quota esaurita — tento recovery e retry...');
+                await this._recoverFromQuota();
+                try {
+                    return await this._saveAuditOnce(audit);
+                } catch (retryErr) {
+                    // Dopo recovery la quota è ancora esaurita (device con storage minimo).
+                    // I dati sono al sicuro sul server: risolvi senza lanciare per non bloccare l'UI.
+                    console.warn('[IndexedDB] saveAudit: quota esaurita anche dopo recovery — skip (dati su server)');
+                    return audit;
+                }
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * @private Esegue un singolo tentativo di salvataggio in IDB.
+     */
+    _saveAuditOnce(auditData) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([STORE_AUDITS], 'readwrite');
             const store = transaction.objectStore(STORE_AUDITS);
 
             // Preserva struttura originale con metadata
-            const auditData = {
-                ...audit,
-                // NON sovrascrivere id se già presente in audit
-                id: audit.id || audit.metadata?.id,
+            const data = {
+                ...auditData,
+                id: auditData.id || auditData.metadata?.id,
                 lastSaved: new Date().toISOString(),
             };
 
-            const request = store.put(auditData);
+            const request = store.put(data);
 
             request.onsuccess = () => {
-                console.log(`✅ Audit ${auditData.id} salvato in IndexedDB`);
-                resolve(auditData);
+                console.log(`✅ Audit ${data.id} salvato in IndexedDB`);
+                resolve(data);
             };
 
             request.onerror = () => {
@@ -157,6 +199,37 @@ export class IndexedDBProvider {
                 reject(request.error);
             };
         });
+    }
+
+    /**
+     * Recovery da quota IDB esaurita.
+     * Ordine: (1) svuota allegati (blob grandi), (2) svuota tutti gli audit.
+     * Non lancia: qualsiasi fallimento interno viene loggato e ignorato.
+     * Dopo questa chiamata, l'operazione che aveva fallito può essere ritentata.
+     */
+    async _recoverFromQuota() {
+        console.warn('[IndexedDB] Quota IDB esaurita — avvio recovery...');
+        if (!this.db) return;
+
+        // Step 1: svuota allegati offline (spesso i più pesanti — blob binari)
+        try {
+            await new Promise((resolve) => {
+                const tx = this.db.transaction([STORE_ATTACHMENTS], 'readwrite');
+                const req = tx.objectStore(STORE_ATTACHMENTS).clear();
+                req.onsuccess = () => { console.warn('[IndexedDB] Recovery: store allegati svuotato'); resolve(); };
+                req.onerror  = () => resolve(); // non bloccante
+            });
+        } catch { /* non bloccante */ }
+
+        // Step 2: svuota audit (il server è la fonte di verità; verranno ricaricati al prossimo fetch)
+        try {
+            await new Promise((resolve) => {
+                const tx = this.db.transaction([STORE_AUDITS], 'readwrite');
+                const req = tx.objectStore(STORE_AUDITS).clear();
+                req.onsuccess = () => { console.warn('[IndexedDB] Recovery: store audit svuotato'); resolve(); };
+                req.onerror  = () => resolve(); // non bloccante
+            });
+        } catch { /* non bloccante */ }
     }
 
     /**

@@ -40,6 +40,23 @@ const ATTACHMENTS_BLOB_STORE = 'attachments_offline'; // Store blob per upload o
  */
 
 export class SyncService {
+    /**
+     * Verifica se un errore è dovuto a quota IndexedDB esaurita.
+     * @param {any} error
+     * @returns {boolean}
+     */
+    static _isQuotaError(error) {
+        if (!error) return false;
+        const name = String(error?.name || '');
+        const msg  = String(error?.message || error || '');
+        return (
+            name === 'QuotaExceededError' ||
+            msg.includes('kQuotaBytes') ||
+            msg.includes('QuotaExceeded') ||
+            msg.includes('quota exceeded')
+        );
+    }
+
     constructor(apiBaseUrl = null) {
         // Usa lo stesso base URL del backend delle API (critico su Netlify: frontend e API su domini diversi)
         this.apiBaseUrl = apiBaseUrl ?? (typeof apiService !== 'undefined' ? apiService.baseUrl : null) ?? '/api/v1';
@@ -148,7 +165,16 @@ export class SyncService {
                 console.log(`📤 [SYNC QUEUE] Aggiunto: ${type}`, queueItem.id);
                 resolve(request.result);
             };
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                // Quota IDB esaurita: l'item non può essere accodato.
+                // I dati sono gestiti via server al prossimo fetch; non lanciare per non bloccare l'UI.
+                if (SyncService._isQuotaError(request.error)) {
+                    console.warn(`[SYNC QUEUE] Quota IDB esaurita: item ${type} non accodato (skip graceful)`);
+                    resolve(null);
+                } else {
+                    reject(request.error);
+                }
+            };
         });
 
         // Tenta sync immediata se online
