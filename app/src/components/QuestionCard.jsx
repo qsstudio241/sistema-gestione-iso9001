@@ -76,7 +76,7 @@ export function QuestionCard({
                 key={code}
                 type="button"
                 className={`status-btn ${className}${question.status === code ? " active" : ""}`}
-                onClick={() => onStatusChange?.(code)}
+                onClick={() => onStatusChange?.(question.status === code ? null : code)}
                 title={label}
                 disabled={readOnly}
               >
