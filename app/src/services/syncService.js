@@ -1225,7 +1225,15 @@ export class SyncService {
             await new Promise((resolve, reject) => {
                 const request = store.put(item);
                 request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
+                request.onerror = () => {
+                    // Quota: non bloccante, l'item verrà rivalutato al prossimo ciclo
+                    if (SyncService._isQuotaError(request.error)) {
+                        console.warn('[SYNC] updateRetryCount: quota IDB, skip graceful');
+                        resolve();
+                    } else {
+                        reject(request.error);
+                    }
+                };
             });
         }
     }
@@ -1284,7 +1292,16 @@ export class SyncService {
 
                 const saveRequest = existing ? store.put(record) : store.add(record);
                 saveRequest.onsuccess = () => resolve();
-                saveRequest.onerror = () => reject(saveRequest.error);
+                saveRequest.onerror = () => {
+                    // Quota esaurita: la sync_metadata è non critica per la correttezza dati
+                    // (viene riscritta al prossimo ciclo). Risolvi senza lanciare.
+                    if (SyncService._isQuotaError(saveRequest.error)) {
+                        console.warn('[SYNC METADATA] Quota IDB esaurita: sync_metadata non aggiornata (non critico)');
+                        resolve();
+                    } else {
+                        reject(saveRequest.error);
+                    }
+                };
             };
             getRequest.onerror = () => reject(getRequest.error);
         });
