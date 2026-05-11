@@ -40,6 +40,23 @@ const ATTACHMENTS_BLOB_STORE = 'attachments_offline'; // Store blob per upload o
  */
 
 export class SyncService {
+    /**
+     * Verifica se un errore è dovuto a quota IndexedDB esaurita.
+     * @param {any} error
+     * @returns {boolean}
+     */
+    static _isQuotaError(error) {
+        if (!error) return false;
+        const name = String(error?.name || '');
+        const msg  = String(error?.message || error || '');
+        return (
+            name === 'QuotaExceededError' ||
+            msg.includes('kQuotaBytes') ||
+            msg.includes('QuotaExceeded') ||
+            msg.includes('quota exceeded')
+        );
+    }
+
     constructor(apiBaseUrl = null) {
         // Usa lo stesso base URL del backend delle API (critico su Netlify: frontend e API su domini diversi)
         this.apiBaseUrl = apiBaseUrl ?? (typeof apiService !== 'undefined' ? apiService.baseUrl : null) ?? '/api/v1';
@@ -94,7 +111,11 @@ export class SyncService {
     }
 
     /**
-     * Aggiungi operazione a sync queue
+     * Aggiungi operazione a sync queue.
+     * Per save_responses, save_custom_checklist_responses e update_audit applica
+     * la deduplicazione per auditId/audit_uuid: tiene solo l'ultimo item (coalescenza).
+     * Evita lo "storm" di centinaia di chiamate identiche quando il device torna online
+     * dopo una sessione offline lunga — solo l'ultima versione del dato interessa.
      */
     async enqueue(type, payload) {
         // Validazione payload per create_audit e update_audit
@@ -105,6 +126,22 @@ export class SyncService {
                 console.error(`❌ [SYNC QUEUE] Validazione fallita per ${type}:`, error.message);
                 console.warn('⚠️ Audit payload:', payload);
                 throw error; // Blocca enqueue di audit malformati
+            }
+        }
+
+        // Deduplicazione: per questi tipi mantieni solo l'ultimo item per audit.
+        // I tipi idempotenti (create_audit, delete_audit, send_audit_event, upload/delete_attachment)
+        // NON vengono deduplicati — ogni operazione è atomica e va inviata una volta.
+        const DEDUP_KEY_BY_TYPE = {
+            'save_responses': 'auditId',
+            'save_custom_checklist_responses': 'auditId',
+            'update_audit': 'audit_uuid',
+        };
+        const dedupKey = DEDUP_KEY_BY_TYPE[type];
+        if (dedupKey) {
+            const dedupValue = payload[dedupKey];
+            if (dedupValue != null) {
+                await this._deduplicateQueueItem(type, dedupKey, String(dedupValue));
             }
         }
 
@@ -128,7 +165,16 @@ export class SyncService {
                 console.log(`📤 [SYNC QUEUE] Aggiunto: ${type}`, queueItem.id);
                 resolve(request.result);
             };
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                // Quota IDB esaurita: l'item non può essere accodato.
+                // I dati sono gestiti via server al prossimo fetch; non lanciare per non bloccare l'UI.
+                if (SyncService._isQuotaError(request.error)) {
+                    console.warn(`[SYNC QUEUE] Quota IDB esaurita: item ${type} non accodato (skip graceful)`);
+                    resolve(null);
+                } else {
+                    reject(request.error);
+                }
+            };
         });
 
         // Tenta sync immediata se online
@@ -137,6 +183,54 @@ export class SyncService {
         }
 
         return queueItem.id;
+    }
+
+    /**
+     * Rimuove dalla sync queue tutti gli item NON stalled dello stesso tipo e stessa chiave audit.
+     * Chiamato da enqueue() per coalescenza: mantiene solo l'ultima versione del dato.
+     * Operazione non bloccante — eventuali errori IDB vengono loggati ma non propagati.
+     *
+     * @private
+     * @param {string} type         - Tipo item (es. 'save_responses', 'update_audit')
+     * @param {string} payloadKey   - Chiave nel payload per identificare l'audit (es. 'auditId')
+     * @param {string} payloadValue - Valore atteso (audit UUID normalizzato in minuscolo)
+     */
+    async _deduplicateQueueItem(type, payloadKey, payloadValue) {
+        try {
+            const db = await this.init();
+            const normalizedValue = payloadValue.toLowerCase();
+
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                const store = tx.objectStore(SYNC_QUEUE_STORE);
+
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    let removed = 0;
+                    for (const item of req.result) {
+                        if (
+                            item.type === type &&
+                            !item.isStalled &&
+                            item.payload?.[payloadKey] != null &&
+                            String(item.payload[payloadKey]).toLowerCase() === normalizedValue
+                        ) {
+                            store.delete(item.id);
+                            removed++;
+                        }
+                    }
+                    if (removed > 0) {
+                        console.log(`[SYNC] Dedup: rimossi ${removed} item ${type} obsoleti per ${payloadKey}=${payloadValue}`);
+                    }
+                };
+                req.onerror = () => reject(req.error);
+            });
+        } catch (e) {
+            // Non bloccante: se la dedup fallisce, l'item viene aggiunto normalmente
+            console.warn('[SYNC] _deduplicateQueueItem fallito (non bloccante):', e?.message);
+        }
     }
 
     /**

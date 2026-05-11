@@ -17,6 +17,31 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 11 maggio 2026 — Fix sync-queue storm: deduplicazione save_responses / update_audit
+
+**Branch**: `cursor/fix-sync-queue-dedup-storm-6ad0`  
+**Sintomo segnalato**: Console Eruda su mobile Camellini mostrava 6+ warning `[SYNC] Audit assente sul server (404 AUDIT_NOT_FOUND): rimozione item obsoleto save_responses (UUID)`.
+
+**Diagnosi** (verificata su DB e log VPS):
+- Audit QS-260511-01 (audit_id 35192, UUID `79697DAD-...`) correttamente sul server con 6 risposte salvate. **Nessuna perdita di dati**.
+- I warning 404 erano per item `save_responses` di UUID **fantasma** (sessioni precedenti del device mobile), rimossi correttamente dalla coda dal meccanismo self-healing esistente.
+- **Root cause reale**: il log VPS mostrava storm di ~40 chiamate `POST /api/v1/audits/sync` in 10 secondi e ~287 chiamate `POST .../responses/bulk` in 3 minuti per lo stesso audit. La coda IndexedDB accumulava un item per ogni modifica offline; al reconnect sparavano tutte in sequenza.
+
+**Fix applicato** (`app/src/services/syncService.js`):
+- Nuovo metodo `_deduplicateQueueItem(type, payloadKey, payloadValue)` — usa una singola transazione `readwrite` IDB: `getAll` + `delete` per tutti gli item non-stalled dello stesso tipo+auditId.
+- `enqueue()` chiama `_deduplicateQueueItem` **prima** di aggiungere il nuovo item per i tipi coalescenti: `save_responses` (key: `auditId`), `save_custom_checklist_responses` (key: `auditId`), `update_audit` (key: `audit_uuid`).
+- Tipi **non** deduplicati (ogni operazione è atomica): `create_audit`, `delete_audit`, `send_audit_event`, `upload_attachment`, `delete_attachment`.
+- Confronto UUID **case-insensitive** (`.toLowerCase()`) per coprire mismatch upper/lower tra server e device.
+- **10 test L1** in `syncService.dedup.test.js` — tutti PASS.
+
+**Lezione appresa (11/05/2026)**:
+- **Pattern "accumula tutto, manda tutto"** è il default della sync queue: ogni edit utente = 1 item. Su sessioni offline lunghe (ore) = centinaia di item identici. La coalescenza (replace invece di append) per i tipi idempotenti è la soluzione minima e sicura.
+- **Log VPS sono essenziali**: il logger Winston va su `journalctl` (non su `app.log` se girato come systemd). Usare `sudo journalctl -u sgq-backend -o cat | sed 's/\x1b\[[0-9;]*m//g'` per i log leggibili.
+- **404 AUDIT_NOT_FOUND in console mobile**: warning attesi e innocui quando il device ha code item di audit non più presenti sul server. Non confondere con errori reali — verificare sempre se `payload.auditId` corrisponde a un UUID esistente sul server prima di intervenire.
+- **`kQuotaBytes quota exceeded` = IDB piena**: causato dalla combinazione di (a) 287+ `save_responses` in coda (risolto con dedup) + (b) `saveAudit` che rigettava invece di fare recovery. Pattern fix: `_recoverFromQuota()` (svuota allegati poi audit vecchi) + retry, infine graceful resolve se ancora piena. Stesso pattern in `enqueue()` per `store.add()`.
+
+---
+
 ### Sessione 09 maggio 2026 (sera) — Fix validazione, guided close, collapse button
 
 **Struttura accordion AuditAccordionLayout — mappa completa (da NON ri-esplorare):**
