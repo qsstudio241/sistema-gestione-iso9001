@@ -35,7 +35,7 @@ export default function AuditLockBanner() {
           )}
           {auditLock.mode === "pending_server" && (
             <>
-              <strong>In attesa di sincronizzazione</strong>
+              <strong>Sincronizzazione in corso</strong>
               <p>{auditLock.message}</p>
             </>
           )}
