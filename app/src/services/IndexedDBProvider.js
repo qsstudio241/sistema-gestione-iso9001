@@ -48,6 +48,9 @@ export class IndexedDBProvider {
                 this.db = request.result;
                 this.isReady = true;
                 console.log('✅ IndexedDB inizializzato (mobile storage)');
+                // Controllo quota in background: se lo storage è quasi pieno, pulisci subito
+                // senza aspettare che scoppino errori QuotaExceeded a metà operazione.
+                this._checkStorageQuota().catch(() => {});
                 resolve(this);
             };
 
@@ -81,6 +84,31 @@ export class IndexedDBProvider {
                 }
             };
         });
+    }
+
+    /**
+     * Controlla la quota storage dell'origine e, se supera l'85%, esegue _recoverFromQuota().
+     * Chiamato all'avvio in background: previene QuotaExceededError prima che si manifestino.
+     * Emette 'sgq:storageRecovered' se è stato necessario intervenire.
+     */
+    async _checkStorageQuota() {
+        if (!navigator?.storage?.estimate) return;
+        try {
+            const { usage, quota } = await navigator.storage.estimate();
+            if (!quota || quota === 0) return;
+            const pct = Math.round((usage / quota) * 100);
+            if (pct >= 85) {
+                console.warn(`[IndexedDB] Storage al ${pct}% (${Math.round(usage / 1024)}KB / ${Math.round(quota / 1024)}KB) — pulizia automatica avviata`);
+                await this._recoverFromQuota();
+                try {
+                    window.dispatchEvent(new CustomEvent('sgq:storageRecovered', {
+                        detail: { usagePercent: pct }
+                    }));
+                } catch { /* ambiente senza window */ }
+            } else {
+                console.log(`[IndexedDB] Storage al ${pct}% — OK`);
+            }
+        } catch { /* non bloccante */ }
     }
 
     /**
