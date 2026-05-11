@@ -48,9 +48,14 @@ export class IndexedDBProvider {
                 this.db = request.result;
                 this.isReady = true;
                 console.log('✅ IndexedDB inizializzato (mobile storage)');
-                // Controlla quota PRIMA di segnalare il provider come pronto:
-                // se la quota è esaurita, pulisce entrambi i DB (audit + sync queue)
-                // prima che reconcileAuditsFromServer inizi a scrivere.
+                // Handler: se qualcuno (es. _recoverFromQuota) elimina il DB,
+                // chiude la connessione correttamente così la delete non rimane bloccata.
+                this.db.onversionchange = () => {
+                    this.db?.close();
+                    this.db = null;
+                    this.isReady = false;
+                };
+                // Controlla quota PRIMA di segnalare il provider come pronto.
                 await this._checkStorageQuota();
                 resolve(this);
             };
@@ -134,11 +139,14 @@ export class IndexedDBProvider {
             if (IndexedDBProvider._isQuotaError(error)) {
                 console.warn('[IndexedDB] saveAudit: quota esaurita — tento recovery e retry...');
                 await this._recoverFromQuota();
+                // Dopo recovery nucleare this.db potrebbe essere null (delete bloccata)
+                if (!this.db) {
+                    console.warn('[IndexedDB] saveAudit: DB non disponibile dopo recovery — skip (dati su server)');
+                    return audit;
+                }
                 try {
                     return await this._saveAuditOnce(audit);
                 } catch (retryErr) {
-                    // Dopo recovery la quota è ancora esaurita (device con storage minimo).
-                    // I dati sono al sicuro sul server: risolvi senza lanciare per non bloccare l'UI.
                     console.warn('[IndexedDB] saveAudit: quota esaurita anche dopo recovery — skip (dati su server)');
                     return audit;
                 }
@@ -238,59 +246,90 @@ export class IndexedDBProvider {
      */
     /**
      * Recovery da quota IDB esaurita.
-     * Svuota TUTTI i database IndexedDB dell'applicazione:
-     *   1. SGQ_ISO9001_Storage (audits + attachments)
-     *   2. SGQ_ISO9001_DB     (syncQueue + sync_metadata + attachments_offline)
-     * La quota origine è CONDIVISA tra tutti i DB: svuotare solo uno non basta.
-     * I dati sono sul server e vengono ricaricati al prossimo fetch.
+     *
+     * Quando la quota è al 100%, anche store.clear() può fallire (Chrome/Edge
+     * richiedono spazio nel journal IDB anche per i delete). L'unica operazione
+     * garantita a quota piena è indexedDB.deleteDatabase() (elimina il file OS).
+     *
+     * Strategia nuclear:
+     *   1. Chiude this.db (così deleteDatabase non viene bloccata)
+     *   2. Elimina SGQ_ISO9001_Storage (audit + allegati)
+     *   3. Elimina SGQ_ISO9001_DB (syncQueue — il vero responsabile: 287+ item)
+     *      L'onversionchange su syncDbInstance lo chiude automaticamente.
+     *   4. Riapre SGQ_ISO9001_Storage (fresh, schema vuoto)
+     *
      * Non lancia mai: ogni errore interno è loggato e ignorato.
      */
     async _recoverFromQuota() {
-        console.warn('[IndexedDB] Quota IDB esaurita — avvio recovery completo...');
+        console.warn('[IndexedDB] Quota IDB esaurita — eliminazione completa database (nuclear cleanup)...');
 
-        const clearStore = (db, name) => new Promise((resolve) => {
-            try {
-                if (!db.objectStoreNames.contains(name)) { resolve(); return; }
-                const tx = db.transaction([name], 'readwrite');
-                const req = tx.objectStore(name).clear();
-                req.onsuccess = () => resolve();
-                req.onerror  = () => resolve();
-            } catch { resolve(); }
-        });
-
-        // 1. Svuota il proprio DB (SGQ_ISO9001_Storage)
+        // 1. Chiudi la connessione locale per sbloccare deleteDatabase
         if (this.db) {
-            try {
-                await clearStore(this.db, STORE_ATTACHMENTS);
-                await clearStore(this.db, STORE_AUDITS);
-                console.warn('[IndexedDB] Recovery: DB audit/allegati svuotato');
-            } catch { /* non bloccante */ }
+            try { this.db.close(); } catch { /* no-op */ }
+            this.db = null;
+            this.isReady = false;
         }
 
-        // 2. Svuota il DB della sync queue (SGQ_ISO9001_DB) — connessione separata.
-        //    La quota origine è condivisa: la sync queue accumulata è spesso il
-        //    maggior contributore al superamento del limite.
-        await new Promise((resolve) => {
+        // Helper: elimina un database attendendo onsuccess o risolvendo comunque su errore/blocked
+        const deleteDb = (name) => new Promise((resolve) => {
             try {
-                const req = indexedDB.open('SGQ_ISO9001_DB');
-                req.onsuccess = () => {
-                    const syncDb = req.result;
-                    const names = ['syncQueue', 'sync_metadata', 'attachments_offline']
-                        .filter(n => syncDb.objectStoreNames.contains(n));
-                    if (names.length === 0) { syncDb.close(); resolve(); return; }
-                    try {
-                        const tx = syncDb.transaction(names, 'readwrite');
-                        names.forEach(n => tx.objectStore(n).clear());
-                        tx.oncomplete = () => {
-                            console.warn('[IndexedDB] Recovery: sync queue svuotata (syncQueue + sync_metadata + attachments_offline)');
-                            syncDb.close();
-                            resolve();
-                        };
-                        tx.onerror = () => { syncDb.close(); resolve(); };
-                    } catch { syncDb.close(); resolve(); }
+                const req = indexedDB.deleteDatabase(name);
+                req.onsuccess = () => { console.warn(`[IDB] Recovery: ${name} eliminato`); resolve(true); };
+                req.onerror   = () => { console.warn(`[IDB] Recovery: errore eliminando ${name}`); resolve(false); };
+                req.onblocked = () => {
+                    // Altre connessioni aperte: si chiuderanno via onversionchange
+                    console.warn(`[IDB] Recovery: delete ${name} bloccato — verrà completato al prossimo avvio`);
+                    resolve(false);
                 };
-                req.onerror = () => resolve();
-            } catch { resolve(); }
+            } catch { resolve(false); }
+        });
+
+        // 2. Elimina entrambi i database
+        //    SGQ_ISO9001_DB: l'onversionchange del syncDbInstance lo chiude automaticamente
+        const [ok1] = await Promise.all([
+            deleteDb('SGQ_ISO9001_Storage'),
+            deleteDb('SGQ_ISO9001_DB'),
+        ]);
+
+        // 3. Riapri il database locale solo se la delete è riuscita
+        if (ok1) {
+            try { await this._openFreshDb(); } catch { /* non critico */ }
+        }
+    }
+
+    /**
+     * Apre (o ricrea) il database locale SGQ_ISO9001_Storage senza eseguire
+     * il check quota (evita loop). Usato dopo _recoverFromQuota().
+     * @private
+     */
+    _openFreshDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                this.db = req.result;
+                this.isReady = true;
+                this.db.onversionchange = () => {
+                    this.db?.close();
+                    this.db = null;
+                    this.isReady = false;
+                };
+                console.log('[IDB] Recovery: SGQ_ISO9001_Storage riaperto (fresh)');
+                resolve(this.db);
+            };
+            req.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_AUDITS)) {
+                    const s = db.createObjectStore(STORE_AUDITS, { keyPath: 'id' });
+                    s.createIndex('auditNumber', 'metadata.auditNumber', { unique: false });
+                    s.createIndex('clientName',  'metadata.clientName',  { unique: false });
+                }
+                if (!db.objectStoreNames.contains(STORE_ATTACHMENTS)) {
+                    const s = db.createObjectStore(STORE_ATTACHMENTS, { keyPath: 'id' });
+                    s.createIndex('auditId',    'auditId',    { unique: false });
+                    s.createIndex('questionId', 'questionId', { unique: false });
+                }
+            };
         });
     }
 
