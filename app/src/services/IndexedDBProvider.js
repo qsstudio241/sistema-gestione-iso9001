@@ -44,13 +44,14 @@ export class IndexedDBProvider {
                 reject(request.error);
             };
 
-            request.onsuccess = () => {
+            request.onsuccess = async () => {
                 this.db = request.result;
                 this.isReady = true;
                 console.log('✅ IndexedDB inizializzato (mobile storage)');
-                // Controllo quota in background: se lo storage è quasi pieno, pulisci subito
-                // senza aspettare che scoppino errori QuotaExceeded a metà operazione.
-                this._checkStorageQuota().catch(() => {});
+                // Controlla quota PRIMA di segnalare il provider come pronto:
+                // se la quota è esaurita, pulisce entrambi i DB (audit + sync queue)
+                // prima che reconcileAuditsFromServer inizi a scrivere.
+                await this._checkStorageQuota();
                 resolve(this);
             };
 
@@ -235,29 +236,62 @@ export class IndexedDBProvider {
      * Non lancia: qualsiasi fallimento interno viene loggato e ignorato.
      * Dopo questa chiamata, l'operazione che aveva fallito può essere ritentata.
      */
+    /**
+     * Recovery da quota IDB esaurita.
+     * Svuota TUTTI i database IndexedDB dell'applicazione:
+     *   1. SGQ_ISO9001_Storage (audits + attachments)
+     *   2. SGQ_ISO9001_DB     (syncQueue + sync_metadata + attachments_offline)
+     * La quota origine è CONDIVISA tra tutti i DB: svuotare solo uno non basta.
+     * I dati sono sul server e vengono ricaricati al prossimo fetch.
+     * Non lancia mai: ogni errore interno è loggato e ignorato.
+     */
     async _recoverFromQuota() {
-        console.warn('[IndexedDB] Quota IDB esaurita — avvio recovery...');
-        if (!this.db) return;
+        console.warn('[IndexedDB] Quota IDB esaurita — avvio recovery completo...');
 
-        // Step 1: svuota allegati offline (spesso i più pesanti — blob binari)
-        try {
-            await new Promise((resolve) => {
-                const tx = this.db.transaction([STORE_ATTACHMENTS], 'readwrite');
-                const req = tx.objectStore(STORE_ATTACHMENTS).clear();
-                req.onsuccess = () => { console.warn('[IndexedDB] Recovery: store allegati svuotato'); resolve(); };
-                req.onerror  = () => resolve(); // non bloccante
-            });
-        } catch { /* non bloccante */ }
+        const clearStore = (db, name) => new Promise((resolve) => {
+            try {
+                if (!db.objectStoreNames.contains(name)) { resolve(); return; }
+                const tx = db.transaction([name], 'readwrite');
+                const req = tx.objectStore(name).clear();
+                req.onsuccess = () => resolve();
+                req.onerror  = () => resolve();
+            } catch { resolve(); }
+        });
 
-        // Step 2: svuota audit (il server è la fonte di verità; verranno ricaricati al prossimo fetch)
-        try {
-            await new Promise((resolve) => {
-                const tx = this.db.transaction([STORE_AUDITS], 'readwrite');
-                const req = tx.objectStore(STORE_AUDITS).clear();
-                req.onsuccess = () => { console.warn('[IndexedDB] Recovery: store audit svuotato'); resolve(); };
-                req.onerror  = () => resolve(); // non bloccante
-            });
-        } catch { /* non bloccante */ }
+        // 1. Svuota il proprio DB (SGQ_ISO9001_Storage)
+        if (this.db) {
+            try {
+                await clearStore(this.db, STORE_ATTACHMENTS);
+                await clearStore(this.db, STORE_AUDITS);
+                console.warn('[IndexedDB] Recovery: DB audit/allegati svuotato');
+            } catch { /* non bloccante */ }
+        }
+
+        // 2. Svuota il DB della sync queue (SGQ_ISO9001_DB) — connessione separata.
+        //    La quota origine è condivisa: la sync queue accumulata è spesso il
+        //    maggior contributore al superamento del limite.
+        await new Promise((resolve) => {
+            try {
+                const req = indexedDB.open('SGQ_ISO9001_DB');
+                req.onsuccess = () => {
+                    const syncDb = req.result;
+                    const names = ['syncQueue', 'sync_metadata', 'attachments_offline']
+                        .filter(n => syncDb.objectStoreNames.contains(n));
+                    if (names.length === 0) { syncDb.close(); resolve(); return; }
+                    try {
+                        const tx = syncDb.transaction(names, 'readwrite');
+                        names.forEach(n => tx.objectStore(n).clear());
+                        tx.oncomplete = () => {
+                            console.warn('[IndexedDB] Recovery: sync queue svuotata (syncQueue + sync_metadata + attachments_offline)');
+                            syncDb.close();
+                            resolve();
+                        };
+                        tx.onerror = () => { syncDb.close(); resolve(); };
+                    } catch { syncDb.close(); resolve(); }
+                };
+                req.onerror = () => resolve();
+            } catch { resolve(); }
+        });
     }
 
     /**
