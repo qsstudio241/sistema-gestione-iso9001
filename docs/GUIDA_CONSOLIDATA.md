@@ -38,6 +38,7 @@
 - **Pattern "accumula tutto, manda tutto"** è il default della sync queue: ogni edit utente = 1 item. Su sessioni offline lunghe (ore) = centinaia di item identici. La coalescenza (replace invece di append) per i tipi idempotenti è la soluzione minima e sicura.
 - **Log VPS sono essenziali**: il logger Winston va su `journalctl` (non su `app.log` se girato come systemd). Usare `sudo journalctl -u sgq-backend -o cat | sed 's/\x1b\[[0-9;]*m//g'` per i log leggibili.
 - **404 AUDIT_NOT_FOUND in console mobile**: warning attesi e innocui quando il device ha code item di audit non più presenti sul server. Non confondere con errori reali — verificare sempre se `payload.auditId` corrisponde a un UUID esistente sul server prima di intervenire.
+- **`kQuotaBytes quota exceeded` = IDB piena**: causato dalla combinazione di (a) 287+ `save_responses` in coda (risolto con dedup) + (b) `saveAudit` che rigettava invece di fare recovery. Pattern fix: `_recoverFromQuota()` (svuota allegati poi audit vecchi) + retry, infine graceful resolve se ancora piena. Stesso pattern in `enqueue()` per `store.add()`.
 
 ---
 
