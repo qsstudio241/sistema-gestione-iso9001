@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import AutoTextarea from "./AutoTextarea";
 import "./ChecklistModule.css";
+import "./AuditOutcomeSection.css";
 import "./PendingIssuesCascade.css";
 
 /** Stati NC del modulo organizzativo che indicano risoluzione (suggerimento UI). */
@@ -78,7 +79,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
   const hasNcLicense = hasLicensedModule("nc");
 
   const [issues, setIssues]                   = useState([]);
-  const [sourceAuditNumber, setSourceAuditNumber] = useState(null);
   const [loading, setLoading]                 = useState(false);
   const [error, setError]                     = useState(null);
   const [retryCount, setRetryCount]           = useState(0);
@@ -98,7 +98,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
   useEffect(() => {
     if (!clientName || (!auditUuid && !auditId)) {
       setIssues([]);
-      setSourceAuditNumber(null);
       return;
     }
 
@@ -122,11 +121,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
             if (pi.resolution_notes) initialNotes[pi.issue_id] = pi.resolution_notes;
           });
           setNotes(initialNotes);
-
-          // Numero audit sorgente (fallback a ID numerico)
-          setSourceAuditNumber(
-            data.source_audit_number || (data.source_audit_id ? `#${data.source_audit_id}` : null)
-          );
         }
       } catch (err) {
         if (!cancelled) {
@@ -238,11 +232,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
       <div className="pending-header">
         <div>
           <h3>🔁 Rilievi Pendenti</h3>
-          <p className="pending-description">
-            {sourceAuditNumber
-              ? `Rilievi dell'audit ${sourceAuditNumber} da verificare in questo re-audit`
-              : "Rilievi dell'audit precedente da verificare in questo re-audit"}
-          </p>
         </div>
       </div>
 
@@ -259,42 +248,11 @@ function PendingIssuesCascade({ onGoToQuestion }) {
 
       {!loading && !error && issues.length > 0 && (
         <>
-          {/* Riepilogo statistiche */}
-          <div className="pending-stats">
-            <div className="stat-card">
-              <span className="stat-value">{issues.length}</span>
-              <span className="stat-label">Totali</span>
-            </div>
-            {ncCount > 0 && (
-              <div className="stat-card stat-nc">
-                <span className="stat-value">{ncCount}</span>
-                <span className="stat-label">NC</span>
-              </div>
-            )}
-            {ossCount > 0 && (
-              <div className="stat-card stat-oss">
-                <span className="stat-value">{ossCount}</span>
-                <span className="stat-label">OSS</span>
-              </div>
-            )}
-            {nvCount > 0 && (
-              <div className="stat-card stat-nv">
-                <span className="stat-value">{nvCount}</span>
-                <span className="stat-label">NV</span>
-              </div>
-            )}
-            {resolvedCount > 0 && (
-              <div className="stat-card stat-resolved">
-                <span className="stat-value">{resolvedCount}</span>
-                <span className="stat-label">Risolti</span>
-              </div>
-            )}
-            {persistsCount > 0 && (
-              <div className="stat-card stat-persists">
-                <span className="stat-value">{persistsCount}</span>
-                <span className="stat-label">Persistono</span>
-              </div>
-            )}
+          {/* Riepilogo statistiche — badge compatte, stesso stile di Rilievi Emergenti */}
+          <div className="findings-metrics-compact">
+            <span className="metric-compact nc-severe"><strong>NC:</strong> {ncCount}</span>
+            <span className="metric-compact oss"><strong>OSS:</strong> {ossCount}</span>
+            <span className="metric-compact nv"><strong>NV:</strong> {nvCount}</span>
           </div>
 
           {/* Lista rilievi */}
