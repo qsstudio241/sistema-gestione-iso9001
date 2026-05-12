@@ -267,16 +267,28 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   }
 
   // ─── Trasferimento NC/OSS al modulo organizzativo (richiede licenza 'nc') ──
-  // Conteggio rilievi disponibili per il push (NC + OSS sia ISO sia custom)
+  // Conteggio rilievi disponibili per il push (NC + OSS sia ISO sia custom).
+  // Usa checklist locale come sorgente primaria; fallback su audit.metrics
+  // (pre-calcolate dal server, sempre presenti anche prima della hydration completa).
   const ncPushAvailable = useMemo(() => {
     const isoM = calculateFindingsMetrics(currentAudit?.checklist);
     const cuM  = currentAudit?.customChecklist?.has_outcome_buttons
       ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
       : { totalNC: 0, totalOSS: 0 };
-    return {
-      nc:  (isoM.totalNC  || 0) + (cuM.totalNC  || 0),
-      oss: (isoM.totalOSS || 0) + (cuM.totalOSS || 0),
-    };
+
+    const localNC  = (isoM.totalNC  || 0) + (cuM.totalNC  || 0);
+    const localOSS = (isoM.totalOSS || 0) + (cuM.totalOSS || 0);
+
+    // Se il checklist locale è ancora vuoto (hydration in corso), usa audit.metrics
+    if (localNC === 0 && localOSS === 0) {
+      const m = currentAudit?.metrics || {};
+      return {
+        nc:  m.totalNC  || 0,
+        oss: m.totalOSS || 0,
+      };
+    }
+
+    return { nc: localNC, oss: localOSS };
   }, [currentAudit]);
 
   const ncPushTotal = ncPushAvailable.nc + ncPushAvailable.oss;
@@ -334,6 +346,10 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     try {
       await apiService.undoPushAuditToNcRegister(auditRef);
       setNcPushState((s) => ({ ...s, phase: "undone", countdown: 0 }));
+      // Dopo 3s reset a idle: il pulsante ricompare e l'utente può ri-trasferire
+      setTimeout(() => {
+        setNcPushState({ phase: "idle", countdown: 0, summary: null, error: null });
+      }, 3000);
     } catch (err) {
       setNcPushState((s) => ({
         ...s,
