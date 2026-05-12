@@ -82,7 +82,7 @@ const RESOLUTION_ACTIONS = [
   { status: "persists",    label: "❌ Persiste",     cls: "btn-persists"    },
 ];
 
-function PendingIssuesCascade() {
+function PendingIssuesCascade({ onGoToQuestion }) {
   const { currentAudit } = useStorage();
   const { hasLicensedModule } = useAuth();
   const hasNcLicense = hasLicensedModule("nc");
@@ -297,20 +297,11 @@ function PendingIssuesCascade() {
                         )}
                         <h4 className="issue-title">{description}</h4>
                         {/* Pulsante deep-link — inline nell'header, sempre visibile */}
-                        {issue.section_code && (
+                        {issue.section_code && onGoToQuestion && (
                           <button
                             className="issue-goto-btn"
                             type="button"
-                            onClick={() =>
-                              window.dispatchEvent(
-                                new CustomEvent("sgq:goto-question", {
-                                  detail: {
-                                    questionId: issue.question_id,
-                                    sectionCode: issue.section_code,
-                                  },
-                                })
-                              )
-                            }
+                            onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
                             title={`Vai alla clausola ${issue.section_code} nella checklist`}
                           >
                             🔍 Vai alla domanda

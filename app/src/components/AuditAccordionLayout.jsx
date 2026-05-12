@@ -207,14 +207,12 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         return codes.some((code) => upper.includes(code.toUpperCase()));
       }) ?? null;
 
+    // Apre la sezione Checklist
     setOpenSections(prev => ({ ...prev, checklist: true }));
 
     if (stdEntry) {
-      // Standard esplicito nel codice (es. "ISO_9001_clause8") → apri solo quella sottosezione
       setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
     } else if (/clause\d+/i.test(sectionCode)) {
-      // Clause code generico senza standard (es. "clause8") → apri tutte le sottosezioni HLS
-      // (9001/14001/45001 condividono la stessa numerazione 4-10)
       const hlsSubsIds = STANDARDS_LIST
         .filter(({ kind }) => kind === 'iso_hls')
         .map(({ subsId }) => subsId);
@@ -225,27 +223,26 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       });
     }
 
+    // Espande le clausole interne a ChecklistModule (indispensabile per trovare l'elemento DOM)
+    setChecklistExpandTrigger(prev => prev + 1);
+
     if (questionId) {
+      // 600ms: accordions a due livelli (sezione + sottosezione + clausole) hanno tempo di renderizzare
       setTimeout(() => {
         const el = document.getElementById(`question-${questionId}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('sgq-guided-highlight');
-          setTimeout(() => el.classList.remove('sgq-guided-highlight'), 1800);
-        }
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('sgq-guided-highlight');
+        setTimeout(() => el.classList.remove('sgq-guided-highlight'), 1800);
+      }, 600);
+    } else {
+      // Nessun questionId: scrolla alla sezione checklist
+      setTimeout(() => {
+        const sec = document.getElementById('sgq-section-checklist');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 400);
     }
   }, []); // STANDARDS_LIST e setter React sono stabili
-
-  // Listener evento globale sgq:goto-question (dispatched da PendingIssuesCascade)
-  useEffect(() => {
-    const handler = (e) => {
-      const { questionId, sectionCode } = e.detail || {};
-      handleGoToQuestion(sectionCode, questionId);
-    };
-    window.addEventListener("sgq:goto-question", handler);
-    return () => window.removeEventListener("sgq:goto-question", handler);
-  }, [handleGoToQuestion]);
 
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {
@@ -605,7 +602,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
                 {openSubSections["pending-issues"] && (
                   <div className="subsection-content">
-                    <PendingIssuesCascade />
+                    <PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
                   </div>
                 )}
               </div>
