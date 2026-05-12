@@ -943,13 +943,13 @@ async function pushAuditToNcRegister(req, res) {
                     const ins = await query(`
                         INSERT INTO non_conformities (
                             audit_id, standard_id, nc_number, section_code, description, severity,
-                            status, source_type, source_question_id, source_response_id,
+                            status, source_type, source_question_id,
                             created_at, updated_at
                         )
                         OUTPUT INSERTED.nc_id, INSERTED.nc_uuid
                         VALUES (
                             @audit_id, @standard_id, @nc_number, @section_code, @description, @severity,
-                            'open', @source_type, @source_question_id, @source_response_id,
+                            'open', @source_type, @source_question_id,
                             GETDATE(), GETDATE()
                         )
                     `, {
@@ -961,7 +961,6 @@ async function pushAuditToNcRegister(req, res) {
                         severity,
                         source_type,
                         source_question_id: f.question_id,
-                        source_response_id: f.response_id || null,
                     });
                     inserted = ins.recordset[0];
                     break;
