@@ -1232,7 +1232,7 @@ async function getPendingIssues(req, res) {
                 SELECT ar.response_id, ar.question_id, ar.conformity_status
                 FROM audit_responses ar
                 WHERE ar.audit_id = @source_audit_id
-                  AND ar.conformity_status IN ('NC', 'OSS', 'OM')
+                  AND ar.conformity_status IN ('NC', 'OSS', 'NV')
             ) AS src
             ON tgt.source_response_id = src.response_id
                AND tgt.target_audit_id = @target_audit_id
@@ -1487,7 +1487,7 @@ async function checkReaudit(req, res) {
             FROM audits a
             JOIN audit_responses ar
               ON ar.audit_id = a.audit_id
-             AND ar.conformity_status IN ('NC', 'OSS', 'NV', 'OM')
+             AND ar.conformity_status IN ('NC', 'OSS', 'NV')
             WHERE a.organization_id = @organization_id
               AND a.client_name = @client_name
               AND a.status IN ('completed', 'finalized', 'approved')
@@ -1630,7 +1630,7 @@ async function getNcResponses(req, res) {
              JOIN audits a ON ar.audit_id = a.audit_id
              WHERE (ar.audit_id = TRY_CAST(@audit_id AS INT) OR a.audit_uuid = @audit_id)
                AND a.organization_id = @organization_id
-               AND ar.conformity_status IN ('NC', 'OSS', 'NV', 'OM')
+               AND ar.conformity_status IN ('NC', 'OSS', 'NV')
              ORDER BY ar.conformity_status, cq.section_code`,
             { audit_id: String(audit_id), organization_id }
         );
