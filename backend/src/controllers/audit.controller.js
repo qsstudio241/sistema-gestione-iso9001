@@ -1232,7 +1232,7 @@ async function getPendingIssues(req, res) {
                 SELECT ar.response_id, ar.question_id, ar.conformity_status
                 FROM audit_responses ar
                 WHERE ar.audit_id = @source_audit_id
-                  AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+                  AND ar.conformity_status IN ('NC', 'OSS', 'OM')
             ) AS src
             ON tgt.source_response_id = src.response_id
                AND tgt.target_audit_id = @target_audit_id
