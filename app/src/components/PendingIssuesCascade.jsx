@@ -41,6 +41,30 @@ const ORIGIN_STATUS_CONFIG = {
   NV:  { label: "Non Valutato",  cssKey: "nv",  statusBtnClass: "not-verified"  },
 };
 
+/** Mappa section_code → nome leggibile ISO 9001 (HLS clausole 4-10) */
+const SECTION_LABELS = {
+  clause4:  "4 - Contesto dell'organizzazione",
+  clause5:  "5 - Leadership",
+  clause6:  "6 - Pianificazione",
+  clause7:  "7 - Supporto",
+  clause8:  "8 - Attività operative",
+  clause9:  "9 - Valutazione delle prestazioni",
+  clause10: "10 - Miglioramento",
+};
+
+/**
+ * Restituisce l'etichetta leggibile per un section_code.
+ * Gestisce sia codici puri ("clause8") sia prefissati ("ISO_9001_clause8").
+ */
+function getSectionLabel(sectionCode) {
+  if (!sectionCode) return null;
+  const lower = sectionCode.toLowerCase();
+  for (const [key, label] of Object.entries(SECTION_LABELS)) {
+    if (lower === key || lower.endsWith(`_${key}`)) return label;
+  }
+  return sectionCode;
+}
+
 /** Config pulsanti di risoluzione */
 const RESOLUTION_ACTIONS = [
   { status: "resolved",    label: "✅ Risolto",     cls: "btn-resolved"    },
@@ -277,7 +301,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
           <div className="issues-list">
             {sortedIssues.map((issue) => {
               const cfg         = ORIGIN_STATUS_CONFIG[issue.original_status] || null;
-              const clauseLabel = issue.section_code || null;
+              const clauseLabel = issue.section_code ? getSectionLabel(issue.section_code) : null;
               const description = issue.question_text || clauseLabel || `Risposta #${issue.source_response_id}`;
               const curStatus   = issue.issue_status || "open";
               const isResolved  = curStatus === "resolved";

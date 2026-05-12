@@ -208,15 +208,32 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       }) ?? null;
 
     setOpenSections(prev => ({ ...prev, checklist: true }));
+
     if (stdEntry) {
+      // Standard esplicito nel codice (es. "ISO_9001_clause8") → apri solo quella sottosezione
       setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
+    } else if (/clause\d+/i.test(sectionCode)) {
+      // Clause code generico senza standard (es. "clause8") → apri tutte le sottosezioni HLS
+      // (9001/14001/45001 condividono la stessa numerazione 4-10)
+      const hlsSubsIds = STANDARDS_LIST
+        .filter(({ kind }) => kind === 'iso_hls')
+        .map(({ subsId }) => subsId);
+      setOpenSubSections(prev => {
+        const next = { ...prev };
+        hlsSubsIds.forEach(id => { next[id] = true; });
+        return next;
+      });
     }
 
     if (questionId) {
       setTimeout(() => {
         const el = document.getElementById(`question-${questionId}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('sgq-guided-highlight');
+          setTimeout(() => el.classList.remove('sgq-guided-highlight'), 1800);
+        }
+      }, 400);
     }
   }, []); // STANDARDS_LIST e setter React sono stabili
 
