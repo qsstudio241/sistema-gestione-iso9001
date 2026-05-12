@@ -1,0 +1,1874 @@
+[
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "4",
+    "clause_title": "CONTESTO DELL'ORGANIZZAZIONE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "4.1",
+    "clause_title": "Comprendere l'organizzazione e il suo contesto",
+    "requirement_text": "L’organizzazione deve determinare i fattori esterni ed interni rilevanti per le sue finalità e\nche influenzano la sua capacità di conseguire gli esiti attesi per il proprio sistema di\ngestione ambientale. Tali fattori devono includere le condizioni ambientali che sono\ninfluenzate o in grado di influenzare l'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "4.2",
+    "clause_title": "Comprendere le esigenze e le aspettative delle parti interessate",
+    "requirement_text": "L'organizzazione deve determinare:\na) le parti interessate rilevanti per il sistema di gestione ambientale;\nb) le esigenze e aspettative (cioè i requisiti) rilevanti di tali parti interessate;\nc) quali di queste esigenze e aspettative diventano suoi obblighi di conformità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "4.3",
+    "clause_title": "Determinare il campo di applicazione del sistema di gestione ambientale",
+    "requirement_text": "L'organizzazione deve determinare i confini e l'applicabilità del sistema di gestione\nambientale per stabilirne il campo di applicazione.\nNel determinare il campo di applicazione, l’organizzazione deve considerare:\na) i fattori esterni ed interni di cui al punto 4.1;\nb) gli obblighi di conformità di cui al punto 4.2;\nc) le sue unità organizzative, funzioni e confini fisici;\nd) le sue attività, prodotti e servizi;\ne) la sua autorità e abilità ad esercitare controllo e influenza.\nUna volta definito il campo di applicazione, tutte le attività, tutti i prodotti e tutti i servizi\ndell'organizzazione che rientrano in tale campo di applicazione devono essere compresi\nnel sistema di gestione ambientale.\nIl campo di applicazione deve essere mantenuto come informazione documentata ed\nessere disponibile alle parti interessate.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "4.4",
+    "clause_title": "Sistema di gestione ambientale",
+    "requirement_text": "Per raggiungere gli esiti attesi, compreso l'accrescimento delle proprie prestazioni\nambientali, l'organizzazione deve stabilire, attuare, mantenere e migliorare in modo\ncontinuo un sistema di gestione ambientale, compresi i processi necessari e le loro\ninterazioni, in conformità ai requisiti della presente norma internazionale.\nL'organizzazione deve considerare la conoscenza che deriva dai punti 4.1 e 4.2 quando\nstabilisce e mantiene il sistema di gestione ambientale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "5",
+    "clause_title": "LEADERSHIP",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "5.1",
+    "clause_title": "Leadership e impegno",
+    "requirement_text": "L’alta direzione deve dimostrare leadership e impegno nei riguardi del sistema di gestione\nambientale:\na) accettando di rendere conto dell'efficacia del sistema di gestione ambientale;\nb) assicurando che siano stabiliti la politica e gli obiettivi ambientali e che essi siano\ncompatibili con gli indirizzi strategici e il contesto dell’organizzazione;\nc) assicurando l’integrazione dei requisiti del sistema di gestione ambientale nei\nprocessi di business dell’organizzazione;\nd) assicurando la disponibilità delle risorse necessarie al sistema di gestione\nambientale;\ne) comunicando l'importanza di una gestione ambientale efficace e della conformità ai\nrequisiti del sistema di gestione ambientale;\n\nf) assicurando che il sistema di gestione ambientale consegua gli esiti attesi;\ng) guidando e sostenendo le persone affinché contribuiscano all'efficacia del sistema di\ngestione ambientale;\nh) promuovendo il miglioramento continuo;\ni) supportando gli altri rilevanti ruoli gestionali nel dimostrare come attuare la propria\nleadership nelle rispettive aree di responsabilità.\nNota L’espressione “business” nella presente norma internazionale può essere intesa, in senso ampio, come riferita\na quelle attività che caratterizzano la ragion d'essere dell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "5.2",
+    "clause_title": "Politica ambientale",
+    "requirement_text": "L'alta direzione deve stabilire, attuare e mantenere una politica ambientale che, all’interno\ndel campo di applicazione definito del proprio sistema di gestione ambientale:\na) sia appropriata alle finalità e al contesto dell'organizzazione, compresi la natura, la\ndimensione e gli impatti ambientali delle sue attività, prodotti e servizi;\nb) costituisca un quadro di riferimento per fissare gli obiettivi ambientali;\nc) comprenda un impegno alla protezione dell'ambiente, inclusa la prevenzione\ndell’inquinamento e altri impegni specifici pertinenti al contesto dell'organizzazione;\nNota Altri impegni specifici per proteggere l'ambiente possono comprendere l'utilizzo di risorse sostenibili, la\nmitigazione e l'adattamento al cambiamento climatico, e la protezione della biodiversità e degli ecosistemi.\nd) comprenda un impegno a soddisfare i propri obblighi di conformità;\ne) comprenda un impegno per il miglioramento continuo del sistema di gestione\nambientale per accrescere le prestazioni ambientali.\nLa politica ambientale deve:\n- essere mantenuta come informazione documentata;\n- essere comunicata all'interno dell'organizzazione;\n- essere disponibile alle parti interessate.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "5.3",
+    "clause_title": "Ruoli, responsabilità e autorità nell'organizzazione",
+    "requirement_text": "L'alta direzione deve assicurare che le responsabilità e le autorità per i ruoli pertinenti\nsiano assegnate e comunicate all’interno dell'organizzazione.\nL'alta direzione deve assegnare le responsabilità e autorità per:\na) assicurare che il sistema di gestione ambientale sia conforme ai requisiti della\npresente norma internazionale;\nb) riferire all’alta direzione sulle prestazioni del sistema di gestione ambientale,\ncompresa la prestazione ambientale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6",
+    "clause_title": "PIANIFICAZIONE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.1",
+    "clause_title": "Azioni per affrontare rischi e opportunità",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve stabilire, attuare e mantenere il(i) processo(i) necessario(i) per\nsoddisfare i requisiti di cui ai punti da 6.1.1 a 6.1.4.\nNel pianificare il sistema di gestione ambientale, l’organizzazione deve considerare:\na) i fattori di cui al punto 4.1;\nb) i requisiti di cui al punto 4.2;\nc) il campo di applicazione del suo sistema di gestione ambientale;\n\ne determinare i rischi e le opportunità correlati ai suoi aspetti ambientali (vedere punto\n6.1.2), obblighi di conformità (vedere punto 6.1.3), altri fattori e requisiti, identificati nei\npunti 4.1 e 4.2, che è necessario affrontare per:\n- fornire assicurazione che il sistema di gestione ambientale possa conseguire gli esiti\nattesi;\n- prevenire, o ridurre, gli effetti indesiderati, compresa la possibilità che le condizioni\nambientali esterne influenzino l'organizzazione;\n- conseguire il miglioramento continuo.\nAll’interno del campo di applicazione definito per il sistema di gestione ambientale,\nl'organizzazione deve determinare potenziali situazioni di emergenza, comprese quelle\nche possono avere un impatto ambientale.\nL'organizzazione deve mantenere informazioni documentate dei suoi:\n- rischi e opportunità che è necessario affrontare;\n- processo(i) richiesto(i) nei punti da 6.1.1 a 6.1.4, nella misura necessaria ad avere\nfiducia che siano effettuati come pianificato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.1.2",
+    "clause_title": "Aspetti ambientali",
+    "requirement_text": "All’interno del campo di applicazione definito per il sistema di gestione ambientale,\nl'organizzazione deve determinare gli aspetti ambientali delle proprie attività, prodotti e\nservizi che può tenere sotto controllo e quelli sui quali essa può esercitare un’influenza, e\ni loro impatti ambientali associati, considerando una prospettiva di ciclo di vita.\nNel determinare gli aspetti ambientali, l'organizzazione deve tenere conto:\na) del cambiamento, che comprende sviluppi pianificati o nuovi e attività, prodotti e\nservizi nuovi o modificati;\nb) delle condizioni anomale e di situazioni di emergenza ragionevolmente prevedibili.\nL'organizzazione deve determinare quegli aspetti che hanno o possono avere un impatto\nambientale significativo, cioè gli aspetti ambientali significativi, utilizzando criteri stabiliti.\nL'organizzazione deve comunicare i propri aspetti ambientali significativi fra i differenti\nlivelli e le diverse funzioni dell'organizzazione, per quanto appropriato.\nL'organizzazione deve mantenere informazioni documentate dei propri:\n- aspetti ambientali e impatti ambientali associati;\n- criteri utilizzati per determinare i propri aspetti ambientali significativi;\n- aspetti ambientali significativi.\nNota Gli aspetti ambientali significativi possono risultare in rischi e opportunità associati con impatti ambientali\nnegativi (minacce) o impatti ambientali positivi (opportunità).",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.1.3",
+    "clause_title": "Obblighi di conformità",
+    "requirement_text": "L'organizzazione deve:\na) determinare e avere accesso agli obblighi di conformità relativi ai propri aspetti\nambientali;\nb) determinare come questi obblighi di conformità si applicano all'organizzazione;\nc) tenere conto di questi obblighi di conformità nell'istituzione, attuazione,\nmantenimento e miglioramento continuo del proprio sistema di gestione ambientale.\nL'organizzazione deve mantenere informazioni documentate dei propri obblighi di\nconformità.\nNota Gli obblighi di conformità possono dare luogo a rischi e opportunità per l'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.1.4",
+    "clause_title": "Attività di pianificazione",
+    "requirement_text": "L'organizzazione deve pianificare:\na) di intraprendere azioni per affrontare i propri:\n1) aspetti ambientali significativi;\n2) obblighi di conformità;\n3) rischi e opportunità identificati nel punto 6.1.1;\nb) in che modo:\n1) integrare e attuare le azioni nei processi del proprio sistema di gestione\nambientale (vedere punto 6.2, punto 7, punto 8 e 9.1) o in altri processi di\nbusiness;\n2) valutare l'efficacia di tali azioni (vedere punto 9.1).\nNel pianificare queste azioni, l'organizzazione deve considerare le proprie opzioni\ntecnologiche e i propri requisiti finanziari, operativi e aziendali.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.2",
+    "clause_title": "Obiettivi ambientali e pianificazione per il loro raggiungimento",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.2.1",
+    "clause_title": "Obiettivi ambientali",
+    "requirement_text": "L’organizzazione deve stabilire gli obiettivi ambientali relativi alle funzioni e ai livelli\npertinenti, tenendo conto degli aspetti ambientali significativi e degli obblighi di conformità\nassociati, e considerando i propri rischi e opportunità.\nGli obiettivi ambientali devono essere:\na) coerenti con la politica ambientale;\nb) misurabili (se praticabile);\nc) monitorati;\nd) comunicati;\ne) aggiornati per quanto appropriato.\nL'organizzazione deve mantenere informazioni documentate sugli obiettivi ambientali.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "6.2.2",
+    "clause_title": "Attività di pianificazione per raggiungere gli obiettivi ambientali",
+    "requirement_text": "Nel pianificare come raggiungere i propri obiettivi ambientali, l'organizzazione deve\ndeterminare:\na) cosa sarà fatto;\nb) quali risorse saranno richieste;\nc) chi ne sarà responsabile;\nd) quando sarà completato;\ne) come saranno valutati i risultati, compresi gli indicatori per monitorare il progresso\nverso il raggiungimento dei propri obiettivi ambientali misurabili (vedere punto 9.1.1).\nL'organizzazione deve considerare in che modo le azioni per il raggiungimento dei propri\nobiettivi ambientali possono essere integrate nei processi di business dell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7",
+    "clause_title": "SUPPORTO",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.1",
+    "clause_title": "Risorse",
+    "requirement_text": "L'organizzazione deve determinare e fornire le risorse necessarie per l'istituzione,\nl'attuazione, il mantenimento e il miglioramento continuo del sistema di gestione\nambientale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.2",
+    "clause_title": "Competenza",
+    "requirement_text": "L'organizzazione deve:\na) determinare le competenze necessarie per le persone che svolgono attività\nlavorative sotto il suo controllo e che influenzano le sue prestazioni ambientali e la\nsua capacità di adempiere agli obblighi di conformità;\nb) assicurare che queste persone siano competenti sulla base di istruzione, formazione\no esperienza appropriate;\nc) determinare le esigenze di formazione associate ai propri aspetti ambientali e al\nproprio sistema di gestione ambientale;\nd) ove applicabile, intraprendere azioni per acquisire le necessarie competenze e\nvalutare l'efficacia delle azioni intraprese.\nNota Le azioni applicabili possono comprendere, per esempio, il provvedere alla formazione, il tutoraggio, o la\nriallocazione delle persone attualmente impiegate; oppure l’assunzione o l’incarico a contratto di persone\ncompetenti.\nL'organizzazione deve conservare appropriate informazioni documentate quale evidenza\ndelle competenze.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.3",
+    "clause_title": "Consapevolezza",
+    "requirement_text": "L'organizzazione deve assicurare che le persone che svolgono un’attività lavorativa sotto\nil controllo dell’organizzazione siano consapevoli:\na) della politica ambientale;\nb) degli aspetti ambientali significativi e degli impatti ambientali effettivi o potenziali\ncorrelati, associati alla loro attività lavorativa;\nc) del proprio contributo all’efficacia del sistema di gestione ambientale, compresi i\nbenefici derivanti dal miglioramento delle prestazioni ambientali;\nd) delle implicazioni derivanti dal non essere conformi ai requisiti del sistema di\ngestione ambientale, compreso il mancato adempimento degli obblighi di\nconformità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.4",
+    "clause_title": "Comunicazione",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.4.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve attuare e mantenere il(i) processo(i) necessario(i) per le\ncomunicazioni interne ed esterne pertinenti al sistema di gestione ambientale,\nincludendo:\na) cosa vuole comunicare;\nb) quando comunicare;\nc) con chi comunicare;\nd) come comunicare.\nNello stabilire i propri processi di comunicazione, l'organizzazione deve:\n- tenere conto dei propri obblighi di conformità;\n- assicurare che l'informazione ambientale comunicata sia coerente con\nl'informazione generata all'interno del sistema di gestione ambientale, e che sia\naffidabile.\nL'organizzazione deve rispondere alle comunicazioni pertinenti riguardanti il proprio\nsistema di gestione ambientale.\nL'organizzazione deve conservare informazioni documentate quale evidenza delle proprie\ncomunicazioni, per quanto appropriato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.4.2",
+    "clause_title": "Comunicazione interna",
+    "requirement_text": "L'organizzazione deve:\na) comunicare internamente informazioni pertinenti al sistema di gestione ambientale\nfra i differenti livelli e le diverse funzioni dell'organizzazione, compresi i cambiamenti\nal sistema di gestione ambientale, per quanto appropriato;\nb) assicurare che i propri processi di comunicazione consentano alle persone che\nsvolgono un'attività lavorativa sotto il controllo dell'organizzazione di contribuire al\nmiglioramento continuo.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.4.3",
+    "clause_title": "Comunicazione esterna",
+    "requirement_text": "L'organizzazione deve comunicare esternamente informazioni pertinenti al sistema di\ngestione ambientale, come stabilito dai processi di comunicazione dell'organizzazione e\ncome richiesto dai propri obblighi di conformità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.5",
+    "clause_title": "Informazioni documentate",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.5.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il sistema di gestione ambientale dell’organizzazione deve comprendere:\na) le informazioni documentate richieste dalla presente norma internazionale;\nb) le informazioni documentate che l'organizzazione determina siano necessarie per\nl'efficacia del sistema di gestione ambientale.\nNota L’estensione delle informazioni documentate del sistema di gestione ambientale può variare da\nun'organizzazione all'altra in base a:\n- la dimensione dell'organizzazione e il suo tipo di attività, processi, prodotti e servizi;\n- la necessità di dimostrare l'adempimento dei propri obblighi di conformità;\n- la complessità dei processi e delle loro interazioni;\n- la competenza delle persone che svolgono attività lavorative sotto il controllo dell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.5.2",
+    "clause_title": "Creazione e aggiornamento",
+    "requirement_text": "Nel creare e aggiornare le informazioni documentate, l’organizzazione deve assicurare\nappropriata:\na) identificazione e descrizione (per esempio titolo, data, autore o numero di riferimento);\nb) formato (per esempio lingua, versione del software, grafica) e supporto (per esempio\ncartaceo, elettronico);\nc) riesame e approvazione in merito all’idoneità e all’adeguatezza.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "7.5.3",
+    "clause_title": "Controllo delle informazioni documentate",
+    "requirement_text": "Le informazioni documentate richieste dal sistema di gestione ambientale e dalla\npresente norma internazionale devono essere tenute sotto controllo per assicurare che:\na) siano disponibili e idonee all’utilizzo, dove e quando necessario;\nb) siano adeguatamente protette (per esempio da perdita di riservatezza, utilizzo\nimproprio, o perdita d’integrità).\nPer tenere sotto controllo le informazioni documentate, l’organizzazione deve\nintraprendere le seguenti attività, per quanto applicabile:\n- distribuzione, accesso, reperimento e utilizzo;\n- archiviazione e preservazione, compreso il mantenimento della leggibilità;\n- tenuta sotto controllo delle modifiche (per esempio controllo delle versioni);\n- conservazione ed eliminazione**).\n**) Nota nazionale - Il termine \"eliminazione\" dovrebbe essere inteso in senso ampio per indicare decisioni che, dopo il\ntempo stabilito per la \"conservazione\" delle informazioni documentate, possono riguardare il loro trasferimento in archivi\nremoti oppure la loro distruzione.\n\nLe informazioni documentate di origine esterna, ritenute necessarie dall'organizzazione\nper la pianificazione e per il funzionamento del sistema di gestione ambientale, devono\nessere identificate per quanto appropriato, e tenute sotto controllo.\nNota L’accesso può comportare una decisione in merito ai permessi di sola visione delle informazioni documentate,\no ai permessi e autorità per visualizzarle e modificarle.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "8",
+    "clause_title": "ATTIVITÀ OPERATIVE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "8.1",
+    "clause_title": "Pianificazione e controllo operativi",
+    "requirement_text": "L'organizzazione deve stabilire, attuare, tenere sotto controllo e mantenere i processi\nnecessari per soddisfare i requisiti del sistema di gestione ambientale e per attuare le\nazioni identificate nei punti 6.1 e 6.2:\n- stabilendo i criteri operativi per i processi;\n- attuando il controllo(i)***) del(i) processo(i), in conformità ai criteri operativi.\nNota I controlli possono comprendere controlli e procedure ingegneristici. I controlli possono essere attuati\nseguendo una gerarchia (per esempio eliminazione, sostituzione, amministrazione) e possono essere\nutilizzati singolarmente o in combinazione.\nL'organizzazione deve tenere sotto controllo le modifiche pianificate e riesaminare le\nconseguenze dei cambiamenti involontari, intraprendendo azioni per mitigare ogni effetto\nnegativo, per quanto necessario.\nL'organizzazione deve assicurare che i processi affidati all’esterno siano tenuti sotto\ncontrollo o influenzati. Il tipo e l'estensione del controllo o l'influenza da applicare ai\nprocessi devono essere definiti all'interno del sistema di gestione ambientale.\nCoerentemente con una prospettiva di ciclo di vita, l'organizzazione deve:\na) stabilire controlli, per quanto appropriato, per assicurare che il(i) proprio(i)\nrequisito(i) ambientale(i) sia(siano) affrontato(i) nei processi di progettazione e\nsviluppo per il prodotto o servizio, tenendo conto di ciascuna fase del ciclo di vita;\nb) determinare i propri requisiti ambientali per l'approvvigionamento di prodotti e\nservizi, per quanto appropriato;\nc) comunicare i propri requisiti ambientali pertinenti ai fornitori esterni, compresi gli\nappaltatori;\nd) considerare la necessità di fornire informazioni sui potenziali impatti ambientali\nsignificativi associati a trasporto o consegna, utilizzo, trattamento di fine vita e\nsmaltimento finale dei propri prodotti e servizi.\nL'organizzazione deve mantenere informazioni documentate nella misura necessaria ad\navere fiducia che i processi siano stati effettuati come pianificato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "8.2",
+    "clause_title": "Preparazione e risposta alle emergenze",
+    "requirement_text": "L’organizzazione deve stabilire, attuare e mantenere attivo(i) il(i) processo(i) necessario(i)\nper prepararsi a come dovrà affrontare e rispondere alle potenziali situazioni di\nemergenza identificate nel punto 6.1.1.\nL'organizzazione deve:\na) prepararsi a rispondere pianificando azioni per prevenire o mitigare impatti\nambientali negativi derivanti da situazioni di emergenza;\nb) rispondere alle situazioni di emergenza reali;\nc) intraprendere azioni per prevenire o mitigare le conseguenze di situazioni di emergenza,\nappropriate all'importanza dell'emergenza e del potenziale impatto ambientale;\nd) sottoporre periodicamente a prova le azioni di risposta pianificate, ove praticabile;\ne) riesaminare e revisionare periodicamente i processi e le azioni di risposta pianificate, in\nparticolare dopo che si sono verificate situazioni di emergenza o di prova;\n***) Nota nazionale - Il termine \"controllo\" deve essere inteso in questo documento come un’attività per la gestione dei\nprocessi e non la semplice acquisizione delle informazioni che li caratterizzano, coperta dal punto 9.1.\n\nf) fornire informazioni e formazione pertinenti in relazione alla preparazione e risposta\nalle emergenze, per quanto appropriato, alle parti interessate pertinenti, comprese\nle persone che svolgono attività lavorative sotto il suo controllo.\nL'organizzazione deve mantenere informazioni documentate nella misura necessaria ad\navere fiducia che i processi siano stati effettuati come pianificato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9",
+    "clause_title": "VALUTAZIONE DELLE PRESTAZIONI",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.1",
+    "clause_title": "Monitoraggio, misurazione, analisi e valutazione",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve monitorare, misurare, analizzare e valutare la propria prestazione\nambientale.\nL'organizzazione deve determinare:\na) cosa è necessario monitorare e misurare;\nb) i metodi per il monitoraggio, la misurazione, l’analisi e la valutazione, per quanto\napplicabile, per assicurare risultati validi;\nc) i criteri rispetto ai quali l'organizzazione valuterà la propria prestazione ambientale, e\ngli indicatori appropriati;\nd) quando il monitoraggio e la misurazione devono essere eseguiti;\ne) quando i risultati del monitoraggio e della misurazione devono essere analizzati e\nvalutati.\nL’organizzazione deve assicurare che l'attrezzatura di sorveglianza e misurazione tarata o\nverificata sia utilizzata e sottoposta a manutenzione, per quanto appropriato.\nL'organizzazione deve valutare la propria prestazione ambientale e l'efficacia del sistema\ndi gestione ambientale.\nL'organizzazione deve comunicare pertinenti informazioni relative alla prestazione\nambientale sia internamente sia esternamente, come identificato nei propri processi di\ncomunicazione e come richiesto dai propri obblighi di conformità.\nL'organizzazione deve conservare appropriate informazioni documentate quale evidenza\ndei risultati di monitoraggio, misurazione, analisi e valutazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.1.2",
+    "clause_title": "Valutazione della conformità",
+    "requirement_text": "L’organizzazione deve istituire, attuare e mantenere il(i) processo(i) necessario(i) per\nvalutare l'adempimento dei propri obblighi di conformità.\nL'organizzazione deve:\na) determinare con che frequenza valutare la conformità;\nb) valutare la conformità e intraprendere azioni se necessario;\nc) mantenere conoscenza e comprensione del proprio stato di conformità.\nL'organizzazione deve conservare informazioni documentate come evidenza del(i)\nrisultato(i) della valutazione della conformità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.2",
+    "clause_title": "Audit interno",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.2.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve condurre, ad intervalli pianificati, audit interni allo scopo di fornire\ninformazioni per accertare se il sistema di gestione ambientale:\na) è conforme ai:\n1) requisiti propri dell’organizzazione per il suo sistema di gestione ambientale;\n2) requisiti della presente norma internazionale;\nb) è efficacemente attuato e mantenuto.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.2.2",
+    "clause_title": "Programma di audit interno",
+    "requirement_text": "L’organizzazione deve stabilire, attuare e mantenere (un) programma(i) di audit interno\ncomprensivo(i) di frequenza, metodi, responsabilità, requisiti di pianificazione e reporting\ndei propri audit interni.\nNello stabilire il proprio programma di audit interno, l'organizzazione deve tenere in\nconsiderazione l'importanza ambientale dei processi coinvolti, dei cambiamenti che\ninfluenzano l'organizzazione e dei risultati degli audit precedenti.\nL'organizzazione deve:\na) definire i criteri dell’audit e il campo di applicazione per ciascun audit;\nb) selezionare gli auditor e condurre gli audit in modo tale da assicurare l'obiettività e\nl'imparzialità del processo di audit;\nc) assicurare che i risultati degli audit siano riportati al pertinente livello direzionale.\nL'organizzazione deve conservare informazioni documentate quale evidenza\ndell’attuazione del programma di audit e dei risultati di audit.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "9.3",
+    "clause_title": "Riesame di direzione",
+    "requirement_text": "L'alta direzione deve, a intervalli pianificati, riesaminare il sistema di gestione ambientale\ndell'organizzazione, per assicurarne la continua idoneità, adeguatezza ed efficacia.\nIl riesame di direzione deve includere considerazioni su:\na) lo stato delle azioni derivanti dai precedenti riesami di direzione;\nb) i cambiamenti:\n1) nei fattori esterni e interni che sono rilevanti per il sistema di gestione;\n2) nelle esigenze e aspettative delle parti interessate, compresi gli obblighi di\nconformità;\n3) nei propri aspetti ambientali significativi;\n4) nei rischi e nelle opportunità;\nc) il grado di realizzazione degli obiettivi ambientali;\nd) le informazioni sulla prestazione ambientale dell'organizzazione, compresi gli\nandamenti relativi:\n1) alle non conformità e alle azioni correttive;\n2) ai risultati del monitoraggio e della misurazione;\n3) al soddisfacimento dei propri obblighi di conformità;\n4) ai risultati di audit;\ne) l'adeguatezza delle risorse;\nf) le comunicazioni pertinenti provenienti dalle parti interessate, compresi i reclami;\ng) le opportunità per il miglioramento continuo.\nGli output del riesame di direzione devono comprendere:\n- conclusioni sulla continua idoneità, adeguatezza ed efficacia del sistema di gestione\nambientale;\n- decisioni relative alle opportunità di miglioramento continuo;\n- decisioni relative a ogni necessità di modifiche al sistema di gestione ambientale,\ncomprese le risorse;\n- azioni, se necessarie, qualora gli obiettivi ambientali non siano stati raggiunti;\n- opportunità di migliorare l'integrazione del sistema di gestione ambientale con altri\nprocessi aziendali, se necessario;\n- tutte le implicazioni per la direzione strategica dell'organizzazione.\nL’organizzazione deve conservare informazioni documentate quale evidenza dei risultati\ndei riesami di direzione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "10",
+    "clause_title": "MIGLIORAMENTO",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "10.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve determinare opportunità di miglioramento (vedere punti 9.1, 9.2 e\n9.3) e intraprendere le azioni necessarie al conseguimento degli esiti attesi del proprio\nsistema di gestione ambientale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "10.2",
+    "clause_title": "Non conformità e azioni correttive",
+    "requirement_text": "Quando si verifica una non conformità, l’organizzazione deve:\na) reagire alla non conformità, e, per quanto applicabile:\n1) intraprendere azioni per tenerla sotto controllo e correggerla;\n2) affrontarne le conseguenze, compresa la mitigazione di impatti ambientali\nnegativi;\nb) valutare l’esigenza di azioni per eliminare le cause della non conformità, in modo che\nnon si ripeta o non si verifichi altrove:\n1) riesaminando la non conformità;\n2) determinando le cause della non conformità;\n3) determinando se esistono o potrebbero verificarsi non conformità simili;\nc) attuare ogni azione necessaria;\nd) riesaminare l’efficacia di ogni azione correttiva intrapresa;\ne) effettuare, se necessario, modifiche al sistema di gestione ambientale.\nLe azioni correttive devono essere adeguate all'importanza degli effetti delle non\nconformità riscontrate, compresi gli impatti ambientali.\nL’organizzazione deve conservare informazioni documentate quale evidenza:\n- della natura delle non conformità e di ogni successiva azione intrapresa;\n- dei risultati di ogni azione correttiva.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_14001_2015",
+    "clause_ref": "10.3",
+    "clause_title": "Miglioramento continuo",
+    "requirement_text": "L’organizzazione deve migliorare in modo continuo l’idoneità, l’adeguatezza e l’efficacia\ndel sistema di gestione ambientale per migliorare la prestazione ambientale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_1_2021",
+    "clause_ref": "5",
+    "clause_title": "CRITERI PER LA SCELTA DEL LIVELLO APPROPRIATO DI REQUISITI DI QUALITÀ",
+    "requirement_text": "La scelta della parte appropriata della serie ISO 3834, che specifica il livello richiesto di\nrequisiti di qualità, dovrebbe essere in conformità alla norma di prodotto, alla specifica, al\nregolamento o al contratto. Poiché la serie ISO 3834 può essere utilizzata in una varietà\ndi situazioni e per diverse applicazioni, in questo punto non possono essere indicate\nregole definitive sul livello dei requisiti di qualità da adottare nelle singole circostanze.\nLa serie ISO 3834 può essere applicata in una varietà di situazioni. Il fabbricante\ndovrebbe scegliere una delle tre parti che specificano diversi livelli di requisiti di qualità, in\nbase ai seguenti criteri relativi ai prodotti:\n- la misura e l'importanza dei prodotti critici per la sicurezza;\n- la complessità della fabbricazione;\n- la gamma di prodotti fabbricati;\n- la gamma di materiali differenti utilizzati;\n- la misura in cui possono verificarsi problemi metallurgici;\n- la misura in cui le imperfezioni di fabbricazione, per esempio il disallineamento, la\ndistorsione o l'imperfezione della saldatura, influiscono sulle prestazioni del prodotto.\nUn fabbricante che dimostra la conformità ad un particolare livello di qualità è considerato\naver stabilito la conformità a tutti i livelli inferiori senza ulteriori dimostrazioni, per esempio\nun fabbricante conforme ai requisiti di qualità completi (cioè ISO 3834-2) dimostra la\nconformità ai requisiti di qualità normalizzati (cioè ISO 3834-3) e ai requisiti di qualità\nelementari (cioè ISO 3834-4).\nL'appendice A elenca i criteri che aiutano nella scelta della parte appropriata della serie\nISO 3834.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_1_2021",
+    "clause_ref": "6",
+    "clause_title": "ELEMENTI DA CONSIDERARE PER UN SISTEMA DI GESTIONE DELLA QUALITÀ A COMPLEMENTO DELLA SERIE ISO",
+    "requirement_text": "La serie ISO 3834 contiene molte caratteristiche che contribuiscono a un QMS. Questo\npunto identifica gli elementi del QMS che il fabbricante dovrebbe considerare di\nimplementare per sostenere i requisiti di qualità della serie ISO 3834:\na) controllo dei documenti e delle registrazioni (vedere ISO 9001:2015, punto 7.5);\nb) responsabilità della direzione (vedere ISO 9001:2015, punto 5.3);\nc) previsione delle risorse (vedere ISO 9001:2015, punto 7.1);\nd) competenza, consapevolezza e formazione del personale operativo (vedere\nISO 9001:2015, punti 7.2, 7.3 e 10);\ne) pianificazione della realizzazione del prodotto (vedere ISO 9001:2015, punti 8.2, 8.3,",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_1_2021",
+    "clause_ref": "8.4",
+    "clause_title": "e 8.5, e ISO 10005);",
+    "requirement_text": "f) determinazione dei requisiti relativi al prodotto (vedere ISO 9001:2015, punti 8.2.2 e\n8.2.4);\ng) riesame dei requisiti relativi al prodotto (vedere ISO 9001:2015, punto 8.2.3);\nh) approvvigionamento (vedere ISO 9001:2015, punto 8.4);\ni) validazione dei processi (vedere ISO 9001:2015, punti 8.4 e 8.5.1);\nj) caratteristica del cliente (vedere ISO 9001:2015, punto 8.5.3);\nk) audit interno (vedere ISO 9001:2015, punto 9.2);\nl) monitoraggio e misurazione dei prodotti (vedere ISO 9001:2015, punto 9.1.3);\nm) controllo dei processi, prodotti e servizi forniti dall'esterno (vedere ISO 9001:2015,\npunto 8.4);\nn) controllo della produzione e della fornitura di servizi (vedere ISO 9001:2015, punto\n8.5.1).\nLa ISO 9004 fornisce una guida per lo sviluppo e l'attuazione di un QSM.\n\nrichiesta | La registrazione non è richiesta |\nrichiesta | La registrazione non è richiesta |\nresponsabilità finale della qualità rimane al fabbricante. |  |  |\nsaldatura | La qualificazione è richiesta |  |  |\ndelle attività di saldatura | Richiesta |  | Nessun requisito specifico |\nprove | La qualificazione è richiesta |  |  |\ne le prove | Adatta e disponibile come richiesto per la preparazione, l'esecuzione del processo, il collaudo, il trasporto, il\nsollevamento in combinazione con attrezzature di sicurezza e indumenti protettivi. |  |  |\nsono richiesti | Le registrazioni sono\nraccomandate |  |\nsono richiesti | Si raccomandano piani e registri\ndocumentati |  |\nsaldatura | Richiesta |  | Nessun requisito specifico |\ndi saldatura | Richiesta |  | Nessun requisito specifico |\nconsumo | Se richiesta | Nessun requisito specifico |  |\nmovimentazione dei materiali\nd'apporto di saldatura | Si richiede una procedura in conformità alle raccomandazioni del fornitore |  | In conformità alle\nraccomandazioni del fornitore |\nmateriale base | Richiesta protezione dall'influenza dell'ambiente. L'identificazione deve\nessere mantenuta durante l'immagazzinamento. |  | Nessun requisito specifico |\npost-saldatura | Conferma che i requisiti secondo la norma di prodotto o le specifiche sono\nsoddisfatti |  | Nessun requisito specifico |\nregistrazione e rintracciabilità della\nregistrazione al prodotto | Sono richieste procedure e\nregistrazioni |  |\ndurante e dopo la saldatura | Richiesta |  | Se richiesta |\ncorrettive | Le misure di controllo sono implementate. Sono richieste procedure di\nriparazione e/o rettifica. |  | Le misure di controllo sono\nimplementate |\nattrezzature di misurazione,\nispezione e prova | Richiesta | Se richiesta | Nessun requisito specifico |\nprocesso | Se richiesta |  | Nessun requisito specifico |",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "4",
+    "clause_title": "UTILIZZO DEL PRESENTE DOCUMENTO",
+    "requirement_text": "Per informazioni generali sull'uso del presente documento, si deve usare la ISO 3834-1.\nPer soddisfare i requisiti di qualità indicati nel presente documento, si deve verificare la\nconformità ai documenti pertinenti indicati nella ISO 3834-5.\nIn certe situazioni, per esempio quando la fabbricazione è più idonea alla ISO 3834-4, o\nquando non sono effettuate particolari operazioni, come il trattamento termico, i requisiti\nindicati in dettaglio nel presente documento possono essere modificati selettivamente\noppure cancellati.\nAltrimenti, i requisiti contenuti nel presente documento devono essere adottati\nintegralmente.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "5",
+    "clause_title": "RIESAME DEI REQUISITI E RIESAME TECNICO",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "5.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il costruttore deve riesaminare i requisiti contrattuali ed ogni altro requisito, unitamente ad\neventuali dati tecnici forniti dal committente o ai dati aziendali quando la costruzione è\nprogettata dal costruttore. Il costruttore deve verificare che tutte le informazioni necessarie\nper effettuare le operazioni di fabbricazione siano complete e disponibili prima dell'inizio del\nlavoro. Il costruttore deve dichiarare la sua capacità di soddisfare tutti i requisiti e deve\nassicurare una pianificazione adeguata di tutte le attività legate alla qualità.\nIl riesame dei requisiti è effettuato dal costruttore per verificare che:\n- il tipo di lavoro rientri nella propria capacità di fabbricazione;\n- siano disponibili risorse sufficienti per rispettare i programmi di consegna; e\n- la documentazione sia chiara e non ambigua.\n1) In corso di preparazione. (Stadio al momento della pubblicazione: ISO/DIS 3834-5:2021).\n\nIl costruttore deve assicurare di avere evidenziato eventuali differenze tra il contratto e\nogni precedente documentazione di offerta e di avere informato il committente sulle\neventuali modifiche di programmi, costi e situazioni tecniche che ne potrebbero derivare.\nGli elementi citati nel punto 5.2 sono considerati generalmente al momento o prima del\nriesame dei requisiti. Gli elementi citati nel punto 5.3 fanno generalmente parte del\nriesame tecnico e sono presi in considerazione nello stadio iniziale di pianificazione.\nQuando non esiste un contratto, per esempio nel caso di prodotti a magazzino, al\ncostruttore è richiesto di prendere in considerazione i requisiti del punto 5.2 mentre\neffettua il riesame tecnico (vedere punto 5.3).",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "5.2",
+    "clause_title": "Riesame dei requisiti",
+    "requirement_text": "Si devono tenere in considerazione i seguenti aspetti:\na) la norma di prodotto da usare, insieme a eventuali requisiti supplementari;\nb) requisiti regolamentari e legislativi;\nc) eventuali requisiti supplementari stabiliti dal costruttore;\nd) la capacità del costruttore di soddisfare i requisiti prescritti.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "5.3",
+    "clause_title": "Riesame tecnico",
+    "requirement_text": "Si devono tenere in considerazione i seguenti requisiti tecnici:\na) specifica del(dei) materiale(i) base e delle caratteristiche del giunto saldato;\nb) requisiti di qualità e di accettabilità delle saldature;\nc) posizione, accessibilità e sequenza delle saldature, inclusa l'accessibilità per\nl'ispezione e per le prove non distruttive;\nd) la specificazione di procedure di saldatura, di procedure di controlli non distruttivi e di\nprocedure di trattamento termico;\ne) il criterio da usare per la qualificazione delle procedure di saldatura;\nf) la qualificazione del personale;\ng) la scelta, l'identificazione e/o la rintracciabilità (per esempio per materiali, saldature);\nh) disposizioni relative al controllo della qualità, incluso l'eventuale intervento di un\norganismo ispettivo indipendente;\ni) le ispezioni e le prove;\nj) la subfornitura;\nk) i trattamenti termici dopo saldatura;\nl) altri requisiti di saldatura, per esempio tenore di ferrite nel metallo depositato,\ninvecchiamento, tenore di idrogeno, sostegno permanente, uso di martellinatura,\nfinitura superficiale, profilo della saldatura;\nm) uso di metodi particolari (per esempio per ottenere la piena penetrazione senza\nsupporto al rovescio allorché si salda da un solo lato);\nn) dimensioni e dettagli della preparazione dei giunti e dei giunti finiti;\no) saldature da eseguire in officina o altrove;\np) condizioni ambientali pertinenti all'applicazione del procedimento (per esempio\ntemperature ambiente molto basse o eventuale necessità di provvedere a protezioni\ncontro condizioni di tempo avverse);\nq) gestione delle non conformità.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "6",
+    "clause_title": "SUBFORNITURA",
+    "requirement_text": "Quando un costruttore intende usare servizi od attività di subfornitura (per esempio\nsaldatura, ispezione, controlli non distruttivi, trattamenti termici), deve dare al subfornitore\nle informazioni necessarie per soddisfare i requisiti applicabili. Il subfornitore deve fornire\nrapporti e documentazione relativi al suo lavoro secondo le modalità che possono essere\nspecificate dal costruttore.\nOgni subfornitore deve lavorare secondo le prescrizioni e sotto la responsabilità del\ncostruttore e deve soddisfare completamente i requisiti pertinenti del presente\ndocumento. Il costruttore deve assicurare che il subfornitore sia in grado di soddisfare i\nrequisiti di qualità specificati.\nLe informazioni che il costruttore deve fornire al subfornitore devono comprendere tutti i\ndati pertinenti al riesame dei requisiti (vedere punto 5.2) e al riesame tecnico (vedere\npunto 5.3). Possono essere specificati requisiti aggiuntivi per quanto necessario ad\nassicurare la conformità del subfornitore ai requisiti tecnici.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "7",
+    "clause_title": "PERSONALE DI SALDATURA",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "7.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il costruttore deve disporre di personale sufficiente e competente per effettuare la\npianificazione, la fabbricazione e la supervisione della produzione di saldatura secondo i\nrequisiti specificati.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "7.2",
+    "clause_title": "Saldatori ed operatori di saldatura",
+    "requirement_text": "I saldatori e gli operatori di saldatura devono essere qualificati mediante una prova\nadeguata.\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 1, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "7.3",
+    "clause_title": "Personale di coordinamento delle attività di saldatura",
+    "requirement_text": "Il costruttore deve disporre di idoneo personale di coordinamento delle attività di\nsaldatura. Tali persone, essendo responsabili delle attività riguardanti la qualità, devono\navere autorità sufficiente per permettere che siano prese le azioni necessarie. I compiti e\nle responsabilità di tali persone devono essere definiti chiaramente.\nI documenti ISO ai quali è richiesto conformarsi per soddisfare i requisiti di qualità sono\nspecificati nel prospetto 2 della ISO 3834-5:-, per la saldatura ad arco, la saldatura a\nfascio elettronico, la saldatura laser e la saldatura a gas, e nel prospetto 10 della\nISO3834-5:-, per altri procedimenti di saldatura a fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "8",
+    "clause_title": "PERSONALE ADDETTO A ISPEZIONI E PROVE",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "8.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il costruttore deve disporre di personale sufficiente e competente per la pianificazione e\nl'esecuzione, nonché per la supervisione, l'ispezione e le prove della produzione di\nsaldatura secondo i requisiti specificati.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "8.2",
+    "clause_title": "Personale addetto alle prove non distruttive",
+    "requirement_text": "Il personale addetto ai controlli non distruttivi deve essere qualificato. Per l'esame visivo\npuò non essere sempre richiesta una prova di qualificazione. Quando non è richiesta una\nprova di qualificazione la competenza deve essere verificata dal costruttore.\n\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 3, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "9",
+    "clause_title": "ATTREZZATURE",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "9.1",
+    "clause_title": "Attrezzature per la produzione e le prove",
+    "requirement_text": "Quando necessario, devono essere disponibili le seguenti attrezzature:\na) saldatrici e altre macchine;\nb) attrezzature per la preparazione dei giunti e delle superfici, nonché per il taglio,\nincluso il taglio termico;\nc) attrezzature per il preriscaldo e il trattamento termico dopo saldatura, inclusi\ndispositivi di indicatori di temperatura;\nd) maschere e attrezzature;\ne) gru e attrezzature di movimentazione usate per la produzione;\nf) dispositivi di protezione individuale e altre attrezzature di sicurezza, direttamente\nattinenti al procedimento di fabbricazione applicabile;\ng) forni, fornetti per elettrodi, ecc. usati per il trattamento dei materiali di apporto di\nsaldatura;\nh) attrezzature per la pulitura delle superfici;\ni) attrezzature per le prove distruttive e per le prove non distruttive.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "9.2",
+    "clause_title": "Descrizione delle attrezzature",
+    "requirement_text": "Il costruttore deve tenere un elenco delle attrezzature essenziali usate per la produzione.\nTale elenco deve indicare le caratteristiche delle attrezzature principali, essenziali per la\nvalutazione della capacità di lavoro e dell'idoneità dell'officina. Il medesimo elenco\ninclude, per esempio:\na) portata massima della(e) gru;\nb) dimensioni dei componenti che l'officina è in grado di movimentare;\nc) idoneità dell'attrezzatura per la saldatura meccanizzata o automatica;\nd) dimensioni e temperatura massima dei forni per il trattamento termico dopo\nsaldatura;\ne) capacità di lavoro delle attrezzature per calandratura, piegatura e taglio.\nPer quanto riguarda le altre attrezzature, per ciascun tipo generale è necessario\nspecificare solamente il numero totale approssimato (per esempio, numero totale di\nsaldatrici per i differenti procedimenti di saldatura).",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "9.3",
+    "clause_title": "Idoneità e manutenzione delle attrezzature",
+    "requirement_text": "Le attrezzature devono essere idonee per l'applicazione prevista e devono essere in\nadeguate condizioni di manutenzione. Si raccomanda l'uso di resoconti di manutenzione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "10",
+    "clause_title": "SALDATURA E ATTIVITÀ CONNESSE",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "10.1",
+    "clause_title": "Pianificazione della produzione",
+    "requirement_text": "Il costruttore deve effettuare una adeguata pianificazione della produzione.\nGli elementi da considerare devono comprendere almeno:\n\na) indicazione della sequenza mediante la quale la costruzione deve essere fabbricata\n(per esempio se a componenti singoli o a sottogruppi, e dell'ordine del successivo\nmontaggio finale);\nb) identificazione dei singoli processi richiesti per fabbricare la costruzione;\nc) riferimenti alle appropriate specifiche di procedura per la saldatura e i procedimenti\nconnessi;\nd) la sequenza di esecuzione delle saldature, se richiesta;\ne) specificazione delle ispezioni e delle prove, incluso l'eventuale intervento di un\norganismo ispettivo indipendente;\nf) condizioni ambientali (per esempio protezione contro il vento e la pioggia);\ng) identificazione di componenti o parti, secondo il caso;\nh) previsione di personale qualificato;\ni) disposizioni per eventuali prove di produzione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "10.2",
+    "clause_title": "Specifiche delle procedure di saldatura",
+    "requirement_text": "Il costruttore deve preparare la specifica(che) di procedura di saldatura e deve assicurarsi\nche questa(e) sia(no) usata(e) correttamente in produzione.\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 4, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "10.3",
+    "clause_title": "Qualificazione delle procedure di saldatura",
+    "requirement_text": "Le procedure di saldatura devono essere qualificate prima della produzione. Il metodo di\nqualificazione deve essere in conformità alle norme di prodotto pertinenti o alle\nprescrizioni della specifica.\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 5, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.\nNota Nelle pertinenti norme di prodotto e/o specifiche può essere richiesta la qualificazione di altre procedure.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "10.4",
+    "clause_title": "Istruzioni di lavoro",
+    "requirement_text": "Il costruttore può usare la specifica di procedura di saldatura direttamente in officina, a\nscopo di istruzione. In alternativa, egli può usare istruzioni di lavoro apposite. Tali\nistruzioni di lavoro dedicate devono essere preparate sulla base di una specifica di\nprocedura di saldatura qualificata e non richiedono una qualificazione separata.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "11",
+    "clause_title": "IMMAGAZZINAMENTO E MOVIMENTAZIONE DEI MATERIALI D'APPORTO DI SALDATURA",
+    "requirement_text": "Il costruttore deve preparare e applicare procedure per l'immagazzinamento, la\nmovimentazione e l'impiego dei materiali di apporto, in modo da evitare assorbimento di\numidità, ossidazione e danneggiamenti. Le procedure devono essere in conformità alle\nraccomandazioni del fornitore.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "12",
+    "clause_title": "IMMAGAZZINAMENTO DEI MATERIALI BASE",
+    "requirement_text": "L'immagazzinamento deve essere fatto in modo che i materiali base, inclusi quelli forniti\ndal cliente, non subiscano danneggiamenti. L'identificazione deve essere mantenuta\ndurante l'immagazzinamento.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "13",
+    "clause_title": "TRATTAMENTO TERMICO DOPO SALDATURA",
+    "requirement_text": "Il costruttore deve essere completamente responsabile della specificazione e della\nesecuzione di qualsiasi trattamento termico dopo saldatura. La procedura deve essere\ncompatibile con il materiale base, il giunto saldato, il tipo di costruzione. Deve essere in\nconformità alla norma di prodotto e/o ai requisiti specificati. Durante il processo deve\nessere fatta una registrazione del trattamento termico. Tale registrazione deve dimostrare\nche la specifica è stata seguita.\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 6, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14",
+    "clause_title": "ISPEZIONI E PROVE",
+    "requirement_text": "",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Si devono effettuare ispezioni e prove negli stadi opportuni del processo di fabbricazione,\nin modo da assicurare la conformità ai requisiti del contratto. L'ubicazione e la frequenza\ndi tali ispezioni e/o prove dipendono dal contratto e/o dalla norma di prodotto, dal\nprocedimento di saldatura e dal tipo di costruzione (vedere punti 5.2 e 5.3).\nIl costruttore può effettuare prove ulteriori senza restrizioni. Non sono richiesti rapporti di\nqueste prove.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14.2",
+    "clause_title": "Ispezioni e prove prima della saldatura Prima dell'inizio della saldatura devono essere verificati i seguenti elementi:",
+    "requirement_text": "a) l'idoneità e la validità dei certificati di qualificazione dei saldatori e degli operatori di\nsaldatura;\nb) l'idoneità delle specifiche di procedura di saldatura;\nc) l'identificazione dei materiali base;\nd) l'identificazione dei materiali di apporto di saldatura;\ne) la preparazione dei giunti (per esempio la forma e le dimensioni);\nf) l'accostamento dei lembi, il fissaggio e la puntatura del giunto;\ng) eventuali requisiti particolari della specifica di procedura di saldatura (per esempio la\nprevenzione di distorsioni);\nh) l'idoneità delle condizioni di lavoro per la saldatura, incluse le condizioni ambientali.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14.3",
+    "clause_title": "Ispezioni e prove durante la saldatura",
+    "requirement_text": "Durante la saldatura devono essere verificati ad intervalli idonei o con sorveglianza\ncontinua i seguenti elementi:\na) i parametri essenziali di saldatura (per esempio corrente di saldatura, tensione\nd'arco e velocità di avanzamento);\nb) le temperature di preriscaldo e tra le passate;\nc) la pulizia e la forma delle passate e degli strati di metallo depositato;\nd) la solcatura al rovescio;\n\ne) la sequenza di saldatura;\nf) l'uso e la manipolazione corretti dei materiali di apporto di saldatura;\ng) il controllo delle distorsioni;\nh) eventuali controlli intermedi (per esempio controlli dimensionali).\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 7, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14.4",
+    "clause_title": "Ispezioni e prove dopo la saldatura Dopo la saldatura si deve verificare la conformità ai criteri di accettabilità pertinenti:",
+    "requirement_text": "a) mediante esame visivo (VT);\nb) mediante controlli non distruttivi (PND);\nc) mediante prove distruttive;\nd) forma e dimensioni della costruzione saldata;\ne) risultati e documenti di registrazione delle operazioni eseguite dopo la saldatura (per\nesempio trattamento termico dopo saldatura, invecchiamento).\nI documenti ai quali è richiesta la conformità per soddisfare i requisiti di qualità sono\nspecificati nella:\n- ISO 3834-5:-, prospetto 8, per la saldatura ad arco, la saldatura a fascio elettronico,\nla saldatura laser e la saldatura a gas, e nella\n- ISO 3834-5:-, prospetto 10, per altri procedimenti di saldatura per fusione.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "14.5",
+    "clause_title": "Stato delle ispezioni e delle prove Devono essere prese misure appropriate per indicare lo stato delle ispezioni e delle prove",
+    "requirement_text": "della costruzione saldata, per esempio mediante marcatura del pezzo o indicazione su\nuna scheda di lavoro.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "15",
+    "clause_title": "NON CONFORMITÀ ED AZIONI CORRETTIVE",
+    "requirement_text": "Si devono prendere misure per controllare i pezzi o le attività che non sono conformi ai\nrequisiti specificati, in modo da prevenire la loro impropria accettazione. Quando la loro\nriparazione e/o rilavorazione è eseguita dal costruttore, la descrizione delle procedure\nappropriate deve essere disponibile presso tutti i posti di lavoro dove è eseguita la\nriparazione o la rilavorazione. Qualora sia effettuata la riparazione, i pezzi devono essere\ndi nuovo sottoposti a ispezioni, e a riprove in conformità ai requisiti originali. Inoltre devono\nessere prese misure per evitare il ripetersi delle non-conformità.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "16",
+    "clause_title": "TARATURA E CONVALIDA DI ATTREZZATURE DI MISURA, ISPEZIONE",
+    "requirement_text": "E PROVA 9\nBIBLIOGRAFIA 11\n\nPREMESSA CEN\nIl presente documento (EN ISO 3834-3:2021) è stato elaborato dal Comitato Tecnico\nISO/TC 44 \"Welding and allied processes\" in collaborazione con il Comitato Tecnico\nCEN/TC 121 \"Welding and allied processes\" la cui segreteria è affidata al DIN.\nAlla presente norma europea deve essere attribuito lo status di norma nazionale, o\nmediante pubblicazione di un testo identico o mediante notifica di adozione, al più tardi\nentro ottobre 2021, e le norme nazionali in contrasto devono essere ritirate al più tardi\nentro ottobre 2021.\nSi richiama l'attenzione sulla possibilità che alcuni degli elementi del presente documento\npossano essere oggetto di diritti di brevetto. Il CEN non deve essere ritenuto responsabile\ndell'identificazione di alcuni o di tutti questi diritti di brevetto.\nIl presente documento sostituisce la EN ISO 3834-3:2005.\nIn conformità alle Regole Comuni CEN-CENELEC, gli enti nazionali di normazione dei\nseguenti Paesi sono tenuti a recepire la presente norma europea: Austria, Belgio,\nBulgaria, Cipro, Croazia, Danimarca, Estonia, Finlandia, Francia, Germania, Grecia,\nIrlanda, Islanda, Italia, Lettonia, Lituania, Lussemburgo, Malta, Norvegia, Paesi Bassi,\nPolonia, Portogallo, Regno Unito, Repubblica Ceca, Repubblica della Macedonia del\nNord, Romania, Serbia, Slovacchia, Slovenia, Spagna, Svezia, Svizzera, Turchia e\nUngheria.\nNOTIFICA DI ADOZIONE\nIl testo della ISO 3834-3:2021 è stato approvato dal CEN come EN ISO 3834-3:2021\nsenza alcuna modifica.\n\nPREMESSA ISO\nL'ISO (Organizzazione Internazionale di Normazione) è la federazione mondiale degli\norganismi di normazione nazionali (membri ISO). L'attività di stesura delle norme\ninternazionali è svolta generalmente attraverso comitati tecnici ISO. Ogni organismo\nmembro interessato ad un argomento per il quale è stato istituito un comitato tecnico ha\nil diritto di essere rappresentato in tale comitato. Anche le organizzazioni internazionali,\ngovernative e non-governative, in collaborazione con l'ISO, partecipano ai suddetti lavori.\nL'ISO collabora strettamente con l'IEC (Commissione Elettrotecnica Internazionale) su\ntutti gli argomenti della normazione elettrotecnica.\nLe procedure seguite per sviluppare il presente documento, unitamente a quelle\nseguiteper il suo successivo aggiornamento, sono descritte nelle Direttive ISO/IEC,\nParte1. Inoltre si dovrebbe prestare attenzione ai diversi criteri di approvazione\nnecessariper i diversi tipi di documenti ISO. Il presente documento è stato redatto\ninconformità alle regole editoriali contenute nelle Direttive ISO/IEC, Parte 2 (vedere\nwww.iso.org/directives).\nSi richiama l'attenzione sulla possibilità che alcuni degli elementi del presente documento\npossano essere oggetto di diritti di brevetto. ISO non deve essere ritenuto responsabile\ndell'identificazione di alcuni o di tutti questi diritti di brevetto. I dettagli sui brevetti\nidentificati durante lo sviluppo del documento sono indicati nell'Introduzione e/o\nnell'elenco ISO delle dichiarazioni di brevetto ricevute (vedere www.iso.org/patents).\nQualsiasi denominazione commerciale utilizzata nel presente documento costituisce\nun'informazione fornita a supporto degli utenti e non costituisce un'approvazione.\nPer una spiegazione sulla natura volontaria delle norme, sul significato di termini specifici\nISO e delle espressioni relative alla valutazione di conformità, nonché informazioni\nsull'osservanza dell'ISO ai principi dell'Organizzazione Mondiale del Commercio (WTO)\nnell'ambito delle barriere tecniche per il commercio (TBT), vedere il seguente URL:\nwww.iso.org/iso/foreword.html.\nIl presente documento è stato elaborato dal Comitato Tecnico ISO/TC 44, Welding and\nallied processes, Sottocomitato SC 10, Quality management in the field of welding, in\ncollaborazione con la Commissione europea per la normazione (CEN) Comitato tecnico\nCEN/TC 121, Welding and allied processes, in conformità all'Accordo sulla cooperazione\ntecnica tra ISO e CEN (Accordo di Vienna).\nLa presente terza edizione annulla e sostituisce la seconda edizione (ISO 3834-3:2005),\ndella quale costituisce una revisione minore.\nLe modifiche principali rispetto all'edizione precedente sono le seguenti:\n- revisioni editoriali;\n- aggiornamento dei riferimenti alla più recente edizione della ISO 3834-5;\n- riscrittura del punto 16 su taratura e validazione delle attrezzature di misura, di\nispezione e di controllo.\nUn elenco di tutte le parti della serie ISO 3834 è reperibile nel sito Web dell'ISO.\nQualsiasi commento o richiesta sul presente documento dovrebbe essere rivolta al\nproprio ente di normazione nazionale. Una lista completa di tali enti è fornita al sito\nwww.iso.org/members.html.\nLe interpretazioni ufficiali, dove esistenti, sono disponibili in questa pagina:\nhttps://committee.iso.org/sites/tc44/home/interpretation.html.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "17",
+    "clause_title": "IDENTIFICAZIONE E RINTRACCIABILITÀ",
+    "requirement_text": "L'identificazione e la rintracciabilità devono essere mantenute attraverso tutto il processo\ndi fabbricazione, se richiesto.\nI sistemi documentati per assicurare l'identificazione e la rintracciabilità delle operazioni di\nsaldatura devono includere, se richiesto:\na) identificazione dei piani di produzione;\nb) identificazione della posizione delle saldature nella costruzione;\nc) identificazione delle procedure di prove non distruttive e del personale addetto;\nd) identificazione dei materiali d'apporto (per esempio designazione, denominazione\ncommerciale, fabbricante dei materiali d'apporto);\ne) identificazione del materiale base (per esempio tipo);\nf) identificazione della posizione delle riparazioni;\ng) rintracciabilità di saldatori ed operatori di saldatura in relazione a particolari\nsaldature;\nh) rintracciabilità di specifiche di procedura di saldatura in relazione a particolari\nsaldature.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_3_2021",
+    "clause_ref": "18",
+    "clause_title": "DOCUMENTI DI REGISTRAZIONE DELLA QUALITÀ",
+    "requirement_text": "Quando necessario, i documenti di registrazione della qualità devono comprendere:\na) documentazione del riesame dei requisiti e del riesame tecnico;\nb) documenti di ispezione del materiale base;\nc) documenti di ispezione dei materiali di apporto;\nd) specifiche delle procedure di saldatura;\ne) verbali di qualificazione delle procedure di saldatura (WPQR);\nf) documenti di qualificazione dei saldatori o degli operatori di saldatura;\ng) documenti di qualificazione del personale addetto alle prove non distruttive;\nh) specifiche delle procedure di trattamento termico e registrazioni dei trattamenti;\ni) procedure e rapporti delle prove non distruttive e delle prove distruttive;\nj) rapporti dei controlli dimensionali;\nk) rapporti sulle riparazioni e rapporti sulle non-conformità;\nl) altri documenti, se richiesti.\nSe non sono specificati requisiti diversi, i documenti di registrazione della qualità devono\nessere conservati per un periodo minimo di cinque anni.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_5_2021",
+    "clause_ref": "4",
+    "clause_title": "DOCUMENTI AI QUALI È NECESSARIO CONFORMARSI PER POTER DICHIARARE",
+    "requirement_text": "LA CONFORMITÀ AI REQUISITI DI QUALITÀ DELLA ISO 3834-2, ISO 3834-3 O\nISO 3834-4",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_5_2021",
+    "clause_ref": "4.1",
+    "clause_title": "Generalità",
+    "requirement_text": "La conformità ai requisiti di qualità della ISO 3834-2, ISO 3834-3 o ISO 3834-4 può\nessere dichiarata dal fabbricante secondo una o più delle seguenti opzioni:\na) adozione dei documenti ISO elencati nei prospetti da 1 a 10;\nb) adozione di altri documenti che forniscono condizioni tecnicamente equivalenti ai\ndocumenti ISO elencati nei prospetti da 1 a 10;\nc) adozione di norme di supporto differenti, dove queste sono richieste nelle norme di\napplicazione utilizzate dai fabbricanti.",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_5_2021",
+    "clause_ref": "4.2",
+    "clause_title": "Applicabilità",
+    "requirement_text": "Riguardo i requisiti di qualità dei processi di saldatura per fusione, esistono due tipi di\ndocumento:\n- tipo A: documenti ISO per i processi di saldatura per i quali i requisiti di qualità sono\nindicati in parecchi documenti, vedere prospetti da 1 a 9;\n- tipo B: documenti ISO per processi di saldatura particolari per i quali i requisiti di\nqualità sono indicati in un solo documento, vedere prospetto 10.\nNota I requisiti di qualità della saldatura per fusione possono inoltre essere applicati alla saldatura ad attrito, alla\nsaldatura ad attrito tixotropica e alla saldatura ad attrito a punti, come appropriato (vedere ISO 15620,\nISO18785 e ISO 25239).",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_3834_5_2021",
+    "clause_ref": "4.3",
+    "clause_title": "Certificato",
+    "requirement_text": "L'organismo di certificazione oppure le dichiarazioni di conformità di un fabbricante in\nconformità alla ISO 3834-2, ISO 3834-3 o ISO 3834-4 devono elencare nel certificato le\nnorme di supporto o la documentazione.\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nISO 9606-4, ISO 9606-5, ISO 14732,\nISO 15618-1, ISO 15618-2 | 7.2 | 7.2 | 7.2 |\nelettronico | ISO 14732 |  |  |  |\nsaldatura ibrida a laser | ISO 14732 |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nelettronico |  |  |  |  |\nsaldatura ibrida a laser |  |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nelettronico |  |  |  |  |\nsaldatura ibrida a laser |  |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nelettronico | ISO 15609-3 |  |  |  |\nsaldatura ibrida a laser | ISO 15609-4, ISO 15609-6 |  |  |  |\n\nprospetto 1 Saldatori ed operatori di saldatura\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco ISO 9606-1, ISO 9606-2, ISO 9606-3,\nISO 9606-4, ISO 9606-5, ISO 14732,\nISO 15618-1, ISO 15618-2\nSaldatura a fascio\nISO 14732 7.2 7.2 7.2\nelettronico\nSaldatura a laser e\nISO 14732\nsaldatura ibrida a laser\nSaldatura a gas ISO 9606-1\nprospetto 2 Personale di coordinamento delle attività di saldatura\nProcedura di saldatura Documento ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco\nSaldatura a fascio\nelettronico\nISO 14731 7.3 7.3 Nessuno\nSaldatura a laser e\nsaldatura ibrida a laser\nSaldatura a gas\nprospetto 3 Personale addetto ai controlli non distruttivi\nProcedura di saldatura Documento ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco\nSaldatura a fascio\nelettronico\nISO 9712 8.2 8.2 8.2\nSaldatura a laser e\nsaldatura ibrida a laser\nSaldatura a gas\nprospetto 4 Specifiche della procedura di saldatura\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco ISO 15609-1\nSaldatura a fascio\nISO 15609-3\nelettronico\nSaldatura a laser e\nISO 15609-4, ISO 15609-6\nsaldatura ibrida a laser\nSaldatura a gas ISO 15609-2\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nISO 15612, ISO 15613, ISO 15614-1,\nISO 15614-2, ISO 15614-3,\nISO 15614-4, ISO 15614-5\nISO 15614-6, ISO 15614-7,\nISO 15614-8, ISO 15614-10 | 10.3 | 10.3 | Nessuno |\nelettronico | ISO 15607, ISO 15611, ISO 15612,\nISO 15613, ISO 15614-11 |  |  |  |\nsaldatura ibrida a laser | ISO 15607, ISO 15611, ISO 15612,\nISO 15613, ISO 15614-11, ISO 15614-14 |  |  |  |\nISO 15612, ISO 15613, ISO 15614-1 |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nelettronico |  |  |  |  |\nsaldatura ibrida a laser |  |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nISO/TR 17844 | 14.3 | 14.3 | Nessuno |\nelettronico | Nessuno |  |  |  |\nsaldatura ibrida a laser | Nessuno |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nISO 17636-1, ISO 17636-2, ISO 17637,\nISO 17638, ISO 17639, ISO 17640,\nISO 22825 | 14.4 | 14.4 | Nessuno |\nelettronico |  |  |  |  |\nsaldatura ibrida a laser |  |  |  |  |\n\nprospetto 5 Qualificazione delle procedure di saldatura\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco ISO 15607, ISO 15610, ISO 15611,\nISO 15612, ISO 15613, ISO 15614-1,\nISO 15614-2, ISO 15614-3,\nISO 15614-4, ISO 15614-5\nISO 15614-6, ISO 15614-7,\nISO 15614-8, ISO 15614-10\nSaldatura a fascio ISO 15607, ISO 15611, ISO 15612, 10.3 10.3 Nessuno\nelettronico ISO 15613, ISO 15614-11\nSaldatura a laser e ISO 15607, ISO 15611, ISO 15612,\nsaldatura ibrida a laser ISO 15613, ISO 15614-11, ISO 15614-14\nSaldatura a gas ISO 15607, ISO 15610, ISO 15611,\nISO 15612, ISO 15613, ISO 15614-1\nprospetto 6 Trattamento termico dopo saldatura\nProcedura di saldatura Documento ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco\nSaldatura a fascio\nelettronico\nISO 17663 13 13 Nessuno\nSaldatura a laser e\nsaldatura ibrida a laser\nSaldatura a gas\nprospetto 7 Ispezioni e controlli durante la saldatura\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nISO 13916, ISO/TR 17671-2,\nSaldatura ad arco\nISO/TR 17844\nSaldatura a fascio\nNessuno\nelettronico 14.3 14.3 Nessuno\nSaldatura a laser e\nNessuno\nsaldatura ibrida a laser\nSaldatura a gas Nessuno\nprospetto 8 Ispezioni e controlli dopo la saldatura\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco\nSaldatura a fascio ISO 10863, ISO 13588, ISO 17635,\nelettronico ISO 17636-1, ISO 17636-2, ISO 17637,\nSaldatura a laser e ISO 17638, ISO 17639, ISO 17640,\nsaldatura ibrida a laser ISO 22825\nSaldatura a gas\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nelettronico |  |  |  |  |\nsaldatura ibrida a laser |  |  |  |  |\n\nISO 3834-2:2021 | Punto nella\nISO 3834-3:2021 | Punto nella\nISO 3834-4:2021 |\nmomento della pubblicazione | - | - | - |\n\nprospetto 9 Taratura e validazione delle attrezzature di misura, di ispezione e di controllo\nProcedura di saldatura Documento ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura ad arco\nSaldatura a fascio\nelettronico\nISO 17662 16 16 Nessuno\nSaldatura a laser e\nsaldatura ibrida a laser\nSaldatura a gas\nprospetto 10 Altri procedimenti di saldatura per fusione\nProcedura di saldatura Documenti ISO Punto nella Punto nella Punto nella\nISO 3834-2:2021 ISO 3834-3:2021 ISO 3834-4:2021\nSaldatura di prigionieri ISO 14555 Tutti, se pertinente Tutti, se pertinente Tutti, se pertinente\nNessun documento ISO disponibile al\nSaldatura alluminotermica - - -\nmomento della pubblicazione",
+    "norm_version": "2021",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "4",
+    "clause_title": "CONTESTO DELL'ORGANIZZAZIONE",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "4.1",
+    "clause_title": "Comprendere l'organizzazione e il suo contesto",
+    "requirement_text": "L’organizzazione deve determinare i fattori esterni e interni pertinenti**) alle sue finalità e\nche influenzano la sua capacità di conseguire i risultati attesi per il proprio sistema di\ngestione per la SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "4.2",
+    "clause_title": "Comprendere le esigenze e le aspettative dei lavoratori e di altre parti interessate",
+    "requirement_text": "L'organizzazione deve determinare:\na) le altre parti interessate, oltre ai lavoratori, che sono pertinenti**) al sistema di\ngestione per la SSL;\nb) le esigenze e le aspettative pertinenti**) (cioè i requisiti) dei lavoratori e di altre parti\ninteressate;\nc) quali di queste esigenze e aspettative sono o potrebbero diventare requisiti legali e\naltri requisiti.\n**) Nota nazionale – Nel presente documento il termine \"relevant\" è tradotto con \"pertinente\" ed è da intendersi equivalente\nal termine \"rilevante\" utilizzato negli stessi punti di altre norme tecniche volontarie sui sistemi di gestione, quali, per\nesempio la UNI EN ISO 9001:2015 e la UNI EN ISO 14001:2015.\nUNI ISO 45001:2018 © UNI Pagina 9",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "4.3",
+    "clause_title": "Determinare il campo di applicazione del sistema di gestione per la SSL",
+    "requirement_text": "L'organizzazione deve determinare i confini e l'applicabilità del sistema di gestione per la\nSSL, al fine di stabilirne il campo di applicazione.\nNel determinare il campo di applicazione, l’organizzazione deve:\na) considerare i fattori esterni e interni di cui al punto 4.1;\nb) tenere conto dei requisiti di cui al punto 4.2;\nc) tenere conto delle attività correlate al lavoro pianificate o svolte.\nIl sistema di gestione per la SSL deve includere le attività, i prodotti e i servizi nell'ambito\ndel controllo o dell'influenza dell'organizzazione i quali possono avere un impatto sulle\nprestazioni in termini di SSL dell'organizzazione.\nIl campo di applicazione deve essere disponibile come informazione documentata.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "4.4",
+    "clause_title": "Sistema di gestione per la SSL",
+    "requirement_text": "L'organizzazione deve stabilire, attuare, mantenere e migliorare in modo continuo un\nsistema di gestione per la SSL, compresi i processi necessari e le loro interazioni, in\nconformità ai requisiti del presente documento.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "5",
+    "clause_title": "LEADERSHIP E PARTECIPAZIONE DEI LAVORATORI",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "5.1",
+    "clause_title": "Leadership e impegno",
+    "requirement_text": "L’alta direzione deve dimostrare leadership e impegno nei riguardi del sistema di gestione\nper la SSL:\na) assumendosi la piena responsabilità e l'obbligo complessivo di rendere conto della\nprevenzione di lesioni e malattie correlate al lavoro, nonché della predisposizione di\nluoghi di lavoro e attività sicuri e salubri;\nb) assicurando che siano stabiliti la politica e gli obiettivi di SSL e che questi siano\ncompatibili con gli indirizzi strategici dell’organizzazione;\nc) assicurando l’integrazione dei requisiti del sistema di SSL nei processi di business\ndell’organizzazione;\nd) assicurando che siano disponibili le risorse necessarie per stabilire, attuare,\nmantenere e migliorare il sistema di gestione per la SSL;\ne) comunicando l'importanza di una gestione della SSL efficace, e della conformità ai\nrequisiti del sistema di gestione per la SSL;\nf) assicurando che il sistema di gestione per la SSL consegua i risultati attesi;\ng) guidando e sostenendo le persone affinché contribuiscano all'efficacia del sistema di\ngestione per la SSL;\nh) assicurando e promuovendo il miglioramento continuo;\ni) fornendo sostegno agli altri pertinenti ruoli gestionali per dimostrare la loro\nleadership come essa si applica alle rispettive aree di responsabilità;\nj) sviluppando, guidando e promuovendo una cultura nell'organizzazione che supporti\ni risultati attesi del sistema di gestione per la SSL;\nk) proteggendo i lavoratori dalle ritorsioni a seguito della segnalazione di incidenti,\npericoli, rischi e opportunità;\nl) assicurando che l'organizzazione stabilisca e implementi un processo o dei processi\nper la consultazione e la partecipazione dei lavoratori (vedere punto 5.4);\nm) supportando l'istituzione e l'operatività dei comitati per la salute e sicurezza [vedere\npunto 5.4 e) 1)].\nNota Nel presente documento, il termine \"business\" può essere inteso in senso ampio, come riferito a quelle attività\nche caratterizzano la ragion d'essere dell'organizzazione.\nUNI ISO 45001:2018 © UNI Pagina 10",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "5.2",
+    "clause_title": "Politica per la SSL",
+    "requirement_text": "L’alta direzione deve stabilire, attuare e mantenere una politica per la SSL che:\na) comprenda l'impegno a fornire condizioni di lavoro sicure e salubri per la\nprevenzione di lesioni e malattie correlate al lavoro, e sia appropriata allo scopo, alle\ndimensioni e al contesto dell'organizzazione e alla natura specifica dei suoi rischi per\nla SSL e opportunità per la SSL;\nb) costituisca un quadro di riferimento per fissare gli obiettivi per la SSL;\nc) comprenda l'impegno a soddisfare i requisiti legali e altri requisiti;\nd) comprenda l'impegno ad eliminare i pericoli e a ridurre i rischi per la SSL (vedere\npunto 8.1.2);\ne) comprenda l'impegno per il miglioramento continuo del sistema di SSL;\nf) comprenda l'impegno per la consultazione e la partecipazione dei lavoratori e, ove\nistituiti, dei rappresentanti dei lavoratori.\nLa politica per la SSL deve:\n- essere disponibile come informazione documentata;\n- essere comunicata all'interno dell'organizzazione;\n- essere disponibile alle parti interessate, per quanto appropriato;\n- essere pertinente e appropriata.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "5.3",
+    "clause_title": "Ruoli, responsabilità e autorità nell'organizzazione",
+    "requirement_text": "L'alta direzione deve assicurare che le responsabilità e le autorità per i ruoli pertinenti\nall'interno del sistema di gestione per la SSL siano assegnate e comunicate a tutti i livelli\nall'interno dell'organizzazione e mantenute come informazioni documentate. I lavoratori a\nciascun livello dell'organizzazione devono assumersi la responsabilità di quegli aspetti del\nsistema di gestione per la SSL su cui hanno il controllo.\nNota Sebbene la responsabilità e l'autorità possano essere assegnate, in ultima analisi l'alta direzione comunque\nrende conto del funzionamento del sistema di gestione per la SSL.\nL'alta direzione deve assegnare le responsabilità e autorità per:\na) assicurare che il sistema di gestione per la SSL sia conforme ai requisiti del presente\ndocumento;\nb) riferire all'alta direzione sulle prestazioni del sistema di gestione per la SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "5.4",
+    "clause_title": "Consultazione e partecipazione dei lavoratori",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per la\nconsultazione e la partecipazione dei lavoratori a tutti i livelli e funzioni applicabili e, ove\nistituiti, dei rappresentanti dei lavoratori, nello sviluppo, pianificazione, attuazione,\nvalutazione delle prestazioni e delle azioni per il miglioramento del sistema di gestione per\nla SSL.\nL'organizzazione deve:\na) fornire modalità, tempo, formazione e risorse necessarie per la consultazione e la\npartecipazione;\nNota 1 La rappresentanza dei lavoratori può essere una modalità per la consultazione e la partecipazione.\nb) fornire un accesso tempestivo a informazioni chiare, comprensibili e pertinenti sul\nsistema di gestione per la SSL;\nc) individuare ed eliminare gli ostacoli o le barriere alla partecipazione e ridurre al\nminimo quelli che non possono essere rimossi;\nNota 2 Gli ostacoli e le barriere possono includere la mancata risposta agli input o suggerimenti dei lavoratori,\nbarriere linguistiche o di alfabetizzazione, ritorsioni o minacce di ritorsioni, nonché politiche o prassi che\nscoraggino o penalizzino la partecipazione dei lavoratori.\nUNI ISO 45001:2018 © UNI Pagina 11\n\nd) favorire la consultazione dei lavoratori senza funzioni manageriali sulle seguenti attività:\n1) determinare le esigenze e le aspettative delle parti interessate (vedere punto 4.2);\n2) stabilire la politica per la SSL (vedere punto 5.2);\n3) assegnare ruoli, responsabilità e autorità nell'organizzazione, per quanto\napplicabile (vedere punto 5.3);\n4) determinare come soddisfare i requisiti legali e altri requisiti (vedere punto 6.1.3);\n5) stabilire gli obiettivi per la SSL e pianificarne il raggiungimento (vedere punto 6.2);\n6) determinare i controlli applicabili per l'affidamento all'esterno,\nl'approvvigionamento e gli appaltatori (vedere punto 8.1.4);\n7) determinare cosa necessita di essere monitorato, misurato e valutato (vedere\npunto 9.1);\n8) pianificare, stabilire, attuare e mantenere uno o più programmi di audit (vedere\npunto 9.2.2);\n9) assicurare il miglioramento continuo, (vedere 10.3);\ne) favorire la partecipazione di lavoratori senza funzioni manageriali nelle seguenti attività:\n1) determinare le modalità per la loro consultazione e partecipazione;\n2) identificare i pericoli e valutare i rischi e le opportunità (vedere punti 6.1.1 e 6.1.2);\n3) determinare le azioni per eliminare i pericoli e ridurre i rischi per la SSL (vedere\npunto 6.1.4);\n4) determinare i requisiti di competenza, i fabbisogni formativi, la formazione da\neffettuare e valutare la formazione stessa (vedere punto 7.2);\n5) determinare cosa è necessario comunicare e come farlo (vedere punto 7.4);\n6) determinare le misure di controllo e la loro attuazione e uso efficaci (vedere punti\n8.1, 8.1.3 e 8.2);\n7) investigare incidenti e non conformità e determinare azioni correttive (vedere\npunto 10.2).\nNota 3 Il riferimento a favorire la consultazione e la partecipazione dei lavoratori senza funzioni manageriali è rivolto\nalle persone che svolgono le attività lavorative, senza escludere, per esempio, i manager su cui le attività\nlavorative o altri fattori all'interno dell'organizzazione hanno un impatto.\nNota 4 Si riconosce che la formazione gratuita per i lavoratori e la formazione durante l'orario di lavoro, ove possibile,\npossono rimuovere ostacoli significativi alla partecipazione dei lavoratori.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6",
+    "clause_title": "PIANIFICAZIONE",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1",
+    "clause_title": "Azioni per affrontare rischi e opportunità",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Nel pianificare il sistema di gestione per la SSL, l’organizzazione deve considerare i fattori\ndi cui al punto 4.1 (contesto), i requisiti di cui al punto 4.2 (parti interessate) e punto 4.3\n(campo di applicazione del proprio sistema di gestione per la SSL) e determinare i rischi\ne le opportunità che è necessario affrontare per:\na) fornire assicurazione che il sistema di gestione per la SSL possa conseguire i\nrisultati attesi;\nb) prevenire, o ridurre, gli effetti indesiderati;\nc) conseguire il miglioramento continuo.\nNel determinare i rischi e le opportunità, che è necessario affrontare per il sistema di\ngestione per la SSL e i suoi risultati attesi, l'organizzazione deve tenere conto:\n- dei pericoli, (vedere punto 6.1.2.1);\n- dei rischi per la SSL e altri rischi (vedere punto 6.1.2.2);\nUNI ISO 45001:2018 © UNI Pagina 12\n\n- delle opportunità per la SSL e altre opportunità (vedere punto 6.1.2.3);\n- dei requisiti legali e altri requisiti (vedere punto 6.1.3).\nL'organizzazione, nei suoi processi di pianificazione, deve determinare e valutare i rischi\ne le opportunità che sono pertinenti ai risultati attesi del sistema di gestione per la SSL,\nassociati ai cambiamenti nell'organizzazione, ai suoi processi o al sistema di gestione per\nla SSL. In caso di modifiche pianificate, permanenti o temporanee, questa valutazione\ndeve essere effettuata prima che sia attuata la modifica (vedere punto 8.1.3).\nL'organizzazione deve conservare informazioni documentate relative a:\n- rischi e opportunità;\n- processi e azioni necessarie per determinare e affrontare i rischi e le opportunità\n(vedere punti da 6.1.2 a 6.1.4) nella misura necessaria per poter ritenere che\nprocessi e azioni siano eseguiti come pianificato.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.2",
+    "clause_title": "Identificazione dei pericoli e valutazione dei rischi e delle opportunità",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.2.1",
+    "clause_title": "Identificazione dei pericoli",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per\nl'identificazione continua e proattiva dei pericoli. I processi devono tener conto, ma non\nlimitarsi a:\na) come è organizzato il lavoro, fattori sociali (inclusi carico di lavoro, ore di lavoro,\nvessazioni, molestie e intimidazioni), leadership e cultura nell'organizzazione;\nb) attività e situazioni di routine e non di routine, compresi i pericoli derivanti da:\n1) infrastrutture, attrezzature, materiali, sostanze e condizioni fisiche del luogo di\nlavoro;\n2) progettazione di prodotti e servizi, ricerca, sviluppo, collaudo, produzione,\nassemblaggio, costruzione, erogazione di servizi, manutenzione e smaltimento;\n3) fattori umani;\n4) come viene eseguito il lavoro;\nc) incidenti rilevanti accaduti, interni o esterni all'organizzazione, incluse le emergenze\ne le loro cause;\nd) situazioni di potenziale emergenza;\ne) persone, tenendo in considerazione :\n1) coloro che hanno accesso al luogo di lavoro e le loro attività, inclusi lavoratori,\nappaltatori, visitatori e altre persone;\n2) coloro che, nelle vicinanze del luogo di lavoro, possono essere influenzati dalle\nattività dell'organizzazione;\n3) lavoratori in un luogo non sotto il controllo diretto dell'organizzazione;\nf) altri fattori, tenendo in considerazione:\n1) la progettazione di aree di lavoro, processi, installazioni,\nmacchinari/attrezzature, procedure operative e organizzazione del lavoro,\ncompreso il loro adeguamento alle esigenze e alle capacità dei lavoratori\ncoinvolti;\n2) situazioni che si verificano nelle vicinanze del posto di lavoro causate da attività\ncorrelate al lavoro sotto il controllo dell'organizzazione;\n3) situazioni non tenute sotto controllo dall'organizzazione e che si verificano nelle\nvicinanze del luogo di lavoro, che possono causare lesioni e malattie a persone\nsul luogo di lavoro;\ng) cambiamenti effettivi o proposti nell'organizzazione, attività operative, processi,\nattività nel sistema di gestione per la SSL (vedere punto 8.1.3);\nh) cambiamenti nella conoscenza e nelle informazioni dei pericoli.\nUNI ISO 45001:2018 © UNI Pagina 13",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.2.2",
+    "clause_title": "Valutazione dei rischi per la SSL e altri rischi per il sistema di gestione per la SSL",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per:\na) valutare i rischi per la SSL provenienti dai pericoli identificati, tenendo conto, al\ncontempo, dell'efficacia dei controlli esistenti;\nb) determinare e valutare gli altri rischi connessi alla costituzione, attuazione, attività\noperative e manutenzione del sistema di gestione per la SSL.\nLe metodologie dell'organizzazione e i criteri per la valutazione dei rischi per la SSL\ndevono essere definiti in relazione al loro campo di applicazione, alla loro natura e alla\ntempistica per assicurare che siano proattivi piuttosto che reattivi e utilizzati in modo\nsistematico. Le informazioni documentate sulla metodologia e sui criteri devono essere\nmantenute e conservate.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.2.3",
+    "clause_title": "Valutazione delle opportunità per la SSL e di altre opportunità per il sistema di gestione per la SSL",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per valutare:\na) opportunità per la SSL per migliorare le prestazioni in termini di SSL, tenendo conto delle\nmodifiche pianificate all'organizzazione, alle sue politiche, ai processi o alle sue attività, e:\n1) opportunità di adattare il lavoro, l'organizzazione del lavoro e l'ambiente di lavoro\nai lavoratori;\n2) opportunità di eliminare i pericoli e ridurre i rischi per la SSL;\nb) altre opportunità di migliorare il sistema di gestione per la SSL.\nNota I rischi per la SSL e le opportunità per la SSL possono comportare altri rischi e altre opportunità per\nl'organizzazione.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.3",
+    "clause_title": "Determinazione dei requisiti legali e altri requisiti",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per:\na) determinare e avere accesso a requisiti legali aggiornati e ad altri requisiti applicabili\nai suoi pericoli, ai rischi per la SSL e al sistema di gestione per la SSL;\nb) determinare in che modo questi requisiti legali e altri requisiti si applicano\nall'organizzazione e cosa necessita di essere comunicato;\nc) tenere conto di questi requisiti legali e altri requisiti nell'istituzione, attuazione,\nmantenimento e miglioramento continuo del proprio sistema di gestione per la SSL.\nL'organizzazione deve mantenere e conservare le informazioni documentate sui propri\nrequisiti legali e altri requisiti e deve assicurarsi che siano aggiornate per recepire gli\neventuali cambiamenti.\nNota I requisiti legali e altri requisiti possono comportare rischi e opportunità per l'organizzazione.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.1.4",
+    "clause_title": "Attività di pianificazione",
+    "requirement_text": "L'organizzazione deve pianificare:\na) azioni, per:\n1) affrontare tali rischi e opportunità (vedere punto 6.1.2.2 e 6.1.2.3);\n2) soddisfare requisiti legali e altri requisiti (vedere punto 6.1.3);\n3) prepararsi e rispondere alle situazioni di emergenza (vedere punto 8.2);\nb) modalità, per:\n1) integrare e attuare le azioni nei processi del proprio sistema di gestione per la\nSSL e altri processi di business;\n2) valutare l'efficacia di tali azioni.\nL'organizzazione deve tenere conto della gerarchia delle misure di prevenzione e\nprotezione (hierarchy of controls - vedere punto 8.1.2) e degli output dal sistema di\ngestione per la SSL nel pianificare l'azione da intraprendere.\nNel pianificare tali azioni, l'organizzazione deve considerare le migliori prassi, le opzioni\ntecnologiche e i suoi requisiti finanziari, operativi e di business.\nUNI ISO 45001:2018 © UNI Pagina 14",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.2",
+    "clause_title": "Obiettivi per la SSL e pianificazione per il loro raggiungimento",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.2.1",
+    "clause_title": "Obiettivi per la SSL",
+    "requirement_text": "L'organizzazione deve stabilire obiettivi per la SSL alle funzioni e ai livelli pertinenti al fine\ndi mantenere e migliorare in modo continuo il sistema di gestione e la prestazione in\ntermini di SSL (vedere punto 10.3):\nGli obiettivi per la SSL devono:\na) essere coerenti con la politica per la SSL;\nb) essere misurabili (se praticabile) o essere in grado di fornire una valutazione delle\nprestazioni;\nc) tenere conto dei:\n1) requisiti applicabili;\n2) risultati della valutazione dei rischi e delle opportunità (vedere punti 6.1.2.2 e 6.1.2.3);\n3) risultati della consultazione dei lavoratori (vedere punto 5.4) e, ove istituiti, dei\nrappresentanti dei lavoratori;\nd) essere monitorati;\ne) essere comunicati;\nf) essere aggiornati per quanto appropriato.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "6.2.2",
+    "clause_title": "Pianificazione per il raggiungimento degli obiettivi per la SSL",
+    "requirement_text": "Nel pianificare come raggiungere i propri obiettivi per la SSL, l'organizzazione deve determinare:\na) cosa sarà fatto;\nb) quali risorse saranno richieste;\nc) chi ne sarà responsabile;\nd) quando sarà completato;\ne) come saranno valutati i risultati, compresi gli indicatori per il monitoraggio;\nf) come le azioni per raggiungere gli obiettivi per la SSL saranno integrate nei processi\ndi business dell'organizzazione.\nL'organizzazione deve mantenere e conservare informazioni documentate sugli obiettivi e\nsui piani della SSL per raggiungere tali obiettivi.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7",
+    "clause_title": "SUPPORTO",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.1",
+    "clause_title": "Risorse",
+    "requirement_text": "L'organizzazione deve determinare e fornire le risorse necessarie per l'istituzione,\nl'attuazione, il mantenimento e il miglioramento continuo del sistema di gestione per la SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.2",
+    "clause_title": "Competenza",
+    "requirement_text": "L'organizzazione deve:\na) determinare le competenze necessarie dei lavoratori che influenzano o possono\ninfluenzare le sue prestazioni in termini di SSL;\nb) assicurare che i lavoratori siano competenti (compresa la capacità di identificare i pericoli)\nsulla base del livello di istruzione, della formazione***) o dell'esperienza adeguate;\nc) ove applicabile, intraprendere azioni per acquisire e mantenere le necessarie\ncompetenze e valutare l'efficacia delle azioni intraprese;\nd) conservare appropriate informazioni documentate, quale evidenza delle competenze.\nNota Le azioni applicabili possono comprendere, per esempio: il provvedere alla formazione, il mentoring, o la riallocazione\ndelle persone attualmente impiegate oppure l’assunzione o l’incarico a contratto di persone competenti.\n***) Nota nazionale - Il termine \"formazione\" (training) è da intendersi in un'ampia accezione che comprende l'addestramento.\nUNI ISO 45001:2018 © UNI Pagina 15",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.3",
+    "clause_title": "Consapevolezza",
+    "requirement_text": "I lavoratori devono essere resi consapevoli:\na) della politica per la SSL e degli obiettivi per la SSL;\nb) del proprio contributo all’efficacia del sistema di gestione per la SSL, compresi i\nbenefici derivanti dal miglioramento delle prestazioni in termini di SSL;\nc) delle implicazioni e delle conseguenze potenziali derivanti dal non essere conformi\nai requisiti del sistema di gestione per la SSL;\nd) degli incidenti che li riguardano e dei risultati delle analisi delle relative cause;\ne) dei pericoli, dei rischi per la SSL e delle relative azioni che li riguardano;\nf) della capacità di allontanarsi da situazioni lavorative che ritengono rappresentino un\npericolo grave e immediato per la loro vita o salute, nonché delle disposizioni per\ntutelarli da conseguenze ingiustificate qualora lo facciano.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.4",
+    "clause_title": "Comunicazione",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.4.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve stabilire, attuare e mantenere uno o più processi necessari per le\ncomunicazioni interne ed esterne pertinenti al sistema di gestione per la SSL,\ndeterminando anche:\na) l'oggetto della comunicazione;\nb) quando comunicare;\nc) con chi comunicare:\n1) internamente tra i differenti livelli e le diverse funzioni dell'organizzazione;\n2) con gli appaltatori e i visitatori del luogo di lavoro;\n3) con le altre parti interessate;\nd) come comunicare.\nL'organizzazione deve tenere conto degli aspetti della diversità (per esempio genere,\nlingua, cultura, alfabetizzazione, disabilità) quando si considerano le sue esigenze di\ncomunicazione.\nL'organizzazione deve assicurare che le opinioni delle parti interessate esterne siano\nconsiderate nello stabilire i suoi processi di comunicazione.\nNello stabilire i propri processi di comunicazione, l'organizzazione deve:\n- tenere conto dei propri requisiti legali e di altri requisiti;\n- assicurare che le informazioni relative alla SSL da comunicare siano coerenti con le\ninformazioni generate all'interno del sistema di gestione per la SSL, e che siano\naffidabili.\nL'organizzazione deve rispondere alle comunicazioni pertinenti riguardanti il proprio\nsistema di gestione per la SSL.\nL'organizzazione deve conservare informazioni documentate quale evidenza delle proprie\ncomunicazioni, per quanto appropriato.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.4.2",
+    "clause_title": "Comunicazione interna",
+    "requirement_text": "L'organizzazione deve:\na) comunicare internamente informazioni pertinenti al sistema di gestione per la SSL\nfra i differenti livelli e le diverse funzioni dell'organizzazione, compresi i cambiamenti\nal sistema di gestione per la SSL, per quanto appropriato;\nb) assicurare che i suoi processi di comunicazione consentano ai lavoratori di\ncontribuire al miglioramento continuo.\nUNI ISO 45001:2018 © UNI Pagina 16",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.4.3",
+    "clause_title": "Comunicazione esterna",
+    "requirement_text": "L'organizzazione deve comunicare all'esterno informazioni pertinenti al sistema di\ngestione per la SSL, come stabilito dai processi di comunicazione dell'organizzazione e\ntenendo in considerazione i propri requisiti legali e altri requisiti.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.5",
+    "clause_title": "Informazioni documentate",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.5.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il sistema di gestione per la SSL dell’organizzazione deve comprendere:\na) le informazioni documentate richieste dal presente documento;\nb) le informazioni documentate che l'organizzazione determina necessarie per\nl'efficacia del sistema di gestione per la SSL;\nNota L’estensione delle informazioni documentate del sistema di gestione per la SSL può variare da\nun'organizzazione all'altra, in base a:\n- la dimensione dell'organizzazione e il suo tipo di attività, processi, prodotti e servizi;\n- l'esigenza di dimostrare il soddisfacimento dei requisiti legali e degli altri requisiti;\n- la complessità dei processi e delle loro interazioni;\n- la competenza dei lavoratori.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.5.2",
+    "clause_title": "Creazione e aggiornamento",
+    "requirement_text": "Nel creare e aggiornare le informazioni documentate, l’organizzazione deve assicurare in\nmaniera appropriata:\na) l'identificazione e la descrizione (per esempio titolo, data, autore o numero di\nriferimento);\nb) il formato (per esempio lingua, versione del software, grafica) e il supporto (per\nesempio cartaceo, elettronico);\nc) il riesame e l'approvazione in merito all’idoneità e all’adeguatezza.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "7.5.3",
+    "clause_title": "Controllo delle informazioni documentate",
+    "requirement_text": "Le informazioni documentate richieste dal sistema di gestione per la SSL e dal presente\ndocumento devono essere tenute sotto controllo per assicurare che:\na) siano disponibili e idonee all’utilizzo, dove e quando necessario;\nb) siano adeguatamente protette (per esempio da perdita di riservatezza, utilizzo\nimproprio o perdita d’integrità).\nPer tenere sotto controllo le informazioni documentate, l'organizzazione deve\nintraprendere le seguenti attività, per quanto applicabile:\n- distribuzione, accesso, reperimento e utilizzo;\n- archiviazione e preservazione, compreso il mantenimento della leggibilità;\n- tenuta sotto controllo delle modifiche (per esempio controllo delle versioni);\n- conservazione ed eliminazione.\nLe informazioni documentate di origine esterna, determinate come necessarie\ndall'organizzazione per la pianificazione e per il funzionamento del sistema di gestione\nper la SSL, devono essere identificate per quanto appropriato, e tenute sotto controllo.\nNota 1 L’accesso può comportare una decisione in merito ai permessi di sola visione delle informazioni documentate,\no ai permessi e all’autorità per visualizzarle e modificarle.\nNota 2 L'accesso alle informazioni documentate pertinenti include l'accesso da parte dei lavoratori e, ove istituiti, dei\nrappresentanti dei lavoratori.\nUNI ISO 45001:2018 © UNI Pagina 17",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8",
+    "clause_title": "ATTIVITÀ OPERATIVE",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1",
+    "clause_title": "Pianificazione e controllo operativi",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve pianificare, attuare, controllare e mantenere i processi necessari\nper soddisfare i requisiti del sistema di gestione per la SSL e per attuare le azioni\ndeterminate al punto 6, come segue:\na) stabilendo i criteri per i processi;\nb) attuando il controllo dei processi in conformità ai criteri;\nc) mantenendo e conservando le informazioni documentate nella misura necessaria a\nritenere che i processi siano stati effettuati come pianificato;\nd) adattando il lavoro ai lavoratori.\nNei luoghi di lavoro con più datori di lavoro, l'organizzazione deve coordinare le parti\npertinenti del sistema di gestione per la SSL con le altre organizzazioni.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.2",
+    "clause_title": "Eliminazione dei pericoli e riduzione dei rischi per la SSL",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per l'eliminazione\ndei pericoli e la riduzione dei rischi per la SSL, utilizzando la seguente \"gerarchia delle\nmisure di prevenzione e protezione (hierarchy of controls)\":\na) eliminare i pericoli;\nb) sostituire con processi, attività operative, materiali o attrezzature meno pericolosi;\nc) utilizzare misure tecnico-progettuali (engineering controls****)) e riorganizzare il\nlavoro;\nd) utilizzare misure di tipo amministrativo (administrative controls*****)), compresa la\nformazione;\ne) utilizzare adeguati dispositivi di protezione individuale.\nNota In molti paesi, i requisiti legali e altri requisiti includono il requisito della fornitura gratuita ai lavoratori di\ndispositivi di protezione individuale (DPI).",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.3",
+    "clause_title": "Gestione del cambiamento",
+    "requirement_text": "L'organizzazione deve stabilire uno o più processi per l'attuazione e il controllo delle\nmodifiche temporanee e permanenti pianificate che hanno un impatto sulle prestazioni in\ntermini di SSL, tra cui:\na) nuovi prodotti, servizi e processi o modifiche a prodotti, servizi e processi esistenti,\ninclusi:\n- ubicazione del luogo di lavoro e aree circostanti;\n- organizzazione del lavoro;\n- condizioni di lavoro;\n- impianti e attrezzature;\n- forza lavoro;\nb) cambiamenti nei requisiti legali e altri requisiti;\nc) cambiamenti nelle conoscenze o informazioni su pericoli e rischi per la SSL;\nd) sviluppi nella conoscenza e nella tecnologia.\nL'organizzazione deve riesaminare le conseguenze dei cambiamenti involontari,\nintraprendendo azioni per mitigare ogni effetto negativo, per quanto necessario.\nNota Cambiamenti e modifiche possono comportare rischi e opportunità.\n****) Nota nazionale - Vedere punto A.8.1.2 c).\n*****) Nota nazionale - Vedere punto A.8.1.2 d).\nUNI ISO 45001:2018 © UNI Pagina 18",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.4",
+    "clause_title": "Approvvigionamento",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.4.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per tenere sotto\ncontrollo l'approvvigionamento di prodotti e servizi al fine di assicurare la conformità al\nproprio sistema di gestione per la SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.4.2",
+    "clause_title": "Appaltatori",
+    "requirement_text": "L'organizzazione deve coordinare i processi di approvvigionamento con i propri\nappaltatori, per identificare i pericoli e valutare e tenere sotto controllo i rischi per la SSL\nderivanti da:\na) attività e operazioni degli appaltatori che hanno un impatto sull'organizzazione;\nb) attività e operazioni dell'organizzazione che hanno un impatto sui lavoratori degli\nappaltatori;\nc) attività e operazioni degli appaltatori che hanno un impatto su altre parti interessate\npresenti nel luogo di lavoro.\nL'organizzazione deve assicurare che i requisiti del proprio sistema di gestione per la SSL\nsiano soddisfatti dagli appaltatori e dai loro lavoratori. I processi di approvvigionamento\ndell'organizzazione devono definire e applicare criteri di salute e sicurezza sul lavoro nel\nselezionare gli appaltatori.\nNota Può essere utile includere i criteri di salute e sicurezza sul lavoro per selezionare gli appaltatori nei documenti\ncontrattuali.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.1.4.3",
+    "clause_title": "Affidamento all'esterno (outsourcing)",
+    "requirement_text": "L'organizzazione deve assicurare che le funzioni e i processi affidati all'esterno siano\ntenuti sotto controllo. L'organizzazione deve assicurare che i suoi accordi di affidamento\nall'esterno siano coerenti con i requisiti legali e altri requisiti e con il raggiungimento dei\nrisultati attesi del sistema di gestione per la SSL. Il tipo e l'estensione del controllo da\napplicare a tali funzioni e processi devono essere definiti all'interno del sistema di\ngestione per la SSL.\nNota Il coordinamento con fornitori esterni può aiutare un'organizzazione a fronteggiare qualsiasi impatto che\nl'affidamento all'esterno ha sulle sue prestazioni in termini di SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "8.2",
+    "clause_title": "Preparazione e risposta alle emergenze",
+    "requirement_text": "L’organizzazione deve stabilire, attuare e mantenere uno o più processi necessari per\nprepararsi e rispondere alle potenziali situazioni di emergenza, così come identificate nel\npunto 6.1.2,1, tra cui:\na) stabilire una risposta pianificata alle situazioni di emergenza, compreso l'intervento\ndi primo soccorso;\nb) fornire formazione per la risposta pianificata;\nc) periodicamente sottoporre a prova ed effettuare esercitazioni per valutare la\ncapacità di reazione secondo quanto pianificato;\nd) valutare le prestazioni e, per quanto necessario, sottoporre a revisione le modalità di\nrisposta pianificate, anche dopo le prove e in particolare dopo il verificarsi di\nsituazioni di emergenza;\ne) comunicare e fornire informazioni pertinenti a tutti i lavoratori sui loro obblighi e\nresponsabilità;\nf) comunicare informazioni pertinenti agli appaltatori, visitatori, servizi di risposta alle\nemergenze, autorità governative e, per quanto appropriato, alla comunità locale;\ng) tener conto delle esigenze e delle capacità di tutte le parti interessate pertinenti e\nassicurare il loro coinvolgimento, per quanto appropriato, nello sviluppo della\nrisposta pianificata.\nL'organizzazione deve mantenere e conservare informazioni documentate sui processi e\nsui piani per rispondere alle potenziali situazioni di emergenza.\nUNI ISO 45001:2018 © UNI Pagina 19",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9",
+    "clause_title": "VALUTAZIONE DELLE PRESTAZIONI",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.1",
+    "clause_title": "Monitoraggio, misurazione, analisi e valutazione delle prestazioni",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per il\nmonitoraggio, la misurazione, l'analisi e la valutazione delle prestazioni.\nL'organizzazione deve determinare:\na) cosa è necessario monitorare e misurare, compreso:\n1) la misura in cui sono soddisfatti i requisiti legali e altri requisiti;\n2) le sue attività e operazioni relative ai pericoli, ai rischi e alle opportunità identificati;\n3) progressi verso il raggiungimento degli obiettivi dell'organizzazione per la SSL;\n4) efficacia dei controlli operativi e di altri controlli;\nb) metodi per il monitoraggio, la misurazione, l’analisi e la valutazione delle prestazioni,\nper quanto applicabile, per assicurare risultati validi;\nc) criteri rispetto ai quali l'organizzazione valuterà le proprie prestazioni in termini di SSL;\nd) quando devono essere eseguiti il monitoraggio e la misurazione;\ne) quando devono essere analizzati, valutati e comunicati i risultati del monitoraggio e\ndella misurazione.\nL'organizzazione deve valutare le prestazioni in termini di SSL e determinare l'efficacia\ndel sistema di gestione per la SSL.\nL'organizzazione deve assicurare che le apparecchiature di monitoraggio e misurazione siano\ntarate o verificate, per quanto applicabile, e che vengano utilizzate e mantenute in modo\nappropriato.\nNota Possono esistere requisiti legali o altri requisiti (per esempio norme nazionali o internazionali) relative alla\ntaratura o alla verifica delle apparecchiature di monitoraggio e misurazione.\nL'organizzazione deve conservare appropriate informazioni documentate:\n- come evidenza dei risultati di monitoraggio, misurazione, analisi e valutazione delle\nprestazioni;\n- sulla manutenzione, taratura o verifica dell’attrezzatura di misurazione;",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.1.2",
+    "clause_title": "Valutazione della conformità",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi per valutare la\nconformità ai requisiti legali e altri requisiti (vedere punto 6.1.3).\nL'organizzazione deve:\na) determinare la frequenza e i metodi per la valutazione della conformità;\nb) valutare la conformità e intraprendere azioni, se necessario (vedere punto 10.2);\nc) mantenere la conoscenza e la comprensione del proprio stato di conformità ai\nrequisiti legali e altri requisiti;\nd) conservare informazioni documentate dei risultati della valutazione della conformità.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.2",
+    "clause_title": "Audit interno",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.2.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’organizzazione deve condurre, ad intervalli pianificati, audit interni allo scopo di fornire\ninformazioni per accertare se il sistema di gestione per la SSL è:\na) conforme:\n1) ai requisiti propri dell'organizzazione per il proprio sistema di gestione per la\nSSL, compresa la politica e gli obiettivi per la SSL;\n2) ai requisiti del presente documento;\nb) efficacemente attuato e mantenuto.\nUNI ISO 45001:2018 © UNI Pagina 20",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.2.2",
+    "clause_title": "Programma di audit interno",
+    "requirement_text": "L'organizzazione deve:\na) pianificare, stabilire, attuare e mantenere uno o più programmi di audit, comprensivi\ndi frequenza, metodi, responsabilità, consultazione, requisiti di pianificazione e\nreporting, che devono tenere in considerazione l’importanza dei processi coinvolti e\ni risultati degli audit precedenti;\nb) definire i criteri di audit e il campo di applicazione per ciascun audit;\nc) selezionare gli auditor e condurre gli audit in modo tale da assicurare l'obiettività e\nl'imparzialità del processo di audit;\nd) assicurare che i risultati degli audit siano riportati ai manager pertinenti; assicurare\nche i risultati pertinenti degli audit siano riportati ai lavoratori e, ove istituiti, ai\nrappresentanti dei lavoratori e ad altre parti interessate pertinenti;\ne) intraprendere azioni per affrontare le non conformità e migliorare in modo continuo le\nprestazioni in termini di SSL (vedere punto(cid:124)10);\nf) conservare informazioni documentate quale evidenza dei risultati di audit e\ndell'attuazione del programma di audit.\nNota Per ulteriori informazioni sul controllo e la competenza degli auditor, vedere ISO 19011.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "9.3",
+    "clause_title": "Riesame di direzione",
+    "requirement_text": "L'alta direzione deve, a intervalli pianificati, riesaminare il sistema di gestione per la SSL\ndell'organizzazione, per assicurarne la continua idoneità, adeguatezza ed efficacia.\nIl riesame di direzione deve includere considerazioni su:\na) stato delle azioni derivanti da precedenti riesami di direzione;\nb) cambiamenti nei fattori esterni e interni che sono pertinenti al sistema di gestione per\nla SSL, inclusi:\n1) esigenze e aspettative delle parti interessate;\n2) requisiti legali e altri requisiti;\n3) rischi e opportunità;\nc) grado di realizzazione della politica per la SSL e degli obiettivi per la SSL;\nd) informazioni sulle prestazioni in termini di SSL, compresi gli andamenti relativi a:\n1) incidenti, non conformità, azioni correttive e miglioramento continuo;\n2) risultati del monitoraggio e della misurazione;\n3) risultati della valutazione della conformità ai requisiti legali e altri requisiti;\n4) risultati di audit;\n5) consultazione e partecipazione dei lavoratori;\n6) rischi e opportunità;\ne) adeguatezza delle risorse per il mantenimento di un efficace sistema di gestione per la\nSSL;\nf) comunicazioni pertinenti con le parti interessate;\ng) opportunità per il miglioramento continuo.\nGli output del riesame di direzione devono comprendere decisioni relative a:\n- mantenimento dell'idoneità, dell'adeguatezza e dell'efficacia del sistema di gestione\nper la SSL nel conseguimento dei risultati attesi;\n- opportunità di miglioramento continuo;\n- qualsiasi esigenza di modifica al sistema di gestione per la SSL;\n- risorse necessarie;\n- azioni, se necessarie;\n- opportunità per migliorare l'integrazione del sistema di gestione per la SSL con altri\nprocessi di business;\n- qualsiasi implicazione per gli indirizzi strategici dell'organizzazione.\nUNI ISO 45001:2018 © UNI Pagina 21\n\nL'alta direzione deve comunicare i risultati pertinenti del riesame di direzione ai lavoratori\ne, ove istituiti, ai rappresentanti dei lavoratori (vedere punto 7.4).\nL’organizzazione deve conservare informazioni documentate quale evidenza dei risultati\ndei riesami di direzione.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "10",
+    "clause_title": "MIGLIORAMENTO",
+    "requirement_text": "",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "10.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve determinare opportunità di miglioramento (vedere punto 9) e\nintraprendere le azioni necessarie al conseguimento dei risultati attesi del proprio sistema\ndi gestione per la SSL.",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "10.2",
+    "clause_title": "Incidenti, non conformità e azioni correttive",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere uno o più processi, compreso\nreporting, investigazioni e azioni da intraprendere, per determinare e gestire gli incidenti e\nle non conformità.\nQuando si verifica un incidente o una non conformità, l’organizzazione deve:\na) reagire tempestivamente all'incidente o alla non conformità, e, per quanto\napplicabile:\n1) intraprendere azioni per tenerli sotto controllo e correggerli;\n2) affrontarne le conseguenze;\nb) valutare, con la partecipazione dei lavoratori (vedere punto 5.4) e il coinvolgimento di\naltre parti interessate pertinenti, la necessità di azioni correttive per eliminare le\ncause radice dell'incidente o della non conformità, in modo che non si ripetano o si\nverifichino altrove:\n1) indagando sull'incidente o riesaminando la non conformità;\n2) determinando le cause dell'incidente o della non conformità;\n3) determinando se si siano verificati incidenti simili, se esistano non conformità\nsimili oppure se possano potenzialmente verificarsi;\nc) riesaminare le valutazioni esistenti dei rischi per la SSL e di altri rischi, per quanto\nappropriato (vedere punto 6.1);\nd) determinare e attuare ogni azione necessaria, comprese le azioni correttive,\nsecondo la gerarchia delle misure di prevenzione e protezione (hierarchy of controls,\nvedere punto 8.1.2) e la gestione del cambiamento (vedere punto 8.1.3);\ne) valutare i rischi per la SSL che riguardano pericoli nuovi o modificati, prima di\nintraprendere azioni;\nf) riesaminare l'efficacia di ogni azione intrapresa, comprese le azioni correttive;\ng) effettuare modifiche al sistema di gestione per la SSL, se necessario.\nLe azioni correttive devono essere appropriate agli effetti reali o potenziali degli incidenti\no delle non conformità riscontrate.\nL’organizzazione deve conservare informazioni documentate quale evidenza:\n- della natura degli incidenti o delle non conformità e di ogni successiva azione\nintrapresa;\n- dei risultati di qualsiasi azione e azione correttiva, compresa la loro efficacia.\nL'organizzazione deve comunicare queste informazioni documentate ai lavoratori\ninteressati e, ove istituiti, ai rappresentanti dei lavoratori e ad altre parti interessate\npertinenti.\nNota Il reporting e l'investigazione degli incidenti senza ritardi ingiustificati possono consentire l'eliminazione dei\npericoli e la tempestiva riduzione al minimo dei relativi rischi per la SSL.\nUNI ISO 45001:2018 © UNI Pagina 22",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_45001_2018",
+    "clause_ref": "10.3",
+    "clause_title": "Miglioramento continuo",
+    "requirement_text": "L'organizzazione deve migliorare in modo continuo l’idoneità, l'adeguatezza e l'efficacia\ndel sistema di gestione per la SSL, mediante:\na) il miglioramento delle prestazioni in termini di SSL;\nb) la promozione di una cultura che supporti un sistema di gestione per la SSL;\nc) la promozione della partecipazione dei lavoratori nell'attuazione di azioni per il\nmiglioramento continuo del sistema di gestione per la SSL;\nd) la comunicazione dei risultati pertinenti del miglioramento continuo ai lavoratori e,\nove istituiti, ai rappresentanti dei lavoratori;\ne) mantenimento e conservazione di informazioni documentate come evidenza del\nmiglioramento continuo.\nUNI ISO 45001:2018 © UNI Pagina 23",
+    "norm_version": "2018",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4",
+    "clause_title": "CONTESTO DELL'ORGANIZZAZIONE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.1",
+    "clause_title": "Comprendere l'organizzazione e il suo contesto",
+    "requirement_text": "L’organizzazione deve determinare i fattori esterni e interni rilevanti per le sue finalità e\nindirizzi strategici e che influenzano la sua capacità di conseguire il(i) risultato(i) atteso(i)\nper il proprio sistema di gestione per la qualità.\nL'organizzazione deve monitorare e riesaminare le informazioni che riguardano tali fattori\nesterni e interni.\nNota 1 I fattori possono comprendere fattori positivi e negativi, o condizioni da considerare.\nNota 2 La comprensione del contesto esterno può essere facilitata considerando i fattori che emergono dagli\nambienti legale, tecnologico, competitivo, di mercato, culturale, sociale ed economico, sia esso internazionale,\nnazionale, regionale o locale.\nNota 3 La comprensione del contesto interno può essere facilitata considerando i fattori relativi a valori, cultura,\nconoscenza e prestazioni dell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.2",
+    "clause_title": "Comprendere le esigenze e le aspettative delle parti interessate Dato il loro effetto, o effetto potenziale, sulla capacità dell'organizzazione di fornire con",
+    "requirement_text": "regolarità prodotti e servizi che soddisfino i requisiti del cliente e quelli cogenti applicabili,\nl'organizzazione deve determinare:\na) le parti interessate rilevanti per il sistema di gestione per la qualità;\nb) i requisiti di tali parti interessate che sono rilevanti per il sistema di gestione per la\nqualità.\nL'organizzazione deve monitorare e riesaminare le informazioni che riguardano tali parti\ninteressate e i loro requisiti rilevanti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.3",
+    "clause_title": "Determinare il campo di applicazione del sistema di gestione per la qualità",
+    "requirement_text": "L’organizzazione deve determinare i confini e l’applicabilità del sistema di gestione per la\nqualità per stabilirne il campo di applicazione.\nNel determinare il campo di applicazione, l’organizzazione deve considerare:\na) i fattori esterni e interni di cui al punto 4.1;\nb) i requisiti delle parti interessate rilevanti di cui al punto 4.2;\nc) i prodotti e i servizi dell'organizzazione.\nL'organizzazione deve applicare tutti i requisiti della presente norma internazionale se\nessi sono applicabili nell’ambito del campo di applicazione determinato del suo sistema di\ngestione per la qualità.\nIl campo di applicazione del sistema di gestione per la qualità dell’organizzazione deve\nessere disponibile e mantenuto come informazione documentata. Esso deve dichiarare i\ntipi di prodotti e servizi coperti, e fornire la giustificazione per ogni requisito della presente\nnorma internazionale che l'organizzazione determina non applicabile al campo di\napplicazione del proprio sistema di gestione per la qualità.\nLa conformità alla presente norma internazionale può essere dichiarata solo se i requisiti\ndeterminati come non applicabili non influenzano la capacità o la responsabilità\ndell'organizzazione di assicurare la conformità dei propri prodotti e servizi e l'aumento\ndella soddisfazione del cliente.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.4",
+    "clause_title": "Sistema di gestione per la qualità e relativi processi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.4.1",
+    "clause_title": "L'organizzazione deve stabilire, attuare, mantenere e migliorare in modo continuo un",
+    "requirement_text": "sistema di gestione per la qualità, compresi i processi necessari e le loro interazioni, in\nconformità ai requisiti della presente norma internazionale.\nL'organizzazione deve determinare i processi necessari per il sistema di gestione per la\nqualità e la loro applicazione nell'ambito di tutta l'organizzazione e deve:\na) determinare gli input necessari e gli output attesi da tali processi;\nb) determinare la sequenza e l'interazione di tali processi;\nc) determinare e applicare i criteri e i metodi (compresi il monitoraggio, le misurazioni e\ngli indicatori di prestazione correlati), necessari ad assicurare l’efficace\nfunzionamento e la tenuta sotto controllo di tali processi;\nd) determinare le risorse necessarie per tali processi e assicurarne la disponibilità;\ne) attribuire le responsabilità e le autorità per tali processi;\nf) affrontare i rischi e le opportunità come determinati in conformità ai requisiti di cui al\npunto 6.1;\ng) valutare tali processi e attuare ogni modifica necessaria per assicurare che tali\nprocessi conseguano i risultati attesi;\nh) migliorare i processi e il sistema di gestione per la qualità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "4.4.2",
+    "clause_title": "L'organizzazione deve, nella misura necessaria:",
+    "requirement_text": "a) mantenere informazioni documentate per supportare il funzionamento dei propri\nprocessi;\nb) conservare informazioni documentate affinché si possa avere fiducia nel fatto che i\nprocessi sono condotti come pianificato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5",
+    "clause_title": "LEADERSHIP",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.1",
+    "clause_title": "Leadership e impegno",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L’alta direzione deve dimostrare leadership e impegno nei riguardi del sistema di gestione\nper la qualità:\na) assumendosi la responsabilità dell'efficacia del sistema di gestione per la qualità;\nb) assicurando che siano stabiliti la politica e gli obiettivi per la qualità relativi al sistema\ndi gestione per la qualità e che essi siano compatibili con il contesto e con gli indirizzi\nstrategici dell’organizzazione;\nc) assicurando l’integrazione dei requisiti del sistema di gestione per la qualità nei\nprocessi di business dell’organizzazione;\nd) promuovendo l’utilizzo dell'approccio per processi e del risk-based thinking;\ne) assicurando la disponibilità delle risorse necessarie al sistema di gestione per la\nqualità;\nf) comunicando l'importanza di una gestione per la qualità efficace, e della conformità\nai requisiti del sistema di gestione per la qualità;\ng) assicurando che il sistema di gestione per la qualità consegua i risultati attesi;\nh) facendo partecipare attivamente, guidando e sostenendo le persone affinché\ncontribuiscano all'efficacia del sistema di gestione per la qualità;\ni) promuovendo il miglioramento;\nj) fornendo sostegno agli altri pertinenti ruoli gestionali per dimostrare la loro\nleadership, come essa si applica alle rispettive aree di responsabilità.\nNota Nella presente norma internazionale, il termine \"business\" può essere inteso, in senso ampio, come riferito a\nquelle attività che caratterizzano la ragion d'essere dell'organizzazione, sia quest’ultima pubblica, privata, a\nscopo di lucro o no profit.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.1.2",
+    "clause_title": "Focalizzazione sul cliente",
+    "requirement_text": "L'alta direzione deve dimostrare leadership e impegno riguardo alla focalizzazione sul\ncliente, assicurando che:\na) siano determinati, compresi e soddisfatti con regolarità i requisiti del cliente e i\nrequisiti cogenti applicabili;\nb) siano determinati e affrontati i rischi e le opportunità che possono influenzare la\nconformità dei prodotti e servizi e la capacità di accrescere la soddisfazione del\ncliente;\nc) sia mantenuta la focalizzazione sull'aumento della soddisfazione del cliente.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.2",
+    "clause_title": "Politica",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.2.1",
+    "clause_title": "Stabilire la politica per la qualità",
+    "requirement_text": "L'alta direzione deve stabilire, attuare e mantenere una politica per la qualità che:\na) sia appropriata alle finalità e al contesto dell'organizzazione e supporti i suoi indirizzi\nstrategici;\nb) costituisca un quadro di riferimento per fissare gli obiettivi per la qualità;\nc) comprenda un impegno a soddisfare i requisiti applicabili;\nd) comprenda un impegno per il miglioramento continuo del sistema di gestione per la\nqualità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.2.2",
+    "clause_title": "Comunicare la politica per la qualità",
+    "requirement_text": "La politica per la qualità deve:\na) essere disponibile e mantenuta come informazione documentata;\nb) essere comunicata, compresa e applicata all'interno dell'organizzazione;\nc) essere disponibile alle parti interessate rilevanti, per quanto appropriato.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "5.3",
+    "clause_title": "Ruoli, responsabilità e autorità nell’organizzazione",
+    "requirement_text": "L'alta direzione deve assicurare che le responsabilità e le autorità per i ruoli pertinenti\nsiano assegnate, comunicate e comprese all’interno dell’organizzazione.\nL'alta direzione deve assegnare le responsabilità e autorità per:\na) assicurare che il sistema di gestione per la qualità sia conforme ai requisiti della\npresente norma internazionale;\nb) assicurare che i processi stiano producendo gli output attesi;\nc) riferire, in particolare all’alta direzione, sulle prestazioni del sistema di gestione per la\nqualità e sulle opportunità di miglioramento (vedere punto 10.1);\nd) assicurare la promozione della focalizzazione sul cliente nell'ambito dell'intera\norganizzazione;\ne) assicurare che l'integrità del sistema di gestione per la qualità sia mantenuta,\nquando vengono pianificate e attuate modifiche al sistema stesso.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6",
+    "clause_title": "PIANIFICAZIONE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.1",
+    "clause_title": "Azioni per affrontare rischi e opportunità",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.1.1",
+    "clause_title": "Nel pianificare il sistema di gestione per la qualità, l’organizzazione deve considerare i",
+    "requirement_text": "fattori di cui al punto 4.1 e i requisiti di cui al punto 4.2 e determinare i rischi e le\nopportunità che è necessario affrontare per:\na) fornire assicurazione che il sistema di gestione per la qualità possa conseguire il(i)\nrisultato(i) atteso(i);\nb) accrescere gli effetti desiderati;\nc) prevenire, o ridurre, gli effetti indesiderati;\nd) conseguire il miglioramento.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.1.2",
+    "clause_title": "L’organizzazione deve pianificare:",
+    "requirement_text": "a) le azioni per affrontare questi rischi e opportunità;\nb) le modalità per:\n1) integrare e attuare le azioni nei processi del proprio sistema di gestione per la\nqualità (vedere punto 4.4);\n2) valutare l’efficacia di tali azioni.\nLe azioni intraprese per affrontare i rischi e le opportunità devono essere proporzionate\nall'impatto potenziale sulla conformità di prodotti e servizi.\nNota 1 Le opzioni per affrontare i rischi possono comprendere: evitare il rischio, assumersi il rischio in modo da\nperseguire un'opportunità, rimuovere la fonte di rischio, modificare la probabilità o le conseguenze,\ncondividere il rischio, o ritenere il rischio sulla base di una decisione informata.\nNota 2 Le opportunità possono comprendere l'adozione di nuove prassi, il lancio di nuovi prodotti, l'apertura di nuovi\nmercati, l'indirizzarsi a nuovi clienti, la creazione di partnership, l'utilizzo di nuove tecnologie e altre possibilità\ndesiderabili e praticabili per affrontare le esigenze dell'organizzazione o dei relativi clienti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.2",
+    "clause_title": "Obiettivi per la qualità e pianificazione per il loro raggiungimento",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.2.1",
+    "clause_title": "L’organizzazione deve stabilire gli obiettivi per la qualità relativi alle funzioni, ai livelli e ai",
+    "requirement_text": "processi pertinenti, necessari per il sistema di gestione per la qualità.\nGli obiettivi per la qualità devono:\na) essere coerenti con la politica per la qualità;\nb) essere misurabili;\nc) tenere in considerazione i requisiti applicabili;\nd) essere pertinenti alla conformità dei prodotti e servizi e all'aumento della\nsoddisfazione del cliente;\ne) essere monitorati;\nf) essere comunicati;\ng) essere aggiornati per quanto appropriato.\nL’organizzazione deve mantenere informazioni documentate sugli obiettivi per la qualità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.2.2",
+    "clause_title": "Nel pianificare come raggiungere i propri obiettivi per la qualità, l’organizzazione deve",
+    "requirement_text": "determinare:\na) cosa sarà fatto;\nb) quali risorse saranno richieste;\nc) chi ne sarà responsabile;\nd) quando sarà completato;\ne) come saranno valutati i risultati.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "6.3",
+    "clause_title": "Pianificazione delle modifiche",
+    "requirement_text": "Quando l'organizzazione determina l’esigenza di modifiche al sistema di gestione per la\nqualità, queste devono essere effettuate in modo pianificato (vedere punto 4.4).\nL'organizzazione deve considerare:\na) le finalità delle modifiche e le loro potenziali conseguenze;\nb) l'integrità del sistema di gestione per la qualità;\nc) la disponibilità di risorse;\nd) l'allocazione o la riallocazione delle responsabilità e autorità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7",
+    "clause_title": "SUPPORTO",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1",
+    "clause_title": "Risorse",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve determinare e fornire le risorse necessarie per l’istituzione,\nl’attuazione, il mantenimento e il miglioramento continuo del sistema di gestione per la\nqualità.\nL'organizzazione deve considerare:\na) le capacità delle risorse esistenti al proprio interno e i vincoli che gravano su di esse;\nb) che cosa ottenere dai fornitori esterni.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.2",
+    "clause_title": "Persone",
+    "requirement_text": "L'organizzazione deve determinare e rendere disponibili le persone necessarie per\nl'efficace attuazione del proprio sistema di gestione per la qualità e per il funzionamento e\nil controllo dei suoi processi.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.3",
+    "clause_title": "Infrastruttura",
+    "requirement_text": "L'organizzazione deve determinare, mettere a disposizione e manutenere l'infrastruttura\nnecessaria per il funzionamento dei suoi processi e per conseguire la conformità dei\nprodotti e servizi.\nNota L'infrastruttura può comprendere:\na) edifici e relativi impianti;\nb) apparecchiature, compresi hardware e software;\nc) risorse per il trasporto;\nd) tecnologie dell’informazione e comunicazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.4",
+    "clause_title": "Ambiente per il funzionamento dei processi",
+    "requirement_text": "L'organizzazione deve determinare, mettere a disposizione e manutenere l'ambiente\nnecessario per il funzionamento dei suoi processi e per conseguire la conformità dei\nprodotti e servizi.\nNota Un ambiente idoneo può consistere in una combinazione di fattori umani e fisici, quali quelli di natura:\na) sociale (per esempio condizioni non discriminatorie, tranquille, non conflittuali);\nb) psicologica (per esempio riduzione dello stress, prevenzione del burnout, protezione emotiva);\nc) fisica (per esempio temperatura, calore, umidità, illuminazione, flusso d'aria, igiene, rumore).\nQuesti fattori possono differire in modo sostanziale in funzione dei prodotti forniti e dei servizi erogati.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.5",
+    "clause_title": "Risorse per il monitoraggio e la misurazione",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.5.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Quando il monitoraggio o la misurazione sono utilizzati per verificare la conformità dei\nprodotti e servizi ai requisiti, l'organizzazione deve determinare e mettere a disposizione\nle risorse necessarie per assicurare risultati validi e affidabili.\nL'organizzazione deve assicurare che le risorse messe a disposizione:\na) siano adatte allo specifico tipo di attività di monitoraggio e misurazione da\nintraprendere;\nb) siano manutenute al fine di assicurare la loro continua idoneità allo scopo.\nL'organizzazione deve conservare appropriate informazioni documentate quale evidenza\ndell'idoneità allo scopo delle risorse per il monitoraggio e la misurazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.5.2",
+    "clause_title": "Riferibilità delle misurazioni",
+    "requirement_text": "Quando la riferibilità delle misurazioni è un requisito o è considerato dall'organizzazione\nuna componente essenziale per fornire fiducia circa la validità dei risultati di misura, le\napparecchiature di misura devono essere:\na) tarate e/o verificate a intervalli specificati o prima dell'utilizzo, a fronte di campioni di\nmisura riferibili a campioni di riferimento internazionali o nazionali; qualora tali\ncampioni non esistano, la base utilizzata per la taratura o verifica deve essere\nconservata come informazione documentata;\nb) identificate affinché ne sia determinato lo stato;\nc) salvaguardate da regolazioni, danni o deterioramenti che potrebbero invalidare il\nloro stato di taratura e i conseguenti risultati di misura.\nQuando un'apparecchiatura di misura viene riscontrata non adatta all’utilizzo previsto,\nl'organizzazione deve determinare se la validità dei risultati di misura precedenti sia stata\ninfluenzata negativamente e intraprendere azioni appropriate, per quanto necessario.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.1.6",
+    "clause_title": "Conoscenza organizzativa",
+    "requirement_text": "L'organizzazione deve determinare la conoscenza necessaria per il funzionamento dei\npropri processi e per conseguire la conformità di prodotti e servizi.\nTale conoscenza deve essere mantenuta e messa a disposizione, nella misura\nnecessaria.\nNell'affrontare le esigenze e tendenze di cambiamento, l'organizzazione deve considerare\nla propria conoscenza attuale e determinare come acquisire o accedere ad ogni\nnecessaria conoscenza aggiuntiva e aggiornamenti richiesti.\nNota 1 La conoscenza organizzativa è la conoscenza specifica dell'organizzazione, maturata generalmente\nattraverso l'esperienza. Queste informazioni sono utilizzate e condivise al fine di conseguire gli obiettivi\ndell'organizzazione.\nNota 2 La conoscenza organizzativa può essere basata su:\na) risorse interne (per esempio proprietà intellettuale; conoscenze maturate con l'esperienza; lezioni apprese\nda insuccessi o da progetti che hanno avuto successo; acquisizione e condivisione di conoscenze ed\nesperienze non documentate; risultati dei miglioramenti ottenuti nei processi, prodotti e servizi);\nb) risorse esterne (per esempio norme; fonti accademiche; conferenze; raccolta di conoscenze da clienti\no fornitori esterni).",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.2",
+    "clause_title": "Competenza",
+    "requirement_text": "L'organizzazione deve:\na) determinare le competenze necessarie per la(e) persona(e) che svolge(ono) attività\nlavorative sotto il suo controllo e che influenzano le prestazioni e l'efficacia del\nsistema di gestione per la qualità;\nb) assicurare che queste persone siano competenti sulla base di istruzione,\nformazione***), o esperienza appropriate;\nc) ove applicabile, intraprendere azioni per acquisire le necessarie competenze e\nvalutare l'efficacia delle azioni intraprese;\nd) conservare appropriate informazioni documentate quale evidenza delle competenze.\nNota Le azioni applicabili possono comprendere, per esempio: il provvedere alla formazione, il mentoring, o la\nriallocazione delle persone attualmente impiegate; oppure l’assunzione o l’incarico a contratto di persone\ncompetenti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.3",
+    "clause_title": "Consapevolezza",
+    "requirement_text": "L'organizzazione deve assicurare che le persone che svolgono un’attività lavorativa sotto\nil suo controllo siano consapevoli:\na) della politica per la qualità;\nb) dei pertinenti obiettivi per la qualità;\nc) del proprio contributo all’efficacia del sistema di gestione per la qualità, compresi i\nbenefici derivanti dal miglioramento delle prestazioni;\nd) delle implicazioni derivanti dal non essere conformi ai requisiti del sistema di\ngestione per la qualità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.4",
+    "clause_title": "Comunicazione",
+    "requirement_text": "L’organizzazione deve determinare le comunicazioni interne ed esterne pertinenti al\nsistema di gestione per la qualità, includendo:\na) cosa vuole comunicare;\nb) quando comunicare;\nc) con chi comunicare;\nd) come comunicare;\ne) chi comunica.\n***) Nota Nazionale - Il termine \"formazione\" (training) è da intendersi in un’ampia accezione che comprende l’addestramento.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5",
+    "clause_title": "Informazioni documentate",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5.1",
+    "clause_title": "Generalità",
+    "requirement_text": "Il sistema di gestione per la qualità dell’organizzazione deve comprendere:\na) le informazioni documentate richieste dalla presente norma internazionale;\nb) le informazioni documentate che l'organizzazione determina necessarie per\nl'efficacia del sistema di gestione per la qualità.\nNota L’estensione delle informazioni documentate del sistema di gestione per la qualità può variare da\nun'organizzazione all'altra in base a:\n- la dimensione dell'organizzazione e il suo tipo di attività, processi, prodotti e servizi;\n- la complessità dei processi e delle loro interazioni;\n- la competenza delle persone.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5.2",
+    "clause_title": "Creazione e aggiornamento",
+    "requirement_text": "Nel creare e aggiornare le informazioni documentate, l’organizzazione deve assicurare\nappropriati:\na) identificazione e descrizione (per esempio titolo, data, autore o numero di\nriferimento);\nb) formato (per esempio lingua, versione del software, grafica) e supporto (per esempio\ncartaceo, elettronico);\nc) riesame e approvazione in merito all’idoneità e all’adeguatezza.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5.3",
+    "clause_title": "Controllo delle informazioni documentate",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5.3.1",
+    "clause_title": "Le informazioni documentate richieste dal sistema di gestione per la qualità e dalla",
+    "requirement_text": "presente norma internazionale devono essere tenute sotto controllo per assicurare che:\na) siano disponibili e idonee all'utilizzo, dove e quando necessario;\nb) siano adeguatamente protette (per esempio da perdita di riservatezza, utilizzo\nimproprio, o perdita d’integrità).",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "7.5.3.2",
+    "clause_title": "Per tenere sotto controllo le informazioni documentate l’organizzazione deve",
+    "requirement_text": "intraprendere le seguenti attività, per quanto applicabile:\na) distribuzione, accesso, reperimento e utilizzo;\nb) archiviazione e preservazione, compreso il mantenimento della leggibilità;\nc) tenuta sotto controllo delle modifiche (per esempio controllo delle versioni);\nd) conservazione ed eliminazione.\nLe informazioni documentate di origine esterna, determinate come necessarie\ndall'organizzazione per la pianificazione e per il funzionamento del sistema di gestione\nper la qualità, devono essere identificate, per quanto appropriato, e tenute sotto controllo.\nLe informazioni documentate conservate come evidenza di conformità devono essere\nprotette da alterazioni involontarie.\nNota L’accesso può comportare una decisione in merito ai permessi di sola visione delle informazioni documentate,\no ai permessi e autorità per visualizzarle e modificarle.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8",
+    "clause_title": "ATTIVITÀ OPERATIVE",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.1",
+    "clause_title": "Pianificazione e controllo operativi",
+    "requirement_text": "L'organizzazione deve pianificare, attuare e tenere sotto controllo i processi (vedere\npunto 4.4) necessari per soddisfare i requisiti per la fornitura di prodotti ed erogazione di\nservizi e per attuare le azioni determinate al punto 6:\na) determinando i requisiti per i prodotti e servizi;\nb) stabilendo i criteri per:\n1) i processi;\n2) l'accettazione di prodotti e servizi;\nc) determinando le risorse necessarie per conseguire la conformità ai requisiti relativi\nai prodotti e servizi;\nd) attuando il controllo dei processi in conformità ai criteri;\ne) determinando, mantenendo e conservando le informazioni documentate nella\nmisura necessaria:\n1) ad avere fiducia che i processi siano stati effettuati come pianificato;\n2) per dimostrare la conformità dei prodotti e servizi ai relativi requisiti.\nL'output di tale pianificazione deve essere adatto alle attività operative\ndell'organizzazione.\nL'organizzazione deve tenere sotto controllo le modifiche pianificate e riesaminare le\nconseguenze dei cambiamenti involontari, intraprendendo azioni per mitigare ogni effetto\nnegativo, per quanto necessario.\nL'organizzazione deve assicurare che i processi affidati all’esterno siano tenuti sotto\ncontrollo (vedere punto 8.4).",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2",
+    "clause_title": "Requisiti per i prodotti e i servizi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.1",
+    "clause_title": "Comunicazione con il cliente",
+    "requirement_text": "La comunicazione con i clienti deve comprendere:\na) la fornitura di informazioni relative ai prodotti e servizi;\nb) la gestione delle richieste, contratti o ordini, comprese le modifiche;\nc) l'ottenimento, dal cliente, di informazioni di ritorno relative ai prodotti e servizi,\ncompresi i reclami del cliente stesso;\nd) la gestione o la tenuta sotto controllo della proprietà del cliente;\ne) la definizione di specifici requisiti per le azioni di emergenza, quando pertinente.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.2",
+    "clause_title": "Determinazione dei requisiti relativi ai prodotti e servizi",
+    "requirement_text": "Nel determinare i requisiti dei prodotti e dei servizi da offrire ai clienti, l'organizzazione\ndeve assicurare che:\na) siano definiti i requisiti dei prodotti e servizi, compresi:\n1) ogni eventuale requisito cogente applicabile;\n2) quelli ritenuti necessari dall'organizzazione;\nb) l'organizzazione sia in grado di corrispondere a quanto essa dichiara in relazione ai\nprodotti e servizi offerti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.3",
+    "clause_title": "Riesame dei requisiti relativi ai prodotti e servizi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.3.1",
+    "clause_title": "L'organizzazione deve assicurare che essa possiede la capacità di soddisfare i requisiti",
+    "requirement_text": "dei prodotti e servizi da offrire ai clienti. Prima di impegnarsi a fornire prodotti e servizi al\ncliente, l'organizzazione deve condurre un riesame che comprenda:\na) i requisiti specificati dal cliente, compresi i requisiti per le attività di consegna e\npost-consegna;\nb) i requisiti non stabiliti dal cliente, ma necessari per l'utilizzo specificato o atteso,\nquando conosciuto;\nc) i requisiti specificati dall'organizzazione;\nd) i requisiti cogenti applicabili ai prodotti e ai servizi;\ne) i requisiti del contratto o dell'ordine che differiscono da quelli espressi in precedenza.\nL'organizzazione deve assicurare che siano risolte le differenze fra i requisiti del contratto\no dell'ordine e quelli espressi in precedenza.\nQualora il cliente non fornisca una dichiarazione documentata dei propri requisiti, i\nrequisiti del cliente devono essere confermati dall'organizzazione prima di essere\naccettati.\nNota In alcune situazioni, come nel caso di vendite via internet, un riesame formale è impraticabile per ogni ordine.\nInvece, il riesame può riguardare le pertinenti informazioni sul prodotto, quali cataloghi.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.3.2",
+    "clause_title": "L'organizzazione deve conservare informazioni documentate, per quanto applicabile:",
+    "requirement_text": "a) dei risultati del riesame;\nb) di ogni nuovo requisito per i prodotti e servizi.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.2.4",
+    "clause_title": "Modifiche ai requisiti per i prodotti e servizi",
+    "requirement_text": "Quando i requisiti di prodotti e servizi vengono modificati, l'organizzazione deve\nassicurare che le pertinenti informazioni documentate siano aggiornate e che le persone\npertinenti siano rese consapevoli in merito ai requisiti modificati.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3",
+    "clause_title": "Progettazione e sviluppo di prodotti e servizi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve stabilire, attuare e mantenere un processo di progettazione e\nsviluppo appropriato ad assicurare la successiva fornitura di prodotti ed erogazione di\nservizi.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.2",
+    "clause_title": "Pianificazione della progettazione e sviluppo",
+    "requirement_text": "Nel determinare le fasi e i controlli per la progettazione e sviluppo, l'organizzazione deve\nconsiderare:\na) la natura, la durata e la complessità delle attività di progettazione e sviluppo;\nb) le fasi necessarie del processo, compresi i riesami della progettazione e sviluppo\napplicabili;\nc) le necessarie attività di verifica e validazione della progettazione e sviluppo;\nd) le responsabilità e le autorità coinvolte nel processo di progettazione e sviluppo;\ne) le esigenze di risorse interne ed esterne per la progettazione e sviluppo di prodotti e\nservizi;\nf) l’esigenza di tenere sotto controllo le interfacce fra le persone coinvolte nel processo\ndi progettazione e sviluppo;\ng) l’esigenza di coinvolgere clienti e utilizzatori nel processo di progettazione e sviluppo;\nh) i requisiti per la successiva fornitura di prodotti ed erogazione di servizi;\ni) il livello di controllo del processo di progettazione e sviluppo atteso dai clienti e dalle\naltre parti interessate rilevanti;\nj) le informazioni documentate necessarie per dimostrare che i requisiti relativi alla\nprogettazione e sviluppo sono stati soddisfatti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.3",
+    "clause_title": "Input alla progettazione e sviluppo",
+    "requirement_text": "L'organizzazione deve determinare i requisiti essenziali per gli specifici tipi di prodotti e\nservizi da progettare e sviluppare. L'organizzazione deve considerare:\na) i requisiti funzionali e prestazionali;\nb) le informazioni derivanti da precedenti analoghe attività di progettazione e sviluppo;\nc) i requisiti cogenti;\nd) le norme o i codici di condotta che l'organizzazione si è impegnata a mettere in atto;\ne) le potenziali conseguenze di guasto dovute alla natura dei prodotti e servizi.\nGli input devono essere adeguati, in relazione alle finalità della progettazione e sviluppo,\ncompleti e univoci.\nEventuali conflitti fra gli input alla progettazione e sviluppo devono essere risolti.\nL'organizzazione deve conservare informazioni documentate sugli input alla\nprogettazione e sviluppo.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.4",
+    "clause_title": "Controlli della progettazione e sviluppo",
+    "requirement_text": "L'organizzazione deve effettuare controlli sul processo di progettazione e sviluppo in\nmodo da assicurare che:\na) siano definiti i risultati da conseguire;\nb) siano condotti riesami allo scopo di valutare la capacità dei risultati della\nprogettazione e sviluppo di soddisfare i requisiti;\nc) siano condotte attività di verifica per assicurare che gli output della progettazione e\nsviluppo soddisfino i requisiti di input;\nd) siano condotte attività di validazione per assicurare che i prodotti e servizi risultanti\nsoddisfino i requisiti per l'applicazione specificata o per l'utilizzo previsto;\ne) sia intrapresa ogni azione necessaria su problemi determinati durante i riesami o le\nattività di verifica e validazione;\nf) siano conservate le informazioni documentate di tali attività.\nNota I riesami, la verifica e la validazione della progettazione e sviluppo hanno finalità differenti. Essi possono\nessere condotti separatamente o in qualsiasi combinazione, nel modo adatto ai prodotti e servizi\ndell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.5",
+    "clause_title": "Output della progettazione e sviluppo",
+    "requirement_text": "L'organizzazione deve assicurare che gli output della progettazione e sviluppo:\na) soddisfino i requisiti di input;\nb) siano idonei per i successivi processi di fornitura di prodotti ed erogazione di servizi;\nc) comprendano o facciano riferimento ai requisiti di monitoraggio e misurazione, per\nquanto appropriato, e ai criteri di accettazione;\nd) specifichino le caratteristiche dei prodotti e servizi che sono essenziali per le relative\nfinalità previste e per la loro sicura e appropriata fornitura/erogazione.\nL’organizzazione deve conservare informazioni documentate relative agli output della\nprogettazione e sviluppo.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.3.6",
+    "clause_title": "Modifiche della progettazione e sviluppo",
+    "requirement_text": "L'organizzazione deve identificare, riesaminare e tenere sotto controllo le modifiche\neffettuate durante o successivamente alla progettazione e sviluppo di prodotti e servizi,\nnella misura necessaria per assicurare che non vi siano impatti negativi sulla conformità\nai requisiti.\nL'organizzazione deve conservare informazioni documentate relative:\na) alle modifiche alla progettazione e sviluppo;\nb) ai risultati dei riesami;\nc) alle autorizzazioni delle modifiche;\nd) alle azioni intraprese per prevenire impatti negativi.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.4",
+    "clause_title": "Controllo dei processi, prodotti e servizi forniti dall’esterno",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.4.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve assicurare che i processi, prodotti e servizi forniti dall’esterno\nsiano conformi ai requisiti.\nL'organizzazione deve determinare i controlli da attuare sui processi, prodotti e servizi\nforniti dall’esterno, quando:\na) prodotti e servizi di fornitori esterni sono destinati ad essere incorporati nei prodotti\ne servizi dell'organizzazione;\nb) prodotti e servizi sono forniti direttamente al(ai) cliente(i) da fornitori esterni, per\nconto dell'organizzazione;\nc) un processo, o una sua parte, viene fornito da un fornitore esterno, quale esito di una\ndecisione dell'organizzazione.\nL'organizzazione deve determinare e applicare criteri per la valutazione, selezione,\nmonitoraggio delle prestazioni e per la ri-valutazione dei fornitori esterni, sulla base della\nloro capacità di fornire processi o prodotti e servizi conformi ai requisiti. L'organizzazione\ndeve conservare informazioni documentate di queste attività e di ogni necessaria azione\nche scaturisce dalle valutazioni.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.4.2",
+    "clause_title": "Tipo ed estensione del controllo",
+    "requirement_text": "L'organizzazione deve assicurare che i processi, prodotti e servizi forniti dall’esterno non\ninfluenzino negativamente la capacità dell'organizzazione di rilasciare con regolarità, ai\npropri clienti, prodotti e servizi conformi.\nL’organizzazione deve:\na) assicurare che i processi forniti dall’esterno rimangano sotto il controllo del proprio\nsistema di gestione per la qualità;\nb) definire sia i controlli che essa intende applicare al fornitore esterno, sia quelli che\nintende applicare agli output risultanti;\nc) tenere in considerazione:\n1) l'impatto potenziale dei processi, prodotti e servizi forniti dall’esterno sulla\ncapacità dell'organizzazione di soddisfare con regolarità i requisiti del cliente e\nquelli cogenti applicabili;\n2) l'efficacia dei controlli attuati dal fornitore esterno;\nd) determinare le verifiche o altre attività, necessarie ad assicurare che i processi,\nprodotti e servizi forniti dall’esterno soddisfino i requisiti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.4.3",
+    "clause_title": "Informazioni ai fornitori esterni",
+    "requirement_text": "L'organizzazione deve assicurare l'adeguatezza dei requisiti specificati prima della loro\ncomunicazione al fornitore esterno.\nL'organizzazione deve comunicare ai fornitori esterni i requisiti relativi a:\na) i processi, prodotti e servizi da fornire;\nb) l’approvazione:\n1) di prodotti e servizi;\n2) di metodi, processi e apparecchiature;\n3) del rilascio di prodotti e servizi;\nc) la competenza, comprese le eventuali qualifiche delle persone;\nd) le interazioni fra il fornitore esterno e l'organizzazione;\ne) il controllo e monitoraggio da applicare sulle prestazioni del fornitore esterno da\nparte dell’organizzazione;\nf) le attività di verifica o di validazione che l'organizzazione, o i suoi clienti, intendono\neffettuare presso le sedi del fornitore esterno.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5",
+    "clause_title": "Produzione ed erogazione dei servizi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.1",
+    "clause_title": "Controllo della produzione e dell'erogazione dei servizi",
+    "requirement_text": "L'organizzazione deve attuare la produzione e l'erogazione dei servizi in condizioni\ncontrollate.\nLe condizioni controllate devono comprendere, per quanto applicabile:\na) la disponibilità di informazioni documentate che definiscano:\n1) le caratteristiche dei prodotti da realizzare, dei servizi da erogare o delle attività\nda eseguire;\n2) i risultati da conseguire;\nb) la disponibilità e l'utilizzo di idonee risorse per il monitoraggio e la misurazione;\nc) l'attuazione di attività di monitoraggio e misurazione in fasi appropriate, per verificare\nche i criteri per il controllo dei processi o degli output, e i criteri di accettazione di\nprodotti e servizi, siano stati soddisfatti;\nd) l'utilizzo di infrastrutture e ambienti idonei per il funzionamento dei processi;\ne) la designazione di persone competenti, comprese le eventuali qualifiche richieste;\nf) la validazione, e periodica rivalidazione, della capacità di conseguire i risultati\npianificati per i processi di produzione e di erogazione dei servizi, quando gli output\nrisultanti non possano essere verificati per mezzo di successivi monitoraggio o\nmisurazione;\ng) l’attuazione di azioni atte a prevenire l'errore umano;\nh) l’attuazione di attività di rilascio, consegna e post- consegna.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.2",
+    "clause_title": "Identificazione e rintracciabilità",
+    "requirement_text": "L'organizzazione deve utilizzare mezzi idonei per identificare gli output, quando ciò è\nnecessario per assicurare la conformità dei prodotti e dei servizi.\nL'organizzazione deve identificare lo stato degli output a fronte dei requisiti di\nmonitoraggio e misurazione, durante tutta la produzione e l'erogazione dei servizi.\nQuando la rintracciabilità è un requisito, l'organizzazione deve tenere sotto controllo\nl'univoca identificazione degli output e deve conservare le informazioni documentate\nnecessarie a consentire detta rintracciabilità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.3",
+    "clause_title": "Proprietà che appartengono ai clienti o ai fornitori esterni",
+    "requirement_text": "L'organizzazione deve aver cura della proprietà dei clienti o dei fornitori esterni, quando\nessa si trova sotto il suo controllo o viene da essa utilizzata.\nL'organizzazione deve identificare, verificare, proteggere e salvaguardare la proprietà del\ncliente o del fornitore esterno, messa a disposizione per essere utilizzata o per essere\nincorporata nei prodotti e servizi.\nQuando la proprietà del cliente o del fornitore esterno viene persa, danneggiata o\naltrimenti riscontrata inadatta all'utilizzo, l'organizzazione deve riferire ciò al cliente o al\nfornitore esterno e conservare informazioni documentate su quanto accaduto.\nNota La proprietà del cliente o del fornitore esterno può comprendere materiali, componenti, strumenti e\napparecchiature, siti, proprietà intellettuali o dati personali.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.4",
+    "clause_title": "Preservazione",
+    "requirement_text": "L'organizzazione deve preservare gli output durante la produzione e l'erogazione dei\nservizi, nella misura necessaria ad assicurare la conformità ai requisiti.\nNota La preservazione può comprendere l'identificazione, la movimentazione, il controllo della contaminazione,\nl’imballaggio, lo stoccaggio, la trasmissione o il trasporto, e la protezione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.5",
+    "clause_title": "Attività post-consegna",
+    "requirement_text": "L'organizzazione deve soddisfare i requisiti relativi alle attività post-consegna associate ai\nprodotti e ai servizi.\nNel determinare l'estensione delle attività post-consegna necessarie, l'organizzazione\ndeve considerare:\na) i requisiti cogenti;\nb) le potenziali conseguenze indesiderate associate ai propri prodotti e servizi;\nc) la natura, l’utilizzo e la durata di vita attesa dei suoi prodotti e servizi;\nd) i requisiti del cliente;\ne) le informazioni di ritorno da parte del cliente.\nNota Le attività post-consegna possono comprendere interventi in garanzia, obblighi contrattuali, come per\nesempio i servizi di manutenzione, e i servizi supplementari, quali il riciclo o lo smaltimento finale.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.5.6",
+    "clause_title": "Controllo delle modifiche",
+    "requirement_text": "L'organizzazione deve riesaminare e tenere sotto controllo le modifiche alla produzione o\nall'erogazione dei servizi, nella misura necessaria ad assicurare la continua conformità ai\nrequisiti.\nL'organizzazione deve conservare informazioni documentate che descrivano i risultati dei\nriesami delle modifiche, la(e) persona(e) che autorizza(no) la modifica e ogni azione\nnecessaria derivante dal riesame.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.6",
+    "clause_title": "Rilascio di prodotti e servizi",
+    "requirement_text": "L'organizzazione deve attuare, in fasi appropriate, quanto pianificato, per verificare che i\nrequisiti dei prodotti e dei servizi siano stati soddisfatti.\nIl rilascio dei prodotti e l’erogazione dei servizi al cliente non devono essere effettuati\nprima che quanto pianificato sia stato completato in modo soddisfacente, salvo diversa\napprovazione da parte di un’autorità competente e, ove applicabile, del cliente.\nL'organizzazione deve conservare informazioni documentate circa il rilascio dei prodotti e\nservizi. Tali informazioni devono comprendere:\na) l’evidenza della conformità ai criteri di accettazione;\nb) la riferibilità alla(e) persona(e) autorizzata(e) al rilascio.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.7",
+    "clause_title": "Controllo degli output non conformi",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.7.1",
+    "clause_title": "L'organizzazione deve assicurare che gli output non conformi ai requisiti siano identificati",
+    "requirement_text": "e tenuti sotto controllo, in modo da prevenirne l'utilizzo o la consegna involontari.\nL'organizzazione deve intraprendere azioni appropriate in base alla natura della non\nconformità e al suo effetto sulla conformità dei prodotti e dei servizi. Ciò si deve applicare\nanche ai prodotti e servizi riscontrati non conformi dopo la consegna dei prodotti, durante\no dopo l'erogazione dei servizi.\nL'organizzazione deve trattare gli output non conformi in uno o più dei modi seguenti:\na) correzione;\nb) segregazione, contenimento, restituzione o sospensione della fornitura di prodotti ed\nerogazione di servizi;\nc) informazione al cliente;\nd) ottenimento di autorizzazioni per l'accettazione in concessione.\nQuando gli output non conformi vengono corretti, deve essere verificata la conformità ai\nrequisiti.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "8.7.2",
+    "clause_title": "L'organizzazione deve conservare informazioni documentate che:",
+    "requirement_text": "a) descrivano la non conformità;\nb) descrivano le azioni adottate;\nc) descrivano ogni concessione ottenuta;\nd) identifichino l'autorità che decide le azioni in riferimento alla non conformità.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9",
+    "clause_title": "VALUTAZIONE DELLE PRESTAZIONI",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.1",
+    "clause_title": "Monitoraggio, misurazione, analisi e valutazione",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.1.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve determinare:\na) cosa è necessario monitorare e misurare;\nb) i metodi per il monitoraggio, la misurazione, l'analisi e la valutazione, necessari per\nassicurare risultati validi;\nc) quando il monitoraggio e la misurazione devono essere eseguiti;\nd) quando i risultati del monitoraggio e della misurazione devono essere analizzati e\nvalutati.\nL'organizzazione deve valutare le prestazioni e l'efficacia del sistema di gestione per la\nqualità.\nL'organizzazione deve conservare appropriate informazioni documentate quale evidenza\ndei risultati.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.1.2",
+    "clause_title": "Soddisfazione del cliente",
+    "requirement_text": "L'organizzazione deve monitorare la percezione del cliente riguardo al grado in cui le sue\nesigenze e aspettative sono state soddisfatte. L'organizzazione deve determinare i\nmetodi per ottenere, monitorare e riesaminare queste informazioni.\nNota Esempi di monitoraggio della percezione del cliente possono comprendere indagini sui clienti, informazioni di\nritorno da parte del cliente sui prodotti forniti e servizi erogati, riunioni con i clienti, analisi delle quote di\nmercato, espressioni di gradimento, richieste di interventi in garanzia e rapporti dei venditori.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.1.3",
+    "clause_title": "Analisi e valutazione",
+    "requirement_text": "L'organizzazione deve analizzare e valutare i dati e le informazioni appropriati che\nemergono dal monitoraggio e dalla misurazione.\nI risultati dell'analisi devono essere utilizzati per valutare:\na) la conformità di prodotti e servizi;\nb) il grado di soddisfazione del cliente;\nc) le prestazioni e l’efficacia del sistema di gestione per la qualità;\nd) se la pianificazione è stata condotta efficacemente;\ne) l’efficacia delle azioni intraprese per affrontare i rischi e le opportunità;\nf) le prestazioni dei fornitori esterni;\ng) l’esigenza di miglioramenti del sistema di gestione per la qualità.\nNota I metodi per analizzare i dati possono comprendere tecniche statistiche.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.2",
+    "clause_title": "Audit interno",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.2.1",
+    "clause_title": "L’organizzazione deve condurre, a intervalli pianificati, audit interni allo scopo di fornire",
+    "requirement_text": "informazioni per accertare se il sistema di gestione per la qualità:\na) è conforme ai:\n1) requisiti propri dell’organizzazione relativi al suo sistema di gestione per la qualità;\n2) requisiti della presente norma internazionale;\nb) è efficacemente attuato e mantenuto.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.2.2",
+    "clause_title": "L’organizzazione deve:",
+    "requirement_text": "a) pianificare, stabilire, attuare e mantenere uno o più programmi di audit comprensivi\ndi frequenza, metodi, responsabilità, requisiti di pianificazione e reporting, che\ndevono tenere in considerazione l’importanza dei processi coinvolti, i cambiamenti\nche influiscono sull'organizzazione, e i risultati degli audit precedenti;\nb) definire i criteri e il campo di applicazione per ciascun audit;\nc) selezionare gli auditor e condurre gli audit in modo tale da assicurare l'obiettività e\nl'imparzialità del processo di audit;\nd) assicurare che i risultati degli audit siano riportati al pertinente livello direzionale;\ne) adottare correzioni e azioni correttive appropriate senza indebito ritardo;\nf) conservare informazioni documentate quale evidenza dell’attuazione del\nprogramma di audit e dei risultati di audit.\nNota Vedere la ISO 19011 come guida.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.3",
+    "clause_title": "Riesame di direzione",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.3.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'alta direzione deve, a intervalli pianificati, riesaminare il sistema di gestione per la\nqualità dell'organizzazione, per assicurarne la continua idoneità, adeguatezza ed\nefficacia, nonché l'allineamento agli indirizzi strategici dell'organizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.3.2",
+    "clause_title": "Input al riesame di direzione",
+    "requirement_text": "Il riesame di direzione deve essere pianificato e condotto prendendo in considerazione:\na) lo stato delle azioni derivanti da precedenti riesami di direzione;\nb) i cambiamenti nei fattori esterni e interni che sono rilevanti per il sistema di gestione\nper la qualità;\nc) le informazioni sulle prestazioni e sull'efficacia del sistema di gestione per la qualità,\ncompresi gli andamenti relativi:\n1) alla soddisfazione del cliente e alle informazioni di ritorno dalle parti interessate\nrilevanti;\n2) alla misura in cui gli obiettivi per la qualità sono stati raggiunti;\n3) alle prestazioni di processo e alla conformità di prodotti e servizi;\n4) alle non conformità e alle azioni correttive;\n5) ai risultati del monitoraggio e della misurazione;\n6) ai risultati di audit;\n7) alle prestazioni dei fornitori esterni;\nd) l'adeguatezza delle risorse;\ne) l'efficacia delle azioni intraprese per affrontare i rischi e le opportunità (vedere\npunto 6.1);\nf) le opportunità di miglioramento.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "9.3.3",
+    "clause_title": "Output del riesame di direzione",
+    "requirement_text": "Gli output del riesame di direzione devono comprendere decisioni e azioni relative a:\na) opportunità di miglioramento;\nb) ogni esigenza di modifica al sistema di gestione per la qualità;\nc) risorse necessarie.\nL’organizzazione deve conservare informazioni documentate quale evidenza dei risultati\ndei riesami di direzione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10",
+    "clause_title": "MIGLIORAMENTO",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10.1",
+    "clause_title": "Generalità",
+    "requirement_text": "L'organizzazione deve determinare e selezionare opportunità di miglioramento e attuare\nogni azione necessaria per soddisfare i requisiti del cliente e accrescerne la\nsoddisfazione.\nQueste devono comprendere:\na) il miglioramento dei prodotti e dei servizi, per soddisfare i requisiti, così come per\naffrontare le esigenze e le aspettative future;\nb) la correzione, la prevenzione o la riduzione degli effetti indesiderati;\nc) il miglioramento delle prestazioni e dell'efficacia del sistema di gestione per la\nqualità.\nNota Esempi di miglioramento possono comprendere correzioni, azioni correttive, miglioramento continuo,\ncambiamenti radicali (breakthrough change), innovazione e riorganizzazione.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10.2",
+    "clause_title": "Non conformità e azioni correttive",
+    "requirement_text": "",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10.2.1",
+    "clause_title": "Quando si verifica una non conformità, comprese quelle che emergono dai reclami,",
+    "requirement_text": "l’organizzazione deve:\na) reagire alla non conformità e, per quanto applicabile:\n1) intraprendere azioni per tenerla sotto controllo e correggerla;\n2) affrontarne le conseguenze;\nb) valutare l’esigenza di azioni per eliminare la(e) causa(e) della non conformità, in\nmodo che non si ripeta o non si verifichi altrove:\n1) riesaminando e analizzando la non conformità;\n2) determinando le cause della non conformità;\n3) determinando se esistono o potrebbero verificarsi non conformità simili;\nc) attuare ogni azione necessaria;\nd) riesaminare l’efficacia di ogni azione correttiva intrapresa;\ne) aggiornare, se necessario, i rischi e le opportunità determinati nel corso della\npianificazione;\nf) effettuare, se necessario, modifiche al sistema di gestione per la qualità.\nLe azioni correttive devono essere adeguate agli effetti delle non conformità riscontrate.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10.2.2",
+    "clause_title": "L'organizzazione deve conservare informazioni documentate quale evidenza:",
+    "requirement_text": "a) della natura delle non conformità e di ogni successiva azione intrapresa;\nb) dei risultati di ogni azione correttiva.",
+    "norm_version": "2015",
+    "source": "local_file"
+  },
+  {
+    "standard_code": "ISO_9001_2015",
+    "clause_ref": "10.3",
+    "clause_title": "Miglioramento continuo",
+    "requirement_text": "L'organizzazione deve migliorare in modo continuo l'idoneità, l'adeguatezza e l'efficacia\ndel sistema di gestione per la qualità.\nL'organizzazione deve considerare i risultati dell'analisi e valutazione, e gli output del\nriesame di direzione, per determinare se ci sono esigenze od opportunità che devono\nessere considerate come parte del miglioramento continuo.\n\n(vedere punto A.5 per chiarimenti sull'applicabilità) |\n(analoghe responsabilità e autorità vengono assegnate ma non vi\nè il requisito di avere un singolo rappresentante della direzione) |\nprocedure documentate, registrazioni | Informazioni documentate |",
+    "norm_version": "2015",
+    "source": "local_file"
+  }
+]
