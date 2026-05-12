@@ -1239,6 +1239,7 @@ class ApiService {
     async createComplaint(data)     { return this.post('/complaints', data); }
     async updateComplaint(id, data) { return this.put(`/complaints/${id}`, data); }
     async deleteComplaint(id)       { return this.delete(`/complaints/${id}`); }
+    async promoteComplaintToNc(id, data) { return this.post(`/complaints/${id}/promote-to-nc`, data); }
 
     // ─── Suppliers & Evaluations (Sprint 7) ──────────────────────────────────
     async getSuppliers(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/suppliers${qs ? '?' + qs : ''}`); }
@@ -1246,10 +1247,17 @@ class ApiService {
     async createSupplier(data)      { return this.post('/suppliers', data); }
     async updateSupplier(id, data)  { return this.put(`/suppliers/${id}`, data); }
     async deleteSupplier(id)        { return this.delete(`/suppliers/${id}`); }
-    
+
     async getSupplierEvaluations(id){ return this.get(`/suppliers/${id}/evaluations`); }
     async createSupplierEvaluation(id, data) { return this.post(`/suppliers/${id}/evaluations`, data); }
     async deleteSupplierEvaluation(id, evalId) { return this.delete(`/suppliers/${id}/evaluations/${evalId}`); }
+
+    // ─── Departments (reparti produttivi) ────────────────────────────────────
+    async getDepartments(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/departments${qs ? '?' + qs : ''}`); }
+    async getDepartment(id)           { return this.get(`/departments/${id}`); }
+    async createDepartment(data)      { return this.post('/departments', data); }
+    async updateDepartment(id, data)  { return this.put(`/departments/${id}`, data); }
+    async deleteDepartment(id)        { return this.delete(`/departments/${id}`); }
 
     // ─── Licenze moduli (Sprint 8) ───────────────────────────────────────────
     async getAdminLicenses() {
