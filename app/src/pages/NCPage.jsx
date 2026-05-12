@@ -278,8 +278,8 @@ export default function NCPage() {
     }
   }
 
-  const openCount     = stats?.open || 0;
-  const inProgCount   = stats?.in_progress || 0;
+  const openCount     = stats?.count_open     ?? stats?.open     ?? 0;
+  const inProgCount   = stats?.count_in_progress ?? stats?.in_progress ?? 0;
   const overdueCount  = stats?.overdue || 0;
 
   return (

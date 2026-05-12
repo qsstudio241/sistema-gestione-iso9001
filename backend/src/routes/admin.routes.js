@@ -22,5 +22,7 @@ router.put('/admin/users/:id/standards', adminOnly, adminController.updateUserSt
 // Licenze: admin può LEGGERE le proprie licenze; solo superadmin può MODIFICARLE
 router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
 router.patch('/admin/licenses', superadminOnly, adminController.updateOrgLicenses);
+// Superadmin: gestione licenze per qualsiasi organizzazione (studi clienti)
+router.patch('/admin/organizations/:organizationId/licenses', superadminOnly, adminController.updateAnyOrgLicenses);
 
 module.exports = router;

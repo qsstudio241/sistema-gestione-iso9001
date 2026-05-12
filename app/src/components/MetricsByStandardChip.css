@@ -1,0 +1,49 @@
+/* MetricsByStandardChip — chip riusabile metriche NC/OSS/OM per norma.
+ * ADR-009 Fase 1.
+ *
+ * Stile coerente con .audit-status-badge / .audit-meta dell'header audit:
+ * pill rounded, font 11-12px, contrasto sufficiente su sfondo chiaro/sticky.
+ */
+
+.metrics-by-standard-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+
+.metrics-by-standard-chip__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.metrics-by-standard-chip__label {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.metrics-by-standard-chip__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics-by-standard-chip__total {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-weight: 600;
+  white-space: nowrap;
+}

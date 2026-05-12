@@ -7,6 +7,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import {
+  STANDARDS_LIST,
+  STANDARD_INIT_MAP,
+} from "../data/standardsRegistry";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -19,7 +23,6 @@ import CustomChecklistAuditView from "./CustomChecklistAuditView";
 import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
 import AuditClosePanel from "./AuditClosePanel";
-import NonConformitiesManager from "./NonConformitiesManager";
 
 /** Mappa status → etichetta italiana e classe CSS */
 const STATUS_LABELS = {
@@ -40,59 +43,10 @@ function AuditStatusBadge({ status }) {
   );
 }
 
-/**
- * Configurazione centralizzata di tutti gli standard supportati.
- * Per aggiungere un nuovo standard: aggiungere UNA SOLA RIGA qui.
- *
- * Campi:
- *   key      — chiave interna usata nella checklist (es. "ISO_9001")
- *   codes    — tutti i codici accettati da selectedStandards (incluse varianti anno)
- *   label    — testo mostrato nell'accordion
- *   icon     — emoji icona nella UI
- *   subsId   — id CSS della sotto-sezione accordion (univoco, lowercase, senza spazi)
- */
-const STANDARDS_CONFIG = [
-  {
-    key:    "ISO_9001",
-    codes:  ["ISO_9001", "ISO_9001_2015"],
-    label:  "ISO 9001:2015 \u2014 Qualit\u00e0",
-    icon:   "\uD83D\uDCCB",
-    subsId: "iso-9001",
-  },
-  {
-    key:    "ISO_14001",
-    codes:  ["ISO_14001", "ISO_14001_2015"],
-    label:  "ISO 14001:2015 \u2014 Ambiente",
-    icon:   "\uD83C\uDF31",
-    subsId: "iso-14001",
-  },
-  {
-    key:    "ISO_45001",
-    codes:  ["ISO_45001", "ISO_45001_2018"],
-    label:  "ISO 45001:2018 \u2014 Salute e Sicurezza",
-    icon:   "\uD83E\uDDBA",
-    subsId: "iso-45001",
-  },
-  {
-    key:    "ISO_3834_2",
-    codes:  ["ISO_3834", "ISO_3834_2", "ISO_3834_2_2021"],
-    label:  "ISO 3834-2 \u2014 Audit Fornitori in Campo",
-    icon:   "\uD83D\uDD27",
-    subsId: "iso-3834",
-  },
-  {
-    key:    "RDP_MSN",
-    codes:  ["RDP_MSN"],
-    label:  "RDP Mason \u2014 Audit di Sistema Saldatura",
-    icon:   "\uD83D\uDCCA",
-    subsId: "rdp-msn",
-  },
-];
-
-// Mappa key → codes (usata da STANDARD_INIT_MAP per retrocompatibilità interna)
-const STANDARD_INIT_MAP = Object.fromEntries(
-  STANDARDS_CONFIG.map(({ key, codes }) => [key, codes])
-);
+// Source of Truth degli standard supportati: importata da
+// `app/src/data/standardsRegistry.js` (ADR-009 Fase 1).
+// Per aggiungere un nuovo standard: aggiungere UNA SOLA RIGA in
+// STANDARDS_REGISTRY (registry condiviso) — questo file non richiede modifiche.
 
 const MANUAL_COMPANY_VALUE = "__manual__";
 
@@ -144,13 +98,15 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     loadCompanies();
   }, [loadCompanies]);
 
+  // Metriche per-norma in tempo reale (ADR-009 Fase 1).
+  // Il chip header le legge per mostrare "9001: 2 NC · 14001: 1 NC · totale 3".
+  // Calcolato a livello top del componente (PRIMA del guard `if (!currentAudit)`)
   // Stato per gestire quali sezioni sono aperte
   const [checklistExpandTrigger, setChecklistExpandTrigger] = useState(0);
 
   const [openSections, setOpenSections] = useState({
     "general-data": false,
     checklist: false,
-    "nc-register": false,
     outcome: false,
     conclusions: false,
     close: false,
@@ -158,14 +114,16 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   });
 
   // Stato per gestire quali sotto-sezioni sono aperte.
-  // Le sottosezioni standard sono generate dinamicamente da STANDARDS_CONFIG.
+  // Le sottosezioni standard sono generate dinamicamente da STANDARDS_REGISTRY
+  // (ADR-009 Fase 1): aggiungere un nuovo standard al registro popola in
+  // automatico la mappa qui sotto.
   const [openSubSections, setOpenSubSections] = useState(() => ({
     "general-data-form": false,
     objective: false,
     "pending-issues": false,
     "cert-findings": false,
     "custom-checklist": false,
-    ...Object.fromEntries(STANDARDS_CONFIG.map(({ subsId }) => [subsId, false])),
+    ...Object.fromEntries(STANDARDS_LIST.map(({ subsId }) => [subsId, false])),
   }));
 
   const toggleSection = (sectionId) => {
@@ -233,31 +191,58 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   /**
    * Deep-link: apre la sezione checklist e la sottosezione dello standard
    * che contiene section_code, poi scrolla alla domanda tramite id DOM.
+   *
+   * Identifica lo standard cercando, dentro il registry, una entry il cui
+   * `key` o uno dei `codes` sia contenuto come substring nel `sectionCode`
+   * (es. "ISO_9001_clause4" → ISO_9001). Pattern scalabile: aggiungere uno
+   * standard al registry lo rende automaticamente deep-linkabile.
    */
   const handleGoToQuestion = useCallback((sectionCode, questionId) => {
     if (!sectionCode) return;
-    const lower = sectionCode.toLowerCase();
+    const upper = sectionCode.toUpperCase();
 
-    const stdEntry = STANDARDS_CONFIG.find(({ key }) => {
-      if (key === 'ISO_9001'   && lower.includes('9001')) return true;
-      if (key === 'ISO_14001'  && lower.includes('14001')) return true;
-      if (key === 'ISO_45001'  && lower.includes('45001')) return true;
-      if (key === 'ISO_3834_2' && (lower.includes('3834') || lower.includes('rdp'))) return true;
-      return false;
-    });
+    const stdEntry =
+      STANDARDS_LIST.find(({ key, codes }) => {
+        if (upper.includes(key.toUpperCase())) return true;
+        return codes.some((code) => upper.includes(code.toUpperCase()));
+      }) ?? null;
 
+    // Apre la sezione Checklist
     setOpenSections(prev => ({ ...prev, checklist: true }));
+
     if (stdEntry) {
       setOpenSubSections(prev => ({ ...prev, [stdEntry.subsId]: true }));
+    } else if (/clause\d+/i.test(sectionCode)) {
+      const hlsSubsIds = STANDARDS_LIST
+        .filter(({ kind }) => kind === 'iso_hls')
+        .map(({ subsId }) => subsId);
+      setOpenSubSections(prev => {
+        const next = { ...prev };
+        hlsSubsIds.forEach(id => { next[id] = true; });
+        return next;
+      });
     }
 
+    // Espande le clausole interne a ChecklistModule (indispensabile per trovare l'elemento DOM)
+    setChecklistExpandTrigger(prev => prev + 1);
+
     if (questionId) {
+      // 600ms: accordions a due livelli (sezione + sottosezione + clausole) hanno tempo di renderizzare
       setTimeout(() => {
         const el = document.getElementById(`question-${questionId}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('sgq-guided-highlight');
+        setTimeout(() => el.classList.remove('sgq-guided-highlight'), 1800);
+      }, 600);
+    } else {
+      // Nessun questionId: scrolla alla sezione checklist
+      setTimeout(() => {
+        const sec = document.getElementById('sgq-section-checklist');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
     }
-  }, []); // STANDARDS_CONFIG, setOpenSections, setOpenSubSections sono stabili (React setter)
+  }, []); // STANDARDS_LIST e setter React sono stabili
 
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {
@@ -342,11 +327,18 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   // Verifica quali standard sono selezionati
   const selectedStandards = currentAudit.metadata.selectedStandards || [];
 
-  // Calcola quali standard hanno già risposte nella checklist locale
-  // (usato da GeneralDataSection per bloccare la deselezione e proteggere i dati)
+  // Blocca la deselezione solo se almeno una domanda ha ricevuto una valutazione.
+  // Clausole vuote o con sole domande NOT_ANSWERED non contano come "dati".
   const standardsWithData = Object.entries(currentAudit.checklist || {})
-    .filter(([, data]) => data && Object.keys(data).length > 0)
-    .map(([key]) => key); // es. ["ISO_9001", "ISO_14001"]
+    .filter(([, normData]) =>
+      normData &&
+      Object.values(normData).some((clause) =>
+        clause?.questions?.some(
+          (q) => q.status && q.status !== "NOT_ANSWERED"
+        )
+      )
+    )
+    .map(([key]) => key);
 
   return (
     <div className="audit-accordion-layout">
@@ -659,7 +651,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
           {openSections["checklist"] && (
             <div className="accordion-content">
-              {/* Sezioni checklist generate dinamicamente da STANDARDS_CONFIG */}
+              {/* Sezioni checklist generate dinamicamente da STANDARDS_REGISTRY (ADR-009 Fase 1) */}
               {/* Checklist personalizzata (Phase 6) */}
               {(currentAudit?.metadata?.customChecklistId || currentAudit?.custom_checklist_id) && (
                 <div id="sgq-subsection-custom-checklist" className="accordion-subsection standard-section custom-checklist-section">
@@ -683,7 +675,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 </div>
               )}
 
-              {STANDARDS_CONFIG.map(({ key, codes, label, icon, subsId }) => {
+              {STANDARDS_LIST.map(({ key, codes, label, icon, subsId }) => {
                 const isSelected = selectedStandards.some((s) => codes.includes(s));
                 if (!isSelected) return null;
                 return (
@@ -724,27 +716,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
           )}
         </div>
 
-        {/* ==================== REGISTRO NC (NonConformitiesManager) ==================== */}
-        <div className="accordion-section">
-          <button
-            className={`accordion-header ${openSections["nc-register"] ? "open" : ""}`}
-            onClick={() => toggleSection("nc-register")}
-          >
-            <span className="section-icon">📋</span>
-            <span className="section-arrow">
-              {openSections["nc-register"] ? "▼" : "▶"}
-            </span>
-            <span className="section-title">Registro Non Conformità</span>
-          </button>
-
-          {openSections["nc-register"] && (
-            <div className="accordion-content">
-              <NonConformitiesManager readOnly={isReadOnly} />
-              <button className="accordion-collapse-btn" onClick={() => toggleSection("nc-register")}>▲ Chiudi sezione</button>
-            </div>
-          )}
-        </div>
-
         {/* ==================== SEZIONE 11: ESITO DELL'AUDIT (metriche NC/OSS/OM) ==================== */}
         <div className="accordion-section">
           <button
@@ -767,6 +738,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={false}
                 readOnly={isReadOnly}
+                selectedStandards={selectedStandards}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("outcome")}>▲ Chiudi sezione 11</button>
             </div>
@@ -795,6 +767,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 onUpdate={handleAuditOutcomeUpdate}
                 showConclusions={true}
                 readOnly={isReadOnly}
+                selectedStandards={selectedStandards}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("conclusions")}>▲ Chiudi sezione 12</button>
             </div>

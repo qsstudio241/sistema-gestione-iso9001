@@ -23,7 +23,7 @@ async function listAuditorOrgs(req, res) {
             // — serve per assegnare correttamente gli auditor cross-tenant dalla UI
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
-                       o.organization_name
+                       o.organization_name, o.licensed_modules
                 FROM auditor_orgs ao
                 INNER JOIN organizations o ON ao.organization_id = o.organization_id
                 ORDER BY o.organization_name, ao.name
@@ -32,7 +32,7 @@ async function listAuditorOrgs(req, res) {
             // Admin org (senza studio): vede solo i studi del proprio tenant
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
-                       o.organization_name
+                       o.organization_name, o.licensed_modules
                 FROM auditor_orgs ao
                 INNER JOIN organizations o ON ao.organization_id = o.organization_id
                 WHERE ao.organization_id = @organization_id
@@ -41,7 +41,7 @@ async function listAuditorOrgs(req, res) {
         } else if (auditor_org_id) {
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
-                       o.organization_name
+                       o.organization_name, o.licensed_modules
                 FROM auditor_orgs ao
                 INNER JOIN organizations o ON ao.organization_id = o.organization_id
                 WHERE ao.id = @auditor_org_id

@@ -44,6 +44,9 @@ yarn-error.log*
 .parcel-cache/
 .vite/
 
+# Playwright MCP cloud agent (snapshot/console log temporanei delle sessioni)
+.playwright-mcp/
+
 # Testing
 coverage/
 

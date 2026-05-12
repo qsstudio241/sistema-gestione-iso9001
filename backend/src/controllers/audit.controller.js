@@ -1232,7 +1232,7 @@ async function getPendingIssues(req, res) {
                 SELECT ar.response_id, ar.question_id, ar.conformity_status
                 FROM audit_responses ar
                 WHERE ar.audit_id = @source_audit_id
-                  AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+                  AND ar.conformity_status IN ('NC', 'OSS', 'OM')
             ) AS src
             ON tgt.source_response_id = src.response_id
                AND tgt.target_audit_id = @target_audit_id
@@ -1243,7 +1243,23 @@ async function getPendingIssues(req, res) {
                         'open', src.conformity_status, @organization_id);
         `, { source_audit_id, target_audit_id, organization_id });
 
-        // Step 4: Leggi tutti i pending di questo target audit
+        // Step 3b: Collega nc_id dal modulo NC se push già eseguito per il source audit.
+        // Necessario perché il push avviene prima della creazione dei pending (lazy-init).
+        await query(`
+            UPDATE pi
+            SET pi.nc_id = nc.nc_id, pi.updated_at = GETDATE()
+            FROM [dbo].[pending_issues] pi
+            INNER JOIN [dbo].[audit_responses] ar ON ar.response_id = pi.source_response_id
+            INNER JOIN [dbo].[non_conformities] nc
+                ON nc.source_question_id = ar.question_id
+               AND nc.audit_id = @source_audit_id
+            WHERE pi.target_audit_id = @target_audit_id
+              AND pi.nc_id IS NULL
+        `, { source_audit_id, target_audit_id });
+
+        // Step 4: Leggi tutti i pending di questo target audit + (se presente) stato corrente NC
+        // dal modulo NC organizzativo. Permette al re-audit di leggere automaticamente lo stato di
+        // risoluzione gestito nel modulo NC senza richiedere data entry duplicata.
         const pendingIssuesResult = await query(`
             SELECT
                 pi.issue_id,
@@ -1255,6 +1271,12 @@ async function getPendingIssues(req, res) {
                 pi.original_status,
                 pi.resolution_notes,
                 pi.follow_up_notes,
+                pi.nc_id,
+                nc.nc_number,
+                nc.status        AS nc_status,
+                nc.severity      AS nc_severity,
+                nc.corrective_action AS nc_corrective_action,
+                nc.verification_notes AS nc_verification_notes,
                 pi.created_at,
                 pi.updated_at,
                 ar.conformity_status,
@@ -1262,8 +1284,9 @@ async function getPendingIssues(req, res) {
                 cq.question_text,
                 cq.section_code
             FROM pending_issues pi
-            LEFT JOIN audit_responses  ar ON pi.source_response_id = ar.response_id
+            LEFT JOIN audit_responses  ar  ON pi.source_response_id = ar.response_id
             LEFT JOIN checklist_questions cq ON pi.question_id      = cq.question_id
+            LEFT JOIN non_conformities nc  ON pi.nc_id              = nc.nc_id
             WHERE pi.target_audit_id = @target_audit_id
               AND pi.organization_id = @organization_id
             ORDER BY pi.original_status, cq.section_code, pi.issue_id

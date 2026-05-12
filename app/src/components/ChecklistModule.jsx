@@ -586,6 +586,14 @@ function ClauseAccordion({
             />
           </div>
         </div>
+        <button
+          type="button"
+          className="clause-collapse-btn"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          {isExpanded ? "▲" : "▼"}
+        </button>
       </div>
 
       {isExpanded && (

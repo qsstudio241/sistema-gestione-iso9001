@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from "react";
 import { fetchStandards } from "../services/standardsService";
+import { getStandardByCode } from "../data/standardsRegistry";
+import AutoTextarea from "./AutoTextarea";
 import "./GeneralDataSection.css";
 
 // Fallback standard se API non disponibile
@@ -142,15 +144,18 @@ function GeneralDataSection({
           ) : (
             <div className="standards-grid">
               {availableStandards.map((standard) => {
-                // Normalizza verso forma canonica senza anno (es. "ISO_9001_2015" → "ISO_9001")
-                // per essere coerente con selectedStandards che usa la forma corta
                 const stdId = NORMALIZE_STD[standard.standard_code] || standard.standard_code || standard.id;
                 const hasData = standardsWithData.includes(stdId);
+                // Usa il kind del registry per determinare il colore — ignora il category dell'API
+                // che può essere errato per ISO 3834 e RDP
+                const registryEntry = getStandardByCode(stdId);
+                const kindToCategory = { iso_hls: standard.category || "quality", iso_process: "process", rdp: "rdp" };
+                const categoryClass = kindToCategory[registryEntry?.kind] ?? (standard.category || "quality");
                 return (
                   <label
                     key={stdId}
-                    className={`standard-checkbox category-${standard.category}${hasData ? " has-data" : ""}`}
-                    title={hasData ? `${standard.standard_name}: impossibile deselezionare, esistono già risposte nella checklist` : ""}
+                    className={`standard-checkbox category-${categoryClass}${hasData ? " has-data" : ""}`}
+                    title={hasData ? `Impossibile deselezionare: esistono già risposte nella checklist` : ""}
                   >
                     <input
                       type="checkbox"
@@ -164,16 +169,9 @@ function GeneralDataSection({
                         onStandardsUpdate(updated);
                       }}
                     />
-                    <div className="standard-info">
-                      <span className="standard-label">
-                        {standard.standard_name || standard.label}
-                      </span>
-                      <span
-                        className={`standard-description category-badge-${standard.category}`}
-                      >
-                        {standard.description}
-                      </span>
-                    </div>
+                    <span className="standard-label">
+                      {getStandardByCode(stdId)?.label || `${standard.standard_name}${standard.description ? ` — ${standard.description}` : ""}`}
+                    </span>
                   </label>
                 );
               })}
@@ -184,10 +182,10 @@ function GeneralDataSection({
         {/* Oggetto */}
         <div className="form-field">
           <label className="field-label">Oggetto</label>
-          <input
+          <AutoTextarea
             id="field-auditObject"
-            type="text"
-            className="field-input"
+            className="field-textarea"
+            rows={1}
             value={formData.auditObject}
             onChange={(e) => handleChange("auditObject", e.target.value)}
             placeholder="Es: Audit di Verifica ispettiva interna RP"
@@ -198,13 +196,12 @@ function GeneralDataSection({
         {/* Campo Applicazione */}
         <div className="form-field">
           <label className="field-label">Campo Applicazione</label>
-          <textarea
+          <AutoTextarea
             id="field-scope"
             className="field-textarea"
-            rows={3}
             value={formData.scope}
             onChange={(e) => handleChange("scope", e.target.value)}
-            placeholder="Es: Sistema di Gestione per la Qualità RP: Contesto, Pianificazione, Supporto..."
+            placeholder="Es: Sistema di Gestione per la Qualità — Contesto, Pianificazione, Supporto..."
             disabled={readOnly}
           />
         </div>
@@ -278,12 +275,12 @@ function GeneralDataSection({
         {/* Processi/Funzioni */}
         <div className="form-field">
           <label className="field-label">Processi/Funzioni</label>
-          <input
-            type="text"
-            className="field-input"
+          <AutoTextarea
+            className="field-textarea"
+            rows={1}
             value={formData.processes}
             onChange={(e) => handleChange("processes", e.target.value)}
-            placeholder="Es: vari"
+            placeholder="Es: Progettazione, Produzione, Qualità..."
             disabled={readOnly}
           />
         </div>

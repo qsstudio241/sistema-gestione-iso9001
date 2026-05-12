@@ -190,6 +190,27 @@
   color: #5b21b6;
 }
 
+/* ==================== DETTAGLIO PER NORMA (multi-standard) ==================== */
+
+.findings-per-standard {
+  margin-top: 4px;
+}
+
+.findings-per-standard__label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  padding-left: 2px;
+}
+
+.findings-per-standard .findings-metrics-compact {
+  margin-bottom: 8px;
+}
+
 /* ==================== FINDINGS LEGEND ==================== */
 
 .findings-legend {

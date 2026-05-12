@@ -17,29 +17,91 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
-### Sessione 11 maggio 2026 — Fix sync-queue storm: deduplicazione save_responses / update_audit
+### Sessione 10 maggio 2026 (sera) — Integrazione modulo NC con audit (push licenza-aware + undo 10s)
 
-**Branch**: `cursor/fix-sync-queue-dedup-storm-6ad0`  
-**Sintomo segnalato**: Console Eruda su mobile Camellini mostrava 6+ warning `[SYNC] Audit assente sul server (404 AUDIT_NOT_FOUND): rimozione item obsoleto save_responses (UUID)`.
+**Branch / commit**: `cursor/adr009-fase1-registro-standard-52c5` → commit `732f45e` (push integrazione NC) e `57886eb` (fix conclusioni Word per-norma).
+**Migration**: `052_nc_audit_integration.sql` applicata in produzione (10/05/2026 22:14 UTC). DB SQL Server localhost.
+**Deploy backend**: `nc.controller.js`, `nc.routes.js`, `audit.controller.js` su VPS, restart `sgq-backend.service` PID 71141, smoke `/health` 200 OK.
 
-**Diagnosi** (verificata su DB e log VPS):
-- Audit QS-260511-01 (audit_id 35192, UUID `79697DAD-...`) correttamente sul server con 6 risposte salvate. **Nessuna perdita di dati**.
-- I warning 404 erano per item `save_responses` di UUID **fantasma** (sessioni precedenti del device mobile), rimossi correttamente dalla coda dal meccanismo self-healing esistente.
-- **Root cause reale**: il log VPS mostrava storm di ~40 chiamate `POST /api/v1/audits/sync` in 10 secondi e ~287 chiamate `POST .../responses/bulk` in 3 minuti per lo stesso audit. La coda IndexedDB accumulava un item per ogni modifica offline; al reconnect sparavano tutte in sequenza.
+**Workflow concordato con committente (ISO 9001:2015 §10.2):**
+- **Senza licenza modulo NC**: NC e OSS rilevate in audit vengono presentate al re-audit successivo come `pending_issues` (flusso legacy, sempre attivo).
+- **Con licenza modulo NC**: pulsante "Trasferisci NC e OSS al modulo NC" nel pannello "🔒 Chiusura Audit". Push idempotente (skip per coppia `audit_id+question_id` già presente). Toast con countdown **10 secondi** e pulsante "↩ Annulla". Dopo 10s la NC è definitiva nel registro, eliminabile solo dal modulo NC.
+- **Re-audit con licenza NC**: i `pending_issues` con `nc_id` mostrano stato corrente dal modulo NC (Aperta / In corso / Risolta / Verificata / Chiusa) + azione correttiva intrapresa + verifica efficacia. UI suggerisce "✓ NC risolta dal modulo → conferma 'Risolto' qui sotto".
+- **Norma OSS → NC**: una OSS non gestita entro l'audit successivo deve essere rivalutata come NC (regola normativa). Implementato come `source_type='reaudit_persists'` per tracciare l'escalation.
 
-**Fix applicato** (`app/src/services/syncService.js`):
-- Nuovo metodo `_deduplicateQueueItem(type, payloadKey, payloadValue)` — usa una singola transazione `readwrite` IDB: `getAll` + `delete` per tutti gli item non-stalled dello stesso tipo+auditId.
-- `enqueue()` chiama `_deduplicateQueueItem` **prima** di aggiungere il nuovo item per i tipi coalescenti: `save_responses` (key: `auditId`), `save_custom_checklist_responses` (key: `auditId`), `update_audit` (key: `audit_uuid`).
-- Tipi **non** deduplicati (ogni operazione è atomica): `create_audit`, `delete_audit`, `send_audit_event`, `upload_attachment`, `delete_attachment`.
-- Confronto UUID **case-insensitive** (`.toLowerCase()`) per coprire mismatch upper/lower tra server e device.
-- **10 test L1** in `syncService.dedup.test.js` — tutti PASS.
+**Implementazione tecnica:**
 
-**Lezione appresa (11/05/2026)**:
-- **Pattern "accumula tutto, manda tutto"** è il default della sync queue: ogni edit utente = 1 item. Su sessioni offline lunghe (ore) = centinaia di item identici. La coalescenza (replace invece di append) per i tipi idempotenti è la soluzione minima e sicura.
-- **Log VPS sono essenziali**: il logger Winston va su `journalctl` (non su `app.log` se girato come systemd). Usare `sudo journalctl -u sgq-backend -o cat | sed 's/\x1b\[[0-9;]*m//g'` per i log leggibili.
-- **404 AUDIT_NOT_FOUND in console mobile**: warning attesi e innocui quando il device ha code item di audit non più presenti sul server. Non confondere con errori reali — verificare sempre se `payload.auditId` corrisponde a un UUID esistente sul server prima di intervenire.
-- **`kQuotaBytes quota exceeded` = IDB piena**: causato dalla combinazione di (a) 287+ `save_responses` in coda (risolto con dedup) + (b) `saveAudit` che rigettava invece di fare recovery. Pattern fix: `_recoverFromQuota()` (svuota allegati poi audit vecchi) + retry, infine graceful resolve se ancora piena. Stesso pattern in `enqueue()` per `store.add()`.
-- **`parseInt('79697DAD-...') = 79697` (non NaN!)**: `parseInt` legge solo i digit iniziali e si ferma. Vecchi UUID iniziavano con lettere hex → parseInt = NaN → funzionavano. UUID `79697DAD-...` inizia con "79697" → parseInt = 79697 → branch numerico → lookup audit_id=79697 → 404 → note non salvate. **Fix sempre**: usare `Number(auditId)` + `Number.isInteger()` nei controller che distinguono UUID/numericId.
+*DB (migration 052)*:
+- `pending_issues.nc_id INT NULL FK → non_conformities`
+- `non_conformities.source_type` (`audit_nc`/`audit_oss`/`manual`/`reaudit_persists`), `source_pending_issue_id`, `source_question_id` (FK)
+- Indice univoco `IX_nc_audit_question_unique` su `(audit_id, source_question_id)` → idempotenza push
+- Tutte le FK con `ON DELETE NO ACTION` per evitare cascade cycle (l'esperienza ADR-009 sui bug Camellini ha mostrato che SET NULL/CASCADE su SQL Server falliscono spesso, vedi rule sgq-sysadmin)
+
+*Backend (nuovi endpoint, richiedono licenza `nc`)*:
+- `POST /api/v1/audits/:auditRef/push-to-nc-register` → bulk insert NC con `nc_number` incrementale (`NC-{audit_number}-{seq}`), severity `minor` per NC e `observation` per OSS, link bidirezionale `pending_issues.nc_id`. Dedup via indice univoco. Aggiorna `audits.non_conformities_count` (escluse osservazioni).
+- `DELETE /api/v1/audits/:auditRef/push-to-nc-register` → undo: elimina solo NC con `status='open'` e senza `nc_actions` (tutela: una volta presa in carico, va rimossa dal modulo).
+- `GET /audits/:id/pending-issues` esteso: join con `non_conformities` per restituire `nc_id`, `nc_number`, `nc_status`, `nc_severity`, `nc_corrective_action`, `nc_verification_notes`.
+
+*Frontend*:
+- `AuditClosePanel.jsx`: nuova sezione "📋 Trasferimento al modulo Non Conformità" (visibile se `hasLicensedModule('nc')` e ci sono NC/OSS), con countdown undo gestito via `useRef` + `useEffect` cleanup. Sezione informativa alternativa per organizzazioni senza licenza ("le NC saranno presentate come rilievi pendenti nel prossimo audit").
+- `PendingIssuesCascade.jsx`: badge stato NC dal modulo organizzativo se `nc_id` presente. Suggerimento UI quando `nc_status IN ('resolved','verified','closed')` e issue ancora `open`.
+- `apiService.js`: nuovi metodi `pushAuditToNcRegister(auditRef)` e `undoPushAuditToNcRegister(auditRef)`.
+- **Bug fix latente**: in `NonConformitiesManager.jsx` la prop `onRegisterToOrg` era condizionata a `hasLicensedModule` (funzione truthy senza chiamata!) → corretto a `hasLicensedModule("nc")`. Il gate effettivo era già garantito dal backend (403 senza licenza), ma la UI ora è coerente.
+
+**Pattern operativo confermato — esecuzione migrazione DB da Cloud Agent (NUOVO consolidato):**
+1. `pscp` upload script `.sql` + script `.js` (con dotenv autoload) su `/tmp/` del VPS
+2. `plink` esegue `node /tmp/run-migration-NNN-vps.js` con NODE_ENV implicito
+3. Lo script Node deve dichiarare gli statement esplicitamente in array (NO split su `GO` — il regex falliva con CRLF Windows + line endings misti)
+4. Lo script deve caricare `.env` esplicitamente: `require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' })` con fallback parser manuale per compatibilità
+5. Verifica: la query finale stampa le colonne aggiunte come prova di successo
+
+Tutto questo è ora encoded in `backend/scripts/run-migration-052-vps.js` come template di riferimento per future migrazioni.
+
+**Pendenti / verifiche committente (smoke L3)**:
+1. Aprire audit con licenza NC attiva, rilevare NC/OSS, andare a Chiusura Audit → verificare visibilità sezione push.
+2. Cliccare "Trasferisci NC e OSS al modulo NC" → verificare toast countdown 10s.
+3. Annullare entro 10s → verificare che le NC scompaiano dal `/nc`.
+4. Riprovare e attendere 10s → verificare che le NC siano definitive nel `/nc`.
+5. Aprire audit successivo dello stesso cliente → verificare `PendingIssuesCascade` mostra badge stato NC e azione correttiva.
+6. Disattivare licenza NC su una org di test → verificare che il pulsante push scompaia e appaia nota informativa.
+
+**Architettura abilitata**:
+- Custom checklist con `has_outcome_buttons=true` produce NC/OSS che entrano nel push (calcolo unificato `calculateFindingsMetrics + calculateCustomFindingsMetrics`)
+- Multi-standard: il push lavora a livello di `audit_responses` indipendentemente dal numero di norme attive
+- Scalabile a futuri `document_type` (ADR-009): RDP/SAL non hanno checklist NC/OSS → il pulsante non si mostra naturalmente
+
+---
+
+### Sessione 10 maggio 2026 — ADR-009 Fase 1: registro standard + metriche per-norma
+
+**Branch / PR**: `cursor/adr009-fase1-registro-standard-52c5` → PR #40 (draft).
+**Tipo intervento**: refactor frontend-only, zero backend, zero migrazioni DB.
+
+**Cosa è stato consegnato (DoD ADR-009 Fase 1, tutti i punti rispettati):**
+- ✅ Source of Truth standard centralizzata in **`app/src/data/standardsRegistry.js`** (`STANDARDS_REGISTRY` + helper `getStandardByKey/Code`, `getSelectedStandardEntries`, `isAllHls`, mappe derivate `STANDARDS_LIST` / `STANDARD_INIT_MAP` / `CODE_TO_KEY` / `STANDARD_TO_SUBSID`).
+- ✅ `STANDARDS_CONFIG` locale rimosso da `AuditAccordionLayout.jsx` (~50 righe in meno) + duplicato `STANDARD_TO_SUBSID` rimosso da `AuditClosePanel.jsx` (era già marcato "speculare a STANDARDS_CONFIG" — ora SoT unica).
+- ✅ Nuovo componente riusabile **`MetricsByStandardChip.jsx`** (+ `.css`): mostra "9001: 2 NC · 14001: 1 NC · totale 3 NC" nell'header audit (`.audit-meta`). Mono-standard mostra solo "N NC". Opzioni `includeOss`/`includeOm` per Fase 2.
+- ✅ `metricsCalculator.js` esteso con **`calculateByStandardMetrics()`**; `updateAuditMetrics` popola `metrics.byStandard[normKey]` SENZA toccare i campi legacy (totalNC/observationsNC/totalQuestions/emergingFindings restano).
+- ✅ Test L1 nuovi: 31/31 PASS (`standardsRegistry.test.js` 19, `metricsByStandard.test.js` 6, `MetricsByStandardChip.test.jsx` 6). Suite completa post-refactor: 153 PASS / 3 fail (i 3 fail sono `wordExport.*` pre-esistenti su main, fuori scope Fase 1, zero regressioni introdotte).
+- ✅ Build Vite pulita (1.76s, 0 warning).
+
+**Test di scalabilità (criterio di accettazione ADR-009)**: aggiungere ISO 27001 al registry richiederà SOLO 1 INSERT DB + 1 riga in `STANDARDS_REGISTRY` + (opz.) template Word. Coperto da test `MetricsByStandardChip.test.jsx` "aggiunge ISO 45001 al registry → il chip lo mostra senza modifiche al componente" + `standardsRegistry.test.js` (mappe derivate sempre coerenti con SoT).
+
+**Scelte tecniche autonome (decisione lead, no escalation utente):**
+- **Pulled in `AuditClosePanel.jsx`**: oltre al perimetro Fase 1 dichiarato, ho rimosso anche la duplicazione `STANDARD_TO_SUBSID` locale per evitare divergenze future con il registry (era già marcato come duplicato nel codice).
+- **`handleGoToQuestion` deep-link generico**: sostituito match hardcoded `9001/14001/45001/3834` con substring-match sui `codes` del registry — pattern scalabile per qualsiasi nuova norma aggiunta.
+- **Chip nel `.audit-meta` dell'header**: l'audit non ha una sidebar laterale dedicata; l'header sticky è la "sidebar" di fatto. Posizionato accanto al badge status (allineamento naturale con metadata audit).
+- **`metrics.byStandard` additivo**: nessun tocco ai campi legacy → gli audit pre-ADR-009 in produzione continuano a funzionare senza modifiche (retrocompatibilità totale).
+
+**Architettura abilitata per Fase 2 (sezione 11 + close panel per-norma + flag SGI integrato):**
+- Helper `isAllHls(selectedStandards)` già pronto nel registry per validare il flag `isIntegratedSystem`.
+- `metrics.byStandard[key]` già disponibile per i tab conclusioni per-norma.
+- `STANDARDS_REGISTRY[key].templateExport` già dichiarato per Fase 3 (export Word per-norma).
+
+**Pendenti**: nessuno per Fase 1. Prossimo step: stabilità conclamata 24-48h post-merge → Fase 2 (`AuditOutcomeSection` per-norma + flag SGI).
+
+**Lezione imparata — Rules of Hooks (commit `ce0e15d`)**:
+Errore "Rendered more hooks than during the previous render" emerso al primo apri-audit dopo il merge in dev. Causa: `useMemo(calculateByStandardMetrics)` inserito DOPO `if (!currentAudit) return` → il numero di hook chiamati cambiava fra render quando `currentAudit` passava da null a oggetto. **Regola da rispettare sempre in `AuditAccordionLayout` (e in qualsiasi componente con guard precoce)**: TUTTI gli hook (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, custom) devono stare PRIMA di qualsiasi `if/return` condizionale. In questo file il guard è `if (!currentAudit) return <NoAudit/>` — dopo il commit `ce0e15d` ci sono 10 hook tutti raggruppati ai primi ~115 righe, prima del guard a riga ~303. Quando aggiungi un nuovo hook in futuro, mettilo lì.
 
 ---
 

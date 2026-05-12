@@ -19,6 +19,7 @@
 import React, { useState } from "react";
 import AttachmentSection from "./AttachmentSection";
 import AttachmentPreview from "./AttachmentPreview";
+import AutoTextarea from "./AutoTextarea";
 import "./ChecklistModule.css";
 
 const STATUS_BUTTONS = [
@@ -90,11 +91,10 @@ export function QuestionCard({
       <div className="question-details">
         <div className="question-field">
           <label className="field-label">📝 Note / Osservazioni</label>
-          <textarea
+          <AutoTextarea
             value={question.notes || ""}
             onChange={(e) => onNotesChange?.(e.target.value)}
             placeholder="Inserisci osservazioni, note e dettagli della verifica..."
-            rows={3}
             className="notes-textarea"
             disabled={readOnly}
           />
