@@ -401,28 +401,28 @@
 
 /* Pulsante collasso/espansione clausola — piccolo, discreto, sticky insieme all'header */
 .clause-collapse-btn {
-  width: 28px;
-  height: 28px;
-  border: 2px solid #007bff;
-  background: #007bff;
-  opacity: 1;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  opacity: 0.75;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: bold;
   line-height: 1;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 4px;
   flex-shrink: 0;
-  color: white;
-  transition: background 0.2s, border-color 0.2s;
+  color: #444;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
 }
 .clause-collapse-btn:hover {
-  background: #0056b3;
-  border-color: #0056b3;
-  color: white;
+  opacity: 1;
+  color: #111;
+  background: rgba(0, 0, 0, 0.08);
 }
 .clause-accordion.expanded .clause-collapse-btn:hover {
   background: rgba(255, 255, 255, 0.2);
