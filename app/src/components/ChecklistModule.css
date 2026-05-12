@@ -399,6 +399,33 @@
   background: white;
 }
 
+/* Pulsante collasso/espansione clausola — piccolo, discreto, sticky insieme all'header */
+.clause-collapse-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  color: inherit;
+  transition: opacity 0.2s, background 0.2s;
+}
+.clause-collapse-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+.clause-accordion.expanded .clause-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .clause-content {
   padding: 20px;
   background: white;
