@@ -18,6 +18,7 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import AutoTextarea from "./AutoTextarea";
+import "./ChecklistModule.css";
 import "./PendingIssuesCascade.css";
 
 /** Stati NC del modulo organizzativo che indicano risoluzione (suggerimento UI). */
@@ -34,9 +35,10 @@ const NC_STATUS_LABELS = {
 
 /** Config badge per status originale rilievo */
 const ORIGIN_STATUS_CONFIG = {
-  NC:  { label: "Non Conforme",  cssKey: "nc" },
-  OSS: { label: "Osservazione",  cssKey: "oss" },
-  NV:  { label: "Non Valutato", cssKey: "nv" },
+  NC:  { label: "Non Conforme",  cssKey: "nc",  statusBtnClass: "non-compliant" },
+  OSS: { label: "Osservazione",  cssKey: "oss", statusBtnClass: "partial"       },
+  OM:  { label: "Osservazione Minore", cssKey: "om", statusBtnClass: "om"       },
+  NV:  { label: "Non Valutato",  cssKey: "nv",  statusBtnClass: "not-verified"  },
 };
 
 /** Config pulsanti di risoluzione */
@@ -291,7 +293,11 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                     <div className="issue-title-section">
                       <div className="issue-title-row">
                         {cfg && (
-                          <span className={`issue-status-badge badge-${cfg.cssKey}`}>
+                          <span
+                            className={`status-btn ${cfg.statusBtnClass} active`}
+                            style={{ cursor: "default", pointerEvents: "none" }}
+                            aria-label={cfg.label}
+                          >
                             {issue.original_status}
                           </span>
                         )}
