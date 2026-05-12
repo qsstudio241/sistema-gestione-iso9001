@@ -884,7 +884,6 @@ async function pushAuditToNcRegister(req, res) {
             INNER JOIN checklist_questions cq ON ar.question_id = cq.question_id
             WHERE ar.audit_id = @audit_id
               AND ar.conformity_status IN ('NC', 'OSS')
-              AND ar.is_deleted = 0
             ORDER BY cq.section_code, ar.question_id
         `, { audit_id });
 
