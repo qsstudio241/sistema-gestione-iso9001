@@ -871,7 +871,8 @@ async function pushAuditToNcRegister(req, res) {
         const audit_id = auditRow.recordset[0].audit_id;
         const audit_number = auditRow.recordset[0].audit_number;
 
-        // Prendi tutte le risposte NC/OSS dell'audit, con dettaglio domanda
+        // Prendi tutte le risposte NC/OSS dell'audit con standard_id per sezione
+        // (JOIN su checklist_sections per rispettare la FK composita section_code+standard_id)
         const findingsRes = await query(`
             SELECT
                 ar.response_id,
@@ -879,21 +880,17 @@ async function pushAuditToNcRegister(req, res) {
                 ar.conformity_status,
                 ar.notes,
                 cq.section_code,
-                cq.question_text
+                cq.question_text,
+                cs.standard_id AS finding_standard_id
             FROM audit_responses ar
             INNER JOIN checklist_questions cq ON ar.question_id = cq.question_id
+            INNER JOIN checklist_sections cs ON cs.section_code = cq.section_code
             WHERE ar.audit_id = @audit_id
               AND ar.conformity_status IN ('NC', 'OSS')
             ORDER BY cq.section_code, ar.question_id
         `, { audit_id });
 
         const findings = findingsRes.recordset || [];
-
-        // Standard di riferimento (primo della junction)
-        const standardRes = await query(`
-            SELECT TOP 1 standard_id FROM audit_standards WHERE audit_id = @audit_id
-        `, { audit_id });
-        const standard_id = standardRes.recordset?.[0]?.standard_id || null;
 
         // Recupera nc_id gia esistenti per questo audit (idempotenza)
         const existingNcRes = await query(`
@@ -954,9 +951,9 @@ async function pushAuditToNcRegister(req, res) {
                         )
                     `, {
                         audit_id,
-                        standard_id,
+                        standard_id: f.finding_standard_id,
                         nc_number,
-                        section_code: f.section_code || '0.0',
+                        section_code: f.section_code,
                         description: (f.notes && String(f.notes).trim()) || `Rilievo ${f.conformity_status} su domanda "${(f.question_text || '').slice(0, 200)}"`,
                         severity,
                         source_type,
