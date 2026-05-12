@@ -587,11 +587,11 @@ async function getNonConformitiesStatistics(req, res) {
         const statsResult = await query(`
       SELECT 
         COUNT(*) AS total,
-        SUM(CASE WHEN nc.status = 'open' THEN 1 ELSE 0 END) AS open,
-        SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
-        SUM(CASE WHEN nc.status = 'resolved' THEN 1 ELSE 0 END) AS resolved,
-        SUM(CASE WHEN nc.status = 'verified' THEN 1 ELSE 0 END) AS verified,
-        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed,
+        SUM(CASE WHEN nc.status = 'open' THEN 1 ELSE 0 END) AS count_open,
+        SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS count_in_progress,
+        SUM(CASE WHEN nc.status = 'resolved' THEN 1 ELSE 0 END) AS count_resolved,
+        SUM(CASE WHEN nc.status = 'verified' THEN 1 ELSE 0 END) AS count_verified,
+        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS count_closed,
         SUM(CASE WHEN nc.severity = 'major' THEN 1 ELSE 0 END) AS major,
         SUM(CASE WHEN nc.severity = 'minor' THEN 1 ELSE 0 END) AS minor,
         SUM(CASE WHEN nc.severity = 'observation' THEN 1 ELSE 0 END) AS observations,
