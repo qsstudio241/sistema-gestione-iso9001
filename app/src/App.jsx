@@ -32,6 +32,7 @@ const QualificationsPage = React.lazy(() => import("./pages/QualificationsPage")
 const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
+const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
@@ -117,11 +118,12 @@ function AppContent() {
         />
 
         {/* Moduli SGQ — gating licenza Sprint 8 */}
-        <Route path="/qualifiche" element={<LicensedRoute moduleKey="qualifiche"><QualificationsPage /></LicensedRoute>} />
-        <Route path="/nc"         element={<LicensedRoute moduleKey="nc"><NCPage /></LicensedRoute>} />
-        <Route path="/rischi"     element={<LicensedRoute moduleKey="rischi"><RisksPage /></LicensedRoute>} />
-        <Route path="/reclami"    element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
-        <Route path="/sal"        element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
+        <Route path="/qualifiche"    element={<LicensedRoute moduleKey="qualifiche"><QualificationsPage /></LicensedRoute>} />
+        <Route path="/nc"            element={<LicensedRoute moduleKey="nc"><NCPage /></LicensedRoute>} />
+        <Route path="/rischi"        element={<LicensedRoute moduleKey="rischi"><RisksPage /></LicensedRoute>} />
+        <Route path="/reclami"       element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
+        <Route path="/anagrafiche"   element={<LicensedRoute moduleKey="reclami"><AnagrafichePage /></LicensedRoute>} />
+        <Route path="/sal"           element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><ModuleLocked module="saldatura" /></LicensedRoute>} />
 
