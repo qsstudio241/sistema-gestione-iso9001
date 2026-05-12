@@ -55,13 +55,22 @@ const SECTION_LABELS = {
 
 /**
  * Restituisce l'etichetta leggibile per un section_code.
- * Gestisce sia codici puri ("clause8") sia prefissati ("ISO_9001_clause8").
+ * Gestisce:
+ *  - codici puri: "clause8"
+ *  - codici prefissati: "ISO_9001_clause8"
+ *  - formati numerici dotted: "8.5.6" → estrae il numero principale → "clause8"
  */
 function getSectionLabel(sectionCode) {
   if (!sectionCode) return null;
   const lower = sectionCode.toLowerCase();
   for (const [key, label] of Object.entries(SECTION_LABELS)) {
     if (lower === key || lower.endsWith(`_${key}`)) return label;
+  }
+  // Formato numerico "8.5.6" → estrai numero principale → cerca clauseN
+  const numericMatch = sectionCode.match(/^(\d+)/);
+  if (numericMatch) {
+    const clauseKey = `clause${numericMatch[1]}`;
+    if (SECTION_LABELS[clauseKey]) return SECTION_LABELS[clauseKey];
   }
   return sectionCode;
 }
@@ -283,29 +292,31 @@ function PendingIssuesCascade() {
                             {issue.original_status}
                           </span>
                         )}
-                        {clauseLabel && <span className="issue-clause">{clauseLabel}</span>}
+                        {clauseLabel && (
+                          <span className="question-reference">{clauseLabel}</span>
+                        )}
                         <h4 className="issue-title">{description}</h4>
+                        {/* Pulsante deep-link — inline nell'header, sempre visibile */}
+                        {issue.section_code && (
+                          <button
+                            className="issue-goto-btn"
+                            type="button"
+                            onClick={() =>
+                              window.dispatchEvent(
+                                new CustomEvent("sgq:goto-question", {
+                                  detail: {
+                                    questionId: issue.question_id,
+                                    sectionCode: issue.section_code,
+                                  },
+                                })
+                              )
+                            }
+                            title={`Vai alla clausola ${issue.section_code} nella checklist`}
+                          >
+                            🔍 Vai alla domanda
+                          </button>
+                        )}
                       </div>
-                      {/* Pulsante deep-link domanda */}
-                      {issue.section_code && (
-                        <button
-                          className="issue-goto-btn"
-                          type="button"
-                          onClick={() =>
-                            window.dispatchEvent(
-                              new CustomEvent("sgq:goto-question", {
-                                detail: {
-                                  questionId: issue.question_id,
-                                  sectionCode: issue.section_code,
-                                },
-                              })
-                            )
-                          }
-                          title={`Vai alla clausola ${issue.section_code} nella checklist`}
-                        >
-                          🔍 Vai alla domanda
-                        </button>
-                      )}
                     </div>
                     {/* Badge stato corrente */}
                     {curStatus !== "open" && (

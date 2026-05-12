@@ -330,8 +330,9 @@
   margin: 0;
 }
 
-/* Deep-link pulsante */
+/* Deep-link pulsante — inline nella title-row */
 .issue-goto-btn {
+  flex-shrink: 0;
   background: none;
   border: 1px solid #6366f1;
   border-radius: 4px;
@@ -339,7 +340,7 @@
   cursor: pointer;
   font-size: 0.78rem;
   padding: 2px 8px;
-  margin-top: 4px;
+  margin-left: auto;
   transition: background 0.15s;
 }
 .issue-goto-btn:hover {
