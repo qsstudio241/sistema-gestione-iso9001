@@ -175,6 +175,9 @@
   border-left: 3px solid #9b59b6;
   color: #555;
   line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .issue-notes.issue-notes-empty {
@@ -392,3 +395,19 @@
 .issue-nc-verification strong {
   color: #4a5568;
 }
+
+/* Badge stato NC inline */
+.issue-nc-status-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.82em;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #2d3748;
+}
+.issue-nc-status-badge.nc-badge--open        { background: #fed7d7; color: #c53030; }
+.issue-nc-status-badge.nc-badge--in_progress { background: #feebc8; color: #c05621; }
+.issue-nc-status-badge.nc-badge--resolved    { background: #c6f6d5; color: #276749; }
+.issue-nc-status-badge.nc-badge--verified    { background: #bee3f8; color: #2b6cb0; }
+.issue-nc-status-badge.nc-badge--closed      { background: #e9d8fd; color: #553c9a; }

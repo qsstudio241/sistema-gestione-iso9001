@@ -237,6 +237,16 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }
   }, []); // STANDARDS_LIST e setter React sono stabili
 
+  // Listener evento globale sgq:goto-question (dispatched da PendingIssuesCascade)
+  useEffect(() => {
+    const handler = (e) => {
+      const { questionId, sectionCode } = e.detail || {};
+      handleGoToQuestion(sectionCode, questionId);
+    };
+    window.addEventListener("sgq:goto-question", handler);
+    return () => window.removeEventListener("sgq:goto-question", handler);
+  }, [handleGoToQuestion]);
+
   // Auto-inizializza checklist al caricamento dell'audit per tutti gli standard selezionati
   useEffect(() => {
     if (!currentAudit) return;
@@ -595,7 +605,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
                 {openSubSections["pending-issues"] && (
                   <div className="subsection-content">
-                    <PendingIssuesCascade onGoToQuestion={handleGoToQuestion} />
+                    <PendingIssuesCascade />
                   </div>
                 )}
               </div>

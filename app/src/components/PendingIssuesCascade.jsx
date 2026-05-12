@@ -73,7 +73,7 @@ const RESOLUTION_ACTIONS = [
   { status: "persists",    label: "❌ Persiste",     cls: "btn-persists"    },
 ];
 
-function PendingIssuesCascade({ onGoToQuestion }) {
+function PendingIssuesCascade() {
   const { currentAudit } = useStorage();
   const { hasLicensedModule } = useAuth();
   const hasNcLicense = hasLicensedModule("nc");
@@ -287,11 +287,20 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                         <h4 className="issue-title">{description}</h4>
                       </div>
                       {/* Pulsante deep-link domanda */}
-                      {onGoToQuestion && issue.section_code && (
+                      {issue.section_code && (
                         <button
                           className="issue-goto-btn"
                           type="button"
-                          onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
+                          onClick={() =>
+                            window.dispatchEvent(
+                              new CustomEvent("sgq:goto-question", {
+                                detail: {
+                                  questionId: issue.question_id,
+                                  sectionCode: issue.section_code,
+                                },
+                              })
+                            )
+                          }
                           title={`Vai alla clausola ${issue.section_code} nella checklist`}
                         >
                           🔍 Vai alla domanda
@@ -310,7 +319,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
 
                   {/* Note originali rilievo */}
                   <div className={`issue-notes${!issue.source_notes ? " issue-notes-empty" : ""}`}>
-                    <strong>Note originali:</strong>{" "}
                     {issue.source_notes || <em>Nessuna nota registrata</em>}
                   </div>
 
@@ -319,10 +327,11 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                     <div className={`issue-nc-link ${NC_STATUS_LABELS[issue.nc_status]?.cls || ""}`}>
                       <span className="issue-nc-icon">📋</span>
                       <span className="issue-nc-text">
-                        Gestita nel modulo NC come{" "}
                         <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
-                        {" — stato attuale: "}
-                        <strong>{NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}</strong>
+                        {" — "}
+                        <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
+                          {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
+                        </span>
                       </span>
                       {NC_RESOLVED_STATUSES.has(issue.nc_status) && curStatus === "open" && (
                         <span className="issue-nc-suggest">
