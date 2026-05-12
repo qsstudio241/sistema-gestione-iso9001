@@ -165,10 +165,12 @@ async function saveResponse(req, res) {
             });
         }
 
-        // Verifica ownership audit (ID numerico o UUID)
-        let auditIdNumeric = parseInt(auditId, 10);
+        // Verifica ownership audit (ID numerico o UUID).
+        // BUGFIX: parseInt('79697DAD-...') = 79697 (non NaN!) perché legge i digit iniziali.
+        // Number() restituisce NaN per qualsiasi stringa non-numero puro: comportamento corretto.
+        let auditIdNumeric = Number(auditId);
         let auditStatus;
-        if (isNaN(auditIdNumeric)) {
+        if (isNaN(auditIdNumeric) || !Number.isInteger(auditIdNumeric)) {
             const uuidLookup = await query(`
                 SELECT audit_id, status FROM audits
                 WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0
@@ -362,12 +364,13 @@ async function bulkSaveResponses(req, res) {
             });
         }
 
-        // Lookup audit_id: supporta sia UUID che ID numerico
+        // Lookup audit_id: supporta sia UUID che ID numerico.
+        // BUGFIX: usare Number() non parseInt() — parseInt('79697DAD-...') = 79697 invece di NaN!
         let auditIdNumeric;
         let auditCurrentStatus;
-        const parsedId = parseInt(auditId);
+        const parsedId = Number(auditId);
 
-        if (isNaN(parsedId)) {
+        if (isNaN(parsedId) || !Number.isInteger(parsedId)) {
             // È un UUID stringa → lookup audit_id
             const uuidLookup = await query(`
                 SELECT audit_id, status FROM audits

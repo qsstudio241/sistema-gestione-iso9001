@@ -318,6 +318,30 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
       }
     }
 
+    // Percorso legacy: deselect diretto al server (bypassa sync queue per evitare dedup-override).
+    // Quando la domanda torna a NOT_ANSWERED, extractChecklistResponses la esclude dal bulk
+    // save_responses → il server non verrebbe aggiornato. La chiamata diretta garantisce che
+    // il reset arrivi al server se l'utente è online. In offline, il deselect persiste in IDB
+    // ma al prossimo hydrate il server ripristina il vecchio valore (limitazione nota).
+    if (
+      field === 'status' &&
+      value === null &&
+      import.meta.env.VITE_SYNC_MODE !== 'events' &&
+      auditId
+    ) {
+      const numericQIdForReset = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+        ?.questions?.find((q) => q.id === questionId)?.questionId ?? null;
+      const currentNotesForReset = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+        ?.questions?.find((q) => q.id === questionId)?.notes ?? null;
+      if (numericQIdForReset != null) {
+        apiService.bulkSaveResponses(auditId, [{
+          question_id: numericQIdForReset,
+          conformity_status: null,
+          notes: currentNotesForReset,
+        }]).catch(() => {});
+      }
+    }
+
     updateCurrentAudit((audit) => {
       const updatedAudit = { ...audit };
 
@@ -348,6 +372,10 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
         }
 
         if (field === "status") {
+          // null = deselect (click su pulsante già attivo): equivale a NOT_ANSWERED in-memory
+          if (sanitizedValue === null) {
+            sanitizedValue = 'NOT_ANSWERED';
+          }
           // Verifica che lo status sia valido (supporta nuovo formato + legacy)
           const validStatuses = [
             ...Object.values(CHECKLIST_STATUS), // Legacy: compliant, partial, non_compliant, not_applicable

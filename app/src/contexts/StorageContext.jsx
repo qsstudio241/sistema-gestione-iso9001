@@ -510,7 +510,7 @@ export function StorageProvider({ children, useMockData = false }) {
             mode: "pending_server",
             lockedByName: null,
             message:
-              "Audit non ancora sul server: il lock si attiverà dopo la prima sincronizzazione.",
+              "Primo salvataggio in corso... il lock verrà acquisito automaticamente tra qualche secondo.",
           });
         } else {
           setAuditLock({

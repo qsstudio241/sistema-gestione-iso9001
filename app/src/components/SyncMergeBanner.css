@@ -6,6 +6,12 @@
   animation: sync-merge-slidein 0.25s ease-out;
 }
 
+/* Variante informativa (es. recovery automatico storage) */
+.sync-merge-banner--info {
+  background: linear-gradient(90deg, #1a3a5c 0%, #1e4a72 100%);
+  color: #e3f0ff;
+}
+
 @keyframes sync-merge-slidein {
   from {
     opacity: 0;
