@@ -405,9 +405,10 @@
   height: 24px;
   border: none;
   background: transparent;
-  opacity: 0.5;
+  opacity: 0.75;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: bold;
   line-height: 1;
   padding: 0;
   display: flex;
@@ -415,11 +416,12 @@
   justify-content: center;
   border-radius: 4px;
   flex-shrink: 0;
-  color: inherit;
-  transition: opacity 0.2s, background 0.2s;
+  color: #444;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
 }
 .clause-collapse-btn:hover {
   opacity: 1;
+  color: #111;
   background: rgba(0, 0, 0, 0.08);
 }
 .clause-accordion.expanded .clause-collapse-btn:hover {
