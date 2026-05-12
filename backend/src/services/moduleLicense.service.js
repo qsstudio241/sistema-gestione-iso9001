@@ -17,6 +17,10 @@ const KNOWN_MODULE_KEYS = [
     'sal',
     'saldatura',
     'ai_import',
+    'ai_assist',
+    'ai_norms',
+    'ai_review',
+    'ai_chat',
 ];
 
 const ALL_MODULES_DEFAULT = [...KNOWN_MODULE_KEYS];
@@ -32,6 +36,10 @@ const LABELS_IT = {
     sal: 'SAL — Riesame direzione',
     saldatura: 'Modulo saldatura ISO 3834',
     ai_import: 'Import batch documenti (PDF)',
+    ai_assist: 'AI Assist — suggerimenti compilazione',
+    ai_norms: 'AI Norme — accesso normativo on-demand',
+    ai_review: 'AI Riesame — riesame requisiti assistito',
+    ai_chat: 'AI Chat — assistente conversazionale',
 };
 
 function parseLicensedModulesColumn(raw) {
