@@ -23,7 +23,6 @@ import CustomChecklistAuditView from "./CustomChecklistAuditView";
 import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
 import AuditClosePanel from "./AuditClosePanel";
-import NonConformitiesManager from "./NonConformitiesManager";
 
 /** Mappa status → etichetta italiana e classe CSS */
 const STATUS_LABELS = {
@@ -108,7 +107,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   const [openSections, setOpenSections] = useState({
     "general-data": false,
     checklist: false,
-    "nc-register": false,
     outcome: false,
     conclusions: false,
     close: false,
@@ -690,27 +688,6 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                   </p>
                 </div>
               )}
-            </div>
-          )}
-        </div>
-
-        {/* ==================== REGISTRO NC (NonConformitiesManager) ==================== */}
-        <div className="accordion-section">
-          <button
-            className={`accordion-header ${openSections["nc-register"] ? "open" : ""}`}
-            onClick={() => toggleSection("nc-register")}
-          >
-            <span className="section-icon">📋</span>
-            <span className="section-arrow">
-              {openSections["nc-register"] ? "▼" : "▶"}
-            </span>
-            <span className="section-title">Registro Non Conformità</span>
-          </button>
-
-          {openSections["nc-register"] && (
-            <div className="accordion-content">
-              <NonConformitiesManager readOnly={isReadOnly} />
-              <button className="accordion-collapse-btn" onClick={() => toggleSection("nc-register")}>▲ Chiudi sezione</button>
             </div>
           )}
         </div>
