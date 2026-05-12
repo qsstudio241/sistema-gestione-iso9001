@@ -585,15 +585,15 @@ function ClauseAccordion({
               style={{ width: `${clauseStats.percentage}%` }}
             />
           </div>
-          <button
-            type="button"
-            className="clause-collapse-btn"
-            aria-hidden="true"
-            tabIndex={-1}
-          >
-            {isExpanded ? "▲" : "▼"}
-          </button>
         </div>
+        <button
+          type="button"
+          className="clause-collapse-btn"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          {isExpanded ? "▲" : "▼"}
+        </button>
       </div>
 
       {isExpanded && (
