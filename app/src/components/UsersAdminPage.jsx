@@ -16,6 +16,30 @@ const STANDARDS_LIST = [
   { standard_id: 7, label: "RDP Mason — Audit di Sistema Saldatura" },
 ];
 
+const ALL_MODULE_KEYS = [
+  { key: "audit",       label: "Audit" },
+  { key: "documents",   label: "Registro documenti" },
+  { key: "qualifiche",  label: "Qualifiche personale" },
+  { key: "nc",          label: "Non conformità" },
+  { key: "rischi",      label: "Rischi e obiettivi" },
+  { key: "reclami",     label: "Reclami e fornitori" },
+  { key: "notifications", label: "Notifiche" },
+  { key: "sal",         label: "SAL" },
+  { key: "saldatura",   label: "Saldatura ISO 3834" },
+  { key: "ai_import",   label: "Import AI" },
+];
+
+/** Legge licensed_modules da una riga auditorOrg (può essere null = tutti) */
+function parseOrgModules(rawJson) {
+  if (!rawJson) return null; // null = tutti i moduli (default)
+  try {
+    const arr = typeof rawJson === "string" ? JSON.parse(rawJson) : rawJson;
+    return Array.isArray(arr) ? arr : null;
+  } catch {
+    return null;
+  }
+}
+
 function userIsActive(u) {
   if (!u) return false;
   const v = u.is_active;
@@ -63,7 +87,62 @@ export default function UsersAdminPage({ onBack }) {
   const [editForms, setEditForms] = useState({});
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isSuperadmin = user?.role === "superadmin";
   const elevatedAdmin = isAdmin;
+
+  // Stato licenze moduli per org (superadmin only) — dirty map: orgId → string[]|null
+  const [orgLicensesDirty, setOrgLicensesDirty] = useState({});
+  const [savingOrgLicense, setSavingOrgLicense] = useState(null);
+  const [orgLicenseMsg, setOrgLicenseMsg] = useState({});
+
+  /** Ritorna i moduli effettivi per una org (dirty o da auditorOrg.licensed_modules) */
+  const getEffectiveOrgModules = (ao) => {
+    if (orgLicensesDirty[ao.organization_id] !== undefined)
+      return orgLicensesDirty[ao.organization_id];
+    return parseOrgModules(ao.licensed_modules);
+  };
+
+  const toggleOrgModule = (organizationId, key) => {
+    const ao = auditorOrgs.find((x) => x.organization_id === organizationId);
+    const current = getEffectiveOrgModules(ao);
+    // null = tutti → espandi a lista completa prima di modificare
+    const base = current ?? ALL_MODULE_KEYS.map((m) => m.key);
+    const next =
+      key === "audit"
+        ? base // audit non si toglie
+        : base.includes(key)
+          ? base.filter((k) => k !== key)
+          : [...base, key];
+    setOrgLicensesDirty((prev) => ({ ...prev, [organizationId]: next }));
+  };
+
+  const saveOrgLicenses = async (ao) => {
+    setSavingOrgLicense(ao.organization_id);
+    setOrgLicenseMsg((prev) => ({ ...prev, [ao.organization_id]: null }));
+    try {
+      const modules = getEffectiveOrgModules(ao);
+      await apiService.patchOrgLicenses(ao.organization_id, { modules: modules ?? [] });
+      // Aggiorna il dato locale nell'auditorOrgs list
+      setAuditorOrgs((prev) =>
+        prev.map((x) =>
+          x.organization_id === ao.organization_id
+            ? { ...x, licensed_modules: JSON.stringify(modules) }
+            : x
+        )
+      );
+      setOrgLicensesDirty((prev) => {
+        const next = { ...prev };
+        delete next[ao.organization_id];
+        return next;
+      });
+      setOrgLicenseMsg((prev) => ({ ...prev, [ao.organization_id]: "✅ Licenze salvate." }));
+      setTimeout(() => setOrgLicenseMsg((prev) => ({ ...prev, [ao.organization_id]: null })), 3000);
+    } catch (err) {
+      setOrgLicenseMsg((prev) => ({ ...prev, [ao.organization_id]: `❌ ${err.message || "Errore"}` }));
+    } finally {
+      setSavingOrgLicense(null);
+    }
+  };
 
   const reloadUsers = useCallback(async () => {
     if (!isAdmin) return;
@@ -427,6 +506,82 @@ export default function UsersAdminPage({ onBack }) {
             {createSubmitting ? "Creazione..." : "Crea utente"}
           </button>
         </form>
+      )}
+
+      {/* ── Licenze moduli per studio (solo superadmin) ─────────────────── */}
+      {isSuperadmin && !loading && auditorOrgs.length > 0 && (
+        <section className="org-licenses-section">
+          <h2 className="org-licenses-title">Licenze moduli per studio</h2>
+          <p className="org-licenses-desc">
+            Assegna i moduli funzionali attivi per ogni studio cliente. Il modulo <strong>Audit</strong> è sempre abilitato.
+            Nessuna selezione esplicita = tutti i moduli attivi (impostazione predefinita).
+          </p>
+          {auditorOrgs.map((ao) => {
+            const effectiveMods = getEffectiveOrgModules(ao);
+            const isDirty = orgLicensesDirty[ao.organization_id] !== undefined;
+            const useDefault = effectiveMods === null;
+            const msg = orgLicenseMsg[ao.organization_id];
+            return (
+              <details key={ao.organization_id} className="org-license-details">
+                <summary className="org-license-summary">
+                  <span className="org-license-name">{ao.name}</span>
+                  <span className="org-license-orgname">{ao.organization_name}</span>
+                  {useDefault && !isDirty && (
+                    <span className="org-license-badge default">Tutti i moduli (default)</span>
+                  )}
+                  {isDirty && <span className="org-license-badge dirty">● Modifiche non salvate</span>}
+                </summary>
+                <div className="org-license-body">
+                  <div className="standards-checkboxes">
+                    {ALL_MODULE_KEYS.map(({ key, label }) => {
+                      const checked = useDefault && !isDirty ? true : (effectiveMods ?? []).includes(key);
+                      return (
+                        <label key={key} className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={key === "audit" || savingOrgLicense === ao.organization_id}
+                            onChange={() => toggleOrgModule(ao.organization_id, key)}
+                          />
+                          <span>{label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="org-license-actions">
+                    {isDirty && (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={savingOrgLicense === ao.organization_id}
+                        onClick={() => saveOrgLicenses(ao)}
+                      >
+                        {savingOrgLicense === ao.organization_id ? "Salvataggio…" : "Salva licenze"}
+                      </button>
+                    )}
+                    {isDirty && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={savingOrgLicense === ao.organization_id}
+                        onClick={() =>
+                          setOrgLicensesDirty((prev) => {
+                            const next = { ...prev };
+                            delete next[ao.organization_id];
+                            return next;
+                          })
+                        }
+                      >
+                        Annulla
+                      </button>
+                    )}
+                    {msg && <span className="org-license-msg">{msg}</span>}
+                  </div>
+                </div>
+              </details>
+            );
+          })}
+        </section>
       )}
 
       {loading && <p className="loading-message">Caricamento utenti...</p>}

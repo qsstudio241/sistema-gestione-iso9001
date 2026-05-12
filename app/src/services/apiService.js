@@ -1275,6 +1275,11 @@ class ApiService {
         return this.patch('/admin/licenses', body);
     }
 
+    /** Superadmin: aggiorna licensed_modules di un'organizzazione specifica (studio cliente) */
+    async patchOrgLicenses(organizationId, body) {
+        return this.patch(`/admin/organizations/${organizationId}/licenses`, body);
+    }
+
     // ─── Import job PDF batch (Sprint 9) ─────────────────────────────────────
     async getImportJobs() {
         return this.get('/import-jobs');
