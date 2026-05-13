@@ -42,6 +42,19 @@
   flex-wrap: wrap;
   align-items: center;
 }
+.nc-search {
+  padding: 7px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  min-width: 220px;
+  flex: 1;
+}
+.nc-search:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66,153,225,.15);
+}
 .nc-filters select {
   padding: 7px 12px;
   border: 1px solid #cbd5e0;

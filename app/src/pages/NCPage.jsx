@@ -1,20 +1,20 @@
 /**
- * NCPage — Registro Non Conformit\u00e0 & Azioni Correttive
+ * NCPage — Registro Non Conformità & Azioni Correttive
  * Sprint 5: vista cross-audit, workflow stati, azioni correttive strutturate
- * ISO 9001:2015 \u00a78.7 + \u00a710.2
+ * ISO 9001:2015 §8.7 + §10.2
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import "./NCPage.css";
 
 const NC_STATUS_CFG = {
-  open:        { label: "Aperta",     cls: "nc-open",        icon: "\uD83D\uDD34" },
-  in_progress: { label: "In corso",   cls: "nc-in-progress", icon: "\uD83D\uDFE1" },
-  resolved:    { label: "Risolta",    cls: "nc-resolved",    icon: "\uD83D\uDFE2" },
-  verified:    { label: "Verificata", cls: "nc-verified",    icon: "\u2705" },
-  closed:      { label: "Chiusa",     cls: "nc-closed",      icon: "\u26AB" },
+  open:        { label: "Aperta",     cls: "nc-open",        icon: "🔴" },
+  in_progress: { label: "In corso",   cls: "nc-in-progress", icon: "🟡" },
+  resolved:    { label: "Risolta",    cls: "nc-resolved",    icon: "🟢" },
+  verified:    { label: "Verificata", cls: "nc-verified",    icon: "✅" },
+  closed:      { label: "Chiusa",     cls: "nc-closed",      icon: "⚫" },
 };
 
 const ACTION_STATUS_CFG = {
@@ -25,9 +25,9 @@ const ACTION_STATUS_CFG = {
 };
 
 const SEVERITY_CFG = {
-  major:       { label: "Grave",       cls: "sev-major" },
-  minor:       { label: "Lieve",       cls: "sev-minor" },
-  observation: { label: "Osservazione",cls: "sev-obs" },
+  major:       { label: "Grave",        cls: "sev-major" },
+  minor:       { label: "Lieve",        cls: "sev-minor" },
+  observation: { label: "Osservazione", cls: "sev-obs" },
 };
 
 function NcStatusTag({ status }) {
@@ -80,7 +80,7 @@ function ActionsList({ ncId, ncStatus }) {
       setShowForm(false);
       await load();
     } catch (err) {
-      setError("Errore durante il salvataggio dell\u2019azione.");
+      setError("Errore durante il salvataggio dell'azione.");
     } finally {
       setSaving(false);
     }
@@ -91,17 +91,17 @@ function ActionsList({ ncId, ncStatus }) {
       await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
       await load();
     } catch {
-      alert("Impossibile aggiornare lo stato dell\u2019azione.");
+      alert("Impossibile aggiornare lo stato dell'azione.");
     }
   }
 
   async function handleDelete(action) {
-    if (!window.confirm(`Eliminare l\u2019azione "${action.description.substring(0, 50)}..."?`)) return;
+    if (!window.confirm(`Eliminare l'azione "${action.description.substring(0, 50)}..."?`)) return;
     try {
       await apiService.deleteNcAction(ncId, action.action_id);
       await load();
     } catch {
-      alert("Errore durante l\u2019eliminazione.");
+      alert("Errore durante l'eliminazione.");
     }
   }
 
@@ -115,7 +115,7 @@ function ActionsList({ ncId, ncStatus }) {
         <h4>Azioni correttive ({actions.length})</h4>
         {!isClosed && (
           <button className="btn-add-action" onClick={() => setShowForm(v => !v)}>
-            {showForm ? "\u2715 Annulla" : "+ Aggiungi azione"}
+            {showForm ? "✕ Annulla" : "+ Aggiungi azione"}
           </button>
         )}
       </div>
@@ -137,7 +137,7 @@ function ActionsList({ ncId, ncStatus }) {
               rows={2}
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              placeholder="Descrivi l\u2019azione da intraprendere..."
+              placeholder="Descrivi l'azione da intraprendere..."
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">
@@ -192,9 +192,9 @@ function ActionsList({ ncId, ncStatus }) {
                 <p className="nc-action-desc">{a.description}</p>
                 {(a.responsible || a.due_date) && (
                   <div className="nc-action-meta">
-                    {a.responsible && <span>\uD83D\uDC64 {a.responsible}</span>}
-                    {a.due_date && <span>\uD83D\uDCC5 Scadenza: {formatDate(a.due_date)}</span>}
-                    {a.completed_at && <span>\u2705 Completata: {formatDate(a.completed_at)}</span>}
+                    {a.responsible && <span>👤 {a.responsible}</span>}
+                    {a.due_date && <span>📅 Scadenza: {formatDate(a.due_date)}</span>}
+                    {a.completed_at && <span>✅ Completata: {formatDate(a.completed_at)}</span>}
                   </div>
                 )}
                 {!isClosed && (
@@ -228,9 +228,12 @@ export default function NCPage() {
   const [stats, setStats]           = useState(null);
   const [loading, setLoading]       = useState(true);
   const [expandedId, setExpandedId] = useState(null);
-  const [filters, setFilters]       = useState({ status: "", severity: "", overdue: "" });
-  const [page, setPage]             = useState(1);
+  // Filtri server-side
+  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "" });
+  const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  // Filtro locale per numero NC (ricerca testuale istantanea)
+  const [searchNc, setSearchNc] = useState("");
 
   const LIMIT = 20;
 
@@ -259,12 +262,25 @@ export default function NCPage() {
 
   useEffect(() => { loadNc(); }, [loadNc]);
 
-  function toggleExpand(id) {
-    setExpandedId(prev => prev === id ? null : id);
-  }
+  // Filtro locale per numero NC: istantaneo, senza round-trip al server
+  const filteredList = useMemo(() => {
+    if (!searchNc.trim()) return ncList;
+    const q = searchNc.trim().toLowerCase();
+    return ncList.filter(nc =>
+      (nc.nc_number || "").toLowerCase().includes(q) ||
+      (nc.description || "").toLowerCase().includes(q)
+    );
+  }, [ncList, searchNc]);
 
   function handleFilter(key, val) {
     setFilters(f => ({ ...f, [key]: val }));
+    setPage(1);
+    setExpandedId(null);
+  }
+
+  function resetFilters() {
+    setFilters({ status: "", severity: "", overdue: "" });
+    setSearchNc("");
     setPage(1);
     setExpandedId(null);
   }
@@ -278,14 +294,14 @@ export default function NCPage() {
     }
   }
 
-  const openCount     = stats?.count_open     ?? stats?.open     ?? 0;
-  const inProgCount   = stats?.count_in_progress ?? stats?.in_progress ?? 0;
-  const overdueCount  = stats?.overdue || 0;
+  const openCount    = stats?.open     ?? 0;
+  const inProgCount  = stats?.in_progress ?? 0;
+  const overdueCount = stats?.overdue  ?? 0;
 
   return (
     <div className="nc-page">
       <div className="nc-page-header">
-        <h1>🚨 Non Conformità & Azioni Correttive</h1>
+        <h1>🚨 Non Conformità &amp; Azioni Correttive</h1>
         <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 — Registro cross-audit</p>
       </div>
 
@@ -313,6 +329,15 @@ export default function NCPage() {
 
       {/* Filtri */}
       <div className="nc-filters">
+        {/* Ricerca per numero NC */}
+        <input
+          type="search"
+          className="nc-search"
+          placeholder="Cerca per numero NC o descrizione..."
+          value={searchNc}
+          onChange={e => setSearchNc(e.target.value)}
+        />
+
         <select value={filters.status} onChange={e => handleFilter("status", e.target.value)}>
           <option value="">Tutti gli stati</option>
           <option value="open">Aperte</option>
@@ -321,31 +346,36 @@ export default function NCPage() {
           <option value="verified">Verificate</option>
           <option value="closed">Chiuse</option>
         </select>
+
         <select value={filters.severity} onChange={e => handleFilter("severity", e.target.value)}>
-          <option value="">Tutte le severit\u00e0</option>
+          <option value="">Tutte le severità</option>
           <option value="major">Grave</option>
           <option value="minor">Lieve</option>
           <option value="observation">Osservazione</option>
         </select>
+
         <select value={filters.overdue} onChange={e => handleFilter("overdue", e.target.value)}>
           <option value="">Tutte</option>
           <option value="true">Solo scadute</option>
         </select>
-        <button className="btn-reset-filters" onClick={() => { setFilters({ status: "", severity: "", overdue: "" }); setPage(1); }}>
-          Reset filtri
-        </button>
+
+        {(filters.status || filters.severity || filters.overdue || searchNc) && (
+          <button className="btn-reset-filters" onClick={resetFilters}>
+            Azzera filtri
+          </button>
+        )}
       </div>
 
       {/* Lista NC */}
       {loading ? (
         <div className="nc-loading-main">Caricamento...</div>
-      ) : ncList.length === 0 ? (
+      ) : filteredList.length === 0 ? (
         <div className="nc-empty">
-          <p>Nessuna non conformit\u00e0 trovata con i filtri selezionati.</p>
+          <p>Nessuna non conformità trovata con i filtri selezionati.</p>
         </div>
       ) : (
         <div className="nc-list">
-          {ncList.map(nc => {
+          {filteredList.map(nc => {
             const isExpanded = expandedId === nc.nc_id;
             const isOverdue  = nc.is_overdue === 1 || nc.is_overdue === true;
             const validNext  = {
@@ -358,19 +388,19 @@ export default function NCPage() {
 
             return (
               <div key={nc.nc_id} className={`nc-card${isOverdue ? " nc-overdue" : ""}${isExpanded ? " nc-expanded" : ""}`}>
-                <div className="nc-card-header" onClick={() => toggleExpand(nc.nc_id)}>
+                <div className="nc-card-header" onClick={() => setExpandedId(prev => prev === nc.nc_id ? null : nc.nc_id)}>
                   <div className="nc-card-title">
                     <span className="nc-number">{nc.nc_number}</span>
                     <NcStatusTag status={nc.status} />
                     <SeverityTag severity={nc.severity} />
-                    {isOverdue && <span className="nc-overdue-badge">\u26A0\uFE0F Scaduta</span>}
+                    {isOverdue && <span className="nc-overdue-badge">⚠️ Scaduta</span>}
                   </div>
                   <div className="nc-card-meta">
-                    <span className="nc-audit-ref">\uD83D\uDCCB {nc.audit_number} \u2014 {nc.client_name}</span>
+                    <span className="nc-audit-ref">📋 {nc.audit_number} — {nc.client_name}</span>
                     <span className="nc-section">{nc.section_title}</span>
-                    {nc.due_date && <span className="nc-due">\uD83D\uDCC5 {formatDate(nc.due_date)}</span>}
+                    {nc.due_date && <span className="nc-due">📅 {formatDate(nc.due_date)}</span>}
                   </div>
-                  <span className="nc-expand-arrow">{isExpanded ? "\u25B2" : "\u25BC"}</span>
+                  <span className="nc-expand-arrow">{isExpanded ? "▲" : "▼"}</span>
                 </div>
 
                 {isExpanded && (
@@ -386,7 +416,9 @@ export default function NCPage() {
                       </div>
                     )}
                     {nc.responsible_person && (
-                      <p className="nc-responsible">\uD83D\uDC64 Responsabile: <strong>{nc.responsible_person}</strong></p>
+                      <p className="nc-responsible">
+                        👤 Responsabile: <strong>{nc.responsible_person}</strong>
+                      </p>
                     )}
 
                     {/* Workflow buttons */}
@@ -421,9 +453,9 @@ export default function NCPage() {
       {/* Paginazione */}
       {totalPages > 1 && (
         <div className="nc-pagination">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>\u2190 Prec</button>
+          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Prec</button>
           <span>Pagina {page} di {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Succ \u2192</button>
+          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Succ →</button>
         </div>
       )}
     </div>
