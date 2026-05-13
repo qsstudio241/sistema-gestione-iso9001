@@ -298,6 +298,33 @@ export default function NCPage() {
   const inProgCount  = stats?.in_progress ?? 0;
   const overdueCount = stats?.overdue  ?? 0;
 
+  // Determina quale card è attiva per evidenziarla
+  function getActiveCard() {
+    if (filters.overdue === "true") return "overdue";
+    if (filters.status === "open")        return "open";
+    if (filters.status === "in_progress") return "in_progress";
+    if (!filters.status && !filters.overdue) return "total";
+    return null;
+  }
+
+  function handleCardFilter(card) {
+    const active = getActiveCard();
+    if (active === card) {
+      // Clic su card già attiva → azzera
+      setFilters(f => ({ ...f, status: "", overdue: "" }));
+      setPage(1);
+      return;
+    }
+    if (card === "open")        setFilters(f => ({ ...f, status: "open",        overdue: "" }));
+    if (card === "in_progress") setFilters(f => ({ ...f, status: "in_progress", overdue: "" }));
+    if (card === "overdue")     setFilters(f => ({ ...f, status: "",             overdue: "true" }));
+    if (card === "total")       setFilters(f => ({ ...f, status: "",             overdue: "" }));
+    setPage(1);
+    setExpandedId(null);
+  }
+
+  const activeCard = getActiveCard();
+
   return (
     <div className="nc-page">
       <div className="nc-page-header">
@@ -305,25 +332,41 @@ export default function NCPage() {
         <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 — Registro cross-audit</p>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats bar — ogni card è un pulsante filtro */}
       {stats && (
         <div className="nc-stats-bar">
-          <div className="nc-stat nc-stat-open">
+          <button
+            className={`nc-stat nc-stat-open${activeCard === "open" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("open")}
+            title="Filtra: solo NC aperte"
+          >
             <span className="nc-stat-num">{openCount}</span>
             <span className="nc-stat-label">Aperte</span>
-          </div>
-          <div className="nc-stat nc-stat-prog">
+          </button>
+          <button
+            className={`nc-stat nc-stat-prog${activeCard === "in_progress" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("in_progress")}
+            title="Filtra: solo NC in corso"
+          >
             <span className="nc-stat-num">{inProgCount}</span>
             <span className="nc-stat-label">In corso</span>
-          </div>
-          <div className="nc-stat nc-stat-over">
+          </button>
+          <button
+            className={`nc-stat nc-stat-over${activeCard === "overdue" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("overdue")}
+            title="Filtra: solo NC scadute"
+          >
             <span className="nc-stat-num">{overdueCount}</span>
             <span className="nc-stat-label">Scadute</span>
-          </div>
-          <div className="nc-stat nc-stat-tot">
+          </button>
+          <button
+            className={`nc-stat nc-stat-tot${activeCard === "total" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("total")}
+            title="Mostra tutte le NC"
+          >
             <span className="nc-stat-num">{stats.total || 0}</span>
             <span className="nc-stat-label">Totale</span>
-          </div>
+          </button>
         </div>
       )}
 
