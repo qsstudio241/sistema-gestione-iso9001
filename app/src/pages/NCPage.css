@@ -78,7 +78,21 @@
   background: #fff;
   cursor: pointer;
 }
-.btn-reset-filters {
+.nc-filter-company {
+  padding: 7px 12px;
+  border: 1px solid #90cdf4;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #ebf8ff;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 160px;
+}
+.nc-filter-company:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66,153,225,.15);
+}
   padding: 7px 14px;
   background: #edf2f7;
   border: 1px solid #cbd5e0;
