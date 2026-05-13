@@ -244,8 +244,8 @@ function RisksTab() {
         apiService.getRisks(params),
         apiService.getRisksStats(),
       ]);
-      setList(listRes.data?.data || []);
-      setStats(statsRes.data?.data || null);
+      setList(listRes?.data || []);
+      setStats(statsRes?.data || null);
     } finally { setLoading(false); }
   }, [filterStatus]);
 
@@ -354,8 +354,8 @@ function ObjectivesTab() {
         apiService.getObjectives(params),
         apiService.getObjectivesStats(),
       ]);
-      setList(listRes.data?.data || []);
-      setStats(statsRes.data?.data || null);
+      setList(listRes?.data || []);
+      setStats(statsRes?.data || null);
     } finally { setLoading(false); }
   }, [filterStatus]);
 

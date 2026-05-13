@@ -54,7 +54,7 @@ function ActionsList({ ncId, ncStatus }) {
     setLoading(true);
     try {
       const res = await apiService.getNcActions(ncId);
-      setActions(res.data?.data || []);
+      setActions(res?.data || []);
     } catch {
       setActions([]);
     } finally {
@@ -247,9 +247,9 @@ export default function NCPage() {
         apiService.getNcStats(),
       ]);
 
-      setNcList(listRes.data?.data || []);
-      setTotalPages(listRes.data?.pagination?.totalPages || 1);
-      setStats(statsRes.data?.data || null);
+      setNcList(listRes?.data || []);
+      setTotalPages(listRes?.pagination?.totalPages || 1);
+      setStats(statsRes?.data || null);
     } catch (err) {
       console.error("NCPage load error:", err);
     } finally {

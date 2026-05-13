@@ -85,8 +85,8 @@ export default function ComplaintsPage() {
         apiService.getComplaints(params),
         apiService.getComplaintsStats(),
       ]);
-      setItems(listRes.data?.data || listRes.data || []);
-      setStats(statsRes.data?.data || null);
+      setItems(listRes?.data || []);
+      setStats(statsRes?.data || null);
     } catch (e) {
       console.error("Complaints load error:", e);
     } finally {
@@ -346,8 +346,8 @@ function ComplaintForm({ item, onClose, onSaved }) {
       apiService.getSuppliers({ is_active: "true" }).catch(() => ({ data: [] })),
       apiService.getDepartments({ is_active: "true" }).catch(() => ({ data: [] })),
     ]).then(([sRes, dRes]) => {
-      setSuppliers(sRes.data?.data || sRes.data || []);
-      setDepartments(dRes.data?.data || dRes.data || []);
+      setSuppliers(sRes?.data || []);
+      setDepartments(dRes?.data || []);
     });
   }, []);
 

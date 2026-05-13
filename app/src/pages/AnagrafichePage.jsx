@@ -75,7 +75,7 @@ function SuppliersTab() {
       const params = {};
       if (filterType) params.supplier_type = filterType;
       const res = await apiService.getSuppliers(params);
-      setItems(res.data?.data || res.data || []);
+      setItems(res?.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -234,7 +234,7 @@ function SupplierDetail({ supplier, onRefresh }) {
     setLoading(true);
     try {
       const res = await apiService.getSupplierEvaluations(supplier.id);
-      setEvals(res.data?.data || res.data || []);
+      setEvals(res?.data || []);
     } catch {
       setEvals([]);
     } finally {
@@ -461,7 +461,7 @@ function DepartmentsTab() {
     setLoading(true);
     try {
       const res = await apiService.getDepartments();
-      setItems(res.data?.data || res.data || []);
+      setItems(res?.data || []);
     } catch (e) {
       console.error(e);
     } finally {
