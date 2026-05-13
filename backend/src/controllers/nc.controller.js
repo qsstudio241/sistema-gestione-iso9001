@@ -26,6 +26,7 @@ async function listNonConformities(req, res) {
         const { organization_id } = req.user;
         const {
             audit_id,
+            company_id,
             status,
             severity,
             overdue,
@@ -42,6 +43,11 @@ async function listNonConformities(req, res) {
         if (audit_id) {
             whereConditions.push('nc.audit_id = @audit_id');
             params.audit_id = parseInt(audit_id);
+        }
+
+        if (company_id) {
+            whereConditions.push('a.company_id = @company_id');
+            params.company_id = parseInt(company_id);
         }
 
         if (status) {
@@ -577,21 +583,32 @@ async function deleteNonConformity(req, res) {
 
 /**
  * GET /api/v1/non-conformities/statistics/overview
- * Statistiche generali NC per organizzazione
+ * Statistiche generali NC per organizzazione (opzionale: filtro company_id)
  */
 async function getNonConformitiesStatistics(req, res) {
     try {
         const { organization_id } = req.user;
+        const { company_id } = req.query;
+
+        let whereConditions = ['a.organization_id = @organization_id'];
+        const params = { organization_id };
+
+        if (company_id) {
+            whereConditions.push('a.company_id = @company_id');
+            params.company_id = parseInt(company_id);
+        }
+
+        const whereClause = whereConditions.join(' AND ');
 
         // Statistiche aggregate
         const statsResult = await query(`
       SELECT 
         COUNT(*) AS total,
-        SUM(CASE WHEN nc.status = 'open' THEN 1 ELSE 0 END) AS count_open,
-        SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS count_in_progress,
-        SUM(CASE WHEN nc.status = 'resolved' THEN 1 ELSE 0 END) AS count_resolved,
-        SUM(CASE WHEN nc.status = 'verified' THEN 1 ELSE 0 END) AS count_verified,
-        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS count_closed,
+        SUM(CASE WHEN nc.status = 'open' THEN 1 ELSE 0 END) AS open,
+        SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
+        SUM(CASE WHEN nc.status = 'resolved' THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN nc.status = 'verified' THEN 1 ELSE 0 END) AS verified,
+        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed,
         SUM(CASE WHEN nc.severity = 'major' THEN 1 ELSE 0 END) AS major,
         SUM(CASE WHEN nc.severity = 'minor' THEN 1 ELSE 0 END) AS minor,
         SUM(CASE WHEN nc.severity = 'observation' THEN 1 ELSE 0 END) AS observations,
@@ -602,10 +619,10 @@ async function getNonConformitiesStatistics(req, res) {
         END) AS overdue
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE a.organization_id = @organization_id
-    `, { organization_id });
+      WHERE ${whereClause}
+    `, params);
 
-        logger.info('NC statistics retrieved', { organization_id });
+        logger.info('NC statistics retrieved', { organization_id, company_id });
 
         res.json({
             success: true,

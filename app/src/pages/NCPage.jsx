@@ -229,11 +229,22 @@ export default function NCPage() {
   const [loading, setLoading]       = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   // Filtri server-side
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "" });
+  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", company_id: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   // Filtro locale per numero NC (ricerca testuale istantanea)
   const [searchNc, setSearchNc] = useState("");
+  // Lista clienti per il dropdown
+  const [companies, setCompanies] = useState([]);
+
+  const LIMIT = 20;
+
+  // Carica aziende una volta sola al mount
+  useEffect(() => {
+    apiService.getCompanies()
+      .then(res => setCompanies(res?.data || []))
+      .catch(() => setCompanies([]));
+  }, []);
 
   const LIMIT = 20;
 
@@ -241,13 +252,14 @@ export default function NCPage() {
     setLoading(true);
     try {
       const params = { page, limit: LIMIT };
-      if (filters.status)   params.status   = filters.status;
-      if (filters.severity) params.severity = filters.severity;
-      if (filters.overdue)  params.overdue  = filters.overdue;
+      if (filters.status)     params.status     = filters.status;
+      if (filters.severity)   params.severity   = filters.severity;
+      if (filters.overdue)    params.overdue    = filters.overdue;
+      if (filters.company_id) params.company_id = filters.company_id;
 
       const [listRes, statsRes] = await Promise.all([
         apiService.getAllNonConformities(params),
-        apiService.getNcStats(),
+        apiService.getNcStats(filters.company_id ? { company_id: filters.company_id } : {}),
       ]);
 
       setNcList(listRes?.data || []);
@@ -279,7 +291,7 @@ export default function NCPage() {
   }
 
   function resetFilters() {
-    setFilters({ status: "", severity: "", overdue: "" });
+    setFilters({ status: "", severity: "", overdue: "", company_id: "" });
     setSearchNc("");
     setPage(1);
     setExpandedId(null);
@@ -310,7 +322,6 @@ export default function NCPage() {
   function handleCardFilter(card) {
     const active = getActiveCard();
     if (active === card) {
-      // Clic su card già attiva → azzera
       setFilters(f => ({ ...f, status: "", overdue: "" }));
       setPage(1);
       return;
@@ -324,6 +335,7 @@ export default function NCPage() {
   }
 
   const activeCard = getActiveCard();
+  const hasActiveFilter = !!(filters.status || filters.severity || filters.overdue || filters.company_id || searchNc);
 
   return (
     <div className="nc-page">
@@ -372,6 +384,20 @@ export default function NCPage() {
 
       {/* Filtri */}
       <div className="nc-filters">
+        {/* Filtro cliente — primo nella barra per dare priorità visiva */}
+        {companies.length > 0 && (
+          <select
+            className="nc-filter-company"
+            value={filters.company_id}
+            onChange={e => handleFilter("company_id", e.target.value)}
+          >
+            <option value="">Tutti i clienti</option>
+            {companies.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
+
         {/* Ricerca per numero NC */}
         <input
           type="search"
@@ -402,7 +428,7 @@ export default function NCPage() {
           <option value="true">Solo scadute</option>
         </select>
 
-        {(filters.status || filters.severity || filters.overdue || searchNc) && (
+        {hasActiveFilter && (
           <button className="btn-reset-filters" onClick={resetFilters}>
             Azzera filtri
           </button>

@@ -755,8 +755,9 @@ class ApiService {
         return this.get(`/non-conformities${qs ? '?' + qs : ''}`);
     }
 
-    async getNcStats() {
-        return this.get('/non-conformities/statistics/overview');
+    async getNcStats(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/non-conformities/statistics/overview${qs ? '?' + qs : ''}`);
     }
 
     async updateNcStatus(id, data) {
