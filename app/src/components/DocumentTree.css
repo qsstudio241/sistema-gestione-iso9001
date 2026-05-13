@@ -1,0 +1,276 @@
+/* ====================================================
+   DocumentTree — sidebar albero documenti SGQ
+   BEM: .doc-tree, .doc-tree__node, .doc-tree__node--selected
+   ==================================================== */
+
+.doc-tree {
+  width: 260px;
+  min-width: 220px;
+  max-width: 320px;
+  height: 100%;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.doc-tree__header {
+  padding: 14px 16px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+/* ---- lista ---- */
+
+.doc-tree__list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.doc-tree__children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.doc-tree__item {
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- nodo ---- */
+
+.doc-tree__node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px 6px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #212529;
+  border-radius: 4px;
+  margin: 1px 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.doc-tree__node:hover {
+  background: #e9ecef;
+}
+
+.doc-tree__node--selected {
+  background: #d4e5f7;
+  color: #1a73e8;
+  font-weight: 500;
+}
+
+.doc-tree__node--selected:hover {
+  background: #c5daef;
+}
+
+.doc-tree__node--folder {
+  font-weight: 500;
+}
+
+/* ---- freccia expand ---- */
+
+.doc-tree__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  min-width: 16px;
+  font-size: 9px;
+  color: #868e96;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.doc-tree__arrow--open {
+  color: #495057;
+}
+
+/* ---- icona tipo ---- */
+
+.doc-tree__icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ---- label ---- */
+
+.doc-tree__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- badge contatore figli ---- */
+
+.doc-tree__badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6c757d;
+  background: #dee2e6;
+  border-radius: 10px;
+  padding: 1px 6px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+/* ---- stati vuoto / loading / errore ---- */
+
+.doc-tree__empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: #adb5bd;
+  font-size: 13px;
+}
+
+.doc-tree__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.doc-tree__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dee2e6;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: doc-tree-spin 0.7s linear infinite;
+}
+
+@keyframes doc-tree-spin {
+  to { transform: rotate(360deg); }
+}
+
+.doc-tree__error {
+  padding: 16px;
+  color: #dc3545;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---- nuova cartella ---- */
+
+.doc-tree__add-btn {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 4px 8px 8px;
+  padding: 7px 12px;
+  border: 1px dashed #ced4da;
+  border-radius: 6px;
+  background: transparent;
+  color: #1a73e8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.doc-tree__add-btn:hover {
+  background: #e8f0fe;
+  border-color: #1a73e8;
+}
+
+.doc-tree__new-folder {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 8px;
+  flex-shrink: 0;
+}
+
+.doc-tree__new-folder-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.doc-tree__new-folder-input:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.doc-tree__new-folder-confirm,
+.doc-tree__new-folder-cancel {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.doc-tree__new-folder-confirm {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.doc-tree__new-folder-confirm:hover:not(:disabled) {
+  background: #1765cc;
+}
+
+.doc-tree__new-folder-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.doc-tree__new-folder-cancel {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.doc-tree__new-folder-cancel:hover {
+  background: #dee2e6;
+}
+
+/* ---- responsive: drawer mobile ---- */
+
+@media (max-width: 768px) {
+  .doc-tree {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 200;
+    width: 280px;
+    height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .doc-tree--open {
+    transform: translateX(0);
+  }
+}

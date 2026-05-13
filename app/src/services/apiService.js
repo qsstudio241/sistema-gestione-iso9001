@@ -1169,6 +1169,32 @@ class ApiService {
         return this.post(`/documents/${docId}/webdav-link`, {});
     }
 
+    // ─── Document Tags ──────────────────────────────────────────────────────
+    async getDocumentTags()                     { return this.get('/document-tags'); }
+    async createDocumentTag(data)               { return this.post('/document-tags', data); }
+    async updateDocumentTag(id, data)           { return this.put(`/document-tags/${id}`, data); }
+    async deleteDocumentTag(id)                 { return this.delete(`/document-tags/${id}`); }
+    async getTagCategories()                    { return this.get('/tag-categories'); }
+    async createTagCategory(data)               { return this.post('/tag-categories', data); }
+    async assignDocumentTags(docId, tagIds)     { return this.post(`/documents/${docId}/tags`, { tag_ids: tagIds }); }
+    async removeDocumentTag(docId, tagId)       { return this.delete(`/documents/${docId}/tags/${tagId}`); }
+    async getDocumentsByTag(tagId)              { return this.get(`/documents/by-tag/${tagId}`); }
+
+    // ─── Document Relations ─────────────────────────────────────────────────
+    async getDocumentRelations(docId)           { return this.get(`/documents/${docId}/relations`); }
+    async createDocumentRelation(docId, data)   { return this.post(`/documents/${docId}/relations`, data); }
+    async deleteDocumentRelation(relationId)    { return this.delete(`/document-relations/${relationId}`); }
+
+    // ─── Document Tree ──────────────────────────────────────────────────────
+    async getDocumentTree(depth = 2)            { return this.get(`/documents/tree?depth=${depth}`); }
+    async getDocumentTreeChildren(parentId)     { return this.get(`/documents/tree/${parentId}/children`); }
+    async moveDocument(docId, data)             { return this.put(`/documents/${docId}/move`, data); }
+    async createFolder(data)                    { return this.post('/documents/folder', data); }
+    async getDocumentBreadcrumb(docId)          { return this.get(`/documents/${docId}/breadcrumb`); }
+    async getDocumentHistory(docId, page = 1)   { return this.get(`/documents/${docId}/history?page=${page}`); }
+    async provisionDocumentTree(data)           { return this.post('/documents/provision-tree', data); }
+    async getDocumentTreeTemplates()            { return this.get('/document-tree-templates'); }
+
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
     async getDocFiles(docId) {

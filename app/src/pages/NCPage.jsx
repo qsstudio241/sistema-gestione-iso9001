@@ -246,8 +246,6 @@ export default function NCPage() {
       .catch(() => setCompanies([]));
   }, []);
 
-  const LIMIT = 20;
-
   const loadNc = useCallback(async () => {
     setLoading(true);
     try {

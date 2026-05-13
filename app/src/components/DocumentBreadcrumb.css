@@ -1,0 +1,82 @@
+/* ====================================================
+   DocumentBreadcrumb — barra navigazione percorso
+   BEM: .doc-breadcrumb
+   ==================================================== */
+
+.doc-breadcrumb {
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+  font-family: inherit;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.doc-breadcrumb__list {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.doc-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.doc-breadcrumb__separator {
+  display: inline-block;
+  padding: 0 6px;
+  color: #adb5bd;
+  font-size: 14px;
+  font-weight: 300;
+  user-select: none;
+}
+
+.doc-breadcrumb__home {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.doc-breadcrumb__link {
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1a73e8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.doc-breadcrumb__link:hover {
+  background: #e8f0fe;
+  color: #1558b0;
+}
+
+.doc-breadcrumb__current {
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #212529;
+  white-space: nowrap;
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 768px) {
+  .doc-breadcrumb {
+    padding: 6px 12px;
+  }
+
+  .doc-breadcrumb__link,
+  .doc-breadcrumb__current {
+    font-size: 12px;
+  }
+}

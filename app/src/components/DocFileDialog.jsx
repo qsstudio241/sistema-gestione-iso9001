@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
+import DocumentPdfViewer from "./DocumentPdfViewer";
 import "./DocFileDialog.css";
 
 const BLOCKED_EXT = [".exe",".bat",".cmd",".ps1",".sh",".msi",".vbs",".jar",".com",".scr",".pif",".reg",".dll",".sys"];
@@ -45,6 +46,10 @@ function DocFileDialog({ doc, onClose }) {
   const [officeLoading, setOfficeLoading] = useState(false);
   const [officeError,   setOfficeError]   = useState(null);
   const [webdavData,    setWebdavData]    = useState(null); // cache link generato
+
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfViewerAttId, setPdfViewerAttId] = useState(null);
+  const [pdfViewerName, setPdfViewerName] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -180,14 +185,16 @@ function DocFileDialog({ doc, onClose }) {
                 <div className="docfile-actions">
                   {/* PDF: visualizzazione inline nel browser */}
                   {currentFile.mime_type === "application/pdf" ? (
-                    <a
-                      href={apiService.getDocFileDownloadUrl(doc.id, null, true)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
                       className="btn-docfile-view"
+                      onClick={() => {
+                        setPdfViewerAttId(currentFile.id);
+                        setPdfViewerName(currentFile.file_name);
+                        setPdfViewerOpen(true);
+                      }}
                     >
                       &#128196; Visualizza PDF
-                    </a>
+                    </button>
                   ) : null}
 
                   {/* Office: apri in Word/Excel desktop (Sprint 12-A) */}
@@ -282,6 +289,19 @@ function DocFileDialog({ doc, onClose }) {
                         <span className="docfile-history-date">
                           {new Date(f.uploaded_at).toLocaleDateString("it-IT")}
                         </span>
+                        {f.mime_type === 'application/pdf' && (
+                          <button
+                            className="btn-docfile-hist-view"
+                            title="Visualizza PDF"
+                            onClick={() => {
+                              setPdfViewerAttId(f.id);
+                              setPdfViewerName(f.file_name);
+                              setPdfViewerOpen(true);
+                            }}
+                          >
+                            &#128065;&#65039;
+                          </button>
+                        )}
                         <a
                           href={apiService.getDocFileDownloadUrl(doc.id, f.id)}
                           download
@@ -344,6 +364,15 @@ function DocFileDialog({ doc, onClose }) {
               </div>
             </div>
           </div>
+        )}
+        {/* PDF Viewer overlay */}
+        {pdfViewerOpen && (
+          <DocumentPdfViewer
+            docId={doc.id}
+            attachmentId={pdfViewerAttId}
+            fileName={pdfViewerName}
+            onClose={() => setPdfViewerOpen(false)}
+          />
         )}
       </div>
     </div>

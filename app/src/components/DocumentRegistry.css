@@ -559,7 +559,111 @@
 .docregistry-pagination button:hover:not(:disabled) { background: #f3f4f6; }
 .docregistry-pagination button:disabled { opacity: 0.4; cursor: default; }
 
+/* ─── Layout Albero master-detail ──────────────────────────────────────────── */
+
+.docregistry-tree-layout {
+  display: flex;
+  gap: 0;
+  min-height: 500px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.docregistry-tree-sidebar {
+  width: 260px;
+  min-width: 260px;
+  border-right: 1px solid #e5e7eb;
+  background: #f8f9fa;
+  overflow-y: auto;
+  max-height: 75vh;
+}
+
+.docregistry-tree-content {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 75vh;
+}
+
+/* Card documenti nella lista centrale */
+.tree-doc-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tree-doc-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tree-doc-card:hover { background: #f3f4f6; }
+.tree-doc-card--selected { background: #d4e5f7; }
+
+.tree-doc-card__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.tree-doc-card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-doc-card__title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-doc-card__meta {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tree-doc-card__badge {
+  background: #e5e7eb;
+  color: #374151;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .docregistry-tree-layout {
+    flex-direction: column;
+  }
+  .docregistry-tree-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .docregistry-tree-content {
+    max-height: none;
+  }
+}
 
 @media (max-width: 640px) {
   .docregistry-page { padding: 16px; }

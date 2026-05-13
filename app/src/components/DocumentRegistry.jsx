@@ -1,17 +1,24 @@
 /**
  * DocumentRegistry — Registro universale documenti SGQ
  * Sprint 1: UX redesign con approccio Apple
+ * Sprint Doc-Avanzata: layout master-detail con albero, tag, relazioni
  *
  * Tab "Priorità" (default): mostra solo ciò che richiede azione immediata
  * Tab "Catalogo": griglia completa con filtri e export CSV
- * Inline confirmation: niente window.confirm
- * Wizard form: 2 passi per nuovi documenti
+ * Tab "Albero": navigazione gerarchica con pannello dettaglio
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
+import DocumentTree from "./DocumentTree";
+import DocumentDetailPanel from "./DocumentDetailPanel";
+import DocumentBreadcrumb from "./DocumentBreadcrumb";
+import TagFilterBar from "./TagFilterBar";
+import useDocumentTree from "../hooks/useDocumentTree";
+import useDocumentTags from "../hooks/useDocumentTags";
+import useDocumentRelations from "../hooks/useDocumentRelations";
 import { formatDate } from "../utils/dateHelpers";
 import "./DocumentRegistry.css";
 
@@ -419,13 +426,32 @@ function CatalogView({
 // ─── Componente principale ────────────────────────────────────────────────────
 
 function DocumentRegistry() {
-  // Tab attiva
-  const [activeTab, setActiveTab] = useState("priority"); // "priority" | "catalog"
+  // Tab attiva: "priority" | "catalog" | "tree"
+  const [activeTab, setActiveTab] = useState("priority");
 
   // Dati
   const [stats, setStats]         = useState(null);
   const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
+
+  // Albero documentale
+  const tree = useDocumentTree();
+
+  // Documento selezionato nel dettaglio
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docHistory, setDocHistory] = useState([]);
+  const [showDetail, setShowDetail] = useState(false);
+
+  // Tag e relazioni per il documento selezionato
+  const tags = useDocumentTags(selectedDoc?.id);
+  const relations = useDocumentRelations(selectedDoc?.id);
+
+  // Tag filtri attivi per la vista albero
+  const [activeTagFilters, setActiveTagFilters] = useState([]);
+
+  // Documenti figli del nodo selezionato (per lista centrale in vista albero)
+  const [treeListDocs, setTreeListDocs] = useState([]);
+  const [treeListLoading, setTreeListLoading] = useState(false);
 
   // Documenti priorità (scaduti + in scadenza 60gg + in revisione)
   const [priorityDocs, setPriorityDocs] = useState([]);
@@ -530,6 +556,43 @@ function DocumentRegistry() {
     if (activeTab === "catalog") loadCatalog();
   }, [activeTab, loadCatalog]);
 
+  useEffect(() => {
+    if (activeTab === "tree") tree.loadTree();
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Quando si seleziona un nodo nell'albero, carica i documenti figli
+  const handleTreeNodeSelect = useCallback(async (nodeId) => {
+    tree.selectNode(nodeId);
+    setTreeListLoading(true);
+    try {
+      const res = await apiService.getDocumentTreeChildren(nodeId);
+      setTreeListDocs(res.data || []);
+    } catch { setTreeListDocs([]); }
+    finally { setTreeListLoading(false); }
+  }, [tree]);
+
+  // Seleziona un documento per vedere il dettaglio
+  const handleDocSelect = useCallback(async (doc) => {
+    setSelectedDoc(doc);
+    setShowDetail(true);
+    try {
+      const res = await apiService.getDocumentHistory(doc.id);
+      setDocHistory(res.data || []);
+    } catch { setDocHistory([]); }
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setShowDetail(false);
+    setSelectedDoc(null);
+    setDocHistory([]);
+  }, []);
+
+  const handleTagFilterToggle = useCallback((tagId) => {
+    setActiveTagFilters(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  }, []);
+
   // ─── Azioni ────────────────────────────────────────────────────────────
 
   const handleNew  = () => { setEditingDoc(null);  setModalOpen(true); };
@@ -621,10 +684,16 @@ function DocumentRegistry() {
           📋 Catalogo
           {stats && <span className="tab-count">{stats.total}</span>}
         </button>
+        <button
+          className={`doc-tab${activeTab === "tree" ? " doc-tab-active" : ""}`}
+          onClick={() => setActiveTab("tree")}
+        >
+          🗂️ Albero
+        </button>
       </div>
 
       {/* Contenuto tab */}
-      {activeTab === "priority" ? (
+      {activeTab === "priority" && (
         <PriorityView
           stats={stats}
           expiredDocs={expiredDocs}
@@ -638,7 +707,9 @@ function DocumentRegistry() {
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
         />
-      ) : (
+      )}
+
+      {activeTab === "catalog" && (
         <CatalogView
           documents={catalogDocs}
           total={catalogTotal}
@@ -660,6 +731,102 @@ function DocumentRegistry() {
           companies={companies}
           onFileDialog={setFileDialogDoc}
         />
+      )}
+
+      {activeTab === "tree" && (
+        <div className="docregistry-tree-layout">
+          {/* Sidebar albero */}
+          <div className="docregistry-tree-sidebar">
+            <DocumentTree
+              nodes={tree.treeNodes}
+              expandedIds={tree.expandedIds}
+              selectedNodeId={tree.selectedNodeId}
+              onToggle={tree.toggleNode}
+              onSelect={handleTreeNodeSelect}
+              onCreateFolder={tree.createFolder}
+            />
+          </div>
+
+          {/* Contenuto centrale */}
+          <div className="docregistry-tree-content">
+            {tree.breadcrumb.length > 0 && (
+              <DocumentBreadcrumb
+                items={tree.breadcrumb}
+                onNavigate={handleTreeNodeSelect}
+              />
+            )}
+
+            {tags.allTags.length > 0 && (
+              <TagFilterBar
+                tags={tags.allTags}
+                activeTagIds={activeTagFilters}
+                onToggle={handleTagFilterToggle}
+                onReset={() => setActiveTagFilters([])}
+              />
+            )}
+
+            {treeListLoading ? (
+              <div className="docregistry-loading">
+                <div className="loading-spinner-sm" />
+                <span>Caricamento...</span>
+              </div>
+            ) : tree.selectedNodeId ? (
+              <div className="tree-doc-list">
+                {treeListDocs.length === 0 ? (
+                  <div className="docregistry-empty">
+                    <p>Nessun elemento in questa cartella.</p>
+                    <button className="btn-primary" onClick={handleNew}>+ Aggiungi documento</button>
+                  </div>
+                ) : (
+                  <div className="tree-doc-cards">
+                    {treeListDocs.map(doc => (
+                      <div
+                        key={doc.id}
+                        className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
+                        onClick={() => handleDocSelect(doc)}
+                      >
+                        <span className="tree-doc-card__icon">
+                          {doc.doc_type === 'folder' ? '📁' : '📄'}
+                        </span>
+                        <div className="tree-doc-card__info">
+                          <span className="tree-doc-card__title">{doc.title}</span>
+                          <span className="tree-doc-card__meta">
+                            {doc.doc_code && `${doc.doc_code} · `}
+                            {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+                            {doc.status && ` · `}
+                            {doc.status && (
+                              <span className={`status-badge status-${doc.status}`}>
+                                {DOC_STATUS_LABELS[doc.status] || doc.status}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {doc.children_count > 0 && (
+                          <span className="tree-doc-card__badge">{doc.children_count}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="docregistry-empty">
+                <p>Seleziona una cartella dall'albero per vederne il contenuto.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Pannello dettaglio */}
+          {showDetail && selectedDoc && (
+            <DocumentDetailPanel
+              document={selectedDoc}
+              history={docHistory}
+              onEdit={handleEdit}
+              onArchive={(id) => handleArchive(id)}
+              onClose={handleCloseDetail}
+            />
+          )}
+        </div>
       )}
 
       {/* Modale wizard */}

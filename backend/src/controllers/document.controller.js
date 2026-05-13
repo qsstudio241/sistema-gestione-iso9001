@@ -278,6 +278,18 @@ async function createDocument(req, res) {
             });
         }
 
+        const parent_id = req.body.parent_id ? parseInt(req.body.parent_id) : null;
+
+        let path_cache = null;
+        if (parent_id) {
+            const parentRow = await query(
+                `SELECT path_cache FROM document_registry WHERE id = @pid AND organization_id = @organization_id`,
+                { pid: parent_id, organization_id }
+            );
+            const parentPath = parentRow.recordset[0]?.path_cache || `/${parent_id}/`;
+            path_cache = parentPath; // will be completed after INSERT with new id
+        }
+
         const result = await query(`
             INSERT INTO document_registry (
                 organization_id, company_id, auditor_org_id,
@@ -285,6 +297,7 @@ async function createDocument(req, res) {
                 doc_type, doc_code, title, revision, status,
                 issue_date, expiry_date, responsible, retention_years,
                 attachment_id, import_status, notes,
+                parent_id, path_cache,
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
@@ -294,6 +307,7 @@ async function createDocument(req, res) {
                 @doc_type, @doc_code, @title, @revision, @status,
                 @issue_date, @expiry_date, @responsible, @retention_years,
                 @attachment_id, @import_status, @notes,
+                @parent_id, @path_cache,
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
@@ -307,6 +321,8 @@ async function createDocument(req, res) {
             title,
             revision:        revision        || null,
             status,
+            parent_id,
+            path_cache,
             issue_date:      issue_date      || null,
             expiry_date:     expiry_date     || null,
             responsible:     responsible     || null,
@@ -319,11 +335,26 @@ async function createDocument(req, res) {
 
         const newId = result.recordset[0].id;
 
+        // Completa path_cache con il nuovo id
+        const finalPath = parent_id
+            ? `${path_cache}${newId}/`
+            : `/${newId}/`;
+        await query(
+            `UPDATE document_registry SET path_cache = @pc WHERE id = @id`,
+            { pc: finalPath, id: newId }
+        );
+
+        // History tracking (fire-and-forget)
+        try {
+            const historyTracker = require('../services/documentHistoryTracker.service');
+            await historyTracker.trackCreation(newId, user_id);
+        } catch (_) { /* non bloccante */ }
+
         logger.info('Document created', { id: newId, organization_id, doc_type, title });
 
         res.status(201).json({
             success: true,
-            data:    { id: newId, doc_type, title, status },
+            data:    { id: newId, doc_type, title, status, parent_id },
         });
 
     } catch (error) {
@@ -343,7 +374,7 @@ async function updateDocument(req, res) {
 
         // Verifica esistenza e ownership
         const existing = await query(`
-            SELECT id FROM document_registry
+            SELECT id, is_system_folder FROM document_registry
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -354,11 +385,20 @@ async function updateDocument(req, res) {
             });
         }
 
+        // Protezione cartelle di sistema
+        const doc = existing.recordset[0];
+        if (doc.is_system_folder && (req.body.title !== undefined || req.body.folder_code !== undefined)) {
+            return res.status(403).json({
+                error: 'Le cartelle di sistema non possono essere rinominate',
+                code:  'SYSTEM_FOLDER_PROTECTED',
+            });
+        }
+
         const allowed = [
             'company_id', 'auditor_org_id', 'standard_id', 'clause_ref',
             'doc_type', 'doc_code', 'title', 'revision', 'status',
             'issue_date', 'expiry_date', 'responsible', 'retention_years',
-            'attachment_id', 'import_status', 'notes',
+            'attachment_id', 'import_status', 'notes', 'parent_id',
         ];
 
         const updates = [];
@@ -368,7 +408,7 @@ async function updateDocument(req, res) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
                 // Campi interi
-                if (['company_id', 'auditor_org_id', 'standard_id', 'retention_years', 'attachment_id'].includes(field)) {
+                if (['company_id', 'auditor_org_id', 'standard_id', 'retention_years', 'attachment_id', 'parent_id'].includes(field)) {
                     params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
                 } else {
                     params[field] = req.body[field] || null;
@@ -427,7 +467,7 @@ async function deleteDocument(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, status FROM document_registry
+            SELECT id, status, is_system_folder FROM document_registry
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -435,6 +475,13 @@ async function deleteDocument(req, res) {
             return res.status(404).json({
                 error: 'Documento non trovato',
                 code:  'DOC_NOT_FOUND',
+            });
+        }
+
+        if (existing.recordset[0].is_system_folder) {
+            return res.status(403).json({
+                error: 'Le cartelle di sistema non possono essere archiviate',
+                code:  'SYSTEM_FOLDER_PROTECTED',
             });
         }
 

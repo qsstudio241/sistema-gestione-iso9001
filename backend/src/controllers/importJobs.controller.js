@@ -370,7 +370,8 @@ async function commitToRegistry(req, res) {
 
         // Verifica file e stato
         const f = await query(
-            `SELECT id, status, original_name, ai_extraction_json, registry_document_id
+            `SELECT id, status, original_name, storage_path, mime_type, file_size,
+                    ai_extraction_json, registry_document_id
              FROM import_job_files WHERE id = @file_id AND job_id = @job_id`,
             { file_id: fileId, job_id: jobId }
         );
@@ -444,6 +445,37 @@ async function commitToRegistry(req, res) {
             }
         );
         const registryId = ins.recordset[0].id;
+
+        // Collega il PDF originale come prima versione file del documento
+        if (file.storage_path && fs.existsSync(file.storage_path)) {
+            try {
+                const fileExt = path.extname(file.original_name || '').toLowerCase() || '.pdf';
+                await query(
+                    `INSERT INTO attachments
+                        (document_id, uploaded_by,
+                         file_name, file_type, storage_path, file_size, mime_type,
+                         doc_file_version, is_current_doc_version,
+                         category, created_at)
+                     VALUES
+                        (@docId, @userId,
+                         @fileName, @fileType, @storagePath, @fileSize, @mimeType,
+                         1, 1,
+                         'document', GETDATE())`,
+                    {
+                        docId: registryId,
+                        userId: user_id || null,
+                        fileName: file.original_name || 'documento.pdf',
+                        fileType: fileExt,
+                        storagePath: file.storage_path,
+                        fileSize: file.file_size || null,
+                        mimeType: file.mime_type || 'application/pdf',
+                    }
+                );
+                logger.info(`commitToRegistry: PDF ${file.original_name} allegato come v1 al documento #${registryId}`);
+            } catch (attErr) {
+                logger.warn(`commitToRegistry: impossibile allegare PDF al documento #${registryId}`, { error: attErr.message });
+            }
+        }
 
         // Aggiorna il file: committed + link al registry
         await query(
