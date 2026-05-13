@@ -64,6 +64,9 @@ const departmentsRoutes     = require('./routes/departments.routes');
 const importJobsRoutes      = require('./routes/importJobs.routes');
 const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.routes');
 const auditEventsRoutes = require('./routes/auditEvents.routes');
+const normBrokerRoutes = require('./routes/normBroker.routes');
+const contractReviewRoutes = require('./routes/contractReview.routes');
+const aiAssistRoutes = require('./routes/aiAssist.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -243,6 +246,9 @@ app.use(`${API_BASE}/complaints`,   complaintsRoutes);
 app.use(`${API_BASE}/suppliers`,    suppliersRoutes);
 app.use(`${API_BASE}/departments`,  departmentsRoutes);
 app.use(API_BASE, importJobsRoutes);
+app.use(API_BASE, normBrokerRoutes);
+app.use(API_BASE, contractReviewRoutes);
+app.use(API_BASE, aiAssistRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 // Sprint 12-A: WebDAV — endpoint REST (genera link) + endpoint WebDAV (Office R/W)
 app.use(API_BASE, webdavApiRoutes);

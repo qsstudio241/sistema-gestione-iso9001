@@ -1,13 +1,13 @@
 /**
- * Estrazione strutturata da testo documento tramite OpenAI (JSON mode).
+ * Estrazione strutturata da testo documento tramite provider AI (modalita' JSON).
  * Passo singolo: base per pipeline piu' avanzata (staging, tool-use, RAG).
  */
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const { chat, getActiveProvider } = require('./aiProviderAdapter');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
+/** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
 const DEFAULT_MODEL = process.env.OPENAI_IMPORT_MODEL || 'gpt-4o-mini';
-const REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_IMPORT_TIMEOUT_MS) || 90000;
 
 function stripCodeFences(raw) {
     let s = String(raw || '').trim();
@@ -18,20 +18,47 @@ function stripCodeFences(raw) {
 }
 
 /**
+ * Preserva i codici errore noti dagli adapter; normalizza il resto su AI_REQUEST_FAILED.
+ * @param {unknown} err
+ * @returns {never}
+ */
+function normalizeChatError(err) {
+    const code = err && err.code;
+    if (
+        code === 'AI_REQUEST_FAILED' ||
+        code === 'AI_UPSTREAM_ERROR' ||
+        code === 'AI_EMPTY_RESPONSE'
+    ) {
+        throw err;
+    }
+    if (code === 'AI_NOT_CONFIGURED') {
+        const e = new Error('Nessun provider AI configurato sul server.');
+        e.code = 'AI_NOT_CONFIGURED';
+        throw e;
+    }
+    const e = new Error(
+        err && err.message ? String(err.message) : String(err || 'Richiesta AI fallita.')
+    );
+    e.code = 'AI_REQUEST_FAILED';
+    if (err && err.status !== undefined) {
+        e.status = err.status;
+    }
+    throw e;
+}
+
+/**
  * @param {object} params
  * @param {string} params.text
  * @param {string|null} params.documentTypeHint
  * @returns {Promise<{ model: string, data: object, raw_content: string }>}
  */
 async function extractStructuredFromText({ text, documentTypeHint }) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey || !String(apiKey).trim()) {
-        const e = new Error('Chiave API OpenAI non configurata sul server (OPENAI_API_KEY).');
+    if (!getActiveProvider()) {
+        const e = new Error('Nessun provider AI configurato sul server.');
         e.code = 'AI_NOT_CONFIGURED';
         throw e;
     }
 
-    const model = DEFAULT_MODEL;
     const bodyText = String(text || '').trim();
     if (!bodyText) {
         const e = new Error('Testo sorgente vuoto: estrarre prima il PDF.');
@@ -68,46 +95,20 @@ Testo documento:
 ${truncated}
 ---`;
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-    let response;
+    let result;
     try {
-        response = await fetch(OPENAI_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model,
-                temperature: 0.2,
-                response_format: { type: 'json_object' },
-                messages: [
-                    { role: 'system', content: system },
-                    { role: 'user', content: user },
-                ],
-            }),
-            signal: controller.signal,
-        });
+        result = await chat(
+            [
+                { role: 'system', content: system },
+                { role: 'user', content: user },
+            ],
+            { temperature: 0.2, responseFormat: 'json' }
+        );
     } catch (err) {
-        clearTimeout(timer);
-        const e = new Error(err.name === 'AbortError' ? 'Timeout richiesta OpenAI.' : String(err.message || err));
-        e.code = 'AI_REQUEST_FAILED';
-        throw e;
-    }
-    clearTimeout(timer);
-
-    const rawJson = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        const msg = rawJson?.error?.message || response.statusText || 'Errore OpenAI';
-        const e = new Error(msg);
-        e.code = 'AI_UPSTREAM_ERROR';
-        e.status = response.status;
-        throw e;
+        normalizeChatError(err);
     }
 
-    const content = rawJson?.choices?.[0]?.message?.content;
+    const content = result.content;
     if (!content || typeof content !== 'string') {
         const e = new Error('Risposta OpenAI senza contenuto testuale.');
         e.code = 'AI_EMPTY_RESPONSE';
@@ -130,7 +131,7 @@ ${truncated}
     }
 
     return {
-        model,
+        model: result.model || DEFAULT_MODEL,
         data,
         raw_content: content,
     };
