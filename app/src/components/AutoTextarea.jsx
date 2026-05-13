@@ -1,15 +1,19 @@
 /**
- * AutoTextarea  textarea che si espande automaticamente al contenuto
+ * AutoTextarea - textarea che si espande automaticamente al contenuto
  * + pulsante dettatura vocale (Web Speech API, it-IT) su browser compatibili.
  *
- * Riusabile ovunque serva una textarea libera: conclusioni, note checklist, ecc.
- * Props:
- *   className   classe CSS da applicare alla textarea (default: "outcome-textarea")
- *   onBlur      handler opzionale onBlur (es. per auto-save)
+ * Note compatibilità:
+ * - Android Chrome: non supporta `continuous:true`. Il riconoscimento termina
+ *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms
+ *   (delay necessario per Chrome: se si chiama start() subito in onend,
+ *   la sessione non parte e il pulsante torna inattivo silenziosamente).
+ * - PWA Android: il microfono va abilitato manualmente in Impostazioni Android
+ *   ? App ? [nome app] ? Permessi ? Microfono. L'errore viene mostrato in-page.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
 
+const RESTART_DELAY_MS = 150; // Chrome richiede un breve gap tra onend e il prossimo start()
 
 function AutoTextarea({
   id,
@@ -23,7 +27,11 @@ function AutoTextarea({
 }) {
   const ref = useRef(null);
   const recognitionRef = useRef(null);
+  const isListeningRef = useRef(false);
+  const valueRef = useRef(value);
+  const restartTimerRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState(null); // null | "not-allowed" | "unavailable"
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
@@ -36,30 +44,95 @@ function AutoTextarea({
     el.style.height = el.scrollHeight + "px";
   }, [value]);
 
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  // Pulizia timer al dismiss del componente
+  useEffect(() => {
+    return () => {
+      clearTimeout(restartTimerRef.current);
+      isListeningRef.current = false;
+      try { recognitionRef.current?.stop(); } catch { /* ignorato */ }
+    };
+  }, []);
+
+  const stopListening = () => {
+    isListeningRef.current = false;
+    clearTimeout(restartTimerRef.current);
+    setIsListening(false);
+    try { recognitionRef.current?.stop(); } catch { /* ignorato */ }
+  };
+
+  const startRecognition = () => {
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "it-IT";
+      recognition.continuous = false;   // Android Chrome non supporta true
+      recognition.interimResults = false;
+
+      recognition.onresult = (e) => {
+        const transcript = Array.from(e.results)
+          .map((r) => r[0].transcript)
+          .join(" ");
+        if (transcript) {
+          const current = valueRef.current;
+          onChange({ target: { value: current ? current + " " + transcript : transcript } });
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.warn("[Voice] SpeechRecognition error:", e.error);
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          isListeningRef.current = false;
+          clearTimeout(restartTimerRef.current);
+          setIsListening(false);
+          setVoiceError("not-allowed");
+        }
+        // Errori transitori (network, audio-capture, ecc.): onend gestisce il restart
+      };
+
+      recognition.onend = () => {
+        if (isListeningRef.current) {
+          // Delay 150ms: Chrome richiede un gap prima di poter chiamare start() di nuovo.
+          // Senza questo delay il pulsante torna inattivo silenziosamente su Desktop e Android.
+          restartTimerRef.current = setTimeout(() => {
+            if (isListeningRef.current) {
+              startRecognition();
+            }
+          }, RESTART_DELAY_MS);
+        } else {
+          setIsListening(false);
+        }
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (err) {
+      console.warn("[Voice] Impossibile avviare SpeechRecognition:", err.message);
+      isListeningRef.current = false;
+      setIsListening(false);
+      setVoiceError("unavailable");
+    }
+  };
+
   const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
+    setVoiceError(null);
+    if (isListeningRef.current) {
+      stopListening();
       return;
     }
-    const recognition = new SpeechRecognition();
-    recognition.lang = "it-IT";
-    recognition.continuous = true;
-    recognition.interimResults = false;
-
-    recognition.onresult = (e) => {
-      const transcript = Array.from(e.results)
-        .map((r) => r[0].transcript)
-        .join(" ");
-      onChange({ target: { value: value ? value + " " + transcript : transcript } });
-    };
-
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
-
-    recognition.start();
-    recognitionRef.current = recognition;
+    isListeningRef.current = true;
     setIsListening(true);
+    startRecognition();
   };
+
+  const errorMessage =
+    voiceError === "not-allowed"
+      ? "Permesso microfono non concesso. Impostazioni Android ? App ? SGQ Audit ? Permessi ? Microfono"
+      : voiceError === "unavailable"
+      ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
+      : null;
 
   return (
     <div className="auto-textarea-wrapper">
@@ -75,13 +148,30 @@ function AutoTextarea({
         disabled={disabled}
       />
       {SpeechRecognition && !disabled && (
-        <button
-          type="button"
-          className={`voice-btn${isListening ? " voice-btn--active" : ""}`}
-          onClick={toggleListening}
-          title={isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
-          aria-label={isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
-        />
+        <>
+          <button
+            type="button"
+            className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
+            onClick={toggleListening}
+            title={
+              voiceError
+                ? "Errore microfono — tocca per riprovare"
+                : isListening
+                ? "Ferma dettatura"
+                : "Dettatura vocale (it-IT)"
+            }
+            aria-label={
+              voiceError
+                ? "Errore microfono"
+                : isListening
+                ? "Ferma dettatura"
+                : "Avvia dettatura vocale"
+            }
+          />
+          {errorMessage && (
+            <p className="voice-perm-error">{errorMessage}</p>
+          )}
+        </>
       )}
     </div>
   );

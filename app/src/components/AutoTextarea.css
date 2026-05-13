@@ -3,11 +3,11 @@
 }
 
 /* La textarea dentro il wrapper non deve avere resize manuale e
-   lascia spazio per il pulsante mic a destra */
+   lascia spazio per il pulsante mic a destra (padding allargato per touch target 44px) */
 .auto-textarea-wrapper textarea {
   resize: none;
   overflow: hidden;
-  padding-right: 2.8rem;
+  padding-right: 3.2rem;
   background: #ffffff;
 }
 
@@ -20,10 +20,14 @@
 /* ---- Pulsante microfono ---- */
 .voice-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
+  /* Area visibile 2rem x 2rem */
   width: 2rem;
   height: 2rem;
+  /* Padding trasparente porta il touch target a ~44px (Apple HIG / Google MD) */
+  padding: 6px;
+  box-sizing: content-box;
   border: 1px solid #e5e7eb;
   border-radius: 50%;
   background-color: #f9fafb;
@@ -32,6 +36,8 @@
   background-position: center;
   background-size: 55%;
   cursor: pointer;
+  /* Rimuove il 300ms delay di Android e il double-tap zoom */
+  touch-action: manipulation;
   transition: background-color 0.2s, transform 0.1s;
   z-index: 1;
 }
@@ -47,7 +53,24 @@
   animation: pulse-mic 1.2s ease-in-out infinite;
 }
 
+.voice-btn--error {
+  background-color: #fef3c7;
+  border-color: #f59e0b;
+}
+
 @keyframes pulse-mic {
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.15); }
+}
+
+/* Messaggio permesso microfono negato */
+.voice-perm-error {
+  margin: 4px 0 0 0;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
 }
