@@ -17,6 +17,40 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 12-13 maggio 2026 — ADR-010 Architettura AI Agentica + Implementazione Fase 0-1
+
+**Branch**: `cursor/adr-010-ai-agentic-architecture-7330` — PR #44
+**Obiettivo**: rendere l'app agentica con AI a supporto dell'utente (riesame requisiti, gap analysis, NormBroker).
+
+**Decisioni architetturali (ADR-010)**:
+- Adapter multi-provider AI: Gemini Flash (gratis, default) / Azure OpenAI / OpenAI con cascata automatica
+- NormBroker multi-source: cache locale + API normative + web scraping autenticato + fonti pubbliche (Normattiva.it)
+- Riesame requisiti (§8.2) assistito: AI legge capitolato, estrae requisiti, cross-referenzia con documenti azienda
+- RAG incrementale: context lungo Gemini (Fase 1) → chunking SQL (Fase 2) → pgvector (Fase 3)
+- Licenze AI: `ai_import` (esistente), `ai_assist`, `ai_norms`, `ai_review`, `ai_chat` (nuove) — comportamento "B" (nascoste se off)
+
+**Implementato e deployato (Fase 0 + Fase 1)**:
+- `aiProviderAdapter.js` + 3 adapter (Gemini/Azure/OpenAI) — 16 test
+- `norm_requirements` DB + import 234 clausole da 6 norme ISO
+- `ai_interactions`, `norm_sources`, `norm_access_log` DB + middleware audit trail
+- `importAiExtraction` migrato su adapter (retrocompatibile)
+- `normBroker.service.js` + `localStoreConnector.js` + API REST `/norms/*` — 8 test
+- `contractReview.controller.js` + route — 7 endpoint, 11 stati workflow, checklist — migration 054
+- `aiContextBuilder.service.js` + `aiAssist.controller.js` + `/ai/suggest` — 4 test
+- UI `ContractReviewPage.jsx` + `AiSuggestionInline.jsx` + `useAiAssist.js` + route + menu
+- Route montate in `server.js`, migrazioni 052-053-054 applicate su VPS, backend restartato
+
+**Da completare nella prossima sessione**:
+1. Attivare licenza `ai_review` per l'organizzazione di test
+2. Configurare `GEMINI_API_KEY` nel `.env` del VPS (l'utente deve fornire la chiave)
+3. TASK 1-E: WebScraper per siti normativi (quando l'utente configura credenziali)
+4. Merge PR #44 in main dopo smoke test
+5. Fase 2: gap analysis + legislazione (ADR-010)
+
+**Lezione appresa**: il workflow multi-agente Cursor (3-4 task paralleli su file diversi) funziona bene se i brief sono precisi e i perimetri file non si sovrappongono. Tempo totale: ~30 min per 8 task (vs ore in sequenza).
+
+---
+
 ### Sessione 11 maggio 2026 — Fix sync-queue storm: deduplicazione save_responses / update_audit
 
 **Branch**: `cursor/fix-sync-queue-dedup-storm-6ad0`  
