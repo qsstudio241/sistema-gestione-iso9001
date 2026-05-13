@@ -17,6 +17,51 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 13 maggio 2026 — ADR-010 AI agentica: attivazione Gemini, seed norme, merge PR #44
+
+**Branch**: `cursor/adr-010-ai-agentic-architecture-7330` → mergiato su `main` (commit `49a6a6c`).
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Verifica licenza `ai_review`/`ai_assist` per org 1002 | `licensed_modules = null` = tutti i moduli già attivi — nessuna modifica necessaria |
+| 2 | GEMINI_API_KEY configurata sul VPS | `AIzaSyAyeq...` in `/var/www/sgq-backend/.env` |
+| 3 | GEMINI_MODEL aggiornato | `gemini-2.5-flash` (unico modello funzionante nel free tier con questa key) |
+| 4 | Smoke test `/ai/suggest` | HTTP 200 in ~1.7s — Gemini risponde correttamente |
+| 5 | Seed `norm_requirements` | 234 clausole: ISO 9001 (91), ISO 14001 (45), ISO 45001 (56), 3834-1 (3), 3834-3 (35), 3834-5 (4) |
+| 6 | Merge PR #44 in main | Conflitti risolti (migrazioni rinomerate, App.jsx + AppLayout.jsx uniti) |
+| 7 | Route frontend `/contract-reviews` | Aggiunta in App.jsx + voce "Riesame Requisiti" 📑 in AppLayout.jsx |
+
+#### Lezioni apprese (13/05/2026)
+
+- **Gemini free tier 2026**: `gemini-1.5-flash` non è disponibile sulla v1beta API. `gemini-2.0-flash` ha quota 0 sul tier gratuito "Default Project". **Soluzione**: `gemini-2.5-flash` funziona correttamente. Default aggiornato in `geminiAdapter.js` e in `.env` VPS.
+- **Password admin@sgq.local**: era sconosciuta. Impostata a `Sistemi@2026` via script bcrypt sul VPS (stesso pattern SSH/sudo del progetto).
+- **Conflitti numerazione migrazioni**: ADR-010 usava 052/053/054 ma `main` aveva già 052_departments, 053_enhance_suppliers, 054_enhance_complaints. Il file `run-migration-052-vps.js` era in conflitto. Tenuto la versione main (NC integration); le migrazioni ADR-010 sono `052_norm_requirements.sql`, `053_ai_interactions.sql`, `054_commercial_cases.sql` già applicate sul VPS prima del conflitto.
+- **Merge con rebase fallisce se ci sono N commit con conflitti docs**: usare `git pull --no-rebase` per merge standard quando si integrano branch con molti commit su file .md.
+- **Seed norme**: script `import-norms-from-markdown.js` genera `backend/data/norm_requirements_seed.json` (eseguire in locale). Script separato per INSERT nel DB va eseguito sul VPS tramite `scp + node`. Non eseguire mai il seed direttamente da Windows (MSSQL pool lento).
+
+#### Stato VPS al 13/05/2026
+
+| Componente | Stato |
+|---|---|
+| Backend sgq-backend | ✅ attivo, PID aggiornato dopo restart |
+| `GEMINI_API_KEY` | ✅ configurata in `.env` |
+| `GEMINI_MODEL` | ✅ `gemini-2.5-flash` |
+| `norm_requirements` | ✅ 234 righe |
+| `ai_interactions` | ✅ tabella creata (migrazione 053) |
+| `commercial_cases` | ✅ tabella creata (migrazione 054) |
+| Route `/ai/suggest` | ✅ HTTP 401 senza auth, 200 con token valido |
+| Route `/contract-reviews` | ✅ HTTP 401 senza auth |
+| Route `/norm-broker/search` | ✅ HTTP 401 senza auth |
+
+#### Smoke test E2E — da completare
+
+- ⏳ Login su `https://systemgest.netlify.app` → menu SGQ → "Riesame Requisiti" → creare caso → incollare capitolato → lanciare analisi AI → verificare suggerimenti
+- Credenziali test: `admin@sgq.local` / `Sistemi@2026` (superadmin, org 1001)
+
+---
+
 ### Sessione 12 maggio 2026 — Fix backend pending-issues/NC + UI PendingIssuesCascade + collapse clausola
 
 **Branch**: `cursor/adr009-fase1-registro-standard-52c5` → mergiato su `main` + deploy Netlify. Fix backend deployati su VPS.
