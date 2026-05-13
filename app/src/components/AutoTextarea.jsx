@@ -10,6 +10,10 @@
  * Nota Android: Chrome per Android non supporta `continuous: true`. Il riconoscimento
  * si interrompe dopo ogni pausa; viene riavviato automaticamente finche' l'utente non
  * tocca di nuovo il pulsante (simula la modalita' continua).
+ *
+ * Nota PWA: se il permesso microfono non e' stato concesso, `onerror('not-allowed')`
+ * si attiva silenziosamente. In quel caso viene mostrato un messaggio con le istruzioni
+ * per abilitare il permesso nelle impostazioni Android.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
@@ -30,6 +34,7 @@ function AutoTextarea({
   const isListeningRef = useRef(false);
   const valueRef = useRef(value);
   const [isListening, setIsListening] = useState(false);
+  const [permError, setPermError] = useState(false);
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
@@ -71,9 +76,12 @@ function AutoTextarea({
 
     recognition.onerror = (e) => {
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        // Permesso microfono negato: ferma definitivamente
+        // Permesso microfono negato (frequente su PWA Android al primo avvio o se revocato)
+        console.warn("[Voice] Permesso microfono negato:", e.error,
+          "— Abilita in Impostazioni Android > App > Permessi > Microfono");
         isListeningRef.current = false;
         setIsListening(false);
+        setPermError(true);
       }
       // Altri errori transitori: onend gestisce il restart
     };
@@ -97,6 +105,7 @@ function AutoTextarea({
   };
 
   const toggleListening = () => {
+    setPermError(false); // reset messaggio errore ad ogni nuovo tentativo
     if (isListeningRef.current) {
       stopListening();
       return;
@@ -120,13 +129,35 @@ function AutoTextarea({
         disabled={disabled}
       />
       {SpeechRecognition && !disabled && (
-        <button
-          type="button"
-          className={`voice-btn${isListening ? " voice-btn--active" : ""}`}
-          onClick={toggleListening}
-          title={isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
-          aria-label={isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
-        />
+        <>
+          <button
+            type="button"
+            className={`voice-btn${isListening ? " voice-btn--active" : ""}${permError ? " voice-btn--error" : ""}`}
+            onClick={toggleListening}
+            title={
+              permError
+                ? "Permesso microfono negato — tocca per riprovare"
+                : isListening
+                ? "Ferma dettatura"
+                : "Dettatura vocale (it-IT)"
+            }
+            aria-label={
+              permError
+                ? "Permesso microfono negato"
+                : isListening
+                ? "Ferma dettatura"
+                : "Avvia dettatura vocale"
+            }
+          />
+          {permError && (
+            <p className="voice-perm-error">
+              Permesso microfono non concesso.{" "}
+              <strong>
+                Impostazioni Android &rarr; App &rarr; {document.title || "SGQ"} &rarr; Permessi &rarr; Microfono
+              </strong>
+            </p>
+          )}
+        </>
       )}
     </div>
   );
