@@ -1402,7 +1402,7 @@ class ApiService {
     }
 
     async aiSuggest(feature, context) {
-        return this.post('/ai/suggest', { feature, context });
+        return this.post('/ai/suggest', { feature, context }, { timeout: 90000 });
     }
 }
 
