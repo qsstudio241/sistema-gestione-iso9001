@@ -1312,6 +1312,43 @@ class ApiService {
     async commitImportJobFileToRegistry(jobId, fileId, data) {
         return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-registry`, data);
     }
+
+    // ─── Riesame requisiti contratto (commercial_cases) ─────────────────────
+    async getContractReviews(status) {
+        const qs = new URLSearchParams(status ? { status } : {}).toString();
+        return this.get(`/contract-reviews${qs ? `?${qs}` : ''}`);
+    }
+
+    async createContractReview(data) {
+        return this.post('/contract-reviews', data);
+    }
+
+    async getContractReview(id) {
+        return this.get(`/contract-reviews/${id}`);
+    }
+
+    async updateContractReview(id, data) {
+        return this.put(`/contract-reviews/${id}`, data);
+    }
+
+    async transitionContractReview(id, toStatus, reason) {
+        return this.post(`/contract-reviews/${id}/transition`, {
+            to_status: toStatus,
+            reason,
+        });
+    }
+
+    async generateReviewChecklist(id, phase) {
+        return this.post(`/contract-reviews/${id}/generate-checklist`, { phase });
+    }
+
+    async saveChecklistAnswer(caseId, itemId, data) {
+        return this.put(`/contract-reviews/${caseId}/checklist/${itemId}`, data);
+    }
+
+    async aiSuggest(feature, context) {
+        return this.post('/ai/suggest', { feature, context });
+    }
 }
 
 /**

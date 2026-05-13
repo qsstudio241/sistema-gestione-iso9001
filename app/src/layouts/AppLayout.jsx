@@ -50,6 +50,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/nc",          icon: "🚨", label: "Non Conformità", licenseKey: "nc" },
         { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", licenseKey: "rischi" },
         { to: "/reclami",     icon: "📢", label: "Reclami & Fornitori", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
+        { to: "/contract-reviews", icon: "📑", label: "Riesame Requisiti", licenseKey: "ai_review" },
         { to: "/sal",         icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
       ]),
     },

@@ -1,0 +1,95 @@
+.ai-suggestion-inline {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: linear-gradient(165deg, #fafbff 0%, #f5f7fb 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ai-suggestion-inline.loading {
+  border-style: dashed;
+  color: #555;
+  animation: ai-suggestion-pulse 1.2s ease-in-out infinite;
+}
+
+.ai-suggestion-inline.error {
+  border-color: #e57373;
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+@keyframes ai-suggestion-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.ai-suggestion-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c6bc0;
+  margin-bottom: 0.5rem;
+}
+
+.ai-suggestion-content {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.ai-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ai-suggestion-actions .ai-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.ai-suggestion-actions .ai-btn.accept {
+  background: #2e7d32;
+  color: #fff;
+  border-color: #1b5e20;
+}
+
+.ai-suggestion-actions .ai-btn.accept:hover {
+  background: #388e3c;
+}
+
+.ai-suggestion-actions .ai-btn.edit {
+  background: #f9a825;
+  color: #1a1a1a;
+  border-color: #f57f17;
+}
+
+.ai-suggestion-actions .ai-btn.edit:hover {
+  background: #fbc02d;
+}
+
+.ai-suggestion-actions .ai-btn.reject {
+  background: #fff;
+  color: #c62828;
+  border-color: #e57373;
+}
+
+.ai-suggestion-actions .ai-btn.reject:hover {
+  background: #ffebee;
+}
