@@ -47,9 +47,10 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
-        { to: "/nc",          icon: "🚨", label: "Non Conformità", licenseKey: "nc" },
+        { to: "/nc",          icon: "🚨", label: "Non Conformità",   licenseKey: "nc" },
         { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", licenseKey: "rischi" },
-        { to: "/reclami",     icon: "📢", label: "Reclami & Fornitori", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
+        { to: "/reclami",     icon: "📢", label: "Reclami", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
+        { to: "/anagrafiche", icon: "🗂️",  label: "Anagrafiche",        licenseKey: "reclami" },
         { to: "/sal",         icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
       ]),
     },

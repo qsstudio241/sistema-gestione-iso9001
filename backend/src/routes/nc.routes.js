@@ -44,4 +44,15 @@ router.put('/non-conformities/:id/actions/:actionId', ncController.updateNcActio
 // DELETE /api/v1/non-conformities/:id/actions/:actionId - Elimina azione
 router.delete('/non-conformities/:id/actions/:actionId', ncController.deleteNcAction);
 
+// ─── BULK PUSH AUDIT → REGISTRO NC ───────────────────────────────────────────
+// Trasferisce tutte le NC/OSS rilevate nella checklist di un audit nel registro
+// organizzativo non_conformities. Idempotente (skip se gia presenti).
+// Richiede licenza modulo 'nc' (gia applicata da router.use sopra).
+
+// POST /api/v1/audits/:auditRef/push-to-nc-register
+router.post('/audits/:auditRef/push-to-nc-register', ncController.pushAuditToNcRegister);
+
+// DELETE /api/v1/audits/:auditRef/push-to-nc-register - Undo (entro 10s, solo NC open)
+router.delete('/audits/:auditRef/push-to-nc-register', ncController.undoPushAuditToNcRegister);
+
 module.exports = router;
