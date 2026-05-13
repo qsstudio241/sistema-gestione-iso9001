@@ -64,7 +64,7 @@ async function chat(messages, options = {}) {
     );
   }
 
-  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const timeout =
     typeof options.timeout === 'number' && options.timeout > 0
       ? options.timeout
