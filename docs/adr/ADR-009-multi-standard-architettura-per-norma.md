@@ -1,6 +1,6 @@
-# ADR-009 — Architettura multi-standard / multi-document_type per-norma + AI-ready
+# ADR-009 ï¿½ Architettura multi-standard / multi-document_type per-norma + AI-ready
 
-> **Stato**: Accettato — 8 maggio 2026
+> **Stato**: Accettato ï¿½ 8 maggio 2026
 > **Autori**: Lead architect (AI), Product owner
 > **Sostituisce parzialmente**: nessun ADR (estende il modello dati senza romperlo)
 > **Vincolante**: ogni nuova feature che tocchi audit/SAL/RDP o aggiunga uno standard deve essere progettata in modo compatibile con questo modello.
@@ -18,27 +18,27 @@ L'8 maggio 2026, durante la giornata di stabilizzazione di Camellini in produzio
 3. **`requireLicensedModule`** ignorava il ruolo ? admin riceveva `403 MODULE_NOT_LICENSED` su moduli base
 4. **CORS** mancante quando il backend era in restart (nginx restituiva 502 muto)
 
-Tutti e 4 sono **sintomi della stessa debolezza strutturale**: l'app è nata mono-standard (ISO 9001) e i moduli per ISO 14001 / 45001 / 3834-2 / RDP / Custom checklist / SAL sono stati appiccicati sopra a colpi di `if (norm === 'ISO_9001')`. Il debito è tracciabile in:
+Tutti e 4 sono **sintomi della stessa debolezza strutturale**: l'app ï¿½ nata mono-standard (ISO 9001) e i moduli per ISO 14001 / 45001 / 3834-2 / RDP / Custom checklist / SAL sono stati appiccicati sopra a colpi di `if (norm === 'ISO_9001')`. Il debito ï¿½ tracciabile in:
 
-- `auditConverter.js` — fallback hardcoded ISO_9001
-- `StorageContext.jsx` Exception 4 — condizione single-standard
+- `auditConverter.js` ï¿½ fallback hardcoded ISO_9001
+- `StorageContext.jsx` Exception 4 ï¿½ condizione single-standard
 - `AuditAccordionLayout.jsx` `STANDARDS_CONFIG` locale (non SoT condivisa)
-- `AuditOutcomeSection.jsx` — una sola casella conclusioni
-- `AuditClosePanel.jsx` — soglia di completamento globale, non per-norma
-- `wordExport.js` — pensato per "il template ISO 9001"
-- `exportPreferences.embedPhotos` — flag globale, non per-norma
+- `AuditOutcomeSection.jsx` ï¿½ una sola casella conclusioni
+- `AuditClosePanel.jsx` ï¿½ soglia di completamento globale, non per-norma
+- `wordExport.js` ï¿½ pensato per "il template ISO 9001"
+- `exportPreferences.embedPhotos` ï¿½ flag globale, non per-norma
 
 ### La vision finale del prodotto
 
-Dai documenti di progetto (`PROJECT_ROADMAP.md`, decisione 05/04/2026 "6 entità universali", Sprint 9-12, vision vincolante 08/04/2026):
+Dai documenti di progetto (`PROJECT_ROADMAP.md`, decisione 05/04/2026 "6 entitï¿½ universali", Sprint 9-12, vision vincolante 08/04/2026):
 
-> Piattaforma SaaS multi-tenant per la **gestione documentale integrata di SGQ aziendali**, dove l'AI è il moltiplicatore di valore per estrazione/indicizzazione/assistenza contestuale.
+> Piattaforma SaaS multi-tenant per la **gestione documentale integrata di SGQ aziendali**, dove l'AI ï¿½ il moltiplicatore di valore per estrazione/indicizzazione/assistenza contestuale.
 
-Il **modulo audit è dichiarato pilastro e pilota** dell'intero design del `document_registry`: l'architettura multi-standard di audit/SAL/RDP guida le decisioni di schema del registro documentale e dei moduli AI a valle.
+Il **modulo audit ï¿½ dichiarato pilastro e pilota** dell'intero design del `document_registry`: l'architettura multi-standard di audit/SAL/RDP guida le decisioni di schema del registro documentale e dei moduli AI a valle.
 
 ### Cosa va deciso in modo strutturale
 
-1. Come si separa ciò che è **per-norma** da ciò che è **condiviso** in un audit multi-standard
+1. Come si separa ciï¿½ che ï¿½ **per-norma** da ciï¿½ che ï¿½ **condiviso** in un audit multi-standard
 2. Come si distingue il caso **sistemi integrati** (Annex SL / HLS) dal caso **non-integrati** (richiedono report e conteggi separati)
 3. Come si modellano in modo uniforme **audit, SAL, RDP, riesame contratto, futuri** senza far esplodere il codice
 4. Come si rendono i **componenti UI modulari** in modo che diventino punti di aggancio per AI/RAG senza richiedere riscrittura
@@ -48,9 +48,9 @@ Il **modulo audit è dichiarato pilastro e pilota** dell'intero design del `docum
 
 ## Decisione
 
-### 1. Modello a due assi ortogonali: `document_type` × `selectedStandards[]`
+### 1. Modello a due assi ortogonali: `document_type` ï¿½ `selectedStandards[]`
 
-Un documento del SGQ è caratterizzato da **due assi indipendenti**:
+Un documento del SGQ ï¿½ caratterizzato da **due assi indipendenti**:
 
 ```js
 audit.metadata = {
@@ -61,13 +61,13 @@ audit.metadata = {
 }
 ```
 
-**Asse 1 — `document_type`**: determina la **shell UI** (componente di compilazione/chiusura) e il **template export base**. Esempi:
+**Asse 1 ï¿½ `document_type`**: determina la **shell UI** (componente di compilazione/chiusura) e il **template export base**. Esempi:
 - `'audit'` ? checklist + risposte C/NC/OSS/OM/NA/NV
-- `'sal'` ? tracker requisiti × stati Discusso/In corso/Da validare/Completato
+- `'sal'` ? tracker requisiti ï¿½ stati Discusso/In corso/Da validare/Completato
 - `'rdp'` ? form prove + galleria foto + note (Mason, RDP saldatura, VT/MT/PT)
-- `'contract_review'` ? matrice requisiti committente vs capacità (Sprint 11)
+- `'contract_review'` ? matrice requisiti committente vs capacitï¿½ (Sprint 11)
 
-**Asse 2 — `selectedStandards[]`**: determina **conteggi per norma**, **conclusioni per norma**, **stralci normativi**, **export per certificatore**. Può essere vuoto (`[]`) per documenti puramente custom (es. RDP Mason senza ISO).
+**Asse 2 ï¿½ `selectedStandards[]`**: determina **conteggi per norma**, **conclusioni per norma**, **stralci normativi**, **export per certificatore**. Puï¿½ essere vuoto (`[]`) per documenti puramente custom (es. RDP Mason senza ISO).
 
 ### 2. Modello dati per-norma `byStandard[key]`
 
@@ -76,12 +76,12 @@ Tutti i campi che hanno significato per-norma vivono sotto una mappa con la stes
 ```js
 audit = {
   metadata: { ... },
-  checklist: {                      // contenitore parametrico (già esistente)
+  checklist: {                      // contenitore parametrico (giï¿½ esistente)
     ISO_9001:  { clause4: { questions: [...] }, ... },
     ISO_14001: { clause4: { questions: [...] }, ... },
     CUSTOM_42: { ... }
   },
-  byStandard: {                     // ? NUOVO: tutto ciò che è per-norma
+  byStandard: {                     // ? NUOVO: tutto ciï¿½ che ï¿½ per-norma
     ISO_9001: {
       conclusions: '...',
       decision: 'conforme' | 'nc_minore' | 'nc_maggiore' | null,
@@ -98,7 +98,7 @@ audit = {
 }
 ```
 
-**Persistenza server**: il campo va in `audits.audit_extra_data.byStandard` (il JSON è già flessibile, nessuna migrazione DB richiesta nella fase iniziale).
+**Persistenza server**: il campo va in `audits.audit_extra_data.byStandard` (il JSON ï¿½ giï¿½ flessibile, nessuna migrazione DB richiesta nella fase iniziale).
 
 ### 3. Registro standard come Source of Truth
 
@@ -122,74 +122,74 @@ export const STANDARDS_REGISTRY = {
 };
 ```
 
-**Proprietà chiave `kind`**: classifica lo standard per consentire/vietare combinazioni:
-- `iso_hls` — standard ISO con High Level Structure (9001, 14001, 45001) ? integrabili tra loro
-- `iso_process` — standard ISO di processo (3834-2) ? non integrabili con HLS
-- `rdp` — rapporti specialistici (RDP Mason, futuri VT/MT/PT) ? singoli, non integrabili
-- `custom` — checklist personalizzate ? norma virtuale, mai integrabili con altre
+**Proprietï¿½ chiave `kind`**: classifica lo standard per consentire/vietare combinazioni:
+- `iso_hls` ï¿½ standard ISO con High Level Structure (9001, 14001, 45001) ? integrabili tra loro
+- `iso_process` ï¿½ standard ISO di processo (3834-2) ? non integrabili con HLS
+- `rdp` ï¿½ rapporti specialistici (RDP Mason, futuri VT/MT/PT) ? singoli, non integrabili
+- `custom` ï¿½ checklist personalizzate ? norma virtuale, mai integrabili con altre
 
-**Test di scalabilità**: aggiungere un nuovo standard ISO (es. ISO 27001) deve richiedere SOLO:
+**Test di scalabilitï¿½**: aggiungere un nuovo standard ISO (es. ISO 27001) deve richiedere SOLO:
 1. `INSERT INTO standards (...)` + seed domande
 2. Una riga in `STANDARDS_REGISTRY`
 3. (Opzionale) un template Word dedicato
 
 E **niente altre modifiche** al codice frontend.
 
-### 4. Flag `isIntegratedSystem` — sistemi integrati vs non-integrati
+### 4. Flag `isIntegratedSystem` ï¿½ sistemi integrati vs non-integrati
 
 **Decisione**:
 - Flag impostato all'atto della selezione standard (creazione audit / aggiunta standard a draft)
 - **Valido solo** se TUTTI gli standard selezionati hanno `kind === 'iso_hls'`
-- **Immutabile dopo la prima risposta compilata**, modificabile solo finché l'audit è in stato `draft` puro (zero risposte e zero modifiche a campi ricchi)
+- **Immutabile dopo la prima risposta compilata**, modificabile solo finchï¿½ l'audit ï¿½ in stato `draft` puro (zero risposte e zero modifiche a campi ricchi)
 
 **Cosa cambia in funzione del flag** (riassunto operativo):
 
 | Aspetto | `isIntegratedSystem=true` | `isIntegratedSystem=false` |
 |---|---|---|
-| Sidebar conteggi | 1 totale unico ("5 NC, 3 OSS") | Per norma ("9001: 2 NC · 14001: 3 NC") |
+| Sidebar conteggi | 1 totale unico ("5 NC, 3 OSS") | Per norma ("9001: 2 NC ï¿½ 14001: 3 NC") |
 | Sezione 11 conclusioni | 1 casella "Conclusioni complessive" | Tab per norma + opzionale "Sintesi" |
 | Esito / decisione | 1 esito complessivo del SGI | 1 esito per norma |
 | AuditClosePanel | 1 soglia di completamento globale | Checklist per norma "ISO 9001 ? / ISO 14001 ?" |
 | Status audit | Unico (`completed` quando tutto chiuso) | Unico, ma chiusura richiede checkpoint per ogni norma |
 | Export Word | 1 file integrato (con tutte le norme) | n file (uno per norma) + ZIP "tutti" + opzione "integrato" facoltativa |
 
-### 5. Cosa è per-norma vs cosa è condiviso
+### 5. Cosa ï¿½ per-norma vs cosa ï¿½ condiviso
 
 Mappa di riferimento (vincolante per design):
 
 | Elemento | Per norma? | Note |
 |---|---|---|
 | **Anagrafica** (numero audit, data, azienda, auditor, programma) | ? Unico | Stesso evento, stessa azienda, stesso giorno |
-| **Obiettivo audit** (descrizione, agenda, partecipanti) | ? Unico | "Verifica SGI integrato 9001+14001" è UNA descrizione |
+| **Obiettivo audit** (descrizione, agenda, partecipanti) | ? Unico | "Verifica SGI integrato 9001+14001" ï¿½ UNA descrizione |
 | **Scope / Processi / Documenti riferimento** | ? Unici | Spesso convergono nello stesso audit |
-| **Checklist domande/risposte** | ? Per norma | Già così oggi (corretto) |
+| **Checklist domande/risposte** | ? Per norma | Giï¿½ cosï¿½ oggi (corretto) |
 | **Conteggi NC/OSS/OM** | ? Per norma + totale | Per il certificatore di 9001 contano solo le NC 9001 |
 | **Conclusioni** | ? Per norma + opz. complessiva | Vedi flag `isIntegratedSystem` |
 | **Decisione finale (esito)** | ? Per norma se non-integrato | Posso dichiarare 9001 conforme e 14001 da rivedere |
 | **Soglia completamento per chiusura** | ? Per norma | Override per norma su soglia di default |
-| **Status audit** (draft / in_progress / completed) | ? Unico | È UN documento — `completed` significa "tutte le norme chiuse o esplicitamente saltate" |
+| **Status audit** (draft / in_progress / completed) | ? Unico | ï¿½ UN documento ï¿½ `completed` significa "tutte le norme chiuse o esplicitamente saltate" |
 | **Export Word/PDF** | ? Per norma + integrato opz. | Certificatori diversi vogliono il loro report |
 | **Opzioni export** (foto, allegati, intestazioni) | ? Per norma | Posso volere foto in 14001 ma non in 9001 |
-| **Allegati audit** | ? Unici | Allegati appartengono all'audit; un allegato può essere riferito a domanda di qualsiasi norma |
+| **Allegati audit** | ? Unici | Allegati appartengono all'audit; un allegato puï¿½ essere riferito a domanda di qualsiasi norma |
 | **Pending issues / Rilievi pendenti tra audit** | ? Per norma | Un pending nasce su una clausola di una norma specifica |
-| **Lock acquisition** | ? Unico | Lock è sull'intero audit, indipendente dalle norme |
+| **Lock acquisition** | ? Unico | Lock ï¿½ sull'intero audit, indipendente dalle norme |
 
 ### 6. RDP come specializzazione di custom checklist
 
-**Tecnicamente** RDP è una custom checklist con:
+**Tecnicamente** RDP ï¿½ una custom checklist con:
 - `has_outcome_buttons = false` (no C/NC/OSS/OM, solo "fatto/note/foto")
 - `requires_photos = true` (campo da aggiungere a `custom_checklists`)
 - Template Word dedicato (`rdp-mason-report.docx`)
 
-**A livello prodotto** RDP è esposto come `document_type='rdp'` — voce di menu separata, validazioni specifiche di chiusura (foto obbligatorie su ogni voce), pannello di compilazione dedicato `<RDPModule>`.
+**A livello prodotto** RDP ï¿½ esposto come `document_type='rdp'` ï¿½ voce di menu separata, validazioni specifiche di chiusura (foto obbligatorie su ogni voce), pannello di compilazione dedicato `<RDPModule>`.
 
 **Sotto il cofano** RDP riusa il motore custom checklist (stesse tabelle DB `custom_checklists` / `audit_custom_checklist_responses`, stesso componente di compilazione `CustomChecklistAuditView` arricchito), zero codice duplicato.
 
-Lo stesso pattern si applicherà a futuri rapporti specialistici (VT, MT, PT, ecc.): tipo documento separato in superficie, motore custom + flag specifici sotto.
+Lo stesso pattern si applicherï¿½ a futuri rapporti specialistici (VT, MT, PT, ecc.): tipo documento separato in superficie, motore custom + flag specifici sotto.
 
 ### 7. SAL come modulo gestionale separato (non un audit)
 
-**Tecnicamente** SAL è `document_type='sal'`. Differenze strutturali rispetto ad un audit:
+**Tecnicamente** SAL ï¿½ `document_type='sal'`. Differenze strutturali rispetto ad un audit:
 
 | Audit | SAL |
 |---|---|
@@ -200,8 +200,8 @@ Lo stesso pattern si applicherà a futuri rapporti specialistici (VT, MT, PT, ecc
 | 1 lead auditor | Consulente + azienda con dialogo continuo |
 | Allegati come evidenze del momento | Documenti del registro come stato implementazione |
 
-**Riuso massimo**: SAL **deve** appoggiarsi alla tabella `document_registry` (Sprint 1 — già in produzione) con un overlay di stato implementazione. Niente nuove tabelle base, solo:
-- Filtri per categoria documentale già esistenti
+**Riuso massimo**: SAL **deve** appoggiarsi alla tabella `document_registry` (Sprint 1 ï¿½ giï¿½ in produzione) con un overlay di stato implementazione. Niente nuove tabelle base, solo:
+- Filtri per categoria documentale giï¿½ esistenti
 - Asse "stato implementazione" sovrapposto a "stato documentale"
 - Albero documentale specifico per norma del SGI auditato
 
@@ -211,11 +211,11 @@ Lo stesso pattern si applicherà a futuri rapporti specialistici (VT, MT, PT, ecc
 
 Le custom checklist (`custom_checklists` con `id` e `name`) diventano norme virtuali con chiave `CUSTOM_<id>` nel `STANDARDS_REGISTRY` (caricate runtime). Un audit ibrido (es. ISO 9001 + checklist custom) trovs entrambe nelle tab parallele, conteggi separati, export indipendenti.
 
-**Già pronto al 80%**: `audit_custom_checklist_responses` è separato, `calculateCustomFindingsMetrics` esiste. Manca solo il **modello UI** che le tratti come pari grado di una ISO.
+**Giï¿½ pronto al 80%**: `audit_custom_checklist_responses` ï¿½ separato, `calculateCustomFindingsMetrics` esiste. Manca solo il **modello UI** che le tratti come pari grado di una ISO.
 
 ### 9. Componenti UI modulari come architettura abilitante per AI
 
-I componenti standard replicabili sono il cuore della scalabilità e il punto di aggancio per AI:
+I componenti standard replicabili sono il cuore della scalabilitï¿½ e il punto di aggancio per AI:
 
 | Componente | Riusato in | Hook AI futuro |
 |---|---|---|
@@ -227,41 +227,41 @@ I componenti standard replicabili sono il cuore della scalabilità e il punto di 
 | `<ExportPerStandardPanel audit>` | Ogni `document_type` | (read-only) |
 | `<NormExcerptInline clauseRef>` | Domande checklist, sezioni report | RAG: ricerca semantica clausole simili |
 
-**Interfaccia AI generica**: ogni componente standard espone una prop opzionale `aiAssist={({ context }) => Promise<Suggestion>}`. Se la licenza AI è attiva, il componente mostra il pulsante. Implementazione AI singola che vale per N moduli.
+**Interfaccia AI generica**: ogni componente standard espone una prop opzionale `aiAssist={({ context }) => Promise<Suggestion>}`. Se la licenza AI ï¿½ attiva, il componente mostra il pulsante. Implementazione AI singola che vale per N moduli.
 
 ### 10. Audit come pilota di `document_registry`
 
 **Decisione strategica confermata** dal product owner:
 
-> Il modulo audit è pilastro e pilota dell'architettura del `document_registry` che deve essere sviluppato proprio per chiudere il modulo audit.
+> Il modulo audit ï¿½ pilastro e pilota dell'architettura del `document_registry` che deve essere sviluppato proprio per chiudere il modulo audit.
 
 **Tradotto operativamente**:
 
-- Un audit chiuso (`status='completed'`) **è** un documento del registro:
+- Un audit chiuso (`status='completed'`) **ï¿½** un documento del registro:
   - `doc_type='audit_report'`
   - `status='vigente'`
   - `expiry_date = audit_date + 1 anno` (o setting per-tenant per la cadenza)
   - allegati audit linkati come evidenze documentali
-- Un SAL **è** un documento di gestione del registro:
+- Un SAL **ï¿½** un documento di gestione del registro:
   - `doc_type='sal'`
-  - `status='in_revisione'` finché aggiornato, `status='vigente'` solo a fine ciclo
-- Un RDP **è** un rapporto specialistico nel registro:
+  - `status='in_revisione'` finchï¿½ aggiornato, `status='vigente'` solo a fine ciclo
+- Un RDP **ï¿½** un rapporto specialistico nel registro:
   - `doc_type='inspection_report'`
   - `status='vigente'`, scadenza in funzione della commessa
-- Riesame contratto §8.2 (Sprint 11) **è** un documento di processo nel registro
+- Riesame contratto ï¿½8.2 (Sprint 11) **ï¿½** un documento di processo nel registro
 
-**Implementazione predisposta**: il modello `audit.metadata.documentRegistryId` viene riservato come campo opzionale (`null` accettato all'inizio). Verrà popolato quando il collegamento sarà implementato (Fase 5 di questo ADR + completamento Sprint A `document_registry` integration). Nessun refactoring distruttivo richiesto.
+**Implementazione predisposta**: il modello `audit.metadata.documentRegistryId` viene riservato come campo opzionale (`null` accettato all'inizio). Verrï¿½ popolato quando il collegamento sarï¿½ implementato (Fase 5 di questo ADR + completamento Sprint A `document_registry` integration). Nessun refactoring distruttivo richiesto.
 
 ### 11. AI integration come licenza separata, comportamento UI "B"
 
-**Decisione confermata** dal product owner: voto "B" — feature AI **completamente nascoste** se la licenza non è attiva (l'utente che paga solo audit base non vede mai un pulsante AI). Riconsiderazione futura se il canale commerciale di upselling viene strutturato.
+**Decisione confermata** dal product owner: voto "B" ï¿½ feature AI **completamente nascoste** se la licenza non ï¿½ attiva (l'utente che paga solo audit base non vede mai un pulsante AI). Riconsiderazione futura se il canale commerciale di upselling viene strutturato.
 
 **Licenze AI previste**:
-- `ai_import` (già esistente — Sprint 9: estrazione PDF strutturata)
-- `ai_assist` (futura — suggerimenti contestuali in compilazione)
-- `ai_rag` (futura — ricerca semantica cross-tipo-documento)
+- `ai_import` (giï¿½ esistente ï¿½ Sprint 9: estrazione PDF strutturata)
+- `ai_assist` (futura ï¿½ suggerimenti contestuali in compilazione)
+- `ai_rag` (futura ï¿½ ricerca semantica cross-tipo-documento)
 
-**Pattern componenti**: `<NormConclusionsBlock>` e gli altri leggono `licensed_modules` da `AuthContext`. Se `ai_assist` non è in lista, il pulsante "? Suggerisci" semplicemente non si renderizza. Zero divergenze UI tra utenti paganti e non.
+**Pattern componenti**: `<NormConclusionsBlock>` e gli altri leggono `licensed_modules` da `AuthContext`. Se `ai_assist` non ï¿½ in lista, il pulsante "? Suggerisci" semplicemente non si renderizza. Zero divergenze UI tra utenti paganti e non.
 
 ---
 
@@ -293,7 +293,7 @@ Schema mentale del flusso end-to-end (per orientare le decisioni implementative)
           ?               ?
           ?               ??? document_registry indicizzato
           ?
-          ??? Suggestions inline ? utente accetta/rifiuta ? tracciabilità ISO 9001 §7.5
+          ??? Suggestions inline ? utente accetta/rifiuta ? tracciabilitï¿½ ISO 9001 ï¿½7.5
 ```
 
 Tutto si tiene se i mattoni alla base (modello dati strutturato, componenti modulari, `document_type`) sono solidi.
@@ -309,17 +309,17 @@ Tutto si tiene se i mattoni alla base (modello dati strutturato, componenti modu
 - **AI funziona schema-first** sul modello strutturato `byStandard[key]`, non parsing libero.
 - **Custom checklist diventa pari grado** di una norma ISO senza codice duplicato.
 - **RDP, SAL, riesame contratto** modellati con la stessa griglia ? un solo insieme di test, un solo set di componenti UI.
-- **Audit è pilota di document_registry** — l'architettura impone disciplina cross-modulare sin dall'inizio.
+- **Audit ï¿½ pilota di document_registry** ï¿½ l'architettura impone disciplina cross-modulare sin dall'inizio.
 
 ### Negative / Rischi
 
-| Rischio | Probabilità | Impatto | Mitigazione |
+| Rischio | Probabilitï¿½ | Impatto | Mitigazione |
 |---|---|---|---|
-| Refactoring tocca codice "caldo" (5 fix critici nelle ultime 24h) | Alta | Alto | Implementazione **incrementale** in 5 fasi, ognuna committabile e collaudabile separatamente. Solo dopo conferma stabilità del fix Exception 4 in produzione. |
+| Refactoring tocca codice "caldo" (5 fix critici nelle ultime 24h) | Alta | Alto | Implementazione **incrementale** in 5 fasi, ognuna committabile e collaudabile separatamente. Solo dopo conferma stabilitï¿½ del fix Exception 4 in produzione. |
 | Migrazione audit esistenti richiede backfill `byStandard` | Media | Medio | `byStandard` opzionale con fallback al legacy `audit_extra_data.auditOutcome.conclusions` per audit pre-ADR. Nessun audit esistente si rompe. |
-| Sovra-ingegnerizzazione (componenti troppo astratti) | Media | Medio | Test di scalabilità concreto come criterio di accettazione (aggiungere ISO 27001 = 1+1+1 modifiche). Se non passa, si è andati troppo astratti. |
+| Sovra-ingegnerizzazione (componenti troppo astratti) | Media | Medio | Test di scalabilitï¿½ concreto come criterio di accettazione (aggiungere ISO 27001 = 1+1+1 modifiche). Se non passa, si ï¿½ andati troppo astratti. |
 | Confusione utente con flag `isIntegratedSystem` | Bassa | Medio | Flag visualizzato chiaramente al momento della selezione standard, con tooltip che spiega "SGI integrato vs sistemi separati". UI per audit monorma nasconde completamente il flag. |
-| Performance con molti standard selezionati | Bassa | Basso | I conteggi `byStandard` sono calcolati lazy in `useMemo`. Rendering parametrico è React-friendly. |
+| Performance con molti standard selezionati | Bassa | Basso | I conteggi `byStandard` sono calcolati lazy in `useMemo`. Rendering parametrico ï¿½ React-friendly. |
 
 ---
 
@@ -329,19 +329,19 @@ Tutti gli audit esistenti continuano a funzionare senza modifiche grazie a:
 
 1. **`byStandard[key]` opzionale**: se assente, i componenti leggono il legacy `auditOutcome.conclusions` come fallback unico (mappato implicitamente a `byStandard[firstStandard].conclusions`).
 2. **`isIntegratedSystem` opzionale**: se assente, default `true` per audit monorma, `false` per multinorma ? comportamento UI identico al pre-ADR per gli audit esistenti.
-3. **`documentType` opzionale**: se assente, default `'audit'` (oggi è l'unico tipo presente).
+3. **`documentType` opzionale**: se assente, default `'audit'` (oggi ï¿½ l'unico tipo presente).
 4. **`STANDARDS_REGISTRY` retrocompatibile**: i normalize map esistenti (`ISO_9001_2015 ? ISO_9001`, ecc.) vengono mantenuti.
 5. **Custom checklist `CUSTOM_<id>`**: caricate runtime, gli audit esistenti con `customChecklistId` vengono trattati identicamente al pre-ADR.
 
-**Conseguenza**: si può rilasciare l'ADR fase per fase, ogni commit è retrocompatibile con tutti gli audit in produzione.
+**Conseguenza**: si puï¿½ rilasciare l'ADR fase per fase, ogni commit ï¿½ retrocompatibile con tutti gli audit in produzione.
 
 ---
 
 ## Piano di implementazione (5 fasi)
 
-Implementazione **incrementale**. Ogni fase committabile e collaudabile separatamente. Avvio condizionato a stabilità conclamata del fix Exception 4 in produzione (24-48h senza segnalazioni Camellini).
+Implementazione **incrementale**. Ogni fase committabile e collaudabile separatamente. Avvio condizionato a stabilitï¿½ conclamata del fix Exception 4 in produzione (24-48h senza segnalazioni Camellini).
 
-### Fase 1 — Registro standard centralizzato + metriche per-norma
+### Fase 1 ï¿½ Registro standard centralizzato + metriche per-norma
 
 **Obiettivo**: SoT registro standard + chip "NC per norma" in sidebar audit.
 
@@ -353,7 +353,7 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 - Test L1: scenari registro + metriche per ogni standard.
 
 **DoD**:
-- Sidebar audit ISO 9001+14001 mostra "9001: 2 NC · 14001: 1 NC · totale 3"
+- Sidebar audit ISO 9001+14001 mostra "9001: 2 NC ï¿½ 14001: 1 NC ï¿½ totale 3"
 - `STANDARDS_CONFIG` locale rimosso (sostituito da import da registro)
 - Aggiungere ISO 45001 al registro non richiede modifiche a `AuditAccordionLayout`
 - 100% test L1 verdi, build pulita
@@ -361,7 +361,7 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 
 **Rischio**: basso. Refactoring puro. Smoke L3 standard.
 
-### Fase 2 — Sezione 11 e Close Panel per-norma + flag SGI integrato
+### Fase 2 ï¿½ Sezione 11 e Close Panel per-norma + flag SGI integrato
 
 **Obiettivo**: tab UI per norma in sezione conclusioni; flag "Sistemi integrati" alla selezione standard; chiusura per norma.
 
@@ -382,7 +382,7 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 
 **Rischio**: medio. Tocca componenti centrali. Richiede test multi-utente.
 
-### Fase 3 — Export Word per-norma con opzioni indipendenti
+### Fase 3 ï¿½ Export Word per-norma con opzioni indipendenti
 
 **Obiettivo**: export Word genera n file (uno per norma) o 1 file integrato; opzioni `embedPhotos` indipendenti per norma.
 
@@ -401,7 +401,7 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 
 **Rischio**: basso. Localizzato all'export, non tocca compilazione audit.
 
-### Fase 4 — Custom checklist come "norma virtuale" parallela
+### Fase 4 ï¿½ Custom checklist come "norma virtuale" parallela
 
 **Obiettivo**: una checklist custom appare come tab pari grado a ISO nelle sezioni esiti / chiusura / export.
 
@@ -419,7 +419,7 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 
 **Rischio**: medio. Custom era trattato come "appendice"; portarla a pari grado tocca diverse sezioni.
 
-### Fase 5 — Audit ? document_registry tie-in
+### Fase 5 ï¿½ Audit ? document_registry tie-in
 
 **Obiettivo**: audit chiuso registrato automaticamente in `document_registry` con scadenza prossima sorveglianza.
 
@@ -435,15 +435,15 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 - Allegati audit visibili anche dal `document_registry` (link bidirezionale)
 - Smoke L3 fine ciclo: chiudi audit, verifica comparsa nel registro, verifica scadenza
 
-**Rischio**: medio. Tocca backend (poco) + integrazione cross-modulo. Da fare quando il `document_registry` è confermato come modulo cardine.
+**Rischio**: medio. Tocca backend (poco) + integrazione cross-modulo. Da fare quando il `document_registry` ï¿½ confermato come modulo cardine.
 
 ---
 
-## Test di scalabilità (criterio di accettazione)
+## Test di scalabilitï¿½ (criterio di accettazione)
 
-Il design è considerato corretto se vale la regola:
+Il design ï¿½ considerato corretto se vale la regola:
 
-> **Aggiungere un nuovo standard ISO** (es. ISO 27001:2022 — Sicurezza informazioni) richiede SOLO:
+> **Aggiungere un nuovo standard ISO** (es. ISO 27001:2022 ï¿½ Sicurezza informazioni) richiede SOLO:
 >
 > 1. `INSERT INTO standards (standard_code, standard_name, version, is_active) VALUES ('ISO_27001_2022', 'ISO/IEC 27001:2022', '2022', 1)`
 > 2. Seed domande in `checklist_questions`
@@ -469,11 +469,11 @@ Lo stesso criterio vale per:
 Ogni nuovo modulo introdotto dopo l'ADR-009 deve rispettare questa checklist per essere "AI-ready":
 
 - [ ] **Schema-first**: i dati di output sono strutturati per chiave (per norma, per clausola, per requisito), non blob di testo libero
-- [ ] **Componenti modulari**: la UI è composta da componenti riusabili che esporranno hook `aiAssist` opzionale
+- [ ] **Componenti modulari**: la UI ï¿½ composta da componenti riusabili che esporranno hook `aiAssist` opzionale
 - [ ] **`document_type` esplicito**: ogni modulo dichiara il proprio tipo nella tassonomia
-- [ ] **`documentRegistryId` predisposto**: campo opzionale che permetterà l'integrazione con il registro
-- [ ] **Licenza modulare**: feature flag `ai_*` per gating UI (comportamento "B" — nascosto se off)
-- [ ] **Indicizzabilità**: il modello esponi i campi indicizzabili per RAG (titoli, conclusioni, requisiti, evidenze) in posizione deterministica
+- [ ] **`documentRegistryId` predisposto**: campo opzionale che permetterï¿½ l'integrazione con il registro
+- [ ] **Licenza modulare**: feature flag `ai_*` per gating UI (comportamento "B" ï¿½ nascosto se off)
+- [ ] **Indicizzabilitï¿½**: il modello esponi i campi indicizzabili per RAG (titoli, conclusioni, requisiti, evidenze) in posizione deterministica
 
 Validazione checklist nei PR review: ogni nuovo modulo viene marcato AI-ready dal Lead architect prima del merge in main.
 
@@ -481,9 +481,9 @@ Validazione checklist nei PR review: ogni nuovo modulo viene marcato AI-ready da
 
 ## Riferimenti
 
-- [PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md) — sezione "Visione Strategica" + "VISION VINCOLANTE 08/04/2026" + Sprint A?F
-- [GUIDA_CONSOLIDATA.md](../GUIDA_CONSOLIDATA.md) — sessione 08/05/2026 (fix Exception 4 multi-standard)
-- [ADR-008](ADR-008-event-sourcing-sync.md) — modello sync event-based (compatibile con ADR-009)
-- [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](../MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) — primo test di estendibilità (Sprint 11 user di questo ADR)
-- [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) — `audits`, `audit_standards`, `custom_checklists`, `document_registry`
+- [PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md) ï¿½ sezione "Visione Strategica" + "VISION VINCOLANTE 08/04/2026" + Sprint A?F
+- [GUIDA_CONSOLIDATA.md](../GUIDA_CONSOLIDATA.md) ï¿½ sessione 08/05/2026 (fix Exception 4 multi-standard)
+- [ADR-008](ADR-008-event-sourcing-sync.md) ï¿½ modello sync event-based (compatibile con ADR-009)
+- [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](../MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) ï¿½ primo test di estendibilitï¿½ (Sprint 11 user di questo ADR)
+- [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) ï¿½ `audits`, `audit_standards`, `custom_checklists`, `document_registry`
 - Standard caricati in produzione (verificati 08/05/2026): ISO 9001:2015 (id=1, 41 domande), ISO 14001:2015 (id=2, 53 domande), ISO 45001:2018 (id=3, 53 domande), ISO 3834-2:2021 (id=6, 22 domande), RDP Mason (id=7, 0 domande)

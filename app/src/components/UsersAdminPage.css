@@ -315,3 +315,89 @@
   font-size: 0.8rem;
   margin-left: 0.25rem;
 }
+
+/* ── Sezione licenze moduli per studio (superadmin) ──────────────────────── */
+.org-licenses-section {
+  margin: 1.5rem 0 2rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.org-licenses-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: #1d3557;
+}
+
+.org-licenses-desc {
+  font-size: 0.875rem;
+  color: #495057;
+  margin: 0 0 1rem;
+}
+
+.org-license-details {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+  background: #fff;
+}
+
+.org-license-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+  user-select: none;
+}
+
+.org-license-summary::-webkit-details-marker { display: none; }
+.org-license-details[open] .org-license-summary { border-bottom: 1px solid #dee2e6; }
+
+.org-license-name {
+  font-weight: 600;
+  color: #1d3557;
+}
+
+.org-license-orgname {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.org-license-badge {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.org-license-badge.default {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.org-license-badge.dirty {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.org-license-body {
+  padding: 0.75rem 1rem 0.85rem;
+}
+
+.org-license-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.org-license-msg {
+  font-size: 0.85rem;
+  color: #155724;
+}

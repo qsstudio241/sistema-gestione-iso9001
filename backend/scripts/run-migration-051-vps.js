@@ -1,5 +1,5 @@
 /**
- * Migration 051 — doc_type_config
+ * Migration 051 ï¿½ doc_type_config
  * Eseguire sul VPS: node /tmp/run-migration-051-vps.js
  */
 process.chdir('/var/www/sgq-backend');
@@ -15,7 +15,7 @@ async function run() {
     `);
 
     if (checkTable.recordset.length > 0) {
-        console.log('??  Tabella doc_type_config già presente — nessuna azione.');
+        console.log('??  Tabella doc_type_config giï¿½ presente ï¿½ nessuna azione.');
     } else {
         await query(`
             CREATE TABLE dbo.doc_type_config (

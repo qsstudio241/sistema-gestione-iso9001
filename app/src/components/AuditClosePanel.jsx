@@ -7,20 +7,36 @@
  *
  * Sistema Gestione ISO 9001 - QS Studio
  */
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
+import { STANDARD_TO_SUBSID, getSelectedStandardEntries } from "../data/standardsRegistry";
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
-/** Soglia minima completamento checklist per poter chiudere (%) */
-const COMPLETION_THRESHOLD = 80;
+/** Finestra di grazia (secondi) per annullare il trasferimento delle NC al modulo organizzativo. */
+const NC_PUSH_UNDO_SECONDS = 10;
+
+/** Tutti i punti norma devono essere valutati (anche NA/NV contano come risposta) */
+const COMPLETION_THRESHOLD = 100;
+
+function calcNormCompletion(normData) {
+  if (!normData || typeof normData !== "object") return 0;
+  let total = 0, answered = 0;
+  Object.values(normData).forEach((clause) => {
+    (clause?.questions || []).forEach((q) => {
+      total++;
+      if (q.status && q.status !== "NOT_ANSWERED") answered++;
+    });
+  });
+  return total === 0 ? 0 : Math.round((answered / total) * 100);
+}
 
 function calcCompletion(checklist) {
   if (!checklist || typeof checklist !== "object") return 0;
-  let total = 0;
-  let answered = 0;
+  let total = 0, answered = 0;
   Object.values(checklist).forEach((norm) => {
     if (!norm || typeof norm !== "object") return;
     Object.values(norm).forEach((clause) => {
@@ -35,6 +51,7 @@ function calcCompletion(checklist) {
 
 function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const { updateCurrentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
 
   // Stato chiusura
   const [confirming, setConfirming] = useState(false);
@@ -46,17 +63,30 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const [approveLoading, setApproveLoading] = useState(false);
   const [approveError, setApproveError]   = useState(null);
 
+  // Stato push NC verso modulo organizzativo (solo con licenza 'nc')
+  // Fasi: idle -> pushing -> pushed (con countdown undo) -> finalized / undone
+  const [ncPushState, setNcPushState] = useState({
+    phase: "idle", // 'idle' | 'pushing' | 'pushed' | 'undoing' | 'finalized' | 'undone' | 'error'
+    countdown: 0,
+    summary: null, // { created_count, skipped_count, total_findings }
+    error: null,
+  });
+  const ncPushTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (ncPushTimerRef.current) clearInterval(ncPushTimerRef.current);
+    };
+  }, []);
+
+  const hasNcLicense = hasLicensedModule("nc");
+
   const status = currentAudit?.metadata?.status || "draft";
   const isAlreadyClosed = ["completed", "approved", "archived"].includes(status);
 
-  // ─── Mappa standard → subsId accordion (speculare a STANDARDS_CONFIG in AuditAccordionLayout) ──
-  const STANDARD_TO_SUBSID = {
-    ISO_9001: "iso-9001", ISO_9001_2015: "iso-9001",
-    ISO_14001: "iso-14001", ISO_14001_2015: "iso-14001",
-    ISO_45001: "iso-45001", ISO_45001_2018: "iso-45001",
-    ISO_3834_2: "iso-3834", ISO_3834: "iso-3834",
-    RDP_MSN: "rdp-msn",
-  };
+  // Mappa standard → subsId accordion: importata da `data/standardsRegistry.js`
+  // (ADR-009 Fase 1). Aggiungere uno standard al registry aggiorna in
+  // automatico la guided close senza modifiche qui.
 
   // Trova il primo item custom senza status: ritorna il customItemId o null
   function getFirstUnansweredCustomItem(audit) {
@@ -92,9 +122,23 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const gd = currentAudit?.metadata?.generalData    || {};
   const ao = currentAudit?.metadata?.auditObjective || {};
   const oc = currentAudit?.metadata?.auditOutcome   || {};
+  const selectedStandards = currentAudit?.metadata?.selectedStandards || [];
+  const standardEntries   = getSelectedStandardEntries(selectedStandards);
+  const isMultiStandard   = standardEntries.length > 1;
 
   const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
   const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
+
+  // Completamento per-norma (usato per barre multi-standard e fieldDescriptors)
+  const normCompletions = standardEntries.map(({ key, shortLabel, label }) => {
+    const normData = currentAudit?.checklist?.[key];
+    const pct = normData ? calcNormCompletion(normData) : 0;
+    const hasDomande = normData && Object.values(normData).some(c => (c?.questions?.length ?? 0) > 0);
+    const firstUnansweredNorm = (hasDomande && pct < COMPLETION_THRESHOLD)
+      ? getFirstUnansweredTarget({ [key]: normData })
+      : { subsId: null, fieldId: null };
+    return { key, shortLabel, label, pct, hasDomande, firstUnansweredNorm };
+  });
 
   const hasCustomChecklist = !!(currentAudit?.customChecklist || currentAudit?.metadata?.customChecklistId);
   const customStatuses    = currentAudit?.customStatuses || {};
@@ -102,8 +146,8 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
 
-  // Target dinamico per checklist ISO (prima domanda non risposta)
-  const firstUnanswered = (hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
+  // Per audit mono-standard: target dinamico legacy
+  const firstUnanswered = (!isMultiStandard && hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
     ? getFirstUnansweredTarget(currentAudit?.checklist) : { subsId: null, fieldId: null };
 
   const fieldDescriptors = [
@@ -122,22 +166,46 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       fieldId: "field-auditDescription",
       path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "objective" }],
     },
-    {
-      id: "conclusions", text: "Conclusioni (Sezione 12)", isMissing: !oc.conclusions?.trim(),
-      fieldId: "conclusions",
-      path: [{ type: "section", key: "conclusions" }],
-    },
-    {
-      id: "checklistPct",
-      text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
-      isMissing: hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD,
-      fieldId: firstUnanswered.fieldId,
-      path: [
-        { type: "section",      key: "checklist" },
-        { type: "subsection",   key: firstUnanswered.subsId },
-        { type: "clauseExpand" },               // apre tutte le clausole del ChecklistModule
-      ].filter((s) => !(s.type === "subsection" && !s.key)),
-    },
+    // Conclusioni: per multi-standard una voce per norma, per singolo una voce unica
+    ...(isMultiStandard
+      ? standardEntries.map(({ key, shortLabel }) => ({
+          id: `conclusions-${key}`,
+          text: `Conclusioni ${shortLabel} (Sezione 12)`,
+          isMissing: !oc.byStandard?.[key]?.conclusions?.trim(),
+          fieldId: `conclusions-${key}`,
+          path: [{ type: "section", key: "conclusions" }],
+        }))
+      : [{
+          id: "conclusions", text: "Conclusioni (Sezione 12)", isMissing: !oc.conclusions?.trim(),
+          fieldId: "conclusions",
+          path: [{ type: "section", key: "conclusions" }],
+        }]
+    ),
+    // Completamento per-norma (multi-standard) o unico (mono)
+    ...(isMultiStandard
+      ? normCompletions.filter(n => n.hasDomande).map(({ key, shortLabel, pct, firstUnansweredNorm }) => ({
+          id: `checklistPct-${key}`,
+          text: `${shortLabel}: checklist al ${pct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+          isMissing: pct < COMPLETION_THRESHOLD,
+          fieldId: firstUnansweredNorm.fieldId,
+          path: [
+            { type: "section", key: "checklist" },
+            { type: "subsection", key: firstUnansweredNorm.subsId },
+            { type: "clauseExpand" },
+          ].filter((s) => !(s.type === "subsection" && !s.key)),
+        }))
+      : hasIsoChecklistForGuide ? [{
+          id: "checklistPct",
+          text: `Checklist al ${checklistPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
+          isMissing: checklistPct < COMPLETION_THRESHOLD,
+          fieldId: firstUnanswered.fieldId,
+          path: [
+            { type: "section", key: "checklist" },
+            { type: "subsection", key: firstUnanswered.subsId },
+            { type: "clauseExpand" },
+          ].filter((s) => !(s.type === "subsection" && !s.key)),
+        }] : []
+    ),
     {
       id: "customChecklistPct",
       text: customTotal === 0 ? "Nessuna risposta nella checklist personalizzata" : `Checklist personalizzata al ${customPct}% (minimo ${COMPLETION_THRESHOLD}%)`,
@@ -195,6 +263,99 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       setError(err?.message || "Errore durante la chiusura dell'audit. Riprova.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ─── Trasferimento NC/OSS al modulo organizzativo (richiede licenza 'nc') ──
+  // Conteggio rilievi disponibili per il push (NC + OSS sia ISO sia custom).
+  // Usa checklist locale come sorgente primaria; fallback su audit.metrics
+  // (pre-calcolate dal server, sempre presenti anche prima della hydration completa).
+  const ncPushAvailable = useMemo(() => {
+    const isoM = calculateFindingsMetrics(currentAudit?.checklist);
+    const cuM  = currentAudit?.customChecklist?.has_outcome_buttons
+      ? calculateCustomFindingsMetrics(currentAudit.customStatuses)
+      : { totalNC: 0, totalOSS: 0 };
+
+    const localNC  = (isoM.totalNC  || 0) + (cuM.totalNC  || 0);
+    const localOSS = (isoM.totalOSS || 0) + (cuM.totalOSS || 0);
+
+    // Se il checklist locale è ancora vuoto (hydration in corso), usa audit.metrics
+    if (localNC === 0 && localOSS === 0) {
+      const m = currentAudit?.metrics || {};
+      return {
+        nc:  m.totalNC  || 0,
+        oss: m.totalOSS || 0,
+      };
+    }
+
+    return { nc: localNC, oss: localOSS };
+  }, [currentAudit]);
+
+  const ncPushTotal = ncPushAvailable.nc + ncPushAvailable.oss;
+
+  async function handleNcPush() {
+    const auditRef = currentAudit?.metadata?.auditId ?? currentAudit?.audit_id
+                  ?? currentAudit?.metadata?.id     ?? currentAudit?.id;
+    if (!auditRef) {
+      setNcPushState((s) => ({ ...s, phase: "error", error: "ID audit non disponibile" }));
+      return;
+    }
+    setNcPushState({ phase: "pushing", countdown: 0, summary: null, error: null });
+    try {
+      const res = await apiService.pushAuditToNcRegister(auditRef);
+      const data = res?.data || res || {};
+      const summary = data.summary || {
+        created_count: (data.created || []).length,
+        skipped_count: (data.skipped || []).length,
+        total_findings: 0,
+      };
+
+      // Avvia countdown undo
+      let secs = NC_PUSH_UNDO_SECONDS;
+      setNcPushState({ phase: "pushed", countdown: secs, summary, error: null });
+      if (ncPushTimerRef.current) clearInterval(ncPushTimerRef.current);
+      ncPushTimerRef.current = setInterval(() => {
+        secs -= 1;
+        if (secs <= 0) {
+          clearInterval(ncPushTimerRef.current);
+          ncPushTimerRef.current = null;
+          setNcPushState((s) => ({ ...s, phase: "finalized", countdown: 0 }));
+        } else {
+          setNcPushState((s) => ({ ...s, countdown: secs }));
+        }
+      }, 1000);
+    } catch (err) {
+      setNcPushState({
+        phase: "error",
+        countdown: 0,
+        summary: null,
+        error: err?.response?.data?.error || err?.message || "Errore durante il trasferimento.",
+      });
+    }
+  }
+
+  async function handleNcPushUndo() {
+    const auditRef = currentAudit?.metadata?.auditId ?? currentAudit?.audit_id
+                  ?? currentAudit?.metadata?.id     ?? currentAudit?.id;
+    if (!auditRef) return;
+    if (ncPushTimerRef.current) {
+      clearInterval(ncPushTimerRef.current);
+      ncPushTimerRef.current = null;
+    }
+    setNcPushState((s) => ({ ...s, phase: "undoing" }));
+    try {
+      await apiService.undoPushAuditToNcRegister(auditRef);
+      setNcPushState((s) => ({ ...s, phase: "undone", countdown: 0 }));
+      // Dopo 3s reset a idle: il pulsante ricompare e l'utente può ri-trasferire
+      setTimeout(() => {
+        setNcPushState({ phase: "idle", countdown: 0, summary: null, error: null });
+      }, 3000);
+    } catch (err) {
+      setNcPushState((s) => ({
+        ...s,
+        phase: "error",
+        error: err?.response?.data?.error || err?.message || "Impossibile annullare il trasferimento.",
+      }));
     }
   }
 
@@ -311,36 +472,21 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   // ─── Render: pannello pre-chiusura ─────────────────────────────────────────
   return (
     <div className="close-panel">
-      <div className="close-panel__header">
-        <h3>🔒 Chiusura Audit</h3>
-        <p className="close-panel__subtitle">
-          Verifica i requisiti prima di chiudere formalmente l'audit.
-          Dopo la chiusura l'audit sara' in sola lettura.
-        </p>
-      </div>
+      <p className="close-panel__subtitle">Elenco informazioni mancanti. Dopo la chiusura l'audit sarà in sola lettura.</p>
 
-      {/* Barra completamento checklist */}
-      {completionPct !== null && (
-        <div className="close-completion">
+      {/* Barre completamento: una per norma (multi) o unica (mono) */}
+      {hasIsoChecklistForGuide && (isMultiStandard ? normCompletions.filter(n => n.hasDomande) : [{ shortLabel: "Checklist", pct: checklistPct }]).map(({ shortLabel, pct }, i) => (
+        <div key={i} className="close-completion">
           <div className="close-completion__label">
-            <span>Completamento checklist</span>
-            <strong className={completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>
-              {completionPct}%
-            </strong>
+            <span>{isMultiStandard ? shortLabel : "Completamento checklist"}</span>
+            <strong className={pct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>{pct}%</strong>
           </div>
           <div className="close-completion__bar">
-            <div
-              className={`close-completion__fill ${completionPct >= COMPLETION_THRESHOLD ? "ok" : "fail"}`}
-              style={{ width: `${Math.min(completionPct, 100)}%` }}
-            />
-            <div
-              className="close-completion__threshold"
-              style={{ left: `${COMPLETION_THRESHOLD}%` }}
-              title={`Soglia minima: ${COMPLETION_THRESHOLD}%`}
-            />
+            <div className={`close-completion__fill ${pct >= COMPLETION_THRESHOLD ? "ok" : "fail"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+            <div className="close-completion__threshold" style={{ left: `${COMPLETION_THRESHOLD}%` }} title={`Soglia: ${COMPLETION_THRESHOLD}%`} />
           </div>
         </div>
-      )}
+      ))}
 
       {/* Campi obbligatori mancanti — lista semplice, navigazione via pulsante principale */}
       {missingFields.length > 0 && (
@@ -376,6 +522,95 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
         <div className="close-checklist close-checklist--ok">
           <h4>✅ Audit pronto per la chiusura</h4>
           <p>Tutti i requisiti obbligatori sono soddisfatti.</p>
+        </div>
+      )}
+
+      {/* ─── Trasferimento al modulo NC (solo con licenza 'nc') ───────────── */}
+      {hasNcLicense && ncPushTotal > 0 && (
+        <div className="close-checklist close-nc-push">
+          <h4>📋 Trasferimento al modulo Non Conformità</h4>
+          {ncPushState.phase === "idle" && (
+            <>
+              <p className="close-nc-push__text">
+                Rilevate <strong>{ncPushAvailable.nc} NC</strong>
+                {ncPushAvailable.oss > 0 && (
+                  <> e <strong>{ncPushAvailable.oss} OSS</strong></>
+                )}.
+                Trasferiscile al modulo organizzativo per gestire azioni correttive,
+                responsabili e verifiche di efficacia.
+              </p>
+              <button
+                className="close-btn close-btn--secondary"
+                onClick={handleNcPush}
+                title="Trasferisce NC e OSS al registro organizzativo (potrai annullare entro 10 secondi)"
+              >
+                📤 Trasferisci NC e OSS al modulo NC
+              </button>
+            </>
+          )}
+          {ncPushState.phase === "pushing" && (
+            <p className="close-nc-push__text">⏳ Trasferimento in corso...</p>
+          )}
+          {ncPushState.phase === "pushed" && (
+            <div className="close-nc-push__toast">
+              <p>
+                ✅ <strong>Trasferiti {ncPushState.summary?.created_count ?? 0} rilievi</strong>
+                {ncPushState.summary?.skipped_count > 0 && (
+                  <> ({ncPushState.summary.skipped_count} già presenti, saltati)</>
+                )} al modulo NC.
+              </p>
+              <p className="close-nc-push__countdown">
+                Annullabile entro <strong>{ncPushState.countdown}s</strong>
+              </p>
+              <button
+                className="close-btn close-btn--force"
+                onClick={handleNcPushUndo}
+              >
+                ↩ Annulla trasferimento
+              </button>
+            </div>
+          )}
+          {ncPushState.phase === "undoing" && (
+            <p className="close-nc-push__text">⏳ Annullamento in corso...</p>
+          )}
+          {ncPushState.phase === "finalized" && (
+            <p className="close-nc-push__text close-nc-push__text--ok">
+              ✅ Trasferimento completato. {ncPushState.summary?.created_count ?? 0} NC/OSS
+              ora gestibili dal <a href="/nc" target="_blank" rel="noreferrer">modulo NC</a>.
+              Per modifiche o eliminazioni, agire dal modulo NC.
+            </p>
+          )}
+          {ncPushState.phase === "undone" && (
+            <p className="close-nc-push__text close-nc-push__text--ok">
+              ✅ Trasferimento annullato. Le NC/OSS sono state rimosse dal modulo.
+              {" "}
+              <button
+                className="close-link-btn"
+                onClick={() => setNcPushState({ phase: "idle", countdown: 0, summary: null, error: null })}
+              >
+                Riprova
+              </button>
+            </p>
+          )}
+          {ncPushState.phase === "error" && (
+            <p className="close-api-error">⚠️ {ncPushState.error}</p>
+          )}
+        </div>
+      )}
+
+      {/* Nota informativa quando la licenza NC NON e' attiva: il flusso pending_issues
+          resta comunque attivo, le NC/OSS verranno presentate al re-audit successivo. */}
+      {!hasNcLicense && ncPushTotal > 0 && (
+        <div className="close-checklist close-checklist--info">
+          <h4>ℹ️ Gestione rilievi senza modulo NC</h4>
+          <p>
+            Le <strong>{ncPushAvailable.nc} NC</strong>
+            {ncPushAvailable.oss > 0 && (
+              <> e <strong>{ncPushAvailable.oss} OSS</strong></>
+            )} rilevate saranno automaticamente presentate come <strong>rilievi pendenti</strong>
+            nel prossimo audit dello stesso cliente. Attiva il modulo "Non Conformità" per
+            gestire azioni correttive, responsabili e verifiche di efficacia in modo strutturato.
+          </p>
         </div>
       )}
 

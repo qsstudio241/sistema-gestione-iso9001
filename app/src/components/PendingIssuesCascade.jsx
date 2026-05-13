@@ -15,15 +15,65 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
+import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import AutoTextarea from "./AutoTextarea";
+import "./ChecklistModule.css";
+import "./AuditOutcomeSection.css";
 import "./PendingIssuesCascade.css";
+
+/** Stati NC del modulo organizzativo che indicano risoluzione (suggerimento UI). */
+const NC_RESOLVED_STATUSES = new Set(["resolved", "verified", "closed"]);
+
+/** Etichette stato NC dal modulo organizzativo. */
+const NC_STATUS_LABELS = {
+  open:        { label: "Aperta",     cls: "nc-open"        },
+  in_progress: { label: "In corso",   cls: "nc-in-progress" },
+  resolved:    { label: "Risolta",    cls: "nc-resolved"    },
+  verified:    { label: "Verificata", cls: "nc-verified"    },
+  closed:      { label: "Chiusa",     cls: "nc-closed"      },
+};
 
 /** Config badge per status originale rilievo */
 const ORIGIN_STATUS_CONFIG = {
-  NC:  { label: "Non Conforme",  cssKey: "nc" },
-  OSS: { label: "Osservazione",  cssKey: "oss" },
-  NV:  { label: "Non Valutato", cssKey: "nv" },
+  NC:  { label: "Non Conforme",  cssKey: "nc",  statusBtnClass: "non-compliant" },
+  OSS: { label: "Osservazione",  cssKey: "oss", statusBtnClass: "partial"       },
+  OM:  { label: "Osservazione Minore", cssKey: "om", statusBtnClass: "om"       },
+  NV:  { label: "Non Valutato",  cssKey: "nv",  statusBtnClass: "not-verified"  },
 };
+
+/** Mappa section_code → nome leggibile ISO 9001 (HLS clausole 4-10) */
+const SECTION_LABELS = {
+  clause4:  "4 - Contesto dell'organizzazione",
+  clause5:  "5 - Leadership",
+  clause6:  "6 - Pianificazione",
+  clause7:  "7 - Supporto",
+  clause8:  "8 - Attività operative",
+  clause9:  "9 - Valutazione delle prestazioni",
+  clause10: "10 - Miglioramento",
+};
+
+/**
+ * Restituisce l'etichetta leggibile per un section_code.
+ * Gestisce:
+ *  - codici puri: "clause8"
+ *  - codici prefissati: "ISO_9001_clause8"
+ *  - formati numerici dotted: "8.5.6" → estrae il numero principale → "clause8"
+ */
+function getSectionLabel(sectionCode) {
+  if (!sectionCode) return null;
+  const lower = sectionCode.toLowerCase();
+  for (const [key, label] of Object.entries(SECTION_LABELS)) {
+    if (lower === key || lower.endsWith(`_${key}`)) return label;
+  }
+  // Formato numerico "8.5.6" → estrai numero principale → cerca clauseN
+  const numericMatch = sectionCode.match(/^(\d+)/);
+  if (numericMatch) {
+    const clauseKey = `clause${numericMatch[1]}`;
+    if (SECTION_LABELS[clauseKey]) return SECTION_LABELS[clauseKey];
+  }
+  return sectionCode;
+}
 
 /** Config pulsanti di risoluzione */
 const RESOLUTION_ACTIONS = [
@@ -34,9 +84,10 @@ const RESOLUTION_ACTIONS = [
 
 function PendingIssuesCascade({ onGoToQuestion }) {
   const { currentAudit } = useStorage();
+  const { hasLicensedModule } = useAuth();
+  const hasNcLicense = hasLicensedModule("nc");
 
   const [issues, setIssues]                   = useState([]);
-  const [sourceAuditNumber, setSourceAuditNumber] = useState(null);
   const [loading, setLoading]                 = useState(false);
   const [error, setError]                     = useState(null);
   const [retryCount, setRetryCount]           = useState(0);
@@ -56,7 +107,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
   useEffect(() => {
     if (!clientName || (!auditUuid && !auditId)) {
       setIssues([]);
-      setSourceAuditNumber(null);
       return;
     }
 
@@ -80,11 +130,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
             if (pi.resolution_notes) initialNotes[pi.issue_id] = pi.resolution_notes;
           });
           setNotes(initialNotes);
-
-          // Numero audit sorgente (fallback a ID numerico)
-          setSourceAuditNumber(
-            data.source_audit_number || (data.source_audit_id ? `#${data.source_audit_id}` : null)
-          );
         }
       } catch (err) {
         if (!cancelled) {
@@ -196,11 +241,6 @@ function PendingIssuesCascade({ onGoToQuestion }) {
       <div className="pending-header">
         <div>
           <h3>🔁 Rilievi Pendenti</h3>
-          <p className="pending-description">
-            {sourceAuditNumber
-              ? `Rilievi dell'audit ${sourceAuditNumber} da verificare in questo re-audit`
-              : "Rilievi dell'audit precedente da verificare in questo re-audit"}
-          </p>
         </div>
       </div>
 
@@ -217,49 +257,18 @@ function PendingIssuesCascade({ onGoToQuestion }) {
 
       {!loading && !error && issues.length > 0 && (
         <>
-          {/* Riepilogo statistiche */}
-          <div className="pending-stats">
-            <div className="stat-card">
-              <span className="stat-value">{issues.length}</span>
-              <span className="stat-label">Totali</span>
-            </div>
-            {ncCount > 0 && (
-              <div className="stat-card stat-nc">
-                <span className="stat-value">{ncCount}</span>
-                <span className="stat-label">NC</span>
-              </div>
-            )}
-            {ossCount > 0 && (
-              <div className="stat-card stat-oss">
-                <span className="stat-value">{ossCount}</span>
-                <span className="stat-label">OSS</span>
-              </div>
-            )}
-            {nvCount > 0 && (
-              <div className="stat-card stat-nv">
-                <span className="stat-value">{nvCount}</span>
-                <span className="stat-label">NV</span>
-              </div>
-            )}
-            {resolvedCount > 0 && (
-              <div className="stat-card stat-resolved">
-                <span className="stat-value">{resolvedCount}</span>
-                <span className="stat-label">Risolti</span>
-              </div>
-            )}
-            {persistsCount > 0 && (
-              <div className="stat-card stat-persists">
-                <span className="stat-value">{persistsCount}</span>
-                <span className="stat-label">Persistono</span>
-              </div>
-            )}
+          {/* Riepilogo statistiche — badge compatte, stesso stile di Rilievi Emergenti */}
+          <div className="findings-metrics-compact">
+            <span className="metric-compact nc-severe"><strong>NC:</strong> {ncCount}</span>
+            <span className="metric-compact oss"><strong>OSS:</strong> {ossCount}</span>
+            <span className="metric-compact nv"><strong>NV:</strong> {nvCount}</span>
           </div>
 
           {/* Lista rilievi */}
           <div className="issues-list">
             {sortedIssues.map((issue) => {
               const cfg         = ORIGIN_STATUS_CONFIG[issue.original_status] || null;
-              const clauseLabel = issue.section_code || null;
+              const clauseLabel = issue.section_code ? getSectionLabel(issue.section_code) : null;
               const description = issue.question_text || clauseLabel || `Risposta #${issue.source_response_id}`;
               const curStatus   = issue.issue_status || "open";
               const isResolved  = curStatus === "resolved";
@@ -275,24 +284,30 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                     <div className="issue-title-section">
                       <div className="issue-title-row">
                         {cfg && (
-                          <span className={`issue-status-badge badge-${cfg.cssKey}`}>
+                          <span
+                            className={`status-btn ${cfg.statusBtnClass} active`}
+                            style={{ cursor: "default", pointerEvents: "none" }}
+                            aria-label={cfg.label}
+                          >
                             {issue.original_status}
                           </span>
                         )}
-                        {clauseLabel && <span className="issue-clause">{clauseLabel}</span>}
+                        {clauseLabel && (
+                          <span className="question-reference">{clauseLabel}</span>
+                        )}
                         <h4 className="issue-title">{description}</h4>
+                        {/* Pulsante deep-link — inline nell'header, sempre visibile */}
+                        {issue.section_code && onGoToQuestion && (
+                          <button
+                            className="issue-goto-btn"
+                            type="button"
+                            onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
+                            title={`Vai alla clausola ${issue.section_code} nella checklist`}
+                          >
+                            🔍 Vai alla domanda
+                          </button>
+                        )}
                       </div>
-                      {/* Pulsante deep-link domanda */}
-                      {onGoToQuestion && issue.section_code && (
-                        <button
-                          className="issue-goto-btn"
-                          type="button"
-                          onClick={() => onGoToQuestion(issue.section_code, issue.question_id)}
-                          title={`Vai alla clausola ${issue.section_code} nella checklist`}
-                        >
-                          🔍 Vai alla domanda
-                        </button>
-                      )}
                     </div>
                     {/* Badge stato corrente */}
                     {curStatus !== "open" && (
@@ -306,9 +321,39 @@ function PendingIssuesCascade({ onGoToQuestion }) {
 
                   {/* Note originali rilievo */}
                   <div className={`issue-notes${!issue.source_notes ? " issue-notes-empty" : ""}`}>
-                    <strong>Note originali:</strong>{" "}
                     {issue.source_notes || <em>Nessuna nota registrata</em>}
                   </div>
+
+                  {/* Stato dal modulo NC organizzativo (solo se licenza attiva e linkato) */}
+                  {hasNcLicense && issue.nc_id && issue.nc_status && (
+                    <div className={`issue-nc-link ${NC_STATUS_LABELS[issue.nc_status]?.cls || ""}`}>
+                      <span className="issue-nc-icon">📋</span>
+                      <span className="issue-nc-text">
+                        <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
+                        {" — "}
+                        <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
+                          {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
+                        </span>
+                      </span>
+                      {NC_RESOLVED_STATUSES.has(issue.nc_status) && curStatus === "open" && (
+                        <span className="issue-nc-suggest">
+                          ✓ Suggerimento: NC risolta dal modulo → conferma "Risolto" qui sotto
+                        </span>
+                      )}
+                      {issue.nc_corrective_action && (
+                        <div className="issue-nc-corrective">
+                          <strong>Azione correttiva intrapresa:</strong>{" "}
+                          {issue.nc_corrective_action}
+                        </div>
+                      )}
+                      {issue.nc_verification_notes && (
+                        <div className="issue-nc-verification">
+                          <strong>Verifica efficacia:</strong>{" "}
+                          {issue.nc_verification_notes}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Pulsanti risoluzione */}
                   <div className="resolution-actions">
@@ -330,9 +375,8 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                   {curStatus !== "open" && (
                     <div className="resolution-note-block">
                       <label className="resolution-note-label">Note di risoluzione:</label>
-                      <textarea
+                      <AutoTextarea
                         className="resolution-note-textarea notes-textarea"
-                        rows={2}
                         placeholder="Descrivi come il rilievo è stato verificato..."
                         value={notes[issue.issue_id] || ""}
                         onChange={(e) => handleNoteChange(issue.issue_id, e.target.value)}

@@ -17,29 +17,48 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
-### Sessione 11 maggio 2026 — Fix sync-queue storm: deduplicazione save_responses / update_audit
+### Sessione 12 maggio 2026 — Fix backend pending-issues/NC + UI PendingIssuesCascade + collapse clausola
 
-**Branch**: `cursor/fix-sync-queue-dedup-storm-6ad0`  
-**Sintomo segnalato**: Console Eruda su mobile Camellini mostrava 6+ warning `[SYNC] Audit assente sul server (404 AUDIT_NOT_FOUND): rimozione item obsoleto save_responses (UUID)`.
+**Branch**: `cursor/adr009-fase1-registro-standard-52c5` → mergiato su `main` + deploy Netlify. Fix backend deployati su VPS.
 
-**Diagnosi** (verificata su DB e log VPS):
-- Audit QS-260511-01 (audit_id 35192, UUID `79697DAD-...`) correttamente sul server con 6 risposte salvate. **Nessuna perdita di dati**.
-- I warning 404 erano per item `save_responses` di UUID **fantasma** (sessioni precedenti del device mobile), rimossi correttamente dalla coda dal meccanismo self-healing esistente.
-- **Root cause reale**: il log VPS mostrava storm di ~40 chiamate `POST /api/v1/audits/sync` in 10 secondi e ~287 chiamate `POST .../responses/bulk` in 3 minuti per lo stesso audit. La coda IndexedDB accumulava un item per ogni modifica offline; al reconnect sparavano tutte in sequenza.
+#### Fix backend (VPS deployati)
 
-**Fix applicato** (`app/src/services/syncService.js`):
-- Nuovo metodo `_deduplicateQueueItem(type, payloadKey, payloadValue)` — usa una singola transazione `readwrite` IDB: `getAll` + `delete` per tutti gli item non-stalled dello stesso tipo+auditId.
-- `enqueue()` chiama `_deduplicateQueueItem` **prima** di aggiungere il nuovo item per i tipi coalescenti: `save_responses` (key: `auditId`), `save_custom_checklist_responses` (key: `auditId`), `update_audit` (key: `audit_uuid`).
-- Tipi **non** deduplicati (ogni operazione è atomica): `create_audit`, `delete_audit`, `send_audit_event`, `upload_attachment`, `delete_attachment`.
-- Confronto UUID **case-insensitive** (`.toLowerCase()`) per coprire mismatch upper/lower tra server e device.
-- **10 test L1** in `syncService.dedup.test.js` — tutti PASS.
+| # | Bug | Causa radice | File | Fix |
+|---|---|---|---|---|
+| 1 | Pending issues non mostrava NC/OSS/NV corretti | Filtro `conformity_status IN ('NC','OSS','NV')` era stato cambiato in `OM` | `audit.controller.js` + migrazione DB | Ripristinato filtro corretto + migrazione CHECK constraint `CK_pending_issues_original_status` da `('NC','OSS','OM')` a `('NC','OSS','NV')` |
+| 2 | NC statistics causava errore SQL | Alias `open`/`in_progress` sono keyword riservate in SQL Server | `nc.controller.js` | Rinominati in `count_open`/`count_in_progress` |
+| 3 | `nc_id` non collegato dopo MERGE pending-issues | MERGE inseriva righe senza aggiornare `nc_id` dal modulo NC tramite `source_question_id` | `audit.controller.js` | Aggiunto UPDATE post-MERGE per collegare `nc_id` |
 
-**Lezione appresa (11/05/2026)**:
-- **Pattern "accumula tutto, manda tutto"** è il default della sync queue: ogni edit utente = 1 item. Su sessioni offline lunghe (ore) = centinaia di item identici. La coalescenza (replace invece di append) per i tipi idempotenti è la soluzione minima e sicura.
-- **Log VPS sono essenziali**: il logger Winston va su `journalctl` (non su `app.log` se girato come systemd). Usare `sudo journalctl -u sgq-backend -o cat | sed 's/\x1b\[[0-9;]*m//g'` per i log leggibili.
-- **404 AUDIT_NOT_FOUND in console mobile**: warning attesi e innocui quando il device ha code item di audit non più presenti sul server. Non confondere con errori reali — verificare sempre se `payload.auditId` corrisponde a un UUID esistente sul server prima di intervenire.
-- **`kQuotaBytes quota exceeded` = IDB piena**: causato dalla combinazione di (a) 287+ `save_responses` in coda (risolto con dedup) + (b) `saveAudit` che rigettava invece di fare recovery. Pattern fix: `_recoverFromQuota()` (svuota allegati poi audit vecchi) + retry, infine graceful resolve se ancora piena. Stesso pattern in `enqueue()` per `store.add()`.
-- **`parseInt('79697DAD-...') = 79697` (non NaN!)**: `parseInt` legge solo i digit iniziali e si ferma. Vecchi UUID iniziavano con lettere hex → parseInt = NaN → funzionavano. UUID `79697DAD-...` inizia con "79697" → parseInt = 79697 → branch numerico → lookup audit_id=79697 → 404 → note non salvate. **Fix sempre**: usare `Number(auditId)` + `Number.isInteger()` nei controller che distinguono UUID/numericId.
+#### Fix frontend (branch mergiato su main + deploy Netlify)
+
+**PendingIssuesCascade** — fix UI/UX multipli:
+- Badge NC/OSS/NV standardizzate con classi `status-btn non-compliant/partial/not-verified active` di `ChecklistModule.css`
+- Rimossa nota ridondante "Rilievi dell'audit #xxx da verificare..."
+- Badge contatori sostituiti con chip compatte identiche a "Rilievi Emergenti"
+- Rimosso label "Note originali:", semplificato link NC modulo
+- Word-break fix sul testo note (overflow su parole lunghe)
+- "Vai alla domanda" implementato con prop callback diretta (stesso pattern `AuditClosePanel` → `onNavigateTo`)
+- Chip sezione con classe `question-reference` (identica a `QuestionCard`)
+- `SECTION_LABELS` map per tradurre chiave interna (`clause8` → "8 - Attività operative")
+
+**ChecklistModule** — pulsante ▲/▼ per collasso/espansione singola clausola spostato fuori da `.clause-progress` (era nascosto da media query mobile `display: none`).
+
+#### Lezioni apprese (12/05/2026)
+
+- **CHECK constraint SQL Server — verificare prima di modificare valori**: prima di usare un valore come contenuto di colonna, verificare i CHECK constraint esistenti con `SELECT name, definition FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('tabella')`. Nel bug corrente, `pending_issues.original_status` aveva un CHECK `IN ('NC','OSS','OM')` errato che bloccava i rilievi NV.
+- **SQL reserved keywords**: alias come `open`, `closed`, `status` possono causare errori oscuri su SQL Server anche senza essere in posizione keyword esplicita. Usare sempre prefissi descrittivi: `count_open`, `count_closed`, `count_in_progress`.
+- **CSS media query nasconde elementi padre**: quando un pulsante/elemento non appare su mobile, verificare se un **contenitore genitore** ha `display: none` in una media query (es. `.clause-progress { display: none }` su mobile). La soluzione è spostare l'elemento fuori da quel contenitore, non modificare la media query.
+- **Navigazione accordion — callback diretta è l'unico pattern affidabile**: per navigare a una domanda specifica da un componente esterno usare prop callback diretta (`onGoToQuestion` passata da `AuditAccordionLayout`) + `setChecklistExpandTrigger(prev => prev+1)`. I `CustomEvent` globali (`window.dispatchEvent`) hanno problemi di timing/mount e non sono affidabili.
+- **Coerenza visiva badge stati conformità**: ogni componente che mostra NC/OSS/NV deve usare esclusivamente `status-btn non-compliant/partial/not-verified active` di `ChecklistModule.css`. Mai creare classi CSS parallele per gli stessi stati — crea inconsistenza visiva e debito tecnico.
+
+#### Stato modulo pending-issues al 12/05/2026
+
+- ✅ Filtro `conformity_status IN ('NC','OSS','NV')` corretto in `audit.controller.js`
+- ✅ CHECK constraint DB `CK_pending_issues_original_status` aggiornato a `('NC','OSS','NV')`
+- ✅ `nc_id` collegato dopo MERGE tramite `source_question_id`
+- ✅ UI PendingIssuesCascade: badge standardizzati, "Vai alla domanda" funzionante, chip sezione, SECTION_LABELS
+- ✅ NC statistics: alias SQL corretti (`count_open`, `count_in_progress`)
+- ⚠️ NC/OSS senza note non ancora nei blockers guided close (da aggiungere in ADR-009 Fase 2)
 
 ---
 

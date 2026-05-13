@@ -1,0 +1,53 @@
+.auto-textarea-wrapper {
+  position: relative;
+}
+
+/* La textarea dentro il wrapper non deve avere resize manuale e
+   lascia spazio per il pulsante mic a destra */
+.auto-textarea-wrapper textarea {
+  resize: none;
+  overflow: hidden;
+  padding-right: 2.8rem;
+  background: #ffffff;
+}
+
+/* Placeholder leggibile — contrasto WCAG AA su sfondo bianco */
+.auto-textarea-wrapper textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+/* ---- Pulsante microfono ---- */
+.voice-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background-color: #f9fafb;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23374151' d='M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z'/%3E%3Cpath fill='%23374151' d='M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 55%;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  z-index: 1;
+}
+
+.voice-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.voice-btn--active {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23dc2626' x='6' y='6' width='12' height='12' rx='1'/%3E%3C/svg%3E");
+  animation: pulse-mic 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}

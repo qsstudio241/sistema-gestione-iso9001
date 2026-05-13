@@ -612,6 +612,48 @@ async function updateOrgLicenses(req, res) {
     }
 }
 
+/**
+ * PATCH /api/v1/admin/organizations/:organizationId/licenses
+ * Superadmin: aggiorna licensed_modules di qualsiasi organizzazione (studio cliente).
+ * body: { modules: string[] } | { use_defaults: true }
+ */
+async function updateAnyOrgLicenses(req, res) {
+    try {
+        const targetOrgId = parseInt(req.params.organizationId, 10);
+        if (!Number.isFinite(targetOrgId)) {
+            return res.status(400).json({ success: false, error: 'organizationId non valido' });
+        }
+
+        const orgCheck = await query(
+            `SELECT organization_id FROM organizations WHERE organization_id = @organization_id`,
+            { organization_id: targetOrgId }
+        );
+        if (!orgCheck.recordset.length) {
+            return res.status(404).json({ success: false, error: 'Organizzazione non trovata' });
+        }
+
+        const { modules, use_defaults } = req.body || {};
+
+        if (use_defaults === true) {
+            await clearLicensedModulesOverride(targetOrgId);
+            const updated = await getLicensedModuleKeysForOrg(targetOrgId);
+            logger.info('Superadmin reset org licenses to defaults', { targetOrgId, actor: req.user.user_id });
+            return res.json({ success: true, data: { modules: updated } });
+        }
+
+        if (!Array.isArray(modules)) {
+            return res.status(400).json({ success: false, error: 'Campo "modules" deve essere un array', code: 'INVALID_BODY' });
+        }
+
+        const updated = await setLicensedModulesForOrg(targetOrgId, modules);
+        logger.info('Superadmin updated org licenses', { targetOrgId, modules: updated, actor: req.user.user_id });
+        res.json({ success: true, data: { modules: updated } });
+    } catch (error) {
+        logger.error('Admin updateAnyOrgLicenses error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore aggiornamento licenze organizzazione' });
+    }
+}
+
 module.exports = {
     listUsers,
     createUser,
@@ -620,4 +662,5 @@ module.exports = {
     updateUserStandards,
     getOrgLicenses,
     updateOrgLicenses,
+    updateAnyOrgLicenses,
 };

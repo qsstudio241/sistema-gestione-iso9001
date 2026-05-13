@@ -3,23 +3,31 @@
  * Componente per la gestione dell'esito finale dell'audit
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
-import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
+import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
+import { getSelectedStandardEntries } from "../data/standardsRegistry";
+import AutoTextarea from "./AutoTextarea";
 import "./AuditOutcomeSection.css";
 
 /**
  * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
  *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
  */
-function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false }) {
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards }) {
   const { currentAudit } = useStorage();
 
-  // Stato locale per editing
-  const [conclusions, setConclusions] = useState(
-    auditOutcome?.conclusions || ""
+  // Conclusione unica (standard singolo)
+  const [conclusions, setConclusions] = useState(auditOutcome?.conclusions || "");
+
+  // Conclusioni per norma (multi-standard) — chiave: normKey, valore: testo
+  const [conclusionsByKey, setConclusionsByKey] = useState(
+    () => Object.fromEntries(
+      Object.keys(auditOutcome?.byStandard || {}).map((key) => [
+        key, auditOutcome?.byStandard?.[key]?.conclusions || ""
+      ])
+    )
   );
-  // RIMOSSO: emergingSummary, attachments, distribution (funzionalità future)
 
   // Calcola metriche real-time dalla checklist
   const [metrics, setMetrics] = useState({
@@ -66,49 +74,68 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     }
   }, [currentAudit?.checklist, currentAudit?.customStatuses, currentAudit?.customChecklist, auditOutcome, onUpdate]);
 
-  // Handler aggiornamento conclusioni
   const handleConclusionsChange = (e) => {
     const value = e.target.value;
     setConclusions(value);
+    onUpdate({ ...auditOutcome, conclusions: value });
+  };
+
+  const handleConclusionsByKeyChange = (key, value) => {
+    setConclusionsByKey((prev) => ({ ...prev, [key]: value }));
     onUpdate({
       ...auditOutcome,
-      conclusions: value,
+      byStandard: {
+        ...auditOutcome?.byStandard,
+        [key]: { ...auditOutcome?.byStandard?.[key], conclusions: value },
+      },
     });
   };
 
-  // Calcola metriche da checklist (passate come prop o calcolate)
   const totalNC = metrics.totalNC;
   const totalOSS = metrics.totalOSS;
   const totalOM = metrics.totalOM;
+
+  const byStandard = useMemo(
+    () => calculateByStandardMetrics(currentAudit?.checklist),
+    [currentAudit?.checklist]
+  );
+  const standardEntries = useMemo(
+    () => getSelectedStandardEntries(selectedStandards || []),
+    [selectedStandards]
+  );
+  const isMultiStandard = standardEntries.length > 1;
 
   return (
     <div className={`audit-outcome-section${readOnly ? ' readonly-mode' : ''}`}>
       {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
       {showConclusions && (
       <div className="outcome-block">
-        <h3 className="outcome-block-title">
-          <span className="block-icon">📝</span>
-          Conclusioni dell'Audit
-        </h3>
-        <div className="form-group">
-          <label htmlFor="conclusions">
-            Sintesi generale dell'esito dell'audit
-          </label>
-          <textarea
+        {/* Standard singolo: una textarea */}
+        {!isMultiStandard && (
+          <AutoTextarea
             id="conclusions"
-            className="outcome-textarea"
-            rows={6}
-            placeholder="Descrivere le conclusioni generali dell'audit, il livello di conformità del sistema di gestione, e il giudizio complessivo sull'efficacia dei processi..."
             value={conclusions}
             onChange={handleConclusionsChange}
+            placeholder="Sintesi generale dell'esito dell'audit: livello di conformità del sistema di gestione e giudizio complessivo sull'efficacia dei processi..."
             disabled={readOnly}
           />
-          <p className="field-hint">
-            Esempio: "Il sistema di gestione per la qualità risulta
-            complessivamente efficace e conforme ai requisiti della norma UNI EN
-            ISO 9001:2015..."
-          </p>
-        </div>
+        )}
+
+        {/* Multi-standard: una textarea per norma con intestazione */}
+        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => (
+          <div key={key} className="findings-per-standard">
+            <span className="findings-per-standard__label">
+              {shortLabel} — {label.split(" \u2014 ")[1] || label}
+            </span>
+            <AutoTextarea
+              id={`conclusions-${key}`}
+              value={conclusionsByKey[key] ?? ""}
+              onChange={(e) => handleConclusionsByKeyChange(key, e.target.value)}
+              placeholder={`Conclusioni per ${label.split(" \u2014 ")[0] || label}…`}
+              disabled={readOnly}
+            />
+          </div>
+        ))}
       </div>
       )}
 
@@ -120,43 +147,48 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           Rilievi Emergenti
         </h3>
 
-        {/* Metriche findings - COMPATTE SU UNA RIGA — somma TUTTI gli standard + custom */}
-        {(() => {
-          // Conta C/NA/NV da checklist ISO
+        {/* Standard singolo: riga totale (è già il dato del report).
+            Multi-standard: non ha senso un aggregato — ogni norma ha il suo report. */}
+        {!isMultiStandard && (() => {
           const allQuestions = currentAudit?.checklist
             ? Object.values(currentAudit.checklist).flatMap(cl =>
                 Object.values(cl || {}).flatMap(clause => clause.questions || [])
               )
             : [];
           const countISO = (s) => allQuestions.filter((q) => q.status === s).length;
-          // Conta C/NA/NV da customStatuses (se checklist custom con pulsanti)
           const customSts = currentAudit?.customChecklist?.has_outcome_buttons
             ? Object.values(currentAudit.customStatuses || {})
             : [];
           const countCustom = (s) => customSts.filter((v) => v === s).length;
           return (
             <div className="findings-metrics-compact">
-              <span className="metric-compact nc">
-                <strong>C:</strong> {countISO("C") + countCustom("C")}
-              </span>
-              <span className="metric-compact oss">
-                <strong>OSS:</strong> {totalOSS}
-              </span>
-              <span className="metric-compact nc-severe">
-                <strong>NC:</strong> {totalNC}
-              </span>
-              <span className="metric-compact om">
-                <strong>OM:</strong> {totalOM}
-              </span>
-              <span className="metric-compact na">
-                <strong>NA:</strong> {countISO("NA") + countCustom("NA")}
-              </span>
-              <span className="metric-compact nv">
-                <strong>NV:</strong> {countISO("NV") + countCustom("NV")}
-              </span>
+              <span className="metric-compact nc"><strong>C:</strong> {countISO("C") + countCustom("C")}</span>
+              <span className="metric-compact oss"><strong>OSS:</strong> {totalOSS}</span>
+              <span className="metric-compact nc-severe"><strong>NC:</strong> {totalNC}</span>
+              <span className="metric-compact om"><strong>OM:</strong> {totalOM}</span>
+              <span className="metric-compact na"><strong>NA:</strong> {countISO("NA") + countCustom("NA")}</span>
+              <span className="metric-compact nv"><strong>NV:</strong> {countISO("NV") + countCustom("NV")}</span>
             </div>
           );
         })()}
+
+        {/* Dettaglio per norma — visibile solo per audit multi-standard */}
+        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => {
+          const m = byStandard[key] || {};
+          return (
+            <div key={key} className="findings-per-standard">
+              <span className="findings-per-standard__label">{shortLabel} — {label.split(" \u2014 ")[1] || label}</span>
+              <div className="findings-metrics-compact">
+                <span className="metric-compact nc"><strong>C:</strong> {m.totalC ?? 0}</span>
+                <span className="metric-compact oss"><strong>OSS:</strong> {m.totalOSS ?? 0}</span>
+                <span className="metric-compact nc-severe"><strong>NC:</strong> {m.totalNC ?? 0}</span>
+                <span className="metric-compact om"><strong>OM:</strong> {m.totalOM ?? 0}</span>
+                <span className="metric-compact na"><strong>NA:</strong> {m.totalNA ?? 0}</span>
+                <span className="metric-compact nv"><strong>NV:</strong> {m.totalNV ?? 0}</span>
+              </div>
+            </div>
+          );
+        })}
 
         {/* LEGENDA (spostata da ChecklistModule) */}
         <div className="findings-legend">
@@ -186,13 +218,6 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
 
         {/* RIMOSSO: Descrizione sintetica rilievi emergenti */}
 
-        {/* Link ai rilievi dettagliati */}
-        <div className="findings-link">
-          <p className="info-message">
-            ℹ️ I rilievi dettagliati (NC, OSS, OM) sono compilati nella sezione{" "}
-            <strong>Checklist</strong> per ogni domanda normativa
-          </p>
-        </div>
       </div>
       )}
     </div>

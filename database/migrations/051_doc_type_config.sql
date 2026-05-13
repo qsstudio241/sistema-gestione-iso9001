@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration 051: doc_type_config — configurazione prefissi per tipo documento
+-- Migration 051: doc_type_config ï¿½ configurazione prefissi per tipo documento
 -- ============================================================================
 -- Permette a ogni organizzazione di configurare prefisso e autonumerazione
 -- per ciascun tipo di documento (es. 'Procedura' -> 'PG', 'Modulo' -> 'MOD').
@@ -30,7 +30,7 @@ BEGIN
     PRINT '  ? Tabella doc_type_config creata';
 END
 ELSE
-    PRINT '  ??  Tabella doc_type_config già presente';
+    PRINT '  ??  Tabella doc_type_config giï¿½ presente';
 
 PRINT '';
 PRINT 'Migration 051 completata.';

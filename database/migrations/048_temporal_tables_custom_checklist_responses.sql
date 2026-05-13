@@ -1,8 +1,8 @@
 -- =============================================================================
--- Migrazione 048 — Temporal Table su audit_custom_checklist_responses
+-- Migrazione 048 ï¿½ Temporal Table su audit_custom_checklist_responses
 -- =============================================================================
--- Motivazione: parità con migration 045 (audit_responses + audits).
--- ADR-008: ogni entità audit deve avere storicizzazione automatica.
+-- Motivazione: paritï¿½ con migration 045 (audit_responses + audits).
+-- ADR-008: ogni entitï¿½ audit deve avere storicizzazione automatica.
 -- Prerequisiti: SQL Server 2016+ (verificato: SQL Server 2025 Enterprise)
 --
 -- Rollback:
@@ -15,7 +15,7 @@
 
 PRINT '=== Migration 048: Temporal Table audit_custom_checklist_responses ===';
 
--- 1. Se temporal table già attiva: disabilita, rimuovi period e colonne (idempotente)
+-- 1. Se temporal table giï¿½ attiva: disabilita, rimuovi period e colonne (idempotente)
 IF EXISTS (
     SELECT 1 FROM sys.tables
     WHERE name = 'audit_custom_checklist_responses'
@@ -50,7 +50,7 @@ BEGIN
     PRINT '[OK] Colonne ValidFrom/ValidTo aggiunte';
 END
 ELSE
-    PRINT '[SKIP] Colonne ValidFrom/ValidTo già presenti';
+    PRINT '[SKIP] Colonne ValidFrom/ValidTo giï¿½ presenti';
 
 -- 3. Crea history table e abilita system versioning
 IF NOT EXISTS (
@@ -67,7 +67,7 @@ BEGIN
     PRINT '[OK] History table: dbo.audit_custom_checklist_responses_history';
 END
 ELSE
-    PRINT '[SKIP] History table già presente';
+    PRINT '[SKIP] History table giï¿½ presente';
 
 -- 4. Verifica finale
 PRINT '';
