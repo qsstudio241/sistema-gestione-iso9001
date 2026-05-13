@@ -2,22 +2,18 @@
  * AutoTextarea - textarea che si espande automaticamente al contenuto
  * + pulsante dettatura vocale (Web Speech API, it-IT) su browser compatibili.
  *
- * Riusabile ovunque serva una textarea libera: conclusioni, note checklist, ecc.
- * Props:
- *   className  - classe CSS da applicare alla textarea (default: "outcome-textarea")
- *   onBlur     - handler opzionale onBlur (es. per auto-save)
- *
- * Nota Android: Chrome per Android non supporta `continuous: true`. Il riconoscimento
- * si interrompe dopo ogni pausa; viene riavviato automaticamente finche' l'utente non
- * tocca di nuovo il pulsante (simula la modalita' continua).
- *
- * Nota PWA: se il permesso microfono non e' stato concesso, `onerror('not-allowed')`
- * si attiva silenziosamente. In quel caso viene mostrato un messaggio con le istruzioni
- * per abilitare il permesso nelle impostazioni Android.
+ * Note compatibilità:
+ * - Android Chrome: non supporta `continuous:true`. Il riconoscimento termina
+ *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms
+ *   (delay necessario per Chrome: se si chiama start() subito in onend,
+ *   la sessione non parte e il pulsante torna inattivo silenziosamente).
+ * - PWA Android: il microfono va abilitato manualmente in Impostazioni Android
+ *   ? App ? [nome app] ? Permessi ? Microfono. L'errore viene mostrato in-page.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
 
+const RESTART_DELAY_MS = 150; // Chrome richiede un breve gap tra onend e il prossimo start()
 
 function AutoTextarea({
   id,
@@ -33,8 +29,9 @@ function AutoTextarea({
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
   const valueRef = useRef(value);
+  const restartTimerRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
-  const [permError, setPermError] = useState(false);
+  const [voiceError, setVoiceError] = useState(null); // null | "not-allowed" | "unavailable"
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
@@ -47,65 +44,80 @@ function AutoTextarea({
     el.style.height = el.scrollHeight + "px";
   }, [value]);
 
-  // Mantiene valueRef aggiornato per evitare stale closures nelle callback
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
 
+  // Pulizia timer al dismiss del componente
+  useEffect(() => {
+    return () => {
+      clearTimeout(restartTimerRef.current);
+      isListeningRef.current = false;
+      try { recognitionRef.current?.stop(); } catch { /* ignorato */ }
+    };
+  }, []);
+
   const stopListening = () => {
     isListeningRef.current = false;
+    clearTimeout(restartTimerRef.current);
     setIsListening(false);
     try { recognitionRef.current?.stop(); } catch { /* ignorato */ }
   };
 
   const startRecognition = () => {
-    const recognition = new SpeechRecognition();
-    recognition.lang = "it-IT";
-    recognition.continuous = false; // Android Chrome non supporta continuous: true
-    recognition.interimResults = false;
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "it-IT";
+      recognition.continuous = false;   // Android Chrome non supporta true
+      recognition.interimResults = false;
 
-    recognition.onresult = (e) => {
-      const transcript = Array.from(e.results)
-        .map((r) => r[0].transcript)
-        .join(" ");
-      if (transcript) {
-        const current = valueRef.current;
-        onChange({ target: { value: current ? current + " " + transcript : transcript } });
-      }
-    };
+      recognition.onresult = (e) => {
+        const transcript = Array.from(e.results)
+          .map((r) => r[0].transcript)
+          .join(" ");
+        if (transcript) {
+          const current = valueRef.current;
+          onChange({ target: { value: current ? current + " " + transcript : transcript } });
+        }
+      };
 
-    recognition.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        // Permesso microfono negato (frequente su PWA Android al primo avvio o se revocato)
-        console.warn("[Voice] Permesso microfono negato:", e.error,
-          "— Abilita in Impostazioni Android > App > Permessi > Microfono");
-        isListeningRef.current = false;
-        setIsListening(false);
-        setPermError(true);
-      }
-      // Altri errori transitori: onend gestisce il restart
-    };
-
-    recognition.onend = () => {
-      if (isListeningRef.current) {
-        // Android: sessione terminata dopo pausa -> riavvio automatico
-        try {
-          startRecognition();
-        } catch {
+      recognition.onerror = (e) => {
+        console.warn("[Voice] SpeechRecognition error:", e.error);
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
           isListeningRef.current = false;
+          clearTimeout(restartTimerRef.current);
+          setIsListening(false);
+          setVoiceError("not-allowed");
+        }
+        // Errori transitori (network, audio-capture, ecc.): onend gestisce il restart
+      };
+
+      recognition.onend = () => {
+        if (isListeningRef.current) {
+          // Delay 150ms: Chrome richiede un gap prima di poter chiamare start() di nuovo.
+          // Senza questo delay il pulsante torna inattivo silenziosamente su Desktop e Android.
+          restartTimerRef.current = setTimeout(() => {
+            if (isListeningRef.current) {
+              startRecognition();
+            }
+          }, RESTART_DELAY_MS);
+        } else {
           setIsListening(false);
         }
-      } else {
-        setIsListening(false);
-      }
-    };
+      };
 
-    recognition.start();
-    recognitionRef.current = recognition;
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (err) {
+      console.warn("[Voice] Impossibile avviare SpeechRecognition:", err.message);
+      isListeningRef.current = false;
+      setIsListening(false);
+      setVoiceError("unavailable");
+    }
   };
 
   const toggleListening = () => {
-    setPermError(false); // reset messaggio errore ad ogni nuovo tentativo
+    setVoiceError(null);
     if (isListeningRef.current) {
       stopListening();
       return;
@@ -114,6 +126,13 @@ function AutoTextarea({
     setIsListening(true);
     startRecognition();
   };
+
+  const errorMessage =
+    voiceError === "not-allowed"
+      ? "Permesso microfono non concesso. Impostazioni Android ? App ? SGQ Audit ? Permessi ? Microfono"
+      : voiceError === "unavailable"
+      ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
+      : null;
 
   return (
     <div className="auto-textarea-wrapper">
@@ -132,30 +151,25 @@ function AutoTextarea({
         <>
           <button
             type="button"
-            className={`voice-btn${isListening ? " voice-btn--active" : ""}${permError ? " voice-btn--error" : ""}`}
+            className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
             onClick={toggleListening}
             title={
-              permError
-                ? "Permesso microfono negato — tocca per riprovare"
+              voiceError
+                ? "Errore microfono — tocca per riprovare"
                 : isListening
                 ? "Ferma dettatura"
                 : "Dettatura vocale (it-IT)"
             }
             aria-label={
-              permError
-                ? "Permesso microfono negato"
+              voiceError
+                ? "Errore microfono"
                 : isListening
                 ? "Ferma dettatura"
                 : "Avvia dettatura vocale"
             }
           />
-          {permError && (
-            <p className="voice-perm-error">
-              Permesso microfono non concesso.{" "}
-              <strong>
-                Impostazioni Android &rarr; App &rarr; {document.title || "SGQ"} &rarr; Permessi &rarr; Microfono
-              </strong>
-            </p>
+          {errorMessage && (
+            <p className="voice-perm-error">{errorMessage}</p>
           )}
         </>
       )}
