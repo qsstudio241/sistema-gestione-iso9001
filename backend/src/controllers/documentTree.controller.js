@@ -346,11 +346,10 @@ async function provisionTree(req, res) {
 async function listTemplates(req, res) {
     try {
         const result = await query(`
-            SELECT id, template_code, template_name, description, is_default, is_active,
-                   created_at, updated_at
+            SELECT id, template_code, name, description, applicable_standards,
+                   is_default, created_at
             FROM document_tree_templates
-            WHERE is_active = 1
-            ORDER BY is_default DESC, template_name ASC
+            ORDER BY is_default DESC, name ASC
         `);
 
         res.json({ success: true, data: result.recordset });

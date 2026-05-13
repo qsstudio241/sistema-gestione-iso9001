@@ -63,6 +63,10 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
     let order = baseOrder;
 
     for (const node of nodes) {
+        // Il template JSON usa "code", il DB usa "folder_code"
+        const folderCode = node.folder_code || node.code || null;
+        const nodeTitle  = node.title || node.name || '';
+
         if (node.requires_standards && node.requires_standards.length > 0) {
             const hasMatch = node.requires_standards.some(s => standardCodes.includes(s));
             if (!hasMatch) continue;
@@ -74,7 +78,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
               AND organization_id = @org_id
               AND (company_id = @company_id OR (@company_id IS NULL AND company_id IS NULL))
         `, {
-            folder_code: node.folder_code,
+            folder_code: folderCode,
             org_id:      orgId,
             company_id:  companyId != null ? parseInt(companyId) : null,
         });
@@ -96,8 +100,8 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
             `, {
                 org_id:        orgId,
                 company_id:    companyId != null ? parseInt(companyId) : null,
-                title:         node.title,
-                folder_code:   node.folder_code,
+                title:         nodeTitle,
+                folder_code:   folderCode,
                 parent_id:     parentId != null ? parseInt(parentId) : null,
                 display_order: order,
             });
@@ -109,7 +113,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
             `, { path_cache: pathCache, id: nodeId });
         }
 
-        const item = { id: nodeId, folder_code: node.folder_code, title: node.title, children: [] };
+        const item = { id: nodeId, folder_code: folderCode, title: nodeTitle, children: [] };
 
         if (node.children && node.children.length > 0) {
             item.children = await createNodesRecursive(
@@ -137,28 +141,28 @@ async function provisionTree(orgId, companyId, templateCode, standardCodes = [])
 
     if (templateCode) {
         const tmpl = await query(`
-            SELECT tree_structure FROM document_tree_templates
-            WHERE template_code = @code AND is_active = 1
+            SELECT structure FROM document_tree_templates
+            WHERE template_code = @code
         `, { code: templateCode });
 
         if (!tmpl.recordset.length) {
-            throw new Error(`Template "${templateCode}" non trovato o non attivo`);
+            throw new Error(`Template "${templateCode}" non trovato`);
         }
-        templateData = typeof tmpl.recordset[0].tree_structure === 'string'
-            ? JSON.parse(tmpl.recordset[0].tree_structure)
-            : tmpl.recordset[0].tree_structure;
+        templateData = typeof tmpl.recordset[0].structure === 'string'
+            ? JSON.parse(tmpl.recordset[0].structure)
+            : tmpl.recordset[0].structure;
     } else {
         const tmpl = await query(`
-            SELECT TOP 1 tree_structure FROM document_tree_templates
-            WHERE is_default = 1 AND is_active = 1
+            SELECT TOP 1 structure FROM document_tree_templates
+            WHERE is_default = 1
         `);
 
         if (!tmpl.recordset.length) {
-            throw new Error('Nessun template default attivo trovato');
+            throw new Error('Nessun template default trovato');
         }
-        templateData = typeof tmpl.recordset[0].tree_structure === 'string'
-            ? JSON.parse(tmpl.recordset[0].tree_structure)
-            : tmpl.recordset[0].tree_structure;
+        templateData = typeof tmpl.recordset[0].structure === 'string'
+            ? JSON.parse(tmpl.recordset[0].structure)
+            : tmpl.recordset[0].structure;
     }
 
     logger.info('[TreeProvisioner] Starting provisioning', {
