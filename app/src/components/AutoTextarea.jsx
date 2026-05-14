@@ -74,10 +74,17 @@ function AutoTextarea({
       recognition.continuous = false;   // Android Chrome non supporta true
       recognition.interimResults = false;
 
+      console.log("[MIC-DIAG] 5. recognition creata, lang:", recognition.lang);
+
+      recognition.onstart = () => {
+        console.log("[MIC-DIAG] 6. onstart — ascolto attivo");
+      };
+
       recognition.onresult = (e) => {
         const transcript = Array.from(e.results)
           .map((r) => r[0].transcript)
           .join(" ");
+        console.log("[MIC-DIAG] 7. onresult transcript:", transcript);
         if (transcript) {
           const current = valueRef.current;
           onChange({ target: { value: current ? current + " " + transcript : transcript } });
@@ -85,11 +92,9 @@ function AutoTextarea({
       };
 
       recognition.onerror = (e) => {
-        console.warn("[Voice] SpeechRecognition error:", e.error);
-        // Errori transitori: onend gestisce l'auto-restart
+        console.log("[MIC-DIAG] 8. onerror — error:", e.error, "message:", e.message);
         const transient = ["no-speech", "aborted"];
         if (transient.includes(e.error)) return;
-        // Tutti gli altri errori non sono recuperabili con un semplice restart
         isListeningRef.current = false;
         clearTimeout(restartTimerRef.current);
         setIsListening(false);
@@ -97,9 +102,8 @@ function AutoTextarea({
       };
 
       recognition.onend = () => {
+        console.log("[MIC-DIAG] 9. onend — isListeningRef:", isListeningRef.current);
         if (isListeningRef.current) {
-          // Delay 150ms: Chrome richiede un gap prima di poter chiamare start() di nuovo.
-          // Senza questo delay il pulsante torna inattivo silenziosamente su Desktop e Android.
           restartTimerRef.current = setTimeout(() => {
             if (isListeningRef.current) {
               startRecognition();
@@ -113,7 +117,7 @@ function AutoTextarea({
       recognition.start();
       recognitionRef.current = recognition;
     } catch (err) {
-      console.warn("[Voice] Impossibile avviare SpeechRecognition:", err.message);
+      console.log("[MIC-DIAG] startRecognition ECCEZIONE:", err.name, err.message);
       isListeningRef.current = false;
       setIsListening(false);
       setVoiceError("unavailable");
@@ -127,35 +131,41 @@ function AutoTextarea({
       return;
     }
 
-    // Controlla lo stato del permesso prima di fare qualsiasi cosa.
-    // Se è già "denied", mostra subito il messaggio invece di chiamare getUserMedia
-    // (che fallirebbe silenziosamente senza mostrare alcun dialog).
+    console.log("[MIC-DIAG] 1. toggleListening avviato");
+    console.log("[MIC-DIAG] SpeechRecognition disponibile:", !!SpeechRecognition);
+    console.log("[MIC-DIAG] navigator.mediaDevices:", !!navigator.mediaDevices);
+    console.log("[MIC-DIAG] navigator.permissions:", !!navigator.permissions);
+
     if (navigator.permissions?.query) {
       try {
         const perm = await navigator.permissions.query({ name: "microphone" });
+        console.log("[MIC-DIAG] 2. permissions.query stato:", perm.state);
         if (perm.state === "denied") {
+          console.log("[MIC-DIAG] ? permesso già negato, esco");
           setVoiceError("not-allowed");
           return;
         }
-      } catch {
-        // permissions API non disponibile su questo browser — prosegui
+      } catch (err) {
+        console.log("[MIC-DIAG] 2. permissions.query non disponibile:", err.message);
       }
     }
 
-    // Richiede esplicitamente il permesso microfono via getUserMedia prima di avviare
-    // SpeechRecognition. Su Android Chrome (PWA shortcut o WebAPK) questa è l'unica
-    // chiamata che fa comparire il dialog nativo di consenso. Senza di essa, Chrome
-    // rigetta SpeechRecognition silenziosamente con "not-allowed".
     if (navigator.mediaDevices?.getUserMedia) {
       try {
+        console.log("[MIC-DIAG] 3. getUserMedia richiesto...");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop()); // stream non serve, libera subito
-      } catch {
+        console.log("[MIC-DIAG] 3. getUserMedia OK, tracce:", stream.getTracks().length);
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        console.log("[MIC-DIAG] 3. getUserMedia ERRORE:", err.name, err.message);
         setVoiceError("not-allowed");
         return;
       }
+    } else {
+      console.log("[MIC-DIAG] 3. getUserMedia non disponibile");
     }
 
+    console.log("[MIC-DIAG] 4. Avvio SpeechRecognition...");
     isListeningRef.current = true;
     setIsListening(true);
     startRecognition();
