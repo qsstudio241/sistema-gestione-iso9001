@@ -7,14 +7,14 @@
  *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms.
  * - PWA Android (shortcut o WebAPK): il permesso microfono viene richiesto
  *   esplicitamente via getUserMedia() prima di avviare SpeechRecognition.
- *   Senza questa chiamata Chrome non mostra il dialog di consenso nativo e
- *   rigetta silenziosamente la sessione.
+ *   Senza questa chiamata Chrome non mostra il dialog di consenso nativo.
+ * - L'header HTTP Permissions-Policy deve includere microphone=(self)
+ *   nel netlify.toml (o equivalente) altrimenti il browser blocca tutto.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
 
 const RESTART_DELAY_MS = 150;
-const MIC_DEBUG_BUILD = "v5"; // incrementa ad ogni modifica debug — visibile sul pulsante
 
 function AutoTextarea({
   id,
@@ -33,16 +33,10 @@ function AutoTextarea({
   const restartTimerRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
-  const [debugLines, setDebugLines] = useState([]);
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
     (window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  const dbg = (msg) => {
-    console.log("[MIC-DIAG]", msg);
-    setDebugLines((prev) => [...prev.slice(-19), `${new Date().toLocaleTimeString()} ${msg}`]);
-  };
 
   useEffect(() => {
     const el = ref.current;
@@ -75,13 +69,8 @@ function AutoTextarea({
       recognition.continuous = false;
       recognition.interimResults = false;
 
-      dbg(`5. recognition creata lang=${recognition.lang}`);
-
-      recognition.onstart = () => dbg("6. onstart — ascolto attivo");
-
       recognition.onresult = (e) => {
         const transcript = Array.from(e.results).map((r) => r[0].transcript).join(" ");
-        dbg(`7. onresult: "${transcript}"`);
         if (transcript) {
           const current = valueRef.current;
           onChange({ target: { value: current ? current + " " + transcript : transcript } });
@@ -89,7 +78,6 @@ function AutoTextarea({
       };
 
       recognition.onerror = (e) => {
-        dbg(`8. onerror: ${e.error} — ${e.message || ""}`);
         const transient = ["no-speech", "aborted"];
         if (transient.includes(e.error)) return;
         isListeningRef.current = false;
@@ -99,7 +87,6 @@ function AutoTextarea({
       };
 
       recognition.onend = () => {
-        dbg(`9. onend — isListening=${isListeningRef.current}`);
         if (isListeningRef.current) {
           restartTimerRef.current = setTimeout(() => {
             if (isListeningRef.current) startRecognition();
@@ -112,7 +99,6 @@ function AutoTextarea({
       recognition.start();
       recognitionRef.current = recognition;
     } catch (err) {
-      dbg(`startRecognition ECCEZIONE: ${err.name} ${err.message}`);
       isListeningRef.current = false;
       setIsListening(false);
       setVoiceError("unavailable");
@@ -126,38 +112,28 @@ function AutoTextarea({
       return;
     }
 
-    dbg(`1. click — SpeechRec=${!!SpeechRecognition} mediaDevices=${!!navigator.mediaDevices} permissions=${!!navigator.permissions}`);
-
     if (navigator.permissions?.query) {
       try {
         const perm = await navigator.permissions.query({ name: "microphone" });
-        dbg(`2. permissions.query stato: ${perm.state}`);
         if (perm.state === "denied") {
-          dbg("? permesso già negato");
           setVoiceError("not-allowed");
           return;
         }
-      } catch (err) {
-        dbg(`2. permissions.query N/A: ${err.message}`);
+      } catch {
+        // permissions API non disponibile — prosegui
       }
     }
 
     if (navigator.mediaDevices?.getUserMedia) {
       try {
-        dbg("3. getUserMedia richiesto...");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        dbg(`3. getUserMedia OK — tracce: ${stream.getTracks().length}`);
         stream.getTracks().forEach((t) => t.stop());
-      } catch (err) {
-        dbg(`3. getUserMedia ERRORE: ${err.name} ${err.message}`);
+      } catch {
         setVoiceError("not-allowed");
         return;
       }
-    } else {
-      dbg("3. getUserMedia non disponibile");
     }
 
-    dbg("4. avvio SpeechRecognition...");
     isListeningRef.current = true;
     setIsListening(true);
     startRecognition();
@@ -201,26 +177,10 @@ function AutoTextarea({
             type="button"
             className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
             onClick={toggleListening}
-            title={`[${MIC_DEBUG_BUILD}] ${voiceError ? "Errore — tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}`}
+            title={voiceError ? "Errore microfono — tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
             aria-label={voiceError ? "Errore microfono" : isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
           />
           {errorMessage && <p className="voice-perm-error">{errorMessage}</p>}
-          {debugLines.length > 0 && (
-            <div style={{
-              marginTop: 6, padding: "6px 8px", background: "#1e1e1e", borderRadius: 6,
-              fontFamily: "monospace", fontSize: 11, color: "#d4d4d4", maxHeight: 180,
-              overflowY: "auto", lineHeight: 1.5,
-            }}>
-              <div style={{ color: "#888", marginBottom: 4 }}>
-                ?? Mic debug {MIC_DEBUG_BUILD} — tocca per copiare
-              </div>
-              {debugLines.map((line, i) => (
-                <div key={i} style={{ color: line.includes("ERRORE") || line.includes("negato") ? "#f48771" : "#d4d4d4" }}>
-                  {line}
-                </div>
-              ))}
-            </div>
-          )}
         </>
       )}
     </div>
