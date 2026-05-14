@@ -560,6 +560,7 @@
 /* Status Buttons */
 .status-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -851,6 +852,7 @@
 
   .status-btn {
     flex: 1;
+    min-width: calc(33.333% - 6px);
   }
 }
 
