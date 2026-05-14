@@ -126,6 +126,21 @@ function AutoTextarea({
       return;
     }
 
+    // Controlla lo stato del permesso prima di fare qualsiasi cosa.
+    // Se è già "denied", mostra subito il messaggio invece di chiamare getUserMedia
+    // (che fallirebbe silenziosamente senza mostrare alcun dialog).
+    if (navigator.permissions?.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: "microphone" });
+        if (perm.state === "denied") {
+          setVoiceError("not-allowed");
+          return;
+        }
+      } catch {
+        // permissions API non disponibile su questo browser — prosegui
+      }
+    }
+
     // Richiede esplicitamente il permesso microfono via getUserMedia prima di avviare
     // SpeechRecognition. Su Android Chrome (PWA shortcut o WebAPK) questa è l'unica
     // chiamata che fa comparire il dialog nativo di consenso. Senza di essa, Chrome
@@ -147,7 +162,7 @@ function AutoTextarea({
 
   const errorMessage =
     voiceError === "not-allowed"
-      ? "Microfono bloccato. In Chrome: menu ? ? Impostazioni ? Impostazioni sito ? Microfono ? sblocca questo sito. Poi tocca di nuovo il pulsante."
+      ? "Microfono bloccato. Per sbloccare: apri Chrome (non l'app), vai su sistema-gestione-iso9001.netlify.app, tocca il lucchetto ?? ? Autorizzazioni sito ? Microfono ? imposta «Chiedi». Poi torna qui e riprova."
       : voiceError === "unavailable"
       ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
       : null;
