@@ -86,13 +86,14 @@ function AutoTextarea({
 
       recognition.onerror = (e) => {
         console.warn("[Voice] SpeechRecognition error:", e.error);
-        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-          isListeningRef.current = false;
-          clearTimeout(restartTimerRef.current);
-          setIsListening(false);
-          setVoiceError("not-allowed");
-        }
-        // Errori transitori (network, audio-capture, ecc.): onend gestisce il restart
+        // Errori transitori: onend gestisce l'auto-restart
+        const transient = ["no-speech", "aborted"];
+        if (transient.includes(e.error)) return;
+        // Tutti gli altri errori non sono recuperabili con un semplice restart
+        isListeningRef.current = false;
+        clearTimeout(restartTimerRef.current);
+        setIsListening(false);
+        setVoiceError(e.error);
       };
 
       recognition.onend = () => {
@@ -160,12 +161,24 @@ function AutoTextarea({
     startRecognition();
   };
 
-  const errorMessage =
-    voiceError === "not-allowed"
-      ? "Microfono bloccato. Vai in Impostazioni Android \u2192 App \u2192 Chrome \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti. Poi torna qui e riprova."
-      : voiceError === "unavailable"
-      ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
-      : null;
+  const ERROR_MESSAGES = {
+    "not-allowed":
+      "Microfono bloccato. Vai in Impostazioni Android \u2192 App \u2192 Chrome \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti. Poi riprova.",
+    "service-not-allowed":
+      "Servizio vocale non disponibile. Verifica che l'app Google abbia il permesso microfono: Impostazioni Android \u2192 App \u2192 Google \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti.",
+    "audio-capture":
+      "Microfono non accessibile. Un'altra app potrebbe averlo occupato. Chiudi altre app e riprova.",
+    "network":
+      "Connessione assente. La dettatura richiede internet (audio inviato ai server Google). Riprova con connessione attiva.",
+    "language-not-supported":
+      "Lingua it-IT non supportata su questo dispositivo.",
+    "unavailable":
+      "Dettatura non disponibile su questo browser. Usa Chrome o Edge.",
+  };
+
+  const errorMessage = voiceError
+    ? (ERROR_MESSAGES[voiceError] ?? `Errore dettatura: ${voiceError}. Riprova o usa Edge.`)
+    : null;
 
   return (
     <div className="auto-textarea-wrapper">
