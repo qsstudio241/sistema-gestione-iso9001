@@ -4,19 +4,17 @@
  *
  * Note compatibilità:
  * - Android Chrome: non supporta `continuous:true`. Il riconoscimento termina
- *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms
- *   (delay necessario per Chrome: se si chiama start() subito in onend,
- *   la sessione non parte e il pulsante torna inattivo silenziosamente).
+ *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms.
  * - PWA Android (shortcut o WebAPK): il permesso microfono viene richiesto
  *   esplicitamente via getUserMedia() prima di avviare SpeechRecognition.
  *   Senza questa chiamata Chrome non mostra il dialog di consenso nativo e
- *   rigetta silenziosamente la sessione. Se bloccato, il messaggio di errore
- *   guida l'utente a Chrome ? Impostazioni sito ? Microfono.
+ *   rigetta silenziosamente la sessione.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
 
-const RESTART_DELAY_MS = 150; // Chrome richiede un breve gap tra onend e il prossimo start()
+const RESTART_DELAY_MS = 150;
+const MIC_DEBUG_BUILD = "v5"; // incrementa ad ogni modifica debug — visibile sul pulsante
 
 function AutoTextarea({
   id,
@@ -34,11 +32,17 @@ function AutoTextarea({
   const valueRef = useRef(value);
   const restartTimerRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
-  const [voiceError, setVoiceError] = useState(null); // null | "not-allowed" | "unavailable"
+  const [voiceError, setVoiceError] = useState(null);
+  const [debugLines, setDebugLines] = useState([]);
 
   const SpeechRecognition =
     typeof window !== "undefined" &&
     (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const dbg = (msg) => {
+    console.log("[MIC-DIAG]", msg);
+    setDebugLines((prev) => [...prev.slice(-19), `${new Date().toLocaleTimeString()} ${msg}`]);
+  };
 
   useEffect(() => {
     const el = ref.current;
@@ -47,11 +51,8 @@ function AutoTextarea({
     el.style.height = el.scrollHeight + "px";
   }, [value]);
 
-  useEffect(() => {
-    valueRef.current = value;
-  }, [value]);
+  useEffect(() => { valueRef.current = value; }, [value]);
 
-  // Pulizia timer al dismiss del componente
   useEffect(() => {
     return () => {
       clearTimeout(restartTimerRef.current);
@@ -71,20 +72,16 @@ function AutoTextarea({
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = "it-IT";
-      recognition.continuous = false;   // Android Chrome non supporta true
+      recognition.continuous = false;
       recognition.interimResults = false;
 
-      console.log("[MIC-DIAG] 5. recognition creata, lang:", recognition.lang);
+      dbg(`5. recognition creata lang=${recognition.lang}`);
 
-      recognition.onstart = () => {
-        console.log("[MIC-DIAG] 6. onstart — ascolto attivo");
-      };
+      recognition.onstart = () => dbg("6. onstart — ascolto attivo");
 
       recognition.onresult = (e) => {
-        const transcript = Array.from(e.results)
-          .map((r) => r[0].transcript)
-          .join(" ");
-        console.log("[MIC-DIAG] 7. onresult transcript:", transcript);
+        const transcript = Array.from(e.results).map((r) => r[0].transcript).join(" ");
+        dbg(`7. onresult: "${transcript}"`);
         if (transcript) {
           const current = valueRef.current;
           onChange({ target: { value: current ? current + " " + transcript : transcript } });
@@ -92,7 +89,7 @@ function AutoTextarea({
       };
 
       recognition.onerror = (e) => {
-        console.log("[MIC-DIAG] 8. onerror — error:", e.error, "message:", e.message);
+        dbg(`8. onerror: ${e.error} — ${e.message || ""}`);
         const transient = ["no-speech", "aborted"];
         if (transient.includes(e.error)) return;
         isListeningRef.current = false;
@@ -102,12 +99,10 @@ function AutoTextarea({
       };
 
       recognition.onend = () => {
-        console.log("[MIC-DIAG] 9. onend — isListeningRef:", isListeningRef.current);
+        dbg(`9. onend — isListening=${isListeningRef.current}`);
         if (isListeningRef.current) {
           restartTimerRef.current = setTimeout(() => {
-            if (isListeningRef.current) {
-              startRecognition();
-            }
+            if (isListeningRef.current) startRecognition();
           }, RESTART_DELAY_MS);
         } else {
           setIsListening(false);
@@ -117,7 +112,7 @@ function AutoTextarea({
       recognition.start();
       recognitionRef.current = recognition;
     } catch (err) {
-      console.log("[MIC-DIAG] startRecognition ECCEZIONE:", err.name, err.message);
+      dbg(`startRecognition ECCEZIONE: ${err.name} ${err.message}`);
       isListeningRef.current = false;
       setIsListening(false);
       setVoiceError("unavailable");
@@ -131,41 +126,38 @@ function AutoTextarea({
       return;
     }
 
-    console.log("[MIC-DIAG] 1. toggleListening avviato");
-    console.log("[MIC-DIAG] SpeechRecognition disponibile:", !!SpeechRecognition);
-    console.log("[MIC-DIAG] navigator.mediaDevices:", !!navigator.mediaDevices);
-    console.log("[MIC-DIAG] navigator.permissions:", !!navigator.permissions);
+    dbg(`1. click — SpeechRec=${!!SpeechRecognition} mediaDevices=${!!navigator.mediaDevices} permissions=${!!navigator.permissions}`);
 
     if (navigator.permissions?.query) {
       try {
         const perm = await navigator.permissions.query({ name: "microphone" });
-        console.log("[MIC-DIAG] 2. permissions.query stato:", perm.state);
+        dbg(`2. permissions.query stato: ${perm.state}`);
         if (perm.state === "denied") {
-          console.log("[MIC-DIAG] ? permesso già negato, esco");
+          dbg("? permesso già negato");
           setVoiceError("not-allowed");
           return;
         }
       } catch (err) {
-        console.log("[MIC-DIAG] 2. permissions.query non disponibile:", err.message);
+        dbg(`2. permissions.query N/A: ${err.message}`);
       }
     }
 
     if (navigator.mediaDevices?.getUserMedia) {
       try {
-        console.log("[MIC-DIAG] 3. getUserMedia richiesto...");
+        dbg("3. getUserMedia richiesto...");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("[MIC-DIAG] 3. getUserMedia OK, tracce:", stream.getTracks().length);
+        dbg(`3. getUserMedia OK — tracce: ${stream.getTracks().length}`);
         stream.getTracks().forEach((t) => t.stop());
       } catch (err) {
-        console.log("[MIC-DIAG] 3. getUserMedia ERRORE:", err.name, err.message);
+        dbg(`3. getUserMedia ERRORE: ${err.name} ${err.message}`);
         setVoiceError("not-allowed");
         return;
       }
     } else {
-      console.log("[MIC-DIAG] 3. getUserMedia non disponibile");
+      dbg("3. getUserMedia non disponibile");
     }
 
-    console.log("[MIC-DIAG] 4. Avvio SpeechRecognition...");
+    dbg("4. avvio SpeechRecognition...");
     isListeningRef.current = true;
     setIsListening(true);
     startRecognition();
@@ -175,11 +167,11 @@ function AutoTextarea({
     "not-allowed":
       "Microfono bloccato. Vai in Impostazioni Android \u2192 App \u2192 Chrome \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti. Poi riprova.",
     "service-not-allowed":
-      "Servizio vocale non disponibile. Verifica che l'app Google abbia il permesso microfono: Impostazioni Android \u2192 App \u2192 Google \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti.",
+      "Servizio vocale non disponibile. Prova: Impostazioni Android \u2192 App \u2192 Google \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti.",
     "audio-capture":
       "Microfono non accessibile. Un'altra app potrebbe averlo occupato. Chiudi altre app e riprova.",
     "network":
-      "Connessione assente. La dettatura richiede internet (audio inviato ai server Google). Riprova con connessione attiva.",
+      "Connessione assente. La dettatura richiede internet. Riprova con connessione attiva.",
     "language-not-supported":
       "Lingua it-IT non supportata su questo dispositivo.",
     "unavailable":
@@ -187,7 +179,7 @@ function AutoTextarea({
   };
 
   const errorMessage = voiceError
-    ? (ERROR_MESSAGES[voiceError] ?? `Errore dettatura: ${voiceError}. Riprova o usa Edge.`)
+    ? (ERROR_MESSAGES[voiceError] ?? `Errore dettatura: ${voiceError}`)
     : null;
 
   return (
@@ -209,23 +201,25 @@ function AutoTextarea({
             type="button"
             className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
             onClick={toggleListening}
-            title={
-              voiceError
-                ? "Errore microfono — tocca per riprovare"
-                : isListening
-                ? "Ferma dettatura"
-                : "Dettatura vocale (it-IT)"
-            }
-            aria-label={
-              voiceError
-                ? "Errore microfono"
-                : isListening
-                ? "Ferma dettatura"
-                : "Avvia dettatura vocale"
-            }
+            title={`[${MIC_DEBUG_BUILD}] ${voiceError ? "Errore — tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}`}
+            aria-label={voiceError ? "Errore microfono" : isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
           />
-          {errorMessage && (
-            <p className="voice-perm-error">{errorMessage}</p>
+          {errorMessage && <p className="voice-perm-error">{errorMessage}</p>}
+          {debugLines.length > 0 && (
+            <div style={{
+              marginTop: 6, padding: "6px 8px", background: "#1e1e1e", borderRadius: 6,
+              fontFamily: "monospace", fontSize: 11, color: "#d4d4d4", maxHeight: 180,
+              overflowY: "auto", lineHeight: 1.5,
+            }}>
+              <div style={{ color: "#888", marginBottom: 4 }}>
+                ?? Mic debug {MIC_DEBUG_BUILD} — tocca per copiare
+              </div>
+              {debugLines.map((line, i) => (
+                <div key={i} style={{ color: line.includes("ERRORE") || line.includes("negato") ? "#f48771" : "#d4d4d4" }}>
+                  {line}
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
