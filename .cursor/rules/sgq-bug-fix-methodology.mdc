@@ -126,3 +126,168 @@ ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busat
 3. Se la query funziona ma l'endpoint no → aggiungere log ENTRY per vedere i valori reali dei parametri
 4. Controllare `parseInt` vs `Number` per parametri che possono essere UUID o numeri
 5. Verificare la versione del controller sul VPS vs repo (`diff` o `grep` di una stringa chiave)
+
+---
+
+## Fase 5 — Diagnosi PWA / funzionalità browser bloccate (microfono, camera, geolocation)
+
+**Regola**: se una funzione del browser (microfono, camera, geolocation) non funziona su PWA Netlify nonostante i permessi Android/Chrome siano già concessi → **verificare prima l'header HTTP**, non i permessi utente.
+
+### 5a. Verifica header Permissions-Policy (primo passo obbligatorio)
+```bash
+curl -sI "https://systemgest.netlify.app/" | grep -i permissions-policy
+```
+- `microphone=()` → **BLOCCO TOTALE** — nessun dialog viene mai mostrato, nessuna API funziona
+- `microphone=(self)` → corretto — l'app può richiedere il consenso
+- Se manca del tutto → comportamento default del browser (di solito permissivo)
+
+**File da correggere**: `netlify.toml` → sezione `[[headers]] for = "/*"` → `Permissions-Policy`.
+
+### 5b. Verifica bundle Netlify (se console.log non appare su mobile)
+Se l'utente dice "non vedo log in console quando clicco" → il service worker sta servendo il vecchio bundle.
+
+```bash
+# Verifica quale bundle è attivo su Netlify
+curl -s "https://systemgest.netlify.app/" | grep -o 'index-[^"]*\.js'
+
+# Controlla se il bundle ha il nuovo codice
+# (da Playwright o browser: fetch del bundle + search per stringa nota)
+```
+
+**Soluzione immediata**: sostituire `console.log` con un **pannello di debug in-page** (stato React visibile sullo schermo). Pattern:
+```jsx
+const [debugLines, setDebugLines] = useState([]);
+const dbg = (msg) => {
+  console.log("[DEBUG]", msg);
+  setDebugLines(prev => [...prev.slice(-19), `${new Date().toLocaleTimeString()} ${msg}`]);
+};
+// Nel JSX: {debugLines.length > 0 && <pre style={{background:"#111",color:"#ddd",fontSize:11,padding:8}}>{debugLines.join("\n")}</pre>}
+```
+Rimuovere dopo la diagnosi.
+
+### 5c. Sequenza corretta per SpeechRecognition su Android Chrome PWA
+```js
+// 1. Controlla se già negato
+const perm = await navigator.permissions.query({ name: "microphone" });
+if (perm.state === "denied") { /* mostra messaggio */ return; }
+
+// 2. Forza il dialog di consenso nativo Android
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+stream.getTracks().forEach(t => t.stop()); // libera subito
+
+// 3. Solo ora avvia SpeechRecognition
+recognition.start();
+```
+Senza il passo 2, Chrome Android non mostra il dialog e rigetta silenziosamente.
+
+### 5d. Diagnosi autonoma con Playwright MCP (senza device fisico)
+```js
+// Verifica header HTTP produzione
+// (da Shell): curl -sI "https://systemgest.netlify.app/" | grep -i permissions-policy
+
+// Verifica bundle attivo + contenuto
+const resp = await fetch('https://systemgest.netlify.app/', {cache: 'no-store'});
+const html = await resp.text();
+const bundle = html.match(/assets\/(index-[^"]+\.js)/)?.[1];
+const bResp = await fetch(`https://systemgest.netlify.app/assets/${bundle}`);
+const code = await bResp.text();
+console.log('hasNewCode:', code.includes('MY_UNIQUE_STRING'));
+```
+
+### Nota: Netlify aggiorna header CDN senza rebuild JS
+Se si cambia solo `netlify.toml` (headers/redirects) → Netlify aggiorna la CDN in pochi minuti senza ricompilare il bundle. Il hash del bundle rimane invariato. Se si cambia codice in `app/` → nuovo hash al prossimo build completo.
+
+---
+
+## Fase 4 — Diagnosi avanzata VPS (quando il bug non è riproducibile solo dal codice)
+
+Quando il codice sembra corretto ma il comportamento in produzione è diverso, usare questa sequenza **prima** di toccare il codice:
+
+### 4a. Nginx access log — codici HTTP reali
+```bash
+# Vedere tutti i codici risposta per un endpoint specifico
+sudo grep -E 'responses/bulk|lock|sync' /var/log/nginx/access.log | tail -30
+
+# Filtrare per IP specifico (mobile vs desktop) + codice 404
+sudo grep '45.94\|mobile_ip' /var/log/nginx/access.log | grep '404'
+```
+**Cosa dice**: il codice HTTP effettivo, l'IP sorgente, il User-Agent, i timestamp. Permette di correlare con i log app.
+
+### 4b. Journalctl app log (Winston → systemd)
+```bash
+# Log leggibili (rimuove ANSI colors)
+sudo journalctl -u sgq-backend --since '2026-05-11 10:00:00' --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'BULK|lock|ERROR|404' | tail -30
+
+# Ultimi log senza filtro
+sudo journalctl -u sgq-backend -n 50 --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g'
+```
+**Nota**: Winston scrive su journalctl (non su `app.log`) quando il backend gira come systemd service.
+
+### 4c. Script Node diagnostico sul VPS (query DB dirette)
+```bash
+# Scrivi script in locale
+cat > /tmp/diag.js << 'EOF'
+require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
+const { query } = require('/var/www/sgq-backend/src/config/database');
+async function main() {
+  try {
+    const r = await query("SELECT ... FROM ... WHERE ...", { param: value });
+    console.log(JSON.stringify(r.recordset, null, 2));
+  } catch(e) { console.error(e.message); } finally { process.exit(0); }
+}
+main();
+EOF
+
+# Copia ed esegui sul VPS
+scp -i /tmp/sgq_key -P 1122 -o StrictHostKeyChecking=no /tmp/diag.js spascarella@www.fr-busato.it:/tmp/
+ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it "node /tmp/diag.js"
+```
+**Regola**: questo bypassa RBAC e JWT — serve solo per lettura diagnostica. Non modificare dati con questi script.
+
+### 4d. Patch debug temporanea sul VPS (solo se il log non basta)
+```bash
+# 1. Fai SEMPRE il backup prima
+cp /var/www/sgq-backend/src/controllers/foo.controller.js \
+   /var/www/sgq-backend/src/controllers/foo.controller.js.bak
+
+# 2. Aggiungi log ENTRY all'inizio della funzione sospetta
+#    → cattura i parametri reali (org_id, uuid, ecc.)
+logger.warn('[DEBUG_ENTRY] param1=' + param1 + ' param2=' + param2);
+
+# 3. Restart servizio
+sudo systemctl restart sgq-backend.service && sleep 4
+
+# 4. Provoca il bug (l'utente ripete l'azione)
+
+# 5. Leggi il log per catturare i valori reali
+sudo journalctl -u sgq-backend -n 20 --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g' | grep DEBUG_ENTRY
+
+# 6. Applica il fix nel repo E sul VPS (scp + restart)
+
+# 7. Rimuovi il backup e i file temporanei
+rm -f /var/www/sgq-backend/src/controllers/foo.controller.js.bak
+rm -f /tmp/diag.js
+```
+**Regola**: mai lasciare file `.bak` o log `[DEBUG_*]` in produzione. Ripristinare sempre il file originale prima di applicare il fix definitivo.
+
+### 4e. Deploy hotfix diretto sul VPS (solo fix urgenti di backend)
+```bash
+# Fix minimo nel repo, poi deploy immediato
+scp -i /tmp/sgq_key -P 1122 -o StrictHostKeyChecking=no \
+    backend/src/controllers/foo.controller.js \
+    spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+
+# Restart con verifica PID
+ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it \
+    "echo '$SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend.service && sleep 4 && sudo systemctl status sgq-backend | grep 'Active\|PID'"
+
+# Verifica nel log che il fix sia attivo
+# (cercare il log entry corretto con i nuovi valori)
+```
+
+### Checklist diagnosi "API ritorna 404 ma il dato esiste nel DB"
+1. `sudo grep '404' /var/log/nginx/access.log | tail -20` → quale endpoint?
+2. Script Node: esegui la query SQL esatta del controller con i parametri reali
+3. Se la query funziona ma l'endpoint no → aggiungere log ENTRY per vedere i valori reali dei parametri
+4. Controllare `parseInt` vs `Number` per parametri che possono essere UUID o numeri
+5. Verificare la versione del controller sul VPS vs repo (`diff` o `grep` di una stringa chiave)
