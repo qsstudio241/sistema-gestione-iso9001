@@ -7,8 +7,11 @@
  *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms
  *   (delay necessario per Chrome: se si chiama start() subito in onend,
  *   la sessione non parte e il pulsante torna inattivo silenziosamente).
- * - PWA Android: il microfono va abilitato manualmente in Impostazioni Android
- *   ? App ? [nome app] ? Permessi ? Microfono. L'errore viene mostrato in-page.
+ * - PWA Android (shortcut o WebAPK): il permesso microfono viene richiesto
+ *   esplicitamente via getUserMedia() prima di avviare SpeechRecognition.
+ *   Senza questa chiamata Chrome non mostra il dialog di consenso nativo e
+ *   rigetta silenziosamente la sessione. Se bloccato, il messaggio di errore
+ *   guida l'utente a Chrome ? Impostazioni sito ? Microfono.
  */
 import { useEffect, useRef, useState } from "react";
 import "./AutoTextarea.css";
@@ -116,12 +119,27 @@ function AutoTextarea({
     }
   };
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     setVoiceError(null);
     if (isListeningRef.current) {
       stopListening();
       return;
     }
+
+    // Richiede esplicitamente il permesso microfono via getUserMedia prima di avviare
+    // SpeechRecognition. Su Android Chrome (PWA shortcut o WebAPK) questa è l'unica
+    // chiamata che fa comparire il dialog nativo di consenso. Senza di essa, Chrome
+    // rigetta SpeechRecognition silenziosamente con "not-allowed".
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop()); // stream non serve, libera subito
+      } catch {
+        setVoiceError("not-allowed");
+        return;
+      }
+    }
+
     isListeningRef.current = true;
     setIsListening(true);
     startRecognition();
@@ -129,7 +147,7 @@ function AutoTextarea({
 
   const errorMessage =
     voiceError === "not-allowed"
-      ? "Permesso microfono non concesso. Impostazioni Android ? App ? SGQ Audit ? Permessi ? Microfono"
+      ? "Microfono bloccato. In Chrome: menu ? ? Impostazioni ? Impostazioni sito ? Microfono ? sblocca questo sito. Poi tocca di nuovo il pulsante."
       : voiceError === "unavailable"
       ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
       : null;
