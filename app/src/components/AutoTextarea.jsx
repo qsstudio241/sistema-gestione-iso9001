@@ -162,7 +162,7 @@ function AutoTextarea({
 
   const errorMessage =
     voiceError === "not-allowed"
-      ? "Microfono bloccato. Per sbloccare: apri Chrome (non l'app), vai su sistema-gestione-iso9001.netlify.app, tocca il lucchetto ?? ? Autorizzazioni sito ? Microfono ? imposta «Chiedi». Poi torna qui e riprova."
+      ? "Microfono bloccato. Vai in Impostazioni Android \u2192 App \u2192 Chrome \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti. Poi torna qui e riprova."
       : voiceError === "unavailable"
       ? "Dettatura non disponibile su questo browser. Usa Chrome o Edge."
       : null;
