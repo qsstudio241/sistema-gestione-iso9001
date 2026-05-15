@@ -17,6 +17,25 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+### Sessione 15 maggio 2026 — Fix sezione 1.4 ghost-click mobile
+
+#### Problema
+Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuamente".
+
+#### Causa radice
+**Ghost-click mobile** (iOS/Android): il browser genera un secondo click sintetico ~300ms dopo il tap su un pulsante. Se il tap apre una modale `position:fixed; inset:0`, il ghost-click atterrisce sull'overlay nello stesso punto e, se `e.target === e.currentTarget`, chiude la modale immediatamente. Su desktop il bug non è riproducibile (il mouse non genera ghost-click).
+
+#### Fix
+`CertificationFindingsSection.jsx` — `openTimeRef = useRef(0)`:
+- `openNew()` e `openEdit()` salvano `Date.now()` al momento dell'apertura
+- L'overlay ignora i click entro 350ms dall'apertura
+
+**Regola generale**: qualsiasi overlay `position:fixed` aperto da un tap mobile deve proteggere dalla chiusura accidentale entro 300-400ms via debounce sul `Date.now()`. Questo vale per tutte le modali aperte da pulsanti (non solo `CertificationFindingsSection`).
+
+**Branch**: `cursor/fix-cert-findings-modal-close-7b68` → PR #48 → mergiata su `main` (commit `6898554`).
+
+---
+
 ### Sessione 14 maggio 2026 — Fix UI mobile + microfono PWA (root cause header HTTP)
 
 #### Attività completate
