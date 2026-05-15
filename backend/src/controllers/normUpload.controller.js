@@ -27,6 +27,35 @@ function assessTextQuality(text) {
 }
 
 /**
+ * Da standard_code grezzo (es. "ISO_9016_2012") + norm_title + issuing_body
+ * produce un titolo leggibile: "ISO 9016:2012 ù Destructive tests on weldsù"
+ * Se issuing_body ù "UNI" e il codice non inizia giù con UNI, prefissa "UNI EN".
+ */
+function formatReadableTitle(metadata) {
+  const { standard_code, norm_title, issuing_body } = metadata;
+  if (!norm_title) return null;
+  if (!standard_code) return norm_title;
+
+  const parts = standard_code.split('_');
+  let year = '';
+  let codeParts = [...parts];
+  if (parts.length > 1 && /^\d{4}$/.test(parts[parts.length - 1])) {
+    year = parts[parts.length - 1];
+    codeParts = parts.slice(0, -1);
+  }
+
+  const codeStr = codeParts.join(' ');
+  const formattedCode = year ? `${codeStr}:${year}` : codeStr;
+
+  let prefix = formattedCode;
+  if (issuing_body && issuing_body.toUpperCase() === 'UNI' && !codeStr.toUpperCase().startsWith('UNI')) {
+    prefix = `UNI EN ${formattedCode}`;
+  }
+
+  return `${prefix} ù ${norm_title}`;
+}
+
+/**
  * POST /documents/norms/upload
  * Multer array field "files", max 10, solo PDF, 50 MB ciascuno.
  */
@@ -66,7 +95,7 @@ async function uploadNorms(req, res) {
   const hasAiProvider = !!getActiveProvider();
 
   for (const file of req.files) {
-    const entry = { fileName: file.originalname, success: false, metadata: null, documentId: null, textQuality: null };
+    const entry = { filename: file.originalname, success: false, metadata: null, documentId: null, textQuality: null };
     try {
       // (a) Extract text with pdf-parse
       const fileBuffer = await fs.readFile(file.path);
@@ -102,51 +131,33 @@ async function uploadNorms(req, res) {
       }
       entry.metadata = metadata;
 
-      const docTitle = metadata.norm_title
-        ? `${metadata.standard_code || ''} ${metadata.norm_title}`.trim()
-        : path.basename(file.originalname, '.pdf');
+      const docTitle = formatReadableTitle(metadata)
+        || path.basename(file.originalname, '.pdf');
 
-      // (b2) Duplicate check: same title or standard_code under the norm folder
-      const dupConditions = ['organization_id = @orgId', 'parent_id = @parentId'];
-      const dupParams = { orgId: organization_id, parentId: normFolderId };
-
-      if (metadata.standard_code) {
-        dupConditions.push('(title = @dupTitle OR title LIKE @stdCodePattern)');
-        dupParams.dupTitle = docTitle.substring(0, 255);
-        dupParams.stdCodePattern = `${metadata.standard_code}%`;
-      } else {
-        dupConditions.push('title = @dupTitle');
-        dupParams.dupTitle = docTitle.substring(0, 255);
-      }
-
-      const dupCheck = await query(
-        `SELECT id, title FROM document_registry WHERE ${dupConditions.join(' AND ')} AND status <> 'obsoleto'`,
-        dupParams
-      );
-      if (dupCheck.recordset.length > 0) {
-        entry.error = 'Norma giù presente nel registro';
-        entry.existingDocumentId = dupCheck.recordset[0].id;
-        entry.existingTitle = dupCheck.recordset[0].title;
-        await fs.unlink(file.path).catch(() => {});
-        results.push(entry);
-        continue;
-      }
+      const editionYear = metadata.edition_year
+        ? parseInt(metadata.edition_year, 10) || null
+        : null;
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(
         `INSERT INTO document_registry (
            organization_id, parent_id, title, doc_type, status,
-           is_system_folder, created_by, created_at, updated_at
+           is_system_folder, issue_date, created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
            @orgId, @parentId, @title, 'norma', 'vigente',
-           0, @userId, GETDATE(), GETDATE()
+           0,
+           CASE WHEN @editionYear IS NOT NULL
+                THEN DATEFROMPARTS(@editionYear, 1, 1)
+                ELSE NULL END,
+           @userId, GETDATE(), GETDATE()
          )`,
         {
           orgId: organization_id,
           parentId: normFolderId,
           title: docTitle.substring(0, 255),
+          editionYear,
           userId: user_id,
         }
       );
@@ -154,18 +165,19 @@ async function uploadNorms(req, res) {
       entry.documentId = documentId;
 
       // (d) Create attachments row linked to this document
-      await query(
+      const attResult = await query(
         `INSERT INTO attachments (
            document_id,
            file_name, file_type, file_size, mime_type,
            storage_path, category, description, uploaded_by, created_at,
-           is_current_doc_version
+           is_current_doc_version, doc_file_version
          )
+         OUTPUT INSERTED.attachment_id
          VALUES (
            @documentId,
            @fileName, @fileType, @fileSize, @mimeType,
            @storagePath, 'document', @description, @userId, GETDATE(),
-           1
+           1, 1
          )`,
         {
           documentId,
@@ -177,6 +189,13 @@ async function uploadNorms(req, res) {
           description: `Norma: ${docTitle.substring(0, 200)}`,
           userId: user_id,
         }
+      );
+      const attachmentId = attResult.recordset[0].attachment_id;
+
+      // (d2) Link attachment back to document_registry
+      await query(
+        `UPDATE document_registry SET attachment_id = @attId WHERE id = @docId`,
+        { attId: attachmentId, docId: documentId }
       );
 
       // (e) Create norm_document_sources row
