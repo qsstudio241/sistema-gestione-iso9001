@@ -1404,6 +1404,10 @@ class ApiService {
     async aiSuggest(feature, context) {
         return this.post('/ai/suggest', { feature, context }, { timeout: 90000 });
     }
+
+    async aiFeedback({ feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed }) {
+        return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
+    }
 }
 
 /**

@@ -39,7 +39,11 @@ async function suggest(req, res) {
         });
         break;
       case 'audit_conclusions':
-        built = contextBuilder.buildAuditConclusionsContext(context);
+        built = await contextBuilder.buildAuditConclusionsContext({
+          ...context,
+          userId: req.user.id,
+          organizationId: req.user.organization_id,
+        });
         break;
       default:
         return res.status(400).json({
@@ -85,4 +89,43 @@ async function suggest(req, res) {
   }
 }
 
-module.exports = { suggest };
+/**
+ * POST /ai/feedback
+ * Body: { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed }
+ */
+async function feedback(req, res) {
+  try {
+    const { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed } = req.body;
+    if (!feature || !action) {
+      return res.status(400).json({ error: 'feature e action sono obbligatori.', code: 'MISSING_PARAMS' });
+    }
+    if (!['accepted', 'rejected', 'rephrased'].includes(action)) {
+      return res.status(400).json({ error: "action deve essere 'accepted', 'rejected' o 'rephrased'.", code: 'INVALID_ACTION' });
+    }
+
+    const { query } = require('../config/database');
+    await query(
+      `INSERT INTO ai_feedback (organization_id, user_id, feature, audit_id, action, ai_text, final_text, recommendation, context_summary, model_used)
+       VALUES (@orgId, @userId, @feature, @auditId, @action, @aiText, @finalText, @recommendation, @contextSummary, @modelUsed)`,
+      {
+        orgId: req.user.organization_id,
+        userId: req.user.id,
+        feature,
+        auditId: auditId || null,
+        action,
+        aiText: aiText || null,
+        finalText: finalText || null,
+        recommendation: recommendation || null,
+        contextSummary: contextSummary || null,
+        modelUsed: modelUsed || null,
+      }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('[AI_FEEDBACK] Error:', err.message);
+    res.status(500).json({ error: 'Errore salvataggio feedback.', code: 'FEEDBACK_ERROR' });
+  }
+}
+
+module.exports = { suggest, feedback };

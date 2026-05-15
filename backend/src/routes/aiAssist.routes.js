@@ -14,5 +14,12 @@ router.post(
   ctrl.suggest
 );
 
+// POST /ai/feedback — save user reaction to AI suggestion (for personalization)
+router.post(
+  '/ai/feedback',
+  authenticate,
+  ctrl.feedback
+);
+
 module.exports = router;
 // Mount in server.js: app.use(API_BASE, aiAssistRoutes);

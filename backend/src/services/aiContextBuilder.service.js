@@ -102,6 +102,10 @@ ${capitolatoText}
  *   - existingConclusions present → AI refines/improves what the auditor wrote
  *   - existingConclusions empty   → AI generates a proposal from scratch
  *
+ * Enrichment:
+ *   - Loads relevant normative clauses from DB for cited findings (Level A)
+ *   - Loads past accepted/rephrased conclusions as few-shot examples (Level C)
+ *
  * @param {object} params
  * @param {object} params.auditMetrics - { total, nc, oss, om, nv, conformities }
  * @param {string[]} params.standardCodes - e.g. ['ISO_9001_2015']
@@ -111,9 +115,11 @@ ${capitolatoText}
  * @param {string} [params.auditObject] - object/scope of the audit
  * @param {string} [params.auditDescription] - objective description
  * @param {string} [params.mode] - 'generate' | 'refine' (auto-detected if omitted)
- * @returns {{systemPrompt: string, userPrompt: string, contextSummary: string}}
+ * @param {number} [params.userId] - for loading personalized few-shot examples
+ * @param {number} [params.organizationId] - tenant scope for feedback lookup
+ * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
  */
-function buildAuditConclusionsContext({
+async function buildAuditConclusionsContext({
   auditMetrics,
   standardCodes,
   findings,
@@ -122,11 +128,70 @@ function buildAuditConclusionsContext({
   auditObject,
   auditDescription,
   mode,
+  userId,
+  organizationId,
 }) {
   const codes = standardCodes || ['ISO_9001_2015'];
   const labels = codes.map(c => c.replace(/_/g, ' ')).join(', ');
   const hasExisting = !!(existingConclusions && existingConclusions.trim());
   const effectiveMode = mode || (hasExisting ? 'refine' : 'generate');
+
+  // --- Level A: Load normative clauses for cited findings ---
+  let normContext = '';
+  try {
+    const normBroker = require('./normBroker.service');
+    const relevantRefs = (findings || [])
+      .filter(f => f.clauseRef && f.status !== 'COMPLIANT')
+      .map(f => ({ ref: f.clauseRef.split('.').slice(0, 2).join('.'), std: f.standardCode }));
+
+    const seen = new Set();
+    for (const { ref, std } of relevantRefs) {
+      const key = `${std}:${ref}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const clause = await normBroker.getClauseText(std || codes[0], ref);
+      if (clause && clause.text) {
+        normContext += `\n§${ref} (${(std || codes[0]).replace(/_/g, ' ')}): ${clause.text.substring(0, 400)}`;
+      }
+    }
+    if (!normContext && codes.length > 0) {
+      const allClauses = await normBroker.getFullNorm(codes[0]);
+      if (allClauses && allClauses.length > 0) {
+        normContext = '\n\nRiferimenti normativi principali:';
+        for (const c of allClauses.slice(0, 20)) {
+          if (c.requirement_text) {
+            normContext += `\n§${c.clause_ref} ${c.clause_title || ''}: ${c.requirement_text.substring(0, 200)}`;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn('[AI_CONTEXT] NormBroker enrichment failed for conclusions:', err.message);
+  }
+
+  // --- Level C: Load past accepted conclusions as few-shot examples ---
+  let fewShotBlock = '';
+  try {
+    const { query } = require('../config/database');
+    const feedbackRows = await query(
+      `SELECT TOP 3 final_text FROM ai_feedback
+       WHERE feature = 'audit_conclusions'
+         AND action IN ('accepted', 'rephrased')
+         AND user_id = @userId
+         AND organization_id = @orgId
+         AND final_text IS NOT NULL AND LEN(final_text) > 50
+       ORDER BY created_at DESC`,
+      { userId: userId || 0, orgId: organizationId || 0 }
+    );
+    if (feedbackRows.recordset && feedbackRows.recordset.length > 0) {
+      fewShotBlock = '\n\nEsempi di conclusioni già approvate da questo auditor (imita questo stile):';
+      for (const row of feedbackRows.recordset) {
+        fewShotBlock += `\n---\n${row.final_text.substring(0, 600)}\n---`;
+      }
+    }
+  } catch (err) {
+    logger.debug('[AI_CONTEXT] ai_feedback table not available yet (Level C):', err.message);
+  }
 
   const systemPrompt = `Sei un lead auditor ISO esperto con 15+ anni di esperienza su ${labels}.
 Scrivi conclusioni di audit formali, professionali, in italiano, coerenti con lo stile di un verbale di audit ISO 19011.
@@ -138,6 +203,7 @@ Regole:
 - Se tutto è conforme, esprimi un giudizio positivo ma professionale (mai enfatico).
 - Usa un linguaggio da verbale ufficiale, non da chat.
 ${effectiveMode === 'refine' ? '\nL\'auditor ha già scritto una bozza di conclusioni. Migliorala: mantieni il suo stile e le informazioni corrette, arricchisci con dettagli dalle evidenze, correggi eventuali imprecisioni, rendi il testo più completo e professionale.' : ''}
+${normContext ? '\nRequisiti normativi pertinenti ai rilievi:' + normContext : ''}${fewShotBlock}
 
 Rispondi SOLO con JSON valido:
 {

@@ -230,6 +230,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           onAccept={handleAiAccept}
           auditContext={buildAiContext()}
           standardKey={aiModalStdKey}
+          auditId={currentAudit?.id || null}
         />
       </div>
       )}
