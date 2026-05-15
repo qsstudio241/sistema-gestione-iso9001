@@ -37,6 +37,8 @@ function DocFileDialog({ doc, onClose }) {
   const [error,       setError]       = useState(null);
   const [uploading,   setUploading]   = useState(false);
   const [uploadErr,   setUploadErr]   = useState(null);
+  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
+  const openTimeRef = useRef(Date.now());
   const [uploadOk,    setUploadOk]    = useState(null);
   const [version,     setVersion]     = useState("");
   const [fileObj,     setFileObj]     = useState(null);
@@ -139,7 +141,11 @@ function DocFileDialog({ doc, onClose }) {
   const history     = data?.files?.slice(1) || [];
 
   return (
-    <div className="docfile-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="docfile-overlay" onClick={(e) => {
+      if (e.target !== e.currentTarget) return;
+      if (Date.now() - openTimeRef.current < 350) return;
+      onClose();
+    }}>
       <div className="docfile-modal">
         {/* Header */}
         <div className="docfile-header">

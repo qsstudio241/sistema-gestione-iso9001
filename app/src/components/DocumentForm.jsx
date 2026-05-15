@@ -9,7 +9,7 @@
  * La submit ora è gestita esplicitamente tramite onClick.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import "./DocumentForm.css";
 
@@ -61,6 +61,9 @@ function StepIndicator({ step }) {
 function DocumentForm({ doc, companies, standards, onSave, onClose }) {
   const isEdit = !!doc;
   const [step, setStep] = useState(1);
+  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
+  // ~300ms dopo il tap sul pulsante che ha aperto questa modale.
+  const openTimeRef = useRef(Date.now());
 
   const [form, setForm] = useState({
     doc_type:        doc?.doc_type        || "procedura",
@@ -328,7 +331,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
   // La submit è gestita esclusivamente tramite onClick su "Crea documento" / "Salva modifiche".
 
   return (
-    <div className="docform-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="docform-overlay" onClick={(e) => {
+      if (e.target !== e.currentTarget) return;
+      if (Date.now() - openTimeRef.current < 350) return;
+      onClose();
+    }}>
       <div className="docform-modal">
 
         {/* Header */}

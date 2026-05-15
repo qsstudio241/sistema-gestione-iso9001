@@ -2,7 +2,7 @@
  * QualificationForm — Form creazione/modifica qualifica
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import "./QualificationForm.css";
 
@@ -45,6 +45,8 @@ function QualificationForm({ qualification, onSave, onClose }) {
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
   const [companies, setCompanies] = useState([]);
+  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
+  const openTimeRef = useRef(Date.now());
   const [customType, setCustomType] = useState(false);
 
   useEffect(() => {
@@ -91,7 +93,11 @@ function QualificationForm({ qualification, onSave, onClose }) {
   }
 
   return (
-    <div className="qf-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="qf-overlay" onClick={e => {
+      if (e.target !== e.currentTarget) return;
+      if (Date.now() - openTimeRef.current < 350) return;
+      onClose();
+    }}>
       <div className="qf-modal">
         <div className="qf-header">
           <h3 className="qf-title">{isEdit ? "\u270F\uFE0F Modifica qualifica" : "+ Nuova qualifica"}</h3>
