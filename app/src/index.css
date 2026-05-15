@@ -32,24 +32,34 @@ body {
   margin-bottom: 20px;
 }
 
+/* Default sicuro: molti moduli impostano solo background chiaro sul <button>.
+   Se il colore resta quello "primario" legacy (bianco), il testo diventa invisibile. */
 button {
   cursor: pointer;
   padding: 10px 20px;
-  border: none;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
-  background-color: #0066cc;
-  color: white;
+  background-color: #ffffff;
+  color: #1e293b;
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-button:hover {
-  background-color: #0052a3;
+button:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+button:active:not(:disabled) {
+  background-color: #e2e8f0;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
   cursor: not-allowed;
 }
 

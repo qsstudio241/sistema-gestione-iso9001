@@ -3,11 +3,12 @@
  * Componente per la gestione dell'esito finale dell'audit
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
 import { getSelectedStandardEntries } from "../data/standardsRegistry";
 import AutoTextarea from "./AutoTextarea";
+import AiConclusionsModal from "./AiConclusionsModal";
 import "./AuditOutcomeSection.css";
 
 /**
@@ -105,11 +106,84 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
   );
   const isMultiStandard = standardEntries.length > 1;
 
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiModalStdKey, setAiModalStdKey] = useState(null);
+
+  const buildAiContext = useCallback(() => {
+    const checklist = currentAudit?.checklist || {};
+    const findings = [];
+    for (const [stdCode, clauseMap] of Object.entries(checklist)) {
+      if (!clauseMap || typeof clauseMap !== "object") continue;
+      for (const [clauseRef, questions] of Object.entries(clauseMap)) {
+        if (!questions || typeof questions !== "object") continue;
+        for (const [qId, q] of Object.entries(questions)) {
+          if (q && q.status && q.status !== "NOT_ANSWERED") {
+            findings.push({
+              clauseRef: clauseRef + (qId ? "." + qId : ""),
+              status: q.status,
+              notes: q.notes || "",
+              standardCode: stdCode,
+            });
+          }
+        }
+      }
+    }
+
+    const total = findings.length + (findings.length > 0 ? 0 :
+      Object.values(checklist).reduce((sum, clauses) => {
+        if (!clauses || typeof clauses !== "object") return sum;
+        return sum + Object.values(clauses).reduce((s2, qs) => {
+          if (!qs || typeof qs !== "object") return s2;
+          return s2 + Object.keys(qs).length;
+        }, 0);
+      }, 0));
+
+    return {
+      auditMetrics: {
+        total,
+        nc: totalNC,
+        oss: totalOSS,
+        om: totalOM,
+        nv: 0,
+        conformities: Math.max(0, total - totalNC - totalOSS - totalOM),
+      },
+      standardCodes: standardEntries.map((e) => e.key),
+      findings,
+      existingConclusions: conclusions || "",
+      byStandardConclusions: conclusionsByKey,
+      auditObject: currentAudit?.metadata?.generalData?.auditObject || "",
+      auditDescription: currentAudit?.metadata?.auditObjective?.description || "",
+    };
+  }, [currentAudit, conclusions, conclusionsByKey, totalNC, totalOSS, totalOM, standardEntries]);
+
+  const handleAiAccept = useCallback((text) => {
+    if (aiModalStdKey) {
+      handleConclusionsByKeyChange(aiModalStdKey, text);
+    } else {
+      setConclusions(text);
+      onUpdate({ ...auditOutcome, conclusions: text });
+    }
+  }, [aiModalStdKey, auditOutcome, onUpdate]);
+
   return (
     <div className={`audit-outcome-section${readOnly ? ' readonly-mode' : ''}`}>
       {/* ==================== SEZIONE 12: CONCLUSIONI ==================== */}
       {showConclusions && (
       <div className="outcome-block">
+        {/* Pulsante AI Assistente */}
+        {!readOnly && (
+          <div className="ai-conclusions-trigger">
+            <button
+              className="ai-conclusions-trigger__btn"
+              onClick={() => { setAiModalStdKey(null); setAiModalOpen(true); }}
+              type="button"
+            >
+              <span className="ai-conclusions-trigger__icon">🤖</span>
+              Assistente AI Conclusioni
+            </button>
+          </div>
+        )}
+
         {/* Standard singolo: una textarea */}
         {!isMultiStandard && (
           <AutoTextarea
@@ -124,9 +198,21 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
         {/* Multi-standard: una textarea per norma con intestazione */}
         {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => (
           <div key={key} className="findings-per-standard">
-            <span className="findings-per-standard__label">
-              {shortLabel} — {label.split(" \u2014 ")[1] || label}
-            </span>
+            <div className="findings-per-standard__header">
+              <span className="findings-per-standard__label">
+                {shortLabel} — {label.split(" \u2014 ")[1] || label}
+              </span>
+              {!readOnly && (
+                <button
+                  className="ai-conclusions-trigger__btn ai-conclusions-trigger__btn--sm"
+                  onClick={() => { setAiModalStdKey(key); setAiModalOpen(true); }}
+                  type="button"
+                  title="Assistente AI per questa norma"
+                >
+                  🤖
+                </button>
+              )}
+            </div>
             <AutoTextarea
               id={`conclusions-${key}`}
               value={conclusionsByKey[key] ?? ""}
@@ -136,6 +222,15 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
             />
           </div>
         ))}
+
+        {/* Modale AI */}
+        <AiConclusionsModal
+          open={aiModalOpen}
+          onClose={() => setAiModalOpen(false)}
+          onAccept={handleAiAccept}
+          auditContext={buildAiContext()}
+          standardKey={aiModalStdKey}
+        />
       </div>
       )}
 

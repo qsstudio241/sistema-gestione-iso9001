@@ -615,8 +615,8 @@
 
 .status-btn.partial.active {
   background: #ffc107;
-  color: white;
-  border-color: #ffc107;
+  color: #78350f;
+  border-color: #d97706;
 }
 
 .status-btn.non-compliant {
