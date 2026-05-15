@@ -110,12 +110,12 @@ async function uploadNorms(req, res) {
       const docResult = await query(
         `INSERT INTO document_registry (
            organization_id, parent_id, title, doc_type, status,
-           is_folder, is_system_folder, created_by, created_at, updated_at
+           is_system_folder, created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
-           @orgId, @parentId, @title, 'norma', 'attivo',
-           0, 0, @userId, GETDATE(), GETDATE()
+           @orgId, @parentId, @title, 'norma', 'vigente',
+           0, @userId, GETDATE(), GETDATE()
          )`,
         {
           orgId: organization_id,
@@ -130,16 +130,19 @@ async function uploadNorms(req, res) {
       // (d) Create attachments row linked to this document
       await query(
         `INSERT INTO attachments (
-           audit_id, nc_id, question_id, custom_item_id,
+           document_id,
            file_name, file_type, file_size, mime_type,
-           storage_path, category, description, uploaded_by, created_at
+           storage_path, category, description, uploaded_by, created_at,
+           is_current_doc_version
          )
          VALUES (
-           NULL, NULL, NULL, NULL,
+           @documentId,
            @fileName, @fileType, @fileSize, @mimeType,
-           @storagePath, 'document', @description, @userId, GETDATE()
+           @storagePath, 'document', @description, @userId, GETDATE(),
+           1
          )`,
         {
+          documentId,
           fileName: file.originalname,
           fileType: path.extname(file.originalname).toLowerCase(),
           fileSize: file.size,
@@ -185,7 +188,7 @@ async function uploadNorms(req, res) {
     } catch (err) {
       logger.error(`[NormUpload] Errore per ${file.originalname}:`, err.message);
       entry.error = err.message;
-      // Don't delete the file ó it's already on disk; the partial state can be cleaned up manually
+      // Don't delete the file ù it's already on disk; the partial state can be cleaned up manually
     }
     results.push(entry);
   }
