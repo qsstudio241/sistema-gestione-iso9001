@@ -327,6 +327,59 @@ I due useEffect di auto-init (in `ChecklistModule` e in `AuditAccordionLayout`) 
 
 ---
 
+## Sessione 15/05/2026 — AI Audit Conclusions + Upload Norme
+
+### Funzionalità implementate
+
+1. **Assistente AI Conclusioni Audit**
+   - Pulsante "Assistente AI Conclusioni" nella sezione 12 dell'audit
+   - Modale popup con Accetta / Scarta / Riformula
+   - Due modalità: "Genera proposta" (se conclusioni vuote) e "Migliora bozza" (se esistenti)
+   - Context builder arricchito: clausole normative pertinenti, metriche, findings dettagliati
+   - Supporto multi-standard (pulsante per ogni norma)
+
+2. **Personalizzazione AI (3 livelli)**
+   - Livello A: enrichment normativo automatico dal DB norm_requirements
+   - Livello B: tabella ai_feedback — salva accetta/scarta/riformula per ogni interazione
+   - Livello C: few-shot learning — le ultime 3 conclusioni accettate diventano esempi nel prompt
+   - Framework ISO 19011:2018 §6.4.9 integrato nel system prompt
+
+3. **Upload multiplo norme nel Registro Documentale**
+   - Endpoint POST /documents/norms/upload (max 10 PDF, 50MB ciascuno)
+   - Estrazione testo con pdf-parse + metadati con AI (titolo, codice, anno, ente)
+   - Salvataggio in document_registry + norm_document_sources come fonte AI
+   - Prevenzione duplicati (verifica titolo/standard_code)
+   - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
+
+4. **Verifica validità norme**
+   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
+   - Se edizione superata: flag validity_status = 'superata'
+   - Job cron ogni lunedì alle 03:00
+
+### Migrazioni DB applicate
+- 055_ai_feedback.sql — tabella feedback personalizzazione
+- 060_norm_document_sources.sql — fonti normative da documenti caricati
+
+### Lezioni apprese
+- PDF scansionati (come ISO 19011): pdf-parse estrae poco/nulla, servono PDF nativi per buona qualità
+- Gemini 2.5 flash: occasional "high demand" transient errors — retry dopo 15s risolve
+- PowerShell: evitare heredoc bash, usare file .sh copiati via pscp per comandi complessi
+- Attachments document_registry: serve sia INSERT in attachments CON document_id, sia UPDATE document_registry SET attachment_id (bidirezionale)
+
+### Stato VPS
+- Backend: attivo, health OK
+- Tabelle: ai_feedback, norm_document_sources create
+- Cartella /var/www/sgq-backend/uploads/norms/ creata
+- Job validità norme: registrato in alertScheduler
+
+### Prossimi passi suggeriti
+- OCR completo ISO 19011 (installare tesseract o usare servizio esterno)
+- Caricare linee guida Conforma come PDF nativi
+- Test approfondito upload norme dall'interfaccia con PDF reali
+- Verificare comportamento few-shot dopo 3+ interazioni accettate
+
+---
+
 ### Chiusura sessione 07 maggio 2026 — tarda sera (Cloud Agent)
 
 **Branch**: `cursor/custom-checklist-gap-fixes-3f28` (PR da creare → merge in main + deploy)
