@@ -647,6 +647,41 @@
   flex-shrink: 0;
 }
 
+.tree-doc-card__delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.tree-doc-card:hover .tree-doc-card__delete-btn {
+  opacity: 0.5;
+}
+
+.tree-doc-card__delete-btn:hover {
+  opacity: 1 !important;
+  background: #fee2e2;
+}
+
+.tree-doc-card__delete-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tree-doc-card__delete-text {
+  font-size: 0.78rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {

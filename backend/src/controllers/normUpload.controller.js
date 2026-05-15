@@ -66,7 +66,7 @@ async function uploadNorms(req, res) {
   const hasAiProvider = !!getActiveProvider();
 
   for (const file of req.files) {
-    const entry = { filename: file.originalname, success: false, metadata: null, documentId: null, textQuality: null };
+    const entry = { fileName: file.originalname, success: false, metadata: null, documentId: null, textQuality: null };
     try {
       // (a) Extract text with pdf-parse
       const fileBuffer = await fs.readFile(file.path);
@@ -105,6 +105,32 @@ async function uploadNorms(req, res) {
       const docTitle = metadata.norm_title
         ? `${metadata.standard_code || ''} ${metadata.norm_title}`.trim()
         : path.basename(file.originalname, '.pdf');
+
+      // (b2) Duplicate check: same title or standard_code under the norm folder
+      const dupConditions = ['organization_id = @orgId', 'parent_id = @parentId'];
+      const dupParams = { orgId: organization_id, parentId: normFolderId };
+
+      if (metadata.standard_code) {
+        dupConditions.push('(title = @dupTitle OR title LIKE @stdCodePattern)');
+        dupParams.dupTitle = docTitle.substring(0, 255);
+        dupParams.stdCodePattern = `${metadata.standard_code}%`;
+      } else {
+        dupConditions.push('title = @dupTitle');
+        dupParams.dupTitle = docTitle.substring(0, 255);
+      }
+
+      const dupCheck = await query(
+        `SELECT id, title FROM document_registry WHERE ${dupConditions.join(' AND ')} AND status <> 'obsoleto'`,
+        dupParams
+      );
+      if (dupCheck.recordset.length > 0) {
+        entry.error = 'Norma gi presente nel registro';
+        entry.existingDocumentId = dupCheck.recordset[0].id;
+        entry.existingTitle = dupCheck.recordset[0].title;
+        await fs.unlink(file.path).catch(() => {});
+        results.push(entry);
+        continue;
+      }
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(

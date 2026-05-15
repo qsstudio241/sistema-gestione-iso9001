@@ -638,6 +638,25 @@ function DocumentRegistry() {
     }
   };
 
+  // ─── Elimina documento (albero) ──────────────────────────────────────────
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteDoc = async (docId) => {
+    setDeleting(true);
+    try {
+      await apiService.deleteDocument(docId);
+      setDeleteConfirmId(null);
+      if (selectedDoc?.id === docId) handleCloseDetail();
+      if (tree.selectedNodeId) await handleTreeNodeSelect(tree.selectedNodeId);
+      await loadStats();
+    } catch (err) {
+      alert("Errore eliminazione: " + (err.message || "errore sconosciuto"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Suddividi documenti priorità in categorie
   const expiredDocs  = priorityDocs.filter((d) => d.is_expired);
   const expiringDocs = priorityDocs.filter((d) => d.expiring_soon && !d.is_expired);
@@ -800,7 +819,7 @@ function DocumentRegistry() {
                         onClick={() => handleDocSelect(doc)}
                       >
                         <span className="tree-doc-card__icon">
-                          {doc.doc_type === 'folder' ? '📁' : '📄'}
+                          {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
                         </span>
                         <div className="tree-doc-card__info">
                           <span className="tree-doc-card__title">{doc.title}</span>
@@ -817,6 +836,34 @@ function DocumentRegistry() {
                         </div>
                         {doc.children_count > 0 && (
                           <span className="tree-doc-card__badge">{doc.children_count}</span>
+                        )}
+                        {!doc.is_system_folder && doc.doc_type !== 'folder' && (
+                          deleteConfirmId === doc.id ? (
+                            <span className="tree-doc-card__delete-confirm" onClick={e => e.stopPropagation()}>
+                              <span className="tree-doc-card__delete-text">Eliminare?</span>
+                              <button
+                                className="btn-confirm-yes"
+                                disabled={deleting}
+                                onClick={() => handleDeleteDoc(doc.id)}
+                              >
+                                {deleting ? '...' : 'Sì'}
+                              </button>
+                              <button
+                                className="btn-confirm-no"
+                                onClick={() => setDeleteConfirmId(null)}
+                              >
+                                No
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              className="tree-doc-card__delete-btn"
+                              title="Elimina documento"
+                              onClick={e => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
+                            >
+                              {"\uD83D\uDDD1\uFE0F"}
+                            </button>
+                          )
                         )}
                       </div>
                     ))}

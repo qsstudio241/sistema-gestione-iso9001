@@ -106,6 +106,7 @@ async function getChildren(req, res) {
                    (SELECT COUNT(*) FROM document_registry sub WHERE sub.parent_id = dr.id) AS children_count
             FROM document_registry dr
             WHERE dr.organization_id = @organization_id AND dr.parent_id = @parent_id
+              AND ISNULL(dr.status, 'vigente') <> 'obsoleto'
             ORDER BY dr.display_order ASC, dr.title ASC
         `, { organization_id, parent_id: parentId });
 

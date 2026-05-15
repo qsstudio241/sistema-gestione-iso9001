@@ -1137,6 +1137,11 @@ class ApiService {
         return this.delete(`/documents/${id}`);
     }
 
+    /** Elimina documento dal registro (soft-delete → obsoleto, rimosso dalla vista) */
+    async deleteDocument(id) {
+        return this.delete(`/documents/${id}`);
+    }
+
     // ─── Alert Engine ────────────────────────────────────────────────────────
 
     /** Conteggio alert urgenti per badge sidebar */

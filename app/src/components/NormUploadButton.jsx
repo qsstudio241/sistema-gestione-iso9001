@@ -1,5 +1,5 @@
 /**
- * NormUploadButton ó Upload multiplo PDF norme con estrazione AI metadati
+ * NormUploadButton ù Upload multiplo PDF norme con estrazione AI metadati
  * Mostrato nella cartella "NORME E LEGGI" del DocumentRegistry (vista Albero).
  */
 import React, { useState, useRef, useCallback } from "react";
@@ -57,7 +57,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   return (
     <div className="norm-upload">
       <button className="norm-upload__btn" onClick={handleClick} disabled={uploading}>
-        <span className="norm-upload__icon">??</span>
+        <span className="norm-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
         Carica Norme
       </button>
 
@@ -83,7 +83,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
               <ul className="norm-upload__file-list">
                 {selectedFiles.map((f, i) => (
                   <li key={i} className="norm-upload__file-item">
-                    <span className="norm-upload__file-icon">??</span>
+                    <span className="norm-upload__file-icon">{"\uD83D\uDCC4"}</span>
                     <span className="norm-upload__file-name">{f.name}</span>
                     <span className="norm-upload__file-size">
                       {(f.size / 1024 / 1024).toFixed(1)} MB
@@ -128,7 +128,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                   <li key={i} className={`norm-upload__result-item ${r.error ? "norm-upload__result-item--error" : "norm-upload__result-item--success"}`}>
                     {r.error ? (
                       <div className="norm-upload__result-error">
-                        <span className="norm-upload__result-icon">?</span>
+                        <span className="norm-upload__result-icon">{"\u274C"}</span>
                         <div>
                           <strong>{r.fileName || `File ${i + 1}`}</strong>
                           <p>{r.error}</p>
@@ -136,7 +136,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                       </div>
                     ) : (
                       <div className="norm-upload__result-success">
-                        <span className="norm-upload__result-icon">?</span>
+                        <span className="norm-upload__result-icon">{"\u2705"}</span>
                         <div className="norm-upload__result-meta">
                           <strong className="norm-upload__norm-title">
                             {r.norm_title || r.title || r.fileName || `File ${i + 1}`}
