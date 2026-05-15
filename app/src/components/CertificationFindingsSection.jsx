@@ -3,7 +3,7 @@
  * Rilievi dell'ente certificatore (ACCREDIA, Bureau Veritas, TÜV, ecc.)
  * Legati all'azienda, persistono tra un audit e l'altro.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import AutoTextarea from "./AutoTextarea";
 import "./CertificationFindingsSection.css";
@@ -36,6 +36,9 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
   const [form, setForm]             = useState(EMPTY_FORM);
   const [saving, setSaving]         = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  // Timestamp di apertura modale: previene ghost-click mobile (iOS/Android)
+  // che chiuderebbero l'overlay ~300ms dopo il tap su "Aggiungi Rilievo"
+  const openTimeRef = useRef(0);
 
   const load = useCallback(async () => {
     if (!companyId) return;
@@ -61,10 +64,12 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
     setEditingId(null);
     setForm({ ...EMPTY_FORM });
     setShowForm(true);
+    openTimeRef.current = Date.now();
   };
 
   const openEdit = (f) => {
     setEditingId(f.finding_id);
+    openTimeRef.current = Date.now();
     setForm({
       finding_number:    f.finding_number    || "",
       finding_type:      f.finding_type      || "NC",
@@ -216,7 +221,16 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
 
       {/* Form modale aggiunta/modifica */}
       {showForm && (
-        <div className="cert-modal-overlay" onClick={e => e.target === e.currentTarget && setShowForm(false)}>
+        <div
+          className="cert-modal-overlay"
+          onClick={e => {
+            // Protegge dal ghost-click mobile: ignora click sull'overlay
+            // entro 350ms dall'apertura (touch delay su iOS/Android).
+            if (e.target !== e.currentTarget) return;
+            if (Date.now() - openTimeRef.current < 350) return;
+            setShowForm(false);
+          }}
+        >
           <div className="cert-modal">
             <div className="cert-modal-header">
               <h3>{editingId ? "Modifica Rilievo" : "Nuovo Rilievo Ente Certificatore"}</h3>
