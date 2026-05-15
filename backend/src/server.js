@@ -70,6 +70,7 @@ const aiAssistRoutes = require('./routes/aiAssist.routes');
 const documentTagsRoutes     = require('./routes/documentTags.routes');
 const documentRelationsRoutes = require('./routes/documentRelations.routes');
 const documentTreeRoutes     = require('./routes/documentTree.routes');
+const normUploadRoutes       = require('./routes/normUpload.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -242,6 +243,7 @@ app.use(API_BASE, customChecklistRoutes);
 app.use(API_BASE, documentTagsRoutes);
 app.use(API_BASE, documentRelationsRoutes);
 app.use(API_BASE, documentTreeRoutes);
+app.use(API_BASE, normUploadRoutes);
 app.use(API_BASE, documentRoutes);
 app.use(API_BASE, alertRoutes);
 app.use(API_BASE, notificationsRoutes);

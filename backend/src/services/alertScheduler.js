@@ -197,6 +197,26 @@ async function runAlertJob() {
 
 // ─── Avvio scheduler ──────────────────────────────────────────────────────────
 
+// ─── Verifica validità norme (settimanale) ────────────────────────────────────
+
+async function runNormValidityJob() {
+  logger.info('[AlertScheduler] Avvio job verifica validità norme...');
+  try {
+    const { runScheduledValidityCheck } = require('./normValidityChecker.service');
+    const pool = await getPool();
+    const orgsResult = await pool.request().query(
+      'SELECT organization_id FROM organizations'
+    );
+    const orgs = orgsResult.recordset || [];
+    for (const org of orgs) {
+      await runScheduledValidityCheck(org.organization_id);
+    }
+    logger.info(`[AlertScheduler] Verifica validità norme completata per ${orgs.length} organizzazioni`);
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job validità norme:', err.message);
+  }
+}
+
 function startAlertScheduler() {
   if (!schedule) {
     logger.warn('[AlertScheduler] node-schedule non disponibile — scheduler non avviato');
@@ -208,7 +228,12 @@ function startAlertScheduler() {
     runAlertJob().catch(err => logger.error('[AlertScheduler] Errore non gestito:', err.message));
   });
 
-  logger.info('[AlertScheduler] Scheduler avviato — alert inviati ogni giorno alle 08:00');
+  // Ogni lunedì alle 03:00 — verifica validità norme
+  schedule.scheduleJob('0 3 * * 1', () => {
+    runNormValidityJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (norme):', err.message));
+  });
+
+  logger.info('[AlertScheduler] Scheduler avviato — alert giornalieri 08:00, verifica norme settimanale lun 03:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob };

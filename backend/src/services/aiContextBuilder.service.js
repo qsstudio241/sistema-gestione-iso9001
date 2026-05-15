@@ -169,6 +169,29 @@ async function buildAuditConclusionsContext({
     logger.warn('[AI_CONTEXT] NormBroker enrichment failed for conclusions:', err.message);
   }
 
+  // --- Level A2: Load extracted norm texts from norm_document_sources ---
+  try {
+    const { query: dbQuery } = require('../config/database');
+    const normCodes = codes.map(c => `'${c.replace(/'/g, "''")}'`).join(',');
+    const normSourceRows = await dbQuery(
+      `SELECT standard_code, norm_title, extracted_text
+       FROM norm_document_sources
+       WHERE standard_code IN (${normCodes})
+         AND validity_status = 'vigente'
+         AND organization_id = @orgId
+         AND extracted_text IS NOT NULL AND LEN(extracted_text) > 100`,
+      { orgId: organizationId || 0 }
+    );
+    if (normSourceRows.recordset && normSourceRows.recordset.length > 0) {
+      for (const row of normSourceRows.recordset) {
+        const excerpt = row.extracted_text.substring(0, 2000);
+        normContext += `\n\n--- Testo norma ${row.standard_code} (${row.norm_title || 'N/D'}) ---\n${excerpt}`;
+      }
+    }
+  } catch (err) {
+    logger.debug('[AI_CONTEXT] norm_document_sources not available (Level A2):', err.message);
+  }
+
   // --- Level C: Load past accepted conclusions as few-shot examples ---
   let fewShotBlock = '';
   try {
@@ -267,4 +290,47 @@ ${effectiveMode === 'refine' ? 'Migliora le conclusioni dell\'auditor mantenendo
   };
 }
 
-module.exports = { buildReviewRequirementsContext, buildAuditConclusionsContext };
+/**
+ * Build context to extract norm metadata from raw PDF text.
+ * The AI returns a JSON object with structured metadata fields.
+ * @param {object} params
+ * @param {string} params.text - Raw text extracted from a PDF (first ~4000 chars)
+ * @returns {{systemPrompt: string, userPrompt: string, contextSummary: string}}
+ */
+function buildExtractNormMetadataContext({ text }) {
+  const snippet = (text || '').substring(0, 4000);
+
+  const systemPrompt = `Sei un esperto di normazione tecnica (ISO, UNI, CEN, IEC).
+Analizza il testo estratto da un documento PDF e identifica i metadati della norma.
+
+Rispondi SOLO con JSON valido nel formato:
+{
+  "norm_title": "titolo completo della norma (senza codice)",
+  "standard_code": "codice in formato ISO_XXXX_YYYY (es. ISO_19011_2018, UNI_EN_ISO_9001_2015)",
+  "issuing_body": "ente emittente principale (ISO, UNI, CEN, IEC, ecc.)",
+  "edition_year": 2018,
+  "language": "it|en|de|fr",
+  "abstract": "descrizione sintetica del contenuto in 1-2 frasi"
+}
+
+Regole:
+- standard_code: usa underscore come separatore, includi l'anno se presente (es. ISO_19011_2018)
+- Se il documento è una traduzione UNI di una norma ISO, includi il prefisso UNI_EN_ (es. UNI_EN_ISO_9001_2015)
+- edition_year: anno di pubblicazione dell'edizione (intero, es. 2018)
+- Se un campo non è determinabile dal testo, usa null
+- Non inventare dati: basa tutto esclusivamente sul testo fornito`;
+
+  const userPrompt = `Analizza questo testo estratto da un PDF normativo e restituisci i metadati in JSON:
+
+---
+${snippet}
+---`;
+
+  return {
+    systemPrompt,
+    userPrompt,
+    contextSummary: `Extract norm metadata from ${snippet.length} chars of PDF text`,
+  };
+}
+
+module.exports = { buildReviewRequirementsContext, buildAuditConclusionsContext, buildExtractNormMetadataContext };

@@ -1408,6 +1408,48 @@ class ApiService {
     async aiFeedback({ feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed }) {
         return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
     }
+
+    // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
+
+    async uploadNorms(files) {
+        const formData = new FormData();
+        for (const file of files) {
+            formData.append('files', file);
+        }
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+        try {
+            const response = await fetch(`${this.baseUrl}/documents/norms/upload`, {
+                method: 'POST',
+                headers,
+                body: formData,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new ApiError(
+                    errorData.error || `Upload norme fallito (${response.status})`,
+                    response.status,
+                    errorData.code || 'NORM_UPLOAD_ERROR'
+                );
+            }
+
+            return response.json();
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new ApiError('Upload norme timeout (3 min)', 408, 'TIMEOUT');
+            }
+            if (error instanceof ApiError) throw error;
+            throw new ApiError(error.message, 0, 'NETWORK_ERROR');
+        }
+    }
 }
 
 /**

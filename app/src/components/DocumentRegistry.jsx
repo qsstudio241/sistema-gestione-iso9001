@@ -16,6 +16,7 @@ import DocumentTree from "./DocumentTree";
 import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import TagFilterBar from "./TagFilterBar";
+import NormUploadButton from "./NormUploadButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import useDocumentRelations from "../hooks/useDocumentRelations";
@@ -755,6 +756,19 @@ function DocumentRegistry() {
                 onNavigate={handleTreeNodeSelect}
               />
             )}
+
+            {/* Pulsante upload norme: visibile solo nella cartella NORME E LEGGI */}
+            {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
+              const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
+              const isNormsFolder = currentFolder?.folder_code === '2.3'
+                || (currentFolder?.title || '').toUpperCase().includes('NORME');
+              return isNormsFolder ? (
+                <NormUploadButton
+                  folderId={tree.selectedNodeId}
+                  onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                />
+              ) : null;
+            })()}
 
             {tags.allTags.length > 0 && (
               <TagFilterBar

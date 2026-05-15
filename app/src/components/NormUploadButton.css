@@ -1,0 +1,281 @@
+/**
+ * NormUploadButton — stili coerenti con il design system SGQ
+ */
+
+.norm-upload {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.norm-upload__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(165deg, #fafbff 0%, #f0f2f8 100%);
+  border: 1px solid #d0d5e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.norm-upload__btn:hover:not(:disabled) {
+  background: linear-gradient(165deg, #eef1ff 0%, #e4e8f4 100%);
+  border-color: #007bff;
+  color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.12);
+}
+
+.norm-upload__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.norm-upload__icon {
+  font-size: 1.1rem;
+}
+
+.norm-upload__input-hidden {
+  display: none;
+}
+
+/* ??? Panel ??????????????????????????????????????????????????????????????? */
+
+.norm-upload__panel {
+  margin-top: 12px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  animation: norm-panel-slidein 0.2s ease-out;
+}
+
+@keyframes norm-panel-slidein {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.norm-upload__panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e8e8e8;
+  background: linear-gradient(165deg, #fafbff 0%, #f0f2f8 100%);
+}
+
+.norm-upload__panel-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+}
+
+/* ??? File list ??????????????????????????????????????????????????????????? */
+
+.norm-upload__file-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.norm-upload__file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.norm-upload__file-item:last-child {
+  border-bottom: none;
+}
+
+.norm-upload__file-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.norm-upload__file-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.norm-upload__file-size {
+  font-size: 0.8rem;
+  color: #6c757d;
+  flex-shrink: 0;
+}
+
+/* ??? Actions ????????????????????????????????????????????????????????????? */
+
+.norm-upload__actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e8e8e8;
+  background: #fafafa;
+}
+
+.norm-upload__action-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.norm-upload__action-btn--primary {
+  background: #007bff;
+  color: #fff;
+}
+
+.norm-upload__action-btn--primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.norm-upload__action-btn--primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.norm-upload__action-btn--secondary {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.norm-upload__action-btn--secondary:hover:not(:disabled) {
+  background: #dee2e6;
+}
+
+/* ??? Spinner ????????????????????????????????????????????????????????????? */
+
+.norm-upload__spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: norm-spin 0.7s linear infinite;
+}
+
+@keyframes norm-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ??? Results ????????????????????????????????????????????????????????????? */
+
+.norm-upload__results {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.norm-upload__result-item {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.norm-upload__result-item:last-child {
+  margin-bottom: 0;
+}
+
+.norm-upload__result-item--success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.norm-upload__result-item--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.norm-upload__result-error,
+.norm-upload__result-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.norm-upload__result-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.norm-upload__result-error p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #991b1b;
+}
+
+.norm-upload__result-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.norm-upload__norm-title {
+  font-size: 0.88rem;
+  color: #1e293b;
+}
+
+.norm-upload__code-badge {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.norm-upload__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #475569;
+  margin-top: 2px;
+}
+
+/* ??? Quality badges ?????????????????????????????????????????????????????? */
+
+.norm-quality-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.norm-quality--good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.norm-quality--partial {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.norm-quality--poor {
+  background: #fee2e2;
+  color: #991b1b;
+}
