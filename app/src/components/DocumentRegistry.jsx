@@ -308,7 +308,7 @@ function CatalogView({
           </label>
           <button
             className="btn-reset"
-            onClick={() => { setFilter("doc_type", ""); setFilter("status", "rilasciato"); setFilter("company_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
+            onClick={() => { setFilter("doc_type", ""); setFilter("status", ""); setFilter("company_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
           >
             Reset
           </button>
@@ -523,7 +523,7 @@ function DocumentRegistry() {
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
-    search: "", doc_type: "", status: "rilasciato", company_id: "", expiring_days: null,
+    search: "", doc_type: "", status: "", company_id: "", expiring_days: null,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));

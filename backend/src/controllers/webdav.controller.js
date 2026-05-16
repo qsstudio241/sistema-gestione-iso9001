@@ -253,12 +253,16 @@ async function handleWebdavPut(req, res) {
         const newId = insertRes.recordset[0].id;
 
         // Dopo il salvataggio da Office → documento entra in stato 'bozza'
-        // (richiede "RILASCIA REVISIONE" per tornare a 'rilasciato')
+        // (richiede "RILASCIA REVISIONE" per tornare a 'rilasciato').
+        // ESCLUSO doc_type='folder': le cartelle non hanno lifecycle revisione,
+        // anche se possono avere un file allegato.
         await pool.request()
             .input('docId', docId)
             .query(`UPDATE document_registry
                     SET status='bozza', updated_at=GETDATE()
-                    WHERE id=@docId AND status IN ('rilasciato','vigente','in_revisione')`);
+                    WHERE id=@docId
+                      AND doc_type <> 'folder'
+                      AND status IN ('rilasciato','vigente','in_revisione')`);
 
         logger.info(`[WebDAV] PUT doc ${docId} (org ${orgId}) → attachment ${newId} (${buffer.length} bytes), status→bozza`);
 
