@@ -19,12 +19,14 @@
   background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
   color: #fff;
   flex-shrink: 0;
+  gap: 12px;
 }
 
 .ai-assistant-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .ai-assistant-header-icon {
@@ -42,6 +44,13 @@
   margin: 2px 0 0;
   font-size: 12px;
   opacity: 0.8;
+}
+
+.ai-assistant-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .ai-assistant-reindex-btn {
@@ -63,6 +72,167 @@
 .ai-assistant-reindex-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Clear button */
+.ai-assistant-clear-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.ai-assistant-clear-btn:hover {
+  background: rgba(255, 80, 80, 0.3);
+  border-color: rgba(255, 120, 120, 0.5);
+}
+
+/* Context chip */
+.ai-context-chip-wrapper {
+  position: relative;
+}
+
+.ai-context-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.ai-context-chip:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ai-context-chip--company {
+  background: rgba(99, 179, 237, 0.25);
+  border-color: rgba(99, 179, 237, 0.5);
+}
+
+.ai-context-chip--company:hover {
+  background: rgba(99, 179, 237, 0.35);
+}
+
+.ai-context-chip-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.ai-context-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.ai-context-chip-arrow {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Context dropdown */
+.ai-context-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  max-width: 300px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 4px;
+  animation: ai-dropdown-in 0.15s ease;
+}
+
+@keyframes ai-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ai-context-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.ai-context-dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.ai-context-dropdown-item.active {
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 500;
+}
+
+.ai-context-dropdown-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* Context separator */
+.ai-context-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  margin: 4px 0;
+}
+
+.ai-context-separator-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+}
+
+.ai-context-separator-text {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  padding: 3px 10px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Faded messages (pre-cambio contesto) */
+.ai-msg--faded {
+  opacity: 0.45;
+  transition: opacity 0.4s ease;
+}
+
+.ai-msg--faded:hover {
+  opacity: 0.7;
 }
 
 /* Messages area */
@@ -104,6 +274,19 @@
   font-size: 14px;
   line-height: 1.5;
   max-width: 400px;
+}
+
+.ai-assistant-empty-context {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #475569;
+  background: #eef2ff;
+  padding: 6px 14px;
+  border-radius: 16px;
+}
+
+.ai-assistant-empty-context strong {
+  color: #4338ca;
 }
 
 .ai-assistant-suggestions {
@@ -336,6 +519,11 @@
 
   .ai-assistant-header {
     padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .ai-assistant-header-actions {
+    flex-wrap: wrap;
   }
 
   .ai-assistant-messages {
@@ -352,5 +540,14 @@
 
   .ai-assistant-reindex-btn {
     display: none;
+  }
+
+  .ai-context-chip-label {
+    max-width: 100px;
+  }
+
+  .ai-context-dropdown {
+    right: -40px;
+    min-width: 200px;
   }
 }

@@ -1,15 +1,16 @@
 /**
- * aiChat.controller.js ó Assistente AI globale SGQ
+ * aiChat.controller.js ù Assistente AI globale SGQ
  *
- * POST /ai/chat  ó risponde a domande libere usando il contesto indicizzato
- * POST /ai/reindex ó re-indicizza tutti i dati per l'organizzazione (admin)
+ * POST /ai/chat  ù risponde a domande libere usando il contesto indicizzato
+ * POST /ai/reindex ù re-indicizza tutti i dati per l'organizzazione (admin)
  */
 
 const logger = require('../utils/logger');
+const { query } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge, indexAllEntities } = require('../services/knowledgeIndexer.service');
 
-const SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit‡ ISO 9001 di questa organizzazione.
+const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualitù ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
@@ -17,8 +18,26 @@ Quando citi dati specifici (audit, NC, documenti, rischi), indica il riferimento
 Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto per i punti chiave.`;
 
 /**
+ * Carica il profilo azienda da DB per arricchire il system prompt.
+ */
+async function loadCompanyProfile(companyId, organizationId) {
+  try {
+    const result = await query(
+      `SELECT name, vat_number, sector, address
+       FROM companies
+       WHERE id = @id AND organization_id = @orgId`,
+      { id: companyId, orgId: organizationId }
+    );
+    return (result.recordset || [])[0] || null;
+  } catch (err) {
+    logger.warn('[AI_CHAT] loadCompanyProfile failed:', err.message);
+    return null;
+  }
+}
+
+/**
  * POST /ai/chat
- * Body: { message: string }
+ * Body: { message: string, companyId?: number|null }
  */
 async function aiChat(req, res) {
   try {
@@ -30,20 +49,41 @@ async function aiChat(req, res) {
       });
     }
 
-    const { message } = req.body;
+    const { message, companyId } = req.body;
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({
-        error: 'Il campo "message" Ë obbligatorio.',
+        error: 'Il campo "message" ù obbligatorio.',
         code: 'MISSING_PARAMS',
       });
     }
 
     const organizationId = req.user.organization_id;
+    const parsedCompanyId = companyId ? parseInt(companyId, 10) || null : null;
 
-    // Ricerca contesto semantico
+    // Costruisci system prompt con contesto azienda se specificato
+    let systemPrompt = BASE_SYSTEM_PROMPT;
+    if (parsedCompanyId) {
+      const company = await loadCompanyProfile(parsedCompanyId, organizationId);
+      if (company) {
+        const companyLines = [`\n\n--- CONTESTO AZIENDA ATTIVA ---`];
+        companyLines.push(`Nome: ${company.name}`);
+        if (company.vat_number) companyLines.push(`P.IVA: ${company.vat_number}`);
+        if (company.sector) companyLines.push(`Settore: ${company.sector}`);
+        if (company.address) companyLines.push(`Indirizzo: ${company.address}`);
+        companyLines.push(`--- FINE CONTESTO AZIENDA ---`);
+        companyLines.push(`Le domande dell'utente si riferiscono specificamente a questa azienda. Filtra le risposte di conseguenza.`);
+        systemPrompt += companyLines.join('\n');
+      }
+    }
+
+    // Ricerca contesto semantico (con filtro azienda se specificato)
     let contextChunks = [];
     try {
-      contextChunks = await searchKnowledge(message.trim(), organizationId, { topK: 15, minScore: 0.2 });
+      contextChunks = await searchKnowledge(message.trim(), organizationId, {
+        topK: 15,
+        minScore: 0.2,
+        companyId: parsedCompanyId,
+      });
     } catch (err) {
       logger.warn('[AI_CHAT] searchKnowledge failed, proceeding without context:', err.message);
     }
@@ -63,7 +103,7 @@ async function aiChat(req, res) {
 
     const result = await chat(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       { temperature: 0.3, timeout: 90000 }

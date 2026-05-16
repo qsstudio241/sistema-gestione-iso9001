@@ -1,6 +1,6 @@
 /**
  * knowledgeIndexer.service.js
- * Indicizza tutte le entit‡ SGQ (audit, NC, reclami, qualifiche, rischi, documenti)
+ * Indicizza tutte le entitù SGQ (audit, NC, reclami, qualifiche, rischi, documenti)
  * in chunk con embedding Gemini per la ricerca semantica dell'assistente AI.
  */
 
@@ -14,7 +14,7 @@ const EMBED_BATCH = 20;
 const INDEXABLE_ENTITIES = [
   {
     entity_type: 'audit_conclusion',
-    sql: `SELECT a.audit_id AS id, a.audit_number, a.audit_date, a.status,
+    sql: `SELECT a.audit_id AS id, a.company_id, a.audit_number, a.audit_date, a.status,
             JSON_VALUE(a.audit_extra_data, '$.auditOutcome.conclusions') AS conclusions,
             c.name AS company_name
           FROM audits a
@@ -23,23 +23,23 @@ const INDEXABLE_ENTITIES = [
     buildText: (r) => {
       const parts = [`Audit ${r.audit_number || ''} del ${r.audit_date || '?'}`];
       if (r.company_name) parts[0] += ` (${r.company_name})`;
-      parts[0] += ` ó stato: ${r.status || '?'}`;
+      parts[0] += ` ù stato: ${r.status || '?'}`;
       if (r.conclusions) parts.push(`Conclusioni: ${r.conclusions}`);
       return parts.join('. ');
     },
   },
   {
     entity_type: 'non_conformity',
-    sql: `SELECT nc.nc_id AS id, nc.nc_number, nc.nc_type, nc.description, nc.severity, nc.status
+    sql: `SELECT nc.nc_id AS id, a.company_id, nc.nc_number, nc.nc_type, nc.description, nc.severity, nc.status
           FROM non_conformities nc
           JOIN audits a ON nc.audit_id = a.audit_id
           WHERE a.organization_id = @orgId`,
     buildText: (r) =>
-      `NC ${r.nc_number || ''} (${r.nc_type || '?'}): ${r.description || ''}. Gravit‡: ${r.severity || '?'}, Stato: ${r.status || '?'}`,
+      `NC ${r.nc_number || ''} (${r.nc_type || '?'}): ${r.description || ''}. Gravitù: ${r.severity || '?'}, Stato: ${r.status || '?'}`,
   },
   {
     entity_type: 'nc_action',
-    sql: `SELECT na.action_id AS id, na.action_type, na.description, na.responsible, na.status,
+    sql: `SELECT na.action_id AS id, a.company_id, na.action_type, na.description, na.responsible, na.status,
             nc.nc_number
           FROM nc_actions na
           JOIN non_conformities nc ON na.nc_id = nc.nc_id
@@ -50,7 +50,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'complaint',
-    sql: `SELECT c.id, c.complaint_number, c.title, c.description,
+    sql: `SELECT c.id, c.company_id, c.complaint_number, c.title, c.description,
             c.complaint_type, c.severity, c.status, c.customer_name,
             c.root_cause, c.corrective_action
           FROM complaints c
@@ -60,7 +60,7 @@ const INDEXABLE_ENTITIES = [
       if (r.description) parts.push(r.description);
       if (r.complaint_type) parts.push(`Tipo: ${r.complaint_type}`);
       if (r.customer_name) parts.push(`Cliente: ${r.customer_name}`);
-      if (r.severity) parts.push(`Gravit‡: ${r.severity}`);
+      if (r.severity) parts.push(`Gravitù: ${r.severity}`);
       if (r.root_cause) parts.push(`Causa: ${r.root_cause}`);
       if (r.corrective_action) parts.push(`Azione correttiva: ${r.corrective_action}`);
       parts.push(`Stato: ${r.status || '?'}`);
@@ -69,7 +69,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'qualification',
-    sql: `SELECT q.id, q.person_name, q.qualification_type, q.standard_ref,
+    sql: `SELECT q.id, q.company_id, q.person_name, q.qualification_type, q.standard_ref,
             q.scope_detail, q.certificate_number, q.issuing_body,
             q.expiry_date, q.status, q.notes,
             c.name AS company_name
@@ -90,7 +90,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'risk',
-    sql: `SELECT r.risk_id AS id, r.title, r.description, r.context, r.category,
+    sql: `SELECT r.risk_id AS id, NULL AS company_id, r.title, r.description, r.context, r.category,
             r.probability, r.impact, r.treatment, r.treatment_desc,
             r.responsible, r.status
           FROM risks r
@@ -100,7 +100,7 @@ const INDEXABLE_ENTITIES = [
       const parts = [`Rischio: ${r.title}`];
       if (r.description) parts.push(r.description);
       parts.push(`Contesto: ${r.context || '?'}, Categoria: ${r.category || 'N/D'}`);
-      parts.push(`Probabilit‡: ${r.probability}, Impatto: ${r.impact}, Score: ${score}`);
+      parts.push(`Probabilitù: ${r.probability}, Impatto: ${r.impact}, Score: ${score}`);
       parts.push(`Trattamento: ${r.treatment || '?'}`);
       if (r.treatment_desc) parts.push(`Descrizione trattamento: ${r.treatment_desc}`);
       if (r.responsible) parts.push(`Responsabile: ${r.responsible}`);
@@ -110,7 +110,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'document',
-    sql: `SELECT dr.id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
+    sql: `SELECT dr.id, dr.company_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
             dr.status, dr.clause_ref, dr.responsible,
             c.name AS company_name
           FROM document_registry dr
@@ -152,7 +152,7 @@ const ENTITY_TABLE_MAP = {
 };
 
 /**
- * Indicizza tutte le entit‡ SGQ per un'organizzazione.
+ * Indicizza tutte le entitù SGQ per un'organizzazione.
  */
 async function indexAllEntities(organizationId) {
   logger.info(`[KnowledgeIndexer] Start indexing org ${organizationId}`);
@@ -185,14 +185,15 @@ async function indexAllEntities(organizationId) {
         const text = entity.buildText(row);
         if (!text || text.trim().length < 10) continue;
 
+        const compId = row.company_id || null;
         const words = text.split(/\s+/);
         if (words.length > 500) {
           const parts = chunkText(text, 400, 50);
           for (const part of parts) {
-            allChunks.push({ entityId: row.id, text: part.text });
+            allChunks.push({ entityId: row.id, companyId: compId, text: part.text });
           }
         } else {
-          allChunks.push({ entityId: row.id, text });
+          allChunks.push({ entityId: row.id, companyId: compId, text });
         }
       }
 
@@ -214,13 +215,14 @@ async function indexAllEntities(organizationId) {
           const vec = vectors[j] || null;
           await query(
             `INSERT INTO knowledge_chunks
-              (organization_id, entity_type, entity_id, chunk_text, embedding, last_indexed_at)
+              (organization_id, entity_type, entity_id, company_id, chunk_text, embedding, last_indexed_at)
              VALUES
-              (@orgId, @et, @eid, @text, @emb, GETDATE())`,
+              (@orgId, @et, @eid, @cid, @text, @emb, GETDATE())`,
             {
               orgId: organizationId,
               et: entity.entity_type,
               eid: c.entityId || null,
+              cid: c.companyId || null,
               text: c.text,
               emb: vec ? JSON.stringify(vec) : null,
             }
@@ -270,21 +272,27 @@ function cosineSimilarity(a, b) {
  * @param {object} [options]
  * @param {number} [options.topK=15]
  * @param {number} [options.minScore=0.25]
+ * @param {number|null} [options.companyId=null] - filtra chunk per azienda
  * @returns {Promise<Array<{entity_type, entity_id, chunk_text, score}>>}
  */
 async function searchKnowledge(queryText, organizationId, options = {}) {
-  const { topK = 15, minScore = 0.25 } = options;
+  const { topK = 15, minScore = 0.25, companyId = null } = options;
 
   const [queryVec] = await embed([queryText]);
   if (!queryVec) throw new Error('Failed to embed query text');
 
-  // Load knowledge_chunks
-  const kcResult = await query(
-    `SELECT id, entity_type, entity_id, chunk_text, embedding
+  // Load knowledge_chunks (con filtro opzionale per company_id)
+  let kcSql = `SELECT id, entity_type, entity_id, chunk_text, embedding
      FROM knowledge_chunks
-     WHERE organization_id = @orgId AND embedding IS NOT NULL`,
-    { orgId: organizationId }
-  );
+     WHERE organization_id = @orgId AND embedding IS NOT NULL`;
+  const kcParams = { orgId: organizationId };
+
+  if (companyId) {
+    kcSql += ' AND (company_id = @compId OR company_id IS NULL)';
+    kcParams.compId = companyId;
+  }
+
+  const kcResult = await query(kcSql, kcParams);
 
   // Load norm_chunks
   let ncRows = [];

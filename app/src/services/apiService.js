@@ -1414,8 +1414,10 @@ class ApiService {
         return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
     }
 
-    async aiChat(message) {
-        return this.post('/ai/chat', { message }, { timeout: 120000 });
+    async aiChat(message, companyId = null) {
+        const body = { message };
+        if (companyId) body.companyId = companyId;
+        return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
     async aiReindex() {
