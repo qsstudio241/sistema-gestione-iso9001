@@ -76,14 +76,8 @@ function handleCollectionRequest(req, res) {
     res.status(405).end('Method Not Allowed');
 }
 
-// /webdav/:orgId  e  /webdav/:orgId/:docId  (con o senza trailing slash)
-webdavRouter.all('/:orgId',                handleCollectionRequest);
-webdavRouter.all('/:orgId/',               handleCollectionRequest);
-webdavRouter.all('/:orgId/:docId',         handleCollectionRequest);
-webdavRouter.all('/:orgId/:docId/',        handleCollectionRequest);
-
-// Tutti i metodi WebDAV su /:orgId/:docId/:filename
-webdavRouter.all('/:orgId/:docId/:filename', (req, res) => {
+// Dispatch standard per richieste su un file (con o senza prefisso /dt/:dt/)
+function handleFileRequest(req, res) {
     switch (req.method.toUpperCase()) {
         case 'GET':      return ctrl.handleWebdavGet(req, res);
         case 'HEAD':     return ctrl.handleWebdavHead(req, res);
@@ -96,6 +90,22 @@ webdavRouter.all('/:orgId/:docId/:filename', (req, res) => {
             res.setHeader('Allow', 'GET, HEAD, PUT, PROPFIND, LOCK, UNLOCK, OPTIONS');
             res.status(405).end('Method Not Allowed');
     }
-});
+}
+
+// Variante con token nel path: /webdav/dt/:dt/:orgId/:docId/:filename
+// Microsoft-WebDAV-MiniRedir preserva il path nelle richieste, così tutte
+// le operazioni (GET, LOCK, PUT, ...) restano autenticate senza prompt.
+webdavRouter.all('/dt/:dt/:orgId',                            handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/',                           handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId',                     handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId/',                    handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId/:filename',           handleFileRequest);
+
+// Variante legacy con token in query string (mantenuta per compat)
+webdavRouter.all('/:orgId',                                    handleCollectionRequest);
+webdavRouter.all('/:orgId/',                                   handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId',                             handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId/',                            handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId/:filename',                   handleFileRequest);
 
 module.exports = { apiRouter: router, webdavRouter };

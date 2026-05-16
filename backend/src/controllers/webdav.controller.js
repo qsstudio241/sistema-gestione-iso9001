@@ -54,6 +54,13 @@ function validateToken(token, orgId, docId) {
     return data;
 }
 
+// Estrae il token sia dal path (req.params.dt) che dal query string (?dt=).
+// Il path è preferito perché Microsoft-WebDAV-MiniRedir di Windows preserva
+// il path completo ma scarta i query parameter.
+function extractToken(req) {
+    return req.params.dt || req.query.dt || null;
+}
+
 // ─── Helper DB ────────────────────────────────────────────────────────────────
 
 async function getDocAndCurrentFile(pool, docId, orgId) {
@@ -102,8 +109,19 @@ async function generateWebdavLink(req, res) {
         // URL WebDAV accessibile da Office: usa env WEBDAV_BASE_URL o il dominio della request
         const baseUrl  = process.env.WEBDAV_BASE_URL
             || `${req.protocol}://${req.get('host')}`;
-        const safeFile = encodeURIComponent(result.file.file_name);
-        const webdavUrl = `${baseUrl}/webdav/${orgId}/${docId}/${safeFile}?dt=${token}`;
+        // Sanitizza il nome file per l'URL: Office decodifica %20 in spazio
+        // letterale prima della richiesta HTTP, causando un URL con spazio
+        // che Nginx rifiuta. Il file è recuperato dal DB via docId, il nome
+        // nell'URL è solo cosmético.
+        const _fileExt  = path.extname(result.file.file_name);
+        const _baseName = path.basename(result.file.file_name, _fileExt);
+        const _safeBase = _baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-]/g, '_');
+        const safeFile  = _safeBase + _fileExt;
+        // Token nel PATH (non query string): Microsoft-WebDAV-MiniRedir di
+        // Windows preserva il path completo nelle richieste subordinate (LOCK,
+        // GET dopo LOCK, ecc.) ma scarta i query parameter. Mettendolo nel path
+        // tutte le richieste WebDAV restano autenticate senza prompt utente.
+        const webdavUrl = `${baseUrl}/webdav/dt/${token}/${orgId}/${docId}/${encodeURIComponent(safeFile)}`;
 
         // Office URI Scheme — apre Word/Excel direttamente da browser
         const ext     = path.extname(result.file.file_name).toLowerCase();
@@ -136,7 +154,7 @@ async function generateWebdavLink(req, res) {
 async function handleWebdavGet(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token = req.query.dt;
+        const token = extractToken(req);
 
         const tokenData = validateToken(token, orgId, docId);
         if (!tokenData) return res.status(401).end('Token WebDAV non valido o scaduto.');
@@ -169,7 +187,7 @@ async function handleWebdavGet(req, res) {
 async function handleWebdavPut(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token = req.query.dt;
+        const token = extractToken(req);
 
         const tokenData = validateToken(token, orgId, docId);
         if (!tokenData) return res.status(401).end('Token WebDAV non valido o scaduto.');
@@ -256,7 +274,7 @@ async function handleWebdavPut(req, res) {
 async function handleWebdavPropfind(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token    = req.query.dt;
+        const token    = extractToken(req);
         const filename = req.params.filename || '';
 
         const tokenData = validateToken(token, orgId, docId);
@@ -276,8 +294,8 @@ async function handleWebdavPropfind(req, res) {
         if (!fileRes.recordset.length) return res.status(404).end();
         const file    = fileRes.recordset[0];
         const lastMod = new Date(file.created_at).toUTCString();
-        const tokenSuffix = token ? `?dt=${token}` : '';
-        const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}${tokenSuffix}`;
+        const tokenPrefix = token ? `/dt/${token}` : '';
+        const href    = `/webdav${tokenPrefix}/${orgId}/${docId}/${encodeURIComponent(filename)}`;
         const timeout = Math.floor(TOKEN_TTL_MS / 1000);
         const activeLockXml = (tokenData && tokenData.lockToken)
             ? `<D:activelock><D:locktoken><D:href>${tokenData.lockToken}</D:href></D:locktoken><D:timeout>Second-${timeout}</D:timeout></D:activelock>`
@@ -325,7 +343,7 @@ async function handleWebdavPropfind(req, res) {
 
 function handleWebdavLock(req, res) {
     const { orgId, docId } = parseParams(req);
-    const token    = req.query.dt;
+    const token    = extractToken(req);
     const filename = req.params.filename || '';
 
     const tokenData = validateToken(token, orgId, docId);
@@ -339,8 +357,8 @@ function handleWebdavLock(req, res) {
         tokenStore.set(token, tokenData);
     }
 
-    const tokenSuffix = token ? `?dt=${token}` : '';
-    const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}${tokenSuffix}`;
+    const tokenPrefix = token ? `/dt/${token}` : '';
+    const href    = `/webdav${tokenPrefix}/${orgId}/${docId}/${encodeURIComponent(filename)}`;
     const timeout = Math.floor(TOKEN_TTL_MS / 1000);
 
     const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
@@ -369,7 +387,7 @@ function handleWebdavLock(req, res) {
 
 function handleWebdavUnlock(req, res) {
     const { orgId, docId } = parseParams(req);
-    const token = req.query.dt;
+    const token = extractToken(req);
 
     const tokenData = validateToken(token, orgId, docId);
     if (tokenData) {
