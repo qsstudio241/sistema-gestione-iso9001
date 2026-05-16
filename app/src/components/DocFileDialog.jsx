@@ -151,16 +151,23 @@ function DocFileDialog({ doc, onClose }) {
       setShowEditAlert(false);
 
       if (mode === 'edit') {
-        // Apertura diretta in Word/Excel desktop via URI Scheme
+        // Apertura diretta in Word/Excel desktop via URI Scheme (modifica)
         if (!link.office_uri) {
           setOfficeError('Formato file non supportato per l\'apertura diretta in Office.');
           return;
         }
         window.location.href = link.office_uri;
       } else {
-        // Visualizzazione in-browser via Microsoft Office Online Viewer (gratuito)
-        const viewUrl = buildOfficOnlineViewUrl(link.webdav_url);
-        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+        // Visualizzazione: apre Word/Excel desktop in modalita' SOLA LETTURA (ofv).
+        // Piu' affidabile di Office Online Viewer (che ha problemi con porte
+        // non standard come :8443 e con server WebDAV custom).
+        if (link.office_uri_view) {
+          window.location.href = link.office_uri_view;
+        } else {
+          // Fallback per file non Word/Excel: Office Online Viewer
+          const viewUrl = buildOfficOnlineViewUrl(link.webdav_url);
+          window.open(viewUrl, '_blank', 'noopener,noreferrer');
+        }
       }
     } catch (err) {
       setOfficeError(`Errore: ${err.message}`);

@@ -124,24 +124,30 @@ async function generateWebdavLink(req, res) {
         const webdavUrl = `${baseUrl}/webdav/dt/${token}/${orgId}/${docId}/${encodeURIComponent(safeFile)}`;
 
         // Office URI Scheme — apre Word/Excel direttamente da browser
+        // ofe = Open For Editing (modifica)
+        // ofv = Open For Viewing (sola lettura)
         const ext     = path.extname(result.file.file_name).toLowerCase();
         const isExcel = ['.xlsx', '.xls', '.xlsm', '.csv'].includes(ext);
         const isWord  = ['.docx', '.doc', '.docm', '.rtf'].includes(ext);
         const officeUri = isWord  ? `ms-word:ofe|u|${webdavUrl}`
                         : isExcel ? `ms-excel:ofe|u|${webdavUrl}`
                         : null;
+        const officeUriView = isWord  ? `ms-word:ofv|u|${webdavUrl}`
+                            : isExcel ? `ms-excel:ofv|u|${webdavUrl}`
+                            : null;
 
         logger.info(`[WebDAV] Link generato: doc ${docId}, org ${orgId}, user ${userId}, scade ${new Date(expires).toISOString()}`);
 
         res.json({
-            webdav_url:  webdavUrl,
-            office_uri:  officeUri,
-            file_name:   result.file.file_name,
-            mime_type:   result.file.mime_type,
-            is_word:     isWord,
-            is_excel:    isExcel,
-            has_office_uri: !!officeUri,
-            expires_at:  new Date(expires).toISOString(),
+            webdav_url:      webdavUrl,
+            office_uri:      officeUri,
+            office_uri_view: officeUriView,
+            file_name:       result.file.file_name,
+            mime_type:       result.file.mime_type,
+            is_word:         isWord,
+            is_excel:        isExcel,
+            has_office_uri:  !!officeUri,
+            expires_at:      new Date(expires).toISOString(),
         });
     } catch (err) {
         logger.error('[WebDAV] generateWebdavLink:', err.message);
