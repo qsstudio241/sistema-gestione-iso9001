@@ -1414,6 +1414,14 @@ class ApiService {
         return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
     }
 
+    async aiChat(message) {
+        return this.post('/ai/chat', { message }, { timeout: 120000 });
+    }
+
+    async aiReindex() {
+        return this.post('/ai/reindex', {}, { timeout: 300000 });
+    }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
     async uploadNorms(files) {

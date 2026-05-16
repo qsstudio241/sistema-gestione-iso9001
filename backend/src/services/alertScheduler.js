@@ -217,6 +217,31 @@ async function runNormValidityJob() {
   }
 }
 
+// ─── Indicizzazione knowledge base AI (notturna) ─────────────────────────────
+
+async function runKnowledgeIndexJob() {
+  logger.info('[AlertScheduler] Avvio job indicizzazione knowledge base AI...');
+  try {
+    const { indexAllEntities } = require('./knowledgeIndexer.service');
+    const pool = await getPool();
+    const orgsResult = await pool.request().query(
+      'SELECT organization_id FROM organizations WHERE is_active = 1'
+    );
+    const orgs = orgsResult.recordset || [];
+    for (const org of orgs) {
+      try {
+        const count = await indexAllEntities(org.organization_id);
+        logger.info(`[AlertScheduler] Knowledge index org ${org.organization_id}: ${count} chunks`);
+      } catch (err) {
+        logger.error(`[AlertScheduler] Knowledge index failed org ${org.organization_id}:`, err.message);
+      }
+    }
+    logger.info(`[AlertScheduler] Indicizzazione knowledge completata per ${orgs.length} organizzazioni`);
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job knowledge index:', err.message);
+  }
+}
+
 function startAlertScheduler() {
   if (!schedule) {
     logger.warn('[AlertScheduler] node-schedule non disponibile — scheduler non avviato');
@@ -233,7 +258,12 @@ function startAlertScheduler() {
     runNormValidityJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (norme):', err.message));
   });
 
-  logger.info('[AlertScheduler] Scheduler avviato — alert giornalieri 08:00, verifica norme settimanale lun 03:00');
+  // Ogni notte alle 02:00 — indicizzazione knowledge base AI
+  schedule.scheduleJob('0 2 * * *', () => {
+    runKnowledgeIndexJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge):', err.message));
+  });
+
+  logger.info('[AlertScheduler] Scheduler avviato — alert giornalieri 08:00, verifica norme lun 03:00, knowledge index 02:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob };

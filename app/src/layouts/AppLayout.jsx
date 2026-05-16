@@ -52,6 +52,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/reclami",          icon: "📢", label: "Reclami", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
         { to: "/anagrafiche",      icon: "🗂️",  label: "Anagrafiche",        licenseKey: "reclami" },
         { to: "/contract-reviews", icon: "📑", label: "Riesame Requisiti",   licenseKey: "ai_review" },
+        { to: "/ai-assistant",     icon: "🤖", label: "Assistente AI",      licenseKey: "ai_assist" },
         { to: "/sal",              icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
       ]),
     },
