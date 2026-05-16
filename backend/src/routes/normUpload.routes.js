@@ -12,6 +12,8 @@ const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const normUploadCtrl = require('../controllers/normUpload.controller');
+const normChunker = require('../services/normChunker.service');
+const logger = require('../utils/logger');
 
 router.use(authenticate);
 router.use(requireLicensedModule('documents'));
@@ -56,5 +58,17 @@ router.post(
   uploadNorms.array('files', 10),
   normUploadCtrl.uploadNorms
 );
+
+router.post('/documents/norms/reindex', async (req, res) => {
+  const orgId = req.user.organization_id;
+  try {
+    logger.info(`[NormReindex] Starting reindex for org ${orgId}`);
+    await normChunker.reindexAll(orgId);
+    res.json({ success: true, message: 'Reindex completato' });
+  } catch (err) {
+    logger.error('[NormReindex] Error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 module.exports = router;

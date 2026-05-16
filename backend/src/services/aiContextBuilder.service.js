@@ -36,6 +36,24 @@ async function buildReviewRequirementsContext({
     logger.warn('[AI_CONTEXT] NormBroker not available, proceeding without norm context:', err.message);
   }
 
+  // 1b. Semantic search from indexed norm chunks
+  try {
+    const normChunker = require('./normChunker.service');
+    const searchQuery = capitolatoText.substring(0, 1000);
+    const relevantChunks = await normChunker.searchSimilar(searchQuery, organizationId, {
+      topK: 15,
+      minScore: 0.25,
+    });
+    if (relevantChunks.length > 0) {
+      normContext += '\n\nContenuto normativo aggiuntivo pertinente al capitolato:';
+      for (const chunk of relevantChunks) {
+        normContext += `\n[${chunk.standard_code || 'DOC'}] ${chunk.chunk_text.substring(0, 400)}`;
+      }
+    }
+  } catch (err) {
+    logger.debug('[AI_CONTEXT] Semantic search for review not available:', err.message);
+  }
+
   // 2. Load company profile (basic info from companies table)
   let companyContext = '';
   try {
@@ -169,27 +187,30 @@ async function buildAuditConclusionsContext({
     logger.warn('[AI_CONTEXT] NormBroker enrichment failed for conclusions:', err.message);
   }
 
-  // --- Level A2: Load extracted norm texts from norm_document_sources ---
+  // --- Level A2: Semantic search from indexed norms ---
   try {
-    const { query: dbQuery } = require('../config/database');
-    const normCodes = codes.map(c => `'${c.replace(/'/g, "''")}'`).join(',');
-    const normSourceRows = await dbQuery(
-      `SELECT standard_code, norm_title, extracted_text
-       FROM norm_document_sources
-       WHERE standard_code IN (${normCodes})
-         AND validity_status = 'vigente'
-         AND organization_id = @orgId
-         AND extracted_text IS NOT NULL AND LEN(extracted_text) > 100`,
-      { orgId: organizationId || 0 }
-    );
-    if (normSourceRows.recordset && normSourceRows.recordset.length > 0) {
-      for (const row of normSourceRows.recordset) {
-        const excerpt = row.extracted_text.substring(0, 2000);
-        normContext += `\n\n--- Testo norma ${row.standard_code} (${row.norm_title || 'N/D'}) ---\n${excerpt}`;
+    const normChunker = require('./normChunker.service');
+    const queryParts = (findings || [])
+      .filter(f => f.status !== 'COMPLIANT' && f.notes)
+      .slice(0, 5)
+      .map(f => f.notes)
+      .join('. ');
+    const searchQuery = `Conclusioni audit ${labels}: ${queryParts || auditObject || 'sistema di gestione qualità'}`;
+
+    const relevantChunks = await normChunker.searchSimilar(searchQuery, organizationId, {
+      standardCodes: codes,
+      topK: 8,
+      minScore: 0.3,
+    });
+
+    if (relevantChunks.length > 0) {
+      normContext += '\n\nContenuto normativo pertinente (da documenti caricati):';
+      for (const chunk of relevantChunks) {
+        normContext += `\n[${chunk.standard_code || 'DOC'}] ${chunk.chunk_text.substring(0, 500)}`;
       }
     }
   } catch (err) {
-    logger.debug('[AI_CONTEXT] norm_document_sources not available (Level A2):', err.message);
+    logger.debug('[AI_CONTEXT] Semantic search not available:', err.message);
   }
 
   // --- Level C: Load past accepted conclusions as few-shot examples ---

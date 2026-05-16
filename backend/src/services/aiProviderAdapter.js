@@ -80,8 +80,29 @@ async function chatStream(messages, onChunk) {
   return result;
 }
 
+/**
+ * Embed texts via active provider (currently Gemini only).
+ * @param {string[]} texts
+ * @returns {Promise<number[][]>}
+ */
+async function embed(texts) {
+  const provider = getActiveProvider();
+  if (!provider) {
+    const err = new Error('No AI provider configured for embeddings');
+    err.code = 'AI_NOT_CONFIGURED';
+    throw err;
+  }
+  if (provider !== 'gemini') {
+    const err = new Error(`Embedding not supported for provider: ${provider}`);
+    err.code = 'AI_NOT_CONFIGURED';
+    throw err;
+  }
+  return geminiAdapter.embed(texts);
+}
+
 module.exports = {
   chat,
   chatStream,
+  embed,
   getActiveProvider,
 };

@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
+const normChunker = require('../services/normChunker.service');
 
 function stripCodeFences(raw) {
   let s = String(raw || '').trim();
@@ -28,8 +29,8 @@ function assessTextQuality(text) {
 
 /**
  * Da standard_code grezzo (es. "ISO_9016_2012") + norm_title + issuing_body
- * produce un titolo leggibile: "ISO 9016:2012 ù Destructive tests on weldsù"
- * Se issuing_body ù "UNI" e il codice non inizia giù con UNI, prefissa "UNI EN".
+ * produce un titolo leggibile: "ISO 9016:2012 ÔøΩ Destructive tests on weldsÔøΩ"
+ * Se issuing_body ÔøΩ "UNI" e il codice non inizia giÔøΩ con UNI, prefissa "UNI EN".
  */
 function formatReadableTitle(metadata) {
   const { standard_code, norm_title, issuing_body } = metadata;
@@ -52,7 +53,7 @@ function formatReadableTitle(metadata) {
     prefix = `UNI EN ${formattedCode}`;
   }
 
-  return `${prefix} ù ${norm_title}`;
+  return `${prefix} ÔøΩ ${norm_title}`;
 }
 
 /**
@@ -199,12 +200,13 @@ async function uploadNorms(req, res) {
       );
 
       // (e) Create norm_document_sources row
-      await query(
+      const srcResult = await query(
         `INSERT INTO norm_document_sources (
            document_id, organization_id, standard_code, norm_title,
            edition_year, issuing_body, extracted_text, text_quality,
            validity_status, created_at, updated_at
          )
+         OUTPUT INSERTED.id
          VALUES (
            @docId, @orgId, @stdCode, @normTitle,
            @editionYear, @issuingBody, @extractedText, @textQuality,
@@ -222,6 +224,16 @@ async function uploadNorms(req, res) {
         }
       );
 
+      // (f) Semantic indexing (async, non-blocking)
+      const sourceId = srcResult.recordset && srcResult.recordset[0] && srcResult.recordset[0].id;
+      if (sourceId) {
+        setImmediate(() => {
+          normChunker.indexDocument(sourceId).catch(err => {
+            logger.warn(`[NormUpload] Async indexing failed for source ${sourceId}:`, err.message);
+          });
+        });
+      }
+
       entry.success = true;
       logger.info('[NormUpload] Norma caricata con successo', {
         documentId,
@@ -233,7 +245,7 @@ async function uploadNorms(req, res) {
     } catch (err) {
       logger.error(`[NormUpload] Errore per ${file.originalname}:`, err.message);
       entry.error = err.message;
-      // Don't delete the file ù it's already on disk; the partial state can be cleaned up manually
+      // Don't delete the file ÔøΩ it's already on disk; the partial state can be cleaned up manually
     }
     results.push(entry);
   }

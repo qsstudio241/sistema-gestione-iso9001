@@ -1,6 +1,6 @@
 /**
  * normValidityChecker.service.js
- * Verifica periodica della validità delle norme caricate, confrontando
+ * Verifica periodica della validitï¿½ delle norme caricate, confrontando
  * l'edizione locale con il catalogo UNI pubblico (store.uni.com).
  */
 
@@ -67,7 +67,7 @@ async function checkNormValidity(standardCode, editionYear) {
 }
 
 /**
- * Esegue la verifica di validità per tutte le norme "vigenti" di un'organizzazione.
+ * Esegue la verifica di validitï¿½ per tutte le norme "vigenti" di un'organizzazione.
  * Le norme superate vengono aggiornate a validity_status='superata'.
  * @param {number} organizationId
  */

@@ -164,4 +164,73 @@ async function chat(messages, options = {}) {
   };
 }
 
-module.exports = { chat, mapMessagesToGemini };
+/**
+ * Batch embed texts using text-embedding-004.
+ * @param {string[]} texts - Max 100 per call (API limit)
+ * @returns {Promise<number[][]>} Array of 768-dim float vectors
+ */
+async function embed(texts) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw createNormalizedError('AI_NOT_CONFIGURED', 'GEMINI_API_KEY is not set');
+  }
+  if (!texts || texts.length === 0) return [];
+
+  const BATCH_LIMIT = 100;
+  const allEmbeddings = [];
+
+  for (let i = 0; i < texts.length; i += BATCH_LIMIT) {
+    const batch = texts.slice(i, i + BATCH_LIMIT);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=${encodeURIComponent(apiKey)}`;
+    const body = {
+      requests: batch.map(t => ({
+        model: 'models/text-embedding-004',
+        content: { parts: [{ text: t }] },
+      })),
+    };
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      throw createNormalizedError(
+        'AI_REQUEST_FAILED',
+        `Gemini embedding network error: ${e.message || 'unknown'}`
+      );
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw createNormalizedError('AI_UPSTREAM_ERROR', 'Gemini embedding response is not valid JSON', response.status);
+    }
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get('retry-after') || '5', 10);
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+        i -= BATCH_LIMIT; // retry this batch
+        continue;
+      }
+      const msg = (data && data.error && data.error.message) || `Gemini embedding HTTP ${response.status}`;
+      throw createNormalizedError('AI_UPSTREAM_ERROR', msg, response.status);
+    }
+
+    if (!data.embeddings || !Array.isArray(data.embeddings)) {
+      throw createNormalizedError('AI_UPSTREAM_ERROR', 'Gemini embedding response missing embeddings array');
+    }
+
+    for (const emb of data.embeddings) {
+      allEmbeddings.push(emb.values);
+    }
+  }
+
+  return allEmbeddings;
+}
+
+module.exports = { chat, embed, mapMessagesToGemini };
