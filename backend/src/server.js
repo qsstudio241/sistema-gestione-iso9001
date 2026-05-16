@@ -96,7 +96,10 @@ app.use(helmet({
             imgSrc:          ["'self'", "data:", "blob:"],   // allegati immagine via /uploads
             mediaSrc:        ["'self'"],
             connectSrc:      ["'self'"],
-            frameAncestors:  ["'none'"],                     // no clickjacking
+            // frame-ancestors: permette embedding solo dal frontend Netlify
+            // (necessario per DocumentPdfViewer che mostra PDF in iframe).
+            // "'none'" bloccherebbe qualsiasi iframe, inclusi i nostri.
+            frameAncestors:  ["'self'", ...(process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean)],
             formAction:      ["'none'"],
             objectSrc:       ["'none'"],
             scriptSrc:       ["'none'"],
