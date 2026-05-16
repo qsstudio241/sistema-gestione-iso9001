@@ -17,6 +17,36 @@
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
 
+---
+
+### Playbook riutilizzabile — Caratteri non riconoscibili (U+FFFD / tofu in UI)
+
+**Quando ripetere questa procedura:** in schermata compaiono **U+FFFD** (simbolo con punto interrogativo), **`??`**, o accenti **mancanti/sostituiti** (es. "Qualit" al posto di "Qualità"), spesso solo su **Windows** o solo in **produzione**.
+
+#### Cause tipiche (non escludersi a vicenda)
+
+| # | Causa | Indizio |
+|---|--------|--------|
+| 1 | **Byte non UTF-8** o copia-incolla corrotta nel sorgente | Nel file manca la sequenza hex corretta per à (`C3 A0`); grep trova `�` |
+| 2 | **Glifo assente** nel font effettivo: `›` U+203A, `—` U+2014 | Schermo OK su un PC, tofu su un altro |
+| 3 | **Emoji/simboli** senza glifo nella stack font | Icone che diventano tofu |
+| 4 | **Bundle o Service Worker obsoleto** (Netlify / PWA) | Repo a posto, browser ancora su JS vecchio |
+
+#### Checklist operativa (ordine consigliato)
+
+1. **Trovare il file** (cerca stringa spezzata nel repo; React DevTools sul testo).
+2. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
+3. **Correggere:** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in stringhe JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
+4. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
+5. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
+
+#### Riferimenti vincolanti
+
+- Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
+- Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
 ### Sessione 15 maggio 2026 — Fix sezione 1.4 ghost-click mobile
 
 #### Problema
