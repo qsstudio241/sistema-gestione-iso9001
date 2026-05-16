@@ -1,6 +1,6 @@
 /**
  * Document Tags Controller
- * Gestisce tag, categorie tag e assegnazioni tag ? documenti.
+ * Gestisce tag, categorie tag e assegnazioni tag ai documenti.
  *
  * Tabelle: tag_categories, document_tags, document_tag_assignments
  * Tenant-isolated: ogni query filtra per organization_id dal JWT.
@@ -9,7 +9,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
-// ??? helpers ????????????????????????????????????????????????????????????????????
+// Helpers
 
 function slugify(text) {
     return String(text)
@@ -23,7 +23,7 @@ function slugify(text) {
         .replace(/^-|-$/g, '');
 }
 
-// ??? TAG CRUD ???????????????????????????????????????????????????????????????????
+// TAG CRUD
 
 async function listTags(req, res) {
     try {
@@ -73,7 +73,7 @@ async function createTag(req, res) {
         const { name, category_id, color } = req.body;
 
         if (!name || !name.trim()) {
-            return res.status(400).json({ error: 'Il nome del tag ù obbligatorio', code: 'TAG_NAME_REQUIRED' });
+            return res.status(400).json({ error: 'Il nome del tag ? obbligatorio', code: 'TAG_NAME_REQUIRED' });
         }
 
         const slug = slugify(name);
@@ -84,7 +84,7 @@ async function createTag(req, res) {
         `, { organization_id, slug });
 
         if (existing.recordset.length > 0) {
-            return res.status(409).json({ error: 'Un tag con questo nome esiste giù', code: 'TAG_DUPLICATE' });
+            return res.status(409).json({ error: 'Un tag con questo nome esiste gi?', code: 'TAG_DUPLICATE' });
         }
 
         const params = {
@@ -123,7 +123,7 @@ async function updateTag(req, res) {
             return res.status(404).json({ error: 'Tag non trovato', code: 'TAG_NOT_FOUND' });
         }
         if (tag.recordset[0].is_system) {
-            return res.status(403).json({ error: 'Non ù possibile modificare un tag di sistema', code: 'TAG_SYSTEM_READONLY' });
+            return res.status(403).json({ error: 'Non ? possibile modificare un tag di sistema', code: 'TAG_SYSTEM_READONLY' });
         }
 
         const sets = [];
@@ -136,7 +136,7 @@ async function updateTag(req, res) {
                 WHERE organization_id = @organization_id AND slug = @slug AND id != @tagId
             `, { organization_id, slug, tagId });
             if (dup.recordset.length > 0) {
-                return res.status(409).json({ error: 'Un tag con questo nome esiste giù', code: 'TAG_DUPLICATE' });
+                return res.status(409).json({ error: 'Un tag con questo nome esiste gi?', code: 'TAG_DUPLICATE' });
             }
             sets.push('name = @name', 'slug = @slug');
             params.name = name.trim();
@@ -182,7 +182,7 @@ async function deleteTag(req, res) {
             return res.status(404).json({ error: 'Tag non trovato', code: 'TAG_NOT_FOUND' });
         }
         if (tag.recordset[0].is_system) {
-            return res.status(403).json({ error: 'Non ù possibile eliminare un tag di sistema', code: 'TAG_SYSTEM_READONLY' });
+            return res.status(403).json({ error: 'Non ? possibile eliminare un tag di sistema', code: 'TAG_SYSTEM_READONLY' });
         }
 
         await query(`DELETE FROM document_tag_assignments WHERE tag_id = @tagId`, { tagId });
@@ -195,7 +195,7 @@ async function deleteTag(req, res) {
     }
 }
 
-// ??? CATEGORIES ?????????????????????????????????????????????????????????????????
+// Categorie
 
 async function listCategories(req, res) {
     try {
@@ -229,7 +229,7 @@ async function createCategory(req, res) {
         const { name, color, display_order } = req.body;
 
         if (!name || !name.trim()) {
-            return res.status(400).json({ error: 'Il nome della categoria ù obbligatorio', code: 'CATEGORY_NAME_REQUIRED' });
+            return res.status(400).json({ error: 'Il nome della categoria ? obbligatorio', code: 'CATEGORY_NAME_REQUIRED' });
         }
 
         const result = await query(`
@@ -250,7 +250,7 @@ async function createCategory(req, res) {
     }
 }
 
-// ??? TAG ASSIGNMENTS ????????????????????????????????????????????????????????????
+// Assegnazioni tag
 
 async function assignTags(req, res) {
     try {
@@ -331,7 +331,7 @@ async function removeTag(req, res) {
     }
 }
 
-// ??? DOCUMENTS BY TAG ???????????????????????????????????????????????????????????
+// Documenti per tag
 
 async function getDocumentsByTag(req, res) {
     try {

@@ -41,9 +41,9 @@ function KnowledgeHealthPage() {
   if (!isAdmin) {
     return (
       <div className="kh-access-denied">
-        <div className="kh-access-denied-icon">??</div>
+        <div className="kh-access-denied-icon" aria-hidden>{"\u{1F512}"}</div>
         <h3>Accesso riservato</h3>
-        <p>Questa pagina Ë accessibile solo agli amministratori.</p>
+        <p>Questa pagina ù accessibile solo agli amministratori.</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ function KnowledgeHealthPage() {
   if (error) {
     return (
       <div className="kh-error">
-        <div className="kh-error-icon">??</div>
+        <div className="kh-error-icon" aria-hidden>{"\u{26A0}\u{FE0F}"}</div>
         <h3>Errore di caricamento</h3>
         <p>{error}</p>
         <button className="kh-error-retry" onClick={loadData}>Riprova</button>
@@ -95,7 +95,7 @@ function KnowledgeHealthPage() {
         </div>
 
         <div className={`kh-kpi-card kpi-${qualityColor}`}>
-          <span className="kh-kpi-label">Qualit‡ retrieval</span>
+          <span className="kh-kpi-label">Qualitù retrieval</span>
           <QualityRing value={qualityPct} color={qualityColor} />
           <span className="kh-kpi-sub">accuratezza risposte</span>
         </div>
@@ -128,7 +128,7 @@ function KnowledgeHealthPage() {
   );
 }
 
-/* ?? Quality ring (SVG circular progress) ???????????????????????????????????? */
+/* Anello qualitù (progress SVG circolare) */
 
 function QualityRing({ value, color }) {
   const r = 26;
@@ -154,7 +154,7 @@ function QualityRing({ value, color }) {
   );
 }
 
-/* ?? Coverage table ?????????????????????????????????????????????????????????? */
+/* Tabella coverage */
 
 function CoverageTable({ coverage }) {
   if (!coverage || coverage.length === 0) return null;
@@ -222,7 +222,7 @@ function CoverageTable({ coverage }) {
   );
 }
 
-/* ?? Gaps card ??????????????????????????????????????????????????????????????? */
+/* Card gap rilevati */
 
 function GapsCard({ gaps }) {
   return (
@@ -237,14 +237,14 @@ function GapsCard({ gaps }) {
       </div>
       {(!gaps || gaps.length === 0) ? (
         <div className="kh-no-gap">
-          <span style={{ fontSize: 20 }}>?</span>
-          Nessun gap rilevato ó tutte le aziende hanno copertura completa
+          <span style={{ fontSize: 20 }} aria-hidden>{"\u{2714}"}</span>
+          Nessun gap rilevato ù tutte le aziende hanno copertura completa
         </div>
       ) : (
         <ul className="kh-gap-list">
           {gaps.map((g, i) => (
             <li key={i} className="kh-gap-item">
-              <span className="kh-gap-icon">??</span>
+              <span className="kh-gap-icon" aria-hidden>{"\u{26A0}\u{FE0F}"}</span>
               <div>
                 <div className="kh-gap-company">{g.companyName}</div>
                 <div className="kh-gap-types">
@@ -259,7 +259,7 @@ function GapsCard({ gaps }) {
   );
 }
 
-/* ?? Top companies bar chart ????????????????????????????????????????????????? */
+/* Bar chart aziende top */
 
 function TopCompaniesCard({ topCompanies }) {
   const items = (topCompanies || []).slice(0, 5);
@@ -273,7 +273,7 @@ function TopCompaniesCard({ topCompanies }) {
           <line x1="12" y1="20" x2="12" y2="4" />
           <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
-        Aziende pi˘ consultate
+        Aziende più consultate
       </div>
       {items.length === 0 ? (
         <div className="kh-no-gap" style={{ color: "#718096" }}>
@@ -299,7 +299,7 @@ function TopCompaniesCard({ topCompanies }) {
   );
 }
 
-/* ?? Optimizer run card ?????????????????????????????????????????????????????? */
+/* Card ultimo optimizer run */
 
 function OptimizerCard({ run }) {
   if (!run) return null;
@@ -308,9 +308,9 @@ function OptimizerCard({ run }) {
     : run.status === "failed" ? "status-failed"
     : "status-running";
 
-  const statusIcon = run.status === "completed" ? "?"
-    : run.status === "failed" ? "?"
-    : "?";
+  const statusIcon = run.status === "completed" ? "\u{2714}"
+    : run.status === "failed" ? "\u{2716}"
+    : "\u{23F3}";
 
   const statusLabel = run.status === "completed" ? "Completato"
     : run.status === "failed" ? "Fallito"
@@ -318,11 +318,11 @@ function OptimizerCard({ run }) {
 
   const runTypeLabel = run.run_type === "dedup" ? "Deduplicazione"
     : run.run_type === "refresh" ? "Refresh"
-    : run.run_type || "ó";
+    : run.run_type || "ù";
 
   const dateStr = run.started_at
     ? new Date(run.started_at).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : "ó";
+    : "ù";
 
   return (
     <div className="kh-section">
@@ -350,7 +350,7 @@ function OptimizerCard({ run }) {
   );
 }
 
-/* ?? Loading skeleton ???????????????????????????????????????????????????????? */
+/* Skeleton caricamento */
 
 function LoadingSkeleton() {
   return (

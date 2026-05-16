@@ -3,11 +3,11 @@ import apiService from '../services/apiService';
 import './RelationEditor.css';
 
 const RELATION_TYPES = [
-    { value: 'references',    label: 'Riferisce',    icon: '??' },
-    { value: 'supersedes',    label: 'Sostituisce',  icon: '??' },
-    { value: 'implements',    label: 'Implementa',   icon: '?' },
-    { value: 'requires',      label: 'Richiede',     icon: '??' },
-    { value: 'attachment_of', label: 'Allegato di',   icon: '??' },
+    { value: 'references',    label: 'Riferisce',    icon: '\u{1F517}' },
+    { value: 'supersedes',    label: 'Sostituisce',  icon: '\u{1F504}' },
+    { value: 'implements',    label: 'Implementa',   icon: '\u{2699}\u{FE0F}' },
+    { value: 'requires',      label: 'Richiede',     icon: '\u{279C}' },
+    { value: 'attachment_of', label: 'Allegato di',   icon: '\u{1F4CE}' },
 ];
 
 const typeMap = Object.fromEntries(RELATION_TYPES.map((t) => [t.value, t]));

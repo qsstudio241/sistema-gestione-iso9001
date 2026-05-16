@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
 
 const VALID_RELATION_TYPES = ['references', 'supersedes', 'implements', 'requires', 'attachment_of'];
 
-// ??? CREATE ?????????????????????????????????????????????????????????????????????
+// Creazione relazione
 
 async function createRelation(req, res) {
     try {
@@ -22,7 +22,7 @@ async function createRelation(req, res) {
         const { target_document_id, relation_type, notes } = req.body;
 
         if (!target_document_id) {
-            return res.status(400).json({ error: 'target_document_id Ë obbligatorio', code: 'REL_TARGET_REQUIRED' });
+            return res.status(400).json({ error: 'target_document_id ù obbligatorio', code: 'REL_TARGET_REQUIRED' });
         }
         const targetDocId = parseInt(target_document_id);
 
@@ -34,7 +34,7 @@ async function createRelation(req, res) {
         }
 
         if (sourceDocId === targetDocId) {
-            return res.status(400).json({ error: 'Un documento non puÚ essere collegato a se stesso', code: 'REL_SELF_REFERENCE' });
+            return res.status(400).json({ error: 'Un documento non puù essere collegato a se stesso', code: 'REL_SELF_REFERENCE' });
         }
 
         const docs = await query(`
@@ -60,7 +60,7 @@ async function createRelation(req, res) {
         `, { organization_id, sourceDocId, targetDocId, relation_type });
 
         if (existing.recordset.length > 0) {
-            return res.status(409).json({ error: 'Questa relazione esiste gi‡', code: 'REL_DUPLICATE' });
+            return res.status(409).json({ error: 'Questa relazione esiste giù', code: 'REL_DUPLICATE' });
         }
 
         const result = await query(`
@@ -84,7 +84,7 @@ async function createRelation(req, res) {
     }
 }
 
-// ??? LIST (both directions) ?????????????????????????????????????????????????????
+// Lista relazioni (entrambe le direzioni)
 
 async function getRelations(req, res) {
     try {
@@ -127,7 +127,7 @@ async function getRelations(req, res) {
     }
 }
 
-// ??? DELETE ?????????????????????????????????????????????????????????????????????
+// Eliminazione relazione
 
 async function deleteRelation(req, res) {
     try {

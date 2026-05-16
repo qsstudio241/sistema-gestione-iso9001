@@ -8,7 +8,7 @@ alwaysApply: true
 ## Regola caratteri italiani
 - Tutti i file sorgente DEVONO essere salvati in **UTF-8 senza BOM**
 - I testi in italiano DEVONO usare le lettere accentate corrette: à, è, é, ì, ò, ù (NON sequenze corrotte come ??, Ã , ecc.)
-- **Mai** usare apostrofo al posto dell'accento (es. "qualita'" ? usare "qualità" nei testi UI visibili all'utente)
+- **Mai** usare apostrofo al posto dell'accento (es. scrivere "qualità", non "qualita'", nei testi UI visibili all'utente)
 
 ## Caratteri proibiti nei sorgenti
 | Carattere | Problema | Sostituzione |

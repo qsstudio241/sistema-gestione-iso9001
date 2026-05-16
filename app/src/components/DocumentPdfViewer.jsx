@@ -30,7 +30,7 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
         {/* Header */}
         <div className="pdf-viewer-header">
           <div className="pdf-viewer-header__info">
-            <span className="pdf-viewer-header__icon">??</span>
+            <span className="pdf-viewer-header__icon" aria-hidden>{"\u{1F4C4}"}</span>
             <span className="pdf-viewer-header__title">
               {fileName || "Documento PDF"}
             </span>
@@ -42,14 +42,14 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
               download
               title="Scarica file"
             >
-              ?? Scarica
+              {"\u{1F4BE}"} Scarica
             </a>
             <button
               className="pdf-viewer-btn pdf-viewer-btn--close"
               onClick={onClose}
               title="Chiudi"
             >
-              ?
+              {"\u{00D7}"}
             </button>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
             <div className="pdf-viewer-fallback">
               <p>Il browser non riesce a visualizzare questo PDF.</p>
               <a href={downloadUrl} className="pdf-viewer-btn pdf-viewer-btn--download" download>
-                ?? Scarica il file per visualizzarlo
+                {"\u{1F4BE}"} Scarica il file per visualizzarlo
               </a>
             </div>
           ) : (

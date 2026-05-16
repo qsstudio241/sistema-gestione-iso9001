@@ -9,12 +9,11 @@ const logger = require('../utils/logger');
 const historyTracker = require('../services/documentHistoryTracker.service');
 const provisioner = require('../services/documentTreeProvisioner.service');
 
-// ??? GET /api/v1/documents/tree ?????????????????????????????????????????????
 /**
  * Ritorna l'albero documentale a partire dalle root.
  * Query params:
- *   depth     (default 2)  ó livelli di figli da caricare
- *   company_id             ó filtra per azienda
+ *   depth     (default 2)  ù livelli di figli da caricare
+ *   company_id             ù filtra per azienda
  */
 async function getTree(req, res) {
     try {
@@ -90,7 +89,7 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
     return children;
 }
 
-// ??? GET /api/v1/documents/tree/:parentId/children ??????????????????????????
+// GET /api/v1/documents/tree/:parentId/children
 async function getChildren(req, res) {
     try {
         const { organization_id } = req.user;
@@ -121,7 +120,7 @@ async function getChildren(req, res) {
     }
 }
 
-// ??? PUT /api/v1/documents/:docId/move ??????????????????????????????????????
+// PUT /api/v1/documents/:docId/move
 async function moveDocument(req, res) {
     try {
         const { organization_id, user_id } = req.user;
@@ -154,7 +153,7 @@ async function moveDocument(req, res) {
         if (newParentId != null) {
             if (newParentId === docId) {
                 return res.status(400).json({
-                    error: 'Un documento non puÚ essere figlio di se stesso',
+                    error: 'Un documento non puù essere figlio di se stesso',
                     code:  'CIRCULAR_REF',
                 });
             }
@@ -198,7 +197,7 @@ async function moveDocument(req, res) {
     }
 }
 
-// ??? POST /api/v1/documents/folder ??????????????????????????????????????????
+// POST /api/v1/documents/folder
 async function createFolder(req, res) {
     try {
         const { organization_id, user_id } = req.user;
@@ -206,7 +205,7 @@ async function createFolder(req, res) {
 
         if (!title || !title.trim()) {
             return res.status(400).json({
-                error:    'Il titolo Ë obbligatorio',
+                error:    'Il titolo ù obbligatorio',
                 code:     'VALIDATION_ERROR',
                 required: ['title'],
             });
@@ -269,7 +268,7 @@ async function createFolder(req, res) {
     }
 }
 
-// ??? GET /api/v1/documents/:docId/breadcrumb ????????????????????????????????
+// GET /api/v1/documents/:docId/breadcrumb
 async function getBreadcrumb(req, res) {
     try {
         const { organization_id } = req.user;
@@ -309,7 +308,7 @@ async function getBreadcrumb(req, res) {
     }
 }
 
-// ??? POST /api/v1/documents/provision-tree ??????????????????????????????????
+// POST /api/v1/documents/provision-tree
 async function provisionTree(req, res) {
     try {
         const { organization_id, role } = req.user;
@@ -343,7 +342,7 @@ async function provisionTree(req, res) {
     }
 }
 
-// ??? GET /api/v1/document-tree-templates ????????????????????????????????????
+// GET /api/v1/document-tree-templates
 async function listTemplates(req, res) {
     try {
         const result = await query(`
