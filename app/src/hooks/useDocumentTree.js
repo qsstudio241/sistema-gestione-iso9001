@@ -1,5 +1,5 @@
 /**
- * useDocumentTree ù stato e operazioni per l'albero documentale SGQ
+ * useDocumentTree ó stato e operazioni per l'albero documentale SGQ
  *
  * Lazy-loading: carica figli solo all'espansione del nodo.
  * Breadcrumb: aggiornato alla selezione del nodo.

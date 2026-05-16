@@ -66,7 +66,7 @@ export default function TagFilterBar({
                         className="tag-filter-bar__all-btn"
                         onClick={() => setShowAll((p) => !p)}
                     >
-                        Tutti i tag ?
+                        Tutti i tag {"\u25BE"}
                     </button>
                     {showAll && (
                         <div className="tag-filter-bar__dropdown">
@@ -89,7 +89,7 @@ export default function TagFilterBar({
                                                     style={{ backgroundColor: t.color || '#6c757d' }}
                                                 />
                                                 {t.name}
-                                                {active && <span className="tag-filter-bar__dropdown-check">?</span>}
+                                                {active && <span className="tag-filter-bar__dropdown-check">{"\u2713"}</span>}
                                             </div>
                                         );
                                     })}
@@ -106,7 +106,7 @@ export default function TagFilterBar({
                     className="tag-filter-bar__reset-btn"
                     onClick={onReset}
                 >
-                    ? Reset filtri
+                    {"\u21BB"} Reset filtri
                 </button>
             )}
         </div>

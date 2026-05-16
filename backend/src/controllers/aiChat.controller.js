@@ -1,9 +1,9 @@
 /**
- * aiChat.controller.js ó Assistente AI globale SGQ
+ * aiChat.controller.js ù Assistente AI globale SGQ
  *
- * POST /ai/chat  ó risponde a domande libere usando il contesto indicizzato
- * POST /ai/reindex ó re-indicizza tutti i dati per l'organizzazione (admin)
- * GET  /ai/knowledge-health ó KPI salute knowledge base (admin)
+ * POST /ai/chat  ù risponde a domande libere usando il contesto indicizzato
+ * POST /ai/reindex ù re-indicizza tutti i dati per l'organizzazione (admin)
+ * GET  /ai/knowledge-health ù KPI salute knowledge base (admin)
  */
 
 const logger = require('../utils/logger');
@@ -11,7 +11,7 @@ const { query } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge, indexAllEntities } = require('../services/knowledgeIndexer.service');
 
-const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit‡ ISO 9001 di questa organizzazione.
+const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualitù ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
@@ -21,13 +21,13 @@ Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto
 /**
  * Carica il profilo azienda da DB per arricchire il system prompt.
  */
-async function loadCompanyProfile(companyId, organizationId) {
+async function loadCompanyProfile(companyId, auditorOrgId) {
   try {
     const result = await query(
       `SELECT name, vat_number, sector, address
        FROM companies
-       WHERE id = @id AND organization_id = @orgId`,
-      { id: companyId, orgId: organizationId }
+       WHERE id = @id AND auditor_org_id = @auditorOrgId`,
+      { id: companyId, auditorOrgId }
     );
     return (result.recordset || [])[0] || null;
   } catch (err) {
@@ -104,12 +104,13 @@ async function aiChat(req, res) {
     }
 
     const organizationId = req.user.organization_id;
+    const auditorOrgId = req.user.auditor_org_id;
     const userId = req.user.user_id;
     const parsedCompanyId = companyId ? parseInt(companyId, 10) || null : null;
 
     let systemPrompt = BASE_SYSTEM_PROMPT;
     if (parsedCompanyId) {
-      const company = await loadCompanyProfile(parsedCompanyId, organizationId);
+      const company = await loadCompanyProfile(parsedCompanyId, auditorOrgId);
       if (company) {
         const companyLines = [`\n\n--- CONTESTO AZIENDA ATTIVA ---`];
         companyLines.push(`Nome: ${company.name}`);
@@ -218,6 +219,7 @@ async function aiReindex(req, res) {
 async function knowledgeHealth(req, res) {
   try {
     const organizationId = req.user.organization_id;
+    const auditorOrgId = req.user.auditor_org_id;
 
     const [
       totalRes,
@@ -244,12 +246,12 @@ async function knowledgeHealth(req, res) {
                 COUNT(*) AS chunk_count
          FROM companies c
          LEFT JOIN knowledge_chunks kc
-           ON kc.company_id = c.id AND kc.organization_id = c.organization_id
+           ON kc.company_id = c.id AND kc.organization_id = @orgId
               AND (kc.is_stale = 0 OR kc.is_stale IS NULL)
-         WHERE c.organization_id = @orgId
+         WHERE c.auditor_org_id = @auditorOrgId
          GROUP BY c.id, c.name, kc.entity_type
          ORDER BY c.name, kc.entity_type`,
-        { orgId: organizationId }
+        { orgId: organizationId, auditorOrgId: auditorOrgId }
       ),
       query(
         `SELECT COUNT(*) AS cnt FROM ai_usage_log

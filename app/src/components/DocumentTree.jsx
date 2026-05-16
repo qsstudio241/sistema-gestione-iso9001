@@ -1,5 +1,5 @@
 /**
- * DocumentTree ó sidebar navigazione ad albero dei documenti SGQ
+ * DocumentTree ù sidebar navigazione ad albero dei documenti SGQ
  *
  * Nodi espandibili/collassabili con lazy-loading dei figli.
  * Input inline per creazione rapida cartelle.
@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "./DocumentTree.css";
 
 /* ------------------------------------------------------------------ */
-/*  TreeNode ó nodo ricorsivo                                         */
+/*  TreeNode ù nodo ricorsivo                                         */
 /* ------------------------------------------------------------------ */
 function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect }) {
   const isExpanded = expandedIds.has(node.id);
@@ -79,7 +79,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
 }
 
 /* ------------------------------------------------------------------ */
-/*  DocumentTree ó componente principale                               */
+/*  DocumentTree ù componente principale                               */
 /* ------------------------------------------------------------------ */
 function DocumentTree({
   nodes,
@@ -131,7 +131,7 @@ function DocumentTree({
         <div className="doc-tree__header">Documenti</div>
         <div className="doc-tree__loading">
           <span className="doc-tree__spinner" />
-          CaricamentoÖ
+          Caricamentoù
         </div>
       </aside>
     );
@@ -174,7 +174,7 @@ function DocumentTree({
             ref={inputRef}
             className="doc-tree__new-folder-input"
             type="text"
-            placeholder="Nome cartellaÖ"
+            placeholder="Nome cartellaù"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -185,13 +185,13 @@ function DocumentTree({
             onClick={handleCreateFolder}
             disabled={saving || !newFolderName.trim()}
           >
-            {saving ? "Ö" : "?"}
+            {saving ? "ù" : "\u2713"}
           </button>
           <button
             className="doc-tree__new-folder-cancel"
             onClick={() => { setCreatingFolder(false); setNewFolderName(""); }}
           >
-            ?
+            {"\u2715"}
           </button>
         </div>
       ) : (
@@ -199,7 +199,7 @@ function DocumentTree({
           className="doc-tree__add-btn"
           onClick={() => setCreatingFolder(true)}
         >
-          ? Nuova cartella
+          + Nuova cartella
         </button>
       )}
     </aside>
