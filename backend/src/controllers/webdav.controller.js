@@ -317,6 +317,11 @@ async function handleWebdavPropfind(req, res) {
 }
 
 // ─── LOCK /webdav/:orgId/:docId/:filename ────────────────────────────────────
+// IMPORTANTE: come PROPFIND/HEAD, accetta anche richieste senza token.
+// Microsoft-WebDAV-MiniRedir di Windows fa il LOCK senza ?dt=, e se rispondiamo
+// 401 Windows mostra il dialog "Sicurezza di Windows" all'utente. Il LOCK è
+// un'operazione "advisory" (informa il server che c'è un editing in corso),
+// non modifica i dati. L'integrità è garantita dal PUT che resta autenticato.
 
 function handleWebdavLock(req, res) {
     const { orgId, docId } = parseParams(req);
@@ -324,13 +329,18 @@ function handleWebdavLock(req, res) {
     const filename = req.params.filename || '';
 
     const tokenData = validateToken(token, orgId, docId);
-    if (!tokenData) return res.status(401).end();
+    // Se il token c'è e è valido, registriamo il lock nello store associato
+    // al token (così PROPFIND può segnalare il lock attivo).
+    // Se manca, generiamo comunque un lock token (Office è felice).
 
     const lockToken = `urn:uuid:${crypto.randomUUID()}`;
-    tokenData.lockToken = lockToken;
-    tokenStore.set(token, tokenData);
+    if (tokenData) {
+        tokenData.lockToken = lockToken;
+        tokenStore.set(token, tokenData);
+    }
 
-    const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}?dt=${token}`;
+    const tokenSuffix = token ? `?dt=${token}` : '';
+    const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}${tokenSuffix}`;
     const timeout = Math.floor(TOKEN_TTL_MS / 1000);
 
     const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
@@ -355,16 +365,17 @@ function handleWebdavLock(req, res) {
 }
 
 // ─── UNLOCK /webdav/:orgId/:docId/:filename ──────────────────────────────────
+// Stesso trattamento del LOCK: accetta anche senza token (advisory only).
 
 function handleWebdavUnlock(req, res) {
     const { orgId, docId } = parseParams(req);
     const token = req.query.dt;
 
     const tokenData = validateToken(token, orgId, docId);
-    if (!tokenData) return res.status(401).end();
-
-    tokenData.lockToken = null;
-    tokenStore.set(token, tokenData);
+    if (tokenData) {
+        tokenData.lockToken = null;
+        tokenStore.set(token, tokenData);
+    }
     logger.info(`[WebDAV] UNLOCK doc ${docId} (org ${orgId})`);
     res.status(204).end();
 }
