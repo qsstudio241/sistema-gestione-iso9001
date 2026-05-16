@@ -4,8 +4,9 @@
  * Mostra: informazioni, tag (placeholder WS-5), relazioni (placeholder WS-5),
  * file/versioni, cronologia modifiche, azioni.
  */
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { formatDate } from "../utils/dateHelpers";
+import apiService from "../services/apiService";
 import "./DocumentDetailPanel.css";
 
 const STATUS_CONFIG = {
@@ -40,6 +41,22 @@ function InfoRow({ label, value }) {
 }
 
 function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClose }) {
+  // Files allegati: l'endpoint dell'albero non li popola, li carichiamo qui
+  const [files, setFiles] = useState(doc?.files || []);
+  const [filesLoading, setFilesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!doc?.id) { setFiles([]); return; }
+    if (doc.files && doc.files.length > 0) { setFiles(doc.files); return; }
+    let cancelled = false;
+    setFilesLoading(true);
+    apiService.getDocFiles(doc.id)
+      .then(res => { if (!cancelled) setFiles(res?.files || []); })
+      .catch(() => { if (!cancelled) setFiles([]); })
+      .finally(() => { if (!cancelled) setFilesLoading(false); });
+    return () => { cancelled = true; };
+  }, [doc?.id]);
+
   if (!doc) return null;
 
   const statusCfg = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG.vigente;
@@ -95,14 +112,17 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
           {/* File / Versioni */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">File</h3>
-            {doc.files?.length > 0 ? (
+            {filesLoading ? (
+              <p className="doc-detail__placeholder">Caricamento...</p>
+            ) : files.length > 0 ? (
               <ul className="doc-detail__file-list">
-                {doc.files.map((f) => (
+                {files.map((f) => (
                   <li key={f.id ?? f.file_name} className="doc-detail__file-item">
                     <span className="doc-detail__file-name">{f.file_name}</span>
                     <span className="doc-detail__file-meta">
                       {f.version && `v${f.version}`}
-                      {f.uploaded_at && ` - ${formatDate(f.uploaded_at)}`}
+                      {(f.uploaded_at || f.created_at) && ` - ${formatDate(f.uploaded_at || f.created_at)}`}
+                      {f.file_size_label && ` - ${f.file_size_label}`}
                     </span>
                   </li>
                 ))}
