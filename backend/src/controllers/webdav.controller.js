@@ -102,8 +102,14 @@ async function generateWebdavLink(req, res) {
         // URL WebDAV accessibile da Office: usa env WEBDAV_BASE_URL o il dominio della request
         const baseUrl  = process.env.WEBDAV_BASE_URL
             || `${req.protocol}://${req.get('host')}`;
-        const safeFile = encodeURIComponent(result.file.file_name);
-        const webdavUrl = `${baseUrl}/webdav/${orgId}/${docId}/${safeFile}?dt=${token}`;
+        // Sanitizza il nome file per l'URL: Office/Windows decodifica %20 → spazio prima della
+        // richiesta HTTP, causando un URL con spazio letterale che Nginx rifiuta.
+        // Il file viene sempre recuperato dal DB via docId, il nome nell'URL è solo cosmético.
+        const _fileExt  = path.extname(result.file.file_name);
+        const _baseName = path.basename(result.file.file_name, _fileExt);
+        const _safeBase = _baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-]/g, '_');
+        const safeFile  = _safeBase + _fileExt;
+        const webdavUrl = `${baseUrl}/webdav/${orgId}/${docId}/${encodeURIComponent(safeFile)}?dt=${token}`;
 
         // Office URI Scheme — apre Word/Excel direttamente da browser
         const ext     = path.extname(result.file.file_name).toLowerCase();
