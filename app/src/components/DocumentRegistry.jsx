@@ -429,6 +429,58 @@ function CatalogView({
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
+// ─── Flatten cartelle per folder picker ──────────────────────────────────────
+
+function flattenFolders(nodes, depth = 0) {
+  const result = [];
+  for (const node of nodes) {
+    if (node.doc_type === 'folder' || node.is_system_folder) {
+      result.push({ id: node.id, title: node.title, depth });
+      if (node.children?.length) {
+        result.push(...flattenFolders(node.children, depth + 1));
+      }
+    }
+  }
+  return result;
+}
+
+// ─── Modal selezione cartella di destinazione ─────────────────────────────────
+
+function MoveFolderPicker({ nodes, currentFolderId, moving, onMove, onCancel }) {
+  const folders = flattenFolders(nodes);
+
+  return (
+    <div className="folder-picker-overlay" onClick={onCancel}>
+      <div className="folder-picker" onClick={e => e.stopPropagation()}>
+        <div className="folder-picker__header">
+          <h3 className="folder-picker__title">Sposta in cartella</h3>
+          <button className="folder-picker__close" onClick={onCancel}>{"\u2715"}</button>
+        </div>
+        <div className="folder-picker__list">
+          {folders.length === 0 ? (
+            <div className="folder-picker__empty">Nessuna cartella disponibile.</div>
+          ) : (
+            folders.map(f => (
+              <div
+                key={f.id}
+                className={"folder-picker__item" + (f.id === currentFolderId ? " folder-picker__item--current" : "")}
+                onClick={() => !moving && f.id !== currentFolderId && onMove(f.id)}
+              >
+                <span style={{ paddingLeft: f.depth * 16 + "px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {"\uD83D\uDCC1"} {f.title}
+                  {f.id === currentFolderId && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 4 }}>(cartella attuale)</span>}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente principale ────────────────────────────────────────────────────
+
 function DocumentRegistry() {
   // Tab attiva: "priority" | "catalog" | "tree"
   const [activeTab, setActiveTab] = useState("priority");
@@ -645,6 +697,10 @@ function DocumentRegistry() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // ─── Sposta documento (albero) ───────────────────────────────────────────
+  const [moveDocId, setMoveDocId] = useState(null);
+  const [movingDoc, setMovingDoc] = useState(false);
+
   const handleDeleteDoc = async (docId) => {
     setDeleting(true);
     try {
@@ -657,6 +713,20 @@ function DocumentRegistry() {
       alert("Errore eliminazione: " + (err.message || "errore sconosciuto"));
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleMoveDoc = async (newParentId) => {
+    if (!moveDocId) return;
+    setMovingDoc(true);
+    try {
+      await tree.moveDocument(moveDocId, newParentId, 0);
+      setMoveDocId(null);
+      if (tree.selectedNodeId) await handleTreeNodeSelect(tree.selectedNodeId);
+    } catch (err) {
+      alert("Errore spostamento: " + (err.message || "errore sconosciuto"));
+    } finally {
+      setMovingDoc(false);
     }
   };
 
@@ -859,13 +929,22 @@ function DocumentRegistry() {
                               </button>
                             </span>
                           ) : (
-                            <button
-                              className="tree-doc-card__delete-btn"
-                              title="Elimina documento"
-                              onClick={e => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
-                            >
-                              {"\uD83D\uDDD1\uFE0F"}
-                            </button>
+                            <>
+                              <button
+                                className="tree-doc-card__move-btn"
+                                title="Sposta in un'altra cartella"
+                                onClick={e => { e.stopPropagation(); setMoveDocId(doc.id); }}
+                              >
+                                {"\u2197\uFE0F"}
+                              </button>
+                              <button
+                                className="tree-doc-card__delete-btn"
+                                title="Elimina documento"
+                                onClick={e => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
+                              >
+                                {"\uD83D\uDDD1\uFE0F"}
+                              </button>
+                            </>
                           )
                         )}
                       </div>
@@ -909,6 +988,17 @@ function DocumentRegistry() {
         <DocFileDialog
           doc={fileDialogDoc}
           onClose={() => setFileDialogDoc(null)}
+        />
+      )}
+
+      {/* Modal spostamento documento */}
+      {moveDocId && (
+        <MoveFolderPicker
+          nodes={tree.treeNodes}
+          currentFolderId={tree.selectedNodeId}
+          moving={movingDoc}
+          onMove={handleMoveDoc}
+          onCancel={() => setMoveDocId(null)}
         />
       )}
     </div>
