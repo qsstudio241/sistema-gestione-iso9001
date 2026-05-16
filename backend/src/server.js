@@ -122,7 +122,16 @@ const corsOptions = {
     preflightContinue: false,
     optionsSuccessStatus: 204
 };
-app.use(cors(corsOptions));
+// Le OPTIONS su /webdav/* NON devono essere intercettate dal CORS middleware:
+// Office usa OPTIONS per ottenere gli header DAV: 1,2 e Allow che indicano
+// un server WebDAV scrivibile. Se il CORS middleware risponde 204, Office
+// non vede qugli header e apre il documento in sola lettura.
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS' && req.path.startsWith('/webdav')) {
+        return next();
+    }
+    cors(corsOptions)(req, res, next);
+});
 
 // Body parsers
 app.use(express.json({ limit: '50mb' }));
