@@ -104,7 +104,7 @@ function HomePage() {
         apiService.getDocumentStats(),
         apiService.getNonConformitiesStatistics?.() || Promise.resolve(null),
         apiService.getAudits?.({ page: 1, limit: 5, sort: "desc" }) || Promise.resolve(null),
-        apiService.getDocuments({ expiring_days: 30, status: "vigente", limit: 10 }),
+        apiService.getDocuments({ expiring_days: 30, status: "rilasciato", limit: 10 }),
       ]);
 
       if (docRes.status === "fulfilled") setDocStats(docRes.value?.data || null);

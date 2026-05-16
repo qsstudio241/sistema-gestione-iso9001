@@ -94,7 +94,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
                      created_by, created_at, updated_at)
                 OUTPUT INSERTED.id
                 VALUES
-                    (@org_id, @company_id, 'folder', @title, 'vigente',
+                    (@org_id, @company_id, 'folder', @title, 'rilasciato',
                      1, @folder_code, @parent_id, @display_order,
                      NULL, GETDATE(), GETDATE())
             `, {

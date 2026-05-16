@@ -9,7 +9,8 @@ import { formatDate } from "../utils/dateHelpers";
 import "./DocumentDetailPanel.css";
 
 const STATUS_CONFIG = {
-  vigente:      { label: "Vigente",      className: "doc-detail__badge--green" },
+  rilasciato:   { label: "Rilasciato",   className: "doc-detail__badge--green" },
+  vigente:      { label: "Rilasciato",  className: "doc-detail__badge--green" },
   in_revisione: { label: "In revisione", className: "doc-detail__badge--yellow" },
   obsoleto:     { label: "Obsoleto",     className: "doc-detail__badge--grey" },
   bozza:        { label: "Bozza",        className: "doc-detail__badge--blue" },

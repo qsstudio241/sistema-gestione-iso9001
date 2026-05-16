@@ -105,7 +105,7 @@ async function getChildren(req, res) {
                    (SELECT COUNT(*) FROM document_registry sub WHERE sub.parent_id = dr.id) AS children_count
             FROM document_registry dr
             WHERE dr.organization_id = @organization_id AND dr.parent_id = @parent_id
-              AND ISNULL(dr.status, 'vigente') <> 'obsoleto'
+              AND ISNULL(dr.status, 'rilasciato') <> 'obsoleto'
             ORDER BY dr.display_order ASC, dr.title ASC
         `, { organization_id, parent_id: parentId });
 
@@ -232,7 +232,7 @@ async function createFolder(req, res) {
                  created_by, created_at, updated_at)
             OUTPUT INSERTED.id
             VALUES
-                (@organization_id, @company_id, 'folder', @title, 'vigente',
+                (@organization_id, @company_id, 'folder', @title, 'rilasciato',
                  @parent_id, 0, 0,
                  @created_by, GETDATE(), GETDATE())
         `, {

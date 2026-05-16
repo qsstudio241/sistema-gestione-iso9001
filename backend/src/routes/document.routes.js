@@ -16,10 +16,12 @@ router.use(requireLicensedModule('documents'));
 router.get('/documents/stats', docCtrl.getDocumentStats);
 
 // CRUD
-router.get   ('/documents',     docCtrl.listDocuments);
-router.get   ('/documents/:id', docCtrl.getDocumentById);
-router.post  ('/documents',     docCtrl.createDocument);
-router.put   ('/documents/:id', docCtrl.updateDocument);
-router.delete('/documents/:id', docCtrl.deleteDocument);
+router.get   ('/documents',                      docCtrl.listDocuments);
+router.get   ('/documents/:id',                  docCtrl.getDocumentById);
+router.post  ('/documents',                      docCtrl.createDocument);
+router.put   ('/documents/:id',                  docCtrl.updateDocument);
+router.delete('/documents/:id',                  docCtrl.deleteDocument);
+// Lifecycle: bozza → rilasciato con incremento revision_number
+router.post  ('/documents/:id/release-revision', docCtrl.releaseRevision);
 
 module.exports = router;

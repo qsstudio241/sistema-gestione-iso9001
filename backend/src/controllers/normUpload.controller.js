@@ -147,7 +147,7 @@ async function uploadNorms(req, res) {
          )
          OUTPUT INSERTED.id
          VALUES (
-           @orgId, @parentId, @title, 'norma', 'vigente',
+           @orgId, @parentId, @title, 'norma', 'rilasciato',
            0,
            CASE WHEN @editionYear IS NOT NULL
                 THEN DATEFROMPARTS(@editionYear, 1, 1)
@@ -210,7 +210,7 @@ async function uploadNorms(req, res) {
          VALUES (
            @docId, @orgId, @stdCode, @normTitle,
            @editionYear, @issuingBody, @extractedText, @textQuality,
-           'vigente', GETDATE(), GETDATE()
+           'rilasciato', GETDATE(), GETDATE()
          )`,
         {
           docId: documentId,

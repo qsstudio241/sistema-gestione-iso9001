@@ -533,6 +533,8 @@
   white-space: nowrap;
 }
 .status-vigente         { background: #d1fae5; color: #065f46; }
+.status-rilasciato      { background: #d1fae5; color: #065f46; }
+.status-bozza           { background: #dbeafe; color: #1e40af; }
 .status-in_revisione    { background: #dbeafe; color: #1e40af; }
 .status-in_approvazione { background: #fef3c7; color: #92400e; }
 .status-obsoleto        { background: #f3f4f6; color: #6b7280; }
