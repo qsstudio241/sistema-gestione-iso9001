@@ -2,10 +2,14 @@
  * knowledgeOptimizer.service.js
  * Ottimizzazione continua della knowledge base AI.
  * Livello 1: housekeeping automatico (dedup, prune stale, gap detection)
+ * Livello 2: sintesi AI settimanale (condensate, cross-company patterns, enrichment)
  */
 
 const { query } = require('../config/database');
+const { chat, embed } = require('./aiProviderAdapter');
 const logger = require('../utils/logger');
+
+const L2_MAX_CALLS_PER_ORG = 20;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -306,9 +310,319 @@ async function runOptimization(organizationId) {
   return summary;
 }
 
+// ===========================================================================
+// LIVELLO 2 — Sintesi AI settimanale
+// ===========================================================================
+
+/**
+ * Inserisce un chunk sintetico generato dall'AI e ne calcola l'embedding.
+ * @returns {number} id del chunk creato
+ */
+async function insertSyntheticChunk(organizationId, companyId, entityType, text, runId) {
+  let embeddingJson = null;
+  try {
+    const [vec] = await embed([text]);
+    if (vec) embeddingJson = JSON.stringify(vec);
+  } catch (err) {
+    logger.warn(`[KnowledgeOptimizer] embed synthetic chunk failed: ${err.message}`);
+  }
+
+  const res = await query(
+    `INSERT INTO knowledge_chunks
+       (organization_id, entity_type, entity_id, company_id, chunk_text, embedding, last_indexed_at, source_run_id)
+     OUTPUT INSERTED.id
+     VALUES (@orgId, @et, NULL, @cid, @text, @emb, GETDATE(), @runId)`,
+    {
+      orgId: organizationId,
+      et: entityType,
+      cid: companyId,
+      text,
+      emb: embeddingJson,
+      runId,
+    }
+  );
+  return res.recordset[0].id;
+}
+
+// ---------------------------------------------------------------------------
+// L2-1. Condensazione storia azienda
+// ---------------------------------------------------------------------------
+
+async function condensateCompanyHistory(organizationId) {
+  const runId = await createRun(organizationId, 'synthesis');
+  let callCount = 0;
+  let chunksCreated = 0;
+
+  try {
+    // Rimuovi sintesi precedenti per questa org (verranno rigenerate)
+    await query(
+      `DELETE FROM knowledge_chunks
+       WHERE organization_id = @orgId AND entity_type IN ('ai_synthesis')
+             AND source_run_id IS NOT NULL`,
+      { orgId: organizationId }
+    );
+
+    // --- Sintesi audit_conclusion per azienda (> 5 chunk) ---
+    const auditBuckets = await query(
+      `SELECT company_id, COUNT(*) AS cnt
+       FROM knowledge_chunks
+       WHERE organization_id = @orgId AND entity_type = 'audit_conclusion'
+             AND (is_stale = 0 OR is_stale IS NULL)
+       GROUP BY company_id
+       HAVING COUNT(*) > 5`,
+      { orgId: organizationId }
+    );
+
+    for (const bucket of (auditBuckets.recordset || [])) {
+      if (callCount >= L2_MAX_CALLS_PER_ORG) break;
+
+      const chunksRes = await query(
+        `SELECT chunk_text FROM knowledge_chunks
+         WHERE organization_id = @orgId AND entity_type = 'audit_conclusion'
+               AND (is_stale = 0 OR is_stale IS NULL)
+               AND company_id ${bucket.company_id != null ? '= @cid' : 'IS NULL'}
+         ORDER BY last_indexed_at DESC`,
+        { orgId: organizationId, cid: bucket.company_id }
+      );
+      const texts = (chunksRes.recordset || []).map(r => r.chunk_text).join('\n---\n');
+
+      const result = await chat([
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001.' },
+        {
+          role: 'user',
+          content: `Analizza questi dati di audit e genera un riassunto strutturato che includa: 1) pattern ricorrenti, 2) punti critici, 3) trend nel tempo, 4) clausole più problematiche. Rispondi in italiano, max 500 parole.\n\n${texts}`,
+        },
+      ], { temperature: 0.3, maxTokens: 1200 });
+      callCount++;
+
+      await insertSyntheticChunk(organizationId, bucket.company_id, 'ai_synthesis', result.content, runId);
+      chunksCreated++;
+    }
+
+    // --- Sintesi non_conformity per azienda (> 3 chunk) ---
+    const ncBuckets = await query(
+      `SELECT company_id, COUNT(*) AS cnt
+       FROM knowledge_chunks
+       WHERE organization_id = @orgId AND entity_type = 'non_conformity'
+             AND (is_stale = 0 OR is_stale IS NULL)
+       GROUP BY company_id
+       HAVING COUNT(*) > 3`,
+      { orgId: organizationId }
+    );
+
+    for (const bucket of (ncBuckets.recordset || [])) {
+      if (callCount >= L2_MAX_CALLS_PER_ORG) break;
+
+      const chunksRes = await query(
+        `SELECT chunk_text FROM knowledge_chunks
+         WHERE organization_id = @orgId AND entity_type = 'non_conformity'
+               AND (is_stale = 0 OR is_stale IS NULL)
+               AND company_id ${bucket.company_id != null ? '= @cid' : 'IS NULL'}
+         ORDER BY last_indexed_at DESC`,
+        { orgId: organizationId, cid: bucket.company_id }
+      );
+      const texts = (chunksRes.recordset || []).map(r => r.chunk_text).join('\n---\n');
+
+      const result = await chat([
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001.' },
+        {
+          role: 'user',
+          content: `Analizza queste non conformità di un'azienda e genera un riassunto dei pattern ricorrenti: 1) tipologie NC più frequenti, 2) aree critiche, 3) suggerimenti di prevenzione. Rispondi in italiano, max 400 parole.\n\n${texts}`,
+        },
+      ], { temperature: 0.3, maxTokens: 1000 });
+      callCount++;
+
+      await insertSyntheticChunk(organizationId, bucket.company_id, 'ai_synthesis', result.content, runId);
+      chunksCreated++;
+    }
+
+    await completeRun(runId, { chunksCreated, details: { callCount } });
+    logger.info(`[KnowledgeOptimizer] L2 synthesis org ${organizationId}: ${chunksCreated} chunks created, ${callCount} AI calls`);
+    return { chunksCreated, callCount };
+  } catch (err) {
+    await completeRun(runId, { status: 'failed', details: { error: err.message, callCount } });
+    logger.error(`[KnowledgeOptimizer] L2 synthesis failed org ${organizationId}:`, err.message);
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// L2-2. Pattern trasversali cross-company
+// ---------------------------------------------------------------------------
+
+async function extractCrossCompanyPatterns(organizationId) {
+  const runId = await createRun(organizationId, 'cross_pattern');
+  let chunksCreated = 0;
+
+  try {
+    // Rimuovi pattern precedenti per questa org
+    await query(
+      `DELETE FROM knowledge_chunks
+       WHERE organization_id = @orgId AND entity_type = 'ai_pattern'
+             AND source_run_id IS NOT NULL`,
+      { orgId: organizationId }
+    );
+
+    const allNcRes = await query(
+      `SELECT chunk_text FROM knowledge_chunks
+       WHERE organization_id = @orgId AND entity_type = 'non_conformity'
+             AND (is_stale = 0 OR is_stale IS NULL)
+       ORDER BY last_indexed_at DESC`,
+      { orgId: organizationId }
+    );
+    const ncChunks = allNcRes.recordset || [];
+
+    if (ncChunks.length > 10) {
+      const texts = ncChunks.map(r => r.chunk_text).join('\n---\n');
+
+      const result = await chat([
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001 con esperienza multi-azienda.' },
+        {
+          role: 'user',
+          content: `Analizza queste non conformità provenienti da diverse aziende. Identifica: 1) le clausole ISO più frequentemente coinvolte, 2) pattern ricorrenti per settore, 3) suggerimenti di prevenzione basati sui dati. Rispondi in italiano, max 400 parole.\n\n${texts}`,
+        },
+      ], { temperature: 0.3, maxTokens: 1000 });
+
+      await insertSyntheticChunk(organizationId, null, 'ai_pattern', result.content, runId);
+      chunksCreated++;
+    }
+
+    await completeRun(runId, { chunksCreated, details: { totalNcChunks: ncChunks.length } });
+    logger.info(`[KnowledgeOptimizer] L2 cross-patterns org ${organizationId}: ${chunksCreated} patterns from ${ncChunks.length} NC chunks`);
+    return { chunksCreated, totalNcChunks: ncChunks.length };
+  } catch (err) {
+    await completeRun(runId, { status: 'failed', details: { error: err.message } });
+    logger.error(`[KnowledgeOptimizer] L2 cross-patterns failed org ${organizationId}:`, err.message);
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// L2-3. Riformulazione chunk a basso score
+// ---------------------------------------------------------------------------
+
+async function enrichLowScoreChunks(organizationId) {
+  const runId = await createRun(organizationId, 'enrichment');
+  let enriched = 0;
+  let callCount = 0;
+
+  try {
+    // Trova chunk usati ma con basso score e follow-up (stessa sessione, entro 5 min)
+    const lowScoreRes = await query(
+      `SELECT TOP 10
+         ul1.chunk_ids, ul1.avg_chunk_score
+       FROM ai_usage_log ul1
+       WHERE ul1.organization_id = @orgId
+         AND ul1.avg_chunk_score < 0.4
+         AND ul1.avg_chunk_score > 0
+         AND ul1.chunk_ids IS NOT NULL
+         AND EXISTS (
+           SELECT 1 FROM ai_usage_log ul2
+           WHERE ul2.organization_id = @orgId
+             AND ul2.user_id = ul1.user_id
+             AND ul2.created_at > ul1.created_at
+             AND ul2.created_at <= DATEADD(minute, 5, ul1.created_at)
+         )
+       ORDER BY ul1.avg_chunk_score ASC`,
+      { orgId: organizationId }
+    );
+
+    const seenChunkIds = new Set();
+    for (const row of (lowScoreRes.recordset || [])) {
+      if (callCount >= L2_MAX_CALLS_PER_ORG) break;
+
+      let chunkIds;
+      try { chunkIds = JSON.parse(row.chunk_ids); } catch { continue; }
+      if (!Array.isArray(chunkIds)) continue;
+
+      for (const chunkId of chunkIds) {
+        if (callCount >= L2_MAX_CALLS_PER_ORG) break;
+        if (seenChunkIds.has(chunkId)) continue;
+        seenChunkIds.add(chunkId);
+
+        const chunkRes = await query(
+          `SELECT id, chunk_text, entity_type FROM knowledge_chunks
+           WHERE id = @id AND organization_id = @orgId
+                 AND entity_type NOT LIKE 'ai_%'`,
+          { id: chunkId, orgId: organizationId }
+        );
+        const chunk = (chunkRes.recordset || [])[0];
+        if (!chunk || !chunk.chunk_text) continue;
+
+        const result = await chat([
+          { role: 'system', content: 'Sei un esperto di riformulazione testi per ricerca semantica in ambito ISO 9001.' },
+          {
+            role: 'user',
+            content: `Questo testo è usato come contesto in una ricerca semantica ma ha basso score di pertinenza. Riformulalo in modo più chiaro e ricercabile, mantenendo TUTTE le informazioni fattuali. Non aggiungere dati inventati.\n\n${chunk.chunk_text}`,
+          },
+        ], { temperature: 0.2, maxTokens: 800 });
+        callCount++;
+
+        let newEmbedding = null;
+        try {
+          const [vec] = await embed([result.content]);
+          if (vec) newEmbedding = JSON.stringify(vec);
+        } catch (err) {
+          logger.warn(`[KnowledgeOptimizer] re-embed chunk ${chunkId} failed: ${err.message}`);
+        }
+
+        await query(
+          `UPDATE knowledge_chunks
+           SET chunk_text = @text, embedding = COALESCE(@emb, embedding), last_indexed_at = GETDATE()
+           WHERE id = @id`,
+          { id: chunkId, text: result.content, emb: newEmbedding }
+        );
+        enriched++;
+      }
+    }
+
+    await completeRun(runId, { chunksCreated: enriched, details: { callCount, enriched } });
+    logger.info(`[KnowledgeOptimizer] L2 enrichment org ${organizationId}: ${enriched} chunks enriched, ${callCount} AI calls`);
+    return { enriched, callCount };
+  } catch (err) {
+    await completeRun(runId, { status: 'failed', details: { error: err.message, callCount } });
+    logger.error(`[KnowledgeOptimizer] L2 enrichment failed org ${organizationId}:`, err.message);
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Orchestratore Livello 2
+// ---------------------------------------------------------------------------
+
+async function runLevel2Optimization(organizationId) {
+  logger.info(`[KnowledgeOptimizer] Starting L2 optimization for org ${organizationId}`);
+  const summary = {};
+
+  try {
+    summary.synthesis = await condensateCompanyHistory(organizationId);
+  } catch (err) {
+    summary.synthesis = { error: err.message };
+  }
+
+  try {
+    summary.crossPatterns = await extractCrossCompanyPatterns(organizationId);
+  } catch (err) {
+    summary.crossPatterns = { error: err.message };
+  }
+
+  try {
+    summary.enrichment = await enrichLowScoreChunks(organizationId);
+  } catch (err) {
+    summary.enrichment = { error: err.message };
+  }
+
+  logger.info(`[KnowledgeOptimizer] L2 optimization completed for org ${organizationId}`);
+  return summary;
+}
+
 module.exports = {
   deduplicateChunks,
   pruneStaleChunks,
   detectGaps,
   runOptimization,
+  condensateCompanyHistory,
+  extractCrossCompanyPatterns,
+  enrichLowScoreChunks,
+  runLevel2Optimization,
 };

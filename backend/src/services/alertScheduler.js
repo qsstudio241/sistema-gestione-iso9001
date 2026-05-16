@@ -220,6 +220,31 @@ async function runKnowledgeOptimizationJob() {
   }
 }
 
+// ─── Ottimizzazione knowledge L2 — sintesi AI (settimanale) ───────────────────
+
+async function runKnowledgeL2Job() {
+  logger.info('[AlertScheduler] Avvio job knowledge L2 (sintesi AI settimanale)...');
+  try {
+    const { runLevel2Optimization } = require('./knowledgeOptimizer.service');
+    const pool = await getPool();
+    const orgsResult = await pool.request().query(
+      'SELECT organization_id FROM organizations WHERE is_active = 1'
+    );
+    const orgs = orgsResult.recordset || [];
+    for (const org of orgs) {
+      try {
+        const summary = await runLevel2Optimization(org.organization_id);
+        logger.info(`[AlertScheduler] Knowledge L2 org ${org.organization_id}: synthesis=${JSON.stringify(summary.synthesis)}, crossPatterns=${JSON.stringify(summary.crossPatterns)}, enrichment=${JSON.stringify(summary.enrichment)}`);
+      } catch (err) {
+        logger.error(`[AlertScheduler] Knowledge L2 failed org ${org.organization_id}:`, err.message);
+      }
+    }
+    logger.info(`[AlertScheduler] Knowledge L2 completata per ${orgs.length} organizzazioni`);
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job knowledge L2:', err.message);
+  }
+}
+
 // ─── Avvio scheduler ──────────────────────────────────────────────────────────
 
 // ─── Verifica validità norme (settimanale) ────────────────────────────────────
@@ -293,7 +318,12 @@ function startAlertScheduler() {
     runKnowledgeOptimizationJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (optimization):', err.message));
   });
 
-  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, norme lun 03:00, knowledge index 02:00, optimization 03:00');
+  // Ogni domenica alle 04:00 — sintesi AI settimanale (Livello 2)
+  schedule.scheduleJob('0 4 * * 0', () => {
+    runKnowledgeL2Job().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge L2):', err.message));
+  });
+
+  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, norme lun 03:00, knowledge index 02:00, optimization 03:00, L2 synthesis dom 04:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job };

@@ -166,9 +166,11 @@ async function indexAllEntities(organizationId) {
         continue;
       }
 
-      // Elimina chunk precedenti di questo tipo per questa org
+      // Elimina chunk precedenti di questo tipo per questa org (preserva chunk ai_*)
       await query(
-        'DELETE FROM knowledge_chunks WHERE organization_id = @orgId AND entity_type = @et',
+        `DELETE FROM knowledge_chunks
+         WHERE organization_id = @orgId AND entity_type = @et
+               AND entity_type NOT LIKE 'ai_%'`,
         { orgId: organizationId, et: entity.entity_type }
       );
 
