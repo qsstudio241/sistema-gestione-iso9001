@@ -247,6 +247,11 @@ async function handleWebdavPut(req, res) {
 }
 
 // ─── PROPFIND /webdav/:orgId/:docId/:filename — Office interroga proprietà ────
+// IMPORTANTE: PROPFIND deve rispondere ANCHE senza token, perché il client
+// Microsoft-WebDAV-MiniRedir di Windows (usato da Office per "sondare" il
+// server) non inoltra il ?dt=token. Se rispondiamo 401, Word apre in sola
+// lettura. Il token resta obbligatorio per le operazioni che cambiano stato
+// (LOCK, PUT, UNLOCK). PROPFIND espone solo metadata (nome, size, mtime).
 
 async function handleWebdavPropfind(req, res) {
     try {
@@ -255,7 +260,8 @@ async function handleWebdavPropfind(req, res) {
         const filename = req.params.filename || '';
 
         const tokenData = validateToken(token, orgId, docId);
-        if (!tokenData) return res.status(401).end();
+        // Senza token: rispondiamo lo stesso ma senza lockdiscovery attivo.
+        // Multi-tenant safe: i metadata sono comunque scopati a (orgId, docId).
 
         const pool    = await getPool();
         const fileRes = await pool.request()
@@ -270,8 +276,12 @@ async function handleWebdavPropfind(req, res) {
         if (!fileRes.recordset.length) return res.status(404).end();
         const file    = fileRes.recordset[0];
         const lastMod = new Date(file.created_at).toUTCString();
-        const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}?dt=${token}`;
+        const tokenSuffix = token ? `?dt=${token}` : '';
+        const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}${tokenSuffix}`;
         const timeout = Math.floor(TOKEN_TTL_MS / 1000);
+        const activeLockXml = (tokenData && tokenData.lockToken)
+            ? `<D:activelock><D:locktoken><D:href>${tokenData.lockToken}</D:href></D:locktoken><D:timeout>Second-${timeout}</D:timeout></D:activelock>`
+            : '';
 
         const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
 `<D:multistatus xmlns:D="DAV:">\n` +
@@ -290,9 +300,7 @@ async function handleWebdavPropfind(req, res) {
 `            <D:locktype><D:write/></D:locktype>\n` +
 `          </D:lockentry>\n` +
 `        </D:supportedlock>\n` +
-`        <D:lockdiscovery>${tokenData.lockToken
-    ? `<D:activelock><D:locktoken><D:href>${tokenData.lockToken}</D:href></D:locktoken><D:timeout>Second-${timeout}</D:timeout></D:activelock>`
-    : ''}</D:lockdiscovery>\n` +
+`        <D:lockdiscovery>${activeLockXml}</D:lockdiscovery>\n` +
 `      </D:prop>\n` +
 `      <D:status>HTTP/1.1 200 OK</D:status>\n` +
 `    </D:propstat>\n` +
@@ -364,14 +372,12 @@ function handleWebdavUnlock(req, res) {
 // ─── HEAD /webdav/:orgId/:docId/:filename — Office Existence/Word Discovery ──
 // Office usa HEAD per verificare se il file è accessibile prima di LOCK.
 // Risponde con gli stessi header di GET ma senza body.
+// IMPORTANTE: come PROPFIND, accetta anche richieste senza token, perché
+// Microsoft-WebDAV-MiniRedir non inoltra il ?dt=token. Solo metadata.
 
 async function handleWebdavHead(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token = req.query.dt;
-
-        const tokenData = validateToken(token, orgId, docId);
-        if (!tokenData) return res.status(401).end();
 
         const pool   = await getPool();
         const result = await getDocAndCurrentFile(pool, docId, orgId);

@@ -33,10 +33,54 @@ router.post(
 
 const webdavRouter = express.Router();
 
-// OPTIONS su /:orgId/:docId/ (senza filename) — usato da Office Protocol Discovery
-// Deve rispondere con DAV: 1, 2 + Allow, altrimenti Office non tenta LOCK
-webdavRouter.all('/:orgId/:docId/', ctrl.handleWebdavOptions);
-webdavRouter.all('/:orgId/:docId', ctrl.handleWebdavOptions);
+// Microsoft-WebDAV-MiniRedir (Windows) sonda /webdav/:orgId e /webdav/:orgId/:docId
+// senza filename. Devono rispondere positivamente per non interrompere la
+// sequenza WebDAV di Office (altrimenti Word apre in sola lettura).
+function handleCollectionRequest(req, res) {
+    const method = req.method.toUpperCase();
+    if (method === 'OPTIONS') return ctrl.handleWebdavOptions(req, res);
+    if (method === 'HEAD' || method === 'GET') {
+        // Le directory esistono ma non si scaricano: rispondi 200 vuoto.
+        res.setHeader('DAV', '1, 2');
+        res.setHeader('MS-Author-Via', 'DAV');
+        res.setHeader('Content-Type', 'httpd/unix-directory');
+        return res.status(200).end();
+    }
+    if (method === 'PROPFIND') {
+        // PROPFIND su collection: rispondi un multistatus minimal "è una directory".
+        res.setHeader('DAV', '1, 2');
+        res.setHeader('MS-Author-Via', 'DAV');
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+        const href = req.path.endsWith('/') ? req.path : req.path + '/';
+        const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
+`<D:multistatus xmlns:D="DAV:">\n` +
+`  <D:response>\n` +
+`    <D:href>${href}</D:href>\n` +
+`    <D:propstat>\n` +
+`      <D:prop>\n` +
+`        <D:resourcetype><D:collection/></D:resourcetype>\n` +
+`        <D:supportedlock>\n` +
+`          <D:lockentry>\n` +
+`            <D:lockscope><D:exclusive/></D:lockscope>\n` +
+`            <D:locktype><D:write/></D:locktype>\n` +
+`          </D:lockentry>\n` +
+`        </D:supportedlock>\n` +
+`      </D:prop>\n` +
+`      <D:status>HTTP/1.1 200 OK</D:status>\n` +
+`    </D:propstat>\n` +
+`  </D:response>\n` +
+`</D:multistatus>`;
+        return res.status(207).send(xml);
+    }
+    res.setHeader('Allow', 'OPTIONS, GET, HEAD, PROPFIND');
+    res.status(405).end('Method Not Allowed');
+}
+
+// /webdav/:orgId  e  /webdav/:orgId/:docId  (con o senza trailing slash)
+webdavRouter.all('/:orgId',                handleCollectionRequest);
+webdavRouter.all('/:orgId/',               handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId',         handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId/',        handleCollectionRequest);
 
 // Tutti i metodi WebDAV su /:orgId/:docId/:filename
 webdavRouter.all('/:orgId/:docId/:filename', (req, res) => {
