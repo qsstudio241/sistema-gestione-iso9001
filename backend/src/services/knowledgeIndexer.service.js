@@ -30,12 +30,19 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'non_conformity',
-    sql: `SELECT nc.nc_id AS id, a.company_id, nc.nc_number, nc.nc_type, nc.description, nc.severity, nc.status
+    sql: `SELECT nc.nc_id AS id, a.company_id, nc.nc_number, nc.section_code, nc.description,
+            nc.severity, nc.status, nc.root_cause, nc.corrective_action
           FROM non_conformities nc
           JOIN audits a ON nc.audit_id = a.audit_id
           WHERE a.organization_id = @orgId`,
-    buildText: (r) =>
-      `NC ${r.nc_number || ''} (${r.nc_type || '?'}): ${r.description || ''}. Gravit: ${r.severity || '?'}, Stato: ${r.status || '?'}`,
+    buildText: (r) => {
+      const parts = [`NC ${r.nc_number || ''}: ${r.description || ''}`];
+      if (r.section_code) parts.push(`Clausola: ${r.section_code}`);
+      parts.push(`Gravit\u00e0: ${r.severity || '?'}, Stato: ${r.status || '?'}`);
+      if (r.root_cause) parts.push(`Causa radice: ${r.root_cause}`);
+      if (r.resolution_summary) parts.push(`Riepilogo risoluzione: ${r.resolution_summary}`);
+      return parts.join('. ');
+    },
   },
   {
     entity_type: 'nc_action',
@@ -52,7 +59,7 @@ const INDEXABLE_ENTITIES = [
     entity_type: 'complaint',
     sql: `SELECT c.id, c.company_id, c.complaint_number, c.title, c.description,
             c.complaint_type, c.severity, c.status, c.customer_name,
-            c.root_cause, c.corrective_action
+            c.root_cause, c.resolution_summary
           FROM complaints c
           WHERE c.organization_id = @orgId`,
     buildText: (r) => {
@@ -62,7 +69,7 @@ const INDEXABLE_ENTITIES = [
       if (r.customer_name) parts.push(`Cliente: ${r.customer_name}`);
       if (r.severity) parts.push(`Gravit: ${r.severity}`);
       if (r.root_cause) parts.push(`Causa: ${r.root_cause}`);
-      if (r.corrective_action) parts.push(`Azione correttiva: ${r.corrective_action}`);
+      if (r.resolution_summary) parts.push(`Riepilogo risoluzione: ${r.resolution_summary}`);
       parts.push(`Stato: ${r.status || '?'}`);
       return parts.join('. ');
     },

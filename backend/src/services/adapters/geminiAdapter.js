@@ -165,9 +165,9 @@ async function chat(messages, options = {}) {
 }
 
 /**
- * Batch embed texts using text-embedding-004.
+ * Batch embed texts using Gemini embedding model.
  * @param {string[]} texts - Max 100 per call (API limit)
- * @returns {Promise<number[][]>} Array of 768-dim float vectors
+ * @returns {Promise<number[][]>} Array of float vectors (3072-dim for gemini-embedding-001)
  */
 async function embed(texts) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -176,15 +176,16 @@ async function embed(texts) {
   }
   if (!texts || texts.length === 0) return [];
 
+  const embedModel = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
   const BATCH_LIMIT = 100;
   const allEmbeddings = [];
 
   for (let i = 0; i < texts.length; i += BATCH_LIMIT) {
     const batch = texts.slice(i, i + BATCH_LIMIT);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=${encodeURIComponent(apiKey)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(embedModel)}:batchEmbedContents?key=${encodeURIComponent(apiKey)}`;
     const body = {
       requests: batch.map(t => ({
-        model: 'models/text-embedding-004',
+        model: `models/${embedModel}`,
         content: { parts: [{ text: t }] },
       })),
     };
