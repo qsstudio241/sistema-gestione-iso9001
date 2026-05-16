@@ -19,7 +19,7 @@ export const ISO_9001_TEMPLATE = {
   sections: [
     {
       sectionCode: "clause4",
-      sectionTitle: "4 – Contesto dell'Organizzazione",
+      sectionTitle: "4 - Contesto dell'Organizzazione",
       displayOrder: 1,
       questions: [
         { questionId: 87,  clauseRef: "4.1", questionText: "Comprendere l'Organizzazione e il suo contesto", questionType: "conformity", isMandatory: true, displayOrder: 1 },
@@ -30,7 +30,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause5",
-      sectionTitle: "5 – Leadership",
+      sectionTitle: "5 - Leadership",
       displayOrder: 2,
       questions: [
         { questionId: 91,  clauseRef: "5.1",   questionText: "Leadership e Impegno", questionType: "conformity", isMandatory: true, displayOrder: 5 },
@@ -41,7 +41,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause6",
-      sectionTitle: "6 – Pianificazione",
+      sectionTitle: "6 - Pianificazione",
       displayOrder: 3,
       questions: [
         { questionId: 95, clauseRef: "6.1", questionText: "Azioni per affrontare rischi e opportunità", questionType: "conformity", isMandatory: true, displayOrder: 9 },
@@ -50,7 +50,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause7",
-      sectionTitle: "7 – Supporto",
+      sectionTitle: "7 - Supporto",
       displayOrder: 4,
       questions: [
         { questionId: 97,  clauseRef: "7.1.2",   questionText: "Persone", questionType: "conformity", isMandatory: true, displayOrder: 13 },
@@ -66,7 +66,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause8",
-      sectionTitle: "8 – Attività Operative",
+      sectionTitle: "8 - Attività Operative",
       displayOrder: 5,
       questions: [
         { questionId: 194, clauseRef: "8.1",   questionText: "Pianificazione e controllo operativi", questionType: "conformity", isMandatory: true, displayOrder: 39 },
@@ -89,7 +89,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause9",
-      sectionTitle: "9 – Valutazione delle Prestazioni",
+      sectionTitle: "9 - Valutazione delle Prestazioni",
       displayOrder: 6,
       questions: [
         { questionId: 116, clauseRef: "9.1.1", questionText: "Valutazione delle prestazioni del SGQ (KPI)", questionType: "conformity", isMandatory: true, displayOrder: 33 },
@@ -100,7 +100,7 @@ export const ISO_9001_TEMPLATE = {
     },
     {
       sectionCode: "clause10",
-      sectionTitle: "10 – Miglioramento",
+      sectionTitle: "10 - Miglioramento",
       displayOrder: 7,
       questions: [
         { questionId: 120, clauseRef: "10.2", questionText: "Non conformità e Azioni Correttive", questionType: "conformity", isMandatory: true, displayOrder: 37 },
@@ -111,7 +111,7 @@ export const ISO_9001_TEMPLATE = {
 };
 
 /**
- * Template ISO 14001:2015 – Checklist Legislativa Ambiente & Sicurezza
+ * Template ISO 14001:2015 - Checklist Legislativa Ambiente & Sicurezza
  * 2 sezioni normative — 46 domande
  * Fonte: CheckList\ChekList14001.txt (cliente)
  * questionId: null = domande non ancora nel DB (sync silenzioso; vedere migration 012)
@@ -123,7 +123,7 @@ export const ISO_14001_TEMPLATE = {
   sections: [
     {
       sectionCode: "14001_s4",
-      sectionTitle: "4 – AMBIENTE E SICUREZZA",
+      sectionTitle: "4 - AMBIENTE E SICUREZZA",
       displayOrder: 1,
       questions: [
         { questionId: 122, clauseRef: "2",  questionText: "EDILIZIA/AGIBILITA'", questionType: "conformity", isMandatory: true, displayOrder: 2 },
@@ -197,7 +197,7 @@ export const RDP_MSN_TEMPLATE = {
   sections: [
     {
       sectionCode: "3834_s4",
-      sectionTitle: "4 – Riesame dei requisiti e riesame tecnico",
+      sectionTitle: "4 - Riesame dei requisiti e riesame tecnico",
       displayOrder: 1,
       questions: [
         { questionId: null, clauseRef: "1",  questionText: "Riesame dei requisiti contrattuali prima dell'offerta/ordine (4.2)", questionType: "conformity", isMandatory: true, displayOrder: 1 },
@@ -207,7 +207,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s7",
-      sectionTitle: "7 – Personale di saldatura",
+      sectionTitle: "7 - Personale di saldatura",
       displayOrder: 2,
       questions: [
         { questionId: null, clauseRef: "4",  questionText: "Saldatori e operatori qualificati secondo norme applicabili (ISO 9606, ISO 14732) (7.1)", questionType: "conformity", isMandatory: true, displayOrder: 4 },
@@ -217,7 +217,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s10",
-      sectionTitle: "10 – Attrezzature di saldatura e accessorie",
+      sectionTitle: "10 - Attrezzature di saldatura e accessorie",
       displayOrder: 3,
       questions: [
         { questionId: null, clauseRef: "7",  questionText: "Attrezzature di saldatura idonee, disponibili e manutenute (10.1)", questionType: "conformity", isMandatory: true, displayOrder: 7 },
@@ -227,7 +227,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s11",
-      sectionTitle: "11 – Attività di saldatura (pianificazione e WPS)",
+      sectionTitle: "11 - Attività di saldatura (pianificazione e WPS)",
       displayOrder: 4,
       questions: [
         { questionId: null, clauseRef: "10", questionText: "Specifiche di procedura di saldatura (WPS) disponibili e approvate (11.1)", questionType: "conformity", isMandatory: true, displayOrder: 10 },
@@ -240,7 +240,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s12",
-      sectionTitle: "12 – Controllo e prove (prima, durante e dopo la saldatura)",
+      sectionTitle: "12 - Controllo e prove (prima, durante e dopo la saldatura)",
       displayOrder: 5,
       questions: [
         { questionId: null, clauseRef: "16", questionText: "Controlli pre-saldatura: pulizia, geometria, posizionamento, puntatura (12.1)", questionType: "conformity", isMandatory: true, displayOrder: 16 },
@@ -252,7 +252,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s14",
-      sectionTitle: "14 – Non conformità e azioni correttive",
+      sectionTitle: "14 - Non conformità e azioni correttive",
       displayOrder: 6,
       questions: [
         { questionId: null, clauseRef: "21", questionText: "Difetti rilevati riparati secondo procedura qualificata o rilavorati (14.1)", questionType: "conformity", isMandatory: true, displayOrder: 21 },
@@ -262,7 +262,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s15",
-      sectionTitle: "15 – Identificazione e rintracciabilità",
+      sectionTitle: "15 - Identificazione e rintracciabilità",
       displayOrder: 7,
       questions: [
         { questionId: null, clauseRef: "24", questionText: "Materiali base identificati e rintracciabili durante tutto il processo (15.1)", questionType: "conformity", isMandatory: true, displayOrder: 24 },
@@ -272,7 +272,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s16",
-      sectionTitle: "16 – Registrazioni della qualità",
+      sectionTitle: "16 - Registrazioni della qualità",
       displayOrder: 8,
       questions: [
         { questionId: null, clauseRef: "27", questionText: "Registrazioni delle qualifiche di saldatori e operatori disponibili e aggiornate (16)", questionType: "conformity", isMandatory: true, displayOrder: 27 },
@@ -285,7 +285,7 @@ export const RDP_MSN_TEMPLATE = {
     },
     {
       sectionCode: "3834_s17",
-      sectionTitle: "17 – Dichiarazione di conformità",
+      sectionTitle: "17 - Dichiarazione di conformità",
       displayOrder: 9,
       questions: [
         { questionId: null, clauseRef: "33", questionText: "Dichiarazione di conformità alla norma ISO 3834-2 disponibile e aggiornata (17)", questionType: "conformity", isMandatory: true, displayOrder: 33 },
@@ -306,7 +306,7 @@ export const RDP_MSN_TEMPLATE = {
 export const ISO_3834_TEMPLATE = {
   standardId: 6,
   standardCode: "ISO_3834_2",
-  standardName: "ISO 3834-2 — Audit Fornitori in Campo",
+  standardName: "ISO 3834-2 - Audit Fornitori in Campo",
   sections: [
     {
       sectionCode: "3834_s1",

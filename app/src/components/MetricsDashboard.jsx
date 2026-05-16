@@ -103,7 +103,7 @@ function MetricsDashboard() {
           <div className="metric-value">{ncStats.total}</div>
           <div className="metric-label">Non Conformità</div>
           <div className="metric-detail">
-            {ncStats.major} Major • {ncStats.minor} Minor •{" "}
+            {ncStats.major} Major | {ncStats.minor} Minor |{" "}
             {ncStats.observation} Osservazioni
           </div>
         </div>
@@ -113,7 +113,7 @@ function MetricsDashboard() {
           <div className="metric-value">{evidenceStats.total}</div>
           <div className="metric-label">Evidenze Raccolte</div>
           <div className="metric-detail">
-            {evidenceStats.documents} Documenti • {evidenceStats.photos} Foto
+            {evidenceStats.documents} Documenti | {evidenceStats.photos} Foto
           </div>
         </div>
 
@@ -122,7 +122,7 @@ function MetricsDashboard() {
           <div className="metric-value">{pendingStats.total}</div>
           <div className="metric-label">Pending Issues</div>
           <div className="metric-detail">
-            {pendingStats.resolved} risolti •{" "}
+            {pendingStats.resolved} risolti |{" "}
             {pendingStats.total - pendingStats.resolved} aperti
           </div>
         </div>

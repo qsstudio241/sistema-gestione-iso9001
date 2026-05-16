@@ -16,15 +16,15 @@
 
 // Nomi leggibili dei standard — aggiungere qui nuovi standard
 const STANDARD_LABELS = {
-    ISO_9001:        'ISO 9001:2015 \u2014 Sistema di Gestione per la Qualit\u00e0',
-    ISO_9001_2015:   'ISO 9001:2015 \u2014 Sistema di Gestione per la Qualit\u00e0',
-    ISO_14001:       'ISO 14001:2015 \u2014 Sistema di Gestione Ambientale',
-    ISO_14001_2015:  'ISO 14001:2015 \u2014 Sistema di Gestione Ambientale',
-    ISO_45001:       'ISO 45001:2018 \u2014 Sistema di Gestione per la Salute e Sicurezza',
-    ISO_45001_2018:  'ISO 45001:2018 \u2014 Sistema di Gestione per la Salute e Sicurezza',
-    ISO_3834_2:      'ISO 3834-2 \u2014 Checklist Audit Fornitori in Campo',
-    ISO_3834_2_2021: 'ISO 3834-2 \u2014 Checklist Audit Fornitori in Campo',
-    RDP_MSN:         'ISO 3834-2:2021 \u2014 Requisiti di qualit\u00e0 per la saldatura per fusione (Audit di sistema)',
+    ISO_9001:        'ISO 9001:2015 - Sistema di Gestione per la Qualit\u00e0',
+    ISO_9001_2015:   'ISO 9001:2015 - Sistema di Gestione per la Qualit\u00e0',
+    ISO_14001:       'ISO 14001:2015 - Sistema di Gestione Ambientale',
+    ISO_14001_2015:  'ISO 14001:2015 - Sistema di Gestione Ambientale',
+    ISO_45001:       'ISO 45001:2018 - Sistema di Gestione per la Salute e Sicurezza',
+    ISO_45001_2018:  'ISO 45001:2018 - Sistema di Gestione per la Salute e Sicurezza',
+    ISO_3834_2:      'ISO 3834-2 - Checklist Audit Fornitori in Campo',
+    ISO_3834_2_2021: 'ISO 3834-2 - Checklist Audit Fornitori in Campo',
+    RDP_MSN:         'ISO 3834-2:2021 - Requisiti di qualit\u00e0 per la saldatura per fusione (Audit di sistema)',
 };
 
 /**
@@ -46,7 +46,7 @@ export const STATUS_CFG = {
     OM:          { label: 'Opp. Miglioramento',  fill: 'DBEAFE', text: '1E40AF' },
     NA:          { label: 'Non Applicabile',     fill: 'E5E7EB', text: '374151' },
     NV:          { label: 'Non Valutato',        fill: 'F3E8FF', text: '6B21A8' },
-    NOT_ANSWERED:{ label: '\u2014',             fill: 'FFFFFF', text: '000000' },
+    NOT_ANSWERED:{ label: '-',             fill: 'FFFFFF', text: '000000' },
 };
 
 /** Escape obbligatorio per inserire testo in XML */
@@ -188,7 +188,7 @@ function buildPendingIssuesOoxml(pendingIssues = []) {
         const origType  = pi.original_status || pi.conformity_status || '';
         const refNote   = pi.resolution_notes || pi.follow_up_notes || pi.resolutionNotes || '';
         const sourceRef = pi.originAuditNumber || pi.source_audit_number ||
-                          (pi.source_audit_id ? 'Audit ID ' + pi.source_audit_id : '\u2014');
+                          (pi.source_audit_id ? 'Audit ID ' + pi.source_audit_id : '-');
 
         const descBody  = xmlPara(escXml(
             pi.question_text || pi.description || pi.nc_description || 'N/D'
@@ -197,7 +197,7 @@ function buildPendingIssuesOoxml(pendingIssues = []) {
             : '');
 
         return xmlRow([
-            xmlCell(xmlPara(escXml(pi.section_code || pi.clause || '\u2014'), { align: 'center' }), { pct: PCT[0] }),
+            xmlCell(xmlPara(escXml(pi.section_code || pi.clause || '-'), { align: 'center' }), { pct: PCT[0] }),
             xmlCell(descBody, { pct: PCT[1] }),
             xmlCell(xmlPara(escXml(origType), { align: 'center' }), { pct: PCT[2] }),
             xmlCell(xmlPara(escXml(sourceRef), { align: 'center' }), { pct: PCT[3] }),
@@ -438,7 +438,7 @@ function parseNormExcerptContent(text) {
     }
 
     return result || xmlPara(
-        xmlRun('— stralcio non disponibile', { ital: true, color: '9CA3AF', size: 18 }),
+        xmlRun('- stralcio non disponibile', { ital: true, color: '9CA3AF', size: 18 }),
         { sb: 80, sa: 80 }
     );
 }
@@ -480,7 +480,7 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
         const qRef  = q.clauseRef || '';
         const qTxt  = q.question || q.text || 'Domanda non definita';
         const full  = escXml(qRef ? qRef + ' - ' + qTxt : qTxt);
-        const notes = (q.notes && q.notes.trim()) ? escXml(q.notes.trim()) : '\u2014';
+        const notes = (q.notes && q.notes.trim()) ? escXml(q.notes.trim()) : '-';
 
         allRows.push(xmlRow([
             xmlCell(xmlPara(full,  { sa: 0 }), { dxa: C[0], va: 'top' }),
@@ -574,19 +574,19 @@ function buildCertFindingsOoxml(certFindings = []) {
     const dataRows = certFindings.map(f => {
         const sCfg = STATUS_CFG[f.status] || STATUS_CFG.open;
         const tColor = TYPE_COLOR[f.finding_type] || 'DC2626';
-        const descBody = xmlPara(escXml(f.description || '—'))
+        const descBody = xmlPara(escXml(f.description || '-'))
             + (f.corrective_action
                 ? xmlPara(xmlRun('↳ AC: ' + f.corrective_action, { ital: true, color: '1D4ED8' }), { sb: 60, sa: 0 })
                 : '');
         const dueDate = f.due_date
             ? new Date(f.due_date).toLocaleDateString('it-IT')
-            : '—';
+            : '-';
         return xmlRow([
-            xmlCell(xmlPara(escXml(f.finding_number || '—'), { align: 'center' }), { pct: PCT[0] }),
+            xmlCell(xmlPara(escXml(f.finding_number || '-'), { align: 'center' }), { pct: PCT[0] }),
             xmlCell(xmlPara(xmlRun(f.finding_type || 'NC', { bold: true, color: tColor }), { align: 'center' }), { pct: PCT[1] }),
-            xmlCell(xmlPara(escXml(f.clause_ref || '—'), { align: 'center' }), { pct: PCT[2] }),
+            xmlCell(xmlPara(escXml(f.clause_ref || '-'), { align: 'center' }), { pct: PCT[2] }),
             xmlCell(descBody, { pct: PCT[3] }),
-            xmlCell(xmlPara(escXml(f.certifying_body || '—'), { align: 'center' }), { pct: PCT[4] }),
+            xmlCell(xmlPara(escXml(f.certifying_body || '-'), { align: 'center' }), { pct: PCT[4] }),
             xmlCell(xmlPara(escXml(dueDate), { align: 'center' }), { pct: PCT[5] }),
             xmlCell(xmlPara(xmlRun(sCfg.label, { bold: true, color: sCfg.text }), { align: 'center' }),
                 { fill: sCfg.fill, pct: PCT[6] }),
@@ -608,12 +608,12 @@ function buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUr
 
     // ── Cap. 3: Rilievi Precedenti ──────────────────────────────────────────
     xml += xmlPara(
-        xmlRun('3 \u2014 RILIEVI PRECEDENTI', { bold: true, size: 24, color: '1D4ED8' }),
+        xmlRun('3 - RILIEVI PRECEDENTI', { bold: true, size: 24, color: '1D4ED8' }),
         { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
     );
     // Titolo2 per il sotto-punto "AP"
     xml += xmlPara(
-        xmlRun('1.\u2002AP \u2014 Rilievi emersi dai precedenti Audit Interni-Esterni', { bold: true, size: 22, color: '1D4ED8' }),
+        xmlRun('1.\u2002AP - Rilievi emersi dai precedenti Audit Interni-Esterni', { bold: true, size: 22, color: '1D4ED8' }),
         { style: 'Titolo2', sb: 100, sa: 100 }
     );
     xml += buildPendingIssuesOoxml(pendingIssues);
@@ -642,7 +642,7 @@ function buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUr
         const sectionTitle = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '').toUpperCase();
 
         xml += xmlPara(
-            xmlRun(`${sectionNum} \u2014 ${sectionTitle}`, { bold: true, size: 24, color: '1D4ED8' }),
+            xmlRun(`${sectionNum} - ${sectionTitle}`, { bold: true, size: 24, color: '1D4ED8' }),
             { style: 'Titolo1', pageBreak: false, sb: 400, sa: 200 }
         );
         sectionNum++;
@@ -673,7 +673,7 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
     if (!checklist || !Object.keys(checklist).length) {
         // Nessuna checklist: almeno i rilievi pendenti
         xml += xmlPara(
-            xmlRun('3 \u2014 RILIEVI PENDENTI', { bold: true, size: 24, color: '1D4ED8' }),
+            xmlRun('3 - RILIEVI PENDENTI', { bold: true, size: 24, color: '1D4ED8' }),
             { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
         );
         xml += buildPendingIssuesOoxml(pendingIssues);
@@ -693,12 +693,12 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
         // Prima volta: aggiungi cap. 3 Rilievi Pendenti
         if (!xml.includes('RILIEVI PENDENTI') && !xml.includes('RILIEVI PRECEDENTI')) {
             xml += xmlPara(
-                xmlRun('3 \u2014 RILIEVI PENDENTI', { bold: true, size: 24, color: '1D4ED8' }),
+                xmlRun('3 - RILIEVI PENDENTI', { bold: true, size: 24, color: '1D4ED8' }),
                 { style: 'Titolo1', pageBreak: true, sb: 0, sa: 200 }
             );
             xml += buildPendingIssuesOoxml(pendingIssues);
             xml += xmlPara(
-                xmlRun('3.1 \u2014 RILIEVI DELL\'ENTE CERTIFICATORE', { bold: true, size: 22, color: '1D4ED8' }),
+                xmlRun('3.1 - RILIEVI DELL\'ENTE CERTIFICATORE', { bold: true, size: 22, color: '1D4ED8' }),
                 { style: 'Titolo2', sb: 200, sa: 200 }
             );
             xml += buildCertFindingsOoxml(certFindings);
@@ -714,7 +714,7 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
                 const num   = extractSectionNum(clauseKey);
                 const title = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '');
                 xml += xmlPara(
-                    xmlRun(num + ' \u2014 ' + title.toUpperCase(), { bold: true, size: 24, color: '1D4ED8' }),
+                    xmlRun(num + ' - ' + title.toUpperCase(), { bold: true, size: 24, color: '1D4ED8' }),
                     { style: 'Titolo1', pageBreak: false, sb: 400, sa: 200 }
                 );
                 xml += buildClauseTableOoxml(clause.questions || [], auditAttachments, getViewUrl, options, imageRegistry, normExcerpts);
@@ -795,7 +795,7 @@ export function buildRileviSummaryOoxml(checklist, pendingIssues = []) {
 
                     const ref   = q.clauseRef || q.id || '';
                     const title = (q.title || q.text || '').replace(/^\d+\.?\d*\.?\d*\s*-?\s*/, '');
-                    const label = escXml([ref, title].filter(Boolean).join('  '));
+                    const label = escXml([ref, title].filter(Boolean).join(' - '));
 
                     rows.push(xmlRow([
                         xmlCell(label, { pct: PCT[0] }),
@@ -895,7 +895,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
 
     const sectionHeaderRow = (sec) => xmlRow([
         xmlCell(
-            xmlPara(xmlRun(String(sec.code || '').trim() || '\u2014', { bold: true, size: 20 }), { align: 'center' }),
+            xmlPara(xmlRun(String(sec.code || '').trim() || '-', { bold: true, size: 20 }), { align: 'center' }),
             { dxa: C[0], fill: 'D9D9D9', va: 'center' }
         ),
         xmlCell(
@@ -916,7 +916,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
 
             if (!items.length) {
                 allRows.push(xmlRow([
-                    xmlCell(xmlPara('\u2014', { align: 'center' }), { dxa: C[0] }),
+                    xmlCell(xmlPara('-', { align: 'center' }), { dxa: C[0] }),
                     xmlCell(xmlPara(xmlRun('Nessuna sotto-sezione disponibile.', { ital: true })), { dxa: C[1] }),
                     emptyCell(2),
                     emptyCell(3),
@@ -925,7 +925,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
 
             items.forEach((item) => {
                 const blocks = Array.isArray(customResponses[item.id]) ? customResponses[item.id] : [];
-                const itemCode = String(item.code || '').trim() || '\u2014';
+                const itemCode = String(item.code || '').trim() || '-';
                 const itemTitle = String(item.title || '').trim();
 
                 const itemStatus = hasOutcomeButtons ? (customStatuses[item.id] || null) : null;
@@ -940,7 +940,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                     const titleContent = [
                         xmlRun(itemTitle || 'Voce checklist', { bold: true, size: 18 }),
                         badgeRun,
-                        xmlRun('\n\u2014 Nessuna evidenza compilata.', { ital: true, size: 18 }),
+                        xmlRun('\n- Nessuna evidenza compilata.', { ital: true, size: 18 }),
                     ].join('');
                     const badgeCellFill = (itemStatus && STATUS_BG[itemStatus]) ? STATUS_BG[itemStatus] : undefined;
                     allRows.push(xmlRow([
@@ -1003,7 +1003,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                     }
 
                     if (!fragment) {
-                        fragment = xmlPara(xmlRun('\u2014 Evidenza senza contenuto testuale.', { ital: true, size: 18 }));
+                        fragment = xmlPara(xmlRun('- Evidenza senza contenuto testuale.', { ital: true, size: 18 }));
                     }
                     detail += fragment;
                 });
@@ -1061,7 +1061,7 @@ export function buildCustomRileviSummaryOoxml(customChecklist, customResponses =
             else if (st === 'NA')  col = 'N.A.';
             else if (st === 'NV')  col = 'NV';
 
-            const label = escXml([item.code, item.title].filter(Boolean).join('  '));
+            const label = escXml([item.code, item.title].filter(Boolean).join(' - '));
             rows.push(xmlRow([
                 xmlCell(label, { pct: PCT[0] }),
                 ...COLS.map((k, i) =>

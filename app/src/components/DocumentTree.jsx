@@ -1,5 +1,5 @@
 /**
- * DocumentTree ù sidebar navigazione ad albero dei documenti SGQ
+ * DocumentTree ó sidebar navigazione ad albero dei documenti SGQ
  *
  * Nodi espandibili/collassabili con lazy-loading dei figli.
  * Input inline per creazione rapida cartelle.
@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "./DocumentTree.css";
 
 /* ------------------------------------------------------------------ */
-/*  TreeNode ù nodo ricorsivo                                         */
+/*  TreeNode ó nodo ricorsivo                                         */
 /* ------------------------------------------------------------------ */
 function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect }) {
   const isExpanded = expandedIds.has(node.id);
@@ -79,7 +79,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
 }
 
 /* ------------------------------------------------------------------ */
-/*  DocumentTree ù componente principale                               */
+/*  DocumentTree ó componente principale                               */
 /* ------------------------------------------------------------------ */
 function DocumentTree({
   nodes,
@@ -131,7 +131,7 @@ function DocumentTree({
         <div className="doc-tree__header">Documenti</div>
         <div className="doc-tree__loading">
           <span className="doc-tree__spinner" />
-          Caricamentoù
+          Caricamento{"\u2026"}
         </div>
       </aside>
     );
@@ -174,7 +174,7 @@ function DocumentTree({
             ref={inputRef}
             className="doc-tree__new-folder-input"
             type="text"
-            placeholder="Nome cartellaù"
+            placeholder={"Nome cartella\u2026"}
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -185,7 +185,7 @@ function DocumentTree({
             onClick={handleCreateFolder}
             disabled={saving || !newFolderName.trim()}
           >
-            {saving ? "ù" : "\u2713"}
+            {saving ? "\u2026" : "\u2713"}
           </button>
           <button
             className="doc-tree__new-folder-cancel"

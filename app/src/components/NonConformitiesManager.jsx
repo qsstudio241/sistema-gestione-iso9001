@@ -35,7 +35,7 @@ function NonConformitiesManager({ readOnly = false }) {
 
   const handleRegisterToOrg = useCallback(async (nc) => {
     if (!currentAudit?.metadata?.auditId) {
-      setRegisterError("Audit non ancora salvato sul server — salva prima di registrare.");
+      setRegisterError("Audit non ancora salvato sul server - salva prima di registrare.");
       return;
     }
     setRegisteringNcId(nc.id);

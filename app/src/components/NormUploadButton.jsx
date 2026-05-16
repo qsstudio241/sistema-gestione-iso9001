@@ -1,5 +1,5 @@
 /**
- * NormUploadButton — Upload multiplo PDF norme con estrazione AI metadati
+ * NormUploadButton â€” Upload multiplo PDF norme con estrazione AI metadati
  * Mostrato nella cartella "NORME E LEGGI" del DocumentRegistry (vista Albero).
  */
 import React, { useState, useRef, useCallback } from "react";

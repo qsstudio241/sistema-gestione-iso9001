@@ -216,7 +216,7 @@ export default function LicensesSettingsPage() {
           Anagrafica organizzazione
         </h2>
         <p className="licenses-org-intro">
-          Nome tenant: <strong>{user?.organization_name || "—"}</strong>. Partita IVA e logo compaiono nel banner
+          Nome tenant: <strong>{user?.organization_name || "-"}</strong>. Partita IVA e logo compaiono nel banner
           dell’app e nei report Word (segnaposto <code className="licenses-code">{"{organizationName}"}</code>,{" "}
           <code className="licenses-code">{"{organizationVat}"}</code>; nel template Word anche il marker{" "}
           <code className="licenses-code">[LOGO_ORG]</code> per il logo studio).
@@ -309,7 +309,7 @@ export default function LicensesSettingsPage() {
               <span className="licenses-key">{key}</span>
               <span className="licenses-label">{label}</span>
               <span className="license-status-badge">
-                {selected.has(key) ? "✓ Attivo" : "— Non attivo"}
+                {selected.has(key) ? "\u2713 Attivo" : "- Non attivo"}
               </span>
             </li>
           ))}

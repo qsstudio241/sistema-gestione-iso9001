@@ -1,8 +1,8 @@
 /**
- * HomePage — Dashboard "Cosa fare oggi"
+ * HomePage - Dashboard "Cosa fare oggi"
  *
  * Filosofia Apple: l'utente arriva e in 3 secondi sa cosa richiede attenzione.
- * NON è un menu — è un briefing operativo personalizzato.
+ * NON è un menu - è un briefing operativo personalizzato.
  *
  * Sezioni:
  * 1. Saluto contestuale (buongiorno/pomeriggio/sera)
@@ -76,7 +76,7 @@ function StatBox({ icon, label, value, subLabel, onClick, locked }) {
     >
       <span className="stat-box-icon">{locked ? "🔒" : icon}</span>
       <div className="stat-box-content">
-        <span className="stat-box-value">{locked ? "—" : value}</span>
+        <span className="stat-box-value">{locked ? "-" : value}</span>
         <span className="stat-box-label">{label}</span>
         {subLabel && !locked && <span className="stat-box-sub">{subLabel}</span>}
         {locked && <span className="stat-box-sub" style={{ color: "#94a3b8" }}>Non attivato</span>}
@@ -116,7 +116,7 @@ function HomePage() {
         setExpiringDocs(expiringRes.value?.data || []);
       }
     } catch {
-      // errori silenziosi — la home mostra quello che riesce a caricare
+      // errori silenziosi - la home mostra quello che riesce a caricare
     } finally {
       setLoading(false);
     }
@@ -191,7 +191,7 @@ function HomePage() {
                   <span className="expiring-title">{doc.title}</span>
                   <span className="expiring-date">
                     Scade il {new Date(doc.expiry_date).toLocaleDateString("it-IT")}
-                    {doc.company_name ? ` — ${doc.company_name}` : ""}
+                    {doc.company_name ? ` - ${doc.company_name}` : ""}
                   </span>
                 </div>
               </div>
@@ -208,26 +208,26 @@ function HomePage() {
             <StatBox
               icon="📄"
               label="Documenti vigenti"
-              value={docStats?.vigenti ?? "—"}
+              value={docStats?.vigenti ?? "-"}
               subLabel={docStats?.in_scadenza_30gg > 0 ? `${docStats.in_scadenza_30gg} in scadenza` : null}
               onClick={() => navigate("/documents")}
             />
             <StatBox
               icon="🎓"
               label="Qualifiche"
-              value="—"
+              value="-"
               locked
             />
             <StatBox
               icon="⚠️"
               label="Rischi aperti"
-              value="—"
+              value="-"
               locked
             />
             <StatBox
               icon="✅"
               label="Azioni aperte"
-              value={ncStats?.open != null ? ncStats.open : "—"}
+              value={ncStats?.open != null ? ncStats.open : "-"}
               subLabel={ncStats?.overdue > 0 ? `${ncStats.overdue} in ritardo` : null}
               onClick={ncStats?.open != null ? () => navigate("/azioni") : undefined}
               locked={ncStats == null}

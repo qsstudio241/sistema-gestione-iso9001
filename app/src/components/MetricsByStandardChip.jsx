@@ -3,7 +3,7 @@
  * OSS/OM) per ciascuna norma selezionata in un audit.
  *
  * ADR-009 Fase 1 — DoD: sidebar audit ISO 9001+14001 mostra
- * "9001: 2 NC · 14001: 1 NC · totale 3".
+ * "9001: 2 NC | 14001: 1 NC | totale 3".
  *
  * Aggiunge una riga compatta accanto a metadata audit (header/sidebar). Non rompe
  * il caso mono-standard: con una sola norma mostra solo "2 NC" senza prefisso
@@ -25,7 +25,7 @@ function formatNormMetrics(metrics, { includeOss, includeOm }) {
   const parts = [`${metrics.totalNC} NC`];
   if (includeOss) parts.push(`${metrics.totalOSS} OSS`);
   if (includeOm) parts.push(`${metrics.totalOM} OM`);
-  return parts.join(" · ");
+  return parts.join(" | ");
 }
 
 function MetricsByStandardChip({

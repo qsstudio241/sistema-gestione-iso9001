@@ -16,11 +16,11 @@ import "./AuditSelector.css";
  * Per aggiungere un nuovo standard: inserire una nuova riga qui.
  */
 const AVAILABLE_STANDARDS = [
-  { code: "ISO_9001",   label: "ISO 9001:2015 \u2014 Qualit\u00e0", standardId: 1 },
-  { code: "ISO_14001",  label: "ISO 14001:2015 \u2014 Ambiente", standardId: 2 },
-  { code: "ISO_45001",  label: "ISO 45001:2018 \u2014 Salute e Sicurezza", standardId: 3 },
-  { code: "ISO_3834_2", label: "ISO 3834-2 \u2014 Audit Fornitori in Campo", standardId: 6 },
-  { code: "RDP_MSN",    label: "RDP Mason \u2014 Audit di Sistema Saldatura (ISO 3834-2)", standardId: 7 },
+  { code: "ISO_9001",   label: "ISO 9001:2015 - Qualit\u00e0", standardId: 1 },
+  { code: "ISO_14001",  label: "ISO 14001:2015 - Ambiente", standardId: 2 },
+  { code: "ISO_45001",  label: "ISO 45001:2018 - Salute e Sicurezza", standardId: 3 },
+  { code: "ISO_3834_2", label: "ISO 3834-2 - Audit Fornitori in Campo", standardId: 6 },
+  { code: "RDP_MSN",    label: "RDP Mason - Audit di Sistema Saldatura (ISO 3834-2)", standardId: 7 },
 ];
 
 const CLOSED_AUDIT_STATUSES = new Set(["completed", "approved", "archived"]);
@@ -142,10 +142,10 @@ const hasAnyClosedAudit = useMemo(
 
   const handleDeleteAudit = async () => {
     if (!currentAudit) return;
-    const num = currentAudit.metadata.auditNumber || "—";
-    const client = currentAudit.metadata.clientName || "—";
+    const num = currentAudit.metadata.auditNumber || "-";
+    const client = currentAudit.metadata.clientName || "-";
     const first = window.confirm(
-      `Eliminare definitivamente l'audit?\n\n${num} — ${client}\n\nQuesta operazione rimuove l'audit dal browser e dal server.\nNon può essere annullata.`
+      `Eliminare definitivamente l'audit?\n\n${num} - ${client}\n\nQuesta operazione rimuove l'audit dal browser e dal server.\nNon può essere annullata.`
     );
     if (!first) return;
     const second = window.confirm(
@@ -202,7 +202,7 @@ const hasAnyClosedAudit = useMemo(
                 onChange={handleCompanyChange}
                 className="audit-dropdown audit-company-select"
               >
-                <option value="">— Tutte le aziende —</option>
+                <option value="">- Tutte le aziende -</option>
                 {companyOptions.map(([norm, label]) => (
                   <option key={norm} value={norm}>
                     {label}
@@ -231,7 +231,7 @@ const hasAnyClosedAudit = useMemo(
                       {outsideFilter ? "⚠ " : ""}
                       {audit.metadata.auditNumber} - {audit.metadata.clientName} (
                       {audit.metadata.status})
-                      {outsideFilter ? " — fuori filtro" : ""}
+                      {outsideFilter ? " - fuori filtro" : ""}
                     </option>
                   );
                 })}
@@ -590,7 +590,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
           </button>
         </div>
 
-        {/* Sezione rilievi pendenti — re-audit o nuovo audit con storico cliente */}
+        {/* Sezione rilievi pendenti - re-audit o nuovo audit con storico cliente */}
         {pendingInfo && pendingInfo.count > 0 && (
           <div className="pending-issues-section">
             <div className="pending-issues-header">
@@ -616,7 +616,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                       {issue.clause_number || issue.requirement_reference || `Q${issue.question_id}`}
                     </span>
                     <span className="pending-issue-text">
-                      {issue.question_text || issue.notes || '—'}
+                      {issue.question_text || issue.notes || '-'}
                     </span>
                   </li>
                 ))}
@@ -649,7 +649,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                 type="text"
                 id="clientName"
                 readOnly
-                value={formData.clientName || "—"}
+                value={formData.clientName || "-"}
                 className="form-control readonly"
               />
             ) : companies.length > 0 ? (
@@ -662,8 +662,8 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                   className={`form-control ${errors.clientName ? "error" : ""}`}
                   disabled={companiesLoading}
                 >
-                  <option value="">— Seleziona azienda —</option>
-                  <option value={MANUAL_COMPANY_VALUE}>— Nuova azienda / Inserimento manuale —</option>
+                  <option value="">- Seleziona azienda -</option>
+                  <option value={MANUAL_COMPANY_VALUE}>- Nuova azienda / Inserimento manuale -</option>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -716,7 +716,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                   checked={formData.auditPartyType === "first_party"}
                   onChange={() => setFormData((p) => ({ ...p, auditPartyType: "first_party", fornitoreName: p.auditPartyType === "second_party" ? "" : p.fornitoreName }))}
                 />
-                <span>Prima parte (interno) — audit sul committente</span>
+                <span>Prima parte (interno) - audit sul committente</span>
               </label>
               <label className="checkbox-label">
                 <input
@@ -725,7 +725,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                   checked={formData.auditPartyType === "second_party"}
                   onChange={() => setFormData((p) => ({ ...p, auditPartyType: "second_party" }))}
                 />
-                <span>Seconda parte (fornitore) — audit su un fornitore</span>
+                <span>Seconda parte (fornitore) - audit su un fornitore</span>
               </label>
             </div>
             <small className="form-hint">I nostri audit sono di prima parte (interno) o seconda parte (fornitore).</small>
@@ -761,8 +761,8 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                     className="form-control"
                     disabled={companiesLoading}
                   >
-                    <option value="">— Seleziona fornitore —</option>
-                    <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
+                    <option value="">- Seleziona fornitore -</option>
+                    <option value={MANUAL_COMPANY_VALUE}>- Inserimento manuale -</option>
                     {companies.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
@@ -872,7 +872,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                 }
                 className="form-control"
               >
-                <option value="">— Nessuna —</option>
+                <option value="">- Nessuna -</option>
                 {customChecklists.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}

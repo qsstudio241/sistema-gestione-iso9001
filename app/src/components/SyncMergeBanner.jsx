@@ -1,5 +1,5 @@
 /**
- * SYNC-3 — Banner merge dati + notifica recovery storage automatica.
+ * SYNC-3 - Banner merge dati + notifica recovery storage automatica.
  *
  * Gestisce due eventi:
  * - sgq:auditMerged: mostra avviso merge field-level (solo con audit aperto)
@@ -80,7 +80,7 @@ export default function SyncMergeBanner() {
           <div className="sync-merge-banner-inner">
             <span className="sync-merge-banner-icon" aria-hidden>✅</span>
             <div className="sync-merge-banner-text">
-              <strong>Dati salvati — merge automatico applicato</strong>
+              <strong>Dati salvati - merge automatico applicato</strong>
               <p>
                 Il server aveva una versione più aggiornata dell&apos;audit. Le tue
                 modifiche sono state integrate automaticamente. Verifica note e

@@ -1,5 +1,5 @@
 /**
- * Pending Issues Cascade Component — Re-audit interattivo
+ * Pending Issues Cascade Component - Re-audit interattivo
  *
  * Carica i rilievi pendenti dall'audit precedente tramite GET /pending-issues
  * (che esegue lazy-init su DB). Permette all'auditor di segnare ciascun rilievo
@@ -257,7 +257,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
 
       {!loading && !error && issues.length > 0 && (
         <>
-          {/* Riepilogo statistiche — badge compatte, stesso stile di Rilievi Emergenti */}
+          {/* Riepilogo statistiche - badge compatte, stesso stile di Rilievi Emergenti */}
           <div className="findings-metrics-compact">
             <span className="metric-compact nc-severe"><strong>NC:</strong> {ncCount}</span>
             <span className="metric-compact oss"><strong>OSS:</strong> {ossCount}</span>
@@ -296,7 +296,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                           <span className="question-reference">{clauseLabel}</span>
                         )}
                         <h4 className="issue-title">{description}</h4>
-                        {/* Pulsante deep-link — inline nell'header, sempre visibile */}
+                        {/* Pulsante deep-link - inline nell'header, sempre visibile */}
                         {issue.section_code && onGoToQuestion && (
                           <button
                             className="issue-goto-btn"
@@ -330,7 +330,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                       <span className="issue-nc-icon">📋</span>
                       <span className="issue-nc-text">
                         <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
-                        {" — "}
+                        {" - "}
                         <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
                           {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
                         </span>

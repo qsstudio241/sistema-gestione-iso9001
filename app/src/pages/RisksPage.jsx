@@ -1,5 +1,5 @@
 /**
- * RisksPage — Registro Rischi & Obiettivi ISO 9001 §6.1 + §6.2
+ * RisksPage - Registro Rischi & Obiettivi ISO 9001 §6.1 + §6.2
  * Sprint 6: matrice rischio (prob×impatto), CRUD rischi, CRUD obiettivi con progress bar
  */
 
@@ -98,13 +98,13 @@ function RiskForm({ initial, onSave, onClose }) {
             <div>
               <label>Probabilit\u00e0</label>
               <select value={form.probability} onChange={e => upd("probability", parseInt(e.target.value))}>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} — {PROB_LABELS[v]}</option>)}
+                {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
               </select>
             </div>
             <div>
               <label>Impatto</label>
               <select value={form.impact} onChange={e => upd("impact", parseInt(e.target.value))}>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} — {IMP_LABELS[v]}</option>)}
+                {[1,2,3].map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
               </select>
             </div>
             <div className="score-preview">
@@ -465,7 +465,7 @@ export default function RisksPage() {
     <div className="risks-page">
       <div className="risks-page-header">
         <h1>\u26A0\uFE0F Rischi & Obiettivi</h1>
-        <p className="risks-page-sub">ISO 9001:2015 \u00a76.1 Rischi e opportunit\u00e0 \u2014 \u00a76.2 Obiettivi per la qualit\u00e0</p>
+        <p className="risks-page-sub">ISO 9001:2015 \u00a76.1 Rischi e opportunit\u00e0 - \u00a76.2 Obiettivi per la qualit\u00e0</p>
       </div>
 
       <div className="risks-tabs">

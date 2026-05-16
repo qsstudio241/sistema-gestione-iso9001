@@ -456,7 +456,7 @@ function ComplaintForm({ item, onClose, onSaved }) {
             <div className="form-group">
               <label>Fornitore oggetto del reclamo</label>
               <select value={form.supplier_id} onChange={e => set("supplier_id", e.target.value)}>
-                <option value="">— seleziona fornitore —</option>
+                <option value="">- seleziona fornitore -</option>
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.name}{s.category ? ` [${s.category}]` : ""}
@@ -476,7 +476,7 @@ function ComplaintForm({ item, onClose, onSaved }) {
             <div className="form-group">
               <label>Reparto oggetto del reclamo</label>
               <select value={form.department_id} onChange={e => set("department_id", e.target.value)}>
-                <option value="">— seleziona reparto —</option>
+                <option value="">- seleziona reparto -</option>
                 {departments.map(d => (
                   <option key={d.id} value={d.id}>
                     {d.name}{d.code ? ` [${d.code}]` : ""}

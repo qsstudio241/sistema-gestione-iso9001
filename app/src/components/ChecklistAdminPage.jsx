@@ -39,7 +39,7 @@ function MarkdownLegend() {
       {open && (
         <div className="md-legend-body">
           <p className="md-legend-intro">
-            Puoi usare questi simboli nel campo stralcio — verranno convertiti in formattazione Word:
+            Puoi usare questi simboli nel campo stralcio - verranno convertiti in formattazione Word:
           </p>
           <table className="md-legend-table">
             <thead><tr><th>Scrivi</th><th>Risultato nel Word</th></tr></thead>
@@ -68,10 +68,10 @@ function MarkdownLegend() {
 // ── Costanti ───────────────────────────────────────────────────────────────
 
 const STANDARDS = [
-  { id: 2, code: "ISO 14001", name: "ISO 14001 — Gestione Ambientale" },
-  { id: 1, code: "ISO 9001",  name: "ISO 9001 — Gestione Qualità" },
-  { id: 3, code: "ISO 3834",  name: "ISO 3834 — Requisiti Saldatura" },
-  { id: 4, code: "ISO 45001", name: "ISO 45001 — Salute e Sicurezza" },
+  { id: 2, code: "ISO 14001", name: "ISO 14001 - Gestione Ambientale" },
+  { id: 1, code: "ISO 9001",  name: "ISO 9001 - Gestione Qualit\u00e0" },
+  { id: 3, code: "ISO 3834",  name: "ISO 3834 - Requisiti Saldatura" },
+  { id: 4, code: "ISO 45001", name: "ISO 45001 - Salute e Sicurezza" },
 ];
 
 // ── Componente singola domanda ─────────────────────────────────────────────
@@ -219,7 +219,7 @@ function ChecklistAdminPage({ onBack }) {
           ← Lista Audit
         </button>
         <div className="ca-title-block">
-          <h2>Gestione Checklist — Stralci Normativi</h2>
+          <h2>Gestione Checklist - Stralci Normativi</h2>
           <p className="ca-subtitle">
             Incolla il testo normativo di riferimento per ogni domanda. Comparirà
             automaticamente nel report Word sotto la tabella di ogni punto auditato.

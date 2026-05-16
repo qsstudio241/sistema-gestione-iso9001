@@ -1,5 +1,5 @@
 /**
- * DocumentRegistry — Registro universale documenti SGQ
+ * DocumentRegistry - Registro universale documenti SGQ
  * Sprint 1: UX redesign con approccio Apple
  * Sprint Doc-Avanzata: layout master-detail con albero, tag, relazioni
  *
@@ -120,7 +120,7 @@ function PriorityCard({ doc, onEdit, onArchive, archiveId, onConfirmArchive, onC
           <span className={`pcard-expiry ${doc.is_expired ? "text-red" : "text-orange"}`}>
             {doc.is_expired
               ? `Scaduto il ${formatDate(doc.expiry_date)}`
-              : `Scade tra ${days} giorn${days === 1 ? "o" : "i"} — ${formatDate(doc.expiry_date)}`}
+              : `Scade tra ${days} giorn${days === 1 ? "o" : "i"} - ${formatDate(doc.expiry_date)}`}
           </span>
         </div>
       </div>
@@ -178,7 +178,7 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
       {expiredDocs.length > 0 && (
         <section className="priority-section">
           <div className="priority-section-header priority-section-red">
-            <span>⚠️ Scaduti — {expiredDocs.length}</span>
+            <span>⚠️ Scaduti - {expiredDocs.length}</span>
             <span className="ps-hint">Da rinnovare o archiviare</span>
           </div>
           {expiredDocs.map((doc) => (
@@ -199,7 +199,7 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
       {expiringDocs.length > 0 && (
         <section className="priority-section">
           <div className="priority-section-header priority-section-orange">
-            <span>🟡 In scadenza nei prossimi 60 giorni — {expiringDocs.length}</span>
+            <span>🟡 In scadenza nei prossimi 60 giorni - {expiringDocs.length}</span>
             <span className="ps-hint">Pianifica il rinnovo</span>
           </div>
           {expiringDocs.map((doc) => (
@@ -220,7 +220,7 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
       {revisionDocs.length > 0 && (
         <section className="priority-section">
           <div className="priority-section-header priority-section-blue">
-            <span>🔵 In revisione — {revisionDocs.length}</span>
+            <span>🔵 In revisione - {revisionDocs.length}</span>
             <span className="ps-hint">In attesa di approvazione</span>
           </div>
           {revisionDocs.map((doc) => (
@@ -358,7 +358,7 @@ function CatalogView({
                   const isConfirming = archiveId === doc.id;
                   return (
                     <tr key={doc.id} className={getExpiryClass(doc)}>
-                      <td className="col-code">{doc.doc_code || "—"}</td>
+                      <td className="col-code">{doc.doc_code || "-"}</td>
                       <td className="col-title">
                         <span className="doc-title">{doc.title}</span>
                         {doc.clause_ref && (
@@ -370,7 +370,7 @@ function CatalogView({
                           {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
                         </span>
                       </td>
-                      <td className="col-rev">{doc.revision || "—"}</td>
+                      <td className="col-rev">{doc.revision || "-"}</td>
                       <td className="col-status">
                         <span className={`status-badge status-${doc.status}`}>
                           {DOC_STATUS_LABELS[doc.status] || doc.status}
@@ -383,10 +383,10 @@ function CatalogView({
                             {doc.expiring_soon && !doc.is_expired && "🟡 "}
                             {formatDate(doc.expiry_date)}
                           </span>
-                        ) : "—"}
+                        ) : "-"}
                       </td>
-                      <td className="col-company">{doc.company_name || "—"}</td>
-                      <td className="col-responsible">{doc.responsible || "—"}</td>
+                      <td className="col-company">{doc.company_name || "-"}</td>
+                      <td className="col-responsible">{doc.responsible || "-"}</td>
                       <td className="col-actions" style={isConfirming ? { minWidth: 220 } : {}}>
                         {isConfirming ? (
                           <div className="inline-confirm">

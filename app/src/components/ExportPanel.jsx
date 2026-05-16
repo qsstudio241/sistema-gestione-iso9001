@@ -100,10 +100,10 @@ const ExportPanel = () => {
         auditorName: auditorFb,
       };
     }
-    // Priorità a auditId numerico (integer DB) — stesso ordine di useAttachmentManager.js
+    // Priorità a auditId numerico (integer DB) - stesso ordine di useAttachmentManager.js
     const auditId = currentAudit.metadata?.auditId || currentAudit.metadata?.id || currentAudit.id;
 
-    // 1) Preferisci GET /audits/:id/pending-issues (tab. pending_issues + NC) — Fase 0.5 roadmap
+    // 1) Preferisci GET /audits/:id/pending-issues (tab. pending_issues + NC) - Fase 0.5 roadmap
     try {
       if (auditId != null && String(auditId).trim() !== "") {
         const pendRes = await apiService.getPendingIssues(auditId);
@@ -116,7 +116,7 @@ const ExportPanel = () => {
               "",
             description: p.nc_description || "",
             originAuditNumber:
-              p.nc_number || (p.source_audit_id ? `#${p.source_audit_id}` : "—"),
+              p.nc_number || (p.source_audit_id ? `#${p.source_audit_id}` : "-"),
             issue_status: p.issue_status || "open",
             status: p.issue_status || "open",
             resolutionNotes: p.follow_up_notes || "",
@@ -294,7 +294,7 @@ const ExportPanel = () => {
       console.warn('[EXPORT] allegati server non disp., uso locali:', err.message);
     }
 
-    // Fetch stralci normativi (norm_excerpt) — usati dal report ISO 14001
+    // Fetch stralci normativi (norm_excerpt) - usati dal report ISO 14001
     // Usa .some(includes) per gestire varianti '14001', 'ISO_14001', 'ISO_14001_2015'
     const selectedStandards = currentAudit?.metadata?.selectedStandards || [];
     const checklistKeys = Object.keys(currentAudit?.checklist || {});
@@ -573,7 +573,7 @@ const ExportPanel = () => {
               String(k).replace('ISO_', 'ISO ').replace(/_\d{4}$/, '')
             ).join(' + ');
             return stds.length > 1
-              ? ` — ${stds.length} file (${label})`
+              ? ` - ${stds.length} file (${label})`
               : ` (${label})`;
           })()}</h4>
           {!currentAudit ? (
@@ -614,8 +614,8 @@ const ExportPanel = () => {
                 )}
                 <p className="photo-toggle-hint">
                   {embedPhotosEffective
-                    ? "Le foto vengono scaricate e incorporate nel DOCX — file più grande, generazione più lenta."
-                    : "Le foto non vengono incorporate — solo il nome del file comparirà nel report."}
+                    ? "Le foto vengono scaricate e incorporate nel DOCX - file più grande, generazione più lenta."
+                    : "Le foto non vengono incorporate - solo il nome del file comparirà nel report."}
                 </p>
               </div>
 
@@ -659,7 +659,7 @@ const ExportPanel = () => {
                 )}
               </p>
 
-              {/* Collegamento documentale — visibile per audit completati/approvati */}
+              {/* Collegamento documentale - visibile per audit completati/approvati */}
               {["completed", "approved"].includes(currentAudit?.metadata?.status) &&
                 hasLicensedModule?.("documents") && (
                 <div className="export-docregistry-hint">

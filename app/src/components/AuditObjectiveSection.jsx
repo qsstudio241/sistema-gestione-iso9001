@@ -137,8 +137,8 @@ function AuditObjectiveSection({ auditObjective, onUpdate, readOnly = false }) {
             <tbody>
               {formData.participants.map((p, idx) => (
                 <tr key={idx}>
-                  <td className="role-cell">{p.role || "—"}</td>
-                  <td className="name-cell">{p.name || "—"}</td>
+                  <td className="role-cell">{p.role || "-"}</td>
+                  <td className="name-cell">{p.name || "-"}</td>
                 </tr>
               ))}
             </tbody>

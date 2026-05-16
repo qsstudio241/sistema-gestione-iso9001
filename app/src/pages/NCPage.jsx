@@ -1,5 +1,5 @@
 /**
- * NCPage — Registro Non Conformità & Azioni Correttive
+ * NCPage - Registro Non Conformità & Azioni Correttive
  * Sprint 5: vista cross-audit, workflow stati, azioni correttive strutturate
  * ISO 9001:2015 §8.7 + §10.2
  */
@@ -339,10 +339,10 @@ export default function NCPage() {
     <div className="nc-page">
       <div className="nc-page-header">
         <h1>🚨 Non Conformità &amp; Azioni Correttive</h1>
-        <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 — Registro cross-audit</p>
+        <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
       </div>
 
-      {/* Stats bar — ogni card è un pulsante filtro */}
+      {/* Stats bar - ogni card è un pulsante filtro */}
       {stats && (
         <div className="nc-stats-bar">
           <button
@@ -382,7 +382,7 @@ export default function NCPage() {
 
       {/* Filtri */}
       <div className="nc-filters">
-        {/* Filtro cliente — primo nella barra per dare priorità visiva */}
+        {/* Filtro cliente - primo nella barra per dare priorità visiva */}
         {companies.length > 0 && (
           <select
             className="nc-filter-company"
@@ -463,7 +463,7 @@ export default function NCPage() {
                     {isOverdue && <span className="nc-overdue-badge">⚠️ Scaduta</span>}
                   </div>
                   <div className="nc-card-meta">
-                    <span className="nc-audit-ref">📋 {nc.audit_number} — {nc.client_name}</span>
+                    <span className="nc-audit-ref">📋 {nc.audit_number} - {nc.client_name}</span>
                     <span className="nc-section">{nc.section_title}</span>
                     {nc.due_date && <span className="nc-due">📅 {formatDate(nc.due_date)}</span>}
                   </div>

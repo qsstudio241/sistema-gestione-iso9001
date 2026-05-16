@@ -58,9 +58,9 @@ describe('MetricsByStandardChip', () => {
     );
 
     const wrapper = screen.getByTestId('metrics-by-standard-chip');
-    expect(wrapper.textContent).toMatch(/9001\s*:\s*2 NC\s*·\s*1 OSS\s*·\s*1 OM/);
-    expect(wrapper.textContent).toMatch(/14001\s*:\s*1 NC\s*·\s*2 OSS\s*·\s*0 OM/);
-    expect(wrapper.textContent).toMatch(/totale\s+3 NC\s*·\s*3 OSS\s*·\s*1 OM/);
+    expect(wrapper.textContent).toMatch(/9001\s*:\s*2 NC\s*\|\s*1 OSS\s*\|\s*1 OM/);
+    expect(wrapper.textContent).toMatch(/14001\s*:\s*1 NC\s*\|\s*2 OSS\s*\|\s*0 OM/);
+    expect(wrapper.textContent).toMatch(/totale\s+3 NC\s*\|\s*3 OSS\s*\|\s*1 OM/);
   });
 
   it('byStandard mancante per una norma selezionata → la salta senza esplodere', () => {

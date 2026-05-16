@@ -44,7 +44,7 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
             scope: "S",
             referenceDocuments: "R",
             processes: "P",
-            programCommunicatedDate: "—",
+            programCommunicatedDate: "-",
             auditor: "VERIFICATORE_PROVA",
             objectiveDescription: "O",
             participants: [{ role: "a", name: "b" }],
@@ -57,9 +57,12 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
             summaryText: "sum",
         });
         const docXml = d.getZip().files["word/document.xml"].asText();
-        const hdrXml = d.getZip().files["word/header1.xml"].asText();
+        const zipFiles = d.getZip().files;
+        const hdrPlain = Object.keys(zipFiles)
+            .filter((p) => /^word\/header\d+\.xml$/.test(p))
+            .map((p) => allWText(zipFiles[p].asText()))
+            .join("|");
         const docPlain = allWText(docXml);
-        const hdrPlain = allWText(hdrXml);
         expect(docPlain).toContain("TEST_OGGETTO");
         expect(docPlain).toContain("VERIFICATORE_PROVA");
         expect(hdrPlain).toContain("TEST_CLIENTE");
@@ -209,7 +212,7 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
             ncCount: "0", ossCount: "0", omCount: "0", nvCount: "0", naCount: "0", summaryText: "",
             organizationName: "", organizationVat: "",
             fornitoreName: "", committenteName: "", auditPartyTypeLabel: "", summaryText: "",
-            programCommunicatedDate: "—",
+            programCommunicatedDate: "-",
         });
         const docXml   = d.getZip().files["word/document.xml"].asText();
         const docPlain = allWText(docXml);

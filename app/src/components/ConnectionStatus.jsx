@@ -152,10 +152,10 @@ function ConnectionStatus() {
                     <span className="status-text">Offline</span>
                     {pendingCount > 0 ? (
                         <span className="offline-hint">
-                            {pendingCount} modifi{pendingCount === 1 ? 'ca' : 'che'} in coda — invio automatico al reconnect
+                            {pendingCount} modifi{pendingCount === 1 ? 'ca' : 'che'} in coda - invio automatico al reconnect
                         </span>
                     ) : (
-                        <span className="offline-hint">Lavoro salvato localmente — invio automatico al reconnect</span>
+                        <span className="offline-hint">Lavoro salvato localmente - invio automatico al reconnect</span>
                     )}
                 </>
             )}

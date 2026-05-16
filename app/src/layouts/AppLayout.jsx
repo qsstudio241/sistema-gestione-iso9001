@@ -1,5 +1,5 @@
 /**
- * AppLayout — Layout principale dell'applicazione
+ * AppLayout - Layout principale dell'applicazione
  *
  * Desktop: header top + sidebar sinistra fissa (240px) + area contenuto
  * Mobile:  header compatto + bottom navigation (5 voci)
@@ -86,7 +86,7 @@ function buildNavItems(user, alerts = {}) {
   ];
 }
 
-// ─── Bottom navigation (mobile — max 5 voci) ─────────────────────────────────
+// ─── Bottom navigation (mobile - max 5 voci) ─────────────────────────────────
 
 function BottomNav({ navItems }) {
   const { path } = useRouter();
@@ -287,7 +287,7 @@ function AppLayout({ children }) {
               <img src={orgLogoDataUrl} alt="" className="layout-header-org-logo" width={36} height={36} />
             ) : null}
             <h1 className="layout-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              SGQ — Sistema di Gestione
+              SGQ - Sistema di Gestione
             </h1>
           </div>
           <div className="layout-header-right">
@@ -320,7 +320,7 @@ function AppLayout({ children }) {
 
         {/* Footer */}
         <footer className="layout-footer">
-          <p>© {new Date().getFullYear()} QS Studio — Sistema Gestione ISO 9001/14001/45001</p>
+          <p>© {new Date().getFullYear()} QS Studio - Sistema Gestione ISO 9001/14001/45001</p>
         </footer>
       </div>
 

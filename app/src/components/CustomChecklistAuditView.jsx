@@ -355,14 +355,14 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
       {(checklist?.sections || []).map((sec) => (
         <div key={sec.id} className="custom-checklist-section">
           <h4 className="custom-checklist-section-title">
-            {sec.code} — {sec.title}
+            {sec.code} - {sec.title}
           </h4>
 
           {(sec.items || []).map((item) => {
             // Adatta item custom → forma question attesa da QuestionCard
             const question = {
               id: item.id,
-              text: `${item.code} — ${item.title}`,
+              text: `${item.code} - ${item.title}`,
               status: statuses[item.id] || null,
               // notes: primo blocco testo (campo principale item custom)
               notes: responses[item.id]?.[0]?.text || "",

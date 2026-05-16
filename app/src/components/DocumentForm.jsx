@@ -1,5 +1,5 @@
 /**
- * DocumentForm — Modale per creazione e modifica documenti SGQ
+ * DocumentForm - Modale per creazione e modifica documenti SGQ
  * Sprint 1 UX:
  *   - Nuovo documento: wizard 2 passi (essenziali → dettagli)
  *   - Modifica: form completo in una sola schermata
@@ -95,7 +95,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
 
   const step1Valid = form.title.trim().length > 0;
 
-  // Avanza dal passo 1 al passo 2 — NON salva nulla
+  // Avanza dal passo 1 al passo 2 - NON salva nulla
   const handleNext = () => {
     if (!step1Valid) { setError("Il titolo è obbligatorio."); return; }
     setError(null);
@@ -183,7 +183,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
           <div className="docform-field">
             <label>Azienda</label>
             <select value={form.company_id} onChange={handleChange("company_id")}>
-              <option value="">— Documento di studio —</option>
+              <option value="">- Documento di studio -</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -224,7 +224,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
               <div className="docform-field">
                 <label>Azienda</label>
                 <select value={form.company_id} onChange={handleChange("company_id")}>
-                  <option value="">— Documento di studio —</option>
+                  <option value="">- Documento di studio -</option>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -294,10 +294,10 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
         <div className="docform-field">
           <label>Norma di riferimento</label>
           <select value={form.standard_id} onChange={handleChange("standard_id")}>
-            <option value="">— Nessuna —</option>
+            <option value="">- Nessuna -</option>
             {standards.map((s) => (
               <option key={s.standard_id} value={s.standard_id}>
-                {s.standard_code} — {s.standard_name}
+                {s.standard_code} - {s.standard_name}
               </option>
             ))}
           </select>
@@ -340,14 +340,14 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
 
         {/* Header */}
         <div className="docform-header">
-          <h3>{isEdit ? `Modifica — ${doc.title}` : "Nuovo documento"}</h3>
+          <h3>{isEdit ? `Modifica - ${doc.title}` : "Nuovo documento"}</h3>
           <button className="docform-close" type="button" onClick={onClose} aria-label="Chiudi">✕</button>
         </div>
 
         {/* Indicatore wizard (solo nuovo) */}
         {!isEdit && <StepIndicator step={step} />}
 
-        {/* Corpo — div invece di form, niente submit automatica */}
+        {/* Corpo - div invece di form, niente submit automatica */}
         <div className="docform-body">
           {!isEdit
             ? (step === 1 ? renderStep1() : renderStep2orEdit())
@@ -358,7 +358,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
           {error && <div className="docform-error">⚠️ {error}</div>}
         </div>
 
-        {/* Footer — fuori dal body scrollabile, fuori da qualsiasi form */}
+        {/* Footer - fuori dal body scrollabile, fuori da qualsiasi form */}
         <div className="docform-footer">
           {!isEdit && step === 1 && (
             <>

@@ -9,11 +9,11 @@ import apiService from "../services/apiService";
 import "./UsersAdminPage.css";
 
 const STANDARDS_LIST = [
-  { standard_id: 1, label: "ISO 9001:2015 — Qualità" },
-  { standard_id: 2, label: "ISO 14001:2015 — Ambiente" },
-  { standard_id: 3, label: "ISO 45001:2018 — Salute e Sicurezza" },
-  { standard_id: 6, label: "ISO 3834-2 — Audit Fornitori in Campo" },
-  { standard_id: 7, label: "RDP Mason — Audit di Sistema Saldatura" },
+  { standard_id: 1, label: "ISO 9001:2015 - Qualità" },
+  { standard_id: 2, label: "ISO 14001:2015 - Ambiente" },
+  { standard_id: 3, label: "ISO 45001:2018 - Salute e Sicurezza" },
+  { standard_id: 6, label: "ISO 3834-2 - Audit Fornitori in Campo" },
+  { standard_id: 7, label: "RDP Mason - Audit di Sistema Saldatura" },
 ];
 
 const ALL_MODULE_KEYS = [
@@ -58,7 +58,7 @@ function emptyEditForm(u) {
   };
 }
 
-/** Un auditor senza studio assegnato è "orfano" — configurazione incompleta */
+/** Un auditor senza studio assegnato è "orfano" - configurazione incompleta */
 function isOrphanAuditor(role, auditor_org_id) {
   return role === "auditor" && (auditor_org_id == null || auditor_org_id === "");
 }
@@ -90,7 +90,7 @@ export default function UsersAdminPage({ onBack }) {
   const isSuperadmin = user?.role === "superadmin";
   const elevatedAdmin = isAdmin;
 
-  // Stato licenze moduli per org (superadmin only) — dirty map: orgId → string[]|null
+  // Stato licenze moduli per org (superadmin only) - dirty map: orgId → string[]|null
   const [orgLicensesDirty, setOrgLicensesDirty] = useState({});
   const [savingOrgLicense, setSavingOrgLicense] = useState(null);
   const [orgLicenseMsg, setOrgLicenseMsg] = useState({});
@@ -471,7 +471,7 @@ export default function UsersAdminPage({ onBack }) {
                 setCreateForm((f) => ({ ...f, auditor_org_id: e.target.value }))
               }
             >
-              <option value="">— Nessuno —</option>
+              <option value="">- Nessuno -</option>
               {auditorOrgs
                 .filter((ao) =>
                   !user?.organization_id || ao.organization_id === user.organization_id
@@ -689,7 +689,7 @@ export default function UsersAdminPage({ onBack }) {
                       }
                       disabled={!active || savingId === u.user_id}
                     >
-                      <option value="">— Nessuno —</option>
+                      <option value="">- Nessuno -</option>
                       {auditorOrgs
                         .filter((ao) =>
                           !u.organization_id || ao.organization_id === u.organization_id

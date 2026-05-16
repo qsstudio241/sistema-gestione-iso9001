@@ -231,7 +231,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       : { totalNC: 0 };
     const totalNC = isoMetrics.totalNC + customMetrics.totalNC;
     if (totalNC > 0)
-      ws.push(`${totalNC} Non Conformità rilevate — verificare note e azioni correttive`);
+      ws.push(`${totalNC} Non Conformità rilevate - verificare note e azioni correttive`);
     return ws;
   }, [currentAudit]);
 
@@ -417,7 +417,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
           </p>
         )}
 
-        {/* Pulsante Approva — solo da completed, per ruolo responsabile/admin */}
+        {/* Pulsante Approva - solo da completed, per ruolo responsabile/admin */}
         {status === "completed" && !approving && (
           <button
             className="close-btn close-btn--approve"
@@ -462,7 +462,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
         )}
         {status === "approved" && (
           <p className="close-done-hint" style={{ marginTop: "12px" }}>
-            Audit approvato — nessuna modifica consentita.
+            Audit approvato - nessuna modifica consentita.
           </p>
         )}
       </div>
@@ -488,7 +488,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
         </div>
       ))}
 
-      {/* Campi obbligatori mancanti — lista semplice, navigazione via pulsante principale */}
+      {/* Campi obbligatori mancanti - lista semplice, navigazione via pulsante principale */}
       {missingFields.length > 0 && (
         <div className="close-checklist close-checklist--blockers">
           <h4>❌ Campi obbligatori mancanti</h4>

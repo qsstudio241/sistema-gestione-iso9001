@@ -471,7 +471,7 @@ function CustomChecklistEditor({ checklist, activeAuditCount = 0, onBack, onSave
           disabled={templateSaving || !templates.length}
           className="cc-template-select"
         >
-          <option value="">— Seleziona template —</option>
+          <option value="">- Seleziona template -</option>
           {templates.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name} {t.is_system ? "(sistema)" : ""}
@@ -528,7 +528,7 @@ function CustomChecklistEditor({ checklist, activeAuditCount = 0, onBack, onSave
                 <>
                   <span className="cc-section-title-text">
                     <strong>{sec.code}</strong>
-                    {" — "}
+                    {" - "}
                     {sec.title}
                   </span>
                   <span className="cc-section-actions">

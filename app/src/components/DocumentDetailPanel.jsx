@@ -1,5 +1,5 @@
 /**
- * DocumentDetailPanel ù pannello slide-in con dettagli documento selezionato
+ * DocumentDetailPanel - pannello slide-in con dettagli documento selezionato
  *
  * Mostra: informazioni, tag (placeholder WS-5), relazioni (placeholder WS-5),
  * file/versioni, cronologia modifiche, azioni.
@@ -79,13 +79,13 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
             <InfoRow label="Clausola" value={doc.clause_reference} />
           </section>
 
-          {/* Tag ù placeholder WS-5 */}
+          {/* Tag - placeholder WS-5 */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">Tag</h3>
             <p className="doc-detail__placeholder">Nessun tag assegnato</p>
           </section>
 
-          {/* Relazioni ó placeholder WS-5 */}
+          {/* Relazioni - placeholder WS-5 */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">Relazioni</h3>
             <p className="doc-detail__placeholder">Nessuna relazione</p>
@@ -101,7 +101,7 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
                     <span className="doc-detail__file-name">{f.file_name}</span>
                     <span className="doc-detail__file-meta">
                       {f.version && `v${f.version}`}
-                      {f.uploaded_at && ` ù ${formatDate(f.uploaded_at)}`}
+                      {f.uploaded_at && ` - ${formatDate(f.uploaded_at)}`}
                     </span>
                   </li>
                 ))}
@@ -122,7 +122,7 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
                     <div className="doc-detail__timeline-content">
                       <span className="doc-detail__timeline-action">{evt.action}</span>
                       <span className="doc-detail__timeline-meta">
-                        {evt.user_name && `${evt.user_name} ù `}
+                        {evt.user_name && `${evt.user_name} - `}
                         {formatDate(evt.created_at)}
                       </span>
                     </div>
@@ -130,7 +130,7 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
                 ))}
               </ul>
             ) : (
-              <p className="doc-detail__placeholder">Nessuna attivitù registrata</p>
+              <p className="doc-detail__placeholder">{"Nessuna attivit\u00e0 registrata"}</p>
             )}
           </section>
         </div>

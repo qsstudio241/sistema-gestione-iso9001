@@ -208,7 +208,7 @@ function QualificationsPage() {
                     {q.scope_detail && <div className="sq-qual-scope">{q.scope_detail}</div>}
                   </td>
                   <td className="sq-col-cert">
-                    {q.certificate_number || "—"}
+                    {q.certificate_number || "-"}
                     {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
                   </td>
                   <td className="sq-col-expiry">

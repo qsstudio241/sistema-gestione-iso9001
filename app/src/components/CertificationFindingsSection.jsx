@@ -182,13 +182,13 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
                 const isOverdue = f.status !== "closed" && f.due_date && new Date(f.due_date) < new Date();
                 return (
                   <tr key={f.finding_id} className={isOverdue ? "row-overdue" : ""}>
-                    <td className="col-number">{f.finding_number || "—"}</td>
+                    <td className="col-number">{f.finding_number || "-"}</td>
                     <td>
                       <span className="badge-type" style={{ color: type.color, borderColor: type.color }}>
                         {f.finding_type}
                       </span>
                     </td>
-                    <td className="col-clause">{f.clause_ref || "—"}</td>
+                    <td className="col-clause">{f.clause_ref || "-"}</td>
                     <td className="col-description">
                       <div className="description-text">{f.description}</div>
                       {f.corrective_action && (
@@ -197,9 +197,9 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
                         </div>
                       )}
                     </td>
-                    <td className="col-body">{f.certifying_body || "—"}</td>
+                    <td className="col-body">{f.certifying_body || "-"}</td>
                     <td className={`col-date ${isOverdue ? "date-overdue" : ""}`}>
-                      {f.due_date ? new Date(f.due_date).toLocaleDateString("it-IT") : "—"}
+                      {f.due_date ? new Date(f.due_date).toLocaleDateString("it-IT") : "-"}
                       {isOverdue && <span className="overdue-badge">SCADUTO</span>}
                     </td>
                     <td>

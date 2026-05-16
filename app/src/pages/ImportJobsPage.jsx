@@ -1,5 +1,5 @@
 /**
- * ImportJobsPage — Sprint 9: job import PDF batch + revisione testo
+ * ImportJobsPage - Sprint 9: job import PDF batch + revisione testo
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -282,7 +282,7 @@ export default function ImportJobsPage() {
                   >
                     <span className="job-title">{j.title}</span>
                     <span className="job-meta">
-                      #{j.id} — {j.status} — {j.file_count ?? 0} file
+                      #{j.id} - {j.status} - {j.file_count ?? 0} file
                     </span>
                   </button>
                   <button
@@ -311,7 +311,7 @@ export default function ImportJobsPage() {
               <p className="job-detail-status">
                 Stato: <strong>{detail.job.status}</strong>
                 {detail.job.document_type_hint && (
-                  <> — tipo suggerito: {detail.job.document_type_hint}</>
+                  <> - tipo suggerito: {detail.job.document_type_hint}</>
                 )}
               </p>
               <div className="import-jobs-actions">
@@ -427,7 +427,7 @@ export default function ImportJobsPage() {
         </section>
       </div>
 
-      {/* Sprint 10 — Dialog commit al registry */}
+      {/* Sprint 10 - Dialog commit al registry */}
       {commitDialog && (
         <div className="commit-dialog-overlay" onClick={() => setCommitDialog(null)}>
           <div className="commit-dialog" onClick={(e) => e.stopPropagation()}>

@@ -46,7 +46,7 @@ function AuditStatusBadge({ status }) {
 // Source of Truth degli standard supportati: importata da
 // `app/src/data/standardsRegistry.js` (ADR-009 Fase 1).
 // Per aggiungere un nuovo standard: aggiungere UNA SOLA RIGA in
-// STANDARDS_REGISTRY (registry condiviso) — questo file non richiede modifiche.
+// STANDARDS_REGISTRY (registry condiviso) - questo file non richiede modifiche.
 
 const MANUAL_COMPANY_VALUE = "__manual__";
 
@@ -141,7 +141,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   };
 
   /**
-   * navigateTo(path, fieldId) — apre tutti i livelli accordion dichiarati in path[],
+   * navigateTo(path, fieldId) - apre tutti i livelli accordion dichiarati in path[],
    * poi scrolla al fieldId. Aggiungere un nuovo tipo a PathStep è sufficiente
    * per supportare qualsiasi futura struttura annidata senza modificare i chiamanti.
    *
@@ -296,7 +296,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     // Aggiorna metadata
     onUpdate("selectedStandards", updatedStandards);
 
-    // Inizializza checklist per standard aggiunti — usa STANDARD_INIT_MAP per scalabilità
+    // Inizializza checklist per standard aggiunti - usa STANDARD_INIT_MAP per scalabilità
     addedStandards.forEach((standard) => {
       const entry = Object.entries(STANDARD_INIT_MAP).find(([, codes]) => codes.includes(standard));
       if (entry) {
@@ -389,10 +389,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         </div>
       </div>
 
-      {/* Banner read-only — visibile quando audit è in stato bloccato */}
+      {/* Banner read-only - visibile quando audit è in stato bloccato */}
       {isReadOnly && (
         <div className="audit-readonly-banner">
-          🔒 Audit in sola lettura — stato: <strong>{currentAudit.metadata.status?.toUpperCase()}</strong>.
+          🔒 Audit in sola lettura - stato: <strong>{currentAudit.metadata.status?.toUpperCase()}</strong>.
           Nessuna modifica consentita.
         </div>
       )}
@@ -401,19 +401,19 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       {serverDataStatus === 'loading' && (
         <div className="server-data-banner server-data-banner--loading">
           <span className="server-data-banner__spinner" aria-hidden="true">⏳</span>
-          <span>Caricamento risposte dal server in corso — le modifiche sono disabilitate temporaneamente…</span>
+          <span>Caricamento risposte dal server in corso - le modifiche sono disabilitate temporaneamente…</span>
         </div>
       )}
       {showReadyBanner && (
         <div className="server-data-banner server-data-banner--ready">
           <span aria-hidden="true">✅</span>
-          <span>Dati aggiornati dal server — puoi modificare</span>
+          <span>Dati aggiornati dal server - puoi modificare</span>
         </div>
       )}
       {serverDataStatus === 'error' && (
         <div className="server-data-banner server-data-banner--error">
           <span aria-hidden="true">⚠️</span>
-          <span>Impossibile caricare le risposte dal server — vengono mostrati i dati locali. Ricarica per riprovare.</span>
+          <span>Impossibile caricare le risposte dal server - vengono mostrati i dati locali. Ricarica per riprovare.</span>
         </div>
       )}
 
@@ -431,7 +431,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <span className="section-arrow">
               {openSections["general-data"] ? "▼" : "▶"}
             </span>
-            <span className="section-title">1 – DATI GENERALI</span>
+            <span className="section-title">1 - DATI GENERALI</span>
           </button>
 
           {openSections["general-data"] && (
@@ -509,8 +509,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                 }}
                                 disabled={isReadOnly || companiesLoading}
                               >
-                                <option value="">— Seleziona azienda auditata —</option>
-                                <option value={MANUAL_COMPANY_VALUE}>— Inserimento manuale —</option>
+                                <option value="">- Seleziona azienda auditata -</option>
+                                <option value={MANUAL_COMPANY_VALUE}>- Inserimento manuale -</option>
                                 {companies.map(c => (
                                   <option key={c.id} value={c.id}>
                                     {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
@@ -728,7 +728,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <span className="section-arrow">
               {openSections["outcome"] ? "▼" : "▶"}
             </span>
-            <span className="section-title">11 – ESITO DELL'AUDIT</span>
+            <span className="section-title">11 - ESITO DELL'AUDIT</span>
           </button>
 
           {openSections["outcome"] && (
@@ -757,7 +757,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             <span className="section-arrow">
               {openSections["conclusions"] ? "▼" : "▶"}
             </span>
-            <span className="section-title">12 – CONCLUSIONI</span>
+            <span className="section-title">12 - CONCLUSIONI</span>
           </button>
 
           {openSections["conclusions"] && (

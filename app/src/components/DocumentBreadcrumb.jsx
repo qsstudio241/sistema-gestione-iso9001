@@ -1,11 +1,25 @@
 /**
- * DocumentBreadcrumb ó barra orizzontale con percorso navigabile
+ * DocumentBreadcrumb ù barra orizzontale con percorso navigabile
  *
- * Formato: Home õ Cartella 1 õ Sotto-cartella õ Documento attuale
- * Ogni elemento Ë cliccabile tranne l'ultimo (posizione corrente).
+ * Formato: Home / Cartella / Sotto-cartella / Documento attuale
+ * Separatori solo ASCII (evita U+FFFD su font stack senza glifo per ù o em dash).
+ * Ogni elemento ù cliccabile tranne l'ultimo (posizione corrente).
  */
 import React from "react";
 import "./DocumentBreadcrumb.css";
+
+/** Rimuove caratteri di sostituzione da stringhe DB/API (mojibake residuo). */
+function sanitizeSegment(s) {
+  if (s == null || typeof s !== "string") return s;
+  return s.replace(/\uFFFD/g, "").trim();
+}
+
+function formatItemLabel(item) {
+  const title = sanitizeSegment(item.title);
+  const code = item.folder_code != null ? sanitizeSegment(String(item.folder_code)) : "";
+  if (code) return `${code} - ${title}`;
+  return title;
+}
 
 function DocumentBreadcrumb({ items, onNavigate }) {
   if (!items?.length) return null;
@@ -28,10 +42,12 @@ function DocumentBreadcrumb({ items, onNavigate }) {
           const isLast = idx === items.length - 1;
           return (
             <li key={item.id} className="doc-breadcrumb__item">
-              <span className="doc-breadcrumb__separator" aria-hidden="true">õ</span>
+              <span className="doc-breadcrumb__separator" aria-hidden="true">
+                /
+              </span>
               {isLast ? (
                 <span className="doc-breadcrumb__current" aria-current="page">
-                  {item.title}
+                  {sanitizeSegment(item.title)}
                 </span>
               ) : (
                 <button
@@ -39,7 +55,7 @@ function DocumentBreadcrumb({ items, onNavigate }) {
                   onClick={() => onNavigate(item.id)}
                   type="button"
                 >
-                  {item.folder_code ? `${item.folder_code} ó ${item.title}` : item.title}
+                  {formatItemLabel(item)}
                 </button>
               )}
             </li>

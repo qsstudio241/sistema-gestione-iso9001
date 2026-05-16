@@ -1,5 +1,5 @@
 /**
- * AnagrafichePage — Gestione Master Data: Fornitori e Reparti
+ * AnagrafichePage - Gestione Master Data: Fornitori e Reparti
  *
  * Route: /anagrafiche
  * ISO 9001:2015 §8.4 Controllo fornitura esterna (Fornitori)
@@ -17,7 +17,7 @@ import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import "./AnagrafichePage.css";
 
-const SCORE_STARS = (n) => n ? "⭐".repeat(Math.min(n, 5)) : "—";
+const SCORE_STARS = (n) => n ? "\u2B50".repeat(Math.min(n, 5)) : "-";
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
@@ -30,8 +30,7 @@ export default function AnagrafichePage() {
         <div>
           <h1>Anagrafiche</h1>
           <p className="page-sub">
-            Registro fornitori esterni e reparti produttivi interni —
-            ISO 9001:2015 §8.4 · §8.5
+            Registro fornitori esterni e reparti produttivi interni - ISO 9001:2015 §8.4 / §8.5
           </p>
         </div>
       </div>
@@ -164,15 +163,15 @@ function SuppliersTab() {
                     <strong>{s.name}</strong>
                     {s.vat_number && <small className="vat-note"> · {s.vat_number}</small>}
                   </td>
-                  <td><code>{s.code || "—"}</code></td>
-                  <td>{s.category || "—"}</td>
-                  <td>{s.contact_person || "—"}</td>
-                  <td>{s.is_qualified ? "✅" : "—"}</td>
+                  <td><code>{s.code || "-"}</code></td>
+                  <td>{s.category || "-"}</td>
+                  <td>{s.contact_person || "-"}</td>
+                  <td>{s.is_qualified ? "✅" : "-"}</td>
                   <td>{SCORE_STARS(s.last_score)}</td>
                   <td>
                     {s.complaints_count > 0
                       ? <span className="badge-warning">{s.complaints_count}</span>
-                      : "—"}
+                      : "-"}
                   </td>
                   <td className="actions-cell">
                     <button
@@ -295,7 +294,7 @@ function SupplierDetail({ supplier, onRefresh }) {
                 onChange={e => setForm(f => ({ ...f, score: parseInt(e.target.value) }))}
               >
                 {[1,2,3,4,5].map(n => (
-                  <option key={n} value={n}>{"⭐".repeat(n)} — {["Pessimo","Scarso","Sufficiente","Buono","Ottimo"][n-1]}</option>
+                  <option key={n} value={n}>{"⭐".repeat(n)} - {["Pessimo","Scarso","Sufficiente","Buono","Ottimo"][n-1]}</option>
                 ))}
               </select>
             </div>
@@ -544,18 +543,18 @@ function DepartmentsTab() {
               </tr>
             ) : sorted.map(d => (
               <tr key={d.id}>
-                <td><code>{d.code || "—"}</code></td>
+                <td><code>{d.code || "-"}</code></td>
                 <td>
                   {d.parent_id && <span className="indent-arrow">↳ </span>}
                   <strong>{d.name}</strong>
                   {d.description && <small className="detail-hint"> · {d.description}</small>}
                 </td>
-                <td>{d.parent_name || "—"}</td>
-                <td>{d.manager_name || "—"}</td>
+                <td>{d.parent_name || "-"}</td>
+                <td>{d.manager_name || "-"}</td>
                 <td>
                   {d.complaints_count > 0
                     ? <span className="badge-warning">{d.complaints_count}</span>
-                    : "—"}
+                    : "-"}
                 </td>
                 <td>
                   <span className={`active-badge ${d.is_active ? "active" : "inactive"}`}>
@@ -653,7 +652,7 @@ function DepartmentForm({ item, parentOptions, onClose, onSaved }) {
             <div className="form-group">
               <label>Reparto padre (struttura gerarchica)</label>
               <select value={form.parent_id} onChange={e => set("parent_id", e.target.value)}>
-                <option value="">— nessuno (reparto di primo livello) —</option>
+                <option value="">- nessuno (reparto di primo livello) -</option>
                 {parentOptions
                   .filter(p => p.id !== item?.id)
                   .map(p => (

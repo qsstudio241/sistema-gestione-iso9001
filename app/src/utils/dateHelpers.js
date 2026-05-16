@@ -7,10 +7,10 @@
  * Formatta una data ISO (YYYY-MM-DD...) in formato italiano (DD/MM/YYYY).
  * Gestisce: stringhe ISO, Date objects, null/undefined.
  * @param {string|Date|null|undefined} d
- * @returns {string} Data formattata o "—"
+ * @returns {string} Data formattata o "-"
  */
 export function formatDate(d) {
-  if (!d) return "—";
+  if (!d) return "-";
   const s = typeof d === "string" ? d : String(d);
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
@@ -22,5 +22,5 @@ export function formatDate(d) {
       year: "numeric",
     });
   }
-  return "—";
+  return "-";
 }

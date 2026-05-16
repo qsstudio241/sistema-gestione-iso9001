@@ -122,7 +122,7 @@ function NotificationsSettingsPage() {
       <div className={`smtp-status ${process.env.NODE_ENV ? "smtp-unknown" : ""}`}>
         <span className="smtp-dot" />
         <span className="smtp-label">
-          Account SMTP configurato sul server — gestito dal tecnico tramite variabili d'ambiente
+          Account SMTP configurato sul server - gestito dal tecnico tramite variabili d'ambiente
         </span>
       </div>
 

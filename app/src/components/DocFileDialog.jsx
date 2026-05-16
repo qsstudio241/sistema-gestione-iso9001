@@ -1,5 +1,5 @@
 /**
- * DocFileDialog — Dialog gestione file allegato al documento del registro
+ * DocFileDialog - Dialog gestione file allegato al documento del registro
  * Sprint 2B: visualizza lista versioni, permette upload nuova revisione
  * Sprint 12-A: "Apri in Word/Excel" (Office URI Scheme + WebDAV) e anteprima browser
  */
@@ -151,7 +151,7 @@ function DocFileDialog({ doc, onClose }) {
         <div className="docfile-header">
           <div>
             <h3 className="docfile-title">&#128206; File allegato</h3>
-            <p className="docfile-subtitle">{doc.doc_code ? `${doc.doc_code} — ` : ""}{doc.title}</p>
+            <p className="docfile-subtitle">{doc.doc_code ? `${doc.doc_code} - ` : ""}{doc.title}</p>
           </div>
           <button className="docfile-close" onClick={onClose}>&#x2715;</button>
         </div>
@@ -209,7 +209,7 @@ function DocFileDialog({ doc, onClose }) {
                       className="btn-docfile-office btn-docfile-office-word"
                       onClick={() => handleOpenInOffice('edit')}
                       disabled={officeLoading}
-                      title="Apri in Word desktop — modifica e salva direttamente"
+                      title="Apri in Word desktop - modifica e salva direttamente"
                     >
                       &#128196; Apri in Word
                     </button>
@@ -219,7 +219,7 @@ function DocFileDialog({ doc, onClose }) {
                       className="btn-docfile-office btn-docfile-office-excel"
                       onClick={() => handleOpenInOffice('edit')}
                       disabled={officeLoading}
-                      title="Apri in Excel desktop — modifica e salva direttamente"
+                      title="Apri in Excel desktop - modifica e salva direttamente"
                     >
                       &#128202; Apri in Excel
                     </button>
@@ -263,7 +263,7 @@ function DocFileDialog({ doc, onClose }) {
                 {/* Info post-apertura Office */}
                 {webdavData && !officeError && (
                   <div className="docfile-office-info">
-                    &#128274; Link Office attivo — salva in Word/Excel per aggiornare il documento.
+                    &#128274; Link Office attivo - salva in Word/Excel per aggiornare il documento.
                     Scade alle {new Date(webdavData.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
                   </div>
                 )}

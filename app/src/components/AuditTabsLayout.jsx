@@ -14,17 +14,17 @@ import PendingIssuesCascade from "./PendingIssuesCascade";
 // import AuditOutcomeSection from './AuditOutcomeSection';
 
 const AUDIT_TABS = [
-  { id: "general-data", label: "1 – Dati Generali", icon: "📋" },
-  { id: "objective", label: "2 – Obiettivo", icon: "🎯" },
-  { id: "pending-issues", label: "3 – Rilievi Pendenti", icon: "⏳" },
-  { id: "clause-4", label: "4 – Contesto", icon: "🏢" },
-  { id: "clause-5", label: "5 – Leadership", icon: "👔" },
-  { id: "clause-6", label: "6 – Pianificazione", icon: "📊" },
-  { id: "clause-7", label: "7 – Supporto", icon: "🛠️" },
-  { id: "clause-8", label: "8 – Attività Operative", icon: "⚙️" },
-  { id: "clause-9", label: "9 – Valutazione", icon: "📈" },
-  { id: "clause-10", label: "10 – Miglioramento", icon: "🚀" },
-  { id: "outcome", label: "11 – Esito", icon: "✅" },
+  { id: "general-data", label: "1 - Dati Generali", icon: "📋" },
+  { id: "objective", label: "2 - Obiettivo", icon: "🎯" },
+  { id: "pending-issues", label: "3 - Rilievi Pendenti", icon: "⏳" },
+  { id: "clause-4", label: "4 - Contesto", icon: "🏢" },
+  { id: "clause-5", label: "5 - Leadership", icon: "👔" },
+  { id: "clause-6", label: "6 - Pianificazione", icon: "📊" },
+  { id: "clause-7", label: "7 - Supporto", icon: "🛠️" },
+  { id: "clause-8", label: "8 - Attività Operative", icon: "⚙️" },
+  { id: "clause-9", label: "9 - Valutazione", icon: "📈" },
+  { id: "clause-10", label: "10 - Miglioramento", icon: "🚀" },
+  { id: "outcome", label: "11 - Esito", icon: "✅" },
 ];
 
 function AuditTabsLayout({ currentAudit, onUpdate }) {

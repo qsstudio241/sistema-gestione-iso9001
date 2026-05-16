@@ -1,5 +1,5 @@
 /**
- * ContractReviewPage — Riesame requisiti contratto (commercial cases) + analisi AI capitolato
+ * ContractReviewPage - Riesame requisiti contratto (commercial cases) + analisi AI capitolato
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -130,7 +130,7 @@ function assessmentLabel(a) {
   if (x === 'satisfied') return 'Soddisfatto';
   if (x === 'gap') return 'Gap';
   if (x === 'to_verify') return 'Da verificare';
-  return a || '—';
+  return a || '-';
 }
 
 function riskClass(r) {
@@ -146,7 +146,7 @@ function riskLabel(r) {
   if (x === 'low') return 'Basso';
   if (x === 'medium') return 'Medio';
   if (x === 'high') return 'Alto';
-  return r || '—';
+  return r || '-';
 }
 
 export default function ContractReviewPage() {
@@ -396,7 +396,7 @@ export default function ContractReviewPage() {
         if (!best || bestScore < 1) continue;
         const answer = mapAssessmentToAnswer(best.assessment);
         const noteParts = [best.suggested_action, best.gap_detail].filter(Boolean);
-        const notes = noteParts.join(' — ') || item.notes;
+        const notes = noteParts.join(' - ') || item.notes;
         await apiService.saveChecklistAnswer(caseId, item.id, { answer, notes });
       }
       await loadDetail(caseId);
@@ -504,12 +504,12 @@ export default function ContractReviewPage() {
                           </span>
                         </td>
                         <td>
-                          {c.company_id != null ? companiesById.get(c.company_id) || `#${c.company_id}` : '—'}
+                          {c.company_id != null ? companiesById.get(c.company_id) || `#${c.company_id}` : '-'}
                         </td>
                         <td>
                           {c.updated_at
                             ? new Date(c.updated_at).toLocaleString('it-IT')
-                            : '—'}
+                            : '-'}
                         </td>
                       </tr>
                     ))
@@ -541,12 +541,12 @@ export default function ContractReviewPage() {
                       {STATUS_LABELS[detail.case.status] || detail.case.status}
                     </span>
                     {' · '}
-                    Rif. esterno: {detail.case.external_ref || '—'}
+                    Rif. esterno: {detail.case.external_ref || '-'}
                     {' · '}
                     Azienda:{' '}
                     {detail.case.company_id != null
                       ? companiesById.get(detail.case.company_id) || `#${detail.case.company_id}`
-                      : '—'}
+                      : '-'}
                   </div>
                 </div>
               </div>
@@ -695,7 +695,7 @@ export default function ContractReviewPage() {
                     value={aiCompanyContextId}
                     onChange={(e) => setAiCompanyContextId(e.target.value)}
                   >
-                    <option value="">— Seleziona —</option>
+                    <option value="">- Seleziona -</option>
                     {companies.map((co) => (
                       <option key={co.id} value={String(co.id)}>
                         {co.name}
@@ -753,7 +753,7 @@ export default function ContractReviewPage() {
                       </div>
                       <div className="cr-ai-kpi" style={{ gridColumn: 'span 2' }}>
                         <div>Sintesi</div>
-                        <div>{aiSuggestion.summary || '—'}</div>
+                        <div>{aiSuggestion.summary || '-'}</div>
                       </div>
                     </div>
 
@@ -778,9 +778,9 @@ export default function ContractReviewPage() {
                         <tbody>
                           {(aiSuggestion.identified_requirements || []).map((r, idx) => (
                             <tr key={r.ref || idx}>
-                              <td>{r.ref || `—`}</td>
+                              <td>{r.ref || `-`}</td>
                               <td>
-                                {r.description || '—'}
+                                {r.description || '-'}
                                 {r.source ? (
                                   <>
                                     <br />
@@ -799,7 +799,7 @@ export default function ContractReviewPage() {
                                   {assessmentLabel(r.assessment)}
                                 </span>
                               </td>
-                              <td>{r.suggested_action || '—'}</td>
+                              <td>{r.suggested_action || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -845,7 +845,7 @@ export default function ContractReviewPage() {
                   value={createForm.company_id}
                   onChange={(e) => setCreateForm((f) => ({ ...f, company_id: e.target.value }))}
                 >
-                  <option value="">— Opzionale —</option>
+                  <option value="">- Opzionale -</option>
                   {companies.map((co) => (
                     <option key={co.id} value={String(co.id)}>
                       {co.name}

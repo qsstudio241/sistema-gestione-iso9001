@@ -200,7 +200,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           <div key={key} className="findings-per-standard">
             <div className="findings-per-standard__header">
               <span className="findings-per-standard__label">
-                {shortLabel} — {label.split(" \u2014 ")[1] || label}
+                {shortLabel} - {label.split(" - ")[1] || label}
               </span>
               {!readOnly && (
                 <button
@@ -217,7 +217,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
               id={`conclusions-${key}`}
               value={conclusionsByKey[key] ?? ""}
               onChange={(e) => handleConclusionsByKeyChange(key, e.target.value)}
-              placeholder={`Conclusioni per ${label.split(" \u2014 ")[0] || label}…`}
+              placeholder={`Conclusioni per ${label.split(" - ")[0] || label}…`}
               disabled={readOnly}
             />
           </div>
@@ -273,7 +273,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           const m = byStandard[key] || {};
           return (
             <div key={key} className="findings-per-standard">
-              <span className="findings-per-standard__label">{shortLabel} — {label.split(" \u2014 ")[1] || label}</span>
+              <span className="findings-per-standard__label">{shortLabel} - {label.split(" - ")[1] || label}</span>
               <div className="findings-metrics-compact">
                 <span className="metric-compact nc"><strong>C:</strong> {m.totalC ?? 0}</span>
                 <span className="metric-compact oss"><strong>OSS:</strong> {m.totalOSS ?? 0}</span>

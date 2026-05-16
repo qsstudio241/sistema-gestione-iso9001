@@ -110,7 +110,7 @@ const MODULE_INFO = {
   },
   sal: {
     icon: "📊",
-    title: "SAL — Riesame Direzione",
+    title: "SAL - Riesame Direzione",
     description: "Stato Avanzamento Lavori per il riesame della direzione. Griglia requisiti × stati con codifica colori (discusso / in corso / completato). Export verbale Word.",
     features: [
       "Griglia requisiti ISO 9001/14001/45001",
@@ -142,7 +142,7 @@ function ModuleLocked({ module, lockedByLicense = false }) {
     title: "Modulo non disponibile",
     description: "Questo modulo è in fase di sviluppo.",
     features: [],
-    sprint: "—",
+    sprint: "-",
     eta: "Prossimamente",
   };
 
@@ -179,7 +179,7 @@ function ModuleLocked({ module, lockedByLicense = false }) {
         {!lockedByLicense && (
           <div className="module-locked-eta">
             <span className="eta-label">Rilascio previsto</span>
-            <span className="eta-value">{info.sprint} — {info.eta}</span>
+            <span className="eta-value">{info.sprint} - {info.eta}</span>
           </div>
         )}
 

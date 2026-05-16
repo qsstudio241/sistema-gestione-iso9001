@@ -183,7 +183,7 @@ function CompaniesPage({ onBack }) {
             value={auditorOrgId || ""}
             onChange={(e) => setAuditorOrgId(parseInt(e.target.value, 10) || null)}
           >
-            <option value="">— Seleziona —</option>
+            <option value="">- Seleziona -</option>
             {auditorOrgs.map((ao) => (
               <option key={ao.id} value={ao.id}>
                 {ao.name}
@@ -235,12 +235,12 @@ function CompaniesPage({ onBack }) {
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
                       ) : (
-                        <span className="company-logo-placeholder">—</span>
+                        <span className="company-logo-placeholder">-</span>
                       )}
                     </td>
                     <td>{c.name}</td>
-                    <td>{c.vat_number || "—"}</td>
-                    <td>{c.sector || "—"}</td>
+                    <td>{c.vat_number || "-"}</td>
+                    <td>{c.sector || "-"}</td>
                     <td>
                       <button type="button" className="btn-edit" onClick={() => openEdit(c)}>Modifica</button>
                       <button type="button" className="btn-delete" onClick={() => handleDelete(c.id)}>Elimina</button>
@@ -309,7 +309,7 @@ function CompaniesPage({ onBack }) {
                       onChange={handleLogoChange}
                     />
                   </label>
-                  <span className="logo-hint">JPG, PNG, SVG — max 2 MB</span>
+                  <span className="logo-hint">JPG, PNG, SVG - max 2 MB</span>
                 </div>
               </div>
               <div className="form-actions">

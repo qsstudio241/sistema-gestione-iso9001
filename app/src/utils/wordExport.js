@@ -167,7 +167,7 @@ function buildTemplateData(audit, normKey = null) {
     const reportClientName = (auditPartyType === 'second_party' && fornitoreNameRaw)
         ? fornitoreNameRaw
         : (meta.clientName || 'Cliente');
-    const reportScope = gd.scope || '—';
+    const reportScope = gd.scope || '-';
     const primaryAuditor = pickAuditorName();
     const fallbackParticipants = (gd.auditors || [])
         .map((v) => String(v || '').trim())
@@ -186,16 +186,16 @@ function buildTemplateData(audit, normKey = null) {
         clientName:             reportClientName,
         committenteName:        meta.clientName  || 'Cliente',
         auditPartyTypeLabel,
-        fornitoreName:          fornitoreName || '—',
-        fornitoreIndirizzo:     fornitoreAddressRaw || '—',
+        fornitoreName:          fornitoreName || '-',
+        fornitoreIndirizzo:     fornitoreAddressRaw || '-',
         auditNumber:            meta.auditNumber || 'N/A',
-        procedureCode:          meta.procedureCode || '—',
+        procedureCode:          meta.procedureCode || '-',
         auditDate:              formatDate(meta.auditDate || gd.auditDate),
         auditObject:            gd.auditObject   || 'Audit di Verifica ispettiva interna',
         scope:                  reportScope,
         referenceDocuments:     Array.isArray(gd.referenceDocuments)
             ? gd.referenceDocuments.join(', ')
-            : (gd.referenceDocuments || '—'),
+            : (gd.referenceDocuments || '-'),
         processes:              gd.processes     || 'Tutti i processi aziendali',
         ispettore:              primaryAuditor,
         programCommunicatedDate: formatDate(gd.programCommunicatedDate),
