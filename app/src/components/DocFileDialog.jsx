@@ -45,9 +45,13 @@ function DocFileDialog({ doc, onClose }) {
   const [showHistory, setShowHistory] = useState(false);
 
   // Sprint 12-A: stato per apertura/anteprima Office
-  const [officeLoading, setOfficeLoading] = useState(false);
-  const [officeError,   setOfficeError]   = useState(null);
-  const [webdavData,    setWebdavData]    = useState(null); // cache link generato
+  const [officeLoading,  setOfficeLoading]  = useState(false);
+  const [officeError,    setOfficeError]    = useState(null);
+  const [webdavData,     setWebdavData]     = useState(null);
+  const [showEditAlert,  setShowEditAlert]  = useState(false);
+  // Sprint 12-B: stato per rilascio revisione
+  const [releasing,      setReleasing]      = useState(false);
+  const [releaseError,   setReleaseError]   = useState(null);
 
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfViewerAttId, setPdfViewerAttId] = useState(null);
@@ -106,6 +110,22 @@ function DocFileDialog({ doc, onClose }) {
     }
   }
 
+  // Sprint 12-B: rilascia revisione (bozza → rilasciato)
+  const handleReleaseRevision = useCallback(async () => {
+    setReleasing(true);
+    setReleaseError(null);
+    try {
+      const result = await apiService.releaseRevision(doc.id);
+      await loadFiles();
+      // Aggiorna il doc parent se possibile (ricarica lista esterna)
+      if (doc.onStatusChange) doc.onStatusChange(doc.id, 'rilasciato', result.revision);
+    } catch (err) {
+      setReleaseError(`Errore rilascio: ${err.message}`);
+    } finally {
+      setReleasing(false);
+    }
+  }, [doc.id, loadFiles]);
+
   // Sprint 12-A: genera link WebDAV e apre Office (editing) o viewer (lettura)
   const handleOpenInOffice = useCallback(async (mode = 'edit') => {
     setOfficeLoading(true);
@@ -117,6 +137,13 @@ function DocFileDialog({ doc, onClose }) {
         link = await apiService.getWebdavLink(doc.id);
         setWebdavData(link);
       }
+
+      if (mode === 'edit' && doc.status === 'rilasciato' && !showEditAlert) {
+        setShowEditAlert(true);
+        setOfficeLoading(false);
+        return;
+      }
+      setShowEditAlert(false);
 
       if (mode === 'edit') {
         // Apertura diretta in Word/Excel desktop via URI Scheme
@@ -250,6 +277,51 @@ function DocFileDialog({ doc, onClose }) {
                   </a>
                 </div>
 
+                {/* Alert: documento rilasciato → conferma apertura in modifica */}
+                {showEditAlert && (
+                  <div className="docfile-office-alert">
+                    <strong>&#9888;&#65039; Documento rilasciato</strong>
+                    <p>
+                      Questo documento è in stato <strong>Rilasciato</strong>. Aprirlo in modifica
+                      creerà una nuova <strong>bozza</strong>: dovrai poi usare
+                      "Rilascia revisione" per renderlo di nuovo ufficiale.
+                    </p>
+                    <p>Se vuoi solo leggere, usa il pulsante <strong>Visualizza</strong>.</p>
+                    <div className="docfile-alert-actions">
+                      <button
+                        className="btn-docfile-alert-confirm"
+                        onClick={() => handleOpenInOffice('edit')}
+                        disabled={officeLoading}
+                      >
+                        &#9999;&#65039; Sì, apri in modifica
+                      </button>
+                      <button
+                        className="btn-docfile-alert-cancel"
+                        onClick={() => setShowEditAlert(false)}
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pulsante RILASCIA REVISIONE (solo per bozze) */}
+                {doc.status === 'bozza' && (
+                  <div className="docfile-release-section">
+                    <button
+                      className="btn-docfile-release"
+                      onClick={handleReleaseRevision}
+                      disabled={releasing}
+                      title="Incrementa il numero di revisione e porta il documento in stato Rilasciato"
+                    >
+                      {releasing ? "Rilascio in corso..." : "&#127881; Rilascia revisione"}
+                    </button>
+                    {releaseError && (
+                      <div className="docfile-office-error">&#9888;&#65039; {releaseError}</div>
+                    )}
+                  </div>
+                )}
+
                 {/* Errore apertura Office */}
                 {officeError && (
                   <div className="docfile-office-error">
@@ -261,7 +333,7 @@ function DocFileDialog({ doc, onClose }) {
                 )}
 
                 {/* Info post-apertura Office */}
-                {webdavData && !officeError && (
+                {webdavData && !officeError && !showEditAlert && (
                   <div className="docfile-office-info">
                     &#128274; Link Office attivo - salva in Word/Excel per aggiornare il documento.
                     Scade alle {new Date(webdavData.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.

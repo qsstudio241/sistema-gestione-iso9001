@@ -44,7 +44,9 @@ const DOC_TYPE_LABELS = Object.fromEntries(
 );
 
 const DOC_STATUS_LABELS = {
-  vigente:          "Vigente",
+  rilasciato:       "Rilasciato",
+  vigente:          "Rilasciato",
+  bozza:            "Bozza",
   in_revisione:     "In revisione",
   in_approvazione:  "In approvazione",
   obsoleto:         "Obsoleto",
@@ -284,7 +286,8 @@ function CatalogView({
           </select>
           <select value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
             <option value="">Tutti gli stati</option>
-            <option value="vigente">Vigente</option>
+            <option value="rilasciato">Rilasciato</option>
+            <option value="bozza">Bozza</option>
             <option value="in_revisione">In revisione</option>
             <option value="in_approvazione">In approvazione</option>
             <option value="obsoleto">Obsoleto</option>
@@ -305,7 +308,7 @@ function CatalogView({
           </label>
           <button
             className="btn-reset"
-            onClick={() => { setFilter("doc_type", ""); setFilter("status", "vigente"); setFilter("company_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
+            onClick={() => { setFilter("doc_type", ""); setFilter("status", "rilasciato"); setFilter("company_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
           >
             Reset
           </button>
@@ -468,7 +471,7 @@ function DocumentRegistry() {
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
-    search: "", doc_type: "", status: "vigente", company_id: "", expiring_days: null,
+    search: "", doc_type: "", status: "rilasciato", company_id: "", expiring_days: null,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -502,7 +505,7 @@ function DocumentRegistry() {
     try {
       // Scaduti + in scadenza 60gg
       const [expRes, revRes] = await Promise.all([
-        apiService.getDocuments({ expiring_days: 60, status: "vigente", limit: 50 }),
+        apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50 }),
         apiService.getDocuments({ status: "in_revisione", limit: 20 }),
       ]);
       setPriorityDocs([

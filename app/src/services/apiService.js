@@ -1173,6 +1173,9 @@ class ApiService {
     async getWebdavLink(docId) {
         return this.post(`/documents/${docId}/webdav-link`, {});
     }
+    async releaseRevision(docId, data = {}) {
+        return this.post(`/documents/${docId}/release-revision`, data);
+    }
 
     // ─── Document Tags ──────────────────────────────────────────────────────
     async getDocumentTags()                     { return this.get('/document-tags'); }

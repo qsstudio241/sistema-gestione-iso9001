@@ -56,7 +56,7 @@ async function listDocuments(req, res) {
             conditions.push(`dr.expiry_date IS NOT NULL
                 AND dr.expiry_date <= DATEADD(DAY, @expiring_days, CAST(GETDATE() AS DATE))
                 AND dr.expiry_date >= CAST(GETDATE() AS DATE)
-                AND dr.status = 'vigente'`);
+                AND dr.status = 'rilasciato'`);
             params.expiring_days = parseInt(expiring_days);
         }
         if (search) {
@@ -81,6 +81,8 @@ async function listDocuments(req, res) {
                 dr.retention_years,
                 dr.clause_ref,
                 dr.notes,
+                dr.revision_number,
+                dr.released_at,
                 dr.created_at,
                 dr.updated_at,
                 c.name        AS company_name,
@@ -90,14 +92,14 @@ async function listDocuments(req, res) {
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
-                         AND dr.status = 'vigente'
+                         AND dr.status = 'rilasciato'
                     THEN 1 ELSE 0
                 END AS is_expired,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND dr.status = 'vigente'
+                         AND dr.status = 'rilasciato'
                     THEN 1 ELSE 0
                 END AS expiring_soon
             FROM document_registry dr
@@ -107,10 +109,11 @@ async function listDocuments(req, res) {
             WHERE ${where}
             ORDER BY
                 CASE dr.status
-                    WHEN 'vigente'        THEN 1
-                    WHEN 'in_approvazione' THEN 2
-                    WHEN 'in_revisione'   THEN 3
-                    ELSE 4
+                    WHEN 'rilasciato'      THEN 1
+                    WHEN 'bozza'          THEN 2
+                    WHEN 'in_approvazione' THEN 3
+                    WHEN 'in_revisione'   THEN 4
+                    ELSE 5
                 END,
                 dr.expiry_date ASC,
                 dr.title ASC
@@ -164,20 +167,20 @@ async function getDocumentStats(req, res) {
         const result = await query(`
             SELECT
                 COUNT(*)                                                         AS total,
-                SUM(CASE WHEN status = 'vigente'         THEN 1 ELSE 0 END)     AS vigenti,
+                SUM(CASE WHEN status = 'rilasciato'         THEN 1 ELSE 0 END)     AS vigenti,
                 SUM(CASE WHEN status = 'in_revisione'    THEN 1 ELSE 0 END)     AS in_revisione,
                 SUM(CASE WHEN status = 'in_approvazione' THEN 1 ELSE 0 END)     AS in_approvazione,
                 SUM(CASE WHEN status = 'obsoleto'        THEN 1 ELSE 0 END)     AS obsoleti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date < CAST(GETDATE() AS DATE)
-                         AND status = 'vigente'
+                         AND status = 'rilasciato'
                     THEN 1 ELSE 0 END)                                           AS scaduti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND status = 'vigente'
+                         AND status = 'rilasciato'
                     THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg
             FROM document_registry
             WHERE organization_id = @organization_id
@@ -250,7 +253,7 @@ async function createDocument(req, res) {
             doc_code,
             title,
             revision,
-            status       = 'vigente',
+            status       = 'rilasciato',
             issue_date,
             expiry_date,
             responsible,
@@ -269,7 +272,7 @@ async function createDocument(req, res) {
             });
         }
 
-        const validStatuses = ['vigente', 'in_revisione', 'obsoleto', 'in_approvazione'];
+        const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 error:   'Status non valido',
@@ -425,7 +428,7 @@ async function updateDocument(req, res) {
 
         // Validazione status se presente
         if (params.status) {
-            const validStatuses = ['vigente', 'in_revisione', 'obsoleto', 'in_approvazione'];
+            const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
             if (!validStatuses.includes(params.status)) {
                 return res.status(400).json({
                     error:   'Status non valido',
@@ -507,6 +510,76 @@ async function deleteDocument(req, res) {
     }
 }
 
+// ─── POST /api/v1/documents/:id/release-revision ─────────────────────────────
+/**
+ * Avanza il documento da 'bozza' a 'rilasciato':
+ * - incrementa revision_number
+ * - aggiorna revision (testo display) se fornito, altrimenti auto-genera "Rev. N"
+ * - imposta released_at = now
+ * - opzionalmente aggiorna expiry_date se fornita
+ */
+async function releaseRevision(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id, user_id } = req.user;
+        const { revision_label, expiry_date } = req.body;
+
+        const existing = await query(`
+            SELECT id, status, revision_number, revision
+            FROM document_registry
+            WHERE id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (!existing.recordset.length) {
+            return res.status(404).json({ error: 'Documento non trovato', code: 'DOC_NOT_FOUND' });
+        }
+
+        const doc = existing.recordset[0];
+        if (doc.status !== 'bozza') {
+            return res.status(409).json({
+                error: 'Solo i documenti in stato bozza possono essere rilasciati.',
+                code:  'INVALID_STATUS_TRANSITION',
+                current_status: doc.status,
+            });
+        }
+
+        const newRevNum = (doc.revision_number || 0) + 1;
+        const newRevLabel = revision_label || `Rev. ${String(newRevNum).padStart(2, '0')}`;
+
+        const params = {
+            id: parseInt(id),
+            revision_number: newRevNum,
+            revision:        newRevLabel,
+            expiry_date:     expiry_date || null,
+        };
+
+        await query(`
+            UPDATE document_registry
+            SET status          = 'rilasciato',
+                revision_number = @revision_number,
+                revision        = @revision,
+                released_at     = GETDATE(),
+                expiry_date     = ISNULL(@expiry_date, expiry_date),
+                updated_at      = GETDATE()
+            WHERE id = @id
+        `, params);
+
+        logger.info('Document released', { id, organization_id, user_id, revision: newRevLabel });
+
+        res.json({
+            success:         true,
+            revision_number: newRevNum,
+            revision:        newRevLabel,
+            status:          'rilasciato',
+            released_at:     new Date().toISOString(),
+        });
+
+    } catch (error) {
+        logger.error('Error releasing document revision', { error: error.message });
+        res.status(500).json({ error: 'Errore durante il rilascio della revisione', code: 'RELEASE_ERROR' });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -514,4 +587,5 @@ module.exports = {
     createDocument,
     updateDocument,
     deleteDocument,
+    releaseRevision,
 };

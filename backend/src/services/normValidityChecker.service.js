@@ -79,7 +79,7 @@ async function runScheduledValidityCheck(organizationId) {
     const result = await query(
       `SELECT id, standard_code, edition_year
        FROM norm_document_sources
-       WHERE validity_status = 'vigente'
+       WHERE validity_status = 'rilasciato'
          AND organization_id = @orgId
          AND standard_code IS NOT NULL`,
       { orgId: organizationId }
