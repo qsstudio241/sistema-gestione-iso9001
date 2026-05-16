@@ -1424,6 +1424,10 @@ class ApiService {
         return this.post('/ai/reindex', {}, { timeout: 300000 });
     }
 
+    async getKnowledgeHealth() {
+        return this.get('/ai/knowledge-health');
+    }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
     async uploadNorms(files) {
