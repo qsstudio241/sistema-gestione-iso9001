@@ -195,6 +195,31 @@ async function runAlertJob() {
   }
 }
 
+// ─── Ottimizzazione knowledge base AI (notturna, dopo reindex) ────────────────
+
+async function runKnowledgeOptimizationJob() {
+  logger.info('[AlertScheduler] Avvio job ottimizzazione knowledge base AI...');
+  try {
+    const { runOptimization } = require('./knowledgeOptimizer.service');
+    const pool = await getPool();
+    const orgsResult = await pool.request().query(
+      'SELECT organization_id FROM organizations WHERE is_active = 1'
+    );
+    const orgs = orgsResult.recordset || [];
+    for (const org of orgs) {
+      try {
+        const summary = await runOptimization(org.organization_id);
+        logger.info(`[AlertScheduler] Knowledge optimization org ${org.organization_id}: dedup=${JSON.stringify(summary.dedup)}, prune=${JSON.stringify(summary.prune)}, gaps=${Array.isArray(summary.gaps) ? summary.gaps.length + ' companies' : 'error'}`);
+      } catch (err) {
+        logger.error(`[AlertScheduler] Knowledge optimization failed org ${org.organization_id}:`, err.message);
+      }
+    }
+    logger.info(`[AlertScheduler] Ottimizzazione knowledge completata per ${orgs.length} organizzazioni`);
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job knowledge optimization:', err.message);
+  }
+}
+
 // ─── Avvio scheduler ──────────────────────────────────────────────────────────
 
 // ─── Verifica validità norme (settimanale) ────────────────────────────────────
@@ -263,7 +288,12 @@ function startAlertScheduler() {
     runKnowledgeIndexJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge):', err.message));
   });
 
-  logger.info('[AlertScheduler] Scheduler avviato — alert giornalieri 08:00, verifica norme lun 03:00, knowledge index 02:00');
+  // Ogni notte alle 03:00 — ottimizzazione knowledge base AI (dopo reindex)
+  schedule.scheduleJob('0 3 * * *', () => {
+    runKnowledgeOptimizationJob().catch(err => logger.error('[AlertScheduler] Errore non gestito (optimization):', err.message));
+  });
+
+  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, norme lun 03:00, knowledge index 02:00, optimization 03:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob };

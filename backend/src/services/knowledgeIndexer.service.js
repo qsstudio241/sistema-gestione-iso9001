@@ -281,10 +281,11 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
   const [queryVec] = await embed([queryText]);
   if (!queryVec) throw new Error('Failed to embed query text');
 
-  // Load knowledge_chunks (con filtro opzionale per company_id)
+  // Load knowledge_chunks (con filtro opzionale per company_id, esclusi stale)
   let kcSql = `SELECT id, entity_type, entity_id, chunk_text, embedding
      FROM knowledge_chunks
-     WHERE organization_id = @orgId AND embedding IS NOT NULL`;
+     WHERE organization_id = @orgId AND embedding IS NOT NULL
+           AND (is_stale = 0 OR is_stale IS NULL)`;
   const kcParams = { orgId: organizationId };
 
   if (companyId) {

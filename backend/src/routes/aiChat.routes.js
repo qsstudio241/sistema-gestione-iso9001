@@ -22,4 +22,12 @@ router.post(
   ctrl.aiReindex
 );
 
+// GET /ai/knowledge-health — KPI salute knowledge base (solo admin)
+router.get(
+  '/ai/knowledge-health',
+  authenticate,
+  authorize('admin'),
+  ctrl.knowledgeHealth
+);
+
 module.exports = router;
