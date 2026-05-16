@@ -1239,6 +1239,24 @@ class ApiService {
         return `${base}/documents/${docId}/file/download?token=${token}${inlineParam}`;
     }
 
+    // Scarica il file come Blob via fetch con Authorization header.
+    // Usato da DocumentPdfViewer: evita il ?token= in querystring
+    // (problematico quando il token è null su desktop con cookie httpOnly).
+    async getDocFileBlob(docId, attId = null) {
+        const path = attId
+            ? `/documents/${docId}/file/${attId}/download?inline=1`
+            : `/documents/${docId}/file/download?inline=1`;
+        const url = `${this.baseUrl}${path}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
+    }
+
     // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────
 
     async getQualificationsStats() {
