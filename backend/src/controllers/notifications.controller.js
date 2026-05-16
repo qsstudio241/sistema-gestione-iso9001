@@ -1,5 +1,5 @@
 /**
- * notifications.controller.js — Configurazione notifiche email per organizzazione
+ * notifications.controller.js Â— Configurazione notifiche email per organizzazione
  * GET  /notifications-config  ? legge configurazione corrente
  * PUT  /notifications-config  ? salva configurazione
  * POST /notifications-config/test ? invia email di test
@@ -26,7 +26,7 @@ async function getConfig(req, res) {
       `);
 
     if (result.recordset.length === 0) {
-      // Nessuna configurazione ancora — restituisce defaults
+      // Nessuna configurazione ancora Â— restituisce defaults
       return res.json({
         exists: false,
         recipients_email: '',
@@ -73,7 +73,7 @@ async function saveConfig(req, res) {
 
     // Validazione minima
     if (!recipients_email || !recipients_email.trim()) {
-      return res.status(400).json({ error: 'Almeno un destinatario email è obbligatorio.' });
+      return res.status(400).json({ error: 'Almeno un destinatario email Ã¨ obbligatorio.' });
     }
 
     // Upsert
@@ -117,7 +117,7 @@ async function saveConfig(req, res) {
   }
 }
 
-/** POST /notifications-config/test — invia email di test */
+/** POST /notifications-config/test Â— invia email di test */
 async function sendTestEmail(req, res) {
   try {
     const pool  = await getPool();
@@ -153,11 +153,11 @@ async function sendTestEmail(req, res) {
     await transporter.sendMail({
       from:    process.env.SMTP_FROM || process.env.SMTP_USER,
       to:      recipients,
-      subject: '[SGQ Studio] Email di test — configurazione notifiche OK',
+      subject: '[SGQ Studio] Email di test Â— configurazione notifiche OK',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:500px;padding:24px">
           <h2 style="color:#1e3a5f">? Email di test SGQ Studio</h2>
-          <p>Questa email conferma che la configurazione SMTP è corretta e le notifiche automatiche funzionano.</p>
+          <p>Questa email conferma che la configurazione SMTP Ã¨ corretta e le notifiche automatiche funzionano.</p>
           <p style="color:#6b7280;font-size:13px">Inviata il: ${new Date().toLocaleString('it-IT')}</p>
         </div>
       `,

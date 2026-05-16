@@ -11,7 +11,7 @@
   background: #ffffff;
 }
 
-/* Placeholder leggibile — contrasto WCAG AA su sfondo bianco */
+/* Placeholder leggibile Â— contrasto WCAG AA su sfondo bianco */
 .auto-textarea-wrapper textarea::placeholder {
   color: #6b7280;
   opacity: 1;

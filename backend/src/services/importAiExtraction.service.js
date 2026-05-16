@@ -69,8 +69,8 @@ async function extractStructuredFromText({ text, documentTypeHint }) {
         ? `${bodyText.slice(0, MAX_INPUT_CHARS)}\n\n[... testo troncato per limite ${MAX_INPUT_CHARS} caratteri ...]`
         : bodyText;
 
-    const system = `Sei un assistente per documenti tecnici e qualita' (ISO 9001, saldatura, certificazioni).
-Analizza il testo estratto da un PDF (puo' contenere errori di OCR/strato testo).
+    const system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
+Analizza il testo estratto da un PDF (può contenere errori di OCR/strato testo).
 Rispondi SOLO con un oggetto JSON valido (nessun testo fuori dal JSON) con questa forma:
 {
   "title": string|null,
@@ -84,7 +84,7 @@ Rispondi SOLO con un oggetto JSON valido (nessun testo fuori dal JSON) con quest
 Regole:
 - Chiavi e stringhe in italiano dove ha senso.
 - extraction_confidence: intero 0-100 (quanto il testo sembra completo e coerente).
-- warnings: elenco problemi (testo frammentario, dati mancanti, ambiguita').
+- warnings: elenco problemi (testo frammentario, dati mancanti, ambiguità).
 - Non inventare numeri di certificato o date: se non presenti, null o omesso.
 - document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, dichiarazione_ce, cert_taratura, altro — solo se plausibile.`;
 

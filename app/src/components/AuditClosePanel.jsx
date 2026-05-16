@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AuditClosePanel - Pannello chiusura formale audit
  *
  * Mostra checklist pre-chiusura, validazione guidata e pulsante "Chiudi Audit".

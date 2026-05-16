@@ -12,6 +12,25 @@ const TYPE_LABELS = {
   complaint: "Reclami",
 };
 
+function KhSvg({ size, className, children }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
 function KnowledgeHealthPage() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -41,9 +60,14 @@ function KnowledgeHealthPage() {
   if (!isAdmin) {
     return (
       <div className="kh-access-denied">
-        <div className="kh-access-denied-icon" aria-hidden>{"\u{1F512}"}</div>
+        <div className="kh-access-denied-icon">
+          <KhSvg size={48}>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </KhSvg>
+        </div>
         <h3>Accesso riservato</h3>
-        <p>Questa pagina ù accessibile solo agli amministratori.</p>
+        <p>Questa pagina √® accessibile solo agli amministratori.</p>
       </div>
     );
   }
@@ -53,7 +77,13 @@ function KnowledgeHealthPage() {
   if (error) {
     return (
       <div className="kh-error">
-        <div className="kh-error-icon" aria-hidden>{"\u{26A0}\u{FE0F}"}</div>
+        <div className="kh-error-icon">
+          <KhSvg size={40}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </KhSvg>
+        </div>
         <h3>Errore di caricamento</h3>
         <p>{error}</p>
         <button className="kh-error-retry" onClick={loadData}>Riprova</button>
@@ -95,7 +125,7 @@ function KnowledgeHealthPage() {
         </div>
 
         <div className={`kh-kpi-card kpi-${qualityColor}`}>
-          <span className="kh-kpi-label">Qualitù retrieval</span>
+          <span className="kh-kpi-label">Qualit√† retrieval</span>
           <QualityRing value={qualityPct} color={qualityColor} />
           <span className="kh-kpi-sub">accuratezza risposte</span>
         </div>
@@ -128,7 +158,7 @@ function KnowledgeHealthPage() {
   );
 }
 
-/* Anello qualitù (progress SVG circolare) */
+/* Anello qualit√† (progress SVG circolare) */
 
 function QualityRing({ value, color }) {
   const r = 26;
@@ -237,14 +267,22 @@ function GapsCard({ gaps }) {
       </div>
       {(!gaps || gaps.length === 0) ? (
         <div className="kh-no-gap">
-          <span style={{ fontSize: 20 }} aria-hidden>{"\u{2714}"}</span>
-          Nessun gap rilevato ù tutte le aziende hanno copertura completa
+          <KhSvg size={20}>
+            <polyline points="20 6 9 17 4 12" />
+          </KhSvg>
+          Nessun gap rilevato: tutte le aziende hanno copertura completa
         </div>
       ) : (
         <ul className="kh-gap-list">
           {gaps.map((g, i) => (
             <li key={i} className="kh-gap-item">
-              <span className="kh-gap-icon" aria-hidden>{"\u{26A0}\u{FE0F}"}</span>
+              <span className="kh-gap-icon">
+                <KhSvg size={18}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </KhSvg>
+              </span>
               <div>
                 <div className="kh-gap-company">{g.companyName}</div>
                 <div className="kh-gap-types">
@@ -273,7 +311,7 @@ function TopCompaniesCard({ topCompanies }) {
           <line x1="12" y1="20" x2="12" y2="4" />
           <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
-        Aziende più consultate
+        Aziende pi√π consultate
       </div>
       {items.length === 0 ? (
         <div className="kh-no-gap" style={{ color: "#718096" }}>
@@ -308,21 +346,17 @@ function OptimizerCard({ run }) {
     : run.status === "failed" ? "status-failed"
     : "status-running";
 
-  const statusIcon = run.status === "completed" ? "\u{2714}"
-    : run.status === "failed" ? "\u{2716}"
-    : "\u{23F3}";
-
   const statusLabel = run.status === "completed" ? "Completato"
     : run.status === "failed" ? "Fallito"
     : "In corso";
 
   const runTypeLabel = run.run_type === "dedup" ? "Deduplicazione"
     : run.run_type === "refresh" ? "Refresh"
-    : run.run_type || "ù";
+    : run.run_type || "n/d";
 
   const dateStr = run.started_at
     ? new Date(run.started_at).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : "ù";
+    : "n/d";
 
   return (
     <div className="kh-section">
@@ -335,7 +369,24 @@ function OptimizerCard({ run }) {
       </div>
       <div className="kh-optim-info">
         <span className={`kh-optim-badge ${statusClass}`}>
-          {statusIcon} {statusLabel}
+          {run.status === "completed" && (
+            <KhSvg size={14}>
+              <polyline points="20 6 9 17 4 12" />
+            </KhSvg>
+          )}
+          {run.status === "failed" && (
+            <KhSvg size={14}>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </KhSvg>
+          )}
+          {run.status !== "completed" && run.status !== "failed" && (
+            <KhSvg size={14}>
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </KhSvg>
+          )}
+          {statusLabel}
         </span>
         <span className="kh-optim-detail"><strong>Tipo:</strong> {runTypeLabel}</span>
         <span className="kh-optim-detail"><strong>Data:</strong> {dateStr}</span>

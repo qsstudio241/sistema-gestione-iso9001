@@ -2,7 +2,7 @@
  * AutoTextarea - textarea che si espande automaticamente al contenuto
  * + pulsante dettatura vocale (Web Speech API, it-IT) su browser compatibili.
  *
- * Note compatibilità:
+ * Note compatibilitÃ :
  * - Android Chrome: non supporta `continuous:true`. Il riconoscimento termina
  *   dopo ogni pausa; il componente lo riavvia automaticamente dopo 150ms.
  * - PWA Android (shortcut o WebAPK): il permesso microfono viene richiesto
@@ -120,7 +120,7 @@ function AutoTextarea({
           return;
         }
       } catch {
-        // permissions API non disponibile — prosegui
+        // permissions API non disponibile Â— prosegui
       }
     }
 
@@ -177,7 +177,7 @@ function AutoTextarea({
             type="button"
             className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
             onClick={toggleListening}
-            title={voiceError ? "Errore microfono — tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
+            title={voiceError ? "Errore microfono Â— tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
             aria-label={voiceError ? "Errore microfono" : isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
           />
           {errorMessage && <p className="voice-perm-error">{errorMessage}</p>}

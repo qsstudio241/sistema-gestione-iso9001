@@ -1,9 +1,9 @@
 /**
- * DocumentBreadcrumb ù barra orizzontale con percorso navigabile
+ * DocumentBreadcrumb ¬ù barra orizzontale con percorso navigabile
  *
  * Formato: Home / Cartella / Sotto-cartella / Documento attuale
- * Separatori solo ASCII (evita U+FFFD su font stack senza glifo per ù o em dash).
- * Ogni elemento ù cliccabile tranne l'ultimo (posizione corrente).
+ * Separatori solo ASCII (evita U+FFFD su font stack senza glifo per ¬ù o em dash).
+ * Ogni elemento ¬ù cliccabile tranne l'ultimo (posizione corrente).
  */
 import React from "react";
 import "./DocumentBreadcrumb.css";

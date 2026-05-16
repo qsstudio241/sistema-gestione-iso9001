@@ -1,5 +1,5 @@
 /**
- * DocumentTree — sidebar navigazione ad albero dei documenti SGQ
+ * DocumentTree Â— sidebar navigazione ad albero dei documenti SGQ
  *
  * Nodi espandibili/collassabili con lazy-loading dei figli.
  * Input inline per creazione rapida cartelle.
@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "./DocumentTree.css";
 
 /* ------------------------------------------------------------------ */
-/*  TreeNode — nodo ricorsivo                                         */
+/*  TreeNode Â— nodo ricorsivo                                         */
 /* ------------------------------------------------------------------ */
 function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect }) {
   const isExpanded = expandedIds.has(node.id);
@@ -79,7 +79,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
 }
 
 /* ------------------------------------------------------------------ */
-/*  DocumentTree — componente principale                               */
+/*  DocumentTree Â— componente principale                               */
 /* ------------------------------------------------------------------ */
 function DocumentTree({
   nodes,

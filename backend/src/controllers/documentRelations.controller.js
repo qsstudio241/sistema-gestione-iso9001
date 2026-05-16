@@ -22,7 +22,7 @@ async function createRelation(req, res) {
         const { target_document_id, relation_type, notes } = req.body;
 
         if (!target_document_id) {
-            return res.status(400).json({ error: 'target_document_id ù obbligatorio', code: 'REL_TARGET_REQUIRED' });
+            return res.status(400).json({ error: 'target_document_id ¬ù obbligatorio', code: 'REL_TARGET_REQUIRED' });
         }
         const targetDocId = parseInt(target_document_id);
 
@@ -34,7 +34,7 @@ async function createRelation(req, res) {
         }
 
         if (sourceDocId === targetDocId) {
-            return res.status(400).json({ error: 'Un documento non puù essere collegato a se stesso', code: 'REL_SELF_REFERENCE' });
+            return res.status(400).json({ error: 'Un documento non pu¬ù essere collegato a se stesso', code: 'REL_SELF_REFERENCE' });
         }
 
         const docs = await query(`
@@ -60,7 +60,7 @@ async function createRelation(req, res) {
         `, { organization_id, sourceDocId, targetDocId, relation_type });
 
         if (existing.recordset.length > 0) {
-            return res.status(409).json({ error: 'Questa relazione esiste giù', code: 'REL_DUPLICATE' });
+            return res.status(409).json({ error: 'Questa relazione esiste gi¬ù', code: 'REL_DUPLICATE' });
         }
 
         const result = await query(`

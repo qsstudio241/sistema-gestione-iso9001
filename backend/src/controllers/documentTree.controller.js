@@ -12,8 +12,8 @@ const provisioner = require('../services/documentTreeProvisioner.service');
 /**
  * Ritorna l'albero documentale a partire dalle root.
  * Query params:
- *   depth     (default 2)  ù livelli di figli da caricare
- *   company_id             ù filtra per azienda
+ *   depth     (default 2)  ¬ù livelli di figli da caricare
+ *   company_id             ¬ù filtra per azienda
  */
 async function getTree(req, res) {
     try {
@@ -153,7 +153,7 @@ async function moveDocument(req, res) {
         if (newParentId != null) {
             if (newParentId === docId) {
                 return res.status(400).json({
-                    error: 'Un documento non puù essere figlio di se stesso',
+                    error: 'Un documento non pu¬ù essere figlio di se stesso',
                     code:  'CIRCULAR_REF',
                 });
             }
@@ -205,7 +205,7 @@ async function createFolder(req, res) {
 
         if (!title || !title.trim()) {
             return res.status(400).json({
-                error:    'Il titolo ù obbligatorio',
+                error:    'Il titolo ¬ù obbligatorio',
                 code:     'VALIDATION_ERROR',
                 required: ['title'],
             });

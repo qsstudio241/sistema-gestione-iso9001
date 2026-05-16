@@ -1,5 +1,5 @@
 /**
- * DocumentPdfViewer — visualizzatore PDF inline nel browser
+ * DocumentPdfViewer Â— visualizzatore PDF inline nel browser
  *
  * Usa l'iframe nativo del browser per renderizzare PDF senza librerie esterne.
  * Supporta: zoom, navigazione pagine, stampa (tutti gestiti dal viewer nativo).

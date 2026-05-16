@@ -151,7 +151,7 @@ export default function RelationEditor({
                         <input
                             className="relation-editor__search-input"
                             type="text"
-                            placeholder="Cerca documento…"
+                            placeholder="Cerca documentoÂ…"
                             value={searchQuery}
                             onChange={handleSearchChange}
                             onFocus={() => searchResults.length > 0 && setShowResults(true)}

@@ -311,7 +311,7 @@ async function runOptimization(organizationId) {
 }
 
 // ===========================================================================
-// LIVELLO 2 — Sintesi AI settimanale
+// LIVELLO 2 Â— Sintesi AI settimanale
 // ===========================================================================
 
 /**
@@ -387,10 +387,10 @@ async function condensateCompanyHistory(organizationId) {
       const texts = (chunksRes.recordset || []).map(r => r.chunk_text).join('\n---\n');
 
       const result = await chat([
-        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001.' },
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualitÃ  ISO 9001.' },
         {
           role: 'user',
-          content: `Analizza questi dati di audit e genera un riassunto strutturato che includa: 1) pattern ricorrenti, 2) punti critici, 3) trend nel tempo, 4) clausole più problematiche. Rispondi in italiano, max 500 parole.\n\n${texts}`,
+          content: `Analizza questi dati di audit e genera un riassunto strutturato che includa: 1) pattern ricorrenti, 2) punti critici, 3) trend nel tempo, 4) clausole piÃ¹ problematiche. Rispondi in italiano, max 500 parole.\n\n${texts}`,
         },
       ], { temperature: 0.3, maxTokens: 1200 });
       callCount++;
@@ -424,10 +424,10 @@ async function condensateCompanyHistory(organizationId) {
       const texts = (chunksRes.recordset || []).map(r => r.chunk_text).join('\n---\n');
 
       const result = await chat([
-        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001.' },
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualitÃ  ISO 9001.' },
         {
           role: 'user',
-          content: `Analizza queste non conformità di un'azienda e genera un riassunto dei pattern ricorrenti: 1) tipologie NC più frequenti, 2) aree critiche, 3) suggerimenti di prevenzione. Rispondi in italiano, max 400 parole.\n\n${texts}`,
+          content: `Analizza queste non conformitÃ  di un'azienda e genera un riassunto dei pattern ricorrenti: 1) tipologie NC piÃ¹ frequenti, 2) aree critiche, 3) suggerimenti di prevenzione. Rispondi in italiano, max 400 parole.\n\n${texts}`,
         },
       ], { temperature: 0.3, maxTokens: 1000 });
       callCount++;
@@ -476,10 +476,10 @@ async function extractCrossCompanyPatterns(organizationId) {
       const texts = ncChunks.map(r => r.chunk_text).join('\n---\n');
 
       const result = await chat([
-        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualità ISO 9001 con esperienza multi-azienda.' },
+        { role: 'system', content: 'Sei un esperto di sistemi di gestione qualitÃ  ISO 9001 con esperienza multi-azienda.' },
         {
           role: 'user',
-          content: `Analizza queste non conformità provenienti da diverse aziende. Identifica: 1) le clausole ISO più frequentemente coinvolte, 2) pattern ricorrenti per settore, 3) suggerimenti di prevenzione basati sui dati. Rispondi in italiano, max 400 parole.\n\n${texts}`,
+          content: `Analizza queste non conformitÃ  provenienti da diverse aziende. Identifica: 1) le clausole ISO piÃ¹ frequentemente coinvolte, 2) pattern ricorrenti per settore, 3) suggerimenti di prevenzione basati sui dati. Rispondi in italiano, max 400 parole.\n\n${texts}`,
         },
       ], { temperature: 0.3, maxTokens: 1000 });
 
@@ -553,7 +553,7 @@ async function enrichLowScoreChunks(organizationId) {
           { role: 'system', content: 'Sei un esperto di riformulazione testi per ricerca semantica in ambito ISO 9001.' },
           {
             role: 'user',
-            content: `Questo testo è usato come contesto in una ricerca semantica ma ha basso score di pertinenza. Riformulalo in modo più chiaro e ricercabile, mantenendo TUTTE le informazioni fattuali. Non aggiungere dati inventati.\n\n${chunk.chunk_text}`,
+            content: `Questo testo Ã¨ usato come contesto in una ricerca semantica ma ha basso score di pertinenza. Riformulalo in modo piÃ¹ chiaro e ricercabile, mantenendo TUTTE le informazioni fattuali. Non aggiungere dati inventati.\n\n${chunk.chunk_text}`,
           },
         ], { temperature: 0.2, maxTokens: 800 });
         callCount++;

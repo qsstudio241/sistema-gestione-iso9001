@@ -1,4 +1,4 @@
-﻿/**
+/**
  * App.jsx — Entry point principale
  *
  * Architettura Sprint 0:

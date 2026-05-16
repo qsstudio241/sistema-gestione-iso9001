@@ -1,6 +1,6 @@
 /**
  * knowledgeIndexer.service.js
- * Indicizza tutte le entitù SGQ (audit, NC, reclami, qualifiche, rischi, documenti)
+ * Indicizza tutte le entit¬ù SGQ (audit, NC, reclami, qualifiche, rischi, documenti)
  * in chunk con embedding Gemini per la ricerca semantica dell'assistente AI.
  */
 
@@ -23,7 +23,7 @@ const INDEXABLE_ENTITIES = [
     buildText: (r) => {
       const parts = [`Audit ${r.audit_number || ''} del ${r.audit_date || '?'}`];
       if (r.company_name) parts[0] += ` (${r.company_name})`;
-      parts[0] += ` ù stato: ${r.status || '?'}`;
+      parts[0] += ` ¬ù stato: ${r.status || '?'}`;
       if (r.conclusions) parts.push(`Conclusioni: ${r.conclusions}`);
       return parts.join('. ');
     },
@@ -35,7 +35,7 @@ const INDEXABLE_ENTITIES = [
           JOIN audits a ON nc.audit_id = a.audit_id
           WHERE a.organization_id = @orgId`,
     buildText: (r) =>
-      `NC ${r.nc_number || ''} (${r.nc_type || '?'}): ${r.description || ''}. Gravitù: ${r.severity || '?'}, Stato: ${r.status || '?'}`,
+      `NC ${r.nc_number || ''} (${r.nc_type || '?'}): ${r.description || ''}. Gravit¬ù: ${r.severity || '?'}, Stato: ${r.status || '?'}`,
   },
   {
     entity_type: 'nc_action',
@@ -60,7 +60,7 @@ const INDEXABLE_ENTITIES = [
       if (r.description) parts.push(r.description);
       if (r.complaint_type) parts.push(`Tipo: ${r.complaint_type}`);
       if (r.customer_name) parts.push(`Cliente: ${r.customer_name}`);
-      if (r.severity) parts.push(`Gravitù: ${r.severity}`);
+      if (r.severity) parts.push(`Gravit¬ù: ${r.severity}`);
       if (r.root_cause) parts.push(`Causa: ${r.root_cause}`);
       if (r.corrective_action) parts.push(`Azione correttiva: ${r.corrective_action}`);
       parts.push(`Stato: ${r.status || '?'}`);
@@ -90,7 +90,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'risk',
-    sql: `SELECT r.risk_id AS id, NULL AS company_id, r.title, r.description, r.context, r.category,
+    sql: `SELECT r.risk_id AS id, r.company_id, r.title, r.description, r.context, r.category,
             r.probability, r.impact, r.treatment, r.treatment_desc,
             r.responsible, r.status
           FROM risks r
@@ -100,7 +100,7 @@ const INDEXABLE_ENTITIES = [
       const parts = [`Rischio: ${r.title}`];
       if (r.description) parts.push(r.description);
       parts.push(`Contesto: ${r.context || '?'}, Categoria: ${r.category || 'N/D'}`);
-      parts.push(`Probabilitù: ${r.probability}, Impatto: ${r.impact}, Score: ${score}`);
+      parts.push(`Probabilit¬ù: ${r.probability}, Impatto: ${r.impact}, Score: ${score}`);
       parts.push(`Trattamento: ${r.treatment || '?'}`);
       if (r.treatment_desc) parts.push(`Descrizione trattamento: ${r.treatment_desc}`);
       if (r.responsible) parts.push(`Responsabile: ${r.responsible}`);
@@ -152,7 +152,7 @@ const ENTITY_TABLE_MAP = {
 };
 
 /**
- * Indicizza tutte le entitù SGQ per un'organizzazione.
+ * Indicizza tutte le entit¬ù SGQ per un'organizzazione.
  */
 async function indexAllEntities(organizationId) {
   logger.info(`[KnowledgeIndexer] Start indexing org ${organizationId}`);

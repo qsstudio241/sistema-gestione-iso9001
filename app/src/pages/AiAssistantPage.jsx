@@ -8,7 +8,7 @@ const SUGGESTIONS = [
   "Quante NC aperte ci sono?",
   "Quali documenti sono in scadenza?",
   "Riassumi le conclusioni degli ultimi audit",
-  "Quali rischi hanno score più alto?",
+  "Quali rischi hanno score pi\u00F9 alto?",
   "Stato delle qualifiche in scadenza",
 ];
 
@@ -244,7 +244,7 @@ function AiAssistantPage() {
         ...prev,
         {
           role: "assistant",
-          text: `Re-indicizzazione completata: ${data.totalChunks || 0} chunk generati. Le risposte dell'assistente ora riflettono i dati più aggiornati.`,
+          text: `Re-indicizzazione completata: ${data.totalChunks || 0} chunk generati. Le risposte dell'assistente ora riflettono i dati pi\u00F9 aggiornati.`,
           time: new Date(),
         },
       ]);
@@ -339,7 +339,7 @@ function AiAssistantPage() {
               className="ai-assistant-reindex-btn"
               onClick={handleReindex}
               disabled={reindexing}
-              title="Aggiorna l'indice dei dati per risposte più accurate"
+              title="Aggiorna l'indice dei dati per risposte pi\u00F9 accurate"
             >
               {reindexing ? "Indicizzazione..." : "Aggiorna indice"}
             </button>
@@ -354,8 +354,8 @@ function AiAssistantPage() {
             <span className="ai-assistant-empty-icon">{"\uD83D\uDCA1"}</span>
             <h3>Come posso aiutarti?</h3>
             <p>
-              Fai una domanda su audit, non conformità, reclami, rischi,
-              qualifiche, documenti o norme del tuo Sistema di Gestione Qualità.
+              Fai una domanda su audit, non conformit\u00E0, reclami, rischi,
+              qualifiche, documenti o norme del tuo Sistema di Gestione Qualit\u00E0.
             </p>
             {contextIsCompany && (
               <p className="ai-assistant-empty-context">

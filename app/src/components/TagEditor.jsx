@@ -94,7 +94,7 @@ export default function TagEditor({
                 <input
                     className="tag-editor__input"
                     type="text"
-                    placeholder="Cerca o crea tag…"
+                    placeholder="Cerca o crea tagÂ…"
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
                     onFocus={() => setOpen(true)}

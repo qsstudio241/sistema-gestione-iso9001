@@ -1,4 +1,4 @@
-/* KnowledgeHealthPage — Dashboard KPI Knowledge Health */
+/* KnowledgeHealthPage - Dashboard KPI Knowledge Health */
 
 .kh-page {
   max-width: 1100px;
@@ -274,8 +274,14 @@
 
 .kh-gap-icon {
   flex-shrink: 0;
-  font-size: 16px;
-  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 1px;
+  color: #d69e2e;
+}
+
+.kh-gap-icon svg {
+  display: block;
 }
 
 .kh-gap-company {
@@ -296,6 +302,11 @@
   color: #38a169;
   font-size: 14px;
   font-weight: 500;
+}
+
+.kh-no-gap svg {
+  flex-shrink: 0;
+  color: #38a169;
 }
 
 /* Top companies bars */
@@ -406,8 +417,14 @@
 }
 
 .kh-access-denied-icon {
-  font-size: 48px;
+  display: flex;
+  justify-content: center;
   margin-bottom: 12px;
+  color: #718096;
+}
+
+.kh-access-denied-icon svg {
+  display: block;
 }
 
 .kh-access-denied h3 {
@@ -464,8 +481,14 @@
 }
 
 .kh-error-icon {
-  font-size: 40px;
+  display: flex;
+  justify-content: center;
   margin-bottom: 12px;
+  color: #c53030;
+}
+
+.kh-error-icon svg {
+  display: block;
 }
 
 .kh-error h3 {
