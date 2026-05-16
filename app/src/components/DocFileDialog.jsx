@@ -9,6 +9,11 @@ import apiService from "../services/apiService";
 import DocumentPdfViewer from "./DocumentPdfViewer";
 import "./DocFileDialog.css";
 
+/** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
+function e(dec) {
+  return String.fromCodePoint(dec);
+}
+
 const BLOCKED_EXT = [".exe",".bat",".cmd",".ps1",".sh",".msi",".vbs",".jar",".com",".scr",".pif",".reg",".dll",".sys"];
 
 function isBlocked(filename) {
@@ -177,10 +182,10 @@ function DocFileDialog({ doc, onClose }) {
         {/* Header */}
         <div className="docfile-header">
           <div>
-            <h3 className="docfile-title">&#128206; File allegato</h3>
+            <h3 className="docfile-title">{e(128206)} File allegato</h3>
             <p className="docfile-subtitle">{doc.doc_code ? `${doc.doc_code} - ` : ""}{doc.title}</p>
           </div>
-          <button className="docfile-close" onClick={onClose}>&#x2715;</button>
+          <button type="button" className="docfile-close" onClick={onClose} aria-label="Chiudi">{String.fromCodePoint(0x2715)}</button>
         </div>
 
         {loading && (
@@ -191,7 +196,7 @@ function DocFileDialog({ doc, onClose }) {
         )}
 
         {error && (
-          <div className="docfile-error">&#9888;&#65039; {error}</div>
+          <div className="docfile-error">{e(9888)}{"\uFE0F"} {error}</div>
         )}
 
         {!loading && !error && data && (
@@ -200,7 +205,7 @@ function DocFileDialog({ doc, onClose }) {
             {currentFile ? (
               <div className="docfile-current">
                 <div className="docfile-current-info">
-                  <span className="docfile-icon">&#128196;</span>
+                  <span className="docfile-icon">{e(128196)}</span>
                   <div className="docfile-meta">
                     <span className="docfile-name">{currentFile.file_name}</span>
                     <div className="docfile-details">
@@ -226,7 +231,7 @@ function DocFileDialog({ doc, onClose }) {
                         setPdfViewerOpen(true);
                       }}
                     >
-                      &#128196; Visualizza PDF
+                      {e(128196)} Visualizza PDF
                     </button>
                   ) : null}
 
@@ -238,7 +243,7 @@ function DocFileDialog({ doc, onClose }) {
                       disabled={officeLoading}
                       title="Apri in Word desktop - modifica e salva direttamente"
                     >
-                      &#128196; Apri in Word
+                      {e(128196)} Apri in Word
                     </button>
                   )}
                   {OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
@@ -248,7 +253,7 @@ function DocFileDialog({ doc, onClose }) {
                       disabled={officeLoading}
                       title="Apri in Excel desktop - modifica e salva direttamente"
                     >
-                      &#128202; Apri in Excel
+                      {e(128202)} Apri in Excel
                     </button>
                   )}
 
@@ -260,12 +265,12 @@ function DocFileDialog({ doc, onClose }) {
                       disabled={officeLoading}
                       title="Visualizza nel browser senza Office installato"
                     >
-                      &#128065;&#65039; Visualizza
+                      {e(128065)}{"\uFE0F"} Visualizza
                     </button>
                   )}
 
                   {officeLoading && (
-                    <span className="docfile-office-loading">&#9696; Apertura...</span>
+                    <span className="docfile-office-loading">{e(9696)} Apertura...</span>
                   )}
 
                   <a
@@ -273,14 +278,14 @@ function DocFileDialog({ doc, onClose }) {
                     download
                     className="btn-docfile-download"
                   >
-                    &#11015;&#65039; Scarica
+                    {e(11015)}{"\uFE0F"} Scarica
                   </a>
                 </div>
 
                 {/* Alert: documento rilasciato → conferma apertura in modifica */}
                 {showEditAlert && (
                   <div className="docfile-office-alert">
-                    <strong>&#9888;&#65039; Documento rilasciato</strong>
+                    <strong>{e(9888)}{"\uFE0F"} Documento rilasciato</strong>
                     <p>
                       Questo documento è in stato <strong>Rilasciato</strong>. Aprirlo in modifica
                       creerà una nuova <strong>bozza</strong>: dovrai poi usare
@@ -293,7 +298,7 @@ function DocFileDialog({ doc, onClose }) {
                         onClick={() => handleOpenInOffice('edit')}
                         disabled={officeLoading}
                       >
-                        &#9999;&#65039; Sì, apri in modifica
+                        {e(9999)}{"\uFE0F"} Sì, apri in modifica
                       </button>
                       <button
                         className="btn-docfile-alert-cancel"
@@ -314,10 +319,10 @@ function DocFileDialog({ doc, onClose }) {
                       disabled={releasing}
                       title="Incrementa il numero di revisione e porta il documento in stato Rilasciato"
                     >
-                      {releasing ? "Rilascio in corso..." : "&#127881; Rilascia revisione"}
+                      {releasing ? "Rilascio in corso..." : `${e(127881)} Rilascia revisione`}
                     </button>
                     {releaseError && (
-                      <div className="docfile-office-error">&#9888;&#65039; {releaseError}</div>
+                      <div className="docfile-office-error">{e(9888)}{"\uFE0F"} {releaseError}</div>
                     )}
                   </div>
                 )}
@@ -325,7 +330,7 @@ function DocFileDialog({ doc, onClose }) {
                 {/* Errore apertura Office */}
                 {officeError && (
                   <div className="docfile-office-error">
-                    &#9888;&#65039; {officeError}
+                    {e(9888)}{"\uFE0F"} {officeError}
                     <p className="docfile-office-fallback">
                       Usa il pulsante <strong>Scarica</strong>, modifica il file e ricaricalo con "Carica nuova revisione".
                     </p>
@@ -335,14 +340,14 @@ function DocFileDialog({ doc, onClose }) {
                 {/* Info post-apertura Office */}
                 {webdavData && !officeError && !showEditAlert && (
                   <div className="docfile-office-info">
-                    &#128274; Link Office attivo - salva in Word/Excel per aggiornare il documento.
+                    {e(128274)} Link Office attivo - salva in Word/Excel per aggiornare il documento.
                     Scade alle {new Date(webdavData.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
                   </div>
                 )}
               </div>
             ) : (
               <div className="docfile-empty">
-                <span className="docfile-empty-icon">&#128196;</span>
+                <span className="docfile-empty-icon">{e(128196)}</span>
                 <p>Nessun file allegato ancora.</p>
                 <p className="docfile-empty-hint">Carica la prima versione usando il form qui sotto.</p>
               </div>
@@ -355,7 +360,7 @@ function DocFileDialog({ doc, onClose }) {
                   className="docfile-history-toggle"
                   onClick={() => setShowHistory(v => !v)}
                 >
-                  {showHistory ? "&#9650;" : "&#9660;"} Versioni precedenti ({history.length})
+                  {showHistory ? e(9650) : e(9660)} Versioni precedenti ({history.length})
                 </button>
                 {showHistory && (
                   <ul className="docfile-history-list">
@@ -377,7 +382,7 @@ function DocFileDialog({ doc, onClose }) {
                               setPdfViewerOpen(true);
                             }}
                           >
-                            &#128065;&#65039;
+                            {e(128065)}{"\uFE0F"}
                           </button>
                         )}
                         <a
@@ -385,7 +390,7 @@ function DocFileDialog({ doc, onClose }) {
                           download
                           className="btn-docfile-hist-dl"
                         >
-                          &#11015;&#65039;
+                          {e(11015)}{"\uFE0F"}
                         </a>
                       </li>
                     ))}
@@ -397,7 +402,7 @@ function DocFileDialog({ doc, onClose }) {
             {/* Upload nuova versione */}
             <div className="docfile-upload-section">
               <h4 className="docfile-upload-title">
-                {currentFile ? "&#128260; Carica nuova revisione" : "&#128228; Carica file"}
+                {currentFile ? `${e(128260)} Carica nuova revisione` : `${e(128228)} Carica file`}
               </h4>
 
               <div className="docfile-upload-form">
@@ -429,8 +434,8 @@ function DocFileDialog({ doc, onClose }) {
                   </div>
                 )}
 
-                {uploadErr && <div className="docfile-upload-error">&#9888;&#65039; {uploadErr}</div>}
-                {uploadOk  && <div className="docfile-upload-ok">&#9989; {uploadOk}</div>}
+                {uploadErr && <div className="docfile-upload-error">{e(9888)}{"\uFE0F"} {uploadErr}</div>}
+                {uploadOk  && <div className="docfile-upload-ok">{e(9989)} {uploadOk}</div>}
 
                 <button
                   className="btn-docfile-upload"
