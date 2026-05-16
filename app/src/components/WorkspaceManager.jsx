@@ -193,8 +193,8 @@ export default function WorkspaceManager({ audit, compact = false }) {
     <div className="workspace-manager">
       <h4 className="workspace-title">
         {isMobile
-          ? "� Storage Dispositivo Mobile"
-          : "�📁 Gestione Cartella Salvataggio"}
+          ? "\uD83D\uDCF1 Storage Dispositivo Mobile"
+          : "\uD83D\uDCC1 Gestione Cartella Salvataggio"}
       </h4>
 
       {/* Mobile: Info e guida */}

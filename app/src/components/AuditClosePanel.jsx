@@ -417,7 +417,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
           </p>
         )}
 
-        {/* Pulsante Approva � solo da completed, per ruolo responsabile/admin */}
+        {/* Pulsante Approva — solo da completed, per ruolo responsabile/admin */}
         {status === "completed" && !approving && (
           <button
             className="close-btn close-btn--approve"
@@ -433,7 +433,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
             <p className="close-confirm__text">
               <strong>Confermi l'approvazione?</strong>
               <br />
-              L'audit sara' definitivamente bloccato e non potra' essere modificato.
+              L'audit sarà definitivamente bloccato e non potrà essere modificato.
             </p>
             {approveError && <div className="close-api-error">⚠️ {approveError}</div>}
             <div className="close-confirm__actions">
@@ -457,12 +457,12 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
 
         {status !== "approved" && !approving && (
           <p className="close-done-hint" style={{ marginTop: "12px" }}>
-            L'audit e' in sola lettura. Per modifiche contatta il responsabile.
+            L'audit è in sola lettura. Per modifiche contatta il responsabile.
           </p>
         )}
         {status === "approved" && (
           <p className="close-done-hint" style={{ marginTop: "12px" }}>
-            Audit approvato � nessuna modifica consentita.
+            Audit approvato — nessuna modifica consentita.
           </p>
         )}
       </div>

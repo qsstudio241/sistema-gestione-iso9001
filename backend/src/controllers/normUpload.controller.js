@@ -29,8 +29,8 @@ function assessTextQuality(text) {
 
 /**
  * Da standard_code grezzo (es. "ISO_9016_2012") + norm_title + issuing_body
- * produce un titolo leggibile: "ISO 9016:2012 � Destructive tests on welds�"
- * Se issuing_body � "UNI" e il codice non inizia gi� con UNI, prefissa "UNI EN".
+ * produce un titolo leggibile: "ISO 9016:2012 — Destructive tests on welds."
+ * Se issuing_body è "UNI" e il codice non inizia già con UNI, prefissa "UNI EN".
  */
 function formatReadableTitle(metadata) {
   const { standard_code, norm_title, issuing_body } = metadata;
@@ -53,7 +53,7 @@ function formatReadableTitle(metadata) {
     prefix = `UNI EN ${formattedCode}`;
   }
 
-  return `${prefix} � ${norm_title}`;
+  return `${prefix} — ${norm_title}`;
 }
 
 /**
@@ -245,7 +245,7 @@ async function uploadNorms(req, res) {
     } catch (err) {
       logger.error(`[NormUpload] Errore per ${file.originalname}:`, err.message);
       entry.error = err.message;
-      // Don't delete the file � it's already on disk; the partial state can be cleaned up manually
+      // Don't delete the file — it's already on disk; the partial state can be cleaned up manually
     }
     results.push(entry);
   }

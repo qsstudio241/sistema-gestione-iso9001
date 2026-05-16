@@ -1,0 +1,26 @@
+---
+description: Regola encoding e caratteri ó prevenzione caratteri corrotti
+alwaysApply: true
+---
+
+# Encoding e qualit‡ testo
+
+## Regola caratteri italiani
+- Tutti i file sorgente DEVONO essere salvati in **UTF-8 senza BOM**
+- I testi in italiano DEVONO usare le lettere accentate corrette: ‡, Ë, È, Ï, Ú, ˘ (NON sequenze corrotte come ??, √ , ecc.)
+- **Mai** usare apostrofo al posto dell'accento (es. "qualita'" ? usare "qualit‡" nei testi UI visibili all'utente)
+
+## Caratteri proibiti nei sorgenti
+| Carattere | Problema | Sostituzione |
+|-----------|----------|-------------|
+| ù (U+FFFD) | Replacement character | Determinare il carattere originale |
+| √  / √® / √© | UTF-8 letto come Latin1 | ‡ / Ë / È |
+| ?? in mezzo a parola | Encoding perso | Lettera accentata corretta |
+
+## Emoji nel codice
+- Le emoji nella UI devono essere inserite come **escape Unicode** (`\uD83E\uDD16`) o come entit‡, NON come carattere diretto (evita problemi cross-platform)
+- Le emoji vanno usate SOLO se esplicitamente richieste dal committente
+
+## Lista caratteri accentati italiani di riferimento
+‡ (U+00E0), Ë (U+00E8), È (U+00E9), Ï (U+00EC), Ú (U+00F2), ˘ (U+00F9)
+¿ (U+00C0), » (U+00C8), … (U+00C9), Ã (U+00CC), “ (U+00D2), Ÿ (U+00D9)

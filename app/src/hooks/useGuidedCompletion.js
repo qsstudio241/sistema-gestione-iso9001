@@ -1,5 +1,5 @@
 /**
- * useGuidedCompletion � navigazione guidata ai campi obbligatori mancanti.
+ * useGuidedCompletion — navigazione guidata ai campi obbligatori mancanti.
  *
  * Ogni field descriptor dichiara il proprio `path[]` completo verso il campo:
  *
@@ -12,12 +12,12 @@
  *
  * Il parent (AuditAccordionLayout) riceve `onNavigateTo(path, fieldId)` e
  * apre in batch tutti i livelli dichiarati nel path, poi scrolla al fieldId.
- * Non importa quanti livelli ci siano � basta aggiungerli al path.
+ * Non importa quanti livelli ci siano — basta aggiungerli al path.
  *
  * fieldDescriptors: Array<{
  *   id, text, isMissing,
- *   fieldId,   � id DOM del campo target (es. "field-auditObject") o null
- *   path,      � Array<PathStep> � percorso completo per aprire il campo
+ *   fieldId,   — id DOM del campo target (es. "field-auditObject") o null
+ *   path,      — Array<PathStep> — percorso completo per aprire il campo
  * }>
  *
  * onNavigateTo: (path: PathStep[], fieldId: string|null) => void

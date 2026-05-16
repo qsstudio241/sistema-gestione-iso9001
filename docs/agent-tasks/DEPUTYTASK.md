@@ -1,151 +1,111 @@
-# DEPUTYTASK — Deploy Gestione Documentale Avanzata + Smoke Test
+# DEPUTYTASK — Fix caratteri non riconosciuti nella UX + regola preventiva
 
 ## Obiettivo
-Eseguire le 4 migration SQL, il seed dei tag di sistema, il deploy backend sul VPS e uno smoke test completo delle nuove API.
+Scansionare **tutti i file frontend** (`app/src/**/*.jsx`, `app/src/**/*.css`) e i file backend che generano testo utente (`backend/src/controllers/*.js`, `backend/src/services/*.js`) per trovare caratteri "rotti" (es. `�`, sequenze `??`, encoding corrotti, emoji spezzate).
 
-## Pre-condizioni
-- Il commit `28d850e` è già su `main` (push completato)
-- Netlify build frontend è in corso automaticamente
-- Le variabili `SGQ_SSH_KEY_B64` e `SGQ_SUDO_PASSWORD` devono essere disponibili come Cloud Secrets
+Determinare il carattere corretto per ogni occorrenza, correggere, e **creare una regola `.cursor/rules`** per evitare che vengano usati in futuro.
 
-## Step 1 — Setup SSH
-```bash
-echo "$SGQ_SSH_KEY_B64" | base64 -d > /tmp/sgq_key && chmod 600 /tmp/sgq_key
-SSH_CMD="ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it"
-SCP_CMD="scp -i /tmp/sgq_key -P 1122 -o StrictHostKeyChecking=no"
-```
+## Contesto
+Alcuni file contengono caratteri non riconosciuti (probabilmente per problemi di encoding UTF-8/Latin1 durante salvataggi o copia-incolla). Questi appaiono nella UI come `�`, `??`, quadratini o spazi vuoti. Vanno trovati tutti e corretti.
 
-## Step 2 — Pull codice sul VPS
-```bash
-$SSH_CMD "cd /var/www/sgq-backend && git pull origin main"
-```
-Verificare che l'output mostri i file nuovi (controllers, routes, services, migrations).
+## Step 1 — Scansione sistematica
 
-## Step 3 — Eseguire le 4 migration SQL
-Creare uno script runner e copiarlo sul VPS:
+Cercare nei file sorgente (NON in `app/dist/`, NON in `node_modules/`):
 
 ```bash
-cat > /tmp/run-migrations-056-059.js << 'SCRIPT'
-const sql = require('mssql');
-const fs = require('fs');
-const path = require('path');
-const dbConfig = require('/var/www/sgq-backend/src/config/database');
+# Pattern da cercare:
+# 1. Replacement character Unicode U+FFFD: �
+# 2. Sequenze di ?? dove ci dovrebbe essere un carattere (es. "Qualit??" invece di "Qualità")
+# 3. Caratteri Latin1 corrotti: Ã , Ã¨, Ã©, Ã², Ã¹ (UTF-8 letto come Latin1)
+# 4. Emoji Unicode che potrebbero non renderizzare: \uD83E\uDD16, \uD83D\uDCA1, ecc.
 
-async function run() {
-    const pool = await dbConfig.getPool();
-    const migrationsDir = '/var/www/sgq-backend/database/migrations';
-    const files = [
-        '056_document_tags.sql',
-        '057_document_tree_and_relations.sql',
-        '058_document_history.sql',
-        '059_document_tree_templates.sql',
-    ];
-
-    for (const file of files) {
-        console.log(`\n=== Esecuzione ${file} ===`);
-        const sqlText = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
-        // Splitta per GO ed esegui ogni batch separatamente
-        const batches = sqlText.split(/^\s*GO\s*$/gim).filter(b => b.trim());
-        for (const batch of batches) {
-            try {
-                await pool.request().query(batch);
-            } catch (err) {
-                // Ignora errori di "già esiste" (idempotenza)
-                if (err.message.includes('already') || err.message.includes('There is already')) {
-                    console.log(`  (già presente, skip)`);
-                } else {
-                    console.error(`  ERRORE: ${err.message}`);
-                }
-            }
-        }
-        console.log(`  ${file} completato`);
-    }
-    console.log('\nTutte le migration completate.');
-    process.exit(0);
-}
-
-run().catch(err => { console.error('FATAL:', err.message); process.exit(1); });
-SCRIPT
-
-$SCP_CMD /tmp/run-migrations-056-059.js spascarella@www.fr-busato.it:/tmp/
-$SSH_CMD "cd /var/www/sgq-backend && node /tmp/run-migrations-056-059.js"
+# Usare ripgrep (rg) per cercare:
+rg -l '�|Ã |Ã¨|Ã©|Ã²|Ã¹' app/src/ backend/src/
+rg -n "Qualit..\b" app/src/ backend/src/  # per trovare "Qualità" corrotto
+rg -n "entit..\b" app/src/ backend/src/   # per trovare "entità" corrotto  
+rg -n "Gravit..\b" app/src/ backend/src/  # per trovare "Gravità" corrotto
 ```
 
-## Step 4 — Seed tag di sistema
+## Step 2 — Catalogare le occorrenze
+
+Per ogni file con problemi, creare una lista:
+```
+| File | Riga | Testo corrotto | Testo corretto |
+|------|------|----------------|----------------|
+| knowledgeIndexer.service.js | 38 | "Gravit:" | "Gravità:" |
+| ... | ... | ... | ... |
+```
+
+## Step 3 — Correggere
+
+Per ogni occorrenza:
+1. Leggere il file
+2. Sostituire il testo corrotto con quello corretto (usare StrReplace)
+3. Verificare che il file sia salvato in UTF-8
+
+**Attenzione**: i file JSX che contengono emoji tramite escape Unicode (`\uD83E\uDD16`) sono CORRETTI — non sono caratteri rotti. Quelli sono intenzionali. Correggere solo i testi in italiano con accenti mancanti o caratteri rotti.
+
+## Step 4 — Creare regola preventiva
+
+Creare il file `.cursor/rules/sgq-encoding-quality.mdc` con:
+
+```markdown
+---
+description: Regola encoding e caratteri — prevenzione caratteri corrotti
+alwaysApply: true
+---
+
+# Encoding e qualità testo
+
+## Regola caratteri italiani
+- Tutti i file sorgente DEVONO essere salvati in **UTF-8 senza BOM**
+- I testi in italiano DEVONO usare le lettere accentate corrette: à, è, é, ì, ò, ù (NON sequenze corrotte come ??, Ã , ecc.)
+- **Mai** usare apostrofo al posto dell'accento (es. "qualita'" → usare "qualità" nei testi UI visibili all'utente)
+
+## Caratteri proibiti nei sorgenti
+| Carattere | Problema | Sostituzione |
+|-----------|----------|-------------|
+| � (U+FFFD) | Replacement character | Determinare il carattere originale |
+| Ã  / Ã¨ / Ã© | UTF-8 letto come Latin1 | à / è / é |
+| ?? in mezzo a parola | Encoding perso | Lettera accentata corretta |
+
+## Emoji nel codice
+- Le emoji nella UI devono essere inserite come **escape Unicode** (`\uD83E\uDD16`) o come entità, NON come carattere diretto (evita problemi cross-platform)
+- Le emoji vanno usate SOLO se esplicitamente richieste dal committente
+
+## Lista caratteri accentati italiani di riferimento
+à (U+00E0), è (U+00E8), é (U+00E9), ì (U+00EC), ò (U+00F2), ù (U+00F9)
+À (U+00C0), È (U+00C8), É (U+00C9), Ì (U+00CC), Ò (U+00D2), Ù (U+00D9)
+```
+
+## Step 5 — Verifica
+
+1. Build frontend: 
+```powershell
+$node = "c:\Users\AI.Project\AppData\Local\Programs\cursor\resources\app\resources\helpers\node.exe"
+Set-Location "C:\ProgettoISO\app"; & $node "node_modules\vite\bin\vite.js" build 2>&1 | Select-Object -Last 30
+```
+
+2. Verificare che non ci siano più caratteri corrotti:
 ```bash
-$SCP_CMD backend/scripts/seed-system-tags.js spascarella@www.fr-busato.it:/tmp/
-$SSH_CMD "cd /var/www/sgq-backend && node /tmp/seed-system-tags.js"
+rg '�|Ã |Ã¨|Ã©' app/src/ backend/src/
 ```
-Verificare output: 4 categorie + ~19 tag creati (o "già presente" se ripetuto).
+Deve restituire 0 risultati.
 
-## Step 5 — Restart backend
+## Step 6 — Commit e push
+
 ```bash
-$SSH_CMD "echo '$SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend.service && sleep 3 && sudo systemctl status sgq-backend | head -5"
+git add -A
+git commit -m "fix(encoding): corregge caratteri non riconosciuti nella UX + regola preventiva encoding"
+git push origin main
 ```
-Verificare: `Active: active (running)`.
-
-## Step 6 — Smoke test API
-
-### 6.1 Health check
-```bash
-curl -sk https://www.fr-busato.it:8443/api/v1/health
-```
-Atteso: `{"status":"ok",...}`
-
-### 6.2 Login (ottenere token)
-```bash
-TOKEN=$(curl -sk https://www.fr-busato.it:8443/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))")
-```
-Se le credenziali di test non funzionano, usare qualsiasi utente valido. L'importante è ottenere un token JWT.
-
-### 6.3 Test nuove API (con token)
-```bash
-# Albero documentale
-curl -sk https://www.fr-busato.it:8443/api/v1/documents/tree \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool | head -20
-
-# Tag di sistema
-curl -sk https://www.fr-busato.it:8443/api/v1/document-tags \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool | head -30
-
-# Categorie tag
-curl -sk https://www.fr-busato.it:8443/api/v1/tag-categories \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
-
-# Template albero
-curl -sk https://www.fr-busato.it:8443/api/v1/document-tree-templates \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool | head -20
-
-# History di un documento (se ne esiste almeno uno — usa id=1 o un id valido)
-curl -sk https://www.fr-busato.it:8443/api/v1/documents/1/history \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool | head -10
-```
-
-### 6.4 Test provisioning albero (opzionale ma consigliato)
-Se esiste almeno una company (usa id reale), provisionare l'albero Camellini:
-```bash
-curl -sk -X POST https://www.fr-busato.it:8443/api/v1/documents/provision-tree \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"company_id": 1, "standard_codes": ["ISO_9001"]}' | python3 -m json.tool | head -30
-```
-Atteso: lista cartelle create (15 cartelle madre per ISO 9001, meno quelle condizionate a 14001/45001).
-
-Dopo il provisioning, ri-verificare l'albero:
-```bash
-curl -sk https://www.fr-busato.it:8443/api/v1/documents/tree?company_id=1 \
-  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool | head -40
-```
-
-## Step 7 — Verifica frontend
-Verificare che la build Netlify sia completata:
-```bash
-curl -sI https://sistema-gestione-iso9001.netlify.app | head -5
-```
-Se risponde 200, la build è OK. La nuova tab "Albero" sarà visibile nel Registro Documenti.
 
 ## Esito atteso
-Riportare per ogni step: OK o ERRORE con dettaglio.
+Riportare:
+- Numero file corretti
+- Tabella completa delle sostituzioni fatte
+- Conferma creazione regola `.cursor/rules/sgq-encoding-quality.mdc`
+- Esito build
+- Commit hash
+
 Chiudere con: **TEST OK** o **FIX NECESSARIO: [descrizione]**
