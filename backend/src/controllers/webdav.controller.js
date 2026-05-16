@@ -361,11 +361,40 @@ function handleWebdavUnlock(req, res) {
     res.status(204).end();
 }
 
+// ─── HEAD /webdav/:orgId/:docId/:filename — Office Existence/Word Discovery ──
+// Office usa HEAD per verificare se il file è accessibile prima di LOCK.
+// Risponde con gli stessi header di GET ma senza body.
+
+async function handleWebdavHead(req, res) {
+    try {
+        const { orgId, docId } = parseParams(req);
+        const token = req.query.dt;
+
+        const tokenData = validateToken(token, orgId, docId);
+        if (!tokenData) return res.status(401).end();
+
+        const pool   = await getPool();
+        const result = await getDocAndCurrentFile(pool, docId, orgId);
+        if (!result?.file) return res.status(404).end();
+
+        const { file } = result;
+        res.setHeader('Content-Length', file.file_size || 0);
+        if (file.mime_type) res.setHeader('Content-Type', file.mime_type);
+        res.setHeader('ETag', `"${file.attachment_id}"`);
+        res.setHeader('Last-Modified', new Date(file.created_at).toUTCString());
+        setWebdavHeaders(res);
+        res.status(200).end();
+    } catch (err) {
+        logger.error('[WebDAV] HEAD:', err.message);
+        res.status(500).end();
+    }
+}
+
 // ─── OPTIONS ─────────────────────────────────────────────────────────────────
 
 function handleWebdavOptions(req, res) {
     setWebdavHeaders(res);
-    res.setHeader('Allow', 'OPTIONS, GET, PUT, PROPFIND, LOCK, UNLOCK');
+    res.setHeader('Allow', 'OPTIONS, GET, HEAD, PUT, PROPFIND, LOCK, UNLOCK');
     res.status(200).end();
 }
 
@@ -395,6 +424,7 @@ function escapeXml(str) {
 module.exports = {
     generateWebdavLink,
     handleWebdavGet,
+    handleWebdavHead,
     handleWebdavPut,
     handleWebdavPropfind,
     handleWebdavLock,

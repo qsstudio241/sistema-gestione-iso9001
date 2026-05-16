@@ -33,17 +33,23 @@ router.post(
 
 const webdavRouter = express.Router();
 
+// OPTIONS su /:orgId/:docId/ (senza filename) — usato da Office Protocol Discovery
+// Deve rispondere con DAV: 1, 2 + Allow, altrimenti Office non tenta LOCK
+webdavRouter.all('/:orgId/:docId/', ctrl.handleWebdavOptions);
+webdavRouter.all('/:orgId/:docId', ctrl.handleWebdavOptions);
+
 // Tutti i metodi WebDAV su /:orgId/:docId/:filename
 webdavRouter.all('/:orgId/:docId/:filename', (req, res) => {
     switch (req.method.toUpperCase()) {
         case 'GET':      return ctrl.handleWebdavGet(req, res);
+        case 'HEAD':     return ctrl.handleWebdavHead(req, res);
         case 'PUT':      return ctrl.handleWebdavPut(req, res);
         case 'PROPFIND': return ctrl.handleWebdavPropfind(req, res);
         case 'LOCK':     return ctrl.handleWebdavLock(req, res);
         case 'UNLOCK':   return ctrl.handleWebdavUnlock(req, res);
         case 'OPTIONS':  return ctrl.handleWebdavOptions(req, res);
         default:
-            res.setHeader('Allow', 'GET, PUT, PROPFIND, LOCK, UNLOCK, OPTIONS');
+            res.setHeader('Allow', 'GET, HEAD, PUT, PROPFIND, LOCK, UNLOCK, OPTIONS');
             res.status(405).end('Method Not Allowed');
     }
 });
