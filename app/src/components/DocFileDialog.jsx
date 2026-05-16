@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentPdfViewer from "./DocumentPdfViewer";
+import DocumentDocxViewer from "./DocumentDocxViewer";
 import "./DocFileDialog.css";
 
 /** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
@@ -61,6 +62,10 @@ function DocFileDialog({ doc, onClose }) {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfViewerAttId, setPdfViewerAttId] = useState(null);
   const [pdfViewerName, setPdfViewerName] = useState(null);
+  // Sprint 12-B: viewer .docx browser-side (sola lettura, no Word desktop richiesto)
+  const [docxViewerOpen, setDocxViewerOpen] = useState(false);
+  const [docxViewerAttId, setDocxViewerAttId] = useState(null);
+  const [docxViewerName, setDocxViewerName] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -161,16 +166,9 @@ function DocFileDialog({ doc, onClose }) {
         }
         window.location.href = link.office_uri;
       } else {
-        // Visualizzazione: apre Word/Excel desktop in modalita' SOLA LETTURA (ofv).
-        // Piu' affidabile di Office Online Viewer (che ha problemi con porte
-        // non standard come :8443 e con server WebDAV custom).
-        if (link.office_uri_view) {
-          window.location.href = link.office_uri_view;
-        } else {
-          // Fallback per file non Word/Excel: Office Online Viewer
-          const viewUrl = buildOfficOnlineViewUrl(link.webdav_url);
-          window.open(viewUrl, '_blank', 'noopener,noreferrer');
-        }
+        // Per la visualizzazione il routing avviene direttamente sul pulsante
+        // (apre il viewer browser docx-preview), non passa di qui.
+        setOfficeError('Funzione non disponibile.');
       }
     } catch (err) {
       setOfficeError(`Errore: ${err.message}`);
@@ -267,13 +265,30 @@ function DocFileDialog({ doc, onClose }) {
                     </button>
                   )}
 
-                  {/* Visualizzazione browser senza Office (Microsoft Office Online Viewer) */}
-                  {OFFICE_VIEW_EXTS.includes(getExt(currentFile.file_name)) && (
+                  {/* Visualizzazione browser nativa Word: docx-preview (sola lettura) */}
+                  {OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
                       className="btn-docfile-office btn-docfile-office-view"
-                      onClick={() => handleOpenInOffice('view')}
-                      disabled={officeLoading}
-                      title="Visualizza nel browser senza Office installato"
+                      onClick={() => {
+                        setDocxViewerAttId(currentFile.id);
+                        setDocxViewerName(currentFile.file_name);
+                        setDocxViewerOpen(true);
+                      }}
+                      title="Visualizza nel browser - solo lettura, no Word richiesto"
+                    >
+                      {e(128065)}{"\uFE0F"} Visualizza
+                    </button>
+                  )}
+                  {/* Excel: niente viewer browser, fallback Office Online Viewer */}
+                  {OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
+                    <button
+                      className="btn-docfile-office btn-docfile-office-view"
+                      onClick={() => {
+                        const url = apiService.getDocFileDownloadUrl(doc.id, currentFile.id, false);
+                        const viewUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
+                        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                      title="Visualizza nel browser"
                     >
                       {e(128065)}{"\uFE0F"} Visualizza
                     </button>
@@ -465,6 +480,15 @@ function DocFileDialog({ doc, onClose }) {
             attachmentId={pdfViewerAttId}
             fileName={pdfViewerName}
             onClose={() => setPdfViewerOpen(false)}
+          />
+        )}
+        {/* Word .docx Viewer overlay (sola lettura, browser-side) */}
+        {docxViewerOpen && (
+          <DocumentDocxViewer
+            docId={doc.id}
+            attachmentId={docxViewerAttId}
+            fileName={docxViewerName}
+            onClose={() => setDocxViewerOpen(false)}
           />
         )}
       </div>
