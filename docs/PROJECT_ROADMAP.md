@@ -712,7 +712,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 ---
 
-**Ultimo Aggiornamento**: 29 aprile 2026
+**Ultimo Aggiornamento**: 16 maggio 2026
 
 ### Sequenza priorità aggiornata (29 aprile 2026)
 
@@ -756,6 +756,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **ADR-009 Fase 3** | Export Word per-norma con opzioni indipendenti (sblocca anche Word ISO 14001) | Deputy/Lead | ⏳ Dopo Fase 2 |
 | **ADR-009 Fase 4** | Custom checklist come "norma virtuale" pari grado a ISO | Deputy/Lead | ⏳ Dopo Fase 3 |
 | **ADR-009 Fase 5** | Audit ↔ document_registry tie-in (audit chiuso = documento del registro con scadenza) | Lead | ⏳ Dopo Fase 4, in concomitanza Sprint A registry |
+| **AI-CTX** | Contesto azienda/studio nell'assistente AI — backend filtra chunk per azienda, frontend chip + dropdown selettore, migrazione 063 | Lead (16/05/2026) | ✅ Completato |
+| **AI-OPT-L1** | Knowledge Optimizer Livello 1: dedup cosine >0.95, prune stale NC >180gg, gap detection per azienda — job notturno 03:00, migrazione 064 | Lead (16/05/2026) | ✅ Completato |
+| **AI-OPT-L2** | Knowledge Optimizer Livello 2: sintesi AI settimanale, condensazione per azienda, pattern cross-company, enrichment chunk deboli — job domenica 04:00, migrazione 065 | Lead (16/05/2026) | ✅ Completato |
+| **AI-KPI** | Dashboard Knowledge Health per admin: `/ai-knowledge-health`, 4 KPI cards, coverage per azienda, gap rilevati, endpoint `GET /ai/knowledge-health` | Lead (16/05/2026) | ✅ Completato |
 
 **Prossimo Step**: **ADR-009 Fase 2** (Sezione 11 e Close Panel per-norma + flag SGI integrato). Fase 1 completata 12/05/2026.
 

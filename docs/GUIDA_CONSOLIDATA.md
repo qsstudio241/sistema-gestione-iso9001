@@ -47,6 +47,36 @@
 
 ---
 
+### Sessione 16 maggio 2026 — Assistente AI: contesto azienda e ottimizzazione knowledge
+
+#### Architettura assistente AI — contesto e ottimizzazione
+
+- **Contesto a 4 livelli**: Studio (implicito da org), Azienda (auto da audit + override manuale con dropdown), Standard (backlog), Sessione (backlog)
+- **Soft reset conversazione**: separatore visivo al cambio contesto, messaggi precedenti sfumati ma accessibili, clear per azzeramento completo
+- **Knowledge Optimizer**: L1 notturno 03:00 (dedup cosine >0.95, prune stale NC chiuse >180gg, gap detection per azienda), L2 settimanale domenica 04:00 (sintesi AI per azienda, pattern trasversali cross-company, enrichment chunk deboli)
+- **Dashboard KPI Knowledge Health**: `/ai-knowledge-health`, solo admin/superadmin — 4 KPI cards, coverage per azienda, gap rilevati
+- **Modello embedding**: `gemini-embedding-001` (NON `text-embedding-004` che è deprecato)
+- **Migrazioni**: 063 (colonna `company_id` + indice su `knowledge_chunks`), 064 (tabelle `ai_usage_log` + `ai_optimization_runs`, colonne `is_stale`/`usage_count`), 065 (colonna `source_run_id` su `knowledge_chunks`)
+- **Protezione chunk AI**: i chunk con `entity_type` prefisso `ai_*` non vengono cancellati dal reindex
+
+#### Lezioni apprese (16/05/2026)
+
+- **Bug pattern query indexer**: verificare sempre che le colonne SQL nelle query dell'indexer corrispondano allo schema reale del DB. Fix multipli: `nc_type` inesistente, `corrective_action` → `resolution_summary`, `NULL AS company_id` → `r.company_id`, `organization_id` → `auditor_org_id` in companies join.
+- **Modello embedding Gemini**: `text-embedding-004` è deprecato e ritorna errore. Usare `gemini-embedding-001`.
+- **Contratto API flat vs nested**: quando si progetta un endpoint dashboard (es. `/ai/knowledge-health`), definire il formato di risposta (flat object vs nested) e allinearlo subito al frontend. Disallineamento causa errore silenzioso (valori `undefined`).
+
+#### Commit principali (16/05/2026)
+
+| Commit | Contenuto |
+|--------|-----------|
+| `306e0fe` | AI context: companyId in chat, chip header, dropdown, migrazione 063 |
+| `4f467b5` | AI usage log + Knowledge Optimizer L1, migrazione 064 |
+| `23aeaaa` | Dashboard Knowledge Health frontend + endpoint |
+| `87f628e` | Knowledge Optimizer L2 (sintesi AI settimanale), migrazione 065 |
+| `2e521d2`, `d3a4374` | Bug fix: contratto API, embedding deprecato, query SQL |
+
+---
+
 ### Sessione 15 maggio 2026 — Fix sezione 1.4 ghost-click mobile
 
 #### Problema
