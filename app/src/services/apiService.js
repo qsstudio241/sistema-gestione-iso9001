@@ -1170,8 +1170,9 @@ class ApiService {
 
     // ─── WebDAV / Office Round-trip (Sprint 12-A) ────────────────────────────
 
-    async getWebdavLink(docId) {
-        return this.post(`/documents/${docId}/webdav-link`, {});
+    async getWebdavLink(docId, mode = 'edit') {
+        // mode: 'edit' (default) → permette PUT; 'read' → solo lettura, PUT rifiutato lato server
+        return this.post(`/documents/${docId}/webdav-link`, { mode });
     }
     async releaseRevision(docId, data = {}) {
         return this.post(`/documents/${docId}/release-revision`, data);

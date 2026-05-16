@@ -95,6 +95,9 @@ async function generateWebdavLink(req, res) {
         const orgId  = req.user.organization_id;
         const userId = req.user.user_id;
         const docId  = parseInt(req.params.docId);
+        // Modalita' del token: 'edit' (default, permette PUT) o 'read' (sola lettura).
+        // Il client passa 'read' per il pulsante "Visualizza" — il server respinge le PUT.
+        const mode = (req.body?.mode === 'read' || req.query?.mode === 'read') ? 'read' : 'edit';
 
         if (isNaN(docId)) return res.status(400).json({ error: 'docId non valido.' });
 
@@ -104,7 +107,7 @@ async function generateWebdavLink(req, res) {
 
         const token   = makeToken();
         const expires = Date.now() + TOKEN_TTL_MS;
-        tokenStore.set(token, { docId, orgId, userId, expires, lockToken: null });
+        tokenStore.set(token, { docId, orgId, userId, expires, lockToken: null, mode });
 
         // URL WebDAV accessibile da Office: usa env WEBDAV_BASE_URL o il dominio della request
         const baseUrl  = process.env.WEBDAV_BASE_URL
@@ -197,6 +200,13 @@ async function handleWebdavPut(req, res) {
 
         const tokenData = validateToken(token, orgId, docId);
         if (!tokenData) return res.status(401).end('Token WebDAV non valido o scaduto.');
+
+        // Token in modalita' read: il salvataggio non e' permesso.
+        // Word in questo caso mostra "Salva con nome..." (che salva localmente).
+        if (tokenData.mode === 'read') {
+            logger.warn(`[WebDAV] PUT rifiutato per token mode=read: doc ${docId}, user ${tokenData.userId}`);
+            return res.status(403).end('Documento aperto in sola lettura.');
+        }
 
         // Raccoglie body (stream binario inviato da Office)
         const chunks = [];

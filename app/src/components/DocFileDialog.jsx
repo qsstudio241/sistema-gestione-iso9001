@@ -136,10 +136,13 @@ function DocFileDialog({ doc, onClose }) {
     setOfficeLoading(true);
     setOfficeError(null);
     try {
-      // Riusa il link se già generato e non scaduto (cache lato client)
+      // I link 'edit' e 'read' sono distinti lato server (token diversi).
+      // Cache solo se la modalita' coincide e non e' scaduto.
       let link = webdavData;
-      if (!link || new Date(link.expires_at) <= new Date()) {
-        link = await apiService.getWebdavLink(doc.id);
+      const linkMode = link?.mode || 'edit';
+      if (!link || linkMode !== mode || new Date(link.expires_at) <= new Date()) {
+        link = await apiService.getWebdavLink(doc.id, mode === 'edit' ? 'edit' : 'read');
+        link.mode = mode;
         setWebdavData(link);
       }
 
