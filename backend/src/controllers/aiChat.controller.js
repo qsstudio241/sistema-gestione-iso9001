@@ -1,9 +1,9 @@
 /**
- * aiChat.controller.js  Assistente AI globale SGQ
+ * aiChat.controller.js ? Assistente AI globale SGQ
  *
- * POST /ai/chat   risponde a domande libere usando il contesto indicizzato
- * POST /ai/reindex  re-indicizza tutti i dati per l'organizzazione (admin)
- * GET  /ai/knowledge-health  KPI salute knowledge base (admin)
+ * POST /ai/chat  ? risponde a domande libere usando il contesto indicizzato
+ * POST /ai/reindex ? re-indicizza tutti i dati per l'organizzazione (admin)
+ * GET  /ai/knowledge-health ? KPI salute knowledge base (admin)
  */
 
 const logger = require('../utils/logger');
@@ -11,7 +11,7 @@ const { query } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge, indexAllEntities } = require('../services/knowledgeIndexer.service');
 
-const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit ISO 9001 di questa organizzazione.
+const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit? ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
@@ -288,18 +288,18 @@ async function knowledgeHealth(req, res) {
       ),
     ]);
 
-    // Riorganizza coverage per azienda
+    // Riorganizza coverage per azienda  formato flat atteso dal frontend
     const coverageMap = {};
     for (const row of (coverageRes.recordset || [])) {
       if (!coverageMap[row.company_id]) {
-        coverageMap[row.company_id] = { companyId: row.company_id, companyName: row.company_name, types: {} };
+        coverageMap[row.company_id] = { companyId: row.company_id, companyName: row.company_name };
       }
       if (row.entity_type) {
-        coverageMap[row.company_id].types[row.entity_type] = row.chunk_count;
+        coverageMap[row.company_id][row.entity_type] = row.chunk_count;
       }
     }
 
-    // Arricchisci top companies con nome
+    // Arricchisci top companies con nome e rinomina cnt ? queryCount
     const topCompanies = (topCompaniesRes.recordset || []);
     if (topCompanies.length > 0) {
       const companyIds = topCompanies.map(c => c.company_id);
@@ -311,7 +311,11 @@ async function knowledgeHealth(req, res) {
       );
       const nameMap = {};
       for (const r of (namesRes.recordset || [])) nameMap[r.id] = r.name;
-      for (const tc of topCompanies) tc.companyName = nameMap[tc.company_id] || null;
+      for (const tc of topCompanies) {
+        tc.companyName = nameMap[tc.company_id] || null;
+        tc.queryCount = tc.cnt;
+        delete tc.cnt;
+      }
     }
 
     // Ultimo gap detection
@@ -332,7 +336,7 @@ async function knowledgeHealth(req, res) {
       staleChunks: (staleRes.recordset[0] || {}).cnt || 0,
       companyCoverage: Object.values(coverageMap),
       recentUsage: {
-        last30Days: (usageRes.recordset[0] || {}).cnt || 0,
+        totalQueries30d: (usageRes.recordset[0] || {}).cnt || 0,
         topCompanies,
       },
       avgResponseTime: Math.round((avgTimeRes.recordset[0] || {}).avg_ms || 0),
