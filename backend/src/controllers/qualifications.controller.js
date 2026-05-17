@@ -43,6 +43,7 @@ async function listQualifications(req, res) {
         const {
             search = '', company_id = '', status = '',
             person_name = '', expiring_days = '',
+            qualification_type = '',
             page = 1, limit = 50,
         } = req.query;
 
@@ -53,6 +54,17 @@ async function listQualifications(req, res) {
         if (search) { r.input('search', `%${search}%`); where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)"); }
         if (company_id) { r.input('companyId', parseInt(company_id)); where.push('q.company_id = @companyId'); }
         if (status)  { r.input('status', status); where.push('q.status = @status'); }
+        if (qualification_type) {
+            const qualTypeMap = {
+                iso9606_1: '%9606-1%',
+                iso9606_2: '%9606-2%',
+                iso14732:  '%14732%',
+                ndt:       '%NDT%',
+            };
+            const likePattern = qualTypeMap[qualification_type] || `%${qualification_type}%`;
+            r.input('qualType', likePattern);
+            where.push('q.qualification_type LIKE @qualType');
+        }
         if (expiring_days) {
             r.input('expDays', parseInt(expiring_days));
             where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");

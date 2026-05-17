@@ -521,6 +521,135 @@ async function deleteWPQR(req, res) {
     }
 }
 
+// ===============================================================================
+// WPS Welders — Assegnazione saldatori a WPS
+// ===============================================================================
+
+// GET /api/v1/welding/wps/:id/welders
+async function listWpsWelders(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id } = req.user;
+
+        const wpsCheck = await query(`
+            SELECT id FROM welding_procedures
+            WHERE id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (wpsCheck.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPS non trovata', code: 'WPS_NOT_FOUND' });
+        }
+
+        const result = await query(`
+            SELECT
+                ww.id, ww.wps_id, ww.qualification_id, ww.assigned_date, ww.notes, ww.created_at,
+                q.person_name, q.qualification_type, q.certificate_number,
+                q.expiry_date, q.status AS qualification_status,
+                q.welding_process, q.position_range
+            FROM wps_welders ww
+            JOIN qualifications q ON ww.qualification_id = q.id
+            WHERE ww.wps_id = @id AND ww.organization_id = @organization_id
+            ORDER BY q.person_name
+        `, { id: parseInt(id), organization_id });
+
+        res.json({ success: true, data: result.recordset });
+    } catch (error) {
+        logger.error('Error listing WPS welders', { error: error.message });
+        res.status(500).json({ error: 'Errore durante il recupero dei saldatori WPS', code: 'WPS_WELDERS_LIST_ERROR' });
+    }
+}
+
+// POST /api/v1/welding/wps/:id/welders
+async function assignWpsWelder(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id } = req.user;
+        const { qualification_id, assigned_date, notes } = req.body;
+
+        if (!qualification_id) {
+            return res.status(400).json({ error: 'qualification_id obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+
+        // Verifica WPS appartenga alla stessa org
+        const wpsCheck = await query(`
+            SELECT id FROM welding_procedures
+            WHERE id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (wpsCheck.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPS non trovata', code: 'WPS_NOT_FOUND' });
+        }
+
+        // Verifica qualifica appartenga alla stessa org
+        const qualCheck = await query(`
+            SELECT id FROM qualifications
+            WHERE id = @qualification_id AND organization_id = @organization_id
+        `, { qualification_id: parseInt(qualification_id), organization_id });
+
+        if (qualCheck.recordset.length === 0) {
+            return res.status(404).json({ error: 'Qualifica non trovata', code: 'QUALIFICATION_NOT_FOUND' });
+        }
+
+        // Verifica duplicato
+        const dupCheck = await query(`
+            SELECT id FROM wps_welders
+            WHERE wps_id = @wps_id AND qualification_id = @qualification_id AND organization_id = @organization_id
+        `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
+
+        if (dupCheck.recordset.length > 0) {
+            return res.status(409).json({ error: 'Saldatore già assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
+        }
+
+        const result = await query(`
+            INSERT INTO wps_welders (wps_id, qualification_id, assigned_date, notes, organization_id, created_at)
+            OUTPUT INSERTED.id
+            VALUES (@wps_id, @qualification_id, @assigned_date, @notes, @organization_id, GETDATE())
+        `, {
+            wps_id:           parseInt(id),
+            qualification_id: parseInt(qualification_id),
+            assigned_date:    assigned_date || null,
+            notes:            notes || null,
+            organization_id,
+        });
+
+        const newId = result.recordset[0].id;
+        logger.info('WPS welder assigned', { id: newId, wps_id: id, qualification_id, organization_id });
+
+        res.status(201).json({ success: true, data: { id: newId } });
+    } catch (error) {
+        logger.error('Error assigning WPS welder', { error: error.message });
+        res.status(500).json({ error: 'Errore durante l\'assegnazione del saldatore', code: 'WPS_WELDER_ASSIGN_ERROR' });
+    }
+}
+
+// DELETE /api/v1/welding/wps/:id/welders/:welderId
+async function removeWpsWelder(req, res) {
+    try {
+        const { id, welderId } = req.params;
+        const { organization_id } = req.user;
+
+        const existing = await query(`
+            SELECT id FROM wps_welders
+            WHERE id = @welderId AND wps_id = @wps_id AND organization_id = @organization_id
+        `, { welderId: parseInt(welderId), wps_id: parseInt(id), organization_id });
+
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'Assegnazione non trovata', code: 'ASSIGNMENT_NOT_FOUND' });
+        }
+
+        await query(`
+            DELETE FROM wps_welders
+            WHERE id = @welderId AND organization_id = @organization_id
+        `, { welderId: parseInt(welderId), organization_id });
+
+        logger.info('WPS welder removed', { welderId, wps_id: id, organization_id });
+        res.json({ success: true, message: 'Assegnazione rimossa con successo' });
+    } catch (error) {
+        logger.error('Error removing WPS welder', { error: error.message });
+        res.status(500).json({ error: 'Errore durante la rimozione del saldatore', code: 'WPS_WELDER_REMOVE_ERROR' });
+    }
+}
+
 module.exports = {
     listWPS,
     getWPS,
@@ -532,4 +661,7 @@ module.exports = {
     createWPQR,
     updateWPQR,
     deleteWPQR,
+    listWpsWelders,
+    assignWpsWelder,
+    removeWpsWelder,
 };

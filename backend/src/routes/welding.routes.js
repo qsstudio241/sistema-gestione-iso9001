@@ -17,6 +17,11 @@ router.post  ('/welding/wps',     ctrl.createWPS);
 router.put   ('/welding/wps/:id', ctrl.updateWPS);
 router.delete('/welding/wps/:id', ctrl.deleteWPS);
 
+// WPS Welders
+router.get   ('/welding/wps/:id/welders',           ctrl.listWpsWelders);
+router.post  ('/welding/wps/:id/welders',           ctrl.assignWpsWelder);
+router.delete('/welding/wps/:id/welders/:welderId', ctrl.removeWpsWelder);
+
 // WPQR
 router.get   ('/welding/wpqr',     ctrl.listWPQR);
 router.get   ('/welding/wpqr/:id', ctrl.getWPQR);

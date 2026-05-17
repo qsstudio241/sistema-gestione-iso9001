@@ -1463,6 +1463,19 @@ class ApiService {
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }
 
+    // WPS Welders
+    async getWpsWelders(wpsId)              { return this.get(`/welding/wps/${wpsId}/welders`); }
+    async assignWpsWelder(wpsId, data)      { return this.post(`/welding/wps/${wpsId}/welders`, data); }
+    async removeWpsWelder(wpsId, welderId)  { return this.delete(`/welding/wps/${wpsId}/welders/${welderId}`); }
+
+    // ─── Projects / Commesse (Modulo Saldatura) ─────────────────────────────
+    async getProjects(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/projects${qs ? '?' + qs : ''}`); }
+    async getProject(id)             { return this.get(`/projects/${id}`); }
+    async createProject(data)        { return this.post('/projects', data); }
+    async updateProject(id, data)    { return this.put(`/projects/${id}`, data); }
+    async deleteProject(id)          { return this.delete(`/projects/${id}`); }
+    async getProjectStats()          { return this.get('/projects/stats'); }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
     async uploadNorms(files) {

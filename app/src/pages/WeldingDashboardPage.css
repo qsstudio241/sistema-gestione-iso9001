@@ -1,0 +1,93 @@
+/* WeldingDashboardPage.css — Dashboard Coordinatore ISO 3834 */
+
+.wd-page { padding: 24px 28px; max-width: 1200px; }
+
+/* Header */
+.wd-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.wd-title  { font-size:22px; font-weight:700; color:#1e3a5f; margin:0 0 4px; }
+.wd-subtitle { font-size:14px; color:#6b7280; margin:0; }
+.wd-btn-reload { padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:16px; }
+.wd-btn-reload:hover { background:#f3f4f6; }
+
+/* Loading */
+.wd-loading { display:flex; align-items:center; gap:12px; padding:40px; color:#6b7280; }
+.wd-spinner { width:20px; height:20px; border:3px solid #e5e7eb; border-top-color:#1e3a5f; border-radius:50%; animation:wd-spin .7s linear infinite; }
+@keyframes wd-spin { to { transform:rotate(360deg); } }
+
+/* Card riassuntive */
+.wd-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:24px; }
+
+.wd-card {
+  display:flex; align-items:center; gap:14px;
+  padding:18px 20px; background:#fff;
+  border:1px solid #e5e7eb; border-radius:12px;
+  cursor:pointer; transition:box-shadow .15s, border-color .15s;
+}
+.wd-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.08); border-color:#93c5fd; }
+
+.wd-card-icon { font-size:28px; flex-shrink:0; }
+.wd-card-body { flex:1; display:flex; flex-direction:column; gap:2px; }
+.wd-card-value { font-size:26px; font-weight:700; color:#1e3a5f; line-height:1; }
+.wd-card-label { font-size:13px; font-weight:600; color:#374151; }
+.wd-card-detail { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.wd-card-arrow { font-size:22px; color:#9ca3af; font-weight:300; }
+
+.wd-detail-item { font-size:11px; font-weight:600; padding:1px 7px; border-radius:4px; white-space:nowrap; }
+.wd-detail-green  { background:#dcfce7; color:#166534; }
+.wd-detail-blue   { background:#dbeafe; color:#1d4ed8; }
+.wd-detail-gray   { background:#f3f4f6; color:#4b5563; }
+.wd-detail-red    { background:#fee2e2; color:#991b1b; }
+.wd-detail-orange { background:#ffedd5; color:#9a3412; }
+
+/* Sezioni */
+.wd-section { margin-bottom:24px; }
+.wd-section-title {
+  font-size:12px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.04em; color:#6b7280; margin:0 0 10px;
+  padding-bottom:6px; border-bottom:1px solid #e5e7eb;
+}
+.wd-section-title-alert { color:#d97706; border-color:#fde68a; }
+
+/* Alert */
+.wd-alerts { display:flex; flex-direction:column; gap:6px; }
+.wd-alert {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-radius:8px;
+  cursor:pointer; transition:background .15s;
+}
+.wd-alert-danger  { background:#fef2f2; border:1px solid #fecaca; }
+.wd-alert-danger:hover { background:#fee2e2; }
+.wd-alert-warning { background:#fffbeb; border:1px solid #fde68a; }
+.wd-alert-warning:hover { background:#fef3c7; }
+.wd-alert-icon { font-size:16px; flex-shrink:0; }
+.wd-alert-text { flex:1; font-size:13px; font-weight:500; color:#1e293b; }
+.wd-alert-arrow { font-size:18px; color:#9ca3af; }
+
+/* Tabella commesse */
+.wd-table-wrap { overflow-x:auto; border:1px solid #e5e7eb; border-radius:10px; }
+.wd-table { width:100%; border-collapse:collapse; font-size:13px; }
+.wd-table th { background:#f9fafb; padding:9px 10px; text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.wd-table td { padding:9px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
+.wd-table tbody tr:last-child td { border-bottom:none; }
+.wd-row-click { cursor:pointer; }
+.wd-row-click:hover td { background:#fafafa; }
+.wd-notes-cell { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#6b7280; font-size:12px; }
+
+/* Status badge */
+.wd-status { display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
+.wd-status-aperta  { background:#dcfce7; color:#166534; }
+.wd-status-offerta { background:#dbeafe; color:#1d4ed8; }
+.wd-status-chiusa  { background:#f3f4f6; color:#4b5563; }
+.wd-status-sospesa { background:#fef9c3; color:#854d0e; }
+
+/* Empty */
+.wd-empty { text-align:center; padding:30px; color:#6b7280; }
+.wd-btn-new { padding:9px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; }
+.wd-btn-new:hover { background:#16304e; }
+
+/* Responsive */
+@media (max-width:700px) {
+  .wd-page { padding:14px; }
+  .wd-cards { grid-template-columns:1fr; }
+  .wd-table th:nth-child(n+4), .wd-table td:nth-child(n+4) { display:none; }
+}

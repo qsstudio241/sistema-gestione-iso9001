@@ -1,0 +1,755 @@
+# Piano Operativo — Modulo Saldatura ISO 3834 v2
+
+**Data**: 17 maggio 2026
+**Obiettivo**: rendere il Modulo Saldatura operativo per un coordinatore di saldatura (Mason) secondo EN ISO 14731.
+
+---
+
+## Sommario Esecutivo
+
+Il modulo saldatura ha oggi un CRUD WPS/WPQR funzionante (`/saldatura/procedure`), un registro qualifiche con campi estesi per saldatori/NDT, e una checklist audit ISO 3834 con funzione SAT. Mancano:
+
+1. **Dashboard coordinatore** — la pagina `/saldatura` mostra solo un placeholder "In arrivo"
+2. **Gestione commesse** — tabella DB `projects` creata (migrazione 067) ma senza API/UI
+3. **Allegati PDF** su WPS/WPQR — campo DB `attachment_id` esiste ma l'UI non lo usa
+4. **Collegamento WPS ? Saldatori qualificati** — oggi `welder_name` nei WPQR è testo libero
+5. **Bug critico schema WPQR** — il controller usa colonne (`testing_body`, `welder_name`, `certificate_number`) che NON esistono nello schema DB
+6. **Bug filtro qualifiche** — il frontend invia `qualification_type` ma il backend lo ignora
+
+**Stima complessiva**: 4 fasi, ~15 task, effort totale M-L (~60-80h di sviluppo).
+
+---
+
+## Bug da fixare subito (Fase 0 — Prerequisiti)
+
+### BUG-A: Disallineamento schema wpqr_records (CRITICO)
+
+**Problema**: Il controller `welding.controller.js` (righe 372-427) inserisce e aggiorna colonne `testing_body`, `welder_name`, `certificate_number` che **non esistono** nella tabella `wpqr_records`. Lo schema della migrazione 067 definisce solo `issuing_body`. Ogni INSERT/UPDATE di un WPQR con quei campi genera un errore SQL silenzioso.
+
+**File interessati**:
+- `backend/scripts/run-migration-067-vps.js` — schema originale (riga 46-73): solo `issuing_body`
+- `backend/src/controllers/welding.controller.js`:
+  - `createWPQR` (riga 372): destruttura `testing_body`, `welder_name`, `certificate_number`
+  - `updateWPQR` (riga 455): lista `allowed` contiene gli stessi campi inesistenti
+
+**Soluzione**: Migrazione 069 — aggiungere le colonne mancanti alla tabella:
+
+```sql
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('wpqr_records') AND name = 'testing_body')
+  ALTER TABLE wpqr_records ADD testing_body NVARCHAR(100) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('wpqr_records') AND name = 'welder_name')
+  ALTER TABLE wpqr_records ADD welder_name NVARCHAR(100) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('wpqr_records') AND name = 'certificate_number')
+  ALTER TABLE wpqr_records ADD certificate_number NVARCHAR(100) NULL;
+```
+
+**Alternativa** (scelta in Fase 2): rinominare nel controller `testing_body` ? `issuing_body` e aggiungere solo `welder_name`, `certificate_number`. Entrambi gli approcci richiedono una migrazione.
+
+**Effort**: S (1-2h)
+**Test di accettazione**: creare un WPQR dal form con ente certificatore + saldatore + n. certificato ? salvataggio senza errori SQL.
+
+---
+
+### BUG-B: Filtro qualification_type non applicato dal backend (MEDIA)
+
+**Problema**: Il frontend `QualificationsPage.jsx` (riga 89) invia `qualification_type` come query parameter. Il backend `qualifications.controller.js` `listQualifications` (riga 39-92) lo legge ma **non** aggiunge alcuna condizione WHERE su di esso. L'unico uso di `qualification_type` nella WHERE è dentro `search` LIKE (riga 53).
+
+**File interessati**:
+- `backend/src/controllers/qualifications.controller.js` — funzione `listQualifications` (riga 39)
+
+**Soluzione**: Aggiungere nel controller:
+
+```javascript
+const { search = '', company_id = '', status = '',
+        person_name = '', expiring_days = '',
+        qualification_type = '', // <-- gia' destrutturato ma non usato
+        page = 1, limit = 50,
+} = req.query;
+
+// Aggiungere dopo le condizioni esistenti:
+if (qualification_type) {
+    r.input('qualType', qualification_type);
+    where.push('q.qualification_type = @qualType');
+}
+```
+
+**Nota**: Il valore nel frontend (es. `iso9606_1`) e' una chiave codificata, ma il backend salva stringhe come `"Saldatore ISO 9606-1"`. Bisogna decidere se:
+- (a) Normalizzare i tipi in una tabella o enum condiviso
+- (b) Usare LIKE `%9606-1%` nel filtro
+
+Approccio consigliato: **(b)** con mapping frontend ? pattern LIKE nel backend, mantenendo compatibilita' retroattiva.
+
+**Effort**: S (1h)
+**Test di accettazione**: filtrare "Saldatore ISO 9606-1" nella pagina qualifiche ? vengono mostrati solo i saldatori con quel tipo.
+
+---
+
+## Fase 1 — Fondamenta Backend (Sprint A)
+
+### Task 1.1: API CRUD Commesse/Progetti
+
+**Obiettivo**: Esporre CRUD per la tabella `projects` (gia' creata in migrazione 067).
+
+**Schema DB esistente** (`projects` — migrazione 067, righe 78-99):
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| id | INT IDENTITY PK | |
+| organization_id | INT NOT NULL | FK organizations |
+| company_id | INT NULL | FK companies |
+| project_code | NVARCHAR(50) NOT NULL | Codice commessa |
+| client_name | NVARCHAR(200) NULL | Cliente |
+| client_company_id | INT NULL | FK companies (cliente) |
+| description | NVARCHAR(MAX) NULL | |
+| start_date | DATE NULL | |
+| end_date | DATE NULL | |
+| applicable_wps_ids | NVARCHAR(MAX) NULL | JSON array di WPS id |
+| status | NVARCHAR(30) DEFAULT 'offerta' | offerta/aperta/chiusa/sospesa |
+| requirements_review_date | DATE NULL | Data riesame requisiti |
+| technical_review_date | DATE NULL | Data riesame tecnico |
+| notes | NVARCHAR(MAX) NULL | |
+| created_by | INT NULL | |
+| created_at/updated_at | DATETIME2 | |
+
+**File da creare/modificare**:
+- `backend/src/controllers/projects.controller.js` — **NUOVO**: CRUD completo (list, getOne, create, update, delete)
+- `backend/src/routes/projects.routes.js` — **NUOVO**: rotte REST sotto `/api/v1/projects`
+- `backend/src/app.js` — aggiungere `require('./routes/projects.routes')`
+- `app/src/services/apiService.js` — aggiungere metodi `getProjects`, `getProject`, `createProject`, `updateProject`, `deleteProject`
+
+**Endpoints**:
+```
+GET    /api/v1/projects          ? lista con filtri (status, search, page/limit)
+GET    /api/v1/projects/:id      ? dettaglio con WPS collegate (join)
+POST   /api/v1/projects          ? crea
+PUT    /api/v1/projects/:id      ? aggiorna
+DELETE /api/v1/projects/:id      ? soft delete (status = 'chiusa') o hard delete
+GET    /api/v1/projects/stats    ? conteggi per stato (badge dashboard)
+```
+
+**Dipendenze**: Nessuna
+**Effort**: M (4-6h)
+**Test di accettazione**: CRUD commesse via Postman/curl con autenticazione JWT.
+
+---
+
+### Task 1.2: Tabella di collegamento WPS ? Saldatori (migrazione 069)
+
+**Obiettivo**: Collegare WPS ai saldatori qualificati tramite una tabella relazionale, sostituendo il testo libero `welder_name` nei WPQR.
+
+**Schema nuova tabella `wps_welders`**:
+
+```sql
+CREATE TABLE wps_welders (
+    id                INT IDENTITY(1,1) PRIMARY KEY,
+    wps_id            INT NOT NULL,          -- FK welding_procedures
+    qualification_id  INT NOT NULL,          -- FK qualifications (il saldatore)
+    assigned_date     DATE NULL,
+    notes             NVARCHAR(500) NULL,
+    organization_id   INT NOT NULL,          -- FK organizations (scope tenant)
+    created_at        DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE INDEX IX_wps_welders_wps ON wps_welders(wps_id, organization_id);
+CREATE INDEX IX_wps_welders_qual ON wps_welders(qualification_id, organization_id);
+```
+
+**Schema nuova tabella `project_welders`** (assegnazione saldatori a commesse):
+
+```sql
+CREATE TABLE project_welders (
+    id                INT IDENTITY(1,1) PRIMARY KEY,
+    project_id        INT NOT NULL,          -- FK projects
+    qualification_id  INT NOT NULL,          -- FK qualifications
+    wps_id            INT NULL,              -- FK welding_procedures (opzionale)
+    assigned_date     DATE NULL,
+    notes             NVARCHAR(500) NULL,
+    organization_id   INT NOT NULL,
+    created_at        DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE INDEX IX_proj_welders_proj ON project_welders(project_id, organization_id);
+```
+
+Includere nella stessa migrazione le colonne mancanti del BUG-A.
+
+**File da creare/modificare**:
+- `backend/scripts/run-migration-069-vps.js` — **NUOVO**
+- `backend/src/controllers/welding.controller.js` — aggiungere endpoint per gestire assegnazioni WPS ? saldatori
+- `backend/src/routes/welding.routes.js` — nuove rotte
+
+**Effort**: M (3-4h)
+**Dipendenze**: BUG-A (nella stessa migrazione)
+**Test di accettazione**: assegnare un saldatore qualificato a una WPS, verificare che l'associazione persiste e appare nel dettaglio WPS.
+
+---
+
+### Task 1.3: Endpoint allegati WPS/WPQR
+
+**Obiettivo**: Permettere upload/download PDF su WPS e WPQR. Il campo `attachment_id` esiste gia' su entrambe le tabelle.
+
+**Strategia**: Riutilizzare il sistema allegati gia' presente (`/api/v1/attachments/upload`). Aggiungere:
+- Colonna opzionale `wps_id` e `wpqr_id` nella tabella `attachments` (migrazione 069)
+- Oppure: usare il campo `attachment_id` gia' presente su `welding_procedures` e `wpqr_records` per un singolo allegato PDF per record (piu' semplice, coerente con lo schema)
+
+**Approccio consigliato**: Usare un pattern multi-allegato come gia' fatto per documenti:
+- Migrazione 069: aggiungere `wps_id INT NULL` e `wpqr_id INT NULL` alla tabella `attachments`
+- Backend: accettare `wps_id`/`wpqr_id` in `uploadAttachment`
+- Frontend: aggiungere `AttachmentSection` nel form WPS/WPQR
+
+**File da modificare**:
+- `backend/scripts/run-migration-069-vps.js` — aggiungere colonne ad `attachments`
+- `backend/src/controllers/attachments.controller.js` — accettare `wps_id`/`wpqr_id`
+- `app/src/pages/WeldingProceduresPage.jsx` — aggiungere sezione allegati nei form
+- `app/src/services/apiService.js` — passare `wpsId`/`wpqrId` a `uploadAttachment`
+
+**Effort**: M (3-4h)
+**Dipendenze**: Task 1.2 (stessa migrazione)
+**Test di accettazione**: caricare un PDF su una WPS, visualizzarlo dall'elenco WPS, scaricarlo.
+
+---
+
+## Fase 2 — Dashboard Coordinatore (Sprint B)
+
+### Task 2.1: Pagina Dashboard ISO 3834
+
+**Obiettivo**: Trasformare il placeholder `/saldatura` in una dashboard operativa per Mason.
+
+**Layout dashboard** (4 sezioni card):
+
+```
+????????????????????????????????????????????????????
+?  DASHBOARD ISO 3834 — Coordinatore Saldatura     ?
+????????????????????????????????????????????????????
+? Commesse     ? WPS          ? Qualifiche         ?
+? Attive: 3    ? Attive: 12   ? In scadenza: 2     ?
+? Offerta: 1   ? Bozza: 2     ? Scadute: 0         ?
+? [Vai ?]      ? [Vai ?]      ? [Vai ?]            ?
+????????????????????????????????????????????????????
+? ALERT E SCADENZE                                 ?
+? ? Qualifica Mario Rossi scade tra 28 gg         ?
+? ? WPQR-003 scade il 15/07/2026                  ?
+? ?? WPS-007 in bozza da >30 giorni               ?
+????????????????????????????????????????????????????
+? COMMESSE ATTIVE (tabella riassuntiva)            ?
+? COM-001 | Cliente X | 3 WPS | 5 saldatori       ?
+? COM-002 | Cliente Y | 1 WPS | 2 saldatori       ?
+????????????????????????????????????????????????????
+? ULTIME ATTIVITA'                                 ?
+? 15/05 — Aggiunta WPS-012 (TIG, acc. inox)       ?
+? 14/05 — Rinnovo qualifica Marco Bianchi          ?
+????????????????????????????????????????????????????
+```
+
+**File da creare/modificare**:
+- `app/src/pages/WeldingDashboardPage.jsx` — **NUOVO**: componente dashboard
+- `app/src/pages/WeldingDashboardPage.css` — **NUOVO**: stili
+- `app/src/App.jsx` — cambiare rotta `/saldatura` da `ModuleLocked` a `WeldingDashboardPage`
+- `app/src/layouts/AppLayout.jsx` — rimuovere `locked: true` dalla voce "ISO 3834" (riga 65)
+- `app/src/components/ModuleLocked.jsx` — nessuna modifica (resta per altri moduli)
+
+**API da consumare** (gia' esistenti + nuove):
+- `apiService.getWPSList({ limit: 5 })` — ultime WPS
+- `apiService.getQualificationsStats()` — conteggi qualifiche
+- `apiService.getProjects({ status: 'aperta' })` — commesse attive (Task 1.1)
+- `apiService.getWPQRList({ limit: 5 })` — ultimi WPQR
+
+**Effort**: M (4-5h)
+**Dipendenze**: Task 1.1 (API commesse)
+**Test di accettazione**: Mason vede la dashboard con conteggi reali, link funzionanti a WPS/commesse/qualifiche, alert scadenze.
+
+---
+
+### Task 2.2: Pagina gestione commesse (UI)
+
+**Obiettivo**: CRUD commesse con selezione WPS applicabili e assegnazione saldatori.
+
+**Struttura pagina** `/saldatura/commesse`:
+
+| Componente | Funzionalita' |
+|------------|---------------|
+| Tabella commesse | Codice, cliente, stato, date, n. WPS, n. saldatori |
+| Form modale | Crea/modifica commessa |
+| Tab WPS nella commessa | Seleziona WPS applicabili (checkbox da lista WPS attive) |
+| Tab Saldatori | Assegna saldatori qualificati (select da registro qualifiche filtrato saldatura) |
+| Sezione riesame | Date riesame requisiti e tecnico |
+
+**File da creare/modificare**:
+- `app/src/pages/ProjectsPage.jsx` — **NUOVO**
+- `app/src/pages/ProjectsPage.css` — **NUOVO**
+- `app/src/App.jsx` — aggiungere rotta `/saldatura/commesse`
+- `app/src/layouts/AppLayout.jsx` — aggiungere voce sidebar "Commesse" nel gruppo Saldatura
+
+**Effort**: L (6-8h)
+**Dipendenze**: Task 1.1, Task 1.2
+**Test di accettazione**: Mason crea commessa, assegna 2 WPS e 3 saldatori, salva, riapre e verifica i dati.
+
+---
+
+### Task 2.3: Collegamento WPS ? Saldatori nella UI
+
+**Obiettivo**: Nel form WPS, sezione "Saldatori qualificati" con autocomplete dal registro qualifiche filtrato per tipo saldatura.
+
+**Modifica al form WPS** (`WPSFormModal` in `WeldingProceduresPage.jsx`):
+
+Aggiungere dopo la griglia campi esistente:
+- Sezione "Saldatori qualificati assegnati a questa WPS"
+- Select/autocomplete che filtra `qualifications` per `qualification_type LIKE '%9606%' OR '%14732%'`
+- Lista chip rimovibili dei saldatori assegnati
+- Stesso pattern usato per tag documenti (chip + rimozione)
+
+**Modifica al form WPQR** (`WPQRFormModal`):
+- Sostituire `welder_name` (input testo libero) con select dei saldatori collegati alla WPS selezionata (`wps_welders` JOIN `qualifications`)
+- Mantenere fallback testo libero per retrocompatibilita'
+
+**File da modificare**:
+- `app/src/pages/WeldingProceduresPage.jsx` — form WPS e WPQR
+- `app/src/services/apiService.js` — endpoint `getWpsWelders`, `assignWpsWelder`, `removeWpsWelder`
+- `backend/src/controllers/welding.controller.js` — nuovi endpoint assegnazione
+- `backend/src/routes/welding.routes.js` — nuove rotte
+
+**Effort**: M (4-5h)
+**Dipendenze**: Task 1.2
+**Test di accettazione**: assegnare saldatore Mario Rossi (ISO 9606-1, MIG) a WPS-001, creare WPQR selezionandolo dal dropdown.
+
+---
+
+## Fase 3 — Funzionalita' Avanzate (Sprint C)
+
+### Task 3.1: Range validita' qualifiche ISO 9606
+
+**Obiettivo**: Calcolo automatico del range di validita' di una qualifica saldatore in base a ISO 9606 (spessore, diametro, posizioni coperte).
+
+**Logica**: Le regole ISO 9606-1 definiscono range di validita' a partire dallo spessore/diametro del provino:
+- Spessore provino `t`: qualifica copre da `t/2` (min 3mm) a `2t` (max illimitato per t ? 12mm)
+- Diametro provino `D`: copre da `D/2` a `5D` (o illimitato per D ? 500mm)
+- Posizioni: PA copre solo PA; PF copre PA+PB+PF; ecc.
+
+**File da creare/modificare**:
+- `app/src/utils/weldingQualificationRanges.js` — **NUOVO**: logica calcolo range
+- `app/src/pages/QualificationForm.jsx` — mostrare range calcolato sotto i campi spessore/posizione
+- Migrazione 069: aggiungere colonne `thickness_qualified_min`, `thickness_qualified_max`, `diameter_qualified_min`, `diameter_qualified_max` alla tabella `qualifications`
+
+**Effort**: M (4-5h)
+**Dipendenze**: Nessuna (puo' procedere in parallelo)
+**Test di accettazione**: inserire qualifica con spessore provino 10mm ? il sistema mostra "Copre: 5-20mm". Posizione PF ? mostra "Copre: PA, PB, PF".
+
+---
+
+### Task 3.2: NC specifiche saldatura
+
+**Obiettivo**: Permettere di collegare una NC a WPS, saldatore e commessa specifici.
+
+**Modifica schema**:
+```sql
+ALTER TABLE non_conformities ADD wps_id INT NULL;           -- FK welding_procedures
+ALTER TABLE non_conformities ADD welder_qualification_id INT NULL; -- FK qualifications
+ALTER TABLE non_conformities ADD project_id INT NULL;        -- FK projects
+```
+
+**File da modificare**:
+- Migrazione 069/070
+- `backend/src/controllers/nc.controller.js` — accettare e salvare i nuovi campi
+- `app/src/pages/NCPage.jsx` — aggiungere campi saldatura nel form NC (condizionali, visibili solo se contesto saldatura)
+
+**Effort**: M (4-5h)
+**Dipendenze**: Task 1.1, Task 1.2
+**Test di accettazione**: creare NC collegata a WPS-001 + saldatore + commessa COM-001, filtrarla dalla dashboard saldatura.
+
+---
+
+### Task 3.3: Certificati materiali EN 10204
+
+**Obiettivo**: Tipo documento strutturato nel Document Registry per certificati materiali (3.1, 3.2).
+
+**File da modificare**:
+- `app/src/data/standardsRegistry.js` o file dati tipo documenti — aggiungere tipo "Certificato materiale EN 10204"
+- Form documenti — campi specifici: tipo certificato (3.1/3.2), materiale, colata, fornitore
+
+**Effort**: M (3-4h)
+**Dipendenze**: Nessuna
+**Test di accettazione**: caricare certificato 3.1 con PDF allegato, ritrovarlo nel registro documenti filtrato per tipo.
+
+---
+
+### Task 3.4: Stampa/export WPS in formato standard
+
+**Obiettivo**: Generare PDF della WPS in formato standard (simile al format AWS/EN).
+
+**Approccio**: Template HTML ? PDF via browser (`window.print()` su div nascosto) oppure generazione lato server.
+
+**File da creare**:
+- `app/src/pages/WPSPrintView.jsx` — **NUOVO**: layout stampa WPS
+- `app/src/pages/WPSPrintView.css` — **NUOVO**: stili stampa (`@media print`)
+
+**Effort**: M (3-4h)
+**Dipendenze**: Task 1.3 (per mostrare allegati)
+**Test di accettazione**: pulsante "Stampa" su WPS ? apre preview con tutti i dati formattati, stampabile su A4.
+
+---
+
+## Fase 4 — Integrazione e Polishing (Sprint D)
+
+### Task 4.1: Commesse ? Audit ISO 3834
+
+**Obiettivo**: Collegare un audit ISO 3834 a una commessa specifica.
+
+**File da modificare**:
+- Schema audit: aggiungere `project_id INT NULL` alla tabella `audits`
+- Form creazione audit: se standard selezionato include ISO 3834, mostrare select commessa
+- Dashboard saldatura: mostrare ultimo audit per commessa
+
+**Effort**: M (3-4h)
+**Dipendenze**: Task 1.1, Task 2.1
+
+---
+
+### Task 4.2: Alert scadenze nella dashboard saldatura
+
+**Obiettivo**: Mostrare alert per qualifiche saldatori in scadenza, WPQR in scadenza, WPS in bozza da troppo tempo.
+
+**File da modificare**:
+- `app/src/pages/WeldingDashboardPage.jsx` — sezione alert
+- Backend: endpoint `/api/v1/welding/alerts` che aggrega scadenze
+
+**Effort**: S (2-3h)
+**Dipendenze**: Task 2.1
+
+---
+
+### Task 4.3: Sidebar e navigazione aggiornate
+
+**Obiettivo**: Aggiornare la sidebar per riflettere le nuove pagine.
+
+**Stato attuale** sidebar "Saldatura" (`AppLayout.jsx` riga 62-66):
+```javascript
+{ to: "/saldatura/procedure", icon: "??", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
+{ to: "/saldatura", icon: "??", label: "ISO 3834", locked: true, licenseKey: "saldatura" },
+```
+
+**Stato finale**:
+```javascript
+{ to: "/saldatura",            icon: "??", label: "Dashboard 3834",     licenseKey: "saldatura" },
+{ to: "/saldatura/commesse",   icon: "??", label: "Commesse",           licenseKey: "saldatura" },
+{ to: "/saldatura/procedure",  icon: "??", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
+```
+
+**File da modificare**:
+- `app/src/layouts/AppLayout.jsx` — aggiornare voci sidebar
+- `app/src/App.jsx` — aggiungere rotte
+
+**Effort**: S (1h)
+**Dipendenze**: Task 2.1, Task 2.2
+
+---
+
+## Riepilogo Fasi e Priorita'
+
+| Fase | Task | Effort | Dipendenze | Priorita' |
+|------|------|--------|------------|-----------|
+| **0** | BUG-A: Fix schema wpqr_records | S | — | CRITICA |
+| **0** | BUG-B: Fix filtro qualification_type | S | — | MEDIA |
+| **1** | 1.1 API CRUD Commesse | M | — | ALTA |
+| **1** | 1.2 Tabella wps_welders + migrazione 069 | M | BUG-A | ALTA |
+| **1** | 1.3 Allegati WPS/WPQR | M | 1.2 | ALTA |
+| **2** | 2.1 Dashboard coordinatore | M | 1.1 | ALTA |
+| **2** | 2.2 UI gestione commesse | L | 1.1, 1.2 | ALTA |
+| **2** | 2.3 UI collegamento WPS ? Saldatori | M | 1.2 | ALTA |
+| **3** | 3.1 Range validita' ISO 9606 | M | — | MEDIA |
+| **3** | 3.2 NC specifiche saldatura | M | 1.1, 1.2 | MEDIA |
+| **3** | 3.3 Certificati EN 10204 | M | — | MEDIA |
+| **3** | 3.4 Stampa WPS | M | 1.3 | MEDIA |
+| **4** | 4.1 Commesse ? Audit | M | 1.1 | MEDIA |
+| **4** | 4.2 Alert scadenze dashboard | S | 2.1 | MEDIA |
+| **4** | 4.3 Sidebar aggiornata | S | 2.1, 2.2 | BASSA |
+
+---
+
+## Scenari di Test Mason (Coordinatore Saldatura EN ISO 14731)
+
+### Scenario A — Setup iniziale
+
+**Prerequisiti**: utente Mason con ruolo `auditor`, modulo `saldatura` abilitato nella licenza.
+
+**Passi UI**:
+1. Login con email mason@test.it / password test
+2. Sidebar ? gruppo "Saldatura" ? click "Dashboard 3834"
+3. **Verificare**: pagina dashboard con 4 card riassuntive:
+   - Commesse (0 attive se DB vuoto)
+   - WPS (conteggio da API)
+   - Qualifiche saldatura (conteggio filtrato per tipo 9606/NDT)
+   - Alert scadenze (lista vuota o con scadenze reali)
+4. Click su card "WPS" ? naviga a `/saldatura/procedure`
+5. Click su card "Qualifiche" ? naviga a `/qualifiche?qualification_type=iso9606_1`
+6. Click su card "Commesse" ? naviga a `/saldatura/commesse`
+
+**Dati di test**: nessun dato iniziale necessario (verifica stato vuoto).
+
+**Risultato atteso**: la dashboard mostra conteggi coerenti con il DB; tutti i link navigano correttamente; nessun errore console.
+
+**Cosa verificare**:
+- [x] Dashboard carica senza errori
+- [x] Conteggi corretti (confrontare con query SQL diretta)
+- [x] Link alle sotto-pagine funzionanti
+- [x] Responsive mobile (card impilate)
+
+---
+
+### Scenario B — Nuova commessa
+
+**Prerequisiti**: almeno 2 WPS attive e 3 saldatori qualificati (ISO 9606) nel DB.
+
+**Passi UI**:
+1. Sidebar ? "Commesse" oppure Dashboard ? card Commesse ? click "Vai"
+2. Click "+ Nuova commessa"
+3. Compilare form:
+   - Codice: `COM-2026-001`
+   - Cliente: `Acciaieria Nord S.r.l.`
+   - Descrizione: `Fornitura carpenteria metallica capannone`
+   - Data inizio: `2026-06-01`
+   - Data fine: `2026-12-31`
+   - Stato: `offerta`
+4. Tab "WPS applicabili": selezionare WPS-001 (MIG, acc. carbonio) e WPS-003 (TIG, inox)
+5. Tab "Saldatori": assegnare:
+   - Mario Rossi (ISO 9606-1, proc. 135, mat. 1.1)
+   - Luca Verdi (ISO 9606-1, proc. 141, mat. 8.1)
+   - Paolo Bianchi (ISO 9606-1, proc. 135, mat. 1.2)
+6. Click "Salva"
+7. La commessa appare nella tabella con stato "Offerta", 2 WPS, 3 saldatori
+8. Click sulla riga ? dettaglio commessa con tutte le info
+
+**Dati di test da inserire prima**:
+```
+WPS-001: proc=135(MAG), materiale=1.1, giunto=BW, stato=attiva
+WPS-003: proc=141(TIG), materiale=8.1, giunto=FW, stato=attiva
+Qualifica: Mario Rossi, tipo=Saldatore ISO 9606-1, proc=135, mat=1.1, scadenza=2027-03-15
+Qualifica: Luca Verdi, tipo=Saldatore ISO 9606-1, proc=141, mat=8.1, scadenza=2026-11-30
+Qualifica: Paolo Bianchi, tipo=Saldatore ISO 9606-1, proc=135, mat=1.2, scadenza=2027-06-20
+```
+
+**Risultato atteso**: commessa salvata con associazioni WPS e saldatori persistite; riaprendo la commessa si vedono tutte le assegnazioni.
+
+**Cosa verificare**:
+- [x] Salvataggio senza errori (network 201)
+- [x] Riapertura mostra dati corretti
+- [x] Cambio stato offerta ? aperta funziona
+- [x] Rimozione saldatore da commessa persiste
+- [x] Se un saldatore non e' qualificato per il processo WPS selezionato, mostrare warning (Fase 3)
+
+---
+
+### Scenario C — Gestione WPS
+
+**Prerequisiti**: almeno 1 WPS esistente.
+
+**Passi UI**:
+1. Sidebar ? "Procedure WPS/WPQR"
+2. Click "+ Nuova WPS"
+3. Compilare:
+   - Codice: `WPS-012`
+   - Revisione: `Rev.0`
+   - Processo: `141 - TIG`
+   - Materiale: `8.1` (inox austenitico)
+   - Materiale d'apporto: `ER308L`
+   - Gas: `Argon 100%`
+   - Giunto: `BW - Testa a testa`
+   - Posizioni: `PA, PF`
+   - Spessore: `2.0 - 12.0 mm`
+   - Norma qualificazione: `EN ISO 15614-1`
+   - Stato: `bozza`
+4. Click "Salva" ? WPS appare in tabella
+5. Riaprire WPS-012 ? click "Allega PDF" (dopo Task 1.3)
+6. Caricare file `WPS-012_rev0.pdf` ? file appare nella sezione allegati
+7. Tab WPQR ? click "Nuovo WPQR"
+8. Compilare WPQR:
+   - WPS di riferimento: `WPS-012`
+   - Codice: `WPQR-012-01`
+   - Data prova: `2026-05-10`
+   - Ente: `IIS Genova`
+   - Saldatore: selezionare `Luca Verdi` (dal dropdown, dopo Task 2.3)
+   - Risultati: VT=OK, RT=OK, Trazione=OK, Piega=OK
+   - N. certificato: `IIS-2026-0458`
+   - Scadenza: `2028-05-10`
+9. Salvare ? WPQR appare nella lista con badge verde per tutti i test OK
+
+**Dati di test**: Luca Verdi gia' nel registro qualifiche (vedi Scenario B).
+
+**Risultato atteso**: WPS salvata con allegato PDF scaricabile; WPQR collegato con riferimento a saldatore dal registro qualifiche.
+
+**Cosa verificare**:
+- [x] WPS salvata correttamente (tutti i campi)
+- [x] PDF caricato e scaricabile
+- [x] WPQR collegato a WPS (visibile nel conteggio WPQR sulla riga WPS)
+- [x] Click "X WPQR" sulla riga WPS ? filtra tab WPQR per quella WPS
+- [x] Ente certificatore e n. certificato salvati (verifica BUG-A risolto)
+
+---
+
+### Scenario D — Verifica qualifiche
+
+**Prerequisiti**: almeno 5 qualifiche di cui 1 in scadenza entro 30gg e 1 scaduta.
+
+**Passi UI**:
+1. Sidebar ? "Qualifiche"
+2. Filtro "Tipo qualifica" ? selezionare "Saldatore ISO 9606-1"
+3. **Verificare**: la tabella mostra SOLO saldatori ISO 9606-1 (BUG-B risolto)
+4. Colonna "Stato" mostra semafori corretti (verde/giallo/arancione/rosso)
+5. Filtro "In scadenza entro 30 gg" ? mostra solo qualifiche con semaforo arancione/rosso
+6. Click su qualifica di Mario Rossi ? form mostra:
+   - Sezione "Dettagli saldatura" con processo (135), materiale (1.1), posizioni (PA, PB, PF)
+   - Range calcolato (dopo Task 3.1): "Spessore: 5-20mm" (se provino era 10mm)
+7. Verificare copertura: il saldatore copre il materiale/processo richiesto dalla WPS-001?
+   - WPS-001 richiede: proc=135, mat=1.1, spessore 3-15mm
+   - Qualifica Mario Rossi: proc=135, mat=1.1, spessore coperto 5-20mm
+   - Risultato: **copre parzialmente** (non copre 3-5mm)
+
+**Dati di test**:
+```
+Qualifica 1: Mario Rossi, ISO 9606-1, proc=135, mat=1.1, scadenza=2027-03-15 (verde)
+Qualifica 2: Luca Verdi, ISO 9606-1, proc=141, mat=8.1, scadenza=2026-06-15 (arancione - 28gg)
+Qualifica 3: Paolo Bianchi, ISO 9606-1, proc=135, mat=1.2, scadenza=2027-06-20 (verde)
+Qualifica 4: Anna Neri, NDT VT Livello 2, scadenza=2026-04-30 (rosso - scaduta)
+Qualifica 5: Marco Blu, NDT UT Livello 2, scadenza=2027-01-10 (verde)
+```
+
+**Risultato atteso**: filtro per tipo funziona; semafori corretti; dettagli saldatura visibili.
+
+**Cosa verificare**:
+- [x] Filtro `qualification_type` funziona (solo ISO 9606-1 visibili)
+- [x] Semafori calcolati correttamente (confrontare con date)
+- [x] Dettagli saldatura visibili nel form
+- [x] Stats bar aggiornata dopo filtro
+
+---
+
+### Scenario E — Ispezione e NC
+
+**Prerequisiti**: Fase 3 implementata (Task 3.2). WPS-001 e saldatore Mario Rossi assegnati a commessa COM-2026-001.
+
+**Passi UI**:
+1. Eseguire controllo NDT su giunto saldato da Mario Rossi per commessa COM-2026-001
+2. Risultato RT: difetto inaccettabile (inclusione di scoria > limite)
+3. Sidebar ? "Non Conformità" ? "+ Nuova NC"
+4. Compilare:
+   - Titolo: `Difetto RT — inclusione scoria giunto #47`
+   - Severita': `maggiore`
+   - WPS collegata: selezionare `WPS-001` (dopo Task 3.2)
+   - Saldatore: selezionare `Mario Rossi`
+   - Commessa: selezionare `COM-2026-001`
+   - Descrizione: `Inclusione di scoria > 2mm rilevata al controllo radiografico del giunto n. 47, traversa principale. Non conforme a EN ISO 5817 livello B.`
+   - Causa: `Pulizia insufficiente tra le passate`
+5. Salvare NC
+6. Dashboard saldatura ? la NC appare nei conteggi e negli alert
+
+**Risultato atteso**: NC salvata con collegamenti a WPS, saldatore e commessa; navigabile dalla dashboard saldatura.
+
+**Cosa verificare**:
+- [x] NC collegata a WPS, saldatore, commessa (verificare in DB)
+- [x] Dashboard saldatura mostra NC nel riepilogo
+- [x] Click sulla NC dalla dashboard ? apre dettaglio NC
+- [x] Report audit ISO 3834 include la NC (se audit in corso)
+
+---
+
+### Scenario F — Audit ISO 3834
+
+**Prerequisiti**: audit creato con standard ISO 3834 selezionato, commessa COM-2026-001 collegata.
+
+**Passi UI**:
+1. Sidebar ? "Audit" ? "+ Nuovo audit"
+2. Selezionare standard: ISO 3834-2
+3. Selezionare commessa: COM-2026-001 (dopo Task 4.1)
+4. Compilare dati audit (data, responsabile, ecc.)
+5. Aprire checklist ISO 3834 ? sezioni clausole (7-19 della norma)
+6. Per ogni clausola:
+   - Se il requisito e' gia' coperto dalla ISO 9001 ? click pulsante "SAT" (Satisfied by)
+   - Se il requisito e' specifico saldatura ? compilare manualmente (C/NC/NA)
+7. Esempio clausola 7 "Riesame requisiti":
+   - Sub-requisito 7.1: SAT da ISO 9001 §8.2.2 ? click SAT, selezionare "ISO 9001", clausola "8.2.2"
+   - Sub-requisito 7.2: specifico saldatura ? Conforme, note: "Riesame tecnico del 10/05/2026"
+8. Completare sezioni 8-19
+9. Chiudere audit ? generare report
+
+**Dati di test**: checklist ISO 3834 gia' configurata nel DB (standard_id=6, domande seed).
+
+**Risultato atteso**: audit compilato con mix SAT/risposte manuali; report generato con indicazione delle clausole soddisfatte dalla 9001.
+
+**Cosa verificare**:
+- [x] Checklist ISO 3834 carica correttamente
+- [x] Pulsante SAT funziona (salva `satisfied_by_standard`, `satisfied_by_clause`, `satisfied_by_doc_ref`)
+- [x] Mix SAT + risposte manuali si salvano senza conflitto
+- [x] Report Word include indicazione SAT
+- [x] Dashboard saldatura mostra stato audit
+
+---
+
+## Note Tecniche
+
+### Migrazione 069 — Contenuto aggregato
+
+La migrazione 069 deve includere:
+1. Colonne mancanti su `wpqr_records` (BUG-A): `testing_body`, `welder_name`, `certificate_number`
+2. Tabella `wps_welders` (Task 1.2)
+3. Tabella `project_welders` (Task 1.2)
+4. Colonne `wps_id`, `wpqr_id` su `attachments` (Task 1.3) — oppure usare il pattern `attachment_id` gia' presente
+5. (Opzionale) Colonne range qualifica: `thickness_qualified_min/max`, `diameter_qualified_min/max` su `qualifications` (Task 3.1)
+
+**Pattern migrazione**: usare lo stesso pattern delle migrazioni 067-068 (script Node con `IF NOT EXISTS`).
+
+### Deploy
+
+Sequenza deploy:
+1. Script migrazione 069 ? SCP sul VPS ? eseguire via SSH
+2. Backend controller aggiornati ? deploy via `deploy-to-vps.sh`
+3. Frontend ? push su main ? build Netlify automatica
+4. Smoke test: dashboard saldatura, CRUD commesse, CRUD WPS con allegati
+
+### Struttura file finale
+
+```
+backend/src/controllers/
+  ??? welding.controller.js      ? aggiornato (BUG-A + endpoint wps_welders)
+  ??? projects.controller.js     ? NUOVO
+  ??? qualifications.controller.js ? aggiornato (BUG-B)
+
+backend/src/routes/
+  ??? welding.routes.js          ? aggiornato (nuove rotte)
+  ??? projects.routes.js         ? NUOVO
+
+backend/scripts/
+  ??? run-migration-069-vps.js   ? NUOVO
+
+app/src/pages/
+  ??? WeldingDashboardPage.jsx   ? NUOVO
+  ??? WeldingDashboardPage.css   ? NUOVO
+  ??? ProjectsPage.jsx           ? NUOVO
+  ??? ProjectsPage.css           ? NUOVO
+  ??? WeldingProceduresPage.jsx  ? aggiornato (allegati + saldatori)
+  ??? QualificationsPage.jsx     ? invariato (filtro gia' frontend)
+  ??? QualificationForm.jsx      ? aggiornato (range validita')
+
+app/src/utils/
+  ??? weldingQualificationRanges.js ? NUOVO (Fase 3)
+
+app/src/services/
+  ??? apiService.js              ? aggiornato (metodi projects + wps_welders)
+```
+
+---
+
+## Ordine di esecuzione consigliato
+
+```
+Settimana 1: BUG-A + BUG-B + Task 1.1 (API commesse) + Task 1.2 (migrazione 069)
+Settimana 2: Task 1.3 (allegati) + Task 2.1 (dashboard) + Task 4.3 (sidebar)
+Settimana 3: Task 2.2 (UI commesse) + Task 2.3 (collegamento WPS?saldatori)
+Settimana 4: Task 3.1 (range ISO 9606) + Task 3.2 (NC saldatura)
+Settimana 5: Task 3.3 (EN 10204) + Task 3.4 (stampa WPS) + Task 4.1 (commesse?audit)
+Settimana 6: Task 4.2 (alert) + test end-to-end scenari A-F + polishing
+```
+
+---
+
+*Piano generato il 17/05/2026 — da usare come riferimento per task delegati via DEPUTYTASK.md*
