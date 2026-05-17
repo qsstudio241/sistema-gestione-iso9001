@@ -100,8 +100,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
+  gap: 12px;
 }
 .docfile-current-info {
   display: flex;
@@ -111,13 +110,19 @@
   min-width: 0;
 }
 .docfile-icon { font-size: 28px; flex-shrink: 0; }
-.docfile-meta { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.docfile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
 .docfile-name {
   font-size: 14px;
   font-weight: 600;
   color: #1e3a5f;
-  overflow-wrap: anywhere;
   word-break: break-word;
+  overflow-wrap: break-word;
 }
 .docfile-details {
   display: flex;
@@ -141,9 +146,13 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  align-items: center;
   width: 100%;
-  justify-content: flex-start;
+  order: -1; /* Pulsanti sopra il nome del file (più leggibili) */
+}
+.docfile-actions > * {
+  flex: 1 1 auto;
+  text-align: center;
+  white-space: nowrap;
 }
 .btn-docfile-view, .btn-docfile-download {
   display: inline-block;
@@ -412,5 +421,7 @@
 
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 560px) {
+  .docfile-current { flex-direction: column; }
+  .docfile-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
   .btn-docfile-office { font-size: 12px; padding: 5px 10px; }
 }

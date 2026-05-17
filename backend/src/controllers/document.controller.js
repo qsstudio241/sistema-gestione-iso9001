@@ -51,6 +51,10 @@ async function listDocuments(req, res) {
         if (status) {
             conditions.push('dr.status = @status');
             params.status = status;
+        } else {
+            // Senza filtro status esplicito: nascondi i documenti obsoleti
+            // (soft-deleted). Mostra rilasciato + bozza + in_revisione + in_approvazione.
+            conditions.push("dr.status <> 'obsoleto'");
         }
         if (expiring_days) {
             conditions.push(`dr.expiry_date IS NOT NULL

@@ -47,6 +47,140 @@
 
 ---
 
+### Sessione 16 maggio 2026 (sera) — Office round-trip WebDAV + lifecycle documenti + viewer .docx browser
+
+#### Sintesi
+Maratona stabilizzazione Office round-trip e lifecycle documenti. Ha richiesto 9 fix
+consecutivi sul WebDAV controller perché Word desktop su Windows ha un comportamento
+poco documentato: delega le richieste WebDAV al client nativo `Microsoft-WebDAV-MiniRedir`
+che NON inoltra i query parameter del browser.
+
+#### Fix WebDAV (in ordine di scoperta)
+1. **Spazi nel nome file** — `encodeURIComponent` produce `%20` ma Office decodifica
+   in spazio letterale prima della richiesta HTTP → Nginx 400. Fix: sanitize del filename
+   nell'URL (`spazi → _`, caratteri speciali → `_`). Il file è sempre recuperato dal DB
+   via `docId`, il nome nell'URL è solo cosmético.
+2. **URL senza porta 8443** — Nginx usa `proxy_set_header Host $host` (senza porta) →
+   backend generava URL su porta 443 (default HTTPS, non aperta). Fix: variabile
+   `WEBDAV_BASE_URL=https://www.fr-busato.it:8443` nel `.env` del VPS.
+3. **CORS middleware Express intercetta OPTIONS WebDAV** — il middleware `cors()` con
+   `preflightContinue: false` rispondeva 204 a TUTTE le OPTIONS, anche quelle WebDAV
+   di Office, senza header `DAV: 1, 2`. Office non riconosceva il server come WebDAV
+   scrivibile e apriva in sola lettura. Fix: wrapper che bypassa `cors()` per
+   `OPTIONS /webdav/*`.
+4. **Handler HEAD mancante** — Office invia HEAD prima di LOCK ("Existence Discovery",
+   "Word 2014 check"). Senza handler → 405. Fix: aggiunto `handleWebdavHead`.
+5. **Route OPTIONS senza filename** — `OPTIONS /webdav/:orgId/:docId/` (collection)
+   ritornava 404. Fix: route `webdavRouter.all('/:orgId/:docId/', ctrl.handleWebdavOptions)`.
+6. **PROPFIND/HEAD richiedevano token ma MiniRedir non lo passa** — il client WebDAV
+   nativo Windows scarta `?dt=token` e fa PROPFIND senza auth → 401 ripetuto 12 volte
+   → Word assume read-only. Fix: PROPFIND e HEAD accettano richieste senza token
+   (espongono solo metadata pubblici, scopati a `orgId+docId`).
+7. **LOCK/UNLOCK senza token mostravano dialog credenziali Windows** — il 401 attivava
+   automaticamente il prompt "Sicurezza di Windows". Fix: LOCK e UNLOCK accettano
+   senza token (sono advisory, non scrivono dati). PUT resta protetto.
+8. **GET dopo LOCK senza token (causa principale del prompt)** — MiniRedir, dopo aver
+   ottenuto il LOCK, rifaceva GET del file e perdeva di nuovo il `?dt=`. Fix definitivo:
+   **token nel PATH** invece che in query string.
+   - Prima: `https://host:8443/webdav/orgId/docId/file.docx?dt=TOKEN`
+   - Dopo:  `https://host:8443/webdav/dt/TOKEN/orgId/docId/file.docx`
+   - MiniRedir preserva l'intero path → tutte le richieste restano autenticate
+9. **Vera sola lettura** — `ms-word:ofv` apre Word in "view mode" ma è solo una hint:
+   se il server WebDAV è scrivibile, Word permette il banner "Modifica comunque". Fix:
+   token con `mode: 'edit' | 'read'` nel `tokenStore`. PUT respinge 403 se mode='read'.
+   Il client passa `mode='read'` per il pulsante "Visualizza".
+
+**Regola consolidata WebDAV**: ogni operazione che NON modifica i dati deve essere
+accessibile senza token (Microsoft-WebDAV-MiniRedir li scarta). Solo PUT richiede
+auth completa. Il path scopato a `(orgId, docId)` garantisce il multi-tenant.
+Quando si genera l'URL, **mettere sempre il token nel PATH**, mai in query string.
+
+#### Lifecycle documenti (rilasciato/bozza + RILASCIA REVISIONE)
+Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
+- **DB migrato** (41 doc): aggiunte colonne `revision_number INT DEFAULT 0` e
+  `released_at DATETIME2 NULL`. `CHECK constraint` aggiornato per includere
+  `rilasciato`, `bozza`. UPDATE `vigente → rilasciato`.
+- **Backend**: `vigente → rilasciato` in tutte le query (5 file). Nuovo endpoint
+  `POST /api/v1/documents/:id/release-revision` (incrementa revision_number,
+  imposta released_at, genera label "Rev. NN" se non fornita).
+- **WebDAV PUT**: dopo salvataggio Word → `status='bozza'`. **Eccezione**: se
+  `doc_type='folder'` non aggiorna lo status (le cartelle non hanno lifecycle
+  revisione anche se hanno file allegati).
+- **Frontend**: `DocFileDialog` con alert "Documento rilasciato — aprirlo creerà
+  bozza, continuare?" + pulsante verde "Rilascia revisione" per le bozze.
+- **Filtro UI default**: cambiato da `status='rilasciato'` a `status=''` (= tutti
+  gli stati attivi). Backend in mancanza di filtro esplicito esclude solo `obsoleto`.
+  Senza questo fix i documenti appena salvati in bozza "scomparivano" all'utente.
+
+#### Viewer documenti (PDF + .docx browser-native)
+- **PDF viewer (DocumentPdfViewer)**: 2 fix.
+  - `frame-ancestors 'none'` di Helmet bloccava l'iframe del viewer. Fix:
+    `frameAncestors: ["'self'", ...CORS_ORIGIN]` per permettere embedding solo
+    dai domini Netlify.
+  - Il viewer usava `<iframe src="...?token=NULL">` (`getToken()` ritorna null
+    su desktop con cookie httpOnly). Fix: `getDocFileBlob()` con `fetch` +
+    `URL.createObjectURL()`. Nessun token in URL.
+- **NUOVO Viewer .docx (`DocumentDocxViewer`)**: usa libreria `docx-preview`
+  (173KB / 51KB gzip, chunk separato lazy-loaded). Renderizza `.docx` come HTML+CSS
+  preservando layout, tabelle, immagini. **Vera sola lettura totale**: nessun modo
+  per modificare. Niente Microsoft Cloud, niente Word desktop richiesto.
+- Controlli viewer: zoom 50%-250%, fullscreen toggle, scarica.
+- Routing pulsante "Visualizza":
+  - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
+  - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
+  - `.xlsx` → fallback Office Online Viewer (Microsoft)
+
+#### DocumentDetailPanel (slide-in dettaglio documento)
+Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"
+anche con file presente. Causa: leggeva `doc.files`, popolato solo da `/documents`
+list ma non da `/documents/tree/...`. Fix: `useEffect` che chiama `getDocFiles(docId)`
+quando il pannello si apre.
+
+#### Lezioni apprese (16/05/2026 sera)
+1. **Microsoft-WebDAV-MiniRedir** è un client legacy di Windows che parte automaticamente
+   quando un'app Office invoca un URL WebDAV. **Non passa token in query string**.
+   Per supportarlo: o token nel path, o auth via Basic/NTLM, o endpoint pubblici per
+   metadata read-only.
+2. **`ms-word:ofv`** è una hint UI, non un blocco di scrittura. Per vera sola lettura
+   serve respingere il PUT lato server con un token mode separato.
+3. **`docx-preview` è il viewer .docx browser-native più affidabile**. Office Online
+   Viewer fallisce con porte non standard come `:8443` (limitazione documentata
+   Microsoft).
+4. Quando il filtro UI default nasconde stati di workflow (`bozza`), l'utente
+   percepisce "il file è sparito". Default sicuro: **mostra tutto tranne soft-deleted**.
+5. **Cartelle (`doc_type='folder'`) non sono documenti** anche se hanno attachment.
+   Il lifecycle revisione (bozza/rilasciato/RILASCIA REVISIONE) non si applica.
+   Filtrare esplicitamente in tutte le operazioni di transizione di stato.
+
+#### Commit principali (16/05/2026 sera)
+- `fix(webdav): sanitize filename in URL` (PR #50)
+- `fix(webdav): token nel path URL anziche' query string`
+- `fix(webdav): rimuove dialog credenziali Windows su LOCK`
+- `feat(webdav): token mode (edit|read) per garantire vera sola lettura`
+- `feat(docs): lifecycle documenti — rilasciato/bozza + RILASCIA REVISIONE` (PR #51)
+- `feat(viewer): visualizzatore .docx browser-native (sola lettura)`
+- `feat(viewer): zoom e fullscreen per visualizzatore .docx`
+- `fix(docs): pannello dettaglio carica i file allegati via API`
+- `fix(docs): cartelle non diventano bozza al salvataggio Word + filtro default mostra bozze`
+
+#### Punti aperti (per ripresa 17/05/2026)
+1. **Placeholder dinamici nei .docx** (richiesta utente). Pattern proposto: hook
+   nell'endpoint `release-revision` che apre il `.docx` con `docxtemplater` (già nel
+   progetto), sostituisce `{{data_rilascio}}`, `{{numero_revisione}}`, `{{revisione_label}}`,
+   salva la nuova versione. Da implementare.
+2. **Excel viewer**: attualmente "Visualizza" su `.xlsx` cade su Office Online Viewer
+   (inaffidabile con porta 8443). Da valutare libreria browser-side equivalente a
+   docx-preview per Excel (es. `xlsx-preview` o `sheetjs` + custom renderer).
+3. **Test L1** della suite frontend non eseguiti dopo le modifiche di oggi (Vitest).
+   Da lanciare prima di considerare definitivamente chiuso il modulo Word round-trip.
+4. **Pulsante "Visualizza" su .doc legacy**: docx-preview probabilmente non supporta
+   `.doc` (formato binario pre-2007). Verificare e gestire fallback.
+5. **`SGQ_APP_PASSWORD` Cloud Secret** non corrisponde all'hash DB (verificato in
+   sessione). L'utente dovrebbe aggiornare il segreto in Cursor Cloud per permettere
+   ai prossimi cloud agent di fare test UI con login automatico.
+
+---
+
 ### Sessione 16 maggio 2026 — Assistente AI: contesto azienda e ottimizzazione knowledge
 
 #### Architettura assistente AI — contesto e ottimizzazione

@@ -54,6 +54,13 @@ function validateToken(token, orgId, docId) {
     return data;
 }
 
+// Estrae il token sia dal path (req.params.dt) che dal query string (?dt=).
+// Il path è preferito perché Microsoft-WebDAV-MiniRedir di Windows preserva
+// il path completo ma scarta i query parameter.
+function extractToken(req) {
+    return req.params.dt || req.query.dt || null;
+}
+
 // ─── Helper DB ────────────────────────────────────────────────────────────────
 
 async function getDocAndCurrentFile(pool, docId, orgId) {
@@ -88,6 +95,9 @@ async function generateWebdavLink(req, res) {
         const orgId  = req.user.organization_id;
         const userId = req.user.user_id;
         const docId  = parseInt(req.params.docId);
+        // Modalita' del token: 'edit' (default, permette PUT) o 'read' (sola lettura).
+        // Il client passa 'read' per il pulsante "Visualizza" — il server respinge le PUT.
+        const mode = (req.body?.mode === 'read' || req.query?.mode === 'read') ? 'read' : 'edit';
 
         if (isNaN(docId)) return res.status(400).json({ error: 'docId non valido.' });
 
@@ -97,33 +107,50 @@ async function generateWebdavLink(req, res) {
 
         const token   = makeToken();
         const expires = Date.now() + TOKEN_TTL_MS;
-        tokenStore.set(token, { docId, orgId, userId, expires, lockToken: null });
+        tokenStore.set(token, { docId, orgId, userId, expires, lockToken: null, mode });
 
         // URL WebDAV accessibile da Office: usa env WEBDAV_BASE_URL o il dominio della request
         const baseUrl  = process.env.WEBDAV_BASE_URL
             || `${req.protocol}://${req.get('host')}`;
-        const safeFile = encodeURIComponent(result.file.file_name);
-        const webdavUrl = `${baseUrl}/webdav/${orgId}/${docId}/${safeFile}?dt=${token}`;
+        // Sanitizza il nome file per l'URL: Office decodifica %20 in spazio
+        // letterale prima della richiesta HTTP, causando un URL con spazio
+        // che Nginx rifiuta. Il file è recuperato dal DB via docId, il nome
+        // nell'URL è solo cosmético.
+        const _fileExt  = path.extname(result.file.file_name);
+        const _baseName = path.basename(result.file.file_name, _fileExt);
+        const _safeBase = _baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-]/g, '_');
+        const safeFile  = _safeBase + _fileExt;
+        // Token nel PATH (non query string): Microsoft-WebDAV-MiniRedir di
+        // Windows preserva il path completo nelle richieste subordinate (LOCK,
+        // GET dopo LOCK, ecc.) ma scarta i query parameter. Mettendolo nel path
+        // tutte le richieste WebDAV restano autenticate senza prompt utente.
+        const webdavUrl = `${baseUrl}/webdav/dt/${token}/${orgId}/${docId}/${encodeURIComponent(safeFile)}`;
 
         // Office URI Scheme — apre Word/Excel direttamente da browser
+        // ofe = Open For Editing (modifica)
+        // ofv = Open For Viewing (sola lettura)
         const ext     = path.extname(result.file.file_name).toLowerCase();
         const isExcel = ['.xlsx', '.xls', '.xlsm', '.csv'].includes(ext);
         const isWord  = ['.docx', '.doc', '.docm', '.rtf'].includes(ext);
         const officeUri = isWord  ? `ms-word:ofe|u|${webdavUrl}`
                         : isExcel ? `ms-excel:ofe|u|${webdavUrl}`
                         : null;
+        const officeUriView = isWord  ? `ms-word:ofv|u|${webdavUrl}`
+                            : isExcel ? `ms-excel:ofv|u|${webdavUrl}`
+                            : null;
 
         logger.info(`[WebDAV] Link generato: doc ${docId}, org ${orgId}, user ${userId}, scade ${new Date(expires).toISOString()}`);
 
         res.json({
-            webdav_url:  webdavUrl,
-            office_uri:  officeUri,
-            file_name:   result.file.file_name,
-            mime_type:   result.file.mime_type,
-            is_word:     isWord,
-            is_excel:    isExcel,
-            has_office_uri: !!officeUri,
-            expires_at:  new Date(expires).toISOString(),
+            webdav_url:      webdavUrl,
+            office_uri:      officeUri,
+            office_uri_view: officeUriView,
+            file_name:       result.file.file_name,
+            mime_type:       result.file.mime_type,
+            is_word:         isWord,
+            is_excel:        isExcel,
+            has_office_uri:  !!officeUri,
+            expires_at:      new Date(expires).toISOString(),
         });
     } catch (err) {
         logger.error('[WebDAV] generateWebdavLink:', err.message);
@@ -136,7 +163,7 @@ async function generateWebdavLink(req, res) {
 async function handleWebdavGet(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token = req.query.dt;
+        const token = extractToken(req);
 
         const tokenData = validateToken(token, orgId, docId);
         if (!tokenData) return res.status(401).end('Token WebDAV non valido o scaduto.');
@@ -169,10 +196,17 @@ async function handleWebdavGet(req, res) {
 async function handleWebdavPut(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token = req.query.dt;
+        const token = extractToken(req);
 
         const tokenData = validateToken(token, orgId, docId);
         if (!tokenData) return res.status(401).end('Token WebDAV non valido o scaduto.');
+
+        // Token in modalita' read: il salvataggio non e' permesso.
+        // Word in questo caso mostra "Salva con nome..." (che salva localmente).
+        if (tokenData.mode === 'read') {
+            logger.warn(`[WebDAV] PUT rifiutato per token mode=read: doc ${docId}, user ${tokenData.userId}`);
+            return res.status(403).end('Documento aperto in sola lettura.');
+        }
 
         // Raccoglie body (stream binario inviato da Office)
         const chunks = [];
@@ -229,12 +263,16 @@ async function handleWebdavPut(req, res) {
         const newId = insertRes.recordset[0].id;
 
         // Dopo il salvataggio da Office → documento entra in stato 'bozza'
-        // (richiede "RILASCIA REVISIONE" per tornare a 'rilasciato')
+        // (richiede "RILASCIA REVISIONE" per tornare a 'rilasciato').
+        // ESCLUSO doc_type='folder': le cartelle non hanno lifecycle revisione,
+        // anche se possono avere un file allegato.
         await pool.request()
             .input('docId', docId)
             .query(`UPDATE document_registry
                     SET status='bozza', updated_at=GETDATE()
-                    WHERE id=@docId AND status IN ('rilasciato','vigente','in_revisione')`);
+                    WHERE id=@docId
+                      AND doc_type <> 'folder'
+                      AND status IN ('rilasciato','vigente','in_revisione')`);
 
         logger.info(`[WebDAV] PUT doc ${docId} (org ${orgId}) → attachment ${newId} (${buffer.length} bytes), status→bozza`);
 
@@ -247,15 +285,21 @@ async function handleWebdavPut(req, res) {
 }
 
 // ─── PROPFIND /webdav/:orgId/:docId/:filename — Office interroga proprietà ────
+// IMPORTANTE: PROPFIND deve rispondere ANCHE senza token, perché il client
+// Microsoft-WebDAV-MiniRedir di Windows (usato da Office per "sondare" il
+// server) non inoltra il ?dt=token. Se rispondiamo 401, Word apre in sola
+// lettura. Il token resta obbligatorio per le operazioni che cambiano stato
+// (LOCK, PUT, UNLOCK). PROPFIND espone solo metadata (nome, size, mtime).
 
 async function handleWebdavPropfind(req, res) {
     try {
         const { orgId, docId } = parseParams(req);
-        const token    = req.query.dt;
+        const token    = extractToken(req);
         const filename = req.params.filename || '';
 
         const tokenData = validateToken(token, orgId, docId);
-        if (!tokenData) return res.status(401).end();
+        // Senza token: rispondiamo lo stesso ma senza lockdiscovery attivo.
+        // Multi-tenant safe: i metadata sono comunque scopati a (orgId, docId).
 
         const pool    = await getPool();
         const fileRes = await pool.request()
@@ -270,8 +314,12 @@ async function handleWebdavPropfind(req, res) {
         if (!fileRes.recordset.length) return res.status(404).end();
         const file    = fileRes.recordset[0];
         const lastMod = new Date(file.created_at).toUTCString();
-        const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}?dt=${token}`;
+        const tokenPrefix = token ? `/dt/${token}` : '';
+        const href    = `/webdav${tokenPrefix}/${orgId}/${docId}/${encodeURIComponent(filename)}`;
         const timeout = Math.floor(TOKEN_TTL_MS / 1000);
+        const activeLockXml = (tokenData && tokenData.lockToken)
+            ? `<D:activelock><D:locktoken><D:href>${tokenData.lockToken}</D:href></D:locktoken><D:timeout>Second-${timeout}</D:timeout></D:activelock>`
+            : '';
 
         const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
 `<D:multistatus xmlns:D="DAV:">\n` +
@@ -290,9 +338,7 @@ async function handleWebdavPropfind(req, res) {
 `            <D:locktype><D:write/></D:locktype>\n` +
 `          </D:lockentry>\n` +
 `        </D:supportedlock>\n` +
-`        <D:lockdiscovery>${tokenData.lockToken
-    ? `<D:activelock><D:locktoken><D:href>${tokenData.lockToken}</D:href></D:locktoken><D:timeout>Second-${timeout}</D:timeout></D:activelock>`
-    : ''}</D:lockdiscovery>\n` +
+`        <D:lockdiscovery>${activeLockXml}</D:lockdiscovery>\n` +
 `      </D:prop>\n` +
 `      <D:status>HTTP/1.1 200 OK</D:status>\n` +
 `    </D:propstat>\n` +
@@ -309,20 +355,30 @@ async function handleWebdavPropfind(req, res) {
 }
 
 // ─── LOCK /webdav/:orgId/:docId/:filename ────────────────────────────────────
+// IMPORTANTE: come PROPFIND/HEAD, accetta anche richieste senza token.
+// Microsoft-WebDAV-MiniRedir di Windows fa il LOCK senza ?dt=, e se rispondiamo
+// 401 Windows mostra il dialog "Sicurezza di Windows" all'utente. Il LOCK è
+// un'operazione "advisory" (informa il server che c'è un editing in corso),
+// non modifica i dati. L'integrità è garantita dal PUT che resta autenticato.
 
 function handleWebdavLock(req, res) {
     const { orgId, docId } = parseParams(req);
-    const token    = req.query.dt;
+    const token    = extractToken(req);
     const filename = req.params.filename || '';
 
     const tokenData = validateToken(token, orgId, docId);
-    if (!tokenData) return res.status(401).end();
+    // Se il token c'è e è valido, registriamo il lock nello store associato
+    // al token (così PROPFIND può segnalare il lock attivo).
+    // Se manca, generiamo comunque un lock token (Office è felice).
 
     const lockToken = `urn:uuid:${crypto.randomUUID()}`;
-    tokenData.lockToken = lockToken;
-    tokenStore.set(token, tokenData);
+    if (tokenData) {
+        tokenData.lockToken = lockToken;
+        tokenStore.set(token, tokenData);
+    }
 
-    const href    = `/webdav/${orgId}/${docId}/${encodeURIComponent(filename)}?dt=${token}`;
+    const tokenPrefix = token ? `/dt/${token}` : '';
+    const href    = `/webdav${tokenPrefix}/${orgId}/${docId}/${encodeURIComponent(filename)}`;
     const timeout = Math.floor(TOKEN_TTL_MS / 1000);
 
     const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
@@ -347,25 +403,53 @@ function handleWebdavLock(req, res) {
 }
 
 // ─── UNLOCK /webdav/:orgId/:docId/:filename ──────────────────────────────────
+// Stesso trattamento del LOCK: accetta anche senza token (advisory only).
 
 function handleWebdavUnlock(req, res) {
     const { orgId, docId } = parseParams(req);
-    const token = req.query.dt;
+    const token = extractToken(req);
 
     const tokenData = validateToken(token, orgId, docId);
-    if (!tokenData) return res.status(401).end();
-
-    tokenData.lockToken = null;
-    tokenStore.set(token, tokenData);
+    if (tokenData) {
+        tokenData.lockToken = null;
+        tokenStore.set(token, tokenData);
+    }
     logger.info(`[WebDAV] UNLOCK doc ${docId} (org ${orgId})`);
     res.status(204).end();
+}
+
+// ─── HEAD /webdav/:orgId/:docId/:filename — Office Existence/Word Discovery ──
+// Office usa HEAD per verificare se il file è accessibile prima di LOCK.
+// Risponde con gli stessi header di GET ma senza body.
+// IMPORTANTE: come PROPFIND, accetta anche richieste senza token, perché
+// Microsoft-WebDAV-MiniRedir non inoltra il ?dt=token. Solo metadata.
+
+async function handleWebdavHead(req, res) {
+    try {
+        const { orgId, docId } = parseParams(req);
+
+        const pool   = await getPool();
+        const result = await getDocAndCurrentFile(pool, docId, orgId);
+        if (!result?.file) return res.status(404).end();
+
+        const { file } = result;
+        res.setHeader('Content-Length', file.file_size || 0);
+        if (file.mime_type) res.setHeader('Content-Type', file.mime_type);
+        res.setHeader('ETag', `"${file.attachment_id}"`);
+        res.setHeader('Last-Modified', new Date(file.created_at).toUTCString());
+        setWebdavHeaders(res);
+        res.status(200).end();
+    } catch (err) {
+        logger.error('[WebDAV] HEAD:', err.message);
+        res.status(500).end();
+    }
 }
 
 // ─── OPTIONS ─────────────────────────────────────────────────────────────────
 
 function handleWebdavOptions(req, res) {
     setWebdavHeaders(res);
-    res.setHeader('Allow', 'OPTIONS, GET, PUT, PROPFIND, LOCK, UNLOCK');
+    res.setHeader('Allow', 'OPTIONS, GET, HEAD, PUT, PROPFIND, LOCK, UNLOCK');
     res.status(200).end();
 }
 
@@ -395,6 +479,7 @@ function escapeXml(str) {
 module.exports = {
     generateWebdavLink,
     handleWebdavGet,
+    handleWebdavHead,
     handleWebdavPut,
     handleWebdavPropfind,
     handleWebdavLock,

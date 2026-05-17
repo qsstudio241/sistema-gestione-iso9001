@@ -1,28 +1,53 @@
 /**
- * DocumentPdfViewer  visualizzatore PDF inline nel browser
+ * DocumentPdfViewer  visualizzatore PDF inline nel browser
  *
- * Usa l'iframe nativo del browser per renderizzare PDF senza librerie esterne.
- * Supporta: zoom, navigazione pagine, stampa (tutti gestiti dal viewer nativo).
- * Fallback: link download se il browser non supporta PDF inline.
+ * Usa fetch via Axios (con cookie httpOnly) + blob URL per l'iframe.
+ * Evita il problema del token mancante in querystring quando l'auth
+ * desktop usa cookie httpOnly (non leggibili da JavaScript).
  */
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import "./DocumentPdfViewer.css";
 
 export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClose }) {
+  const [blobUrl,   setBlobUrl]   = useState(null);
   const [loadError, setLoadError] = useState(false);
+  const [loading,   setLoading]   = useState(true);
+  const revokeRef = useRef(null);
 
-  const pdfUrl = useMemo(() => {
-    if (!docId) return null;
-    return apiService.getDocFileDownloadUrl(docId, attachmentId || null, true);
+  useEffect(() => {
+    if (!docId) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
+    setBlobUrl(null);
+
+    apiService.getDocFileBlob(docId, attachmentId || null)
+      .then(blob => {
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        revokeRef.current = url;
+        setBlobUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (revokeRef.current) {
+        URL.revokeObjectURL(revokeRef.current);
+        revokeRef.current = null;
+      }
+    };
   }, [docId, attachmentId]);
 
-  const downloadUrl = useMemo(() => {
-    if (!docId) return null;
-    return apiService.getDocFileDownloadUrl(docId, attachmentId || null, false);
-  }, [docId, attachmentId]);
+  const downloadUrl = apiService.getDocFileDownloadUrl(docId, attachmentId || null, false);
 
-  if (!pdfUrl) return null;
+  if (!docId) return null;
 
   return (
     <div className="pdf-viewer-overlay" onClick={onClose}>
@@ -56,16 +81,22 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
 
         {/* Viewer */}
         <div className="pdf-viewer-body">
-          {loadError ? (
+          {loading && (
+            <div className="pdf-viewer-fallback">
+              <p>Caricamento PDF...</p>
+            </div>
+          )}
+          {!loading && loadError && (
             <div className="pdf-viewer-fallback">
               <p>Il browser non riesce a visualizzare questo PDF.</p>
               <a href={downloadUrl} className="pdf-viewer-btn pdf-viewer-btn--download" download>
                 {"\u{1F4BE}"} Scarica il file per visualizzarlo
               </a>
             </div>
-          ) : (
+          )}
+          {!loading && blobUrl && (
             <iframe
-              src={pdfUrl}
+              src={blobUrl}
               className="pdf-viewer-iframe"
               title={fileName || "PDF Viewer"}
               onError={() => setLoadError(true)}

@@ -1170,8 +1170,9 @@ class ApiService {
 
     // ─── WebDAV / Office Round-trip (Sprint 12-A) ────────────────────────────
 
-    async getWebdavLink(docId) {
-        return this.post(`/documents/${docId}/webdav-link`, {});
+    async getWebdavLink(docId, mode = 'edit') {
+        // mode: 'edit' (default) → permette PUT; 'read' → solo lettura, PUT rifiutato lato server
+        return this.post(`/documents/${docId}/webdav-link`, { mode });
     }
     async releaseRevision(docId, data = {}) {
         return this.post(`/documents/${docId}/release-revision`, data);
@@ -1237,6 +1238,24 @@ class ApiService {
             return `${base}/documents/${docId}/file/${attId}/download?token=${token}${inlineParam}`;
         }
         return `${base}/documents/${docId}/file/download?token=${token}${inlineParam}`;
+    }
+
+    // Scarica il file come Blob via fetch con Authorization header.
+    // Usato da DocumentPdfViewer: evita il ?token= in querystring
+    // (problematico quando il token è null su desktop con cookie httpOnly).
+    async getDocFileBlob(docId, attId = null) {
+        const path = attId
+            ? `/documents/${docId}/file/${attId}/download?inline=1`
+            : `/documents/${docId}/file/download?inline=1`;
+        const url = `${this.baseUrl}${path}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
     }
 
     // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────

@@ -33,19 +33,79 @@ router.post(
 
 const webdavRouter = express.Router();
 
-// Tutti i metodi WebDAV su /:orgId/:docId/:filename
-webdavRouter.all('/:orgId/:docId/:filename', (req, res) => {
+// Microsoft-WebDAV-MiniRedir (Windows) sonda /webdav/:orgId e /webdav/:orgId/:docId
+// senza filename. Devono rispondere positivamente per non interrompere la
+// sequenza WebDAV di Office (altrimenti Word apre in sola lettura).
+function handleCollectionRequest(req, res) {
+    const method = req.method.toUpperCase();
+    if (method === 'OPTIONS') return ctrl.handleWebdavOptions(req, res);
+    if (method === 'HEAD' || method === 'GET') {
+        // Le directory esistono ma non si scaricano: rispondi 200 vuoto.
+        res.setHeader('DAV', '1, 2');
+        res.setHeader('MS-Author-Via', 'DAV');
+        res.setHeader('Content-Type', 'httpd/unix-directory');
+        return res.status(200).end();
+    }
+    if (method === 'PROPFIND') {
+        // PROPFIND su collection: rispondi un multistatus minimal "è una directory".
+        res.setHeader('DAV', '1, 2');
+        res.setHeader('MS-Author-Via', 'DAV');
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+        const href = req.path.endsWith('/') ? req.path : req.path + '/';
+        const xml = `<?xml version="1.0" encoding="utf-8"?>\n` +
+`<D:multistatus xmlns:D="DAV:">\n` +
+`  <D:response>\n` +
+`    <D:href>${href}</D:href>\n` +
+`    <D:propstat>\n` +
+`      <D:prop>\n` +
+`        <D:resourcetype><D:collection/></D:resourcetype>\n` +
+`        <D:supportedlock>\n` +
+`          <D:lockentry>\n` +
+`            <D:lockscope><D:exclusive/></D:lockscope>\n` +
+`            <D:locktype><D:write/></D:locktype>\n` +
+`          </D:lockentry>\n` +
+`        </D:supportedlock>\n` +
+`      </D:prop>\n` +
+`      <D:status>HTTP/1.1 200 OK</D:status>\n` +
+`    </D:propstat>\n` +
+`  </D:response>\n` +
+`</D:multistatus>`;
+        return res.status(207).send(xml);
+    }
+    res.setHeader('Allow', 'OPTIONS, GET, HEAD, PROPFIND');
+    res.status(405).end('Method Not Allowed');
+}
+
+// Dispatch standard per richieste su un file (con o senza prefisso /dt/:dt/)
+function handleFileRequest(req, res) {
     switch (req.method.toUpperCase()) {
         case 'GET':      return ctrl.handleWebdavGet(req, res);
+        case 'HEAD':     return ctrl.handleWebdavHead(req, res);
         case 'PUT':      return ctrl.handleWebdavPut(req, res);
         case 'PROPFIND': return ctrl.handleWebdavPropfind(req, res);
         case 'LOCK':     return ctrl.handleWebdavLock(req, res);
         case 'UNLOCK':   return ctrl.handleWebdavUnlock(req, res);
         case 'OPTIONS':  return ctrl.handleWebdavOptions(req, res);
         default:
-            res.setHeader('Allow', 'GET, PUT, PROPFIND, LOCK, UNLOCK, OPTIONS');
+            res.setHeader('Allow', 'GET, HEAD, PUT, PROPFIND, LOCK, UNLOCK, OPTIONS');
             res.status(405).end('Method Not Allowed');
     }
-});
+}
+
+// Variante con token nel path: /webdav/dt/:dt/:orgId/:docId/:filename
+// Microsoft-WebDAV-MiniRedir preserva il path nelle richieste, così tutte
+// le operazioni (GET, LOCK, PUT, ...) restano autenticate senza prompt.
+webdavRouter.all('/dt/:dt/:orgId',                            handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/',                           handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId',                     handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId/',                    handleCollectionRequest);
+webdavRouter.all('/dt/:dt/:orgId/:docId/:filename',           handleFileRequest);
+
+// Variante legacy con token in query string (mantenuta per compat)
+webdavRouter.all('/:orgId',                                    handleCollectionRequest);
+webdavRouter.all('/:orgId/',                                   handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId',                             handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId/',                            handleCollectionRequest);
+webdavRouter.all('/:orgId/:docId/:filename',                   handleFileRequest);
 
 module.exports = { apiRouter: router, webdavRouter };
