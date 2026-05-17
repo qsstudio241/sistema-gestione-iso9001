@@ -5,18 +5,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import "./ImportJobsPage.css";
 
-const DOC_TYPE_OPTIONS = [
+// Aggiunge l'opzione guida AI in cima alla lista tipi per il form di import
+const DOC_TYPE_OPTIONS_IMPORT = [
   { value: "", label: "Tipo documento (opz., guida la AI)" },
-  { value: "wps", label: "WPS" },
-  { value: "wpqr", label: "WPQR" },
-  { value: "patentino_saldatore", label: "Patentino saldatore" },
-  { value: "qualifica_operatore", label: "Qualifica operatore (14732)" },
-  { value: "cert_ndt", label: "Certificato NDT" },
-  { value: "dichiarazione_ce", label: "Dichiarazione CE" },
-  { value: "cert_taratura", label: "Certificato taratura" },
-  { value: "altro", label: "Altro / misto" },
+  ...DOC_TYPE_OPTIONS,
 ];
 
 function parseAiJson(val) {
@@ -259,7 +254,7 @@ export default function ImportJobsPage() {
               value={docTypeHint}
               onChange={(e) => setDocTypeHint(e.target.value)}
             >
-              {DOC_TYPE_OPTIONS.map((o) => (
+              {DOC_TYPE_OPTIONS_IMPORT.map((o) => (
                 <option key={o.value || "none"} value={o.value}>
                   {o.label}
                 </option>
@@ -446,7 +441,7 @@ export default function ImportJobsPage() {
                   value={commitDialog.form.doc_type}
                   onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_type: e.target.value } }))}
                 >
-                  {DOC_TYPE_OPTIONS.map((o) => (
+                  {DOC_TYPE_OPTIONS_IMPORT.map((o) => (
                     <option key={o.value || "none"} value={o.value}>{o.label}</option>
                   ))}
                 </select>

@@ -11,27 +11,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
+import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
 import "./DocumentForm.css";
 
-const DOC_TYPES = [
-  { value: "procedura",        label: "Procedura" },
-  { value: "istruzione",       label: "Istruzione operativa" },
-  { value: "modulo",           label: "Modulo / Registrazione" },
-  { value: "manuale",          label: "Manuale" },
-  { value: "qualifica",        label: "Qualifica personale" },
-  { value: "wps",              label: "WPS (Procedura saldatura)" },
-  { value: "wpqr",             label: "WPQR (Qualifica procedura)" },
-  { value: "dichiarazione_ce", label: "Dichiarazione CE" },
-  { value: "taratura",         label: "Certificato taratura" },
-  { value: "altro",            label: "Altro" },
-];
-
-const DOC_STATUSES = [
-  { value: "vigente",         label: "Vigente" },
-  { value: "in_revisione",    label: "In revisione" },
-  { value: "in_approvazione", label: "In approvazione" },
-  { value: "obsoleto",        label: "Obsoleto" },
-];
+// Alias locali per retrocompatibilità con il markup esistente
+const DOC_TYPES = DOC_TYPE_OPTIONS;
+const DOC_STATUSES = DOC_STATUS_OPTIONS;
 
 function toDateInput(val) {
   if (!val) return "";

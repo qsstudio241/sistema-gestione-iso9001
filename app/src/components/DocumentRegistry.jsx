@@ -15,42 +15,21 @@ import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
 import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
-import TagFilterBar from "./TagFilterBar";
 import NormUploadButton from "./NormUploadButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import useDocumentRelations from "../hooks/useDocumentRelations";
 import { formatDate } from "../utils/dateHelpers";
+import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import "./DocumentRegistry.css";
 
-// ─── Costanti ────────────────────────────────────────────────────────────────
+// ─── Costanti filtro ──────────────────────────────────────────────────────────
 
-const DOC_TYPES = [
+// Opzione "Tutti i tipi" preposta alla lista tipi per il filtro select
+const DOC_TYPES_FILTER = [
   { value: "", label: "Tutti i tipi" },
-  { value: "procedura",        label: "Procedura" },
-  { value: "istruzione",       label: "Istruzione operativa" },
-  { value: "modulo",           label: "Modulo / Registrazione" },
-  { value: "manuale",          label: "Manuale" },
-  { value: "qualifica",        label: "Qualifica personale" },
-  { value: "wps",              label: "WPS (Procedura saldatura)" },
-  { value: "wpqr",             label: "WPQR (Qualifica procedura)" },
-  { value: "dichiarazione_ce", label: "Dichiarazione CE" },
-  { value: "taratura",         label: "Certificato taratura" },
-  { value: "altro",            label: "Altro" },
+  ...DOC_TYPE_OPTIONS,
 ];
-
-const DOC_TYPE_LABELS = Object.fromEntries(
-  DOC_TYPES.filter((t) => t.value).map((t) => [t.value, t.label])
-);
-
-const DOC_STATUS_LABELS = {
-  rilasciato:       "Rilasciato",
-  vigente:          "Rilasciato",
-  bozza:            "Bozza",
-  in_revisione:     "In revisione",
-  in_approvazione:  "In approvazione",
-  obsoleto:         "Obsoleto",
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -249,7 +228,7 @@ function CatalogView({
   loading, error, onEdit, onArchive, archiveId, onConfirmArchive, onCancelArchive,
   onNewDoc, onReload,
   filters, setFilter, onExport,
-  companies, onFileDialog,
+  companies, standards, onFileDialog,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -275,14 +254,21 @@ function CatalogView({
         <button className="btn-export" onClick={onExport} title="Esporta lista in CSV (apribile con Excel)">
           ⬇️ Esporta CSV
         </button>
-        <button className="btn-primary" onClick={onNewDoc}>+ Nuovo</button>
       </div>
 
       {/* Pannello filtri (collassabile) */}
       {filtersOpen && (
         <div className="catalog-filters">
           <select value={filters.doc_type} onChange={(e) => setFilter("doc_type", e.target.value)}>
-            {DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {DOC_TYPES_FILTER.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <select value={filters.standard_id} onChange={(e) => setFilter("standard_id", e.target.value)}>
+            <option value="">Tutte le norme</option>
+            {(standards || []).map((s) => (
+              <option key={s.standard_id} value={s.standard_id}>
+                {s.standard_code}
+              </option>
+            ))}
           </select>
           <select value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
             <option value="">Tutti gli stati</option>
@@ -308,7 +294,7 @@ function CatalogView({
           </label>
           <button
             className="btn-reset"
-            onClick={() => { setFilter("doc_type", ""); setFilter("status", "rilasciato"); setFilter("company_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
+            onClick={() => { setFilter("doc_type", ""); setFilter("status", "rilasciato"); setFilter("company_id", ""); setFilter("standard_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
           >
             Reset
           </button>
@@ -498,12 +484,9 @@ function DocumentRegistry() {
   const [docHistory, setDocHistory] = useState([]);
   const [showDetail, setShowDetail] = useState(false);
 
-  // Tag e relazioni per il documento selezionato
+  // Tag e relazioni per il documento selezionato (pannello dettaglio)
   const tags = useDocumentTags(selectedDoc?.id);
   const relations = useDocumentRelations(selectedDoc?.id);
-
-  // Tag filtri attivi per la vista albero
-  const [activeTagFilters, setActiveTagFilters] = useState([]);
 
   // Documenti figli del nodo selezionato (per lista centrale in vista albero)
   const [treeListDocs, setTreeListDocs] = useState([]);
@@ -523,7 +506,7 @@ function DocumentRegistry() {
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
-    search: "", doc_type: "", status: "rilasciato", company_id: "", expiring_days: null,
+    search: "", doc_type: "", status: "rilasciato", company_id: "", standard_id: "", expiring_days: null,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -574,10 +557,11 @@ function DocumentRegistry() {
     try {
       const params = {
         page: catalogPage, limit: LIMIT,
-        ...(filters.search       && { search:       filters.search }),
-        ...(filters.doc_type     && { doc_type:     filters.doc_type }),
-        ...(filters.status       && { status:       filters.status }),
-        ...(filters.company_id   && { company_id:   filters.company_id }),
+        ...(filters.search        && { search:       filters.search }),
+        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
+        ...(filters.status        && { status:       filters.status }),
+        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
       };
       const res = await apiService.getDocuments(params);
@@ -643,12 +627,6 @@ function DocumentRegistry() {
     setDocHistory([]);
   }, []);
 
-  const handleTagFilterToggle = useCallback((tagId) => {
-    setActiveTagFilters(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
-  }, []);
-
   // ─── Azioni ────────────────────────────────────────────────────────────
 
   const handleNew  = () => { setEditingDoc(null);  setModalOpen(true); };
@@ -680,10 +658,11 @@ function DocumentRegistry() {
       // Esporta fino a 500 righe con i filtri attivi
       const params = {
         page: 1, limit: 500,
-        ...(filters.search       && { search:       filters.search }),
-        ...(filters.doc_type     && { doc_type:     filters.doc_type }),
-        ...(filters.status       && { status:       filters.status }),
-        ...(filters.company_id   && { company_id:   filters.company_id }),
+        ...(filters.search        && { search:       filters.search }),
+        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
+        ...(filters.status        && { status:       filters.status }),
+        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
       };
       const res = await apiService.getDocuments(params);
@@ -822,6 +801,7 @@ function DocumentRegistry() {
           setFilter={setFilter}
           onExport={handleExport}
           companies={companies}
+          standards={standards}
           onFileDialog={setFileDialogDoc}
         />
       )}
@@ -849,8 +829,8 @@ function DocumentRegistry() {
               />
             )}
 
-            {/* Pulsante upload norme: visibile solo nella cartella NORME E LEGGI */}
-            {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
+          {/* Pulsante upload norme: visibile solo nella cartella NORME E LEGGI */}
+          {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
               const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
               const isNormsFolder = currentFolder?.folder_code === '2.3'
                 || (currentFolder?.title || '').toUpperCase().includes('NORME');
@@ -861,15 +841,6 @@ function DocumentRegistry() {
                 />
               ) : null;
             })()}
-
-            {tags.allTags.length > 0 && (
-              <TagFilterBar
-                tags={tags.allTags}
-                activeTagIds={activeTagFilters}
-                onToggle={handleTagFilterToggle}
-                onReset={() => setActiveTagFilters([])}
-              />
-            )}
 
             {treeListLoading ? (
               <div className="docregistry-loading">
@@ -929,7 +900,21 @@ function DocumentRegistry() {
                               </button>
                             </span>
                           ) : (
-                            <>
+                            <span className="tree-doc-card__actions" onClick={e => e.stopPropagation()}>
+                              <button
+                                className="tree-doc-card__action-btn"
+                                title="File allegato"
+                                onClick={() => setFileDialogDoc(doc)}
+                              >
+                                📎
+                              </button>
+                              <button
+                                className="tree-doc-card__action-btn"
+                                title="Modifica"
+                                onClick={() => handleEdit(doc)}
+                              >
+                                ✏️
+                              </button>
                               <button
                                 className="tree-doc-card__move-btn"
                                 title="Sposta in un'altra cartella"
@@ -944,7 +929,7 @@ function DocumentRegistry() {
                               >
                                 {"\uD83D\uDDD1\uFE0F"}
                               </button>
-                            </>
+                            </span>
                           )
                         )}
                       </div>
@@ -964,6 +949,7 @@ function DocumentRegistry() {
             <DocumentDetailPanel
               document={selectedDoc}
               history={docHistory}
+              tags={tags.allTags}
               onEdit={handleEdit}
               onArchive={(id) => handleArchive(id)}
               onClose={handleCloseDetail}

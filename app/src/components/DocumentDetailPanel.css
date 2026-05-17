@@ -290,6 +290,23 @@
   background: #e9ecef;
 }
 
+/* ---- tag ---- */
+
+.doc-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-detail__tag {
+  background: #e8f4fd;
+  color: #1a73e8;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 768px) {

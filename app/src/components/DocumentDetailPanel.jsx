@@ -6,28 +6,8 @@
  */
 import React from "react";
 import { formatDate } from "../utils/dateHelpers";
+import { DOC_TYPE_LABELS, DOC_STATUS_LABELS, DOC_STATUS_BADGE_CLASS } from "../data/documentTypes";
 import "./DocumentDetailPanel.css";
-
-const STATUS_CONFIG = {
-  rilasciato:   { label: "Rilasciato",   className: "doc-detail__badge--green" },
-  vigente:      { label: "Rilasciato",  className: "doc-detail__badge--green" },
-  in_revisione: { label: "In revisione", className: "doc-detail__badge--yellow" },
-  obsoleto:     { label: "Obsoleto",     className: "doc-detail__badge--grey" },
-  bozza:        { label: "Bozza",        className: "doc-detail__badge--blue" },
-};
-
-const DOC_TYPE_LABELS = {
-  procedure:    "Procedura",
-  work_instruction: "Istruzione operativa",
-  manual:       "Manuale",
-  form:         "Modulo",
-  record:       "Registrazione",
-  policy:       "Politica",
-  plan:         "Piano",
-  report:       "Report",
-  folder:       "Cartella",
-  external:     "Documento esterno",
-};
 
 function InfoRow({ label, value }) {
   if (value == null || value === "") return null;
@@ -39,10 +19,11 @@ function InfoRow({ label, value }) {
   );
 }
 
-function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClose }) {
+function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
   if (!doc) return null;
 
-  const statusCfg = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG.vigente;
+  const statusLabel = DOC_STATUS_LABELS[doc.status] ?? doc.status;
+  const statusClass = DOC_STATUS_BADGE_CLASS[doc.status] ?? "doc-detail__badge--grey";
 
   return (
     <div className="doc-detail__overlay" onClick={onClose}>
@@ -60,8 +41,8 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
               {"\u2715"}
             </button>
           </div>
-          <span className={"doc-detail__badge " + statusCfg.className}>
-            {statusCfg.label}
+          <span className={"doc-detail__badge " + statusClass}>
+            {statusLabel}
           </span>
         </div>
 
@@ -80,10 +61,18 @@ function DocumentDetailPanel({ document: doc, history, onEdit, onArchive, onClos
             <InfoRow label="Clausola" value={doc.clause_reference} />
           </section>
 
-          {/* Tag - placeholder WS-5 */}
+          {/* Tag */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">Tag</h3>
-            <p className="doc-detail__placeholder">Nessun tag assegnato</p>
+            {tags && tags.length > 0 ? (
+              <div className="doc-detail__tags">
+                {tags.map((t) => (
+                  <span key={t.id} className="doc-detail__tag">{t.name}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="doc-detail__placeholder">Nessun tag assegnato</p>
+            )}
           </section>
 
           {/* Relazioni - placeholder WS-5 */}

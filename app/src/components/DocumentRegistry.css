@@ -663,6 +663,35 @@
   line-height: 1;
 }
 
+.tree-doc-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.tree-doc-card__action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.tree-doc-card:hover .tree-doc-card__action-btn {
+  opacity: 0.5;
+}
+
+.tree-doc-card__action-btn:hover {
+  opacity: 1 !important;
+  background: #dbeafe;
+}
+
 .tree-doc-card:hover .tree-doc-card__delete-btn,
 .tree-doc-card:hover .tree-doc-card__move-btn {
   opacity: 0.5;
