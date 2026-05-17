@@ -8,7 +8,7 @@
  * Tab "Albero": navigazione gerarchica con pannello dettaglio
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
@@ -21,7 +21,253 @@ import useDocumentTags from "../hooks/useDocumentTags";
 import useDocumentRelations from "../hooks/useDocumentRelations";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
+import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import "./DocumentRegistry.css";
+
+// ─── Alberi clausole per vista per-standard ──────────────────────────────────
+
+const STANDARD_CLAUSE_TREES = {
+  ISO_9001: [
+    { code: "4", label: "Contesto dell'organizzazione", children: [
+      { code: "4.1", label: "Comprensione del contesto" },
+      { code: "4.2", label: "Parti interessate" },
+      { code: "4.3", label: "Campo di applicazione" },
+      { code: "4.4", label: "SGQ e processi" },
+    ]},
+    { code: "5", label: "Leadership", children: [
+      { code: "5.1", label: "Leadership e impegno" },
+      { code: "5.2", label: "Politica per la qualita'" },
+      { code: "5.3", label: "Ruoli e responsabilita'" },
+    ]},
+    { code: "6", label: "Pianificazione", children: [
+      { code: "6.1", label: "Rischi e opportunita'" },
+      { code: "6.2", label: "Obiettivi per la qualita'" },
+      { code: "6.3", label: "Pianificazione modifiche" },
+    ]},
+    { code: "7", label: "Supporto", children: [
+      { code: "7.1", label: "Risorse" },
+      { code: "7.2", label: "Competenza" },
+      { code: "7.3", label: "Consapevolezza" },
+      { code: "7.4", label: "Comunicazione" },
+      { code: "7.5", label: "Informazioni documentate" },
+    ]},
+    { code: "8", label: "Attivita' operative", children: [
+      { code: "8.1", label: "Pianificazione e controllo" },
+      { code: "8.2", label: "Requisiti prodotti e servizi" },
+      { code: "8.3", label: "Progettazione" },
+      { code: "8.4", label: "Fornitori esterni" },
+      { code: "8.5", label: "Produzione ed erogazione" },
+      { code: "8.6", label: "Rilascio prodotti" },
+      { code: "8.7", label: "Output non conformi" },
+    ]},
+    { code: "9", label: "Valutazione delle prestazioni", children: [
+      { code: "9.1", label: "Monitoraggio e misurazione" },
+      { code: "9.2", label: "Audit interno" },
+      { code: "9.3", label: "Riesame di direzione" },
+    ]},
+    { code: "10", label: "Miglioramento", children: [
+      { code: "10.1", label: "Generalita'" },
+      { code: "10.2", label: "Non conformita' e azioni correttive" },
+      { code: "10.3", label: "Miglioramento continuo" },
+    ]},
+  ],
+  ISO_14001: [
+    { code: "4", label: "Contesto dell'organizzazione", children: [
+      { code: "4.1", label: "Comprensione del contesto" },
+      { code: "4.2", label: "Parti interessate" },
+      { code: "4.3", label: "Campo di applicazione" },
+      { code: "4.4", label: "SGA e processi" },
+    ]},
+    { code: "5", label: "Leadership", children: [
+      { code: "5.1", label: "Leadership e impegno" },
+      { code: "5.2", label: "Politica ambientale" },
+      { code: "5.3", label: "Ruoli e responsabilita'" },
+    ]},
+    { code: "6", label: "Pianificazione", children: [
+      { code: "6.1", label: "Aspetti ambientali e rischi" },
+      { code: "6.2", label: "Obiettivi ambientali" },
+    ]},
+    { code: "7", label: "Supporto", children: [
+      { code: "7.1", label: "Risorse" },
+      { code: "7.2", label: "Competenza" },
+      { code: "7.3", label: "Consapevolezza" },
+      { code: "7.4", label: "Comunicazione" },
+      { code: "7.5", label: "Informazioni documentate" },
+    ]},
+    { code: "8", label: "Attivita' operative", children: [
+      { code: "8.1", label: "Pianificazione e controllo operativo" },
+      { code: "8.2", label: "Preparazione e risposta emergenze" },
+    ]},
+    { code: "9", label: "Valutazione delle prestazioni", children: [
+      { code: "9.1", label: "Monitoraggio e misurazione" },
+      { code: "9.2", label: "Audit interno" },
+      { code: "9.3", label: "Riesame di direzione" },
+    ]},
+    { code: "10", label: "Miglioramento", children: [
+      { code: "10.1", label: "Generalita'" },
+      { code: "10.2", label: "Non conformita' e azioni correttive" },
+      { code: "10.3", label: "Miglioramento continuo" },
+    ]},
+  ],
+  ISO_45001: [
+    { code: "4", label: "Contesto dell'organizzazione", children: [
+      { code: "4.1", label: "Comprensione del contesto" },
+      { code: "4.2", label: "Parti interessate e lavoratori" },
+      { code: "4.3", label: "Campo di applicazione" },
+      { code: "4.4", label: "SGSSL e processi" },
+    ]},
+    { code: "5", label: "Leadership e partecipazione", children: [
+      { code: "5.1", label: "Leadership e impegno" },
+      { code: "5.2", label: "Politica SSL" },
+      { code: "5.3", label: "Ruoli e responsabilita'" },
+      { code: "5.4", label: "Consultazione e partecipazione" },
+    ]},
+    { code: "6", label: "Pianificazione", children: [
+      { code: "6.1", label: "Pericoli, rischi e opportunita'" },
+      { code: "6.2", label: "Obiettivi SSL" },
+    ]},
+    { code: "7", label: "Supporto", children: [
+      { code: "7.1", label: "Risorse" },
+      { code: "7.2", label: "Competenza" },
+      { code: "7.3", label: "Consapevolezza" },
+      { code: "7.4", label: "Comunicazione" },
+      { code: "7.5", label: "Informazioni documentate" },
+    ]},
+    { code: "8", label: "Attivita' operative", children: [
+      { code: "8.1", label: "Pianificazione e controllo operativo" },
+      { code: "8.2", label: "Preparazione e risposta emergenze" },
+    ]},
+    { code: "9", label: "Valutazione delle prestazioni", children: [
+      { code: "9.1", label: "Monitoraggio e misurazione" },
+      { code: "9.2", label: "Audit interno" },
+      { code: "9.3", label: "Riesame di direzione" },
+    ]},
+    { code: "10", label: "Miglioramento", children: [
+      { code: "10.1", label: "Generalita'" },
+      { code: "10.2", label: "Incidenti, NC e azioni correttive" },
+      { code: "10.3", label: "Miglioramento continuo" },
+    ]},
+  ],
+  ISO_3834_2: [
+    { code: "5", label: "Riesame dei requisiti e riesame tecnico" },
+    { code: "7", label: "Subfornitura" },
+    { code: "8", label: "Personale di saldatura" },
+    { code: "9", label: "Personale di controllo e collaudo" },
+    { code: "10", label: "Attrezzature" },
+    { code: "11", label: "Manutenzione attrezzature" },
+    { code: "12", label: "Descrizione delle attrezzature" },
+    { code: "13", label: "Pianificazione della produzione" },
+    { code: "14", label: "Procedure di saldatura (WPS)" },
+    { code: "15", label: "Qualificazione procedure (WPQR)" },
+    { code: "16", label: "Saldatori e operatori" },
+    { code: "17", label: "Controllo materiali d'apporto" },
+    { code: "18", label: "Stoccaggio materiali base" },
+    { code: "19", label: "Trattamenti termici" },
+    { code: "20", label: "Ispezione e prove" },
+    { code: "21", label: "Non conformita' e azioni correttive" },
+    { code: "22", label: "Taratura e validazione" },
+    { code: "23", label: "Identificazione e rintracciabilita'" },
+    { code: "24", label: "Registrazioni qualita'" },
+  ],
+};
+
+// Opzioni per il dropdown vista albero, generate dinamicamente dal registry
+function buildTreeViewOptions() {
+  const opts = [{ value: "free", label: "Libera (cartelle)" }];
+  for (const [key, reg] of Object.entries(STANDARDS_REGISTRY)) {
+    if (STANDARD_CLAUSE_TREES[key]) {
+      opts.push({ value: key, label: `${reg.icon} ${reg.label}` });
+    }
+  }
+  return opts;
+}
+const TREE_VIEW_OPTIONS = buildTreeViewOptions();
+
+// ─── StandardTreeView — albero clausole virtuale ─────────────────────────────
+
+function StandardClauseNode({ node, level, selectedCode, expandedCodes, onToggle, onSelect }) {
+  const hasChildren = node.children?.length > 0;
+  const isExpanded = expandedCodes.has(node.code);
+  const isSelected = selectedCode === node.code;
+
+  return (
+    <li className="doc-tree__item">
+      <div
+        className={
+          "doc-tree__node doc-tree__node--folder" +
+          (isSelected ? " doc-tree__node--selected" : "")
+        }
+        style={{ paddingLeft: level * 20 + 8 + "px" }}
+        onClick={() => onSelect(node.code)}
+        role="treeitem"
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-selected={isSelected}
+      >
+        <span
+          className={"doc-tree__arrow" + (isExpanded ? " doc-tree__arrow--open" : "")}
+          onClick={hasChildren ? (e) => { e.stopPropagation(); onToggle(node.code); } : undefined}
+          aria-hidden="true"
+        >
+          {hasChildren ? (isExpanded ? "\u25BC" : "\u25B6") : ""}
+        </span>
+        <span className="doc-tree__icon" aria-hidden="true">
+          {hasChildren ? "\uD83D\uDCC2" : "\uD83D\uDCC4"}
+        </span>
+        <span className="doc-tree__label">
+          <span className="std-tree__code">{"\u00A7"}{node.code}</span>{" "}
+          {node.label}
+        </span>
+      </div>
+      {isExpanded && hasChildren && (
+        <ul className="doc-tree__children" role="group">
+          {node.children.map((child) => (
+            <StandardClauseNode
+              key={child.code}
+              node={child}
+              level={level + 1}
+              selectedCode={selectedCode}
+              expandedCodes={expandedCodes}
+              onToggle={onToggle}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function StandardTreeView({ clauseTree, standardLabel, selectedCode, onSelectClause }) {
+  const [expandedCodes, setExpandedCodes] = useState(() => new Set());
+
+  const handleToggle = useCallback((code) => {
+    setExpandedCodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }, []);
+
+  return (
+    <aside className="doc-tree" role="tree" aria-label={`Albero ${standardLabel}`}>
+      <div className="doc-tree__header">{standardLabel}</div>
+      <ul className="doc-tree__list">
+        {clauseTree.map((node) => (
+          <StandardClauseNode
+            key={node.code}
+            node={node}
+            level={0}
+            selectedCode={selectedCode}
+            expandedCodes={expandedCodes}
+            onToggle={handleToggle}
+            onSelect={onSelectClause}
+          />
+        ))}
+      </ul>
+    </aside>
+  );
+}
 
 // ─── Costanti filtro ──────────────────────────────────────────────────────────
 
@@ -479,6 +725,17 @@ function DocumentRegistry() {
   // Albero documentale
   const tree = useDocumentTree();
 
+  // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
+  const [treeViewMode, setTreeViewMode] = useState("free");
+  const [stdSelectedClause, setStdSelectedClause] = useState(null);
+  const [stdClauseDocs, setStdClauseDocs] = useState([]);
+  const [stdClauseLoading, setStdClauseLoading] = useState(false);
+
+  const activeStandardReg = useMemo(
+    () => treeViewMode !== "free" ? STANDARDS_REGISTRY[treeViewMode] : null,
+    [treeViewMode]
+  );
+
   // Documento selezionato nel dettaglio
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [docHistory, setDocHistory] = useState([]);
@@ -610,6 +867,34 @@ function DocumentRegistry() {
     } catch { setTreeListDocs([]); }
     finally { setTreeListLoading(false); }
   }, [tree]);
+
+  // Quando si seleziona una clausola nell'albero per-standard
+  const handleClauseSelect = useCallback(async (clauseCode) => {
+    if (!activeStandardReg) return;
+    setStdSelectedClause(clauseCode);
+    setStdClauseLoading(true);
+    try {
+      const res = await apiService.getDocuments({
+        standard_id: activeStandardReg.standardId,
+        clause_ref_prefix: clauseCode,
+        limit: 100,
+      });
+      setStdClauseDocs(res.data || []);
+    } catch {
+      setStdClauseDocs([]);
+    } finally {
+      setStdClauseLoading(false);
+    }
+  }, [activeStandardReg]);
+
+  // Reset stato quando si cambia vista albero
+  const handleTreeViewModeChange = useCallback((mode) => {
+    setTreeViewMode(mode);
+    setStdSelectedClause(null);
+    setStdClauseDocs([]);
+    setShowDetail(false);
+    setSelectedDoc(null);
+  }, []);
 
   // Seleziona un documento per vedere il dettaglio
   const handleDocSelect = useCallback(async (doc) => {
@@ -807,155 +1092,255 @@ function DocumentRegistry() {
       )}
 
       {activeTab === "tree" && (
-        <div className="docregistry-tree-layout">
-          {/* Sidebar albero */}
-          <div className="docregistry-tree-sidebar">
-            <DocumentTree
-              nodes={tree.treeNodes}
-              expandedIds={tree.expandedIds}
-              selectedNodeId={tree.selectedNodeId}
-              onToggle={tree.toggleNode}
-              onSelect={handleTreeNodeSelect}
-              onCreateFolder={tree.createFolder}
-            />
+        <>
+          {/* Selettore vista albero */}
+          <div className="tree-view-selector">
+            <label className="tree-view-selector__label">Vista:</label>
+            <select
+              className="tree-view-selector__select"
+              value={treeViewMode}
+              onChange={(e) => handleTreeViewModeChange(e.target.value)}
+            >
+              {TREE_VIEW_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Contenuto centrale */}
-          <div className="docregistry-tree-content">
-            {tree.breadcrumb.length > 0 && (
-              <DocumentBreadcrumb
-                items={tree.breadcrumb}
-                onNavigate={handleTreeNodeSelect}
+          <div className="docregistry-tree-layout">
+            {/* Sidebar albero */}
+            <div className="docregistry-tree-sidebar">
+              {treeViewMode === "free" ? (
+                <DocumentTree
+                  nodes={tree.treeNodes}
+                  expandedIds={tree.expandedIds}
+                  selectedNodeId={tree.selectedNodeId}
+                  onToggle={tree.toggleNode}
+                  onSelect={handleTreeNodeSelect}
+                  onCreateFolder={tree.createFolder}
+                />
+              ) : (
+                <StandardTreeView
+                  clauseTree={STANDARD_CLAUSE_TREES[treeViewMode] || []}
+                  standardLabel={activeStandardReg?.shortLabel || ""}
+                  selectedCode={stdSelectedClause}
+                  onSelectClause={handleClauseSelect}
+                />
+              )}
+            </div>
+
+            {/* Contenuto centrale */}
+            <div className="docregistry-tree-content">
+              {treeViewMode === "free" ? (
+                <>
+                  {tree.breadcrumb.length > 0 && (
+                    <DocumentBreadcrumb
+                      items={tree.breadcrumb}
+                      onNavigate={handleTreeNodeSelect}
+                    />
+                  )}
+
+                  {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
+                    const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
+                    const isNormsFolder = currentFolder?.folder_code === '2.3'
+                      || (currentFolder?.title || '').toUpperCase().includes('NORME');
+                    return isNormsFolder ? (
+                      <NormUploadButton
+                        folderId={tree.selectedNodeId}
+                        onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                      />
+                    ) : null;
+                  })()}
+
+                  {treeListLoading ? (
+                    <div className="docregistry-loading">
+                      <div className="loading-spinner-sm" />
+                      <span>Caricamento...</span>
+                    </div>
+                  ) : tree.selectedNodeId ? (
+                    <div className="tree-doc-list">
+                      {treeListDocs.length === 0 ? (
+                        <div className="docregistry-empty">
+                          <p>Nessun elemento in questa cartella.</p>
+                          <button className="btn-primary" onClick={handleNew}>+ Aggiungi documento</button>
+                        </div>
+                      ) : (
+                        <div className="tree-doc-cards">
+                          {treeListDocs.map(doc => (
+                            <div
+                              key={doc.id}
+                              className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
+                              onClick={() => handleDocSelect(doc)}
+                            >
+                              <span className="tree-doc-card__icon">
+                                {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
+                              </span>
+                              <div className="tree-doc-card__info">
+                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__meta">
+                                  {doc.doc_code && `${doc.doc_code} · `}
+                                  {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+                                  {doc.status && ` · `}
+                                  {doc.status && (
+                                    <span className={`status-badge status-${doc.status}`}>
+                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              {doc.children_count > 0 && (
+                                <span className="tree-doc-card__badge">{doc.children_count}</span>
+                              )}
+                              {!doc.is_system_folder && doc.doc_type !== 'folder' && (
+                                deleteConfirmId === doc.id ? (
+                                  <span className="tree-doc-card__delete-confirm" onClick={e => e.stopPropagation()}>
+                                    <span className="tree-doc-card__delete-text">Eliminare?</span>
+                                    <button
+                                      className="btn-confirm-yes"
+                                      disabled={deleting}
+                                      onClick={() => handleDeleteDoc(doc.id)}
+                                    >
+                                      {deleting ? '...' : 'S\u00ec'}
+                                    </button>
+                                    <button
+                                      className="btn-confirm-no"
+                                      onClick={() => setDeleteConfirmId(null)}
+                                    >
+                                      No
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <span className="tree-doc-card__actions" onClick={e => e.stopPropagation()}>
+                                    <button
+                                      className="tree-doc-card__action-btn"
+                                      title="File allegato"
+                                      onClick={() => setFileDialogDoc(doc)}
+                                    >
+                                      {"\uD83D\uDCCE"}
+                                    </button>
+                                    <button
+                                      className="tree-doc-card__action-btn"
+                                      title="Modifica"
+                                      onClick={() => handleEdit(doc)}
+                                    >
+                                      {"\u270F\uFE0F"}
+                                    </button>
+                                    <button
+                                      className="tree-doc-card__move-btn"
+                                      title="Sposta in un'altra cartella"
+                                      onClick={e => { e.stopPropagation(); setMoveDocId(doc.id); }}
+                                    >
+                                      {"\u2197\uFE0F"}
+                                    </button>
+                                    <button
+                                      className="tree-doc-card__delete-btn"
+                                      title="Elimina documento"
+                                      onClick={e => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
+                                    >
+                                      {"\uD83D\uDDD1\uFE0F"}
+                                    </button>
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="docregistry-empty">
+                      <p>Seleziona una cartella dall'albero per vederne il contenuto.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Vista per-standard: lista documenti filtrati per clausola */
+                <>
+                  {stdSelectedClause && (
+                    <div className="std-clause-breadcrumb">
+                      <span className="std-clause-breadcrumb__standard">{activeStandardReg?.icon} {activeStandardReg?.label}</span>
+                      <span className="std-clause-breadcrumb__sep">{"\u203A"}</span>
+                      <span className="std-clause-breadcrumb__clause">{"\u00A7"}{stdSelectedClause}</span>
+                    </div>
+                  )}
+
+                  {stdClauseLoading ? (
+                    <div className="docregistry-loading">
+                      <div className="loading-spinner-sm" />
+                      <span>Caricamento...</span>
+                    </div>
+                  ) : stdSelectedClause ? (
+                    <div className="tree-doc-list">
+                      {stdClauseDocs.length === 0 ? (
+                        <div className="docregistry-empty">
+                          <p>Nessun documento in questa sezione.</p>
+                        </div>
+                      ) : (
+                        <div className="tree-doc-cards">
+                          {stdClauseDocs.map(doc => (
+                            <div
+                              key={doc.id}
+                              className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
+                              onClick={() => handleDocSelect(doc)}
+                            >
+                              <span className="tree-doc-card__icon">{"\uD83D\uDCC4"}</span>
+                              <div className="tree-doc-card__info">
+                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__meta">
+                                  {doc.doc_code && `${doc.doc_code} · `}
+                                  {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+                                  {doc.clause_ref && ` · \u00A7${doc.clause_ref}`}
+                                  {doc.status && ` · `}
+                                  {doc.status && (
+                                    <span className={`status-badge status-${doc.status}`}>
+                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <span className="tree-doc-card__actions" onClick={e => e.stopPropagation()}>
+                                <button
+                                  className="tree-doc-card__action-btn"
+                                  title="File allegato"
+                                  onClick={() => setFileDialogDoc(doc)}
+                                >
+                                  {"\uD83D\uDCCE"}
+                                </button>
+                                <button
+                                  className="tree-doc-card__action-btn"
+                                  title="Modifica"
+                                  onClick={() => handleEdit(doc)}
+                                >
+                                  {"\u270F\uFE0F"}
+                                </button>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="docregistry-empty">
+                      <p>Seleziona una clausola dall'albero per vederne i documenti.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Pannello dettaglio */}
+            {showDetail && selectedDoc && (
+              <DocumentDetailPanel
+                document={selectedDoc}
+                history={docHistory}
+                tags={tags.allTags}
+                onEdit={handleEdit}
+                onArchive={(id) => handleArchive(id)}
+                onClose={handleCloseDetail}
               />
             )}
-
-          {/* Pulsante upload norme: visibile solo nella cartella NORME E LEGGI */}
-          {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
-              const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
-              const isNormsFolder = currentFolder?.folder_code === '2.3'
-                || (currentFolder?.title || '').toUpperCase().includes('NORME');
-              return isNormsFolder ? (
-                <NormUploadButton
-                  folderId={tree.selectedNodeId}
-                  onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
-                />
-              ) : null;
-            })()}
-
-            {treeListLoading ? (
-              <div className="docregistry-loading">
-                <div className="loading-spinner-sm" />
-                <span>Caricamento...</span>
-              </div>
-            ) : tree.selectedNodeId ? (
-              <div className="tree-doc-list">
-                {treeListDocs.length === 0 ? (
-                  <div className="docregistry-empty">
-                    <p>Nessun elemento in questa cartella.</p>
-                    <button className="btn-primary" onClick={handleNew}>+ Aggiungi documento</button>
-                  </div>
-                ) : (
-                  <div className="tree-doc-cards">
-                    {treeListDocs.map(doc => (
-                      <div
-                        key={doc.id}
-                        className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
-                        onClick={() => handleDocSelect(doc)}
-                      >
-                        <span className="tree-doc-card__icon">
-                          {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
-                        </span>
-                        <div className="tree-doc-card__info">
-                          <span className="tree-doc-card__title">{doc.title}</span>
-                          <span className="tree-doc-card__meta">
-                            {doc.doc_code && `${doc.doc_code} · `}
-                            {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
-                            {doc.status && ` · `}
-                            {doc.status && (
-                              <span className={`status-badge status-${doc.status}`}>
-                                {DOC_STATUS_LABELS[doc.status] || doc.status}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        {doc.children_count > 0 && (
-                          <span className="tree-doc-card__badge">{doc.children_count}</span>
-                        )}
-                        {!doc.is_system_folder && doc.doc_type !== 'folder' && (
-                          deleteConfirmId === doc.id ? (
-                            <span className="tree-doc-card__delete-confirm" onClick={e => e.stopPropagation()}>
-                              <span className="tree-doc-card__delete-text">Eliminare?</span>
-                              <button
-                                className="btn-confirm-yes"
-                                disabled={deleting}
-                                onClick={() => handleDeleteDoc(doc.id)}
-                              >
-                                {deleting ? '...' : 'Sì'}
-                              </button>
-                              <button
-                                className="btn-confirm-no"
-                                onClick={() => setDeleteConfirmId(null)}
-                              >
-                                No
-                              </button>
-                            </span>
-                          ) : (
-                            <span className="tree-doc-card__actions" onClick={e => e.stopPropagation()}>
-                              <button
-                                className="tree-doc-card__action-btn"
-                                title="File allegato"
-                                onClick={() => setFileDialogDoc(doc)}
-                              >
-                                📎
-                              </button>
-                              <button
-                                className="tree-doc-card__action-btn"
-                                title="Modifica"
-                                onClick={() => handleEdit(doc)}
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                className="tree-doc-card__move-btn"
-                                title="Sposta in un'altra cartella"
-                                onClick={e => { e.stopPropagation(); setMoveDocId(doc.id); }}
-                              >
-                                {"\u2197\uFE0F"}
-                              </button>
-                              <button
-                                className="tree-doc-card__delete-btn"
-                                title="Elimina documento"
-                                onClick={e => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
-                              >
-                                {"\uD83D\uDDD1\uFE0F"}
-                              </button>
-                            </span>
-                          )
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="docregistry-empty">
-                <p>Seleziona una cartella dall'albero per vederne il contenuto.</p>
-              </div>
-            )}
           </div>
-
-          {/* Pannello dettaglio */}
-          {showDetail && selectedDoc && (
-            <DocumentDetailPanel
-              document={selectedDoc}
-              history={docHistory}
-              tags={tags.allTags}
-              onEdit={handleEdit}
-              onArchive={(id) => handleArchive(id)}
-              onClose={handleCloseDetail}
-            />
-          )}
-        </div>
+        </>
       )}
 
       {/* Modale wizard */}

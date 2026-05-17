@@ -24,6 +24,7 @@ async function listDocuments(req, res) {
         const {
             company_id,
             standard_id,
+            clause_ref_prefix,
             doc_type,
             status,
             expiring_days,
@@ -43,6 +44,10 @@ async function listDocuments(req, res) {
         if (standard_id) {
             conditions.push('dr.standard_id = @standard_id');
             params.standard_id = parseInt(standard_id);
+        }
+        if (clause_ref_prefix) {
+            conditions.push('dr.clause_ref LIKE @clause_ref_prefix');
+            params.clause_ref_prefix = `${clause_ref_prefix}%`;
         }
         if (doc_type) {
             conditions.push('dr.doc_type = @doc_type');
@@ -265,6 +270,7 @@ async function createDocument(req, res) {
             attachment_id,
             import_status = 'active',
             notes,
+            type_specific_data,
         } = req.body;
 
         // Validazione campi obbligatori
@@ -304,7 +310,7 @@ async function createDocument(req, res) {
                 doc_type, doc_code, title, revision, status,
                 issue_date, expiry_date, responsible, retention_years,
                 attachment_id, import_status, notes,
-                parent_id, path_cache,
+                parent_id, path_cache, type_specific_data,
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
@@ -314,7 +320,7 @@ async function createDocument(req, res) {
                 @doc_type, @doc_code, @title, @revision, @status,
                 @issue_date, @expiry_date, @responsible, @retention_years,
                 @attachment_id, @import_status, @notes,
-                @parent_id, @path_cache,
+                @parent_id, @path_cache, @type_specific_data,
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
@@ -337,6 +343,7 @@ async function createDocument(req, res) {
             attachment_id:   attachment_id   ? parseInt(attachment_id)   : null,
             import_status,
             notes:           notes           || null,
+            type_specific_data: type_specific_data ? (typeof type_specific_data === 'string' ? type_specific_data : JSON.stringify(type_specific_data)) : null,
             created_by:      user_id,
         });
 
@@ -406,6 +413,7 @@ async function updateDocument(req, res) {
             'doc_type', 'doc_code', 'title', 'revision', 'status',
             'issue_date', 'expiry_date', 'responsible', 'retention_years',
             'attachment_id', 'import_status', 'notes', 'parent_id',
+            'type_specific_data',
         ];
 
         const updates = [];
@@ -417,6 +425,9 @@ async function updateDocument(req, res) {
                 // Campi interi
                 if (['company_id', 'auditor_org_id', 'standard_id', 'retention_years', 'attachment_id', 'parent_id'].includes(field)) {
                     params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
+                } else if (field === 'type_specific_data') {
+                    const val = req.body[field];
+                    params[field] = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : null;
                 } else {
                     params[field] = req.body[field] || null;
                 }

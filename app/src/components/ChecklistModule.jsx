@@ -10,6 +10,7 @@ import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
 import { validateQuestion } from "../utils/checklistValidation";
+import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
@@ -203,6 +204,9 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
   // Chiave normalizzata per accesso ai dati (ISO_9001_2015 → ISO_9001, ecc.)
   const checklistKey = normalizeChecklistKey(selectedNorm);
+
+  const standardEntry = getStandardByKey(checklistKey);
+  const isIsoProcess = standardEntry?.kind === "iso_process";
 
   // Apre tutte le clausole quando il parent richiede navigazione guidata
   useEffect(() => {
@@ -437,6 +441,27 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     });
   };
 
+  const handleSatisfiedByChange = (clauseId, questionId, satData) => {
+    updateCurrentAudit((audit) => {
+      const updatedAudit = { ...audit };
+      const clause = updatedAudit.checklist?.[checklistKey]?.[clauseId];
+      if (!clause?.questions) return audit;
+      const question = clause.questions.find((q) => q.id === questionId);
+      if (!question) return audit;
+
+      question.satisfied_by_standard = satData?.standard || null;
+      question.satisfied_by_clause = satData?.clause || null;
+      question.satisfied_by_doc_ref = satData?.doc_ref || null;
+
+      if (satData?.standard && (!question.status || question.status === "NOT_ANSWERED")) {
+        question.status = "C";
+      }
+
+      updatedAudit.metadata.lastModified = new Date().toISOString();
+      return updatedAudit;
+    });
+  };
+
   // === RENDER ===
 
   return (
@@ -534,6 +559,8 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
               attachmentManager={attachments}
               auditId={auditId}
               readOnly={readOnly}
+              showSatButton={isIsoProcess}
+              onSatisfiedByChange={handleSatisfiedByChange}
             />
           ))
         )}
@@ -554,6 +581,8 @@ function ClauseAccordion({
   attachmentManager,
   auditId,
   readOnly = false,
+  showSatButton = false,
+  onSatisfiedByChange,
 }) {
   // Calcola statistiche clausola
   const clauseStats = useMemo(() => {
@@ -608,6 +637,8 @@ function ClauseAccordion({
               attachmentManager={attachmentManager}
               auditId={auditId}
               readOnly={readOnly}
+              showSatButton={showSatButton}
+              onSatisfiedByChange={onSatisfiedByChange}
             />
           ))}
         </div>
@@ -619,12 +650,15 @@ function ClauseAccordion({
 // === QUESTION CARD — wrapper ISO che delega al componente universale ===
 // Mantiene l'interfaccia (clauseId, onUpdate) per compatibilità con ClauseAccordion.
 
-function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, readOnly = false }) {
-  // Numerazione: per ISO 3834/RDP solo numero (displayOrder), per 9001/14001 clauseRef (es. 4.1)
+function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, readOnly = false, showSatButton = false, onSatisfiedByChange }) {
   const isSimpleNumbering = ['ISO_3834_2', 'RDP_MSN'].includes(checklistKey);
   const displayRef = isSimpleNumbering && question.displayOrder != null
     ? String(question.displayOrder)
     : (question.clauseRef || '');
+
+  const satisfiedBy = question.satisfied_by_standard
+    ? { standard: question.satisfied_by_standard, clause: question.satisfied_by_clause || "", doc_ref: question.satisfied_by_doc_ref || "" }
+    : null;
 
   return (
     <UniversalQuestionCard
@@ -632,6 +666,9 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       displayRef={displayRef}
       checklistKey={checklistKey}
       showStatusButtons
+      showSatButton={showSatButton}
+      satisfiedBy={satisfiedBy}
+      onSatisfiedByChange={(sat) => onSatisfiedByChange?.(clauseId, question.id, sat)}
       onStatusChange={(status) => onUpdate(clauseId, question.id, "status", status)}
       onNotesChange={(notes) => onUpdate(clauseId, question.id, "notes", notes)}
       attachmentManager={attachmentManager}

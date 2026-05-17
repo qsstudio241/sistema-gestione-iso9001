@@ -66,7 +66,7 @@ function QualificationsPage() {
   const LIMIT = 30;
 
   const [filters, setFiltersState] = useState({
-    search: "", status: "", expiring_days: "",
+    search: "", status: "", expiring_days: "", qualification_type: "",
   });
 
   const [formOpen,    setFormOpen]    = useState(false);
@@ -83,9 +83,10 @@ function QualificationsPage() {
     setError(null);
     try {
       const params = { page, limit: LIMIT };
-      if (filters.search)        params.search        = filters.search;
-      if (filters.status)        params.status        = filters.status;
-      if (filters.expiring_days) params.expiring_days = filters.expiring_days;
+      if (filters.search)             params.search             = filters.search;
+      if (filters.status)             params.status             = filters.status;
+      if (filters.expiring_days)      params.expiring_days      = filters.expiring_days;
+      if (filters.qualification_type) params.qualification_type = filters.qualification_type;
 
       const [res, statsRes] = await Promise.all([
         apiService.getQualifications(params),
@@ -164,6 +165,28 @@ function QualificationsPage() {
           <option value="60">In scadenza entro 60 gg</option>
           <option value="90">In scadenza entro 90 gg</option>
         </select>
+        <select
+          className="sq-select"
+          value={filters.qualification_type}
+          onChange={e => setFilter("qualification_type", e.target.value)}
+        >
+          <option value="">Tutti i tipi</option>
+          <optgroup label="Saldatura ISO 3834">
+            <option value="iso9606_1">Saldatore ISO 9606-1</option>
+            <option value="iso9606_2">Saldatore ISO 9606-2</option>
+            <option value="iso14732">Operatore ISO 14732</option>
+          </optgroup>
+          <optgroup label="NDT ISO 9712">
+            <option value="iso9712_vt">NDT VT (Visivo)</option>
+            <option value="iso9712_mt">NDT MT (Magnetico)</option>
+            <option value="iso9712_pt">NDT PT (Liquidi)</option>
+            <option value="iso9712_ut">NDT UT (Ultrasuoni)</option>
+            <option value="iso9712_rt">NDT RT (Radiografia)</option>
+          </optgroup>
+          <optgroup label="Altre">
+            <option value="generico">Generiche</option>
+          </optgroup>
+        </select>
         <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">↻</button>
       </div>
 
@@ -206,6 +229,10 @@ function QualificationsPage() {
                     <div className="sq-qual-type">{q.qualification_type}</div>
                     {q.standard_ref && <div className="sq-qual-std">{q.standard_ref}</div>}
                     {q.scope_detail && <div className="sq-qual-scope">{q.scope_detail}</div>}
+                    {q.welding_process && <div className="sq-qual-detail">Proc. {q.welding_process}</div>}
+                    {q.material_group && <div className="sq-qual-detail">Mat. {q.material_group}</div>}
+                    {q.position_range && <div className="sq-qual-detail">Pos. {q.position_range}</div>}
+                    {q.ndt_method && <div className="sq-qual-detail">{q.ndt_method} Lv.{q.ndt_level || "?"}</div>}
                   </td>
                   <td className="sq-col-cert">
                     {q.certificate_number || "-"}

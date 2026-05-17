@@ -37,6 +37,8 @@ const EMPTY = {
   scope_detail: "", certificate_number: "", issuing_body: "",
   issue_date: "", expiry_date: "", last_renewal_date: "",
   status: "valida", notes: "",
+  welding_process: "", material_group: "", position_range: "",
+  ndt_method: "", ndt_level: "",
 };
 
 function QualificationForm({ qualification, onSave, onClose }) {
@@ -171,6 +173,66 @@ function QualificationForm({ qualification, onSave, onClose }) {
               <input type="text" value={form.issuing_body} onChange={handle("issuing_body")} placeholder="IIS, Bureau Veritas, DNV..." />
             </div>
           </div>
+
+          {/* Dettagli saldatura ISO 3834 (visibili solo per tipi pertinenti) */}
+          {(form.qualification_type.includes("9606") || form.qualification_type.includes("14732") || form.qualification_type.includes("15614")) && (
+            <>
+              <div className="qf-section-title" style={{marginTop: 16}}>Dettagli saldatura</div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Processo (ISO 4063)</label>
+                  <select value={form.welding_process} onChange={handle("welding_process")}>
+                    <option value="">-- seleziona --</option>
+                    <option value="111">111 — Elettrodo rivestito</option>
+                    <option value="121">121 — Arco sommerso</option>
+                    <option value="131">131 — MIG</option>
+                    <option value="135">135 — MAG</option>
+                    <option value="136">136 — Filo animato</option>
+                    <option value="141">141 — TIG</option>
+                    <option value="15">15 — Plasma</option>
+                    <option value="311">311 — Ossiacetilenica</option>
+                  </select>
+                </div>
+                <div className="qf-field">
+                  <label>Gruppo materiale (ISO/TR 15608)</label>
+                  <input type="text" value={form.material_group} onChange={handle("material_group")} placeholder="es. 1.1, 2, 3" />
+                </div>
+              </div>
+              <div className="qf-field">
+                <label>Posizioni qualificate</label>
+                <input type="text" value={form.position_range} onChange={handle("position_range")} placeholder="es. PA, PB, PF, H-L045" />
+              </div>
+            </>
+          )}
+
+          {/* Dettagli NDT ISO 9712 */}
+          {form.qualification_type.includes("NDT") && (
+            <>
+              <div className="qf-section-title" style={{marginTop: 16}}>Dettagli NDT</div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Metodo NDT</label>
+                  <select value={form.ndt_method} onChange={handle("ndt_method")}>
+                    <option value="">-- seleziona --</option>
+                    <option value="VT">VT — Visivo</option>
+                    <option value="MT">MT — Magnetico</option>
+                    <option value="PT">PT — Liquidi penetranti</option>
+                    <option value="UT">UT — Ultrasuoni</option>
+                    <option value="RT">RT — Radiografia</option>
+                  </select>
+                </div>
+                <div className="qf-field">
+                  <label>Livello</label>
+                  <select value={form.ndt_level} onChange={handle("ndt_level")}>
+                    <option value="">-- livello --</option>
+                    <option value="1">Livello 1</option>
+                    <option value="2">Livello 2</option>
+                    <option value="3">Livello 3</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Date */}
           <div className="qf-section-title" style={{marginTop: 16}}>Date</div>

@@ -97,3 +97,9 @@
   .sq-stats-bar { gap:8px; }
   .sq-stat { min-width:60px; padding:8px; }
 }
+
+.sq-qual-detail {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 1px;
+}

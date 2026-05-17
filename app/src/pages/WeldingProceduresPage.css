@@ -1,0 +1,108 @@
+/* WeldingProceduresPage.css — Modulo Saldatura WPS/WPQR */
+
+.wp-page { padding: 24px 28px; max-width: 1200px; }
+
+/* ?? Header ????????????????? */
+.wp-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+.wp-title  { font-size:22px; font-weight:700; color:#1e3a5f; margin:0 0 4px; }
+.wp-subtitle { font-size:14px; color:#6b7280; margin:0; }
+.wp-btn-new { padding:9px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+.wp-btn-new:hover { background:#16304e; }
+
+/* ?? Tabs ??????????????????? */
+.wp-tabs { display:flex; gap:0; border-bottom:2px solid #e5e7eb; margin-bottom:16px; }
+.wp-tab { padding:10px 24px; font-size:14px; font-weight:600; color:#6b7280; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s, border-color .15s; }
+.wp-tab:hover { color:#1e3a5f; }
+.wp-tab.active { color:#1e3a5f; border-bottom-color:#1e3a5f; }
+
+/* ?? Toolbar ???????????????? */
+.wp-toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.wp-search { flex:1; min-width:180px; padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; }
+.wp-select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; }
+.wp-btn-reload { padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:16px; }
+.wp-btn-reload:hover { background:#f3f4f6; }
+
+/* ?? Error ?????????????????? */
+.wp-error { margin-bottom:12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
+.wp-error button { background:none; border:none; cursor:pointer; color:#dc2626; font-size:16px; }
+
+/* ?? Loading/Empty ?????????? */
+.wp-loading { display:flex; align-items:center; gap:12px; padding:40px; color:#6b7280; }
+.wp-spinner { width:20px; height:20px; border:3px solid #e5e7eb; border-top-color:#1e3a5f; border-radius:50%; animation:wp-spin .7s linear infinite; }
+@keyframes wp-spin { to { transform:rotate(360deg); } }
+.wp-empty { text-align:center; padding:40px; color:#6b7280; }
+.wp-empty-icon { font-size:40px; display:block; margin-bottom:12px; }
+
+/* ?? Table ?????????????????? */
+.wp-table-wrap { overflow-x:auto; border:1px solid #e5e7eb; border-radius:10px; }
+.wp-table { width:100%; border-collapse:collapse; font-size:13px; }
+.wp-table th { background:#f9fafb; padding:9px 10px; text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.wp-table td { padding:9px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
+.wp-table tbody tr:last-child td { border-bottom:none; }
+.wp-table tbody tr:hover td { background:#fafafa; }
+
+/* ?? Status badge ??????????? */
+.wp-status { display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
+.wp-status-attiva    { background:#dcfce7; color:#166534; }
+.wp-status-bozza     { background:#f3f4f6; color:#4b5563; }
+.wp-status-sospesa   { background:#fef9c3; color:#854d0e; }
+.wp-status-revocata  { background:#fee2e2; color:#991b1b; }
+
+/* ?? Test result badge ??????? */
+.wp-test { display:inline-block; padding:1px 7px; border-radius:4px; font-size:11px; font-weight:600; margin:1px; }
+.wp-test-ok  { background:#dcfce7; color:#166534; }
+.wp-test-ko  { background:#fee2e2; color:#991b1b; }
+.wp-test-na  { background:#f3f4f6; color:#9ca3af; }
+
+/* ?? WPQR count badge ?????? */
+.wp-wpqr-count { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600; background:#eff6ff; color:#1d4ed8; cursor:pointer; }
+.wp-wpqr-count:hover { background:#dbeafe; }
+
+/* ?? Link / navigation ????? */
+.wp-link { color:#2563eb; text-decoration:none; font-size:12px; cursor:pointer; }
+.wp-link:hover { text-decoration:underline; }
+
+/* ?? Azioni ????????????????? */
+.wp-btn-icon { background:none; border:none; font-size:15px; cursor:pointer; padding:3px 5px; border-radius:6px; }
+.wp-btn-icon:hover { background:#f3f4f6; }
+.wp-confirm { display:flex; align-items:center; gap:6px; font-size:12px; }
+.wp-confirm-yes { padding:3px 10px; background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
+.wp-confirm-no  { padding:3px 10px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
+
+/* ?? Paginazione ???????????? */
+.wp-pagination { display:flex; align-items:center; justify-content:center; gap:16px; padding:16px; font-size:13px; color:#6b7280; }
+.wp-pagination button { padding:6px 14px; border:1px solid #d1d5db; border-radius:6px; background:#fff; cursor:pointer; font-size:13px; }
+.wp-pagination button:disabled { opacity:.4; cursor:not-allowed; }
+
+/* ?? Modal ?????????????????? */
+.wp-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; }
+.wp-modal { background:#fff; border-radius:14px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.wp-modal-header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; border-bottom:1px solid #e5e7eb; }
+.wp-modal-header h3 { margin:0; font-size:18px; font-weight:700; color:#1e3a5f; }
+.wp-modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#6b7280; padding:4px 8px; border-radius:6px; }
+.wp-modal-close:hover { background:#f3f4f6; }
+.wp-modal-body { padding:20px 24px; }
+.wp-modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
+
+/* ?? Form ??????????????????? */
+.wp-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.wp-form-group { display:flex; flex-direction:column; gap:4px; }
+.wp-form-group.full { grid-column:1/-1; }
+.wp-form-label { font-size:12px; font-weight:600; color:#374151; }
+.wp-form-input, .wp-form-select, .wp-form-textarea {
+    padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; font-family:inherit;
+}
+.wp-form-input:focus, .wp-form-select:focus, .wp-form-textarea:focus {
+    border-color:#1e3a5f; outline:none; box-shadow:0 0 0 2px rgba(30,58,95,.12);
+}
+.wp-form-textarea { resize:vertical; min-height:60px; }
+.wp-btn-save { padding:9px 24px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+.wp-btn-save:hover { background:#16304e; }
+.wp-btn-cancel { padding:9px 24px; background:#e5e7eb; color:#374151; border:none; border-radius:8px; font-size:14px; cursor:pointer; }
+.wp-btn-cancel:hover { background:#d1d5db; }
+
+@media (max-width:700px) {
+    .wp-page { padding:14px; }
+    .wp-form-grid { grid-template-columns:1fr; }
+    .wp-table th:nth-child(n+6), .wp-table td:nth-child(n+6) { display:none; }
+}

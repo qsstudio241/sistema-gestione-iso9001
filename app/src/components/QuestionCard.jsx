@@ -42,9 +42,13 @@ export function QuestionCard({
   auditId = null,
   customItemId = null,
   readOnly = false,
+  showSatButton = false,
+  satisfiedBy = null,
+  onSatisfiedByChange = null,
   children,
 }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+  const [satExpanded, setSatExpanded] = useState(false);
 
   const cardClass = [
     "question-card",
@@ -89,6 +93,68 @@ export function QuestionCard({
       )}
 
       <div className="question-details">
+        {/* SAT — Soddisfatto dal SGQ (solo audit iso_process con azienda che ha certificazione HLS) */}
+        {showSatButton && (
+          <div className="sat-bridge">
+            <button
+              type="button"
+              className={`sat-bridge__btn${satisfiedBy?.standard ? " sat-bridge__btn--active" : ""}`}
+              onClick={() => {
+                if (readOnly) return;
+                if (satisfiedBy?.standard) {
+                  onSatisfiedByChange?.({ standard: null, clause: null, doc_ref: null });
+                } else {
+                  setSatExpanded(e => !e);
+                }
+              }}
+              disabled={readOnly}
+              title="Requisito soddisfatto dal Sistema di Gestione Qualita' (es. ISO 9001)"
+            >
+              {satisfiedBy?.standard ? `SAT ${satisfiedBy.standard}` : "SAT"}
+            </button>
+            {satExpanded && !satisfiedBy?.standard && (
+              <div className="sat-bridge__form">
+                <select
+                  className="sat-bridge__select"
+                  value=""
+                  onChange={(e) => {
+                    const std = e.target.value;
+                    if (std) {
+                      onSatisfiedByChange?.({ standard: std, clause: "", doc_ref: "" });
+                      setSatExpanded(false);
+                    }
+                  }}
+                >
+                  <option value="">Seleziona norma di riferimento...</option>
+                  <option value="ISO_9001">ISO 9001 — SGQ</option>
+                  <option value="ISO_14001">ISO 14001 — Ambiente</option>
+                  <option value="ISO_45001">ISO 45001 — Sicurezza</option>
+                </select>
+              </div>
+            )}
+            {satisfiedBy?.standard && (
+              <div className="sat-bridge__details">
+                <input
+                  type="text"
+                  className="sat-bridge__input"
+                  placeholder="Clausola (es. 7.1.5)"
+                  value={satisfiedBy.clause || ""}
+                  onChange={(e) => onSatisfiedByChange?.({ ...satisfiedBy, clause: e.target.value })}
+                  disabled={readOnly}
+                />
+                <input
+                  type="text"
+                  className="sat-bridge__input"
+                  placeholder="Doc. di riferimento (es. PG-01 rev.3)"
+                  value={satisfiedBy.doc_ref || ""}
+                  onChange={(e) => onSatisfiedByChange?.({ ...satisfiedBy, doc_ref: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="question-field">
           <label className="field-label">📝 Note / Osservazioni</label>
           <AutoTextarea

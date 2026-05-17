@@ -482,11 +482,19 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
         const full  = escXml(qRef ? qRef + ' - ' + qTxt : qTxt);
         const notes = (q.notes && q.notes.trim()) ? escXml(q.notes.trim()) : '-';
 
+        const satNote = q.satisfied_by_standard
+            ? escXml(`[SAT ${q.satisfied_by_standard}${q.satisfied_by_clause ? ' \u00A7' + q.satisfied_by_clause : ''}${q.satisfied_by_doc_ref ? ' - ' + q.satisfied_by_doc_ref : ''}]`)
+            : '';
+
+        const notesContent = satNote
+            ? (notes !== '-' ? satNote + '\n' + notes : satNote)
+            : notes;
+
         allRows.push(xmlRow([
             xmlCell(xmlPara(full,  { sa: 0 }), { dxa: C[0], va: 'top' }),
             xmlCell(xmlPara(xmlRun(cfg.label, { bold: true, color: cfg.text }), { align: 'center' }),
                 { fill: cfg.fill, dxa: C[1] }),
-            xmlCell(xmlPara(notes, { sa: 0 }), { dxa: C[2], va: 'top' }),
+            xmlCell(xmlPara(notesContent, { sa: 0 }), { dxa: C[2], va: 'top' }),
         ]));
 
         // Stralcio normativo (solo se presente nel DB — tipico ISO 14001)
@@ -795,7 +803,10 @@ export function buildRileviSummaryOoxml(checklist, pendingIssues = []) {
 
                     const ref   = q.clauseRef || q.id || '';
                     const title = (q.title || q.text || '').replace(/^\d+\.?\d*\.?\d*\s*-?\s*/, '');
-                    const label = escXml([ref, title].filter(Boolean).join(' - '));
+                    const satPrefix = q.satisfied_by_standard
+                        ? '[SAT ' + escXml(q.satisfied_by_standard) + '] '
+                        : '';
+                    const label = satPrefix + escXml([ref, title].filter(Boolean).join(' - '));
 
                     rows.push(xmlRow([
                         xmlCell(label, { pct: PCT[0] }),

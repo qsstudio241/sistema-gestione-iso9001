@@ -61,7 +61,8 @@ function buildNavItems(user, alerts = {}) {
     {
       group: "Saldatura",
       items: filterByLicense([
-        { to: "/saldatura", icon: "🔧", label: "ISO 3834", locked: true, licenseKey: "saldatura" },
+        { to: "/saldatura/procedure", icon: "🔧", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
+        { to: "/saldatura", icon: "🏭", label: "ISO 3834", locked: true, licenseKey: "saldatura" },
       ]),
     },
     // Gestione (solo admin/auditor)

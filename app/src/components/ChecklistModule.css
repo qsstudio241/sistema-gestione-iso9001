@@ -972,3 +972,59 @@
 .btn-large:active {
   transform: translateY(0);
 }
+
+/* SAT Bridge — Soddisfatto da SGQ */
+.sat-bridge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.sat-bridge__btn {
+  padding: 4px 12px;
+  border: 1.5px solid #8b5cf6;
+  border-radius: 6px;
+  background: #f5f3ff;
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.sat-bridge__btn:hover {
+  background: #ede9fe;
+}
+.sat-bridge__btn--active {
+  background: #6d28d9;
+  color: #fff;
+  border-color: #6d28d9;
+}
+.sat-bridge__btn--active:hover {
+  background: #5b21b6;
+}
+.sat-bridge__form {
+  flex: 1 1 200px;
+}
+.sat-bridge__select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.sat-bridge__details {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 300px;
+}
+.sat-bridge__input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.sat-bridge__input::placeholder {
+  color: #9ca3af;
+}

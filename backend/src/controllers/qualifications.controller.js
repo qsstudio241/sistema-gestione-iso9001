@@ -154,6 +154,8 @@ async function createQualification(req, res) {
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
             status = 'valida', notes,
+            welding_process, material_group, position_range,
+            ndt_method, ndt_level,
         } = req.body;
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona è obbligatorio.' });
@@ -176,16 +178,23 @@ async function createQualification(req, res) {
             .input('status',    status)
             .input('notes',     notes        || null)
             .input('userId',    userId)
+            .input('weldProc',  welding_process || null)
+            .input('matGroup',  material_group  || null)
+            .input('posRange',  position_range  || null)
+            .input('ndtMethod', ndt_method      || null)
+            .input('ndtLevel',  ndt_level != null ? parseInt(ndt_level) : null)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, expiry_date, last_renewal_date, status, notes, created_by)
+                     issue_date, expiry_date, last_renewal_date, status, notes, created_by,
+                     welding_process, material_group, position_range, ndt_method, ndt_level)
                 OUTPUT INSERTED.id
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @expiryDate, @renewalDate, @status, @notes, @userId)
+                     @issueDate, @expiryDate, @renewalDate, @status, @notes, @userId,
+                     @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel)
             `);
 
         logger.info(`[Qualif] Creata id=${r.recordset[0].id} per org ${orgId}`);
@@ -208,6 +217,8 @@ async function updateQualification(req, res) {
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
             status, notes,
+            welding_process, material_group, position_range,
+            ndt_method, ndt_level,
         } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
@@ -231,13 +242,20 @@ async function updateQualification(req, res) {
             .input('renewalDate',last_renewal_date || null)
             .input('status',    status || 'valida')
             .input('notes',     notes        || null)
+            .input('weldProc',  welding_process || null)
+            .input('matGroup',  material_group  || null)
+            .input('posRange',  position_range  || null)
+            .input('ndtMethod', ndt_method      || null)
+            .input('ndtLevel',  ndt_level != null ? parseInt(ndt_level) : null)
             .query(`
                 UPDATE qualifications SET
                     company_id=@compId, person_name=@personName, person_code=@personCode,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
                     issue_date=@issueDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
-                    status=@status, notes=@notes, updated_at=GETDATE()
+                    status=@status, notes=@notes, updated_at=GETDATE(),
+                    welding_process=@weldProc, material_group=@matGroup, position_range=@posRange,
+                    ndt_method=@ndtMethod, ndt_level=@ndtLevel
                 WHERE id=@id AND organization_id=@orgId
             `);
 
