@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
+import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import "./ImportJobsPage.css";
 
 // Aggiunge l'opzione guida AI in cima alla lista tipi per il form di import
@@ -22,6 +23,104 @@ function parseAiJson(val) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Pannello visualizzazione estrazione AI.
+ * Se il tipo documento ha uno schema, mostra prima i campi tipo-specifici
+ * in formato leggibile, poi il JSON grezzo collassabile.
+ */
+function AiExtractionPanel({ file, jobDocTypeHint }) {
+  const [rawOpen, setRawOpen] = useState(false);
+  const ai = parseAiJson(file.ai_extraction_json);
+  if (!ai) return null;
+
+  const docType = ai.document_type_guess || jobDocTypeHint || "";
+  const schema = getSchemaForDocType(docType);
+  const typeData = ai.type_specific_data || {};
+
+  // Etichetta leggibile per posizioni saldatura (array)
+  const formatValue = (fieldDef, val) => {
+    if (val == null || val === "") return "—";
+    if (Array.isArray(val)) {
+      if (val.length === 0) return "—";
+      if (fieldDef?.options) {
+        return val
+          .map((v) => fieldDef.options.find((o) => o.value === v)?.label || v)
+          .join(", ");
+      }
+      return val.join(", ");
+    }
+    if (fieldDef?.options) {
+      return fieldDef.options.find((o) => o.value === String(val))?.label || String(val);
+    }
+    return String(val);
+  };
+
+  return (
+    <div className="ai-extraction-panel">
+      <div className="ai-extraction-head">
+        Estrazione AI
+        {file.ai_model && <span className="ai-model">{file.ai_model}</span>}
+        {file.ai_extraction_at && (
+          <span className="ai-at">
+            {new Date(file.ai_extraction_at).toLocaleString("it-IT")}
+          </span>
+        )}
+        {ai.extraction_confidence != null && (
+          <span className="ai-conf">Attendibilità: {ai.extraction_confidence}%</span>
+        )}
+      </div>
+
+      {/* Campi base generici */}
+      <div className="ai-fields-grid">
+        {ai.title && <div className="ai-field"><span className="ai-field-key">Titolo</span><span className="ai-field-val">{ai.title}</span></div>}
+        {ai.summary && <div className="ai-field ai-field-full"><span className="ai-field-key">Sommario</span><span className="ai-field-val">{ai.summary}</span></div>}
+        {ai.document_type_guess && <div className="ai-field"><span className="ai-field-key">Tipo rilevato</span><span className="ai-field-val">{ai.document_type_guess}</span></div>}
+      </div>
+
+      {/* Campi tipo-specifici (se schema disponibile) */}
+      {schema && Object.keys(typeData).length > 0 && (
+        <div className="ai-type-specific">
+          <div className="ai-type-specific-title">{schema.label} — campi estratti</div>
+          <div className="ai-fields-grid">
+            {schema.fields.map((fieldDef) => {
+              const val = typeData[fieldDef.key];
+              if (val == null || val === "" || (Array.isArray(val) && val.length === 0)) return null;
+              return (
+                <div
+                  key={fieldDef.key}
+                  className={fieldDef.type === "textarea" ? "ai-field ai-field-full" : "ai-field"}
+                >
+                  <span className="ai-field-key">{fieldDef.label}</span>
+                  <span className="ai-field-val">{formatValue(fieldDef, val)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Eventuali warnings */}
+      {Array.isArray(ai.warnings) && ai.warnings.length > 0 && (
+        <div className="ai-warnings">
+          {ai.warnings.map((w, i) => <div key={i} className="ai-warning-item">⚠ {w}</div>)}
+        </div>
+      )}
+
+      {/* JSON grezzo collassabile */}
+      <button
+        type="button"
+        className="ai-raw-toggle"
+        onClick={() => setRawOpen((o) => !o)}
+      >
+        {rawOpen ? "▾ Nascondi JSON grezzo" : "▸ Mostra JSON grezzo"}
+      </button>
+      {rawOpen && (
+        <pre className="ai-json">{JSON.stringify(ai, null, 2)}</pre>
+      )}
+    </div>
+  );
 }
 
 export default function ImportJobsPage() {
@@ -401,18 +500,10 @@ export default function ImportJobsPage() {
                       <p className="file-err ai-err">AI: {f.ai_extraction_error}</p>
                     )}
                     {parseAiJson(f.ai_extraction_json) && (
-                      <div className="ai-extraction-panel">
-                        <div className="ai-extraction-head">
-                          Estrazione AI
-                          {f.ai_model && <span className="ai-model">{f.ai_model}</span>}
-                          {f.ai_extraction_at && (
-                            <span className="ai-at">
-                              {new Date(f.ai_extraction_at).toLocaleString("it-IT")}
-                            </span>
-                          )}
-                        </div>
-                        <pre className="ai-json">{JSON.stringify(parseAiJson(f.ai_extraction_json), null, 2)}</pre>
-                      </div>
+                      <AiExtractionPanel
+                        file={f}
+                        jobDocTypeHint={detail.job.document_type_hint || ""}
+                      />
                     )}
                   </li>
                 ))}

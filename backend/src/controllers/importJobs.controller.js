@@ -7,7 +7,7 @@ const path = require('path');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
-const { extractStructuredFromText } = require('../services/importAiExtraction.service');
+const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 
 async function listJobs(req, res) {
     try {
@@ -243,9 +243,9 @@ async function suggestAiExtraction(req, res) {
         }
         let result;
         try {
-            result = await extractStructuredFromText({
+            result = await extractStructuredByDocType({
                 text,
-                documentTypeHint: j.recordset[0].document_type_hint || null,
+                docType: j.recordset[0].document_type_hint || null,
             });
         } catch (e) {
             const code = e.code || 'AI_ERROR';

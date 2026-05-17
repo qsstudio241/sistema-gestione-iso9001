@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
+import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import "./DocumentForm.css";
 
 // Alias locali per retrocompatibilità con il markup esistente
@@ -66,8 +67,30 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
     notes:           doc?.notes           || "",
   });
 
+  // Dati tipo-specifici — salvati separatamente in type_specific_data
+  const [typeData, setTypeData] = useState(() => {
+    if (doc?.type_specific_data) {
+      try {
+        return typeof doc.type_specific_data === "string"
+          ? JSON.parse(doc.type_specific_data)
+          : doc.type_specific_data;
+      } catch { return {}; }
+    }
+    return {};
+  });
+  const [typeDetailsOpen, setTypeDetailsOpen] = useState(true);
+  const docTypePrevRef = useRef(form.doc_type);
+
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
+
+  // Resetta i dati tipo-specifici solo quando il tipo documento cambia dopo il mount
+  useEffect(() => {
+    if (docTypePrevRef.current === form.doc_type) return;
+    docTypePrevRef.current = form.doc_type;
+    setTypeData({});
+    setTypeDetailsOpen(true);
+  }, [form.doc_type]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -77,6 +100,18 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
 
   const handleChange = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleTypeDataChange = (key) => (e) =>
+    setTypeData((d) => ({ ...d, [key]: e.target.value }));
+
+  const handleTypeDataMultiChange = (key, value) =>
+    setTypeData((d) => {
+      const prev = Array.isArray(d[key]) ? d[key] : [];
+      const next = prev.includes(value)
+        ? prev.filter((v) => v !== value)
+        : [...prev, value];
+      return { ...d, [key]: next };
+    });
 
   const step1Valid = form.title.trim().length > 0;
 
@@ -95,6 +130,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
     setSaving(true);
     setError(null);
     try {
+      const schema = getSchemaForDocType(form.doc_type);
       const payload = {
         ...form,
         retention_years: form.retention_years ? parseInt(form.retention_years) : null,
@@ -107,6 +143,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
         responsible:     form.responsible.trim() || null,
         clause_ref:      form.clause_ref.trim() || null,
         notes:           form.notes.trim()     || null,
+        type_specific_data: schema ? typeData : null,
       };
       if (isEdit) {
         await apiService.updateDocument(doc.id, payload);
@@ -122,6 +159,104 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
   };
 
   // ─── Sezioni form ──────────────────────────────────────────────────────────
+
+  // Renderizza un singolo campo dello schema tipo-specifico
+  const renderTypeField = (fieldDef) => {
+    const { key, label, type, required, options, hint } = fieldDef;
+    const value = typeData[key] ?? "";
+
+    if (type === "select") {
+      return (
+        <div key={key} className="docform-field">
+          <label>{label}{required && <span className="required"> *</span>}</label>
+          <select value={value} onChange={handleTypeDataChange(key)}>
+            <option value="">— Seleziona —</option>
+            {(options || []).map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {hint && <span className="docform-hint">{hint}</span>}
+        </div>
+      );
+    }
+
+    if (type === "multiselect") {
+      const selected = Array.isArray(typeData[key]) ? typeData[key] : [];
+      return (
+        <div key={key} className="docform-field">
+          <label>{label}</label>
+          <div className="docform-multiselect">
+            {(options || []).map((o) => (
+              <label key={o.value} className="docform-multiselect-item">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(o.value)}
+                  onChange={() => handleTypeDataMultiChange(key, o.value)}
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
+          {hint && <span className="docform-hint">{hint}</span>}
+        </div>
+      );
+    }
+
+    if (type === "textarea") {
+      return (
+        <div key={key} className="docform-field">
+          <label>{label}</label>
+          <textarea
+            rows={3}
+            value={value}
+            onChange={handleTypeDataChange(key)}
+            placeholder={hint || ""}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div key={key} className="docform-field">
+        <label>{label}{required && <span className="required"> *</span>}</label>
+        <input
+          type={type === "date" ? "date" : type === "number" ? "number" : "text"}
+          value={value}
+          onChange={handleTypeDataChange(key)}
+          placeholder={hint || ""}
+          step={type === "number" ? "0.1" : undefined}
+          min={type === "number" ? "0" : undefined}
+        />
+        {hint && type !== "date" && type !== "number" && (
+          <span className="docform-hint">{hint}</span>
+        )}
+      </div>
+    );
+  };
+
+  // Sezione "Dettagli qualifica" tipo-specifica (collassabile)
+  const renderTypeSpecificSection = () => {
+    const schema = getSchemaForDocType(form.doc_type);
+    if (!schema) return null;
+    return (
+      <div className="docform-type-section">
+        <button
+          type="button"
+          className="docform-type-section-toggle"
+          onClick={() => setTypeDetailsOpen((o) => !o)}
+          aria-expanded={typeDetailsOpen}
+        >
+          <span className="docform-type-section-icon">{typeDetailsOpen ? "▾" : "▸"}</span>
+          Dettagli qualifica — {schema.label}
+        </button>
+        {typeDetailsOpen && (
+          <div className="docform-type-section-body">
+            {schema.fields.map(renderTypeField)}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderStep1 = () => (
     <div className="docform-step-content">
@@ -308,6 +443,8 @@ function DocumentForm({ doc, companies, standards, onSave, onClose }) {
           onChange={handleChange("notes")}
         />
       </div>
+
+      {renderTypeSpecificSection()}
     </div>
   );
 
