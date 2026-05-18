@@ -164,7 +164,7 @@ const authLimiter = rateLimit({
 // usando solo req.ip senza trust proxy configurato.
 const apiLimiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS)       || 15 * 60 * 1000, // 15 min
-    max:      parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)    || 500,
+    max:      parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)    || 1000,
     message:  { error: 'Troppe richieste. Riprova tra qualche minuto.', code: 'RATE_LIMIT_API' },
     standardHeaders: true,
     legacyHeaders:   false,
