@@ -583,6 +583,7 @@ export function StorageProvider({ children, useMockData = false }) {
           clearInterval(timer);
           setAuditLock({ mode: "none", lockedByName: null, message: null });
         }
+        // 429: non insistere, il prossimo tick (30s) e' sufficiente
       }
     }, 30 * 1000);
     return () => clearInterval(timer);

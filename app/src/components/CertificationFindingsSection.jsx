@@ -52,7 +52,11 @@ export default function CertificationFindingsSection({ companyId, standardId = 1
       );
       setFindings(res.data || []);
     } catch (e) {
-      setError("Impossibile caricare i rilievi: " + e.message);
+      if (e?.status === 429) {
+        setError("Server temporaneamente sovraccarico. Attendi qualche minuto e ricarica la pagina.");
+      } else {
+        setError("Impossibile caricare i rilievi: " + e.message);
+      }
     } finally {
       setLoading(false);
     }
