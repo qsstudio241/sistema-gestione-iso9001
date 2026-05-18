@@ -521,6 +521,53 @@ I due useEffect di auto-init (in `ChecklistModule` e in `AuditAccordionLayout`) 
 
 ---
 
+## Sessione 17/05/2026 — Modulo Saldatura ISO 3834 operativo
+
+### Cosa e' stato fatto
+- **Dashboard coordinatore ISO 3834** (`/saldatura`): card Commesse/WPS/Qualifiche con conteggi, alert scadenze, tabella commesse attive
+- **Pagina Commesse** (`/saldatura/commesse`): CRUD completo con filtri stato/ricerca, sezioni WPS applicabili e saldatori assegnati
+- **Fix BUG-A**: colonne `testing_body`, `welder_name`, `certificate_number` aggiunte a `wpqr_records` (migrazione 069)
+- **Fix BUG-B**: filtro `qualification_type` ora funziona nel backend (mapping codici frontend verso pattern LIKE)
+- **API Commesse**: controller + routes con CRUD completo, stats per dashboard, soft/hard delete
+- **Endpoint wps_welders**: assegnazione saldatori qualificati a WPS (list/assign/remove)
+- **Sidebar**: gruppo Saldatura aggiornato — Dashboard 3834, Commesse, Procedure WPS/WPQR (rimosso lucchetto)
+- **Licenza MASON_Srl**: aggiornata da `["audit"]` a tutti i moduli
+
+### Commit
+- `8aa5865` feat: modulo saldatura ISO 3834 - Fase 0+1+2 (15 file, +2305 righe)
+
+### File chiave creati
+| File | Descrizione |
+|------|-------------|
+| `backend/scripts/run-migration-069-vps.js` | Migrazione: colonne WPQR + tabelle wps_welders/project_welders |
+| `backend/src/controllers/projects.controller.js` | CRUD commesse |
+| `backend/src/routes/projects.routes.js` | Route commesse |
+| `app/src/pages/WeldingDashboardPage.jsx/.css` | Dashboard coordinatore ISO 3834 |
+| `app/src/pages/ProjectsPage.jsx/.css` | Gestione commesse |
+
+### Piano di riferimento
+`docs/piano_modulo_saldatura_v2.plan.md` — contiene Fasi 0-4 con 15 task e 6 scenari di test Mason.
+
+### Fase 3-4 da completare (prossima sessione)
+- Allegati PDF su WPS/WPQR (UI)
+- Range validita' qualifiche ISO 9606 (calcolo automatico)
+- NC specifiche saldatura (collegamento a WPS/saldatore/commessa)
+- Certificati materiali EN 10204 (tipo documento strutturato)
+- Stampa/export WPS formato standard
+- Collegamento commesse-audit ISO 3834
+- Alert scadenze nella dashboard
+
+### Anomalia UX annotata
+La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' auditare), ma la visibilita' dei moduli nella sidebar dipende dalla licenza dell'**organizzazione** (`organizations.licensed_modules`). Sono due concetti separati: l'admin puo' pensare di aver abilitato la saldatura per un utente, ma se l'organizzazione non ha la licenza il modulo resta invisibile. Da chiarire in UI o unificare.
+
+### Test utente Mason
+- Email: andrea.mason@mason-cs.com
+- Organizzazione: MASON_Srl (org 1003)
+- Ruolo: Admin Studio
+- Verificato: login OK, dashboard 3834 visibile, commesse funzionanti
+
+---
+
 ## Sessione 15/05/2026 — AI Audit Conclusions + Upload Norme
 
 ### Funzionalità implementate
