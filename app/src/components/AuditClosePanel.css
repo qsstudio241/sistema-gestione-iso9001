@@ -352,3 +352,37 @@
   color: #c05621;
 }
 
+/* Badge registro documenti: mostrato dopo la chiusura con licenza documents */
+.close-doc-registry-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #ebf8ff;
+  border-left: 4px solid #3182ce;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 0.9em;
+  color: #2a4a6b;
+}
+
+.close-doc-registry-badge__icon {
+  font-size: 1.1em;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.close-doc-registry-badge__text {
+  line-height: 1.5;
+}
+
+.close-doc-registry-badge__link {
+  color: #2b6cb0;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.close-doc-registry-badge__link:hover {
+  color: #2c5282;
+}
+

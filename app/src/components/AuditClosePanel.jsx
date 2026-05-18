@@ -58,6 +58,9 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState(null);
 
+  // Registro documenti: entry creata automaticamente alla chiusura
+  const [docRegistryEntry, setDocRegistryEntry] = useState(null);
+
   // Stato approvazione
   const [approving, setApproving]         = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
@@ -247,7 +250,13 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       const uuid    = currentAudit?.metadata?.id      ?? currentAudit?.id;
       if (!auditId && !uuid) throw new Error("ID audit non disponibile");
 
-      await apiService.completeAudit(auditId || uuid);
+      const res = await apiService.completeAudit(auditId || uuid);
+
+      // Cattura entry registro documenti se creata automaticamente dal server
+      const docEntry = res?.data?.document_registry || res?.document_registry || null;
+      if (docEntry?.id) {
+        setDocRegistryEntry(docEntry);
+      }
 
       updateCurrentAudit((prev) => ({
         ...prev,
@@ -415,6 +424,21 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
               day: "2-digit", month: "long", year: "numeric",
             })}
           </p>
+        )}
+
+        {/* Badge registro documenti: mostrato se la chiusura ha creato/trovato l'entry */}
+        {docRegistryEntry?.id && (
+          <div className="close-doc-registry-badge">
+            <span className="close-doc-registry-badge__icon">📄</span>
+            <span className="close-doc-registry-badge__text">
+              {docRegistryEntry.already_existed
+                ? "Verbale gi\u00E0 presente nel registro documenti"
+                : "Verbale aggiunto al registro documenti"}
+              {docRegistryEntry.title && (
+                <> — <a href="/documents" className="close-doc-registry-badge__link">{docRegistryEntry.title}</a></>
+              )}
+            </span>
+          </div>
         )}
 
         {/* Pulsante Approva - solo da completed, per ruolo responsabile/admin */}

@@ -10,6 +10,7 @@ const { getAllowedStandardIds } = require('./auth.controller');
 // assertWriteAllowed rimosso in T5 (lock solo UX, non blocca le scritture sul server)
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 const { studioScopeClause } = require('../services/auditListRbac.service');
+const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
 
 /**
  * GET /api/v1/audits
@@ -1438,11 +1439,123 @@ async function completeAudit(req, res) {
         `, { numeric_id, organization_id, extra_data: JSON.stringify(extraData) });
 
         logger.info(`[COMPLETE_AUDIT] Audit ${numeric_id} completato`);
+
+        // ── Auto-creazione nel registro documenti (solo se licenza 'documents' attiva) ──
+        // ADR-009 Fase 5: audit chiuso = documento del registro con metadata pre-compilati.
+        // Idempotente: salta se esiste già un record con audit_id = numeric_id.
+        let document_registry = null;
+        try {
+            const licenseKeys = await getLicensedModuleKeysForOrg(organization_id);
+            const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
+            const hasDocumentsLicense = licenseKeys.includes('documents')
+                || role === 'superadmin' || role === 'admin';
+
+            if (hasDocumentsLicense) {
+                // Controlla idempotenza: record già presente per questo audit?
+                const existingDoc = await query(`
+                    SELECT id, title
+                    FROM document_registry
+                    WHERE audit_id = @audit_id
+                      AND organization_id = @organization_id
+                `, { audit_id: numeric_id, organization_id });
+
+                if (existingDoc.recordset.length > 0) {
+                    document_registry = {
+                        id: existingDoc.recordset[0].id,
+                        title: existingDoc.recordset[0].title,
+                        already_existed: true,
+                    };
+                    logger.info(`[COMPLETE_AUDIT] doc_registry già presente (id=${document_registry.id}) per audit ${numeric_id}`);
+                } else {
+                    // Recupera metadata audit completi: numero, data, cliente, azienda, standard
+                    const auditMeta = await query(`
+                        SELECT
+                            a.audit_number,
+                            a.audit_date,
+                            a.client_name,
+                            a.company_id,
+                            a.auditor_name,
+                            a.audit_uuid,
+                            a.auditor_org_id,
+                            u.email AS user_email,
+                            MIN(ast.standard_id) AS first_standard_id
+                        FROM audits a
+                        LEFT JOIN users u ON a.created_by = u.user_id
+                        LEFT JOIN audit_standards ast ON ast.audit_id = a.audit_id
+                        WHERE a.audit_id = @numeric_id
+                        GROUP BY
+                            a.audit_number, a.audit_date, a.client_name, a.company_id,
+                            a.auditor_name, a.audit_uuid, a.auditor_org_id, u.email
+                    `, { numeric_id });
+
+                    if (auditMeta.recordset.length > 0) {
+                        const ad = auditMeta.recordset[0];
+                        const docTitle = `Verbale Audit - ${ad.client_name || 'N/D'} - ${ad.audit_number || numeric_id}`;
+                        const issueDate = extraData.completedAt
+                            ? extraData.completedAt.slice(0, 10)
+                            : new Date().toISOString().slice(0, 10);
+                        const responsible = req.user.email || ad.user_email || null;
+                        const docNotes = `Creato automaticamente alla chiusura dell'audit ${ad.audit_number || numeric_id}.`;
+
+                        const insResult = await query(`
+                            INSERT INTO document_registry (
+                                organization_id, company_id, auditor_org_id,
+                                standard_id,
+                                doc_type, doc_code, title,
+                                status, issue_date,
+                                responsible, import_status, notes,
+                                audit_id, audit_uuid,
+                                created_by, created_at, updated_at
+                            )
+                            OUTPUT INSERTED.id
+                            VALUES (
+                                @organization_id, @company_id, @auditor_org_id,
+                                @standard_id,
+                                N'Verbale di Audit', @doc_code, @title,
+                                'rilasciato', @issue_date,
+                                @responsible, 'active', @notes,
+                                @audit_id, @audit_uuid,
+                                @user_id, GETDATE(), GETDATE()
+                            )
+                        `, {
+                            organization_id,
+                            company_id:      ad.company_id      ? parseInt(ad.company_id)      : null,
+                            auditor_org_id:  ad.auditor_org_id  ? parseInt(ad.auditor_org_id)  : null,
+                            standard_id:     ad.first_standard_id ? parseInt(ad.first_standard_id) : null,
+                            doc_code:        ad.audit_number    || null,
+                            title:           docTitle,
+                            issue_date:      issueDate,
+                            responsible,
+                            notes:           docNotes,
+                            audit_id:        numeric_id,
+                            audit_uuid:      ad.audit_uuid      || null,
+                            user_id:         req.user.user_id   || null,
+                        });
+
+                        // path_cache self-referencing (richiesto dal controller standard)
+                        const newDocId = insResult.recordset[0].id;
+                        await query(
+                            `UPDATE document_registry SET path_cache = @pc WHERE id = @id`,
+                            { pc: `/${newDocId}/`, id: newDocId }
+                        );
+
+                        document_registry = { id: newDocId, title: docTitle, already_existed: false };
+                        logger.info(`[COMPLETE_AUDIT] doc_registry creato (id=${newDocId}) per audit ${numeric_id}`);
+                    }
+                }
+            }
+        } catch (docErr) {
+            // Non bloccante: la chiusura dell'audit è già avvenuta con successo.
+            // L'errore sul registro documenti viene solo loggato.
+            logger.warn(`[COMPLETE_AUDIT] Errore creazione doc_registry per audit ${numeric_id}: ${docErr.message}`);
+        }
+
         return res.json({
             success: true,
             audit_id: numeric_id,
             status: 'completed',
-            completed_at: extraData.completedAt
+            completed_at: extraData.completedAt,
+            document_registry,
         });
 
     } catch (error) {
