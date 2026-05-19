@@ -1404,6 +1404,7 @@ function DocumentRegistry() {
           doc={editingDoc}
           companies={companies}
           standards={standards}
+          defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />

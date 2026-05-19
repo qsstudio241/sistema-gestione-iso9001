@@ -139,7 +139,8 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 6px;
+  padding: 12px 22px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .btn-cancel {
@@ -266,13 +267,255 @@
   gap: 14px;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .docform-row { flex-direction: column; }
-  .docform-row .docform-field-sm,
-  .docform-row .docform-field-xs { flex: none; }
-  .wizard-steps { padding: 12px 16px 0; }
-  .step-label { display: none; }
+/* ─── Drag & Drop zone ─────────────────────────────────────────────────────── */
+
+.docform-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  text-align: center;
+}
+
+.docform-dropzone:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.docform-dropzone-active {
+  border-color: #1e3a5f;
+  background: #dbeafe;
+  transform: scale(1.01);
+}
+
+.docform-dropzone-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.docform-dropzone-text {
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.docform-dropzone-text strong {
+  color: #1e3a5f;
+}
+
+.docform-dropzone-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* ─── File preview (dopo selezione) ────────────────────────────────────────── */
+
+.docform-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.docform-file-preview-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.docform-file-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.docform-file-preview-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docform-file-preview-size {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.docform-file-remove {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.docform-file-remove:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.docform-file-error {
+  padding: 6px 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+  font-size: 0.8rem;
+}
+
+.docform-file-suggestion {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.docform-hint-inline {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+/* ─── Archiviazione / Folder picker ────────────────────────────────────────── */
+
+.docform-archive-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fafbfc;
+}
+
+.docform-archive-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.docform-archive-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.docform-archive-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.docform-badge-suggested {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  vertical-align: middle;
+}
+
+.docform-folder-select {
+  width: 100%;
+}
+
+.docform-folder-loading {
+  font-size: 0.82rem;
+  color: #6b7280;
+  padding: 6px 0;
+}
+
+.docform-folder-empty {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  padding: 6px 0;
+  font-style: italic;
+}
+
+/* ─── Upload progress bar ──────────────────────────────────────────────────── */
+
+.docform-upload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docform-upload-progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.docform-upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1e3a5f, #3b82f6);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.docform-upload-progress-text {
+  font-size: 0.78rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ─── Confirm close overlay ────────────────────────────────────────────────── */
+
+.docform-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.docform-confirm-box {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-width: 320px;
+  text-align: center;
+}
+
+.docform-confirm-box p {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.docform-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
 /* ─── Sezione tipo-specifica (Dettagli qualifica) ──────────────────────────── */
@@ -348,4 +591,14 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .docform-row { flex-direction: column; }
+  .docform-row .docform-field-sm,
+  .docform-row .docform-field-xs { flex: none; }
+  .wizard-steps { padding: 12px 16px 0; }
+  .step-label { display: none; }
+  .docform-dropzone { padding: 18px 12px; }
 }
