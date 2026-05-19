@@ -17,6 +17,16 @@ describe("createNewAudit", () => {
     expect(audit.metadata.generalData.auditors).toEqual(["Ispettore Principale"]);
   });
 
+  it("propaga auditDateEnd in metadata e generalData", () => {
+    const audit = createNewAudit({
+      clientName: "Cliente",
+      auditDate: "2026-05-10",
+      auditDateEnd: "2026-05-12",
+    });
+    expect(audit.metadata.auditDateEnd).toBe("2026-05-12");
+    expect(audit.metadata.generalData.auditDateEnd).toBe("2026-05-12");
+  });
+
   it("createNewAudit con fornitoreCompanyId → preservato in metadata", () => {
     const audit = createNewAudit({
       auditPartyType: "second_party",

@@ -8,6 +8,11 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
+import {
+  formatAuditPeriodLabel,
+  normalizeAuditDateEndForStorage,
+  validateAuditDateRangeClient,
+} from "../utils/auditDatePeriod";
 import apiService from "../services/apiService";
 import "./AuditSelector.css";
 
@@ -226,11 +231,16 @@ const hasAnyClosedAudit = useMemo(
                   const auditId = audit.metadata?.id || audit.id;
                   const outsideFilter =
                     currentOutsideFilter && auditId === currentAuditId;
+                  const periodLabel = formatAuditPeriodLabel(
+                    audit.metadata.auditDate,
+                    audit.metadata.auditDateEnd
+                  );
                   return (
                     <option key={auditId} value={auditId}>
                       {outsideFilter ? "⚠ " : ""}
-                      {audit.metadata.auditNumber} - {audit.metadata.clientName} (
-                      {audit.metadata.status})
+                      {audit.metadata.auditNumber} - {audit.metadata.clientName}
+                      {periodLabel ? ` [${periodLabel}]` : ""}{" "}
+                      ({audit.metadata.status})
                       {outsideFilter ? " - fuori filtro" : ""}
                     </option>
                   );
@@ -389,6 +399,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     fornitoreName: initialFornitore,
     fornitoreCompanyId: initialFornitoreCompanyId,
     auditDate: new Date().toISOString().split("T")[0],
+    auditDateEnd: "",
     auditorName: "",
     norms: [],
     customChecklistId: null,
@@ -538,6 +549,14 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       newErrors.norms = "Selezionare almeno una norma oppure una checklist personalizzata";
     }
 
+    const dateCheck = validateAuditDateRangeClient(
+      formData.auditDate,
+      formData.auditDateEnd
+    );
+    if (!dateCheck.valid) {
+      newErrors.auditDate = dateCheck.message;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -551,6 +570,10 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
 
     // Propaga rilievi pendenti dell'audit precedente nel nuovo audit (re-audit e nuovo con storico)
     const submitData = { ...formData };
+    submitData.auditDateEnd = normalizeAuditDateEndForStorage(
+      formData.auditDate,
+      formData.auditDateEnd
+    );
     // Mappa norms → selectedStandards (atteso da createNewAudit in auditDataModel.js)
     submitData.selectedStandards = formData.norms;
     submitData.companyId = formData.companyId || null;
@@ -800,16 +823,34 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="auditDate">Data Audit *</label>
-            <input
-              type="date"
-              id="auditDate"
-              name="auditDate"
-              value={formData.auditDate}
-              onChange={handleChange}
-              className="form-control"
-            />
+          <div className="form-row form-row-dates" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            <div className="form-group">
+              <label htmlFor="auditDate">Data inizio *</label>
+              <input
+                type="date"
+                id="auditDate"
+                name="auditDate"
+                value={formData.auditDate}
+                onChange={handleChange}
+                className={`form-control ${errors.auditDate ? "error" : ""}`}
+              />
+              {errors.auditDate && (
+                <span className="error-message">{errors.auditDate}</span>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="auditDateEnd">Data fine</label>
+              <input
+                type="date"
+                id="auditDateEnd"
+                name="auditDateEnd"
+                value={formData.auditDateEnd || ""}
+                min={formData.auditDate || undefined}
+                onChange={handleChange}
+                className="form-control"
+              />
+              <small className="form-hint">Opzionale per audit su più giorni</small>
+            </div>
           </div>
 
           <div className="form-group">

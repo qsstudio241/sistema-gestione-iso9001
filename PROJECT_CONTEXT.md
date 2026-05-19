@@ -96,7 +96,7 @@ sleep 4 && cat /var/www/sgq-backend/app.log
 
 ### Segnaposto template
 
-`{clientName}` `{auditDate}` `{auditNumber}` `{procedureCode}` `{auditObject}` `{scope}`  
+`{clientName}` `{auditDate}` `{auditDateEnd}` `{auditPeriod}` `{auditNumber}` `{procedureCode}` `{auditObject}` `{scope}`  
 `{referenceDocuments}` `{processes}` `{programCommunicatedDate}` `{auditor}`  
 `{objectiveDescription}` `{#participants}{role}{name}{/participants}` `{conclusions}`  
 `{ncCount}` `{ossCount}` `{omCount}` `{nvCount}` `{summaryText}`

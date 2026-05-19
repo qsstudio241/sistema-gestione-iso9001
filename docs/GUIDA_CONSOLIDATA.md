@@ -47,6 +47,21 @@
 
 ---
 
+### Audit multi-giorno (migrazione 070 — maggio 2026)
+
+| Campo | Ruolo |
+|--------|--------|
+| `audits.audit_date` | Data **inizio** (invariato, retrocompatibile) |
+| `audits.audit_date_end` | Data **fine**; `NULL` o uguale a inizio = audit mono-giorno |
+| `metadata.auditDateEnd` / `generalData.auditDateEnd` | Mirror frontend + sync (`audit_extra_data`) |
+
+- **Validazione**: fine ≥ inizio; avviso (non blocco) se date nel futuro — come `audit_date` (`auditUtils.js`).
+- **Word**: `{auditDate}` = inizio; `{auditDateEnd}`; `{auditPeriod}` (es. `10/05/2026 – 12/05/2026` o singola data).
+- **DB**: `database/migrations/070_audit_date_end.sql`; su VPS: `backend/scripts/run-migration-070-vps.js` (scp + `node /tmp/...`).
+- **Deploy backend**: dopo migrazione, `deploy-controllers-to-vps.ps1` + restart `sgq-backend`.
+
+---
+
 ### Sessione 16 maggio 2026 (sera) — Office round-trip WebDAV + lifecycle documenti + viewer .docx browser
 
 #### Sintesi

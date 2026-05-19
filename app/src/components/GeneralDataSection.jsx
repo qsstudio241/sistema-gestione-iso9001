@@ -7,6 +7,10 @@ import { useState, useEffect } from "react";
 import { fetchStandards } from "../services/standardsService";
 import { getStandardByCode } from "../data/standardsRegistry";
 import AutoTextarea from "./AutoTextarea";
+import {
+  displayAuditDayCount,
+  validateAuditDateRangeClient,
+} from "../utils/auditDatePeriod";
 import "./GeneralDataSection.css";
 
 // Fallback standard se API non disponibile
@@ -68,6 +72,7 @@ function GeneralDataSection({
       scope: "",
       referenceDocuments: [],
       auditDate: "",
+      auditDateEnd: "",
       processes: "",
       programCommunicatedDate: "",
       auditors: [],
@@ -101,11 +106,27 @@ function GeneralDataSection({
     }
   };
 
+  const [dateHint, setDateHint] = useState("");
+
   const handleChange = (field, value) => {
     const updated = { ...formData, [field]: value };
+    if (field === "auditDate" && updated.auditDateEnd && updated.auditDateEnd < value) {
+      updated.auditDateEnd = "";
+    }
+    const validation = validateAuditDateRangeClient(
+      updated.auditDate,
+      updated.auditDateEnd
+    );
+    setDateHint(
+      validation.valid
+        ? (validation.warnings?.join(" ") || "")
+        : (validation.message || "")
+    );
     setFormData(updated);
     onUpdate(updated);
   };
+
+  const dayCount = displayAuditDayCount(formData.auditDate, formData.auditDateEnd);
 
   const handleArrayChange = (field, index, value) => {
     const updated = { ...formData };
@@ -248,7 +269,7 @@ function GeneralDataSection({
         {/* Date */}
         <div className="form-row">
           <div className="form-field">
-            <label className="field-label">Data Audit</label>
+            <label className="field-label">Data inizio audit</label>
             <input
               type="date"
               className="field-input"
@@ -258,6 +279,27 @@ function GeneralDataSection({
             />
           </div>
 
+          <div className="form-field">
+            <label className="field-label">Data fine audit</label>
+            <input
+              type="date"
+              className="field-input"
+              value={formData.auditDateEnd || ""}
+              min={formData.auditDate || undefined}
+              onChange={(e) => handleChange("auditDateEnd", e.target.value)}
+              disabled={readOnly}
+            />
+            <small className="form-hint">
+              Opzionale: vuoto o uguale all&apos;inizio = un solo giorno.
+              {dayCount ? ` (${dayCount} giorni)` : ""}
+            </small>
+          </div>
+        </div>
+        {dateHint ? (
+          <p className="form-hint" role="status">{dateHint}</p>
+        ) : null}
+
+        <div className="form-row">
           <div className="form-field">
             <label className="field-label">Programma Comunicato il</label>
             <input

@@ -614,6 +614,12 @@ export class SyncService {
 
             const mappedAudit = {
                 ...auditData,
+                audit_date_end:
+                    auditData.audit_date_end
+                    ?? auditData.auditDateEnd
+                    ?? auditData.metadata?.auditDateEnd
+                    ?? auditData.generalData?.auditDateEnd
+                    ?? null,
                 // standard_id scalare (retrocompatibilità campo legacy audits.standard_id)
                 standard_id: resolveStandardId(rawCodes, hasCustomChecklist),
                 // standard_ids array → aggiorna audit_standards junction table con TUTTI gli standard

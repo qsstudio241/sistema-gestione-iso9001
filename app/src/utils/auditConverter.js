@@ -82,6 +82,9 @@ export function backendToFrontend(backendAudit) {
             fornitoreName: backendAudit.fornitore_name || extraData.fornitoreName || '',
             projectYear: backendAudit.project_year || new Date().getFullYear().toString(),
             auditDate: backendAudit.audit_date || new Date().toISOString().split('T')[0],
+            auditDateEnd: backendAudit.audit_date_end
+                || extraData.generalData?.auditDateEnd
+                || null,
             auditorName: backendAudit.auditor_name || '',
             auditType: backendAudit.audit_type || 'certification',
             status: backendAudit.status || 'draft',
@@ -210,6 +213,7 @@ export function frontendToBackend(frontendAudit) {
         fornitore_name: meta.fornitoreName || null,
         project_year: meta.projectYear,
         audit_date: meta.auditDate,
+        audit_date_end: meta.auditDateEnd ?? meta.generalData?.auditDateEnd ?? null,
         auditor_name: meta.auditorName || meta.auditors?.[0] || '',
         audit_type: meta.auditType,
         status: meta.status,

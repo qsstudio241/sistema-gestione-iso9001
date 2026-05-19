@@ -5,6 +5,7 @@
  */
 
 import { AUDIT_STATUS, CHECKLIST_STATUS, NC_CATEGORY, NC_STATUS } from '../data/auditDataModel';
+import { formatAuditPeriodIt } from './auditDatePeriod';
 
 /**
  * Export completo audit in formato JSON
@@ -48,6 +49,11 @@ export function exportAuditSummary(audit) {
             number: audit.metadata.auditNumber,
             clientName: audit.metadata.clientName,
             auditDate: audit.metadata.auditDate,
+            auditDateEnd: audit.metadata.auditDateEnd || null,
+            auditPeriod: formatAuditPeriodIt(
+                audit.metadata.auditDate,
+                audit.metadata.auditDateEnd
+            ),
             auditor: audit.metadata.auditor,
             norms: audit.metadata.norms,
             status: audit.metadata.status
@@ -155,7 +161,10 @@ export function downloadAuditSummaryCSV(audit) {
     csv += 'INFORMAZIONI AUDIT\n';
     csv += `Numero,${summary.auditInfo.number}\n`;
     csv += `Cliente,${summary.auditInfo.clientName}\n`;
-    csv += `Data,${new Date(summary.auditInfo.auditDate).toLocaleDateString('it-IT')}\n`;
+    csv += `Data inizio,${new Date(summary.auditInfo.auditDate).toLocaleDateString('it-IT')}\n`;
+    if (summary.auditInfo.auditPeriod) {
+        csv += `Periodo,${summary.auditInfo.auditPeriod}\n`;
+    }
     csv += `Auditor,${summary.auditInfo.auditor}\n`;
     csv += `Norme,${summary.auditInfo.norms.join(' | ')}\n`;
     csv += `Status,${summary.auditInfo.status}\n\n`;

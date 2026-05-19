@@ -10,6 +10,7 @@ const { getAllowedStandardIds } = require('./auth.controller');
 // assertWriteAllowed rimosso in T5 (lock solo UX, non blocca le scritture sul server)
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 const { studioScopeClause } = require('../services/auditListRbac.service');
+const { validateAuditDateRange } = require('../utils/auditDateRange');
 
 /**
  * GET /api/v1/audits
@@ -72,6 +73,7 @@ async function listAudits(req, res) {
         a.company_id,
         a.project_year,
         a.audit_date,
+        a.audit_date_end,
         a.auditor_name,
         a.audit_type,
         a.status,
@@ -236,6 +238,7 @@ async function createAudit(req, res) {
             client_name,
             project_year,
             audit_date,
+            audit_date_end,
             auditor_name,
             audit_type,
             standard_ids,
@@ -245,6 +248,14 @@ async function createAudit(req, res) {
             fornitore_name,
             company_id
         } = req.body;
+
+        const dateRange = validateAuditDateRange(audit_date, audit_date_end);
+        if (!dateRange.valid) {
+            return res.status(400).json({
+                error: dateRange.error,
+                code: 'VALIDATION_ERROR'
+            });
+        }
 
         // Validazione campi obbligatori (audit_number assegnato server-side: formato PREFISSO-YYMMDD-NN)
         if (!client_name || !project_year || !audit_date || !auditor_name || !audit_type) {
@@ -308,6 +319,7 @@ async function createAudit(req, res) {
         client_name,
         project_year,
         audit_date,
+        audit_date_end,
         auditor_name,
         audit_type,
         status,
@@ -325,6 +337,7 @@ async function createAudit(req, res) {
         @client_name,
         @project_year,
         @audit_date,
+        @audit_date_end,
         @auditor_name,
         @audit_type,
         'draft',
@@ -339,7 +352,8 @@ async function createAudit(req, res) {
             audit_number,
             client_name,
             project_year: parseInt(project_year),
-            audit_date,
+            audit_date: dateRange.audit_date,
+            audit_date_end: dateRange.audit_date_end,
             auditor_name,
             audit_type,
             notes: notes || null,
@@ -413,6 +427,7 @@ async function updateAudit(req, res) {
             client_name,
             project_year,
             audit_date,
+            audit_date_end,
             auditor_name,
             audit_type,
             status,
@@ -430,7 +445,7 @@ async function updateAudit(req, res) {
 
         // Verifica esistenza e ownership (con timestamp, status e audit_extra_data per merge)
         const existingAudit = await query(`
-      SELECT audit_id, status, updated_at, audit_extra_data FROM audits
+      SELECT audit_id, status, updated_at, audit_date, audit_date_end, audit_extra_data FROM audits
       WHERE audit_id = @id 
         AND organization_id = @organization_id
         AND is_deleted = 0
@@ -441,6 +456,22 @@ async function updateAudit(req, res) {
                 error: 'Audit non trovato',
                 code: 'AUDIT_NOT_FOUND'
             });
+        }
+
+        let normalizedDateRange = null;
+        if (audit_date !== undefined || audit_date_end !== undefined) {
+            const row = existingAudit.recordset[0];
+            const dateRange = validateAuditDateRange(
+                audit_date !== undefined ? audit_date : row.audit_date,
+                audit_date_end !== undefined ? audit_date_end : row.audit_date_end
+            );
+            if (!dateRange.valid) {
+                return res.status(400).json({
+                    error: dateRange.error,
+                    code: 'VALIDATION_ERROR'
+                });
+            }
+            normalizedDateRange = dateRange;
         }
 
         const currentStatus = existingAudit.recordset[0].status;
@@ -495,9 +526,27 @@ async function updateAudit(req, res) {
             updates.push('project_year = @project_year');
             params.project_year = parseInt(project_year);
         }
-        if (audit_date !== undefined) {
+        if (normalizedDateRange) {
+            updates.push('audit_date = @audit_date');
+            params.audit_date = normalizedDateRange.audit_date;
+            updates.push('audit_date_end = @audit_date_end');
+            params.audit_date_end = normalizedDateRange.audit_date_end;
+        } else if (audit_date !== undefined) {
             updates.push('audit_date = @audit_date');
             params.audit_date = audit_date;
+        } else if (audit_date_end !== undefined) {
+            const dateRange = validateAuditDateRange(
+                existingAudit.recordset[0].audit_date,
+                audit_date_end
+            );
+            if (!dateRange.valid) {
+                return res.status(400).json({
+                    error: dateRange.error,
+                    code: 'VALIDATION_ERROR'
+                });
+            }
+            updates.push('audit_date_end = @audit_date_end');
+            params.audit_date_end = dateRange.audit_date_end;
         }
         if (auditor_name !== undefined) {
             updates.push('auditor_name = @auditor_name');
@@ -746,6 +795,7 @@ async function upsertAudit(req, res) {
             company_id,
             project_year,
             audit_date,
+            audit_date_end,
             auditor_name,
             audit_type,
             status,
@@ -829,10 +879,22 @@ async function upsertAudit(req, res) {
         // Check esistenza per audit_uuid — include campi ricchi per il merge per campo
         const existing = await query(`
       SELECT audit_id, audit_number, updated_at, status, standard_id, custom_checklist_id,
-             notes, audit_extra_data
+             notes, audit_extra_data, audit_date, audit_date_end
       FROM audits
       WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id
     `, { audit_uuid, organization_id });
+
+        const existingRow = existing.recordset.length > 0 ? existing.recordset[0] : null;
+        const gdForDates = audit_extra_data?.generalData || {};
+        const startForValidate = audit_date ?? gdForDates.auditDate ?? existingRow?.audit_date;
+        const endForValidate = audit_date_end ?? gdForDates.auditDateEnd ?? existingRow?.audit_date_end ?? null;
+        const upsertDateRange = validateAuditDateRange(startForValidate, endForValidate);
+        if (!upsertDateRange.valid) {
+            return res.status(400).json({
+                error: upsertDateRange.error,
+                code: 'VALIDATION_ERROR'
+            });
+        }
 
         if (existing.recordset.length > 0) {
             // ========== UPDATE ESISTENTE ==========
@@ -940,6 +1002,7 @@ async function upsertAudit(req, res) {
           company_id = @company_id,
           project_year = @project_year,
           audit_date = @audit_date,
+          audit_date_end = @audit_date_end,
           auditor_name = @auditor_name,
           audit_type = @audit_type,
           status = @status,
@@ -962,7 +1025,8 @@ async function upsertAudit(req, res) {
                 client_name,
                 company_id: company_id || null,
                 project_year: project_year || new Date().getFullYear(),
-                audit_date: audit_date || new Date().toISOString(),
+                audit_date: upsertDateRange.audit_date || audit_date || new Date().toISOString().slice(0, 10),
+                audit_date_end: upsertDateRange.audit_date_end,
                 auditor_name: auditor_name || 'Non specificato',
                 audit_type: audit_type || 'internal',
                 status: status || 'draft',
@@ -1069,6 +1133,7 @@ async function upsertAudit(req, res) {
           company_id,
           project_year,
           audit_date,
+          audit_date_end,
           auditor_name,
           audit_type,
           status,
@@ -1095,6 +1160,7 @@ async function upsertAudit(req, res) {
           @company_id,
           @project_year,
           @audit_date,
+          @audit_date_end,
           @auditor_name,
           @audit_type,
           @status,
@@ -1120,7 +1186,8 @@ async function upsertAudit(req, res) {
                 client_name,
                 company_id: company_id || null,
                 project_year: project_year || new Date().getFullYear(),
-                audit_date: audit_date || new Date().toISOString(),
+                audit_date: upsertDateRange.audit_date || audit_date || new Date().toISOString().slice(0, 10),
+                audit_date_end: upsertDateRange.audit_date_end,
                 auditor_name: auditor_name || 'Non specificato',
                 audit_type: audit_type || 'internal',
                 status: status || 'draft',

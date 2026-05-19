@@ -9,7 +9,7 @@
  *
  *   2. docxtemplater sostituisce i segnaposto testo:
  *         {clientName}  {committenteName}  {auditPartyTypeLabel}  {fornitoreName}
- *         {auditDate}  {auditNumber}  {procedureCode}
+ *         {auditDate}  {auditDateEnd}  {auditPeriod}  {auditNumber}  {procedureCode}
  *         {auditObject}  {scope}  {referenceDocuments}  {processes}
  *         {programCommunicatedDate}  {auditor}  {objectiveDescription}
  *         {#participants}{role}{name}{/participants}
@@ -42,6 +42,7 @@ import {
     getImagePixelDimensions,
     scaleImageToMaxEmu,
 } from './wordExportHelpers.js';
+import { formatAuditPeriodIt, formatDateIt } from './auditDatePeriod.js';
 
 // Dimensioni massime loghi intestazione (da layout template — celle tabella header2.xml)
 // Cella [LOGO]     (cliente): 1.59 cm wide → max 1.50 cm = 540000 EMU
@@ -191,6 +192,11 @@ function buildTemplateData(audit, normKey = null) {
         auditNumber:            meta.auditNumber || 'N/A',
         procedureCode:          meta.procedureCode || '-',
         auditDate:              formatDate(meta.auditDate || gd.auditDate),
+        auditDateEnd:           formatDateIt(meta.auditDateEnd || gd.auditDateEnd) || 'N/D',
+        auditPeriod:            formatAuditPeriodIt(
+            meta.auditDate || gd.auditDate,
+            meta.auditDateEnd || gd.auditDateEnd
+        ) || formatDate(meta.auditDate || gd.auditDate),
         auditObject:            gd.auditObject   || 'Audit di Verifica ispettiva interna',
         scope:                  reportScope,
         referenceDocuments:     Array.isArray(gd.referenceDocuments)
@@ -286,7 +292,7 @@ const SIMPLE_DOCXTEMPLATE_VAR_NAMES = [
     'referenceDocuments', 'programCommunicatedDate', 'objectiveDescription', 'auditPartyTypeLabel',
     'committenteName', 'fornitoreName', 'fornitoreIndirizzo', 'procedureCode', 'auditNumber', 'auditObject',
     'clientName', 'processes', 'ispettore', 'conclusions', 'summaryText',
-    'auditor', 'scope', 'auditDate', 'cCount', 'ncCount', 'ossCount', 'omCount', 'nvCount', 'naCount',
+    'auditor', 'scope', 'auditDate', 'auditDateEnd', 'auditPeriod', 'cCount', 'ncCount', 'ossCount', 'omCount', 'nvCount', 'naCount',
     'organizationName', 'organizationVat',
 ];
 

@@ -703,6 +703,13 @@ components:
           type: string
           format: date
           example: "2025-12-14"
+          description: Data inizio audit (mono-giorno se audit_date_end assente o uguale)
+        audit_date_end:
+          type: string
+          format: date
+          nullable: true
+          example: "2025-12-16"
+          description: Data fine audit; null o uguale a audit_date = mono-giorno
         auditor_name:
           type: string
           example: "Mario Rossi"
@@ -758,6 +765,10 @@ components:
         audit_date:
           type: string
           format: date
+        audit_date_end:
+          type: string
+          format: date
+          nullable: true
         auditor_name:
           type: string
           minLength: 1

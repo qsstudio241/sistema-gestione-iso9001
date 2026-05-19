@@ -254,6 +254,7 @@ export function createNewAudit(metadata) {
             projectYear: metadata.projectYear || new Date().getFullYear(),
             auditNumber: metadata.auditNumber || '',
             auditDate: metadata.auditDate || '',
+            auditDateEnd: metadata.auditDateEnd || null,
             auditorName: metadata.auditorName || metadata.auditor || '',
             status: AUDIT_STATUS.DRAFT,
             selectedStandards: metadata.selectedStandards || (metadata.customChecklistId ? [] : [ISO_STANDARDS.ISO_9001]),
@@ -272,6 +273,7 @@ export function createNewAudit(metadata) {
                 scope: '',
                 referenceDocuments: [],
                 auditDate: metadata.auditDate || '',
+                auditDateEnd: metadata.auditDateEnd || '',
                 processes: '',
                 programCommunicatedDate: '',
                 auditors: metadata.auditorName ? [metadata.auditorName] : []

@@ -12,14 +12,20 @@ const Dashboard = () => {
   const { currentAudit, updateCurrentAudit, deselectAudit, isSaving, allSaved } = useStorage();
 
   const handleMetadataUpdate = (field, value) => {
-    updateCurrentAudit((audit) => ({
-      ...audit,
-      metadata: {
+    updateCurrentAudit((audit) => {
+      const metadata = {
         ...audit.metadata,
         [field]: value,
         lastModified: new Date().toISOString(),
-      },
-    }));
+      };
+      if (field === "generalData" && value && typeof value === "object") {
+        if (value.auditDate !== undefined) metadata.auditDate = value.auditDate;
+        if (value.auditDateEnd !== undefined) {
+          metadata.auditDateEnd = value.auditDateEnd || null;
+        }
+      }
+      return { ...audit, metadata };
+    });
   };
 
   return (

@@ -15,7 +15,8 @@ function CreateAuditPage({ onCancel, onSuccess }) {
     const [standards, setStandards] = useState([]);
     const [formData, setFormData] = useState({
         client_name: '',
-        audit_date: new Date().toISOString().split('T')[0], // Data odierna
+        audit_date: new Date().toISOString().split('T')[0], // Data inizio
+        audit_date_end: null,
         audit_type: 'audit', // 'audit' o 'gap_analysis'
         standard_ids: [1], // Default ISO 9001
         auditor_name: '',
@@ -91,8 +92,13 @@ function CreateAuditPage({ onCancel, onSuccess }) {
         try {
             // audit_number assegnato dal server (formato PREFISSO-YYMMDD-NN, vedi organizations.audit_report_prefix)
             const { audit_number: _omitClientNumber, ...formWithoutNumber } = formData;
+            const endNorm = formData.audit_date_end
+                && formData.audit_date_end !== formData.audit_date
+                ? formData.audit_date_end
+                : null;
             const payload = {
                 ...formWithoutNumber,
+                audit_date_end: endNorm,
                 standard_ids: formData.standard_ids // Array per multi-standard
             };
 
@@ -202,7 +208,7 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                         </div>
 
                         <div className="form-group">
-                            <label className="label-required">Data Audit</label>
+                            <label className="label-required">Data inizio</label>
                             <input
                                 type="date"
                                 required
@@ -210,6 +216,20 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                                 onChange={(e) => setFormData({ ...formData, audit_date: e.target.value })}
                                 disabled={loading}
                             />
+                        </div>
+                        <div className="form-group">
+                            <label>Data fine</label>
+                            <input
+                                type="date"
+                                value={formData.audit_date_end || ''}
+                                min={formData.audit_date || undefined}
+                                onChange={(e) => setFormData({
+                                    ...formData,
+                                    audit_date_end: e.target.value || null,
+                                })}
+                                disabled={loading}
+                            />
+                            <small className="form-hint">Opzionale (audit multi-giorno)</small>
                         </div>
                     </div>
 

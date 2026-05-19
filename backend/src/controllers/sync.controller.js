@@ -6,6 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
+const { validateAuditDateRange } = require('../utils/auditDateRange');
 const { studioScopeClause } = require('../services/auditListRbac.service');
 
 /**
@@ -106,7 +107,7 @@ async function syncAudits(req, res) {
             const changesResult = await query(`
         SELECT 
           audit_id, audit_uuid, audit_number, client_name,
-          audit_date, status, updated_at
+          audit_date, audit_date_end, status, updated_at
         FROM audits
         WHERE ${wherePart}
         ORDER BY updated_at DESC
@@ -178,16 +179,23 @@ async function updateSyncMetadata(req, res) {
  */
 async function createAuditFromSync(clientAudit, userId, organizationId) {
     const audit_number = await allocateAuditReportNumber(organizationId);
+    const dateRange = validateAuditDateRange(
+        clientAudit.auditDate,
+        clientAudit.auditDateEnd ?? clientAudit.audit_date_end
+    );
+    if (!dateRange.valid) {
+        throw new Error(dateRange.error);
+    }
     // Insert audit (senza standard_id - deprecato). Numero report server-side (allineato a POST /audits).
     const result = await query(`
     INSERT INTO audits (
       audit_uuid, audit_number, client_name, project_year,
-      audit_date, auditor_name, audit_type, status,
+      audit_date, audit_date_end, auditor_name, audit_type, status,
       organization_id, created_by
     )
     VALUES (
       @audit_uuid, @audit_number, @client_name, @project_year,
-      @audit_date, @auditor_name, @audit_type, @status,
+      @audit_date, @audit_date_end, @auditor_name, @audit_type, @status,
       @organization_id, @created_by
     );
     SELECT SCOPE_IDENTITY() AS audit_id;
@@ -196,7 +204,8 @@ async function createAuditFromSync(clientAudit, userId, organizationId) {
         audit_number,
         client_name: clientAudit.clientName,
         project_year: clientAudit.projectYear,
-        audit_date: clientAudit.auditDate,
+        audit_date: dateRange.audit_date,
+        audit_date_end: dateRange.audit_date_end,
         auditor_name: clientAudit.auditorName,
         audit_type: clientAudit.auditType,
         status: clientAudit.status || 'draft',
@@ -262,12 +271,21 @@ async function updateAuditFromSync(auditId, clientAudit) {
         extraData.fornitoreName = clientAudit.fornitoreName ?? clientAudit.fornitore_name ?? '';
     }
 
+    const dateRange = validateAuditDateRange(
+        clientAudit.auditDate,
+        clientAudit.auditDateEnd ?? clientAudit.audit_date_end
+    );
+    if (!dateRange.valid) {
+        throw new Error(dateRange.error);
+    }
+
     // Update audit base fields + audit_extra_data
     await query(`
     UPDATE audits
     SET
       client_name = @client_name,
       audit_date = @audit_date,
+      audit_date_end = @audit_date_end,
       auditor_name = @auditor_name,
       status = @status,
       notes = @notes,
@@ -277,7 +295,8 @@ async function updateAuditFromSync(auditId, clientAudit) {
   `, {
         audit_id: auditId,
         client_name: clientAudit.clientName,
-        audit_date: clientAudit.auditDate,
+        audit_date: dateRange.audit_date,
+        audit_date_end: dateRange.audit_date_end,
         auditor_name: clientAudit.auditorName,
         status: clientAudit.status,
         notes: clientAudit.notes,

@@ -499,7 +499,7 @@ export function validateAuditData(audit) {
         result.errors.push(`Invalid audit number format: ${metadata.auditNumber}`);
     }
 
-    // Business Rule 2: Data audit non nel futuro
+    // Business Rule 2: Date audit non nel futuro (inizio e fine)
     if (metadata.auditDate) {
         const auditDate = new Date(metadata.auditDate);
         const today = new Date();
@@ -507,6 +507,17 @@ export function validateAuditData(audit) {
 
         if (auditDate > today) {
             result.warnings.push('Audit date is in the future');
+        }
+    }
+    if (metadata.auditDateEnd) {
+        const endDate = new Date(metadata.auditDateEnd);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (endDate > today) {
+            result.warnings.push('Audit end date is in the future');
+        }
+        if (metadata.auditDate && endDate < new Date(metadata.auditDate)) {
+            result.warnings.push('Audit end date is before start date');
         }
     }
 
