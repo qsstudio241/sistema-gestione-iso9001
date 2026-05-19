@@ -44,12 +44,39 @@
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px;
+}
+
+.form-row-audit-dates {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-row .form-field {
   min-width: 0;
+}
+
+.audit-date-field .field-input[type="date"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.general-data-section .form-hint {
+  display: block;
+  font-size: 13px;
+  color: #86868b;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.audit-date-end-hint {
+  margin-top: -8px;
+}
+
+.audit-date-validation-hint {
+  margin-top: 0;
 }
 
 .form-field {
@@ -270,6 +297,14 @@
   .form-row {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .form-row-audit-dates {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-date-end-hint {
+    margin-top: 0;
   }
 
   .general-data-form {

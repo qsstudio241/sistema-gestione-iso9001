@@ -266,9 +266,9 @@ function GeneralDataSection({
           )}
         </div>
 
-        {/* Date */}
-        <div className="form-row">
-          <div className="form-field">
+        {/* Date — tre colonne uguali; hint fuori dalla griglia per non allargare la colonna */}
+        <div className="form-row form-row-audit-dates">
+          <div className="form-field audit-date-field">
             <label className="field-label">Data inizio audit</label>
             <input
               type="date"
@@ -279,7 +279,7 @@ function GeneralDataSection({
             />
           </div>
 
-          <div className="form-field">
+          <div className="form-field audit-date-field">
             <label className="field-label">Data fine audit</label>
             <input
               type="date"
@@ -289,18 +289,9 @@ function GeneralDataSection({
               onChange={(e) => handleChange("auditDateEnd", e.target.value)}
               disabled={readOnly}
             />
-            <small className="form-hint">
-              Opzionale: vuoto o uguale all&apos;inizio = un solo giorno.
-              {dayCount ? ` (${dayCount} giorni)` : ""}
-            </small>
           </div>
-        </div>
-        {dateHint ? (
-          <p className="form-hint" role="status">{dateHint}</p>
-        ) : null}
 
-        <div className="form-row">
-          <div className="form-field">
+          <div className="form-field audit-date-field">
             <label className="field-label">Programma Comunicato il</label>
             <input
               type="date"
@@ -313,6 +304,15 @@ function GeneralDataSection({
             />
           </div>
         </div>
+        <small className="form-hint audit-date-end-hint">
+          Opzionale: vuoto o uguale all&apos;inizio = un solo giorno.
+          {dayCount ? ` (${dayCount} giorni)` : ""}
+        </small>
+        {dateHint ? (
+          <p className="form-hint audit-date-validation-hint" role="status">
+            {dateHint}
+          </p>
+        ) : null}
 
         {/* Processi/Funzioni */}
         <div className="form-field">

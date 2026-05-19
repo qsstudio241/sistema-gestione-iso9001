@@ -136,8 +136,29 @@
 
 .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 20px;
+}
+
+.form-row .form-group {
+    min-width: 0;
+}
+
+.form-row-audit-dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.audit-date-field input[type="date"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.audit-date-end-hint {
+    display: block;
+    margin-top: -8px;
+    margin-bottom: 12px;
 }
 
 /* Radio Group */
@@ -347,6 +368,14 @@
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .form-row-audit-dates {
+        grid-template-columns: 1fr;
+    }
+
+    .audit-date-end-hint {
+        margin-top: 0;
     }
 
     .form-section {

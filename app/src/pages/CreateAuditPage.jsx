@@ -194,20 +194,20 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                 {/* Dati Cliente */}
                 <div className="form-section">
                     <h3>2. Dati Cliente</h3>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label className="label-required">Nome Cliente/Azienda</label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.client_name}
-                                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                                placeholder="Es: Raccorderia Piacentina SRL"
-                                disabled={loading}
-                            />
-                        </div>
+                    <div className="form-group">
+                        <label className="label-required">Nome Cliente/Azienda</label>
+                        <input
+                            type="text"
+                            required
+                            value={formData.client_name}
+                            onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                            placeholder="Es: Raccorderia Piacentina SRL"
+                            disabled={loading}
+                        />
+                    </div>
 
-                        <div className="form-group">
+                    <div className="form-row form-row-audit-dates">
+                        <div className="form-group audit-date-field">
                             <label className="label-required">Data inizio</label>
                             <input
                                 type="date"
@@ -217,7 +217,7 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                                 disabled={loading}
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group audit-date-field">
                             <label>Data fine</label>
                             <input
                                 type="date"
@@ -229,9 +229,11 @@ function CreateAuditPage({ onCancel, onSuccess }) {
                                 })}
                                 disabled={loading}
                             />
-                            <small className="form-hint">Opzionale (audit multi-giorno)</small>
                         </div>
                     </div>
+                    <small className="form-hint audit-date-end-hint">
+                        Opzionale (audit multi-giorno)
+                    </small>
 
                     <div className="form-row">
                         <div className="form-group">
