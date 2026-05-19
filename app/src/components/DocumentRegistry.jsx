@@ -19,7 +19,6 @@ import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import NormUploadButton from "./NormUploadButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
-import useDocumentRelations from "../hooks/useDocumentRelations";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
@@ -871,9 +870,8 @@ function DocumentRegistry() {
   const [docHistory, setDocHistory] = useState([]);
   const [showDetail, setShowDetail] = useState(false);
 
-  // Tag e relazioni per il documento selezionato (pannello dettaglio)
+  // Tag per il documento selezionato (pannello dettaglio)
   const tags = useDocumentTags(selectedDoc?.id);
-  const relations = useDocumentRelations(selectedDoc?.id);
 
   // Documenti figli del nodo selezionato (per lista centrale in vista albero)
   const [treeListDocs, setTreeListDocs] = useState([]);

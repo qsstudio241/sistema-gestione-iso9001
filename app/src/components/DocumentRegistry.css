@@ -295,32 +295,6 @@
   font-size: 0.82rem;
 }
 
-/* Inline confirm — tabella */
-.inline-confirm-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.btn-confirm-yes-sm {
-  padding: 3px 9px;
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-.btn-confirm-yes-sm:hover { background: #b91c1c; }
-.btn-confirm-no-sm {
-  padding: 3px 9px;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.78rem;
-}
-
 /* ─── Tab Catalogo ─────────────────────────────────────────────────────────── */
 
 .catalog-view { display: flex; flex-direction: column; gap: 12px; }
