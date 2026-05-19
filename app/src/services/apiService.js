@@ -1204,6 +1204,9 @@ class ApiService {
     async provisionDocumentTree(data)           { return this.post('/documents/provision-tree', data); }
     async getDocumentTreeTemplates()            { return this.get('/document-tree-templates'); }
 
+    /** Suggerimento cartella per tipo documento (AI classification helper) */
+    async getFolderSuggestion(docType)          { return this.get(`/documents/folder-suggestion?doc_type=${encodeURIComponent(docType)}`); }
+
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
     async getDocFiles(docId) {

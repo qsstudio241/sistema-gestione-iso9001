@@ -80,14 +80,34 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
     label: 'Norma tecnica',
 
     aiPrompt: `Stai analizzando una norma tecnica (ISO, EN, UNI, DIN, ecc.).
-Estrai nell'oggetto "type_specific_data": standard_code, issuing_body, edition_year, supersedes.
-Usa null per i campi non trovati.`,
+Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON di risposta.
+Se un campo non è presente nel documento, usa null.
+
+Campi da estrarre:
+- standard_code: il codice completo (es. "BS EN ISO 9606-1:2017")
+- norm_title: il titolo ufficiale senza il codice
+- issuing_body: l'ente emittente principale (ISO, CEN, BSI, UNI, DIN, AFNOR, ANSI, AWS, ASME)
+- edition_year: anno di pubblicazione/edizione (numero intero)
+- supersedes: norma sostituita (se indicato nel testo)
+- validity_status: "vigente" (default se non specificato diversamente), "superata", "annullata" o "in_revisione"
+- language: codice lingua del documento (it, en, de, fr, es, multi)
+- scope_summary: oggetto/scopo dalla Sezione 1 (max 200 caratteri)
+- ics_code: codice ICS se presente (es. "25.160.01")
+- technical_committee: comitato tecnico responsabile (es. "ISO/TC 44")
+- is_harmonized: true se è una norma EN armonizzata, false altrimenti`,
 
     aiExpectedSchema: {
       standard_code: 'string|null',
+      norm_title: 'string|null',
       issuing_body: 'string|null',
       edition_year: 'number|null',
       supersedes: 'string|null',
+      validity_status: 'vigente|superata|annullata|in_revisione|null',
+      language: 'it|en|de|fr|es|multi|null',
+      scope_summary: 'string|null',
+      ics_code: 'string|null',
+      technical_committee: 'string|null',
+      is_harmonized: 'boolean|null',
     },
   },
 };

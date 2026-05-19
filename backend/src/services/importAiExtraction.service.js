@@ -87,7 +87,7 @@ Regole:
 - extraction_confidence: intero 0-100 (quanto il testo sembra completo e coerente).
 - warnings: elenco problemi (testo frammentario, dati mancanti, ambiguità).
 - Non inventare numeri di certificato o date: se non presenti, null o omesso.
-- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, dichiarazione_ce, cert_taratura, altro — solo se plausibile.`;
+- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.`;
 
     const user = `Tipo documento indicato dall'operatore (puo' essere "non specificato"): ${documentTypeHint || 'non specificato'}
 
@@ -192,7 +192,7 @@ Regole generali:
 - extraction_confidence: intero 0-100 (quanto il testo sembra completo e coerente).
 - warnings: elenco problemi (testo frammentario, dati mancanti, ambiguità).
 - Non inventare numeri di certificato o date: se non presenti, null o omesso.
-- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, dichiarazione_ce, cert_taratura, altro — solo se plausibile.
+- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.
 
 Istruzioni specifiche per il tipo documento "${schema.label}":
 ${schema.aiPrompt}`;

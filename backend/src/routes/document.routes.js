@@ -15,6 +15,9 @@ router.use(requireLicensedModule('documents'));
 // Statistiche (prima del :id per evitare conflitti di routing)
 router.get('/documents/stats', docCtrl.getDocumentStats);
 
+// Suggerimento cartella per tipo documento (prima di :id)
+router.get('/documents/folder-suggestion', docCtrl.getFolderSuggestion);
+
 // CRUD
 router.get   ('/documents',                      docCtrl.listDocuments);
 router.get   ('/documents/:id',                  docCtrl.getDocumentById);

@@ -13,6 +13,7 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
+const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 
 // JWT_SECRET: fail-fast in produzione se mancante (vedi server.js).
 // In sviluppo/test il fallback è accettabile; in produzione il server non si avvia senza il segreto.
@@ -112,12 +113,31 @@ async function register(req, res) {
 
         const user_id = result.recordset[0].user_id;
 
+        // Auto-provisioning albero documentale se l'organizzazione non ne ha uno
+        try {
+            const rootCheck = await query(
+                `SELECT TOP 1 id FROM document_registry
+                 WHERE organization_id = @organization_id AND parent_id IS NULL`,
+                { organization_id }
+            );
+            if (rootCheck.recordset.length === 0) {
+                const stdRes = await query(
+                    `SELECT standard_code FROM standards WHERE is_active = 1`
+                );
+                const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                await documentTreeProvisioner.provisionTree(organization_id, null, null, standardCodes);
+                logger.info('[AutoProvision] Document tree created for org', { organization_id });
+            }
+        } catch (provErr) {
+            logger.warn('[AutoProvision] Failed (non-blocking)', { organization_id, error: provErr.message });
+        }
+
         // Genera token
         const token = generateToken({ user_id, email, role, organization_id });
         const refreshToken = generateRefreshToken({ user_id, organization_id });
         const licensed_modules = await getLicensedModuleKeysForOrg(organization_id);
 
-        logger.info(`✅ Utente registrato: ${email} (org: ${organization_id})`);
+        logger.info(`Utente registrato: ${email} (org: ${organization_id})`);
 
         res.status(201).json({
             success: true,

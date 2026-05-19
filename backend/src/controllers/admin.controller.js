@@ -12,6 +12,7 @@ const {
     setLicensedModulesForOrg,
     clearLicensedModulesOverride,
 } = require('../services/moduleLicense.service');
+const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -191,6 +192,25 @@ async function createUser(req, res) {
 
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole });
+
+        // Auto-provisioning albero documentale se non esiste ancora
+        try {
+            const rootCheck = await query(
+                `SELECT TOP 1 id FROM document_registry
+                 WHERE organization_id = @organization_id AND parent_id IS NULL`,
+                { organization_id }
+            );
+            if (rootCheck.recordset.length === 0) {
+                const stdRes = await query(
+                    `SELECT standard_code FROM standards WHERE is_active = 1`
+                );
+                const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                await documentTreeProvisioner.provisionTree(organization_id, null, null, standardCodes);
+                logger.info('[AutoProvision] Document tree created for org', { organization_id });
+            }
+        } catch (provErr) {
+            logger.warn('[AutoProvision] Failed (non-blocking)', { organization_id, error: provErr.message });
+        }
 
         res.status(201).json({
             success: true,

@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import { useAuth } from "../contexts/AuthContext";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
@@ -717,6 +718,9 @@ function DocumentRegistry() {
   // Tab attiva: "priority" | "catalog" | "tree"
   const [activeTab, setActiveTab] = useState("priority");
 
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
   // Dati
   const [stats, setStats]         = useState(null);
   const [companies, setCompanies] = useState([]);
@@ -782,6 +786,26 @@ function DocumentRegistry() {
   const [fileDialogDoc, setFileDialogDoc] = useState(null);
 
   const LIMIT = 20;
+
+  // ─── Provisioning albero documentale ───────────────────────────────────
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState(null);
+
+  const handleProvisionTree = useCallback(async () => {
+    setProvisioning(true);
+    setProvisionError(null);
+    try {
+      const orgStandards = (standards || []).map(s => s.standard_code).filter(Boolean);
+      await apiService.provisionDocumentTree({
+        standard_codes: orgStandards,
+      });
+      await tree.loadTree();
+    } catch (err) {
+      setProvisionError(err.message || 'Errore durante l\'inizializzazione');
+    } finally {
+      setProvisioning(false);
+    }
+  }, [standards, tree]);
 
   // ─── Caricamento dati ────────────────────────────────────────────────────
 
@@ -1093,6 +1117,35 @@ function DocumentRegistry() {
 
       {activeTab === "tree" && (
         <>
+          {/* Banner albero vuoto — visibile solo quando la vista libera non ha nodi root */}
+          {treeViewMode === "free" && !tree.loading && tree.treeNodes.length === 0 ? (
+            <div className="doctree-empty-banner">
+              <span className="doctree-empty-banner__icon">{"\uD83D\uDCC2"}</span>
+              <h3 className="doctree-empty-banner__title">Struttura documentale non ancora inizializzata</h3>
+              {isAdmin ? (
+                <>
+                  <p className="doctree-empty-banner__text">
+                    Crea la struttura standard delle cartelle SGQ per organizzare i documenti secondo le norme attive.
+                  </p>
+                  {provisionError && (
+                    <div className="doctree-empty-banner__error">{provisionError}</div>
+                  )}
+                  <button
+                    className="btn-primary"
+                    onClick={handleProvisionTree}
+                    disabled={provisioning}
+                  >
+                    {provisioning ? 'Inizializzazione in corso\u2026' : 'Inizializza struttura documentale'}
+                  </button>
+                </>
+              ) : (
+                <p className="doctree-empty-banner__text">
+                  La struttura documentale non {"\u00E8"} ancora stata configurata. Contatta l'amministratore per l'inizializzazione.
+                </p>
+              )}
+            </div>
+          ) : (
+          <>
           {/* Selettore vista albero */}
           <div className="tree-view-selector">
             <label className="tree-view-selector__label">Vista:</label>
@@ -1340,6 +1393,8 @@ function DocumentRegistry() {
               />
             )}
           </div>
+        </>
+          )}
         </>
       )}
 

@@ -595,6 +595,75 @@ async function releaseRevision(req, res) {
     }
 }
 
+// ─── GET /api/v1/documents/folder-suggestion ─────────────────────────────────
+const DOC_TYPE_FOLDER_MAP = {
+    procedura:            '1.2',
+    istruzione:           '1.3',
+    modulo:               '1.4',
+    manuale:              '1.1',
+    norma:                '2.3',
+    cert_taratura:        '2.1',
+    qualifica:            '4.3',
+    patentino_saldatore:  '4.3',
+    qualifica_14732:      '4.3',
+    wps:                  '9',
+    wpqr:                 '9',
+    cert_ndt:             '2.1',
+    report_ndt:           '2.1',
+    dichiarazione_ce:     '2.1',
+    piano_qualita:        '1.2',
+    altro:                null,
+};
+
+/**
+ * Suggerisce la cartella di archiviazione in base al tipo documento.
+ * Cerca nel document_registry la cartella con folder_code corrispondente
+ * e organization_id dell'utente autenticato.
+ */
+async function getFolderSuggestion(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const { doc_type } = req.query;
+
+        if (!doc_type) {
+            return res.status(400).json({
+                error: 'Parametro doc_type obbligatorio',
+                code: 'MISSING_DOC_TYPE',
+            });
+        }
+
+        const folderCode = DOC_TYPE_FOLDER_MAP[doc_type] || null;
+
+        if (!folderCode) {
+            return res.json({ folder_id: null, folder_name: null, folder_code: null, confidence: 'none' });
+        }
+
+        const result = await query(`
+            SELECT TOP 1 id, title, folder_code
+            FROM document_registry
+            WHERE folder_code = @folder_code
+              AND organization_id = @organization_id
+              AND is_system_folder = 1
+        `, { folder_code: folderCode, organization_id });
+
+        if (!result.recordset.length) {
+            return res.json({ folder_id: null, folder_name: null, folder_code: folderCode, confidence: 'low' });
+        }
+
+        const folder = result.recordset[0];
+        res.json({
+            folder_id: folder.id,
+            folder_name: folder.title,
+            folder_code: folder.folder_code,
+            confidence: 'high',
+        });
+
+    } catch (error) {
+        logger.error('Error getting folder suggestion', { error: error.message });
+        res.status(500).json({ error: 'Errore nel recupero suggerimento cartella', code: 'FOLDER_SUGGESTION_ERROR' });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -603,4 +672,5 @@ module.exports = {
     updateDocument,
     deleteDocument,
     releaseRevision,
+    getFolderSuggestion,
 };

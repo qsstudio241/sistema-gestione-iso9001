@@ -335,7 +335,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
   },
 };
 
-// ??? norma (schema minimo — da sviluppare) ????????????????????????????????????
+// ??? norma (Norma tecnica — schema completo) ?????????????????????????????????
 
 const norma = {
   id: "norma",
@@ -349,40 +349,128 @@ const norma = {
       label: "Codice norma",
       type: "text",
       required: true,
-      hint: "Es. ISO 9606-1:2012, EN 15085-2",
+      placeholder: "es. BS EN ISO 9606-1:2017",
+    },
+    {
+      key: "norm_title",
+      label: "Titolo ufficiale",
+      type: "text",
+      required: false,
+      placeholder: "es. Qualification testing of welders...",
     },
     {
       key: "issuing_body",
       label: "Ente emittente",
-      type: "text",
+      type: "select",
       required: false,
-      hint: "Es. ISO, CEN, UNI, DIN",
+      options: [
+        { value: "ISO",   label: "ISO" },
+        { value: "CEN",   label: "CEN" },
+        { value: "BSI",   label: "BSI" },
+        { value: "UNI",   label: "UNI" },
+        { value: "DIN",   label: "DIN" },
+        { value: "AFNOR", label: "AFNOR" },
+        { value: "ANSI",  label: "ANSI" },
+        { value: "AWS",   label: "AWS" },
+        { value: "ASME",  label: "ASME" },
+        { value: "altro", label: "Altro" },
+      ],
     },
     {
       key: "edition_year",
       label: "Anno edizione",
       type: "number",
       required: false,
-      hint: "Anno di pubblicazione dell'edizione acquistata",
     },
     {
       key: "supersedes",
       label: "Sostituisce",
       type: "text",
       required: false,
-      hint: "Norma precedente sostituita da questa edizione",
+      placeholder: "es. ISO 9606-1:2013",
+    },
+    {
+      key: "validity_status",
+      label: "Stato",
+      type: "select",
+      required: false,
+      options: [
+        { value: "vigente",      label: "Vigente" },
+        { value: "superata",     label: "Superata" },
+        { value: "annullata",    label: "Annullata" },
+        { value: "in_revisione", label: "In revisione" },
+      ],
+    },
+    {
+      key: "language",
+      label: "Lingua",
+      type: "select",
+      required: false,
+      options: [
+        { value: "it",    label: "Italiano" },
+        { value: "en",    label: "Inglese" },
+        { value: "de",    label: "Tedesco" },
+        { value: "fr",    label: "Francese" },
+        { value: "es",    label: "Spagnolo" },
+        { value: "multi", label: "Multilingua" },
+      ],
+    },
+    {
+      key: "scope_summary",
+      label: "Oggetto/Scopo",
+      type: "textarea",
+      required: false,
+      placeholder: "Breve descrizione dell'ambito della norma",
+    },
+    {
+      key: "ics_code",
+      label: "Codice ICS",
+      type: "text",
+      required: false,
+      placeholder: "es. 25.160.01",
+    },
+    {
+      key: "technical_committee",
+      label: "Comitato tecnico",
+      type: "text",
+      required: false,
+      placeholder: "es. ISO/TC 44",
+    },
+    {
+      key: "is_harmonized",
+      label: "Norma armonizzata EN",
+      type: "boolean",
+      required: false,
     },
   ],
 
   aiPrompt: `Stai analizzando una norma tecnica (ISO, EN, UNI, DIN, ecc.).
-Estrai nell'oggetto "type_specific_data": standard_code, issuing_body, edition_year, supersedes.
+Estrai nell'oggetto "type_specific_data":
+- standard_code: il codice completo (es. "BS EN ISO 9606-1:2017")
+- norm_title: il titolo ufficiale senza il codice
+- issuing_body: l'ente emittente principale (ISO, CEN, BSI, UNI, DIN, ecc.)
+- edition_year: anno di pubblicazione/edizione
+- supersedes: norma sostituita (se indicato)
+- validity_status: "vigente" (default se non specificato)
+- language: codice lingua del documento (it, en, de, fr)
+- scope_summary: oggetto/scopo dalla Sezione 1 (max 200 caratteri)
+- ics_code: codice ICS se presente
+- technical_committee: comitato tecnico responsabile
+- is_harmonized: true se è una norma EN armonizzata
 Usa null per i campi non trovati.`,
 
   aiExpectedSchema: {
     standard_code: "string|null",
+    norm_title: "string|null",
     issuing_body: "string|null",
     edition_year: "number|null",
     supersedes: "string|null",
+    validity_status: "vigente|superata|annullata|in_revisione|null",
+    language: "it|en|de|fr|es|multi|null",
+    scope_summary: "string|null",
+    ics_code: "string|null",
+    technical_committee: "string|null",
+    is_harmonized: "boolean|null",
   },
 };
 
