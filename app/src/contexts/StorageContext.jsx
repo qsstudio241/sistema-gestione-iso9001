@@ -473,18 +473,19 @@ export function StorageProvider({ children, useMockData = false }) {
           const hb = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
               console.warn("[AUDIT_LOCK] heartbeat fallito:", e?.message || e);
-              // 401 = sessione scaduta: ferma heartbeat, non ha senso riprovare.
               if (e?.status === 401) {
                 clearInterval(lockHeartbeatRef.current);
                 lockHeartbeatRef.current = null;
                 setAuditLock({ mode: "none", lockedByName: null, message: null });
                 return;
               }
+              if (e?.status === 429) {
+                return;
+              }
               demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
           lockHeartbeatRef.current = hb;
-          // Sblocca subito la sync in coda che aveva fallito per lock non ancora pronto
           syncService.processQueue().catch(() => {});
         }
       } catch (e) {
@@ -571,6 +572,7 @@ export function StorageProvider({ children, useMockData = false }) {
           setAuditLock({ mode: "owner", lockedByName: null, message: null });
           lockHeartbeatRef.current = setInterval(() => {
             apiService.renewAuditLock(uuid).catch((e) => {
+              if (e?.status === 429) return;
               demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
@@ -581,7 +583,7 @@ export function StorageProvider({ children, useMockData = false }) {
           clearInterval(timer);
           setAuditLock({ mode: "none", lockedByName: null, message: null });
         }
-        // 423: lock ancora in uso da A — riprova al prossimo tick (30s)
+        // 429: non insistere, il prossimo tick (30s) e' sufficiente
       }
     }, 30 * 1000);
     return () => clearInterval(timer);
@@ -592,12 +594,19 @@ export function StorageProvider({ children, useMockData = false }) {
     if (auditLock.mode !== "pending_server" || !currentAuditId || !navigator.onLine) {
       return undefined;
     }
-    const timer = setInterval(async () => {
+    let retryMs = 5000;
+    let timerId = null;
+
+    function scheduleNext() {
+      timerId = setTimeout(attempt, retryMs);
+    }
+
+    async function attempt() {
       const audit = auditsRef.current.find(
         (a) => (a.metadata?.id || a.id) === currentAuditId,
       );
       const uuid = audit?.metadata?.id || audit?.id;
-      if (!uuid) return;
+      if (!uuid) { scheduleNext(); return; }
       try {
         const res = await apiService.acquireAuditLock(uuid);
         const tok = res?.data?.lock_token;
@@ -628,20 +637,28 @@ export function StorageProvider({ children, useMockData = false }) {
               demoteOwnerLockOnHeartbeatFailure(e?.message);
             });
           }, 60 * 1000);
-          clearInterval(timer);
           syncService.processQueue().catch(() => {});
+          return;
         }
+        retryMs = 5000;
+        scheduleNext();
       } catch (err) {
-        // 401 = sessione scaduta: ferma il retry, il 401 interceptor gestirà il logout.
-        // Continuare a riprovare bombarderebbe il server con richieste inutili.
         if (err?.status === 401) {
-          clearInterval(timer);
           setAuditLock({ mode: "none", lockedByName: null, message: null });
+          return;
         }
-        // altri errori (404, 423, rete): resta in pending_server e riprova al prossimo tick
+        if (err?.status === 429) {
+          retryMs = Math.min(retryMs * 2, 120000);
+          console.warn(`[AUDIT_LOCK] 429 rate-limited, backoff ${retryMs / 1000}s`);
+        } else {
+          retryMs = 5000;
+        }
+        scheduleNext();
       }
-    }, 5000);
-    return () => clearInterval(timer);
+    }
+
+    scheduleNext();
+    return () => { if (timerId) clearTimeout(timerId); };
   }, [auditLock.mode, currentAuditId]);
 
   // Rilascio lock server al logout + pulizia cache locale (IndexedDB audit + sync DB)
@@ -754,6 +771,7 @@ export function StorageProvider({ children, useMockData = false }) {
               setAuditLock({ mode: "none", lockedByName: null, message: null });
               return;
             }
+            if (e?.status === 429) return;
             demoteOwnerLockOnHeartbeatFailure(e?.message);
           });
         }, 60 * 1000);

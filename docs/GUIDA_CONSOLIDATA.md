@@ -151,6 +151,18 @@ anche con file presente. Causa: leggeva `doc.files`, popolato solo da `/document
 list ma non da `/documents/tree/...`. Fix: `useEffect` che chiama `getDocFiles(docId)`
 quando il pannello si apre.
 
+#### Lezioni apprese (18/05/2026) — Rate limit e loop di retry lock
+
+**Sintomo**: sezione 1.4 "Rilievi Ente Certificatore" mostrava "Troppe richieste" continuamente (utente Camellini).
+
+**Causa radice**: heartbeat lock (60s) fallisce per 429 → `demoteOwnerLockOnHeartbeatFailure` imposta `mode="pending_server"` → effect retry ogni 5s → esaurisce il budget rate limit (500 req/15min) → tutte le API bloccate → ciclo infinito.
+
+**Fix**: (1) heartbeat ignora 429 (riprova al ciclo successivo 60s); (2) `pending_server` retry usa backoff esponenziale su 429 (5s→120s max); (3) rate limit alzato da 500 a 1000 req/15min.
+
+**Regola generale**: ogni `setInterval`/`setTimeout` che chiama API **DEVE** gestire il 429 con backoff o skip silenzioso — mai ignorarlo lasciando il timer attivo a intervallo fisso. Senza questa protezione un singolo sottosistema (es. lock) puo' bloccare l'intera app.
+
+**Diagnosi rapida**: se un utente vede "Troppe richieste" → `sudo grep 429 /var/log/nginx/access.log | grep IP_UTENTE | tail -30` per capire quale endpoint genera il loop.
+
 #### Lezioni apprese (16/05/2026 sera)
 1. **Microsoft-WebDAV-MiniRedir** è un client legacy di Windows che parte automaticamente
    quando un'app Office invoca un URL WebDAV. **Non passa token in query string**.
