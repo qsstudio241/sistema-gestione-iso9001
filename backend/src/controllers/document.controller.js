@@ -664,6 +664,59 @@ async function getFolderSuggestion(req, res) {
     }
 }
 
+// ─── GET /api/v1/documents/orphans ────────────────────────────────────────────
+/**
+ * Lista documenti orfani: senza parent_id, non cartelle, non eliminati.
+ * Usato dalla Inbox per mostrare documenti da archiviare.
+ */
+async function listOrphanDocuments(req, res) {
+    try {
+        const { organization_id } = req.user;
+
+        const result = await query(`
+            SELECT
+                dr.id,
+                dr.doc_type,
+                dr.doc_code,
+                dr.title,
+                dr.revision,
+                dr.status,
+                dr.issue_date,
+                dr.expiry_date,
+                dr.responsible,
+                dr.clause_ref,
+                dr.notes,
+                dr.created_at,
+                dr.updated_at,
+                c.name        AS company_name,
+                s.standard_code,
+                u.email       AS created_by_email
+            FROM document_registry dr
+            LEFT JOIN companies     c ON dr.company_id   = c.id
+            LEFT JOIN standards     s ON dr.standard_id  = s.standard_id
+            LEFT JOIN users         u ON dr.created_by   = u.user_id
+            WHERE dr.organization_id = @organization_id
+              AND (dr.parent_id IS NULL OR dr.parent_id = 0)
+              AND dr.doc_type != 'folder'
+              AND dr.status != 'obsoleto'
+            ORDER BY dr.created_at DESC
+        `, { organization_id });
+
+        res.json({
+            success: true,
+            data: result.recordset,
+            count: result.recordset.length,
+        });
+
+    } catch (error) {
+        logger.error('Error listing orphan documents', { error: error.message });
+        res.status(500).json({
+            error: 'Errore durante il recupero dei documenti orfani',
+            code:  'DOC_ORPHANS_ERROR',
+        });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -673,4 +726,5 @@ module.exports = {
     deleteDocument,
     releaseRevision,
     getFolderSuggestion,
+    listOrphanDocuments,
 };

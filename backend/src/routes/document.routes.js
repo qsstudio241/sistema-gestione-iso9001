@@ -18,6 +18,9 @@ router.get('/documents/stats', docCtrl.getDocumentStats);
 // Suggerimento cartella per tipo documento (prima di :id)
 router.get('/documents/folder-suggestion', docCtrl.getFolderSuggestion);
 
+// Documenti orfani (inbox) — prima di :id per evitare conflitti
+router.get('/documents/orphans', docCtrl.listOrphanDocuments);
+
 // CRUD
 router.get   ('/documents',                      docCtrl.listDocuments);
 router.get   ('/documents/:id',                  docCtrl.getDocumentById);

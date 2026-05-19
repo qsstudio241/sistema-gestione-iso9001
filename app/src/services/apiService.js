@@ -1207,6 +1207,9 @@ class ApiService {
     /** Suggerimento cartella per tipo documento (AI classification helper) */
     async getFolderSuggestion(docType)          { return this.get(`/documents/folder-suggestion?doc_type=${encodeURIComponent(docType)}`); }
 
+    /** Documenti orfani (senza parent_id, non in cartella) */
+    async getOrphanDocuments()                  { return this.get('/documents/orphans'); }
+
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
     async getDocFiles(docId) {

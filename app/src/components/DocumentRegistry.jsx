@@ -712,6 +712,132 @@ function MoveFolderPicker({ nodes, currentFolderId, moving, onMove, onCancel }) 
   );
 }
 
+// ─── Inbox documenti orfani ────────────────────────────────────────────────────
+
+function OrphanInbox({ orphans, folders, onArchive, onArchiveAll, archiving }) {
+  const [suggestions, setSuggestions] = useState({});
+  const [selectedFolders, setSelectedFolders] = useState({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSuggestions() {
+      setLoadingSuggestions(true);
+      const results = {};
+      const docTypes = [...new Set(orphans.map(d => d.doc_type).filter(Boolean))];
+      await Promise.all(docTypes.map(async (dt) => {
+        try {
+          const res = await apiService.getFolderSuggestion(dt);
+          if (res?.folder_id) results[dt] = res;
+        } catch { /* ignora */ }
+      }));
+      if (!cancelled) {
+        setSuggestions(results);
+        const preselect = {};
+        for (const doc of orphans) {
+          const s = results[doc.doc_type];
+          if (s?.folder_id) preselect[doc.id] = s.folder_id;
+        }
+        setSelectedFolders(preselect);
+        setLoadingSuggestions(false);
+      }
+    }
+    if (orphans.length > 0) loadSuggestions();
+    else setLoadingSuggestions(false);
+    return () => { cancelled = true; };
+  }, [orphans]);
+
+  const highConfidenceCount = orphans.filter(d => suggestions[d.doc_type]?.confidence === 'high').length;
+
+  const getFileIcon = (docType) => {
+    const icons = {
+      procedura: '\uD83D\uDCD8', istruzione: '\uD83D\uDCD7', modulo: '\uD83D\uDCDD',
+      manuale: '\uD83D\uDCD5', norma: '\uD83D\uDCDC', wps: '\u2699\uFE0F',
+      wpqr: '\u2699\uFE0F', cert_taratura: '\uD83D\uDCCB',
+    };
+    return icons[docType] || '\uD83D\uDCC4';
+  };
+
+  if (orphans.length === 0) return null;
+
+  return (
+    <div className="orphan-inbox">
+      <div className="orphan-inbox__header">
+        <span className="orphan-inbox__title">Documenti da archiviare</span>
+        {highConfidenceCount > 0 && (
+          <button
+            className="orphan-inbox__batch-btn"
+            onClick={() => onArchiveAll(orphans, suggestions, selectedFolders)}
+            disabled={archiving}
+          >
+            Archivia tutti suggeriti ({highConfidenceCount})
+          </button>
+        )}
+      </div>
+      <div className="orphan-inbox__list">
+        {orphans.map(doc => {
+          const sugg = suggestions[doc.doc_type];
+          const selectedId = selectedFolders[doc.id] || null;
+          return (
+            <div key={doc.id} className="orphan-inbox__item">
+              <span className="orphan-inbox__icon">{getFileIcon(doc.doc_type)}</span>
+              <div className="orphan-inbox__info">
+                <span className="orphan-inbox__doc-title">{doc.title}</span>
+                <span className="orphan-inbox__doc-meta">
+                  {doc.doc_type && <span className="orphan-inbox__doc-type">{doc.doc_type}</span>}
+                  {doc.created_at && <span className="orphan-inbox__doc-date">{new Date(doc.created_at).toLocaleDateString('it-IT')}</span>}
+                  {sugg?.folder_name && (
+                    <span className="orphan-inbox__suggestion">{'\u2192'} {sugg.folder_name}</span>
+                  )}
+                </span>
+              </div>
+              <div className="orphan-inbox__actions">
+                <select
+                  className="orphan-inbox__folder-select"
+                  value={selectedId || ''}
+                  onChange={(e) => setSelectedFolders(prev => ({ ...prev, [doc.id]: parseInt(e.target.value) || null }))}
+                >
+                  <option value="">Seleziona cartella...</option>
+                  {folders.map(f => (
+                    <option key={f.id} value={f.id}>
+                      {'\u00A0'.repeat(f.depth * 2)}{f.title}
+                    </option>
+                  ))}
+                </select>
+                {sugg?.folder_id && selectedId === sugg.folder_id && (
+                  <button
+                    className="orphan-inbox__quick-btn"
+                    onClick={() => onArchive(doc.id, sugg.folder_id, sugg.folder_name)}
+                    disabled={archiving}
+                    title={`Archivia in ${sugg.folder_name}`}
+                  >
+                    Archivia qui
+                  </button>
+                )}
+                {selectedId && (
+                  <button
+                    className="orphan-inbox__archive-btn"
+                    onClick={() => {
+                      const folder = folders.find(f => f.id === selectedId);
+                      onArchive(doc.id, selectedId, folder?.title || 'cartella');
+                    }}
+                    disabled={archiving}
+                  >
+                    Archivia
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {loadingSuggestions && (
+        <div className="orphan-inbox__loading">Caricamento suggerimenti...</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Componente principale ────────────────────────────────────────────────────
 
 function DocumentRegistry() {
@@ -867,11 +993,19 @@ function DocumentRegistry() {
     } catch { /* non bloccante */ }
   }, []);
 
+  const loadOrphans = useCallback(async () => {
+    try {
+      const res = await apiService.getOrphanDocuments();
+      setOrphanDocs(res.data || []);
+    } catch { /* graceful: non mostrare errori */ }
+  }, []);
+
   useEffect(() => {
     loadAuxiliary();
     loadStats();
     loadPriorityDocs();
-  }, [loadAuxiliary, loadStats, loadPriorityDocs]);
+    loadOrphans();
+  }, [loadAuxiliary, loadStats, loadPriorityDocs, loadOrphans]);
 
   useEffect(() => {
     if (activeTab === "catalog") loadCatalog();
@@ -989,6 +1123,12 @@ function DocumentRegistry() {
   const [moveDocId, setMoveDocId] = useState(null);
   const [movingDoc, setMovingDoc] = useState(false);
 
+  // ─── Inbox documenti orfani ─────────────────────────────────────────────
+  const [orphanDocs, setOrphanDocs] = useState([]);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [archivingOrphan, setArchivingOrphan] = useState(false);
+  const [inboxToast, setInboxToast] = useState(null);
+
   const handleDeleteDoc = async (docId) => {
     setDeleting(true);
     try {
@@ -1018,6 +1158,47 @@ function DocumentRegistry() {
     }
   };
 
+  // ─── Inbox: archivia singolo orfano ──────────────────────────────────────
+  const handleInboxArchive = async (docId, folderId, folderName) => {
+    setArchivingOrphan(true);
+    try {
+      await apiService.updateDocument(docId, { parent_id: folderId });
+      setOrphanDocs(prev => prev.filter(d => d.id !== docId));
+      setInboxToast(`Documento archiviato in ${folderName}`);
+      setTimeout(() => setInboxToast(null), 3000);
+      if (orphanDocs.length <= 1) setInboxOpen(false);
+    } catch (err) {
+      setInboxToast(`Errore: ${err.message || 'archiviazione fallita'}`);
+      setTimeout(() => setInboxToast(null), 4000);
+    } finally {
+      setArchivingOrphan(false);
+    }
+  };
+
+  // ─── Inbox: archivia tutti con suggerimento high ───────────────────────
+  const handleInboxArchiveAll = async (docs, suggestions, selectedFolders) => {
+    setArchivingOrphan(true);
+    let archived = 0;
+    const total = docs.filter(d => suggestions[d.doc_type]?.confidence === 'high').length;
+    for (const doc of docs) {
+      const sugg = suggestions[doc.doc_type];
+      if (sugg?.confidence === 'high' && sugg?.folder_id) {
+        try {
+          await apiService.updateDocument(doc.id, { parent_id: sugg.folder_id });
+          archived++;
+          setOrphanDocs(prev => prev.filter(d => d.id !== doc.id));
+        } catch { /* continua con i restanti */ }
+      }
+    }
+    setInboxToast(`Archiviati ${archived} di ${total}`);
+    setTimeout(() => setInboxToast(null), 3500);
+    if (orphanDocs.length - archived <= 0) setInboxOpen(false);
+    setArchivingOrphan(false);
+  };
+
+  // Cartelle appiattite per il picker dell'inbox
+  const inboxFolders = useMemo(() => flattenFolders(tree.treeNodes), [tree.treeNodes]);
+
   // Suddividi documenti priorità in categorie
   const expiredDocs  = priorityDocs.filter((d) => d.is_expired);
   const expiringDocs = priorityDocs.filter((d) => d.expiring_soon && !d.is_expired);
@@ -1045,6 +1226,31 @@ function DocumentRegistry() {
           ⚠️ {archiveError}
           <button onClick={() => setArchiveError(null)}>✕</button>
         </div>
+      )}
+
+      {/* Badge Inbox orfani */}
+      {orphanDocs.length > 0 && (
+        <div className="inbox-badge-wrap">
+          <button
+            className={`inbox-badge${inboxOpen ? ' inbox-badge--active' : ''}`}
+            onClick={() => setInboxOpen(v => !v)}
+          >
+            {"\uD83D\uDCE5"} Inbox
+            <span className="inbox-badge__count">{orphanDocs.length}</span>
+          </button>
+          {inboxToast && <span className="inbox-toast">{inboxToast}</span>}
+        </div>
+      )}
+
+      {/* Pannello inbox espandibile */}
+      {inboxOpen && orphanDocs.length > 0 && (
+        <OrphanInbox
+          orphans={orphanDocs}
+          folders={inboxFolders}
+          onArchive={handleInboxArchive}
+          onArchiveAll={handleInboxArchiveAll}
+          archiving={archivingOrphan}
+        />
       )}
 
       {/* Tab switcher */}
