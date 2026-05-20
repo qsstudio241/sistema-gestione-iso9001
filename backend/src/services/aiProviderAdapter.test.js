@@ -11,6 +11,7 @@ const aiProviderAdapter = require('./aiProviderAdapter');
 const ENV_KEYS = [
   'GEMINI_API_KEY',
   'GEMINI_MODEL',
+  'GEMINI_MAX_ATTEMPTS',
   'AZURE_OPENAI_ENDPOINT',
   'AZURE_OPENAI_API_KEY',
   'AZURE_OPENAI_DEPLOYMENT',
@@ -302,6 +303,82 @@ describe('aiProviderAdapter.chat error handling', () => {
     );
     expect(out.content).toBe('full');
     expect(chunks).toEqual(['full']);
+  });
+
+  test('Gemini path: retries on 503 then succeeds (model overloaded)', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_MAX_ATTEMPTS = '3';
+
+    const okResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'ok' }], role: 'model' } }],
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+      }),
+    };
+    const overloadedResponse = {
+      ok: false,
+      status: 503,
+      headers: { get: () => '0' },
+      json: async () => ({ error: { message: 'model overloaded' } }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(overloadedResponse)
+      .mockResolvedValueOnce(overloadedResponse)
+      .mockResolvedValueOnce(okResponse);
+
+    const res = await aiProviderAdapter.chat(
+      [{ role: 'user', content: 'go' }],
+      { timeout: 5000 }
+    );
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(res.content).toBe('ok');
+  }, 10000);
+
+  test('Gemini path: gives up after maxAttempts on persistent 503', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_MAX_ATTEMPTS = '2';
+
+    const overloadedResponse = {
+      ok: false,
+      status: 503,
+      headers: { get: () => '0' },
+      json: async () => ({ error: { message: 'model overloaded' } }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(overloadedResponse);
+
+    await expect(
+      aiProviderAdapter.chat([{ role: 'user', content: 'go' }], { timeout: 5000 })
+    ).rejects.toMatchObject({ code: 'AI_UPSTREAM_ERROR', status: 503 });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  }, 10000);
+
+  test('Gemini path: non-retryable status (400) is not retried', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_MAX_ATTEMPTS = '3';
+
+    const badRequest = {
+      ok: false,
+      status: 400,
+      headers: { get: () => null },
+      json: async () => ({ error: { message: 'bad payload' } }),
+    };
+
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(badRequest);
+
+    await expect(
+      aiProviderAdapter.chat([{ role: 'user', content: 'go' }], { timeout: 5000 })
+    ).rejects.toMatchObject({ code: 'AI_UPSTREAM_ERROR', status: 400 });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   test('default timeout uses AI_REQUEST_TIMEOUT_MS', async () => {
