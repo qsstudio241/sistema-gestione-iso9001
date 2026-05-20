@@ -47,6 +47,35 @@
 
 ---
 
+### Sessione 20 maggio 2026 — Errore generico AI "Server temporaneamente non disponibile"
+
+#### Causa root
+`proxy_intercept_errors on` + `error_page 502 503 504 = @backend_down` in Nginx intercettava **tutti** i codici 503 provenienti da Express — inclusi i 503 deliberati del controller AI (Gemini momentaneamente sovraccarico). L'utente vedeva sempre il messaggio generico di Nginx invece del motivo reale.
+
+#### Fix applicati (PR #55)
+1. **Nginx VPS** — rimosso `503` dalla lista: `error_page 502 504 = @backend_down` (backup: `.bak.20260520`).
+2. **`aiAssist.controller.js`** — errori Gemini mappati a messaggi italiani; upstream errors usano HTTP 500 (non 503) per evitare intercettazione Nginx.
+3. **`req.user.id` → `req.user.user_id`** — auth middleware JWT usa `user_id`, non `id`.
+4. **Migrazione 071** — tabelle `ai_feedback` e `ai_interactions` create (erano assenti → DB error ad ogni click Accetta/Scarta).
+
+#### Regola nuova: errori HTTP nei controller AI
+**Non usare 503** per errori runtime dell'app (Gemini down, timeout, quota). Usare **HTTP 500** con messaggio italiano. Riservare 503 SOLO per "provider non configurato" (`AI_NOT_CONFIGURED`), che è un errore di setup non intercettabile dal Nginx corretto.
+
+#### Percorso diagnosi (da replicare in futuro)
+Quando un endpoint restituisce un messaggio che NON è in nessun file del repo:
+1. Controllare `grep -rn 'parola' /var/www/sgq-backend/src/` — se assente...
+2. Controllare il **body size in bytes** nel Nginx access log
+3. Cercare in `/etc/nginx/sites-available/` se Nginx ha `return 503 '...'` custom
+4. Verificare `proxy_intercept_errors` nella config Nginx
+
+#### Tabelle AI (migration 071 — già eseguita)
+| Tabella | Uso |
+|---|---|
+| `ai_feedback` | Feedback utente (accepted/rejected/rephrased) per personalizzazione |
+| `ai_interactions` | Audit trail ogni chiamata AI (provider, model, tokens, latency) |
+
+---
+
 ### Audit multi-giorno (migrazione 070 — maggio 2026)
 
 | Campo | Ruolo |
