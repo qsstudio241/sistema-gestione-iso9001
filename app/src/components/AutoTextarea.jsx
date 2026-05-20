@@ -67,6 +67,10 @@ function AutoTextarea({
     try { recognitionRef.current?.stop(); } catch { /* ignorato */ }
   };
 
+  const touchDraft = () => {
+    if (auditUuid && draftFieldId) markDraft(auditUuid, draftFieldId);
+  };
+
   const startRecognition = () => {
     try {
       const recognition = new SpeechRecognition();
