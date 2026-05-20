@@ -41,7 +41,7 @@ async function suggest(req, res) {
       case 'audit_conclusions':
         built = await contextBuilder.buildAuditConclusionsContext({
           ...context,
-          userId: req.user.id,
+          userId: req.user.user_id,
           organizationId: req.user.organization_id,
         });
         break;
@@ -80,10 +80,47 @@ async function suggest(req, res) {
       },
     });
   } catch (err) {
-    logger.error('[AI_SUGGEST] Error:', err.message);
-    const status = err.code === 'AI_NOT_CONFIGURED' ? 503 : err.status || 500;
-    res.status(status).json({
-      error: err.message,
+    logger.error('[AI_SUGGEST] Error:', err.message, '| code:', err.code, '| status:', err.status);
+
+    // Mappa gli errori AI a messaggi italiani leggibili dall'utente.
+    // Usiamo HTTP 500 (non 503) per errori upstream/timeout così Nginx NON
+    // intercetta la risposta (proxy_intercept_errors cattura solo 502/503/504
+    // quando Node è down — non deve coprire errori funzionali dell'app).
+    let httpStatus;
+    let userMessage;
+
+    switch (err.code) {
+      case 'AI_NOT_CONFIGURED':
+        httpStatus = 503;
+        userMessage = 'Nessun provider AI configurato. Contattare l\'amministratore.';
+        break;
+      case 'AI_UPSTREAM_ERROR':
+        httpStatus = 500;
+        if (err.status === 503 || err.status === 529) {
+          userMessage = 'Servizio AI temporaneamente sovraccarico. Riprovare tra qualche secondo.';
+        } else if (err.status === 429) {
+          userMessage = 'Limite richieste AI superato. Riprovare tra qualche minuto.';
+        } else if (err.status === 400) {
+          userMessage = 'Richiesta AI non valida. Verificare i dati dell\'audit e riprovare.';
+        } else {
+          userMessage = err.message || 'Errore dal servizio AI esterno.';
+        }
+        break;
+      case 'AI_REQUEST_FAILED':
+        httpStatus = 500;
+        userMessage = 'Risposta AI troppo lenta o connessione interrotta. Riprovare.';
+        break;
+      case 'AI_EMPTY_RESPONSE':
+        httpStatus = 500;
+        userMessage = 'Il servizio AI ha restituito una risposta vuota. Riprovare.';
+        break;
+      default:
+        httpStatus = err.status || 500;
+        userMessage = err.message || 'Errore interno nell\'elaborazione AI. Riprovare.';
+    }
+
+    res.status(httpStatus).json({
+      error: userMessage,
       code: err.code || 'AI_ERROR',
     });
   }
@@ -109,7 +146,7 @@ async function feedback(req, res) {
        VALUES (@orgId, @userId, @feature, @auditId, @action, @aiText, @finalText, @recommendation, @contextSummary, @modelUsed)`,
       {
         orgId: req.user.organization_id,
-        userId: req.user.id,
+        userId: req.user.user_id,
         feature,
         auditId: auditId || null,
         action,
