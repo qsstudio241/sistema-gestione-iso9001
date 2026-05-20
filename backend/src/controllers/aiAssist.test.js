@@ -60,13 +60,17 @@ describe('aiAssist.controller — suggest', () => {
           ncList: [{ clauseRef: '8.5.1', description: 'testo NC' }],
         },
       },
-      user: { organization_id: 99 },
+      user: { id: 42, organization_id: 99 },
     };
     const res = createRes();
 
     await suggest(req, res);
 
-    expect(contextBuilder.buildAuditConclusionsContext).toHaveBeenCalledWith(req.body.context);
+    expect(contextBuilder.buildAuditConclusionsContext).toHaveBeenCalledWith({
+      ...req.body.context,
+      organizationId: 99,
+      userId: 42,
+    });
     expect(chat).toHaveBeenCalledWith(
       [
         { role: 'system', content: 'sys' },
