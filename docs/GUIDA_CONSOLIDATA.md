@@ -885,6 +885,11 @@ Il bug multi-device (modifiche del Device 2 non visibili su Device 1) aveva **du
 - **Regola**: al reconcile/hydrate il server è fonte di verità. Il locale prevale SOLO offline o per dati mai sincronizzati.
 - **File**: `StorageContext.jsx` — `fetchAndApplyServerResponses`, `reconcileAuditsFromServer` (due blocchi identici da tenere allineati).
 
+#### Textarea note — draft guard (maggio 2026)
+Sintomo: durante la digitazione nelle note checklist il testo si azzera (“refresh”). Cause: (1) `fetchAndApplyServerResponses` lenta che sovrascrive `notes` mentre si digita; (2) `reconcileAuditsFromServer` ogni ~45s che legge IndexedDB (autosave debounce 2s) e fa `setAudits` con dati obsoleti.
+- **Fix**: `draftFieldRegistry` + `AutoTextarea` (`auditUuid`, `draftFieldId` su focus/change); merge note con `checklistTextMerge.js` (`applyServerResponsesPreservingLocalNotes`, `resolveMergedChecklistForReconcile`); reconcile usa `auditsRef.current` prima di IndexedDB.
+- **Test L1**: `app/src/tests/checklistTextMerge.test.js`.
+
 #### Coerenza percorsi di scrittura (T3/T4/T5)
 Quando si introduce un nuovo percorso di scrittura (T3: eventi atomici), il vecchio percorso (bulk `save_responses`) non va disabilitato ma reso parallelo/additivo. Se si disabilita uno dei percorsi si crea asimmetria (status scritto, note bloccate). Analogamente il lock non deve bloccare un percorso e lasciarne un altro libero.
 - **Regola**: tutti i percorsi di scrittura devono avere lo stesso comportamento rispetto a lock, retry e error handling.
