@@ -19,6 +19,30 @@
 
 ---
 
+### Sessione 20 maggio 2026 — AI conclusioni: retry Gemini su 503 "model overloaded"
+
+#### Sintomo
+Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizio AI temporaneamente sovraccarico" (o, su bundle pre-fix, il messaggio Nginx "Server temporaneamente non disponibile"). Capita soprattutto in orari di picco perché Gemini 2.5 Flash restituisce intermittentemente **503 model overloaded**.
+
+#### Catena di fix (in ordine di scoperta)
+1. **Nginx intercettava 503**: `error_page 502 503 504 = @backend_down` mascherava il messaggio del backend con il generico Nginx. **Fix**: rimosso `503` (rimane `502 504`), perché 503 può essere un errore funzionale legittimo.
+2. **Controller AI usava 503 anche per upstream errors**: il fronte Nginx lo intercettava comunque. **Fix**: `aiAssist.controller.js` mappa errori upstream a HTTP **500** con messaggi italiani; 503 riservato solo a `AI_NOT_CONFIGURED`.
+3. **Tabelle `ai_feedback` / `ai_interactions` mancanti** + `req.user.id` invece di `req.user.user_id` → ogni "Accetta/Scarta" generava DB error. **Fix**: migrazione 071 + correzione field.
+4. **Nessun retry server-side per 503/429 da Gemini**: ogni picco di carico Google arrivava direttamente all'utente. **Fix definitivo**: `geminiAdapter.js` ora ritenta automaticamente su **429/500/502/503/504** con backoff esponenziale (800ms → 1600ms → 3200ms ± jitter 250ms, cap 5s) per default 3 tentativi (configurabile via `GEMINI_MAX_ATTEMPTS`). Rispetta `Retry-After` se presente.
+
+#### Regole consolidate
+- **Errori HTTP nei controller AI**: non usare 503 per errori runtime (Gemini down, timeout, quota). Usare **HTTP 500** con messaggio italiano leggibile. 503 solo per "provider non configurato".
+- **Retry server-side per provider AI**: tutti gli adapter (Gemini/Azure/OpenAI) devono assorbire gli errori transienti del provider prima di propagare al client. Codici retryable: **429, 500, 502, 503, 504**. Non retryable: 400 (richiesta invalida), `AI_REQUEST_FAILED` (rete locale), `AI_EMPTY_RESPONSE`.
+- **Diagnosi messaggio "non in repo"**: se un endpoint restituisce testo non grep-pabile nel repo backend, controllare `proxy_intercept_errors` + `error_page` in `/etc/nginx/sites-available/`.
+
+#### Tabelle AI
+| Tabella | Uso |
+|---|---|
+| `ai_feedback` | Feedback utente (accepted/rejected/rephrased) per personalizzazione |
+| `ai_interactions` | Audit trail ogni chiamata AI (provider, model, tokens, latency) |
+
+---
+
 ### Playbook riutilizzabile — Caratteri non riconoscibili (U+FFFD / tofu in UI)
 
 **Quando ripetere questa procedura:** in schermata compaiono **U+FFFD** (simbolo con punto interrogativo), **`??`**, o accenti **mancanti/sostituiti** (es. "Qualit" al posto di "Qualità"), spesso solo su **Windows** o solo in **produzione**.
