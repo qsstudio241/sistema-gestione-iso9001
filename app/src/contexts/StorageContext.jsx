@@ -23,6 +23,20 @@ import {
 import { calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
 import { syncService } from "../services/syncService";
 import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from "../services/apiService";
+import { hasAnyDraftForAudit } from "../utils/draftFieldRegistry";
+import {
+  applyServerResponsesPreservingLocalNotes,
+  mergeCustomEvidenceResponses,
+  resolveMergedChecklistForReconcile,
+} from "../utils/checklistTextMerge";
+
+/** Audit locale per merge: memoria React (testo in digitazione) prima di IndexedDB. */
+function pickLocalAuditForMerge(sid, localAuditsFromIdb, memoryAudits) {
+  return (
+    memoryAudits.find((la) => (la.metadata?.id || la.id) === sid) ||
+    localAuditsFromIdb.find((la) => (la.metadata?.id || la.id) === sid)
+  );
+}
 
 // Crea Context
 const StorageContext = createContext(null);
@@ -926,9 +940,10 @@ export function StorageProvider({ children, useMockData = false }) {
         syncService.clearQueueForUnknownAudits(serverUuids).catch(() => {});
       }
 
+      const memoryAudits = auditsRef.current;
       const mergedAudits = serverAudits.map((serverAudit) => {
         const sid = serverAudit.metadata?.id || serverAudit.id;
-        const localAudit = localAudits.find((la) => (la.metadata?.id || la.id) === sid);
+        const localAudit = pickLocalAuditForMerge(sid, localAudits, memoryAudits);
 
         // SERVER-WINS su tutti i campi: il server è fonte di verità al reconcile.
         // Garantisce che le modifiche di un secondo device siano sempre visibili
@@ -977,24 +992,14 @@ export function StorageProvider({ children, useMockData = false }) {
           merged.metadata = { ...merged.metadata, selectedStandards: localStds };
         }
 
-        // Eccezione 4: checklist struttura — preserva locale se server ha solo strutture vuote.
-        // Il server non salva la struttura checklist né le risposte inline: le risposte arrivano
-        // da fetchAndApplyServerResponses (audit_responses). Il converter popola le chiavi norma
-        // con {} vuoto per ogni standard. Preservare il locale evita che il reconcile periodico
-        // (ogni 45s) sovrascriva la checklist idratata con template NOT_ANSWERED.
-        // Fix rispetto alla versione precedente: rimosso il controllo hardcoded per singolo
-        // standard ISO_9001. Ora funziona per audit con qualsiasi numero di standard selezionati
-        // (es. ISO_9001 + ISO_14001). Condizione: tutte le norme nel payload server sono {} vuote.
+        // Eccezione 4: checklist — merge intelligente (norme vuote, draft, note locali più ricche).
         const localChecklist = localAudit?.checklist;
-        const serverChecklistEntries = Object.entries(serverAudit?.checklist || {});
-        const localChecklistKeys = Object.keys(localChecklist || {});
-        const serverHasOnlyEmptyNorms = serverChecklistEntries.length > 0 &&
-          serverChecklistEntries.every(([, normData]) =>
-            !normData || typeof normData !== 'object' || Object.keys(normData).length === 0
+        if (localChecklist) {
+          merged.checklist = resolveMergedChecklistForReconcile(
+            localChecklist,
+            merged.checklist ?? serverAudit?.checklist,
+            sid,
           );
-        if (localChecklistKeys.length > 0 &&
-            (serverChecklistEntries.length === 0 || serverHasOnlyEmptyNorms)) {
-          merged.checklist = localChecklist;
         }
 
         // Eccezione 5: allegati — preserva locale se server non li include nel payload list
@@ -1007,6 +1012,14 @@ export function StorageProvider({ children, useMockData = false }) {
         const hasLocalCustomResponses = localCustomResponses && Object.keys(localCustomResponses).length > 0;
         const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
         if (hasLocalCustomResponses && !serverHasCustomResponses) {
+          merged.customResponses = localCustomResponses;
+        } else if (hasLocalCustomResponses && serverHasCustomResponses) {
+          merged.customResponses = mergeCustomEvidenceResponses(
+            localCustomResponses,
+            merged.customResponses,
+            sid,
+          );
+        } else if (hasAnyDraftForAudit(sid) && hasLocalCustomResponses) {
           merged.customResponses = localCustomResponses;
         }
 
@@ -1201,7 +1214,7 @@ export function StorageProvider({ children, useMockData = false }) {
         const mergedAudits = serverAudits.length > 0
           ? serverAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
-              const localAudit = localAudits.find(la => (la.metadata?.id || la.id) === sid);
+              const localAudit = pickLocalAuditForMerge(sid, localAudits, auditsRef.current);
               let merged = { ...serverAudit };
 
               // Eccezione 1: campi ricchi (generalData, auditObjective, auditOutcome) — per-campo.
@@ -1245,18 +1258,14 @@ export function StorageProvider({ children, useMockData = false }) {
                 merged.metadata = { ...merged.metadata, selectedStandards: localStds };
               }
 
-              // Eccezione 4 (loadAuditsFromIndexedDB) — stessa logica di reconcileAuditsFromServer:
-              // preserva locale se server ha solo strutture vuote (qualsiasi numero di standard).
+              // Eccezione 4 (loadAuditsFromIndexedDB) — stesso merge checklist di reconcile.
               const localChecklist = localAudit?.checklist;
-              const serverChecklistEntries = Object.entries(serverAudit?.checklist || {});
-              const localChecklistKeys = Object.keys(localChecklist || {});
-              const serverHasOnlyEmptyNorms = serverChecklistEntries.length > 0 &&
-                serverChecklistEntries.every(([, normData]) =>
-                  !normData || typeof normData !== 'object' || Object.keys(normData).length === 0
+              if (localChecklist) {
+                merged.checklist = resolveMergedChecklistForReconcile(
+                  localChecklist,
+                  merged.checklist ?? serverAudit?.checklist,
+                  sid,
                 );
-              if (localChecklistKeys.length > 0 &&
-                  (serverChecklistEntries.length === 0 || serverHasOnlyEmptyNorms)) {
-                merged.checklist = localChecklist;
               }
 
               // Eccezione 5: allegati — preserva locale se server non li include nel payload list
@@ -1270,6 +1279,12 @@ export function StorageProvider({ children, useMockData = false }) {
               const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
               if (hasLocalCustomResponses && !serverHasCustomResponses) {
                 merged.customResponses = localCustomResponses;
+              } else if (hasLocalCustomResponses && serverHasCustomResponses) {
+                merged.customResponses = mergeCustomEvidenceResponses(
+                  localCustomResponses,
+                  merged.customResponses,
+                  sid,
+                );
               }
 
               return merged;
@@ -2283,12 +2298,13 @@ export function StorageProvider({ children, useMockData = false }) {
               }
             });
 
+            const hydrateUuid = auditForHydrate?.metadata?.id || auditForHydrate?.id || null;
             const customUpdater = (audit) => {
-              // Server-wins per status; evidence: server se non vuoto, altrimenti locale
-              const mergedResponses = { ...(audit.customResponses || {}) };
-              Object.entries(serverResponses).forEach(([k, blocks]) => {
-                if ((blocks || []).length > 0) mergedResponses[k] = blocks;
-              });
+              const mergedResponses = mergeCustomEvidenceResponses(
+                audit.customResponses,
+                serverResponses,
+                hydrateUuid,
+              );
               return {
                 ...audit,
                 customChecklist: clTemplate,
@@ -2334,34 +2350,28 @@ export function StorageProvider({ children, useMockData = false }) {
 
         console.log(`✅ [HYDRATE] Applico ${Object.keys(responseMap).length} risposte alla checklist`);
 
-        updateCurrentAudit((audit) => {
+        const hydrateUuid =
+          auditForHydrate?.metadata?.id ||
+          auditForHydrate?.id ||
+          currentAuditIdRef.current ||
+          null;
+
+        const isoHydrateUpdater = (audit) => {
           const updatedAudit = JSON.parse(JSON.stringify(audit));
           const checklist = updatedAudit.checklist;
           if (!checklist) return audit;
 
-          let applied = 0;
-          Object.values(checklist).forEach((normData) => {
-            if (!normData || typeof normData !== "object") return;
-            Object.values(normData).forEach((clauseData) => {
-              if (!clauseData.questions) return;
-              clauseData.questions = clauseData.questions.map((q) => {
-                if (q.questionId && responseMap[q.questionId]) {
-                  applied++;
-                  const serverData = responseMap[q.questionId];
-                  // All'apertura dell'audit (hydrate iniziale) il server è fonte di verità:
-                  // sovrascriviamo sempre sia status che notes con i dati server.
-                  // Questo garantisce che le modifiche fatte su un altro device siano visibili
-                  // immediatamente quando si riapre l'audit (scenario multi-device).
-                  return { ...q, status: serverData.status, notes: serverData.notes || "" };
-                }
-                return q;
-              });
-            });
-          });
+          const applied = applyServerResponsesPreservingLocalNotes(
+            checklist,
+            responseMap,
+            hydrateUuid,
+          );
 
-          console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte`);
+          console.log(`✅ [HYDRATE] Applicate ${applied}/${rows.length} risposte (note locali preservate se in draft)`);
           return updatedAudit;
-        });
+        };
+        isoHydrateUpdater._systemCall = true;
+        updateCurrentAudit(isoHydrateUpdater, { skipSync: true });
         setServerDataStatus('ready');
       } catch (err) {
         console.warn("⚠️ [HYDRATE] Errore caricamento risposte server:", err.message);

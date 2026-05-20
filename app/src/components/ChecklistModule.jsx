@@ -558,6 +558,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
               onQuestionUpdate={handleQuestionUpdate}
               attachmentManager={attachments}
               auditId={auditId}
+              auditUuid={auditUuid}
               readOnly={readOnly}
               showSatButton={isIsoProcess}
               onSatisfiedByChange={handleSatisfiedByChange}
@@ -580,6 +581,7 @@ function ClauseAccordion({
   onQuestionUpdate,
   attachmentManager,
   auditId,
+  auditUuid = null,
   readOnly = false,
   showSatButton = false,
   onSatisfiedByChange,
@@ -636,6 +638,7 @@ function ClauseAccordion({
               onUpdate={onQuestionUpdate}
               attachmentManager={attachmentManager}
               auditId={auditId}
+              auditUuid={auditUuid}
               readOnly={readOnly}
               showSatButton={showSatButton}
               onSatisfiedByChange={onSatisfiedByChange}
@@ -650,7 +653,7 @@ function ClauseAccordion({
 // === QUESTION CARD — wrapper ISO che delega al componente universale ===
 // Mantiene l'interfaccia (clauseId, onUpdate) per compatibilità con ClauseAccordion.
 
-function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, readOnly = false, showSatButton = false, onSatisfiedByChange }) {
+function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, auditUuid = null, readOnly = false, showSatButton = false, onSatisfiedByChange }) {
   const isSimpleNumbering = ['ISO_3834_2', 'RDP_MSN'].includes(checklistKey);
   const displayRef = isSimpleNumbering && question.displayOrder != null
     ? String(question.displayOrder)
@@ -673,6 +676,7 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       onNotesChange={(notes) => onUpdate(clauseId, question.id, "notes", notes)}
       attachmentManager={attachmentManager}
       auditId={auditId}
+      auditUuid={auditUuid}
       readOnly={readOnly}
     />
   );

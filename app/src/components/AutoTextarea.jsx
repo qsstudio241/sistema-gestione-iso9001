@@ -12,6 +12,7 @@
  *   nel netlify.toml (o equivalente) altrimenti il browser blocca tutto.
  */
 import { useEffect, useRef, useState } from "react";
+import { markDraft, scheduleClearDraft } from "../utils/draftFieldRegistry";
 import "./AutoTextarea.css";
 
 const RESTART_DELAY_MS = 150;
@@ -25,6 +26,10 @@ function AutoTextarea({
   disabled,
   rows = 3,
   className = "outcome-textarea",
+  /** UUID audit — abilita protezione draft da hydrate/reconcile */
+  auditUuid = null,
+  /** es. q:123 o custom:item-uuid */
+  draftFieldId = null,
 }) {
   const ref = useRef(null);
   const recognitionRef = useRef(null);
@@ -72,6 +77,7 @@ function AutoTextarea({
       recognition.onresult = (e) => {
         const transcript = Array.from(e.results).map((r) => r[0].transcript).join(" ");
         if (transcript) {
+          touchDraft();
           const current = valueRef.current;
           onChange({ target: { value: current ? current + " " + transcript : transcript } });
         }
@@ -158,6 +164,20 @@ function AutoTextarea({
     ? (ERROR_MESSAGES[voiceError] ?? `Errore dettatura: ${voiceError}`)
     : null;
 
+  const handleChange = (e) => {
+    touchDraft();
+    onChange?.(e);
+  };
+
+  const handleFocus = () => {
+    touchDraft();
+  };
+
+  const handleBlur = (e) => {
+    if (auditUuid && draftFieldId) scheduleClearDraft(auditUuid, draftFieldId, 2000);
+    onBlur?.(e);
+  };
+
   return (
     <div className="auto-textarea-wrapper">
       <textarea
@@ -166,8 +186,9 @@ function AutoTextarea({
         className={className}
         rows={rows}
         value={value}
-        onChange={onChange}
-        onBlur={onBlur}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={placeholder}
         disabled={disabled}
       />

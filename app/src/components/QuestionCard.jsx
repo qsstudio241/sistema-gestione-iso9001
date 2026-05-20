@@ -40,6 +40,8 @@ export function QuestionCard({
   checklistKey = "",
   attachmentManager = null,
   auditId = null,
+  /** UUID audit per draft guard (distinto da auditId numerico allegati) */
+  auditUuid = null,
   customItemId = null,
   readOnly = false,
   showSatButton = false,
@@ -163,6 +165,14 @@ export function QuestionCard({
             placeholder="Inserisci osservazioni, note e dettagli della verifica..."
             className="notes-textarea"
             disabled={readOnly}
+            auditUuid={auditUuid}
+            draftFieldId={
+              customItemId
+                ? `custom:${customItemId}`
+                : question.questionId
+                  ? `q:${question.questionId}`
+                  : null
+            }
           />
         </div>
 

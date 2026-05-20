@@ -21,6 +21,7 @@ import "./CustomChecklistAuditView.css";
 function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
   const auditId = audit?.metadata?.auditId ?? audit?.audit_id;
+  const auditUuid = audit?.metadata?.id ?? audit?.id ?? null;
   const { updateCurrentAudit } = useStorage();
 
   // Gestione allegati unificata: stesso hook della checklist ISO.
@@ -395,6 +396,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 }}
                 attachmentManager={attachmentManager}
                 auditId={auditId}
+                auditUuid={auditUuid}
                 customItemId={item.id}
               />
             );
