@@ -99,28 +99,28 @@ function StepIndicator({ step }) {
 
 function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId }) {
   const isEdit = !!doc;
-  // Tipi "documento esterno": norme tecniche, standard, certificazioni esterne
-  // Nascondono azienda e codice documento; mostrano standard_code nello step 1
-  const isNormaType = form.doc_type === 'norma';
 
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
 
   const [form, setForm] = useState({
-    doc_type:        doc?.doc_type        || "procedura",
-    doc_code:        doc?.doc_code        || "",
-    title:           doc?.title           || "",
-    revision:        doc?.revision        || "",
-    status:          doc?.status          || "vigente",
+    doc_type:        doc?.doc_type        || 'procedura',
+    doc_code:        doc?.doc_code        || '',
+    title:           doc?.title           || '',
+    revision:        doc?.revision        || '',
+    status:          doc?.status          || 'vigente',
     issue_date:      toDateInput(doc?.issue_date),
     expiry_date:     toDateInput(doc?.expiry_date),
-    responsible:     doc?.responsible     || "",
-    retention_years: doc?.retention_years || "",
-    standard_id:     doc?.standard_id     || "",
-    clause_ref:      doc?.clause_ref      || "",
-    company_id:      doc?.company_id      || "",
-    notes:           doc?.notes           || "",
+    responsible:     doc?.responsible     || '',
+    retention_years: doc?.retention_years || '',
+    standard_id:     doc?.standard_id     || '',
+    clause_ref:      doc?.clause_ref      || '',
+    company_id:      doc?.company_id      || '',
+    notes:           doc?.notes           || '',
   });
+
+  // Tipi "documento esterno": norme tecniche — nascondono azienda/codice, mostrano standard_code
+  const isNormaType = form.doc_type === 'norma';
 
   // Dati tipo-specifici
   const [typeData, setTypeData] = useState(() => {
@@ -157,6 +157,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const [folderSuggestionConfidence, setFolderSuggestionConfidence] = useState(null);
   const [userOverrodeFolder, setUserOverrodeFolder] = useState(!!defaultFolderId);
 
+  // ─── Norm status lookup ───────────────────────────────────────────
+  // { loading: bool, result: { status, supersededBy, catalogUrl, checkedAt } | null }
+  const [normStatus, setNormStatus] = useState({ loading: false, result: null });
+  const normLookupTimerRef = useRef(null);
+
   // ─── Save state ───────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -183,6 +188,34 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     if (isEdit || userOverrodeFolder) return;
     loadFolderSuggestion(form.doc_type);
   }, [form.doc_type, isEdit, userOverrodeFolder]);
+
+  // Verifica automatica stato norma nel catalogo dell'ente (debounce 1.5 s)
+  useEffect(() => {
+    if (!isNormaType) {
+      setNormStatus({ loading: false, result: null });
+      return;
+    }
+    const code = (typeData.standard_code || '').trim();
+    if (!code) {
+      setNormStatus({ loading: false, result: null });
+      return;
+    }
+
+    clearTimeout(normLookupTimerRef.current);
+    setNormStatus({ loading: true, result: null });
+
+    normLookupTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await apiService.lookupNormStatus(code, typeData.issuing_body || '');
+        setNormStatus({ loading: false, result });
+      } catch {
+        setNormStatus({ loading: false, result: { status: 'unknown', supersededBy: null, catalogUrl: null } });
+      }
+    }, 1500);
+
+    return () => clearTimeout(normLookupTimerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeData.standard_code, typeData.issuing_body, isNormaType]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") handleCloseAttempt(); };
@@ -597,6 +630,65 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     );
   };
 
+  // Badge stato norma (vigente / ritirata / sostituita) da catalogo pubblico
+  const renderNormStatusBadge = () => {
+    if (!isNormaType) return null;
+    const code = (typeData.standard_code || '').trim();
+    if (!code) return null;
+
+    const { loading, result } = normStatus;
+
+    if (loading) {
+      return (
+        <div className="norm-status-row">
+          <span className="norm-status-badge norm-status-loading">&#9203; Verifica in corso...</span>
+        </div>
+      );
+    }
+
+    if (!result || result.status === 'unknown') {
+      if (result) {
+        return (
+          <div className="norm-status-row">
+            <span className="norm-status-badge norm-status-unknown">Stato non disponibile</span>
+            {result.catalogUrl && (
+              <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+                Vedi catalogo &#8594;
+              </a>
+            )}
+          </div>
+        );
+      }
+      return null;
+    }
+
+    let badgeClass, icon, text;
+    if (result.status === 'active') {
+      badgeClass = 'norm-status-active';
+      icon = '\uD83D\uDFE2';
+      text = 'In vigore';
+    } else if (result.status === 'withdrawn') {
+      badgeClass = 'norm-status-withdrawn';
+      icon = '\uD83D\uDD34';
+      text = 'Ritirata';
+    } else {
+      badgeClass = 'norm-status-superseded';
+      icon = '\uD83D\uDFE1';
+      text = result.supersededBy ? `Sostituita da ${result.supersededBy}` : 'Sostituita';
+    }
+
+    return (
+      <div className="norm-status-row">
+        <span className={`norm-status-badge ${badgeClass}`}>{icon} {text}</span>
+        {result.catalogUrl && (
+          <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+            Vedi catalogo &#8594;
+          </a>
+        )}
+      </div>
+    );
+  };
+
   // Link verifica catalogo per norme tecniche — richiede standard_code compilato
   const renderNormaVerifyLinks = () => {
     const code = typeData.standard_code || '';
@@ -865,6 +957,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
             className={aiFilledFields.has('type_standard_code') ? 'docform-input-ai-prefilled' : ''}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
           />
+          {renderNormStatusBadge()}
           {renderNormaVerifyLinks()}
         </div>
       )}
@@ -915,6 +1008,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 value={typeData.standard_code || ''}
                 onChange={(e) => handleTypeDataChange('standard_code')(e)}
               />
+              {renderNormStatusBadge()}
               {renderNormaVerifyLinks()}
             </div>
           )}
