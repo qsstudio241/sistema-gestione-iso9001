@@ -167,20 +167,27 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 
 ## Roadmap riorganizzazione documentazione
 
+**Chiusura sessione 2026-05-21:** Fase 1 e 2 su `main`. [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) (Fase 1) **merged**; Fase 2 in commit `b5f303b`. Nessuna azione GitHub pendente.
+
 | Fase | Stato | Contenuto |
 |------|-------|-----------|
-| **1** | **Fatto (2026-05-21)** | TOC in `GUIDA_CONSOLIDATA`, tag in questo indice, `COMMIT_MESSAGES` in archive, ADR 008–010 in `adr/README` |
+| **1** | **Fatto (2026-05-21)** | TOC in `GUIDA_CONSOLIDATA`, tag in questo indice, `COMMIT_MESSAGES` in archive, ADR 008–010 in `adr/README` — [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) |
 | **2** | **Fatto (2026-05-21)** | Cartelle `how-to/`, `reference/`, `specs/`; hub [deploy.md](how-to/deploy.md); stub redirect in root `docs/` |
-| **3** | Pianificata | Rinumerazione ADR univoca (opzionale), split guida per tema |
+| **3** | **Pianificata** | Vedi slice 3a–3c sotto — **non** in parallelo ad ADR-009 Fase 2 (priorità prodotto) |
 
-Fase 2–3: vedi proposta storica sotto (non obbligatoria subito).
+### Fase 3 — piano operativo (prossima sessione doc)
 
-<details>
-<summary>Proposta Fase 2–3 (riferimento)</summary>
+Eseguire **una slice per commit**; dopo ogni slice: `rg` link rotti, aggiornare questo indice.
 
-- Root: `PROJECT_CONTEXT.md` + `README.md` umano.
-- `docs/how-to/deploy.md` unifica `DEPLOY_*`.
-- ADR: sequenza univoca o suffissi `ADR-003a` nel README senza rinominare file.
-- Task agente completati → `archive/agent-tasks/`.
+| Slice | Priorità | Obiettivo | Definition of Done |
+|-------|----------|-----------|-------------------|
+| **3a** | Alta | **ADR leggibili** | In [adr/README.md](adr/README.md): tabella con ID univoco (suffissi `ADR-002a` / `ADR-003b` **senza** rinominare file); ogni duplicato 002/003 referenziato per **nome file**; link da GUIDA/INDICE verificati |
+| **3b** | Media | **Archivio agent-tasks** | `TASK_AI_*` e sprint completati → `docs/archive/agent-tasks/`; stub redirect in `agent-tasks/`; solo `DEPUTYTASK.md` resta brief attivo |
+| **3c** | Bassa | **Cartella `explanation/`** (opzionale) | Spostare con `git mv`: `ARCHITETTURA_UTENTI_RBAC`, `FLUSSO_TIPOLOGIA_AUDIT`, `GESTIONE_PERDITA_CONNESSIONE`, `SCHEMA_UTENTI_*`; stub in root; riga in [README.md](README.md) |
+| **3d** | Bassa | **GUIDA più snella** | Estrarre how-to ripetibili (Word verbale, smoke L3, sync) in `docs/how-to/`; in `GUIDA_CONSOLIDATA` restano TOC + § *Esperienza* + link — **non** duplicare procedure intere |
+| **3e** | Differita | **Pulizia stub** | Rimuovere stub `docs/DEPLOY_*.md` ecc. solo se `rg` nel repo = 0 riferimenti (conservare ≥1 release dopo Fase 2) |
+| **3f** | Bassa | **README root repo** | Breve ingresso umano accanto a `PROJECT_CONTEXT.md` (stack, link a `docs/README.md`) |
 
-</details>
+**Ordine consigliato:** 3a → 3b → (3c se serve) → 3d; 3e solo a distanza; 3f quando utile.
+
+**Non fare in Fase 3:** rinominare file ADR (rischio link esterni); creare `SESSION_NOTES_*`; spostare normative/checklist cliente.
