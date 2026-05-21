@@ -9,6 +9,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const multer = require('multer');
 
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
@@ -717,6 +718,130 @@ async function listOrphanDocuments(req, res) {
     }
 }
 
+// ─── Multer memory storage per pre-extract (nessun file salvato su disco) ────
+const _preExtractUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+}).single('file');
+
+// ─── POST /api/v1/documents/pre-extract ───────────────────────────────────────
+/**
+ * Estrae metadati AI da un PDF caricato temporaneamente (NESSUN record DB creato).
+ * Body: multipart/form-data con campi "file" (PDF) e "doc_type" (stringa).
+ * Risposta: { metadata: { titolo, codice, ...campi tipo-specifici }, confidence: 0..1 }
+ */
+async function preExtractMetadata(req, res) {
+    // Gestione multer inline (memory storage — niente su disco)
+    await new Promise((resolve, reject) => {
+        _preExtractUpload(req, res, (err) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    }).catch((err) => {
+        return res.status(400).json({
+            error: err.message || 'Errore durante il caricamento del file',
+            code:  'UPLOAD_ERROR',
+        });
+    });
+
+    // Se la risposta è già stata inviata dal catch (errore multer)
+    if (res.headersSent) return;
+
+    const file    = req.file;
+    const docType = (req.body?.doc_type || '').trim() || null;
+
+    if (!file) {
+        return res.status(400).json({
+            error: 'Nessun file ricevuto — campo "file" obbligatorio',
+            code:  'MISSING_FILE',
+        });
+    }
+
+    // Solo PDF supportano l'estrazione testo affidabile
+    const isPdf = file.mimetype === 'application/pdf' ||
+                  file.originalname?.toLowerCase().endsWith('.pdf');
+
+    if (!isPdf) {
+        return res.status(422).json({
+            error: 'Estrazione AI disponibile solo per file PDF',
+            code:  'UNSUPPORTED_FILE_TYPE',
+        });
+    }
+
+    try {
+        const { extractPdfText, confidenceFromTextLength } = require('../utils/importPdfText');
+        const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+
+        // Estrazione testo dal buffer (nessun file su disco)
+        let pdfText;
+        try {
+            pdfText = await extractPdfText(file.buffer);
+        } catch (pdfErr) {
+            return res.status(422).json({
+                error: 'Impossibile leggere il PDF (file danneggiato o protetto da password)',
+                code:  'PDF_PARSE_ERROR',
+            });
+        }
+
+        if (!pdfText || pdfText.length < 20) {
+            return res.status(422).json({
+                error: 'PDF scansionato senza strato testo — estrazione AI non disponibile',
+                code:  'EMPTY_PDF_TEXT',
+            });
+        }
+
+        // Estrazione AI strutturata per tipo documento
+        const result = await extractStructuredByDocType({ text: pdfText, docType });
+        const aiData = result.data || {};
+
+        // Confidence: media tra quella AI (0-100→0-1) e quella euristica testo
+        const aiConfidence  = typeof aiData.extraction_confidence === 'number'
+            ? aiData.extraction_confidence / 100
+            : 0.5;
+        const textConfidence = confidenceFromTextLength(pdfText.length) / 100;
+        const confidence     = Math.round(((aiConfidence + textConfidence) / 2) * 100) / 100;
+
+        // Normalizza metadata (campi flat + type_specific_data separati)
+        const typeSpecific = aiData.type_specific_data || {};
+        const metadata = {
+            titolo:   aiData.title           || null,
+            sommario: aiData.summary         || null,
+            warnings: Array.isArray(aiData.warnings) ? aiData.warnings : [],
+            ...typeSpecific,
+        };
+
+        logger.info('pre-extract completato', {
+            docType,
+            filename:    file.originalname,
+            textLen:     pdfText.length,
+            confidence,
+            model:       result.model,
+        });
+
+        res.json({ metadata, confidence, model: result.model });
+
+    } catch (aiErr) {
+        const code = aiErr.code || 'AI_ERROR';
+        const known = ['AI_NOT_CONFIGURED', 'AI_REQUEST_FAILED', 'AI_UPSTREAM_ERROR',
+                       'AI_EMPTY_RESPONSE', 'AI_INVALID_JSON', 'AI_BAD_SHAPE'];
+        const status = code === 'AI_NOT_CONFIGURED' ? 503 : 502;
+        logger.warn('pre-extract AI fallito', { code, msg: aiErr.message });
+
+        if (known.includes(code) || status < 500) {
+            return res.status(status).json({
+                error: aiErr.message || 'Estrazione AI non riuscita',
+                code,
+            });
+        }
+
+        logger.error('pre-extract errore inatteso', { error: aiErr.message });
+        res.status(500).json({
+            error: 'Errore interno durante l\'estrazione',
+            code:  'PRE_EXTRACT_ERROR',
+        });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -727,4 +852,5 @@ module.exports = {
     releaseRevision,
     getFolderSuggestion,
     listOrphanDocuments,
+    preExtractMetadata,
 };

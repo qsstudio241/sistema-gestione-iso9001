@@ -1210,6 +1210,38 @@ class ApiService {
     /** Documenti orfani (senza parent_id, non in cartella) */
     async getOrphanDocuments()                  { return this.get('/documents/orphans'); }
 
+    /**
+     * Pre-estrazione metadati AI da un PDF (nessun record DB creato).
+     * @param {File} file — oggetto File/Blob del PDF
+     * @param {string} docType — chiave tipo documento (es. "norma", "patentino_saldatore")
+     * @returns {Promise<{ metadata: object, confidence: number, model: string }>}
+     */
+    async preExtractDocumentMetadata(file, docType) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (docType) formData.append('doc_type', docType);
+        const token = this.getToken();
+        const response = await fetch(
+            `${this.baseUrl}/documents/pre-extract`,
+            {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData,
+            }
+        );
+        if (!response.ok) {
+            let errMsg = `Errore ${response.status}`;
+            try {
+                const errJson = await response.json();
+                errMsg = errJson.error || errMsg;
+            } catch { /* non json */ }
+            const err = new Error(errMsg);
+            err.status = response.status;
+            throw err;
+        }
+        return response.json();
+    }
+
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
     async getDocFiles(docId) {

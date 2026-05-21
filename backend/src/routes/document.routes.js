@@ -21,6 +21,9 @@ router.get('/documents/folder-suggestion', docCtrl.getFolderSuggestion);
 // Documenti orfani (inbox) — prima di :id per evitare conflitti
 router.get('/documents/orphans', docCtrl.listOrphanDocuments);
 
+// Pre-estrazione metadati AI da PDF (nessun record DB — solo analisi temporanea)
+router.post('/documents/pre-extract', docCtrl.preExtractMetadata);
+
 // CRUD
 router.get   ('/documents',                      docCtrl.listDocuments);
 router.get   ('/documents/:id',                  docCtrl.getDocumentById);

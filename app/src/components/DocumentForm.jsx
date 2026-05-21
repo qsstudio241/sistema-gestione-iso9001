@@ -138,6 +138,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
+  // ─── AI pre-estrazione ────────────────────────────────────────────
+  const [aiExtracting, setAiExtracting] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);  // banner "dati pre-compilati"
+  const [aiExtractError, setAiExtractError] = useState(null);
+  const [aiFilledFields, setAiFilledFields] = useState(new Set()); // campi pre-compilati da AI
+  const aiAbortRef = useRef(null); // per annullare estrazione precedente se docType cambia
+
   // ─── Folder selection state ───────────────────────────────────────
   const [folders, setFolders] = useState([]);
   const [foldersLoading, setFoldersLoading] = useState(false);
@@ -215,6 +222,88 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     }
   }, [userOverrodeFolder, defaultFolderId]);
 
+  // ─── AI pre-estrazione metadati ───────────────────────────────────
+  const runAiExtraction = useCallback(async (file, docType) => {
+    if (!file || !docType) return;
+    // Solo PDF supportati
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.pdf') return;
+
+    // Annulla eventuale estrazione precedente (flag di abort)
+    const abortFlag = { cancelled: false };
+    aiAbortRef.current = abortFlag;
+
+    setAiExtracting(true);
+    setAiExtracted(false);
+    setAiExtractError(null);
+    setAiFilledFields(new Set());
+
+    try {
+      const result = await apiService.preExtractDocumentMetadata(file, docType);
+      if (abortFlag.cancelled) return;
+
+      const meta = result?.metadata || {};
+      const filledKeys = new Set();
+
+      // Pre-compila il titolo se non già inserito dall'utente
+      if (meta.titolo) {
+        setForm((f) => {
+          if (!f.title.trim()) {
+            filledKeys.add('title');
+            return { ...f, title: meta.titolo };
+          }
+          return f;
+        });
+        filledKeys.add('title');
+      }
+
+      // Pre-compila i campi tipo-specifici (tutti i campi extra tranne quelli generici)
+      const genericKeys = new Set(['titolo', 'sommario', 'warnings']);
+      const typeSpecificEntries = Object.entries(meta).filter(
+        ([k, v]) => !genericKeys.has(k) && v !== null && v !== undefined && v !== ''
+      );
+      if (typeSpecificEntries.length > 0) {
+        setTypeData((prev) => {
+          const next = { ...prev };
+          for (const [k, v] of typeSpecificEntries) {
+            if (!prev[k] || prev[k] === '') {
+              next[k] = v;
+              filledKeys.add(`type_${k}`);
+            }
+          }
+          return next;
+        });
+      }
+
+      setAiFilledFields(filledKeys);
+      if (filledKeys.size > 0) {
+        setAiExtracted(true);
+      }
+    } catch (err) {
+      if (abortFlag.cancelled) return;
+      const code = err.status;
+      // 422 = PDF scansionato/non testuale, 503 = AI non configurata → messaggi discreti
+      if (code === 422 || code === 503 || code === 502) {
+        setAiExtractError('Estrazione automatica non disponibile — compila manualmente');
+      } else {
+        setAiExtractError('Estrazione automatica non disponibile — compila manualmente');
+      }
+    } finally {
+      if (!abortFlag.cancelled) setAiExtracting(false);
+    }
+  }, []);
+
+  // Ri-avvia estrazione se cambia il tipo documento (con file già presente)
+  useEffect(() => {
+    if (isEdit || !selectedFile) return;
+    if (form.doc_type) {
+      // Annulla estrazione in corso
+      if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+      runAiExtraction(selectedFile, form.doc_type);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.doc_type]);
+
   // ─── Handlers generali ────────────────────────────────────────────
 
   const handleChange = (field) => (e) =>
@@ -246,6 +335,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
       return;
     }
     setSelectedFile(file);
+    // Avvia estrazione AI se tipo documento già selezionato
+    if (form.doc_type) {
+      if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+      setAiExtracted(false);
+      setAiExtractError(null);
+      runAiExtraction(file, form.doc_type);
+    }
   };
 
   const handleFileBrowse = () => {
@@ -261,6 +357,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError(null);
+    if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+    setAiExtracting(false);
+    setAiExtracted(false);
+    setAiExtractError(null);
+    setAiFilledFields(new Set());
   };
 
   const handleDragOver = (e) => {
@@ -390,12 +491,17 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const renderTypeField = (fieldDef) => {
     const { key, label, type, required, options, hint } = fieldDef;
     const value = typeData[key] ?? "";
+    const isAiPrefilled = aiFilledFields.has(`type_${key}`);
 
     if (type === "select") {
       return (
         <div key={key} className="docform-field">
           <label>{label}{required && <span className="required"> *</span>}</label>
-          <select value={value} onChange={handleTypeDataChange(key)}>
+          <select
+            value={value}
+            onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
+            className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
+          >
             <option value="">— Seleziona —</option>
             {(options || []).map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -435,8 +541,9 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           <textarea
             rows={3}
             value={value}
-            onChange={handleTypeDataChange(key)}
+            onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
             placeholder={hint || ""}
+            className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
           />
         </div>
       );
@@ -448,10 +555,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         <input
           type={type === "date" ? "date" : type === "number" ? "number" : "text"}
           value={value}
-          onChange={handleTypeDataChange(key)}
+          onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
           placeholder={hint || ""}
           step={type === "number" ? "0.1" : undefined}
           min={type === "number" ? "0" : undefined}
+          className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
         />
         {hint && type !== "date" && type !== "number" && (
           <span className="docform-hint">{hint}</span>
@@ -463,6 +571,40 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const renderTypeSpecificSection = () => {
     const schema = getSchemaForDocType(form.doc_type);
     if (!schema) return null;
+
+    // Link verifica per norme (solo se standard_code presente e tipo = "norma")
+    const renderNormaVerifyLinks = () => {
+      if (form.doc_type !== 'norma') return null;
+      const code = typeData.standard_code || '';
+      const issuer = (typeData.issuing_body || '').toUpperCase();
+      if (!code) return null;
+      const enc = encodeURIComponent(code);
+      const links = [];
+      if (issuer.includes('ISO') || issuer === '' || issuer.includes('EN') || issuer.includes('BS EN')) {
+        links.push({ label: 'ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+      }
+      if (issuer.includes('BSI') || issuer.includes('BS')) {
+        links.push({ label: 'BSI', href: `https://shop.bsigroup.com/search?q=${enc}` });
+      }
+      if (issuer.includes('UNI')) {
+        links.push({ label: 'UNI', href: `https://www.uni.com/index.php?option=com_content&view=article&id=1408` });
+      }
+      if (links.length === 0) {
+        links.push({ label: 'ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+      }
+      return (
+        <div className="docform-norma-links">
+          Verifica disponibile su:{' '}
+          {links.map((l, i) => (
+            <span key={l.label}>
+              {i > 0 && ' — '}
+              <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+            </span>
+          ))}
+        </div>
+      );
+    };
+
     return (
       <div className="docform-type-section">
         <button
@@ -476,14 +618,20 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         </button>
         {typeDetailsOpen && (
           <div className="docform-type-section-body">
+            {/* Banner AI in step 2 (dettagli tipo-specifici) */}
+            {aiExtracted && !aiExtracting && (
+              <div className="docform-ai-banner docform-ai-banner-compact">
+                <span className="docform-ai-banner-icon">&#10003;</span>
+                Metadati estratti automaticamente — verifica e correggi se necessario
+              </div>
+            )}
             {schema.fields.map(renderTypeField)}
+            {renderNormaVerifyLinks()}
           </div>
         )}
       </div>
     );
   };
-
-  // ─── Upload zone (Step 1) ─────────────────────────────────────────
 
   const renderFileUploadZone = () => (
     <div className="docform-field">
@@ -523,7 +671,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           )}
         </>
       ) : (
-        <div className="docform-file-preview">
+        <div className={`docform-file-preview${aiExtracting ? ' docform-file-preview-analyzing' : ''}`}>
           <span
             className="docform-file-preview-icon"
             style={{ color: getFileTypeColor(selectedFile.name) }}
@@ -533,6 +681,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           <div className="docform-file-preview-info">
             <span className="docform-file-preview-name">{selectedFile.name}</span>
             <span className="docform-file-preview-size">{formatFileSize(selectedFile.size)}</span>
+            {aiExtracting && (
+              <span className="docform-ai-analyzing">
+                <span className="docform-ai-spinner" aria-hidden="true" /> Analisi AI in corso...
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -548,6 +701,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       {fileError && (
         <div className="docform-file-error">{fileError}</div>
+      )}
+
+      {/* Messaggio errore AI (discreto, non bloccante) */}
+      {!aiExtracting && aiExtractError && (
+        <div className="docform-ai-error">{aiExtractError}</div>
       )}
     </div>
   );
@@ -619,7 +777,12 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           type="text"
           placeholder="es. Procedura Controllo Qualità Saldature"
           value={form.title}
-          onChange={handleChange("title")}
+          onChange={(e) => {
+            handleChange("title")(e);
+            // Se l'utente modifica manualmente, rimuovi il bordo AI dal titolo
+            setAiFilledFields((prev) => { const next = new Set(prev); next.delete('title'); return next; });
+          }}
+          className={aiFilledFields.has('title') ? 'docform-input-ai-prefilled' : ''}
           autoFocus={!isEdit}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
         />
@@ -651,6 +814,14 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       {/* Zona upload file */}
       {renderFileUploadZone()}
+
+      {/* Banner AI estrazione completata */}
+      {aiExtracted && !aiExtracting && (
+        <div className="docform-ai-banner">
+          <span className="docform-ai-banner-icon">&#10003;</span>
+          Metadati estratti automaticamente dal file — verifica e correggi se necessario
+        </div>
+      )}
     </div>
   );
 
