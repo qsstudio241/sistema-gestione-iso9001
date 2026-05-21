@@ -99,6 +99,10 @@ function StepIndicator({ step }) {
 
 function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId }) {
   const isEdit = !!doc;
+  // Tipi "documento esterno": norme tecniche, standard, certificazioni esterne
+  // Nascondono azienda e codice documento; mostrano standard_code nello step 1
+  const isNormaType = form.doc_type === 'norma';
+
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
 
@@ -549,6 +553,31 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
       );
     }
 
+    if (type === "boolean") {
+      const checked = typeData[key] === true || typeData[key] === 'true';
+      return (
+        <div key={key} className="docform-field">
+          <label
+            className="docform-multiselect-item"
+            style={{ textTransform: 'none', letterSpacing: 'normal', fontSize: '0.88rem', fontWeight: 500 }}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => {
+                setTypeData((d) => ({ ...d, [key]: e.target.checked }));
+                setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; });
+              }}
+              style={{ width: 15, height: 15, cursor: 'pointer' }}
+            />
+            {label}
+            {isAiPrefilled && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#2563eb', fontWeight: 600 }}>(AI)</span>}
+          </label>
+          {hint && <span className="docform-hint">{hint}</span>}
+        </div>
+      );
+    }
+
     return (
       <div key={key} className="docform-field">
         <label>{label}{required && <span className="required"> *</span>}</label>
@@ -568,42 +597,49 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     );
   };
 
+  // Link verifica catalogo per norme tecniche — richiede standard_code compilato
+  const renderNormaVerifyLinks = () => {
+    const code = typeData.standard_code || '';
+    if (!isNormaType || !code) return null;
+    const issuer = (typeData.issuing_body || '').toUpperCase();
+    const enc = encodeURIComponent(code);
+    const links = [];
+    if (issuer.includes('BSI') || issuer.includes('BS ')) {
+      links.push({ label: '\uD83D\uDD17 Verifica su BSI Group', href: `https://shop.bsigroup.com/search?q=${enc}` });
+    }
+    if (issuer.includes('ISO') || (!issuer || issuer.includes('EN ISO') || issuer.includes('CEN'))) {
+      links.push({ label: '\uD83D\uDD17 Verifica su ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+    }
+    if (issuer.includes('UNI')) {
+      links.push({ label: '\uD83D\uDD17 Verifica su UNI', href: `https://www.uni.com/index.php?option=com_content&view=article&id=1408` });
+    }
+    if (links.length === 0) {
+      links.push({ label: '\uD83D\uDD17 Verifica su ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+    }
+    return (
+      <div className="docform-norma-links">
+        {links.map((l, i) => (
+          <span key={l.label}>
+            {i > 0 && ' — '}
+            <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const renderTypeSpecificSection = () => {
     const schema = getSchemaForDocType(form.doc_type);
     if (!schema) return null;
 
-    // Link verifica per norme (solo se standard_code presente e tipo = "norma")
-    const renderNormaVerifyLinks = () => {
-      if (form.doc_type !== 'norma') return null;
-      const code = typeData.standard_code || '';
-      const issuer = (typeData.issuing_body || '').toUpperCase();
-      if (!code) return null;
-      const enc = encodeURIComponent(code);
-      const links = [];
-      if (issuer.includes('ISO') || issuer === '' || issuer.includes('EN') || issuer.includes('BS EN')) {
-        links.push({ label: 'ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
-      }
-      if (issuer.includes('BSI') || issuer.includes('BS')) {
-        links.push({ label: 'BSI', href: `https://shop.bsigroup.com/search?q=${enc}` });
-      }
-      if (issuer.includes('UNI')) {
-        links.push({ label: 'UNI', href: `https://www.uni.com/index.php?option=com_content&view=article&id=1408` });
-      }
-      if (links.length === 0) {
-        links.push({ label: 'ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
-      }
-      return (
-        <div className="docform-norma-links">
-          Verifica disponibile su:{' '}
-          {links.map((l, i) => (
-            <span key={l.label}>
-              {i > 0 && ' — '}
-              <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
-            </span>
-          ))}
-        </div>
-      );
-    };
+    // Per norma: standard_code è già mostrato nello step 1 — non duplicarlo qui
+    const fieldsToRender = isNormaType
+      ? schema.fields.filter((f) => f.key !== 'standard_code')
+      : schema.fields;
+
+    const sectionTitle = isNormaType
+      ? `Dettagli — ${schema.label}`
+      : `Dettagli qualifica — ${schema.label}`;
 
     return (
       <div className="docform-type-section">
@@ -614,7 +650,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           aria-expanded={typeDetailsOpen}
         >
           <span className="docform-type-section-icon">{typeDetailsOpen ? "▾" : "▸"}</span>
-          Dettagli qualifica — {schema.label}
+          {sectionTitle}
         </button>
         {typeDetailsOpen && (
           <div className="docform-type-section-body">
@@ -625,8 +661,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 Metadati estratti automaticamente — verifica e correggi se necessario
               </div>
             )}
-            {schema.fields.map(renderTypeField)}
-            {renderNormaVerifyLinks()}
+            {fieldsToRender.map(renderTypeField)}
           </div>
         )}
       </div>
@@ -788,29 +823,51 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         />
       </div>
 
-      <div className="docform-row">
+      {/* Codice documento + Azienda — nascosti per tipo norma */}
+      {!isNormaType && (
+        <div className="docform-row">
+          <div className="docform-field">
+            <label>Codice documento</label>
+            <input
+              type="text"
+              placeholder="es. PG-01, WPS-141-001"
+              value={form.doc_code}
+              onChange={handleChange("doc_code")}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
+            />
+          </div>
+          {companies.length > 0 && (
+            <div className="docform-field">
+              <label>Azienda</label>
+              <select value={form.company_id} onChange={handleChange("company_id")}>
+                <option value="">- Documento di studio -</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Codice norma — solo per tipo norma */}
+      {isNormaType && (
         <div className="docform-field">
-          <label>Codice documento</label>
+          <label>Codice norma <span className="required">*</span></label>
           <input
             type="text"
-            placeholder="es. PG-01, WPS-141-001"
-            value={form.doc_code}
-            onChange={handleChange("doc_code")}
+            placeholder="es. BS EN ISO 9606-1:2017"
+            value={typeData.standard_code || ''}
+            onChange={(e) => {
+              handleTypeDataChange('standard_code')(e);
+              setAiFilledFields((prev) => { const next = new Set(prev); next.delete('type_standard_code'); return next; });
+            }}
+            className={aiFilledFields.has('type_standard_code') ? 'docform-input-ai-prefilled' : ''}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
           />
+          {renderNormaVerifyLinks()}
         </div>
-        {companies.length > 0 && (
-          <div className="docform-field">
-            <label>Azienda</label>
-            <select value={form.company_id} onChange={handleChange("company_id")}>
-              <option value="">- Documento di studio -</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Zona upload file */}
       {renderFileUploadZone()}
@@ -848,23 +905,39 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
               autoFocus
             />
           </div>
-          <div className="docform-row">
+          {/* Codice norma (solo modifica norma) */}
+          {isNormaType && (
             <div className="docform-field">
-              <label>Codice documento</label>
-              <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
+              <label>Codice norma</label>
+              <input
+                type="text"
+                placeholder="es. BS EN ISO 9606-1:2017"
+                value={typeData.standard_code || ''}
+                onChange={(e) => handleTypeDataChange('standard_code')(e)}
+              />
+              {renderNormaVerifyLinks()}
             </div>
-            {companies.length > 0 && (
+          )}
+          {/* Codice documento + Azienda — nascosti per tipo norma */}
+          {!isNormaType && (
+            <div className="docform-row">
               <div className="docform-field">
-                <label>Azienda</label>
-                <select value={form.company_id} onChange={handleChange("company_id")}>
-                  <option value="">- Documento di studio -</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <label>Codice documento</label>
+                <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
               </div>
-            )}
-          </div>
+              {companies.length > 0 && (
+                <div className="docform-field">
+                  <label>Azienda</label>
+                  <select value={form.company_id} onChange={handleChange("company_id")}>
+                    <option value="">- Documento di studio -</option>
+                    {companies.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
           <hr className="docform-divider" />
         </>
       )}
