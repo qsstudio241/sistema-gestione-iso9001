@@ -720,14 +720,19 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     );
   };
 
+  // Campi norma renderizzati inline in step 2 — da escludere dalla sezione collassabile
+  const NORMA_INLINE_KEYS = new Set(['issuing_body', 'edition_year', 'scope_summary', 'ics_code', 'is_harmonized']);
+
   const renderTypeSpecificSection = () => {
     const schema = getSchemaForDocType(form.doc_type);
     if (!schema) return null;
 
-    // Per norma: standard_code è già mostrato nello step 1 — non duplicarlo qui
+    // Per norma: standard_code è in step 1; i campi primari sono inline in step 2
     const fieldsToRender = isNormaType
-      ? schema.fields.filter((f) => f.key !== 'standard_code')
+      ? schema.fields.filter((f) => f.key !== 'standard_code' && !NORMA_INLINE_KEYS.has(f.key))
       : schema.fields;
+
+    if (fieldsToRender.length === 0) return null;
 
     const sectionTitle = isNormaType
       ? `Dettagli — ${schema.label}`
@@ -977,159 +982,209 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
   // ─── Step 2 / Edit render ─────────────────────────────────────────
 
-  const renderStep2orEdit = () => (
-    <div className="docform-step-content">
-      {isEdit && (
-        <>
-          <div className="docform-field">
-            <label>Tipo documento</label>
-            <select value={form.doc_type} onChange={handleChange("doc_type")}>
-              {DOC_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="docform-field">
-            <label>Titolo <span className="required">*</span></label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={handleChange("title")}
-              autoFocus
-            />
-          </div>
-          {/* Codice norma (solo modifica norma) */}
-          {isNormaType && (
+  const renderStep2orEdit = () => {
+    // Helper per recuperare campo tipo-specifico norma da rendere inline
+    const normaSchema = isNormaType ? getSchemaForDocType('norma') : null;
+    const normaField = (key) => normaSchema?.fields.find((f) => f.key === key);
+
+    return (
+      <div className="docform-step-content">
+        {isEdit && (
+          <>
             <div className="docform-field">
-              <label>Codice norma</label>
+              <label>Tipo documento</label>
+              <select value={form.doc_type} onChange={handleChange("doc_type")}>
+                {DOC_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="docform-field">
+              <label>Titolo <span className="required">*</span></label>
               <input
                 type="text"
-                placeholder="es. BS EN ISO 9606-1:2017"
-                value={typeData.standard_code || ''}
-                onChange={(e) => handleTypeDataChange('standard_code')(e)}
+                value={form.title}
+                onChange={handleChange("title")}
+                autoFocus
               />
-              {renderNormStatusBadge()}
-              {renderNormaVerifyLinks()}
             </div>
-          )}
-          {/* Codice documento + Azienda — nascosti per tipo norma */}
-          {!isNormaType && (
-            <div className="docform-row">
+            {/* Codice norma (solo modifica norma) */}
+            {isNormaType && (
               <div className="docform-field">
-                <label>Codice documento</label>
-                <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
+                <label>Codice norma</label>
+                <input
+                  type="text"
+                  placeholder="es. BS EN ISO 9606-1:2017"
+                  value={typeData.standard_code || ''}
+                  onChange={(e) => handleTypeDataChange('standard_code')(e)}
+                />
+                {renderNormStatusBadge()}
+                {renderNormaVerifyLinks()}
               </div>
-              {companies.length > 0 && (
+            )}
+            {/* Codice documento + Azienda — nascosti per tipo norma */}
+            {!isNormaType && (
+              <div className="docform-row">
                 <div className="docform-field">
-                  <label>Azienda</label>
-                  <select value={form.company_id} onChange={handleChange("company_id")}>
-                    <option value="">- Documento di studio -</option>
-                    {companies.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  <label>Codice documento</label>
+                  <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
                 </div>
-              )}
+                {companies.length > 0 && (
+                  <div className="docform-field">
+                    <label>Azienda</label>
+                    <select value={form.company_id} onChange={handleChange("company_id")}>
+                      <option value="">- Documento di studio -</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+            <hr className="docform-divider" />
+          </>
+        )}
+
+        {/* Sezione archiviazione (solo nuovo) */}
+        {renderFolderPicker()}
+
+        {/* Ente emittente + Anno edizione — solo norma, in cima ai dettagli, pre-compilati AI */}
+        {isNormaType && normaSchema && (
+          <div className="docform-row">
+            {renderTypeField(normaField('issuing_body'))}
+            {renderTypeField(normaField('edition_year'))}
+          </div>
+        )}
+
+        {/* Revisione + Stato — nascosti per norma (le norme hanno edizioni, non revisioni interne) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field docform-field-sm">
+              <label>Revisione</label>
+              <input
+                type="text"
+                placeholder="es. Rev.2"
+                value={form.revision}
+                onChange={handleChange("revision")}
+              />
+            </div>
+            <div className="docform-field">
+              <label>Stato</label>
+              <select value={form.status} onChange={handleChange("status")}>
+                {DOC_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="docform-row">
+          <div className="docform-field">
+            {/* Per norma rinominato in "Data pubblicazione" */}
+            <label>{isNormaType ? 'Data pubblicazione' : 'Data emissione'}</label>
+            <input type="date" value={form.issue_date} onChange={handleChange("issue_date")} />
+          </div>
+          {/* Data scadenza — nascosta per norma (le norme vengono sostituite, non scadono) */}
+          {!isNormaType && (
+            <div className="docform-field">
+              <label>Data scadenza</label>
+              <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
             </div>
           )}
-          <hr className="docform-divider" />
-        </>
-      )}
+        </div>
 
-      {/* Sezione archiviazione (solo nuovo) */}
-      {renderFolderPicker()}
+        {/* Responsabile — nascosto per norma (responsabile è l'ente esterno, non una persona interna) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field">
+              <label>Responsabile</label>
+              <input
+                type="text"
+                placeholder="Nome / funzione"
+                value={form.responsible}
+                onChange={handleChange("responsible")}
+              />
+            </div>
+            <div className="docform-field docform-field-xs">
+              <label>Conservazione (anni)</label>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                placeholder="10"
+                value={form.retention_years}
+                onChange={handleChange("retention_years")}
+              />
+            </div>
+          </div>
+        )}
 
-      <div className="docform-row">
-        <div className="docform-field docform-field-sm">
-          <label>Revisione</label>
-          <input
-            type="text"
-            placeholder="es. Rev.2"
-            value={form.revision}
-            onChange={handleChange("revision")}
+        {/* Campo di applicazione + Codice ICS + Norma armonizzata + Conservazione — solo norma, inline */}
+        {isNormaType && normaSchema && (
+          <>
+            {renderTypeField(normaField('scope_summary'))}
+            <div className="docform-row">
+              {renderTypeField(normaField('ics_code'))}
+              {renderTypeField(normaField('is_harmonized'))}
+            </div>
+            <div className="docform-field docform-field-xs">
+              <label>Conservazione (anni)</label>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                placeholder="10"
+                value={form.retention_years}
+                onChange={handleChange("retention_years")}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Norma di riferimento + Paragrafo — nascosti per norma (questo documento IS una norma) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field">
+              <label>Norma di riferimento</label>
+              <select value={form.standard_id} onChange={handleChange("standard_id")}>
+                <option value="">- Nessuna -</option>
+                {standards.map((s) => (
+                  <option key={s.standard_id} value={s.standard_id}>
+                    {s.standard_code} - {s.standard_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="docform-field docform-field-sm">
+              <label>Paragrafo</label>
+              <input
+                type="text"
+                placeholder="es. 7.5"
+                value={form.clause_ref}
+                onChange={handleChange("clause_ref")}
+                disabled={!form.standard_id}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="docform-field">
+          <label>Note</label>
+          <textarea
+            rows={3}
+            placeholder="Note aggiuntive..."
+            value={form.notes}
+            onChange={handleChange("notes")}
           />
         </div>
-        <div className="docform-field">
-          <label>Stato</label>
-          <select value={form.status} onChange={handleChange("status")}>
-            {DOC_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Data emissione</label>
-          <input type="date" value={form.issue_date} onChange={handleChange("issue_date")} />
-        </div>
-        <div className="docform-field">
-          <label>Data scadenza</label>
-          <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
-        </div>
+        {/* Sezione collassabile: per norma mostra solo campi secondari (norm_title, supersedes, validity_status, language, technical_committee) */}
+        {renderTypeSpecificSection()}
       </div>
-
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Responsabile</label>
-          <input
-            type="text"
-            placeholder="Nome / funzione"
-            value={form.responsible}
-            onChange={handleChange("responsible")}
-          />
-        </div>
-        <div className="docform-field docform-field-xs">
-          <label>Conservazione (anni)</label>
-          <input
-            type="number"
-            min="1"
-            max="99"
-            placeholder="10"
-            value={form.retention_years}
-            onChange={handleChange("retention_years")}
-          />
-        </div>
-      </div>
-
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Norma di riferimento</label>
-          <select value={form.standard_id} onChange={handleChange("standard_id")}>
-            <option value="">- Nessuna -</option>
-            {standards.map((s) => (
-              <option key={s.standard_id} value={s.standard_id}>
-                {s.standard_code} - {s.standard_name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="docform-field docform-field-sm">
-          <label>Paragrafo</label>
-          <input
-            type="text"
-            placeholder="es. 7.5"
-            value={form.clause_ref}
-            onChange={handleChange("clause_ref")}
-            disabled={!form.standard_id}
-          />
-        </div>
-      </div>
-
-      <div className="docform-field">
-        <label>Note</label>
-        <textarea
-          rows={3}
-          placeholder="Note aggiuntive..."
-          value={form.notes}
-          onChange={handleChange("notes")}
-        />
-      </div>
-
-      {renderTypeSpecificSection()}
-    </div>
-  );
+    );
+  };
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
