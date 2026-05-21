@@ -621,6 +621,7 @@
   min-width: 260px;
   border-right: 1px solid #e5e7eb;
   background: #f8f9fa;
+  overflow-x: auto;
   overflow-y: auto;
   max-height: 75vh;
 }

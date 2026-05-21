@@ -58,7 +58,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     <div className="norm-upload">
       <button className="norm-upload__btn" onClick={handleClick} disabled={uploading}>
         <span className="norm-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica Norme
+        Carica norme (batch)
       </button>
 
       <input
