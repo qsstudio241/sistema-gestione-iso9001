@@ -1418,8 +1418,7 @@ function DocumentRegistry() {
                     <div className="tree-doc-list">
                       {treeListDocs.length === 0 ? (
                         <div className="docregistry-empty">
-                          <p>Nessun elemento in questa cartella.</p>
-                          <button className="btn-primary" onClick={handleNew}>+ Aggiungi documento</button>
+                          <p>Nessun documento in questa cartella. Usa «+ Nuovo documento» per aggiungerne uno.</p>
                         </div>
                       ) : (
                         <div className="tree-doc-cards">

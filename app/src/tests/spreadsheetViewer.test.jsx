@@ -1,5 +1,5 @@
 /**
- * Test suite – SpreadsheetViewer component
+ * Test suite ï¿½ SpreadsheetViewer component
  *
  * Verifica: rendering overlay, fogli multipli, gestione errori, pulsante download.
  */
@@ -10,7 +10,7 @@ import SpreadsheetViewer from "../components/SpreadsheetViewer";
 // Mock xlsx module
 vi.mock("xlsx", () => {
   const sheetData = [
-    ["Nome", "Cognome", "Età"],
+    ["Nome", "Cognome", "Etï¿½"],
     ["Mario", "Rossi", 42],
     ["Anna", "Verdi", 35],
   ];
@@ -96,7 +96,7 @@ describe("SpreadsheetViewer", () => {
     });
 
     expect(screen.getByText("Cognome")).toBeInTheDocument();
-    expect(screen.getByText("Età")).toBeInTheDocument();
+    expect(screen.getByText("Etï¿½")).toBeInTheDocument();
     expect(screen.getByText("Mario")).toBeInTheDocument();
     expect(screen.getByText("Rossi")).toBeInTheDocument();
   });
@@ -196,7 +196,7 @@ describe("SpreadsheetViewer", () => {
     });
   });
 
-  it("non renderizza nulla se docId è null", () => {
+  it("non renderizza nulla se docId ï¿½ null", () => {
     const { container } = render(
       <SpreadsheetViewer docId={null} fileName="test.xlsx" onClose={() => {}} />
     );
