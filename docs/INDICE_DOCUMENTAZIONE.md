@@ -25,24 +25,62 @@
 | attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
 | attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test |
 | attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
+| attivo | [README.md](README.md) | Mappa cartelle how-to / reference / specs |
 
 ---
 
-## Documentazione attiva (`docs/`)
+## Struttura cartelle (Fase 2)
+
+| Cartella | Contenuto | README |
+|----------|-----------|--------|
+| [how-to/](how-to/) | Procedure deploy, migrazioni DB | [how-to/README.md](how-to/README.md) |
+| [reference/](reference/) | Schema DB, API, mapping | [reference/README.md](reference/README.md) |
+| [specs/](specs/) | Mini-specifiche prodotto | [specs/README.md](specs/README.md) |
+| [docs/README.md](README.md) | Ingresso umano | — |
+
+I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** per link vecchi.
+
+---
+
+## How-to — procedure
 
 | Tag | Scopo | File |
 |-----|-------|------|
-| attivo | Mini-spec commerciale §8.2 | [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
-| attivo | Office round-trip WebDAV | [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
-| attivo | Schema DB (modifiche schema) | [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) |
-| attivo | Quick-ref DB | [DATABASE.md](DATABASE.md) |
-| attivo | Quick-ref API | [BACKEND_API.md](BACKEND_API.md) |
-| attivo | Mapping tabelle | [DATABASE_MAPPING.md](DATABASE_MAPPING.md) |
-| attivo | Deploy Netlify | [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) |
-| attivo | Checklist release | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) |
-| attivo | Deploy backend VPS | [DEPLOY_BACKEND_VPS.md](DEPLOY_BACKEND_VPS.md) |
-| attivo | Troubleshooting deploy | [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md) |
-| attivo | Accesso SSH/API agenti | [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) |
+| attivo | **Hub deploy** | [how-to/deploy.md](how-to/deploy.md) |
+| attivo | Checklist release | [how-to/DEPLOY_CHECKLIST_RELEASE.md](how-to/DEPLOY_CHECKLIST_RELEASE.md) |
+| attivo | Deploy backend VPS | [how-to/DEPLOY_BACKEND_VPS.md](how-to/DEPLOY_BACKEND_VPS.md) |
+| attivo | Troubleshooting deploy | [how-to/DEPLOY_TROUBLESHOOTING.md](how-to/DEPLOY_TROUBLESHOOTING.md) |
+| attivo | Deploy Netlify | [how-to/NETLIFY_DEPLOYMENT.md](how-to/NETLIFY_DEPLOYMENT.md) |
+| attivo | Accesso SSH/API agenti | [how-to/ACCESSO_DEPLOY_AGENTS.md](how-to/ACCESSO_DEPLOY_AGENTS.md) |
+| attivo | Hub migrazioni DB | [how-to/database-migrations.md](how-to/database-migrations.md) |
+
+---
+
+## Reference — schemi e API
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | Schema DB | [reference/DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) |
+| attivo | Quick-ref DB | [reference/DATABASE.md](reference/DATABASE.md) |
+| attivo | Quick-ref API | [reference/BACKEND_API.md](reference/BACKEND_API.md) |
+| attivo | Mapping tabelle | [reference/DATABASE_MAPPING.md](reference/DATABASE_MAPPING.md) |
+
+---
+
+## Specs — requisiti prodotto
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | Riesame requisiti §8.2 | [specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
+| attivo | Office WebDAV | [specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
+| attivo | Modulo saldatura | [specs/piano_modulo_saldatura_v2.plan.md](specs/piano_modulo_saldatura_v2.plan.md) |
+
+---
+
+## Documentazione attiva (root `docs/`)
+
+| Tag | Scopo | File |
+|-----|-------|------|
 | attivo | Offline / sync / logout | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) |
 | attivo | RBAC multi-tenant | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
 | attivo | Utenti, checklist, report | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) |
@@ -56,9 +94,8 @@
 | attivo | Backup DB / branch | [BACKUP_DATABASE_E_USO_BRANCH.md](BACKUP_DATABASE_E_USO_BRANCH.md) |
 | attivo | Verifica isolamento dati | [VERIFICA_ISOLAMENTO_DATI.md](VERIFICA_ISOLAMENTO_DATI.md) |
 | attivo | Debug mobile | [MOBILE_DEBUG_UTILS.md](MOBILE_DEBUG_UTILS.md) |
-| attivo | Piano modulo saldatura | [piano_modulo_saldatura_v2.plan.md](piano_modulo_saldatura_v2.plan.md) |
 
-**Hub deploy (oggi frammentato, Fase 2):** checklist → `DEPLOY_CHECKLIST_RELEASE` + VPS → `DEPLOY_BACKEND_VPS` + errori → `DEPLOY_TROUBLESHOOTING` + agenti → `ACCESSO_DEPLOY_AGENTS`. Sintesi operativa in [GUIDA_CONSOLIDATA § A](GUIDA_CONSOLIDATA.md#a-checklist-custom-sync-deploy-vps).
+**Deploy:** ingresso unico [how-to/deploy.md](how-to/deploy.md). Esperienza operativa: [GUIDA_CONSOLIDATA § A](GUIDA_CONSOLIDATA.md#a-checklist-custom-sync-deploy-vps).
 
 **Open points trasversali:** [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (*Open points e memoria trasversale*) + [adr/ADR-007](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).
 
@@ -133,7 +170,7 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 | Fase | Stato | Contenuto |
 |------|-------|-----------|
 | **1** | **Fatto (2026-05-21)** | TOC in `GUIDA_CONSOLIDATA`, tag in questo indice, `COMMIT_MESSAGES` in archive, ADR 008–010 in `adr/README` |
-| **2** | Pianificata | Cartelle `how-to/`, `reference/`, hub deploy unico |
+| **2** | **Fatto (2026-05-21)** | Cartelle `how-to/`, `reference/`, `specs/`; hub [deploy.md](how-to/deploy.md); stub redirect in root `docs/` |
 | **3** | Pianificata | Rinumerazione ADR univoca (opzionale), split guida per tema |
 
 Fase 2–3: vedi proposta storica sotto (non obbligatoria subito).

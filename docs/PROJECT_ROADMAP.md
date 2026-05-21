@@ -4,7 +4,7 @@
 > **Ultimo Aggiornamento**: 16 maggio 2026
 > **Prossimo Step**: **ADR-009 Fase 2** (sezione 11 e Close Panel per-norma + flag SGI integrato) — Fase 1 completata il 12/05/2026 (branch `cursor/adr009-fase1-registro-standard-52c5` mergiato su main, deploy Netlify). Sblocca poi Export Word ISO 14001, Modal Re-Audit.
 > **Backlog**: 🔴 ADR-009 Fase 2-5 (multi-standard/document_type/AI-ready) | ✅ **Playbook encoding / caratteri non riconoscibili** — sezione fissa in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) + script `backend/scripts/check-utf8-encoding.js` (16/05/2026) | ✅ **ADR-009 Fase 1** — PendingIssuesCascade UI/UX + badge standard + navigazione accordion (12/05/2026) | ✅ Fix pending-issues filtro NC/OSS/NV + CHECK constraint DB (12/05/2026) | ✅ Fix NC statistics alias SQL riservati (12/05/2026) | ✅ Fix pending-issues lazy-init nc_id post-MERGE (12/05/2026) | ✅ Fix validazione guided close collapse button (09-10/05/2026) | ✅ Fix CORS nginx fallback backend down (08/05/2026) | ✅ Fix licenze admin/superadmin bypass requireLicensedModule (08/05/2026) | ✅ Fix Exception 1 campi testo si svuotano (08/05/2026) | ✅ Fix Exception 4 multi-standard (08/05/2026) | ✅ Fix race rendering checklist multi-device (PR #39, 08/05/2026) | ✅ GAP-B1/B2/B3 custom checklist (PR #37, 08/05/2026) | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | ✅ SYNC-5 allegati offline | ✅ migration 048-049-050 applicate
-> **Riferimenti**: [docs/GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [docs/adr/ADR-009-multi-standard-architettura-per-norma.md](adr/ADR-009-multi-standard-architettura-per-norma.md) (vincolante per multi-standard / nuovi document_type) | [docs/adr/ADR-008-event-sourcing-sync.md](adr/ADR-008-event-sourcing-sync.md) (sync event-based) | [docs/adr/ADR-006-auto-reconcile-cache-sync.md](adr/ADR-006-auto-reconcile-cache-sync.md) | [docs/DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) (schema DB)
+> **Riferimenti**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [adr/ADR-009](adr/ADR-009-multi-standard-architettura-per-norma.md) | [adr/ADR-008](adr/ADR-008-event-sourcing-sync.md) | [adr/ADR-006](adr/ADR-006-auto-reconcile-cache-sync.md) | [DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) (schema DB)
 
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
 
@@ -636,8 +636,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **SALDATURA** | Coordinatori / Aziende | WPS/WPQR, qualifiche saldatori, NDT, commesse ISO 3834 |
 | **ALERT** | Incluso in tutti | Email automatiche scadenze, dashboard semaforo |
 | **AI** | Add-on | Import batch PDF (v1 testo locale), staging tipizzato (Sprint 10), ricerca semantica (backlog) |
-| **Commesse / Riesame contratto** | Add-on futuro | Workflow riesame requisiti §8.2 (pilota “ordine diretto”): stati, checklist, allegati — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
-| **Office Round-trip (beta)** | Auditor / Aziende (desktop) | Apertura Word/Excel desktop e salvataggio diretto su server via WebDAV/Helper custom — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
+| **Commesse / Riesame contratto** | Add-on futuro | Workflow riesame requisiti §8.2 (pilota “ordine diretto”): stati, checklist, allegati — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
+| **Office Round-trip (beta)** | Auditor / Aziende (desktop) | Apertura Word/Excel desktop e salvataggio diretto su server via WebDAV/Helper custom — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
 
 ### Roadmap Sprint definitiva
 
@@ -654,8 +654,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **8** | Licensing Engine | Feature flags, pannello abbonamenti, UI locked | Sprint 0 |
 | **9** | Import PDF **v1** (ingest + AI opzionale) | Job `import_jobs` / `import_job_files`, estrazione **testo locale** (`pdf-parse`), confidence euristica, revisione umana, licenza `ai_import`, UI `/settings/import-jobs`. **Analisi strutturata** (OpenAI JSON) su testo estratto: endpoint `POST .../files/:fileId/ai-extract`, migrazione **039**. **Fuori scope immediato**: OCR, agenti multi-tool, commit automatico in registry. Obiettivo: **fondazione ingest** + primo valore AI testabile in sicurezza (revisione umana). | Sprint 1 |
 | **10** | Import staging → registry | Da job file a **record di staging tipizzati** (`document_type` / form registry), commit umano verso persistenza documenti. Estensioni: OCR opzionale, classificazione assistita **dopo** registry stabile. | Sprint 9 |
-| **11** | Commesse / Riesame contratto | Modulo workflow §8.2 (pilota): stati, storico, checklist, allegati in/out; **separato** dalla sola pipeline PDF. Specifica: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). | Sprint 1, Sprint 10 (consigliato) |
-| **12** | Office Round-trip (PoC) | Tool desktop-first per documenti SGQ: link Office URI + endpoint `webdav-link` + WebDAV (GET/PUT/PROPFIND/LOCK/UNLOCK) + lock/versioning baseline. Specifica: [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md). | Sprint 1 |
+| **11** | Commesse / Riesame contratto | Modulo workflow §8.2 (pilota): stati, storico, checklist, allegati in/out; **separato** dalla sola pipeline PDF. Specifica: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). | Sprint 1, Sprint 10 (consigliato) |
+| **12** | Office Round-trip (PoC) | Tool desktop-first per documenti SGQ: link Office URI + endpoint `webdav-link` + WebDAV (GET/PUT/PROPFIND/LOCK/UNLOCK) + lock/versioning baseline. Specifica: [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md). | Sprint 1 |
 
 ### Copertura normativa per modulo SGQ
 
@@ -781,7 +781,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (implementato — 03/05/2026)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
-> **Sprint 11 (backlog)**: riesame requisiti contratto / ciclo commerciale — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md).
-> **Sprint 12 (nuovo backlog tecnico)**: Office Round-trip editing desktop (Windows + Office) con infrastruttura nostra WebDAV/Helper — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md).
+> **Sprint 11 (backlog)**: riesame requisiti contratto / ciclo commerciale — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md).
+> **Sprint 12 (nuovo backlog tecnico)**: Office Round-trip editing desktop (Windows + Office) con infrastruttura nostra WebDAV/Helper — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md).
 
 
