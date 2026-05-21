@@ -24,6 +24,9 @@ router.get('/documents/orphans', docCtrl.listOrphanDocuments);
 // Pre-estrazione metadati AI da PDF (nessun record DB — solo analisi temporanea)
 router.post('/documents/pre-extract', docCtrl.preExtractMetadata);
 
+// Lookup stato norma su catalogo pubblico ente (BSI / ISO / UNI)
+router.post('/documents/norm-lookup', docCtrl.lookupNormStatus);
+
 // CRUD
 router.get   ('/documents',                      docCtrl.listDocuments);
 router.get   ('/documents/:id',                  docCtrl.getDocumentById);

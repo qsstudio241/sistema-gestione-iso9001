@@ -842,6 +842,45 @@ async function preExtractMetadata(req, res) {
     }
 }
 
+// ─── POST /api/v1/documents/norm-lookup ───────────────────────────────────────
+/**
+ * Interroga il catalogo pubblico dell'ente normativo per verificare lo stato
+ * di validità di una norma (vigente / ritirata / sostituita).
+ * Body: { standard_code, issuing_body }
+ * Risposta: { status, supersededBy, catalogUrl, checkedAt }
+ *
+ * Non blocca: in caso di errore restituisce { status: 'unknown' } con HTTP 200.
+ */
+async function lookupNormStatus(req, res) {
+    const { standard_code, issuing_body } = req.body || {};
+
+    if (!standard_code || !String(standard_code).trim()) {
+        return res.status(400).json({ error: 'standard_code obbligatorio', code: 'MISSING_CODE' });
+    }
+
+    try {
+        const normCatalog = require('../services/normCatalogLookup.service');
+        const result = await normCatalog.lookupNormStatus(
+            String(standard_code).trim(),
+            String(issuing_body || '').trim()
+        );
+        res.json({ success: true, data: result });
+    } catch (err) {
+        logger.error('Error in norm-lookup', { error: err.message });
+        // Graceful degradation: non bloccare il flusso
+        res.json({
+            success: true,
+            data: {
+                status:      'unknown',
+                error:       'lookup_failed',
+                supersededBy: null,
+                catalogUrl:   null,
+                checkedAt:    new Date().toISOString(),
+            },
+        });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -853,4 +892,5 @@ module.exports = {
     getFolderSuggestion,
     listOrphanDocuments,
     preExtractMetadata,
+    lookupNormStatus,
 };

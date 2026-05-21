@@ -1514,6 +1514,26 @@ class ApiService {
     async deleteProject(id)          { return this.delete(`/projects/${id}`); }
     async getProjectStats()          { return this.get('/projects/stats'); }
 
+    /**
+     * Verifica stato validità norma su catalogo pubblico ente (BSI / ISO / UNI).
+     * Non bloccante: in caso di errore restituisce { status: 'unknown' }.
+     *
+     * @param {string} standardCode - Es. "BS EN ISO 9606-1:2017"
+     * @param {string} issuingBody  - Es. "BSI", "ISO", "UNI"
+     * @returns {Promise<{ status: 'active'|'withdrawn'|'superseded'|'unknown', supersededBy: string|null, catalogUrl: string|null, checkedAt: string }>}
+     */
+    async lookupNormStatus(standardCode, issuingBody) {
+        try {
+            const res = await this.post('/documents/norm-lookup', {
+                standard_code: standardCode,
+                issuing_body:  issuingBody || '',
+            }, { timeout: 8000 });
+            return res?.data || { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };
+        } catch {
+            return { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };
+        }
+    }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
     async uploadNorms(files) {
