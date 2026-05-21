@@ -8,6 +8,7 @@
 | Sezione | Contenuto |
 |---------|-----------|
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
+| [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
 | [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
 | [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
 | [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
@@ -29,9 +30,9 @@ Sessioni recenti (consultazione): [Sessione 17/05/2026](#sessione-17052026--modu
 2. **[PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)** — fasi e backlog.  
 3. **[ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md)** — gerarchia utenti, segregazione dati, ruoli e piano migrazione RBAC (aspetto portante; aggiornare quando si toccano auth o scope query).  
 4. **Questo file** — lezioni apprese, procedure ripetibili e **piano qualità / test di robustezza** (sezione omonima sotto).  
-5. **[DATABASE.md](DATABASE.md)** — connessione DB, script repro, ambienti `development` / `test`.  
-6. Per deploy: [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md), [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md), [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) (API prod., SSH, file locale sicuro per Cursor).
-7. Se il task tocca editing documentale desktop: **[MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)**.
+5. **[DATABASE.md](reference/DATABASE.md)** — connessione DB, script repro, ambienti `development` / `test`.  
+6. Per deploy: **[how-to/deploy.md](how-to/deploy.md)** (hub) → checklist, VPS, troubleshooting, accesso agenti.
+7. Se il task tocca editing documentale desktop: **[MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)**.
 
 **Percorsi workspace (Windows)** — `C:\ProgettoISO` non è “un progetto diverso” dal repo su disco: sui PC configurati così è di solito una **junction verso Google Drive** (`G:\Il mio Drive\...`). Una cartella omonima sotto **OneDrive** può invece essere un **checkout separato**. Dettaglio e regole operative: sezione *Percorsi di lavoro locale* in **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)**.
 
@@ -1040,7 +1041,7 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 | **Inizio sprint o sessione** | Leggere [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (**Prossimo step**, **Open points e memoria trasversale**, checklist aperte) e, se il task tocca permessi o dati per studio/azienda, [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). |
 | **Durante lo sviluppo** | Ogni vertical slice: elencare in PR/commit **file toccati** + **test aggiunti o da eseguire manualmente** (non solo “build ok”). |
 | **Prima del merge su `main`** | CI app su PR ([`.github/workflows/ci-app-pr.yml`](../.github/workflows/ci-app-pr.yml)); localmente: sezione **D** (test + build). |
-| **Dopo deploy** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) + smoke tabella sotto; se tocca licenze/auth → anche righe “Sicurezza e licenze”. |
+| **Dopo deploy** | [how-to/deploy.md](how-to/deploy.md) + [DEPLOY_CHECKLIST_RELEASE.md](how-to/DEPLOY_CHECKLIST_RELEASE.md) + smoke tabella sotto; se tocca licenze/auth → anche righe “Sicurezza e licenze”. |
 
 ### Definition of Done (slice verticale — minimo)
 
@@ -1056,7 +1057,7 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 |--------|------|--------|
 | **L1 — Automatici app** | `cd app` → `NODE_ENV=test` → `npm run test:run` + `npm run build` | Ogni modifica sostanziale a React/utils (wordExport, converter, hook critici). Pattern Vitest: `src/**/*.{test,spec}.{js,jsx}` (incluso contratto `response-options` in `src/tests/integration/`, mock senza rete in CI). |
 | **L2 — Script / repro** | `node scripts/repro-custom-export.mjs`, `verify-template-repair.js` (se Word/template) | Dopo cambi a export OOXML o template. |
-| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
+| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([how-to/deploy.md](how-to/deploy.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
 | **L4 — Hardening** | Due sessioni, lock audit, licenze (`403 MODULE_NOT_LICENSED`), refresh sessione, PWA offline (cache vs server) | Dopo modifiche a `auth`, `moduleLicense`, `syncService`, `IndexedDB`, lock. |
 | **L5 — E2E / browser** (backlog prodotto) | Flussi completi su Netlify preview o staging | Pianificato in roadmap; non sostituisce L1–L4. |
 
@@ -1098,7 +1099,7 @@ Prima di avviare T1, l'amministratore di sistema deve completare e documentare q
 
 | Prerequisito | Chi fa | Dove documentare | Fatto? |
 |---|---|---|---|
-| DB staging creato (copia schema, dati anonimi) | Admin sistema | [DATABASE.md](DATABASE.md) sezione "Ambienti" | ☐ |
+| DB staging creato (copia schema, dati anonimi) | Admin sistema | [DATABASE.md](reference/DATABASE.md) sezione "Ambienti" | ☐ |
 | Connection string staging in `backend/config/database.json` con env `staging` | Admin sistema | File locale gitignored | ☐ |
 | Script di anonimizzazione dati (per GDPR) | Dev | `database/scripts/anonymize-staging.sql` | ☐ |
 | Policy retention event_store documentata | Product owner | ADR-008 sezione Compaction | ☐ |
@@ -1185,10 +1186,10 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | **Licenze moduli (Sprint 8)** | Colonna `organizations.licensed_modules` (JSON array di chiavi modulo; **NULL** = tutti i moduli attivi, retrocompatibile). API: `GET/PATCH /admin/licenses` (solo admin/superadmin org). Backend: `moduleLicense.service.js`, `requireLicensedModule` su documenti/allegati doc, NC, rischi, qualifiche, reclami+fornitori, notifiche. Login e `GET /auth/me` includono `licensed_modules`. Frontend: `LicensedRoute.jsx`, pagina **Impostazioni → Licenze moduli** (`/settings/licenses`), sidebar filtra voci senza licenza. Deploy VPS: `run-migration-037.js` + copiare service/middleware/controller/routes interessati + `server.js` (mount API su `/complaints` e `/suppliers`) + restart. **`requireLicensedModule` (2026-05-08)**: utenti con ruolo JWT **`superadmin`** o **`admin`** bypassano il controllo licenze sulle API (stesso spirito di `authorize()` per `superadmin`), così admin non riceve più `403 MODULE_NOT_LICENSED` durante collaudo o salvataggio impostazioni; gli **auditor** restano vincolati a `licensed_modules`. |
 | **Licenze: admin salva ma UI non cambia** | Dopo `PATCH /admin/licenses` la sessione locale deve aggiornare `user` con `GET /auth/me`: usare `refreshUser()` da `AuthContext` (chiamato da `LicensesSettingsPage` dopo salvataggio). **Altri utenti** della stessa org: niente push automatico; vedono i moduli aggiornati al **prossimo login** o al **refresh token** / nuova chiamata `/auth/me` — documentare messaggio in UI (vedi roadmap Sessione A). |
 | **Import PDF batch (Sprint 9)** | Tabelle `import_jobs`, `import_job_files`; API `GET/POST/PATCH/DELETE /import-jobs`, upload `POST .../files` (multipart `files`), `POST .../process` usa `pdf-parse` + `confidenceFromTextLength` (euristica). **`POST .../files/:fileId/ai-extract`**: estrazione JSON strutturata via OpenAI sul testo già estratto (richiede `OPENAI_API_KEY` sul server; rate limit dedicato). Colonne file: `ai_extraction_json`, `ai_extraction_error`, `ai_extraction_at`, `ai_model` (migrazione **039**). Licenza modulo **`ai_import`**. UI admin: **Impostazioni → Import PDF** (`/settings/import-jobs`). Deploy VPS: `run-migration-038.js` + **`run-migration-039.js`**, **`npm install`** nella cartella backend (dipendenza `pdf-parse`), copiare `importJobs.controller.js`, `importJobs.routes.js`, `importPdfText.js`, **`importAiExtraction.service.js`**, `server.js`, `moduleLicense.service.js` + restart. **Privacy**: il testo inviato all’API è lo stesso mostrato in schermata revisione; valutare accordo/DPA OpenAI per l’organizzazione. |
-| **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
+| **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
 | **Numerazione report audit (formato Mason)** | Alla creazione (`POST /audits` e sync create) il backend assegna `audit_number` come **`PREFISSO-YYMMDD-NN`** (es. `MSN-260417-01`): giorno calendario **Europe/Rome**, contatore atomico per org+prefisso+giorno (`audit_daily_sequences`, migrazione **040**). Prefisso: colonna **`organizations.audit_report_prefix`** (NULL = default `MSN`). Deploy VPS: `node backend/scripts/run-migration-040.js` (o SQL **040**) + script **`backend/scripts/deploy-controllers-to-vps.ps1`** (include già `auditNumberAllocation.service.js`, `audit.controller.js`, `sync.controller.js`) + restart. **Smoke read-only DB**: da `backend` con `NODE_ENV=production` → `node scripts/smoke-mason-db.js` (dopo almeno una creazione audit post-040 deve comparire almeno un numero Mason). |
 
-**Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: `DEPLOY_CHECKLIST_RELEASE.md`. Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
+**Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: [how-to/deploy.md](how-to/deploy.md). Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
@@ -1306,7 +1307,7 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 
 ## C. Database e repro
 
-- `development` in `database.json` = DB di lavoro (vedi `DATABASE.md`). `test` = `localhost:1433` (spesso assente).  
+- `development` in `database.json` = DB di lavoro (vedi [DATABASE.md](reference/DATABASE.md)). `test` = `localhost:1433` (spesso assente).  
 - Lo script repro normalizza `NODE_ENV=test` → `development` prima del pool.  
 - Comandi: vedi sezione **D** sotto.
 
@@ -1845,7 +1846,7 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 
 **Backlog invariato / ricorrente:**
 - [ ] ADR-006 (auto-reconcile cache) se non avviato.
-- [ ] `DATABASE.md` / `database.json`: segreti — non in chat; ruotare se esposti.
+- [ ] [DATABASE.md](reference/DATABASE.md) / `database.json`: segreti — non in chat; ruotare se esposti.
 - [ ] Opzionale: `ExecStartPre` systemd non bloccante (vedi note deploy).
 - [ ] Eliminare branch remoto `docs/case-study-01-chiusura` (già mergiato in `main`).
 
