@@ -22,7 +22,21 @@ Ogni ADR segue il template standard:
 
 ## Indice ADR
 
-Tutti i documenti in `docs/adr/`. Per numeri con più file (es. due ADR-002, tre ADR-003) il nome file è univoco.
+Tutti i documenti in `docs/adr/`.
+
+### Numerazione duplicata (legacy)
+
+Esistono **più file con lo stesso prefisso numerico** (es. due `ADR-002`, tre `ADR-003`). Per citare un ADR usare sempre il **nome file completo**, non solo il numero. Rinumerazione sequenziale univoca: backlog Fase 2 doc (vedi [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md)).
+
+### ADR critici per sviluppo corrente
+
+| File | Titolo | Stato |
+|------|--------|-------|
+| [ADR-008-event-sourcing-sync](./ADR-008-event-sourcing-sync.md) | Event-Sourced Sync (target sync) | Accettato |
+| [ADR-009-multi-standard-architettura-per-norma](./ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / document_type per norma | Accettato |
+| [ADR-010-ai-agentic-architecture](./ADR-010-ai-agentic-architecture.md) | Architettura AI agentica (NormBroker, RAG) | Accettato |
+
+### Elenco completo
 
 | File | Titolo | Stato |
 |------|--------|-------|
@@ -36,6 +50,9 @@ Tutti i documenti in `docs/adr/`. Per numeri con più file (es. due ADR-002, tre
 | [ADR-005-attachment-storage-strategy](./ADR-005-attachment-storage-strategy.md) | Strategia storage allegati | Accettato |
 | [ADR-006-auto-reconcile-cache-sync](./ADR-006-auto-reconcile-cache-sync.md) | Auto-reconcile cache / multi-device | Proposta approvata |
 | [ADR-007-logout-offline-backup-e-mirror-cartella-pc](./ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Logout senza perdita lavoro locale + backup PC | Proposto |
+| [ADR-008-event-sourcing-sync](./ADR-008-event-sourcing-sync.md) | Event-Sourced Sync (sostituisce parzialmente 002/003/006) | Accettato |
+| [ADR-009-multi-standard-architettura-per-norma](./ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / AI-ready per norma | Accettato |
+| [ADR-010-ai-agentic-architecture](./ADR-010-ai-agentic-architecture.md) | AI agentica: NormBroker, RAG, licenze | Accettato |
 
 ## Convenzioni
 

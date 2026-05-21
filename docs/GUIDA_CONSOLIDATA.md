@@ -3,6 +3,26 @@
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
 
+## Indice rapido (navigazione)
+
+| Sezione | Contenuto |
+|---------|-----------|
+| [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
+| [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
+| [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
+| [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
+| [**A** — Checklist, sync, deploy](#a-checklist-custom-sync-deploy-vps) | Procedure operative principali |
+| [**B** — Word Verbale](#b-report-word--checklist-custom-verbale) | Export OOXML / template |
+| [**C** — Database e repro](#c-database-e-repro) | Script SQL, repro bug |
+| [**D** — Verifica rapida](#d-comandi-di-verifica-rapida) | Comandi curl/test |
+| [**E** — SAL / import / RAG](#e-flusso-2--sal--sopralluoghi--evidenze-documentali--import--rag-retrieval) | Flusso documentale avanzato |
+| [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
+| [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
+
+Sessioni recenti (consultazione): [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+
+---
+
 ## Cosa leggere a inizio sessione (ordine)
 
 1. **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)** — stack, infra, workflow.  
