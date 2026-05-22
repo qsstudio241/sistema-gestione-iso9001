@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
 
 ---
 
@@ -52,19 +52,36 @@ Sessioni recenti (consultazione): [Sessione 22/05/2026](#sessione-22052026--fix-
 | 2 | **Glifo assente** nel font effettivo: `›` U+203A, `—` U+2014 | Schermo OK su un PC, tofu su un altro |
 | 3 | **Emoji/simboli** senza glifo nella stack font | Icone che diventano tofu |
 | 4 | **Bundle o Service Worker obsoleto** (Netlify / PWA) | Repo a posto, browser ancora su JS vecchio |
+| 5 | **Escape `\uXXXX` dentro testo JSX** (non in stringa JS) | La UI mostra **letterale** `\u26A0` o `\u00e0` invece di emoji/accenti |
 
 #### Checklist operativa (ordine consigliato)
 
 1. **Trovare il file** (cerca stringa spezzata nel repo; React DevTools sul testo).
-2. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
-3. **Correggere:** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in stringhe JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
-4. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
-5. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
+2. **React/JSX:** se compaiono **sequenze letterali `\u`** (spesso dopo `>` su titoli, pulsanti o label), il testo **non è** una stringa JavaScript → le escape Unicode **non valgono**. Corregere con **`{"..."}`** dove tra virgolette c'è una **stringa** JS (escape `\u`), oppure **`String.fromCodePoint(...)`**, oppure UTF-8 reale nel sorgente (accenti). Fare grep su `\u` **fuori** da `{ ... }` dopo un tag JSX.
+3. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
+4. **Correggere (encoding):** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in **stringhe** JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
+5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
+6. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
 
 #### Riferimenti vincolanti
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
+### Aggiornamento 22/05/2026 — JSX: sequenze literal `\u` in UI (Rischi / Progetti / Qualifiche)
+
+**Sintomo:** in pagina (es. **Rischi & Obiettivi**) titoli, tab e icone apparivano come testo `\u26A0\uFE0F`, `\uD83D\uDEA7`, `\u00e0`, `\u00a7`, ecc.
+
+**Causa:** in React, il contenuto tra tag (`<h1>\uXXXX ...</h1>`) è **HTML/JSX testuale**, non una stringa JavaScript → `\u` **non viene interpretato**.
+
+**Fix applicati:**  
+- `app/src/pages/RisksPage.jsx` — testo/icona tramite **`{"..."}`** (stringa JS con escape dove servono emoji) o UTF-8 per italiano/simbolo ×.  
+- `app/src/pages/QualificationForm.jsx` — stesso schema sull’errore form.  
+- `app/src/pages/ProjectsPage.jsx` — pulsante **Sì** (prima `S\u00EC` in JSX, mostrato letterale).
+
+**Regola ripetibile:** prima di `\u`/emoji in JSX, preferire **`{expr}`** dove `expr` è stringa/template **JavaScript**, oppure scrivere il carattere Unicode diretto in UTF-8.
 
 ---
 
