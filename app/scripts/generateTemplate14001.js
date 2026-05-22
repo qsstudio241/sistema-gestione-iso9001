@@ -159,7 +159,7 @@ function createSection1() {
     ].map(([label, value]) => new TableRow({ children: [labelCell(label), valueCell(value)] }));
 
     return [
-        new Paragraph({ text: '1 \u2014 DATI GENERALI', style: 'Titolo1', spacing: { before: 0, after: 300 } }),
+        new Paragraph({ text: '1 \u2013 DATI GENERALI', style: 'Titolo1', spacing: { before: 0, after: 300 } }),
         new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE }, borders: stdBorders(),
             margins: { top: 80, bottom: 80, left: 100, right: 100 } }),
         new Paragraph({ text: '', spacing: { after: 400 }, pageBreakBefore: true })
@@ -169,7 +169,7 @@ function createSection1() {
 // --- Sezione 2: Obiettivo ----------------------------------------------------
 function createSection2() {
     return [
-        new Paragraph({ text: "2 \u2014 OBIETTIVO DELL'AUDIT", style: 'Titolo1', spacing: { before: 0, after: 300 } }),
+        new Paragraph({ text: "2 \u2013 OBIETTIVO DELL'AUDIT", style: 'Titolo1', spacing: { before: 0, after: 300 } }),
         new Paragraph({ text: '{objectiveDescription}', spacing: { after: 300 } }),
         new Paragraph({ children: [run('Presenti per l\'organizzazione:', { bold: true })],
             spacing: { before: 300, after: 150 } }),
@@ -221,10 +221,8 @@ function createSection11() {
     ]}));
 
     return [
-        new Paragraph({ text: "11 \u2014 ESITO DELL'AUDIT", style: 'Titolo1',
+        new Paragraph({ text: "11 \u2013 ESITO DELL'AUDIT", style: 'Titolo1',
             spacing: { before: 0, after: 300 }, pageBreakBefore: true }),
-        new Paragraph({ text: 'Conclusioni', style: 'Titolo2', spacing: { before: 200, after: 150 } }),
-        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } }),
         new Paragraph({ text: 'RILIEVI', style: 'Titolo2',
             spacing: { before: 300, after: 150 }, alignment: AlignmentType.CENTER }),
         new Paragraph({
@@ -234,7 +232,9 @@ function createSection11() {
         new Paragraph({ text: 'Rilievi Emersi', style: 'Titolo2', spacing: { before: 300, after: 150 } }),
         new Table({ rows: metricsRows, width: { size: 60, type: WidthType.PERCENTAGE }, borders: stdBorders() }),
         new Paragraph({ text: '', spacing: { after: 200 } }),
-        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } })
+        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } }),
+        new Paragraph({ text: 'Conclusioni', style: 'Titolo2', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } })
     ];
 }
 

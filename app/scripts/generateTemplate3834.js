@@ -266,13 +266,11 @@ function createSection11() {
 
     return [
         new Paragraph({
-            text: '11 - ESITO DELLA VISITA ISPETTIVA',
+            text: '11 \u2013 ESITO DELLA VISITA ISPETTIVA',
             heading: 'Heading1',
             spacing: { before: 0, after: 300 },
             pageBreakBefore: true
         }),
-        new Paragraph({ text: 'Conclusioni', heading: 'Heading2', spacing: { before: 200, after: 150 } }),
-        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } }),
         new Paragraph({
             text: 'RILIEVI',
             heading: 'Heading2',
@@ -290,7 +288,9 @@ function createSection11() {
             borders: stdBorders()
         }),
         new Paragraph({ text: '', spacing: { after: 200 } }),
-        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } })
+        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } }),
+        new Paragraph({ text: 'Conclusioni', heading: 'Heading2', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } })
     ];
 }
 
