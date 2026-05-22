@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
 
 ---
 
@@ -65,6 +65,23 @@ Sessioni recenti (consultazione): [Sessione 17/05/2026](#sessione-17052026--modu
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
+### Sessione 22/05/2026 — Fix allegati ISO 45001
+
+**Problema**: pulsante "+ Aggiungi Allegati" visibile ma non funzionante sulla checklist 45001 (errore silenzioso "ID domanda non disponibile"). Su 9001 e 14001 funzionava regolarmente.
+
+**Causa root**: `ISO_45001_TEMPLATE` in `checklistTemplates.js` aveva tutte le 53 domande con `questionId: null`. `useAttachmentManager` blocca l'upload alla prima riga se `questionId == null`. Le domande esistevano già nel DB (question_id 276-328, migration maggio 2026) ma il template frontend non era stato allineato.
+
+**Fix** (solo frontend, nessun VPS):
+- `checklistTemplates.js` — template riscritto con 53 domande reali, `sectionCode` allineati al DB (`45001_c4`…`45001_c10`), `questionId` 276-328
+- `StorageContext.jsx` — `hydrateQuestionIds` estesa per `ISO_45001` (standard_id=3) con remap sezioni legacy (`clause4 → 45001_c4`)
+- `ChecklistModule.jsx` — hydratation attivata anche per ISO_45001
+
+**Regola appresa — "Template-DB parity"**: ogni volta che si inseriscono domande nel DB per un nuovo standard, aggiornare **immediatamente** il template frontend corrispondente con i questionId reali. Un template con `questionId: null` blocca allegati, sync risposte e ogni funzione che richiede l'ID numerico del DB.
+
+**Verifica rapida**: `curl -s "https://systemgest.netlify.app/assets/$(curl -s https://systemgest.netlify.app/ | grep -o 'index-[^"]*\.js')" | grep -c 'questionId:[0-9]'` deve restituire > 0 per ogni standard attivo.
 
 ---
 
