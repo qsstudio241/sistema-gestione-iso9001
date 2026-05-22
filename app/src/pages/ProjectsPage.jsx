@@ -336,7 +336,7 @@ function ProjectsPage() {
                     {deleteId === p.id ? (
                       <div className="pj-confirm">
                         <span>Eliminare?</span>
-                        <button className="pj-confirm-yes" onClick={() => handleConfirmDelete(p.id)}>S\u00EC</button>
+                        <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>Sì</button>
                         <button className="pj-confirm-no" onClick={() => setDeleteId(null)}>No</button>
                       </div>
                     ) : (
