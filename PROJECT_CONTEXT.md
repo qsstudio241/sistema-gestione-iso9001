@@ -153,7 +153,7 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 |---|---|---|---|---|
 | ISO 9001:2015 | ✅ 35 domande | ✅ | ✅ | ✅ |
 | ISO 14001:2015 | ✅ 46 domande | ✅ | ✅ fix `9894ed5` | ❌ Backlog |
-| ISO 45001:2018 | ❌ 0 domande | ⚠️ Placeholder | ❌ | ❌ |
+| ISO 45001:2018 | ✅ 53 domande (id 276-328) | ✅ allegati fix | ❌ | ❌ |
 
 ### 🔲 Backlog (Fase 2) — con file coinvolti
 
@@ -165,7 +165,7 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 | 🔴 | **Modal Re-Audit con lista pending** | `AuditSelector.jsx`, nuovo `ReauditModal.jsx` |
 | 🟡 | **Fix Auth Mobile (ADR-004)** | `auth.controller.js`, `apiService.js`, `AuthContext.jsx`, `auth.middleware.js` |
 | 🟡 | **SyncService offline allegati** | `syncService.js`, `IndexedDBProvider.js` (v3), `useAttachmentManager.js` |
-| 🟡 | **Seed ISO 45001** | `database/migrations/019_seed_iso45001.sql` |
+| ✅ | **Seed ISO 45001** | domande in DB (id 276-328); template frontend allineato (fix allegati) |
 | 🟢 | Refresh token automatico | `apiService.js` interceptor 401, `POST /auth/refresh` |
 | 🟢 | Auto-logout inattività 4h | `AuthContext.jsx` |
 | 🟢 | Allineamento `/audits` vs `/audits/sync` | debito tecnico — standard_ids[] vs standard_id scalare |
