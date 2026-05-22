@@ -145,10 +145,20 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     return () => clearTimeout(t);
   }, [currentAudit?.id, selectedNorm]);
 
-  // Idrata questionId per ISO 3834/RDP quando il modulo è visibile (allegati e risposte)
+  // Idrata questionId per ISO 45001/3834/RDP quando il modulo è visibile (allegati e risposte)
   useEffect(() => {
     const key = normalizeChecklistKey(selectedNorm);
-    if ((key === "ISO_3834_2" || key === "RDP_MSN") && currentAudit?.checklist?.[key]) {
+    const needsHydration = key === "ISO_45001" || key === "ISO_3834_2" || key === "RDP_MSN";
+    if (needsHydration && currentAudit?.checklist?.[key]) {
+      // Per ISO_45001: verifica se ci sono ancora sezioni legacy (clause4) o domande senza questionId
+      if (key === "ISO_45001") {
+        const ck = currentAudit.checklist[key];
+        const hasLegacyKeys = Object.keys(ck).some((k) => k.startsWith("clause"));
+        const hasMissingIds = Object.values(ck).some(
+          (sec) => sec?.questions?.some((q) => q.questionId == null)
+        );
+        if (!hasLegacyKeys && !hasMissingIds) return;
+      }
       hydrateQuestionIds(key)?.catch((e) => console.warn("[HYDRATE] questionIds:", e.message));
     }
   }, [currentAudit?.id, selectedNorm, hydrateQuestionIds]);

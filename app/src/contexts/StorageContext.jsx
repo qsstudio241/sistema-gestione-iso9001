@@ -2175,13 +2175,20 @@ export function StorageProvider({ children, useMockData = false }) {
   );
 
   /**
-   * Idrata questionId nelle domande della checklist da backend (per standard 6, 7).
+   * Idrata questionId nelle domande della checklist da backend (per standard 3, 6, 7).
    * Necessario per allegati e risposte: il backend richiede question_id INTEGER.
    * Chiamata dopo initializeChecklist quando le domande hanno questionId: null.
+   * Per ISO_45001: rinomina anche le chiavi di sezione legacy (clause4→45001_c4, ecc.)
    */
   const hydrateQuestionIds = useCallback(
     async (standardKey) => {
-      const STANDARD_ID_MAP = { ISO_3834_2: 6, RDP_MSN: 7 };
+      const STANDARD_ID_MAP = { ISO_45001: 3, ISO_3834_2: 6, RDP_MSN: 7 };
+      // Remap chiavi sezioni legacy per ISO_45001 (vecchio template usava "clause4" ecc.)
+      const SECTION_REMAP_45001 = {
+        clause4: "45001_c4", clause5: "45001_c5", clause6: "45001_c6",
+        clause7: "45001_c7", clause8: "45001_c8", clause9: "45001_c9",
+        clause10: "45001_c10",
+      };
       const standardId = STANDARD_ID_MAP[standardKey];
       if (!standardId || !navigator.onLine) return;
       try {
@@ -2192,7 +2199,7 @@ export function StorageProvider({ children, useMockData = false }) {
         questions.forEach((q) => {
           const key = q.section_code;
           if (!bySection[key]) bySection[key] = [];
-          bySection[key].push({ question_id: q.question_id, order: q.question_order });
+          bySection[key].push({ question_id: q.question_id, order: q.question_order ?? q.display_order });
         });
         Object.keys(bySection).forEach((k) =>
           bySection[k].sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -2201,6 +2208,17 @@ export function StorageProvider({ children, useMockData = false }) {
           const checklist = audit.checklist?.[standardKey];
           if (!checklist) return audit;
           const updated = JSON.parse(JSON.stringify(audit));
+          const sectionRemap = standardKey === "ISO_45001" ? SECTION_REMAP_45001 : {};
+          // Rinomina chiavi sezione legacy se necessario
+          if (Object.keys(sectionRemap).length > 0) {
+            const ck = updated.checklist[standardKey];
+            Object.entries(sectionRemap).forEach(([oldKey, newKey]) => {
+              if (ck[oldKey] && !ck[newKey]) {
+                ck[newKey] = { ...ck[oldKey], id: newKey };
+                delete ck[oldKey];
+              }
+            });
+          }
           const oldIdToNewId = {};
           Object.entries(updated.checklist[standardKey]).forEach(([clauseKey, clause]) => {
             if (!clause?.questions) return;
@@ -2226,7 +2244,7 @@ export function StorageProvider({ children, useMockData = false }) {
           }
           return updated;
         });
-        console.log(`✅ [HYDRATE] questionIds idratati per ${standardKey} (${questions.length} domande)`);
+        console.log(`\u2705 [HYDRATE] questionIds idratati per ${standardKey} (${questions.length} domande)`);
       } catch (e) {
         console.warn(`[HYDRATE] questionIds per ${standardKey}:`, e.message);
       }
