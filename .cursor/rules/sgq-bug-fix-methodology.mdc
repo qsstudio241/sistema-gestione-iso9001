@@ -227,6 +227,7 @@ Salvare in `/tmp/test-login.mjs` e lanciare con `node /tmp/test-login.mjs`:
 
 ```js
 import { chromium } from 'playwright';
+import { mkdir } from 'fs/promises';
 
 const EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 const PASSWORD = process.env.SGQ_APP_PASSWORD; // mai hardcoded — letto dall'env
@@ -239,20 +240,25 @@ const page = await context.newPage();
 // Cattura network PRIMA di navigare
 page.on('response', async res => {
   if (res.url().includes('fr-busato') || res.url().includes('auth')) {
-    let body = ''; try { body = (await res.text()).substring(0, 200); } catch {}
+    let body = ''; try { body = (await res.text()).substring(0, 300); } catch {}
     console.log(`[NET] [${res.status()}] ${res.url()}`);
     if (body) console.log(`      ${body}`);
   }
 });
 
-await page.goto('https://systemgest.netlify.app', { waitUntil: 'domcontentloaded' });
-await page.waitForTimeout(1500);
+await mkdir('/opt/cursor/artifacts', { recursive: true });
+await page.goto('https://systemgest.netlify.app', { waitUntil: 'networkidle' });
+await page.waitForSelector('input[placeholder="Inserisci email"]', { state: 'visible' });
 
-// Riempimento form con selector CSS — i placeholder NON sono textContent
-await page.fill('input[placeholder="Inserisci email"]', EMAIL);
-await page.fill('input[type="password"]', PASSWORD);
+// IMPORTANTE: usare click + type (non fill) — fill bypassa onChange di React
+// e il form rimane invalido senza inviare la richiesta POST
+await page.click('input[placeholder="Inserisci email"]');
+await page.type('input[placeholder="Inserisci email"]', EMAIL, { delay: 30 });
+await page.click('input[placeholder="Inserisci password"]');
+await page.type('input[placeholder="Inserisci password"]', PASSWORD, { delay: 30 });
+
 await page.click('button:has-text("Accedi")');
-await page.waitForTimeout(4000);
+await page.waitForTimeout(5000);
 
 // Rilevamento login: assenza del form = successo
 const stillOnLogin = await page.$('input[placeholder="Inserisci email"]') !== null;
@@ -268,6 +274,7 @@ await browser.close();
 |---|---|---|
 | `browser_fill_form` MCP fallisce con schema error | Il tool richiede `target`/`type`/`name` — struttura diversa da doc | Usare `browser_type` con `element` (descrizione) + `target` (ref da snapshot, es. `e14`) |
 | `isOnLoginPage = false` ma login non riuscito | `body.textContent()` non include i `placeholder` degli input | Verificare con `page.$('input[placeholder="..."]')` — deve essere `null` post-login |
+| Nessuna richiesta POST a `/auth/login` rilevata | **`page.fill()` bypassa `onChange` di React** — i campi appaiono compilati ma il form React li vede vuoti | **Usare `page.click()` + `page.type(..., { delay: 30 })` al posto di `page.fill()`** |
 | Nessuna richiesta POST a `/auth/login` rilevata | Response listener montato dopo `page.goto` | Montare `page.on('response', ...)` **prima** di `page.goto` |
 | Password `[REDACTED]` nell'output shell | Il cloud agent maschera i secret nel terminale | La variabile è disponibile in Node.js via `process.env.SGQ_APP_PASSWORD` — usare sempre l'env, mai stampare il valore |
 
