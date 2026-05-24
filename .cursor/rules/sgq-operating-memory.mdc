@@ -152,3 +152,10 @@ Riferimento rapido — blocchi gia' collaudati da riutilizzare:
 2) Applica fix robusto e difensivo.
 3) Esegui test automatici completi disponibili.
 4) Deploy produzione (se applicabile) + smoke; poi **commit e push** quando l'esito e' positivo. In alternativa, commit prima del deploy se serve tracciare lo stato prima del rilascio — l'importante e' non chiudere senza verifica e senza allineare repo e ambiente.
+
+## Chiusura sessione — merge obbligatorio
+Quando il committente chiude la sessione (o il task e' TEST OK):
+1. **Merge su `main`** di ogni PR aperta dalla sessione: `gh pr ready <n>` (se draft) → `gh pr merge <n> --merge`.
+2. **`git pull origin main`** nel workspace per allinearsi.
+3. Aggiornare **`GUIDA_CONSOLIDATA.md`** (lezione appresa + PR mergiata) e **`DEPUTYTASK.md`** (stato chiuso).
+4. **Non** lasciare PR aperte alla chiusura, salvo breaking change o review umana esplicita.
