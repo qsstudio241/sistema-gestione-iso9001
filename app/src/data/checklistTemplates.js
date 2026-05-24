@@ -111,15 +111,131 @@ export const ISO_9001_TEMPLATE = {
 };
 
 /**
- * Template ISO 14001:2015 - Checklist Legislativa Ambiente & Sicurezza
- * 2 sezioni normative — 46 domande
- * Fonte: CheckList\ChekList14001.txt (cliente)
- * questionId: null = domande non ancora nel DB (sync silenzioso; vedere migration 012)
+ * Template ISO 14001:2015 — Audit SGA (clausole 4-10, 53 domande)
+ * Fonte: DB produzione post-migration 049 + UNI EN ISO 14001:2015
+ * questionId: allineati a checklist_questions (standard_id=2)
  */
 export const ISO_14001_TEMPLATE = {
   standardId: 2,
   standardCode: "ISO_14001_2015",
   standardName: "ISO 14001:2015",
+  sections: [
+    {
+      sectionCode: "14001_c4",
+      sectionTitle: "4 - Contesto dell'Organizzazione",
+      displayOrder: 1,
+      questions: [
+        { questionId: 223, clauseRef: "4.1", questionText: "4.1 - L'organizzazione ha determinato i fattori interni ed esterni rilevanti per le sue finalita' e che influenzano il SGA, incluse le condizioni ambientali che la riguardano?", questionType: "conformity", isMandatory: true, displayOrder: 1 },
+        { questionId: 224, clauseRef: "4.2", questionText: "4.2 - L'organizzazione ha identificato le parti interessate rilevanti per il SGA e ne ha determinato esigenze, aspettative e obblighi di conformita' che ne derivano?", questionType: "conformity", isMandatory: true, displayOrder: 2 },
+        { questionId: 225, clauseRef: "4.3", questionText: "4.3 - Il campo di applicazione del SGA e' definito (confini fisici e organizzativi, attivita', prodotti e servizi) e mantenuto come informazione documentata disponibile alle parti interessate?", questionType: "conformity", isMandatory: true, displayOrder: 3 },
+        { questionId: 226, clauseRef: "4.3", questionText: "4.3 - La definizione del campo di applicazione considera i fattori di cui al 4.1, gli obblighi di conformita' di cui al 4.2 e l'autorita'/abilita' dell'organizzazione ad esercitare controllo?", questionType: "conformity", isMandatory: true, displayOrder: 4 },
+        { questionId: 227, clauseRef: "4.4", questionText: "4.4 - Il SGA e' stabilito, attuato, mantenuto e migliorato in modo continuo in conformita' ai requisiti della norma, con processi necessari e loro interazioni definiti?", questionType: "conformity", isMandatory: true, displayOrder: 5 },
+        { questionId: 228, clauseRef: "4.4", questionText: "4.4 - La conoscenza derivante dall'analisi del contesto (4.1) e delle parti interessate (4.2) e' integrata nello sviluppo e nel mantenimento del SGA?", questionType: "conformity", isMandatory: true, displayOrder: 6 },
+        { questionId: 229, clauseRef: "4.4", questionText: "4.4 - Il SGA copre tutte le attivita', i prodotti e i servizi inclusi nel campo di applicazione definito?", questionType: "conformity", isMandatory: true, displayOrder: 7 },
+      ]
+    },
+    {
+      sectionCode: "14001_c5",
+      sectionTitle: "5 - Leadership",
+      displayOrder: 2,
+      questions: [
+        { questionId: 230, clauseRef: "5.1", questionText: "5.1 - L'alta direzione dimostra leadership e impegno: accetta di rendere conto dell'efficacia del SGA, assicura disponibilita' delle risorse e comunica l'importanza della gestione ambientale?", questionType: "conformity", isMandatory: true, displayOrder: 8 },
+        { questionId: 231, clauseRef: "5.1", questionText: "5.1 - L'alta direzione assicura che i requisiti del SGA siano integrati nei processi di business e promuove il miglioramento continuo, guidando e supportando le persone?", questionType: "conformity", isMandatory: true, displayOrder: 9 },
+        { questionId: 232, clauseRef: "5.2", questionText: "5.2 - La politica ambientale e' appropriata alle finalita' e al contesto, fornisce un quadro per gli obiettivi ambientali e include impegni per la protezione dell'ambiente e la prevenzione dell'inquinamento?", questionType: "conformity", isMandatory: true, displayOrder: 10 },
+        { questionId: 233, clauseRef: "5.2", questionText: "5.2 - La politica ambientale include impegno a soddisfare obblighi di conformita' e miglioramento continuo SGA; e' documentata, comunicata internamente e disponibile alle parti interessate?", questionType: "conformity", isMandatory: true, displayOrder: 11 },
+        { questionId: 234, clauseRef: "5.3", questionText: "5.3 - Le responsabilita' e le autorita' per i ruoli pertinenti al SGA sono assegnate, documentate e comunicate all'interno dell'organizzazione?", questionType: "conformity", isMandatory: true, displayOrder: 12 },
+        { questionId: 235, clauseRef: "5.3", questionText: "5.3 - Sono assegnate responsabilita' e autorita' per assicurare la conformita' del SGA alla norma e per riferire all'alta direzione sulle prestazioni del SGA, inclusa la prestazione ambientale?", questionType: "conformity", isMandatory: true, displayOrder: 13 },
+        { questionId: 236, clauseRef: "5.3", questionText: "5.3 - I ruoli gestionali a ogni livello pertinente ricevono supporto nell'esercitare la propria leadership nelle rispettive aree di responsabilita' ambientale?", questionType: "conformity", isMandatory: true, displayOrder: 14 },
+      ]
+    },
+    {
+      sectionCode: "14001_c6",
+      sectionTitle: "6 - Pianificazione",
+      displayOrder: 3,
+      questions: [
+        { questionId: 237, clauseRef: "6.1.1", questionText: "6.1.1 - E' stabilito un processo per determinare i rischi e le opportunita' associati agli aspetti ambientali, agli obblighi di conformita' e ai fattori del contesto, e sono documentati?", questionType: "conformity", isMandatory: true, displayOrder: 15 },
+        { questionId: 238, clauseRef: "6.1.1", questionText: "6.1.1 - Nell'ambito del SGA sono state identificate le potenziali situazioni di emergenza con impatto ambientale?", questionType: "conformity", isMandatory: true, displayOrder: 16 },
+        { questionId: 239, clauseRef: "6.1.2", questionText: "6.1.2 - Gli aspetti ambientali delle attivita', prodotti e servizi (compresi cambiamenti pianificati, condizioni anomale ed emergenze ragionevolmente prevedibili) sono determinati con prospettiva di ciclo di vita?", questionType: "conformity", isMandatory: true, displayOrder: 17 },
+        { questionId: 240, clauseRef: "6.1.2", questionText: "6.1.2 - Gli aspetti ambientali significativi sono determinati con criteri stabiliti, comunicati ai livelli e funzioni pertinenti e mantenuti come informazione documentata (aspetti, criteri, aspetti significativi)?", questionType: "conformity", isMandatory: true, displayOrder: 18 },
+        { questionId: 241, clauseRef: "6.1.3", questionText: "6.1.3 - Gli obblighi di conformita' applicabili agli aspetti ambientali sono identificati, accessibili e considerati nell'istituzione/mantenimento del SGA e mantenuti come informazione documentata?", questionType: "conformity", isMandatory: true, displayOrder: 19 },
+        { questionId: 242, clauseRef: "6.1.4", questionText: "6.1.4 - Sono pianificate azioni per aspetti ambientali significativi, obblighi di conformita' e rischi/opportunita', considerando opzioni tecnologiche e vincoli finanziari e operativi?", questionType: "conformity", isMandatory: true, displayOrder: 20 },
+        { questionId: 243, clauseRef: "6.2.1", questionText: "6.2.1 - Gli obiettivi ambientali sono stabiliti per funzioni e livelli pertinenti, sono coerenti con la politica, misurabili, monitorati, comunicati, aggiornati e mantenuti come informazione documentata?", questionType: "conformity", isMandatory: true, displayOrder: 21 },
+        { questionId: 244, clauseRef: "6.2.1", questionText: "6.2.1 - Gli obiettivi ambientali tengono conto degli aspetti ambientali significativi, degli obblighi di conformita' e dei rischi/opportunita'?", questionType: "conformity", isMandatory: true, displayOrder: 22 },
+        { questionId: 245, clauseRef: "6.2.2", questionText: "6.2.2 - Per ciascun obiettivo ambientale e' definito un piano con: cosa fare, risorse, responsabile, tempi di completamento e indicatori/metodi per valutare i risultati?", questionType: "conformity", isMandatory: true, displayOrder: 23 },
+        { questionId: 246, clauseRef: "6.2.2", questionText: "6.2.2 - Le azioni per il raggiungimento degli obiettivi ambientali sono integrate nei processi di business dell'organizzazione?", questionType: "conformity", isMandatory: true, displayOrder: 24 },
+      ]
+    },
+    {
+      sectionCode: "14001_c7",
+      sectionTitle: "7 - Supporto",
+      displayOrder: 4,
+      questions: [
+        { questionId: 247, clauseRef: "7.1", questionText: "7.1 - Sono state determinate e fornite le risorse (umane, infrastrutturali, tecnologiche, finanziarie) necessarie per l'istituzione, l'attuazione, il mantenimento e il miglioramento del SGA?", questionType: "conformity", isMandatory: true, displayOrder: 25 },
+        { questionId: 248, clauseRef: "7.2", questionText: "7.2 - Le competenze necessarie per il personale con impatto ambientale sono determinate e assicurate (istruzione, formazione, esperienza); le esigenze di formazione correlate al SGA sono identificate?", questionType: "conformity", isMandatory: true, displayOrder: 26 },
+        { questionId: 249, clauseRef: "7.2", questionText: "7.2 - Sono intraprese azioni per acquisire le competenze necessarie e ne e' valutata l'efficacia; le evidenze delle competenze sono conservate come informazione documentata?", questionType: "conformity", isMandatory: true, displayOrder: 27 },
+        { questionId: 250, clauseRef: "7.3", questionText: "7.3 - Il personale sotto il controllo dell'organizzazione e' consapevole della politica ambientale, degli aspetti significativi, del proprio contributo all'efficacia del SGA e delle implicazioni delle non conformita'?", questionType: "conformity", isMandatory: true, displayOrder: 28 },
+        { questionId: 251, clauseRef: "7.4", questionText: "7.4 - Sono stabiliti processi per la comunicazione interna ed esterna pertinente al SGA (cosa, quando, con chi, come), coerenti con le informazioni del SGA e con gli obblighi di conformita'?", questionType: "conformity", isMandatory: true, displayOrder: 29 },
+        { questionId: 252, clauseRef: "7.4.2", questionText: "7.4.2 - La comunicazione interna assicura che informazioni pertinenti al SGA siano diffuse tra livelli e funzioni e che il personale possa contribuire al miglioramento continuo?", questionType: "conformity", isMandatory: true, displayOrder: 30 },
+        { questionId: 253, clauseRef: "7.4.3", questionText: "7.4.3 - La comunicazione esterna pertinente al SGA avviene in conformita' ai processi comunicativi e agli obblighi di conformita', con evidenza documentata per quanto appropriato?", questionType: "conformity", isMandatory: true, displayOrder: 31 },
+        { questionId: 254, clauseRef: "7.5.1", questionText: "7.5.1 - Il SGA comprende tutte le informazioni documentate richieste dalla norma e quelle aggiuntive necessarie per l'efficacia del SGA?", questionType: "conformity", isMandatory: true, displayOrder: 32 },
+        { questionId: 255, clauseRef: "7.5.2", questionText: "7.5.2 - Nella creazione e aggiornamento delle informazioni documentate sono assicurate: identificazione/descrizione adeguata, formato/mezzo appropriato, riesame e approvazione?", questionType: "conformity", isMandatory: true, displayOrder: 33 },
+        { questionId: 256, clauseRef: "7.5.3", questionText: "7.5.3 - Le informazioni documentate del SGA sono tenute sotto controllo: disponibili dove/quando necessario, protette, distribuite, archiviate, conservate e gestite nelle versioni; le modifiche sono controllate?", questionType: "conformity", isMandatory: true, displayOrder: 34 },
+        { questionId: 257, clauseRef: "7.5.3", questionText: "7.5.3 - Le informazioni documentate di origine esterna necessarie per il SGA sono identificate e tenute sotto controllo?", questionType: "conformity", isMandatory: true, displayOrder: 35 },
+      ]
+    },
+    {
+      sectionCode: "14001_c8",
+      sectionTitle: "8 - Attivita Operative",
+      displayOrder: 5,
+      questions: [
+        { questionId: 258, clauseRef: "8.1", questionText: "8.1 - Sono stabiliti criteri operativi per i processi rilevanti e il controllo e' attuato in conformita' (procedure, istruzioni, controlli ingegneristici con gerarchia eliminazione/sostituzione/amministrazione)?", questionType: "conformity", isMandatory: true, displayOrder: 36 },
+        { questionId: 259, clauseRef: "8.1", questionText: "8.1 - Le modifiche pianificate sono gestite e le conseguenze dei cambiamenti involontari sono riesaminate, con azioni per mitigare effetti negativi?", questionType: "conformity", isMandatory: true, displayOrder: 37 },
+        { questionId: 260, clauseRef: "8.1", questionText: "8.1 - I processi affidati all'esterno sono tenuti sotto controllo; i requisiti ambientali sono comunicati ai fornitori esterni/appaltatori; e' adottata una prospettiva di ciclo di vita (progettazione, approvvigionamento, fine vita)?", questionType: "conformity", isMandatory: true, displayOrder: 38 },
+        { questionId: 261, clauseRef: "8.2", questionText: "8.2 - Esiste un processo per prepararsi e rispondere alle emergenze ambientali: piano di risposta, azioni preventive/mitigative, risposta alle emergenze reali?", questionType: "conformity", isMandatory: true, displayOrder: 39 },
+        { questionId: 262, clauseRef: "8.2", questionText: "8.2 - Le azioni di risposta alle emergenze sono periodicamente sottoposte a prova (ove praticabile) e i processi di risposta sono riesaminati e revisionati periodicamente, in particolare dopo eventi di emergenza?", questionType: "conformity", isMandatory: true, displayOrder: 40 },
+        { questionId: 263, clauseRef: "8.2", questionText: "8.2 - Sono fornite informazioni e formazione pertinenti in materia di preparazione e risposta alle emergenze alle parti interessate pertinenti, compresi i lavoratori?", questionType: "conformity", isMandatory: true, displayOrder: 41 },
+      ]
+    },
+    {
+      sectionCode: "14001_c9",
+      sectionTitle: "9 - Valutazione delle Prestazioni",
+      displayOrder: 6,
+      questions: [
+        { questionId: 264, clauseRef: "9.1.1", questionText: "9.1.1 - Sono determinati: cosa monitorare/misurare, i metodi, i criteri di valutazione delle prestazioni ambientali e gli indicatori appropriati, con frequenza definita per esecuzione e analisi?", questionType: "conformity", isMandatory: true, displayOrder: 42 },
+        { questionId: 265, clauseRef: "9.1.1", questionText: "9.1.1 - Le attrezzature di monitoraggio e misurazione sono tarate/verificate e mantenute; i risultati di monitoraggio/analisi/valutazione sono comunicati internamente ed esternamente e documentati?", questionType: "conformity", isMandatory: true, displayOrder: 43 },
+        { questionId: 266, clauseRef: "9.1.2", questionText: "9.1.2 - Esiste un processo per valutare periodicamente la conformita' agli obblighi di conformita'; le azioni necessarie sono intraprese e i risultati della valutazione documentati?", questionType: "conformity", isMandatory: true, displayOrder: 44 },
+        { questionId: 267, clauseRef: "9.2.1", questionText: "9.2.1 - Sono condotti audit interni a intervalli pianificati per verificare la conformita' del SGA ai requisiti propri e della norma e la sua efficace attuazione e mantenimento?", questionType: "conformity", isMandatory: true, displayOrder: 45 },
+        { questionId: 268, clauseRef: "9.2.2", questionText: "9.2.2 - Il programma di audit interno comprende frequenza, metodi, responsabilita', criteri e campo di applicazione; gli auditor garantiscono obiettivita' e imparzialita'; i risultati sono riportati al pertinente livello direzionale e documentati?", questionType: "conformity", isMandatory: true, displayOrder: 46 },
+        { questionId: 269, clauseRef: "9.3", questionText: "9.3 - L'alta direzione riesamina periodicamente il SGA valutando: stato azioni precedenti, cambiamenti interni/esterni/aspetti significativi/rischi, grado di raggiungimento obiettivi, prestazione ambientale, adeguatezza risorse, comunicazioni parti interessate?", questionType: "conformity", isMandatory: true, displayOrder: 47 },
+        { questionId: 270, clauseRef: "9.3", questionText: "9.3 - Il riesame di direzione produce output documentati: conclusioni su idoneita'/adeguatezza/efficacia SGA, decisioni per il miglioramento continuo, eventuali modifiche al SGA, azioni per obiettivi non raggiunti?", questionType: "conformity", isMandatory: true, displayOrder: 48 },
+      ]
+    },
+    {
+      sectionCode: "14001_c10",
+      sectionTitle: "10 - Miglioramento",
+      displayOrder: 7,
+      questions: [
+        { questionId: 271, clauseRef: "10.1", questionText: "10.1 - L'organizzazione determina le opportunita' di miglioramento (da 9.1, 9.2, 9.3) e intraprende le azioni necessarie per conseguire gli esiti attesi del SGA?", questionType: "conformity", isMandatory: true, displayOrder: 49 },
+        { questionId: 272, clauseRef: "10.2", questionText: "10.2 - In caso di non conformita', l'organizzazione reagisce tempestivamente (controllo, correzione, mitigazione impatti ambientali), valuta l'esigenza di azioni correttive per eliminare le cause e prevenire la ripetizione?", questionType: "conformity", isMandatory: true, displayOrder: 50 },
+        { questionId: 273, clauseRef: "10.2", questionText: "10.2 - Le azioni correttive sono proporzionate all'importanza degli effetti e degli impatti ambientali delle non conformita'; la loro efficacia e' riesaminata; il SGA e' modificato se necessario?", questionType: "conformity", isMandatory: true, displayOrder: 51 },
+        { questionId: 274, clauseRef: "10.2", questionText: "10.2 - La natura delle non conformita', le azioni intraprese e i risultati delle azioni correttive sono conservati come informazione documentata?", questionType: "conformity", isMandatory: true, displayOrder: 52 },
+        { questionId: 275, clauseRef: "10.3", questionText: "10.3 - L'organizzazione migliora in modo continuo l'idoneita', l'adeguatezza e l'efficacia del SGA per migliorare la prestazione ambientale?", questionType: "conformity", isMandatory: true, displayOrder: 53 },
+      ]
+    },
+  ]
+};
+
+
+/**
+ * Matrice conformita legislativa (D.Lgs. 152/06) — NON audit ISO 14001 SGA
+ * 2 sezioni normative — 46 domande
+ * Fonte: CheckList\ChekList14001.txt (cliente)
+ * questionId: null = domande non ancora nel DB (sync silenzioso; vedere migration 012)
+ */
+export const ISO_14001_LEGISLATIVO_TEMPLATE = {
+  standardId: 2,
+  standardCode: "LEG_AMBIENTE_152",
+  standardName: "Conformita legislativa ambientale",
   sections: [
     {
       sectionCode: "14001_s4",
