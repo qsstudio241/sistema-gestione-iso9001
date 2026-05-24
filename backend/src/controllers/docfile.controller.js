@@ -104,34 +104,41 @@ async function uploadDocFile(req, res) {
             return res.status(404).json({ error: 'Documento non trovato.' });
         }
 
-        // Marca le versioni precedenti come non correnti
-        await pool.request()
-            .input('docId', docId)
-            .query(`UPDATE attachments SET is_current_doc_version = 0 WHERE document_id = @docId`);
+        const transaction = pool.transaction();
+        await transaction.begin();
+        try {
+            await transaction.request()
+                .input('docId', docId)
+                .query(`UPDATE attachments SET is_current_doc_version = 0 WHERE document_id = @docId`);
 
-        // Inserisci il nuovo allegato
-        const insertResult = await pool.request()
-            .input('docId',    docId)
-            .input('userId',   userId)
-            .input('fileName', req.file.originalname)
-            .input('storagePath', req.file.path)
-            .input('fileSize', req.file.size)
-            .input('fileType', path.extname(req.file.originalname).toLowerCase())
-            .input('mimeType', req.file.mimetype || null)
-            .input('version',  version)
-            .query(`
-                INSERT INTO attachments
-                    (document_id, uploaded_by,
-                     file_name, file_type, storage_path, file_size, mime_type,
-                     doc_file_version, is_current_doc_version,
-                     category, created_at)
-                OUTPUT INSERTED.attachment_id AS id
-                VALUES
-                    (@docId, @userId,
-                     @fileName, @fileType, @storagePath, @fileSize, @mimeType,
-                     @version, 1,
-                     'document', GETDATE())
-            `);
+            var insertResult = await transaction.request()
+                .input('docId',    docId)
+                .input('userId',   userId)
+                .input('fileName', req.file.originalname)
+                .input('storagePath', req.file.path)
+                .input('fileSize', req.file.size)
+                .input('fileType', path.extname(req.file.originalname).toLowerCase())
+                .input('mimeType', req.file.mimetype || null)
+                .input('version',  version)
+                .query(`
+                    INSERT INTO attachments
+                        (document_id, uploaded_by,
+                         file_name, file_type, storage_path, file_size, mime_type,
+                         doc_file_version, is_current_doc_version,
+                         category, created_at)
+                    OUTPUT INSERTED.attachment_id AS id
+                    VALUES
+                        (@docId, @userId,
+                         @fileName, @fileType, @storagePath, @fileSize, @mimeType,
+                         @version, 1,
+                         'document', GETDATE())
+                `);
+
+            await transaction.commit();
+        } catch (txErr) {
+            await transaction.rollback();
+            throw txErr;
+        }
 
         const newId = insertResult.recordset[0].id;
         logger.info(`[DocFile] Upload doc ${docId} → attachment ${newId} (${req.file.originalname})`);
