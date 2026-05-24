@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
 
 ---
 
@@ -67,6 +67,37 @@ Sessioni recenti (consultazione): [Sessione 22/05/2026 (bis)](#aggiornamento-220
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
+### Sessione 24/05/2026 — Smoke E2E login Playwright (cloud agent)
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Documentazione Fase 6 test E2E autenticato | Template Playwright + errori comuni in `sgq-bug-fix-methodology.mdc` (commit `9ae2265`) |
+| 2 | Smoke login su `systemgest.netlify.app` | **Primo tentativo fallito** — errore UI «Inserire email» |
+| 3 | Diagnosi + fix template doc | Input React controllati: `page.fill()` non basta → `pressSequentially` su `#email` / `#password` |
+| 4 | Smoke login (secondo tentativo) | **OK** — `POST /auth/login` 200, dashboard visibile (`admin@sgq.local`, org Al.project) |
+| 5 | PR doc corretta | [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) — **MERGED** su `main` (commit `d4c9a04`) |
+
+#### Lezione appresa (24/05/2026)
+
+**Ipotesi iniziale sbagliata:** credenziali errate o API backend non raggiungibile.
+
+**Causa reale:** `Login.jsx` usa input **controllati React** (`value={formData.email}` + `onChange`). Playwright `page.fill()` scrive nel DOM ma **non** aggiorna lo stato React; al submit la validazione locale legge `formData` vuoto → «Inserire email», **senza** chiamare l'API (o con body vuoto).
+
+**Pattern risolutivo (E2E su form React controllati):**
+
+1. **Prima** verificare l'API con `curl` — se 200, il problema è UI/test, non backend.
+2. Leggere il messaggio di errore **in pagina** (`.login-error`), non solo «form ancora visibile».
+3. Compilare con `pressSequentially` (o helper `fillReactInput`) su `#email` / `#password`, non solo `page.fill()`.
+4. **Non** usare Playwright MCP per login — non legge `SGQ_APP_PASSWORD`; usare script Node in `/tmp/test-login.mjs`.
+
+**Regola ripetibile:** su qualsiasi form React controllato in test E2E, se il DOM mostra il valore ma la validazione fallisce → simulare digitazione reale (`pressSequentially`) o dispatch esplicito di eventi `input`/`change`.
+
+**Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
 
 ---
 
@@ -330,7 +361,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 - **`getUserMedia({audio:true})` deve precedere `SpeechRecognition.start()` su Android Chrome PWA.** Senza questa chiamata, Chrome non mostra il dialog di consenso nativo e rigetta silenziosamente. Sequenza corretta: `permissions.query` → `getUserMedia` → `SpeechRecognition.start()`.
 
-- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD` (mai redatto in Node.js, solo nell'output shell). Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. Selector corretto per il form: `input[placeholder="Inserisci email"]` e `input[type="password"]`. Rilevamento login: `page.$('input[placeholder="Inserisci email"]') === null` dopo submit. Dettaglio completo → `sgq-bug-fix-methodology.mdc` Fase 6.
+- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD`. Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. **Attenzione**: il form login usa input React controllati — `page.fill()` da solo fallisce con errore «Inserire email»; usare `pressSequentially` su `#email` / `#password` (template in `sgq-bug-fix-methodology.mdc` Fase 6).
 
 - **Netlify può aggiornare gli header CDN (`netlify.toml`) senza ricompilare il bundle JS.** Se si cambia solo `netlify.toml` → header live in pochi minuti; bundle invariato. Se si cambia codice in `app/` → bundle nuovo hash al prossimo deploy completo.
 
@@ -372,10 +403,11 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Route `/contract-reviews` | ✅ HTTP 401 senza auth |
 | Route `/norm-broker/search` | ✅ HTTP 401 senza auth |
 
-#### Smoke test E2E — da completare
+#### Smoke test E2E login — completato (24/05/2026)
 
-- ⏳ Login su `https://systemgest.netlify.app` → menu SGQ → "Riesame Requisiti" → creare caso → incollare capitolato → lanciare analisi AI → verificare suggerimenti
-- Credenziali test: `admin@sgq.local` / `Sistemi@2026` (superadmin, org 1001)
+- ✅ Login su `https://systemgest.netlify.app` con script Playwright Node (`/tmp/test-login.mjs`) — dashboard post-auth verificata
+- Credenziali test: `admin@sgq.local` via env `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (superadmin, org 1001)
+- Smoke esteso moduli (Riesame Requisiti, AI, ecc.): da eseguire in sessione dedicata se serve
 
 ---
 
