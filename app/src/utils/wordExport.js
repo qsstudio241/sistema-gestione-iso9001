@@ -52,6 +52,14 @@ const LOGO_CLIENT_MAX_W_EMU = 540000;
 const LOGO_ORG_MAX_W_EMU    = 792000;
 const LOGO_MAX_H_EMU        = 540000;
 
+// ─── Mappa standard → etichetta leggibile ─────────────────────────────────────
+const NORM_LABELS = {
+    'ISO_9001':   'ISO 9001:2015',
+    'ISO_14001':  'ISO 14001:2015',
+    'ISO_45001':  'ISO 45001:2018',
+    'ISO_3834_2': 'ISO 3834-2:2021',
+};
+
 // ─── Mappa standard → template ────────────────────────────────────────────────
 // PER AGGIUNGERE UNA NUOVA NORMA: inserire qui la coppia chiave→percorso template.
 // Nient'altro da modificare nel codice.
@@ -110,7 +118,7 @@ function normalizeMimeType(mimeType) {
     return String(mimeType || '').split(';')[0].trim().toLowerCase();
 }
 
-function buildTemplateData(audit, normKey = null) {
+export function buildTemplateData(audit, normKey = null) {
     const meta    = audit.metadata       || {};
     const gd      = meta.generalData     || {};
     const obj     = meta.auditObjective  || {};
@@ -230,6 +238,32 @@ function buildTemplateData(audit, normKey = null) {
                 'Totale: ' + m.total + ' | Risposte: ' + m.answered +
                 ' | NC: ' + m.totalNC + ' | OSS: ' + m.totalOSS + ' | OM: ' + m.totalOM +
                 ' | N.A.: ' + m.totalNA + ' | NV: ' + m.totalNV),
+        // ── Nuovi placeholder estesi ──────────────────────────────────────────
+        revisionNumber:    String(meta.revisionNumber ?? meta.revision ?? ''),
+        auditorEmail:      meta.auditorEmail  || '',
+        auditorPhone:      meta.auditorPhone  || '',
+        companyAddress:    meta.exportCompanyAddress || meta.companyAddress || meta.clientAddress || '',
+        nextAuditDate:     formatDate(meta.nextAuditDate || outcome.nextAuditDate),
+        referenceStandard: normKey
+            ? (NORM_LABELS[normKey] || normKey)
+            : (meta.selectedStandards || []).map(k => NORM_LABELS[k] || k).join(', '),
+        overallOutcome: (() => {
+            if (m.total === 0 || m.answered === 0) return 'Non valutato';
+            if (m.totalNC > 0) return 'Non conforme';
+            if (m.totalOSS > 0 || m.totalOM > 0) return 'Con osservazioni';
+            return 'Conforme';
+        })(),
+        auditType:         meta.auditType || '',
+        projectYear:       String(meta.projectYear || new Date().getFullYear()),
+        totalQuestions:    String(m.total),
+        answeredQuestions: String(m.answered),
+        notAnsweredCount:  String(m.totalNotAnswered),
+        auditStatus:       meta.status || '',
+        completedDate:     formatDate(meta.completedAt),
+        approvedDate:      formatDate(meta.approvedAt),
+        createdDate:       formatDate(meta.createdAt),
+        lastModifiedDate:  formatDate(meta.lastModified),
+        agenda:            obj.agenda || '',
     };
 }
 

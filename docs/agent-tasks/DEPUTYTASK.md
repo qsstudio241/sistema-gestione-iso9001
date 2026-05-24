@@ -1,4 +1,4 @@
-# DEPUTYTASK — Sessione doc chiusa (2026-05-21)
+# DEPUTYTASK — Sessione chiusa (2026-05-24)
 
 **Stato:** TEST OK — **nessun task attivo**
 
@@ -6,16 +6,16 @@
 
 | Voce | Esito |
 |------|--------|
-| Fase 1 doc | Merged su `main` via [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) |
-| Fase 2 doc | Su `main` (commit `b5f303b`): `how-to/`, `reference/`, `specs/`, hub deploy, stub redirect |
-| PR #58 | Già **MERGED** — non serve merge manuale |
+| Smoke E2E login Playwright | **OK** — `POST /auth/login` 200, dashboard visibile |
+| Fix template Fase 6 (input React controllati) | PR [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) **MERGED** su `main` (`d4c9a04`) |
+| Lezione appresa in GUIDA | Sezione [Sessione 24/05/2026](../GUIDA_CONSOLIDATA.md#sessione-24052026--smoke-e2e-login-playwright-cloud-agent) |
+| Policy merge a chiusura sessione | Registrata in `sgq-operating-memory.mdc` + `sgq-self-learning.mdc` |
 
-## Prossima sessione (solo documentazione)
+## Prossima sessione (suggerimenti)
 
-Leggi la **Fase 3** in [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc).
+- Fase 3 doc: [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) — slice 3a (`adr/README.md` suffissi ADR duplicati)
+- Smoke esteso post-login (moduli AI, Riesame Requisiti) se richiesto dal committente
 
-**Prima slice consigliata (3a):** aggiornare [adr/README.md](../adr/README.md) con suffissi univoci per ADR 002/003 duplicati, senza rinominare file.
-
-Quando il committente vuole riaprire il deputy, sovrascrivere questo file con il brief della slice scelta e usare:
+Quando riaprire il deputy, sovrascrivere questo file e usare:
 
 `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`

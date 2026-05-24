@@ -233,6 +233,13 @@ const EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 const PASSWORD = process.env.SGQ_APP_PASSWORD; // mai hardcoded — letto dall'env
 if (!PASSWORD) { console.error('SGQ_APP_PASSWORD mancante'); process.exit(1); }
 
+/** Input React controllati (value + onChange): page.fill() da solo non basta. */
+async function fillReactInput(page, selector, value) {
+  await page.locator(selector).click();
+  await page.locator(selector).fill('');
+  await page.locator(selector).pressSequentially(value, { delay: 20 });
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const page = await context.newPage();
@@ -266,6 +273,7 @@ console.log(stillOnLogin ? '❌ LOGIN FALLITO' : '✅ LOGIN RIUSCITO');
 
 await page.screenshot({ path: '/opt/cursor/artifacts/smoke_post_login.png', fullPage: true });
 await browser.close();
+process.exit(stillOnLogin ? 1 : 0);
 ```
 
 ### 6c. Errori comuni e correzioni
@@ -276,6 +284,7 @@ await browser.close();
 | `isOnLoginPage = false` ma login non riuscito | `body.textContent()` non include i `placeholder` degli input | Verificare con `page.$('input[placeholder="..."]')` — deve essere `null` post-login |
 | Nessuna richiesta POST a `/auth/login` rilevata | **`page.fill()` bypassa `onChange` di React** — i campi appaiono compilati ma il form React li vede vuoti | **Usare `page.click()` + `page.type(..., { delay: 30 })` al posto di `page.fill()`** |
 | Nessuna richiesta POST a `/auth/login` rilevata | Response listener montato dopo `page.goto` | Montare `page.on('response', ...)` **prima** di `page.goto` |
+| Errore UI **«Inserire email»** nonostante `page.fill()` | `Login.jsx` usa input **controllati React** (`value` + `onChange`); `fill()` aggiorna il DOM ma non lo stato | Usare `fillReactInput` con `pressSequentially` (vedi template 6b) oppure selector `#email` / `#password` |
 | Password `[REDACTED]` nell'output shell | Il cloud agent maschera i secret nel terminale | La variabile è disponibile in Node.js via `process.env.SGQ_APP_PASSWORD` — usare sempre l'env, mai stampare il valore |
 
 ### 6d. Credenziali disponibili (verificate 24/05/2026)
