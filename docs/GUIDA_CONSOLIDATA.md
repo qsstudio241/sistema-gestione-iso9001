@@ -330,7 +330,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 - **`getUserMedia({audio:true})` deve precedere `SpeechRecognition.start()` su Android Chrome PWA.** Senza questa chiamata, Chrome non mostra il dialog di consenso nativo e rigetta silenziosamente. Sequenza corretta: `permissions.query` → `getUserMedia` → `SpeechRecognition.start()`.
 
-- **Diagnosi autonoma con Playwright MCP**: per verificare header HTTP di produzione senza accesso fisico al device → `curl -sI https://[sito]/ | grep -i permissions-policy`. Per verificare se il bundle Netlify è aggiornato → fetch dell'index.html + search nel bundle JS per stringhe note. Credenziali login: usare `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` env vars + `browser_run_code_unsafe` con script in `/workspace/.playwright-mcp/`.
+- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD` (mai redatto in Node.js, solo nell'output shell). Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. Selector corretto per il form: `input[placeholder="Inserisci email"]` e `input[type="password"]`. Rilevamento login: `page.$('input[placeholder="Inserisci email"]') === null` dopo submit. Dettaglio completo → `sgq-bug-fix-methodology.mdc` Fase 6.
 
 - **Netlify può aggiornare gli header CDN (`netlify.toml`) senza ricompilare il bundle JS.** Se si cambia solo `netlify.toml` → header live in pochi minuti; bundle invariato. Se si cambia codice in `app/` → bundle nuovo hash al prossimo deploy completo.
 
