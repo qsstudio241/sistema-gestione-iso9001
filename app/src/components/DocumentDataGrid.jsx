@@ -52,8 +52,15 @@ function DocumentDataGrid({
   onDocSelect,
 }) {
   const [selectedId, setSelectedId] = useState(null);
-  const [sortCol, setSortCol] = useState(null);
+  const [sortCol, setSortCol] = useState("title");
   const [sortDir, setSortDir] = useState("asc");
+
+  // Deseleziona se la riga non esiste più (pagina/filtri cambiati)
+  React.useEffect(() => {
+    if (selectedId && !documents.some((d) => d.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [documents, selectedId]);
 
   const sortedDocs = useMemo(
     () => sortDocs(documents, sortCol, sortDir),
@@ -110,38 +117,48 @@ function DocumentDataGrid({
 
   return (
     <div className="datagrid">
-      {/* Toolbar */}
-      <div className="datagrid-toolbar">
-        <button
-          className="datagrid-toolbar__btn"
-          disabled={!selectedDoc}
-          onClick={handleFileDialog}
-          title="Allegato"
-        >
-          <span className="datagrid-toolbar__icon">{"\uD83D\uDCCE"}</span>
-          <span className="datagrid-toolbar__label">Allegato</span>
-        </button>
-        <button
-          className="datagrid-toolbar__btn"
-          disabled={!selectedDoc}
-          onClick={handleEdit}
-          title="Modifica"
-        >
-          <span className="datagrid-toolbar__icon">{"\u270F\uFE0F"}</span>
-          <span className="datagrid-toolbar__label">Modifica</span>
-        </button>
-        <button
-          className="datagrid-toolbar__btn datagrid-toolbar__btn--muted"
-          disabled={!selectedDoc || selectedDoc?.status === "obsoleto"}
-          onClick={handleArchive}
-          title="Archivia"
-        >
-          <span className="datagrid-toolbar__icon">{"\uD83D\uDDC4\uFE0F"}</span>
-          <span className="datagrid-toolbar__label">Archivia</span>
-        </button>
+      {/* Toolbar contestuale ù si attiva dopo selezione riga */}
+      <div className={`datagrid-toolbar${selectedDoc ? " datagrid-toolbar--active" : ""}`}>
+        <span className="datagrid-toolbar__hint">
+          {selectedDoc
+            ? "Azioni sul documento selezionato:"
+            : "Seleziona una riga nella tabella (clic singolo)"}
+        </span>
+        <div className="datagrid-toolbar__actions">
+          <button
+            className="datagrid-toolbar__btn"
+            disabled={!selectedDoc}
+            onClick={handleFileDialog}
+            title="Allegato"
+          >
+            <span className="datagrid-toolbar__icon">{"\uD83D\uDCCE"}</span>
+            <span className="datagrid-toolbar__label">Allegato</span>
+          </button>
+          <button
+            className="datagrid-toolbar__btn"
+            disabled={!selectedDoc}
+            onClick={handleEdit}
+            title="Modifica"
+          >
+            <span className="datagrid-toolbar__icon">{"\u270F\uFE0F"}</span>
+            <span className="datagrid-toolbar__label">Modifica</span>
+          </button>
+          <button
+            className="datagrid-toolbar__btn datagrid-toolbar__btn--muted"
+            disabled={!selectedDoc || selectedDoc?.status === "obsoleto"}
+            onClick={handleArchive}
+            title="Archivia"
+          >
+            <span className="datagrid-toolbar__icon">{"\uD83D\uDDC4\uFE0F"}</span>
+            <span className="datagrid-toolbar__label">Archivia</span>
+          </button>
+        </div>
         {selectedDoc && (
           <span className="datagrid-toolbar__selection">
-            Selezionato: <strong>{selectedDoc.title}</strong>
+            <strong>{selectedDoc.doc_code || selectedDoc.title}</strong>
+            {selectedDoc.doc_code && (
+              <span className="datagrid-toolbar__selection-title">{selectedDoc.title}</span>
+            )}
           </span>
         )}
       </div>
@@ -151,17 +168,29 @@ function DocumentDataGrid({
         <table className="datagrid-table">
           <thead>
             <tr>
+              <th className="datagrid-th datagrid-th--select" aria-label="Selezione" />
               {COLUMNS.map((col) => (
                 <th
                   key={col.id}
                   className={`datagrid-th${col.sortable ? " datagrid-th--sortable" : ""}${sortCol === col.id ? " datagrid-th--active" : ""}`}
                   onClick={col.sortable ? () => handleHeaderClick(col.id) : undefined}
                   style={{ width: col.width !== "1fr" ? col.width : undefined }}
+                  title={col.sortable ? "Clicca per ordinare" : undefined}
+                  aria-sort={
+                    col.sortable && sortCol === col.id
+                      ? sortDir === "asc" ? "ascending" : "descending"
+                      : col.sortable ? "none" : undefined
+                  }
                 >
                   <span className="datagrid-th__label">{col.label}</span>
-                  {col.sortable && sortCol === col.id && (
-                    <span className="datagrid-th__arrow">
-                      {sortDir === "asc" ? "\u25B2" : "\u25BC"}
+                  {col.sortable && (
+                    <span
+                      className={`datagrid-th__arrow${sortCol === col.id ? " datagrid-th__arrow--active" : ""}`}
+                      aria-hidden="true"
+                    >
+                      {sortCol === col.id
+                        ? (sortDir === "asc" ? "\u25B2" : "\u25BC")
+                        : "\u21C5"}
                     </span>
                   )}
                 </th>
@@ -171,7 +200,7 @@ function DocumentDataGrid({
           <tbody>
             {sortedDocs.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNS.length} className="datagrid-empty-cell">
+                <td colSpan={COLUMNS.length + 1} className="datagrid-empty-cell">
                   Nessun documento trovato.
                 </td>
               </tr>
@@ -184,7 +213,14 @@ function DocumentDataGrid({
                     className={`datagrid-row${isSelected ? " datagrid-row--selected" : ""} ${getExpiryClass(doc)}`}
                     onClick={() => handleRowClick(doc)}
                     onDoubleClick={() => handleRowDoubleClick(doc)}
+                    aria-selected={isSelected}
                   >
+                    <td className="datagrid-cell datagrid-cell--select">
+                      <span
+                        className={`datagrid-select${isSelected ? " datagrid-select--on" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </td>
                     <td className="datagrid-cell datagrid-cell--code" title={doc.doc_code || ""}>
                       {doc.doc_code || "-"}
                     </td>

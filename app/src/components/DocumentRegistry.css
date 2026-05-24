@@ -428,64 +428,7 @@
 }
 .docregistry-empty p { margin-bottom: 16px; font-size: 1rem; }
 
-/* ─── Tabella ──────────────────────────────────────────────────────────────── */
-
-.docregistry-table-wrap {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-}
-
-.docregistry-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.docregistry-table thead {
-  background: #1e3a5f;
-  color: #fff;
-}
-.docregistry-table th {
-  padding: 10px 12px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.docregistry-table tbody tr {
-  border-bottom: 1px solid #f3f4f6;
-  transition: background 0.1s;
-}
-.docregistry-table tbody tr:hover { background: #f8fafc; }
-.docregistry-table td {
-  padding: 9px 12px;
-  vertical-align: middle;
-}
-
-/* Semaforo righe */
-.docregistry-table tr.expiry-scaduto       { background: #fff5f5; }
-.docregistry-table tr.expiry-scaduto:hover { background: #fee2e2; }
-.docregistry-table tr.expiry-warning       { background: #fffbeb; }
-.docregistry-table tr.expiry-warning:hover { background: #fef3c7; }
-.docregistry-table tr.expiry-obsoleto      { opacity: 0.55; }
-
-/* Colonne */
-.col-code        { white-space: nowrap; font-family: monospace; font-size: 0.8rem; color: #374151; }
-.col-title       { min-width: 200px; }
-.col-type        { white-space: nowrap; }
-.col-rev         { text-align: center; color: #6b7280; }
-.col-status      { white-space: nowrap; }
-.col-expiry      { white-space: nowrap; }
-.col-expiry.expiry-scaduto { color: #991b1b; font-weight: 600; }
-.col-expiry.expiry-warning { color: #92400e; font-weight: 600; }
-.col-company     { white-space: nowrap; color: #6b7280; }
-.col-responsible { color: #6b7280; font-size: 0.82rem; }
-.col-actions     { white-space: nowrap; text-align: right; }
-
-.doc-title  { display: block; font-weight: 500; color: #111827; }
-.doc-clause { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+/* Badge tipo/stato (usati anche da DocumentDataGrid) */
 
 .doc-type-badge {
   display: inline-block;
