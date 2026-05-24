@@ -174,6 +174,7 @@ scp_file "${BACKEND_ROOT}/src/services/auditLock.service.js"           "${REMOTE
 scp_file "${BACKEND_ROOT}/src/services/auditNumberAllocation.service.js" "${REMOTE_BASE}/src/services/auditNumberAllocation.service.js"
 scp_file "${BACKEND_ROOT}/src/services/customChecklist.service.js"     "${REMOTE_BASE}/src/services/customChecklist.service.js"
 scp_file "${BACKEND_ROOT}/src/services/reportTemplate.service.js"      "${REMOTE_BASE}/src/services/reportTemplate.service.js"
+scp_file "${BACKEND_ROOT}/src/data/legislativoAmbientaleTemplate.js"  "${REMOTE_BASE}/src/data/legislativoAmbientaleTemplate.js"
 
 echo ""
 echo "✓ Tutti i file copiati."
