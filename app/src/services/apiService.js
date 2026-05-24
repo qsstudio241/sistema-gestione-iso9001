@@ -1044,6 +1044,10 @@ class ApiService {
         return this.post('/custom-checklists', data);
     }
 
+    async seedLegislativoAmbientaleChecklist() {
+        return this.post('/custom-checklists/seed/legislativo-ambientale', {});
+    }
+
     async updateCustomChecklist(id, data) {
         return this.put(`/custom-checklists/${id}`, data);
     }

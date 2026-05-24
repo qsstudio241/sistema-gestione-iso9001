@@ -77,6 +77,60 @@
   background: #218838;
 }
 
+.cc-seed-panel {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #c5d9f0;
+  border-radius: 6px;
+  background: #f0f7ff;
+}
+
+.cc-seed-panel h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.cc-seed-desc {
+  margin: 0 0 0.75rem;
+  color: #444;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.cc-seed-ok {
+  margin: 0;
+  color: #155724;
+  font-size: 0.9rem;
+}
+
+.btn-seed-legislativo {
+  padding: 0.5rem 1rem;
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-seed-legislativo:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.btn-seed-legislativo:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.cc-item-badge-leg {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: 3px;
+  background: #e8f4ea;
+  color: #1e6b34;
+}
+
 .cc-empty {
   color: #666;
   font-style: italic;

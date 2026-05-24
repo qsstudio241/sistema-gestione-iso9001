@@ -2095,13 +2095,28 @@ export function StorageProvider({ children, useMockData = false }) {
         return false;
       }
 
-      // Verifica se checklist già inizializzata
-      if (
-        currentAudit.checklist?.[standard] &&
-        Object.keys(currentAudit.checklist[standard]).length > 0
-      ) {
+      const existingChecklist = currentAudit.checklist?.[standard];
+      const hasExisting =
+        existingChecklist && Object.keys(existingChecklist).length > 0;
+      const isLegacyIso14001 =
+        standardId === 2 &&
+        hasExisting &&
+        Object.keys(existingChecklist).some(
+          (k) =>
+            k === "14001_s4" ||
+            k === "14001_s5" ||
+            k.startsWith("iso14001"),
+        );
+
+      // Verifica se checklist già inizializzata (salta se struttura legislativa obsoleta su 14001)
+      if (hasExisting && !isLegacyIso14001) {
         console.log(`ℹ️ Checklist ${standard} già inizializzata`);
         return true;
+      }
+      if (isLegacyIso14001) {
+        console.warn(
+          `[StorageContext] Checklist ${standard} con matrice legislativa obsoleta — re-inizializzazione SGA (clausole 4-10)`,
+        );
       }
 
       // STRATEGIA: Copia sincrona del template (no fetch, no race conditions)
@@ -2182,7 +2197,13 @@ export function StorageProvider({ children, useMockData = false }) {
    */
   const hydrateQuestionIds = useCallback(
     async (standardKey) => {
-      const STANDARD_ID_MAP = { ISO_45001: 3, ISO_3834_2: 6, RDP_MSN: 7 };
+      const STANDARD_ID_MAP = {
+        ISO_14001: 2,
+        ISO_14001_2015: 2,
+        ISO_45001: 3,
+        ISO_3834_2: 6,
+        RDP_MSN: 7,
+      };
       // Remap chiavi sezioni legacy per ISO_45001 (vecchio template usava "clause4" ecc.)
       const SECTION_REMAP_45001 = {
         clause4: "45001_c4", clause5: "45001_c5", clause6: "45001_c6",
