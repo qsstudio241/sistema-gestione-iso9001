@@ -26,7 +26,7 @@ const uploadDocFileMiddleware = (req, res, next) => {
             }
             // Altri errori di Multer (es. file troppo grande)
             if (err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(413).json({ error: 'File troppo grande. Il limite è 500 MB.', code: 'PAYLOAD_TOO_LARGE' });
+                return res.status(413).json({ error: 'Il file supera il limite massimo di 200 MB', code: 'PAYLOAD_TOO_LARGE' });
             }
             return res.status(400).json({ error: err.message || 'Errore durante l\'upload del file', code: 'UPLOAD_ERROR' });
         }

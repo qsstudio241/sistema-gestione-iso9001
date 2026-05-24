@@ -22,6 +22,7 @@ import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
+import DocumentDataGrid from "./DocumentDataGrid";
 import "./DocumentRegistry.css";
 
 // ─── Alberi clausole per vista per-standard ──────────────────────────────────
@@ -213,7 +214,7 @@ function StandardClauseNode({ node, level, selectedCode, expandedCodes, onToggle
         <span className="doc-tree__icon" aria-hidden="true">
           {hasChildren ? "\uD83D\uDCC2" : "\uD83D\uDCC4"}
         </span>
-        <span className="doc-tree__label">
+        <span className="doc-tree__label" title={`\u00A7${node.code} ${node.label}`}>
           <span className="std-tree__code">{"\u00A7"}{node.code}</span>{" "}
           {node.label}
         </span>
@@ -338,7 +339,7 @@ function PriorityCard({ doc, onEdit, onArchive, archiveId, onConfirmArchive, onC
       <div className="pcard-left">
         <span className={`pcard-dot dot-${doc.is_expired ? "red" : "orange"}`} />
         <div className="pcard-info">
-          <span className="pcard-title">{doc.title}</span>
+          <span className="pcard-title" title={doc.title}>{doc.title}</span>
           <span className="pcard-meta">
             {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
             {doc.doc_code && ` · ${doc.doc_code}`}
@@ -560,97 +561,28 @@ function CatalogView({
         <div className="catalog-count">{total} documento{total !== 1 ? "i" : ""}</div>
       )}
 
-      {/* Tabella */}
-      {loading ? (
-        <div className="docregistry-loading">
-          <div className="loading-spinner-sm" />
-          <span>Caricamento...</span>
-        </div>
-      ) : documents.length === 0 ? (
+      {/* DataGrid */}
+      {documents.length === 0 && !loading ? (
         <div className="docregistry-empty">
           <p>Nessun documento trovato.</p>
           <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
         </div>
       ) : (
         <>
-          <div className="docregistry-table-wrap">
-            <table className="docregistry-table">
-              <thead>
-                <tr>
-                  <th>Codice</th>
-                  <th>Titolo</th>
-                  <th>Tipo</th>
-                  <th>Rev.</th>
-                  <th>Stato</th>
-                  <th>Scadenza</th>
-                  <th>Azienda</th>
-                  <th>Responsabile</th>
-                  <th style={{ width: 90 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((doc) => {
-                  const isConfirming = archiveId === doc.id;
-                  return (
-                    <tr key={doc.id} className={getExpiryClass(doc)}>
-                      <td className="col-code">{doc.doc_code || "-"}</td>
-                      <td className="col-title">
-                        <span className="doc-title">{doc.title}</span>
-                        {doc.clause_ref && (
-                          <span className="doc-clause">{doc.standard_code} §{doc.clause_ref}</span>
-                        )}
-                      </td>
-                      <td className="col-type">
-                        <span className="doc-type-badge">
-                          {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
-                        </span>
-                      </td>
-                      <td className="col-rev">{doc.revision || "-"}</td>
-                      <td className="col-status">
-                        <span className={`status-badge status-${doc.status}`}>
-                          {DOC_STATUS_LABELS[doc.status] || doc.status}
-                        </span>
-                      </td>
-                      <td className={`col-expiry ${getExpiryClass(doc)}`}>
-                        {doc.expiry_date ? (
-                          <span>
-                            {doc.is_expired   && "⚠️ "}
-                            {doc.expiring_soon && !doc.is_expired && "🟡 "}
-                            {formatDate(doc.expiry_date)}
-                          </span>
-                        ) : "-"}
-                      </td>
-                      <td className="col-company">{doc.company_name || "-"}</td>
-                      <td className="col-responsible">{doc.responsible || "-"}</td>
-                      <td className="col-actions" style={isConfirming ? { minWidth: 220 } : {}}>
-                        {isConfirming ? (
-                          <div className="inline-confirm">
-                            <span className="inline-confirm-text">Archiviare?</span>
-                            <button className="btn-confirm-yes" onClick={() => onConfirmArchive(doc.id)}>Sì</button>
-                            <button className="btn-confirm-no" onClick={onCancelArchive}>No</button>
-                          </div>
-                        ) : (
-                          <>
-                            <button className="btn-icon" title="File allegato" onClick={() => onFileDialog(doc)}>📎</button>
-                            <button className="btn-icon" title="Modifica" onClick={() => onEdit(doc)}>✏️</button>
-                            {doc.status !== "obsoleto" && (
-                              <button className="btn-icon" title="Archivia" onClick={() => onArchive(doc.id)}>🗄️</button>
-                            )}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DocumentDataGrid
+            documents={documents}
+            loading={loading}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            onFileDialog={onFileDialog}
+            onDocSelect={onEdit}
+          />
 
           {totalPages > 1 && (
             <div className="docregistry-pagination">
-              <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>← Prec.</button>
+              <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>{"\u2190"} Prec.</button>
               <span>Pagina {page} di {totalPages}</span>
-              <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Succ. →</button>
+              <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Succ. {"\u2192"}</button>
             </div>
           )}
         </>
@@ -1432,7 +1364,7 @@ function DocumentRegistry() {
                                 {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
                               </span>
                               <div className="tree-doc-card__info">
-                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__title" title={doc.title}>{doc.title}</span>
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
@@ -1541,7 +1473,7 @@ function DocumentRegistry() {
                             >
                               <span className="tree-doc-card__icon">{"\uD83D\uDCC4"}</span>
                               <div className="tree-doc-card__info">
-                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__title" title={doc.title}>{doc.title}</span>
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}

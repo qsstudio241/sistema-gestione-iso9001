@@ -721,7 +721,7 @@ async function listOrphanDocuments(req, res) {
 // ─── Multer memory storage per pre-extract (nessun file salvato su disco) ────
 const _preExtractUpload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+    limits: { fileSize: 200 * 1024 * 1024, files: 1 },
 }).single('file');
 
 // ─── POST /api/v1/documents/pre-extract ───────────────────────────────────────

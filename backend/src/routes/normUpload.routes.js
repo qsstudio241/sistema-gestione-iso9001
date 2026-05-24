@@ -50,7 +50,7 @@ const normFileFilter = (req, file, cb) => {
 const uploadNorms = multer({
   storage: normStorage,
   fileFilter: normFileFilter,
-  limits: { fileSize: 50 * 1024 * 1024, files: 10 },
+  limits: { fileSize: 200 * 1024 * 1024, files: 10 },
 });
 
 router.post(
