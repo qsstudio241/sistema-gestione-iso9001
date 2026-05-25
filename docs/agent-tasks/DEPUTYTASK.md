@@ -20,8 +20,10 @@
 
 ## Backlog prossima sessione
 
-- Feature «Condividi via email» con link temporaneo firmato (richiesta originale punto 4)
-- Fase 3 doc: [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) — slice 3a (`adr/README.md` suffissi ADR duplicati)
+1. **Gate 0**: merge + deploy [PR #65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) (Normattiva/EUR-Lex/email norme superate)
+2. **Refactor SoT norme** (slice R1→R7): [PLAN_REGISTRY_NORM_SOT_SLICES.md](./PLAN_REGISTRY_NORM_SOT_SLICES.md) — prima slice eseguibile: [TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md](./TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md)
+3. Feature «Condividi via email» con link temporaneo firmato (richiesta originale punto 4)
+4. Fase 3 doc: [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) — slice 3a (`adr/README.md` suffissi ADR duplicati)
 
 Quando riaprire il deputy, sovrascrivere questo file e usare:
 
