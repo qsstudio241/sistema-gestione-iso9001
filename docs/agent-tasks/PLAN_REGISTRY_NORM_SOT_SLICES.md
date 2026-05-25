@@ -1,5 +1,7 @@
 # Piano refactor — Registro documentale come SoT normativa
 
+> **Stato programma (25/05/2026): ✅ COMPLETATO** — slice R1–R7 mergiate/deployate; ADR [ADR-011](../adr/ADR-011-registry-norm-sot.md). Documento conservato come riferimento storico.
+
 > **Obiettivo prodotto**: norme, leggi, decreti e documenti utili a riesame requisiti / compliance devono essere **fonte di certezza** per l’assistente (riferimenti tracciabili, vigore verificato, niente testo inventato).
 >
 > **Prerequisito obbligatorio (Gate 0)**: merge + deploy VPS di [PR #65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) (Normattiva, EUR-Lex, email norme superate).
@@ -184,15 +186,15 @@ Chiudi con TEST OK o FIX NON APPLICABILI.
 
 ## Definition of Done — programma completo
 
-- [ ] Gate 0: PR #65 in `main` + VPS aggiornato
-- [ ] R1: job settimanale copre **tutte** le norme del registro con codice
-- [ ] R2: lookup e salvataggio persistono vigore su `type_specific_data`
-- [ ] R3: upload bulk e form manuale stesso schema dati
-- [ ] R4: UI mostra vigore dal registro
-- [ ] R5: knowledge index ancorato al registro
-- [ ] R6 (opz.): backfill eseguito in produzione con report
-- [ ] R7: ADR/GUIDA aggiornati
-- [ ] Nessuna nuova feature che scrive solo su `norm_document_sources` senza `document_id`
+- [x] Gate 0: PR #65 in `main` + VPS aggiornato
+- [x] R1: job settimanale copre **tutte** le norme del registro con codice
+- [x] R2: lookup e salvataggio persistono vigore su `type_specific_data`
+- [x] R3: upload bulk e form manuale stesso schema dati
+- [x] R4: UI mostra vigore dal registro
+- [x] R5: knowledge index ancorato al registro
+- [x] R6 (opz.): backfill eseguito in produzione con report
+- [x] R7: ADR/GUIDA aggiornati
+- [x] Nessuna nuova feature che scrive solo su `norm_document_sources` senza `document_id`
 
 ---
 

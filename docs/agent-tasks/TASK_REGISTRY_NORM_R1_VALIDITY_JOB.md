@@ -1,5 +1,7 @@
 # TASK R1 — Job validità norme sul `document_registry`
 
+> **Stato (25/05/2026): ✅ COMPLETATO** — PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata. Documento conservato come riferimento storico.
+
 > **Piano**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](./PLAN_REGISTRY_NORM_SOT_SLICES.md)  
 > **Prerequisito**: Gate 0 completato (PR #65 merge + deploy VPS).  
 > **Branch**: `cursor/registry-norm-sot-r1-b492` da `main`.

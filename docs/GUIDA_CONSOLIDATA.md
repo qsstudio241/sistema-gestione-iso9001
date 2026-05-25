@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r2r4r5-e-riesame-contratto-sprint-11), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -101,23 +101,30 @@ Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--regi
 
 ---
 
-### Sessione 25/05/2026 — Registro norme SoT R1/R2/R4/R5 e riesame contratto Sprint 11
+### Sessione 25/05/2026 — Registro norme SoT R1–R7 (completato) e chiusura PR
 
 #### Attività completate
 
-| PR | Slice | Contenuto |
+| PR / commit | Slice | Contenuto |
 |---|---|---|
 | [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
 | [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
 | [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+| `ef0d6f8` | R3+R6+R7 | Schema unificato upload bulk/form; backfill VPS idempotente; [ADR-011](adr/ADR-011-registry-norm-sot.md); deploy VPS OK |
+| [#62](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/62) | Seed legislativo | Merge `b255207`: `findSeededLegislativoAmbientale` usa `CHARINDEX` al posto di `LIKE` (marker con `[]`); deploy VPS backend 25/05 |
+| [#60](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/60) | Template Word audit | Merge `9ba45b7`: script `patch-audit-template-structure.cjs` + template ISO 9001/14001/3834/45001; CI `test-and-build` verde |
+| [#64](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/64) | — | Chiusa senza merge (draft obsoleta); tema collocamento archivio da riaprire in roadmap se serve |
 
-#### Lezione appresa: scoperta vs implementazione
-Fasi A, B, R5 erano **già completamente implementate** nel codebase (controller, tabelle DB, pagina React, menu, AI hook). Pattern: **verificare prima cosa esiste** prima di implementare → evita doppio lavoro. Il test/verifica rimane utile anche su codice preesistente.
+#### Lezioni apprese (sessione)
 
-#### Prossimi step (da avviare in sessione successiva)
-- **R3** (priorità media): allineamento percorsi `normUpload.controller` e form manuale — stesso schema `type_specific_data`
-- **R6** (opzionale): backfill script VPS per `type_specific_data` su norme storiche senza campi vigore
-- **R7** (doc): ADR mini su registro come SoT norme
+- **Scoperta vs implementazione**: Sprint 11 (CommercialCase) era già nel codebase — verificare prima di reimplementare; test/verifica restano utili su codice preesistente.
+- **Backfill idempotente (R6)**: `mergeMissingNormTypeSpecificData` aggiorna solo campi mancanti — evita regressioni su dati già allineati post-R2/R3.
+- **Allineamento bulk upload (R3)**: un solo contratto `type_specific_data` tra `normUpload.controller` e form manuale (`documentRegistryNorm.service.js`).
+- **Chiusura PR stale**: chiudere draft obsolete (#64) senza merge riduce rumore su branch non allineati a `main`.
+
+#### Prossimo step (roadmap)
+
+- **ADR-009 Fase 2**: Sezione 11 e Close Panel per-norma + flag SGI integrato — vedi [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
 
 ### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
 
