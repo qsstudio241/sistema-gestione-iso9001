@@ -732,9 +732,9 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
    - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
 
 4. **Verifica validità norme**
-   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
-   - Se edizione superata: flag validity_status = 'superata'
-   - Job cron ogni lunedì alle 03:00
+   - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE)
+   - Job settimanale (lunedì 03:00): aggiorna `norm_document_sources`, email se `ALERT_ENABLED=true` e norme superate
+   - Stati vigenti controllati: `vigente`, `rilasciato` (legacy)
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione

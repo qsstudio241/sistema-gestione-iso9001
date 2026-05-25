@@ -198,14 +198,37 @@ function parseUni(html) {
 
 // ??? Logica principale ????????????????????????????????????????????????????????
 
+const normattivaConnector = require('./normConnectors/normativaConnector');
+const eurLexConnector = require('./normConnectors/eurLexConnector');
+
 /**
  * Determina quale catalogo interrogare in base a issuing_body e prefisso codice.
- * Restituisce { searchUrl, catalogUrl, parser }.
+ * Restituisce { searchUrl, catalogUrl, parser } oppure { publicLaw: true, lookup }.
  */
 function resolveTarget(standardCode, issuingBody) {
     const body = (issuingBody || '').toUpperCase().trim();
     const code = (standardCode || '').trim();
     const enc  = encodeURIComponent(code);
+
+    if (eurLexConnector.isEuLegislation(code, body)) {
+        const catalogUrl = eurLexConnector.buildSearchUrl(code);
+        return {
+            publicLaw: true,
+            catalogUrl,
+            lookup: () => eurLexConnector.lookupNormStatus(code),
+        };
+    }
+
+    if (normattivaConnector.isItalianPublicLaw(code, body)) {
+        const catalogUrl = normattivaConnector.parseItalianActReference(code)
+            ? normattivaConnector.buildVigenteUrl(normattivaConnector.parseItalianActReference(code))
+            : 'https://www.normattiva.it/';
+        return {
+            publicLaw: true,
+            catalogUrl,
+            lookup: () => normattivaConnector.lookupNormStatus(code),
+        };
+    }
 
     // BSI: ente "BSI" oppure codice che inizia con "BS "
     if (body.includes('BSI') || /^BS\s/.test(code.toUpperCase())) {
@@ -254,9 +277,25 @@ async function lookupNormStatus(standardCode, issuingBody) {
         return cached.result;
     }
 
-    const { searchUrl, catalogUrl, parser } = resolveTarget(standardCode, issuingBody);
+    const target = resolveTarget(standardCode, issuingBody);
+    const catalogUrl = target.catalogUrl;
 
     try {
+        if (target.publicLaw && target.lookup) {
+            const lawResult = await target.lookup();
+            const result = {
+                status: lawResult.status || 'unknown',
+                supersededBy: lawResult.supersededBy ?? null,
+                catalogUrl: lawResult.catalogUrl || catalogUrl,
+                checkedAt: lawResult.checkedAt || new Date().toISOString(),
+                error: lawResult.error,
+            };
+            _cache.set(cacheKey, { result, cachedAt: Date.now() });
+            logger.info('[normCatalog] public law lookup OK', { standardCode, status: result.status });
+            return result;
+        }
+
+        const { searchUrl, parser } = target;
         logger.info('[normCatalog] fetching', { standardCode, url: searchUrl });
         const { statusCode, body } = await fetchPage(searchUrl);
 
