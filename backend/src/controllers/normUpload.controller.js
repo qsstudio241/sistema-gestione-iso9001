@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
+const { serializeNormTypeSpecificData } = require('../services/documentRegistryNorm.service');
 const normChunker = require('../services/normChunker.service');
 
 function stripCodeFences(raw) {
@@ -139,11 +140,15 @@ async function uploadNorms(req, res) {
         ? parseInt(metadata.edition_year, 10) || null
         : null;
 
+      // Stesso schema type_specific_data del form manuale (slice R3)
+      const typeSpecificData = serializeNormTypeSpecificData(metadata);
+
       // (c) Create document_registry row under norm folder
       const docResult = await query(
         `INSERT INTO document_registry (
            organization_id, parent_id, title, doc_type, status,
-           is_system_folder, issue_date, created_by, created_at, updated_at
+           is_system_folder, issue_date, type_specific_data,
+           created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
@@ -152,6 +157,7 @@ async function uploadNorms(req, res) {
            CASE WHEN @editionYear IS NOT NULL
                 THEN DATEFROMPARTS(@editionYear, 1, 1)
                 ELSE NULL END,
+           @typeSpecificData,
            @userId, GETDATE(), GETDATE()
          )`,
         {
@@ -159,6 +165,7 @@ async function uploadNorms(req, res) {
           parentId: normFolderId,
           title: docTitle.substring(0, 255),
           editionYear,
+          typeSpecificData,
           userId: user_id,
         }
       );
