@@ -739,7 +739,7 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
    - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
    - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
    - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
-   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) — job legge registro (19 test L1 verdi, deploy VPS PID 260874)
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata — job legge `document_registry`; test L1 19/19 verdi; deploy VPS PID 260874; log job confermato: `checked=1 >= norme registro con codice=1`, ISO_9016_2012 marcata `withdrawn` dal catalogo ISO; backfill necessario per org con `type_specific_data` non ancora popolato (R6 opzionale)
    - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — prossima slice **R2** (persistenza lookup in form/registro)
    - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
