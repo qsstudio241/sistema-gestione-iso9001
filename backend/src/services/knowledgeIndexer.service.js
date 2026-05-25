@@ -118,7 +118,7 @@ const INDEXABLE_ENTITIES = [
   {
     entity_type: 'document',
     sql: `SELECT dr.id, dr.company_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
-            dr.status, dr.clause_ref, dr.responsible,
+            dr.status, dr.clause_ref, dr.responsible, dr.type_specific_data,
             c.name AS company_name
           FROM document_registry dr
           LEFT JOIN companies c ON dr.company_id = c.id
@@ -129,6 +129,19 @@ const INDEXABLE_ENTITIES = [
       if (r.company_name) parts.push(`Azienda: ${r.company_name}`);
       if (r.responsible) parts.push(`Responsabile: ${r.responsible}`);
       parts.push(`Stato: ${r.status || '?'}`);
+      // Arricchimento metadati per norme (R5)
+      if (r.doc_type === 'norma' && r.type_specific_data) {
+        try {
+          const tsd = typeof r.type_specific_data === 'string'
+            ? JSON.parse(r.type_specific_data)
+            : r.type_specific_data;
+          if (tsd.standard_code) parts.push(`Codice norma: ${tsd.standard_code}`);
+          if (tsd.issuing_body)  parts.push(`Ente: ${tsd.issuing_body}`);
+          if (tsd.edition_year)  parts.push(`Edizione: ${tsd.edition_year}`);
+          if (tsd.validity_status) parts.push(`Vigore: ${tsd.validity_status}`);
+          if (tsd.superseded_by) parts.push(`Sostituita da: ${tsd.superseded_by}`);
+        } catch (_) { /* JSON malformato: ignora */ }
+      }
       return parts.join('. ');
     },
   },
