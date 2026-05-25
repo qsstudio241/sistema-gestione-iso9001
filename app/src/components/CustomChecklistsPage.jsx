@@ -3,8 +3,12 @@
  * Elenco checklist personalizzate, creazione, modifica, eliminazione.
  * Editor sezioni e voci quando si apre una checklist.
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import {
+  isLegislativoAmbientaleChecklist,
+  LEG_AMBIENTE_TEMPLATE_MARKER,
+} from "../constants/customChecklistTemplates";
 import "./CustomChecklistsPage.css";
 
 const CustomChecklistsPage = ({ onBack }) => {
@@ -18,7 +22,13 @@ const CustomChecklistsPage = ({ onBack }) => {
   const [createDesc, setCreateDesc] = useState("");
   const [createOutcomeButtons, setCreateOutcomeButtons] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [seedingLegislativo, setSeedingLegislativo] = useState(false);
   const [error, setError] = useState(null);
+
+  const legislativoChecklist = useMemo(
+    () => checklists.find(isLegislativoAmbientaleChecklist) ?? null,
+    [checklists]
+  );
 
   const loadChecklists = useCallback(async () => {
     try {
@@ -46,6 +56,20 @@ const CustomChecklistsPage = ({ onBack }) => {
       setChecklistDetail(null);
     }
   }, []);
+
+  const handleSeedLegislativo = async () => {
+    if (legislativoChecklist) return;
+    try {
+      setSeedingLegislativo(true);
+      setError(null);
+      await apiService.seedLegislativoAmbientaleChecklist();
+      await loadChecklists();
+    } catch (err) {
+      setError(err.message || "Errore import matrice legislativa");
+    } finally {
+      setSeedingLegislativo(false);
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -127,6 +151,30 @@ const CustomChecklistsPage = ({ onBack }) => {
         </div>
       )}
 
+      <section className="cc-seed-panel" aria-labelledby="cc-seed-leg-title">
+        <h3 id="cc-seed-leg-title">Matrice conformità legislativa ambientale</h3>
+        <p className="cc-seed-desc">
+          Strumento separato dall&apos;audit <strong>ISO 14001</strong> (SGA / clausole 4–10).
+          Usa questa checklist custom per verificare adempimenti D.Lgs. 152/06 (VIA, AIA, rifiuti…)
+          in sopralluoghi o audit combinati con ISO 9001.
+        </p>
+        {legislativoChecklist ? (
+          <p className="cc-seed-ok">
+            Già importata: <strong>{legislativoChecklist.name}</strong>
+            {" "}(46 voci, pulsanti C/NC/OSS)
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="btn-seed-legislativo"
+            onClick={handleSeedLegislativo}
+            disabled={seedingLegislativo}
+          >
+            {seedingLegislativo ? "Importazione..." : "Importa matrice legislativa ambientale"}
+          </button>
+        )}
+      </section>
+
       {showCreateForm ? (
         <form onSubmit={handleCreate} className="cc-create-form">
           <input
@@ -176,7 +224,12 @@ const CustomChecklistsPage = ({ onBack }) => {
             <li key={c.id} className="cc-item">
               <div className="cc-item-main">
                 <span className="cc-item-name">{c.name}</span>
-                {c.description && <span className="cc-item-desc">{c.description}</span>}
+                {c.description && !c.description.includes(LEG_AMBIENTE_TEMPLATE_MARKER) && (
+                  <span className="cc-item-desc">{c.description}</span>
+                )}
+                {isLegislativoAmbientaleChecklist(c) && (
+                  <span className="cc-item-badge-leg">Legislativa 152/06</span>
+                )}
                 {c.active_audit_count > 0 && (
                   <span className="cc-item-active-badge" title={`${c.active_audit_count} audit attivi usano questo template`}>
                     {c.active_audit_count} audit attivi

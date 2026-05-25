@@ -1,0 +1,419 @@
+/* DocumentDataGrid — griglia interattiva tab Catalogo */
+
+.datagrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Toolbar contestuale */
+
+.datagrid-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.datagrid-toolbar--active {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.datagrid-toolbar__hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+  flex: 1 1 200px;
+}
+
+.datagrid-toolbar--active .datagrid-toolbar__hint {
+  color: #1e40af;
+}
+
+.datagrid-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.datagrid-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.datagrid-toolbar__btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.datagrid-toolbar__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.datagrid-toolbar--active .datagrid-toolbar__btn:not(:disabled) {
+  opacity: 1;
+  border-color: #93c5fd;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.12);
+}
+
+.datagrid-toolbar__btn--muted {
+  color: #6b7280;
+}
+
+.datagrid-toolbar__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.datagrid-toolbar__label {
+  font-size: 0.82rem;
+}
+
+.datagrid-toolbar__selection {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: #1e3a5f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.datagrid-toolbar__selection strong {
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.datagrid-toolbar__selection-title {
+  font-size: 0.72rem;
+  color: #64748b;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Table wrapper */
+
+.datagrid-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.datagrid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: fixed;
+}
+
+/* Header */
+
+.datagrid-table thead {
+  background: linear-gradient(180deg, #1e3a5f 0%, #16304f 100%);
+  color: #fff;
+}
+
+.datagrid-th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+}
+
+.datagrid-th--select {
+  width: 36px;
+  padding: 10px 8px;
+}
+
+.datagrid-th--sortable {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.datagrid-th--sortable:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.datagrid-th--active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.datagrid-th__label {
+  margin-right: 4px;
+}
+
+.datagrid-th__arrow {
+  font-size: 0.7rem;
+  opacity: 0.45;
+  margin-left: 2px;
+}
+
+.datagrid-th__arrow--active {
+  opacity: 1;
+  color: #93c5fd;
+}
+
+.datagrid-th--sortable:hover .datagrid-th__arrow {
+  opacity: 0.75;
+}
+
+/* Rows */
+
+.datagrid-row {
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+
+.datagrid-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.datagrid-row:hover {
+  background: #eff6ff;
+}
+
+.datagrid-row--selected {
+  background: #dbeafe !important;
+  box-shadow: inset 4px 0 0 #2563eb;
+  outline: 1px solid #93c5fd;
+  outline-offset: -1px;
+}
+
+.datagrid-row--selected:hover {
+  background: #bfdbfe !important;
+}
+
+.datagrid-row.expiry-scaduto {
+  background: #fff5f5;
+}
+.datagrid-row.expiry-scaduto:hover {
+  background: #fee2e2;
+}
+.datagrid-row.expiry-scaduto.datagrid-row--selected {
+  background: #fecaca !important;
+  box-shadow: inset 4px 0 0 #dc2626;
+  outline-color: #fca5a5;
+}
+
+.datagrid-row.expiry-warning {
+  background: #fffbeb;
+}
+.datagrid-row.expiry-warning:hover {
+  background: #fef3c7;
+}
+.datagrid-row.expiry-warning.datagrid-row--selected {
+  background: #fde68a !important;
+  box-shadow: inset 4px 0 0 #d97706;
+  outline-color: #fcd34d;
+}
+
+.datagrid-row.expiry-obsoleto {
+  opacity: 0.55;
+}
+
+/* Selection indicator */
+
+.datagrid-cell--select {
+  width: 36px;
+  padding: 9px 8px;
+  text-align: center;
+}
+
+.datagrid-select {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  background: #fff;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.datagrid-row:hover .datagrid-select {
+  border-color: #93c5fd;
+}
+
+.datagrid-select--on {
+  border-color: #2563eb;
+  background: #2563eb;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+/* Cells */
+
+.datagrid-cell {
+  padding: 9px 12px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datagrid-cell--code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #374151;
+  width: 100px;
+}
+
+.datagrid-cell--title {
+  min-width: 180px;
+}
+
+.datagrid-cell__title {
+  display: block;
+  font-weight: 500;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datagrid-cell__clause {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+/* ??? Badge vigore norma (R4) ??????????????????????????????????????? */
+.norm-validity-badge {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.norm-validity-badge--vigente {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.norm-validity-badge--superata {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.norm-validity-badge--da-verificare {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.datagrid-cell--type {
+  width: 110px;
+}
+
+.datagrid-cell--rev {
+  width: 55px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.datagrid-cell--status {
+  width: 110px;
+}
+
+.datagrid-cell--expiry {
+  width: 110px;
+}
+
+.datagrid-cell--expiry.expiry-scaduto {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.datagrid-cell--expiry.expiry-warning {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.datagrid-cell--company {
+  width: 120px;
+  color: #6b7280;
+}
+
+.datagrid-cell--responsible {
+  width: 120px;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.datagrid-empty-cell {
+  text-align: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .datagrid-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .datagrid-toolbar__selection {
+    max-width: 100%;
+    width: 100%;
+    margin-left: 0;
+    align-items: flex-start;
+  }
+  .datagrid-cell--company,
+  .datagrid-cell--responsible {
+    display: none;
+  }
+  .datagrid-th:nth-child(8),
+  .datagrid-th:nth-child(9) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .datagrid-toolbar__label {
+    display: none;
+  }
+  .datagrid-toolbar__btn {
+    padding: 7px 10px;
+  }
+}

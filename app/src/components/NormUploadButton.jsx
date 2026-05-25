@@ -12,10 +12,13 @@ const QUALITY_LABELS = {
   ocr_poor: { label: "OCR scarso", className: "norm-quality--poor" },
 };
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 export default function NormUploadButton({ folderId, onUploadComplete }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState(null);
+  const [validationErr, setValidationErr] = useState(null);
   const inputRef = useRef(null);
 
   const handleClick = () => {
@@ -25,12 +28,21 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    setValidationErr(null);
     setSelectedFiles(files);
     setResults(null);
   };
 
   const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
+
+    const oversized = selectedFiles.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      const names = oversized.map(f => `"${f.name}" (${(f.size / 1024 / 1024).toFixed(1)} MB)`).join(', ');
+      setValidationErr(`File troppo grandi (limite 50 MB): ${names}`);
+      return;
+    }
+    setValidationErr(null);
     setUploading(true);
     setResults(null);
 
@@ -48,6 +60,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   const handleDismiss = () => {
     setSelectedFiles([]);
     setResults(null);
+    setValidationErr(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -91,6 +104,9 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                   </li>
                 ))}
               </ul>
+              {validationErr && (
+                <div className="norm-upload__validation-error">{"\u26A0\uFE0F"} {validationErr}</div>
+              )}
               <div className="norm-upload__actions">
                 <button
                   className="norm-upload__action-btn norm-upload__action-btn--primary"

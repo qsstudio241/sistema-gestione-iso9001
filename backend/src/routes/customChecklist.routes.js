@@ -13,6 +13,11 @@ router.use(authenticate);
 // CRUD checklist
 router.get('/custom-checklists', customChecklistController.listChecklists);
 router.post('/custom-checklists', authorize('admin', 'auditor'), customChecklistController.createChecklist);
+router.post(
+  '/custom-checklists/seed/legislativo-ambientale',
+  authorize('admin', 'auditor'),
+  customChecklistController.seedLegislativoAmbientale
+);
 router.get('/custom-checklists/:id', customChecklistController.getChecklist);
 router.put('/custom-checklists/:id', authorize('admin', 'auditor'), customChecklistController.updateChecklist);
 router.delete('/custom-checklists/:id', authorize('admin', 'auditor'), customChecklistController.deleteChecklist);
