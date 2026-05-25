@@ -1044,6 +1044,10 @@ class ApiService {
         return this.post('/custom-checklists', data);
     }
 
+    async seedLegislativoAmbientaleChecklist() {
+        return this.post('/custom-checklists/seed/legislativo-ambientale', {});
+    }
+
     async updateCustomChecklist(id, data) {
         return this.put(`/custom-checklists/${id}`, data);
     }
@@ -1522,12 +1526,14 @@ class ApiService {
      * @param {string} issuingBody  - Es. "BSI", "ISO", "UNI"
      * @returns {Promise<{ status: 'active'|'withdrawn'|'superseded'|'unknown', supersededBy: string|null, catalogUrl: string|null, checkedAt: string }>}
      */
-    async lookupNormStatus(standardCode, issuingBody) {
+    async lookupNormStatus(standardCode, issuingBody, documentId) {
         try {
-            const res = await this.post('/documents/norm-lookup', {
+            const body = {
                 standard_code: standardCode,
                 issuing_body:  issuingBody || '',
-            }, { timeout: 8000 });
+            };
+            if (documentId) body.document_id = documentId;
+            const res = await this.post('/documents/norm-lookup', body, { timeout: 8000 });
             return res?.data || { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };
         } catch {
             return { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };

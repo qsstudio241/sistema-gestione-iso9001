@@ -52,6 +52,27 @@ async function createChecklist(req, res) {
 }
 
 /**
+ * POST /api/v1/custom-checklists/seed/legislativo-ambientale
+ * Import idempotente matrice conformità legislativa (D.Lgs. 152/06)
+ */
+async function seedLegislativoAmbientale(req, res) {
+  try {
+    const result = await customChecklistService.seedLegislativoAmbientaleChecklist(req.user);
+    res.status(result.created ? 201 : 200).json({
+      success: true,
+      created: result.created,
+      data: result.data,
+    });
+  } catch (err) {
+    logger.error('seedLegislativoAmbientale error', { error: err.message });
+    res.status(500).json({
+      error: 'Errore import matrice legislativa ambientale',
+      code: 'CUSTOM_CHECKLIST_SEED_LEG_AMBIENTE_ERROR',
+    });
+  }
+}
+
+/**
  * GET /api/v1/custom-checklists/:id
  * Dettagli checklist (con sezioni e voci)
  */
@@ -510,6 +531,7 @@ async function saveCustomChecklistResponses(req, res) {
 module.exports = {
   listChecklists,
   createChecklist,
+  seedLegislativoAmbientale,
   getChecklist,
   updateChecklist,
   deleteChecklist,

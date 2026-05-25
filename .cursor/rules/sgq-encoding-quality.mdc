@@ -1,26 +1,31 @@
 ---
-description: Regola encoding e caratteri ó prevenzione caratteri corrotti
+description: Regola encoding e caratteri ? prevenzione caratteri corrotti
 alwaysApply: true
 ---
 
-# Encoding e qualit‡ testo
+# Encoding e qualit? testo
 
 ## Regola caratteri italiani
 - Tutti i file sorgente DEVONO essere salvati in **UTF-8 senza BOM**
-- I testi in italiano DEVONO usare le lettere accentate corrette: ‡, Ë, È, Ï, Ú, ˘ (NON sequenze corrotte come ??, √ , ecc.)
-- **Mai** usare apostrofo al posto dell'accento (es. scrivere "qualit‡", non "qualita'", nei testi UI visibili all'utente)
+- I testi in italiano DEVONO usare le lettere accentate corrette: ?, ?, ?, ?, ?, ? (NON sequenze corrotte come ??, ? , ecc.)
+- **Mai** usare apostrofo al posto dell'accento (es. scrivere "qualit?", non "qualita'", nei testi UI visibili all'utente)
 
 ## Caratteri proibiti nei sorgenti
 | Carattere | Problema | Sostituzione |
-|-----------|----------|-------------|
-| ù (U+FFFD) | Replacement character | Determinare il carattere originale |
-| √  / √® / √© | UTF-8 letto come Latin1 | ‡ / Ë / È |
+|-----------|----------|--------------|
+| U+FFFD | Replacement character (tofu / interrogativo) | Determinare il carattere originale |
+| ? / ? / ÔøΩ | UTF-8 letto come Latin1 | ? / ? / ? |
 | ?? in mezzo a parola | Encoding perso | Lettera accentata corretta |
 
+## JSX / React ? escape `\u`
+- Fra tag JSX (`<h1>...</h1>`, ecc.) il testo ? **literal**: **`\uXXXX` non viene decodificato** e finisce sullo schermo cos? com'?.
+- Mettere sempre le `\u`-escape dentro **una stringa JavaScript in espressione**, ad es.: `<h1>{"\u26A0\uFE0F Rischi"}</h1>`; in alternativa `String.fromCodePoint(...)` oppure UTF-8 reale nei sorgenti.
+- Vedere playbook *Caratteri non riconoscibili* in `docs/GUIDA_CONSOLIDATA.md`.
+
 ## Emoji nel codice
-- Le emoji nella UI devono essere inserite come **escape Unicode** (`\uD83E\uDD16`) o come entit‡, NON come carattere diretto (evita problemi cross-platform)
+- Per la UI preferire escape Unicode dentro **stringa JS**: (`\uD83E\uDD16` nell'argomento stringa), mai come testo JSX grezzo dopo `>`.
 - Le emoji vanno usate SOLO se esplicitamente richieste dal committente
 
 ## Lista caratteri accentati italiani di riferimento
-‡ (U+00E0), Ë (U+00E8), È (U+00E9), Ï (U+00EC), Ú (U+00F2), ˘ (U+00F9)
-¿ (U+00C0), » (U+00C8), … (U+00C9), Ã (U+00CC), “ (U+00D2), Ÿ (U+00D9)
+? (U+00E0), ? (U+00E8), ? (U+00E9), ? (U+00EC), ? (U+00F2), ? (U+00F9)
+? (U+00C0), ? (U+00C8), ? (U+00C9), ? (U+00CC), ? (U+00D2), ? (U+00D9)

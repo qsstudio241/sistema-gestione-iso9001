@@ -99,6 +99,8 @@ async function listDocuments(req, res) {
                 s.standard_code,
                 s.standard_name,
                 u.email       AS created_by_email,
+                JSON_VALUE(dr.type_specific_data, '$.validity_status')     AS norm_validity_status,
+                JSON_VALUE(dr.type_specific_data, '$.last_validity_check') AS norm_last_check,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
@@ -721,7 +723,7 @@ async function listOrphanDocuments(req, res) {
 // ─── Multer memory storage per pre-extract (nessun file salvato su disco) ────
 const _preExtractUpload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+    limits: { fileSize: 200 * 1024 * 1024, files: 1 },
 }).single('file');
 
 // ─── POST /api/v1/documents/pre-extract ───────────────────────────────────────
@@ -852,7 +854,7 @@ async function preExtractMetadata(req, res) {
  * Non blocca: in caso di errore restituisce { status: 'unknown' } con HTTP 200.
  */
 async function lookupNormStatus(req, res) {
-    const { standard_code, issuing_body } = req.body || {};
+    const { standard_code, issuing_body, document_id } = req.body || {};
 
     if (!standard_code || !String(standard_code).trim()) {
         return res.status(400).json({ error: 'standard_code obbligatorio', code: 'MISSING_CODE' });
@@ -864,6 +866,47 @@ async function lookupNormStatus(req, res) {
             String(standard_code).trim(),
             String(issuing_body || '').trim()
         );
+
+        // R2: persisti il risultato su document_registry se document_id fornito e status noto
+        if (document_id && result.status !== 'unknown') {
+            const docId = parseInt(String(document_id), 10);
+            const orgId = req.user?.organization_id;
+            if (Number.isFinite(docId) && docId > 0 && orgId) {
+                const validityStatus = result.status === 'active' ? 'vigente' : 'superata';
+                try {
+                    await query(
+                        `UPDATE document_registry
+                         SET type_specific_data = JSON_MODIFY(
+                               JSON_MODIFY(
+                                 JSON_MODIFY(
+                                   JSON_MODIFY(
+                                     ISNULL(type_specific_data, '{}'),
+                                     '$.validity_status',    @validityStatus
+                                   ),
+                                   '$.last_validity_check', @lastCheck
+                                 ),
+                                 '$.validity_check_url',  @checkUrl
+                               ),
+                               '$.superseded_by',        @supersededBy
+                             ),
+                             updated_at = GETDATE()
+                         WHERE id = @docId AND organization_id = @orgId AND doc_type = 'norma'`,
+                        {
+                            docId,
+                            orgId,
+                            validityStatus,
+                            lastCheck:    result.checkedAt || new Date().toISOString(),
+                            checkUrl:     result.catalogUrl   || null,
+                            supersededBy: result.supersededBy || null,
+                        }
+                    );
+                    logger.info('[norm-lookup] Persistito su document_registry', { docId, validityStatus });
+                } catch (persistErr) {
+                    logger.warn('[norm-lookup] Persist to registry failed:', persistErr.message);
+                }
+            }
+        }
+
         res.json({ success: true, data: result });
     } catch (err) {
         logger.error('Error in norm-lookup', { error: err.message });

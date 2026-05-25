@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r2r4r5-e-riesame-contratto-sprint-11), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -52,19 +52,110 @@ Sessioni recenti (consultazione): [Sessione 22/05/2026](#sessione-22052026--fix-
 | 2 | **Glifo assente** nel font effettivo: `›` U+203A, `—` U+2014 | Schermo OK su un PC, tofu su un altro |
 | 3 | **Emoji/simboli** senza glifo nella stack font | Icone che diventano tofu |
 | 4 | **Bundle o Service Worker obsoleto** (Netlify / PWA) | Repo a posto, browser ancora su JS vecchio |
+| 5 | **Escape `\uXXXX` dentro testo JSX** (non in stringa JS) | La UI mostra **letterale** `\u26A0` o `\u00e0` invece di emoji/accenti |
 
 #### Checklist operativa (ordine consigliato)
 
 1. **Trovare il file** (cerca stringa spezzata nel repo; React DevTools sul testo).
-2. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
-3. **Correggere:** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in stringhe JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
-4. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
-5. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
+2. **React/JSX:** se compaiono **sequenze letterali `\u`** (spesso dopo `>` su titoli, pulsanti o label), il testo **non è** una stringa JavaScript → le escape Unicode **non valgono**. Corregere con **`{"..."}`** dove tra virgolette c'è una **stringa** JS (escape `\u`), oppure **`String.fromCodePoint(...)`**, oppure UTF-8 reale nel sorgente (accenti). Fare grep su `\u` **fuori** da `{ ... }` dopo un tag JSX.
+3. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
+4. **Correggere (encoding):** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in **stringhe** JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
+5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
+6. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
 
 #### Riferimenti vincolanti
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
+### Sessione 24/05/2026 — Smoke E2E login Playwright (cloud agent)
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Documentazione Fase 6 test E2E autenticato | Template Playwright + errori comuni in `sgq-bug-fix-methodology.mdc` (commit `9ae2265`) |
+| 2 | Smoke login su `systemgest.netlify.app` | **Primo tentativo fallito** — errore UI «Inserire email» |
+| 3 | Diagnosi + fix template doc | Input React controllati: `page.fill()` non basta → `pressSequentially` su `#email` / `#password` |
+| 4 | Smoke login (secondo tentativo) | **OK** — `POST /auth/login` 200, dashboard visibile (`admin@sgq.local`, org Al.project) |
+| 5 | PR doc corretta | [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) — **MERGED** su `main` (commit `d4c9a04`) |
+
+#### Lezione appresa (24/05/2026)
+
+**Ipotesi iniziale sbagliata:** credenziali errate o API backend non raggiungibile.
+
+**Causa reale:** `Login.jsx` usa input **controllati React** (`value={formData.email}` + `onChange`). Playwright `page.fill()` scrive nel DOM ma **non** aggiorna lo stato React; al submit la validazione locale legge `formData` vuoto → «Inserire email», **senza** chiamare l'API (o con body vuoto).
+
+**Pattern risolutivo (E2E su form React controllati):**
+
+1. **Prima** verificare l'API con `curl` — se 200, il problema è UI/test, non backend.
+2. Leggere il messaggio di errore **in pagina** (`.login-error`), non solo «form ancora visibile».
+3. Compilare con `pressSequentially` (o helper `fillReactInput`) su `#email` / `#password`, non solo `page.fill()`.
+4. **Non** usare Playwright MCP per login — non legge `SGQ_APP_PASSWORD`; usare script Node in `/tmp/test-login.mjs`.
+
+**Regola ripetibile:** su qualsiasi form React controllato in test E2E, se il DOM mostra il valore ma la validazione fallisce → simulare digitazione reale (`pressSequentially`) o dispatch esplicito di eventi `input`/`change`.
+
+**Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
+
+---
+
+### Sessione 25/05/2026 — Registro norme SoT R1/R2/R4/R5 e riesame contratto Sprint 11
+
+#### Attività completate
+
+| PR | Slice | Contenuto |
+|---|---|---|
+| [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
+| [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
+| [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+
+#### Lezione appresa: scoperta vs implementazione
+Fasi A, B, R5 erano **già completamente implementate** nel codebase (controller, tabelle DB, pagina React, menu, AI hook). Pattern: **verificare prima cosa esiste** prima di implementare → evita doppio lavoro. Il test/verifica rimane utile anche su codice preesistente.
+
+#### Prossimi step (da avviare in sessione successiva)
+- **R3** (priorità media): allineamento percorsi `normUpload.controller` e form manuale — stesso schema `type_specific_data`
+- **R6** (opzionale): backfill script VPS per `type_specific_data` su norme storiche senza campi vigore
+- **R7** (doc): ADR mini su registro come SoT norme
+
+### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Rimozione «Apri in Word/Excel» via WebDAV da `DocFileDialog` | Eliminato popup credenziali Windows (`Microsoft-WebDAV-MiniRedir`); editing resta via viewer browser + download |
+| 2 | Tab **Catalogo**: `DocumentDataGrid` | Selezione riga, toolbar Allegato/Modifica/Archivia, colonne ordinabili, hint toolbar |
+| 3 | Albero cartelle | Rimossa icona lucchetto confusa sulle cartelle di sistema; tooltip su nomi troncati |
+| 4 | Upload hardening | Backend: limite **200 MB**; frontend: avviso soft **50 MB** + barra progresso; fix `getExt`; versioning in transazione SQL |
+| 5 | Test `NormUploadButton` | 12 test Vitest aggiunti |
+| 6 | Deploy su `main` | `2024747` (feat UX), `864c9e1` (integrazione DataGrid Catalogo) — **nessuna PR** |
+
+#### Lezione appresa (modulo documenti)
+
+**WebDAV rimosso dal dialog file:** il round-trip Office via WebDAV (vedi [sessione 16/05](#sessione-16-maggio-2026-sera--office-round-trip-webdav--lifecycle-documenti--viewer-docx-browser)) resta documentato lato backend, ma **non** va esposto in UI se il client Windows apre il popup credenziali nativo senza passare il token JWT. Preferire download + viewer `.docx` in browser finché non c'è un flusso Office365/SharePoint o link firmato temporaneo.
+
+**Policy upload (200 MB / 50 MB):** hard limit server (413) + soft warning client prima dell'invio — evita upload bloccati a metà e allinea aspettative utente su reti lente.
+
+**Pattern `DocumentDataGrid`:** riutilizzare per liste tabellari documenti (selezione singola, sort client-side, toolbar contestuale) invece di card sparse nel Catalogo; colonna selezione e frecce sort devono essere visibili subito (fix visibilità in `864c9e1`).
+
+**Backlog differito:** feature «Condividi via email» con link temporaneo firmato — non in scope sessione.
+
+---
+
+### Aggiornamento 22/05/2026 — JSX: sequenze literal `\u` in UI (Rischi / Progetti / Qualifiche)
+
+**Sintomo:** in pagina (es. **Rischi & Obiettivi**) titoli, tab e icone apparivano come testo `\u26A0\uFE0F`, `\uD83D\uDEA7`, `\u00e0`, `\u00a7`, ecc.
+
+**Causa:** in React, il contenuto tra tag (`<h1>\uXXXX ...</h1>`) è **HTML/JSX testuale**, non una stringa JavaScript → `\u` **non viene interpretato**.
+
+**Fix applicati:**  
+- `app/src/pages/RisksPage.jsx` — testo/icona tramite **`{"..."}`** (stringa JS con escape dove servono emoji) o UTF-8 per italiano/simbolo ×.  
+- `app/src/pages/QualificationForm.jsx` — stesso schema sull’errore form.  
+- `app/src/pages/ProjectsPage.jsx` — pulsante **Sì** (prima `S\u00EC` in JSX, mostrato letterale).
+
+**Regola ripetibile:** prima di `\u`/emoji in JSX, preferire **`{expr}`** dove `expr` è stringa/template **JavaScript**, oppure scrivere il carattere Unicode diretto in UTF-8.
 
 ---
 
@@ -313,7 +404,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 - **`getUserMedia({audio:true})` deve precedere `SpeechRecognition.start()` su Android Chrome PWA.** Senza questa chiamata, Chrome non mostra il dialog di consenso nativo e rigetta silenziosamente. Sequenza corretta: `permissions.query` → `getUserMedia` → `SpeechRecognition.start()`.
 
-- **Diagnosi autonoma con Playwright MCP**: per verificare header HTTP di produzione senza accesso fisico al device → `curl -sI https://[sito]/ | grep -i permissions-policy`. Per verificare se il bundle Netlify è aggiornato → fetch dell'index.html + search nel bundle JS per stringhe note. Credenziali login: usare `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` env vars + `browser_run_code_unsafe` con script in `/workspace/.playwright-mcp/`.
+- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD`. Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. **Attenzione**: il form login usa input React controllati — `page.fill()` da solo fallisce con errore «Inserire email»; usare `pressSequentially` su `#email` / `#password` (template in `sgq-bug-fix-methodology.mdc` Fase 6).
 
 - **Netlify può aggiornare gli header CDN (`netlify.toml`) senza ricompilare il bundle JS.** Se si cambia solo `netlify.toml` → header live in pochi minuti; bundle invariato. Se si cambia codice in `app/` → bundle nuovo hash al prossimo deploy completo.
 
@@ -355,10 +446,11 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Route `/contract-reviews` | ✅ HTTP 401 senza auth |
 | Route `/norm-broker/search` | ✅ HTTP 401 senza auth |
 
-#### Smoke test E2E — da completare
+#### Smoke test E2E login — completato (24/05/2026)
 
-- ⏳ Login su `https://systemgest.netlify.app` → menu SGQ → "Riesame Requisiti" → creare caso → incollare capitolato → lanciare analisi AI → verificare suggerimenti
-- Credenziali test: `admin@sgq.local` / `Sistemi@2026` (superadmin, org 1001)
+- ✅ Login su `https://systemgest.netlify.app` con script Playwright Node (`/tmp/test-login.mjs`) — dashboard post-auth verificata
+- Credenziali test: `admin@sgq.local` via env `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (superadmin, org 1001)
+- Smoke esteso moduli (Riesame Requisiti, AI, ecc.): da eseguire in sessione dedicata se serve
 
 ---
 
@@ -391,7 +483,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 #### Lezioni apprese (12/05/2026)
 
 - **CHECK constraint SQL Server — verificare prima di modificare valori**: prima di usare un valore come contenuto di colonna, verificare i CHECK constraint esistenti con `SELECT name, definition FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('tabella')`. Nel bug corrente, `pending_issues.original_status` aveva un CHECK `IN ('NC','OSS','OM')` errato che bloccava i rilievi NV.
-- **SQL reserved keywords**: alias come `open`, `closed`, `status` possono causare errori oscuri su SQL Server anche senza essere in posizione keyword esplicita. Usare sempre prefissi descrittivi: `count_open`, `count_closed`, `count_in_progress`.
+- **T-SQL — Alias con parole riservate**: keyword T-SQL (`OPEN`, `CLOSE`, `READ`, `KEY`, `STATUS`, ecc.) non possono essere usate come alias di colonna senza escape. Due soluzioni valide: (1) prefissi descrittivi (`count_open`, `count_closed`, `count_in_progress`) — preferibile per chiarezza; (2) parentesi quadre `AS [open]`, `AS [closed]`, `AS [key]` — utile quando il nome dell'alias è imposto dall'API consumer. Sintomo: `RequestError: Incorrect syntax near the keyword 'xxx'` con status 500 sull'endpoint. Fix applicato il 12/05/2026 su `nc.controller.js` (statistiche overview NC).
 - **CSS media query nasconde elementi padre**: quando un pulsante/elemento non appare su mobile, verificare se un **contenitore genitore** ha `display: none` in una media query (es. `.clause-progress { display: none }` su mobile). La soluzione è spostare l'elemento fuori da quel contenitore, non modificare la media query.
 - **Navigazione accordion — callback diretta è l'unico pattern affidabile**: per navigare a una domanda specifica da un componente esterno usare prop callback diretta (`onGoToQuestion` passata da `AuditAccordionLayout`) + `setChecklistExpandTrigger(prev => prev+1)`. I `CustomEvent` globali (`window.dispatchEvent`) hanno problemi di timing/mount e non sono affidabili.
 - **Coerenza visiva badge stati conformità**: ogni componente che mostra NC/OSS/NV deve usare esclusivamente `status-btn non-compliant/partial/not-verified active` di `ChecklistModule.css`. Mai creare classi CSS parallele per gli stessi stati — crea inconsistenza visiva e debito tecnico.
@@ -653,20 +745,36 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 3. **Upload multiplo norme nel Registro Documentale**
    - Endpoint POST /documents/norms/upload (max 10 PDF, 50MB ciascuno)
    - Estrazione testo con pdf-parse + metadati con AI (titolo, codice, anno, ente)
-   - Salvataggio in document_registry + norm_document_sources come fonte AI
+   - Salvataggio in `document_registry` (con `type_specific_data` canonico) + `norm_document_sources` come estensione AI/testo
    - Prevenzione duplicati (verifica titolo/standard_code)
    - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
 
 4. **Verifica validità norme**
-   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
-   - Se edizione superata: flag validity_status = 'superata'
-   - Job cron ogni lunedì alle 03:00
+   - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
+   - Job settimanale (lunedì 03:00): **legge `document_registry`** (`doc_type=norma`) come SoT — slice R1 (25/05/2026, PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66))
+   - Per ogni riga con `JSON_VALUE(type_specific_data, '$.standard_code') IS NOT NULL` chiama `checkNormValidity` e aggiorna `type_specific_data` via `JSON_MODIFY` (merge, non sovrascrive altri campi)
+   - Mirror retrocompatibile su `norm_document_sources` se `document_id` presente (fino a R5)
+   - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
+   - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
+   - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata — job legge `document_registry`; test L1 19/19 verdi; deploy VPS PID 260874; log job confermato: `checked=1 >= norme registro con codice=1`, ISO_9016_2012 marcata `withdrawn` dal catalogo ISO
+   - **R2 completata (25/05/2026)**: `lookupNormStatus` accetta `document_id` opzionale; persiste `validity_status`, `last_validity_check`, `validity_check_url`, `superseded_by` in `type_specific_data` via `JSON_MODIFY` (merge); `DocumentForm.jsx` passa `doc.id` in edit + include campi vigore nel save payload
+   - **R3 completata (25/05/2026)**: upload bulk scrive `type_specific_data` con lo stesso schema del form manuale (`documentRegistryNorm.service.js` + `normUpload.controller.js`); 13 test Jest L1 verdi
+   - **R4 completata (25/05/2026)**: PR [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) — badge vigore nella lista Registro Documenti (tab Catalogo); `listDocuments` aggiunge `norm_validity_status` + `norm_last_check` via `JSON_VALUE`; `DocumentDataGrid` mostra pill verde/rosso/ambra; CI verde; test visuale: norma ISO_9016_2012 mostra badge "Superata" (rosso)
+   - **R5 completata (25/05/2026)**: `knowledgeIndexer` arricchisce testo indicizzato per `doc_type='norma'` con `standard_code`, `issuing_body`, `edition_year`, `validity_status`, `superseded_by` da `type_specific_data`
+   - **R6 completata (25/05/2026)**: backfill VPS `norm_document_sources` → `document_registry.type_specific_data` — report produzione: 2 righe totali, **1 aggiornata** (ISO_9016_2012), 1 senza codice; script `backfill-norm-type-specific-data-vps.js` idempotente
+   - **R7 completata (25/05/2026)**: [ADR-011](adr/ADR-011-registry-norm-sot.md) — SoT metadati norma su registro; `norm_document_sources` solo mirror AI/chunking
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — **R1–R7 completate**
+   - **Sprint 11 CommercialCase (25/05/2026)**: modulo riesame requisiti contratto GIÀ implementato — tabelle `commercial_cases/history/checklist`, controller, routes, `ContractReviewPage.jsx`, menu voce "Riesame Requisiti"; AI analisi capitolato via `useAiAssist` → `review_requirements`; test L1 Jest 14/14 verdi; smoke UI OK (crea caso, checklist 10 voci, transizione stato); PR #67
+   - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione
 - 060_norm_document_sources.sql — fonti normative da documenti caricati
 
 ### Lezioni apprese
+- **SoT norme (R7)**: metadati inventario solo in `document_registry.type_specific_data`; `norm_document_sources` per testo PDF/chunk AI — vedi [ADR-011](adr/ADR-011-registry-norm-sot.md)
+- **Backfill R6**: script VPS idempotente con `mergeMissingNormTypeSpecificData` — non sovrascrivere campi già popolati post-R2/R3
 - PDF scansionati (come ISO 19011): pdf-parse estrae poco/nulla, servono PDF nativi per buona qualità
 - Gemini 2.5 flash: occasional "high demand" transient errors — retry dopo 15s risolve
 - PowerShell: evitare heredoc bash, usare file .sh copiati via pscp per comandi complessi
@@ -743,7 +851,10 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 1. **Merge PR #33** → `main` con git merge --no-ff; push su origin → Netlify auto-deploy avviato.
 2. **Deploy backend VPS**: 4 controller (audit/attachment/customChecklist/response) + `audit.routes.js` copiati via SCP. Fix bug critico: `audit.routes.js` sul VPS aveva route `POST /audits/:auditId/promote-nc → promoteAuditNcToModule` (funzione mai esistita nel controller locale) che mandava in crash il server; rimossa deployando il file locale canonico.
 3. **Migration 049 — ISO 14001 checklist completa**: 53 domande che coprono tutti i sotto-requisiti per clausola (§4→§10), suddivise in 7 sezioni `14001_c4..c10`. Soft-delete delle 46 domande legislative precedenti; sezioni legacy `14001_s4/s5` disattivate. Pattern esecuzione VPS: `DB_SERVER=localhost DB_PORT=11043 ... NODE_ENV=production node /tmp/run-migration-049-vps.js`.
-4. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
+4. **Esperienza 22/05/2026 (Camellini)**: osservazione corretta — in app compariva ancora la matrice **legislativa** (VIA, AIA, rifiuti…) perché `app/src/data/checklistTemplates.js` non era allineato al DB post-049. Fix: `ISO_14001_TEMPLATE` = audit SGA (53 domande); matrice legislativa spostata in `ISO_14001_LEGISLATIVO_TEMPLATE`. `initializeChecklist` re-inizializza audit con sezioni `14001_s4/s5` obsolete. Rigenerazione template SGA: `node app/scripts/buildIso14001Template.js` + export JSON da VPS.
+5. **Checklist custom legislativa (post-merge PR #61)**: matrice 152/06 importabile da **Admin → Checklist personalizzate** (pulsante «Importa matrice legislativa ambientale»). API idempotente `POST /api/v1/custom-checklists/seed/legislativo-ambientale`; marker description `[SGQ_TEMPLATE:LEG_AMBIENTE_152]`. **Uso Camellini**: audit norma **ISO 14001** = SGA clausole 4–10; sopralluogo/consulenza legislativa = checklist custom (assegnabile in creazione audit, anche con ISO 9001). Deploy backend VPS richiesto per il seed. Rigenerazione dati backend: `node backend/scripts/buildLegislativoAmbientaleTemplate.js`.
+   - **Smoke L3 autonomo 24/05/2026**: DB produzione — ISO 14001 = 53 domande `14001_c4..c10` (SGA), zero sezioni `14001_s*`. Netlify bundle `index-C66x6whP.js` contiene template SGA + API `seedLegislativoAmbientale`. **Seed QS Studio (org 1002)**: checklist «Conformità legislativa ambientale (D.Lgs. 152/06)» creata con 46 voci; idempotenza OK. **Bug fix seed**: `findSeededLegislativoAmbientale` usava `LIKE` con marker `[SGQ_TEMPLATE:…]` — le parentesi quadre in SQL Server sono wildcard; corretto con `CHARINDEX`. **Login UI Playwright**: bloccato — `SGQ_APP_PASSWORD` cloud non coincide con hash DB (`admin@sgq.local` → 401); aggiornare segreto Cursor Cloud con password reale (account prod: `marcocamellini@gmail.com` org QS_Studio).
+6. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
 
 #### Nota deploy VPS: bug route promoteAuditNcToModule
 La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al file `audit.routes.js` sul VPS in una sessione precedente senza corrispondente commit git. Il controller non esportava `promoteAuditNcToModule`. Fix: deployato il `audit.routes.js` locale (canonico), che non ha quella route. La funzionalità S-A6-C ("Registra nel modulo NC") è implementata solo nel frontend (navigazione React Router) e non richiede un endpoint backend dedicato.

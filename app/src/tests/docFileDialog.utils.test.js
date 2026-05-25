@@ -12,7 +12,9 @@ import { describe, it, expect } from 'vitest';
 const BLOCKED_EXT = [".exe",".bat",".cmd",".ps1",".sh",".msi",".vbs",".jar",".com",".scr",".pif",".reg",".dll",".sys"];
 
 function isBlocked(filename) {
-  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1) return false;
+  const ext = filename.slice(dot).toLowerCase();
   return BLOCKED_EXT.includes(ext);
 }
 
@@ -22,7 +24,9 @@ const OFFICE_VIEW_EXTS  = [...OFFICE_WORD_EXTS, ...OFFICE_EXCEL_EXTS, '.pptx', '
 
 function getExt(filename) {
   if (!filename) return '';
-  return filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  const dot = filename.lastIndexOf('.');
+  if (dot === -1) return '';
+  return filename.slice(dot).toLowerCase();
 }
 
 function buildOfficOnlineViewUrl(webdavUrl) {
@@ -94,11 +98,9 @@ describe('DocFileDialog  getExt', () => {
     expect(getExt('')).toBe('');
   });
 
-  it('gestisce file senza estensione (lastIndexOf restituisce -1 ? slice(-1)  ultimo char)', () => {
-    // senza punto, lastIndexOf('.') = -1, slice(-1) = ultimo carattere lowercased
-    const result = getExt('README');
-    // Il comportamento reale: 'README'.slice(-1) = 'E' ? lowercase = 'e'
-    expect(result).toBe('e');
+  it('gestisce file senza estensione', () => {
+    expect(getExt('README')).toBe('');
+    expect(getExt('Makefile')).toBe('');
   });
 });
 

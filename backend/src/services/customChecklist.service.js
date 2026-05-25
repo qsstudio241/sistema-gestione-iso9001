@@ -5,6 +5,11 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+  TEMPLATE_MARKER: LEG_AMBIENTE_TEMPLATE_MARKER,
+  LEGISLATIVO_AMBIENTALE_TEMPLATE,
+  isLegislativoAmbientaleDescription,
+} = require('../data/legislativoAmbientaleTemplate');
 
 function buildChecklistScopeWhere(reqUser) {
   const isOrgWideAdmin =
@@ -389,6 +394,59 @@ async function getChecklistWithStructure(customChecklistId, reqUser) {
   };
 }
 
+async function findSeededLegislativoAmbientale(organizationId) {
+  // CHARINDEX: il marker contiene [ ] che in SQL LIKE sarebbero wildcard (character class).
+  const result = await query(
+    `SELECT id FROM custom_checklists
+     WHERE organization_id = @organization_id
+       AND CHARINDEX(@marker, description) > 0`,
+    {
+      organization_id: organizationId,
+      marker: LEG_AMBIENTE_TEMPLATE_MARKER,
+    }
+  );
+  return result.recordset[0] || null;
+}
+
+/**
+ * Crea (idempotente) la checklist custom «Conformità legislativa ambientale» per l'organizzazione.
+ */
+async function seedLegislativoAmbientaleChecklist(reqUser) {
+  const existing = await findSeededLegislativoAmbientale(reqUser.organization_id);
+  if (existing) {
+    const data = await getChecklistWithStructure(existing.id, reqUser);
+    return { created: false, data };
+  }
+
+  const tpl = LEGISLATIVO_AMBIENTALE_TEMPLATE;
+  const checklist = await createChecklist(reqUser, {
+    name: tpl.name,
+    description: tpl.description,
+    is_active: true,
+    has_outcome_buttons: tpl.hasOutcomeButtons,
+  });
+
+  for (const section of tpl.sections) {
+    const createdSection = await createSection(checklist.id, reqUser, {
+      code: section.code,
+      title: section.title,
+      display_order: section.displayOrder,
+    });
+    for (const item of section.items) {
+      await createItem(checklist.id, reqUser, {
+        section_id: createdSection.id,
+        code: item.code,
+        title: item.title,
+        response_type: item.responseType,
+        display_order: item.displayOrder,
+      });
+    }
+  }
+
+  const data = await getChecklistWithStructure(checklist.id, reqUser);
+  return { created: true, data };
+}
+
 module.exports = {
   listChecklists,
   createChecklist,
@@ -405,4 +463,7 @@ module.exports = {
   updateItem,
   deleteItem,
   getChecklistWithStructure,
+  LEG_AMBIENTE_TEMPLATE_MARKER,
+  isLegislativoAmbientaleDescription,
+  seedLegislativoAmbientaleChecklist,
 };
