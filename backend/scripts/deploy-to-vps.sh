@@ -180,6 +180,8 @@ scp_file "${BACKEND_ROOT}/src/data/legislativoAmbientaleTemplate.js"  "${REMOTE_
 scp_file "${BACKEND_ROOT}/src/controllers/document.controller.js"      "${REMOTE_BASE}/src/controllers/document.controller.js"
 scp_file "${BACKEND_ROOT}/src/services/normCatalogLookup.service.js"   "${REMOTE_BASE}/src/services/normCatalogLookup.service.js"
 scp_file "${BACKEND_ROOT}/src/services/normValidityChecker.service.js" "${REMOTE_BASE}/src/services/normValidityChecker.service.js"
+scp_file "${BACKEND_ROOT}/src/services/documentRegistryNorm.service.js" "${REMOTE_BASE}/src/services/documentRegistryNorm.service.js"
+scp_file "${BACKEND_ROOT}/src/controllers/normUpload.controller.js" "${REMOTE_BASE}/src/controllers/normUpload.controller.js"
 scp_file "${BACKEND_ROOT}/src/services/alertMail.service.js"           "${REMOTE_BASE}/src/services/alertMail.service.js"
 scp_file "${BACKEND_ROOT}/src/services/alertScheduler.js"              "${REMOTE_BASE}/src/services/alertScheduler.js"
 

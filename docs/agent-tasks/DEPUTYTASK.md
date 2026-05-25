@@ -1,44 +1,32 @@
-# DEPUTYTASK — Slice R1 (job validità sul registro)
+# DEPUTYTASK — Chiusura refactor Registro norma SoT (R1–R7)
 
-**Stato:** pronto per esecuzione — **Gate 0 completato** (25/05/2026)
+**Stato:** **TEST OK — sessione chiusa** (25/05/2026)
 
-## Gate 0 — esito (lead)
+## Programma completato
 
-| Step | Esito |
-|------|--------|
-| Fix CI `xlsx` + Vitest 371/371 | **OK** |
-| Merge PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) su `main` (`b0a5900`) | **OK** |
-| Deploy VPS file norme + restart PID `259962` → `260569` | **OK** |
-| Health API | **OK** |
-| Smoke `POST /documents/norm-lookup` D.Lgs. 81/2008 → Normattiva `active` | **OK** |
+| Slice | Esito |
+|-------|--------|
+| R1 Job validità su registro | **OK** (PR #66) |
+| R2 Persistenza lookup form | **OK** |
+| R3 Upload bulk schema unificato | **OK** |
+| R4 Badge vigore UI | **OK** (PR #68) |
+| R5 Knowledge index ancorato | **OK** |
+| R6 Backfill dati legacy VPS | **OK** |
+| R7 ADR-011 documentazione | **OK** |
 
 **VPS npm (25/05 12:03):** `npm install` in `/var/www/sgq-backend` — log: `[AlertScheduler] Scheduler avviato` (alert 08:00, norme lun 03:00). Email settimanale norme superate abilitata se `ALERT_ENABLED=true`.
 
----
+## Riferimenti
 
-## Obiettivo slice R1
+- Piano: [PLAN_REGISTRY_NORM_SOT_SLICES.md](./PLAN_REGISTRY_NORM_SOT_SLICES.md)
+- ADR: [ADR-011-registry-norm-sot.md](../adr/ADR-011-registry-norm-sot.md)
+- Script backfill: `backend/scripts/backfill-norm-type-specific-data-vps.js`
 
-Estendere il job settimanale di validità norme a **tutto** `document_registry` (`doc_type=norma` con `standard_code` in JSON), non solo `norm_document_sources`.
+## Lezione appresa
 
-**Brief completo:** [TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md](./TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md)  
-**Piano:** [PLAN_REGISTRY_NORM_SOT_SLICES.md](./PLAN_REGISTRY_NORM_SOT_SLICES.md)
-
-**Branch:** `cursor/registry-norm-sot-r1-b492` da `main` aggiornato.
-
----
-
-## Comando deputy
-
-```
-Leggi docs/agent-tasks/TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md ed eseguilo.
-Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+- **SoT unico**: `document_registry.type_specific_data` per metadati norma; `norm_document_sources` solo testo/chunk AI + mirror transitorio.
+- **Backfill idempotente**: merge solo campi mancanti via `mergeMissingNormTypeSpecificData` — evita regressioni su dati già allineati post-R3.
 
 ---
 
-## Criteri chiusura
-
-- [ ] Test Jest `normValidityChecker` (mock) verdi
-- [ ] PR con CI verde
-- [ ] Deploy VPS + log job con norme registro incluse
-- [ ] Riga in `GUIDA_CONSOLIDATA.md` (job legge registro)
+*Nessun task deputy attivo. Prossimo lavoro: backlog Sprint 11 / gap analysis (fuori da questo refactor).*
