@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r2r4r5-e-riesame-contratto-sprint-11), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -100,6 +100,24 @@ Sessioni recenti (consultazione): [Sessione 24/05/2026 (bis)](#sessione-24052026
 **Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
 
 ---
+
+### Sessione 25/05/2026 — Registro norme SoT R1/R2/R4/R5 e riesame contratto Sprint 11
+
+#### Attività completate
+
+| PR | Slice | Contenuto |
+|---|---|---|
+| [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
+| [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
+| [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+
+#### Lezione appresa: scoperta vs implementazione
+Fasi A, B, R5 erano **già completamente implementate** nel codebase (controller, tabelle DB, pagina React, menu, AI hook). Pattern: **verificare prima cosa esiste** prima di implementare → evita doppio lavoro. Il test/verifica rimane utile anche su codice preesistente.
+
+#### Prossimi step (da avviare in sessione successiva)
+- **R3** (priorità media): allineamento percorsi `normUpload.controller` e form manuale — stesso schema `type_specific_data`
+- **R6** (opzionale): backfill script VPS per `type_specific_data` su norme storiche senza campi vigore
+- **R7** (doc): ADR mini su registro come SoT norme
 
 ### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
 
@@ -732,9 +750,20 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
    - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
 
 4. **Verifica validità norme**
-   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
-   - Se edizione superata: flag validity_status = 'superata'
-   - Job cron ogni lunedì alle 03:00
+   - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
+   - Job settimanale (lunedì 03:00): **legge `document_registry`** (`doc_type=norma`) come SoT — slice R1 (25/05/2026, PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66))
+   - Per ogni riga con `JSON_VALUE(type_specific_data, '$.standard_code') IS NOT NULL` chiama `checkNormValidity` e aggiorna `type_specific_data` via `JSON_MODIFY` (merge, non sovrascrive altri campi)
+   - Mirror retrocompatibile su `norm_document_sources` se `document_id` presente (fino a R5)
+   - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
+   - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
+   - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata — job legge `document_registry`; test L1 19/19 verdi; deploy VPS PID 260874; log job confermato: `checked=1 >= norme registro con codice=1`, ISO_9016_2012 marcata `withdrawn` dal catalogo ISO; backfill necessario per org con `type_specific_data` non ancora popolato (R6 opzionale)
+   - **R2 completata (25/05/2026)**: `lookupNormStatus` accetta `document_id` opzionale; persiste `validity_status`, `last_validity_check`, `validity_check_url`, `superseded_by` in `type_specific_data` via `JSON_MODIFY` (merge); `DocumentForm.jsx` passa `doc.id` in edit + include campi vigore nel save payload
+   - **R5 completata (25/05/2026)**: `knowledgeIndexer` arricchisce testo indicizzato per `doc_type='norma'` con `standard_code`, `issuing_body`, `edition_year`, `validity_status`, `superseded_by` da `type_specific_data`
+   - **R4 completata (25/05/2026)**: PR [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) — badge vigore nella lista Registro Documenti (tab Catalogo); `listDocuments` aggiunge `norm_validity_status` + `norm_last_check` via `JSON_VALUE`; `DocumentDataGrid` mostra pill verde/rosso/ambra; CI verde; test visuale: norma ISO_9016_2012 mostra badge "Superata" (rosso)
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — prossime slice R3 (allineamento bulk/form), R6 (backfill), R7 (ADR)
+   - **Sprint 11 CommercialCase (25/05/2026)**: modulo riesame requisiti contratto GIÀ implementato — tabelle `commercial_cases/history/checklist`, controller, routes, `ContractReviewPage.jsx`, menu voce "Riesame Requisiti"; AI analisi capitolato via `useAiAssist` → `review_requirements`; test L1 Jest 14/14 verdi; smoke UI OK (crea caso, checklist 10 voci, transizione stato); PR #67
+   - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione

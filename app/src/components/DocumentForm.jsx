@@ -210,7 +210,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
     normLookupTimerRef.current = setTimeout(async () => {
       try {
-        const result = await apiService.lookupNormStatus(code, typeData.issuing_body || '');
+        const result = await apiService.lookupNormStatus(
+          code,
+          typeData.issuing_body || '',
+          isEdit ? doc?.id : undefined
+        );
         setNormStatus({ loading: false, result });
       } catch {
         setNormStatus({ loading: false, result: { status: 'unknown', supersededBy: null, catalogUrl: null } });
@@ -483,7 +487,17 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         responsible:     form.responsible.trim() || null,
         clause_ref:      form.clause_ref.trim() || null,
         notes:           form.notes.trim()    || null,
-        type_specific_data: schema ? typeData : null,
+        type_specific_data: schema
+          ? (isNormaType && normStatus.result && normStatus.result.status !== 'unknown'
+              ? {
+                  ...typeData,
+                  validity_status:   normStatus.result.status === 'active' ? 'vigente' : 'superata',
+                  last_validity_check: normStatus.result.checkedAt || new Date().toISOString(),
+                  validity_check_url:  normStatus.result.catalogUrl   || typeData.validity_check_url || null,
+                  superseded_by:       normStatus.result.supersededBy || typeData.superseded_by     || null,
+                }
+              : typeData)
+          : null,
         parent_id:       (!isEdit && selectedFolderId) ? selectedFolderId : undefined,
       };
 

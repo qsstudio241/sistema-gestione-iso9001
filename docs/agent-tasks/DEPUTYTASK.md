@@ -1,28 +1,44 @@
-# DEPUTYTASK — Sessione chiusa (2026-05-24)
+# DEPUTYTASK — Slice R1 (job validità sul registro)
 
-**Stato:** TEST OK — **nessun task attivo**
+**Stato:** pronto per esecuzione — **Gate 0 completato** (25/05/2026)
 
-## Completato oggi (sessione documenti)
+## Gate 0 — esito (lead)
 
-| Voce | Esito |
+| Step | Esito |
 |------|--------|
-| UX modulo documentale (DataGrid Catalogo, albero, upload) | **OK** — su `main` (`2024747`, `864c9e1`) |
-| Rimozione WebDAV da DocFileDialog | **OK** — niente popup credenziali Windows |
-| Test NormUploadButton (12) | **OK** |
-| Lezione appresa in GUIDA | [Sessione 24/05/2026 (bis)](../GUIDA_CONSOLIDATA.md#sessione-24052026-bis--modulo-documentale-ux-e-upload) |
+| Fix CI `xlsx` + Vitest 371/371 | **OK** |
+| Merge PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) su `main` (`b0a5900`) | **OK** |
+| Deploy VPS file norme + restart PID `259962` → `260569` | **OK** |
+| Health API | **OK** |
+| Smoke `POST /documents/norm-lookup` D.Lgs. 81/2008 → Normattiva `active` | **OK** |
 
-## Completato oggi (sessione mattina — smoke E2E)
+**VPS npm (25/05 12:03):** `npm install` in `/var/www/sgq-backend` — log: `[AlertScheduler] Scheduler avviato` (alert 08:00, norme lun 03:00). Email settimanale norme superate abilitata se `ALERT_ENABLED=true`.
 
-| Voce | Esito |
-|------|--------|
-| Smoke E2E login Playwright | **OK** — PR [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) **MERGED** |
-| Lezione Playwright/React controllati | [Sessione 24/05/2026](../GUIDA_CONSOLIDATA.md#sessione-24052026--smoke-e2e-login-playwright-cloud-agent) |
+---
 
-## Backlog prossima sessione
+## Obiettivo slice R1
 
-- Feature «Condividi via email» con link temporaneo firmato (richiesta originale punto 4)
-- Fase 3 doc: [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) — slice 3a (`adr/README.md` suffissi ADR duplicati)
+Estendere il job settimanale di validità norme a **tutto** `document_registry` (`doc_type=norma` con `standard_code` in JSON), non solo `norm_document_sources`.
 
-Quando riaprire il deputy, sovrascrivere questo file e usare:
+**Brief completo:** [TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md](./TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md)  
+**Piano:** [PLAN_REGISTRY_NORM_SOT_SLICES.md](./PLAN_REGISTRY_NORM_SOT_SLICES.md)
 
-`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+**Branch:** `cursor/registry-norm-sot-r1-b492` da `main` aggiornato.
+
+---
+
+## Comando deputy
+
+```
+Leggi docs/agent-tasks/TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md ed eseguilo.
+Chiudi con TEST OK o FIX NON APPLICABILI.
+```
+
+---
+
+## Criteri chiusura
+
+- [ ] Test Jest `normValidityChecker` (mock) verdi
+- [ ] PR con CI verde
+- [ ] Deploy VPS + log job con norme registro incluse
+- [ ] Riga in `GUIDA_CONSOLIDATA.md` (job legge registro)
