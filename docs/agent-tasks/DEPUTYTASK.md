@@ -12,7 +12,7 @@
 | Health API | **OK** |
 | Smoke `POST /documents/norm-lookup` D.Lgs. 81/2008 → Normattiva `active` | **OK** |
 
-**Nota VPS:** log storici segnalano `node-schedule`/`nodemailer` non installati sul server — email settimanale norme superate potrebbe non partire finché non si esegue `npm install` in `/var/www/sgq-backend`. Il lookup in form funziona.
+**VPS npm (25/05 12:03):** `npm install` in `/var/www/sgq-backend` — log: `[AlertScheduler] Scheduler avviato` (alert 08:00, norme lun 03:00). Email settimanale norme superate abilitata se `ALERT_ENABLED=true`.
 
 ---
 
