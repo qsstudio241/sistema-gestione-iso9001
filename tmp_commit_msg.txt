@@ -1,0 +1,7 @@
+feat: lookup automatico validita norma da cataloghi BSI/ISO/UNI
+
+- Servizio normCatalogLookup.service.js con cache 24h e timeout 5s
+- Endpoint POST /documents/norm-lookup
+- Badge stato norma nel wizard: In vigore / Ritirata / Sostituita
+- Debounce 1.5s su campo Codice norma
+- Graceful degradation se catalogo non raggiungibile
