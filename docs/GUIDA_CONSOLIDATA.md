@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r2r4r5-e-riesame-contratto-sprint-11), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -100,6 +100,24 @@ Sessioni recenti (consultazione): [Sessione 24/05/2026 (bis)](#sessione-24052026
 **Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
 
 ---
+
+### Sessione 25/05/2026 — Registro norme SoT R1/R2/R4/R5 e riesame contratto Sprint 11
+
+#### Attività completate
+
+| PR | Slice | Contenuto |
+|---|---|---|
+| [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
+| [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
+| [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+
+#### Lezione appresa: scoperta vs implementazione
+Fasi A, B, R5 erano **già completamente implementate** nel codebase (controller, tabelle DB, pagina React, menu, AI hook). Pattern: **verificare prima cosa esiste** prima di implementare → evita doppio lavoro. Il test/verifica rimane utile anche su codice preesistente.
+
+#### Prossimi step (da avviare in sessione successiva)
+- **R3** (priorità media): allineamento percorsi `normUpload.controller` e form manuale — stesso schema `type_specific_data`
+- **R6** (opzionale): backfill script VPS per `type_specific_data` su norme storiche senza campi vigore
+- **R7** (doc): ADR mini su registro come SoT norme
 
 ### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
 
