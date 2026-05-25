@@ -735,7 +735,9 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
    - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
    - Job settimanale (lunedì 03:00): aggiorna `norm_document_sources`, email se `ALERT_ENABLED=true` e norme superate
    - Stati vigenti controllati: `vigente`, `rilasciato` (legacy)
-   - **Piano refactor SoT** (dopo merge/deploy PR #65): [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — registro = unica fonte visibile; job e UI vigore sul `document_registry`; `norm_document_sources` solo estensione AI 1:1
+   - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — prossima slice **R1** (job validità su `document_registry`): [TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md](agent-tasks/TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md)
+   - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione
