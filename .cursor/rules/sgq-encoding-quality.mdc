@@ -14,7 +14,7 @@ alwaysApply: true
 | Carattere | Problema | Sostituzione |
 |-----------|----------|--------------|
 | U+FFFD | Replacement character (tofu / interrogativo) | Determinare il carattere originale |
-| ? / ? / é | UTF-8 letto come Latin1 | ? / ? / ? |
+| ? / ? / ï¿½ | UTF-8 letto come Latin1 | ? / ? / ? |
 | ?? in mezzo a parola | Encoding perso | Lettera accentata corretta |
 
 ## JSX / React ? escape `\u`

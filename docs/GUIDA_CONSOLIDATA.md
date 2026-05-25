@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo), [Sessione 15/05/2026](#sessione-15052026--ai-audit-conclusions--upload-norme).
+Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r2r4r5-e-riesame-contratto-sprint-11), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -67,6 +67,80 @@ Sessioni recenti (consultazione): [Sessione 22/05/2026 (bis)](#aggiornamento-220
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+---
+
+### Sessione 24/05/2026 — Smoke E2E login Playwright (cloud agent)
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Documentazione Fase 6 test E2E autenticato | Template Playwright + errori comuni in `sgq-bug-fix-methodology.mdc` (commit `9ae2265`) |
+| 2 | Smoke login su `systemgest.netlify.app` | **Primo tentativo fallito** — errore UI «Inserire email» |
+| 3 | Diagnosi + fix template doc | Input React controllati: `page.fill()` non basta → `pressSequentially` su `#email` / `#password` |
+| 4 | Smoke login (secondo tentativo) | **OK** — `POST /auth/login` 200, dashboard visibile (`admin@sgq.local`, org Al.project) |
+| 5 | PR doc corretta | [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) — **MERGED** su `main` (commit `d4c9a04`) |
+
+#### Lezione appresa (24/05/2026)
+
+**Ipotesi iniziale sbagliata:** credenziali errate o API backend non raggiungibile.
+
+**Causa reale:** `Login.jsx` usa input **controllati React** (`value={formData.email}` + `onChange`). Playwright `page.fill()` scrive nel DOM ma **non** aggiorna lo stato React; al submit la validazione locale legge `formData` vuoto → «Inserire email», **senza** chiamare l'API (o con body vuoto).
+
+**Pattern risolutivo (E2E su form React controllati):**
+
+1. **Prima** verificare l'API con `curl` — se 200, il problema è UI/test, non backend.
+2. Leggere il messaggio di errore **in pagina** (`.login-error`), non solo «form ancora visibile».
+3. Compilare con `pressSequentially` (o helper `fillReactInput`) su `#email` / `#password`, non solo `page.fill()`.
+4. **Non** usare Playwright MCP per login — non legge `SGQ_APP_PASSWORD`; usare script Node in `/tmp/test-login.mjs`.
+
+**Regola ripetibile:** su qualsiasi form React controllato in test E2E, se il DOM mostra il valore ma la validazione fallisce → simulare digitazione reale (`pressSequentially`) o dispatch esplicito di eventi `input`/`change`.
+
+**Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
+
+---
+
+### Sessione 25/05/2026 — Registro norme SoT R1/R2/R4/R5 e riesame contratto Sprint 11
+
+#### Attività completate
+
+| PR | Slice | Contenuto |
+|---|---|---|
+| [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
+| [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
+| [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+
+#### Lezione appresa: scoperta vs implementazione
+Fasi A, B, R5 erano **già completamente implementate** nel codebase (controller, tabelle DB, pagina React, menu, AI hook). Pattern: **verificare prima cosa esiste** prima di implementare → evita doppio lavoro. Il test/verifica rimane utile anche su codice preesistente.
+
+#### Prossimi step (da avviare in sessione successiva)
+- **R3** (priorità media): allineamento percorsi `normUpload.controller` e form manuale — stesso schema `type_specific_data`
+- **R6** (opzionale): backfill script VPS per `type_specific_data` su norme storiche senza campi vigore
+- **R7** (doc): ADR mini su registro come SoT norme
+
+### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Rimozione «Apri in Word/Excel» via WebDAV da `DocFileDialog` | Eliminato popup credenziali Windows (`Microsoft-WebDAV-MiniRedir`); editing resta via viewer browser + download |
+| 2 | Tab **Catalogo**: `DocumentDataGrid` | Selezione riga, toolbar Allegato/Modifica/Archivia, colonne ordinabili, hint toolbar |
+| 3 | Albero cartelle | Rimossa icona lucchetto confusa sulle cartelle di sistema; tooltip su nomi troncati |
+| 4 | Upload hardening | Backend: limite **200 MB**; frontend: avviso soft **50 MB** + barra progresso; fix `getExt`; versioning in transazione SQL |
+| 5 | Test `NormUploadButton` | 12 test Vitest aggiunti |
+| 6 | Deploy su `main` | `2024747` (feat UX), `864c9e1` (integrazione DataGrid Catalogo) — **nessuna PR** |
+
+#### Lezione appresa (modulo documenti)
+
+**WebDAV rimosso dal dialog file:** il round-trip Office via WebDAV (vedi [sessione 16/05](#sessione-16-maggio-2026-sera--office-round-trip-webdav--lifecycle-documenti--viewer-docx-browser)) resta documentato lato backend, ma **non** va esposto in UI se il client Windows apre il popup credenziali nativo senza passare il token JWT. Preferire download + viewer `.docx` in browser finché non c'è un flusso Office365/SharePoint o link firmato temporaneo.
+
+**Policy upload (200 MB / 50 MB):** hard limit server (413) + soft warning client prima dell'invio — evita upload bloccati a metà e allinea aspettative utente su reti lente.
+
+**Pattern `DocumentDataGrid`:** riutilizzare per liste tabellari documenti (selezione singola, sort client-side, toolbar contestuale) invece di card sparse nel Catalogo; colonna selezione e frecce sort devono essere visibili subito (fix visibilità in `864c9e1`).
+
+**Backlog differito:** feature «Condividi via email» con link temporaneo firmato — non in scope sessione.
 
 ---
 
@@ -330,7 +404,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 - **`getUserMedia({audio:true})` deve precedere `SpeechRecognition.start()` su Android Chrome PWA.** Senza questa chiamata, Chrome non mostra il dialog di consenso nativo e rigetta silenziosamente. Sequenza corretta: `permissions.query` → `getUserMedia` → `SpeechRecognition.start()`.
 
-- **Diagnosi autonoma con Playwright MCP**: per verificare header HTTP di produzione senza accesso fisico al device → `curl -sI https://[sito]/ | grep -i permissions-policy`. Per verificare se il bundle Netlify è aggiornato → fetch dell'index.html + search nel bundle JS per stringhe note. Credenziali login: usare `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` env vars + `browser_run_code_unsafe` con script in `/workspace/.playwright-mcp/`.
+- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD`. Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. **Attenzione**: il form login usa input React controllati — `page.fill()` da solo fallisce con errore «Inserire email»; usare `pressSequentially` su `#email` / `#password` (template in `sgq-bug-fix-methodology.mdc` Fase 6).
 
 - **Netlify può aggiornare gli header CDN (`netlify.toml`) senza ricompilare il bundle JS.** Se si cambia solo `netlify.toml` → header live in pochi minuti; bundle invariato. Se si cambia codice in `app/` → bundle nuovo hash al prossimo deploy completo.
 
@@ -372,10 +446,11 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Route `/contract-reviews` | ✅ HTTP 401 senza auth |
 | Route `/norm-broker/search` | ✅ HTTP 401 senza auth |
 
-#### Smoke test E2E — da completare
+#### Smoke test E2E login — completato (24/05/2026)
 
-- ⏳ Login su `https://systemgest.netlify.app` → menu SGQ → "Riesame Requisiti" → creare caso → incollare capitolato → lanciare analisi AI → verificare suggerimenti
-- Credenziali test: `admin@sgq.local` / `Sistemi@2026` (superadmin, org 1001)
+- ✅ Login su `https://systemgest.netlify.app` con script Playwright Node (`/tmp/test-login.mjs`) — dashboard post-auth verificata
+- Credenziali test: `admin@sgq.local` via env `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (superadmin, org 1001)
+- Smoke esteso moduli (Riesame Requisiti, AI, ecc.): da eseguire in sessione dedicata se serve
 
 ---
 
@@ -670,20 +745,36 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 3. **Upload multiplo norme nel Registro Documentale**
    - Endpoint POST /documents/norms/upload (max 10 PDF, 50MB ciascuno)
    - Estrazione testo con pdf-parse + metadati con AI (titolo, codice, anno, ente)
-   - Salvataggio in document_registry + norm_document_sources come fonte AI
+   - Salvataggio in `document_registry` (con `type_specific_data` canonico) + `norm_document_sources` come estensione AI/testo
    - Prevenzione duplicati (verifica titolo/standard_code)
    - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
 
 4. **Verifica validità norme**
-   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
-   - Se edizione superata: flag validity_status = 'superata'
-   - Job cron ogni lunedì alle 03:00
+   - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
+   - Job settimanale (lunedì 03:00): **legge `document_registry`** (`doc_type=norma`) come SoT — slice R1 (25/05/2026, PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66))
+   - Per ogni riga con `JSON_VALUE(type_specific_data, '$.standard_code') IS NOT NULL` chiama `checkNormValidity` e aggiorna `type_specific_data` via `JSON_MODIFY` (merge, non sovrascrive altri campi)
+   - Mirror retrocompatibile su `norm_document_sources` se `document_id` presente (fino a R5)
+   - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
+   - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
+   - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata — job legge `document_registry`; test L1 19/19 verdi; deploy VPS PID 260874; log job confermato: `checked=1 >= norme registro con codice=1`, ISO_9016_2012 marcata `withdrawn` dal catalogo ISO
+   - **R2 completata (25/05/2026)**: `lookupNormStatus` accetta `document_id` opzionale; persiste `validity_status`, `last_validity_check`, `validity_check_url`, `superseded_by` in `type_specific_data` via `JSON_MODIFY` (merge); `DocumentForm.jsx` passa `doc.id` in edit + include campi vigore nel save payload
+   - **R3 completata (25/05/2026)**: upload bulk scrive `type_specific_data` con lo stesso schema del form manuale (`documentRegistryNorm.service.js` + `normUpload.controller.js`); 13 test Jest L1 verdi
+   - **R4 completata (25/05/2026)**: PR [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) — badge vigore nella lista Registro Documenti (tab Catalogo); `listDocuments` aggiunge `norm_validity_status` + `norm_last_check` via `JSON_VALUE`; `DocumentDataGrid` mostra pill verde/rosso/ambra; CI verde; test visuale: norma ISO_9016_2012 mostra badge "Superata" (rosso)
+   - **R5 completata (25/05/2026)**: `knowledgeIndexer` arricchisce testo indicizzato per `doc_type='norma'` con `standard_code`, `issuing_body`, `edition_year`, `validity_status`, `superseded_by` da `type_specific_data`
+   - **R6 completata (25/05/2026)**: backfill VPS `norm_document_sources` → `document_registry.type_specific_data` (script `backfill-norm-type-specific-data-vps.js`, idempotente)
+   - **R7 completata (25/05/2026)**: [ADR-011](adr/ADR-011-registry-norm-sot.md) — SoT metadati norma su registro; `norm_document_sources` solo mirror AI/chunking
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — **R1–R7 completate**
+   - **Sprint 11 CommercialCase (25/05/2026)**: modulo riesame requisiti contratto GIÀ implementato — tabelle `commercial_cases/history/checklist`, controller, routes, `ContractReviewPage.jsx`, menu voce "Riesame Requisiti"; AI analisi capitolato via `useAiAssist` → `review_requirements`; test L1 Jest 14/14 verdi; smoke UI OK (crea caso, checklist 10 voci, transizione stato); PR #67
+   - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione
 - 060_norm_document_sources.sql — fonti normative da documenti caricati
 
 ### Lezioni apprese
+- **SoT norme (R7)**: metadati inventario solo in `document_registry.type_specific_data`; `norm_document_sources` per testo PDF/chunk AI — vedi [ADR-011](adr/ADR-011-registry-norm-sot.md)
+- **Backfill R6**: script VPS idempotente con `mergeMissingNormTypeSpecificData` — non sovrascrivere campi già popolati post-R2/R3
 - PDF scansionati (come ISO 19011): pdf-parse estrae poco/nulla, servono PDF nativi per buona qualità
 - Gemini 2.5 flash: occasional "high demand" transient errors — retry dopo 15s risolve
 - PowerShell: evitare heredoc bash, usare file .sh copiati via pscp per comandi complessi

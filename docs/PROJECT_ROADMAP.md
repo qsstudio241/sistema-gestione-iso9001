@@ -761,8 +761,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **AI-OPT-L1** | Knowledge Optimizer Livello 1: dedup cosine >0.95, prune stale NC >180gg, gap detection per azienda — job notturno 03:00, migrazione 064 | Lead (16/05/2026) | ✅ Completato |
 | **AI-OPT-L2** | Knowledge Optimizer Livello 2: sintesi AI settimanale, condensazione per azienda, pattern cross-company, enrichment chunk deboli — job domenica 04:00, migrazione 065 | Lead (16/05/2026) | ✅ Completato |
 | **AI-KPI** | Dashboard Knowledge Health per admin: `/ai-knowledge-health`, 4 KPI cards, coverage per azienda, gap rilevati, endpoint `GET /ai/knowledge-health` | Lead (16/05/2026) | ✅ Completato |
+| **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
+| **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ⏳ Dopo Gate 0 (PR #65) |
 
-**Prossimo Step**: **ADR-009 Fase 2** (Sezione 11 e Close Panel per-norma + flag SGI integrato). Fase 1 completata 12/05/2026.
+**Prossimo Step**: **Gate 0** merge PR #65 → **slice R1** job validità sul registro. In parallelo backlog: **ADR-009 Fase 2** (Sezione 11 e Close Panel per-norma).
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

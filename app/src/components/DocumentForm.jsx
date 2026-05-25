@@ -24,7 +24,8 @@ import "./DocumentForm.css";
 const DOC_TYPES = DOC_TYPE_OPTIONS;
 const DOC_STATUSES = DOC_STATUS_OPTIONS;
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const HARD_LIMIT = 200 * 1024 * 1024; // 200 MB — backend rejects above this
+const WARN_SIZE  =  50 * 1024 * 1024; // 50 MB — soft warning
 const ACCEPTED_TYPES = {
   'application/pdf': '.pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
@@ -68,7 +69,9 @@ function formatFileSize(bytes) {
 
 function isFileAccepted(file) {
   if (ACCEPTED_TYPES[file.type]) return true;
-  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  const dot = file.name.lastIndexOf('.');
+  if (dot === -1) return false;
+  const ext = file.name.slice(dot).toLowerCase();
   return ACCEPTED_EXTENSIONS.includes(ext);
 }
 
@@ -139,6 +142,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   // ─── File upload state ────────────────────────────────────────────
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState(null);
+  const [fileSizeWarning, setFileSizeWarning] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -206,7 +210,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
     normLookupTimerRef.current = setTimeout(async () => {
       try {
-        const result = await apiService.lookupNormStatus(code, typeData.issuing_body || '');
+        const result = await apiService.lookupNormStatus(
+          code,
+          typeData.issuing_body || '',
+          isEdit ? doc?.id : undefined
+        );
         setNormStatus({ loading: false, result });
       } catch {
         setNormStatus({ loading: false, result: { status: 'unknown', supersededBy: null, catalogUrl: null } });
@@ -362,14 +370,18 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
   const validateAndSetFile = (file) => {
     setFileError(null);
+    setFileSizeWarning(null);
     if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      setFileError(`File troppo grande (${formatFileSize(file.size)}). Massimo consentito: 50 MB.`);
+    if (file.size > HARD_LIMIT) {
+      setFileError(`Il file supera il limite massimo di 200 MB (${formatFileSize(file.size)}).`);
       return;
     }
     if (!isFileAccepted(file)) {
       setFileError(`Formato non supportato. Tipi accettati: PDF, DOCX, DOC, XLSX, XLS, PNG, JPG, GIF, WEBP, TIFF.`);
       return;
+    }
+    if (file.size > WARN_SIZE) {
+      setFileSizeWarning(`File di grandi dimensioni (${formatFileSize(file.size)}) \u2014 l\u2019upload potrebbe richiedere alcuni minuti`);
     }
     setSelectedFile(file);
     // Avvia estrazione AI se tipo documento già selezionato
@@ -394,6 +406,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError(null);
+    setFileSizeWarning(null);
     if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
     setAiExtracting(false);
     setAiExtracted(false);
@@ -474,7 +487,17 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         responsible:     form.responsible.trim() || null,
         clause_ref:      form.clause_ref.trim() || null,
         notes:           form.notes.trim()    || null,
-        type_specific_data: schema ? typeData : null,
+        type_specific_data: schema
+          ? (isNormaType && normStatus.result && normStatus.result.status !== 'unknown'
+              ? {
+                  ...typeData,
+                  validity_status:   normStatus.result.status === 'active' ? 'vigente' : 'superata',
+                  last_validity_check: normStatus.result.checkedAt || new Date().toISOString(),
+                  validity_check_url:  normStatus.result.catalogUrl   || typeData.validity_check_url || null,
+                  superseded_by:       normStatus.result.supersededBy || typeData.superseded_by     || null,
+                }
+              : typeData)
+          : null,
         parent_id:       (!isEdit && selectedFolderId) ? selectedFolderId : undefined,
       };
 
@@ -786,7 +809,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
               Trascina qui il file o <strong>clicca per selezionare</strong>
             </span>
             <span className="docform-dropzone-hint">
-              PDF, DOCX, XLSX, immagini — max 50 MB
+              PDF, DOCX, XLSX, immagini — max 200 MB
             </span>
           </div>
           <input
@@ -833,6 +856,10 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       {fileError && (
         <div className="docform-file-error">{fileError}</div>
+      )}
+
+      {fileSizeWarning && !fileError && (
+        <div className="docform-file-size-warning">{fileSizeWarning}</div>
       )}
 
       {/* Messaggio errore AI (discreto, non bloccante) */}

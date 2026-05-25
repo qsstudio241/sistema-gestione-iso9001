@@ -176,6 +176,20 @@ scp_file "${BACKEND_ROOT}/src/services/customChecklist.service.js"     "${REMOTE
 scp_file "${BACKEND_ROOT}/src/services/reportTemplate.service.js"      "${REMOTE_BASE}/src/services/reportTemplate.service.js"
 scp_file "${BACKEND_ROOT}/src/data/legislativoAmbientaleTemplate.js"  "${REMOTE_BASE}/src/data/legislativoAmbientaleTemplate.js"
 
+# Documenti + validità norme (Normattiva/EUR-Lex, PR #65+)
+scp_file "${BACKEND_ROOT}/src/controllers/document.controller.js"      "${REMOTE_BASE}/src/controllers/document.controller.js"
+scp_file "${BACKEND_ROOT}/src/services/normCatalogLookup.service.js"   "${REMOTE_BASE}/src/services/normCatalogLookup.service.js"
+scp_file "${BACKEND_ROOT}/src/services/normValidityChecker.service.js" "${REMOTE_BASE}/src/services/normValidityChecker.service.js"
+scp_file "${BACKEND_ROOT}/src/services/documentRegistryNorm.service.js" "${REMOTE_BASE}/src/services/documentRegistryNorm.service.js"
+scp_file "${BACKEND_ROOT}/src/controllers/normUpload.controller.js" "${REMOTE_BASE}/src/controllers/normUpload.controller.js"
+scp_file "${BACKEND_ROOT}/src/services/alertMail.service.js"           "${REMOTE_BASE}/src/services/alertMail.service.js"
+scp_file "${BACKEND_ROOT}/src/services/alertScheduler.js"              "${REMOTE_BASE}/src/services/alertScheduler.js"
+
+ssh_run "mkdir -p ${REMOTE_BASE}/src/services/normConnectors"
+scp_file "${BACKEND_ROOT}/src/services/normConnectors/publicLawHttp.js"    "${REMOTE_BASE}/src/services/normConnectors/publicLawHttp.js"
+scp_file "${BACKEND_ROOT}/src/services/normConnectors/normativaConnector.js" "${REMOTE_BASE}/src/services/normConnectors/normativaConnector.js"
+scp_file "${BACKEND_ROOT}/src/services/normConnectors/eurLexConnector.js"  "${REMOTE_BASE}/src/services/normConnectors/eurLexConnector.js"
+
 echo ""
 echo "✓ Tutti i file copiati."
 

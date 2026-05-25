@@ -17,7 +17,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
   const isFolder = node.doc_type === "folder" || node.is_folder;
   const isSystem = node.is_system_folder;
 
-  const icon = isSystem ? "\uD83D\uDD12" : isFolder ? "\uD83D\uDCC1" : "\uD83D\uDCC4";
+  const icon = isFolder ? "\uD83D\uDCC1" : "\uD83D\uDCC4";
 
   function handleArrowClick(e) {
     e.stopPropagation();
@@ -52,7 +52,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
 
         <span className="doc-tree__icon" aria-hidden="true">{icon}</span>
 
-        <span className="doc-tree__label">{node.title}</span>
+        <span className="doc-tree__label" title={node.title}>{node.title}</span>
 
         {hasChildren && (
           <span className="doc-tree__badge">{node.children_count ?? node.children?.length}</span>
