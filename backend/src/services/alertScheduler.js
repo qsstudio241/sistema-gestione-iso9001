@@ -17,14 +17,14 @@
  */
 
 const logger = require('../utils/logger');
+const { sendAlertEmail } = require('./alertMail.service');
 
 // Caricamento lazy delle dipendenze opzionali
-let schedule, nodemailer;
+let schedule;
 try {
-  schedule   = require('node-schedule');
-  nodemailer = require('nodemailer');
+  schedule = require('node-schedule');
 } catch {
-  logger.warn('[AlertScheduler] node-schedule o nodemailer non installati — cron job disabilitato. Eseguire: npm install node-schedule nodemailer');
+  logger.warn('[AlertScheduler] node-schedule non installato — cron job disabilitato. Eseguire: npm install node-schedule');
 }
 
 const { getPool } = require('../config/database');
@@ -121,31 +121,43 @@ async function fetchUrgentDocs(pool, orgId) {
   return result.recordset || [];
 }
 
-// ─── Invio email ──────────────────────────────────────────────────────────────
+// ─── Email norme superate ─────────────────────────────────────────────────────
 
-async function sendAlertEmail(recipients, subject, html) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-    logger.warn('[AlertScheduler] SMTP non configurato — email non inviata. Impostare SMTP_HOST, SMTP_USER, SMTP_PASS in .env');
-    return false;
-  }
+function buildNormValidityEmailHtml(orgName, supersededNorms) {
+  const thStyle = 'padding:8px 12px;background:#1e3a5f;color:#fff;text-align:left;font-size:12px';
+  const tableStyle = 'width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px';
 
-  const transporter = nodemailer.createTransporter({
-    host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_PORT === '465',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  const rows = supersededNorms.map((n) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.norm_title || n.standard_code}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${n.standard_code}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.reason === 'superseded' ? 'Sostituita' : 'Non vigente'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.supersededBy || '—'}</td>
+    </tr>`).join('');
 
-  await transporter.sendMail({
-    from:    process.env.SMTP_FROM || process.env.SMTP_USER,
-    to:      recipients,
-    subject,
-    html,
-  });
-  return true;
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#111827">
+      <div style="background:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0">
+        <h2 style="margin:0;color:#fff;font-size:18px">SGQ Studio — Norme non più vigenti</h2>
+        <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">${orgName} · ${new Date().toLocaleDateString('it-IT')}</p>
+      </div>
+      <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
+        <h3 style="color:#b45309;margin:0 0 12px">${supersededNorms.length} norma/e segnalata/e come superata o non vigente</h3>
+        <p style="font-size:14px;color:#4b5563">Verifica automatica su cataloghi pubblici (UNI/ISO/BSI, Normattiva, EUR-Lex).</p>
+        <table style="${tableStyle}">
+          <thead><tr>
+            <th style="${thStyle}">Titolo</th>
+            <th style="${thStyle}">Codice</th>
+            <th style="${thStyle}">Esito</th>
+            <th style="${thStyle}">Note</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p style="font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;margin:0">
+          Messaggio generato dal controllo settimanale del lunedì alle 03:00.
+        </p>
+      </div>
+    </div>`;
 }
 
 // ─── Job principale ───────────────────────────────────────────────────────────
@@ -251,16 +263,38 @@ async function runKnowledgeL2Job() {
 
 async function runNormValidityJob() {
   logger.info('[AlertScheduler] Avvio job verifica validità norme...');
+  if (!process.env.ALERT_ENABLED || process.env.ALERT_ENABLED !== 'true') {
+    logger.info('[AlertScheduler] Alert disabilitati — skip email norme (verifica DB eseguita)');
+  }
+
   try {
     const { runScheduledValidityCheck } = require('./normValidityChecker.service');
     const pool = await getPool();
-    const orgsResult = await pool.request().query(
-      'SELECT organization_id FROM organizations'
-    );
+    const orgsResult = await pool.request().query(`
+      SELECT o.organization_id, o.organization_name, nc.recipients_email, nc.enabled
+      FROM organizations o
+      LEFT JOIN notifications_config nc ON nc.organization_id = o.organization_id
+    `);
     const orgs = orgsResult.recordset || [];
+
     for (const org of orgs) {
-      await runScheduledValidityCheck(org.organization_id);
+      const { updated } = await runScheduledValidityCheck(org.organization_id);
+
+      if (
+        updated.length > 0
+        && process.env.ALERT_ENABLED === 'true'
+        && org.enabled === 1
+        && org.recipients_email
+      ) {
+        const subject = `[SGQ] ${updated.length} norma/e superata/e — ${org.organization_name}`;
+        const html = buildNormValidityEmailHtml(org.organization_name, updated);
+        const sent = await sendAlertEmail(org.recipients_email, subject, html);
+        if (sent) {
+          logger.info(`[AlertScheduler] Email norme superate inviata a ${org.recipients_email} (org ${org.organization_id})`);
+        }
+      }
     }
+
     logger.info(`[AlertScheduler] Verifica validità norme completata per ${orgs.length} organizzazioni`);
   } catch (err) {
     logger.error('[AlertScheduler] Errore job validità norme:', err.message);
