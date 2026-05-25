@@ -99,6 +99,8 @@ async function listDocuments(req, res) {
                 s.standard_code,
                 s.standard_name,
                 u.email       AS created_by_email,
+                JSON_VALUE(dr.type_specific_data, '$.validity_status')     AS norm_validity_status,
+                JSON_VALUE(dr.type_specific_data, '$.last_validity_check') AS norm_last_check,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
