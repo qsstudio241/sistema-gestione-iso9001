@@ -733,10 +733,14 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 
 4. **Verifica validità norme**
    - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
-   - Job settimanale (lunedì 03:00): aggiorna `norm_document_sources`, email se `ALERT_ENABLED=true` e norme superate
-   - Stati vigenti controllati: `vigente`, `rilasciato` (legacy)
+   - Job settimanale (lunedì 03:00): **legge `document_registry`** (`doc_type=norma`) come SoT — slice R1 (25/05/2026, PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66))
+   - Per ogni riga con `JSON_VALUE(type_specific_data, '$.standard_code') IS NOT NULL` chiama `checkNormValidity` e aggiorna `type_specific_data` via `JSON_MODIFY` (merge, non sovrascrive altri campi)
+   - Mirror retrocompatibile su `norm_document_sources` se `document_id` presente (fino a R5)
+   - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
+   - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
    - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
-   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — prossima slice **R1** (job validità su `document_registry`): [TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md](agent-tasks/TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md)
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) — job legge registro (19 test L1 verdi, deploy VPS PID 260874)
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — prossima slice **R2** (persistenza lookup in form/registro)
    - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
