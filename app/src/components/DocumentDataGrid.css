@@ -309,6 +309,37 @@
   margin-top: 1px;
 }
 
+/* ??? Badge vigore norma (R4) ??????????????????????????????????????? */
+.norm-validity-badge {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.norm-validity-badge--vigente {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.norm-validity-badge--superata {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.norm-validity-badge--da-verificare {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
 .datagrid-cell--type {
   width: 110px;
 }

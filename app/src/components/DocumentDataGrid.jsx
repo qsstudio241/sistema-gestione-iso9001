@@ -14,6 +14,31 @@ const COLUMNS = [
   { id: "responsible", label: "Responsabile", width: "120px", sortable: true },
 ];
 
+const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+
+/**
+ * Calcola lo stato visivo del vigore per le norme.
+ * Restituisce: 'vigente' | 'superata' | 'da-verificare'
+ */
+function getNormValidityState(doc) {
+  if (doc.doc_type !== 'norma') return null;
+  const vs = doc.norm_validity_status;
+  if (vs === 'superata') return 'superata';
+  if (vs === 'vigente' || vs === 'rilasciato') {
+    const lastCheck = doc.norm_last_check;
+    if (!lastCheck) return 'da-verificare';
+    const age = Date.now() - new Date(lastCheck).getTime();
+    return age > NINETY_DAYS_MS ? 'da-verificare' : 'vigente';
+  }
+  return 'da-verificare';
+}
+
+const NORM_VALIDITY_LABEL = {
+  'vigente':      'Vigente',
+  'superata':     'Superata',
+  'da-verificare': 'Da verificare',
+};
+
 function getExpiryClass(doc) {
   if (doc.status === "obsoleto") return "expiry-obsoleto";
   if (doc.is_expired) return "expiry-scaduto";
@@ -231,6 +256,18 @@ function DocumentDataGrid({
                           {doc.standard_code} {"\u00A7"}{doc.clause_ref}
                         </span>
                       )}
+                      {(() => {
+                        const vs = getNormValidityState(doc);
+                        if (!vs) return null;
+                        return (
+                          <span
+                            className={`norm-validity-badge norm-validity-badge--${vs}`}
+                            title={`Vigore norma: ${NORM_VALIDITY_LABEL[vs]}`}
+                          >
+                            {NORM_VALIDITY_LABEL[vs]}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="datagrid-cell datagrid-cell--type">
                       <span className="doc-type-badge">
