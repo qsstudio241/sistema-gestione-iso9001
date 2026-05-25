@@ -1,6 +1,10 @@
 /**
  * normValidityChecker.service.js
- * Verifica periodica della validità delle norme caricate (fonti AI + cataloghi pubblici).
+ * Verifica periodica della validità delle norme.
+ *
+ * Fonte di verità: document_registry (doc_type = 'norma').
+ * Se esiste una riga collegata in norm_document_sources (document_id = dr.id),
+ * viene aggiornata in mirror per retrocompatibilità fino a R5.
  */
 
 const logger = require('../utils/logger');
@@ -100,88 +104,171 @@ async function checkNormValidity(standardCode, editionYear, issuingBody) {
 const VIGENT_STATUSES = ['vigente', 'rilasciato'];
 
 /**
- * Esegue la verifica di validità per tutte le norme vigenti di un'organizzazione.
+ * Estrae i campi norma dal JSON type_specific_data di una riga document_registry.
+ * @param {{ type_specific_data: string|null }} row
+ * @returns {{ standard_code: string|null, edition_year: number|null, issuing_body: string|null, validity_status: string|null }}
+ */
+function parseNormFieldsFromRegistry(row) {
+  let tsd = {};
+  if (row.type_specific_data) {
+    try {
+      tsd = JSON.parse(row.type_specific_data);
+    } catch (_) {
+      // JSON malformato: trattare come vuoto
+    }
+  }
+  return {
+    standard_code: tsd.standard_code || null,
+    edition_year: tsd.edition_year ? parseInt(tsd.edition_year, 10) : null,
+    issuing_body: tsd.issuing_body || null,
+    validity_status: tsd.validity_status || null,
+  };
+}
+
+/**
+ * Esegue la verifica di validità per tutte le norme in document_registry
+ * con standard_code valorizzato.
+ * Aggiorna type_specific_data (merge JSON) e, in mirror, norm_document_sources
+ * se la riga è collegata tramite document_id.
+ *
  * @returns {Promise<{ checked: number, updated: Array<object> }>}
  */
 async function runScheduledValidityCheck(organizationId) {
   logger.info(`[NormValidityChecker] Avvio verifica per org ${organizationId}...`);
 
+  const statusList = VIGENT_STATUSES.map((s) => `'${s}'`).join(', ');
+
   let norms;
   try {
-    const statusList = VIGENT_STATUSES.map((s) => `'${s}'`).join(', ');
     const result = await query(
-      `SELECT id, standard_code, edition_year, issuing_body, norm_title, document_id
-       FROM norm_document_sources
-       WHERE organization_id = @orgId
-         AND standard_code IS NOT NULL
-         AND (validity_status IS NULL OR validity_status IN (${statusList}))`,
+      `SELECT
+         dr.id          AS dr_id,
+         dr.title       AS dr_title,
+         dr.doc_code    AS dr_doc_code,
+         dr.type_specific_data,
+         nds.id         AS nds_id
+       FROM document_registry dr
+       LEFT JOIN norm_document_sources nds ON nds.document_id = dr.id
+                                           AND nds.organization_id = @orgId
+       WHERE dr.doc_type = 'norma'
+         AND dr.organization_id = @orgId
+         AND JSON_VALUE(dr.type_specific_data, '$.standard_code') IS NOT NULL
+         AND (
+           JSON_VALUE(dr.type_specific_data, '$.validity_status') IS NULL
+           OR JSON_VALUE(dr.type_specific_data, '$.validity_status') IN (${statusList})
+         )`,
       { orgId: organizationId }
     );
     norms = result.recordset || [];
   } catch (err) {
-    logger.error('[NormValidityChecker] Errore query norme:', err.message);
+    logger.error('[NormValidityChecker] Errore query norme da document_registry:', err.message);
     return { checked: 0, updated: [] };
   }
 
   if (norms.length === 0) {
-    logger.info(`[NormValidityChecker] Nessuna norma vigente per org ${organizationId}`);
+    logger.info(`[NormValidityChecker] Nessuna norma da verificare per org ${organizationId}`);
     return { checked: 0, updated: [] };
   }
 
   const updated = [];
+  const nowIso = new Date().toISOString();
 
   for (const norm of norms) {
+    const fields = parseNormFieldsFromRegistry(norm);
+
+    if (!fields.standard_code) {
+      continue;
+    }
+
     const check = await checkNormValidity(
-      norm.standard_code,
-      norm.edition_year,
-      norm.issuing_body
+      fields.standard_code,
+      fields.edition_year,
+      fields.issuing_body
     );
 
+    const newValidityStatus = check.outdated ? 'superata' : (fields.validity_status || 'vigente');
+    const checkUrl = check.catalogUrl || null;
+    const supersededBy = check.outdated ? (check.supersededBy || null) : null;
+
+    // --- Aggiorna document_registry tramite merge JSON_MODIFY ---
+    try {
+      await query(
+        `UPDATE document_registry
+         SET type_specific_data = JSON_MODIFY(
+               JSON_MODIFY(
+                 JSON_MODIFY(
+                   JSON_MODIFY(
+                     ISNULL(type_specific_data, '{}'),
+                     '$.validity_status',    @validityStatus
+                   ),
+                   '$.last_validity_check', @lastCheck
+                 ),
+                 '$.validity_check_url',  @checkUrl
+               ),
+               '$.superseded_by',        @supersededBy
+             ),
+             updated_at = GETDATE()
+         WHERE id = @drId AND organization_id = @orgId`,
+        {
+          drId: norm.dr_id,
+          orgId: organizationId,
+          validityStatus: newValidityStatus,
+          lastCheck: nowIso,
+          checkUrl,
+          supersededBy,
+        }
+      );
+    } catch (err) {
+      logger.error(
+        `[NormValidityChecker] Errore UPDATE document_registry id=${norm.dr_id} (${fields.standard_code}):`,
+        err.message
+      );
+      continue;
+    }
+
+    // --- Mirror su norm_document_sources (retrocompatibilità) ---
+    if (norm.nds_id) {
+      try {
+        if (check.outdated) {
+          await query(
+            `UPDATE norm_document_sources
+             SET validity_status    = 'superata',
+                 last_validity_check = GETDATE(),
+                 validity_check_url  = @url,
+                 updated_at          = GETDATE()
+             WHERE id = @id AND organization_id = @orgId`,
+            { id: norm.nds_id, orgId: organizationId, url: checkUrl }
+          );
+        } else {
+          await query(
+            `UPDATE norm_document_sources
+             SET last_validity_check = GETDATE(),
+                 validity_check_url  = @url,
+                 updated_at          = GETDATE()
+             WHERE id = @id AND organization_id = @orgId`,
+            { id: norm.nds_id, orgId: organizationId, url: checkUrl }
+          );
+        }
+      } catch (err) {
+        logger.debug(
+          `[NormValidityChecker] Mirror norm_document_sources id=${norm.nds_id} fallito:`,
+          err.message
+        );
+      }
+    }
+
     if (check.outdated) {
-      try {
-        await query(
-          `UPDATE norm_document_sources
-           SET validity_status = 'superata',
-               last_validity_check = GETDATE(),
-               validity_check_url = @url,
-               updated_at = GETDATE()
-           WHERE id = @id AND organization_id = @orgId`,
-          {
-            id: norm.id,
-            orgId: organizationId,
-            url: check.catalogUrl || null,
-          }
-        );
-        updated.push({
-          id: norm.id,
-          document_id: norm.document_id,
-          standard_code: norm.standard_code,
-          norm_title: norm.norm_title,
-          reason: check.reason,
-          supersededBy: check.supersededBy || null,
-          catalogUrl: check.catalogUrl || null,
-        });
-        logger.info(`[NormValidityChecker] ${norm.standard_code}: SUPERATA (${check.reason})`);
-      } catch (err) {
-        logger.error(`[NormValidityChecker] Errore aggiornamento ${norm.standard_code}:`, err.message);
-      }
-    } else {
-      try {
-        await query(
-          `UPDATE norm_document_sources
-           SET last_validity_check = GETDATE(),
-               validity_check_url = @url,
-               updated_at = GETDATE()
-           WHERE id = @id AND organization_id = @orgId`,
-          {
-            id: norm.id,
-            orgId: organizationId,
-            url: check.catalogUrl || null,
-          }
-        );
-      } catch (err) {
-        logger.debug(`[NormValidityChecker] Errore timestamp ${norm.standard_code}:`, err.message);
-      }
+      updated.push({
+        dr_id: norm.dr_id,
+        nds_id: norm.nds_id || null,
+        doc_code: norm.dr_doc_code,
+        title: norm.dr_title,
+        standard_code: fields.standard_code,
+        reason: check.reason,
+        supersededBy,
+        catalogUrl: checkUrl,
+      });
+      logger.info(`[NormValidityChecker] ${fields.standard_code}: SUPERATA (${check.reason})`);
     }
   }
 
@@ -192,4 +279,9 @@ async function runScheduledValidityCheck(organizationId) {
   return { checked: norms.length, updated };
 }
 
-module.exports = { checkNormValidity, checkUniEditionYear, runScheduledValidityCheck };
+module.exports = {
+  checkNormValidity,
+  checkUniEditionYear,
+  parseNormFieldsFromRegistry,
+  runScheduledValidityCheck,
+};
