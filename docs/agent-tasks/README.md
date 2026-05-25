@@ -21,5 +21,5 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 
 - Per la revisione rapida del lavoro delegato usare: `docs/agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md`.
 - Per anomalie report cliente Mason (export Word): `docs/agent-tasks/TASK_MASON_REPORT_ANOMALIE_2026-04-20.md`.
-- Per refactor registro = SoT normativa (dopo PR #65): `docs/agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md` e `TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md`.
+- Refactor registro = SoT normativa (**completato 25/05/2026**): piano storico `PLAN_REGISTRY_NORM_SOT_SLICES.md`; ADR [ADR-011](../adr/ADR-011-registry-norm-sot.md). Task slice R1: `TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md` (archivio).
 - Per audit non visibile in menu Mason (`2026-04`): `docs/agent-tasks/TASK_MASON_AUDIT_2026-04_VISIBILITY_2026-04-20.md`.
