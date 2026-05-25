@@ -395,13 +395,14 @@ async function getChecklistWithStructure(customChecklistId, reqUser) {
 }
 
 async function findSeededLegislativoAmbientale(organizationId) {
+  // CHARINDEX: il marker contiene [ ] che in SQL LIKE sarebbero wildcard (character class).
   const result = await query(
     `SELECT id FROM custom_checklists
      WHERE organization_id = @organization_id
-       AND description LIKE @marker`,
+       AND CHARINDEX(@marker, description) > 0`,
     {
       organization_id: organizationId,
-      marker: `%${LEG_AMBIENTE_TEMPLATE_MARKER}%`,
+      marker: LEG_AMBIENTE_TEMPLATE_MARKER,
     }
   );
   return result.recordset[0] || null;
