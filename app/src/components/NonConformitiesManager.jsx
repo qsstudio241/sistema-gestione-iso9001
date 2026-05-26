@@ -1,5 +1,8 @@
 /**
- * Non Conformities Manager Component
+ * NonConformitiesManager — @deprecated (26/05/2026)
+ * Non importato da App.jsx; il modulo NC usa NCPage.jsx.
+ * Mantenuto per eventuale riuso componenti; candidate per rimozione — vedi DEPUTYTASK.
+ *
  * Gestione Non Conformità (punto 10.2 ISO 9001:2015)
  * Sistema Gestione ISO 9001 - QS Studio
  */

@@ -10,6 +10,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const multer = require('multer');
+const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
@@ -66,7 +67,7 @@ async function listDocuments(req, res) {
             conditions.push(`dr.expiry_date IS NOT NULL
                 AND dr.expiry_date <= DATEADD(DAY, @expiring_days, CAST(GETDATE() AS DATE))
                 AND dr.expiry_date >= CAST(GETDATE() AS DATE)
-                AND dr.status = 'rilasciato'`);
+                AND dr.status IN ${RELEASED_STATUS_SQL_IN}`);
             params.expiring_days = parseInt(expiring_days);
         }
         if (search) {
@@ -104,14 +105,14 @@ async function listDocuments(req, res) {
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
-                         AND dr.status = 'rilasciato'
+                         AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
                 END AS is_expired,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND dr.status = 'rilasciato'
+                         AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
                 END AS expiring_soon
             FROM document_registry dr
@@ -122,6 +123,7 @@ async function listDocuments(req, res) {
             ORDER BY
                 CASE dr.status
                     WHEN 'rilasciato'      THEN 1
+                    WHEN 'vigente'         THEN 1
                     WHEN 'bozza'          THEN 2
                     WHEN 'in_approvazione' THEN 3
                     WHEN 'in_revisione'   THEN 4
@@ -179,23 +181,24 @@ async function getDocumentStats(req, res) {
         const result = await query(`
             SELECT
                 COUNT(*)                                                         AS total,
-                SUM(CASE WHEN status = 'rilasciato'         THEN 1 ELSE 0 END)     AS vigenti,
+                SUM(CASE WHEN status IN ${RELEASED_STATUS_SQL_IN} THEN 1 ELSE 0 END) AS vigenti,
                 SUM(CASE WHEN status = 'in_revisione'    THEN 1 ELSE 0 END)     AS in_revisione,
                 SUM(CASE WHEN status = 'in_approvazione' THEN 1 ELSE 0 END)     AS in_approvazione,
                 SUM(CASE WHEN status = 'obsoleto'        THEN 1 ELSE 0 END)     AS obsoleti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date < CAST(GETDATE() AS DATE)
-                         AND status = 'rilasciato'
+                         AND status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0 END)                                           AS scaduti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND status = 'rilasciato'
+                         AND status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg
             FROM document_registry
             WHERE organization_id = @organization_id
+              AND doc_type <> 'folder'
         `, { organization_id });
 
         res.json({ success: true, data: result.recordset[0] });

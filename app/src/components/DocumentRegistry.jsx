@@ -20,6 +20,7 @@ import NormUploadButton from "./NormUploadButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
+import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
@@ -1368,8 +1369,8 @@ function DocumentRegistry() {
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
-                                  {doc.status && ` · `}
-                                  {doc.status && (
+                                  {shouldShowDocumentStatusBadge(doc) && ` · `}
+                                  {shouldShowDocumentStatusBadge(doc) && (
                                     <span className={`status-badge status-${doc.status}`}>
                                       {DOC_STATUS_LABELS[doc.status] || doc.status}
                                     </span>
@@ -1478,8 +1479,8 @@ function DocumentRegistry() {
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
                                   {doc.clause_ref && ` · \u00A7${doc.clause_ref}`}
-                                  {doc.status && ` · `}
-                                  {doc.status && (
+                                  {shouldShowDocumentStatusBadge(doc) && ` · `}
+                                  {shouldShowDocumentStatusBadge(doc) && (
                                     <span className={`status-badge status-${doc.status}`}>
                                       {DOC_STATUS_LABELS[doc.status] || doc.status}
                                     </span>
