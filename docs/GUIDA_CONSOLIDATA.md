@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -98,6 +98,39 @@ Sessioni recenti (consultazione): [Sessione 25/05/2026](#sessione-25052026--regi
 **Regola ripetibile:** su qualsiasi form React controllato in test E2E, se il DOM mostra il valore ma la validazione fallisce → simulare digitazione reale (`pressSequentially`) o dispatch esplicito di eventi `input`/`change`.
 
 **Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
+
+---
+
+### Sessione 26/05/2026 — Refactor UI slice A/B/D (vigenti, nav)
+
+#### Attività completate
+
+| Slice | Contenuto | Commit |
+|---|---|---|
+| A | Fix link HomePage `/nc`; contatore header vigenti (`rilasciato`+`vigente`, esclude `folder`); badge stato nascosto su cartelle via `shouldShowDocumentStatusBadge()` | `2640100` |
+| B | `.btn-primary` centralizzato in `index.css`; rimosso duplicato da `DocumentRegistry.css` (override per-pagina mantenuti) | `2640100` |
+| D | `@deprecated` su `NonConformitiesManager` e `AuditTabsLayout` (non in routing) | `2640100` |
+| Backend | `backend/src/constants/documentStatus.js` + stats API allineate; deploy VPS `document.controller.js` + constants | deploy 26/05 |
+
+#### Test L1
+
+| Suite | Esito |
+|---|---|
+| `documentValidity.test.js` + `documentTree.test.jsx` | 22/22 OK |
+| `documentStatus.test.js` (Jest) | 3/3 OK |
+
+#### Lezioni apprese
+
+- **Due significati di "vigente"**: stato ciclo di vita (`document_registry.status`) vs vigore norma (`type_specific_data.validity_status` su `doc_type=norma`) — contatore header e badge albero usano solo il primo; non confonderli in query SQL o UI.
+- **Bug "0 vigenti" con badge verdi**: causa doppia — stats API ignorava status `vigente` (legacy migration 067) **e** cartelle mostravano badge per errore. Fix minimo: `RELEASED_STATUS_SQL_IN` condiviso FE/BE + `shouldShowDocumentStatusBadge()`.
+- **Deploy constants nuova cartella VPS**: `deploy-controllers-to-vps.ps1` non copia `document.controller.js` né `src/constants/` — usare `deploy-to-vps.sh` o SCP mirato + `mkdir -p` remoto; restart via fallback `fuser`+`nohup` se `sudo -n` non disponibile.
+
+#### Prossimo step (backlog, non in scope sessione)
+
+- Slice C: estrarre `SgqDataGrid` + pilota (`CompaniesPage` o `NCPage`)
+- Slice B2: rimuovere `.btn-primary` duplicati identici a `index.css`
+- Slice D2: eliminare file `@deprecated` dopo grep zero import
+- Proposte estetiche sidebar/colori: richiedono OK committente (vedi `DEPUTYTASK.md`)
 
 ---
 
