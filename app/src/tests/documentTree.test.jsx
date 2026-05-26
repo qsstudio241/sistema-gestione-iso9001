@@ -82,6 +82,31 @@ describe('DocumentTree — Rendering', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
+  it('NON mostra badge stato Vigente sulle cartelle (solo conteggio figli)', () => {
+    const nodesWithFolderStatus = [
+      {
+        id: 10,
+        title: 'Cartella vigente',
+        doc_type: 'folder',
+        status: 'vigente',
+        children_count: 1,
+      },
+    ];
+    render(
+      <DocumentTree
+        nodes={nodesWithFolderStatus}
+        expandedIds={new Set()}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Cartella vigente')).toBeInTheDocument();
+    expect(screen.queryByText('Vigente')).toBeNull();
+    expect(screen.queryByText('Rilasciato')).toBeNull();
+  });
+
   it('mostra pulsante "Nuova cartella"', () => {
     render(
       <DocumentTree

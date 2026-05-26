@@ -1,5 +1,9 @@
 /**
- * AuditTabsLayout - Sistema di navigazione a tabs per l'audit
+ * AuditTabsLayout — @deprecated (26/05/2026)
+ * Non importato da App.jsx; sostituito dal flusso audit corrente.
+ * Mantenuto per eventuale riuso; candidate per rimozione — vedi DEPUTYTASK.
+ *
+ * Sistema di navigazione a tabs per l'audit
  * Struttura conforme al template Word Check-List Report Audit
  */
 

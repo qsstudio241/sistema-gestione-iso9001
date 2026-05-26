@@ -172,7 +172,7 @@ function HomePage() {
               count={ncStats?.overdue || 0}
               color="red"
               items={[]}
-              onAction={() => navigate("/azioni")}
+              onAction={() => navigate("/nc")}
               actionLabel="Vai alle azioni →"
             />
           </div>
@@ -229,7 +229,7 @@ function HomePage() {
               label="Azioni aperte"
               value={ncStats?.open != null ? ncStats.open : "-"}
               subLabel={ncStats?.overdue > 0 ? `${ncStats.overdue} in ritardo` : null}
-              onClick={ncStats?.open != null ? () => navigate("/azioni") : undefined}
+              onClick={ncStats?.open != null ? () => navigate("/nc") : undefined}
               locked={ncStats == null}
             />
           </div>

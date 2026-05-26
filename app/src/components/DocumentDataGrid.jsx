@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { formatDate } from "../utils/dateHelpers";
+import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import "./DocumentDataGrid.css";
 
 const COLUMNS = [
@@ -80,7 +81,7 @@ function DocumentDataGrid({
   const [sortCol, setSortCol] = useState("title");
   const [sortDir, setSortDir] = useState("asc");
 
-  // Deseleziona se la riga non esiste più (pagina/filtri cambiati)
+  // Deseleziona se la riga non esiste pi? (pagina/filtri cambiati)
   React.useEffect(() => {
     if (selectedId && !documents.some((d) => d.id === selectedId)) {
       setSelectedId(null);
@@ -142,7 +143,7 @@ function DocumentDataGrid({
 
   return (
     <div className="datagrid">
-      {/* Toolbar contestuale ù si attiva dopo selezione riga */}
+      {/* Toolbar contestuale ? si attiva dopo selezione riga */}
       <div className={`datagrid-toolbar${selectedDoc ? " datagrid-toolbar--active" : ""}`}>
         <span className="datagrid-toolbar__hint">
           {selectedDoc
@@ -278,9 +279,13 @@ function DocumentDataGrid({
                       {doc.revision || "-"}
                     </td>
                     <td className="datagrid-cell datagrid-cell--status">
-                      <span className={`status-badge status-${doc.status}`}>
-                        {DOC_STATUS_LABELS[doc.status] || doc.status}
-                      </span>
+                      {shouldShowDocumentStatusBadge(doc) ? (
+                        <span className={`status-badge status-${doc.status}`}>
+                          {DOC_STATUS_LABELS[doc.status] || doc.status}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className={`datagrid-cell datagrid-cell--expiry ${getExpiryClass(doc)}`}>
                       {doc.expiry_date ? (

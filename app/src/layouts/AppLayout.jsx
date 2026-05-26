@@ -88,18 +88,45 @@ function buildNavItems(user, alerts = {}) {
   ];
 }
 
-// ─── Bottom navigation (mobile - max 5 voci) ─────────────────────────────────
+// ─── Bottom navigation (mobile - max 5 voci, allineata a licenze) ────────────
 
-function BottomNav({ navItems }) {
-  const { path } = useRouter();
-  // Seleziona le 5 voci più importanti per il mobile
-  const mobileItems = [
-    { to: "/",          icon: "🏠", label: "Home",     exact: true },
-    { to: "/audit",     icon: "🔍", label: "Audit" },
-    { to: "/documents", icon: "📄", label: "Documenti" },
-    { to: "/companies", icon: "🏢", label: "Aziende" },
-    { to: "/settings/users", icon: "⚙️", label: "Impostazioni" },
+function buildMobileNavItems(user, alerts) {
+  const groups = buildNavItems(user, alerts);
+  const flat = groups.flatMap((g) => g.items).filter((it) => !it.locked);
+
+  const find = (to) => flat.find((it) => it.to === to);
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
+  const items = [
+    { to: "/", icon: "🏠", label: "Home", exact: true },
   ];
+
+  const audit = find("/audit");
+  if (audit) items.push({ to: audit.to, icon: audit.icon, label: audit.label });
+
+  const docs = find("/documents");
+  if (docs) items.push({ to: docs.to, icon: docs.icon, label: docs.label });
+
+  const nc = find("/nc");
+  if (nc) items.push({ to: nc.to, icon: nc.icon, label: "NC" });
+
+  const settings = find("/settings/users");
+  const companies = find("/companies");
+  if (isAdmin && settings) {
+    items.push({ to: settings.to, icon: settings.icon, label: "Impostazioni" });
+  } else if (companies) {
+    items.push({ to: companies.to, icon: companies.icon, label: companies.label });
+  } else {
+    const reclami = find("/reclami");
+    if (reclami) items.push({ to: reclami.to, icon: reclami.icon, label: reclami.label });
+  }
+
+  return items.slice(0, 5);
+}
+
+function BottomNav({ user, alerts }) {
+  const { path } = useRouter();
+  const mobileItems = buildMobileNavItems(user, alerts);
 
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Navigazione principale">
@@ -327,7 +354,7 @@ function AppLayout({ children }) {
       </div>
 
       {/* Bottom navigation mobile */}
-      <BottomNav navGroups={navGroups} />
+      <BottomNav user={user} alerts={alerts} />
     </div>
   );
 }
