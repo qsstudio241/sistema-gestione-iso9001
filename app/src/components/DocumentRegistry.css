@@ -37,6 +37,33 @@
 .docregistry-subtitle {
   font-size: 0.85rem;
   color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.docregistry-file-alert {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: #b45309;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.docregistry-file-alert:hover {
+  color: #92400e;
+}
+
+.docregistry-file-alert-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 /* ─── Pulsanti globali ─────────────────────────────────────────────────────── */
@@ -152,6 +179,11 @@
 .priority-section-red    { background: #fef2f2; color: #991b1b; }
 .priority-section-orange { background: #fffbeb; color: #92400e; }
 .priority-section-blue   { background: #eff6ff; color: #1e40af; }
+.priority-section-amber  { background: #fffbeb; color: #92400e; }
+
+.priority-card-amber { border-left: 4px solid #f59e0b; }
+.dot-amber { background: #f59e0b; }
+.text-amber { color: #b45309; font-size: 0.82rem; }
 
 .ps-hint {
   font-weight: 400;

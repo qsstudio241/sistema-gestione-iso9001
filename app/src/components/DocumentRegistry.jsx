@@ -24,6 +24,7 @@ import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
+import { documentHasFile } from "../utils/documentRegistryFile";
 import "./DocumentRegistry.css";
 
 // ─── Alberi clausole per vista per-standard ──────────────────────────────────
@@ -297,10 +298,15 @@ function getExpiryClass(doc) {
 // ─── Export CSV ───────────────────────────────────────────────────────────────
 
 function exportToCSV(documents) {
-  const headers = ["Codice", "Titolo", "Tipo", "Revisione", "Stato", "Emissione", "Scadenza", "Responsabile", "Azienda", "Norma", "Paragrafo", "Note"];
+  const headers = [
+    "Codice", "Titolo", "File", "Nome file", "Tipo", "Revisione", "Stato",
+    "Emissione", "Scadenza", "Responsabile", "Azienda", "Norma", "Paragrafo", "Note",
+  ];
   const rows = documents.map((d) => [
     d.doc_code || "",
     d.title,
+    documentHasFile(d) ? "Sì" : "No",
+    d.current_file_name || "",
     DOC_TYPE_LABELS[d.doc_type] || d.doc_type,
     d.revision || "",
     DOC_STATUS_LABELS[d.status] || d.status,
@@ -378,8 +384,59 @@ function PriorityCard({ doc, onEdit, onArchive, archiveId, onConfirmArchive, onC
 
 // ─── Tab Priorità ─────────────────────────────────────────────────────────────
 
-function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading, onEdit, onArchive, archiveId, onConfirmArchive, onCancelArchive, onNewDoc }) {
-  const total = expiredDocs.length + expiringDocs.length + revisionDocs.length;
+function ReleasedWithoutFileCard({ doc, onEdit, onFileDialog }) {
+  return (
+    <div className="priority-card priority-card-amber">
+      <div className="pcard-left">
+        <span className="pcard-dot dot-amber" />
+        <div className="pcard-info">
+          <span className="pcard-title" title={doc.title}>{doc.title}</span>
+          <span className="pcard-meta">
+            {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+            {doc.doc_code && ` · ${doc.doc_code}`}
+            {doc.company_name && ` · ${doc.company_name}`}
+          </span>
+          <span className="pcard-expiry text-amber">
+            {"\u26A0\uFE0F"} Rilasciato senza file PDF allegato
+          </span>
+        </div>
+      </div>
+      <div className="pcard-actions">
+        <button
+          type="button"
+          className="btn-icon-sm"
+          title="Carica allegato"
+          onClick={() => onFileDialog?.(doc)}
+        >
+          {"\uD83D\uDCCE"} Carica file
+        </button>
+        <button className="btn-icon-sm" title="Modifica" onClick={() => onEdit(doc)}>
+          {"\u270F\uFE0F"} Modifica
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PriorityView({
+  expiredDocs,
+  expiringDocs,
+  revisionDocs,
+  releasedWithoutFileDocs,
+  loading,
+  onEdit,
+  onArchive,
+  archiveId,
+  onConfirmArchive,
+  onCancelArchive,
+  onNewDoc,
+  onFileDialog,
+}) {
+  const total =
+    expiredDocs.length +
+    expiringDocs.length +
+    revisionDocs.length +
+    releasedWithoutFileDocs.length;
 
   if (loading) {
     return (
@@ -403,6 +460,24 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
 
   return (
     <div className="priority-view">
+      {/* Rilasciati senza file */}
+      {releasedWithoutFileDocs.length > 0 && (
+        <section className="priority-section">
+          <div className="priority-section-header priority-section-amber">
+            <span>{"\uD83D\uDCCE"} Rilasciati senza file — {releasedWithoutFileDocs.length}</span>
+            <span className="ps-hint">Carica il PDF per audit e distribuzione</span>
+          </div>
+          {releasedWithoutFileDocs.map((doc) => (
+            <ReleasedWithoutFileCard
+              key={doc.id}
+              doc={doc}
+              onEdit={onEdit}
+              onFileDialog={onFileDialog}
+            />
+          ))}
+        </section>
+      )}
+
       {/* Scaduti */}
       {expiredDocs.length > 0 && (
         <section className="priority-section">
@@ -540,9 +615,25 @@ function CatalogView({
             />
             Solo in scadenza (30gg)
           </label>
+          <label className="filter-check">
+            <input
+              type="checkbox"
+              checked={Boolean(filters.without_file)}
+              onChange={(e) => setFilter("without_file", e.target.checked)}
+            />
+            Senza file allegato
+          </label>
           <button
             className="btn-reset"
-            onClick={() => { setFilter("doc_type", ""); setFilter("status", ""); setFilter("company_id", ""); setFilter("standard_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
+            onClick={() => {
+              setFilter("doc_type", "");
+              setFilter("status", "");
+              setFilter("company_id", "");
+              setFilter("standard_id", "");
+              setFilter("search", "");
+              setFilter("expiring_days", null);
+              setFilter("without_file", false);
+            }}
           >
             Reset
           </button>
@@ -812,6 +903,7 @@ function DocumentRegistry() {
 
   // Documenti priorità (scaduti + in scadenza 60gg + in revisione)
   const [priorityDocs, setPriorityDocs] = useState([]);
+  const [releasedWithoutFileDocs, setReleasedWithoutFileDocs] = useState([]);
   const [loadingPriority, setLoadingPriority] = useState(true);
 
   // Catalogo
@@ -824,7 +916,13 @@ function DocumentRegistry() {
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
-    search: "", doc_type: "", status: "", company_id: "", standard_id: "", expiring_days: null,
+    search: "",
+    doc_type: "",
+    status: "",
+    company_id: "",
+    standard_id: "",
+    expiring_days: null,
+    without_file: false,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -876,15 +974,16 @@ function DocumentRegistry() {
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
     try {
-      // Scaduti + in scadenza 60gg
-      const [expRes, revRes] = await Promise.all([
+      const [expRes, revRes, noFileRes] = await Promise.all([
         apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50 }),
         apiService.getDocuments({ status: "in_revisione", limit: 20 }),
+        apiService.getDocuments({ without_file: 1, status: "rilasciato", limit: 30 }),
       ]);
       setPriorityDocs([
         ...(expRes.data || []),
         ...(revRes.data || []),
       ]);
+      setReleasedWithoutFileDocs(noFileRes.data || []);
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
   }, []);
@@ -901,6 +1000,7 @@ function DocumentRegistry() {
         ...(filters.company_id    && { company_id:   filters.company_id }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
+        ...(filters.without_file && { without_file: 1 }),
       };
       const res = await apiService.getDocuments(params);
       setCatalogDocs(res.data || []);
@@ -1038,6 +1138,7 @@ function DocumentRegistry() {
         ...(filters.company_id    && { company_id:   filters.company_id }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
+        ...(filters.without_file && { without_file: 1 }),
       };
       const res = await apiService.getDocuments(params);
       exportToCSV(res.data || []);
@@ -1134,7 +1235,17 @@ function DocumentRegistry() {
   const expiredDocs  = priorityDocs.filter((d) => d.is_expired);
   const expiringDocs = priorityDocs.filter((d) => d.expiring_soon && !d.is_expired);
   const revisionDocs = priorityDocs.filter((d) => d.status === "in_revisione");
-  const priorityCount = expiredDocs.length + expiringDocs.length + revisionDocs.length;
+  const priorityCount =
+    expiredDocs.length +
+    expiringDocs.length +
+    revisionDocs.length +
+    releasedWithoutFileDocs.length;
+
+  const openCatalogWithoutFile = useCallback(() => {
+    setActiveTab("catalog");
+    setFiltersState((f) => ({ ...f, without_file: true }));
+    setCatalogPage(1);
+  }, []);
 
   return (
     <div className="docregistry-page">
@@ -1145,6 +1256,24 @@ function DocumentRegistry() {
           {stats && (
             <span className="docregistry-subtitle">
               {stats.total} documenti · {stats.vigenti} vigenti
+              {Number(stats.senza_file) > 0 && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="docregistry-file-alert"
+                    onClick={openCatalogWithoutFile}
+                    title="Apri catalogo filtrato su documenti senza allegato"
+                  >
+                    {stats.senza_file} senza allegato
+                  </button>
+                </>
+              )}
+              {Number(stats.rilasciati_senza_file) > 0 && (
+                <span className="docregistry-file-alert-hint">
+                  {" "}({stats.rilasciati_senza_file} rilasciati)
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -1213,10 +1342,10 @@ function DocumentRegistry() {
       {/* Contenuto tab */}
       {activeTab === "priority" && (
         <PriorityView
-          stats={stats}
           expiredDocs={expiredDocs}
           expiringDocs={expiringDocs}
           revisionDocs={revisionDocs}
+          releasedWithoutFileDocs={releasedWithoutFileDocs}
           loading={loadingPriority}
           onEdit={handleEdit}
           onArchive={handleArchive}
@@ -1224,6 +1353,7 @@ function DocumentRegistry() {
           onConfirmArchive={handleConfirmArchive}
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
+          onFileDialog={setFileDialogDoc}
         />
       )}
 
@@ -1550,7 +1680,11 @@ function DocumentRegistry() {
       {fileDialogDoc && (
         <DocFileDialog
           doc={fileDialogDoc}
-          onClose={() => setFileDialogDoc(null)}
+          onClose={async () => {
+            setFileDialogDoc(null);
+            await Promise.all([loadStats(), loadPriorityDocs()]);
+            if (activeTab === "catalog") await loadCatalog();
+          }}
         />
       )}
 
