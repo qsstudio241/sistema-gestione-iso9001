@@ -11,6 +11,11 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const multer = require('multer');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
+const {
+    buildHasAnyFileSql,
+    buildCurrentFileApplySql,
+    parseTruthyQueryFlag,
+} = require('../utils/documentRegistryFile');
 
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
@@ -18,6 +23,7 @@ const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
  * Query params:
  *   company_id, standard_id, doc_type, status, expiring_days,
  *   search (testo libero su title/doc_code),
+ *   without_file (1/true: solo documenti senza allegato),
  *   page (default 1), limit (default 50)
  */
 async function listDocuments(req, res) {
@@ -31,6 +37,7 @@ async function listDocuments(req, res) {
             status,
             expiring_days,
             search,
+            without_file,
             page  = 1,
             limit = 50,
         } = req.query;
@@ -74,6 +81,9 @@ async function listDocuments(req, res) {
             conditions.push('(dr.title LIKE @search OR dr.doc_code LIKE @search)');
             params.search = `%${search}%`;
         }
+        if (parseTruthyQueryFlag(without_file)) {
+            conditions.push(`NOT ${buildHasAnyFileSql('dr')}`);
+        }
 
         const where = conditions.join(' AND ');
 
@@ -114,11 +124,15 @@ async function listDocuments(req, res) {
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
                          AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
-                END AS expiring_soon
+                END AS expiring_soon,
+                CASE WHEN cur_file.file_name IS NOT NULL THEN 1 ELSE 0 END AS has_file,
+                cur_file.file_name AS current_file_name,
+                cur_file.file_uploaded_at AS current_file_uploaded_at
             FROM document_registry dr
             LEFT JOIN companies     c ON dr.company_id   = c.id
             LEFT JOIN standards     s ON dr.standard_id  = s.standard_id
             LEFT JOIN users         u ON dr.created_by   = u.user_id
+            ${buildCurrentFileApplySql('dr')}
             WHERE ${where}
             ORDER BY
                 CASE dr.status
@@ -195,7 +209,17 @@ async function getDocumentStats(req, res) {
                          AND expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
                          AND status IN ${RELEASED_STATUS_SQL_IN}
-                    THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg
+                    THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg,
+                SUM(CASE
+                    WHEN status <> 'obsoleto'
+                         AND doc_type <> 'folder'
+                         AND NOT ${buildHasAnyFileSql('document_registry')}
+                    THEN 1 ELSE 0 END)                                           AS senza_file,
+                SUM(CASE
+                    WHEN status IN ${RELEASED_STATUS_SQL_IN}
+                         AND doc_type <> 'folder'
+                         AND NOT ${buildHasAnyFileSql('document_registry')}
+                    THEN 1 ELSE 0 END)                                           AS rilasciati_senza_file
             FROM document_registry
             WHERE organization_id = @organization_id
               AND doc_type <> 'folder'
