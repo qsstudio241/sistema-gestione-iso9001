@@ -93,6 +93,8 @@ describe('getDocumentStats', () => {
         const statsSql = query.mock.calls[0][0];
         expect(statsSql).toMatch(/senza_file/i);
         expect(statsSql).toMatch(/rilasciati_senza_file/i);
+        expect(statsSql).toMatch(/SELECT COUNT\(\*\)\s+FROM document_registry dr/i);
+        expect(statsSql).not.toMatch(/SUM\(CASE[\s\S]*NOT EXISTS/i);
         expect(res.json).toHaveBeenCalledWith({
             success: true,
             data: expect.objectContaining({
