@@ -2,11 +2,13 @@ import React, { useState, useMemo, useCallback } from "react";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { formatDate } from "../utils/dateHelpers";
 import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
+import { documentHasFile, formatDocumentFileLabel } from "../utils/documentRegistryFile";
 import "./DocumentDataGrid.css";
 
 const COLUMNS = [
   { id: "doc_code", label: "Codice", width: "100px", sortable: true },
   { id: "title", label: "Titolo", width: "1fr", sortable: true },
+  { id: "has_file", label: "File", width: "100px", sortable: true },
   { id: "doc_type", label: "Tipo", width: "110px", sortable: true },
   { id: "revision", label: "Rev.", width: "55px", sortable: true },
   { id: "status", label: "Stato", width: "110px", sortable: true },
@@ -47,6 +49,90 @@ function getExpiryClass(doc) {
   return "";
 }
 
+function DocumentFileBadge({ doc }) {
+  const hasFile = documentHasFile(doc);
+  const label = formatDocumentFileLabel(doc);
+  return (
+    <span
+      className={`doc-file-badge${hasFile ? " doc-file-badge--ok" : " doc-file-badge--missing"}`}
+      title={label.title}
+    >
+      <span className="doc-file-badge__icon" aria-hidden="true">
+        {hasFile ? "\uD83D\uDCCE" : "\u26A0\uFE0F"}
+      </span>
+      <span className="doc-file-badge__text">{label.short}</span>
+    </span>
+  );
+}
+
+function DocumentCatalogCard({
+  doc,
+  isSelected,
+  onSelect,
+  onDoubleClick,
+  onFileDialog,
+}) {
+  const expiryClass = getExpiryClass(doc);
+  return (
+    <article
+      className={`catalog-doc-card${isSelected ? " catalog-doc-card--selected" : ""}${expiryClass ? ` catalog-doc-card--${expiryClass.replace("expiry-", "")}` : ""}`}
+      onClick={onSelect}
+      onDoubleClick={onDoubleClick}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
+      <div className="catalog-doc-card__head">
+        <div className="catalog-doc-card__title-wrap">
+          <h4 className="catalog-doc-card__title">{doc.title}</h4>
+          {doc.doc_code && (
+            <span className="catalog-doc-card__code">{doc.doc_code}</span>
+          )}
+        </div>
+        <DocumentFileBadge doc={doc} />
+      </div>
+      <div className="catalog-doc-card__meta">
+        <span className="doc-type-badge">
+          {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+        </span>
+        {shouldShowDocumentStatusBadge(doc) && (
+          <span className={`status-badge status-${doc.status}`}>
+            {DOC_STATUS_LABELS[doc.status] || doc.status}
+          </span>
+        )}
+        {doc.revision && (
+          <span className="catalog-doc-card__rev">Rev. {doc.revision}</span>
+        )}
+      </div>
+      {doc.expiry_date && (
+        <div className={`catalog-doc-card__expiry ${expiryClass}`}>
+          {doc.is_expired && "\u26A0\uFE0F "}
+          {doc.expiring_soon && !doc.is_expired && "\uD83D\uDFE1 "}
+          Scadenza: {formatDate(doc.expiry_date)}
+        </div>
+      )}
+      {!documentHasFile(doc) && (
+        <button
+          type="button"
+          className="catalog-doc-card__upload-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFileDialog?.(doc);
+          }}
+        >
+          {"\uD83D\uDCCE"} Carica file
+        </button>
+      )}
+    </article>
+  );
+}
+
 function sortDocs(docs, sortCol, sortDir) {
   if (!sortCol) return docs;
   const sorted = [...docs].sort((a, b) => {
@@ -59,6 +145,10 @@ function sortDocs(docs, sortCol, sortDir) {
     if (sortCol === "status") {
       va = DOC_STATUS_LABELS[va] || va;
       vb = DOC_STATUS_LABELS[vb] || vb;
+    }
+    if (sortCol === "has_file") {
+      va = documentHasFile(a) ? 1 : 0;
+      vb = documentHasFile(b) ? 1 : 0;
     }
     if (typeof va === "string") va = va.toLowerCase();
     if (typeof vb === "string") vb = vb.toLowerCase();
@@ -148,7 +238,7 @@ function DocumentDataGrid({
         <span className="datagrid-toolbar__hint">
           {selectedDoc
             ? "Azioni sul documento selezionato:"
-            : "Seleziona una riga nella tabella (clic singolo)"}
+            : "Seleziona un documento nell'elenco (clic singolo)"}
         </span>
         <div className="datagrid-toolbar__actions">
           <button
@@ -189,7 +279,25 @@ function DocumentDataGrid({
         )}
       </div>
 
-      {/* Table */}
+      {/* Card mobile */}
+      <div className="datagrid-cards" aria-label="Elenco documenti">
+        {sortedDocs.length === 0 ? (
+          <div className="datagrid-cards-empty">Nessun documento trovato.</div>
+        ) : (
+          sortedDocs.map((doc) => (
+            <DocumentCatalogCard
+              key={doc.id}
+              doc={doc}
+              isSelected={selectedId === doc.id}
+              onSelect={() => handleRowClick(doc)}
+              onDoubleClick={() => handleRowDoubleClick(doc)}
+              onFileDialog={onFileDialog}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Table desktop */}
       <div className="datagrid-table-wrap">
         <table className="datagrid-table">
           <thead>
@@ -269,6 +377,9 @@ function DocumentDataGrid({
                           </span>
                         );
                       })()}
+                    </td>
+                    <td className="datagrid-cell datagrid-cell--file">
+                      <DocumentFileBadge doc={doc} />
                     </td>
                     <td className="datagrid-cell datagrid-cell--type">
                       <span className="doc-type-badge">
