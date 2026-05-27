@@ -191,6 +191,7 @@ async function listDocuments(req, res) {
 async function getDocumentStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const noFileExists = buildHasAnyFileSql('dr');
 
         const result = await query(`
             SELECT
@@ -210,16 +211,22 @@ async function getDocumentStats(req, res) {
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
                          AND status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg,
-                SUM(CASE
-                    WHEN status <> 'obsoleto'
-                         AND doc_type <> 'folder'
-                         AND NOT ${buildHasAnyFileSql('document_registry')}
-                    THEN 1 ELSE 0 END)                                           AS senza_file,
-                SUM(CASE
-                    WHEN status IN ${RELEASED_STATUS_SQL_IN}
-                         AND doc_type <> 'folder'
-                         AND NOT ${buildHasAnyFileSql('document_registry')}
-                    THEN 1 ELSE 0 END)                                           AS rilasciati_senza_file
+                (
+                    SELECT COUNT(*)
+                    FROM document_registry dr
+                    WHERE dr.organization_id = @organization_id
+                      AND dr.doc_type <> 'folder'
+                      AND dr.status <> 'obsoleto'
+                      AND NOT ${noFileExists}
+                )                                                                AS senza_file,
+                (
+                    SELECT COUNT(*)
+                    FROM document_registry dr
+                    WHERE dr.organization_id = @organization_id
+                      AND dr.doc_type <> 'folder'
+                      AND dr.status IN ${RELEASED_STATUS_SQL_IN}
+                      AND NOT ${noFileExists}
+                )                                                                AS rilasciati_senza_file
             FROM document_registry
             WHERE organization_id = @organization_id
               AND doc_type <> 'folder'
