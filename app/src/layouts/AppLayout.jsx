@@ -113,7 +113,7 @@ function buildMobileNavItems(user, alerts) {
   const settings = find("/settings/users");
   const companies = find("/companies");
   if (isAdmin && settings) {
-    items.push({ to: settings.to, icon: settings.icon, label: "Impostazioni" });
+    items.push({ to: settings.to, icon: "⚙️", label: "Impostazioni" });
   } else if (companies) {
     items.push({ to: companies.to, icon: companies.icon, label: companies.label });
   } else {
