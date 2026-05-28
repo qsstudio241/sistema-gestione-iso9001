@@ -836,6 +836,58 @@ function attachmentMapByServerId(auditAttachments) {
     return map;
 }
 
+/** ID numerico allegato lato server (per link Word / preload immagini). */
+function serverAttachmentIdOf(att) {
+    const sid = att?.serverAttachmentId ?? att?.attachment_id ?? att?.id;
+    return sid != null ? Number(sid) : null;
+}
+
+/**
+ * Allegati caricati da AttachmentSection su item custom: hanno custom_item_id (server)
+ * o questionId locale = id voce. L'export Word custom leggeva solo evidence_blocks.attachment_id.
+ */
+function attachmentsForCustomItem(auditAttachments, itemId) {
+    const idNum = Number(itemId);
+    if (!Number.isFinite(idNum)) return [];
+    return (auditAttachments || []).filter((a) => {
+        const customId = a.customItemId ?? a.custom_item_id;
+        const qId = a.questionId ?? a.question_id;
+        return (customId != null && Number(customId) === idNum)
+            || (qId != null && Number(qId) === idNum);
+    });
+}
+
+/** OOXML per un allegato in checklist custom (link o embed come ISO). */
+function customItemAttachmentOoxml(att, getViewUrl, options, imageRegistry) {
+    const usePreview = options.photoMode === 'preview';
+    const attId = serverAttachmentIdOf(att);
+    const viewId = attId;
+    const url = getViewUrl && viewId != null ? getViewUrl(viewId) : null;
+    const fnameBase = att?.fileName || att?.name || 'Allegato';
+    const mimeType = normalizeMimeType(att?.imageMimeType || att?.mimeType || '');
+
+    if (usePreview && imageRegistry && IMAGE_MIME_TYPES.has(mimeType) && att?.imageBase64?.startsWith('data:image/')) {
+        const imgIdx = imageRegistry.length;
+        const imgId = 30000 + imgIdx;
+        const rId = `rId${imgId}`;
+        const ext = IMAGE_EXTS[mimeType] || 'jpg';
+        imageRegistry.push({ rId, imgId, base64: att.imageBase64, mimeType, ext });
+        let fragment = xmlPara(xmlImageOoxml(rId, imgId), { sa: 60, sb: 60 });
+        if (url) {
+            fragment += xmlHyperlinkPara(url, '\uD83D\uDD17 ' + fnameBase, { color: '1E40AF', size: 18 });
+        }
+        return fragment;
+    }
+    if (url) {
+        return xmlHyperlinkPara(url, '\uD83D\uDCCE ' + fnameBase, { color: '1E40AF', size: 18 });
+    }
+    const fname = escXml(fnameBase);
+    return xmlPara(
+        xmlRun('\uD83D\uDCCE ' + fname, { size: 18, ital: true, color: '64748B' }),
+        { sa: 40 }
+    );
+}
+
 /**
  * Costruisce OOXML per checklist personalizzata: sezioni, voci, evidence_blocks.
  * @param {Object} customChecklist - { sections: [{ id, code, title, items: [{ id, code, title }] }] }
@@ -938,6 +990,16 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                 const blocks = Array.isArray(customResponses[item.id]) ? customResponses[item.id] : [];
                 const itemCode = String(item.code || '').trim() || '-';
                 const itemTitle = String(item.title || '').trim();
+                const itemAtts = attachmentsForCustomItem(auditAttachments, item.id);
+                const referencedAttIds = new Set(
+                    blocks
+                        .map((b) => (b?.attachment_id != null ? Number(b.attachment_id) : null))
+                        .filter((id) => Number.isFinite(id))
+                );
+                const orphanAtts = itemAtts.filter((a) => {
+                    const sid = serverAttachmentIdOf(a);
+                    return sid == null || !referencedAttIds.has(sid);
+                });
 
                 const itemStatus = hasOutcomeButtons ? (customStatuses[item.id] || null) : null;
                 const badgeRun = itemStatus
@@ -947,7 +1009,7 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                       )
                     : '';
 
-                if (blocks.length === 0) {
+                if (blocks.length === 0 && orphanAtts.length === 0) {
                     const titleContent = [
                         xmlRun(itemTitle || 'Voce checklist', { bold: true, size: 18 }),
                         badgeRun,
@@ -957,6 +1019,28 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                     allRows.push(xmlRow([
                         xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top', ...(badgeCellFill ? { fill: badgeCellFill } : {}) }),
                         xmlCell(xmlPara(titleContent), { dxa: C[1], va: 'top', ml: 120 }),
+                        emptyCell(2),
+                        emptyCell(3),
+                    ]));
+                    return;
+                }
+
+                if (blocks.length === 0 && orphanAtts.length > 0) {
+                    const badgeCellFill = (itemStatus && STATUS_BG[itemStatus]) ? STATUS_BG[itemStatus] : undefined;
+                    let detail = '';
+                    if (itemTitle) {
+                        detail += xmlPara(
+                            xmlRun(itemTitle, { bold: true, size: 18 }) + badgeRun,
+                            { sa: 50, sb: 40 }
+                        );
+                    }
+                    orphanAtts.forEach((att, i) => {
+                        if (i > 0) detail += xmlPara('', { sa: 100, sb: 40 });
+                        detail += customItemAttachmentOoxml(att, getViewUrl, options, imageRegistry);
+                    });
+                    allRows.push(xmlRow([
+                        xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top', ...(badgeCellFill ? { fill: badgeCellFill } : {}) }),
+                        xmlCell(detail, { dxa: C[1], va: 'top', ml: 120 }),
                         emptyCell(2),
                         emptyCell(3),
                     ]));
@@ -1018,6 +1102,14 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                     }
                     detail += fragment;
                 });
+
+                if (orphanAtts.length > 0) {
+                    detail += xmlPara('', { sa: 100, sb: 40 });
+                    orphanAtts.forEach((att, i) => {
+                        if (i > 0) detail += xmlPara('', { sa: 60, sb: 40 });
+                        detail += customItemAttachmentOoxml(att, getViewUrl, options, imageRegistry);
+                    });
+                }
 
                 allRows.push(xmlRow([
                     xmlCell(xmlPara(itemCode, { align: 'center' }), { dxa: C[0], va: 'top', ...(badgeCellFill ? { fill: badgeCellFill } : {}) }),

@@ -1125,6 +1125,8 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 
 **Nota 02/05/2026 — Word checklist custom**: gli allegati nelle `evidence_blocks` ora generano **HYPERLINK** cliccabile (come checklist ISO) quando è disponibile `getViewUrl`; in modalità **Incorpora foto** sotto l’immagine compare anche il link. La mappa allegati usa `attachment_id` / `serverAttachmentId` / `id`.
 
+**Nota 28/05/2026 — Word checklist custom, allegati mancanti**: l'upload da **AttachmentSection** salva su server con `custom_item_id` ma spesso non aggiorna `evidence_blocks.attachment_id`. L'export ISO elenca allegati per `questionId`; il ramo custom leggeva solo i blocchi. Fix: `buildCustomChecklistSectionOoxml` (`attachmentsForCustomItem`). Per il menu template: copiare un `.docx` in `public/templates/` **non** registra il file — serve **POST** `/api/v1/report-templates` e assegnazione in editor checklist o Impostazioni.
+
 ---
 
 ### Chiusura sessione 29–30 aprile 2026
@@ -1468,6 +1470,8 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 | Tabelle fuori margini | `w:tblInd` negativo → `normalizeNegativeTableIndentsInZip`; script `app/scripts/fix-verbale-table-margins.js`. |
 
 **Template**: fallback `app/public/templates/Verbale_di_riunione_QTAFI_VIS001.docx`. Se `getReportTemplate` restituisce URL (anche `/uploads/...`), quello ha priorità. **Repro** (`repro-custom-export.mjs`): solo file in `public/templates`, senza resolver API.
+
+**Registrazione template custom (menu a tendina)**: il dropdown in **Admin → Checklist personalizzate → editor** legge `GET /report-templates?scope=audit` (righe in tabella `report_templates`: template di sistema `organization_id` NULL + upload org). Copiare/rinominare un file sotto `app/public/templates/` **non** crea una voce nel menu. Per usare una copia del template ISO 9001: caricare il `.docx` via API/UI upload, poi **PUT** `/report-template-assignments/custom-checklist/:id` (o dropdown nell'editor). Il file deve contenere i marker `CHECKLIST_MARKER` e `RILIEVI_MARKER` (come il Verbale di sistema) oltre ai placeholder docxtemplater (`{auditDate}`, `{clientName}`, …).
 
 **Script utili**: `fix-verbale-template-xml.js`, `verify-template-repair.js`. Marker: `CHECKLIST_MARKER`, `RILIEVI_MARKER`. Dettaglio placeholder: [ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md](ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md).
 

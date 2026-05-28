@@ -189,6 +189,9 @@ export function useAttachmentManager(audit, onUpdate) {
                         const attachment = {
                             questionId,
                             questionRef: questionId,
+                            ...(opts.customItemId != null
+                                ? { customItemId: Number(opts.customItemId) }
+                                : {}),
                             category,
                             name: file.name,
                             storedName: metadata.storedName,
