@@ -18,6 +18,7 @@ const TARGETS = [
     'ISO14001-audit-report.docx',
     'ISO45001-audit-report.docx',
     'ISO3834-audit-report.docx',
+    'VerbaleVisita-generic.docx',
 ];
 
 function paraText(pXml) {
