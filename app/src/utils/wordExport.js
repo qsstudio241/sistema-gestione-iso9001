@@ -106,12 +106,8 @@ const saveAs =
 
 function formatDate(dateStr) {
     if (!dateStr) return 'N/D';
-    try {
-        const d = new Date(dateStr);
-        return isNaN(d.getTime())
-            ? String(dateStr)
-            : d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return String(dateStr); }
+    const formatted = formatDateIt(dateStr);
+    return formatted || 'N/D';
 }
 
 function normalizeMimeType(mimeType) {
