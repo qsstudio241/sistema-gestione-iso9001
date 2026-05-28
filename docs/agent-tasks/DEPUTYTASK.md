@@ -1,27 +1,9 @@
-# DEPUTYTASK — Catalogo documenti UX (27/05/2026)
+# DEPUTYTASK — Export Word Verbale custom (28/05/2026)
 
-**Stato:** **CHIUSO / TEST OK** — PR #71 mergiata su `main`
+**Stato:** **CHIUSO / TEST OK** — commit su `main`, push completato
 
-## Esito
+## Esito (3 righe)
 
-| Voce | Esito |
-|------|--------|
-| API `has_file` / `without_file` / stats | ✅ codice + file su VPS |
-| Griglia + card mobile + filtri | ✅ |
-| Tab Priorità senza file | ✅ |
-| Vitest 389 + Jest mirati | ✅ |
-| Build Vite | ✅ |
-| PR merge `main` | ✅ [#71](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/71) |
-| Restart `sgq-backend` VPS | ✅ PID 286305 → 294074, health OK |
-| Smoke API `senza_file` | ✅ campi presenti in `/documents/stats` |
+Fix export Word checklist custom: allegati via `custom_item_id`, EXIF foto, mojibake (`Â°`), titoli sezione 3 in Titolo 1 + template `VerbaleVisita-generic.docx` (intestazione committente). Vitest `wordExport.*` 18/18 verdi.
 
-## Commit
-
-`16792d4` su branch `cursor/catalogo-documenti-ux-f6a8`
-
-## Post-merge (utente)
-
-1. Attendere build Netlify su `main` (~2 min), poi **hard refresh** (Ctrl+Shift+R) su https://systemgest.netlify.app
-2. Registro Documenti → verificare colonna File, filtro e badge header
-
-*Chiuso 27/05/2026 — merge + deploy VPS completati*
+*Chiuso 28/05/2026 — attesa build Netlify + rigenerazione Word lato utente*

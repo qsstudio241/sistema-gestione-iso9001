@@ -1491,6 +1491,18 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 
 **Ordine capitoli e sommario (mag 2026)**: in `wordExport.js`, `normalizeAuditReportDocumentStructure` riordina **Conclusioni dopo RILIEVI** (come ISO patchate) e rimuove righe Sommario TOC cache obsolete (`_Toc*`) così Word rigenera l’indice aprendo il file. Test: `wordExport.chapterOrder.test.js`. Script offline: `patch-audit-template-structure.cjs` (include `VerbaleVisita-generic.docx`).
 
+**Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
+
+- **Template giusto**: checklist custom → `VerbaleVisita-generic.docx`, **non** i template ISO 9001/14001; ramo `isCustomChecklist` + fallback `TEMPLATE_MAP.custom_checklist`.
+- **Allegati custom**: l’upload salva `custom_item_id` su `attachments` ma spesso **non** popola `evidence_blocks.attachment_id`; l’export deve leggere anche `attachmentsForCustomItem` (non solo i blocchi).
+- **Foto in Word**: normalizzare **EXIF orientation** (5–8) prima dell’embed OOXML (`embeddedImageEmuFromBase64`); altrimenti foto sempre landscape.
+- **Mojibake**: `Â°` ≠ `à` — sequenza UTF-8/Latin-1 distinta; usare `fixWordXmlMojibake` su template e post-render (`fix-audit-template-mojibake.cjs`).
+- **Sommario / titoli sezione 3**: capitoli **3 / 3.1 / 3.2** in stile **Titolo 1** come 1–2 (non Titolo2); numerazione verbale **3.x** vs audit ISO **11.x**; dopo patch template aggiornare sommario in Word (**F9**).
+- **Upload template**: copiare `.docx` in `public/templates/` **non** basta — registrare con **POST** `/api/v1/report-templates` e assegnazione checklist/org.
+- **Intestazione verbale**: modifiche grafiche (logo, layout) vanno fatte su `VerbaleVisita-generic.docx` in repo + deploy Netlify; runtime OOXML non sostituisce l’header se già nel template patchato.
+
+Script aggiuntivo: `patch-verbale-visita-headings.cjs` (allinea Titolo 1 offline; mirror runtime `normalizeVerbaleVisitaSectionHeadings`).
+
 **Registrazione template custom (menu a tendina)**: il dropdown in **Admin → Checklist personalizzate → editor** legge `GET /report-templates?scope=audit` (righe in tabella `report_templates`: template di sistema `organization_id` NULL + upload org). Copiare/rinominare un file sotto `app/public/templates/` **non** crea una voce nel menu. Per usare una copia del template ISO 9001: caricare il `.docx` via API/UI upload, poi **PUT** `/report-template-assignments/custom-checklist/:id` (o dropdown nell'editor). Il file deve contenere i marker `CHECKLIST_MARKER` e `RILIEVI_MARKER` (come il Verbale di sistema) oltre ai placeholder docxtemplater (`{auditDate}`, `{clientName}`, …).
 
 **Script utili**: `fix-verbale-template-xml.js`, `verify-template-repair.js`. Marker: `CHECKLIST_MARKER`, `RILIEVI_MARKER`. Dettaglio placeholder: [ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md](ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md).

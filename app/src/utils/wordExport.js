@@ -325,11 +325,20 @@ export function wordExportSplitTopLevelBlocks(xml) {
 }
 
 function wordExportIsEsitoHeading(text) {
-    return /^\s*11\s/.test(text) && /ESITO|VISITA ISPETTIVA/i.test(text);
+    const t = (text || '').trim();
+    return (
+        (/^\s*11\s/.test(t) && /ESITO|VISITA ISPETTIVA/i.test(t)) ||
+        /^\s*3\s*[\u2013\u2014-]\s*ESITO/i.test(t) ||
+        /^ESITO DELL'?AUDIT\s*$/i.test(t)
+    );
 }
 
 function wordExportIsConclusionHeading(text) {
-    return /^Conclusioni\s*$/i.test(text.trim());
+    const t = (text || '').trim();
+    return (
+        /^Conclusioni\s*$/i.test(t) ||
+        /^\s*3\.2\s*[\u2013\u2014-]\s*CONCLUSIONI\s*$/i.test(t)
+    );
 }
 
 function wordExportIsConclusionsPlaceholder(text) {
@@ -337,7 +346,75 @@ function wordExportIsConclusionsPlaceholder(text) {
 }
 
 function wordExportIsRilieviHeading(text) {
-    return /^RILIEVI\s*$/i.test(text.trim());
+    const t = (text || '').trim();
+    return (
+        /^RILIEVI\s*$/i.test(t) ||
+        /^\s*3\.1\s*[\u2013\u2014-]\s*RILIEVI\s*$/i.test(t)
+    );
+}
+
+const VERBALE_EN_DASH = '\u2013';
+
+/** Paragrafo Titolo 1 allineato ai capitoli 1–2 del verbale custom. */
+function wordExportTitolo1HeadingXml(text, { pageBreakBefore = false, spacingBefore = '0', spacingAfter = '300' } = {}) {
+    const pageBreak = pageBreakBefore ? '<w:pageBreakBefore/>' : '';
+    return (
+        `<w:p><w:pPr><w:pStyle w:val="Titolo1"/>${pageBreak}` +
+        `<w:spacing w:before="${spacingBefore}" w:after="${spacingAfter}"/></w:pPr>` +
+        `<w:r><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`
+    );
+}
+
+/** Paragrafo introduttivo in grassetto (non compare nel sommario). */
+function wordExportBoldIntroParagraphXml(text, { spacingBefore = '300', spacingAfter = '150' } = {}) {
+    return (
+        `<w:p><w:pPr><w:spacing w:before="${spacingBefore}" w:after="${spacingAfter}"/></w:pPr>` +
+        `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`
+    );
+}
+
+/** Verbale custom: sezioni 3 / 3.1 / 3.2 con stile Titolo 1 come i capitoli 1–2. */
+export function normalizeVerbaleVisitaSectionHeadings(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    const isVerbale =
+        /1\s*[\u2013\u2014-]\s*DATI GENERALI/.test(xml) &&
+        /CHECKLIST_MARKER/.test(xml) &&
+        (/ESITO DELL'?AUDIT/.test(xml) || /3\s*[\u2013\u2014-]\s*ESITO/.test(xml)) &&
+        !/11\s*[\u2013\u2014-]\s*ESITO DELL'?AUDIT/.test(xml);
+    if (!isVerbale) return xml;
+
+    let changed = false;
+    const out = xml.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (pXml) => {
+        const text = wordExportParaText(pXml).trim();
+        if (/^ESITO DELL'?AUDIT\s*$/i.test(text) || /^\s*3\s*[\u2013\u2014-]\s*ESITO/i.test(text)) {
+            changed = true;
+            const pageBreak = /<w:pageBreakBefore\s*\/>/.test(pXml);
+            return wordExportTitolo1HeadingXml(
+                `3 ${VERBALE_EN_DASH} ESITO DELL'AUDIT`,
+                { pageBreakBefore: pageBreak }
+            );
+        }
+        if (/^RILIEVI\s*$/i.test(text) || /^\s*3\.1\s*[\u2013\u2014-]\s*RILIEVI\s*$/i.test(text)) {
+            changed = true;
+            return wordExportTitolo1HeadingXml(
+                `3.1 ${VERBALE_EN_DASH} RILIEVI`,
+                { spacingBefore: '300', spacingAfter: '300' }
+            );
+        }
+        if (/^(Rilievi Emersi|Riepilogo Rilievi)\s*$/i.test(text)) {
+            changed = true;
+            return wordExportBoldIntroParagraphXml('Rilievi Emersi');
+        }
+        if (/^Conclusioni\s*$/i.test(text) || /^\s*3\.2\s*[\u2013\u2014-]\s*CONCLUSIONI\s*$/i.test(text)) {
+            changed = true;
+            return wordExportTitolo1HeadingXml(
+                `3.2 ${VERBALE_EN_DASH} CONCLUSIONI`,
+                { spacingBefore: '300', spacingAfter: '300' }
+            );
+        }
+        return pXml;
+    });
+    return changed ? out : xml;
 }
 
 function wordExportIsSummaryPlaceholder(text) {
@@ -424,7 +501,9 @@ export function clearStaleTocCacheInDocumentXml(xml) {
 export function normalizeAuditReportDocumentStructure(xml) {
     if (!xml || typeof xml !== 'string') return xml;
     let out = clearStaleTocCacheInDocumentXml(xml);
+    out = normalizeVerbaleVisitaSectionHeadings(out);
     out = reorderConclusionsAfterRilievi(out);
+    out = clearStaleTocCacheInDocumentXml(out);
     return out;
 }
 

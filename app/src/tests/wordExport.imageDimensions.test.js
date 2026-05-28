@@ -16,7 +16,7 @@ function uint8ToBase64(bytes) {
     return btoa(bin);
 }
 
-/** JPEG minimale con segmento APP1 EXIF (tag Orientation) + SOF0 w×h. */
+/** JPEG minimale con segmento APP1 EXIF (tag Orientation) + SOF0 wï¿½h. */
 function buildMinimalJpegWithExifOrientation(orientation, w = 160, h = 120) {
     const tiff = new Uint8Array([
         0x49, 0x49, // little-endian
@@ -63,7 +63,7 @@ describe('wordExport EXIF / dimensioni immagini', () => {
         expect(getImagePixelDimensions(b64, 'image/jpeg')).toEqual({ w: 4032, h: 3024 });
     });
 
-    it('getDisplayImagePixelDimensions scambia w/h per orientation 6 (90°)', () => {
+    it('getDisplayImagePixelDimensions scambia w/h per orientation 6 (90ï¿½)', () => {
         const b64 = buildMinimalJpegWithExifOrientation(6, 4032, 3024);
         expect(getDisplayImagePixelDimensions(b64, 'image/jpeg')).toEqual({ w: 3024, h: 4032 });
     });

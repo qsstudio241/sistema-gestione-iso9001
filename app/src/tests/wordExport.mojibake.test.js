@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { fixWordXmlMojibake } from '../utils/wordExport.js';
 
-/** Struttura reale dal template ISO9001 (proofErr spezza Conformitù + NBSP). */
+/** Struttura reale dal template ISO9001 (proofErr spezza ConformitÔøΩ + NBSP). */
 function splitAccentXml(wordPrefix, suffix) {
     return (
         `<w:r><w:rPr><w:b/></w:rPr><w:t>${wordPrefix}\u00C3</w:t></w:r>` +
@@ -14,7 +14,7 @@ function splitAccentXml(wordPrefix, suffix) {
 }
 
 describe('fixWordXmlMojibake', () => {
-    it('corregge accenti italiani spezzati tra run Word (Conformitù + NBSP)', () => {
+    it('corregge accenti italiani spezzati tra run Word (ConformitÔøΩ + NBSP)', () => {
         const fixed = fixWordXmlMojibake(splitAccentXml('Non Conformit', '(NC)'));
         expect(fixed).toContain('Non Conformit\u00e0 (NC)');
         expect(fixed).not.toContain('\u00C3');
