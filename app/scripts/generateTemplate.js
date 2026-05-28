@@ -272,9 +272,9 @@ function createChecklistMarker() {
 function createSection11() {
     // Tabella metriche con segnaposto
     const metricsRows = [
-        ['Non ConformitÃ  (NC)', '{ncCount}'],
+        ['Non Conformit\u00e0 (NC)', '{ncCount}'],
         ['Osservazioni (OSS)', '{ossCount}'],
-        ['OpportunitÃ  di Miglioramento (OM)', '{omCount}'],
+        ['Opportunit\u00e0 di Miglioramento (OM)', '{omCount}'],
         ['Non Valutato (NV)', '{nvCount}']
     ].map(([label, count]) => new TableRow({
         children: [
