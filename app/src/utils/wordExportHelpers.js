@@ -248,6 +248,15 @@ export function buildWordInlineImageRun(rId, imgId, widthEmu = 1905000, heightEm
     return xmlImageOoxml(rId, imgId, widthEmu, heightEmu);
 }
 
+// Max display size allegati checklist in Word (~5.3 cm larghezza, altezza fino ~11 cm per portrait)
+const CHECKLIST_IMAGE_MAX_W_EMU = 1905000;
+const CHECKLIST_IMAGE_MAX_H_EMU = 4286250;
+
+function stripDataUrlBase64(imageBase64) {
+    if (!imageBase64 || typeof imageBase64 !== 'string') return '';
+    return imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+}
+
 /**
  * Legge dimensioni pixel da base64 di immagine PNG o JPEG (sincrono, senza DOM).
  * Ritorna { w, h } o null se formato non riconosciuto.
@@ -284,6 +293,185 @@ export function getImagePixelDimensions(base64Data, mime) {
 }
 
 /**
+ * Legge tag EXIF Orientation (1-8) da JPEG. Ritorna 1 se assente o non JPEG.
+ */
+export function getJpegExifOrientation(base64Data, mime) {
+    try {
+        const m = String(mime || '').split(';')[0].trim().toLowerCase();
+        if (m !== 'image/jpeg' && m !== 'image/jpg') return 1;
+        const binary = atob(base64Data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        let i = 2;
+        while (i < bytes.length - 4) {
+            if (bytes[i] !== 0xFF) { i++; continue; }
+            const marker = bytes[i + 1];
+            if (marker === 0xDA) break;
+            if (marker === 0xE1) {
+                const segLen = (bytes[i + 2] << 8) | bytes[i + 3];
+                if (segLen >= 8
+                    && bytes[i + 4] === 0x45 && bytes[i + 5] === 0x78
+                    && bytes[i + 6] === 0x69 && bytes[i + 7] === 0x66
+                    && bytes[i + 8] === 0 && bytes[i + 9] === 0) {
+                    const tiffStart = i + 10;
+                    const le = bytes[tiffStart] === 0x49 && bytes[tiffStart + 1] === 0x49;
+                    const be = bytes[tiffStart] === 0x4D && bytes[tiffStart + 1] === 0x4D;
+                    if (!le && !be) return 1;
+                    const u16 = (o) => (le
+                        ? bytes[tiffStart + o] | (bytes[tiffStart + o + 1] << 8)
+                        : (bytes[tiffStart + o] << 8) | bytes[tiffStart + o + 1]);
+                    const u32 = (o) => (le
+                        ? bytes[tiffStart + o]
+                            | (bytes[tiffStart + o + 1] << 8)
+                            | (bytes[tiffStart + o + 2] << 16)
+                            | (bytes[tiffStart + o + 3] << 24)
+                        : (bytes[tiffStart + o] << 24)
+                            | (bytes[tiffStart + o + 1] << 16)
+                            | (bytes[tiffStart + o + 2] << 8)
+                            | bytes[tiffStart + o + 3]);
+                    const ifd0 = tiffStart + u32(4);
+                    if (ifd0 + 2 > bytes.length) return 1;
+                    const nTags = u16(ifd0 - tiffStart);
+                    for (let t = 0; t < nTags; t++) {
+                        const tagOff = ifd0 - tiffStart + 2 + t * 12;
+                        if (tagOff + 10 > bytes.length) break;
+                        if (u16(tagOff) === 0x0112) {
+                            const val = u16(tagOff + 8);
+                            return val >= 1 && val <= 8 ? val : 1;
+                        }
+                    }
+                    return 1;
+                }
+                i += 2 + segLen;
+                continue;
+            }
+            if (marker === 0xD8 || marker === 0xFF) { i++; continue; }
+            const segLen = (bytes[i + 2] << 8) | bytes[i + 3];
+            i += 2 + (segLen > 0 ? segLen : 1);
+        }
+        return 1;
+    } catch { return 1; }
+}
+
+/** Dimensioni pixel effettive per layout (scambia w/h se EXIF richiede rotazione 90°). */
+export function getDisplayImagePixelDimensions(base64Data, mime) {
+    const dims = getImagePixelDimensions(base64Data, mime);
+    if (!dims) return null;
+    const orientation = getJpegExifOrientation(base64Data, mime);
+    if (orientation >= 5 && orientation <= 8) {
+        return { w: dims.h, h: dims.w };
+    }
+    return dims;
+}
+
+/** true se JPEG ha tag EXIF Orientation diverso da 1 (Word non lo applica). */
+export function jpegNeedsExifNormalization(base64Data, mime) {
+    const m = normalizeMimeType(mime);
+    if (m !== 'image/jpeg' && m !== 'image/jpg') return false;
+    return getJpegExifOrientation(base64Data, mime) !== 1;
+}
+
+/** Matrice canvas per ogni valore EXIF Orientation (1-8). */
+function applyExifTransformToCanvas(ctx, orientation, width, height) {
+    switch (orientation) {
+        case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
+        case 3: ctx.transform(-1, 0, 0, -1, width, height); break;
+        case 4: ctx.transform(1, 0, 0, -1, 0, height); break;
+        case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+        case 6: ctx.transform(0, 1, -1, 0, height, 0); break;
+        case 7: ctx.transform(0, -1, -1, 0, height, width); break;
+        case 8: ctx.transform(0, -1, 1, 0, 0, width); break;
+        default: break;
+    }
+}
+
+function canvasToDataUrl(canvas, mime) {
+    const outMime = mime === 'image/png' ? 'image/png' : 'image/jpeg';
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                resolve(null);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        }, outMime, 0.92);
+    });
+}
+
+/**
+ * Ruota/riflette i pixel JPEG secondo EXIF e restituisce data URL orientation=1.
+ * Word embedded ignora EXIF: senza questo passaggio le foto smartphone appaiono "sdraiate".
+ */
+export async function normalizeImageDataUrlForWordEmbed(dataUrl, mimeType) {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) {
+        return dataUrl;
+    }
+    const mime = normalizeMimeType(mimeType || dataUrl.split(';')[0].replace('data:', ''));
+    const b64 = stripDataUrlBase64(dataUrl);
+    const orientation = getJpegExifOrientation(b64, mime);
+    if (orientation === 1 || typeof document === 'undefined') return dataUrl;
+
+    try {
+        const rawDims = getImagePixelDimensions(b64, mime);
+        const blob = await fetch(dataUrl).then((r) => r.blob());
+
+        if (typeof createImageBitmap === 'function') {
+            const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                bitmap.close?.();
+                return dataUrl;
+            }
+            ctx.drawImage(bitmap, 0, 0);
+            bitmap.close?.();
+            const normalized = await canvasToDataUrl(canvas, mime);
+            return normalized || dataUrl;
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        try {
+            const img = await new Promise((resolve, reject) => {
+                const el = new Image();
+                el.onload = () => resolve(el);
+                el.onerror = reject;
+                el.src = objectUrl;
+            });
+            const rawW = rawDims?.w || img.naturalWidth;
+            const rawH = rawDims?.h || img.naturalHeight;
+            const swap = orientation >= 5 && orientation <= 8;
+            const canvas = document.createElement('canvas');
+            canvas.width = swap ? rawH : rawW;
+            canvas.height = swap ? rawW : rawH;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return dataUrl;
+            applyExifTransformToCanvas(ctx, orientation, rawW, rawH);
+            ctx.drawImage(img, 0, 0, rawW, rawH);
+            const normalized = await canvasToDataUrl(canvas, mime);
+            return normalized || dataUrl;
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
+    } catch {
+        return dataUrl;
+    }
+}
+
+function embeddedImageEmuFromBase64(imageBase64, mimeType) {
+    const b64 = stripDataUrlBase64(imageBase64);
+    const mime = normalizeMimeType(mimeType);
+    const dims = getDisplayImagePixelDimensions(b64, mime);
+    return scaleImageToMaxEmu(
+        dims?.w, dims?.h, CHECKLIST_IMAGE_MAX_W_EMU, CHECKLIST_IMAGE_MAX_H_EMU
+    );
+}
+
+/**
  * Scala EMU mantenendo le proporzioni originali entro maxWidthEmu e maxHeightEmu.
  * Se le dimensioni reali non sono disponibili usa il fallback (rapporto 4:3).
  */
@@ -302,7 +490,7 @@ export function scaleImageToMaxEmu(pixW, pixH, maxWidthEmu, maxHeightEmu) {
     return { cx, cy };
 }
 
-/** Genera OOXML per un'immagine embedded (200x150px → 1905000x1428750 EMU) */
+/** Genera OOXML per un'immagine embedded con dimensioni EMU esplicite. */
 function xmlImageOoxml(rId, imgId, widthEmu = 1905000, heightEmu = 1428750) {
     const name = `img${imgId}`;
     // cNvPr id deve essere univoco nel documento: usare imgId (non 0 fisso).
@@ -530,7 +718,8 @@ function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl
                     const ext   = IMAGE_EXTS[effectiveMime] || 'jpg';
                     imageRegistry.push({ rId, imgId, base64: a.imageBase64, mimeType: effectiveMime, ext });
 
-                    const imgXml  = xmlImageOoxml(rId, imgId);
+                    const { cx, cy } = embeddedImageEmuFromBase64(a.imageBase64, effectiveMime);
+                    const imgXml  = xmlImageOoxml(rId, imgId, cx, cy);
                     const linkRow = url
                         ? xmlHyperlinkPara(url, '\uD83D\uDD17 ' + name, { color: '1E40AF', size: 18 })
                         : xmlPara(xmlRun(escXml('\uD83D\uDD17 ' + name), { color: '1E40AF', size: 18 }), { sa: 0 });
@@ -872,7 +1061,8 @@ function customItemAttachmentOoxml(att, getViewUrl, options, imageRegistry) {
         const rId = `rId${imgId}`;
         const ext = IMAGE_EXTS[mimeType] || 'jpg';
         imageRegistry.push({ rId, imgId, base64: att.imageBase64, mimeType, ext });
-        let fragment = xmlPara(xmlImageOoxml(rId, imgId), { sa: 60, sb: 60 });
+        const { cx, cy } = embeddedImageEmuFromBase64(att.imageBase64, mimeType);
+        let fragment = xmlPara(xmlImageOoxml(rId, imgId, cx, cy), { sa: 60, sb: 60 });
         if (url) {
             fragment += xmlHyperlinkPara(url, '\uD83D\uDD17 ' + fnameBase, { color: '1E40AF', size: 18 });
         }
@@ -1082,7 +1272,8 @@ export function buildCustomChecklistSectionOoxml(customChecklist, customResponse
                             const rId = `rId${imgId}`;
                             const ext = IMAGE_EXTS[mimeType] || 'jpg';
                             imageRegistry.push({ rId, imgId, base64: att.imageBase64, mimeType, ext });
-                            fragment += xmlPara(xmlImageOoxml(rId, imgId), { sa: 60, sb: 60 });
+                            const { cx, cy } = embeddedImageEmuFromBase64(att.imageBase64, mimeType);
+                            fragment += xmlPara(xmlImageOoxml(rId, imgId, cx, cy), { sa: 60, sb: 60 });
                             if (url) {
                                 fragment += xmlHyperlinkPara(url, '\uD83D\uDD17 ' + fnameBase, { color: '1E40AF', size: 18 });
                             }

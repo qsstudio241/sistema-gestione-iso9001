@@ -60,7 +60,7 @@ Sessioni recenti (consultazione): [Sessione 26/05/2026](#sessione-26052026--refa
 2. **React/JSX:** se compaiono **sequenze letterali `\u`** (spesso dopo `>` su titoli, pulsanti o label), il testo **non è** una stringa JavaScript → le escape Unicode **non valgono**. Corregere con **`{"..."}`** dove tra virgolette c'è una **stringa** JS (escape `\u`), oppure **`String.fromCodePoint(...)`**, oppure UTF-8 reale nel sorgente (accenti). Fare grep su `\u` **fuori** da `{ ... }` dopo un tag JSX.
 3. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
 4. **Correggere (encoding):** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in **stringhe** JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
-5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
+5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` e `wordExport.imageDimensions.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
 6. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
 
 #### Riferimenti vincolanti
@@ -127,10 +127,27 @@ Sessioni recenti (consultazione): [Sessione 26/05/2026](#sessione-26052026--refa
 
 #### Prossimo step (backlog, non in scope sessione)
 
-- Slice C: estrarre `SgqDataGrid` + pilota (`CompaniesPage` o `NCPage`)
-- Slice B2: rimuovere `.btn-primary` duplicati identici a `index.css`
+- ~~Slice C: estrarre `SgqDataGrid` + pilota (`CompaniesPage` o `NCPage`)~~ ✅ 26/05 sera — vedi sotto
+- ~~Slice B2: rimuovere `.btn-primary` duplicati identici a `index.css`~~ ✅ parziale — scoped override per-pagina
 - Slice D2: eliminare file `@deprecated` dopo grep zero import
 - Proposte estetiche sidebar/colori: richiedono OK committente (vedi `DEPUTYTASK.md`)
+
+#### Pattern riusabile — SgqDataGrid (26/05/2026)
+
+Componente condiviso `app/src/components/SgqDataGrid.jsx` per tabelle con sort, empty/loading, selezione riga opzionale.
+
+| Prop | Uso |
+|---|---|
+| `theme="catalog"` | Stile Registro Documenti (`datagrid-*`, header scuro) — usato da `DocumentDataGrid` |
+| `theme="plain"` | Intestazioni chiare — pilota `CompaniesPage` |
+| `columns` | `{ id, label, sortable?, width?, cellClassName? }` |
+| `renderCell(row, col)` | Contenuto cella |
+| `selectable` + `selectedRowKey` | Toolbar contestuale (pattern DocumentDataGrid) |
+| `getSortValue(row, colId)` | Sort custom (es. label tipo documento) |
+
+CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + badge norme/scadenze).
+
+**B2 CSS:** `.btn-primary` / `.btn-secondary` in `index.css`; override colore solo con selettore scoped (`.nc-page`, `.companies-page`, …) — mai duplicare regole globali identiche.
 
 ---
 
@@ -1466,10 +1483,13 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 | Più tabelle | Un solo `xmlTable` in `buildCustomChecklistSectionOoxml`. |
 | Righe `1.1.2`, `1.1.3` | Una riga per voce; `evidence_blocks` concatenati; codice `itemCode`. |
 | `rId` duplicati | Indice sequenziale `30000 + imageRegistry.length`. |
+| Foto sempre **landscape** in Word | Allegati checklist: prima `xmlImageOoxml(rId, imgId)` senza dimensioni → fallback fisso 1905000×1428750 EMU (~200×150 px). Fix (mag 2026): `embeddedImageEmuFromBase64` in `wordExportHelpers.js` legge pixel reali da PNG/JPEG e scambia w/h se EXIF orientation 5–8; logo già corretto in `wordExport.js`. Test: `wordExport.imageDimensions.test.js`. |
 | Template ISO al posto del Verbale | `generateDocxBlob`: ramo `isCustomChecklist` + fallback `TEMPLATE_MAP.custom_checklist`. |
 | Tabelle fuori margini | `w:tblInd` negativo → `normalizeNegativeTableIndentsInZip`; script `app/scripts/fix-verbale-table-margins.js`. |
 
-**Template**: fallback `app/public/templates/Verbale_di_riunione_QTAFI_VIS001.docx`. Se `getReportTemplate` restituisce URL (anche `/uploads/...`), quello ha priorità. **Repro** (`repro-custom-export.mjs`): solo file in `public/templates`, senza resolver API.
+**Template**: fallback `app/public/templates/VerbaleVisita-generic.docx` (allineato a migration 026 / `report_templates`). Il file `Verbale_di_riunione_QTAFI_VIS001.docx` resta copia cliente senza placeholder docxtemplater — **non** usarlo come fallback export. Se `getReportTemplate` restituisce URL (anche `/uploads/...`), quello ha priorità. **Repro** (`repro-custom-export.mjs`): solo file in `public/templates`, senza resolver API.
+
+**Ordine capitoli e sommario (mag 2026)**: in `wordExport.js`, `normalizeAuditReportDocumentStructure` riordina **Conclusioni dopo RILIEVI** (come ISO patchate) e rimuove righe Sommario TOC cache obsolete (`_Toc*`) così Word rigenera l’indice aprendo il file. Test: `wordExport.chapterOrder.test.js`. Script offline: `patch-audit-template-structure.cjs` (include `VerbaleVisita-generic.docx`).
 
 **Registrazione template custom (menu a tendina)**: il dropdown in **Admin → Checklist personalizzate → editor** legge `GET /report-templates?scope=audit` (righe in tabella `report_templates`: template di sistema `organization_id` NULL + upload org). Copiare/rinominare un file sotto `app/public/templates/` **non** crea una voce nel menu. Per usare una copia del template ISO 9001: caricare il `.docx` via API/UI upload, poi **PUT** `/report-template-assignments/custom-checklist/:id` (o dropdown nell'editor). Il file deve contenere i marker `CHECKLIST_MARKER` e `RILIEVI_MARKER` (come il Verbale di sistema) oltre ai placeholder docxtemplater (`{auditDate}`, `{clientName}`, …).
 

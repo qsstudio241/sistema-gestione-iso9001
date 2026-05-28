@@ -41,6 +41,7 @@ import {
     wordEmbeddableExtFromMime,
     getImagePixelDimensions,
     scaleImageToMaxEmu,
+    normalizeImageDataUrlForWordEmbed,
 } from './wordExportHelpers.js';
 import { formatAuditPeriodIt, formatDateIt } from './auditDatePeriod.js';
 
@@ -69,7 +70,8 @@ const TEMPLATE_MAP = {
     'ISO_45001':  '/templates/ISO45001-audit-report.docx',
     'ISO_3834_2': '/templates/ISO3834-audit-report.docx',
     'default':    '/templates/ISO9001-audit-report.docx',
-    'custom_checklist': '/templates/Verbale_di_riunione_QTAFI_VIS001.docx',
+    // Fallback allineato a migration 026 / report_templates (placeholder + sommario)
+    'custom_checklist': '/templates/VerbaleVisita-generic.docx',
 };
 
 /**
@@ -296,6 +298,136 @@ function normalizeNegativeTableIndentsInZip(zip) {
  * Ripara attributi OOXML non quotati (template salvati/exportati in modo non conforme).
  * Word e parser XML rigidi possono rifiutare il documento o corrompere la struttura.
  */
+/** Testo concatenato da paragrafo OOXML (solo w:t). */
+export function wordExportParaText(pXml) {
+    if (!pXml || typeof pXml !== 'string') return '';
+    const ts = [];
+    const re = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    let m;
+    while ((m = re.exec(pXml))) ts.push(m[1]);
+    return ts.join('');
+}
+
+/** Blocchi top-level w:p / w:tbl nell'ordine del documento. */
+export function wordExportSplitTopLevelBlocks(xml) {
+    const blocks = [];
+    const re = /<w:p[\s>][\s\S]*?<\/w:p>|<w:tbl[\s>][\s\S]*?<\/w:tbl>/g;
+    let m;
+    while ((m = re.exec(xml))) {
+        const isP = m[0].startsWith('<w:p');
+        blocks.push({
+            xml: m[0],
+            text: isP ? wordExportParaText(m[0]).trim() : '[table]',
+            index: m.index,
+        });
+    }
+    return blocks;
+}
+
+function wordExportIsEsitoHeading(text) {
+    return /^\s*11\s/.test(text) && /ESITO|VISITA ISPETTIVA/i.test(text);
+}
+
+function wordExportIsConclusionHeading(text) {
+    return /^Conclusioni\s*$/i.test(text.trim());
+}
+
+function wordExportIsConclusionsPlaceholder(text) {
+    return /\{conclusions\}/.test(text);
+}
+
+function wordExportIsRilieviHeading(text) {
+    return /^RILIEVI\s*$/i.test(text.trim());
+}
+
+function wordExportIsSummaryPlaceholder(text) {
+    return /\{summaryText\}/.test(text);
+}
+
+/**
+ * Sezione 11: ESITO → RILIEVI (+ conteggi) → Conclusioni per ultime.
+ * Copia logica patch-audit-template-structure.cjs (template Verbale/ISO legacy).
+ */
+export function reorderConclusionsAfterRilievi(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    const blocks = wordExportSplitTopLevelBlocks(xml);
+    let esitoIdx = -1;
+    for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].text.includes('CHECKLIST_MARKER')) {
+            for (let j = i + 1; j < blocks.length; j++) {
+                if (wordExportIsEsitoHeading(blocks[j].text)) {
+                    esitoIdx = j;
+                    break;
+                }
+            }
+            if (esitoIdx >= 0) break;
+        }
+    }
+    if (esitoIdx < 0) return xml;
+
+    let concHeadIdx = -1;
+    let concBodyIdx = -1;
+    let rilStart = -1;
+    let sectionEnd = blocks.length;
+
+    for (let i = esitoIdx + 1; i < blocks.length; i++) {
+        const t = blocks[i].text;
+        if (concHeadIdx < 0 && wordExportIsConclusionHeading(t)) concHeadIdx = i;
+        else if (concHeadIdx >= 0 && concBodyIdx < 0 && wordExportIsConclusionsPlaceholder(t)) concBodyIdx = i;
+        else if (rilStart < 0 && wordExportIsRilieviHeading(t)) rilStart = i;
+    }
+
+    if (concHeadIdx < 0 || concBodyIdx < 0 || rilStart < 0) return xml;
+    if (rilStart < concBodyIdx) return xml;
+
+    for (let i = rilStart; i < blocks.length; i++) {
+        if (wordExportIsSummaryPlaceholder(blocks[i].text)) {
+            sectionEnd = i + 1;
+            break;
+        }
+    }
+
+    const concHeadStart = blocks[concHeadIdx].index;
+    const concBodyEnd = blocks[concBodyIdx].index + blocks[concBodyIdx].xml.length;
+    const rilStartOff = blocks[rilStart].index;
+    const sectionEndOff = blocks[sectionEnd - 1].index + blocks[sectionEnd - 1].xml.length;
+
+    return (
+        xml.slice(0, concHeadStart) +
+        xml.slice(rilStartOff, sectionEndOff) +
+        xml.slice(concHeadStart, concBodyEnd) +
+        xml.slice(sectionEndOff)
+    );
+}
+
+/**
+ * Rimuove righe Sommario cache obsolete dentro w:sdt TOC (Word le rigenera aprendo il doc).
+ */
+export function clearStaleTocCacheInDocumentXml(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    return xml.replace(
+        /(<w:sdt>[\s\S]*?<w:sdtContent>)([\s\S]*?)(<\/w:sdtContent>[\s\S]*?<\/w:sdt>)/g,
+        (full, open, content, close) => {
+            if (!/w:instrText[^>]*>\s*TOC /i.test(content)) return full;
+            const cleaned = content.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (pXml) => {
+                if (/w:instrText[^>]*>\s*TOC /i.test(pXml)) return pXml;
+                if (/w:hyperlink w:anchor="_Toc/i.test(pXml)) return '';
+                return pXml;
+            });
+            if (cleaned === content) return full;
+            return open + cleaned + close;
+        }
+    );
+}
+
+/** Normalizza struttura report audit prima del render e dopo (ordine + sommario). */
+export function normalizeAuditReportDocumentStructure(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    let out = clearStaleTocCacheInDocumentXml(xml);
+    out = reorderConclusionsAfterRilievi(out);
+    return out;
+}
+
 function repairWordDocumentXmlMalformedAttrs(xml) {
     if (!xml || typeof xml !== 'string') return xml;
     let s = xml;
@@ -426,6 +558,9 @@ function preprocessDocxtemplaterPartsInZip(zip) {
         t = fixWordXmlMojibake(t);
         t = repairDocxtemplaterFragmentedTags(t);
         t = repairWordDocumentXmlMalformedAttrs(t);
+        if (p === 'word/document.xml') {
+            t = normalizeAuditReportDocumentStructure(t);
+        }
         zip.file(p, t);
     }
 }
@@ -881,7 +1016,9 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
     if (processedZip.files[docPath]) {
         processedZip.file(
             docPath,
-            repairWordDocumentXmlMalformedAttrs(processedZip.files[docPath].asText())
+            normalizeAuditReportDocumentStructure(
+                repairWordDocumentXmlMalformedAttrs(processedZip.files[docPath].asText())
+            )
         );
     }
 
@@ -943,7 +1080,10 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
                     console.warn('[wordExport] allegato ignorato: tipo reale non è immagine', { stored: att.mimeType, real: realMimeType, id });
                     return;
                 }
-                att.imageBase64   = await blobToBase64(blob);
+                att.imageBase64 = await normalizeImageDataUrlForWordEmbed(
+                    await blobToBase64(blob),
+                    realMimeType
+                );
                 att.imageMimeType = realMimeType;
             } catch (e) {
                 console.warn('[wordExport] preload image failed for att', id, e.message);
