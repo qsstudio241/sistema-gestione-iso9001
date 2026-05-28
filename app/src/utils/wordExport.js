@@ -518,13 +518,28 @@ const MOJIBAKE_W_RUN_BRIDGE =
     '(?:<\\/w:t><\\/w:r>(?:<w:proofErr[^>]*\\/>)*<w:r(?:\\s[^>]*)?>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?<w:t(?:\\s[^>]*)?>)?';
 
 /** Decodifica coppia Latin-1 (UTF-8 mal interpretato) → carattere Unicode. */
-function latin1Utf8PairToChar(lead, trail) {
+function latin1Utf8PairToChar(lead, trail, before = '') {
     const b1 = lead.charCodeAt(0);
     const b2 = trail.charCodeAt(0);
+    // ConformitÂ° / OpportunitÂ°: à (C3 A0) salvato come C2 B0 (simbolo grado)
+    if (lead === '\u00C2' && trail === '\u00B0' && /it$/i.test(before)) {
+        return '\u00e0';
+    }
     if ((b1 === 0xC2 || b1 === 0xC3) && b2 >= 0x80 && b2 <= 0xBF) {
         return String.fromCodePoint(((b1 & 0x1F) << 6) | (b2 & 0x3F));
     }
     return lead + trail;
+}
+
+/** -ità italiane corrotte in ° o Â° (dopo fixLead generico). */
+function fixItalianItaDegreeMojibake(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    let s = xml;
+    const bridge = MOJIBAKE_W_RUN_BRIDGE;
+    const itaWord = '(Conformit|Opportunit|conformit|opportunit|qualit|Quantit|identit|unit|attivit|priorit|autorit|specialit|generalit|localit|personalit|formalit|legalit|mortalit|neutralit|periodicit|specificit|temperatur|societ)';
+    s = s.replace(new RegExp(`${itaWord}\u00c2${bridge}?\u00b0`, 'g'), '$1\u00e0');
+    s = s.replace(new RegExp(`${itaWord}\u00b0`, 'g'), '$1\u00e0');
+    return s;
 }
 
 /** Accenti italiani UTF-8 letti come Latin-1 (es. ConformitÃ + NBSP → Conformità). */
@@ -533,11 +548,18 @@ function fixItalianAccentMojibake(xml) {
     let s = xml;
     const bridge = MOJIBAKE_W_RUN_BRIDGE;
     const fixLead = (lead) => {
-        s = s.replace(new RegExp(`${lead}${bridge}([\\u0080-\\u00BF])`, 'g'), (_, b) => latin1Utf8PairToChar(lead, b));
-        s = s.replace(new RegExp(`${lead}[\\u0080-\\u00BF]`, 'g'), (m) => latin1Utf8PairToChar(lead, m.charAt(1)));
+        s = s.replace(
+            new RegExp(`([\\w]{0,24})${lead}${bridge}([\\u0080-\\u00BF])`, 'g'),
+            (_, before, b) => before + latin1Utf8PairToChar(lead, b, before)
+        );
+        s = s.replace(
+            new RegExp(`([\\w]{0,24})${lead}([\\u0080-\\u00BF])`, 'g'),
+            (_, before, b) => before + latin1Utf8PairToChar(lead, b, before)
+        );
     };
     fixLead('\u00C3');
     fixLead('\u00C2');
+    s = fixItalianItaDegreeMojibake(s);
     return s;
 }
 
@@ -672,19 +694,58 @@ function replaceLogoMarkerParagraph(xml, markerIndex, imageRunsXml, markerText) 
     return xml.slice(0, pStart) + replacement + xml.slice(pEnd + 6);
 }
 
+/** Rimuove marker logo testuale se l'embed non è possibile (evita riquadro rotto in Word). */
+function stripLogoMarkersInZip(zip, markerText) {
+    const marker = markerText || '[LOGO]';
+    const partPaths = Object.keys(zip.files).filter((p) =>
+        /^word\/(document|header\d+|footer\d+)\.xml$/.test(p)
+    );
+    for (const partPath of partPaths) {
+        let xml = zip.files[partPath]?.asText();
+        if (!xml || !xml.includes(marker)) continue;
+        while (xml.includes(marker)) {
+            xml = replaceLogoMarkerParagraph(
+                xml,
+                xml.indexOf(marker),
+                '<w:r><w:t xml:space="preserve"></w:t></w:r>',
+                marker
+            );
+        }
+        zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
+    }
+}
+
 /**
  * Sostituisce [LOGO] in document/header/footer con immagine da data URL (jpeg/png/gif).
  * Usa un solo file in word/media/; ogni parte ottiene una relazione immagine dedicata.
  */
-function injectCompanyLogoInZip(zip, dataUrl) {
-    const parsed = parseImageDataUrl(dataUrl);
+async function injectCompanyLogoInZip(zip, dataUrl) {
+    let normalizedUrl = dataUrl;
+    try {
+        const parsedPreview = parseImageDataUrl(dataUrl);
+        if (parsedPreview?.mime) {
+            normalizedUrl = await normalizeImageDataUrlForWordEmbed(dataUrl, parsedPreview.mime);
+        }
+    } catch (e) {
+        console.warn('[wordExport] Logo: normalizzazione EXIF non riuscita:', e.message);
+    }
+
+    const parsed = parseImageDataUrl(normalizedUrl);
     if (!parsed) {
         console.warn('[wordExport] Logo: data URL non valido.');
+        stripLogoMarkersInZip(zip, '[LOGO]');
         return;
     }
     const ext = wordEmbeddableExtFromMime(parsed.mime);
     if (!ext) {
         console.warn('[wordExport] Logo: formato non embeddabile in Word:', parsed.mime);
+        stripLogoMarkersInZip(zip, '[LOGO]');
+        return;
+    }
+    const dims = getImagePixelDimensions(parsed.base64, parsed.mime);
+    if (!dims?.w || !dims?.h) {
+        console.warn('[wordExport] Logo: payload immagine non decodificabile, marker rimosso.');
+        stripLogoMarkersInZip(zip, '[LOGO]');
         return;
     }
     const mediaRelTarget = `media/company_logo_export.${ext}`;
@@ -712,9 +773,8 @@ function injectCompanyLogoInZip(zip, dataUrl) {
         relsXml = appendImageRelationship(relsXml, rId, mediaRelTarget);
         zip.file(relsPath, relsXml);
 
-        const dims = getImagePixelDimensions(parsed.base64, parsed.mime);
         const { cx: logoCx, cy: logoCy } = scaleImageToMaxEmu(
-            dims?.w, dims?.h, LOGO_CLIENT_MAX_W_EMU, LOGO_MAX_H_EMU
+            dims.w, dims.h, LOGO_CLIENT_MAX_W_EMU, LOGO_MAX_H_EMU
         );
         let imgIdLocal = 88001;
         while (xml.includes('[LOGO]')) {
@@ -730,15 +790,33 @@ const ORG_LOGO_MARKER = '[LOGO_ORG]';
 /**
  * Come injectCompanyLogoInZip ma per logo tenant (marker [LOGO_ORG] nei template Word).
  */
-function injectOrganizationLogoInZip(zip, dataUrl) {
-    const parsed = parseImageDataUrl(dataUrl);
+async function injectOrganizationLogoInZip(zip, dataUrl) {
+    let normalizedUrl = dataUrl;
+    try {
+        const parsedPreview = parseImageDataUrl(dataUrl);
+        if (parsedPreview?.mime) {
+            normalizedUrl = await normalizeImageDataUrlForWordEmbed(dataUrl, parsedPreview.mime);
+        }
+    } catch (e) {
+        console.warn('[wordExport] Logo org: normalizzazione EXIF non riuscita:', e.message);
+    }
+
+    const parsed = parseImageDataUrl(normalizedUrl);
     if (!parsed) {
         console.warn('[wordExport] Logo org: data URL non valido.');
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
         return;
     }
     const ext = wordEmbeddableExtFromMime(parsed.mime);
     if (!ext) {
         console.warn('[wordExport] Logo org: formato non embeddabile in Word:', parsed.mime);
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
+        return;
+    }
+    const orgDims = getImagePixelDimensions(parsed.base64, parsed.mime);
+    if (!orgDims?.w || !orgDims?.h) {
+        console.warn('[wordExport] Logo org: payload immagine non decodificabile, marker rimosso.');
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
         return;
     }
     const mediaRelTarget = `media/org_logo_export.${ext}`;
@@ -767,9 +845,8 @@ function injectOrganizationLogoInZip(zip, dataUrl) {
         zip.file(relsPath, relsXml);
 
         let imgIdLocal = 89001;
-        const orgDims = getImagePixelDimensions(parsed.base64, parsed.mime);
         const { cx: orgCx, cy: orgCy } = scaleImageToMaxEmu(
-            orgDims?.w, orgDims?.h, LOGO_ORG_MAX_W_EMU, LOGO_MAX_H_EMU
+            orgDims.w, orgDims.h, LOGO_ORG_MAX_W_EMU, LOGO_MAX_H_EMU
         );
         while (xml.includes(ORG_LOGO_MARKER)) {
             const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++, orgCx, orgCy);
@@ -1055,18 +1132,20 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
     const logoUrl = auditForGen?.embedCompanyLogo?.dataUrl;
     if (logoUrl) {
         try {
-            injectCompanyLogoInZip(processedZip, logoUrl);
+            await injectCompanyLogoInZip(processedZip, logoUrl);
         } catch (e) {
             console.warn('[wordExport] Inserimento logo fallito:', e.message);
+            stripLogoMarkersInZip(processedZip, '[LOGO]');
         }
     }
 
     const orgLogoUrl = auditForGen?.embedOrganizationLogo?.dataUrl;
     if (orgLogoUrl) {
         try {
-            injectOrganizationLogoInZip(processedZip, orgLogoUrl);
+            await injectOrganizationLogoInZip(processedZip, orgLogoUrl);
         } catch (e) {
             console.warn('[wordExport] Inserimento logo organizzazione fallito:', e.message);
+            stripLogoMarkersInZip(processedZip, ORG_LOGO_MARKER);
         }
     }
 

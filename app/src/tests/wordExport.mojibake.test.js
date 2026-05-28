@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { fixWordXmlMojibake } from '../utils/wordExport.js';
 
-/** Struttura reale dal template ISO9001 (proofErr spezza Conformit√ + NBSP). */
+/** Struttura reale dal template ISO9001 (proofErr spezza Conformitù + NBSP). */
 function splitAccentXml(wordPrefix, suffix) {
     return (
         `<w:r><w:rPr><w:b/></w:rPr><w:t>${wordPrefix}\u00C3</w:t></w:r>` +
@@ -14,18 +14,31 @@ function splitAccentXml(wordPrefix, suffix) {
 }
 
 describe('fixWordXmlMojibake', () => {
-    it('corregge accenti italiani spezzati tra run Word (Conformit√ + NBSP)', () => {
+    it('corregge accenti italiani spezzati tra run Word (Conformitù + NBSP)', () => {
         const fixed = fixWordXmlMojibake(splitAccentXml('Non Conformit', '(NC)'));
         expect(fixed).toContain('Non Conformit\u00e0 (NC)');
         expect(fixed).not.toContain('\u00C3');
     });
 
-    it('corregge Opportunit√ spezzato', () => {
+    it('corregge Opportunit\u00e0 spezzato', () => {
         const fixed = fixWordXmlMojibake(splitAccentXml('Opportunit', 'di Miglioramento'));
         expect(fixed).toContain('Opportunit\u00e0 di Miglioramento');
     });
 
-    it('corregge en-dash mojibake ‚Ä"', () => {
+    it('corregge Conformit\u00c2\u00b0 e Opportunit\u00c2\u00b0 (grado al posto di \u00e0)', () => {
+        const xml = '<w:t>Non Conformit\u00c2\u00b0 (NC)</w:t><w:t>Opportunit\u00c2\u00b0 di Miglioramento</w:t>';
+        const fixed = fixWordXmlMojibake(xml);
+        expect(fixed).toContain('Non Conformit\u00e0 (NC)');
+        expect(fixed).toContain('Opportunit\u00e0 di Miglioramento');
+        expect(fixed).not.toMatch(/\u00c2\u00b0/);
+    });
+
+    it('corregge Conformit\u00b0 residuo dopo fix generico C2', () => {
+        const xml = '<w:t>Non Conformit\u00b0 (NC)</w:t>';
+        expect(fixWordXmlMojibake(xml)).toContain('Non Conformit\u00e0 (NC)');
+    });
+
+    it('corregge en-dash mojibake', () => {
         const xml = '<w:t>1 \u00e2\u20ac\u201c DATI</w:t>';
         expect(fixWordXmlMojibake(xml)).toContain('1 \u2013 DATI');
     });
