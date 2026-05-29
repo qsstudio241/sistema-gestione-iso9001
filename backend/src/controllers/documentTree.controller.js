@@ -29,10 +29,14 @@ async function getTree(req, res) {
             params.company_id = company_id;
         }
 
+        conditions.push("ISNULL(dr.status, 'rilasciato') <> 'obsoleto'");
+
         const roots = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-                   (SELECT COUNT(*) FROM document_registry sub WHERE sub.parent_id = dr.id) AS children_count
+                   (SELECT COUNT(*) FROM document_registry sub
+                    WHERE sub.parent_id = dr.id
+                      AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
             FROM document_registry dr
             WHERE ${conditions.join(' AND ')}
             ORDER BY dr.display_order ASC, dr.title ASC
@@ -61,7 +65,11 @@ async function getTree(req, res) {
  * Carica ricorsivamente i figli fino al livello richiesto.
  */
 async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
-    const conditions = ['dr.organization_id = @organization_id', 'dr.parent_id = @parent_id'];
+    const conditions = [
+        'dr.organization_id = @organization_id',
+        'dr.parent_id = @parent_id',
+        "ISNULL(dr.status, 'rilasciato') <> 'obsoleto'",
+    ];
     const params = { organization_id: orgId, parent_id: parseInt(parentId) };
 
     if (companyId) {
@@ -72,7 +80,9 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
     const result = await query(`
         SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-               (SELECT COUNT(*) FROM document_registry sub WHERE sub.parent_id = dr.id) AS children_count
+               (SELECT COUNT(*) FROM document_registry sub
+                WHERE sub.parent_id = dr.id
+                  AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
         FROM document_registry dr
         WHERE ${conditions.join(' AND ')}
         ORDER BY dr.display_order ASC, dr.title ASC
@@ -102,7 +112,9 @@ async function getChildren(req, res) {
         const result = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-                   (SELECT COUNT(*) FROM document_registry sub WHERE sub.parent_id = dr.id) AS children_count
+                   (SELECT COUNT(*) FROM document_registry sub
+                    WHERE sub.parent_id = dr.id
+                      AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
             FROM document_registry dr
             WHERE dr.organization_id = @organization_id AND dr.parent_id = @parent_id
               AND ISNULL(dr.status, 'rilasciato') <> 'obsoleto'
