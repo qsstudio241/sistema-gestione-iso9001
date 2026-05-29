@@ -522,7 +522,7 @@ async function deleteDocument(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, status, is_system_folder FROM document_registry
+            SELECT id, status, is_system_folder, doc_type FROM document_registry
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -533,11 +533,30 @@ async function deleteDocument(req, res) {
             });
         }
 
-        if (existing.recordset[0].is_system_folder) {
+        const row = existing.recordset[0];
+
+        if (row.is_system_folder) {
             return res.status(403).json({
                 error: 'Le cartelle di sistema non possono essere archiviate',
                 code:  'SYSTEM_FOLDER_PROTECTED',
             });
+        }
+
+        if (row.doc_type === 'folder') {
+            const children = await query(`
+                SELECT COUNT(*) AS cnt FROM document_registry
+                WHERE parent_id = @id AND organization_id = @organization_id
+                  AND ISNULL(status, 'rilasciato') <> 'obsoleto'
+            `, { id: parseInt(id), organization_id });
+
+            const childCount = children.recordset[0]?.cnt ?? 0;
+            if (childCount > 0) {
+                return res.status(409).json({
+                    error: 'La cartella non è vuota: rimuovi documenti e sottocartelle prima di eliminarla',
+                    code:  'FOLDER_NOT_EMPTY',
+                    children_count: childCount,
+                });
+            }
         }
 
         await query(`

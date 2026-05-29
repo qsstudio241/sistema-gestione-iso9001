@@ -1442,9 +1442,12 @@ function DocumentRegistry() {
                   nodes={tree.treeNodes}
                   expandedIds={tree.expandedIds}
                   selectedNodeId={tree.selectedNodeId}
+                  selectedNode={tree.selectedNode}
                   onToggle={tree.toggleNode}
                   onSelect={handleTreeNodeSelect}
                   onCreateFolder={tree.createFolder}
+                  onRenameFolder={tree.renameFolder}
+                  onDeleteFolder={tree.deleteFolder}
                 />
               ) : (
                 <StandardTreeView

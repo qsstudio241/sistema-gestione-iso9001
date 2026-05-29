@@ -4,7 +4,7 @@
  * Lazy-loading: carica figli solo all'espansione del nodo.
  * Breadcrumb: aggiornato alla selezione del nodo.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 
 function insertChildren(nodes, parentId, children) {
@@ -19,7 +19,7 @@ function insertChildren(nodes, parentId, children) {
   });
 }
 
-function findNodeById(nodes, id) {
+export function findNodeById(nodes, id) {
   for (const n of nodes) {
     if (n.id === id) return n;
     if (n.children?.length) {
@@ -28,6 +28,17 @@ function findNodeById(nodes, id) {
     }
   }
   return null;
+}
+
+export function isTreeFolderNode(node) {
+  return node?.doc_type === "folder" || node?.is_folder === true;
+}
+
+/** Parent per nuova cartella: cartella selezionata, altrimenti parent del documento selezionato. */
+export function resolveNewFolderParentId(selectedNode) {
+  if (!selectedNode) return null;
+  if (isTreeFolderNode(selectedNode)) return selectedNode.id;
+  return selectedNode.parent_id ?? null;
 }
 
 export default function useDocumentTree() {
@@ -94,16 +105,46 @@ export default function useDocumentTree() {
     }
   }, []);
 
+  const selectedNode = useMemo(
+    () => (selectedNodeId != null ? findNodeById(treeNodes, selectedNodeId) : null),
+    [treeNodes, selectedNodeId]
+  );
+
   const createFolder = useCallback(
     async (title, parentId) => {
+      const resolvedParent =
+        parentId !== undefined ? parentId : resolveNewFolderParentId(selectedNode);
       const res = await apiService.post("/documents/folder", {
         title,
-        parent_id: parentId ?? null,
+        parent_id: resolvedParent ?? null,
       });
       await loadTree();
+      if (resolvedParent != null) {
+        setExpandedIds((prev) => new Set(prev).add(resolvedParent));
+      }
       return res.data ?? res;
     },
+    [loadTree, selectedNode]
+  );
+
+  const renameFolder = useCallback(
+    async (folderId, title) => {
+      await apiService.put("/documents/" + folderId, { title: title.trim() });
+      await loadTree();
+    },
     [loadTree]
+  );
+
+  const deleteFolder = useCallback(
+    async (folderId) => {
+      await apiService.delete("/documents/" + folderId);
+      await loadTree();
+      if (selectedNodeId === folderId) {
+        setSelectedNodeId(null);
+        setBreadcrumb([]);
+      }
+    },
+    [loadTree, selectedNodeId]
   );
 
   const moveDocument = useCallback(
@@ -127,7 +168,10 @@ export default function useDocumentTree() {
     loadTree,
     toggleNode,
     selectNode,
+    selectedNode,
     createFolder,
+    renameFolder,
+    deleteFolder,
     moveDocument,
   };
 }

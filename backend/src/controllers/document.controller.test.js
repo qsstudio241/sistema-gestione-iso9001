@@ -75,6 +75,58 @@ describe('listDocuments', () => {
     });
 });
 
+describe('deleteDocument', () => {
+    it('rifiuta eliminazione cartella di sistema', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{ id: 10, status: 'rilasciato', is_system_folder: 1, doc_type: 'folder' }],
+        });
+
+        const req = mockReq({ params: { id: '10' } });
+        const res = mockRes();
+        await ctrl.deleteDocument(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'SYSTEM_FOLDER_PROTECTED' })
+        );
+    });
+
+    it('rifiuta eliminazione cartella non vuota', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{ id: 11, status: 'rilasciato', is_system_folder: 0, doc_type: 'folder' }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ cnt: 2 }] });
+
+        const req = mockReq({ params: { id: '11' } });
+        const res = mockRes();
+        await ctrl.deleteDocument(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'FOLDER_NOT_EMPTY', children_count: 2 })
+        );
+    });
+
+    it('consente eliminazione cartella custom vuota', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{ id: 12, status: 'rilasciato', is_system_folder: 0, doc_type: 'folder' }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({ params: { id: '12' } });
+        const res = mockRes();
+        await ctrl.deleteDocument(req, res);
+
+        expect(query).toHaveBeenCalledTimes(3);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true })
+        );
+    });
+});
+
 describe('getDocumentStats', () => {
     it('restituisce senza_file e rilasciati_senza_file', async () => {
         query.mockResolvedValueOnce({

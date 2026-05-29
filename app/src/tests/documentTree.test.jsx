@@ -107,7 +107,23 @@ describe('DocumentTree — Rendering', () => {
     expect(screen.queryByText('Rilasciato')).toBeNull();
   });
 
-  it('mostra pulsante "Nuova cartella"', () => {
+  it('mostra pulsante nuova cartella (root)', () => {
+    render(
+      <DocumentTree
+        nodes={sampleNodes}
+        expandedIds={new Set()}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('+ Nuova cartella')).toBeInTheDocument();
+  });
+
+  it('label cartella ha attributo title (tooltip nome completo)', () => {
     render(
       <DocumentTree
         nodes={sampleNodes}
@@ -118,7 +134,53 @@ describe('DocumentTree — Rendering', () => {
         onCreateFolder={vi.fn()}
       />
     );
-    expect(screen.getByText('+ Nuova cartella')).toBeInTheDocument();
+    const label = screen.getByText('Procedure');
+    expect(label).toHaveAttribute('title', 'Procedure');
+  });
+});
+
+describe('DocumentTree — Azioni cartella', () => {
+  const customFolder = {
+    id: 99,
+    title: 'Mia cartella',
+    doc_type: 'folder',
+    is_system_folder: false,
+    children_count: 0,
+  };
+
+  it('disabilita Elimina su cartella di sistema', () => {
+    render(
+      <DocumentTree
+        nodes={[customFolder, sampleNodes[1]]}
+        expandedIds={new Set()}
+        selectedNodeId={4}
+        selectedNode={sampleNodes[1]}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Elimina' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rinomina' })).toBeDisabled();
+  });
+
+  it('offre Sottocartella quando è selezionata una cartella custom', () => {
+    render(
+      <DocumentTree
+        nodes={[customFolder]}
+        expandedIds={new Set()}
+        selectedNodeId={99}
+        selectedNode={customFolder}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('+ Sottocartella')).toBeInTheDocument();
   });
 });
 
