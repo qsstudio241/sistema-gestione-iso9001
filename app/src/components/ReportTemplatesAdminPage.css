@@ -50,6 +50,13 @@
   color: #374151;
 }
 
+.rt-banner-guide {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
 .rt-banner-row {
   display: flex;
   flex-wrap: wrap;
@@ -125,36 +132,16 @@
   border-color: #9ca3af;
 }
 
-.rt-system-download {
-  position: relative;
+.rt-banner-duplicate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  flex: 0 1 auto;
 }
 
-.rt-system-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
-  min-width: 220px;
-  margin: 0;
-  padding: 0.35rem 0;
-  list-style: none;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.rt-system-menu-item {
-  display: block;
-  padding: 0.5rem 1rem;
-  color: #374151;
-  text-decoration: none;
-  font-size: 0.88rem;
-}
-
-.rt-system-menu-item:hover {
-  background: #eff6ff;
-  color: #1e40af;
+.rt-banner-dup-select {
+  min-width: 200px;
 }
 
 .rt-upload-selected {
@@ -356,9 +343,8 @@
     align-items: stretch;
   }
 
-  .rt-system-menu {
-    right: auto;
-    left: 0;
-    width: 100%;
+  .rt-banner-duplicate {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
