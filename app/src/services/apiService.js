@@ -1015,6 +1015,41 @@ class ApiService {
     }
 
     /**
+     * Carica un template Word (.docx) per l'organizzazione (admin/auditor)
+     * @param {File} file - file .docx (max 5 MB)
+     * @param {{ name?: string, scope?: string }} options
+     */
+    async uploadReportTemplate(file, options = {}) {
+        const { name, scope = 'audit' } = options;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('scope', scope);
+        if (name && String(name).trim()) {
+            formData.append('name', String(name).trim());
+        }
+
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/report-templates`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Caricamento template fallito',
+                response.status,
+                errorData.code || 'REPORT_TEMPLATE_UPLOAD_ERROR'
+            );
+        }
+
+        return response.json();
+    }
+
+    /**
      * Assegna template a standard per l'org
      */
     async assignReportTemplateToStandard(standardId, reportTemplateId) {
