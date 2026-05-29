@@ -14,7 +14,6 @@ import {
   getReportTemplateDownloadUrl,
   isSystemReportTemplate,
   formatTemplateOrigin,
-  SYSTEM_TEMPLATE_DOWNLOADS,
 } from "../utils/reportTemplateUpload";
 import "./ReportTemplatesAdminPage.css";
 
@@ -52,9 +51,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const [duplicateName, setDuplicateName] = useState("");
   const [duplicating, setDuplicating] = useState(false);
   const [duplicateError, setDuplicateError] = useState(null);
-
-  const [systemDownloadOpen, setSystemDownloadOpen] = useState(false);
-  const systemMenuRef = useRef(null);
+  const [bannerDuplicateId, setBannerDuplicateId] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -88,16 +85,21 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     loadData();
   }, [loadData]);
 
+  const systemTemplates = useMemo(
+    () => templates.filter(isSystemReportTemplate),
+    [templates]
+  );
+
   useEffect(() => {
-    if (!systemDownloadOpen) return undefined;
-    const onDocClick = (e) => {
-      if (systemMenuRef.current && !systemMenuRef.current.contains(e.target)) {
-        setSystemDownloadOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [systemDownloadOpen]);
+    if (!systemTemplates.length) {
+      setBannerDuplicateId("");
+      return;
+    }
+    setBannerDuplicateId((prev) => {
+      if (prev && systemTemplates.some((t) => String(t.id) === prev)) return prev;
+      return String(systemTemplates[0].id);
+    });
+  }, [systemTemplates]);
 
   const refreshTemplates = async () => {
     const tplRes = await apiService.getReportTemplates("audit");
@@ -203,6 +205,11 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     setDuplicateSource(template);
     setDuplicateName(`${template.name} (copia)`);
     setDuplicateError(null);
+  };
+
+  const handleBannerDuplicate = () => {
+    const template = systemTemplates.find((t) => String(t.id) === bannerDuplicateId);
+    if (template) openDuplicateModal(template);
   };
 
   const closeDuplicateModal = () => {
@@ -321,6 +328,10 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         <h3 id="rt-banner-title" className="rt-banner-title">
           Gestione template
         </h3>
+        <p className="rt-banner-guide">
+          Scarica un modello dalla colonna Azioni. Carica un file personalizzato o duplica un modello di sistema
+          e assegnalo alle checklist o agli standard sotto.
+        </p>
         <div className="rt-banner-row">
           <form className="rt-upload-form" onSubmit={handleUpload}>
             <label className="rt-upload-label">
@@ -348,33 +359,35 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
             </button>
           </form>
 
-          <div className="rt-system-download" ref={systemMenuRef}>
+          <div className="rt-banner-duplicate">
+            <label className="rt-upload-label" htmlFor="rt-banner-dup-select">
+              Modello di sistema
+              <select
+                id="rt-banner-dup-select"
+                className="rt-select rt-banner-dup-select"
+                value={bannerDuplicateId}
+                onChange={(e) => setBannerDuplicateId(e.target.value)}
+                disabled={!systemTemplates.length || duplicating}
+              >
+                {systemTemplates.length === 0 ? (
+                  <option value="">Nessun modello di sistema</option>
+                ) : (
+                  systemTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
             <button
               type="button"
               className="btn-rt-secondary"
-              aria-expanded={systemDownloadOpen}
-              aria-haspopup="menu"
-              onClick={() => setSystemDownloadOpen((v) => !v)}
+              onClick={handleBannerDuplicate}
+              disabled={!bannerDuplicateId || duplicating}
             >
-              Scarica modello di sistema
+              Duplica da modello di sistema
             </button>
-            {systemDownloadOpen && (
-              <ul className="rt-system-menu" role="menu">
-                {SYSTEM_TEMPLATE_DOWNLOADS.map((item) => (
-                  <li key={item.path} role="none">
-                    <a
-                      role="menuitem"
-                      href={item.path}
-                      download={item.filename}
-                      className="rt-system-menu-item"
-                      onClick={() => setSystemDownloadOpen(false)}
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
 
