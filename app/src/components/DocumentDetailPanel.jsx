@@ -4,11 +4,28 @@
  * Mostra: informazioni, tag (placeholder WS-5), relazioni (placeholder WS-5),
  * file/versioni, cronologia modifiche, azioni.
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS, DOC_STATUS_BADGE_CLASS } from "../data/documentTypes";
 import apiService from "../services/apiService";
 import "./DocumentDetailPanel.css";
+
+const NORM_VALIDITY_LABELS = {
+  vigente: "Vigente",
+  superata: "Superata",
+  annullata: "Annullata",
+  in_revisione: "In revisione",
+};
+
+function parseTypeSpecificData(raw) {
+  if (!raw) return null;
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 function InfoRow({ label, value }) {
   if (value == null || value === "") return null;
@@ -16,6 +33,23 @@ function InfoRow({ label, value }) {
     <div className="doc-detail__info-row">
       <span className="doc-detail__info-label">{label}</span>
       <span className="doc-detail__info-value">{value}</span>
+    </div>
+  );
+}
+
+function InfoLinkRow({ label, href, text }) {
+  if (!href) return null;
+  return (
+    <div className="doc-detail__info-row">
+      <span className="doc-detail__info-label">{label}</span>
+      <a
+        className="doc-detail__catalog-link"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {text || "Apri catalogo"}
+      </a>
     </div>
   );
 }
@@ -35,7 +69,24 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
       .catch(() => { if (!cancelled) setFiles([]); })
       .finally(() => { if (!cancelled) setFilesLoading(false); });
     return () => { cancelled = true; };
-  }, [doc?.id]);
+  }, [doc?.id, doc?.files]);
+
+  const normData = useMemo(() => {
+    if (!doc || doc.doc_type !== "norma") return null;
+    const tsd = parseTypeSpecificData(doc.type_specific_data);
+    if (!tsd) return null;
+    return {
+      standardCode: tsd.standard_code || null,
+      normTitle: tsd.norm_title || null,
+      issuingBody: tsd.issuing_body || null,
+      editionYear: tsd.edition_year ?? null,
+      validityStatus: tsd.validity_status || doc.norm_validity_status || null,
+      lastCheck: tsd.last_validity_check || doc.norm_last_check || null,
+      catalogUrl: tsd.validity_check_url || null,
+      supersededBy: tsd.superseded_by || null,
+    };
+  }, [doc]);
+
   if (!doc) return null;
 
   const statusLabel = DOC_STATUS_LABELS[doc.status] ?? doc.status;
@@ -73,9 +124,30 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
             <InfoRow label="Responsabile" value={doc.responsible} />
             <InfoRow label="Azienda" value={doc.company_name} />
-            <InfoRow label="Norma" value={doc.standard_reference} />
-            <InfoRow label="Clausola" value={doc.clause_reference} />
+            <InfoRow label="Norma" value={doc.standard_reference || doc.standard_code} />
+            <InfoRow label="Clausola" value={doc.clause_reference || doc.clause_ref} />
           </section>
+
+          {normData && (
+            <section className="doc-detail__section">
+              <h3 className="doc-detail__section-title">Norma tecnica</h3>
+              <InfoRow label="Codice norma" value={normData.standardCode} />
+              <InfoRow label="Titolo norma" value={normData.normTitle} />
+              <InfoRow label="Ente emittente" value={normData.issuingBody} />
+              <InfoRow label="Anno edizione" value={normData.editionYear != null ? String(normData.editionYear) : null} />
+              {normData.validityStatus && (
+                <div className="doc-detail__info-row">
+                  <span className="doc-detail__info-label">Vigore</span>
+                  <span className={`doc-detail__validity doc-detail__validity--${normData.validityStatus}`}>
+                    {NORM_VALIDITY_LABELS[normData.validityStatus] || normData.validityStatus}
+                  </span>
+                </div>
+              )}
+              <InfoRow label="Sostituita da" value={normData.supersededBy} />
+              <InfoRow label="Ultima verifica catalogo" value={normData.lastCheck ? formatDate(normData.lastCheck) : null} />
+              <InfoLinkRow label="Catalogo" href={normData.catalogUrl} text="Vedi su catalogo ISO" />
+            </section>
+          )}
 
           {/* Tag */}
           <section className="doc-detail__section">
