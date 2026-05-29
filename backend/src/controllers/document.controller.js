@@ -958,6 +958,50 @@ async function lookupNormStatus(req, res) {
     }
 }
 
+// ─── POST /api/v1/documents/norm-import-codes ─────────────────────────────────
+/**
+ * Import batch da lista codici norma/legge (senza PDF).
+ * Body: { codes: string|string[], folder_id?: number }
+ */
+async function importNormCodes(req, res) {
+    const { organization_id, user_id } = req.user;
+    const { codes, folder_id } = req.body || {};
+
+    if (!codes || (Array.isArray(codes) && codes.length === 0) || (typeof codes === 'string' && !codes.trim())) {
+        return res.status(400).json({
+            error: 'Fornire almeno un codice norma (codes: stringa multiriga o array)',
+            code: 'VALIDATION_ERROR',
+        });
+    }
+
+    try {
+        const normCodesImport = require('../services/normCodesImport.service');
+        const result = await normCodesImport.importNormCodes(
+            organization_id,
+            user_id,
+            codes,
+            { folderId: folder_id ? parseInt(String(folder_id), 10) : null }
+        );
+
+        const { summary } = result;
+        const httpStatus = summary.created > 0 ? 201 : (summary.duplicates > 0 && summary.errors === 0 ? 200 : 200);
+
+        res.status(httpStatus).json({
+            success: summary.created > 0 || summary.duplicates > 0,
+            ...result,
+        });
+    } catch (err) {
+        if (err.code === 'NORM_FOLDER_NOT_FOUND') {
+            return res.status(404).json({ error: err.message, code: err.code });
+        }
+        if (err.code === 'TOO_MANY_CODES') {
+            return res.status(400).json({ error: err.message, code: err.code });
+        }
+        logger.error('Error in norm-import-codes', { error: err.message });
+        res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -970,4 +1014,5 @@ module.exports = {
     listOrphanDocuments,
     preExtractMetadata,
     lookupNormStatus,
+    importNormCodes,
 };

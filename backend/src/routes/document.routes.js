@@ -27,6 +27,9 @@ router.post('/documents/pre-extract', docCtrl.preExtractMetadata);
 // Lookup stato norma su catalogo pubblico ente (BSI / ISO / UNI)
 router.post('/documents/norm-lookup', docCtrl.lookupNormStatus);
 
+// Import batch da lista codici (senza PDF obbligatorio)
+router.post('/documents/norm-import-codes', docCtrl.importNormCodes);
+
 // CRUD
 router.get   ('/documents',                      docCtrl.listDocuments);
 router.get   ('/documents/:id',                  docCtrl.getDocumentById);

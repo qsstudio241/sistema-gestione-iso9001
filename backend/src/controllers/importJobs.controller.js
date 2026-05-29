@@ -8,6 +8,10 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+const {
+    buildNormTypeSpecificData,
+    serializeNormTypeSpecificData,
+} = require('../services/documentRegistryNorm.service');
 
 async function listJobs(req, res) {
     try {
@@ -404,29 +408,98 @@ async function commitToRegistry(req, res) {
 
         // Campi del documento — priorità: body utente > AI > fallback
         const body = req.body || {};
-        const title = String(body.title || aiData.title || file.original_name || 'Documento importato').substring(0, 500);
-        const doc_type = String(body.doc_type || aiData.document_type || j.recordset[0].document_type_hint || 'altro').substring(0, 50);
-        const doc_code = body.doc_code != null ? String(body.doc_code).substring(0, 100) : (aiData.doc_code || aiData.code || null);
-        const revision = body.revision != null ? String(body.revision).substring(0, 20) : (aiData.revision || null);
-        const responsible = body.responsible != null ? String(body.responsible).substring(0, 255) : (aiData.person_name || aiData.responsible || null);
-        const issue_date = body.issue_date || aiData.issue_date || null;
-        const expiry_date = body.expiry_date || aiData.expiry_date || null;
-        const clause_ref = body.clause_ref != null ? String(body.clause_ref).substring(0, 30) : null;
-        const standard_id = body.standard_id ? parseInt(body.standard_id, 10) : null;
+        const aiTypeSpecific = aiData.type_specific_data && typeof aiData.type_specific_data === 'object'
+            ? aiData.type_specific_data
+            : {};
+        const doc_type = String(
+            body.doc_type
+            || aiData.document_type_guess
+            || aiData.document_type
+            || j.recordset[0].document_type_hint
+            || 'altro'
+        ).substring(0, 50);
+        const isNorma = doc_type === 'norma';
         const company_id = body.company_id ? parseInt(body.company_id, 10) : (j.recordset[0].company_id || null);
         const notes = body.notes != null ? String(body.notes).substring(0, 2000) : null;
+
+        let title;
+        let doc_code = null;
+        let revision = null;
+        let responsible = null;
+        let issue_date = null;
+        let expiry_date = null;
+        let clause_ref = null;
+        let standard_id = null;
+        let type_specific_data = null;
+
+        if (isNorma) {
+            const bodyTsd = body.type_specific_data && typeof body.type_specific_data === 'object'
+                ? body.type_specific_data
+                : {};
+            const normRaw = {
+                ...aiTypeSpecific,
+                ...bodyTsd,
+                standard_code: bodyTsd.standard_code ?? body.standard_code ?? aiTypeSpecific.standard_code,
+                issuing_body: bodyTsd.issuing_body ?? body.issuing_body ?? aiTypeSpecific.issuing_body,
+                edition_year: bodyTsd.edition_year ?? body.edition_year ?? aiTypeSpecific.edition_year,
+                norm_title: bodyTsd.norm_title ?? body.norm_title ?? aiTypeSpecific.norm_title ?? aiData.title,
+                validity_status: bodyTsd.validity_status ?? aiTypeSpecific.validity_status,
+                validity_check_url: bodyTsd.validity_check_url ?? aiTypeSpecific.validity_check_url,
+                last_validity_check: bodyTsd.last_validity_check ?? aiTypeSpecific.last_validity_check,
+                superseded_by: bodyTsd.superseded_by ?? aiTypeSpecific.superseded_by,
+                scope_summary: bodyTsd.scope_summary ?? aiTypeSpecific.scope_summary ?? aiData.summary,
+            };
+
+            const built = buildNormTypeSpecificData(normRaw);
+            if (!built) {
+                return res.status(400).json({
+                    error: 'Codice norma obbligatorio per il commit (standard_code).',
+                    code: 'MISSING_STANDARD_CODE',
+                });
+            }
+
+            type_specific_data = serializeNormTypeSpecificData(normRaw);
+            const codeLabel = built.standard_code;
+            const normTitle = built.norm_title || aiData.title || '';
+            title = String(body.title || (normTitle ? `${codeLabel} — ${normTitle}` : codeLabel))
+                .substring(0, 500);
+
+            if (built.edition_year) {
+                issue_date = `${built.edition_year}-01-01`;
+            }
+        } else {
+            title = String(body.title || aiData.title || file.original_name || 'Documento importato').substring(0, 500);
+            doc_code = body.doc_code != null ? String(body.doc_code).substring(0, 100) : (aiData.doc_code || aiData.code || null);
+            revision = body.revision != null ? String(body.revision).substring(0, 20) : (aiData.revision || null);
+            responsible = body.responsible != null
+                ? String(body.responsible).substring(0, 255)
+                : (aiData.person_name || aiData.responsible || null);
+            issue_date = body.issue_date || aiData.issue_date || null;
+            expiry_date = body.expiry_date || aiData.expiry_date || null;
+            clause_ref = body.clause_ref != null ? String(body.clause_ref).substring(0, 30) : null;
+            standard_id = body.standard_id ? parseInt(body.standard_id, 10) : null;
+            if (body.type_specific_data) {
+                type_specific_data = typeof body.type_specific_data === 'string'
+                    ? body.type_specific_data
+                    : JSON.stringify(body.type_specific_data);
+            } else if (Object.keys(aiTypeSpecific).length) {
+                type_specific_data = JSON.stringify(aiTypeSpecific);
+            }
+        }
 
         // Crea record document_registry
         const ins = await query(
             `INSERT INTO document_registry
              (organization_id, company_id, standard_id, clause_ref, doc_type, doc_code,
               title, revision, status, issue_date, expiry_date, responsible,
-              import_status, extraction_confidence, notes, created_by, created_at, updated_at)
+              import_status, extraction_confidence, notes, type_specific_data,
+              created_by, created_at, updated_at)
              OUTPUT INSERTED.id
              VALUES
              (@organization_id, @company_id, @standard_id, @clause_ref, @doc_type, @doc_code,
               @title, @revision, 'in_approvazione', @issue_date, @expiry_date, @responsible,
-              'ai_draft', @confidence, @notes, @created_by, GETDATE(), GETDATE())`,
+              'ai_draft', @confidence, @notes, @type_specific_data,
+              @created_by, GETDATE(), GETDATE())`,
             {
                 organization_id,
                 company_id,
@@ -441,6 +514,7 @@ async function commitToRegistry(req, res) {
                 responsible,
                 confidence: file.confidence_score || null,
                 notes,
+                type_specific_data,
                 created_by: user_id || null,
             }
         );

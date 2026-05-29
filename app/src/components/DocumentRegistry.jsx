@@ -17,6 +17,7 @@ import DocumentTree from "./DocumentTree";
 import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import NormUploadButton from "./NormUploadButton";
+import NormCodesImportButton from "./NormCodesImportButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
@@ -1465,10 +1466,16 @@ function DocumentRegistry() {
                     const isNormsFolder = currentFolder?.folder_code === '2.3'
                       || (currentFolder?.title || '').toUpperCase().includes('NORME');
                     return isNormsFolder ? (
-                      <NormUploadButton
-                        folderId={tree.selectedNodeId}
-                        onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
-                      />
+                      <div className="norm-folder-actions">
+                        <NormCodesImportButton
+                          folderId={tree.selectedNodeId}
+                          onImportComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                        />
+                        <NormUploadButton
+                          folderId={tree.selectedNodeId}
+                          onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                        />
+                      </div>
                     ) : null;
                   })()}
 
