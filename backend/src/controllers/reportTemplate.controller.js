@@ -110,6 +110,19 @@ async function assignTemplateToStandard(req, res) {
       return res.status(400).json({ error: 'standardId e report_template_id devono essere numeri', code: 'INVALID_ID' });
     }
 
+    const tplCheck = await query(
+      `SELECT 1 FROM report_templates
+       WHERE id = @report_template_id
+         AND (organization_id IS NULL OR organization_id = @organization_id)`,
+      { report_template_id: templateId, organization_id: organizationId }
+    );
+    if (tplCheck.recordset.length === 0) {
+      return res.status(403).json({
+        error: 'Template non disponibile per questa organizzazione',
+        code: 'TEMPLATE_FORBIDDEN',
+      });
+    }
+
     const params = { organization_id: organizationId, standard_id: stdId, report_template_id: templateId };
     await query(
       `DELETE FROM report_template_assignments
@@ -181,6 +194,19 @@ async function assignTemplateToCustomChecklist(req, res) {
     );
     if (ccCheck.recordset.length === 0) {
       return res.status(404).json({ error: 'Checklist non trovata', code: 'CHECKLIST_NOT_FOUND' });
+    }
+
+    const tplCheck = await query(
+      `SELECT 1 FROM report_templates
+       WHERE id = @report_template_id
+         AND (organization_id IS NULL OR organization_id = @organization_id)`,
+      { report_template_id: templateId, organization_id: organizationId }
+    );
+    if (tplCheck.recordset.length === 0) {
+      return res.status(403).json({
+        error: 'Template non disponibile per questa organizzazione',
+        code: 'TEMPLATE_FORBIDDEN',
+      });
     }
 
     // Rimuovi assegnazioni esistenti per questa checklist
