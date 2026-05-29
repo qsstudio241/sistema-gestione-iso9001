@@ -35,6 +35,7 @@
   line-height: 1.45;
 }
 
+/* Banner gestione — stile compatto catalogo SGQ (CompaniesPage / ca-toolbar) */
 .rt-banner {
   margin-bottom: 1.5rem;
   padding: 1rem 1.25rem;
@@ -45,54 +46,90 @@
 
 .rt-banner-title,
 .rt-section-title {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   font-size: 1.05rem;
+  font-weight: 600;
   color: #374151;
 }
 
 .rt-banner-guide {
-  margin: 0 0 0.75rem;
-  font-size: 0.88rem;
+  margin: 0 0 1rem;
+  font-size: 0.84rem;
   color: #6b7280;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
-.rt-banner-row {
-  display: flex;
-  flex-wrap: wrap;
+.rt-banner-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: stretch;
 }
 
-.rt-upload-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  align-items: flex-end;
-  flex: 1 1 320px;
-}
-
-.rt-upload-label {
+.rt-banner-card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #333;
+  gap: 0.65rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  min-width: 0;
 }
 
-.rt-upload-label input[type="text"] {
-  min-width: 200px;
+.rt-card-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rt-upload-form,
+.rt-duplicate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.rt-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.rt-field-label input[type="text"],
+.rt-field-label input[type="file"],
+.rt-field-label .rt-select {
+  width: 100%;
+  box-sizing: border-box;
+  font-weight: normal;
+}
+
+.rt-field-label input[type="text"] {
   padding: 0.45rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-weight: normal;
 }
 
-.rt-upload-label input[type="file"] {
-  font-weight: normal;
+.rt-field-label input[type="file"] {
   font-size: 0.85rem;
-  max-width: 220px;
+}
+
+.rt-card-footer {
+  margin-top: auto;
+  padding-top: 0.15rem;
+}
+
+.rt-card-footer .btn-rt-primary,
+.rt-card-footer .btn-rt-secondary {
+  width: 100%;
 }
 
 .btn-rt-primary {
@@ -124,24 +161,16 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  white-space: nowrap;
 }
 
-.btn-rt-secondary:hover {
+.btn-rt-secondary:hover:not(:disabled) {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.rt-banner-duplicate {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  align-items: flex-end;
-  flex: 0 1 auto;
-}
-
-.rt-banner-dup-select {
-  min-width: 200px;
+.btn-rt-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .rt-upload-selected {
@@ -263,11 +292,16 @@
 }
 
 .rt-select {
-  flex: 1;
-  min-width: 200px;
+  width: 100%;
   padding: 0.45rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.rt-row .rt-select {
+  flex: 1;
+  min-width: 200px;
 }
 
 .rt-saving {
@@ -333,18 +367,14 @@
   margin-top: 0.5rem;
 }
 
+@media (max-width: 720px) {
+  .rt-banner-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .report-templates-admin {
     padding: 12px;
-  }
-
-  .rt-banner-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .rt-banner-duplicate {
-    flex-direction: column;
-    align-items: stretch;
   }
 }

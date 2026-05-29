@@ -329,65 +329,75 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
           Gestione template
         </h3>
         <p className="rt-banner-guide">
-          Scarica un modello dalla colonna Azioni. Carica un file personalizzato o duplica un modello di sistema
-          e assegnalo alle checklist o agli standard sotto.
+          Scarica dalla griglia, carica un .docx o duplica un modello di sistema; assegna agli standard ISO o alle
+          checklist custom.
         </p>
-        <div className="rt-banner-row">
-          <form className="rt-upload-form" onSubmit={handleUpload}>
-            <label className="rt-upload-label">
-              File .docx
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleFileChange}
-                disabled={uploading}
-              />
-            </label>
-            <label className="rt-upload-label">
-              Nome nel menu
-              <input
-                type="text"
-                value={uploadName}
-                onChange={(e) => setUploadName(e.target.value)}
-                placeholder="Es. Verbale 5S, Sopralluogo cantiere"
-                disabled={uploading}
-              />
-            </label>
-            <button type="submit" className="btn-rt-primary" disabled={uploading || !uploadFile}>
-              {uploading ? "Caricamento..." : "Carica template Word"}
-            </button>
-          </form>
+        <div className="rt-banner-cards">
+          <div className="rt-banner-card">
+            <h4 className="rt-card-title">Carica file</h4>
+            <form className="rt-upload-form" onSubmit={handleUpload}>
+              <label className="rt-field-label">
+                File .docx
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                />
+              </label>
+              <label className="rt-field-label">
+                Nome nel menu
+                <input
+                  type="text"
+                  value={uploadName}
+                  onChange={(e) => setUploadName(e.target.value)}
+                  placeholder="Es. Verbale 5S, Sopralluogo cantiere"
+                  disabled={uploading}
+                />
+              </label>
+              <div className="rt-card-footer">
+                <button type="submit" className="btn-rt-primary" disabled={uploading || !uploadFile}>
+                  {uploading ? "Caricamento..." : "Carica"}
+                </button>
+              </div>
+            </form>
+          </div>
 
-          <div className="rt-banner-duplicate">
-            <label className="rt-upload-label" htmlFor="rt-banner-dup-select">
-              Modello di sistema
-              <select
-                id="rt-banner-dup-select"
-                className="rt-select rt-banner-dup-select"
-                value={bannerDuplicateId}
-                onChange={(e) => setBannerDuplicateId(e.target.value)}
-                disabled={!systemTemplates.length || duplicating}
-              >
-                {systemTemplates.length === 0 ? (
-                  <option value="">Nessun modello di sistema</option>
-                ) : (
-                  systemTemplates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="btn-rt-secondary"
-              onClick={handleBannerDuplicate}
-              disabled={!bannerDuplicateId || duplicating}
-            >
-              Duplica da modello di sistema
-            </button>
+          <div className="rt-banner-card">
+            <h4 className="rt-card-title">Duplica modello</h4>
+            <div className="rt-duplicate-form">
+              <label className="rt-field-label" htmlFor="rt-banner-dup-select">
+                Modello di sistema
+                <select
+                  id="rt-banner-dup-select"
+                  className="rt-select"
+                  value={bannerDuplicateId}
+                  onChange={(e) => setBannerDuplicateId(e.target.value)}
+                  disabled={!systemTemplates.length || duplicating}
+                >
+                  {systemTemplates.length === 0 ? (
+                    <option value="">Nessun modello di sistema</option>
+                  ) : (
+                    systemTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+              <div className="rt-card-footer">
+                <button
+                  type="button"
+                  className="btn-rt-secondary"
+                  onClick={handleBannerDuplicate}
+                  disabled={!bannerDuplicateId || duplicating}
+                >
+                  {duplicating ? "Duplicazione..." : "Duplica"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
