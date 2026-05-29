@@ -1599,6 +1599,18 @@ class ApiService {
         }
     }
 
+    /**
+     * Import batch codici norma/legge (senza PDF obbligatorio).
+     * @param {string|string[]} codes
+     * @param {number|null} folderId
+     */
+    async importNormCodes(codes, folderId = null) {
+        const body = { codes };
+        if (folderId) body.folder_id = folderId;
+        const res = await this.post('/documents/norm-import-codes', body, { timeout: 120000 });
+        return res?.data ?? res;
+    }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
     async uploadNorms(files) {
