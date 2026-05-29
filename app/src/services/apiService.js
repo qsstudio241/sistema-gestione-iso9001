@@ -1063,6 +1063,30 @@ class ApiService {
         return this.put(`/report-template-assignments/custom-checklist/${customChecklistId}`, { report_template_id: reportTemplateId });
     }
 
+    /**
+     * Assegnazioni template per standard (org corrente)
+     */
+    async getReportTemplateStandardAssignments() {
+        return this.get('/report-template-assignments/standards');
+    }
+
+    /**
+     * Duplica template di sistema nello studio
+     * @param {number} templateId
+     * @param {string} name
+     */
+    async duplicateReportTemplate(templateId, name) {
+        return this.post(`/report-templates/${templateId}/duplicate`, { name: String(name).trim() });
+    }
+
+    /**
+     * Elimina template dello studio
+     * @param {number} templateId
+     */
+    async deleteReportTemplate(templateId) {
+        return this.delete(`/report-templates/${templateId}`);
+    }
+
     // ==========================================
     // CUSTOM CHECKLISTS (Phase 5/6)
     // ==========================================

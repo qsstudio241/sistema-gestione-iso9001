@@ -8,6 +8,39 @@ const { getReportTemplate } = require('../services/reportTemplate.service');
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
+const crypto = require('crypto');
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+
+/** Risolve path assoluto del file sorgente (sistema /uploads o /templates) */
+async function resolveTemplateSourcePath(filePath) {
+  if (!filePath) return null;
+  if (filePath.startsWith('/uploads/')) {
+    const rel = filePath.replace(/^\/uploads\//, '');
+    const full = path.join(path.resolve(UPLOAD_DIR), rel);
+    try {
+      await fs.access(full);
+      return full;
+    } catch {
+      return null;
+    }
+  }
+  if (filePath.startsWith('/templates/')) {
+    const basename = path.basename(filePath);
+    const candidates = [
+      process.env.REPORT_TEMPLATES_STATIC_DIR,
+      path.join(__dirname, '../../../app/public/templates'),
+      path.join(process.cwd(), 'app/public/templates'),
+      path.join(process.cwd(), '../app/public/templates'),
+    ].filter(Boolean);
+    for (const dir of candidates) {
+      const full = path.join(dir, basename);
+      if (fsSync.existsSync(full)) return full;
+    }
+  }
+  return null;
+}
 
 /**
  * GET /api/v1/report-templates?scope=audit
@@ -231,10 +264,170 @@ async function assignTemplateToCustomChecklist(req, res) {
   }
 }
 
+/**
+ * GET /api/v1/report-template-assignments/standards
+ * Assegnazioni template per standard (org corrente)
+ */
+async function listStandardAssignments(req, res) {
+  try {
+    const organizationId = req.user.organization_id;
+    const result = await query(
+      `SELECT standard_id, report_template_id
+       FROM report_template_assignments
+       WHERE organization_id = @organization_id
+         AND standard_id IS NOT NULL
+         AND custom_checklist_id IS NULL`,
+      { organization_id: organizationId }
+    );
+    res.json({ success: true, data: result.recordset });
+  } catch (err) {
+    logger.error('listStandardAssignments error', { error: err.message });
+    res.status(500).json({ error: 'Errore recupero assegnazioni', code: 'ASSIGNMENTS_LIST_ERROR' });
+  }
+}
+
+/**
+ * POST /api/v1/report-templates/:id/duplicate
+ * Duplica template di sistema nello studio (body: { name })
+ */
+async function duplicateTemplate(req, res) {
+  try {
+    const { role, organization_id: organizationId } = req.user;
+    if (!['admin', 'auditor'].includes(role)) {
+      return res.status(403).json({ error: 'Solo admin/auditor possono duplicare template', code: 'FORBIDDEN' });
+    }
+
+    const templateId = parseInt(req.params.id, 10);
+    if (isNaN(templateId)) {
+      return res.status(400).json({ error: 'ID template non valido', code: 'INVALID_ID' });
+    }
+
+    const name = req.body?.name != null ? String(req.body.name).trim() : '';
+    if (!name) {
+      return res.status(400).json({ error: 'Nome richiesto per il duplicato', code: 'MISSING_NAME' });
+    }
+    if (name.length > 255) {
+      return res.status(400).json({ error: 'Il nome non può superare 255 caratteri', code: 'NAME_TOO_LONG' });
+    }
+
+    const srcResult = await query(
+      `SELECT id, organization_id, name, scope, standard_key, file_path, is_system
+       FROM report_templates WHERE id = @id`,
+      { id: templateId }
+    );
+    if (srcResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Template non trovato', code: 'NOT_FOUND' });
+    }
+
+    const src = srcResult.recordset[0];
+    if (src.organization_id != null) {
+      return res.status(403).json({
+        error: 'Duplicazione consentita solo da template di sistema',
+        code: 'NOT_SYSTEM_TEMPLATE',
+      });
+    }
+
+    const sourcePath = await resolveTemplateSourcePath(src.file_path);
+    if (!sourcePath) {
+      return res.status(500).json({ error: 'File sorgente non trovato sul server', code: 'SOURCE_NOT_FOUND' });
+    }
+
+    const destDir = path.join(path.resolve(UPLOAD_DIR), 'templates', String(organizationId));
+    await fs.mkdir(destDir, { recursive: true });
+    const safeBase = name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40) || 'template';
+    const destFilename = `${Date.now()}_${crypto.randomBytes(6).toString('hex')}_${safeBase}.docx`;
+    const destFull = path.join(destDir, destFilename);
+    await fs.copyFile(sourcePath, destFull);
+
+    const relPath =
+      '/uploads/' + path.relative(path.resolve(UPLOAD_DIR), destFull).replace(/\\/g, '/');
+
+    const ins = await query(
+      `INSERT INTO report_templates (organization_id, name, scope, standard_key, file_path, is_system, created_at, updated_at)
+       OUTPUT INSERTED.id, INSERTED.file_path, INSERTED.name, INSERTED.organization_id, INSERTED.is_system, INSERTED.standard_key
+       VALUES (@organization_id, @name, @scope, @standard_key, @file_path, 0, GETDATE(), GETDATE())`,
+      {
+        organization_id: organizationId,
+        name,
+        scope: src.scope || 'audit',
+        standard_key: src.standard_key || null,
+        file_path: relPath,
+      }
+    );
+
+    const row = ins.recordset[0];
+    logger.info('Report template duplicated', { sourceId: templateId, newId: row.id, org: organizationId });
+
+    res.status(201).json({ success: true, data: row });
+  } catch (err) {
+    logger.error('duplicateTemplate error', { error: err.message });
+    res.status(500).json({ error: 'Errore duplicazione template', code: 'DUPLICATE_TEMPLATE_ERROR' });
+  }
+}
+
+/**
+ * DELETE /api/v1/report-templates/:id
+ * Elimina template dello studio (non di sistema)
+ */
+async function deleteTemplate(req, res) {
+  try {
+    const { role, organization_id: organizationId } = req.user;
+    if (!['admin', 'auditor'].includes(role)) {
+      return res.status(403).json({ error: 'Solo admin/auditor possono eliminare template', code: 'FORBIDDEN' });
+    }
+
+    const templateId = parseInt(req.params.id, 10);
+    if (isNaN(templateId)) {
+      return res.status(400).json({ error: 'ID template non valido', code: 'INVALID_ID' });
+    }
+
+    const tplResult = await query(
+      `SELECT id, organization_id, file_path, is_system FROM report_templates WHERE id = @id`,
+      { id: templateId }
+    );
+    if (tplResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Template non trovato', code: 'NOT_FOUND' });
+    }
+
+    const row = tplResult.recordset[0];
+    if (row.is_system || row.organization_id == null) {
+      return res.status(403).json({
+        error: 'Non è possibile eliminare template di sistema',
+        code: 'SYSTEM_TEMPLATE',
+      });
+    }
+    if (row.organization_id !== organizationId) {
+      return res.status(403).json({
+        error: 'Template non appartenente a questa organizzazione',
+        code: 'FORBIDDEN',
+      });
+    }
+
+    await query(`DELETE FROM report_template_assignments WHERE report_template_id = @id`, { id: templateId });
+
+    if (row.file_path && row.file_path.startsWith('/uploads/')) {
+      const rel = row.file_path.replace(/^\/uploads\//, '');
+      const full = path.join(path.resolve(UPLOAD_DIR), rel);
+      await fs.unlink(full).catch(() => {});
+    }
+
+    await query(`DELETE FROM report_templates WHERE id = @id`, { id: templateId });
+
+    logger.info('Report template deleted', { id: templateId, org: organizationId });
+    res.json({ success: true, message: 'Template eliminato' });
+  } catch (err) {
+    logger.error('deleteTemplate error', { error: err.message });
+    res.status(500).json({ error: 'Errore eliminazione template', code: 'DELETE_TEMPLATE_ERROR' });
+  }
+}
+
 module.exports = {
   listTemplates,
   uploadTemplate,
   assignTemplateToStandard,
   assignTemplateToCustomChecklist,
   resolveTemplate,
+  listStandardAssignments,
+  duplicateTemplate,
+  deleteTemplate,
 };
