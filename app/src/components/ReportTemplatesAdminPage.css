@@ -1,5 +1,7 @@
 .report-templates-admin {
-  padding: 1rem 0;
+  padding: 20px;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .rt-header {
@@ -8,45 +10,51 @@
 
 .rt-header .btn-back {
   margin-bottom: 0.5rem;
-  background: none;
-  border: none;
-  color: #0066cc;
+  padding: 6px 12px;
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .rt-header .btn-back:hover {
-  text-decoration: underline;
+  background: #d1d5db;
 }
 
 .rt-header h2 {
   margin: 0 0 0.5rem;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  color: #2c3e50;
 }
 
 .rt-desc {
   margin: 0;
-  color: #666;
+  color: #6b7280;
   font-size: 0.9rem;
+  line-height: 1.45;
 }
 
-.rt-upload-panel {
+.rt-banner {
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   background: #f9fafb;
 }
 
-.rt-upload-panel h3 {
-  margin: 0 0 0.5rem;
+.rt-banner-title,
+.rt-section-title {
+  margin: 0 0 0.75rem;
   font-size: 1.05rem;
+  color: #374151;
 }
 
-.rt-upload-hint {
-  margin: 0 0 1rem;
-  color: #555;
-  font-size: 0.88rem;
+.rt-banner-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
 }
 
 .rt-upload-form {
@@ -54,6 +62,7 @@
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   align-items: flex-end;
+  flex: 1 1 320px;
 }
 
 .rt-upload-label {
@@ -66,35 +75,86 @@
 }
 
 .rt-upload-label input[type="text"] {
-  min-width: 220px;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  min-width: 200px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   font-weight: normal;
 }
 
 .rt-upload-label input[type="file"] {
   font-weight: normal;
   font-size: 0.85rem;
+  max-width: 220px;
 }
 
-.btn-rt-upload {
+.btn-rt-primary {
   padding: 0.5rem 1rem;
-  background: #0066cc;
+  background: #2563eb;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.btn-rt-upload:hover:not(:disabled) {
-  background: #0052a3;
+.btn-rt-primary:hover:not(:disabled) {
+  background: #1d4ed8;
 }
 
-.btn-rt-upload:disabled {
+.btn-rt-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-rt-secondary {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.btn-rt-secondary:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.rt-system-download {
+  position: relative;
+}
+
+.rt-system-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.rt-system-menu-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+
+.rt-system-menu-item:hover {
+  background: #eff6ff;
+  color: #1e40af;
 }
 
 .rt-upload-selected {
@@ -106,25 +166,95 @@
 .rt-feedback {
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.9rem;
 }
 
 .rt-feedback-success {
-  background: #e8f5e9;
-  border: 1px solid #81c784;
-  color: #1b5e20;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
 }
 
 .rt-feedback-error {
-  background: #ffebee;
-  border: 1px solid #e57373;
-  color: #b71c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
 }
 
-.rt-assign-title {
-  margin: 0 0 0.75rem;
-  font-size: 1.05rem;
+.rt-feedback-warning {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.rt-grid-section {
+  margin-bottom: 2rem;
+}
+
+.rt-name-cell {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.rt-origin-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.rt-origin-badge--system {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.rt-origin-badge--org {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rt-cell-actions {
+  white-space: nowrap;
+}
+
+.rt-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rt-action-btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+}
+
+.rt-action-btn:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.rt-action-btn--danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.rt-assign-section {
+  margin-top: 0.5rem;
+}
+
+.rt-assign-hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 .rt-list {
@@ -148,12 +278,87 @@
 .rt-select {
   flex: 1;
   min-width: 200px;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
 }
 
 .rt-saving {
   font-size: 0.85rem;
-  color: #666;
+  color: #6b7280;
+}
+
+.rt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.rt-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.rt-modal h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.rt-modal-desc {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.rt-form-group {
+  margin-bottom: 1rem;
+}
+
+.rt-form-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.rt-form-group input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.rt-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .report-templates-admin {
+    padding: 12px;
+  }
+
+  .rt-banner-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rt-system-menu {
+    right: auto;
+    left: 0;
+    width: 100%;
+  }
 }

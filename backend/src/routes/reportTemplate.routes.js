@@ -17,8 +17,17 @@ router.get('/report-templates/resolve', reportTemplateController.resolveTemplate
 // GET /api/v1/report-templates?scope=audit
 router.get('/report-templates', reportTemplateController.listTemplates);
 
+// GET /api/v1/report-template-assignments/standards
+router.get('/report-template-assignments/standards', reportTemplateController.listStandardAssignments);
+
 // POST /api/v1/report-templates (upload .docx) - admin/auditor
 router.post('/report-templates', authorize('admin', 'auditor'), uploadTemplate.single('file'), reportTemplateController.uploadTemplate);
+
+// POST /api/v1/report-templates/:id/duplicate
+router.post('/report-templates/:id/duplicate', authorize('admin', 'auditor'), reportTemplateController.duplicateTemplate);
+
+// DELETE /api/v1/report-templates/:id
+router.delete('/report-templates/:id', authorize('admin', 'auditor'), reportTemplateController.deleteTemplate);
 
 // PUT /api/v1/report-template-assignments/standard/:standardId
 router.put('/report-template-assignments/standard/:standardId', reportTemplateController.assignTemplateToStandard);
