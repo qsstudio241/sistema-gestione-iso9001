@@ -157,6 +157,30 @@
   word-break: break-word;
 }
 
+.doc-detail__catalog-link {
+  color: #1a73e8;
+  text-align: right;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.doc-detail__catalog-link:hover {
+  text-decoration: underline;
+}
+
+.doc-detail__validity {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.doc-detail__validity--vigente { background: #d4edda; color: #155724; }
+.doc-detail__validity--superata { background: #f8d7da; color: #721c24; }
+.doc-detail__validity--annullata { background: #e9ecef; color: #495057; }
+.doc-detail__validity--in_revisione { background: #fff3cd; color: #856404; }
+
 /* ---- file list ---- */
 
 .doc-detail__file-list {

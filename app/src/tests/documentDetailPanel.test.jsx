@@ -179,3 +179,35 @@ describe('DocumentDetailPanel - Azioni', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('DocumentDetailPanel - Norma tecnica', () => {
+  const normDoc = {
+    id: 1147,
+    title: 'EN ISO 5817:2014',
+    doc_type: 'norma',
+    status: 'bozza',
+    issue_date: '2014-01-01T00:00:00.000Z',
+    type_specific_data: {
+      standard_code: 'EN ISO 5817:2014',
+      issuing_body: 'EN',
+      edition_year: 2014,
+      validity_status: 'superata',
+      last_validity_check: '2026-05-29T19:56:34.702Z',
+      validity_check_url: 'https://www.iso.org/search.html?q=EN%20ISO%205817%3A2014',
+    },
+  };
+
+  it('mostra sezione norma con vigore e link catalogo', () => {
+    render(
+      <DocumentDetailPanel document={normDoc} onEdit={vi.fn()} onArchive={vi.fn()} onClose={vi.fn()} />
+    );
+    expect(screen.getAllByText('Norma tecnica').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Codice norma')).toBeInTheDocument();
+    expect(screen.getByText('Ente emittente')).toBeInTheDocument();
+    expect(screen.getByText('Superata')).toBeInTheDocument();
+    expect(screen.getByText('Vedi su catalogo ISO')).toHaveAttribute(
+      'href',
+      'https://www.iso.org/search.html?q=EN%20ISO%205817%3A2014'
+    );
+  });
+});

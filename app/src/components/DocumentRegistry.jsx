@@ -1091,9 +1091,15 @@ function DocumentRegistry() {
     setSelectedDoc(doc);
     setShowDetail(true);
     try {
-      const res = await apiService.getDocumentHistory(doc.id);
-      setDocHistory(res.data || []);
-    } catch { setDocHistory([]); }
+      const [detailRes, historyRes] = await Promise.all([
+        apiService.getDocument(doc.id),
+        apiService.getDocumentHistory(doc.id),
+      ]);
+      if (detailRes?.data) setSelectedDoc(detailRes.data);
+      setDocHistory(historyRes.data || []);
+    } catch {
+      setDocHistory([]);
+    }
   }, []);
 
   const handleCloseDetail = useCallback(() => {
