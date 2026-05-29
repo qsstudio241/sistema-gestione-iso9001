@@ -103,6 +103,7 @@ async function findExistingNormByCode(orgId, standardCode) {
      FROM document_registry
      WHERE organization_id = @orgId
        AND doc_type = 'norma'
+       AND ISNULL(status, 'rilasciato') <> 'obsoleto'
        AND LOWER(LTRIM(RTRIM(JSON_VALUE(type_specific_data, '$.standard_code')))) = LOWER(LTRIM(@code))`,
     { orgId, code: standardCode }
   );
