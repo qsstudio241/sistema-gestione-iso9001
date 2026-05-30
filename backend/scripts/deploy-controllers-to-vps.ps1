@@ -117,6 +117,8 @@ Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controller
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
 Copy-FileToVps "src/controllers/organization.controller.js" "$RemoteBase/src/controllers/organization.controller.js"
 Copy-FileToVps "src/controllers/auth.controller.js" "$RemoteBase/src/controllers/auth.controller.js"
+Copy-FileToVps "src/controllers/aiChat.controller.js" "$RemoteBase/src/controllers/aiChat.controller.js"
+Copy-FileToVps "src/utils/aiCitations.js" "$RemoteBase/src/utils/aiCitations.js"
 
 # Routes (necessarie per esporre gli endpoint custom-checklist-responses)
 Copy-FileToVps "src/routes/audit.routes.js" "$RemoteBase/src/routes/audit.routes.js"
