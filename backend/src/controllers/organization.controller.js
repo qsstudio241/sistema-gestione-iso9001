@@ -28,7 +28,8 @@ async function getMyOrganization(req, res) {
         const result = await query(
             `
             SELECT organization_id, organization_code, organization_name,
-                   vat_number, logo_url, is_active, audit_report_prefix
+                   vat_number, logo_url, is_active, audit_report_prefix,
+                   ai_context_notes
             FROM dbo.organizations
             WHERE organization_id = @organization_id
             `,
@@ -48,6 +49,7 @@ async function getMyOrganization(req, res) {
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
                 audit_report_prefix: row.audit_report_prefix || null,
+                ai_context_notes: row.ai_context_notes || '',
             },
         });
     } catch (error) {
@@ -58,7 +60,7 @@ async function getMyOrganization(req, res) {
 
 /**
  * PATCH /api/v1/organizations/me
- * Body: { vat_number?: string, audit_report_prefix?: string|null }
+ * Body: { vat_number?: string, audit_report_prefix?: string|null, ai_context_notes?: string|null }
  */
 async function patchMyOrganization(req, res) {
     try {
@@ -66,8 +68,12 @@ async function patchMyOrganization(req, res) {
             return res.status(403).json({ success: false, error: 'Accesso non autorizzato', code: 'FORBIDDEN' });
         }
         const orgId = req.user.organization_id;
-        const { vat_number, audit_report_prefix } = req.body || {};
-        if (vat_number === undefined && audit_report_prefix === undefined) {
+        const { vat_number, audit_report_prefix, ai_context_notes } = req.body || {};
+        if (
+            vat_number === undefined
+            && audit_report_prefix === undefined
+            && ai_context_notes === undefined
+        ) {
             return res.status(400).json({ success: false, error: 'Nessun campo da aggiornare', code: 'NO_FIELDS' });
         }
 
@@ -82,6 +88,12 @@ async function patchMyOrganization(req, res) {
             setClauses.push('audit_report_prefix = @audit_report_prefix');
             params.audit_report_prefix = audit_report_prefix == null ? null : String(audit_report_prefix).trim().slice(0, 16) || null;
         }
+        if (ai_context_notes !== undefined && isOrgAdmin(req.user.role)) {
+            setClauses.push('ai_context_notes = @ai_context_notes');
+            params.ai_context_notes = ai_context_notes == null
+                ? null
+                : String(ai_context_notes).trim().slice(0, 2000) || null;
+        }
 
         if (setClauses.length === 0) {
             return res.status(400).json({ success: false, error: 'Nessun campo aggiornabile', code: 'NO_FIELDS' });
@@ -94,7 +106,8 @@ async function patchMyOrganization(req, res) {
         const refreshed = await query(
             `
             SELECT organization_id, organization_code, organization_name,
-                   vat_number, logo_url, is_active, audit_report_prefix
+                   vat_number, logo_url, is_active, audit_report_prefix,
+                   ai_context_notes
             FROM dbo.organizations WHERE organization_id = @organization_id
             `,
             { organization_id: orgId }
@@ -110,6 +123,7 @@ async function patchMyOrganization(req, res) {
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
                 audit_report_prefix: row.audit_report_prefix || null,
+                ai_context_notes: row.ai_context_notes || '',
             },
         });
     } catch (error) {

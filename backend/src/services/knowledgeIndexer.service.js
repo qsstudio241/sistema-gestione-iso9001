@@ -14,7 +14,12 @@ const EMBED_BATCH = 20;
 const INDEXABLE_ENTITIES = [
   {
     entity_type: 'audit_conclusion',
-    sql: `SELECT a.audit_id AS id, a.company_id, a.audit_number, a.audit_date, a.status,
+    sql: `SELECT a.audit_id AS id, a.company_id,
+            COALESCE(a.standard_id, (
+              SELECT TOP 1 ast.standard_id FROM audit_standards ast
+              WHERE ast.audit_id = a.audit_id ORDER BY ast.standard_id
+            )) AS standard_id,
+            a.audit_number, a.audit_date, a.status,
             JSON_VALUE(a.audit_extra_data, '$.auditOutcome.conclusions') AS conclusions,
             c.name AS company_name
           FROM audits a
@@ -30,7 +35,12 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'non_conformity',
-    sql: `SELECT nc.nc_id AS id, a.company_id, nc.nc_number, nc.section_code, nc.description,
+    sql: `SELECT nc.nc_id AS id, a.company_id,
+            COALESCE(a.standard_id, (
+              SELECT TOP 1 ast.standard_id FROM audit_standards ast
+              WHERE ast.audit_id = a.audit_id ORDER BY ast.standard_id
+            )) AS standard_id,
+            nc.nc_number, nc.section_code, nc.description,
             nc.severity, nc.status, nc.root_cause, nc.corrective_action
           FROM non_conformities nc
           JOIN audits a ON nc.audit_id = a.audit_id
@@ -46,7 +56,12 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'nc_action',
-    sql: `SELECT na.action_id AS id, a.company_id, na.action_type, na.description, na.responsible, na.status,
+    sql: `SELECT na.action_id AS id, a.company_id,
+            COALESCE(a.standard_id, (
+              SELECT TOP 1 ast.standard_id FROM audit_standards ast
+              WHERE ast.audit_id = a.audit_id ORDER BY ast.standard_id
+            )) AS standard_id,
+            na.action_type, na.description, na.responsible, na.status,
             nc.nc_number
           FROM nc_actions na
           JOIN non_conformities nc ON na.nc_id = nc.nc_id
@@ -117,7 +132,7 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'document',
-    sql: `SELECT dr.id, dr.company_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
+    sql: `SELECT dr.id, dr.company_id, dr.standard_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
             dr.status, dr.clause_ref, dr.responsible, dr.type_specific_data,
             c.name AS company_name
           FROM document_registry dr
@@ -208,14 +223,15 @@ async function indexAllEntities(organizationId) {
         if (!text || text.trim().length < 10) continue;
 
         const compId = row.company_id || null;
+        const stdId = row.standard_id || null;
         const words = text.split(/\s+/);
         if (words.length > 500) {
           const parts = chunkText(text, 400, 50);
           for (const part of parts) {
-            allChunks.push({ entityId: row.id, companyId: compId, text: part.text });
+            allChunks.push({ entityId: row.id, companyId: compId, standardId: stdId, text: part.text });
           }
         } else {
-          allChunks.push({ entityId: row.id, companyId: compId, text });
+          allChunks.push({ entityId: row.id, companyId: compId, standardId: stdId, text });
         }
       }
 
@@ -237,14 +253,15 @@ async function indexAllEntities(organizationId) {
           const vec = vectors[j] || null;
           await query(
             `INSERT INTO knowledge_chunks
-              (organization_id, entity_type, entity_id, company_id, chunk_text, embedding, last_indexed_at)
+              (organization_id, entity_type, entity_id, company_id, standard_id, chunk_text, embedding, last_indexed_at)
              VALUES
-              (@orgId, @et, @eid, @cid, @text, @emb, GETDATE())`,
+              (@orgId, @et, @eid, @cid, @sid, @text, @emb, GETDATE())`,
             {
               orgId: organizationId,
               et: entity.entity_type,
               eid: c.entityId || null,
               cid: c.companyId || null,
+              sid: c.standardId || null,
               text: c.text,
               emb: vec ? JSON.stringify(vec) : null,
             }
@@ -295,10 +312,18 @@ function cosineSimilarity(a, b) {
  * @param {number} [options.topK=15]
  * @param {number} [options.minScore=0.25]
  * @param {number|null} [options.companyId=null] - filtra chunk per azienda
+ * @param {number|null} [options.standardId=null] - filtra chunk per norma
+ * @param {string[]} [options.standardCodes=[]] - codici norma per filtrare norm_chunks
  * @returns {Promise<Array<{entity_type, entity_id, chunk_text, score}>>}
  */
 async function searchKnowledge(queryText, organizationId, options = {}) {
-  const { topK = 15, minScore = 0.25, companyId = null } = options;
+  const {
+    topK = 15,
+    minScore = 0.25,
+    companyId = null,
+    standardId = null,
+    standardCodes = [],
+  } = options;
 
   const [queryVec] = await embed([queryText]);
   if (!queryVec) throw new Error('Failed to embed query text');
@@ -315,18 +340,33 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
     kcParams.compId = companyId;
   }
 
+  if (standardId) {
+    kcSql += ' AND (standard_id = @stdId OR standard_id IS NULL)';
+    kcParams.stdId = standardId;
+  }
+
   const kcResult = await query(kcSql, kcParams);
 
   // Load norm_chunks
   let ncRows = [];
   try {
-    const ncResult = await query(
-      `SELECT id, 'norm_content' AS entity_type, document_source_id AS entity_id,
-              chunk_text, embedding
-       FROM norm_chunks
-       WHERE organization_id = @orgId AND embedding IS NOT NULL`,
-      { orgId: organizationId }
-    );
+    let ncSql = `SELECT id, 'norm_content' AS entity_type, document_source_id AS entity_id,
+                        standard_code, chunk_text, embedding
+                 FROM norm_chunks
+                 WHERE organization_id = @orgId AND embedding IS NOT NULL`;
+    const ncParams = { orgId: organizationId };
+
+    if (standardCodes.length > 0) {
+      const codeParams = {};
+      const placeholders = standardCodes.map((code, i) => {
+        codeParams[`sc${i}`] = code;
+        return `@sc${i}`;
+      });
+      ncSql += ` AND (standard_code IN (${placeholders.join(', ')}) OR standard_code IS NULL)`;
+      Object.assign(ncParams, codeParams);
+    }
+
+    const ncResult = await query(ncSql, ncParams);
     ncRows = ncResult.recordset || [];
   } catch {
     // norm_chunks potrebbe non esistere in ambienti vecchi

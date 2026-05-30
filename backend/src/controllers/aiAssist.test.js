@@ -8,6 +8,10 @@ jest.mock('../services/aiContextBuilder.service', () => ({
   buildAuditConclusionsContext: jest.fn(),
 }));
 
+jest.mock('../services/aiOrganizationContext.service', () => ({
+  enrichSystemPromptWithOrganization: jest.fn(async (prompt) => prompt),
+}));
+
 jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -66,7 +70,11 @@ describe('aiAssist.controller — suggest', () => {
 
     await suggest(req, res);
 
-    expect(contextBuilder.buildAuditConclusionsContext).toHaveBeenCalledWith(req.body.context);
+    expect(contextBuilder.buildAuditConclusionsContext).toHaveBeenCalledWith({
+      ...req.body.context,
+      organizationId: 99,
+      userId: undefined,
+    });
     expect(chat).toHaveBeenCalledWith(
       [
         { role: 'system', content: 'sys' },
