@@ -12,6 +12,7 @@ import {
 describe('importNormCommit', () => {
   it('isNormDocType riconosce norma', () => {
     expect(isNormDocType('norma')).toBe(true);
+    expect(isNormDocType('norma_tecnica')).toBe(true);
     expect(isNormDocType('wps')).toBe(false);
   });
 
@@ -44,6 +45,18 @@ describe('importNormCommit', () => {
     expect(isNorm).toBe(true);
     expect(form.doc_type).toBe('norma');
     expect(form.typeData.standard_code).toBe('ISO 9001:2015');
+  });
+
+  it('buildCommitFormFromFile normalizza norma_tecnica da AI', () => {
+    const { isNorm, form } = buildCommitFormFromFile(
+      { document_type_guess: 'norma_tecnica', title: 'Qualification testing' },
+      { original_name: 'ISO_9001_2015.pdf' },
+      ''
+    );
+    expect(isNorm).toBe(true);
+    expect(form.doc_type).toBe('norma');
+    expect(form.typeData.standard_code).toBe('ISO 9001 2015');
+    expect(form.typeData.edition_year).toBe(2015);
   });
 
   it('applyNormLookupToTypeData mappa vigore e catalogo', () => {
