@@ -28,9 +28,13 @@ function AutoTextarea({
   className = "outcome-textarea",
   /** UUID audit — abilita protezione draft da hydrate/reconcile */
   auditUuid = null,
-  /** es. q:123 o custom:item-uuid */
+  /** Scope generico (audit UUID, nc:123, nc-create) — ha priorità su auditUuid */
+  draftScopeId = null,
+  /** es. q:123 o custom:item-uuid o description */
   draftFieldId = null,
+  onFocus,
 }) {
+  const draftScope = draftScopeId || auditUuid || null;
   const ref = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
@@ -68,7 +72,7 @@ function AutoTextarea({
   };
 
   const touchDraft = () => {
-    if (auditUuid && draftFieldId) markDraft(auditUuid, draftFieldId);
+    if (draftScope && draftFieldId) markDraft(draftScope, draftFieldId);
   };
 
   const startRecognition = () => {
@@ -173,12 +177,13 @@ function AutoTextarea({
     onChange?.(e);
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e) => {
     touchDraft();
+    onFocus?.(e);
   };
 
   const handleBlur = (e) => {
-    if (auditUuid && draftFieldId) scheduleClearDraft(auditUuid, draftFieldId, 2000);
+    if (draftScope && draftFieldId) scheduleClearDraft(draftScope, draftFieldId, 2000);
     onBlur?.(e);
   };
 

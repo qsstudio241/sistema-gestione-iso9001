@@ -10,6 +10,10 @@ import { Link, useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
+import RichTextField, {
+  resolveNcFieldInitial,
+  clearNcFieldDraftsForScope,
+} from "../components/RichTextField";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
@@ -22,6 +26,7 @@ import {
   getActionDueStatus,
 } from "../utils/ncWorkflow";
 import "../components/ChecklistModule.css";
+import "../components/DocumentDetailPanel.css";
 import "./NCPage.css";
 
 const NC_STATUS_CFG = {
@@ -79,10 +84,24 @@ function SeverityTag({ severity }) {
 }
 
 function ActionsList({ ncId, ncStatus }) {
+  const { user } = useAuth();
+  const organizationId = user?.organization_id ?? null;
+  const actionDraftScope = `nc:${ncId}:actions`;
+
   const [actions, setActions]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState({ action_type: "corrective", description: "", responsible: "", due_date: "" });
+  const [form, setForm]         = useState(() => ({
+    action_type: "corrective",
+    description: resolveNcFieldInitial(
+      "",
+      organizationId,
+      actionDraftScope,
+      "new_action_description",
+    ),
+    responsible: "",
+    due_date: "",
+  }));
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState(null);
   const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
@@ -115,7 +134,15 @@ function ActionsList({ ncId, ncStatus }) {
         responsible: form.responsible.trim() || null,
         due_date: form.due_date || null,
       });
-      setForm({ action_type: "corrective", description: "", responsible: "", due_date: "" });
+      if (organizationId) {
+        clearNcFieldDraftsForScope(organizationId, actionDraftScope, ["new_action_description"]);
+      }
+      setForm({
+        action_type: "corrective",
+        description: "",
+        responsible: "",
+        due_date: "",
+      });
       setShowForm(false);
       await load();
     } catch {
@@ -127,7 +154,16 @@ function ActionsList({ ncId, ncStatus }) {
 
   async function handleStatus(action, newStatus) {
     if (newStatus === "verified") {
-      setVerifyDraft({ actionId: action.action_id, note: action.verification_note || "" });
+      const verifyScope = `${actionDraftScope}:verify:${action.action_id}`;
+      setVerifyDraft({
+        actionId: action.action_id,
+        note: resolveNcFieldInitial(
+          action.verification_note,
+          organizationId,
+          verifyScope,
+          "verification_note",
+        ),
+      });
       setVerifyError(null);
       return;
     }
@@ -150,6 +186,13 @@ function ActionsList({ ncId, ncStatus }) {
         status: "verified",
         verification_note: note,
       });
+      if (organizationId) {
+        clearNcFieldDraftsForScope(
+          organizationId,
+          `${actionDraftScope}:verify:${action.action_id}`,
+          ["verification_note"],
+        );
+      }
       setVerifyDraft({ actionId: null, note: "" });
       setVerifyError(null);
       await load();
@@ -159,6 +202,13 @@ function ActionsList({ ncId, ncStatus }) {
   }
 
   function handleCancelVerify() {
+    if (verifyDraft.actionId && organizationId) {
+      clearNcFieldDraftsForScope(
+        organizationId,
+        `${actionDraftScope}:verify:${verifyDraft.actionId}`,
+        ["verification_note"],
+      );
+    }
     setVerifyDraft({ actionId: null, note: "" });
     setVerifyError(null);
   }
@@ -242,13 +292,15 @@ function ActionsList({ ncId, ncStatus }) {
           </div>
           <div className="nc-form-row">
             <label>Descrizione *</label>
-            <textarea
-              className="notes-textarea"
-              required
+            <RichTextField
               rows={2}
               value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="Descrivi l'azione da intraprendere..."
+              draftScopeId={actionDraftScope}
+              draftFieldId="new_action_description"
+              persistLocalDraft
+              organizationId={organizationId}
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">
@@ -326,13 +378,16 @@ function ActionsList({ ncId, ncStatus }) {
                 {verifyDraft.actionId === a.action_id && (
                   <div className="nc-action-verify-form">
                     <label htmlFor={`act-verif-${a.action_id}`}>Nota verifica azione *</label>
-                    <textarea
+                    <RichTextField
                       id={`act-verif-${a.action_id}`}
-                      className="notes-textarea"
                       rows={2}
                       value={verifyDraft.note}
-                      onChange={e => setVerifyDraft(d => ({ ...d, note: e.target.value }))}
+                      onChange={(e) => setVerifyDraft((d) => ({ ...d, note: e.target.value }))}
                       placeholder="Descrivi l'esito della verifica su questa azione..."
+                      draftScopeId={`${actionDraftScope}:verify:${a.action_id}`}
+                      draftFieldId="verification_note"
+                      persistLocalDraft
+                      organizationId={organizationId}
                     />
                     {verifyError && <p className="nc-error">{verifyError}</p>}
                     <div className="nc-form-actions">
@@ -407,7 +462,10 @@ export default function NCPage() {
     const selectId = params.get("select");
     if (selectId) {
       const id = parseInt(selectId, 10);
-      if (!Number.isNaN(id)) setSelectedNcId(id);
+      if (!Number.isNaN(id)) {
+        setSelectedNcId(id);
+        setViewMode("nc");
+      }
     }
   }, []);
 
@@ -516,6 +574,11 @@ export default function NCPage() {
     const id = rowKey ?? row?.nc_id ?? null;
     setSelectedNcId(id);
     replace(id ? `/nc?select=${id}` : "/nc");
+  }
+
+  function handleCloseDetail() {
+    setSelectedNcId(null);
+    replace("/nc");
   }
 
   async function handleStatusChange(nc, newStatus) {
@@ -813,54 +876,78 @@ export default function NCPage() {
       </section>
 
       {selectedNc && viewMode === "nc" && (
-        <section className="nc-detail-section" aria-label={`Dettaglio ${selectedNc.nc_number}`}>
-          <h3 className="nc-detail-heading">
-            {selectedNc.nc_number} — <NcStatusTag status={selectedNc.status} />
-            {selectedNc.approved_at && (
-              <span className="nc-approved-badge" title={selectedNc.approved_by_name || ""}>
-                {" "}· Approvata RQ {formatDate(selectedNc.approved_at)}
-              </span>
-            )}
-          </h3>
-          <NcDetailPanel
-            nc={selectedNc}
-            onSaved={loadNc}
-            readOnly={["closed", "verified"].includes(selectedNc.status) && !!selectedNc.approved_at}
-          />
-
-          {selectedNc.status === "verified" && !selectedNc.approved_at && isRq && (
-            <div className="nc-workflow-btns">
-              <button
-                type="button"
-                className="status-btn compliant"
-                disabled={approveLoading}
-                onClick={() => handleApproveClosure(selectedNc)}
-              >
-                {approveLoading ? "Approvazione..." : "Approva chiusura (RQ)"}
-              </button>
+        <div className="doc-detail__overlay" onClick={handleCloseDetail} role="presentation">
+          <aside
+            className="doc-detail nc-detail-drawer"
+            onClick={(e) => e.stopPropagation()}
+            role="complementary"
+            aria-label={`Dettaglio ${selectedNc.nc_number}`}
+          >
+            <div className="doc-detail__header">
+              <div className="doc-detail__header-top">
+                <h2 className="doc-detail__title nc-detail-drawer-title">
+                  {selectedNc.nc_number}
+                  {" "}
+                  <NcStatusTag status={selectedNc.status} />
+                  {selectedNc.approved_at && (
+                    <span className="nc-approved-badge" title={selectedNc.approved_by_name || ""}>
+                      {" "}· Approvata RQ {formatDate(selectedNc.approved_at)}
+                    </span>
+                  )}
+                </h2>
+                <button
+                  type="button"
+                  className="doc-detail__close"
+                  onClick={handleCloseDetail}
+                  aria-label="Chiudi dettaglio NC"
+                >
+                  {"\u2715"}
+                </button>
+              </div>
             </div>
-          )}
 
-          {getWorkflowButtons(selectedNc).length > 0 && (
-            <div className="nc-workflow-btns">
-              {getWorkflowButtons(selectedNc).map(ns => {
-                const cfg = NC_WORKFLOW_CFG[ns] || { label: ns, statusBtn: "partial" };
-                return (
+            <div className="doc-detail__body nc-detail-drawer-body">
+              <NcDetailPanel
+                nc={selectedNc}
+                onSaved={loadNc}
+                readOnly={["closed", "verified"].includes(selectedNc.status) && !!selectedNc.approved_at}
+              />
+
+              {selectedNc.status === "verified" && !selectedNc.approved_at && isRq && (
+                <div className="nc-workflow-btns">
                   <button
-                    key={ns}
                     type="button"
-                    className={`status-btn ${cfg.statusBtn}`}
-                    onClick={() => handleStatusChange(selectedNc, ns)}
+                    className="status-btn compliant"
+                    disabled={approveLoading}
+                    onClick={() => handleApproveClosure(selectedNc)}
                   >
-                    {cfg.label}
+                    {approveLoading ? "Approvazione..." : "Approva chiusura (RQ)"}
                   </button>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              )}
 
-          <ActionsList ncId={selectedNc.nc_id} ncStatus={selectedNc.status} />
-        </section>
+              {getWorkflowButtons(selectedNc).length > 0 && (
+                <div className="nc-workflow-btns">
+                  {getWorkflowButtons(selectedNc).map(ns => {
+                    const cfg = NC_WORKFLOW_CFG[ns] || { label: ns, statusBtn: "partial" };
+                    return (
+                      <button
+                        key={ns}
+                        type="button"
+                        className={`status-btn ${cfg.statusBtn}`}
+                        onClick={() => handleStatusChange(selectedNc, ns)}
+                      >
+                        {cfg.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <ActionsList ncId={selectedNc.nc_id} ncStatus={selectedNc.status} />
+            </div>
+          </aside>
+        </div>
       )}
 
       {totalPages > 1 && (
