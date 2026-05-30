@@ -1,6 +1,7 @@
 const logger = require('../utils/logger');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const contextBuilder = require('../services/aiContextBuilder.service');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 
 function stripCodeFences(raw) {
   let s = String(raw || '').trim();
@@ -52,9 +53,14 @@ async function suggest(req, res) {
         });
     }
 
+    const systemPrompt = await enrichSystemPromptWithOrganization(
+      built.systemPrompt,
+      req.user.organization_id
+    );
+
     const result = await chat(
       [
-        { role: 'system', content: built.systemPrompt },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: built.userPrompt },
       ],
       { temperature: 0.3, responseFormat: 'json' }

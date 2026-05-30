@@ -1,39 +1,53 @@
-﻿# DEPUTYTASK — Modulo NC
+# DEPUTYTASK - Contesto AI multi-slice (L1-L4)
 
-**Stato:** **CHIUSO / Modulo NC terminato — attesa feedback utenti** — 30/05/2026
-
----
-
-## Sintesi sessione
-
-| Fase | Stato | Commit di riferimento |
-|------|-------|----------------------|
-| Fase 1 (griglia, workflow, creazione, scadenze) | ✅ TEST OK | `d80dafa`, `b23f79d` |
-| Hardening H1–H6 | ✅ TEST OK | `ac9b1a8` |
-| Drawer laterale + flusso ISO 10.2 | ✅ | `6810518`, `505e551`, `527a04d` |
-| RichTextField / dettatura / draft | ✅ | `327be94` |
-| Encoding UTF-8 + manuale | ✅ | `6129a9d`, `ae4887d` |
-| Libreria UI catalogo Fase A | ✅ doc | `docs/reference/LIBRERIA_UI_SGQ.md` |
-
-**URL:** https://systemgest.netlify.app/nc
+**Stato programma:** slice **3 deploy produzione** chiusa (30/05/2026) — slice **2** propagazione audit ancora aperta.
+**Branch:** `feat/ai-context-multi-slice` (commit feature + fix script VPS migrazioni).
 
 ---
 
-## Ripresa (nuova chat)
+## Slice 3 - Deploy produzione (30/05/2026) — TEST OK
 
-Non eseguire questo DEPUTYTASK. Usare:
+| # | Voce | Esito |
+|---|------|-------|
+| 1 | Migrazione 066 VPS (`ai_context_notes`) | **OK** — verify colonna su `organizations` |
+| 2 | Migrazione 067 VPS (`knowledge_chunks.standard_id` + indice) | **OK** |
+| 3 | Deploy backend VPS | **OK** — `deploy-controllers-to-vps.ps1` + file AI (`aiChat`, `aiAssist`, servizi contesto, `knowledgeIndexer`, `normChunker`) |
+| 4 | Restart `sgq-backend` | **OK** — MainPID `328524` → `331861` |
+| 5 | Health | **OK** — `GET https://www.fr-busato.it:8443/api/v1/health` |
+| 6 | Smoke API | **OK** — login, `GET/PATCH /organizations/me` (`ai_context_notes`), `POST /ai/reindex`, `POST /ai/chat` con `standardId` |
+| 7 | Reindex legacy | **OK** — `204` chunk totali, `18` con `standard_id` non null (post reindex manuale) |
+| 8 | CORS (OPTIONS `/audits/sync`) | **OK** — 204 + header CORS presenti |
+
+### Credenziali usate
+
+- VPS/SSH: `backend/config/.ssh-deploy.local.ps1` (gitignored) — env cloud `SGQ_SSH_KEY_B64` / `SGQ_SUDO_PASSWORD` **assenti** in questa shell; deploy via PuTTY + password locale.
+- DB migrazioni: esecuzione **su VPS** con `node /tmp/run-migration-066-vps.js` e `067-vps.js`.
+
+### Blocker residui
+
+1. **Slice 2** (propagazione audit → clausola, enrich su tutti gli endpoint AI) — non in scope deploy.
+2. **`gh` CLI** non in PATH — PR create/merge via **GitHub REST API** + PAT utente Windows.
+3. Frontend Netlify: merge su `main` → build automatica (~2 min) per UI `StudioSettingsPage` / chip norma.
+
+---
+
+## Slice 2 - Avvio (in corso)
+
+| # | Voce | Esito |
+|---|------|-------|
+| 1 | `app/src/utils/aiAssistantContext.js` | Presente |
+| 2 | `app/src/tests/aiAssistantContext.test.js` | OK (4 test) |
+| 3 | `enrichSystemPromptWithOrganization` su tutti gli endpoint AI | **Da fare** |
+| 4 | Propagazione audit aperto → clausola in payload chat | **Da fare** |
+
+### Comando deputy - slice 2
 
 ```
-Leggi docs/agent-tasks/PROMPT_RIPRESA_NC.md e docs/GUIDA_CONSOLIDATA.md (sezione Modulo NC).
-Segnala bug o richiesta P2; segui sgq-operating-memory.
+Leggi docs/agent-tasks/DEPUTYTASK.md (sezione slice 2).
+Completa propagazione contesto audit (norma+clausola) e enrich org su endpoint AI mancanti.
+Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
 ---
 
-## Comando deputy standard (storico)
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
-
-*Aggiornato 30/05/2026 — chiusura modulo NC*
+*Aggiornato 30/05/2026 — deploy produzione contesto AI (mig. 066/067 VPS + backend + smoke).*
