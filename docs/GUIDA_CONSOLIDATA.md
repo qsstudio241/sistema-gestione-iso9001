@@ -1763,7 +1763,22 @@ Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test
 
 **URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
 
-**Backlog P2:** SMTP alert NC (`NC_ALERT_ENABLED`), export CSV/PDF registro, sezioni dinamiche per standard in modal manuale, agente AI CAPA.
+**Backlog P2:** export PDF registro, agente AI CAPA (Fase 2 opzionale).
+
+### NC Hardening — slice H1–H6 (30/05/2026, TEST OK)
+
+| Slice | Implementazione |
+|-------|-----------------|
+| **H1 Push custom** | `pushAuditToNcRegister` legge anche `audit_custom_checklist_responses` (NC/OSS); idempotenza `(audit_id, source_custom_item_id)` migrazione **072**; summary `iso_findings` + `custom_findings` |
+| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
+| **H3 Approvazione RQ** | Colonne `approved_by`, `approved_at`; `POST /non-conformities/:id/approve-closure` (admin/superadmin); gate `closed` → `NC_APPROVAL_REQUIRED` |
+| **H4 Sezioni modal** | `NcCreateModal` carica sezioni da `GET /checklist/sections?standard_id=` dell'audit selezionato |
+| **H5 Export CSV** | Pulsante «Export CSV» in `/nc` — export client-side con filtri griglia correnti |
+| **H6 Azioni cross-NC** | Tab «Azioni in scadenza» + `GET /non-conformities/actions/due?due_within_days=30&overdue=true` |
+
+Test L1 aggiuntivi: `ncExport.test.js`, `ncWorkflowApproval.test.js`. Migrazione **072** eseguita su VPS (step-by-step `run-migration-072-vps.js`).
+
+**Escluso (backlog):** agente AI CAPA, export Word/PDF registro.
 
 **ISO 3834 (specifiche processo saldatura):**
 - Qualifiche saldatori (ISO 9606-1..5) — scadenza 2/3 anni

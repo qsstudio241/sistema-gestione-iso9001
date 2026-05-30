@@ -123,6 +123,7 @@ Copy-FileToVps "src/routes/audit.routes.js" "$RemoteBase/src/routes/audit.routes
 Copy-FileToVps "src/routes/customChecklist.routes.js" "$RemoteBase/src/routes/customChecklist.routes.js"
 Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes.js"
 Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
+Copy-FileToVps "src/routes/nc.routes.js" "$RemoteBase/src/routes/nc.routes.js"
 
 # Sprint 9/10: Import batch PDF → staging → document registry
 Copy-FileToVps "src/controllers/importJobs.controller.js" "$RemoteBase/src/controllers/importJobs.controller.js"

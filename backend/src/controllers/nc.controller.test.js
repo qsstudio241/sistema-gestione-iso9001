@@ -157,3 +157,57 @@ describe('createNonConformity — source_type manual', () => {
         expect(res.status).toHaveBeenCalledWith(201);
     });
 });
+
+describe('updateNonConformity — gate approvazione RQ', () => {
+    it('closed senza approved_at ritorna 400 NC_APPROVAL_REQUIRED', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                nc_id: 5,
+                current_status: 'verified',
+                verification_notes: 'OK',
+                approved_at: null,
+                audit_id: 99,
+            }],
+        });
+
+        const req = mockReq({
+            params: { id: '5' },
+            body: { status: 'closed' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'NC_APPROVAL_REQUIRED' }),
+        );
+    });
+});
+
+describe('approveNcClosure', () => {
+    it('auditor non può approvare', async () => {
+        const req = mockReq({ params: { id: '5' }, user: { role: 'auditor', organization_id: ORG_ID, user_id: USER_ID } });
+        const res = mockRes();
+        await ctrl.approveNcClosure(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it('admin approva NC verified', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{ nc_id: 5, status: 'verified', approved_at: null }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            params: { id: '5' },
+            user: { role: 'admin', organization_id: ORG_ID, user_id: USER_ID, auditor_org_id: null },
+        });
+        const res = mockRes();
+        await ctrl.approveNcClosure(req, res);
+
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true, nc_id: 5 }),
+        );
+    });
+});
