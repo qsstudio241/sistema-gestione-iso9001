@@ -70,4 +70,5 @@ database/backups/
 *.gslides
 *.gform
 .cursor/mcp.json
+.cursor/mcp.env
 .cursorrrules

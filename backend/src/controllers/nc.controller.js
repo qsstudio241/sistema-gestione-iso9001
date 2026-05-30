@@ -8,6 +8,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { studioScopeClause } = require('../services/auditListRbac.service');
 
 /**
  * GET /api/v1/non-conformities
@@ -63,6 +64,12 @@ async function listNonConformities(req, res) {
         if (overdue === 'true') {
             whereConditions.push('nc.due_date < CAST(GETDATE() AS DATE)');
             whereConditions.push('nc.status NOT IN (\'closed\', \'verified\')');
+        }
+
+        const scope = studioScopeClause(req.user, 'a');
+        if (scope.clause) {
+            whereConditions.push(scope.clause);
+            Object.assign(params, scope.params);
         }
 
         const whereClause = whereConditions.join(' AND ');
@@ -135,6 +142,9 @@ async function getNonConformityById(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const scope = studioScopeClause(req.user, 'a');
+        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
+        const queryParams = { id: parseInt(id), organization_id, ...scope.params };
 
         const result = await query(`
       SELECT 
@@ -153,8 +163,8 @@ async function getNonConformityById(req, res) {
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       INNER JOIN checklist_sections cs ON nc.section_code = cs.section_code
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-    `, { id: parseInt(id), organization_id });
+      WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+    `, queryParams);
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -248,11 +258,18 @@ async function createNonConformity(req, res) {
             });
         }
 
-        // Verifica che audit appartenga all'organizzazione
+        // Verifica che audit appartenga all'organizzazione e al perimetro studio RBAC
+        const scope = studioScopeClause(req.user, 'a');
+        let auditWhere = 'audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0';
+        const auditParams = { audit_id: parseInt(audit_id), organization_id };
+        if (scope.clause) {
+            auditWhere += ` AND ${scope.clause}`;
+            Object.assign(auditParams, scope.params);
+        }
         const auditCheck = await query(`
-      SELECT audit_id FROM audits
-      WHERE audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0
-    `, { audit_id: parseInt(audit_id), organization_id });
+      SELECT audit_id FROM audits a
+      WHERE ${auditWhere}
+    `, auditParams);
 
         if (auditCheck.recordset.length === 0) {
             return res.status(404).json({
@@ -290,7 +307,7 @@ async function createNonConformity(req, res) {
             });
         }
 
-        // Crea NC
+        // Crea NC (source_type manual: creazione diretta, non da push audit)
         const result = await query(`
       INSERT INTO non_conformities (
         audit_id,
@@ -303,6 +320,7 @@ async function createNonConformity(req, res) {
         due_date,
         corrective_action,
         status,
+        source_type,
         created_at,
         updated_at
       )
@@ -318,6 +336,7 @@ async function createNonConformity(req, res) {
         @due_date,
         @corrective_action,
         'open',
+        'manual',
         GETDATE(),
         GETDATE()
       )
@@ -389,16 +408,21 @@ async function updateNonConformity(req, res) {
             due_date,
             status,
             resolution_date,
-            verification_notes
+            verification_notes,
+            root_cause
         } = req.body;
 
-        // Verifica esistenza e ownership
+        const scope = studioScopeClause(req.user, 'a');
+        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
+        const ownershipParams = { id: parseInt(id), organization_id, ...scope.params };
+
+        // Verifica esistenza, ownership org e perimetro studio RBAC
         const existingNC = await query(`
       SELECT nc.nc_id, nc.status AS current_status, a.audit_id
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-    `, { id: parseInt(id), organization_id });
+      WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+    `, ownershipParams);
 
         if (existingNC.recordset.length === 0) {
             return res.status(404).json({
@@ -447,6 +471,10 @@ async function updateNonConformity(req, res) {
         if (verification_notes !== undefined) {
             updates.push('verification_notes = @verification_notes');
             params.verification_notes = verification_notes;
+        }
+        if (root_cause !== undefined) {
+            updates.push('root_cause = @root_cause');
+            params.root_cause = root_cause;
         }
 
         // Gestione transizione stato (con validazione workflow)
@@ -596,6 +624,12 @@ async function getNonConformitiesStatistics(req, res) {
         if (company_id) {
             whereConditions.push('a.company_id = @company_id');
             params.company_id = parseInt(company_id);
+        }
+
+        const scope = studioScopeClause(req.user, 'a');
+        if (scope.clause) {
+            whereConditions.push(scope.clause);
+            Object.assign(params, scope.params);
         }
 
         const whereClause = whereConditions.join(' AND ');

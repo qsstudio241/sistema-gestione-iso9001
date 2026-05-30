@@ -1,32 +1,87 @@
-# DEPUTYTASK — Chiusura sessione registro norme / albero (29–30/05/2026)
+# DEPUTYTASK — NC Fase 1 · Slice 5 (Creazione NC + allegati)
 
-**Stato:** **CHIUSO / TEST OK**
+**Stato:** **PRONTO PER DEPUTY** (frontend — indipendente da Slice 4)
 
-## Obiettivo sessione
+**Slice 1:** ✅ COMPLETATO (alias `getNonConformitiesStatistics` + test HomePage)
 
-Completare Fase 2/3 registro norme (commit import PDF, import codici catalogo), hardening albero documenti (obsoleti, dedup, metadati norma), UX albero (tooltip, cartelle custom, DELETE cartella vuota).
+**Slice 4:** ✅ COMPLETATO (NcDetailPanel editabile + integrazione NCPage + test L1)
 
-## Esito
+---
 
-| Area | Esito |
+## Obiettivo Slice 5
+
+Estendere il registro NC (`/nc`) con:
+
+1. **Creazione NC manuale** da registro (`POST /non-conformities`, `source_type: manual`)
+2. **Allegati NC** con `AttachmentSection` + hook `useAttachmentManager` (pattern checklist)
+3. **Badge/link `source_complaint_id`** → reclamo origine (se presente)
+4. Allineamento note verifica in `PendingIssuesCascade` con campo `verification_notes`
+
+**Non** implementare in questa slice: push audit flow, modifiche backend oltre a quanto già esposto.
+
+---
+
+## Vincoli obbligatori
+
+| Vincolo | Dettaglio |
+|---------|-----------|
+| **Push audit** | **NON** toccare `AuditClosePanel.jsx`, `pushAuditToNcRegister`, `undoPushAuditToNcRegister`, `PendingIssuesCascade` push flow (salvo allineamento `verification_notes` se esplicitamente in scope) |
+| **Backend** | Usare endpoint esistenti; nuove migrazioni solo se assenti |
+| **Riuso UI** | `QuestionCard`, `AttachmentSection`, `notes-textarea`, `ChecklistModule.css` |
+| **Validazione UX** | Blur / submit, mai su ogni keystroke |
+| **Encoding** | UTF-8, accenti italiani corretti |
+
+---
+
+## Baseline post-Slice 4
+
+### Implementato
+
+| File | Stato |
+|------|-------|
+| `app/src/components/NcDetailPanel.jsx` | ✅ 6 campi editabili, `notes-textarea`, readonly closed/verified |
+| `app/src/pages/NCPage.jsx` | ✅ `<NcDetailPanel nc={nc} onSaved={loadNc} />` in card espansa |
+| `app/src/pages/NCPage.css` | ✅ `.nc-detail-form`, legacy read-only |
+| `app/src/tests/ncDetailPanel.test.js` | ✅ 6 test verdi |
+
+### Verifica Slice 4 (30/05/2026)
+
+```text
+Vitest: 6/6 passed (ncDetailPanel.test.js)
+Vite build: OK
+```
+
+---
+
+## File da creare / modificare (Slice 5)
+
+| File | Azione |
 |------|--------|
-| Fase 2 commit import PDF + schema norma | OK — `a77b616` |
-| Fase 3 import codici catalogo | OK — service + UI + test L1 |
-| Fix obsoleti/dedup albero | OK — `526ae9f` |
-| Pannello metadati norma | OK — `dde4d6e` |
-| UX albero (rename/delete/subfolder/icon) | OK — `b2c0694` + Vitest albero |
-| Deploy VPS backend documenti | OK — copia manuale document* + normCodesImport + restart; health API OK; `FOLDER_NOT_EMPTY` presente su VPS |
-| PR / main | Nessuna PR aperta; `main` allineato a `origin/main` @ `b2c0694` |
+| `app/src/pages/NCPage.jsx` | Pulsante «Nuova NC» + form/modal creazione |
+| `app/src/components/NcDetailPanel.jsx` | Sezione allegati (opzionale qui o componente dedicato) |
+| `app/src/services/apiService.js` | `createNonConformity` se assente |
+| `app/src/tests/ncCreate.test.js` | Test L1 creazione manuale |
+| `docs/GUIDA_CONSOLIDATA.md` | Nota operativa post-implementazione |
 
-## Smoke consigliato (L3, operatore)
+---
 
-1. Registro → **NORME E LEGGI** → import 2 codici catalogo → verificare bozze e badge vigore.
-2. Aprire norma ISO 5817 (o equivalente) → pannello dettaglio con metadati catalogo.
-3. Albero: creare sottocartella custom, rinomina, tentare eliminare cartella con documenti → messaggio cartella non vuota.
-4. Dopo deploy Netlify: icone sistema vs custom e tooltip.
+## Definition of Done (Slice 5)
 
-## Commit di riferimento
+- [ ] Creazione NC manuale funzionante (POST + refresh lista)
+- [ ] Allegati NC upload/preview (pattern AttachmentSection)
+- [ ] Link reclamo origine se `source_complaint_id`
+- [ ] Test L1 verdi + build Vite OK
+- [ ] Nessuna regressione NcDetailPanel / workflow stati
+- [ ] Chiusura deputy: **TEST OK** o **FIX NON APPLICABILI**
 
-`a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`
+---
 
-*Chiuso 30/05/2026 — doc aggiornata in GUIDA_CONSOLIDATA.md*
+## Comando deputy standard
+
+```
+Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+```
+
+---
+
+*Aggiornato 30/05/2026 — NC Fase 1 Slice 4 COMPLETATO → brief Slice 5*

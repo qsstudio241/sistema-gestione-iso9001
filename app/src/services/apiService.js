@@ -760,6 +760,11 @@ class ApiService {
         return this.get(`/non-conformities/statistics/overview${qs ? '?' + qs : ''}`);
     }
 
+    /** Alias per HomePage e codice legacy — delega a getNcStats */
+    async getNonConformitiesStatistics(params = {}) {
+        return this.getNcStats(params);
+    }
+
     async updateNcStatus(id, data) {
         return this.put(`/non-conformities/${id}`, data);
     }
