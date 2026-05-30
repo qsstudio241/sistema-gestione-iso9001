@@ -37,6 +37,7 @@ function TabAnagrafica() {
   const [form, setForm] = useState({
     audit_report_prefix: "",
     vat_number: "",
+    ai_context_notes: "",
   });
 
   const fileInputRef = useRef(null);
@@ -80,6 +81,7 @@ function TabAnagrafica() {
       setForm({
         audit_report_prefix: orgData?.audit_report_prefix || "",
         vat_number: orgData?.vat_number || "",
+        ai_context_notes: orgData?.ai_context_notes || "",
       });
     } catch (err) {
       setError("Errore caricamento dati studio: " + err.message);
@@ -107,6 +109,7 @@ function TabAnagrafica() {
       };
       if (isAdmin) {
         payload.vat_number = form.vat_number.trim() || null;
+        payload.ai_context_notes = form.ai_context_notes.trim() || null;
       }
       await apiService.patchMyOrganization(payload);
       setSaved(true);
@@ -297,6 +300,44 @@ function TabAnagrafica() {
             Max 8 caratteri &mdash; es. &quot;RAP&quot; &rarr; RAP-2026-001
           </span>
         </div>
+      </div>
+
+      {/* Contesto Assistente AI — note operative per lo studio */}
+      <div className="studio-card">
+        <h3 className="studio-card-title">Contesto Assistente AI</h3>
+        <p className="studio-hint" style={{ marginBottom: 12 }}>
+          Descrivi in poche righe lo studio, i settori di specializzazione e le preferenze operative.
+          Queste note vengono incluse automaticamente in ogni risposta dell&apos;assistente AI
+          (chat globale, conclusioni audit, riesame requisiti).
+        </p>
+        {isAdmin ? (
+          <div className="studio-field">
+            <label htmlFor="ai-context-notes">Note di contesto studio</label>
+            <textarea
+              id="ai-context-notes"
+              className="studio-textarea"
+              value={form.ai_context_notes}
+              onChange={handleChange("ai_context_notes")}
+              placeholder={"Es.: Studio di consulenza ISO con focus metalmeccanica e saldatura.\nPreferire risposte sintetiche con riferimenti a clausola e codice documento."}
+              rows={5}
+              maxLength={2000}
+            />
+            <span className="studio-hint">
+              Max 2000 caratteri — visibile solo agli amministratori dello studio
+            </span>
+          </div>
+        ) : (
+          <div className="studio-field">
+            <label>Note di contesto studio</label>
+            <textarea
+              className="studio-input-disabled studio-textarea"
+              value={org?.ai_context_notes || ""}
+              readOnly
+              rows={4}
+              placeholder="Nessuna nota configurata dall'amministratore."
+            />
+          </div>
+        )}
       </div>
 
       <div className="studio-actions">

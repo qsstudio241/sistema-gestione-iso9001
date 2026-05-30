@@ -2259,3 +2259,18 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 **Cursor — regola utente**: se nelle impostazioni è ancora scritto “leggi `SESSION_NOTES_20260301`”, sostituiscilo con **`docs/GUIDA_CONSOLIDATA.md`**.
 
 
+
+---
+
+## Deploy contesto AI multi-livello (30/05/2026)
+
+| Step | Comando / verifica |
+|------|-------------------|
+| Migrazioni DB produzione | SCP `backend/scripts/run-migration-066-vps.js` e `067-vps.js` su VPS; `node /tmp/run-migration-066-vps.js` poi `067-vps.js` |
+| Deploy backend | `backend/scripts/deploy-controllers-to-vps.ps1` + copia file AI (`aiChat`, `aiAssist`, servizi contesto, `knowledgeIndexer`, `normChunker`) |
+| Restart | `sudo systemctl restart sgq-backend.service` — verificare MainPID cambiato |
+| Reindex | `POST /api/v1/ai/reindex` (admin) dopo mig. 067 |
+| Smoke | `GET/PATCH /api/v1/organizations/me` (`ai_context_notes`); `POST /api/v1/ai/chat` con `standardId` |
+| UI | Impostazioni studio (note contesto) + Assistente AI (chip norma) — Netlify da merge su `main` |
+
+Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e `067_knowledge_chunks_standard_id.sql`.

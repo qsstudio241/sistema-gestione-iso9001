@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useStorage } from "../contexts/StorageContext";
+import {
+  filterStandardsForUser,
+  resolveAutoStandardFromAudit,
+} from "../utils/aiAssistantContext";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS = [
@@ -80,10 +84,21 @@ function AiAssistantPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // --- Contesto norma ---
+  const [standardDropdownOpen, setStandardDropdownOpen] = useState(false);
+  const standardDropdownRef = useRef(null);
+
   // companyContext: { companyId, companyName, source: 'auto'|'manual' }
   const [companyContext, setCompanyContext] = useState({
     companyId: null,
     companyName: null,
+    source: "auto",
+  });
+
+  // standardContext: { standardId, label, source: 'auto'|'manual' }
+  const [standardContext, setStandardContext] = useState({
+    standardId: null,
+    label: null,
     source: "auto",
   });
 
@@ -124,11 +139,34 @@ function AiAssistantPage() {
     }
   }, [autoCompanyId, autoCompanyName, companyContext.source]);
 
+  const standardsForUser = useMemo(
+    () => filterStandardsForUser(user?.allowed_standard_ids),
+    [user?.allowed_standard_ids]
+  );
+
+  const autoStandard = useMemo(
+    () => resolveAutoStandardFromAudit(currentAudit?.metadata?.selectedStandards),
+    [currentAudit?.metadata?.selectedStandards]
+  );
+
+  useEffect(() => {
+    if (standardContext.source === "auto") {
+      setStandardContext({
+        standardId: autoStandard?.standardId ?? null,
+        label: autoStandard?.label ?? null,
+        source: "auto",
+      });
+    }
+  }, [autoStandard, standardContext.source]);
+
   // Chiudi dropdown al click fuori
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (standardDropdownRef.current && !standardDropdownRef.current.contains(e.target)) {
+        setStandardDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -176,6 +214,28 @@ function AiAssistantPage() {
     setDropdownOpen(false);
   }, [companyContext]);
 
+  const handleStandardChange = useCallback((newStandardId, newLabel, source) => {
+    if (standardContext.standardId === newStandardId) {
+      setStandardDropdownOpen(false);
+      return;
+    }
+
+    setStandardContext({ standardId: newStandardId, label: newLabel, source });
+
+    const normLabel = newLabel || "Tutte le norme";
+    setMessages((prevMsgs) => {
+      const separator = {
+        role: "context-separator",
+        text: `Norma: ${normLabel}`,
+        time: new Date(),
+      };
+      const nextMsgs = [...prevMsgs, separator];
+      setContextSeparatorIndex(nextMsgs.length - 1);
+      return nextMsgs;
+    });
+    setStandardDropdownOpen(false);
+  }, [standardContext]);
+
   // Clear conversazione
   const handleClear = useCallback(() => {
     setMessages([]);
@@ -185,7 +245,12 @@ function AiAssistantPage() {
       companyName: autoCompanyName,
       source: "auto",
     });
-  }, [autoCompanyId, autoCompanyName]);
+    setStandardContext({
+      standardId: autoStandard?.standardId ?? null,
+      label: autoStandard?.label ?? null,
+      source: "auto",
+    });
+  }, [autoCompanyId, autoCompanyName, autoStandard]);
 
   const handleSend = useCallback(async (text) => {
     const msg = (text || input).trim();
@@ -201,7 +266,10 @@ function AiAssistantPage() {
     }
 
     try {
-      const res = await apiService.aiChat(msg, companyContext.companyId);
+      const res = await apiService.aiChat(msg, {
+        companyId: companyContext.companyId,
+        standardId: standardContext.standardId,
+      });
       const data = res.data || res;
       setMessages((prev) => [
         ...prev,
@@ -222,7 +290,7 @@ function AiAssistantPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, companyContext.companyId]);
+  }, [input, loading, companyContext.companyId, standardContext.standardId]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -262,6 +330,11 @@ function AiAssistantPage() {
 
   const contextLabel = companyContext.companyName || "Vista complessiva";
   const contextIsCompany = !!companyContext.companyId;
+  const standardLabel = standardContext.label || "Tutte le norme";
+  const contextIsStandard = !!standardContext.standardId;
+  const activeStandardEntry = standardsForUser.find(
+    (s) => s.standardId === standardContext.standardId
+  );
 
   return (
     <div className="ai-assistant-page">
@@ -271,7 +344,11 @@ function AiAssistantPage() {
           <span className="ai-assistant-header-icon">{"\uD83E\uDD16"}</span>
           <div>
             <h2>Assistente AI</h2>
-            <p>Chiedi qualsiasi cosa sui dati del tuo SGQ</p>
+            <p>
+              {user?.organization_name
+                ? `Studio: ${user.organization_name} — chiedi qualsiasi cosa sui dati del tuo SGQ`
+                : "Chiedi qualsiasi cosa sui dati del tuo SGQ"}
+            </p>
           </div>
         </div>
         <div className="ai-assistant-header-actions">
@@ -321,6 +398,46 @@ function AiAssistantPage() {
             )}
           </div>
 
+          {/* Chip contesto norma */}
+          <div className="ai-context-chip-wrapper" ref={standardDropdownRef}>
+            <button
+              className={`ai-context-chip ai-context-chip--standard ${contextIsStandard ? "ai-context-chip--standard-active" : ""}`}
+              onClick={() => setStandardDropdownOpen((v) => !v)}
+              title="Cambia norma di riferimento"
+            >
+              <span className="ai-context-chip-icon" aria-hidden="true">
+                {contextIsStandard
+                  ? activeStandardEntry?.icon || "\uD83D\uDCCB"
+                  : "\uD83D\uDCDA"}
+              </span>
+              <span className="ai-context-chip-label">{standardLabel}</span>
+              <svg className="ai-context-chip-arrow" viewBox="0 0 12 12" width="10" height="10" fill="currentColor">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </button>
+            {standardDropdownOpen && (
+              <div className="ai-context-dropdown">
+                <button
+                  className={`ai-context-dropdown-item ${!standardContext.standardId ? "active" : ""}`}
+                  onClick={() => handleStandardChange(null, null, "manual")}
+                >
+                  <span className="ai-context-dropdown-icon">{"\uD83D\uDCDA"}</span>
+                  Tutte le norme
+                </button>
+                {standardsForUser.map((entry) => (
+                  <button
+                    key={entry.key}
+                    className={`ai-context-dropdown-item ${standardContext.standardId === entry.standardId ? "active" : ""}`}
+                    onClick={() => handleStandardChange(entry.standardId, entry.shortLabel, "manual")}
+                  >
+                    <span className="ai-context-dropdown-icon">{entry.icon}</span>
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Pulsante clear */}
           {messages.length > 0 && (
             <button
@@ -360,6 +477,14 @@ function AiAssistantPage() {
             {contextIsCompany && (
               <p className="ai-assistant-empty-context">
                 Contesto attivo: <strong>{contextLabel}</strong>
+                {contextIsStandard && (
+                  <> — Norma: <strong>{standardLabel}</strong></>
+                )}
+              </p>
+            )}
+            {!contextIsCompany && contextIsStandard && (
+              <p className="ai-assistant-empty-context">
+                Norma attiva: <strong>{standardLabel}</strong>
               </p>
             )}
             <div className="ai-assistant-suggestions">
