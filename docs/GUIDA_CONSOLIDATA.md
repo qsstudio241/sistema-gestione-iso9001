@@ -1744,6 +1744,24 @@ Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved 
 
 Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
 
+#### Simulazione operativa Fase 1 — 30/05/2026 (TEST OK)
+
+| Step | Ruolo | Esito |
+|------|-------|-------|
+| Health API + DB migrazione **071** | Ops | OK — colonna `verification_responsible` presente |
+| Login produzione `systemgest.netlify.app` | A | OK — sessione `PS_Admin` |
+| Griglia `/nc` — stats, filtri, link audit | B | OK — 3 NC visibili; filtri stato/severità/scadenze presenti |
+| Selezione riga → dettaglio (`?select=`) | A | OK dopo fix `handleRowSelect(rowKey, row)` (commit `d80dafa`) |
+| Workflow API open→closed + gate note verifica | A | OK — NC `1043`, responsabili e note tracciati |
+| Creazione manuale modal «Nuova NC» | A | OK audit in dropdown dopo fix lista audit (commit `d80dafa`); FK sezione→standard: errore **400** esplicito se sezione HLS su audit non ISO 9001 |
+| Deploy VPS backend | Ops | OK — `deploy-controllers-to-vps.ps1` + restart `sgq-backend` |
+
+**Lezioni (delta):** (1) `SgqDataGrid.onRowSelect` passa `(rowKey, row)` — non il solo oggetto riga. (2) `NcCreateModal` con `status: active` lasciava dropdown audit vuoto (nessun audit `active` in org test). (3) Sezioni HLS `clause10` falliscono FK su audit ISO 14001/3834 — serve audit ISO 9001 o sezione compatibile col `standard_id`. (4) Test E2E griglia: righe `<tr>` non sempre in snapshot a11y — usare CDP click o deep-link `/nc?select=<id>`.
+
+**URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
+
+**Backlog P2:** SMTP alert NC (`NC_ALERT_ENABLED`), export CSV/PDF registro, sezioni dinamiche per standard in modal manuale, agente AI CAPA.
+
 **ISO 3834 (specifiche processo saldatura):**
 - Qualifiche saldatori (ISO 9606-1..5) — scadenza 2/3 anni
 - Qualifiche operatori (ISO 14732)

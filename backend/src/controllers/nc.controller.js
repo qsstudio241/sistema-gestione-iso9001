@@ -404,6 +404,12 @@ async function createNonConformity(req, res) {
 
     } catch (error) {
         logger.error('Error creating NC', { error: error.message, stack: error.stack });
+        if (error.number === 547) {
+            return res.status(400).json({
+                error: 'Sezione ISO non valida per lo standard dell\'audit selezionato. Scegliere un audit ISO 9001 o una sezione compatibile.',
+                code: 'INVALID_SECTION_FOR_STANDARD'
+            });
+        }
         res.status(500).json({
             error: 'Errore durante la creazione della non conformità',
             code: 'NC_CREATE_ERROR'
