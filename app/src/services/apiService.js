@@ -1560,6 +1560,11 @@ class ApiService {
         const opts = typeof options === 'object' && options !== null ? options : {};
         if (opts.companyId) body.companyId = opts.companyId;
         if (opts.standardId) body.standardId = opts.standardId;
+        if (opts.auditId) body.auditId = opts.auditId;
+        if (opts.clauseRef) body.clauseRef = opts.clauseRef;
+        if (opts.questionId) body.questionId = opts.questionId;
+        if (opts.questionText) body.questionText = opts.questionText;
+        if (opts.standardKey) body.standardKey = opts.standardKey;
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 

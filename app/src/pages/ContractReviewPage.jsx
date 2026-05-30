@@ -5,6 +5,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiService, { ApiError } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
+import { useStorage } from '../contexts/StorageContext';
+import { resolveAutoStandardFromAudit } from '../utils/aiAssistantContext';
+import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
 import { useAiAssist } from '../hooks/useAiAssist';
 import AiSuggestionInline from '../components/AiSuggestionInline';
@@ -151,6 +154,7 @@ function riskLabel(r) {
 
 export default function ContractReviewPage() {
   const { user } = useAuth();
+  const { currentAudit } = useStorage();
   const { path } = useRouter();
   const navigate = useNavigate();
   const caseId = parseCaseIdFromPath(path);
@@ -362,7 +366,19 @@ export default function ContractReviewPage() {
       return;
     }
     setError(null);
-    await suggest('review_requirements', { capitolatoText: text, companyId });
+    const autoStd = resolveAutoStandardFromAudit(currentAudit?.metadata?.selectedStandards);
+    const standardEntries = getSelectedStandardEntries(
+      currentAudit?.metadata?.selectedStandards || []
+    );
+    const standardCodes = standardEntries.length
+      ? standardEntries.map((e) => e.key)
+      : undefined;
+    await suggest('review_requirements', {
+      capitolatoText: text,
+      companyId,
+      standardCodes,
+      standardId: autoStd?.standardId ?? null,
+    });
   }
 
   async function handleApplyAiToPreliminary() {

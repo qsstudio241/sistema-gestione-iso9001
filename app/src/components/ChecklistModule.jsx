@@ -14,6 +14,7 @@ import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
+import { saveChecklistFocus } from "../utils/aiAssistantContext";
 import "./ChecklistModule.css";
 
 /**
@@ -308,6 +309,18 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
   };
 
   const handleQuestionUpdate = (clauseId, questionId, field, value) => {
+    const auditUuidForFocus = currentAudit?.metadata?.id || currentAudit?.id;
+    const clauseForFocus = currentAudit?.checklist?.[checklistKey]?.[clauseId];
+    const questionForFocus = clauseForFocus?.questions?.find((q) => q.id === questionId);
+    if (auditUuidForFocus && (field === "status" || field === "notes")) {
+      saveChecklistFocus(auditUuidForFocus, {
+        standardKey: checklistKey,
+        clauseRef: questionForFocus?.clauseRef || clauseForFocus?.clauseRef || clauseId,
+        questionId: String(questionId),
+        questionText: questionForFocus?.text || questionForFocus?.title || null,
+      });
+    }
+
     // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
     // Ogni cambio di status genera un evento atomico inviato a POST /audits/:uuid/events.
     // Il bulk save_responses è disabilitato in StorageContext quando events è attivo.

@@ -5,6 +5,10 @@ import { useStorage } from "../contexts/StorageContext";
 import {
   filterStandardsForUser,
   resolveAutoStandardFromAudit,
+  resolveAutoCompanyFromAudit,
+  resolveActiveChecklistFocus,
+  buildAuditContextSeparatorLabel,
+  buildAiChatContextPayload,
 } from "../utils/aiAssistantContext";
 import "./AiAssistantPage.css";
 
@@ -69,13 +73,14 @@ function formatAiText(text) {
 
 function AiAssistantPage() {
   const { user } = useAuth();
-  const { currentAudit } = useStorage();
+  const { currentAudit, currentAuditId } = useStorage();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [reindexing, setReindexing] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const prevAuditIdRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   // --- Contesto azienda ---
@@ -120,14 +125,12 @@ function AiAssistantPage() {
   }, []);
 
   // Inferenza automatica dal currentAudit (solo se source === 'auto')
-  const autoCompanyId = currentAudit?.metadata?.companyId || currentAudit?.company_id || null;
-  const autoCompanyName = useMemo(() => {
-    if (!autoCompanyId || !companiesLoaded) return null;
-    const found = companies.find(
-      (c) => c.id === autoCompanyId || c.company_id === autoCompanyId
-    );
-    return found?.name || currentAudit?.metadata?.clientName || null;
-  }, [autoCompanyId, companies, companiesLoaded, currentAudit]);
+  const autoCompany = useMemo(
+    () => resolveAutoCompanyFromAudit(currentAudit, companies),
+    [currentAudit, companies]
+  );
+  const autoCompanyId = autoCompany.companyId;
+  const autoCompanyName = autoCompany.companyName;
 
   useEffect(() => {
     if (companyContext.source === "auto") {
@@ -158,6 +161,59 @@ function AiAssistantPage() {
       });
     }
   }, [autoStandard, standardContext.source]);
+
+  const checklistFocus = useMemo(
+    () => resolveActiveChecklistFocus(currentAudit),
+    [currentAudit]
+  );
+
+  // Separatore chat quando cambia audit aperto
+  useEffect(() => {
+    const auditUuid = currentAudit?.metadata?.id || currentAudit?.id || null;
+    if (!auditUuid || !companiesLoaded) return;
+
+    if (prevAuditIdRef.current && prevAuditIdRef.current !== auditUuid) {
+      const auditNumber =
+        currentAudit?.metadata?.auditNumber ||
+        currentAudit?.metadata?.generalData?.auditNumber ||
+        auditUuid.slice(0, 8);
+      const separatorText = buildAuditContextSeparatorLabel({
+        auditLabel: auditNumber,
+        companyName: autoCompanyName,
+        standardLabel: autoStandard?.label,
+        focus: checklistFocus,
+      });
+      setMessages((prevMsgs) => {
+        const separator = {
+          role: "context-separator",
+          text: separatorText,
+          time: new Date(),
+        };
+        const nextMsgs = [...prevMsgs, separator];
+        setContextSeparatorIndex(nextMsgs.length - 1);
+        return nextMsgs;
+      });
+      setCompanyContext({
+        companyId: autoCompanyId,
+        companyName: autoCompanyName,
+        source: "auto",
+      });
+      setStandardContext({
+        standardId: autoStandard?.standardId ?? null,
+        label: autoStandard?.label ?? null,
+        source: "auto",
+      });
+    }
+    prevAuditIdRef.current = auditUuid;
+  }, [
+    currentAuditId,
+    currentAudit,
+    companiesLoaded,
+    autoCompanyId,
+    autoCompanyName,
+    autoStandard,
+    checklistFocus,
+  ]);
 
   // Chiudi dropdown al click fuori
   useEffect(() => {
@@ -266,9 +322,15 @@ function AiAssistantPage() {
     }
 
     try {
+      const chatCtx = buildAiChatContextPayload(currentAudit, companies);
       const res = await apiService.aiChat(msg, {
         companyId: companyContext.companyId,
         standardId: standardContext.standardId,
+        auditId: chatCtx.auditId,
+        clauseRef: chatCtx.clauseRef,
+        questionId: chatCtx.questionId,
+        questionText: chatCtx.questionText,
+        standardKey: chatCtx.standardKey,
       });
       const data = res.data || res;
       setMessages((prev) => [
@@ -290,7 +352,7 @@ function AiAssistantPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, companyContext.companyId, standardContext.standardId]);
+  }, [input, loading, companyContext.companyId, standardContext.standardId, currentAudit, companies]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -485,6 +547,12 @@ function AiAssistantPage() {
             {!contextIsCompany && contextIsStandard && (
               <p className="ai-assistant-empty-context">
                 Norma attiva: <strong>{standardLabel}</strong>
+              </p>
+            )}
+            {checklistFocus?.clauseRef && (
+              <p className="ai-assistant-empty-context">
+                Clausola attiva: <strong>{"\u00A7"}{checklistFocus.clauseRef}</strong>
+                {checklistFocus.questionId ? ` \u2014 dom. ${checklistFocus.questionId}` : ""}
               </p>
             )}
             <div className="ai-assistant-suggestions">
