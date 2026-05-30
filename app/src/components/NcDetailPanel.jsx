@@ -1,5 +1,5 @@
 /**
- * NcDetailPanel ó pannello dettaglio NC editabile (NC Fase 1 ∑ Slice 5)
+ * NcDetailPanel ù pannello dettaglio NC editabile (NC Fase 1 ù Slice 5)
  *
  * Campi: description, root_cause, verification_notes, verification_responsible,
  *        severity, responsible_person, due_date, allegati evidenze
@@ -7,8 +7,10 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { Link } from "../contexts/RouterContext";
 import apiService from "../services/apiService";
 import NcAttachmentsSection from "./NcAttachmentsSection";
+import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
 import "../components/ChecklistModule.css";
 
 const SEVERITY_OPTIONS = [
@@ -36,9 +38,9 @@ function initForm(nc) {
 
 /**
  * @param {object} props
- * @param {object} props.nc ó riga NC da getAllNonConformities
- * @param {() => void} props.onSaved ó callback dopo salvataggio OK
- * @param {boolean} [props.readOnly] ó true se NC closed/verified
+ * @param {object} props.nc ù riga NC da getAllNonConformities
+ * @param {() => void} props.onSaved ù callback dopo salvataggio OK
+ * @param {boolean} [props.readOnly] ù true se NC closed/verified
  */
 export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
   const isClosed = ["closed", "verified"].includes(nc?.status);
@@ -61,7 +63,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
 
   function validateDescription() {
     if (!form.description.trim()) {
-      setDescError("La descrizione Ë obbligatoria.");
+      setDescError("La descrizione ù obbligatoria.");
       return false;
     }
     setDescError(null);
@@ -87,7 +89,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
       });
       onSaved?.();
     } catch {
-      setError("Errore durante il salvataggio. Riprovare pi˘ tardi.");
+      setError("Errore durante il salvataggio. Riprovare più tardi.");
     } finally {
       setSaving(false);
     }
@@ -95,12 +97,41 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
 
   if (!nc) return null;
 
+  const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
+
   return (
     <form
       className="nc-detail-form nc-action-form"
       onSubmit={handleSubmit}
       noValidate
     >
+      <div className="nc-detail-meta-badges">
+        {nc.source_type && (
+          <span className="nc-source-badge" title="Origine NC">
+            {nc.source_type === "manual" ? "\u270D\uFE0F" : nc.source_type?.startsWith("audit") ? "\uD83D\uDCE4" : "\uD83D\uDEA8"}{" "}
+            {sourceLabel}
+          </span>
+        )}
+        {nc.source_complaint_id && (
+          <Link
+            to={`/reclami?complaint=${nc.source_complaint_id}`}
+            className="nc-complaint-link"
+            title="Apri reclamo origine"
+          >
+            {"\uD83D\uDCE9"} Reclamo {nc.source_complaint_number || `#${nc.source_complaint_id}`}
+          </Link>
+        )}
+        {nc.audit_number && (
+          <Link
+            to="/audit"
+            className="nc-audit-link"
+            title={`Audit ${nc.audit_number} ù ${nc.client_name || ""}`}
+          >
+            {"\uD83D\uDCCB"} {nc.audit_number}
+            {nc.client_name ? ` ù ${nc.client_name}` : ""}
+          </Link>
+        )}
+      </div>
       <div className="nc-form-row">
         <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
         <textarea
@@ -111,14 +142,14 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
           readOnly={readOnly}
           onChange={e => setField("description", e.target.value)}
           onBlur={() => { if (!readOnly) validateDescription(); }}
-          placeholder="Descrivi la non conformit‡ riscontrata..."
+          placeholder="Descrivi la non conformitù riscontrata..."
         />
         {descError && <p className="nc-error">{descError}</p>}
       </div>
 
       <div className="nc-form-row">
         <label htmlFor={`nc-root-${nc.nc_id}`}>
-          Analisi causa radice <small>(ISO ß10.2.1b)</small>
+          Analisi causa radice <small>(ISO ù10.2.1b)</small>
         </label>
         <textarea
           id={`nc-root-${nc.nc_id}`}
@@ -127,7 +158,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
           value={form.root_cause}
           readOnly={readOnly}
           onChange={e => setField("root_cause", e.target.value)}
-          placeholder="5W, Ishikawa, 8D... Qual Ë la causa fondamentale del problema?"
+          placeholder="5W, Ishikawa, 8D... Qual ù la causa fondamentale del problema?"
         />
       </div>
 
@@ -158,7 +189,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
 
       <div className="nc-form-row nc-form-row-2col">
         <div>
-          <label htmlFor={`nc-sev-${nc.nc_id}`}>Severit‡</label>
+          <label htmlFor={`nc-sev-${nc.nc_id}`}>Severitù</label>
           <select
             id={`nc-sev-${nc.nc_id}`}
             value={form.severity}

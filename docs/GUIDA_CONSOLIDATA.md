@@ -1728,6 +1728,22 @@ ISO 3834 ha struttura diversa (specifica di processo, non di sistema) ma condivi
 - Verbale riesame di direzione (§9.3)
 - Non conformità e azioni correttive (§10.2)
 
+### Modulo NC organizzativo — Fase 1 (route `/nc`, 30/05/2026)
+
+Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved → verified → closed`.
+
+| Area | Implementazione |
+|------|-----------------|
+| **Griglia** | `SgqDataGrid` theme `plain` — colonne nc_number, stato, severità, cliente, audit, scadenza, origine |
+| **Dettaglio** | Riga selezionata → `NcDetailPanel` + workflow `status-btn` + `ActionsList` |
+| **Creazione manuale** | Pulsante «Nuova NC» → `NcCreateModal` → `POST /non-conformities` (`source_type: manual`) |
+| **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
+| **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
+| **Gate verifica** | `verification_notes` obbligatorie per stati verified/closed (UI + API); migrazione **071** `verification_responsible` |
+| **Email remind NC** | **Non attivo** — SMTP VPS non configurato; hook commentato in `alertScheduler.js` (§ Alert Engine) |
+
+Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
+
 **ISO 3834 (specifiche processo saldatura):**
 - Qualifiche saldatori (ISO 9606-1..5) — scadenza 2/3 anni
 - Qualifiche operatori (ISO 14732)

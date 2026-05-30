@@ -357,7 +357,22 @@ function startAlertScheduler() {
     runKnowledgeL2Job().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge L2):', err.message));
   });
 
+// ─── NC / azioni correttive — remind email (Fase 1 Slice 8, disabilitato) ─────
+// Prerequisiti: ALERT_ENABLED=true, SMTP_* in .env, notifications_config.enabled=1
+// Abilitare quando SMTP VPS è configurato e testato (GUIDA § Alert Engine).
+//
+// async function runNcDueAlertJob() {
+//   if (process.env.ALERT_ENABLED !== 'true') return;
+//   logger.info('[AlertScheduler] runNcDueAlertJob — NC/azioni in scadenza (feature flag off)');
+//   // Query: NC + nc_actions con due_date passata o entro 7 gg, stati non terminali
+//   // Destinatari: notifications_config.recipients_email per org
+// }
+//
+// schedule.scheduleJob('5 8 * * *', () => {
+//   runNcDueAlertJob().catch(err => logger.error('[AlertScheduler] NC due alert:', err.message));
+// });
+
   logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, norme lun 03:00, knowledge index 02:00, optimization 03:00, L2 synthesis dom 04:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job /* , runNcDueAlertJob */ };

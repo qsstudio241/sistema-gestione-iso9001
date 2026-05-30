@@ -19,6 +19,7 @@ const { studioScopeClause } = require('../services/auditListRbac.service');
  * - status: filter by status (open, in_progress, resolved, verified, closed)
  * - severity: filter by severity (major, minor, observation)
  * - overdue: true/false (scadute)
+ * - due_within_days: NC non terminali con scadenza entro N giorni (non ancora scadute)
  * - page: pagination (default 1)
  * - limit: items per page (default 50)
  */
@@ -31,6 +32,7 @@ async function listNonConformities(req, res) {
             status,
             severity,
             overdue,
+            due_within_days,
             page = 1,
             limit = 50
         } = req.query;
@@ -66,6 +68,14 @@ async function listNonConformities(req, res) {
             whereConditions.push('nc.status NOT IN (\'closed\', \'verified\')');
         }
 
+        const dueWithin = parseInt(due_within_days, 10);
+        if (!Number.isNaN(dueWithin) && dueWithin > 0) {
+            whereConditions.push('nc.due_date IS NOT NULL');
+            whereConditions.push('nc.due_date >= CAST(GETDATE() AS DATE)');
+            whereConditions.push(`nc.due_date <= DATEADD(day, ${dueWithin}, CAST(GETDATE() AS DATE))`);
+            whereConditions.push('nc.status NOT IN (\'closed\', \'verified\')');
+        }
+
         const scope = studioScopeClause(req.user, 'a');
         if (scope.clause) {
             whereConditions.push(scope.clause);
@@ -79,17 +89,28 @@ async function listNonConformities(req, res) {
       SELECT 
         nc.*,
         a.audit_number,
+        a.audit_uuid,
         a.client_name,
         cs.section_title,
+        c.complaint_number AS source_complaint_number,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
         CASE 
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified') 
           THEN 1 
           ELSE 0 
-        END AS is_overdue
+        END AS is_overdue,
+        CASE 
+          WHEN nc.due_date IS NOT NULL
+            AND nc.due_date >= CAST(GETDATE() AS DATE)
+            AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
+            AND nc.status NOT IN ('closed', 'verified')
+          THEN 1
+          ELSE 0
+        END AS is_due_soon
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       INNER JOIN checklist_sections cs ON nc.section_code = cs.section_code
+      LEFT JOIN complaints c ON c.id = nc.source_complaint_id
       WHERE ${whereClause}
       ORDER BY 
         CASE nc.severity WHEN 'major' THEN 1 WHEN 'minor' THEN 2 ELSE 3 END,
@@ -111,7 +132,7 @@ async function listNonConformities(req, res) {
         logger.info('NC list retrieved', {
             organization_id,
             count: result.recordset.length,
-            filters: { audit_id, status, severity, overdue }
+            filters: { audit_id, status, severity, overdue, due_within_days }
         });
 
         res.json({
@@ -668,7 +689,14 @@ async function getNonConformitiesStatistics(req, res) {
           WHEN nc.due_date < CAST(GETDATE() AS DATE) 
             AND nc.status NOT IN ('closed', 'verified') 
           THEN 1 ELSE 0 
-        END) AS overdue
+        END) AS overdue,
+        SUM(CASE 
+          WHEN nc.due_date IS NOT NULL
+            AND nc.due_date >= CAST(GETDATE() AS DATE)
+            AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
+            AND nc.status NOT IN ('closed', 'verified')
+          THEN 1 ELSE 0 
+        END) AS due_soon
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       WHERE ${whereClause}

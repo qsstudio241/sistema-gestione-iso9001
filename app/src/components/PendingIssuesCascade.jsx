@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Link } from "../contexts/RouterContext";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
@@ -327,13 +328,17 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                   {/* Stato dal modulo NC organizzativo (solo se licenza attiva e linkato) */}
                   {hasNcLicense && issue.nc_id && issue.nc_status && (
                     <div className={`issue-nc-link ${NC_STATUS_LABELS[issue.nc_status]?.cls || ""}`}>
-                      <span className="issue-nc-icon">📋</span>
-                      <span className="issue-nc-text">
+                      <span className="issue-nc-icon">{"\uD83D\uDCCB"}</span>
+                      <Link
+                        to={`/nc?select=${issue.nc_id}`}
+                        className="issue-nc-registry-link"
+                        title="Apri NC nel registro organizzativo"
+                      >
                         <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
-                        {" - "}
-                        <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
-                          {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
-                        </span>
+                      </Link>
+                      {" - "}
+                      <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
+                        {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
                       </span>
                       {NC_RESOLVED_STATUSES.has(issue.nc_status) && curStatus === "open" && (
                         <span className="issue-nc-suggest">

@@ -2,8 +2,17 @@
 
 .nc-page {
   padding: 24px;
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
+}
+
+.nc-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
 /* Header */
@@ -47,7 +56,9 @@
 .nc-stat-open  .nc-stat-num { color: #e53e3e; }
 .nc-stat-prog  .nc-stat-num { color: #d69e2e; }
 .nc-stat-over  .nc-stat-num { color: #c05621; }
+.nc-stat-soon  .nc-stat-num { color: #d69e2e; }
 .nc-stat-tot   .nc-stat-num { color: #2d3748; }
+.nc-stat-soon.nc-stat-active { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 
 /* Filtri */
 .nc-filters {
@@ -183,19 +194,9 @@
 .nc-corrective-note { background: #fffbeb; border-left: 3px solid #f6e05e; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; }
 .nc-responsible { font-size: 0.875rem; color: #4a5568; margin: 6px 0; }
 
-/* Workflow buttons */
+/* Workflow buttons — status-btn da ChecklistModule.css */
 .nc-workflow-btns { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-.btn-nc-workflow {
-  padding: 7px 14px;
-  background: #3182ce;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-.btn-nc-workflow:hover { background: #2b6cb0; }
+.nc-action-btns.nc-workflow-btns .status-btn { font-size: 0.78rem; padding: 4px 10px; }
 
 /* Actions panel */
 .nc-actions-panel { margin-top: 16px; }
@@ -264,7 +265,90 @@
 }
 .btn-primary:hover { background: #2b6cb0; }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.nc-page .btn-secondary {
+  padding: 8px 18px;
+  background: #fff;
+  color: #2d3748;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.nc-page .btn-secondary:hover { background: #f7fafc; border-color: #a0aec0; }
+.nc-page .btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
 .nc-error { color: #c53030; font-size: 0.85rem; margin: 6px 0; }
+
+/* Griglia registro */
+.nc-grid-section { margin-bottom: 20px; }
+.nc-grid-section .sgq-datagrid-row-selected { background: #ebf8ff !important; }
+.nc-grid-row-overdue { background: #fff5f5; }
+.nc-grid-number { font-weight: 600; font-family: monospace; }
+.nc-grid-audit { font-size: 0.85rem; }
+
+/* Pannello dettaglio sotto griglia */
+.nc-detail-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.nc-detail-heading {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nc-detail-meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nc-source-badge,
+.nc-complaint-link,
+.nc-audit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  background: #f7fafc;
+  color: #4a5568;
+}
+.nc-complaint-link:hover,
+.nc-audit-link:hover { background: #ebf8ff; border-color: #90cdf4; color: #2c5282; }
+
+/* Modal creazione NC */
+.nc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.nc-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+.nc-modal h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.nc-modal-desc { margin: 0 0 16px; color: #718096; font-size: 0.875rem; }
 
 /* Actions list */
 .nc-action-due-filters {

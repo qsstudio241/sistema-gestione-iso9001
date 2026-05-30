@@ -69,6 +69,20 @@ describe('listNonConformities — RBAC studio', () => {
             expect.objectContaining({ success: true, data: [] }),
         );
     });
+
+    it('applica filtro due_within_days nelle condizioni WHERE', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+
+        const req = mockReq({ query: { page: 1, limit: 50, due_within_days: '7' } });
+        const res = mockRes();
+        await ctrl.listNonConformities(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toContain('DATEADD(day, 7');
+        expect(listSql).toContain('nc.due_date >= CAST(GETDATE() AS DATE)');
+    });
 });
 
 describe('getNonConformitiesStatistics — RBAC studio', () => {
