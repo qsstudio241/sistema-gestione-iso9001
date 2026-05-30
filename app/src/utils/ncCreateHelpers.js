@@ -1,5 +1,5 @@
 /**
- * Helper creazione NC manuale — NC Fase 1 Slice 6
+ * Helper creazione NC manuale - NC Fase 1 Slice 6
  */
 
 /** Sezioni ISO 9001 HLS per dropdown creazione manuale */
@@ -8,7 +8,7 @@ export const NC_MANUAL_SECTIONS = [
   { value: 'clause5', label: '5 - Leadership' },
   { value: 'clause6', label: '6 - Pianificazione' },
   { value: 'clause7', label: '7 - Supporto' },
-  { value: 'clause8', label: '8 - Attività operative' },
+  { value: 'clause8', label: '8 - Attivit\u00E0 operative' },
   { value: 'clause9', label: '9 - Valutazione delle prestazioni' },
   { value: 'clause10', label: '10 - Miglioramento' },
 ];
@@ -47,7 +47,7 @@ export function buildManualNcNumber(auditNumber) {
 export function buildManualNcPayload(form, auditNumber) {
   const description = (form.description || '').trim();
   if (!form.audit_id || !form.section_code || !description || !form.severity) {
-    return { ok: false, message: 'Compilare audit, sezione, descrizione e severità.' };
+    return { ok: false, message: 'Compilare audit, sezione, descrizione e severit\u00E0.' };
   }
   return {
     ok: true,
@@ -64,7 +64,7 @@ export function buildManualNcPayload(form, auditNumber) {
 }
 
 /**
- * Mappa sezioni API checklist ? opzioni dropdown modal.
+ * Mappa sezioni API checklist in opzioni dropdown modal.
  * @param {Array<{ section_code: string, section_title: string }>} sections
  */
 export function mapApiSectionsToOptions(sections) {
@@ -72,7 +72,7 @@ export function mapApiSectionsToOptions(sections) {
   return sections.map(s => ({
     value: s.section_code,
     label: s.section_title
-      ? `${s.section_code} — ${s.section_title}`
+      ? `${s.section_code} - ${s.section_title}`
       : s.section_code,
   }));
 }

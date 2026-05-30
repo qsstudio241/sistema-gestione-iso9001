@@ -1,10 +1,10 @@
 /**
- * Test L1 — ncWorkflow approvazione RQ (NC Hardening H3)
+ * Test L1 - ncWorkflow approvazione RQ (NC Hardening H3)
  */
 import { describe, it, expect } from 'vitest';
 import { canTransitionNcStatus, canApproveNcClosure } from '../utils/ncWorkflow';
 
-describe('ncWorkflow — approvazione RQ', () => {
+describe('ncWorkflow - approvazione RQ', () => {
   it('canApproveNcClosure solo admin/superadmin', () => {
     expect(canApproveNcClosure({ role: 'admin' })).toBe(true);
     expect(canApproveNcClosure({ role: 'superadmin' })).toBe(true);

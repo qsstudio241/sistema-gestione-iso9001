@@ -1,5 +1,5 @@
 /**
- * Test L1 — NcAttachmentsSection (NC Fase 1 Slice 5)
+ * Test L1 - NcAttachmentsSection (NC Fase 1 Slice 5)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
