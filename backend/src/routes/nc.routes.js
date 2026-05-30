@@ -18,6 +18,9 @@ router.get('/non-conformities', ncController.listNonConformities);
 // GET /api/v1/non-conformities/statistics/overview - Statistiche generali NC
 router.get('/non-conformities/statistics/overview', ncController.getNonConformitiesStatistics);
 
+// GET /api/v1/non-conformities/actions/due - Azioni correttive cross-NC (scadenze)
+router.get('/non-conformities/actions/due', ncController.listAggregateDueNcActions);
+
 // GET /api/v1/non-conformities/:id - Dettagli singola NC
 router.get('/non-conformities/:id', ncController.getNonConformityById);
 
@@ -26,6 +29,9 @@ router.post('/non-conformities', ncController.createNonConformity);
 
 // PUT /api/v1/non-conformities/:id - Aggiorna NC (workflow)
 router.put('/non-conformities/:id', ncController.updateNonConformity);
+
+// POST /api/v1/non-conformities/:id/approve-closure - Approvazione RQ chiusura
+router.post('/non-conformities/:id/approve-closure', ncController.approveNcClosure);
 
 // DELETE /api/v1/non-conformities/:id - Elimina NC
 router.delete('/non-conformities/:id', ncController.deleteNonConformity);

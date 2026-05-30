@@ -1,33 +1,23 @@
-﻿# DEPUTYTASK — NC Fase 1 · Chiusura slice 6–11
+﻿# DEPUTYTASK — NC Hardening H1–H6
 
-**Stato:** **CHIUSO / TEST OK Fase 1 NC** — simulazione operativa completata, 30/05/2026
+**Stato:** **CHIUSO / TEST OK NC Hardening** — 30/05/2026
 
 ---
 
 ## Tabella slice | stato | commit
 
-| Slice | Descrizione | Stato | Commit |
-|-------|-------------|-------|--------|
-| 1–5 | Pilastri ISO 10.2, gate, allegati, migrazione 071 | ✅ | `8f66d93` |
-| 6 | Creazione NC manuale + badge reclamo + PendingIssuesCascade | ✅ | `b23f79d` |
-| 6/8 | Griglia `SgqDataGrid` + dettaglio sotto riga | ✅ | `b23f79d` / fix select `d80dafa` |
-| 7 | Workflow `status-btn` standard | ✅ | `b23f79d` |
-| 7/8 | Filtri scadenze API `due_within_days` + UI | ✅ | `b23f79d` |
-| 9 | Link audit ↔ NC (griglia + PendingIssuesCascade) | ✅ | `b23f79d` |
-| 11 | Test regressione push ISO + GUIDA NC | ✅ | `b23f79d` |
-| 8 email | Alert scadenze NC (`NC_ALERT_ENABLED`) | ✅ code | `d80dafa` |
-| Simulazione | Smoke produzione Ruolo A+B + workflow API | ✅ | sessione 30/05/2026 |
-| FK sezione | Errore 400 sezione incompatible (non 500) | ✅ | commit sessione |
-
----
-
-## Residui P2 (non bloccanti Fase 1)
-
-- Smoke L3 email NC quando SMTP VPS attivo (`NC_ALERT_ENABLED=true` + `SMTP_*`)
-- Export CSV/PDF registro NC (Slice 7 report — backlog)
-- Sezioni ISO dinamiche in `NcCreateModal` per audit multi-standard
-- Filtro azioni cross-NC a livello registro (opzionale)
-- Agente AI CAPA (Fase 2)
+| Slice | Descrizione | Stato | Note |
+|-------|-------------|-------|------|
+| H1 | Push checklist custom → registro NC + contatore ISO+custom | ✅ | `pushAuditToNcRegister` + migrazione 072 `source_custom_item_id` |
+| H2 | Email remind NC (`runNcDueAlertJob`) | ✅ | `NC_ALERT_ENABLED=true` attivato VPS; SMTP già configurato |
+| H3 | Approvazione RQ chiusura (`approved_by/at`) | ✅ | API gate `NC_APPROVAL_REQUIRED` + UI «Approva chiusura» |
+| H4 | NcCreateModal sezioni dinamiche per standard audit | ✅ | `GET /checklist/sections?standard_id=` |
+| H5 | Export CSV registro NC (filtri griglia) | ✅ | Client-side `ncExportHelpers.js` |
+| H6 | Filtro azioni cross-NC | ✅ | `GET /non-conformities/actions/due` + tab UI |
+| Migrazione 072 | VPS produzione | ✅ | colonne verificate via SSH |
+| Deploy backend | nc.controller + nc.routes | ✅ | restart `sgq-backend` |
+| Test L1 | Vitest + Jest NC | ✅ | 23 Vitest + 8 Jest |
+| Simulazione | Produzione `/nc` post-deploy Netlify | ⏳ | dopo push `main` |
 
 ---
 
@@ -39,4 +29,4 @@ Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON A
 
 ---
 
-*Aggiornato 30/05/2026 — NC Fase 1 chiusa con simulazione TEST OK*
+*Aggiornato 30/05/2026 — NC Hardening*

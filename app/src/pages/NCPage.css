@@ -15,6 +15,53 @@
   flex-wrap: wrap;
 }
 
+.nc-page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.nc-view-active {
+  border-color: #3182ce;
+  background: #ebf8ff;
+}
+
+.nc-approved-badge {
+  font-size: 0.85rem;
+  color: #276749;
+  font-weight: normal;
+}
+
+.nc-due-actions-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.nc-due-actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nc-due-actions-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.nc-due-overdue .nc-due-link {
+  color: #c53030;
+}
+
+.nc-due-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 4px;
+}
+
 /* Header */
 .nc-page-header h1 { margin: 0 0 4px; font-size: 1.5rem; color: #1a202c; }
 .nc-page-sub { margin: 0 0 20px; color: #718096; font-size: 0.875rem; }

@@ -62,3 +62,17 @@ export function buildManualNcPayload(form, auditNumber) {
     },
   };
 }
+
+/**
+ * Mappa sezioni API checklist ? opzioni dropdown modal.
+ * @param {Array<{ section_code: string, section_title: string }>} sections
+ */
+export function mapApiSectionsToOptions(sections) {
+  if (!Array.isArray(sections) || sections.length === 0) return [];
+  return sections.map(s => ({
+    value: s.section_code,
+    label: s.section_title
+      ? `${s.section_code} — ${s.section_title}`
+      : s.section_code,
+  }));
+}

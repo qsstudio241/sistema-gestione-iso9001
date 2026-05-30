@@ -65,4 +65,15 @@ describe('ncCreateHelpers', () => {
       expect(NC_SOURCE_TYPE_LABELS.audit_nc).toBe('Audit NC');
     });
   });
+
+  describe('mapApiSectionsToOptions', () => {
+    it('mappa sezioni API in opzioni dropdown', async () => {
+      const { mapApiSectionsToOptions } = await import('../utils/ncCreateHelpers');
+      const opts = mapApiSectionsToOptions([
+        { section_code: 'clause10', section_title: 'Miglioramento' },
+      ]);
+      expect(opts[0].value).toBe('clause10');
+      expect(opts[0].label).toContain('Miglioramento');
+    });
+  });
 });

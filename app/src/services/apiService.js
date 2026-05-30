@@ -769,6 +769,19 @@ class ApiService {
         return this.put(`/non-conformities/${id}`, data);
     }
 
+    async approveNcClosure(id) {
+        return this.post(`/non-conformities/${id}/approve-closure`, {});
+    }
+
+    async getAggregateDueNcActions(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/non-conformities/actions/due${qs ? '?' + qs : ''}`);
+    }
+
+    async getChecklistSectionsByStandard(standardId) {
+        return this.get(`/checklist/sections?standard_id=${standardId}`);
+    }
+
     // NC Actions
     async getNcActions(ncId) {
         return this.get(`/non-conformities/${ncId}/actions`);

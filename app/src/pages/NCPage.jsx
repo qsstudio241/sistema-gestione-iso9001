@@ -7,14 +7,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { Link, useRouter } from "../contexts/RouterContext";
+import { useAuth } from "../contexts/AuthContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import { downloadNcCsv } from "../utils/ncExportHelpers";
 import {
   canTransitionNcStatus,
   canVerifyAction,
+  canApproveNcClosure,
   filterActionsByDue,
   getActionDueStatus,
 } from "../utils/ncWorkflow";
@@ -375,11 +378,16 @@ function ActionsList({ ncId, ncStatus }) {
 
 export default function NCPage() {
   const { replace } = useRouter();
+  const { user } = useAuth();
   const [ncList, setNcList]         = useState([]);
   const [stats, setStats]           = useState(null);
   const [loading, setLoading]       = useState(true);
   const [selectedNcId, setSelectedNcId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewMode, setViewMode] = useState("nc");
+  const [dueActions, setDueActions] = useState([]);
+  const [dueActionsLoading, setDueActionsLoading] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
   const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -429,6 +437,46 @@ export default function NCPage() {
   }, [filters, page]);
 
   useEffect(() => { loadNc(); }, [loadNc]);
+
+  const loadDueActions = useCallback(async () => {
+    setDueActionsLoading(true);
+    try {
+      const res = await apiService.getAggregateDueNcActions({ due_within_days: 30, overdue: "true" });
+      setDueActions(res?.data || []);
+    } catch {
+      setDueActions([]);
+    } finally {
+      setDueActionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === "actions_due") loadDueActions();
+  }, [viewMode, loadDueActions]);
+
+  const isRq = canApproveNcClosure(user);
+
+  function handleExportCsv() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadNcCsv(`registro-nc-${stamp}.csv`, filteredList);
+  }
+
+  async function handleApproveClosure(nc) {
+    if (!isRq) {
+      alert("Solo admin o responsabile qualità possono approvare la chiusura.");
+      return;
+    }
+    if (!window.confirm(`Confermi l'approvazione chiusura per ${nc.nc_number}?`)) return;
+    setApproveLoading(true);
+    try {
+      await apiService.approveNcClosure(nc.nc_id);
+      await loadNc();
+    } catch (err) {
+      alert(err?.response?.data?.error || "Impossibile approvare la chiusura.");
+    } finally {
+      setApproveLoading(false);
+    }
+  }
 
   const filteredList = useMemo(() => {
     if (!searchNc.trim()) return ncList;
@@ -529,9 +577,17 @@ export default function NCPage() {
     open:        ["in_progress"],
     in_progress: ["resolved"],
     resolved:    ["verified"],
-    verified:    ["closed"],
+    verified:    [], // closed solo dopo approved_at (vedi sotto)
     closed:      [],
   };
+
+  function getWorkflowButtons(nc) {
+    const next = [...(validNext[nc.status] || [])];
+    if (nc.status === "verified" && nc.approved_at) {
+      next.push("closed");
+    }
+    return next;
+  }
 
   function renderGridCell(row, col) {
     switch (col.id) {
@@ -577,9 +633,21 @@ export default function NCPage() {
           <h1>{"\uD83D\uDEA8 Non Conformit\u00E0 & Azioni Correttive"}</h1>
           <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
         </div>
-        <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
-          + Nuova NC
-        </button>
+        <div className="nc-page-header-actions">
+          <button
+            type="button"
+            className={`btn-secondary${viewMode === "actions_due" ? " nc-view-active" : ""}`}
+            onClick={() => setViewMode(v => v === "actions_due" ? "nc" : "actions_due")}
+          >
+            {viewMode === "actions_due" ? "Registro NC" : "Azioni in scadenza"}
+          </button>
+          <button type="button" className="btn-secondary" onClick={handleExportCsv} disabled={!filteredList.length}>
+            Export CSV
+          </button>
+          <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
+            + Nuova NC
+          </button>
+        </div>
       </div>
 
       {stats && (
@@ -697,6 +765,30 @@ export default function NCPage() {
       </div>
 
       <section className="nc-grid-section" aria-label="Registro non conformità">
+        {viewMode === "actions_due" ? (
+          <div className="nc-due-actions-panel">
+            <h3>Azioni correttive in scadenza (30 gg) o scadute</h3>
+            {dueActionsLoading && <p>Caricamento...</p>}
+            {!dueActionsLoading && dueActions.length === 0 && (
+              <p className="nc-empty-hint">Nessuna azione in scadenza.</p>
+            )}
+            {!dueActionsLoading && dueActions.length > 0 && (
+              <ul className="nc-due-actions-list">
+                {dueActions.map(a => (
+                  <li key={a.action_id} className={a.is_overdue ? "nc-due-overdue" : ""}>
+                    <Link to={`/nc?select=${a.nc_id}`} className="nc-due-link">
+                      <strong>{a.nc_number}</strong> — {a.description?.slice(0, 120)}
+                    </Link>
+                    <span className="nc-due-meta">
+                      {a.responsible || "—"} · scadenza {a.due_date ? formatDate(a.due_date) : "—"}
+                      {a.is_overdue ? " · SCADUTA" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
         <SgqDataGrid
           rows={filteredList}
           columns={NC_GRID_COLUMNS}
@@ -717,18 +809,41 @@ export default function NCPage() {
           selectedRowKey={selectedNcId}
           onRowSelect={handleRowSelect}
         />
+        )}
       </section>
 
-      {selectedNc && (
+      {selectedNc && viewMode === "nc" && (
         <section className="nc-detail-section" aria-label={`Dettaglio ${selectedNc.nc_number}`}>
           <h3 className="nc-detail-heading">
             {selectedNc.nc_number} — <NcStatusTag status={selectedNc.status} />
+            {selectedNc.approved_at && (
+              <span className="nc-approved-badge" title={selectedNc.approved_by_name || ""}>
+                {" "}· Approvata RQ {formatDate(selectedNc.approved_at)}
+              </span>
+            )}
           </h3>
-          <NcDetailPanel nc={selectedNc} onSaved={loadNc} />
+          <NcDetailPanel
+            nc={selectedNc}
+            onSaved={loadNc}
+            readOnly={["closed", "verified"].includes(selectedNc.status) && !!selectedNc.approved_at}
+          />
 
-          {(validNext[selectedNc.status] || []).length > 0 && (
+          {selectedNc.status === "verified" && !selectedNc.approved_at && isRq && (
             <div className="nc-workflow-btns">
-              {(validNext[selectedNc.status] || []).map(ns => {
+              <button
+                type="button"
+                className="status-btn compliant"
+                disabled={approveLoading}
+                onClick={() => handleApproveClosure(selectedNc)}
+              >
+                {approveLoading ? "Approvazione..." : "Approva chiusura (RQ)"}
+              </button>
+            </div>
+          )}
+
+          {getWorkflowButtons(selectedNc).length > 0 && (
+            <div className="nc-workflow-btns">
+              {getWorkflowButtons(selectedNc).map(ns => {
                 const cfg = NC_WORKFLOW_CFG[ns] || { label: ns, statusBtn: "partial" };
                 return (
                   <button

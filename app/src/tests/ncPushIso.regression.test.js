@@ -66,6 +66,22 @@ describe('ncPushIso regression', () => {
     expect(summary.skipped_count).toBe(1);
   });
 
+  it('parsePushResponse accetta summary con custom_findings (push ISO+custom)', () => {
+    const summary = parsePushResponse({
+      data: {
+        summary: {
+          created_count: 3,
+          skipped_count: 1,
+          total_findings: 4,
+          iso_findings: 2,
+          custom_findings: 2,
+        },
+      },
+    });
+    expect(summary.custom_findings).toBe(2);
+    expect(summary.total_findings).toBe(4);
+  });
+
   it('undoPushAuditToNcRegister usa DELETE sullo stesso path', async () => {
     mockDelete.mockResolvedValueOnce({ success: true, deleted_count: 2 });
     await apiService.undoPushAuditToNcRegister('uuid-audit');

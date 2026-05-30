@@ -7,11 +7,29 @@ export function needsVerificationNotesForStatus(status) {
 }
 
 /**
+ * @param {{ role?: string }} user
+ * @returns {boolean}
+ */
+export function canApproveNcClosure(user) {
+  const role = user?.role;
+  return role === 'admin' || role === 'superadmin';
+}
+
+/**
  * @param {object} nc
  * @param {string} newStatus
  * @returns {{ ok: boolean, message?: string }}
  */
 export function canTransitionNcStatus(nc, newStatus) {
+  if (newStatus === 'closed') {
+    if (!nc?.approved_at) {
+      return {
+        ok: false,
+        message:
+          'La chiusura richiede l\'approvazione del Responsabile Qualità. Usare «Approva chiusura» prima di chiudere.',
+      };
+    }
+  }
   if (!needsVerificationNotesForStatus(newStatus)) {
     return { ok: true };
   }
