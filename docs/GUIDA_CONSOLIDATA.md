@@ -9,6 +9,7 @@
 |---------|-----------|
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
 | [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
+| [Manuale NC + Canvas](how-to/MANUALE_UTENTE_NC.md) | Registro non conformità — guida utente e canvas interattivo Glass |
 | [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
 | [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
 | [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
