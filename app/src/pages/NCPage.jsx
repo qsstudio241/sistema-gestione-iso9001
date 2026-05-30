@@ -8,6 +8,12 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import NcDetailPanel from "../components/NcDetailPanel";
 import { formatDate } from "../utils/dateHelpers";
+import {
+  canTransitionNcStatus,
+  canVerifyAction,
+  filterActionsByDue,
+  getActionDueStatus,
+} from "../utils/ncWorkflow";
 import "./NCPage.css";
 
 const NC_STATUS_CFG = {
@@ -50,6 +56,9 @@ function ActionsList({ ncId, ncStatus }) {
   const [form, setForm]         = useState({ action_type: "corrective", description: "", responsible: "", due_date: "" });
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState(null);
+  const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
+  const [verifyError, setVerifyError] = useState(null);
+  const [dueFilter, setDueFilter] = useState("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,12 +97,41 @@ function ActionsList({ ncId, ncStatus }) {
   }
 
   async function handleStatus(action, newStatus) {
+    if (newStatus === "verified") {
+      setVerifyDraft({ actionId: action.action_id, note: action.verification_note || "" });
+      setVerifyError(null);
+      return;
+    }
     try {
       await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
       await load();
     } catch {
       alert("Impossibile aggiornare lo stato dell'azione.");
     }
+  }
+
+  async function handleConfirmVerify(action) {
+    const note = verifyDraft.note.trim();
+    if (!canVerifyAction(note)) {
+      setVerifyError("Inserire la nota verifica prima di segnare l'azione come verificata.");
+      return;
+    }
+    try {
+      await apiService.updateNcAction(ncId, action.action_id, {
+        status: "verified",
+        verification_note: note,
+      });
+      setVerifyDraft({ actionId: null, note: "" });
+      setVerifyError(null);
+      await load();
+    } catch {
+      alert("Impossibile verificare l'azione.");
+    }
+  }
+
+  function handleCancelVerify() {
+    setVerifyDraft({ actionId: null, note: "" });
+    setVerifyError(null);
   }
 
   async function handleDelete(action) {
@@ -107,6 +145,18 @@ function ActionsList({ ncId, ncStatus }) {
   }
 
   const isClosed = ["closed", "verified"].includes(ncStatus);
+  const filteredActions = useMemo(
+    () => filterActionsByDue(actions, dueFilter),
+    [actions, dueFilter]
+  );
+  const overdueActionsCount = useMemo(
+    () => actions.filter(a => getActionDueStatus(a) === "overdue").length,
+    [actions]
+  );
+  const dueSoonActionsCount = useMemo(
+    () => actions.filter(a => getActionDueStatus(a) === "due_soon").length,
+    [actions]
+  );
 
   if (loading) return <p className="nc-loading">Caricamento azioni...</p>;
 
@@ -120,6 +170,36 @@ function ActionsList({ ncId, ncStatus }) {
           </button>
         )}
       </div>
+
+      {actions.length > 0 && (overdueActionsCount > 0 || dueSoonActionsCount > 0) && (
+        <div className="nc-action-due-filters" role="group" aria-label="Filtro scadenze azioni">
+          <button
+            type="button"
+            className={`nc-due-filter-btn${dueFilter === "all" ? " active" : ""}`}
+            onClick={() => setDueFilter("all")}
+          >
+            Tutte ({actions.length})
+          </button>
+          {overdueActionsCount > 0 && (
+            <button
+              type="button"
+              className={`nc-due-filter-btn nc-due-filter-overdue${dueFilter === "overdue" ? " active" : ""}`}
+              onClick={() => setDueFilter("overdue")}
+            >
+              Scadute ({overdueActionsCount})
+            </button>
+          )}
+          {dueSoonActionsCount > 0 && (
+            <button
+              type="button"
+              className={`nc-due-filter-btn nc-due-filter-soon${dueFilter === "due_soon" ? " active" : ""}`}
+              onClick={() => setDueFilter("due_soon")}
+            >
+              In scadenza 7 gg ({dueSoonActionsCount})
+            </button>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form className="nc-action-form" onSubmit={handleSubmit}>
@@ -143,12 +223,12 @@ function ActionsList({ ncId, ncStatus }) {
           </div>
           <div className="nc-form-row nc-form-row-2col">
             <div>
-              <label>Responsabile</label>
+              <label>Responsabile attuazione</label>
               <input
                 type="text"
                 value={form.responsible}
                 onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
-                placeholder="Nome responsabile"
+                placeholder="Chi esegue l'azione"
               />
             </div>
             <div>
@@ -171,10 +251,13 @@ function ActionsList({ ncId, ncStatus }) {
 
       {actions.length === 0 ? (
         <p className="nc-empty-actions">Nessuna azione correttiva registrata.</p>
+      ) : filteredActions.length === 0 ? (
+        <p className="nc-empty-actions">Nessuna azione con la scadenza selezionata.</p>
       ) : (
         <ul className="nc-actions-list">
-          {actions.map(a => {
+          {filteredActions.map(a => {
             const cfg = ACTION_STATUS_CFG[a.status] || { label: a.status, cls: "" };
+            const dueStatus = getActionDueStatus(a);
             const nextSteps = {
               open:        ["in_progress"],
               in_progress: ["completed"],
@@ -182,20 +265,54 @@ function ActionsList({ ncId, ncStatus }) {
               verified:    [],
             };
             return (
-              <li key={a.action_id} className={`nc-action-item ${cfg.cls}`}>
+              <li
+                key={a.action_id}
+                className={`nc-action-item ${cfg.cls}${dueStatus === "overdue" ? " nc-action-overdue" : ""}${dueStatus === "due_soon" ? " nc-action-due-soon" : ""}`}
+              >
                 <div className="nc-action-top">
                   <span className={`act-type-badge at-${a.action_type}`}>
                     {a.action_type === "immediate" ? "Immediata" : a.action_type === "corrective" ? "Correttiva" : "Preventiva"}
                   </span>
                   <span className={`act-status ${cfg.cls}`}>{cfg.label}</span>
+                  {dueStatus === "overdue" && (
+                    <span className="nc-action-due-badge overdue">Scaduta</span>
+                  )}
+                  {dueStatus === "due_soon" && (
+                    <span className="nc-action-due-badge due-soon">In scadenza</span>
+                  )}
                   <span className="nc-action-date">{formatDate(a.created_at)}</span>
                 </div>
                 <p className="nc-action-desc">{a.description}</p>
-                {(a.responsible || a.due_date) && (
-                  <div className="nc-action-meta">
-                    {a.responsible && <span>👤 {a.responsible}</span>}
-                    {a.due_date && <span>📅 Scadenza: {formatDate(a.due_date)}</span>}
-                    {a.completed_at && <span>✅ Completata: {formatDate(a.completed_at)}</span>}
+                <div className="nc-action-meta">
+                  {a.responsible && <span>Attuazione: {a.responsible}</span>}
+                  {a.due_date && <span>Scadenza azione: {formatDate(a.due_date)}</span>}
+                  {a.completed_at && <span>Completata: {formatDate(a.completed_at)}</span>}
+                </div>
+                {a.verification_note && (
+                  <p className="nc-action-verify-note">
+                    <strong>Nota verifica:</strong> {a.verification_note}
+                  </p>
+                )}
+                {verifyDraft.actionId === a.action_id && (
+                  <div className="nc-action-verify-form">
+                    <label htmlFor={`act-verif-${a.action_id}`}>Nota verifica azione *</label>
+                    <textarea
+                      id={`act-verif-${a.action_id}`}
+                      className="notes-textarea"
+                      rows={2}
+                      value={verifyDraft.note}
+                      onChange={e => setVerifyDraft(d => ({ ...d, note: e.target.value }))}
+                      placeholder="Descrivi l'esito della verifica su questa azione..."
+                    />
+                    {verifyError && <p className="nc-error">{verifyError}</p>}
+                    <div className="nc-form-actions">
+                      <button type="button" className="btn-primary" onClick={() => handleConfirmVerify(a)}>
+                        Conferma verifica
+                      </button>
+                      <button type="button" className="btn-action-del" onClick={handleCancelVerify}>
+                        Annulla
+                      </button>
+                    </div>
                   </div>
                 )}
                 {!isClosed && (
@@ -297,6 +414,11 @@ export default function NCPage() {
   }
 
   async function handleStatusChange(nc, newStatus) {
+    const gate = canTransitionNcStatus(nc, newStatus);
+    if (!gate.ok) {
+      alert(gate.message);
+      return;
+    }
     try {
       await apiService.updateNcStatus(nc.nc_id, { status: newStatus });
       await loadNc();

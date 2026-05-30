@@ -58,7 +58,12 @@ async function listAttachments(req, res) {
             whereConditions.push('a.organization_id = @organization_id');
         } else if (nc_id) {
             whereConditions.push('att.nc_id = @nc_id');
-            whereConditions.push('a.organization_id = @organization_id');
+            // Scope org via NC → audit (gli allegati NC hanno spesso audit_id NULL)
+            whereConditions.push(`EXISTS (
+                SELECT 1 FROM non_conformities nc_scope
+                INNER JOIN audits a_scope ON nc_scope.audit_id = a_scope.audit_id
+                WHERE nc_scope.nc_id = att.nc_id AND a_scope.organization_id = @organization_id
+            )`);
             params.nc_id = parseInt(nc_id);
         } else {
             // Lista generale per organizzazione

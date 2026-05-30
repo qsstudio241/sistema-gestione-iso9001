@@ -1,13 +1,14 @@
 /**
- * NcDetailPanel — pannello dettaglio NC editabile (NC Fase 1 · Slice 4)
+ * NcDetailPanel — pannello dettaglio NC editabile (NC Fase 1 · Slice 5)
  *
- * Campi: description, root_cause, verification_notes, severity,
- *        responsible_person, due_date
+ * Campi: description, root_cause, verification_notes, verification_responsible,
+ *        severity, responsible_person, due_date, allegati evidenze
  * API: PUT /non-conformities/:id via apiService.updateNcStatus
  */
 
 import React, { useState, useEffect } from "react";
 import apiService from "../services/apiService";
+import NcAttachmentsSection from "./NcAttachmentsSection";
 import "../components/ChecklistModule.css";
 
 const SEVERITY_OPTIONS = [
@@ -26,6 +27,7 @@ function initForm(nc) {
     description: nc?.description || "",
     root_cause: nc?.root_cause || "",
     verification_notes: nc?.verification_notes || "",
+    verification_responsible: nc?.verification_responsible || "",
     severity: nc?.severity || "minor",
     responsible_person: nc?.responsible_person || "",
     due_date: normalizeDate(nc?.due_date),
@@ -78,6 +80,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
         description: form.description.trim(),
         root_cause: form.root_cause.trim() || null,
         verification_notes: form.verification_notes.trim() || null,
+        verification_responsible: form.verification_responsible.trim() || null,
         severity: form.severity,
         responsible_person: form.responsible_person.trim() || null,
         due_date: form.due_date || null,
@@ -129,7 +132,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
       </div>
 
       <div className="nc-form-row">
-        <label htmlFor={`nc-verif-${nc.nc_id}`}>Note verifica</label>
+        <label htmlFor={`nc-verif-${nc.nc_id}`}>Note verifica efficacia</label>
         <textarea
           id={`nc-verif-${nc.nc_id}`}
           className="notes-textarea"
@@ -138,6 +141,18 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
           readOnly={readOnly}
           onChange={e => setField("verification_notes", e.target.value)}
           placeholder="Esito della verifica dell'efficacia delle azioni correttive..."
+        />
+      </div>
+
+      <div className="nc-form-row">
+        <label htmlFor={`nc-verif-resp-${nc.nc_id}`}>Responsabile verifica</label>
+        <input
+          id={`nc-verif-resp-${nc.nc_id}`}
+          type="text"
+          value={form.verification_responsible}
+          readOnly={readOnly}
+          onChange={e => setField("verification_responsible", e.target.value)}
+          placeholder="Chi verifica l'efficacia delle azioni"
         />
       </div>
 
@@ -156,7 +171,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
           </select>
         </div>
         <div>
-          <label htmlFor={`nc-due-${nc.nc_id}`}>Scadenza</label>
+          <label htmlFor={`nc-due-${nc.nc_id}`}>Scadenza NC</label>
           <input
             id={`nc-due-${nc.nc_id}`}
             type="date"
@@ -169,16 +184,18 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
       </div>
 
       <div className="nc-form-row">
-        <label htmlFor={`nc-resp-${nc.nc_id}`}>Responsabile</label>
+        <label htmlFor={`nc-resp-${nc.nc_id}`}>Responsabile NC</label>
         <input
           id={`nc-resp-${nc.nc_id}`}
           type="text"
           value={form.responsible_person}
           readOnly={readOnly}
           onChange={e => setField("responsible_person", e.target.value)}
-          placeholder="Nome responsabile"
+          placeholder="Referente generale della NC"
         />
       </div>
+
+      <NcAttachmentsSection ncId={nc.nc_id} readOnly={readOnly} />
 
       {nc.corrective_action && (
         <div className="nc-form-row nc-corrective-legacy">
@@ -192,7 +209,7 @@ export default function NcDetailPanel({ nc, onSaved, readOnly: readOnlyProp }) {
       {!readOnly && (
         <div className="nc-form-actions">
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? "Salvataggio…" : "Salva modifiche"}
+            {saving ? "Salvataggio..." : "Salva modifiche"}
           </button>
         </div>
       )}
