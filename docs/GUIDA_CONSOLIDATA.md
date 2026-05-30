@@ -10,6 +10,7 @@
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
 | [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
 | [Manuale NC + Canvas](how-to/MANUALE_UTENTE_NC.md) | Registro non conformità — guida utente e canvas interattivo Glass |
+| [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) | Catalogo componenti UI, duplicati, matrice moduli (~55% copertura Fase A) |
 | [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
 | [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
 | [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
@@ -21,7 +22,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 29/05/2026](#esperienza-29052026---registro-norme-e-albero-documenti-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 29/05/2026](#esperienza-29052026---registro-norme-e-albero-documenti-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -76,6 +77,50 @@ I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché d
 **Esperienza 30/05/2026 — campi testo NC = standard audit (`RichTextField`)**
 
 Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + `draftFieldRegistry` (scope `nc:<id>`) + `ncFieldDraftStorage` (localStorage, debounce 800 ms) + `textFieldHistory` (ultime versioni su blur, ripristino UI). Applicato a dettaglio NC, modale creazione, azioni e nota verifica azione. Validazione descrizione NC resta su blur/submit. Test L1: `ncTextFields.test.js`, `ncDetailPanel.test.js`.
+
+**Esperienza 30/05/2026 — pulsanti workflow NC nel drawer (`.status-btn` 40×40)**
+
+`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
+
+---
+
+### Sessione 30/05/2026 — Modulo NC (chiusura sessione — attesa feedback utenti)
+
+**Stato committente:** modulo NC **considerato terminato** per sviluppo pianificato; eventuali bug o ritocchi UX arrivano in **nuova chat** con feedback campo (es. Camellini).
+
+#### Delta iniziale vs soluzione corretta
+
+| Ipotesi iniziale | Realtà |
+|------------------|--------|
+| Registro NC = estensione tabella audit | Serve **modulo organizzativo** cross-audit ISO §10.2 con workflow proprio, push ISO+custom, gate RQ |
+| Dettaglio sotto la griglia | **Drawer laterale** (pattern Documenti) + deep-link `/nc?select=` |
+| Pulsanti workflow testuali custom | **`.status-btn`** con override dimensioni nel drawer, non nuove classi parallele |
+| Encoding «solo produzione» | Byte Latin-1 in sorgenti dichiarati UTF-8 — fix repo + `check-utf8-encoding.js` (lezione **ripetuta**) |
+
+#### Commit di riferimento (sessione)
+
+| Hash | Contenuto |
+|------|-----------|
+| `8f66d93`–`b23f79d` | Fase 1 slice 5–11 — griglia, creazione, scadenze |
+| `d80dafa` | Fase 1 chiusura — alert scadenze, simulazione |
+| `ac9b1a8` | Hardening H1–H6 — push custom, RQ, CSV, azioni cross-NC |
+| `327be94` | RichTextField + dettatura + draft offline |
+| `6810518` | Drawer guidato flusso ISO 10.2 |
+| `505e551` | Drawer laterale + encoding UI |
+| `527a04d` | Layout pulsanti workflow nel drawer |
+
+#### Lezioni consolidate (tutta la sessione NC)
+
+1. **Simulazione NC audit → gap ISO:** `onRowSelect(rowKey, row)`; audit `status: active` per dropdown creazione; sezioni HLS su audit non ISO 9001 → **400** esplicito; E2E griglia preferire `/nc?select=<id>`.
+2. **Slice verticali:** Fase 1 (griglia, modal, workflow, scadenze) poi H1–H6 senza mescolare migrazioni e refactor UI nella stessa consegna.
+3. **Hardening:** push custom checklist (072), email 08:05 (`NC_ALERT_ENABLED`), approvazione RQ, export CSV client-side, tab azioni cross-NC.
+4. **Golden rule UI:** ordine drawer ISO 10.2 — Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura (non form flat per tipo campo).
+5. **Encoding:** UTF-8 reale o `\u` in **stringhe JS**; mai `\u` come testo JSX grezzo; validare con `check-utf8-encoding.js` anche su `.md` manuale.
+6. **Libreria UI:** catalogo Fase A ~52 pattern / ~55–65% UI reale — secondo passaggio su `pages/` e moduli secondari; consultare [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) prima di nuovi blocchi UI.
+
+**Monitoraggio post-chiusura:** email job 08:05 (SMTP + destinatari `notifications_config`); push custom da audit reale Camellini; feedback utenti su drawer/flusso.
+
+**Ripresa:** [PROMPT_RIPRESA_NC.md](agent-tasks/PROMPT_RIPRESA_NC.md) — solo bug feedback o P2 (AI CAPA, LIBRERIA_UI completa, export PDF).
 
 ---
 
@@ -1738,16 +1783,21 @@ ISO 3834 ha struttura diversa (specifica di processo, non di sistema) ma condivi
 - Verbale riesame di direzione (§9.3)
 - Non conformità e azioni correttive (§10.2)
 
-### Modulo NC organizzativo — Fase 1 (route `/nc`, 30/05/2026)
+### Modulo NC organizzativo — Fase 1 + Hardening + UX drawer (route `/nc`, 30/05/2026)
 
-**Manuale utente:** [how-to/MANUALE_UTENTE_NC.md](how-to/MANUALE_UTENTE_NC.md) — scenari operativi, FAQ e stato hardening H1/H3/H5.
+**Stato:** ✅ **completo** — in attesa feedback utenti reali (chiusura sessione 30/05/2026). Non aprire `SESSION_NOTES_*`.
 
-Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved → verified → closed`.
+**Manuale utente:** [how-to/MANUALE_UTENTE_NC.md](how-to/MANUALE_UTENTE_NC.md) — scenari operativi, FAQ, canvas Glass.
+
+**Libreria UI:** [reference/LIBRERIA_UI_SGQ.md](reference/LIBRERIA_UI_SGQ.md) — consultare prima di nuovi blocchi UI nel modulo o refactor.
+
+Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved → verified →` **approvazione RQ** `→ closed`.
 
 | Area | Implementazione |
 |------|-----------------|
 | **Griglia** | `SgqDataGrid` theme `plain` — colonne nc_number, stato, severità, cliente, audit, scadenza, origine |
-| **Dettaglio** | Riga selezionata → `NcDetailPanel` + workflow `status-btn` + `ActionsList` |
+| **Dettaglio** | **Drawer laterale** (shell `.doc-detail` da Documenti) → `NcDetailPanel` sezioni ISO 10.2 + workflow `.status-btn` / `.nc-workflow-btn` + `ActionsList`; deep-link `/nc?select=` |
+| **Campi testo** | `RichTextField` (dettatura, draft `nc:<id>`, storico versioni) — allineato audit |
 | **Creazione manuale** | Pulsante «Nuova NC» → `NcCreateModal` → `POST /non-conformities` (`source_type: manual`) |
 | **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
 | **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
@@ -1772,7 +1822,7 @@ Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test
 
 **URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
 
-**Backlog P2:** export PDF registro, agente AI CAPA (Fase 2 opzionale).
+**Backlog P2 (solo su richiesta committente):** export PDF registro; agente AI CAPA; completamento catalogo LIBRERIA_UI (Fase B/C); smoke L3 email ricezione reale.
 
 ### NC Hardening — slice H1–H6 (30/05/2026, TEST OK)
 
