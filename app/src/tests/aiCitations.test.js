@@ -8,6 +8,8 @@ describe('aiCitations', () => {
     expect(getCitationPath({ entityType: 'complaint', entityId: '7' })).toBe('/reclami');
     expect(getCitationPath({ entityType: 'document', entityId: '99' })).toBe('/documents');
     expect(getCitationPath({ entityType: 'unknown', entityId: '1' })).toBeNull();
+    expect(getCitationPath({ entityType: 'non_conformity', entityId: '' })).toBe('/nc');
+    expect(getCitationPath({ entityType: 'complaint', entityId: '' })).toBe('/reclami');
   });
 
   it('buildSourcesFootnote distinguishes sources vs empty', () => {
