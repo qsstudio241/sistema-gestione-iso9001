@@ -4,16 +4,18 @@
    ==================================================== */
 
 .doc-tree {
-  width: 260px;
-  min-width: 220px;
-  max-width: 320px;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   background: #f8f9fa;
-  border-right: 1px solid #dee2e6;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: inherit;
+}
+
+.doc-tree__mobile-selection {
+  display: none;
 }
 
 .doc-tree__header {
@@ -353,19 +355,30 @@
 /* ---- responsive: drawer mobile ---- */
 
 @media (max-width: 768px) {
-  .doc-tree {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 200;
-    width: 280px;
-    height: 100dvh;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+  .doc-tree__mobile-selection {
+    display: block;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid #dee2e6;
+    background: #eef2ff;
   }
 
-  .doc-tree--open {
-    transform: translateX(0);
+  .doc-tree__mobile-selection-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6366f1;
+    margin-bottom: 2px;
+  }
+
+  .doc-tree__mobile-selection-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.35;
+    word-break: break-word;
   }
 }

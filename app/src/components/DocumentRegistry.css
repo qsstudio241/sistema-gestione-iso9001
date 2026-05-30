@@ -579,13 +579,47 @@
 }
 
 .docregistry-tree-sidebar {
-  width: 260px;
-  min-width: 260px;
-  border-right: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  min-width: 0;
+  border-right: none;
   background: #f8f9fa;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   max-height: 75vh;
+}
+
+.docregistry-tree-resizer {
+  flex-shrink: 0;
+  width: 6px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  touch-action: none;
+}
+
+.docregistry-tree-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: #e5e7eb;
+  transition: background 0.15s ease;
+}
+
+.docregistry-tree-resizer:hover::after,
+body.sgq-doc-tree-resizing .docregistry-tree-resizer::after {
+  background: #1a73e8;
+}
+
+body.sgq-doc-tree-resizing,
+body.sgq-doc-tree-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .docregistry-tree-content {
@@ -1114,11 +1148,13 @@
     flex-direction: column;
   }
   .docregistry-tree-sidebar {
-    width: 100%;
-    min-width: 0;
+    width: 100% !important;
+    flex-basis: auto !important;
     max-height: 200px;
-    border-right: none;
     border-bottom: 1px solid #e5e7eb;
+  }
+  .docregistry-tree-resizer {
+    display: none;
   }
   .docregistry-tree-content {
     max-height: none;
