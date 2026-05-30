@@ -128,8 +128,6 @@ const uploadTemplate = multer({
     limits: { fileSize: 5 * 1024 * 1024, files: 1 } // 5MB
 });
 
-module.exports = { upload, uploadTemplate };
-
 // ─── Multer per file allegati a documenti del registro ──────────────────────
 // Approccio blacklist: accetta qualsiasi formato eccetto eseguibili.
 // Il percorso è organizzato per documento: uploads/docs/{org_id}/{doc_id}/

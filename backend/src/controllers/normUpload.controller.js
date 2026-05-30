@@ -34,6 +34,18 @@ function assessTextQuality(text) {
  * produce un titolo leggibile: "ISO 9016:2012 — Destructive tests on welds."
  * Se issuing_body è "UNI" e il codice non inizia già con UNI, prefissa "UNI EN".
  */
+/** Campi piatti per UI (NormUploadButton) — oltre a metadata annidato. */
+function flattenNormUploadEntry(entry) {
+    const m = entry.metadata || {};
+    entry.fileName = entry.filename || entry.fileName || null;
+    entry.norm_title = m.norm_title || entry.norm_title || null;
+    entry.standard_code = m.standard_code || entry.standard_code || null;
+    entry.edition_year = m.edition_year ?? entry.edition_year ?? null;
+    entry.issuing_body = m.issuing_body || entry.issuing_body || null;
+    entry.text_quality = entry.textQuality || entry.text_quality || null;
+    return entry;
+}
+
 function formatReadableTitle(metadata) {
   const { standard_code, norm_title, issuing_body } = metadata;
   if (!norm_title) return null;
@@ -257,9 +269,10 @@ async function uploadNorms(req, res) {
     } catch (err) {
       logger.error(`[NormUpload] Errore per ${file.originalname}:`, err.message);
       entry.error = err.message;
+      entry.fileName = file.originalname;
       // Don't delete the file — it's already on disk; the partial state can be cleaned up manually
     }
-    results.push(entry);
+    results.push(flattenNormUploadEntry(entry));
   }
 
   const successCount = results.filter(r => r.success).length;

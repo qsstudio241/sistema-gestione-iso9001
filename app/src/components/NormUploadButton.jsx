@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
+import { normalizeNormUploadResults, countNormUploadSuccesses } from "../utils/normUploadResults";
 import "./NormUploadButton.css";
 
 const QUALITY_LABELS = {
@@ -48,8 +49,11 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
 
     try {
       const res = await apiService.uploadNorms(selectedFiles);
-      setResults(res.results || res.data || []);
-      if (onUploadComplete) onUploadComplete();
+      const normalized = normalizeNormUploadResults(res.results || res.data || []);
+      setResults(normalized);
+      if (onUploadComplete && countNormUploadSuccesses(normalized) > 0) {
+        onUploadComplete();
+      }
     } catch (err) {
       setResults([{ error: err.message || "Errore upload", fileName: "tutti i file" }]);
     } finally {

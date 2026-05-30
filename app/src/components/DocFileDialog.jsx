@@ -255,13 +255,13 @@ function DocFileDialog({ doc, onClose }) {
                     </button>
                   )}
 
-                  <a
-                    href={apiService.getDocFileDownloadUrl(doc.id)}
-                    download
+                  <button
+                    type="button"
                     className="btn-docfile-download"
+                    onClick={() => apiService.downloadDocFile(doc.id, null, currentFile.file_name).catch((err) => setError(err.message))}
                   >
                     {e(11015)}{"\uFE0F"} Scarica
-                  </a>
+                  </button>
                 </div>
 
                 {/* Pulsante RILASCIA REVISIONE (solo per bozze) */}
@@ -322,13 +322,14 @@ function DocFileDialog({ doc, onClose }) {
                             {e(128065)}{"\uFE0F"}
                           </button>
                         )}
-                        <a
-                          href={apiService.getDocFileDownloadUrl(doc.id, f.id)}
-                          download
+                        <button
+                          type="button"
                           className="btn-docfile-hist-dl"
+                          title="Scarica"
+                          onClick={() => apiService.downloadDocFile(doc.id, f.id, f.file_name).catch((err) => setError(err.message))}
                         >
                           {e(11015)}{"\uFE0F"}
-                        </a>
+                        </button>
                       </li>
                     ))}
                   </ul>
