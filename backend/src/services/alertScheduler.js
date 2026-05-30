@@ -326,6 +326,141 @@ async function runKnowledgeIndexJob() {
   }
 }
 
+const NC_ALERT_DAYS = 7;
+
+function formatItDate(d) {
+  if (!d) return '\u2014';
+  const raw = String(d);
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : raw;
+}
+
+function buildNcDueEmailHtml(orgName, overdueNcs, dueSoonNcs, overdueActions, dueSoonActions) {
+  const thStyle = 'padding:8px 12px;background:#1e3a5f;color:#fff;text-align:left;font-size:12px';
+  const tableStyle = 'width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px';
+  const ncRow = (row, overdue) => `
+    <tr style="background:${overdue ? '#fff5f5' : '#fffbeb'}">
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${row.nc_number || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.title || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.status || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${overdue ? '#dc2626' : '#b45309'};font-weight:600">${overdue ? 'Scaduta' : `Scade ${formatItDate(row.due_date)}`}</td>
+    </tr>`;
+  const actionRow = (row, overdue) => `
+    <tr style="background:${overdue ? '#fff5f5' : '#fffbeb'}">
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${row.nc_number || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.description || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.responsible || '\u2014'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${overdue ? '#dc2626' : '#b45309'};font-weight:600">${overdue ? 'Scaduta' : `Scade ${formatItDate(row.due_date)}`}</td>
+    </tr>`;
+
+  const section = (title, color, headers, rowsHtml) => rowsHtml ? `
+    <h3 style="color:${color};margin:0 0 12px">${title}</h3>
+    <table style="${tableStyle}"><thead><tr>${headers.map((h) => `<th style="${thStyle}">${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>` : '';
+
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#111827">
+      <div style="background:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0">
+        <h2 style="margin:0;color:#fff;font-size:18px">SGQ Studio \u2014 Alert NC e azioni correttive</h2>
+        <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">${orgName} \u00b7 ${new Date().toLocaleDateString('it-IT')}</p>
+      </div>
+      <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
+        ${section('NC scadute', '#dc2626', ['Numero', 'Titolo', 'Stato', 'Scadenza'], overdueNcs.map((r) => ncRow(r, true)).join(''))}
+        ${section(`NC in scadenza entro ${NC_ALERT_DAYS} giorni`, '#b45309', ['Numero', 'Titolo', 'Stato', 'Scadenza'], dueSoonNcs.map((r) => ncRow(r, false)).join(''))}
+        ${section('Azioni scadute', '#dc2626', ['NC', 'Descrizione', 'Responsabile', 'Scadenza'], overdueActions.map((r) => actionRow(r, true)).join(''))}
+        ${section(`Azioni in scadenza entro ${NC_ALERT_DAYS} giorni`, '#b45309', ['NC', 'Descrizione', 'Responsabile', 'Scadenza'], dueSoonActions.map((r) => actionRow(r, false)).join(''))}
+        <p style="font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;margin:0">
+          Messaggio automatico SGQ Studio (NC_ALERT_ENABLED=true).
+        </p>
+      </div>
+    </div>`;
+}
+
+async function fetchNcDueItems(pool, orgId) {
+  const ncResult = await pool.request()
+    .input('orgId', orgId)
+    .input('days', NC_ALERT_DAYS)
+    .query(`
+      SELECT nc.nc_id, nc.nc_number, nc.title, nc.status, nc.due_date,
+        CASE WHEN nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
+      FROM non_conformities nc
+      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE a.organization_id = @orgId
+        AND nc.due_date IS NOT NULL
+        AND nc.status NOT IN ('closed', 'verified')
+        AND (
+          nc.due_date < CAST(GETDATE() AS DATE)
+          OR nc.due_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+        )
+      ORDER BY nc.due_date ASC
+    `);
+
+  const actionResult = await pool.request()
+    .input('orgId', orgId)
+    .input('days', NC_ALERT_DAYS)
+    .query(`
+      SELECT na.action_id, na.nc_id, nc.nc_number, na.description, na.responsible, na.due_date, na.status,
+        CASE WHEN na.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
+      FROM nc_actions na
+      INNER JOIN non_conformities nc ON na.nc_id = nc.nc_id
+      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE a.organization_id = @orgId
+        AND na.due_date IS NOT NULL
+        AND na.status NOT IN ('verified')
+        AND (
+          na.due_date < CAST(GETDATE() AS DATE)
+          OR na.due_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+        )
+      ORDER BY na.due_date ASC
+    `);
+
+  return { ncs: ncResult.recordset || [], actions: actionResult.recordset || [] };
+}
+
+async function runNcDueAlertJob() {
+  if (process.env.ALERT_ENABLED !== 'true') {
+    logger.info('[AlertScheduler] NC due alert skip (ALERT_ENABLED != true)');
+    return;
+  }
+  if (process.env.NC_ALERT_ENABLED !== 'true') {
+    logger.info('[AlertScheduler] NC due alert skip (NC_ALERT_ENABLED != true)');
+    return;
+  }
+
+  logger.info('[AlertScheduler] Avvio job alert NC/azioni in scadenza...');
+  const pool = await getPool();
+
+  try {
+    const orgsResult = await pool.request().query(`
+      SELECT nc.organization_id, nc.recipients_email, o.organization_name
+      FROM notifications_config nc
+      JOIN organizations o ON nc.organization_id = o.organization_id
+      WHERE nc.enabled = 1
+    `);
+    const orgs = orgsResult.recordset || [];
+
+    for (const org of orgs) {
+      const { ncs, actions } = await fetchNcDueItems(pool, org.organization_id);
+      if (ncs.length === 0 && actions.length === 0) {
+        logger.info(`[AlertScheduler] Org ${org.organization_id}: nessuna NC/azione in alert`);
+        continue;
+      }
+
+      const overdueNcs = ncs.filter((r) => r.is_overdue);
+      const dueSoonNcs = ncs.filter((r) => !r.is_overdue);
+      const overdueActions = actions.filter((r) => r.is_overdue);
+      const dueSoonActions = actions.filter((r) => !r.is_overdue);
+
+      const subject = `[SGQ] NC/azioni in scadenza \u2014 ${org.organization_name}`;
+      const html = buildNcDueEmailHtml(org.organization_name, overdueNcs, dueSoonNcs, overdueActions, dueSoonActions);
+      const sent = await sendAlertEmail(org.recipients_email, subject, html);
+      logger.info(`[AlertScheduler] NC alert org ${org.organization_id}: inviato=${sent}`);
+    }
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job NC due alert:', err.message);
+  }
+}
+
+
 function startAlertScheduler() {
   if (!schedule) {
     logger.warn('[AlertScheduler] node-schedule non disponibile — scheduler non avviato');
@@ -357,22 +492,11 @@ function startAlertScheduler() {
     runKnowledgeL2Job().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge L2):', err.message));
   });
 
-// ─── NC / azioni correttive — remind email (Fase 1 Slice 8, disabilitato) ─────
-// Prerequisiti: ALERT_ENABLED=true, SMTP_* in .env, notifications_config.enabled=1
-// Abilitare quando SMTP VPS è configurato e testato (GUIDA § Alert Engine).
-//
-// async function runNcDueAlertJob() {
-//   if (process.env.ALERT_ENABLED !== 'true') return;
-//   logger.info('[AlertScheduler] runNcDueAlertJob — NC/azioni in scadenza (feature flag off)');
-//   // Query: NC + nc_actions con due_date passata o entro 7 gg, stati non terminali
-//   // Destinatari: notifications_config.recipients_email per org
-// }
-//
-// schedule.scheduleJob('5 8 * * *', () => {
-//   runNcDueAlertJob().catch(err => logger.error('[AlertScheduler] NC due alert:', err.message));
-// });
+  schedule.scheduleJob('5 8 * * *', () => {
+    runNcDueAlertJob().catch(err => logger.error('[AlertScheduler] NC due alert:', err.message));
+  });
 
-  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, norme lun 03:00, knowledge index 02:00, optimization 03:00, L2 synthesis dom 04:00');
+  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, NC 08:05, norme lun 03:00, knowledge index 02:00, optimization 03:00, L2 synthesis dom 04:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job /* , runNcDueAlertJob */ };
+module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job, runNcDueAlertJob };

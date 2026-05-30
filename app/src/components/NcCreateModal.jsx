@@ -1,5 +1,5 @@
 /**
- * NcCreateModal ó creazione NC manuale (POST source_type manual)
+ * NcCreateModal ù creazione NC manuale (POST source_type manual)
  */
 
 import React, { useState, useEffect } from "react";
@@ -37,8 +37,12 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
     setForm(EMPTY_FORM);
     setError(null);
     setLoadingAudits(true);
-    apiService.getAudits({ limit: 100, status: "active" })
-      .then(res => setAudits(res?.data || []))
+    apiService.getAudits({ limit: 100 })
+      .then(res => {
+        const rows = res?.data || [];
+        const openish = rows.filter(a => a.status !== 'completed' && a.status !== 'approved');
+        setAudits(openish.length ? openish : rows);
+      })
       .catch(() => setAudits([]))
       .finally(() => setLoadingAudits(false));
   }, [open]);
@@ -85,7 +89,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
       >
         <h3 id="nc-create-title">{"\u2795 Nuova NC manuale"}</h3>
         <p className="nc-modal-desc">
-          Crea una non conformit‡ collegata a un audit (origine manuale, ISO ß10.2).
+          Crea una non conformitù collegata a un audit (origine manuale, ISO ù10.2).
         </p>
         <form className="nc-action-form" onSubmit={handleSubmit}>
           <div className="nc-form-row">
@@ -102,7 +106,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               </option>
               {audits.map(a => (
                 <option key={a.audit_id} value={a.audit_id}>
-                  {a.audit_number} ó {a.client_name}
+                  {a.audit_number} ù {a.client_name}
                 </option>
               ))}
             </select>
@@ -123,7 +127,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               </select>
             </div>
             <div>
-              <label htmlFor="nc-create-severity">Severit‡ *</label>
+              <label htmlFor="nc-create-severity">Severitù *</label>
               <select
                 id="nc-create-severity"
                 required
@@ -147,7 +151,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               value={form.description}
               disabled={saving}
               onChange={e => setField("description", e.target.value)}
-              placeholder="Descrivi la non conformit‡..."
+              placeholder="Descrivi la non conformitù..."
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">

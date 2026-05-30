@@ -1,6 +1,6 @@
-# DEPUTYTASK — NC Fase 1 · Chiusura slice 6–11
+﻿# DEPUTYTASK — NC Fase 1 — Chiusura slice 6–11
 
-**Stato:** **TEST OK Fase 1 NC** — lead, 30/05/2026
+**Stato:** **TEST OK Fase 1 NC** — chiusura lead, 30/05/2026 (deploy VPS + mig 071)
 
 ---
 
@@ -15,14 +15,14 @@
 | 7/8 | Filtri scadenze API `due_within_days` + UI | ✅ | `b23f79d` |
 | 9 | Link audit ↔ NC (griglia + PendingIssuesCascade) | ✅ | `b23f79d` |
 | 11 | Test regressione push ISO + GUIDA NC | ✅ | `b23f79d` |
-| 8 email | Hook commentato alertScheduler (SMTP non configurato) | ✅ doc | `b23f79d` |
+| 8 email | `runNcDueAlertJob` + flag `NC_ALERT_ENABLED` | ✅ | *(commit deploy)* |
+| **Ops** | Migrazione **071** VPS + `deploy-controllers-to-vps.ps1` + health | ✅ | 30/05/2026 |
 
 ---
 
 ## Residui P2 (non bloccanti Fase 1)
 
-- Smoke L3 email NC quando SMTP VPS attivo (`ALERT_ENABLED=true`)
-- **Deploy VPS**: migrazione 071 + `deploy-controllers-to-vps.ps1` (credenziali SSH assenti in questo agente)
+- Impostare `NC_ALERT_ENABLED=true` sul VPS dopo smoke L3 email
 - Export CSV/PDF registro NC (Slice 7 report — backlog)
 - Filtro azioni cross-NC a livello registro (opzionale)
 
@@ -36,4 +36,4 @@ Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON A
 
 ---
 
-*Aggiornato 30/05/2026 — NC Fase 1 completata*
+*Aggiornato 30/05/2026 — NC Fase 1 completata con deploy produzione*
