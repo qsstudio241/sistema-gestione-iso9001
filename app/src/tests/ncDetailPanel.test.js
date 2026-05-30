@@ -1,5 +1,5 @@
 /**
- * Test L1 — NcDetailPanel (NC Fase 1 Slice 4)
+ * Test L1 — NcDetailPanel (NC Fase 1 Slice 5)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -10,10 +10,15 @@ const mockUpdateNcStatus = vi.hoisted(() => vi.fn());
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),
+    getAttachments: vi.fn().mockResolvedValue({ data: [] }),
+    uploadAttachment: vi.fn(),
+    deleteAttachment: vi.fn(),
+    getAttachmentDownloadUrl: vi.fn(),
   },
 }));
 
 vi.mock('../components/ChecklistModule.css', () => ({}));
+vi.mock('../components/AttachmentSection.css', () => ({}));
 
 import NcDetailPanel from '../components/NcDetailPanel';
 
@@ -25,6 +30,7 @@ const baseNc = {
   description: 'Descrizione NC di test',
   root_cause: 'Causa radice di test',
   verification_notes: 'Note verifica di test',
+  verification_responsible: 'Luigi Verdi',
   responsible_person: 'Mario Rossi',
   due_date: '2026-06-15T00:00:00.000Z',
   corrective_action: 'Azione legacy deprecata',
@@ -41,9 +47,10 @@ describe('NcDetailPanel', () => {
 
     expect(screen.getByLabelText(/Descrizione/i)).toHaveValue('Descrizione NC di test');
     expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
-    expect(screen.getByLabelText(/Note verifica/i)).toHaveValue('Note verifica di test');
-    expect(screen.getByLabelText(/Responsabile/i)).toHaveValue('Mario Rossi');
-    expect(screen.getByLabelText(/Scadenza/i)).toHaveValue('2026-06-15');
+    expect(screen.getByLabelText(/Note verifica efficacia/i)).toHaveValue('Note verifica di test');
+    expect(screen.getByLabelText(/Responsabile verifica/i)).toHaveValue('Luigi Verdi');
+    expect(screen.getByLabelText(/Responsabile NC/i)).toHaveValue('Mario Rossi');
+    expect(screen.getByLabelText(/Scadenza NC/i)).toHaveValue('2026-06-15');
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
 
@@ -69,6 +76,7 @@ describe('NcDetailPanel', () => {
         description: 'Descrizione aggiornata',
         root_cause: 'Causa radice di test',
         verification_notes: 'Note verifica di test',
+        verification_responsible: 'Luigi Verdi',
         severity: 'major',
         responsible_person: 'Mario Rossi',
         due_date: '2026-06-15',

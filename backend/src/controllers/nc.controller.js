@@ -409,6 +409,7 @@ async function updateNonConformity(req, res) {
             status,
             resolution_date,
             verification_notes,
+            verification_responsible,
             root_cause
         } = req.body;
 
@@ -418,7 +419,7 @@ async function updateNonConformity(req, res) {
 
         // Verifica esistenza, ownership org e perimetro studio RBAC
         const existingNC = await query(`
-      SELECT nc.nc_id, nc.status AS current_status, a.audit_id
+      SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, a.audit_id
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
@@ -472,6 +473,10 @@ async function updateNonConformity(req, res) {
             updates.push('verification_notes = @verification_notes');
             params.verification_notes = verification_notes;
         }
+        if (verification_responsible !== undefined) {
+            updates.push('verification_responsible = @verification_responsible');
+            params.verification_responsible = verification_responsible;
+        }
         if (root_cause !== undefined) {
             updates.push('root_cause = @root_cause');
             params.root_cause = root_cause;
@@ -494,6 +499,19 @@ async function updateNonConformity(req, res) {
                     currentStatus,
                     allowedTransitions: validTransitions[currentStatus]
                 });
+            }
+
+            // Gate ISO 10.2: note verifica obbligatorie per verified/closed
+            if (status === 'verified' || status === 'closed') {
+                const notesCandidate = verification_notes !== undefined
+                    ? verification_notes
+                    : existingNC.recordset[0].verification_notes;
+                if (!notesCandidate || !String(notesCandidate).trim()) {
+                    return res.status(400).json({
+                        error: 'Note verifica obbligatorie prima di passare a Verificata o Chiusa',
+                        code: 'VERIFICATION_NOTES_REQUIRED'
+                    });
+                }
             }
 
             updates.push('status = @status');
@@ -782,7 +800,7 @@ async function updateNcAction(req, res) {
 
         // Verifica ownership
         const check = await query(`
-            SELECT a.action_id, a.status AS current_status
+            SELECT a.action_id, a.status AS current_status, a.verification_note
             FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
             INNER JOIN audits au ON nc.audit_id = au.audit_id
@@ -816,6 +834,17 @@ async function updateNcAction(req, res) {
                     code: 'INVALID_STATE_TRANSITION',
                     allowedTransitions: validTransitions[current]
                 });
+            }
+            if (status === 'verified') {
+                const noteCandidate = verification_note !== undefined
+                    ? verification_note
+                    : check.recordset[0].verification_note;
+                if (!noteCandidate || !String(noteCandidate).trim()) {
+                    return res.status(400).json({
+                        error: 'Nota verifica obbligatoria per segnare l\'azione come verificata',
+                        code: 'ACTION_VERIFICATION_NOTE_REQUIRED'
+                    });
+                }
             }
             updates.push('status = @status');
             params.status = status;
