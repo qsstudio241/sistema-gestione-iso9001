@@ -90,7 +90,20 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 3. Usare il menu **Tutti i clienti** per restringere a un'azienda (es. *Azienda Test Fase 1*).
 4. Cercare per testo nel campo **Cerca per numero NC o descrizione...**.
 5. Affinare con **Tutti gli stati**, **Tutte le severità**, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
-6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra) con dettaglio, workflow e azioni. La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`.
+6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra). La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`.
+
+**Ordine sezioni nel drawer** (flusso ISO 10.2, dall'alto verso il basso):
+
+| # | Sezione | Contenuto |
+|---|---------|-----------|
+| 1 | **Scheda NC** | Descrizione, severità, responsabile NC, scadenza; badge origine (audit/reclamo/manuale) |
+| 2 | **Stato workflow** | Pulsanti Avvia lavorazione / Segna risolta / Verifica (sticky in scroll) |
+| 3 | **Cause** | Analisi causa radice |
+| 4 | **Azioni correttive** | Elenco azioni con attuazione e verifica per singola azione |
+| 5 | **Evidenze** | Allegati facoltativi |
+| 6 | **Verifica efficacia** | Note e responsabile verifica NC; collassata con hint se NC ancora aperta/in corso |
+| 7 | **Chiusura** | Approva chiusura (RQ) e Chiudi NC (dopo approvazione) |
+| — | **Salva modifiche** | In fondo al drawer, dopo le sezioni editabili |
 
 **Domande che mi pongo (FAQ interne)**
 
@@ -229,18 +242,23 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 **Passi**
 
 1. Selezionare la NC in griglia.
-2. Nel dettaglio, compilare campi editabili: **Descrizione**, **Analisi causa radice**, **Note verifica efficacia**, **Responsabile verifica**, **Severità**, **Scadenza NC**, **Responsabile NC**.
-   - **Dettatura vocale**: pulsante microfono a destra nei campi testo lunghi (come in audit); lingua italiana; richiede connessione per il riconoscimento.
-   - **Storico testo**: link «Storico testo (n)» sotto il campo — mostra versioni salvate al termine della modifica (uscita dal campo); clic per ripristinare una versione precedente.
-   - **Bozza locale**: mentre compili, il testo resta nel browser anche se la connessione cade o ricarichi la pagina; al ritorno online usa **Salva modifiche** (o salva l'azione) per inviare al server. La bozza locale si cancella dopo salvataggio riuscito.
-3. Cliccare **Salva modifiche** dopo ogni modifica sostanziale (validazione descrizione solo in uscita dal campo o al salvataggio, non a ogni lettera).
-4. Usare i pulsanti workflow (stile checklist — verde/giallo/grigio):
+2. Nel drawer, seguire le sezioni numerate **1 → 7** (vedi tabella in §3.1):
+   - **1. Scheda NC**: descrizione, severità, responsabile, scadenza (+ link audit/reclamo se presenti).
+   - **2. Stato workflow**: pulsanti di avanzamento stato (subito sotto la scheda).
+   - **3. Cause**: analisi causa radice.
+   - **4. Azioni correttive**: aggiungere e avanzare le singole azioni.
+   - **5. Evidenze**: allegati facoltativi.
+   - **6. Verifica efficacia**: note e responsabile verifica NC (evidenziata da NC risolta in poi; collassata con hint se ancora aperta/in corso).
+   - **7. Chiusura**: approvazione RQ e chiusura formale.
+3. Nei campi testo lunghi: **Dettatura vocale**, **Storico testo**, **Bozza locale** (come in audit).
+4. Cliccare **Salva modifiche** in fondo al drawer dopo ogni modifica sostanziale (validazione descrizione su blur o al salvataggio).
+5. Usare i pulsanti in **2. Stato workflow** (stile checklist — verde/giallo/grigio):
    - **Avvia lavorazione** (Aperta → In corso)
    - **Segna come risolta** (In corso → Risolta)
-   - **Verifica** (Risolta → Verificata) — **solo se** le note verifica sono compilate e salvate
-5. In stato **Verificata**, l'**admin/superadmin** (RQ) clicca **Approva chiusura (RQ)** (H3). Compare badge «Approvata RQ» con data e nome approvatore.
-6. Solo dopo l'approvazione: **Chiudi NC** (Verificata → Chiusa).
-7. Dopo stati **Verificata** (con approvazione) o **Chiusa**, i campi diventano in sola lettura.
+   - **Verifica** (Risolta → Verificata) — **solo se** le note verifica (sez. 6) sono compilate e salvate
+6. In stato **Verificata**, l'**admin/superadmin** (RQ) usa **7. Chiusura** → **Approva chiusura (RQ)** (H3). Compare badge «Approvata RQ» con data e nome approvatore.
+7. Solo dopo l'approvazione: **Chiudi NC** in sez. 7 (Verificata → Chiusa).
+8. Dopo stati **Verificata** (con approvazione) o **Chiusa**, i campi diventano in sola lettura.
 
 **Domande che mi pongo**
 
@@ -267,7 +285,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 **Passi**
 
-1. Nel dettaglio NC, scorrere alla sezione **Azioni correttive (n)**.
+1. Nel drawer NC, sezione **4. Azioni correttive**.
 2. Cliccare **+ Aggiungi azione**.
 3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione*** (microfono e storico come nel form NC), **Responsabile attuazione**, **Scadenza**.
 4. **Salva azione**.
@@ -295,7 +313,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 **Passi**
 
-1. Nel dettaglio NC, sezione **Allegati evidenze**.
+1. Nel drawer NC, sezione **5. Evidenze**.
 2. Cliccare **Carica file** (o area upload) e selezionare uno o più file.
 3. Attendere il completamento; l'elenco mostra nome e dimensione.
 4. Per rimuovere: icona elimina → conferma (non disponibile se NC in sola lettura).
@@ -319,7 +337,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 **Passi**
 
 1. Aprire NC in stato **Verificata** con note verifica compilate e salvate.
-2. L'RQ clicca **Approva chiusura (RQ)**.
+2. L'RQ clicca **Approva chiusura (RQ)** in sezione **7. Chiusura**.
 3. Compare badge «Approvata RQ» con data e nome approvatore.
 4. Solo allora appare e funziona **Chiudi NC**.
 

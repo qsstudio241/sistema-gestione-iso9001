@@ -1,6 +1,27 @@
 /**
- * Regole workflow NC ISO 10.2 ù gate verifica efficacia e scadenze azioni
+ * Regole workflow NC ISO 10.2 - gate verifica efficacia e scadenze azioni
  */
+
+const NC_VALID_NEXT = {
+  open:        ['in_progress'],
+  in_progress: ['resolved'],
+  resolved:    ['verified'],
+  verified:    [],
+  closed:      [],
+};
+
+/** Transizioni workflow principali (sez. 2 drawer), esclusa chiusura formale */
+export function getNcWorkflowTransitionButtons(nc) {
+  return [...(NC_VALID_NEXT[nc?.status] || [])];
+}
+
+/** Pulsante Chiudi NC (sez. 7) - solo dopo approvazione RQ */
+export function getNcClosureButton(nc) {
+  if (nc?.status === 'verified' && nc?.approved_at) {
+    return 'closed';
+  }
+  return null;
+}
 
 export function needsVerificationNotesForStatus(status) {
   return status === 'verified' || status === 'closed';
@@ -26,7 +47,7 @@ export function canTransitionNcStatus(nc, newStatus) {
       return {
         ok: false,
         message:
-          'La chiusura richiede l\'approvazione del Responsabile Qualit‡. Usare ´Approva chiusuraª prima di chiudere.',
+          'La chiusura richiede l\'approvazione del Responsabile Qualit\u00E0. Usare \u00ABApprova chiusura\u00BB prima di chiudere.',
       };
     }
   }
@@ -52,7 +73,7 @@ export function canVerifyAction(verificationNote) {
   return (verificationNote || '').trim().length > 0;
 }
 
-/** Stati azione per cui la scadenza non conta più */
+/** Stati azione per cui la scadenza non conta pi\u00F9 */
 const ACTION_TERMINAL_STATUSES = new Set(['completed', 'verified']);
 
 /**
@@ -110,7 +131,7 @@ export function getActionDueStatus(action, withinDays = 7) {
 }
 
 /**
- * Filtra azioni per scadenza (solo UI, dati gi‡ caricati per NC).
+ * Filtra azioni per scadenza (solo UI, dati gi\u00E0 caricati per NC).
  * @param {'all'|'overdue'|'due_soon'} mode
  */
 export function filterActionsByDue(actions, mode, withinDays = 7) {

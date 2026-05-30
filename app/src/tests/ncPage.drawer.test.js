@@ -9,12 +9,14 @@ const ncPagePath = resolve(process.cwd(), 'src/pages/NCPage.jsx');
 const ncPageCssPath = resolve(process.cwd(), 'src/pages/NCPage.css');
 
 describe('NCPage drawer', () => {
-  it('usa overlay doc-detail e handleCloseDetail al posto del pannello sotto griglia', () => {
+  it('usa overlay doc-detail e delega flusso a NcDetailPanel', () => {
     const src = readFileSync(ncPagePath, 'utf8');
     expect(src).toContain('doc-detail__overlay');
     expect(src).toContain('nc-detail-drawer');
     expect(src).toContain('handleCloseDetail');
     expect(src).toContain('DocumentDetailPanel.css');
+    expect(src).toContain('onStatusChange');
+    expect(src).toContain('onApproveClosure');
     expect(src).not.toMatch(/className="nc-detail-section"/);
   });
 
@@ -24,9 +26,10 @@ describe('NCPage drawer', () => {
     expect(src).toMatch(/setViewMode\("nc"\)/);
   });
 
-  it('CSS drawer NC estende larghezza pannello documenti', () => {
+  it('CSS drawer NC con sezioni flusso operativo', () => {
     const css = readFileSync(ncPageCssPath, 'utf8');
     expect(css).toContain('.nc-detail-drawer');
+    expect(css).toContain('.nc-drawer-section');
     expect(css).not.toContain('.nc-detail-section');
   });
 });

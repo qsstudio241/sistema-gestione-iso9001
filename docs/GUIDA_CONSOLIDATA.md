@@ -71,7 +71,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Tooling Cursor/MCP](#
 
 **Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
 
-I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti.
+I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti. **UI guida flusso**: sezioni numerate nel drawer seguono l'ordine ISO 10.2 (Scheda → Stato workflow → Cause → Azioni → Evidenze → Verifica → Chiusura), non un form flat per tipo campo.
 
 **Esperienza 30/05/2026 — campi testo NC = standard audit (`RichTextField`)**
 
@@ -195,6 +195,7 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 | 2 | Tab **Catalogo**: `DocumentDataGrid` | Selezione riga, toolbar Allegato/Modifica/Archivia, colonne ordinabili, hint toolbar |
 | 3 | Albero cartelle | Rimossa icona lucchetto confusa sulle cartelle di sistema; tooltip su nomi troncati |
 | 3b | Albero cartelle (05/2026) | Rinomina/Elimina cartelle custom (elimina solo se vuota, 409 `FOLDER_NOT_EMPTY`); sottocartella sotto selezione; icone colore sistema vs custom; cartelle sistema non modificabili |
+| 3c | Albero cartelle (05/2026) | Sidebar albero **ridimensionabile** (drag 220–480px, chiave `sgq-doc-tree-width`); su mobile (≤768px) barra con **nome completo cartella selezionata** sopra l'albero (tooltip `title` insufficiente su touch) |
 | 4 | Upload hardening | Backend: limite **200 MB**; frontend: avviso soft **50 MB** + barra progresso; fix `getExt`; versioning in transazione SQL |
 | 5 | Test `NormUploadButton` | 12 test Vitest aggiunti |
 | 6 | Deploy su `main` | `2024747` (feat UX), `864c9e1` (integrazione DataGrid Catalogo) — **nessuna PR** |

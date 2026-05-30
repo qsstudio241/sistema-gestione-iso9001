@@ -254,14 +254,14 @@
 }
 .nc-workflow-btns .status-btn {
   width: auto;
-  min-width: 0;
+  min-width: 7.5rem;
   height: auto;
   min-height: 36px;
   padding: 6px 14px;
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 0 1 auto;
   border-radius: 6px;
 }
 .nc-workflow-btns .status-btn:hover {
@@ -373,6 +373,75 @@
 }
 .nc-detail-drawer-body {
   padding: 16px 20px 24px;
+}
+.nc-detail-drawer .nc-drawer-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf2f7;
+}
+.nc-detail-drawer .nc-drawer-section:last-of-type {
+  border-bottom: none;
+}
+.nc-drawer-section-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 12px;
+}
+.nc-drawer-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.nc-drawer-section-heading .nc-drawer-section-title {
+  margin-bottom: 0;
+}
+.nc-drawer-section-toggle {
+  padding: 4px 10px !important;
+  font-size: 0.75rem !important;
+}
+.nc-drawer-section-hint {
+  font-size: 0.78rem;
+  color: #718096;
+  font-style: italic;
+  margin: 0 0 10px;
+}
+.nc-drawer-section--highlight {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  border-radius: 8px;
+  padding: 12px;
+  border-bottom: none;
+}
+.nc-drawer-section--collapsed .nc-drawer-section-body {
+  display: none;
+}
+.nc-drawer-section--workflow.nc-workflow-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  padding-top: 4px;
+  margin-top: -4px;
+  box-shadow: 0 6px 8px -6px rgba(0, 0, 0, 0.12);
+}
+.nc-drawer-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f7;
+}
+.nc-actions-panel--embedded {
+  margin-top: 0;
+}
+.nc-actions-panel--embedded .nc-actions-header {
+  margin-bottom: 8px;
+}
+.nc-actions-count {
+  font-size: 0.85rem;
+  color: #718096;
 }
 .nc-detail-meta-badges {
   display: flex;
