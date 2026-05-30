@@ -1,11 +1,11 @@
 /**
- * Export CSV registro NC — client-side con filtri griglia correnti
+ * Export CSV registro NC - client-side con filtri griglia correnti
  */
 
 const NC_CSV_COLUMNS = [
   { id: 'nc_number', label: 'Numero NC', get: r => r.nc_number },
   { id: 'status', label: 'Stato', get: r => r.status },
-  { id: 'severity', label: 'Severità', get: r => r.severity },
+  { id: 'severity', label: 'Severit\u00E0', get: r => r.severity },
   { id: 'client_name', label: 'Cliente', get: r => r.client_name },
   { id: 'audit_number', label: 'Audit', get: r => r.audit_number },
   { id: 'due_date', label: 'Scadenza', get: r => r.due_date || '' },

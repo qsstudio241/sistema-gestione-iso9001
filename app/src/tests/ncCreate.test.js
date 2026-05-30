@@ -1,5 +1,5 @@
 /**
- * Test L1 — ncCreateHelpers (NC Fase 1 Slice 6)
+ * Test L1 - ncCreateHelpers (NC Fase 1 Slice 6)
  */
 import { describe, it, expect } from 'vitest';
 import {

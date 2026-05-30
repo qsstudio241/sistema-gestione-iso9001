@@ -1,5 +1,5 @@
 /**
- * Test L1 — ncExportHelpers (NC Hardening H5)
+ * Test L1 - ncExportHelpers (NC Hardening H5)
  */
 import { describe, it, expect } from 'vitest';
 import { escapeCsvCell, buildNcCsvContent } from '../utils/ncExportHelpers';

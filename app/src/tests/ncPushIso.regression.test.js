@@ -1,5 +1,5 @@
 /**
- * Test regressione — push audit ISO ? registro NC (Slice 11)
+ * Test regressione - push audit ISO ? registro NC (Slice 11)
  * NON modifica il flusso push: verifica contratto API e parsing risposta UI.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
