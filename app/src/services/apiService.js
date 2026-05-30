@@ -1377,6 +1377,22 @@ class ApiService {
         return response.blob();
     }
 
+    /** Scarica file registro documenti via Bearer (affidabile anche senza token in URL). */
+    async downloadDocFile(docId, attId = null, suggestedName = null) {
+        const blob = await this.getDocFileBlob(docId, attId);
+        const url = URL.createObjectURL(blob);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = suggestedName || 'documento';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    }
+
     // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────
 
     async getQualificationsStats() {

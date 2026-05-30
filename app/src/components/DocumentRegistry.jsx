@@ -1490,7 +1490,10 @@ function DocumentRegistry() {
                   )}
 
                   {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
-                    const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
+                    const currentFolder =
+                      tree.selectedNode?.doc_type === 'folder'
+                        ? tree.selectedNode
+                        : tree.breadcrumb[tree.breadcrumb.length - 1];
                     const isNormsFolder = currentFolder?.folder_code === '2.3'
                       || (currentFolder?.title || '').toUpperCase().includes('NORME');
                     return isNormsFolder ? (
@@ -1524,7 +1527,13 @@ function DocumentRegistry() {
                             <div
                               key={doc.id}
                               className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
-                              onClick={() => handleDocSelect(doc)}
+                              onClick={() => {
+                                if (doc.doc_type === 'folder') {
+                                  handleTreeNodeSelect(doc.id);
+                                } else {
+                                  handleDocSelect(doc);
+                                }
+                              }}
                             >
                               <span className="tree-doc-card__icon">
                                 {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
