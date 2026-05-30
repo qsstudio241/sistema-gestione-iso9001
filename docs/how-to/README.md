@@ -11,5 +11,6 @@ Documenti **proceduriali** (cosa fare, in che ordine).
 | [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) | Frontend / PWA |
 | [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) | Accesso agenti Cursor |
 | [database-migrations.md](database-migrations.md) | Hub migrazioni DB |
+| [MANUALE_UTENTE_NC.md](MANUALE_UTENTE_NC.md) | Modulo Non Conformità — guida operativa |
 
 Indice generale: [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md).
