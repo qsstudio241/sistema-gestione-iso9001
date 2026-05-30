@@ -11,6 +11,44 @@ const logger = require('../utils/logger');
 
 const EMBED_BATCH = 20;
 
+/** Mappa codici norma → standard_id (allineata a aiStandardContext.service) */
+const CODE_TO_STANDARD_ID = {
+  ISO_9001: 1,
+  ISO_9001_2015: 1,
+  ISO_14001: 2,
+  ISO_14001_2015: 2,
+  ISO_45001: 3,
+  ISO_45001_2018: 3,
+  ISO_3834: 6,
+  ISO_3834_2: 6,
+  ISO_3834_2_2021: 6,
+  RDP_MSN: 7,
+};
+
+/**
+ * Risolve standard_id quando la colonna DB è null (documenti norma, qualifiche).
+ */
+function inferStandardId(row, entityType) {
+  if (row.standard_id) return row.standard_id;
+  if (entityType === 'document' && row.type_specific_data) {
+    try {
+      const tsd = typeof row.type_specific_data === 'string'
+        ? JSON.parse(row.type_specific_data)
+        : row.type_specific_data;
+      const code = tsd?.standard_code;
+      if (code && CODE_TO_STANDARD_ID[code]) return CODE_TO_STANDARD_ID[code];
+    } catch (_) { /* ignore */ }
+  }
+  if (entityType === 'qualification' && row.standard_ref) {
+    const ref = String(row.standard_ref).toUpperCase();
+    if (ref.includes('9001')) return 1;
+    if (ref.includes('14001')) return 2;
+    if (ref.includes('45001')) return 3;
+    if (ref.includes('3834')) return 6;
+  }
+  return null;
+}
+
 const INDEXABLE_ENTITIES = [
   {
     entity_type: 'audit_conclusion',
@@ -223,7 +261,7 @@ async function indexAllEntities(organizationId) {
         if (!text || text.trim().length < 10) continue;
 
         const compId = row.company_id || null;
-        const stdId = row.standard_id || null;
+        const stdId = inferStandardId(row, entity.entity_type);
         const words = text.split(/\s+/);
         if (words.length > 500) {
           const parts = chunkText(text, 400, 50);

@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 const { serializeNormTypeSpecificData } = require('../services/documentRegistryNorm.service');
 const normChunker = require('../services/normChunker.service');
 
@@ -117,9 +118,13 @@ async function uploadNorms(req, res) {
       if (hasAiProvider && extractedText.length > 50) {
         try {
           const ctx = buildExtractNormMetadataContext({ text: extractedText });
+          const systemPrompt = await enrichSystemPromptWithOrganization(
+            ctx.systemPrompt,
+            organization_id
+          );
           const aiResult = await chat(
             [
-              { role: 'system', content: ctx.systemPrompt },
+              { role: 'system', content: systemPrompt },
               { role: 'user', content: ctx.userPrompt },
             ],
             { temperature: 0.1, responseFormat: 'json' }

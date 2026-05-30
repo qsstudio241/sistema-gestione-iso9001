@@ -136,4 +136,32 @@ describe('aiChat.controller — aiChat', () => {
       expect.objectContaining({ standardId: null })
     );
   });
+
+  it('adds audit focus block when clauseRef is provided', async () => {
+    const req = {
+      body: {
+        message: 'Cosa dice la norma?',
+        auditId: 'uuid-audit-1',
+        clauseRef: '7.5',
+        questionId: '2',
+        questionText: 'Documentazione controllata',
+        standardKey: 'ISO_9001',
+      },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+
+    await aiChat(req, res);
+
+    expect(chat).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'system',
+          content: expect.stringContaining('CONTESTO AUDIT APERTO'),
+        }),
+      ]),
+      expect.any(Object)
+    );
+    expect(chat.mock.calls[0][0][0].content).toContain('7.5');
+  });
 });

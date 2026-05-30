@@ -12,6 +12,12 @@ jest.mock('../services/aiOrganizationContext.service', () => ({
   enrichSystemPromptWithOrganization: jest.fn(async (prompt) => prompt),
 }));
 
+jest.mock('../services/aiStandardContext.service', () => ({
+  loadStandardProfile: jest.fn(),
+  resolveStandardCodesForFilter: jest.fn(),
+  buildStandardContextBlock: jest.fn(),
+}));
+
 jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -20,6 +26,10 @@ jest.mock('../utils/logger', () => ({
 
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const contextBuilder = require('../services/aiContextBuilder.service');
+const {
+  loadStandardProfile,
+  buildStandardContextBlock,
+} = require('../services/aiStandardContext.service');
 const { suggest } = require('./aiAssist.controller');
 
 function createRes() {
@@ -39,6 +49,8 @@ function createRes() {
 describe('aiAssist.controller — suggest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    loadStandardProfile.mockResolvedValue(null);
+    buildStandardContextBlock.mockReturnValue('');
   });
 
   it('returns parsed suggestion for feature audit_conclusions', async () => {
@@ -138,6 +150,41 @@ describe('aiAssist.controller — suggest', () => {
       code: 'AI_NOT_CONFIGURED',
     });
     expect(chat).not.toHaveBeenCalled();
+  });
+
+  it('adds standard context block when standardId is in context', async () => {
+    getActiveProvider.mockReturnValue('gemini');
+    loadStandardProfile.mockResolvedValue({
+      standard_id: 1,
+      standard_code: 'ISO_9001_2015',
+      standard_name: 'ISO 9001',
+    });
+    buildStandardContextBlock.mockReturnValue('\n--- NORMA ATTIVA ---\n');
+    contextBuilder.buildAuditConclusionsContext.mockReturnValue({
+      systemPrompt: 'sys',
+      userPrompt: 'usr',
+      contextSummary: 'sum',
+    });
+    chat.mockResolvedValue({
+      content: '{"conclusion_text":"OK","recommendation":"conforme"}',
+      model: 'm',
+      tokens: {},
+      cost: 0,
+    });
+
+    const req = {
+      body: {
+        feature: 'audit_conclusions',
+        context: { standardId: 1, auditMetrics: { total: 1, nc: 0, oss: 0, om: 0, conformities: 1 } },
+      },
+      user: { organization_id: 1 },
+    };
+    const res = createRes();
+
+    await suggest(req, res);
+
+    expect(loadStandardProfile).toHaveBeenCalledWith(1);
+    expect(chat.mock.calls[0][0][0].content).toContain('NORMA ATTIVA');
   });
 
   it('wraps non-JSON AI output in suggestion.raw', async () => {
