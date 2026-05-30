@@ -16,6 +16,7 @@ const {
   resolveStandardCodesForFilter,
   buildStandardContextBlock,
 } = require('../services/aiStandardContext.service');
+const { buildCitationsFromChunks } = require('../utils/aiCitations');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -219,9 +220,13 @@ async function aiChat(req, res) {
       responseTimeMs,
     }).catch(err => logger.warn('[AI_CHAT] Usage log failed:', err.message));
 
+    const citations = buildCitationsFromChunks(contextChunks);
+
     res.json({
       reply: result.content,
       contextUsed: contextChunks.length,
+      sourcesCount: citations.length,
+      citations,
       standardId: activeStandard ? parsedStandardId : null,
       _aiMeta: {
         provider,

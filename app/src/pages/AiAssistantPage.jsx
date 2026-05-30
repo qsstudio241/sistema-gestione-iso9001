@@ -10,6 +10,8 @@ import {
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
 } from "../utils/aiAssistantContext";
+import { getCitationPath, buildSourcesFootnote } from "../utils/aiCitations";
+import { Link } from "../contexts/RouterContext";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS = [
@@ -333,6 +335,7 @@ function AiAssistantPage() {
         standardKey: chatCtx.standardKey,
       });
       const data = res.data || res;
+      const citations = Array.isArray(data.citations) ? data.citations : [];
       setMessages((prev) => [
         ...prev,
         {
@@ -340,6 +343,8 @@ function AiAssistantPage() {
           text: data.reply || "Nessuna risposta ricevuta.",
           time: new Date(),
           contextUsed: data.contextUsed || 0,
+          sourcesCount: data.sourcesCount ?? citations.length,
+          citations,
         },
       ]);
     } catch (err) {
@@ -607,10 +612,46 @@ function AiAssistantPage() {
                     : msg.text}
                 </div>
                 <div className="ai-msg-time">{formatTime(msg.time)}</div>
-                {msg.role === "assistant" && msg.contextUsed > 0 && (
-                  <div className="ai-msg-context-info">
-                    Basato su {msg.contextUsed} fonti dati
-                  </div>
+                {msg.role === "assistant" && (
+                  <>
+                    <div
+                      className={`ai-msg-context-info ${
+                        (msg.sourcesCount ?? 0) === 0 ? "ai-msg-context-info--empty" : ""
+                      }`}
+                    >
+                      {buildSourcesFootnote(
+                        msg.sourcesCount ?? (msg.citations?.length || 0),
+                        msg.contextUsed || 0
+                      )}
+                    </div>
+                    {msg.citations?.length > 0 && (
+                      <div className="ai-msg-citations" role="list" aria-label="Fonti SGQ">
+                        {msg.citations.map((cit) => {
+                          const path = getCitationPath(cit);
+                          const key = `${cit.entityType}-${cit.entityId}`;
+                          const chip = (
+                            <span className="ai-citation-chip" title={cit.label}>
+                              {cit.label}
+                            </span>
+                          );
+                          return path ? (
+                            <Link
+                              key={key}
+                              to={path}
+                              className="ai-citation-link"
+                              role="listitem"
+                            >
+                              {chip}
+                            </Link>
+                          ) : (
+                            <span key={key} className="ai-citation-link ai-citation-link--static" role="listitem">
+                              {chip}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
