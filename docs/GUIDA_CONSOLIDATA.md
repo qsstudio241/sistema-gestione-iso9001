@@ -2274,3 +2274,12 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 | UI | Impostazioni studio (note contesto) + Assistente AI (chip norma) — Netlify da merge su `main` |
 
 Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e `067_knowledge_chunks_standard_id.sql`.
+
+### Slice 2 — propagazione audit (30/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| Frontend | Auto-contesto audit (azienda, norma, clausola checklist) in Assistente AI; separatore chat al cambio audit; `standardId` in suggest conclusioni e riesame contratti |
+| Backend | `POST /ai/chat` accetta `auditId`, `clauseRef`, `questionId`; `POST /ai/suggest` arricchisce con norma se `standardId`; upload norme PDF con enrich org |
+| Reindex | `inferStandardId` su documenti norma (`type_specific_data.standard_code`) e qualifiche (`standard_ref`) |
+| Deploy | Commit `ec62a54` su `main`; VPS PID `331861` → `332487`; smoke: chat con audit context, rimozione nota smoke `ai_context_notes` |

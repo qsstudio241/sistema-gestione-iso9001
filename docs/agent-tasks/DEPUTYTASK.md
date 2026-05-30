@@ -1,7 +1,34 @@
 # DEPUTYTASK - Contesto AI multi-slice (L1-L4)
 
-**Stato programma:** slice **3 deploy produzione** chiusa (30/05/2026) — slice **2** propagazione audit ancora aperta.
-**Branch:** `feat/ai-context-multi-slice` (commit feature + fix script VPS migrazioni).
+**Stato programma:** slice **2** e **3** chiuse (30/05/2026) — programma contesto AI **TEST OK**.
+**Branch:** `main` (commit `ec62a54` slice 2 + PR #73 slice 1/3).
+
+---
+
+## Slice 2 - Propagazione audit (30/05/2026) — TEST OK
+
+| # | Voce | Esito |
+|---|------|-------|
+| 1 | Helper `aiAssistantContext.js` (focus clausola, payload chat) | **OK** |
+| 2 | Test Vitest `aiAssistantContext` (9 test) | **OK** |
+| 3 | `enrichSystemPromptWithOrganization` su tutti gli endpoint AI | **OK** — `ai/chat`, `ai/suggest`, upload norme PDF |
+| 4 | Propagazione audit → norma + clausola in chat e suggest | **OK** |
+| 5 | Separatore UI al cambio audit + banner clausola attiva | **OK** |
+| 6 | Test Jest backend `aiChat` + `aiAssist` | **OK** (9 test) |
+| 7 | Commit + push `main` | **OK** — `ec62a54` |
+| 8 | Deploy backend VPS + restart PID | **OK** — `331861` → `332487` |
+| 9 | Smoke API | **OK** — health, PATCH rimozione nota smoke, `POST /ai/chat` con audit context, reindex |
+| 10 | Netlify UI | **OK** — build automatica da `main` (~2 min) |
+
+### Cosa vedono gli utenti
+
+- **Assistente AI**: chip azienda/norma auto da audit aperto; separatore in chat al cambio audit; clausola attiva se compilano checklist.
+- **Conclusioni audit / Riesame contratti**: suggest AI riceve `standardId` dall'audit corrente.
+- **Impostazioni studio**: nota smoke rimossa da `ai_context_notes`.
+
+### Residui
+
+Nessuno bloccante. Copertura `standard_id` su chunk migliorata (inferenza documenti norma/qualifiche al reindex); entità senza norma (reclami, rischi) restano `NULL` per design.
 
 ---
 
@@ -9,45 +36,12 @@
 
 | # | Voce | Esito |
 |---|------|-------|
-| 1 | Migrazione 066 VPS (`ai_context_notes`) | **OK** — verify colonna su `organizations` |
-| 2 | Migrazione 067 VPS (`knowledge_chunks.standard_id` + indice) | **OK** |
-| 3 | Deploy backend VPS | **OK** — `deploy-controllers-to-vps.ps1` + file AI (`aiChat`, `aiAssist`, servizi contesto, `knowledgeIndexer`, `normChunker`) |
-| 4 | Restart `sgq-backend` | **OK** — MainPID `328524` → `331861` |
-| 5 | Health | **OK** — `GET https://www.fr-busato.it:8443/api/v1/health` |
-| 6 | Smoke API | **OK** — login, `GET/PATCH /organizations/me` (`ai_context_notes`), `POST /ai/reindex`, `POST /ai/chat` con `standardId` |
-| 7 | Reindex legacy | **OK** — `204` chunk totali, `18` con `standard_id` non null (post reindex manuale) |
-| 8 | CORS (OPTIONS `/audits/sync`) | **OK** — 204 + header CORS presenti |
-
-### Credenziali usate
-
-- VPS/SSH: `backend/config/.ssh-deploy.local.ps1` (gitignored) — env cloud `SGQ_SSH_KEY_B64` / `SGQ_SUDO_PASSWORD` **assenti** in questa shell; deploy via PuTTY + password locale.
-- DB migrazioni: esecuzione **su VPS** con `node /tmp/run-migration-066-vps.js` e `067-vps.js`.
-
-### Blocker residui
-
-1. **Slice 2** (propagazione audit → clausola, enrich su tutti gli endpoint AI) — non in scope deploy.
-2. **`gh` CLI** non in PATH — PR create/merge via **GitHub REST API** + PAT utente Windows.
-3. Frontend Netlify: merge su `main` → build automatica (~2 min) per UI `StudioSettingsPage` / chip norma.
+| 1 | Migrazione 066 VPS (`ai_context_notes`) | **OK** |
+| 2 | Migrazione 067 VPS (`knowledge_chunks.standard_id`) | **OK** |
+| 3 | Deploy backend VPS | **OK** |
+| 4 | Restart `sgq-backend` | **OK** |
+| 5 | Health + smoke slice 3 | **OK** |
 
 ---
 
-## Slice 2 - Avvio (in corso)
-
-| # | Voce | Esito |
-|---|------|-------|
-| 1 | `app/src/utils/aiAssistantContext.js` | Presente |
-| 2 | `app/src/tests/aiAssistantContext.test.js` | OK (4 test) |
-| 3 | `enrichSystemPromptWithOrganization` su tutti gli endpoint AI | **Da fare** |
-| 4 | Propagazione audit aperto → clausola in payload chat | **Da fare** |
-
-### Comando deputy - slice 2
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md (sezione slice 2).
-Completa propagazione contesto audit (norma+clausola) e enrich org su endpoint AI mancanti.
-Chiudi con TEST OK o FIX NON APPLICABILI.
-```
-
----
-
-*Aggiornato 30/05/2026 — deploy produzione contesto AI (mig. 066/067 VPS + backend + smoke).*
+*Aggiornato 30/05/2026 — slice 2 chiusa (propagazione audit + deploy VPS + smoke).*
