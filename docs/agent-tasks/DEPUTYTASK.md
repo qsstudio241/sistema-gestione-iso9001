@@ -15,7 +15,7 @@
 | 7/8 | Filtri scadenze API `due_within_days` + UI | ✅ | `b23f79d` |
 | 9 | Link audit ↔ NC (griglia + PendingIssuesCascade) | ✅ | `b23f79d` |
 | 11 | Test regressione push ISO + GUIDA NC | ✅ | `b23f79d` |
-| 8 email | `runNcDueAlertJob` + flag `NC_ALERT_ENABLED` | ✅ | *(commit deploy)* |
+| 8 email | `runNcDueAlertJob` + flag `NC_ALERT_ENABLED` | ✅ | `d80dafa` |
 | **Ops** | Migrazione **071** VPS + `deploy-controllers-to-vps.ps1` + health | ✅ | 30/05/2026 |
 
 ---
