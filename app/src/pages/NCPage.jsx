@@ -876,7 +876,7 @@ export default function NCPage() {
       </section>
 
       {selectedNc && viewMode === "nc" && (
-        <div className="doc-detail__overlay" onClick={handleCloseDetail} role="presentation">
+        <div className="doc-detail__overlay nc-detail-overlay" onClick={handleCloseDetail} role="presentation">
           <aside
             className="doc-detail nc-detail-drawer"
             onClick={(e) => e.stopPropagation()}

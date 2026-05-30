@@ -151,6 +151,7 @@
   border-color: #4299e1;
   box-shadow: 0 0 0 2px rgba(66,153,225,.15);
 }
+.btn-reset-filters {
   padding: 7px 14px;
   background: #edf2f7;
   border: 1px solid #cbd5e0;
@@ -241,9 +242,31 @@
 .nc-corrective-note { background: #fffbeb; border-left: 3px solid #f6e05e; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; }
 .nc-responsible { font-size: 0.875rem; color: #4a5568; margin: 6px 0; }
 
-/* Workflow buttons — status-btn da ChecklistModule.css */
-.nc-workflow-btns { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-.nc-action-btns.nc-workflow-btns .status-btn { font-size: 0.78rem; padding: 4px 10px; }
+/* Workflow buttons — status-btn da ChecklistModule.css (etichette testo, non codici C/NC) */
+.nc-workflow-btns {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.nc-workflow-btns .status-btn {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+.nc-workflow-btns .status-btn:hover {
+  transform: none;
+}
 
 /* Actions panel */
 .nc-actions-panel { margin-top: 16px; }
@@ -333,22 +356,23 @@
 .nc-grid-number { font-weight: 600; font-family: monospace; }
 .nc-grid-audit { font-size: 0.85rem; }
 
-/* Pannello dettaglio sotto griglia */
-.nc-detail-section {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+/* Drawer dettaglio NC — riuso .doc-detail da DocumentDetailPanel.css */
+.doc-detail__overlay.nc-detail-overlay {
+  z-index: 400;
 }
-.nc-detail-heading {
-  margin: 0 0 12px;
-  font-size: 1rem;
+.nc-detail-drawer {
+  width: min(520px, 92vw);
+  max-width: min(520px, 92vw);
+}
+.nc-detail-drawer-title {
   display: flex;
-  align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+.nc-detail-drawer-body {
+  padding: 16px 20px 24px;
 }
 .nc-detail-meta-badges {
   display: flex;
