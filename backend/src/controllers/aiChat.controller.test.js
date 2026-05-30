@@ -48,11 +48,13 @@ function createRes() {
   return res;
 }
 
-describe('aiChat.controller — aiChat', () => {
+describe('aiChat.controller  aiChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveProvider.mockReturnValue('gemini');
-    searchKnowledge.mockResolvedValue([{ id: 1, entity_type: 'audit_conclusion', chunk_text: 'test', score: 0.9 }]);
+    searchKnowledge.mockResolvedValue([
+      { id: 1, entity_type: 'audit_conclusion', entity_id: 1, chunk_text: 'Audit 2024-01 del 2024-01-15', score: 0.9 },
+    ]);
     chat.mockResolvedValue({
       content: 'Risposta di test',
       model: 'gemini-pro',
@@ -92,6 +94,34 @@ describe('aiChat.controller — aiChat', () => {
       expect.objectContaining({
         reply: 'Risposta di test',
         standardId: 1,
+        sourcesCount: 1,
+        citations: [
+          expect.objectContaining({
+            entityType: 'audit_conclusion',
+            entityId: '1',
+            label: expect.any(String),
+            score: 0.9,
+          }),
+        ],
+      })
+    );
+  });
+
+  it('returns empty citations when searchKnowledge finds nothing', async () => {
+    searchKnowledge.mockResolvedValue([]);
+    const req = {
+      body: { message: 'Domanda generica' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+
+    await aiChat(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        citations: [],
+        sourcesCount: 0,
+        contextUsed: 0,
       })
     );
   });
