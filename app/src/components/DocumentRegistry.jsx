@@ -9,6 +9,10 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import useDocTreeSidebarWidth, {
+  DOC_TREE_WIDTH_MIN,
+  DOC_TREE_WIDTH_MAX,
+} from "../hooks/useDocTreeSidebarWidth";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import DocumentForm from "./DocumentForm";
@@ -878,6 +882,7 @@ function DocumentRegistry() {
 
   // Albero documentale
   const tree = useDocumentTree();
+  const { width: treeSidebarWidth, startResize: startTreeSidebarResize } = useDocTreeSidebarWidth();
 
   // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
   const [treeViewMode, setTreeViewMode] = useState("free");
@@ -1435,8 +1440,11 @@ function DocumentRegistry() {
           </div>
 
           <div className="docregistry-tree-layout">
-            {/* Sidebar albero */}
-            <div className="docregistry-tree-sidebar">
+            {/* Sidebar albero (larghezza ridimensionabile desktop) */}
+            <div
+              className="docregistry-tree-sidebar"
+              style={{ width: treeSidebarWidth, flexBasis: treeSidebarWidth }}
+            >
               {treeViewMode === "free" ? (
                 <DocumentTree
                   nodes={tree.treeNodes}
@@ -1458,6 +1466,17 @@ function DocumentRegistry() {
                 />
               )}
             </div>
+
+            <div
+              className="docregistry-tree-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Ridimensiona pannello albero"
+              aria-valuenow={treeSidebarWidth}
+              aria-valuemin={DOC_TREE_WIDTH_MIN}
+              aria-valuemax={DOC_TREE_WIDTH_MAX}
+              onMouseDown={startTreeSidebarResize}
+            />
 
             {/* Contenuto centrale */}
             <div className="docregistry-tree-content">

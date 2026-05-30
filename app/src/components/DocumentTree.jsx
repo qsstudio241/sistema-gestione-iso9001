@@ -265,6 +265,13 @@ function DocumentTree({
     <aside className="doc-tree" role="tree" aria-label="Albero documenti">
       <div className="doc-tree__header">Documenti</div>
 
+      {selectedFolder && (
+        <div className="doc-tree__mobile-selection" aria-live="polite">
+          <span className="doc-tree__mobile-selection-label">Cartella selezionata</span>
+          <span className="doc-tree__mobile-selection-title">{selectedFolder.title}</span>
+        </div>
+      )}
+
       <ul className="doc-tree__list">
         {nodes.map((node) => (
           <TreeNode
