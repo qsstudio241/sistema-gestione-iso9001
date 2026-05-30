@@ -43,6 +43,7 @@ Segui sgq-operating-memory.
 
 | Risorsa | Dettaglio |
 |---------|-----------|
+| **Manuale utente NC** | [docs/how-to/MANUALE_UTENTE_NC.md](../how-to/MANUALE_UTENTE_NC.md) |
 | App produzione | https://systemgest.netlify.app |
 | Modulo NC | `/nc` — griglia `SgqDataGrid`, dettaglio `NcDetailPanel`, workflow `status-btn` |
 | API NC | `GET/POST /api/v1/non-conformities`, `PUT /non-conformities/:id` |

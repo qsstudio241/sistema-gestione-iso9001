@@ -1731,6 +1731,8 @@ ISO 3834 ha struttura diversa (specifica di processo, non di sistema) ma condivi
 
 ### Modulo NC organizzativo — Fase 1 (route `/nc`, 30/05/2026)
 
+**Manuale utente:** [how-to/MANUALE_UTENTE_NC.md](how-to/MANUALE_UTENTE_NC.md) — scenari operativi, FAQ e stato hardening H1/H3/H5.
+
 Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved → verified → closed`.
 
 | Area | Implementazione |
