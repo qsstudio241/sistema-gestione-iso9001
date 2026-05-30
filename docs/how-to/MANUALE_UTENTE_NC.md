@@ -1,47 +1,48 @@
-# Manuale utente — Modulo Non Conformità (NC)
+# Manuale utente â€” Modulo Non ConformitÃ  (NC)
 
-> **Versione:** 30/05/2026 · **Ambiente di riferimento:** https://systemgest.netlify.app/nc  
-> **Commit produzione (Fase 1):** `55db7b2` · **Simulazione browser:** 30/05/2026 (org Al.project, utente PS_Admin)
+> **Versione:** 30/05/2026 Â· **Ambiente di riferimento:** https://systemgest.netlify.app/nc  
+> **Commit produzione:** `ac9b1a8` (NC Hardening H1â€“H6) Â· **Simulazione browser:** 30/05/2026 (org Al.project, utente PS_Admin)
 
 ---
 
 ## Nota sullo stato funzionale
 
-| Area | Stato in produzione (main) | Hardening (working tree / migrazione 072) |
-|------|---------------------------|-------------------------------------------|
-| Griglia registro, filtri, stats | ? Disponibile | — |
-| Creazione manuale, push ISO da audit | ? Disponibile | — |
-| Workflow stati + gate note verifica | ? Disponibile | — |
-| Azioni correttive per NC | ? Disponibile | — |
-| Allegati evidenze su NC | ? Disponibile | — |
-| Link audit ? NC, deep-link `?select=` | ? Disponibile | — |
-| NC da reclamo | ? Disponibile | — |
-| Filtri scadenze NC (scadute / 7 gg) | ? Disponibile | — |
-| Push checklist **custom** ? registro NC | ? | **In arrivo** (H1 — codice pronto, deploy pendente) |
-| Approvazione RQ prima della chiusura | ? | **In arrivo** (H3 — richiede migrazione 072 + deploy) |
-| Export CSV registro | ? | **In arrivo** (H5 — codice pronto, deploy pendente) |
-| Vista «Azioni in scadenza» cross-NC | ? | **In arrivo** (hardening UI) |
-| Email alert scadenze NC | ?? Backend pronto | Attivare `NC_ALERT_ENABLED` + SMTP sul VPS |
+| Area | Stato in produzione (`ac9b1a8`) |
+|------|----------------------------------|
+| Griglia registro, filtri, stats | **SÃ¬** |
+| Creazione manuale, push ISO da audit | **SÃ¬** |
+| Workflow stati + gate note verifica | **SÃ¬** |
+| Azioni correttive per NC | **SÃ¬** |
+| Allegati evidenze su NC | **SÃ¬** |
+| Link audit â†’ NC, deep-link `?select=` | **SÃ¬** |
+| NC da reclamo | **SÃ¬** |
+| Filtri scadenze NC (scadute / 7 gg) | **SÃ¬** |
+| Push checklist **custom** â†’ registro NC | **SÃ¬** (H1, migrazione 072) |
+| Approvazione RQ prima della chiusura | **SÃ¬** (H3) |
+| Export CSV registro | **SÃ¬** (H5) |
+| Vista Â«Azioni in scadenzaÂ» cross-NC | **SÃ¬** (H6) |
+| Sezioni ISO dinamiche in modale manuale | **SÃ¬** (H4) |
+| Email alert scadenze NC | **SÃ¬** (job backend); attivare `NC_ALERT_ENABLED` + SMTP sul VPS se non giÃ  configurato |
 
-Il riferimento agente `2f36d0c9` **non risulta nel repository**; la baseline verificata è la chiusura **NC Fase 1** documentata in `docs/agent-tasks/DEPUTYTASK.md`.
+Baseline documentata: chiusura **NC Fase 1** + hardening **H1â€“H6** (`ac9b1a8`), migrazione **072** su VPS. Dettaglio tecnico in `docs/GUIDA_CONSOLIDATA.md` (sezione NC Hardening).
 
 ---
 
 ## 1. Introduzione
 
-### Cos'è il modulo NC
+### Cos'Ã¨ il modulo NC
 
-Il modulo **Non Conformità & Azioni Correttive** (`/nc`) è il registro organizzativo dello studio QS: raccoglie in un unico elenco tutte le NC e le osservazioni (OSS) emerse da audit ISO, da inserimenti manuali o da reclami, e permette di gestire il ciclo di vita fino alla verifica di efficacia (ISO 9001 §10.2).
+Il modulo **Non ConformitÃ  & Azioni Correttive** (`/nc`) Ã¨ il registro organizzativo dello studio QS: raccoglie in un unico elenco tutte le NC e le osservazioni (OSS) emerse da audit ISO, da inserimenti manuali o da reclami, e permette di gestire il ciclo di vita fino alla verifica di efficacia (ISO 9001 Â§10.2).
 
 ### Chi lo usa
 
 | Ruolo | Uso tipico |
 |-------|------------|
-| **Responsabile Qualità (RQ) / admin** | Panoramica multi-cliente, approvazioni (quando attive), chiusura NC, export |
+| **Responsabile QualitÃ  (RQ) / admin** | Panoramica multi-cliente, approvazioni chiusura, export CSV |
 | **Auditor / consulente** | Push da audit, compilazione cause, azioni, evidenze |
 | **Viewer** | Consultazione (se abilitato dal tenant) |
 
-Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza compare la schermata modulo bloccato.
+Richiede licenza modulo **`nc`** (voce menu Â«Non ConformitÃ Â», icona sirena rossa). Senza licenza compare la schermata modulo bloccato.
 
 ---
 
@@ -50,12 +51,12 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 ### Come accedere
 
 1. Accedere a https://systemgest.netlify.app con le proprie credenziali.
-2. Nel menu laterale SGQ, cliccare **Non Conformità** (icona sirena rossa).
-3. Si apre la pagina **Non Conformità & Azioni Correttive** con sottotitolo *ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit*.
+2. Nel menu laterale SGQ, cliccare **Non ConformitÃ ** (icona sirena rossa).
+3. Si apre la pagina **Non ConformitÃ  & Azioni Correttive** con sottotitolo *ISO 9001:2015 Â§8.7 + Â§10.2 - Registro cross-audit*.
 
 ### Studio vs cliente
 
-- Il registro è **cross-audit**: una riga per ogni NC, con colonna **Cliente** e filtro **Tutti i clienti**.
+- Il registro Ã¨ **cross-audit**: una riga per ogni NC, con colonna **Cliente** e filtro **Tutti i clienti**.
 - Gli **auditor** vedono le NC nel perimetro del proprio studio (`auditor_org_id`); **admin/superadmin** vedono l'intero tenant.
 - Le NC restano collegate all'**audit di riferimento** (numero audit cliccabile nel dettaglio).
 
@@ -63,21 +64,22 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 | Azione | Admin / superadmin | Auditor | Viewer |
 |--------|-------------------|---------|--------|
-| Consultare registro | ? | ? (perimetro studio) | ? (lettura) |
-| Creare NC manuale | ? | ? | ? |
-| Modificare NC aperta | ? | ? | ? |
-| Workflow stati | ? | ? | ? |
-| Push da audit (chiusura) | ? | ? | ? |
-| Allegati evidenze | ? | ? | ? |
-| Approvazione chiusura RQ | ? *(in arrivo H3)* | ? | ? |
+| Consultare registro | **SÃ¬** | **SÃ¬** (perimetro studio) | **SÃ¬** (lettura) |
+| Creare NC manuale | **SÃ¬** | **SÃ¬** | **No** |
+| Modificare NC aperta | **SÃ¬** | **SÃ¬** | **No** |
+| Workflow stati | **SÃ¬** | **SÃ¬** | **No** |
+| Push da audit (chiusura) | **SÃ¬** | **SÃ¬** | **No** |
+| Allegati evidenze | **SÃ¬** | **SÃ¬** | **No** |
+| Approvazione chiusura RQ (H3) | **SÃ¬** | **No** | **No** |
+| Export CSV registro | **SÃ¬** | **SÃ¬** | **No** |
 
 ---
 
 ## 3. Scenari operativi
 
-### 3.1 Panoramica RQ — registro multi-cliente
+### 3.1 Panoramica RQ â€” registro multi-cliente
 
-**Chi:** Responsabile Qualità, admin studio.
+**Chi:** Responsabile QualitÃ , admin studio.
 
 **Quando:** Controllo periodico del registro NC, preparazione audit di sorveglianza o riesame direzione.
 
@@ -87,7 +89,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 2. Osservare le **card riepilogo** cliccabili: **Aperte**, **In corso**, **Scadute**, **In scadenza** (se presenti), **Totale**. Un clic applica il filtro corrispondente; un secondo clic lo rimuove.
 3. Usare il menu **Tutti i clienti** per restringere a un'azienda (es. *Azienda Test Fase 1*).
 4. Cercare per testo nel campo **Cerca per numero NC o descrizione...**.
-5. Affinare con **Tutti gli stati**, **Tutte le severità**, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
+5. Affinare con **Tutti gli stati**, **Tutte le severitÃ **, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
 6. Cliccare una riga della griglia per aprire il **pannello dettaglio** sotto la tabella. L'URL diventa `/nc?select=<id>`.
 
 **Domande che mi pongo (FAQ interne)**
@@ -98,12 +100,12 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 **Risposte**
 
 - Con filtro cliente vuoto vedete tutte le NC del vostro perimetro RBAC; con un cliente selezionato solo quelle collegate ad audit di quell'azienda.
-- Le NC con scadenza superata mostrano badge ?? sulla colonna N° NC e la card **Scadute** si aggiorna. Usate i filtri scadenza per liste di controllo.
+- Le NC con scadenza superata mostrano evidenziazione sulla colonna NÂ° NC e la card **Scadute** si aggiorna. Usate i filtri scadenza per liste di controllo.
 
 **Screenshot note**
 
-- In alto: titolo con sirena, pulsante blu **+ Nuova NC**, card colorate (rosso/giallo per aperte/in corso).
-- Griglia colonne: **N° NC**, **Stato** (pallino colorato), **Severità** (etichetta colorata), **Cliente**, **Audit** (icona documento), **Scadenza**, **Origine** (Manuale / Audit NC / Audit OSS / Reclamo).
+- In alto: titolo con sirena, pulsante blu **+ Nuova NC**, pulsanti **Export CSV** e **Azioni in scadenza**, card colorate (rosso/giallo per aperte/in corso).
+- Griglia colonne: **NÂ° NC**, **Stato** (pallino colorato), **SeveritÃ ** (etichetta colorata), **Cliente**, **Audit** (icona documento), **Scadenza**, **Origine** (Manuale / Audit NC / Audit OSS / Reclamo).
 
 ---
 
@@ -115,11 +117,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Passi**
 
-1. Aprire l'audit da **Audit** ? selezionare l'audit in corso.
+1. Aprire l'audit da **Audit** â†’ selezionare l'audit in corso.
 2. Compilare la checklist segnando esiti **NC** o **OSS** sulle domande pertinenti (pulsanti esito rosso/giallo della checklist).
 3. Andare al pannello **Chiusura audit** (tab o sezione chiusura).
-4. Se è presente il blocco **Trasferimento al modulo Non Conformità** con conteggio NC/OSS, cliccare **Trasferisci NC e OSS al modulo NC**.
-5. Attendere il messaggio di conferma; entro **10 secondi** è possibile **Annulla trasferimento** se il push era errato.
+4. Se Ã¨ presente il blocco **Trasferimento al modulo Non ConformitÃ ** con conteggio NC/OSS, cliccare **Trasferisci NC e OSS al modulo NC**.
+5. Attendere il messaggio di conferma; entro **10 secondi** Ã¨ possibile **Annulla trasferimento** se il push era errato.
 6. Cliccare il link **modulo NC** o aprire `/nc`: le nuove righe hanno origine **Audit NC** o **Audit OSS** e numero tipo `NC-<audit>-00n`.
 
 **Domande che mi pongo**
@@ -129,13 +131,13 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Risposte**
 
-- Il push è **idempotente**: le NC già presenti per la stessa domanda vengono saltate (messaggio «già presenti»).
+- Il push Ã¨ **idempotente**: le NC giÃ  presenti per la stessa domanda vengono saltate (messaggio Â«giÃ  presentiÂ»).
 - Descrizione e riferimento sezione ISO vengono copiati dalla risposta audit; potete arricchirli nel dettaglio NC.
 
 **Screenshot note**
 
-- Pannello chiusura: box «Rilevate X NC e Y OSS» con pulsante ?? verde secondario.
-- In registro: origine **Audit OSS** con severità **Osservazione** (viola) o **Audit NC** con severità tipicamente **Lieve/Grave**.
+- Pannello chiusura: box Â«Rilevate X NC e Y OSSÂ» con pulsante verde secondario.
+- In registro: origine **Audit OSS** con severitÃ  **Osservazione** (viola) o **Audit NC** con severitÃ  tipicamente **Lieve/Grave**.
 
 ---
 
@@ -145,17 +147,16 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Quando:** Item custom con esito NC/OSS devono entrare nel registro come per la checklist ISO.
 
-**Passi (quando la funzione sarà in produzione — H1)**
+**Passi**
 
 1. Compilare item custom con esito NC o OSS.
-2. Dalla chiusura audit, usare lo stesso flusso **Trasferisci NC e OSS al modulo NC** (il backend includerà anche `audit_custom_checklist_responses`).
-3. Verificare in `/nc` origine dedicata o badge che richiama l'item custom.
-
-**Stato attuale:** **In arrivo.** In produzione oggi il push trasferisce solo rilievi checklist **ISO** (`audit_responses`). Il codice hardening e la migrazione **072** (`source_custom_item_id`) sono pronti nel repository ma non ancora deployati.
+2. Dalla chiusura audit, usare lo stesso flusso **Trasferisci NC e OSS al modulo NC** (il backend include anche `audit_custom_checklist_responses`).
+3. Verificare in `/nc` le righe con origine da audit e tracciabilitÃ  item custom (migrazione **072**, `source_custom_item_id`).
+4. Nel riepilogo push, controllare i conteggi **ISO** e **custom** se mostrati nel pannello chiusura.
 
 **Domande / Risposte**
 
-- *Perché le NC custom non compaiono?* — Funzione non ancora rilasciata; usare creazione manuale collegata allo stesso audit come workaround temporaneo.
+- *PerchÃ© una NC custom non compare?* â€” Verificare esito NC/OSS sull'item, ripetere push (idempotente) o creare NC manuale collegata allo stesso audit come integrazione.
 
 ---
 
@@ -168,26 +169,26 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 **Passi**
 
 1. In `/nc`, cliccare **+ Nuova NC**.
-2. Nel modale **Nuova NC manuale**, selezionare **Audit di riferimento** (obbligatorio — dropdown con audit aperti o, se assenti, tutti gli audit).
-3. Scegliere **Sezione ISO** (clausole 4–10 HLS; default *10 - Miglioramento*).
-4. Impostare **Severità** (Grave / Lieve / Osservazione).
+2. Nel modale **Nuova NC manuale**, selezionare **Audit di riferimento** (obbligatorio â€” dropdown con audit aperti o, se assenti, tutti gli audit).
+3. Scegliere **Sezione ISO** (clausole 4â€“10 HLS caricate dinamicamente in base allo standard dell'audit â€” H4).
+4. Impostare **SeveritÃ ** (Grave / Lieve / Osservazione).
 5. Compilare **Descrizione** (obbligatoria).
 6. Opzionale: **Responsabile NC**, **Scadenza NC**.
 7. Cliccare **Crea NC**. La riga appare con origine **Manuale** e numero prefisso `NC-M-...`.
 
 **Domande che mi pongo**
 
-- *Perché il dropdown audit è vuoto?*  
-- *Errore «Sezione non valida»?*
+- *PerchÃ© il dropdown audit Ã¨ vuoto?*  
+- *Errore Â«Sezione non validaÂ»?*
 
 **Risposte**
 
-- Se non ci sono audit «aperti», il sistema elenca comunque gli audit disponibili (fix Fase 1). Verificare di avere audit nell'organizzazione.
-- Se l'audit è ISO 14001/3834 e si sceglie una sezione HLS ISO 9001, l'API risponde **400** con codice `INVALID_SECTION_FOR_STANDARD`: scegliere un audit ISO 9001 o attendere sezioni dinamiche per standard (backlog P2).
+- Se non ci sono audit Â«apertiÂ», il sistema elenca comunque gli audit disponibili (fix Fase 1). Verificare di avere audit nell'organizzazione.
+- Se l'audit Ã¨ ISO 14001/3834 e si sceglie una sezione HLS ISO 9001, l'API risponde **400** con codice `INVALID_SECTION_FOR_STANDARD`: scegliere un audit ISO 9001 o una sezione compatibile con lo `standard_id` dell'audit.
 
 **Screenshot note**
 
-- Modale centrato: titolo ?, campi impilati, pulsanti **Annulla** (bianco) e **Crea NC** (blu).
+- Modale centrato: campi impilati, pulsanti **Annulla** (bianco) e **Crea NC** (blu).
 
 ---
 
@@ -195,7 +196,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Chi:** RQ, addetto reclami.
 
-**Quando:** Un reclamo cliente/fornitore deve generare una NC tracciata nel registro §10.2.
+**Quando:** Un reclamo cliente/fornitore deve generare una NC tracciata nel registro Â§10.2.
 
 **Passi**
 
@@ -203,11 +204,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 2. Individuare il reclamo e usare l'azione **Promuovi a NC** (o equivalente nella riga).
 3. Inserire l'**ID audit** di collegamento quando richiesto dal prompt.
 4. Confermare: il sistema crea la NC con `source_type: complaint`.
-5. Aprire `/nc`: la NC mostra badge **Reclamo** con link **Reclamo #…** che riporta a `/reclami?complaint=<id>`.
+5. Aprire `/nc`: la NC mostra badge **Reclamo** con link **Reclamo #â€¦** che riporta a `/reclami?complaint=<id>`.
 
 **Domande / Risposte**
 
-- *Posso promuovere due volte lo stesso reclamo?* — No: se esiste già una NC collegata, compare messaggio «NC già esistente» con il numero NC.
+- *Posso promuovere due volte lo stesso reclamo?* â€” No: se esiste giÃ  una NC collegata, compare messaggio Â«NC giÃ  esistenteÂ» con il numero NC.
 
 **Screenshot note**
 
@@ -217,44 +218,45 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 ### 3.6 Workflow stati completo e gate note verifica
 
-**Chi:** Auditor (lavorazione), RQ (verifica e chiusura).
+**Chi:** Auditor (lavorazione), RQ (verifica, approvazione e chiusura).
 
 **Quando:** Dalla apertura alla chiusura formale della NC secondo ISO 10.2.
 
 **Stati NC (in ordine)**
 
-`Aperta` ? `In corso` ? `Risolta` ? `Verificata` ? `Chiusa`
+`Aperta` â†’ `In corso` â†’ `Risolta` â†’ `Verificata` â†’ *(approvazione RQ)* â†’ `Chiusa`
 
 **Passi**
 
 1. Selezionare la NC in griglia.
-2. Nel dettaglio, compilare campi editabili: **Descrizione**, **Analisi causa radice**, **Note verifica efficacia**, **Responsabile verifica**, **Severità**, **Scadenza NC**, **Responsabile NC**.
+2. Nel dettaglio, compilare campi editabili: **Descrizione**, **Analisi causa radice**, **Note verifica efficacia**, **Responsabile verifica**, **SeveritÃ **, **Scadenza NC**, **Responsabile NC**.
 3. Cliccare **Salva modifiche** dopo ogni modifica sostanziale.
-4. Usare i pulsanti workflow (stile checklist — verde/giallo/grigio):
-   - **Avvia lavorazione** (Aperta ? In corso)
-   - **Segna come risolta** (In corso ? Risolta)
-   - **Verifica** (Risolta ? Verificata) — **solo se** le note verifica sono compilate e salvate
-   - **Chiudi NC** (Verificata ? Chiusa) — in produzione attuale **senza** gate approvazione RQ; con H3 servirà prima **Approva chiusura (RQ)**
-5. Dopo stati **Verificata** o **Chiusa**, i campi diventano in sola lettura.
+4. Usare i pulsanti workflow (stile checklist â€” verde/giallo/grigio):
+   - **Avvia lavorazione** (Aperta â†’ In corso)
+   - **Segna come risolta** (In corso â†’ Risolta)
+   - **Verifica** (Risolta â†’ Verificata) â€” **solo se** le note verifica sono compilate e salvate
+5. In stato **Verificata**, l'**admin/superadmin** (RQ) clicca **Approva chiusura (RQ)** (H3). Compare badge Â«Approvata RQÂ» con data e nome approvatore.
+6. Solo dopo l'approvazione: **Chiudi NC** (Verificata â†’ Chiusa).
+7. Dopo stati **Verificata** (con approvazione) o **Chiusa**, i campi diventano in sola lettura.
 
 **Domande che mi pongo**
 
 - *Il pulsante Verifica non fa nulla?*  
-- *Posso chiudere senza verificare le azioni?*
+- *Posso chiudere senza approvazione RQ?*
 
 **Risposte**
 
 - Se mancano le **Note verifica efficacia**, compare un alert: compilare, **Salva modifiche**, poi riprovare.
-- La NC può chiudersi a livello registro anche senza azioni correttive formalizzate, ma per audit ISO è buona pratica registrare almeno un'azione per NC rilevanti.
+- No: senza **Approva chiusura (RQ)** il passaggio a **Chiusa** Ã¨ bloccato (messaggio API `NC_APPROVAL_REQUIRED`).
 
 **Screenshot note**
 
 - Pulsanti workflow sotto il form, allineati a sinistra, classi colorate come in checklist audit.
-- NC chiusa: intestazione «NC-… — ? Chiusa», campi grigio/readonly.
+- NC chiusa: intestazione Â«NC-â€¦ â€” ChiusaÂ», campi grigio/readonly, eventuale badge approvazione RQ.
 
 ---
 
-### 3.7 Azioni correttive — attuazione, responsabile, scadenza, verifica
+### 3.7 Azioni correttive â€” attuazione, responsabile, scadenza, verifica
 
 **Chi:** Referente processo, auditor, RQ.
 
@@ -267,18 +269,18 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione***, **Responsabile attuazione**, **Scadenza**.
 4. **Salva azione**.
 5. Per ogni azione, avanzare lo stato con i pulsanti:
-   - **Avvia** ? **Completa** ? **Verifica**
+   - **Avvia** â†’ **Completa** â†’ **Verifica**
 6. Su **Verifica**, compilare **Nota verifica azione** (obbligatoria) e **Conferma verifica**.
 7. Se ci sono azioni scadute o in scadenza entro 7 giorni, usare i filtri **Scadute** / **In scadenza 7 gg** sopra l'elenco azioni.
 
 **Domande / Risposte**
 
-- *Posso eliminare un'azione?* — Sì, solo se è ancora **Aperta** (pulsante Elimina).
-- *La scadenza azione è quella della NC?* — No: sono indipendenti; la NC ha la sua scadenza nel form principale.
+- *Posso eliminare un'azione?* â€” SÃ¬, solo se Ã¨ ancora **Aperta** (pulsante Elimina).
+- *La scadenza azione Ã¨ quella della NC?* â€” No: sono indipendenti; la NC ha la sua scadenza nel form principale.
 
 **Screenshot note**
 
-- Lista azioni con badge tipo (Immediata/Correttiva/Preventiva), stato, eventuale badge rosso «Scaduta».
+- Lista azioni con badge tipo (Immediata/Correttiva/Preventiva), stato, eventuale badge rosso Â«ScadutaÂ».
 
 ---
 
@@ -286,47 +288,45 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Chi:** Auditor, RQ.
 
-**Quando:** Documentare foto, PDF, registrazioni a supporto della NC o della verifica (facoltativi — mai bloccanti per la compilazione).
+**Quando:** Documentare foto, PDF, registrazioni a supporto della NC o della verifica (facoltativi â€” mai bloccanti per la compilazione).
 
 **Passi**
 
 1. Nel dettaglio NC, sezione **Allegati evidenze**.
-2. Cliccare **Carica file** (o area upload) e selezionare uno o più file.
+2. Cliccare **Carica file** (o area upload) e selezionare uno o piÃ¹ file.
 3. Attendere il completamento; l'elenco mostra nome e dimensione.
-4. Per rimuovere: icona elimina ? conferma (non disponibile se NC in sola lettura).
+4. Per rimuovere: icona elimina â†’ conferma (non disponibile se NC in sola lettura).
 
 **Domande / Risposte**
 
-- *Gli allegati sono obbligatori?* — No, per policy SGQ; bastano le note testuali per chiudere il workflow.
+- *Gli allegati sono obbligatori?* â€” No, per policy SGQ; bastano le note testuali per chiudere il workflow.
 
 **Screenshot note**
 
-- Blocco analogo agli allegati checklist: lista file sotto l'etichetta «Allegati evidenze».
+- Blocco analogo agli allegati checklist: lista file sotto l'etichetta Â«Allegati evidenzeÂ».
 
 ---
 
-### 3.9 Approvazione RQ per chiusura (H3 — in arrivo)
+### 3.9 Approvazione RQ per chiusura (H3)
 
-**Chi:** Admin o superadmin (Responsabile Qualità organizzativo).
+**Chi:** Admin o superadmin (Responsabile QualitÃ  organizzativo).
 
-**Quando:** La NC è in stato **Verificata** e si vuole autorizzare la chiusura formale.
+**Quando:** La NC Ã¨ in stato **Verificata** e si vuole autorizzare la chiusura formale.
 
-**Passi (dopo deploy hardening)**
+**Passi**
 
-1. Aprire NC in stato **Verificata** con note verifica compilate.
+1. Aprire NC in stato **Verificata** con note verifica compilate e salvate.
 2. L'RQ clicca **Approva chiusura (RQ)**.
-3. Compare badge «Approvata RQ» con data e nome approvatore.
-4. Solo allora appare **Chiudi NC**.
-
-**Stato attuale in produzione:** la NC può passare da Verificata a Chiusa **senza** approvazione intermedia. Il gate è implementato nel codice hardening + migrazione **072** (`approved_by`, `approved_at`).
+3. Compare badge Â«Approvata RQÂ» con data e nome approvatore.
+4. Solo allora appare e funziona **Chiudi NC**.
 
 **Domande / Risposte**
 
-- *Perché non vedo «Approva chiusura»?* — Funzione non ancora in produzione, oppure utente senza ruolo admin/superadmin.
+- *PerchÃ© non vedo Â«Approva chiusuraÂ»?* â€” Utente senza ruolo admin/superadmin, oppure NC non in stato **Verificata**, oppure approvazione giÃ  registrata.
 
 ---
 
-### 3.10 Filtri scadenze — NC scadute e in scadenza 7 giorni
+### 3.10 Filtri scadenze â€” NC scadute e in scadenza 7 giorni
 
 **Chi:** RQ, auditor.
 
@@ -334,33 +334,31 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Passi**
 
-1. Usare la card **Scadute** o il menu **Tutte le scadenze ? Solo scadute**.
+1. Usare la card **Scadute** o il menu **Tutte le scadenze â†’ Solo scadute**.
 2. Per il preavviso: **In scadenza (7 gg)** (card o menu filtri).
-3. Combinare con filtro **Aperte** / **In corso** per escludere NC già chiuse.
+3. Combinare con filtro **Aperte** / **In corso** per escludere NC giÃ  chiuse.
 
 **Domande / Risposte**
 
-- *Una NC chiusa compare tra le scadute?* — No: stati terminali `verified` e `closed` sono esclusi dal conteggio scadenze API.
+- *Una NC chiusa compare tra le scadute?* â€” No: stati terminali `verified` e `closed` sono esclusi dal conteggio scadenze API.
 
 ---
 
-### 3.11 Export CSV registro (H5 — in arrivo)
+### 3.11 Export CSV registro (H5)
 
-**Chi:** RQ, admin.
+**Chi:** RQ, admin, auditor (con permesso modifica registro).
 
 **Quando:** Archivio elettronico, analisi Excel, consegna al cliente.
 
-**Passi (dopo deploy)**
+**Passi**
 
-1. Applicare i filtri desiderati sulla griglia.
-2. Cliccare **Export CSV** in alto a destra.
-3. Si scarica `registro-nc-YYYY-MM-DD.csv` con le righe **filtrate** (UTF-8 con BOM).
-
-**Stato attuale:** pulsante **non presente** in produzione; implementato in `ncExportHelpers.js` nel branch hardening.
+1. Applicare i filtri desiderati sulla griglia (cliente, stato, severitÃ , scadenze, ricerca testo).
+2. Cliccare **Export CSV** in alto a destra (disabilitato se la lista filtrata Ã¨ vuota).
+3. Si scarica `registro-nc-YYYY-MM-DD.csv` con le righe **filtrate** (UTF-8 con BOM). Colonne tipiche: numero NC, stato, severitÃ , cliente, audit, scadenza, origine, descrizione, responsabile, data approvazione RQ.
 
 ---
 
-### 3.12 Link audit ? NC e deep-link
+### 3.12 Link audit â†’ NC e deep-link
 
 **Chi:** Tutti gli utenti con licenza NC.
 
@@ -368,13 +366,13 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Passi**
 
-- **Da registro a audit:** nel dettaglio NC, cliccare il link **?? &lt;numero audit&gt;** ? pagina Audit.
-- **Da audit a registro:** dopo push, link nel pannello chiusura; in **Rilievi pendenti** (re-audit), link **Apri NC nel registro** ? `/nc?select=<nc_id>`.
+- **Da registro a audit:** nel dettaglio NC, cliccare il link al **numero audit** â†’ pagina Audit.
+- **Da audit a registro:** dopo push, link nel pannello chiusura; in **Rilievi pendenti** (re-audit), link **Apri NC nel registro** â†’ `/nc?select=<nc_id>`.
 - **Deep-link:** aprire o condividere `https://systemgest.netlify.app/nc?select=1043` (sostituire l'ID).
 
 **Domande / Risposte**
 
-- *Il link non seleziona la riga?* — Aggiornare la pagina; verificare che l'ID esista e sia nel perimetro RBAC.
+- *Il link non seleziona la riga?* â€” Aggiornare la pagina; verificare che l'ID esista e sia nel perimetro RBAC.
 
 ---
 
@@ -382,11 +380,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Chi:** Amministratore tenant, auditor.
 
-**Quando:** Configurazione team o verifica visibilità dati.
+**Quando:** Configurazione team o verifica visibilitÃ  dati.
 
 **Sintesi verificata**
 
-- **Superadmin / admin:** vedono tutte le NC del tenant; possono gestire licenze e (con H3) approvare chiusure.
+- **Superadmin / admin:** vedono tutte le NC del tenant; possono approvare chiusure (H3) ed esportare CSV.
 - **Auditor:** NC e audit filtrati per **studio** (`auditor_org_id`); devono avere uno studio assegnato.
 - **Viewer:** sola lettura nel perimetro assegnato.
 
@@ -401,21 +399,21 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 #### Sezione ISO incompatibile con lo standard audit
 
-**Sintomo:** messaggio «Sezione non valida per lo standard dell'audit selezionato» o errore 400 `INVALID_SECTION_FOR_STANDARD`.
+**Sintomo:** messaggio Â«Sezione non valida per lo standard dell'audit selezionatoÂ» o errore 400 `INVALID_SECTION_FOR_STANDARD`.
 
 **Causa:** audit ISO 14001/45001/3834 con sezione HLS ISO 9001 nel modale manuale.
 
-**Cosa fare:** scegliere audit ISO 9001; oppure attendere dropdown sezioni per standard (backlog).
+**Cosa fare:** scegliere audit ISO 9001; oppure attendere dropdown sezioni per standard (backlog P2).
 
 #### Note verifica mancanti
 
-**Sintomo:** alert al clic su **Verifica** o **Chiudi NC**.
+**Sintomo:** alert al clic su **Verifica** o prima di **Chiusa**.
 
-**Cosa fare:** compilare **Note verifica efficacia** ? **Salva modifiche** ? riprovare il cambio stato.
+**Cosa fare:** compilare **Note verifica efficacia** â†’ **Salva modifiche** â†’ riprovare il cambio stato.
 
-#### Chiusura senza approvazione RQ (futuro H3)
+#### Chiusura senza approvazione RQ (H3)
 
-**Sintomo (post-H3):** alert «Approvazione del Responsabile Qualità richiesta».
+**Sintomo:** alert Â«Approvazione del Responsabile QualitÃ  richiestaÂ» o errore `NC_APPROVAL_REQUIRED`.
 
 **Cosa fare:** utente admin clicca **Approva chiusura (RQ)** prima di **Chiudi NC**.
 
@@ -425,21 +423,45 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 **Causa:** licenza modulo `nc` non attiva per l'organizzazione.
 
-**Cosa fare:** admin tenant ? **Licenze moduli** ? abilitare NC.
+**Cosa fare:** admin tenant â†’ **Licenze moduli** â†’ abilitare NC.
 
 ---
 
-## 4. FAQ — Domande e risposte
+### 3.15 Tab Â«Azioni in scadenzaÂ» (H6)
+
+**Chi:** RQ, auditor, admin.
+
+**Quando:** Controllo centralizzato delle azioni correttive in scadenza o giÃ  scadute, su tutte le NC del perimetro, senza aprire NC per NC.
+
+**Passi**
+
+1. Aprire `/nc`.
+2. Cliccare il pulsante secondario **Azioni in scadenza** (in alto a destra, accanto a **Export CSV**).
+3. La griglia NC viene sostituita dal pannello **Azioni correttive in scadenza (30 gg) o scadute**: elenco con numero NC, estratto descrizione azione, responsabile, data scadenza, indicazione **SCADUTA** se applicabile.
+4. Cliccare una riga (link NC) per aprire il dettaglio della NC correlata (`/nc?select=<id>`).
+5. Per tornare al registro completo, cliccare **Registro NC**.
+
+**Domande / Risposte**
+
+- *PerchÃ© la lista Ã¨ vuota?* â€” Nessuna azione aperta/in corso con scadenza entro 30 giorni o giÃ  scaduta nel vostro perimetro.
+- *Ãˆ lo stesso filtro Â«In scadenza 7 ggÂ» sulle NC?* â€” No: questa vista Ã¨ sulle **azioni** correttive (API `GET /non-conformities/actions/due`), non sulle scadenze della NC nel form principale.
+
+---
+
+## 4. FAQ â€” Domande e risposte
 
 | Domanda | Risposta breve |
 |---------|----------------|
-| Qual è la differenza tra OSS e NC? | OSS = osservazione (miglioramento consigliato); NC = non conformità da trattare con maggiore rigore. Entrambe finiscono nel registro con severità e workflow uguale. |
+| Qual Ã¨ la differenza tra OSS e NC? | OSS = osservazione (miglioramento consigliato); NC = non conformitÃ  da trattare con maggiore rigore. Entrambe finiscono nel registro con severitÃ  e workflow uguale. |
 | Devo caricare allegati per chiudere? | No, non sono obbligatori. |
-| Posso modificare una NC chiusa? | No, i campi diventano readonly dopo chiusura/verifica (salvo riapertura futura — non prevista in Fase 1). |
+| Posso modificare una NC chiusa? | No, i campi diventano readonly dopo chiusura (con approvazione RQ se applicabile). |
 | Il push da audit elimina le risposte checklist? | No, copia nel registro; la checklist audit resta invariata. |
 | Come annullo un push errato? | Entro 10 secondi: **Annulla trasferimento** nel pannello chiusura audit. |
-| Arrivano email per scadenze NC? | Solo se ops attiva `NC_ALERT_ENABLED` e SMTP sul VPS. |
-| Export PDF del registro? | Non ancora; solo CSV in arrivo (H5). |
+| Il push include la checklist custom? | SÃ¬ (H1): stesso pulsante chiusura audit, idempotenza per item custom. |
+| Chi deve approvare prima della chiusura? | Admin/superadmin con **Approva chiusura (RQ)** (H3). |
+| Arrivano email per scadenze NC? | SÃ¬ se ops attiva `ALERT_ENABLED`, `NC_ALERT_ENABLED` e SMTP sul VPS. |
+| Export del registro? | **Export CSV** in `/nc` con filtri correnti (H5). PDF registro: backlog P2. |
+| Dove vedo tutte le azioni in scadenza? | Tab **Azioni in scadenza** in `/nc` (H6). |
 
 ---
 
@@ -447,16 +469,16 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 
 | Termine | Significato |
 |---------|-------------|
-| **NC** | Non Conformità — mancato adempimento a un requisito (ISO §10.2). |
-| **OSS** | Osservazione — punto di miglioramento senza evidenza di non conformità grave. |
-| **CAPA** | Corrective And Preventive Action — azioni correttive e preventive. |
+| **NC** | Non ConformitÃ  â€” mancato adempimento a un requisito (ISO Â§10.2). |
+| **OSS** | Osservazione â€” punto di miglioramento senza evidenza di non conformitÃ  grave. |
+| **CAPA** | Corrective And Preventive Action â€” azioni correttive e preventive. |
 | **Verifica efficacia** | Controllo che l'azione correttiva abbia eliminato la causa (ISO 10.2.1 e). |
-| **Causa radice** | Motivo profondo del problema (5 Why, Ishikawa, 8D…). |
+| **Causa radice** | Motivo profondo del problema (5 Why, Ishikawa, 8Dâ€¦). |
 | **Registro cross-audit** | Unico elenco NC di tutti gli audit/clienti dello studio. |
-| **Push** | Trasferimento automatico rilievi checklist ? registro NC. |
-| **Gate** | Regola che blocca un cambio stato finché un campo obbligatorio manca. |
-| **HLS** | High Level Structure — clausole 4–10 comuni alle norme ISO. |
-| **RQ** | Responsabile Qualità — tipicamente admin org con approvazione chiusura (H3). |
+| **Push** | Trasferimento automatico rilievi checklist â†’ registro NC. |
+| **Gate** | Regola che blocca un cambio stato finchÃ© un campo obbligatorio manca. |
+| **HLS** | High Level Structure â€” clausole 4â€“10 comuni alle norme ISO. |
+| **RQ** | Responsabile QualitÃ  â€” tipicamente admin org con approvazione chiusura (H3). |
 
 ---
 
@@ -465,11 +487,13 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 | Problema | Verifica | Azione |
 |--------|----------|--------|
 | Griglia vuota | Filtri attivi, card selezionata | **Azzera filtri**, clic card **Totale** |
-| Dettaglio non si apre | Bug noto snapshot a11y | Usare deep-link `/nc?select=<id>` o ricliccare riga |
-| Dropdown audit vuoto in modale | Nessun audit in org | Creare/aprire un audit; fix Fase 1 elenca anche audit completati |
+| Dettaglio non si apre | Snapshot a11y | Usare deep-link `/nc?select=<id>` o ricliccare riga |
+| Dropdown audit vuoto in modale | Nessun audit in org | Creare/aprire un audit; elenco include anche audit completati |
 | 500 su creazione NC | Sezione vs standard | Usare audit ISO 9001; leggere messaggio 400 sezione |
-| Allegati non caricano | Rete / permessi | Controllare console rete; riprovare file più piccolo |
-| NC duplicate dopo push | Push ripetuto | Normale: idempotenza salta duplicati; verificare colonna Origine |
+| Allegati non caricano | Rete / permessi | Controllare console rete; riprovare file piÃ¹ piccolo |
+| NC duplicate dopo push | Push ripetuto | Idempotenza salta duplicati; verificare colonna Origine |
+| Export CSV disabilitato | Lista filtrata vuota | Allentare filtri o card **Totale** |
+| Chiusura bloccata | Approvazione RQ | **Approva chiusura (RQ)** poi **Chiudi NC** |
 
 ---
 
@@ -478,38 +502,39 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità»). Senza licenza com
 | Requisito ISO 9001:2015 | Cosa fa il modulo |
 |-------------------------|-------------------|
 | **8.7** Controllo output non conforme | Registra NC/OSS emerse da audit o reclami. |
-| **10.2** NC e azioni correttive | Workflow stati, cause, azioni, verifica efficacia, tracciabilità. |
+| **10.2** NC e azioni correttive | Workflow stati, cause, azioni, verifica efficacia, tracciabilitÃ . |
 | **10.2.1 a)** Reazione alla NC | Stati Aperta/In corso, azioni immediate. |
 | **10.2.1 b)** Valutazione cause | Campo **Analisi causa radice**. |
 | **10.2.1 c)** Azioni correttive | Sezione **Azioni correttive** con tipi e responsabili. |
 | **10.2.1 e)** Verifica efficacia | **Note verifica efficacia** + gate obbligatorio prima di Verificata/Chiusa. |
-| **9.1** Monitoraggio | Filtri scadenze, stats card, (futuro) export CSV. |
+| **9.1** Monitoraggio | Filtri scadenze, stats card, export CSV, tab azioni in scadenza. |
 
-*Questo manuale non sostituisce la procedura qualità certificata dello studio; adattare tempistiche e responsabilità al proprio manuale SGQ.*
+*Questo manuale non sostituisce la procedura qualitÃ  certificata dello studio; adattare tempistiche e responsabilitÃ  al proprio manuale SGQ.*
 
 ---
 
 ## 8. Adattamento Canvas
+
+**Canvas interattivo:** [canvases/manuale-modulo-nc.canvas.tsx](../../canvases/manuale-modulo-nc.canvas.tsx) â€” aprire in Cursor/Glass per navigazione per scenario, diagramma stati e FAQ flash.
 
 ### Proposta struttura Canvas interattivo
 
 | Capitolo Canvas | Contenuto |
 |-----------------|-----------|
 | **Home NC** | Video/gif 30s + link app `/nc` |
-| **Scenario card** | Una card per sezione H2 sopra (14 scenari) |
-| **Diagramma stati** | Mermaid interattivo (clic stato ? mostra gate) |
+| **Scenario card** | Una card per sezione 3.x (15 scenari) |
+| **Diagramma stati** | Mermaid interattivo (clic stato â†’ mostra gate) |
 | **FAQ flash** | Card flip domanda/risposta |
 | **Checklist verificatore** | Checkbox stampabile pre-audit |
-| **In arrivo** | Badge su H1/H3/H5 finché non deployati |
 
 ### Pro e contro vs PDF / Markdown statico
 
 | | Canvas | Markdown/PDF |
 |---|--------|--------------|
 | **Pro** | Navigazione per scenario, diagramma cliccabile, aggiornamento centralizzato, link live all'app | Stampabile, versionabile in Git, zero manutenzione UI |
-| **Contro** | Richiede hosting Canvas, sync con release app | Nessuna interattività, screenshot statici invecchiano |
+| **Contro** | Richiede hosting Canvas, sync con release app | Nessuna interattivitÃ , screenshot statici invecchiano |
 
-**Parere:** per **formazione auditor** il Canvas è utile sul diagramma stati e sulle card scenario; per **audit di certificazione** resta preferibile questo Markdown (+ eventuale PDF export) come evidenza versionata. Consiglio ibrido: Canvas come portal, Markdown come fonte unica su Git.
+**Parere:** per **formazione auditor** il Canvas Ã¨ utile sul diagramma stati e sulle card scenario; per **audit di certificazione** resta preferibile questo Markdown (+ eventuale PDF export) come evidenza versionata. Consiglio ibrido: Canvas come portal, Markdown come fonte unica su Git.
 
 ### Bozza diagramma flusso stati (Mermaid per Canvas)
 
@@ -519,12 +544,8 @@ stateDiagram-v2
     Aperta --> InCorso: Avvia lavorazione
     InCorso --> Risolta: Segna come risolta
     Risolta --> Verificata: Verifica\n(note verifica obbligatorie)
-    Verificata --> Chiusa: Chiudi NC
-    note right of Verificata
-        H3 (in arrivo):
-        Approva chiusura RQ
-        prima di Chiusa
-    end note
+    Verificata --> ApprovataRQ: Approva chiusura RQ
+    ApprovataRQ --> Chiusa: Chiudi NC
     Chiusa --> [*]
 ```
 
@@ -534,10 +555,11 @@ stateDiagram-v2
 
 - Codice UI: `app/src/pages/NCPage.jsx`, `NcDetailPanel.jsx`, `NcCreateModal.jsx`
 - Workflow: `app/src/utils/ncWorkflow.js`
-- API: `GET/POST /api/v1/non-conformities`, `PUT /non-conformities/:id`
+- Export CSV: `app/src/utils/ncExportHelpers.js`
+- API: `GET/POST /api/v1/non-conformities`, `PUT /non-conformities/:id`, `POST .../approve-closure`, `GET .../actions/due`
 - Push audit: `POST /api/v1/audits/:id/push-to-nc-register`
-- Documentazione ops: sezione «Modulo NC organizzativo — Fase 1» in `docs/GUIDA_CONSOLIDATA.md`
+- Documentazione ops: sezione Â«Modulo NC organizzativo â€” Fase 1Â» e Â«NC Hardening H1â€“H6Â» in `docs/GUIDA_CONSOLIDATA.md`
 
 ---
 
-*Ultimo aggiornamento: 30/05/2026 — generato post-simulazione produzione e analisi hardening 072.*
+*Ultimo aggiornamento: 30/05/2026 â€” allineato a commit `ac9b1a8` (hardening H1â€“H6, migrazione 072).*
