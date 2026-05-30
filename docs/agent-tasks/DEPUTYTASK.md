@@ -50,6 +50,7 @@ Diagnostica e fix caricamento/upload in DocumentRegistry, DocumentTree, API alle
 
 ## Commit / push
 
-Vedi hash restituito dall'agente padre dopo `git push origin main`.
+- **Hash:** `1c602b9` — `fix(documenti): upload/download registro e risultati norme batch`
+- **Push:** `origin/main` OK (`5aca078..1c602b9`)
 
 *Aggiornato 30/05/2026 — TEST OK.*
