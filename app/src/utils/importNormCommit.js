@@ -1,5 +1,5 @@
 /**
- * Helper commit Import batch PDF ? registro norme (Fase 2).
+ * Helper commit Import batch PDF → registro norme (Fase 2).
  * Allineato a documentRegistryNorm.service e DocumentForm (norm-lookup).
  */
 
@@ -17,9 +17,11 @@ export function isNormDocType(docType) {
 export function guessStandardCodeFromFilename(filename) {
   const base = String(filename || '').replace(/\.pdf$/i, '').trim();
   if (!base) return '';
+  // Underscore è \w in JS: \bISO\b non matcha "ISO_9001" — normalizzare prima del hint.
+  const forHint = base.replace(/_/g, ' ');
   const normHint = /\b(ISO|IEC|EN|UNI|BS|DIN|AWS|ASME|CEN|AFNOR|ANSI)\b|D\.?\s*Lgs|decreto/i;
-  if (!normHint.test(base)) return '';
-  return base.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!normHint.test(forHint)) return '';
+  return forHint.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -149,7 +151,7 @@ export function formatNormCommitTitle(typeData, fallbackTitle) {
   if (normTitle && code) {
     return normTitle.toUpperCase().includes(code.toUpperCase())
       ? normTitle
-      : `${code} � ${normTitle}`;
+      : `${code} — ${normTitle}`;
   }
   return fallbackTitle || normTitle || code || 'Norma importata';
 }
