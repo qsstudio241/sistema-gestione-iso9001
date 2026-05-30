@@ -1,27 +1,26 @@
-# DEPUTYTASK — Fase A citazioni AI (slice verticali)
+# DEPUTYTASK — Fase A citazioni AI — **TEST OK**
 
-**Avviato:** 30/05/2026 — Assistente AI: `citations[]` in risposta chat + chip UI.
+**Chiuso:** 30/05/2026
 
 ## Checklist slice
 
 | Slice | Descrizione | Test | Esito |
 |-------|-------------|------|-------|
-| **A1** | Backend `/ai/chat` → `citations[]` da chunk RAG (`buildCitationsFromChunks`) | Jest: `aiCitations.test.js` (3) + `aiChat.controller.test.js` (5) = **8** | **OK** |
-| **A2** | Frontend `app/src/utils/aiCitations.js` mapping route + footnote | Vitest: `aiCitations.test.js` (**3**) | **OK** |
-| **A3** | UI chip `AiAssistantCitations.jsx` in `AiAssistantPage` | Vitest: `AiAssistantCitations.test.jsx` (**2**) | **OK** |
-| **A4** | Commit/push + deploy VPS backend + smoke chat | curl/script smoke | *in corso* |
+| **A1** | Backend `/ai/chat` → `citations[]` da chunk RAG | Jest **8** (`aiCitations` 3 + `aiChat.controller` 5) | **OK** |
+| **A2** | `app/src/utils/aiCitations.js` mapping route + footnote | Vitest **3** | **OK** |
+| **A3** | `AiAssistantCitations.jsx` + pagina assistente | Vitest **2** (render chip/footnote) | **OK** |
+| **A4** | Push `main`, deploy VPS `aiChat` + `aiCitations`, smoke | `ai-citations-smoke.mjs` → 14 citazioni | **OK** |
 
-## File toccati
+## Commit
 
-- `backend/src/utils/aiCitations.js` (+ test)
-- `backend/src/controllers/aiChat.controller.js` (+ test citations)
-- `app/src/utils/aiCitations.js` (+ test)
-- `app/src/components/AiAssistantCitations.jsx` (+ test render)
-- `app/src/pages/AiAssistantPage.jsx`, `AiAssistantPage.css`
+- `34bf942` — citazioni backend + UI base
+- `c3ef889` — componente testabile, encoding, deploy script, smoke
 
-## Regole
+## Smoke (prod)
 
-- Nessuna modifica modulo documenti (altra chat).
-- Prossima slice solo se test precedente verde.
+```
+OK ai/chat sourcesCount: 14 citations: 14
+SMOKE_CITATIONS_A4_OK
+```
 
-*Aggiornato 30/05/2026 — agent slice A.*
+*Prossimo task: sovrascrivere questo file con nuovo DEPUTYTASK.*

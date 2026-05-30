@@ -2285,3 +2285,13 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Backend | `POST /ai/chat` accetta `auditId`, `clauseRef`, `questionId`; `POST /ai/suggest` arricchisce con norma se `standardId`; upload norme PDF con enrich org |
 | Reindex | `inferStandardId` su documenti norma (`type_specific_data.standard_code`) e qualifiche (`standard_ref`) |
 | Deploy | Commit `ec62a54` su `main`; VPS PID `331861` → `332487`; smoke: chat con audit context, rimozione nota smoke `ai_context_notes` |
+
+### Fase A — citazioni cliccabili in chat (30/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| API | `POST /ai/chat` restituisce `citations[]` (`entityType`, `entityId`, `label`, `score`) e `sourcesCount` da chunk RAG deduplicati |
+| Frontend | Chip sotto risposta assistant + «Basato su N record del SGQ»; link NC con `?select=`; componente `AiAssistantCitations` |
+| Test L1 | Jest 8 + Vitest 5 (`aiCitations`, `AiAssistantCitations`) |
+| Deploy | `deploy-controllers-to-vps.ps1` include `aiChat.controller.js` e `utils/aiCitations.js`; commit `c3ef889` |
+| Smoke | `.cursor/ai-citations-smoke.mjs` — es. 14 citazioni su domanda NC |
