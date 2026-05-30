@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import NcDetailPanel from "../components/NcDetailPanel";
 import { formatDate } from "../utils/dateHelpers";
 import "./NCPage.css";
 
@@ -472,21 +473,7 @@ export default function NCPage() {
 
                 {isExpanded && (
                   <div className="nc-card-body">
-                    <div className="nc-description">
-                      <strong>Descrizione:</strong>
-                      <p>{nc.description}</p>
-                    </div>
-                    {nc.corrective_action && (
-                      <div className="nc-corrective-note">
-                        <strong>Nota azione (legacy):</strong>
-                        <p>{nc.corrective_action}</p>
-                      </div>
-                    )}
-                    {nc.responsible_person && (
-                      <p className="nc-responsible">
-                        👤 Responsabile: <strong>{nc.responsible_person}</strong>
-                      </p>
-                    )}
+                    <NcDetailPanel nc={nc} onSaved={loadNc} />
 
                     {/* Workflow buttons */}
                     {(validNext[nc.status] || []).length > 0 && (

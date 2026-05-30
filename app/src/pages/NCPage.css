@@ -217,6 +217,18 @@
 }
 .btn-add-action:hover { background: #38a169; }
 
+/* Detail panel (Slice 4) */
+.nc-detail-form { margin-bottom: 12px; }
+.nc-corrective-legacy .nc-legacy-readonly {
+  margin: 0;
+  padding: 8px 10px;
+  background: #edf2f7;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #4a5568;
+  white-space: pre-wrap;
+}
+
 /* Action form */
 .nc-action-form {
   background: #f7fafc;
