@@ -1,6 +1,6 @@
 ﻿# DEPUTYTASK — NC Hardening H1–H6
 
-**Stato:** **CHIUSO / TEST OK NC Hardening** — 30/05/2026
+**Stato:** **CHIUSO / TEST OK NC Hardening** — 30/05/2026 · commit `ac9b1a8`
 
 ---
 
@@ -17,7 +17,7 @@
 | Migrazione 072 | VPS produzione | ✅ | colonne verificate via SSH |
 | Deploy backend | nc.controller + nc.routes | ✅ | restart `sgq-backend` |
 | Test L1 | Vitest + Jest NC | ✅ | 23 Vitest + 8 Jest |
-| Simulazione | Produzione `/nc` post-deploy Netlify | ⏳ | dopo push `main` |
+| Simulazione | Produzione `/nc` post-deploy Netlify | ✅ | API workflow + UI Export CSV / tab azioni |
 
 ---
 
