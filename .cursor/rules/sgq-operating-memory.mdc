@@ -147,6 +147,9 @@ Riferimento rapido — blocchi gia' collaudati da riutilizzare:
 
 **Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
 
+## UI guida flusso operativo (golden rule committente)
+- **UI guida flusso**: il layout dei moduli deve seguire l'ordine operativo reale (ISO/process), non un form unico alfabetico o per tipo campo. Usare sezioni numerate collassabili o gate per fasi non ancora rilevanti (es. drawer NC: Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura).
+
 ## Workflow default consigliato
 1) Identifica causa reale (non solo sintomo).
 2) Applica fix robusto e difensivo.

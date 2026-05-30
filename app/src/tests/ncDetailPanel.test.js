@@ -10,6 +10,7 @@ const mockUpdateNcStatus = vi.hoisted(() => vi.fn());
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),
+    getNcActions: vi.fn().mockResolvedValue({ data: [] }),
     getAttachments: vi.fn().mockResolvedValue({ data: [] }),
     uploadAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
@@ -53,6 +54,12 @@ describe('NcDetailPanel', () => {
   it('renderizza i campi popolati dalla NC', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
+    expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
+    expect(screen.getByText('3. Cause')).toBeInTheDocument();
+    expect(screen.getByText('4. Azioni correttive')).toBeInTheDocument();
+    expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
+    expect(screen.getByText('6. Verifica efficacia')).toBeInTheDocument();
+
     expect(screen.getByLabelText(/Descrizione/i)).toHaveValue('Descrizione NC di test');
     expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
     expect(screen.getByLabelText(/Note verifica efficacia/i)).toHaveValue('Note verifica di test');
@@ -62,8 +69,40 @@ describe('NcDetailPanel', () => {
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
 
-  it('usa la classe notes-textarea sulle textarea principali', () => {
+  it('ordine DOM: scheda prima di cause, cause prima di verifica', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
+
+    const desc = screen.getByLabelText(/Descrizione/i);
+    const root = screen.getByLabelText(/Analisi causa radice/i);
+    const verif = screen.getByLabelText(/Note verifica efficacia/i);
+
+    expect(desc.compareDocumentPosition(root) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(root.compareDocumentPosition(verif) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('sezione 2 workflow visibile con callback onStatusChange', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: baseNc,
+      onSaved: vi.fn(),
+      onStatusChange: vi.fn(),
+    }));
+
+    expect(screen.getByText('2. Stato workflow')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Avvia lavorazione/i })).toBeInTheDocument();
+  });
+
+  it('NC open: sezione verifica collassata con hint', () => {
+    render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
+
+    expect(screen.getByText(/Compilare a fine lavori/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mostra/i })).toBeInTheDocument();
+  });
+
+  it('usa la classe notes-textarea sulle textarea principali', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, status: 'resolved' },
+      onSaved: vi.fn(),
+    }));
 
     const textareas = screen.getAllByRole('textbox');
     const notesAreas = textareas.filter((el) => el.classList.contains('notes-textarea'));
@@ -72,7 +111,10 @@ describe('NcDetailPanel', () => {
 
   it('submit chiama updateNcStatus con payload atteso', async () => {
     const onSaved = vi.fn();
-    render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved }));
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, status: 'resolved' },
+      onSaved,
+    }));
 
     fireEvent.change(screen.getByLabelText(/Descrizione/i), {
       target: { value: 'Descrizione aggiornata' },
