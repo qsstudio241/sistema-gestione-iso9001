@@ -1740,7 +1740,7 @@ Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved 
 | **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
 | **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
 | **Gate verifica** | `verification_notes` obbligatorie per stati verified/closed (UI + API); migrazione **071** `verification_responsible` |
-| **Email remind NC** | **Non attivo** — SMTP VPS non configurato; hook commentato in `alertScheduler.js` (§ Alert Engine) |
+| **Email remind NC** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**); attivare con `NC_ALERT_ENABLED=true` sul VPS (richiede anche `ALERT_ENABLED=true`, `SMTP_*`, `notifications_config.enabled=1`). Ops 30/05/2026: migrazione **071** OK, deploy backend + health OK. |
 
 Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
 

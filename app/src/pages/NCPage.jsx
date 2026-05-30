@@ -464,8 +464,8 @@ export default function NCPage() {
     replace("/nc");
   }
 
-  function handleRowSelect(row) {
-    const id = row?.nc_id ?? null;
+  function handleRowSelect(rowKey, row) {
+    const id = rowKey ?? row?.nc_id ?? null;
     setSelectedNcId(id);
     replace(id ? `/nc?select=${id}` : "/nc");
   }
@@ -666,7 +666,7 @@ export default function NCPage() {
         </select>
 
         <select value={filters.severity} onChange={e => handleFilter("severity", e.target.value)}>
-          <option value="">Tutte le severit\u00E0</option>
+          <option value="">Tutte le severità</option>
           <option value="major">Grave</option>
           <option value="minor">Lieve</option>
           <option value="observation">Osservazione</option>
@@ -696,12 +696,12 @@ export default function NCPage() {
         )}
       </div>
 
-      <section className="nc-grid-section" aria-label="Registro non conformit\u00E0">
+      <section className="nc-grid-section" aria-label="Registro non conformità">
         <SgqDataGrid
           rows={filteredList}
           columns={NC_GRID_COLUMNS}
           loading={loading}
-          emptyMessage="Nessuna non conformit\u00E0 trovata con i filtri selezionati."
+          emptyMessage="Nessuna non conformità trovata con i filtri selezionati."
           theme="plain"
           renderCell={renderGridCell}
           getRowKey={row => row.nc_id}
