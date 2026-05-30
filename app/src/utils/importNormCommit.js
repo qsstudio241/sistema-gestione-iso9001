@@ -5,8 +5,13 @@
 
 export const NORM_DOC_TYPE = 'norma';
 
+/** Alias doc_type AI / job hint ? registry canonico `norma`. */
+const NORM_DOC_TYPE_ALIASES = new Set(['norma_tecnica', 'norma tecnica']);
+
 export function isNormDocType(docType) {
-  return docType === NORM_DOC_TYPE;
+  const d = String(docType || '').trim().toLowerCase();
+  if (d === NORM_DOC_TYPE) return true;
+  return NORM_DOC_TYPE_ALIASES.has(d);
 }
 
 /**

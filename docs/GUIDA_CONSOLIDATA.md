@@ -20,7 +20,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 29/05/2026](#esperienza-29052026---registro-norme-e-albero-documenti-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -1182,6 +1182,8 @@ Per **non dipendere dalla lettera disco di Google Drive** e mantenere stabile il
 ### Artefatti IDE e `.gitignore`
 
 - Cartelle **machine-specific** da non versionare: `.vscode/`, `.idea/`, **`.vs/`** (cache/layout Visual Studio) — tutte in **`.gitignore`** alla radice.
+- **`.editorconfig`** (versionato, root): UTF-8, LF, indent — allineato a `.cursor/rules/sgq-encoding-quality.mdc`.
+- **MCP locale (gitignored)**: `.cursor/mcp.json`, `.cursor/mcp.env` — template `mcp.env.example` + script `sync-github-mcp-env.ps1` (vedi [Sessione 30/05/2026 — Tooling](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione)).
 - **Audit storico (2026-04)**: scansione `git log --all` sui path contenenti `.vs/`: **nessun file** risulta mai stato committato in questo repository; **non** serve `git filter-repo` / BFG per `.vs/`.
 - Se in futuro finissero per errore nell’indice: `git rm -r --cached .vs/` e commit; un **rewrite della history** (es. `git filter-repo`) vale solo se serve rimuovere blob dalla storia remota (dimensioni clone, policy compliance), non come passo obbligatorio dopo il solo `rm --cached`.
 
@@ -1382,7 +1384,7 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | **Licenze: admin salva ma UI non cambia** | Dopo `PATCH /admin/licenses` la sessione locale deve aggiornare `user` con `GET /auth/me`: usare `refreshUser()` da `AuthContext` (chiamato da `LicensesSettingsPage` dopo salvataggio). **Altri utenti** della stessa org: niente push automatico; vedono i moduli aggiornati al **prossimo login** o al **refresh token** / nuova chiamata `/auth/me` — documentare messaggio in UI (vedi roadmap Sessione A). |
 | **Import PDF batch (Sprint 9)** | Tabelle `import_jobs`, `import_job_files`; API `GET/POST/PATCH/DELETE /import-jobs`, upload `POST .../files` (multipart `files`), `POST .../process` usa `pdf-parse` + `confidenceFromTextLength` (euristica). **`POST .../files/:fileId/ai-extract`**: estrazione JSON strutturata via OpenAI sul testo già estratto (richiede `OPENAI_API_KEY` sul server; rate limit dedicato). Colonne file: `ai_extraction_json`, `ai_extraction_error`, `ai_extraction_at`, `ai_model` (migrazione **039**). Licenza modulo **`ai_import`**. UI admin: **Impostazioni → Import PDF** (`/settings/import-jobs`). Deploy VPS: `run-migration-038.js` + **`run-migration-039.js`**, **`npm install`** nella cartella backend (dipendenza `pdf-parse`), copiare `importJobs.controller.js`, `importJobs.routes.js`, `importPdfText.js`, **`importAiExtraction.service.js`**, `server.js`, `moduleLicense.service.js` + restart. **Privacy**: il testo inviato all’API è lo stesso mostrato in schermata revisione; valutare accordo/DPA OpenAI per l’organizzazione. |
 | **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
-| **Import PDF — Fase 2 commit norme** | Dialog **Commit al Registry**: se `doc_type=norma`, campi **codice / ente / anno edizione** (no revisione/responsabile/scadenza); dopo il codice (AI o nome file) → `POST /documents/norm-lookup` precompila vigore + link catalogo; backend `commit-to-registry` scrive `type_specific_data` via `documentRegistryNorm.service` (come upload bulk / `DocumentForm`). File: `ImportJobsPage.jsx`, `importNormCommit.js`, `importJobs.controller.js`. Test L1: `app/src/tests/importNormCommit.test.js`. |
+| **Import PDF — Fase 2 commit norme** | Dialog **Commit al Registry**: se `doc_type=norma`, campi **codice / ente / anno edizione** (no revisione/responsabile/scadenza); dopo il codice (AI o nome file) → `POST /documents/norm-lookup` precompila vigore + link catalogo; backend `commit-to-registry` scrive `type_specific_data` via `documentRegistryNorm.service` (come upload bulk / `DocumentForm`). File: `ImportJobsPage.jsx`, `importNormCommit.js`, `importJobs.controller.js`. Test L1: `app/src/tests/importNormCommit.test.js`. **Smoke 30/05/2026**: PR **#72** mergiata (fix `ISO_9001` underscore in filename); alias AI **`norma_tecnica`** → form norma automatico (`isNormDocType`); credenziali smoke → `.cursor/mcp.env.example` + `sync-sgq-smoke-env.ps1` (desktop) / Secrets Cursor Cloud. |
 | **Registro norme — Fase 3 import codici (29/05/2026)** | **Senza PDF obbligatorio**: textarea «un codice per riga» nella cartella **NORME E LEGGI** → `POST /documents/norm-import-codes` → lookup `normCatalogLookup` → bozza `document_registry` (`status=bozza`, `type_specific_data` canonico con vigore + URL catalogo). Duplicati bloccati se `standard_code` già presente nella stessa org. Compatibile job settimanale `normValidityChecker` (legge `JSON_VALUE(..., '$.standard_code')`). File: `normCodesImport.service.js`, `NormCodesImportButton.jsx`, `document.controller.js`. Test L1: `backend/src/services/normCodesImport.service.test.js` (9 test). Deploy VPS: copiare service + controller + routes documenti + restart. |
 | **Numerazione report audit (formato Mason)** | Alla creazione (`POST /audits` e sync create) il backend assegna `audit_number` come **`PREFISSO-YYMMDD-NN`** (es. `MSN-260417-01`): giorno calendario **Europe/Rome**, contatore atomico per org+prefisso+giorno (`audit_daily_sequences`, migrazione **040**). Prefisso: colonna **`organizations.audit_report_prefix`** (NULL = default `MSN`). Deploy VPS: `node backend/scripts/run-migration-040.js` (o SQL **040**) + script **`backend/scripts/deploy-controllers-to-vps.ps1`** (include già `auditNumberAllocation.service.js`, `audit.controller.js`, `sync.controller.js`) + restart. **Smoke read-only DB**: da `backend` con `NODE_ENV=production` → `node scripts/smoke-mason-db.js` (dopo almeno una creazione audit post-040 deve comparire almeno un numero Mason). |
 
@@ -1501,6 +1503,58 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 
 **Ordine capitoli e sommario (mag 2026)**: in `wordExport.js`, `normalizeAuditReportDocumentStructure` riordina **Conclusioni dopo RILIEVI** (come ISO patchate) e rimuove righe Sommario TOC cache obsolete (`_Toc*`) così Word rigenera l’indice aprendo il file. Test: `wordExport.chapterOrder.test.js`. Script offline: `patch-audit-template-structure.cjs` (include `VerbaleVisita-generic.docx`).
 
+
+### Sessione 30/05/2026 — Tooling Cursor / MCP / Node / Vitest (chiusura sessione)
+
+#### Attività completate
+
+| # | Area | Esito |
+|---|------|--------|
+| 1 | Cursor Marketplace — estensioni | GitHub PR, Vitest, MSSQL, EditorConfig, Remote SSH; **Modern Web Guidance** opzionale |
+| 2 | GitHub MCP | URL `https://api.githubcopilot.com/mcp/`; PAT fine-grained ok; **43 tools** |
+| 3 | Playwright MCP | Test ok — **23 tools** |
+| 4 | Node LTS | Installato per Vitest extension e Playwright MCP |
+| 5 | `.editorconfig` | UTF-8, LF, indent coerente (root repo) |
+| 6 | Sync PAT GitHub | `.cursor/mcp.env.example` + `.cursor/sync-github-mcp-env.ps1` |
+| 7 | Vitest L1 | **432 pass / 2 fail** (`importNormCommit` — preesistente) |
+
+#### Lezioni apprese — Cursor Marketplace e estensioni
+
+- **Estensioni utili**: GitHub Pull Requests, Vitest, MSSQL, EditorConfig, Remote SSH.
+- **Installazione CLI**: usare `cursor.cmd --install-extension <publisher.extension> --force -Wait`, **non** lanciare ripetutamente `Cursor.exe` (evita finestre multiple).
+
+#### Lezioni apprese — GitHub MCP (server HTTP)
+
+- **URL server**: `https://api.githubcopilot.com/mcp/` — PAT fine-grained accettato.
+- In `mcp.json` usare `"Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"` (o equivalente headers).
+- **`envFile` NON funziona** per server MCP basati su URL HTTP (solo stdio). Non affidarsi a `envFile` in `.cursor/mcp.json` per GitHub.
+- **Pattern corretto (Windows)**:
+  1. Copiare `.cursor/mcp.env.example` → `.cursor/mcp.env` e incollare il PAT (senza `Bearer`, senza virgolette).
+  2. Eseguire: `powershell -ExecutionPolicy Bypass -File .cursor/sync-github-mcp-env.ps1` — imposta variabile **utente Windows** `GITHUB_PERSONAL_ACCESS_TOKEN`.
+  3. Riavviare Cursor completamente (chiudere tutte le finestre).
+- **Profilo Windows**: la variabile va impostata sul profilo **corretto** (`AI.Project` vs account manutenzione). Se MCP non vede il token, verificare nello stesso profilo usato da Cursor: `[Environment]::GetEnvironmentVariable('GITHUB_PERSONAL_ACCESS_TOKEN','User')`.
+- Se in Impostazioni MCP GitHub mostra **Logout** (OAuth): uscire da OAuth e usare **solo** il PAT.
+
+#### Lezioni apprese — Node, Vitest extension, Playwright MCP
+
+- **Node.js LTS** (`C:\Program Files\nodejs\`) necessario per Vitest extension in IDE e Playwright MCP.
+- Cursor può avere nel PATH un **node bundled** prima del Node di sistema → in `.cursor/mcp.json` usare path assoluto per Playwright: `"command": "C:\\Program Files\\nodejs\\npx.cmd"`.
+- **`.vscode/settings.json`** (gitignored, locale): `"vitest.nodeExecutable": "C:\\Program Files\\nodejs\\node.exe"` per far usare a Vitest extension il Node LTS.
+- **Test da terminale agent** (cloud): pattern esistente con `$node` bundled Cursor — vedi sezione *npm non è nel PATH* più sotto; su desktop IDE preferire Node LTS di sistema.
+
+#### Test L1 — esito sessione
+
+| Suite | Esito | Note |
+|-------|--------|------|
+| Vitest `app/` | **8/8 pass** (`importNormCommit.test.js`, 30/05/2026) | PR #72 mergiata + alias `norma_tecnica` |
+
+#### Prossimo test consigliato (circuito Registro Norme)
+
+Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → **Playwright MCP** (UI Registro → NORME E LEGGI) → **SQL** (verifica `type_specific_data` / duplicati) → **GitHub MCP** (trace PR/commit).
+
+**File locali sessione (non committati)**: `.editorconfig`, `.cursor/mcp.env.example`, `.cursor/sync-github-mcp-env.ps1`, modifica `.gitignore` (ignore `mcp.json` / `mcp.env`).
+
+---
 
 **Esperienza 29/05/2026 - registro norme e albero documenti (chiusura sessione)**
 
