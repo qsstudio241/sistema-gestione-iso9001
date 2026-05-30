@@ -1,5 +1,5 @@
 /**
- * Test L1 ó NcDetailPanel (NC Fase 1 Slice 5)
+ * Test L1 ù NcDetailPanel (NC Fase 1 Slice 5)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -19,6 +19,9 @@ vi.mock('../services/apiService', () => ({
 
 vi.mock('../components/ChecklistModule.css', () => ({}));
 vi.mock('../components/AttachmentSection.css', () => ({}));
+vi.mock('../contexts/RouterContext', () => ({
+  Link: ({ children, to, ...rest }) => React.createElement('a', { href: to, ...rest }, children),
+}));
 
 import NcDetailPanel from '../components/NcDetailPanel';
 
@@ -102,7 +105,7 @@ describe('NcDetailPanel', () => {
       onSaved: vi.fn(),
     }));
 
-    expect(screen.getByLabelText(/Severit‡/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Severitù/i)).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Salva modifiche/i })).not.toBeInTheDocument();
   });
 
