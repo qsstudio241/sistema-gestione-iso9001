@@ -1616,10 +1616,12 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **Fase 2 norme (commit import PDF)**: allineamento `type_specific_data` canonico al commit batch; form tipo `norma` senza campi revisione/responsabile/scadenza SGQ. Commit `a77b616`.
 - **Fase 3 import codici catalogo**: textarea codici in **NORME E LEGGI** → `POST /documents/norm-import-codes` → `normCodesImport.service` + lookup catalogo; duplicati su `standard_code` per org. Commit `a77b616` (service) + deploy VPS manuale service/controller/routes documenti.
 - **Smoke / fix backend**: ISO 5817 e dedup import; esclusione documenti **obsoleti** dall'albero (`526ae9f`). Pannello dettaglio: metadati norma visibili (`dde4d6e`).
-- **UI albero documenti** (`b2c0694`): tooltip, rinomina/elimina cartelle **custom**, sottocartelle, icone distinte sistema vs custom; DELETE cartella rifiuta se non vuota (`FOLDER_NOT_EMPTY` in `document.controller.js`).
-- **Lezioni**: per le **norme** non usare il concetto di *revisione* documentale SGQ (edizione/vigore/catalogo); le **cartelle di sistema** (es. NORME E LEGGI) restano protette — solo custom editabili.
-- **Deploy VPS (30/05/2026)**: `deploy-controllers-to-vps.ps1` **non** copia ancora i file `document*` / `normCodesImport` — dopo push su `main` copiare manualmente `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` + restart `sgq-backend`; verificare `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
-- **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`.
+- **UI albero** (`b2c0694` + `b3e5b51`): tooltip; rinomina/elimina solo cartelle **custom**; icone sistema vs custom; `FOLDER_NOT_EMPTY` se cartella non vuota. **Sidebar ridimensionabile**: maniglia sottile a destra dell'albero, larghezza in `localStorage` chiave `sgq-doc-tree-width`; su mobile barra **Cartella selezionata** sopra il dettaglio.
+- **Norme (lessico SGQ)**: niente campo *revisione* documentale — usare **edizione** / **anno edizione**, **vigore** e lookup **catalogo-first** (`norm-lookup`, import codici); cartelle **sistema** (es. NORME E LEGGI) **non** rinomina/elimina dall'UI.
+- **UX visibilità novità (30/05)**: deploy Netlify **systemgest.netlify.app** può essere OK mentre l'utente «non vede nulla» → aprire tab **Albero** nel Registro documenti, URL produzione corretto, provare **drag** sulla maniglia; se PWA/cache vecchia: hard refresh o reinstallazione PWA.
+- **Deploy VPS**: `deploy-controllers-to-vps.ps1` va **esteso** con `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` (oggi copia manuale post-push) + restart `sgq-backend`; smoke `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
+- **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
+
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
