@@ -130,6 +130,22 @@
   background: rgba(99, 179, 237, 0.35);
 }
 
+.ai-context-chip--standard-active {
+  background: rgba(237, 137, 54, 0.25);
+  border-color: rgba(237, 137, 54, 0.55);
+}
+
+.ai-context-chip--standard-active:hover {
+  background: rgba(237, 137, 54, 0.35);
+}
+
+.ai-context-chip--standard .ai-context-chip-icon {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 .ai-context-chip-icon {
   flex-shrink: 0;
   opacity: 0.85;

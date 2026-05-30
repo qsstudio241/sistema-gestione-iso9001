@@ -10,8 +10,14 @@ const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge, indexAllEntities } = require('../services/knowledgeIndexer.service');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
+const {
+  loadStandardProfile,
+  resolveStandardCodesForFilter,
+  buildStandardContextBlock,
+} = require('../services/aiStandardContext.service');
 
-const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit? ISO 9001 di questa organizzazione.
+const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
@@ -82,7 +88,7 @@ async function logUsage({ organizationId, userId, companyId, message, reply, con
 
 /**
  * POST /ai/chat
- * Body: { message: string, companyId?: number|null }
+ * Body: { message: string, companyId?: number|null, standardId?: number|null }
  */
 async function aiChat(req, res) {
   const startTime = Date.now();
@@ -95,7 +101,7 @@ async function aiChat(req, res) {
       });
     }
 
-    const { message, companyId } = req.body;
+    const { message, companyId, standardId } = req.body;
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({
         error: 'Il campo "message" \u00e8 obbligatorio.',
@@ -107,8 +113,21 @@ async function aiChat(req, res) {
     const auditorOrgId = req.user.auditor_org_id;
     const userId = req.user.user_id;
     const parsedCompanyId = companyId ? parseInt(companyId, 10) || null : null;
+    const parsedStandardId = standardId ? parseInt(standardId, 10) || null : null;
 
-    let systemPrompt = BASE_SYSTEM_PROMPT;
+    let systemPrompt = await enrichSystemPromptWithOrganization(
+      BASE_SYSTEM_PROMPT,
+      organizationId
+    );
+
+    let activeStandard = null;
+    if (parsedStandardId) {
+      activeStandard = await loadStandardProfile(parsedStandardId);
+      if (activeStandard) {
+        systemPrompt += buildStandardContextBlock(activeStandard);
+      }
+    }
+
     if (parsedCompanyId) {
       const company = await loadCompanyProfile(parsedCompanyId, auditorOrgId);
       if (company) {
@@ -125,10 +144,15 @@ async function aiChat(req, res) {
 
     let contextChunks = [];
     try {
+      const standardCodes = activeStandard
+        ? resolveStandardCodesForFilter(activeStandard)
+        : [];
       contextChunks = await searchKnowledge(message.trim(), organizationId, {
         topK: 15,
         minScore: 0.2,
         companyId: parsedCompanyId,
+        standardId: activeStandard ? parsedStandardId : null,
+        standardCodes,
       });
     } catch (err) {
       logger.warn('[AI_CHAT] searchKnowledge failed, proceeding without context:', err.message);
@@ -170,6 +194,7 @@ async function aiChat(req, res) {
     res.json({
       reply: result.content,
       contextUsed: contextChunks.length,
+      standardId: activeStandard ? parsedStandardId : null,
       _aiMeta: {
         provider,
         model: result.model,
