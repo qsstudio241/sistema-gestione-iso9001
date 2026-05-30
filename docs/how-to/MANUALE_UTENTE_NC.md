@@ -90,7 +90,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 3. Usare il menu **Tutti i clienti** per restringere a un'azienda (es. *Azienda Test Fase 1*).
 4. Cercare per testo nel campo **Cerca per numero NC o descrizione...**.
 5. Affinare con **Tutti gli stati**, **Tutte le severità**, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
-6. Cliccare una riga della griglia per aprire il **pannello dettaglio** sotto la tabella. L'URL diventa `/nc?select=<id>`.
+6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra) con dettaglio, workflow e azioni. La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`.
 
 **Domande che mi pongo (FAQ interne)**
 
@@ -230,7 +230,10 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 1. Selezionare la NC in griglia.
 2. Nel dettaglio, compilare campi editabili: **Descrizione**, **Analisi causa radice**, **Note verifica efficacia**, **Responsabile verifica**, **Severità**, **Scadenza NC**, **Responsabile NC**.
-3. Cliccare **Salva modifiche** dopo ogni modifica sostanziale.
+   - **Dettatura vocale**: pulsante microfono a destra nei campi testo lunghi (come in audit); lingua italiana; richiede connessione per il riconoscimento.
+   - **Storico testo**: link «Storico testo (n)» sotto il campo — mostra versioni salvate al termine della modifica (uscita dal campo); clic per ripristinare una versione precedente.
+   - **Bozza locale**: mentre compili, il testo resta nel browser anche se la connessione cade o ricarichi la pagina; al ritorno online usa **Salva modifiche** (o salva l'azione) per inviare al server. La bozza locale si cancella dopo salvataggio riuscito.
+3. Cliccare **Salva modifiche** dopo ogni modifica sostanziale (validazione descrizione solo in uscita dal campo o al salvataggio, non a ogni lettera).
 4. Usare i pulsanti workflow (stile checklist — verde/giallo/grigio):
    - **Avvia lavorazione** (Aperta → In corso)
    - **Segna come risolta** (In corso → Risolta)
@@ -266,11 +269,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 1. Nel dettaglio NC, scorrere alla sezione **Azioni correttive (n)**.
 2. Cliccare **+ Aggiungi azione**.
-3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione***, **Responsabile attuazione**, **Scadenza**.
+3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione*** (microfono e storico come nel form NC), **Responsabile attuazione**, **Scadenza**.
 4. **Salva azione**.
 5. Per ogni azione, avanzare lo stato con i pulsanti:
    - **Avvia** → **Completa** → **Verifica**
-6. Su **Verifica**, compilare **Nota verifica azione** (obbligatoria) e **Conferma verifica**.
+6. Su **Verifica**, compilare **Nota verifica azione** (obbligatoria; stessi strumenti microfono/storico/bozza) e **Conferma verifica**.
 7. Se ci sono azioni scadute o in scadenza entro 7 giorni, usare i filtri **Scadute** / **In scadenza 7 gg** sopra l'elenco azioni.
 
 **Domande / Risposte**

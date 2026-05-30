@@ -1,5 +1,5 @@
 /**
- * Test L1 ù NcDetailPanel (NC Fase 1 Slice 5)
+ * Test L1 - NcDetailPanel (NC Fase 1 Slice 5)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -19,8 +19,13 @@ vi.mock('../services/apiService', () => ({
 
 vi.mock('../components/ChecklistModule.css', () => ({}));
 vi.mock('../components/AttachmentSection.css', () => ({}));
+vi.mock('../components/AutoTextarea.css', () => ({}));
+vi.mock('../components/RichTextField.css', () => ({}));
 vi.mock('../contexts/RouterContext', () => ({
   Link: ({ children, to, ...rest }) => React.createElement('a', { href: to, ...rest }, children),
+}));
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { organization_id: 1001 } }),
 }));
 
 import NcDetailPanel from '../components/NcDetailPanel';
@@ -61,7 +66,7 @@ describe('NcDetailPanel', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     const textareas = screen.getAllByRole('textbox');
-    const notesAreas = textareas.filter(el => el.classList.contains('notes-textarea'));
+    const notesAreas = textareas.filter((el) => el.classList.contains('notes-textarea'));
     expect(notesAreas.length).toBeGreaterThanOrEqual(3);
   });
 
@@ -95,7 +100,7 @@ describe('NcDetailPanel', () => {
       onSaved: vi.fn(),
     }));
 
-    expect(screen.getByLabelText(/Descrizione/i)).toHaveAttribute('readonly');
+    expect(screen.getByLabelText(/Descrizione/i)).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Salva modifiche/i })).not.toBeInTheDocument();
   });
 
@@ -105,7 +110,7 @@ describe('NcDetailPanel', () => {
       onSaved: vi.fn(),
     }));
 
-    expect(screen.getByLabelText(/Severitù/i)).toBeDisabled();
+    expect(document.getElementById('nc-sev-42')).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Salva modifiche/i })).not.toBeInTheDocument();
   });
 

@@ -1,15 +1,22 @@
 /**
- * NcCreateModal — creazione NC manuale (POST source_type manual)
+ * NcCreateModal - creazione NC manuale (POST source_type manual)
  */
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import RichTextField, {
+  resolveNcFieldInitial,
+  clearNcFieldDraftsForScope,
+} from "./RichTextField";
 import {
   NC_MANUAL_SECTIONS,
   buildManualNcPayload,
   mapApiSectionsToOptions,
 } from "../utils/ncCreateHelpers";
 import "../components/ChecklistModule.css";
+
+const CREATE_SCOPE = "nc-create";
 
 const SEVERITY_OPTIONS = [
   { value: "major", label: "Grave" },
@@ -27,6 +34,8 @@ const EMPTY_FORM = {
 };
 
 export default function NcCreateModal({ open, onClose, onCreated }) {
+  const { user } = useAuth();
+  const organizationId = user?.organization_id ?? null;
   const [audits, setAudits] = useState([]);
   const [sectionOptions, setSectionOptions] = useState(NC_MANUAL_SECTIONS);
   const [loadingAudits, setLoadingAudits] = useState(false);
@@ -37,7 +46,10 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
 
   useEffect(() => {
     if (!open) return;
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      description: resolveNcFieldInitial("", organizationId, CREATE_SCOPE, "description"),
+    });
     setSectionOptions(NC_MANUAL_SECTIONS);
     setError(null);
     setLoadingAudits(true);
@@ -49,7 +61,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
       })
       .catch(() => setAudits([]))
       .finally(() => setLoadingAudits(false));
-  }, [open]);
+  }, [open, organizationId]);
 
   useEffect(() => {
     if (!open || !form.audit_id) {
@@ -113,6 +125,9 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
     try {
       const res = await apiService.createNonConformity(built.payload);
       const created = res?.data || res;
+      if (organizationId) {
+        clearNcFieldDraftsForScope(organizationId, CREATE_SCOPE, ["description"]);
+      }
       onCreated?.(created);
       onClose?.();
     } catch (err) {
@@ -137,7 +152,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
       >
         <h3 id="nc-create-title">{"\u2795 Nuova NC manuale"}</h3>
         <p className="nc-modal-desc">
-          Crea una non conformità collegata a un audit (origine manuale, ISO §10.2).
+          Crea una non conformit{"\u00E0"} collegata a un audit (origine manuale, ISO {"\u00A7"}10.2).
         </p>
         <form className="nc-action-form" onSubmit={handleSubmit}>
           <div className="nc-form-row">
@@ -154,7 +169,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               </option>
               {audits.map(a => (
                 <option key={a.audit_id} value={a.audit_id}>
-                  {a.audit_number} — {a.client_name}
+                  {a.audit_number} - {a.client_name}
                 </option>
               ))}
             </select>
@@ -181,7 +196,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               </select>
             </div>
             <div>
-              <label htmlFor="nc-create-severity">Severità *</label>
+              <label htmlFor="nc-create-severity">Severit{"\u00E0"} *</label>
               <select
                 id="nc-create-severity"
                 required
@@ -197,14 +212,16 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
           </div>
           <div className="nc-form-row">
             <label htmlFor="nc-create-desc">Descrizione *</label>
-            <textarea
+            <RichTextField
               id="nc-create-desc"
-              className="notes-textarea"
               rows={3}
-              required
               value={form.description}
               disabled={saving}
-              onChange={e => setField("description", e.target.value)}
+              onChange={(e) => setField("description", e.target.value)}
+              draftScopeId={CREATE_SCOPE}
+              draftFieldId="description"
+              persistLocalDraft
+              organizationId={organizationId}
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">
