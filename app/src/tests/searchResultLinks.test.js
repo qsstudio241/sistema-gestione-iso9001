@@ -9,7 +9,7 @@ import {
 describe('searchResultLinks', () => {
   it('maps unified search entity types to SGQ routes', () => {
     expect(getSearchResultPath({ entityType: 'non_conformity', id: 42 })).toBe('/nc?select=42');
-    expect(getSearchResultPath({ entityType: 'document', id: 99 })).toBe('/documents');
+    expect(getSearchResultPath({ entityType: 'document', id: 99 })).toBe('/documents?tab=tree&select=99');
     expect(getSearchResultPath({ entityType: 'audit', id: 7 })).toBe('/audit');
     expect(getSearchResultPath({ entityType: 'complaint', id: 3 })).toBe('/reclami');
     expect(getSearchResultPath({ entityType: 'risk', id: 1 })).toBe('/rischi');

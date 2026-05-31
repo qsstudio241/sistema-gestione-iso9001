@@ -3,6 +3,8 @@
  * Stesso pattern di aiCitations.js per deep link.
  */
 
+import { buildDocumentDeepLink } from './documentRegistryUrl';
+
 const SEARCH_ENTITY_ROUTES = {
   non_conformity: '/nc',
   document: '/documents',
@@ -13,7 +15,7 @@ const SEARCH_ENTITY_ROUTES = {
 };
 
 export const SEARCH_GROUP_LABELS = {
-  non_conformity: 'Non conformit‡',
+  non_conformity: 'Non conformitù',
   document: 'Documenti',
   audit: 'Audit',
   complaint: 'Reclami',
@@ -42,6 +44,10 @@ export function getSearchResultPath(item) {
   if (item.entityType === 'non_conformity' && item.id != null && item.id !== '') {
     const id = parseInt(item.id, 10);
     if (!Number.isNaN(id)) return `${base}?select=${id}`;
+  }
+
+  if (item.entityType === 'document' && item.id != null && item.id !== '') {
+    return buildDocumentDeepLink(item.id);
   }
 
   return base;

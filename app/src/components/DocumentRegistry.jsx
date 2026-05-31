@@ -8,13 +8,18 @@
  * Tab "Albero": navigazione gerarchica con pannello dettaglio
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import useDocTreeSidebarWidth, {
   DOC_TREE_WIDTH_MIN,
   DOC_TREE_WIDTH_MAX,
 } from "../hooks/useDocTreeSidebarWidth";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from "../contexts/RouterContext";
+import {
+  parseDocumentRegistrySearch,
+  buildDocumentRegistryPath,
+} from "../utils/documentRegistryUrl";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
@@ -869,8 +874,17 @@ function OrphanInbox({ orphans, folders, onArchive, onArchiveAll, archiving }) {
 // ─── Componente principale ────────────────────────────────────────────────────
 
 function DocumentRegistry() {
+  const { replace } = useRouter();
+  const initialUrl = parseDocumentRegistrySearch(
+    typeof window !== "undefined" ? window.location.search : ""
+  );
+
   // Tab attiva: "priority" | "catalog" | "tree"
-  const [activeTab, setActiveTab] = useState("priority");
+  const [activeTab, setActiveTab] = useState(
+    initialUrl.selectId ? "tree" : (initialUrl.tab || "priority")
+  );
+  const deepLinkSelectRef = useRef(initialUrl.selectId);
+  const deepLinkHandledRef = useRef(false);
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -947,6 +961,47 @@ function DocumentRegistry() {
   const [fileDialogDoc, setFileDialogDoc] = useState(null);
 
   const LIMIT = 20;
+
+  const syncRegistryUrl = useCallback(
+    (tab, selectId = null) => {
+      replace(
+        buildDocumentRegistryPath({
+          tab,
+          selectId: tab === "tree" ? selectId : null,
+        })
+      );
+    },
+    [replace]
+  );
+
+  const handleTabChange = useCallback(
+    (tab) => {
+      setActiveTab(tab);
+      if (tab !== "tree") {
+        setShowDetail(false);
+        setSelectedDoc(null);
+        setDocHistory([]);
+      }
+      syncRegistryUrl(tab, null);
+    },
+    [syncRegistryUrl]
+  );
+
+  // URL ?tab= & ?select= al mount e su Back/Forward
+  useEffect(() => {
+    const applyFromUrl = () => {
+      const { tab, selectId } = parseDocumentRegistrySearch(window.location.search);
+      if (tab) setActiveTab(tab);
+      if (selectId != null) {
+        deepLinkSelectRef.current = selectId;
+        deepLinkHandledRef.current = false;
+        setActiveTab("tree");
+      }
+    };
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, []);
 
   // ─── Provisioning albero documentale ───────────────────────────────────
   const [provisioning, setProvisioning] = useState(false);
@@ -1095,6 +1150,7 @@ function DocumentRegistry() {
   const handleDocSelect = useCallback(async (doc) => {
     setSelectedDoc(doc);
     setShowDetail(true);
+    syncRegistryUrl("tree", doc?.id ?? null);
     try {
       const [detailRes, historyRes] = await Promise.all([
         apiService.getDocument(doc.id),
@@ -1105,13 +1161,42 @@ function DocumentRegistry() {
     } catch {
       setDocHistory([]);
     }
-  }, []);
+  }, [syncRegistryUrl]);
 
   const handleCloseDetail = useCallback(() => {
     setShowDetail(false);
     setSelectedDoc(null);
     setDocHistory([]);
-  }, []);
+    syncRegistryUrl("tree", null);
+  }, [syncRegistryUrl]);
+
+  // Deep link ?select=<docId> → tab Albero + espansione + drawer
+  useEffect(() => {
+    const docId = deepLinkSelectRef.current;
+    if (docId == null || deepLinkHandledRef.current || activeTab !== "tree") return;
+
+    let cancelled = false;
+    deepLinkHandledRef.current = true;
+
+    (async () => {
+      setTreeViewMode("free");
+      const doc = await tree.expandToDocument(docId);
+      if (cancelled || !doc) return;
+
+      if (doc.doc_type === "folder") {
+        await handleTreeNodeSelect(doc.id);
+      } else if (doc.parent_id != null) {
+        await handleTreeNodeSelect(doc.parent_id);
+        await handleDocSelect(doc);
+      } else {
+        await handleDocSelect(doc);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, tree.expandToDocument]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Azioni ────────────────────────────────────────────────────────────
 
@@ -1254,10 +1339,10 @@ function DocumentRegistry() {
     releasedWithoutFileDocs.length;
 
   const openCatalogWithoutFile = useCallback(() => {
-    setActiveTab("catalog");
+    handleTabChange("catalog");
     setFiltersState((f) => ({ ...f, without_file: true }));
     setCatalogPage(1);
-  }, []);
+  }, [handleTabChange]);
 
   return (
     <div className="docregistry-page">
@@ -1329,7 +1414,7 @@ function DocumentRegistry() {
       <div className="docregistry-tabs">
         <button
           className={`doc-tab${activeTab === "priority" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("priority")}
+          onClick={() => handleTabChange("priority")}
         >
           ⚠️ Priorità
           {priorityCount > 0 && (
@@ -1338,14 +1423,14 @@ function DocumentRegistry() {
         </button>
         <button
           className={`doc-tab${activeTab === "catalog" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("catalog")}
+          onClick={() => handleTabChange("catalog")}
         >
           📋 Catalogo
           {stats && <span className="tab-count">{stats.total}</span>}
         </button>
         <button
           className={`doc-tab${activeTab === "tree" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("tree")}
+          onClick={() => handleTabChange("tree")}
         >
           🗂️ Albero
         </button>

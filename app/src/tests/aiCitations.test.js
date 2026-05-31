@@ -6,10 +6,12 @@ describe('aiCitations', () => {
     expect(getCitationPath({ entityType: 'non_conformity', entityId: '42' })).toBe('/nc?select=42');
     expect(getCitationPath({ entityType: 'audit_conclusion', entityId: 'uuid-1' })).toBe('/audit');
     expect(getCitationPath({ entityType: 'complaint', entityId: '7' })).toBe('/reclami');
-    expect(getCitationPath({ entityType: 'document', entityId: '99' })).toBe('/documents');
+    expect(getCitationPath({ entityType: 'document', entityId: '99' })).toBe('/documents?tab=tree&select=99');
+    expect(getCitationPath({ entityType: 'norm_content', entityId: '12' })).toBe('/documents?tab=tree&select=12');
     expect(getCitationPath({ entityType: 'unknown', entityId: '1' })).toBeNull();
     expect(getCitationPath({ entityType: 'non_conformity', entityId: '' })).toBe('/nc');
     expect(getCitationPath({ entityType: 'complaint', entityId: '' })).toBe('/reclami');
+    expect(getCitationPath({ entityType: 'document', entityId: 'abc' })).toBe('/documents');
   });
 
   it('buildSourcesFootnote distinguishes sources vs empty', () => {
