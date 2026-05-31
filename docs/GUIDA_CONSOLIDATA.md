@@ -2295,3 +2295,14 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Test L1 | Jest 8 + Vitest 5 (`aiCitations`, `AiAssistantCitations`) |
 | Deploy | `deploy-controllers-to-vps.ps1` include `aiChat.controller.js` e `utils/aiCitations.js`; commit `c3ef889` |
 | Smoke | `.cursor/ai-citations-smoke.mjs` — es. 14 citazioni su domanda NC |
+
+### Fase C — ricerca unificata studio/azienda (31/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| C1 API | `GET /api/v1/search` — LIKE multi-entità, filtro `company_id` rigido, RBAC studio su NC/audit |
+| C2 UI | Pagina `/search`, scope Tutto lo studio / Azienda, risultati raggruppati, deep link (`searchResultLinks.js`) |
+| C3 RAG | Tab **Significato** → `POST /ai/chat` + `AiAssistantCitations`; tab **Esatto** → GET search |
+| Test L1 | Jest 10 (backend) + Vitest 5 (`searchResultLinks`, `SearchPage`) |
+| Deploy | `deploy-controllers-to-vps.ps1` include search routes/controller/service + `server.js` |
+| Smoke | `GET /api/v1/search?q=...` con JWT; verificare assenza leak cross-company con `companyId` |

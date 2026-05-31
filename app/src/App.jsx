@@ -39,6 +39,7 @@ const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
 const AiAssistantPage = React.lazy(() => import("./pages/AiAssistantPage"));
 const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage"));
+const SearchPage = React.lazy(() => import("./pages/SearchPage"));
 const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProceduresPage"));
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
@@ -132,6 +133,7 @@ function AppContent() {
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_assist"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_assist"><KnowledgeHealthPage /></LicensedRoute>} />
+        <Route path="/search"          element={<SearchPage />} />
         <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />

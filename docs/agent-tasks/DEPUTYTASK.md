@@ -1,56 +1,42 @@
-# DEPUTYTASK — CHIUSO (TEST OK)
+# DEPUTYTASK — Chiusura Fase C Ricerca unificata
 
-**Sessione:** 30/05/2026 — Modulo Documenti: upload, download, risultati norme batch.
+**Sessione:** 31/05/2026 — C1–C4 completati
 
-## Obiettivo
+## Stato
 
-Diagnostica e fix caricamento/upload in DocumentRegistry, DocumentTree, API allegati documenti.
+| Slice | Contenuto | Test | Esito |
+|-------|-----------|------|-------|
+| C1 | `GET /api/v1/search` backend | Jest 10 | **OK** |
+| C2 | Pagina `/search`, scope azienda, deep link | Vitest 4 | **OK** |
+| C3 | Tab Esatto / Significato (RAG) | Vitest 1 smoke | **OK** |
+| C4 | Deploy VPS + push main + doc | smoke curl | vedi sessione |
 
-## Root cause individuate
+## API
 
-| Problema | Causa | Fix |
-|----------|--------|-----|
-| Download / link «Scarica» e Office Viewer su file registro | Route `GET /documents/:id/file/download` usava solo `authenticate` (Bearer); `?token=` ignorato | `authenticateDownload` su route download in `docfile.routes.js` |
-| Scarica da DocFileDialog fragile senza token in URL | `<a href>` con `?token=` da localStorage | `apiService.downloadDocFile()` via fetch + Bearer + blob |
-| Risultati upload norme batch senza titolo/codice in UI | API restituiva metadati solo in `metadata.{...}` | `flattenNormUploadEntry` backend + `normalizeNormUploadResults` frontend |
-| Refresh albero dopo batch fallito | `onUploadComplete` sempre chiamato | Callback solo se `countNormUploadSuccesses > 0` |
-| Pulsanti norme non visibili con cartella selezionata nell'albero | `isNormsFolder` leggeva solo ultimo breadcrumb (documento) | Usa `tree.selectedNode` se `doc_type === 'folder'` |
-| Sottocartelle in lista centrale non navigabili | Click apriva pannello dettaglio invece di entrare in cartella | Click su `doc_type === 'folder'` → `handleTreeNodeSelect` |
+`GET /api/v1/search?q=...&companyId=&entityTypes=&limit=`
 
-## File modificati
+- Filtro tenant JWT obbligatorio
+- `companyId` opzionale — match rigido (no OR NULL)
+- Entità: NC, documenti, audit, reclami, rischi, qualifiche
 
-- `backend/src/routes/docfile.routes.js`
-- `backend/src/controllers/normUpload.controller.js`
-- `backend/src/config/multer.js` (export unico)
-- `app/src/services/apiService.js`
-- `app/src/components/DocFileDialog.jsx`
-- `app/src/components/NormUploadButton.jsx`
-- `app/src/components/DocumentRegistry.jsx`
-- `app/src/utils/normUploadResults.js` (nuovo)
-- `app/src/tests/normUploadResults.test.js` (nuovo)
+## Frontend
 
-## Test L1 eseguiti
+- Route `/search` — tab **Esatto** (GET search) e **Significato** (POST `/ai/chat` + citazioni)
+- Dropdown scope: Tutto lo studio | Azienda (anagrafiche)
+- Link header + voce sidebar "Ricerca"
+- Mapping deep link: `app/src/utils/searchResultLinks.js`
 
-| Suite | Esito |
-|-------|--------|
-| `app` — `normUploadResults.test.js` (3) | **PASS** |
-| `app` — `normUploadButton.test.jsx` + `documentRegistryFile.test.js` (15) | **PASS** |
-| `backend` — `document.controller.test.js` + `documentRegistryFile.test.js` (11) | **PASS** |
+## Deploy VPS
 
-## Smoke manuale
+File: `search.routes.js`, `search.controller.js`, `unifiedSearch.service.js`, `server.js`  
+Script: `backend/scripts/deploy-controllers-to-vps.ps1`  
+Restart: `systemctl restart sgq-backend` — verificare PID cambiato
 
-- `GET https://www.fr-busato.it:8443/api/v1/health` → `status: healthy`, DB OK (30/05/2026).
-- **Deploy VPS backend**: dopo push, copiare `docfile.routes.js` e `normUpload.controller.js` + restart `sgq-backend` (script deploy o scp noto in guida).
+## Smoke
 
-## Verifica operativa consigliata (L3)
+```bash
+curl -sk https://www.fr-busato.it:8443/api/v1/health
+curl -sk -H "Authorization: Bearer $TOKEN" "https://www.fr-busato.it:8443/api/v1/search?q=NC&limit=3"
+```
 
-1. Registro documenti → tab **Albero** → cartella **NORME E LEGGI** → upload 1 PDF batch → verificare titolo/codice nei risultati e documento in lista.
-2. Aprire **Allegato** su un documento → **Scarica** e **Visualizza PDF** senza errore 401.
-3. Sottocartella nella lista centrale: click sulla riga cartella → entra nella cartella (non pannello dettaglio documento).
-
-## Commit / push
-
-- **Hash:** `1c602b9` — `fix(documenti): upload/download registro e risultati norme batch`
-- **Push:** `origin/main` OK (`5aca078..1c602b9`)
-
-*Aggiornato 30/05/2026 — TEST OK.*
+*Chiuso 31/05/2026 — TEST OK.*

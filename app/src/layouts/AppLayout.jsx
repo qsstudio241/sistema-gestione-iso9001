@@ -39,6 +39,7 @@ function buildNavItems(user, alerts = {}) {
       items: [
         { to: "/",        icon: "🏠", label: "Home",    exact: true },
         { to: "/audit",   icon: "🔍", label: "Audit" },
+        { to: "/search",  icon: "🔎", label: "Ricerca" },
       ],
     },
     // Modulo SGQ
@@ -318,6 +319,15 @@ function AppLayout({ children }) {
             <h1 className="layout-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
               SGQ - Sistema di Gestione
             </h1>
+            <button
+              type="button"
+              className="layout-search-btn"
+              onClick={() => navigate("/search")}
+              title="Ricerca globale"
+              aria-label="Ricerca globale"
+            >
+              {"\uD83D\uDD0D"} Ricerca
+            </button>
           </div>
           <div className="layout-header-right">
             <div className="user-chip">
