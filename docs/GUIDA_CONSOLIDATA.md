@@ -82,9 +82,19 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 `.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
 
-**Esperienza 31/05/2026 — RBAC Fase 2 (write path audit, NC, allegati, registry)**
+**Esperienza 31/05/2026 — RBAC Fase 2 (chiusura sessione — TEST OK)**
 
-Predicato unico in `auditListRbac.service.js`: `studioScopeClause` (audit/NC/allegati via join su `audits`) + `documentRegistryScopeClause` (registry: org-wide per admin/superadmin senza studio; auditor con studio → `auditor_org_id` diretto, `company_id` collegata, bozze proprie). Write path audit allineati a GET (`updateAudit`, `deleteAudit`, `upsert` UPDATE, `completeAudit`, `approveAudit`, `bulkSaveResponses`, pending issues, sync bulk con errore `AUDIT_FORBIDDEN` se audit esiste ma fuori scope). Allegati: join `COALESCE(att.audit_id, nc.audit_id)` + stesso scope. Deploy VPS: `deploy-controllers-to-vps.ps1` esteso con `attachment.controller.js` e `document.controller.js`. Test L1: 22 test Jest su branch `feat/rbac-phase-2-nc-attachments-registry`. Smoke manuale L3: tabella **RBAC / studio** in questa guida (due utenti, `auditor_org_id` diversi).
+| Voce | Esito / lezione |
+|------|-----------------|
+| Codice | PR [#76](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/76) merge `main` — commit `cf5a556`; predicato `studioScopeClause` / `documentRegistryScopeClause` su write path audit, NC, allegati, registry ([ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7) |
+| Jest L1 | **22/22** (`auditListRbac`, `nc.controller`, `attachment.controller`) — 31/05/2026 |
+| Smoke L3 | Script `.cursor/rbac-smoke-l3-phase2.mjs`: approccio **a fette** (`--slice`), non monolite; upload allegato non deve bloccare test audit/NC |
+| Credenziali smoke | Solo `.cursor/mcp.env` + `.cursor/sync-sgq-smoke-env.ps1` — **mai** `_rbac-temp-pw.cjs` / rotazione hash DB admin |
+| Token setup NC/allegati | `superadmin` con `auditor_org_id` **non** è org-wide per upload: usare token **tenant admin** org-wide |
+| Cleanup | Ordine FK: `document_history` → `document_registry` → company/studio; utenti smoke = hard-delete SQL (API = soft-delete). `--keep-data` / `--cleanup` per ispezione committente |
+| Dati reali | **Manitou** non cancellata dallo smoke (solo prefisso `RBAC_SMOKE_*`); scomparsa in UI = spesso filtro RBAC, non delete |
+| Error pattern | Primo smoke monolitico: `NC_NOT_FOUND` su upload (scope superadmin); password admin compromessa da workaround — ripristinata da backup |
+
 
 ---
 
@@ -1386,7 +1396,27 @@ Spuntare dopo deploy o prima di demo cliente. Adattare profondità al rischio de
 |------|-----------------|----------------|
 | **Auth / sessione** | Login, `/auth/me`, operazione autenticata, logout | Token refresh senza aggiornare `licensed_modules` in UI se non previsto fix. |
 | **Licenze moduli** | Org con licenza parziale: menu + `LicensedRoute` + chiamata API modulo disabilitato → **403** codice `MODULE_NOT_LICENSED` | Allineamento route backend vs voci menu ([roadmap — checklist licenze](PROJECT_ROADMAP.md)). |
-| **RBAC / studio** | Due utenti stesso tenant, `auditor_org` diversi: A non apre audit/B con id noto (GET/PUT/sync/allegati) | Vedi [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7. |
+| **RBAC / studio** | Due utenti stesso tenant, `auditor_org` diversi: A non apre audit/B con id noto (GET/PUT/sync/allegati) | Vedi [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7. Script L3: `.cursor/rbac-smoke-l3-phase2.mjs` (sotto). |
+
+#### Smoke L3 RBAC Fase 2 (`.cursor/rbac-smoke-l3-phase2.mjs`)
+
+Verifica REST cross-studio su API produzione (`fr-busato.it:8443`). Login da `.cursor/mcp.env` (`SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD`) — **non** modifica hash password admin.
+
+| Flag | Default | Uso |
+|------|---------|-----|
+| `--slice=gate|audit|nc|attach|registry|admin|all` | `all` | Esegue solo la fetta indicata |
+| `--keep-data` | sì (sessione chiusura) | Non elimina record `RBAC_SMOKE_*`; stampa ID creati |
+| `--no-keep-data` | — | Cleanup automatico a fine run |
+| `--cleanup` | — | Elimina **tutti** i residui `RBAC_SMOKE_*` e termina |
+
+```powershell
+node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data
+node .cursor/rbac-smoke-l3-phase2.mjs --slice=audit --keep-data
+node .cursor/rbac-smoke-l3-phase2.mjs --cleanup
+```
+
+Esito in `.cursor/rbac-smoke-l3-result.json`. **TEST OK** globale se slice `audit` + `nc` verdi; `attach`/`registry` possono essere **SKIP** (scope studio su download o GET documenti).
+
 | **Multi-tenant** | Utente org A: nessun dato org B in liste principali | Isolamento query. |
 | **Sync / audit** | Modifica audit → sync o reload → coerenza con server | `server-wins` su campi critici. |
 | **Export Word** | Un audit reale: sezioni, allegati link, pending issues se applicabile | Mojibake, VERIFICATORE, logo. |
