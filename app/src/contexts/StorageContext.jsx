@@ -1526,6 +1526,24 @@ export function StorageProvider({ children, useMockData = false }) {
     return () => window.removeEventListener('online', onOnline);
   }, [reconcileAuditsFromServer]);
 
+  // PWA mobile: al ritorno in primo piano (tab/app sospesa) allinea menu al server.
+  useEffect(() => {
+    if (!fsProvider || !hasInitialized) return;
+
+    const pullFromServerIfVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!navigator.onLine || !apiService.getToken()) return;
+      reconcileAuditsFromServer({ processQueueFirst: true }).catch(() => {});
+    };
+
+    document.addEventListener('visibilitychange', pullFromServerIfVisible);
+    window.addEventListener('pageshow', pullFromServerIfVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', pullFromServerIfVisible);
+      window.removeEventListener('pageshow', pullFromServerIfVisible);
+    };
+  }, [fsProvider, hasInitialized, reconcileAuditsFromServer]);
+
   // === SALVATAGGIO AUTOMATICO IN INDEXEDDB (depreca localStorage) ===
   useEffect(() => {
     if (audits.length === 0 || !fsProvider) return;
