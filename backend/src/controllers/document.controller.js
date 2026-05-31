@@ -9,6 +9,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { documentRegistryScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
 const multer = require('multer');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 const {
@@ -43,8 +44,12 @@ async function listDocuments(req, res) {
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
         const conditions = ['dr.organization_id = @organization_id'];
-        const params = { organization_id, limit: parseInt(limit), offset };
+        const params = { organization_id, limit: parseInt(limit), offset, ...docScope.params };
+        if (docScope.clause) {
+            conditions.push(docScope.clause);
+        }
 
         if (company_id) {
             conditions.push('dr.company_id = @company_id');
@@ -191,6 +196,8 @@ async function listDocuments(req, res) {
 async function getDocumentStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
         const noFileExists = buildHasAnyFileSql('dr');
 
         const result = await query(`
@@ -218,6 +225,7 @@ async function getDocumentStats(req, res) {
                       AND dr.doc_type <> 'folder'
                       AND dr.status <> 'obsoleto'
                       AND NOT ${noFileExists}
+                      ${scopeSql}
                 )                                                                AS senza_file,
                 (
                     SELECT COUNT(*)
@@ -226,11 +234,13 @@ async function getDocumentStats(req, res) {
                       AND dr.doc_type <> 'folder'
                       AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                       AND NOT ${noFileExists}
+                      ${scopeSql}
                 )                                                                AS rilasciati_senza_file
-            FROM document_registry
-            WHERE organization_id = @organization_id
-              AND doc_type <> 'folder'
-        `, { organization_id });
+            FROM document_registry dr
+            WHERE dr.organization_id = @organization_id
+              AND dr.doc_type <> 'folder'
+              ${scopeSql}
+        `, { organization_id, ...docScope.params });
 
         res.json({ success: true, data: result.recordset[0] });
 
@@ -248,6 +258,8 @@ async function getDocumentById(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const result = await query(`
             SELECT
@@ -261,7 +273,8 @@ async function getDocumentById(req, res) {
             LEFT JOIN standards s ON dr.standard_id = s.standard_id
             LEFT JOIN users     u ON dr.created_by  = u.user_id
             WHERE dr.id = @id AND dr.organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -422,12 +435,14 @@ async function updateDocument(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
-        // Verifica esistenza e ownership
         const existing = await query(`
-            SELECT id, is_system_folder FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, is_system_folder FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({
@@ -520,11 +535,14 @@ async function deleteDocument(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, status, is_system_folder, doc_type FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, status, is_system_folder, doc_type FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({
@@ -594,12 +612,15 @@ async function releaseRevision(req, res) {
         const { id } = req.params;
         const { organization_id, user_id } = req.user;
         const { revision_label, expiry_date } = req.body;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
             SELECT id, status, revision_number, revision
-            FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (!existing.recordset.length) {
             return res.status(404).json({ error: 'Documento non trovato', code: 'DOC_NOT_FOUND' });

@@ -156,6 +156,45 @@ describe('createNonConformity — source_type manual', () => {
         expect(insertSql).toContain("'manual'");
         expect(res.status).toHaveBeenCalledWith(201);
     });
+
+    it('verifica audit_id in scope prima dell INSERT', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            body: {
+                audit_id: 99,
+                nc_number: 'NC-SCOPE-001',
+                section_code: '4.1',
+                description: 'NC fuori scope',
+                severity: 'minor',
+            },
+        });
+        const res = mockRes();
+        await ctrl.createNonConformity(req, res);
+
+        const auditCheckSql = query.mock.calls[0][0];
+        expect(auditCheckSql).toContain('auditor_org_id = @auditor_org_id');
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+});
+
+describe('deleteNonConformity — RBAC studio', () => {
+    it('applica studioScopeClause nella verifica pre-delete', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ nc_id: 5, audit_id: 99 }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({ params: { id: '5' } });
+        const res = mockRes();
+        await ctrl.deleteNonConformity(req, res);
+
+        const checkSql = query.mock.calls[0][0];
+        expect(checkSql).toContain('auditor_org_id = @auditor_org_id');
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true }),
+        );
+    });
 });
 
 describe('updateNonConformity — gate approvazione RQ', () => {
