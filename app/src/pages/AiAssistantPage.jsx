@@ -11,6 +11,12 @@ import {
   buildAiChatContextPayload,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
+import {
+  buildChatStorageKey,
+  loadChatMessages,
+  saveChatMessages,
+  clearChatMessages,
+} from "../utils/aiAssistantChatPersist";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS = [
@@ -75,13 +81,18 @@ function formatAiText(text) {
 function AiAssistantPage() {
   const { user } = useAuth();
   const { currentAudit, currentAuditId } = useStorage();
-  const [messages, setMessages] = useState([]);
+  const chatStorageKey = useMemo(
+    () => buildChatStorageKey(user?.organization_id, user?.id ?? user?.user_id),
+    [user?.organization_id, user?.id, user?.user_id]
+  );
+  const [messages, setMessages] = useState(() => loadChatMessages(chatStorageKey));
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [reindexing, setReindexing] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const prevAuditIdRef = useRef(null);
+  const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   // --- Contesto azienda ---
@@ -110,6 +121,34 @@ function AiAssistantPage() {
 
   // Indice ultimo separatore di contesto inserito (posizione nei messaggi)
   const [contextSeparatorIndex, setContextSeparatorIndex] = useState(-1);
+
+  // Ricarica messaggi se cambia org/utente (es. switch account)
+  useEffect(() => {
+    setMessages(loadChatMessages(chatStorageKey));
+    setContextSeparatorIndex(-1);
+  }, [chatStorageKey]);
+
+  // Persistenza sessionStorage (debounced, esclude stato loading UI)
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveChatMessages(chatStorageKey, messages);
+    }, 400);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [messages, chatStorageKey]);
+
+  // Pulizia chat al logout
+  useEffect(() => {
+    const onLogout = () => {
+      clearChatMessages(chatStorageKey);
+      setMessages([]);
+      setContextSeparatorIndex(-1);
+    };
+    window.addEventListener("sgq:userLoggedOut", onLogout);
+    return () => window.removeEventListener("sgq:userLoggedOut", onLogout);
+  }, [chatStorageKey]);
 
   // Carica lista aziende una volta
   useEffect(() => {
@@ -293,8 +332,9 @@ function AiAssistantPage() {
     setStandardDropdownOpen(false);
   }, [standardContext]);
 
-  // Clear conversazione
+  // Nuova conversazione — reset stato + sessionStorage
   const handleClear = useCallback(() => {
+    clearChatMessages(chatStorageKey);
     setMessages([]);
     setContextSeparatorIndex(-1);
     setCompanyContext({
@@ -307,7 +347,7 @@ function AiAssistantPage() {
       label: autoStandard?.label ?? null,
       source: "auto",
     });
-  }, [autoCompanyId, autoCompanyName, autoStandard]);
+  }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard]);
 
   const handleSend = useCallback(async (text) => {
     const msg = (text || input).trim();
@@ -504,12 +544,13 @@ function AiAssistantPage() {
             )}
           </div>
 
-          {/* Pulsante clear */}
+          {/* Nuova conversazione */}
           {messages.length > 0 && (
             <button
               className="ai-assistant-clear-btn"
               onClick={handleClear}
-              title="Pulisci conversazione"
+              title="Nuova conversazione"
+              aria-label="Nuova conversazione"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />

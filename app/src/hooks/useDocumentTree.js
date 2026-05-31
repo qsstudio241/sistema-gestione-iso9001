@@ -158,6 +158,45 @@ export default function useDocumentTree() {
     [loadTree]
   );
 
+  /**
+   * Espande l'albero fino al documento (breadcrumb API) e seleziona la cartella contenitore.
+   * @param {number} docId
+   * @returns {Promise<object|null>} documento o null
+   */
+  const expandToDocument = useCallback(async (docId) => {
+    try {
+      const [bcRes, docRes] = await Promise.all([
+        apiService.getDocumentBreadcrumb(docId),
+        apiService.getDocument(docId),
+      ]);
+      const breadcrumb = bcRes?.data ?? bcRes ?? [];
+      const doc = docRes?.data;
+      if (!doc?.id) return null;
+
+      await loadTree();
+
+      const ancestors = breadcrumb.slice(0, -1);
+      for (const item of ancestors) {
+        setExpandedIds((prev) => new Set(prev).add(item.id));
+        await loadChildren(item.id);
+      }
+
+      const isFolder = doc.doc_type === "folder";
+      const folderToSelect = isFolder
+        ? doc.id
+        : (doc.parent_id ?? ancestors[ancestors.length - 1]?.id ?? null);
+
+      if (folderToSelect != null) {
+        await selectNode(folderToSelect);
+      }
+
+      return doc;
+    } catch (err) {
+      console.error("[useDocumentTree] expandToDocument error:", err.message);
+      return null;
+    }
+  }, [loadTree, loadChildren, selectNode]);
+
   return {
     treeNodes,
     expandedIds,
@@ -166,6 +205,7 @@ export default function useDocumentTree() {
     loading,
     error,
     loadTree,
+    loadChildren,
     toggleNode,
     selectNode,
     selectedNode,
@@ -173,5 +213,6 @@ export default function useDocumentTree() {
     renameFolder,
     deleteFolder,
     moveDocument,
+    expandToDocument,
   };
 }

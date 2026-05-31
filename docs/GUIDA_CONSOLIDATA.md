@@ -2296,6 +2296,18 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Deploy | `deploy-controllers-to-vps.ps1` include `aiChat.controller.js` e `utils/aiCitations.js`; commit `c3ef889` |
 | Smoke | `.cursor/ai-citations-smoke.mjs` — es. 14 citazioni su domanda NC |
 
+**Aggiornamento 31/05/2026 — deep link documenti + chat persistente**
+
+| Voce | Esito |
+|------|-------|
+| Contratto URL | `/documents?tab=tree&select=<docId>` (allineato a `/nc?select=`); helper `documentRegistryUrl.js` |
+| Citazioni / ricerca | `getCitationPath` / `getSearchResultPath`: `document` e `norm_content` → tab Albero + drawer |
+| Registro | `DocumentRegistry.jsx`: legge `tab`/`select` (mount + `popstate`); `expandToDocument` via breadcrumb API; `replace` URL su tab/dettaglio |
+| Chat Assistente | `sessionStorage` chiave `sgq:ai-assistant-messages:<org>:<user>`; cap 50 messaggi; debounce 400 ms; pulizia su logout (`sgq:userLoggedOut`); pulsante «Nuova conversazione» |
+| Coerenza albero | Regola unica in `documentTreeCoherence.js`: foglie = `parent_id` cartella + status ≠ obsoleto; catalogo/priorità = elenco piatto (orfani in Inbox, non nel ramo) — **nessun gap API**, differenza intenzionale |
+| Test L1 | Vitest 531 OK (`documentRegistryUrl`, `aiAssistantChatPersist`, `documentTreeCoherence` + aggiornamenti citazioni/ricerca) |
+| Deploy | Solo Netlify (FE); nessun restart VPS |
+
 ### Fase C — ricerca unificata studio/azienda (31/05/2026)
 
 | Voce | Esito |
