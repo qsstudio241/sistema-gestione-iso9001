@@ -1584,6 +1584,18 @@ class ApiService {
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
+    async globalSearch(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.q) qs.set('q', params.q);
+        if (params.companyId != null && params.companyId !== '') {
+            qs.set('companyId', String(params.companyId));
+        }
+        if (params.entityTypes) qs.set('entityTypes', params.entityTypes);
+        if (params.limit) qs.set('limit', String(params.limit));
+        const query = qs.toString();
+        return this.get(`/search${query ? `?${query}` : ''}`);
+    }
+
     async aiReindex() {
         return this.post('/ai/reindex', {}, { timeout: 300000 });
     }
