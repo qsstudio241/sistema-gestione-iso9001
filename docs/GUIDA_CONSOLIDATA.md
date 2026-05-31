@@ -101,8 +101,8 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 | Voce | Esito |
 |------|--------|
 | D2 | Grep `app/src`: zero import di `NonConformitiesManager.jsx` / `AuditTabsLayout.jsx` → rimossi 4 file (jsx+css); catalogo [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) aggiornato |
-| Registro Norme L1 | Vitest mirato: `importNormCommit.test.js`, `standardsRegistry.test.js`, `normUploadResults.test.js` — esito registrato nel commit di chiusura |
-| RBAC L3 (riuso) | Solo se script + `.cursor/mcp.env` + DB raggiungibili: `--slice=attach,registry,admin`; altrimenti nota «non rieseguito» in commit |
+| Registro Norme L1 | **30/30 OK** — `importNormCommit` (8), `standardsRegistry` (19), `normUploadResults` (3) |
+| RBAC L3 (riuso) | **Non rieseguito** — `.cursor/rbac-smoke-l3-phase2.mjs` richiede `database.json` → SQL Server; fallito `localhost:1433` (DNS/host produzione non raggiungibile da desktop). Credenziali `mcp.env` OK; riuso smoke Fase 2 già in tabella sopra |
 
 
 ---
