@@ -1974,6 +1974,13 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 
 - **Lista audit all’avvio (tutte le piattaforme):** il primo download dopo l’avvio non usa più `GET /audits` senza paginazione (limite backend 50). Usa la stessa funzione della riconciliazione (`fetchAllServerAudits`, pagine da 200) **solo se** online e presente JWT (`apiService.getToken()`), così il DB/server è la fonte completa del menu audit anche senza attendere login o i 45s di intervallo.
 
+### Chiusura sessione 31 maggio 2026 — menu audit server-first aggressivo
+
+- **Sintomo:** su mobile (e in generale) compaiono audit nel menu che, in eliminazione, danno `DELETE` 404 («già eliminato») — fantasma in IndexedDB non allineati al server.
+- **Policy (committente):** server-first **aggressivo** — purge automatica della cache locale (equivalente operativo a «Svuota cache»), senza pulsante manuale.
+- **Frontend (`StorageContext.jsx`):** dopo ogni reconcile/load con GET /audits OK: `purgeStaleAuditsFromDevice` + `persistFinalAuditsToIndexedDB` (clear store + rewrite). Lista server **vuota** ma fetch OK → solo bozze `metadata.isIntentionalDraft === true`. Rimosso il ripristino dell’audit corrente da cache locale (Bug 5 Fix B). Al **login**: `processQueue` → `clearAuditsStore` → reconcile. Se download fallisce da online: **non** mostrare tutta la cache; solo bozze intenzionali + retry reconcile. **Mobile:** `visibilitychange` / `pageshow` (PR #74) invariati.
+- **Verifica:** hard refresh PWA → logout/login; console log `🧹 [RECONCILE] Server lista vuota` o `Rimozione N audit stale`. Test L1: `storageContext.dedup.test.js`.
+
 ### Chiusura sessione 27 marzo 2026
 
 **Fatto in codice:**
