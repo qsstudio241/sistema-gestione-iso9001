@@ -82,6 +82,10 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 `.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
 
+**Esperienza 31/05/2026 — RBAC Fase 2 (write path audit, NC, allegati, registry)**
+
+Predicato unico in `auditListRbac.service.js`: `studioScopeClause` (audit/NC/allegati via join su `audits`) + `documentRegistryScopeClause` (registry: org-wide per admin/superadmin senza studio; auditor con studio → `auditor_org_id` diretto, `company_id` collegata, bozze proprie). Write path audit allineati a GET (`updateAudit`, `deleteAudit`, `upsert` UPDATE, `completeAudit`, `approveAudit`, `bulkSaveResponses`, pending issues, sync bulk con errore `AUDIT_FORBIDDEN` se audit esiste ma fuori scope). Allegati: join `COALESCE(att.audit_id, nc.audit_id)` + stesso scope. Deploy VPS: `deploy-controllers-to-vps.ps1` esteso con `attachment.controller.js` e `document.controller.js`. Test L1: 22 test Jest su branch `feat/rbac-phase-2-nc-attachments-registry`. Smoke manuale L3: tabella **RBAC / studio** in questa guida (due utenti, `auditor_org_id` diversi).
+
 ---
 
 ### Sessione 30/05/2026 — Modulo NC (chiusura sessione — attesa feedback utenti)

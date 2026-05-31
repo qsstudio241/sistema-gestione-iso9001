@@ -1,35 +1,28 @@
-# DEPUTYTASK — Audit server-first aggressivo (chiuso)
+# DEPUTYTASK — RBAC Fase 2 (chiuso)
 
-**Branch:** `cursor/audit-aggressive-server-first-7698`  
-**Stato:** TEST OK — merge su `main` in corso dall'agente cloud
+**Stato:** CHIUSO — **TEST OK** (31/05/2026)  
+**Branch:** `feat/rbac-phase-2-nc-attachments-registry`  
+**PR:** #76 (merge su `main` in chiusura sessione)
 
-## Comando deputy (storico)
+## Esito
+
+RBAC Fase 2: scope studio su write path audit, NC, allegati e document registry. Jest L1 **22/22**. Smoke L3 a fette (`.cursor/rbac-smoke-l3-phase2.mjs`) — slice audit + nc **TEST OK**.
+
+## Riferimenti
+
+| Voce | Dettaglio |
+|------|-----------|
+| Architettura | [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7 |
+| Smoke L3 | `node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data` |
+| Cleanup | `node .cursor/rbac-smoke-l3-phase2.mjs --cleanup` |
+| Esperienza | `GUIDA_CONSOLIDATA.md` — Esperienza 31/05/2026 RBAC Fase 2 |
+
+## Prossimo task
+
+**Lead committente:** Fase 3 backlog RBAC / hardening attach+registry in smoke, oppure priorità roadmap corrente.
+
+## Comando deputy (archivio)
 
 ```
 Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
-
-## Obiettivo (completato)
-
-Policy **server-first aggressiva** per il menu audit: purge automatica della cache IndexedDB allineata al server, senza dipendere dal pulsante «Svuota cache».
-
-## Cosa è stato fatto
-
-| Area | Comportamento |
-|------|----------------|
-| `reconcileAuditsFromServer` | Se GET /audits OK e lista vuota → purge fantasma; solo bozze `isIntentionalDraft` |
-| Post-merge | `purgeStaleAuditsFromDevice` + `persistFinalAuditsToIndexedDB` (clear store + rewrite) |
-| Rimosso | Bug 5 Fix B (ripristino audit corrente da cache locale) |
-| `loadAuditsFromIndexedDB` | Online+JWT: no fallback a tutta la cache se download fallisce |
-| Login | `processQueue` → `clearAuditsStore` → reconcile |
-| Mobile | `visibilitychange` / `pageshow` invariati (PR #74) |
-
-## Verifica utente
-
-1. Hard refresh PWA (`https://systemgest.netlify.app`) dopo deploy Netlify (~2 min da merge `main`).
-2. Logout → login (oppure riapri app in primo piano su mobile).
-3. I fantasma eliminati sul server non devono più comparire; restano solo bozze offline intenzionali.
-
-## Test L1
-
-`NODE_ENV=test node node_modules/vitest/vitest.mjs run src/tests/storageContext.dedup.test.js` — 17/17 OK.
