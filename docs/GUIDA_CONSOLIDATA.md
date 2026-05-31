@@ -2307,6 +2307,7 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Coerenza albero | Regola unica in `documentTreeCoherence.js`: foglie = `parent_id` cartella + status ≠ obsoleto; catalogo/priorità = elenco piatto (orfani in Inbox, non nel ramo) — **nessun gap API**, differenza intenzionale |
 | Test L1 | Vitest 531 OK (`documentRegistryUrl`, `aiAssistantChatPersist`, `documentTreeCoherence` + aggiornamenti citazioni/ricerca) |
 | Deploy | Solo Netlify (FE); nessun restart VPS |
+| Merge main | 31/05/2026 commit 88caa9b (fast-forward); deploy Netlify automatico; PR non creata (gh non disponibile su agent) |
 
 ### Fase C — ricerca unificata studio/azienda (31/05/2026)
 
