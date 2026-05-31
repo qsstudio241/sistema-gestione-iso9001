@@ -8,7 +8,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { studioScopeClause } = require('../services/auditListRbac.service');
+const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
 
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
@@ -677,13 +677,17 @@ async function deleteNonConformity(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        // Verifica esistenza e ownership
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
+        // Verifica esistenza, tenant e scope studio
         const existingNC = await query(`
       SELECT nc.nc_id, a.audit_id
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-    `, { id: parseInt(id), organization_id });
+        ${scopeSql}
+    `, { id: parseInt(id), organization_id, ...scope.params });
 
         if (existingNC.recordset.length === 0) {
             return res.status(404).json({
@@ -806,12 +810,16 @@ async function listNcActions(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        // Verifica ownership NC
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
+        // Verifica ownership NC + scope studio
         const ncCheck = await query(`
             SELECT nc.nc_id FROM non_conformities nc
             INNER JOIN audits a ON nc.audit_id = a.audit_id
             WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...scope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -853,12 +861,16 @@ async function createNcAction(req, res) {
             });
         }
 
-        // Verifica ownership NC
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
+        // Verifica ownership NC + scope studio
         const ncCheck = await query(`
             SELECT nc.nc_id FROM non_conformities nc
             INNER JOIN audits a ON nc.audit_id = a.audit_id
             WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...scope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -903,7 +915,10 @@ async function updateNcAction(req, res) {
         const { organization_id } = req.user;
         const { status, description, responsible, due_date, verification_note } = req.body;
 
-        // Verifica ownership
+        const scope = studioScopeClause(req.user, 'au');
+        const scopeSql = appendScopeSql(scope);
+
+        // Verifica ownership + scope studio
         const check = await query(`
             SELECT a.action_id, a.status AS current_status, a.verification_note
             FROM nc_actions a
@@ -911,7 +926,8 @@ async function updateNcAction(req, res) {
             INNER JOIN audits au ON nc.audit_id = au.audit_id
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
               AND au.organization_id = @organization_id
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1001,13 +1017,17 @@ async function deleteNcAction(req, res) {
         const { id, actionId } = req.params;
         const { organization_id } = req.user;
 
+        const scope = studioScopeClause(req.user, 'au');
+        const scopeSql = appendScopeSql(scope);
+
         const check = await query(`
             SELECT a.action_id FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
             INNER JOIN audits au ON nc.audit_id = au.audit_id
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
               AND au.organization_id = @organization_id
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1041,13 +1061,17 @@ async function pushAuditToNcRegister(req, res) {
         const { auditRef } = req.params;
         const { organization_id, user_id } = req.user;
 
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
         const auditRow = await query(`
             SELECT a.audit_id, a.audit_number, a.organization_id, a.custom_checklist_id
             FROM audits a
             WHERE (a.audit_id = TRY_CAST(@auditRef AS INT) OR a.audit_uuid = @auditRef)
               AND a.organization_id = @organization_id
               AND a.is_deleted = 0
-        `, { auditRef, organization_id });
+              ${scopeSql}
+        `, { auditRef, organization_id, ...scope.params });
 
         if (!auditRow.recordset || auditRow.recordset.length === 0) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
@@ -1299,12 +1323,16 @@ async function undoPushAuditToNcRegister(req, res) {
         const { auditRef } = req.params;
         const { organization_id, user_id } = req.user;
 
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
         const auditRow = await query(`
-            SELECT audit_id FROM audits
-            WHERE (audit_id = TRY_CAST(@auditRef AS INT) OR audit_uuid = @auditRef)
-              AND organization_id = @organization_id
-              AND is_deleted = 0
-        `, { auditRef, organization_id });
+            SELECT a.audit_id FROM audits a
+            WHERE (a.audit_id = TRY_CAST(@auditRef AS INT) OR a.audit_uuid = @auditRef)
+              AND a.organization_id = @organization_id
+              AND a.is_deleted = 0
+              ${scopeSql}
+        `, { auditRef, organization_id, ...scope.params });
 
         if (!auditRow.recordset || auditRow.recordset.length === 0) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
