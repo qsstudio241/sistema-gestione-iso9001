@@ -85,13 +85,13 @@ Riferimento rapido anche in `.cursor/rules/sgq-operating-memory.mdc` (tabella «b
 | Stato NC | `.nc-tag` | — | `NCPage.css` | Registro NC | Fino a design system |
 | Stato reclamo | `.cst-tag`, `.sev-tag` | — | `ComplaintsPage` | Reclami | Allineare palette NC |
 
-### Componenti deprecati
+### Componenti rimossi / deprecati
 
-| Componente | Sostituto |
-|------------|-----------|
-| `AuditTabsLayout` | `AuditAccordionLayout` |
-| `NonConformitiesManager` | `NCPage` + `NcDetailPanel` |
-| `EvidenceManager` | `AttachmentSection` |
+| Componente | Sostituto | Stato |
+|------------|-----------|-------|
+| `AuditTabsLayout` (+ `.css`) | `AuditAccordionLayout` | **Rimosso** 31/05/2026 (zero import attivi) |
+| `NonConformitiesManager` (+ `.css`) | `NCPage` + `NcDetailPanel` | **Rimosso** 31/05/2026 (zero import attivi) |
+| `EvidenceManager` | `AttachmentSection` | @deprecated — ancora in repo se referenziato |
 
 ---
 
