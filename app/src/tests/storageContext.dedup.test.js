@@ -50,6 +50,16 @@ function dedupeAudits(audits = []) {
     return Array.from(byKey.values());
 }
 
+function isInTombstone(auditId) {
+    try {
+        const raw = globalThis.localStorage?.getItem?.('sgq_deleted_audit_tombstone');
+        if (!raw) return false;
+        return Boolean(JSON.parse(raw)[auditId]);
+    } catch {
+        return false;
+    }
+}
+
 function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
     if (!Array.isArray(localAudits) || !Array.isArray(mergedFromServer)) return [];
     const mergedIds = new Set(
