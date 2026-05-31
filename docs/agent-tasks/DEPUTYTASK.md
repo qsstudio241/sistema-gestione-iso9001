@@ -1,28 +1,25 @@
-# DEPUTYTASK — RBAC Fase 2 (NC, allegati, registry)
+# DEPUTYTASK — RBAC Fase 2 (chiuso)
 
-**Stato:** ✅ **TEST OK** — chiuso 31/05/2026 (deputy)  
-**Branch:** `feat/rbac-phase-2-nc-attachments-registry`
+**Stato:** CHIUSO — **TEST OK** (31/05/2026)  
+**Branch:** `feat/rbac-phase-2-nc-attachments-registry`  
+**PR:** #76 (merge su `main` in chiusura sessione)
 
 ## Esito
 
-Esteso `studioScopeClause` / `documentRegistryScopeClause` da `auditListRbac.service.js` a write path audit, NC, allegati e document registry. Test L1: **22/22 verdi**. Deploy VPS 31/05/2026 — health OK, MainPID rinnovato (restart 10:42 UTC).
+RBAC Fase 2: scope studio su write path audit, NC, allegati e document registry. Jest L1 **22/22**. Smoke L3 a fette (`.cursor/rbac-smoke-l3-phase2.mjs`) — slice audit + nc **TEST OK**.
 
-## Slice completate
+## Riferimenti
 
-| Slice | Esito |
-|-------|--------|
-| A — Audit write path | ✅ update/delete/stats/upsert/complete/approve/bulk/pending/sync |
-| B — NC | ✅ delete, azioni NC, push/undo NC register + test estesi |
-| C — Allegati | ✅ list/get/upload/download/delete/view/replace + 3 test Jest |
-| D — Document registry | ✅ list/get/stats/update/delete/release con `documentRegistryScopeClause` |
+| Voce | Dettaglio |
+|------|-----------|
+| Architettura | [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7 |
+| Smoke L3 | `node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data` |
+| Cleanup | `node .cursor/rbac-smoke-l3-phase2.mjs --cleanup` |
+| Esperienza | `GUIDA_CONSOLIDATA.md` — Esperienza 31/05/2026 RBAC Fase 2 |
 
-## Checklist DoD
+## Prossimo task
 
-- [x] Slice A–C: scope studio su endpoint radice audit
-- [x] Test Jest verdi (auditListRbac, nc.controller, attachment.controller)
-- [x] Deploy VPS + health `GET /api/v1/health` 31/05/2026
-- [x] `GUIDA_CONSOLIDATA.md` aggiornata (esperienza RBAC Fase 2)
-- [x] Commit su branch feature (merge su `main` → lead committente)
+**Lead committente:** Fase 3 backlog RBAC / hardening attach+registry in smoke, oppure priorità roadmap corrente.
 
 ## Comando deputy (archivio)
 
