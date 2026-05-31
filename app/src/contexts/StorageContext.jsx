@@ -236,6 +236,7 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
   return localAudits.filter((la) => {
     const localId = la.metadata?.id || la.id || la?.metadata?.audit_uuid || la?.audit_uuid;
     const localServerId = la?.metadata?.auditId ?? la?.audit_id ?? null;
+    if (localId && isInTombstone(localId)) return false;
     if (mergedIds.has(localId)) return false;
     if (
       localServerId != null &&
@@ -263,6 +264,48 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
 
     return true;
   });
+}
+
+function auditUuid(a) {
+  const id = a?.metadata?.id || a?.id || a?.metadata?.audit_uuid || a?.audit_uuid;
+  return id ? String(id).trim() : "";
+}
+
+function listStaleLocalAudits(localAudits, finalAudits) {
+  if (!Array.isArray(localAudits) || !Array.isArray(finalAudits)) return [];
+  const finalIds = new Set(finalAudits.map((a) => auditUuid(a)).filter(Boolean));
+  return localAudits.filter((la) => {
+    const lid = auditUuid(la);
+    return lid && !finalIds.has(lid);
+  });
+}
+
+async function purgeStaleAuditsFromDevice(fsProvider, staleLocals) {
+  if (!staleLocals?.length || !fsProvider) return 0;
+  const staleUuids = staleLocals.map((a) => auditUuid(a)).filter(Boolean);
+  const staleServerIds = staleLocals
+    .map((a) => Number(a?.metadata?.auditId))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  await syncService
+    .clearQueueForStaleAudits({ auditUuids: staleUuids, auditIds: staleServerIds })
+    .catch(() => {});
+  for (const stale of staleLocals) {
+    const sid = auditUuid(stale);
+    if (sid && typeof fsProvider.deleteAudit === "function") {
+      await fsProvider.deleteAudit(sid).catch(() => {});
+    }
+  }
+  return staleLocals.length;
+}
+
+async function persistFinalAuditsToIndexedDB(fsProvider, finalAudits) {
+  if (!fsProvider) return;
+  if (typeof fsProvider.clearAuditsStore === "function") {
+    await fsProvider.clearAuditsStore();
+  }
+  for (const audit of finalAudits) {
+    await fsProvider.saveAudit(audit);
+  }
 }
 
 /**
@@ -925,11 +968,32 @@ export function StorageProvider({ children, useMockData = false }) {
       const localAudits = await fsProvider.loadAllAudits();
       const serverAudits = await fetchAllServerAudits();
 
-      // Bug 5 Fix A: se il server restituisce 0 audit (probabile errore API o RBAC temporaneo),
-      // non azzerare la lista locale — mantieni stato corrente e audit selezionato.
       if (serverAudits.length === 0) {
-        console.warn("⚠️ [RECONCILE] Server ha restituito 0 audit — skip riconciliazione per evitare perdita audit corrente");
-        return { success: false, reason: "server_returned_empty_list" };
+        console.log(
+          "🧹 [RECONCILE] Server lista vuota — purge cache locale (solo bozze isIntentionalDraft)",
+        );
+        let finalAudits = dedupeAudits(filterLocalAuditsAfterServerFetch(localAudits, []));
+        const tombstoneEmpty = getTombstone();
+        if (Object.keys(tombstoneEmpty).length > 0) {
+          finalAudits = finalAudits.filter((a) => !tombstoneEmpty[auditUuid(a)]);
+        }
+        if (recentlyDeletedRef.current.size > 0) {
+          finalAudits = finalAudits.filter(
+            (a) => !recentlyDeletedRef.current.has(auditUuid(a)),
+          );
+        }
+        const staleEmpty = listStaleLocalAudits(localAudits, finalAudits);
+        if (staleEmpty.length > 0) {
+          await purgeStaleAuditsFromDevice(fsProvider, staleEmpty);
+        }
+        await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
+        setAudits(finalAudits);
+        setCurrentAuditId((prev) => {
+          if (!prev) return prev;
+          if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
+          return finalAudits.some((a) => auditUuid(a) === prev) ? prev : null;
+        });
+        return { success: true, count: finalAudits.length, serverEmpty: true };
       }
 
       if (serverAudits.length > 0) {
@@ -1058,22 +1122,6 @@ export function StorageProvider({ children, useMockData = false }) {
         });
       }
 
-      // Bug 5 Fix B: se l'audit attualmente selezionato è stato escluso da finalAudits
-      // (il server non lo ha restituito, es. bug RBAC o paginazione incompleta),
-      // ripristinarlo dalla cache locale per evitare che scompaia dal menu.
-      // ECCEZIONE: se l'audit è stato appena eliminato (recentlyDeletedRef), NON ripristinarlo.
-      const protectedId = currentAuditIdRef.current;
-      if (protectedId && !recentlyDeletedRef.current.has(protectedId)) {
-        const inFinal = finalAudits.some((a) => (a.metadata?.id || a.id) === protectedId);
-        if (!inFinal) {
-          const inLocal = localAudits.find((a) => (a.metadata?.id || a.id) === protectedId);
-          if (inLocal) {
-            console.warn(`⚠️ [RECONCILE] Audit corrente ${protectedId} non nel server response — ripristino dalla cache locale`);
-            finalAudits = dedupeAudits([...finalAudits, inLocal]);
-          }
-        }
-      }
-
       // Ripristina metadata.auditId da sync_metadata se disponibile
       for (let i = 0; i < finalAudits.length; i++) {
         const a = finalAudits[i];
@@ -1085,12 +1133,14 @@ export function StorageProvider({ children, useMockData = false }) {
         }
       }
 
-      if (typeof fsProvider.clearAuditsStore === "function") {
-        await fsProvider.clearAuditsStore();
+      const staleLocals = listStaleLocalAudits(localAudits, finalAudits);
+      if (staleLocals.length > 0) {
+        console.log(
+          `🧹 [RECONCILE] Rimozione ${staleLocals.length} audit stale da IndexedDB (server-first)`,
+        );
+        await purgeStaleAuditsFromDevice(fsProvider, staleLocals);
       }
-      for (const audit of finalAudits) {
-        await fsProvider.saveAudit(audit);
-      }
+      await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
 
       setAudits(finalAudits);
       setCurrentAuditId((prev) => {
@@ -1170,10 +1220,13 @@ export function StorageProvider({ children, useMockData = false }) {
         // Il backend default limit=50 su GET /audits senza query: senza paginazione il menu
         // risultava troncato fino al prossimo reconcile/login (ambiguità desktop vs mobile).
         let serverAudits = [];
+        let serverFetchSucceeded = false;
+        let serverDownloadFailed = false;
         if (navigator.onLine && apiService.getToken()) {
           try {
             console.log("🌐 [DOWNLOAD] Scarico tutti gli audit dal server (paginato)...");
             serverAudits = await fetchAllServerAudits();
+            serverFetchSucceeded = true;
             console.log(`✅ [DOWNLOAD] Scaricati ${serverAudits.length} audit dal server`);
 
             // SEED sgq_srv_ts: salva il timestamp server per ogni audit scaricato.
@@ -1204,14 +1257,20 @@ export function StorageProvider({ children, useMockData = false }) {
               syncService.clearQueueForUnknownAudits(serverUuids).catch(() => {});
             }
           } catch (err) {
-            console.warn("⚠️ [DOWNLOAD] Errore download server, uso cache locale:", err.message);
+            serverDownloadFailed = true;
+            console.warn(
+              "⚠️ [DOWNLOAD] Errore download server — niente fallback a tutta la cache (server-first):",
+              err.message,
+            );
           }
         }
 
         // MERGE: SERVER-WINS su tutti i campi — il server è fonte di verità.
         // Garantisce che le modifiche di un secondo device siano visibili al login/reconcile.
         const auditsToUploadRichData = []; // audit locali con dati ricchi mai inviati al server
-        const mergedAudits = serverAudits.length > 0
+        const canTrustServerList =
+          serverFetchSucceeded && navigator.onLine && apiService.getToken();
+        const mergedAudits = canTrustServerList
           ? serverAudits.map(serverAudit => {
               const sid = serverAudit.metadata?.id || serverAudit.id;
               const localAudit = pickLocalAuditForMerge(sid, localAudits, auditsRef.current);
@@ -1289,49 +1348,35 @@ export function StorageProvider({ children, useMockData = false }) {
 
               return merged;
             })
-          : localAudits;
+          : !navigator.onLine || !apiService.getToken()
+            ? localAudits
+            : [];
 
         // Includi audit solo locali (non ancora sul server) nella lista finale.
         // Gli audit locali NON inclusi nel merge (stale, senza isIntentionalDraft, o tombstoned)
         // vengono eliminati da IndexedDB per evitare che riemergano al prossimo reload.
         let finalAudits = mergedAudits;
-        if (serverAudits.length > 0) {
+        if (canTrustServerList) {
           const localOnly = filterLocalAuditsAfterServerFetch(localAudits, mergedAudits);
           if (localOnly.length > 0) {
             finalAudits = [...mergedAudits, ...localOnly];
             console.log(`📋 [MERGE] Aggiunti ${localOnly.length} audit solo locali (bozze senza auditId server) alla lista`);
           }
 
-          // Pulizia bozze stale da IndexedDB: audit locali che il server non ha restituito
-          // E non sono stati inclusi nel merge come draft intentionali.
-          // Impedisce che LOCK-*, ZZ_TEST_* e residui di sessioni precedenti ricompaiano.
-          const finalIds = new Set(
-            finalAudits.map((a) => String(a.metadata?.id || a.id)).filter(Boolean)
-          );
-          const staleLocals = localAudits.filter((la) => {
-            const lid = String(la.metadata?.id || la.id || "");
-            return lid && !finalIds.has(lid);
-          });
+          const staleLocals = listStaleLocalAudits(localAudits, finalAudits);
           if (staleLocals.length > 0) {
-            console.log(`🧹 [CLEANUP] Rimozione ${staleLocals.length} audit stale da IndexedDB (non nel server né draft correnti)`);
-            const staleUuids = staleLocals
-              .map((a) => String(a.metadata?.id || a.id || "").trim())
-              .filter(Boolean);
-            const staleServerIds = staleLocals
-              .map((a) => Number(a?.metadata?.auditId))
-              .filter((n) => Number.isFinite(n) && n > 0);
-            // Pulisce anche la sync queue legata a questi audit, altrimenti il popup logout
-            // continua a mostrare operazioni "non sincronizzate" anche dopo la rimozione lista.
-            await syncService
-              .clearQueueForStaleAudits({ auditUuids: staleUuids, auditIds: staleServerIds })
-              .catch(() => {});
-            for (const stale of staleLocals) {
-              const sid = stale.metadata?.id || stale.id;
-              if (sid && typeof fsProvider.deleteAudit === "function") {
-                fsProvider.deleteAudit(sid).catch(() => {});
-              }
-            }
+            console.log(
+              `🧹 [CLEANUP] Rimozione ${staleLocals.length} audit stale da IndexedDB (server-first)`,
+            );
+            await purgeStaleAuditsFromDevice(fsProvider, staleLocals);
           }
+        } else if (serverDownloadFailed && navigator.onLine && apiService.getToken()) {
+          finalAudits = filterLocalAuditsAfterServerFetch(localAudits, []);
+          const staleOnFail = listStaleLocalAudits(localAudits, finalAudits);
+          if (staleOnFail.length > 0) {
+            await purgeStaleAuditsFromDevice(fsProvider, staleOnFail);
+          }
+          reconcileAuditsFromServer({ processQueueFirst: true }).catch(() => {});
         }
 
         // Deduplica difensiva finale per evitare doppioni nel menu selector.
@@ -1405,24 +1450,18 @@ export function StorageProvider({ children, useMockData = false }) {
           }
         }
 
-        if (finalAudits && finalAudits.length > 0) {
-          // Server come fonte di verità: sostituisci completamente la cache locale
-          // (evita dati obsoleti quando si cambia device o dopo problemi di rete)
-          if (serverAudits.length > 0) {
-            if (typeof fsProvider.clearAuditsStore === "function") {
-              await fsProvider.clearAuditsStore();
-            }
-            console.log("💾 [MERGE] Aggiorno IndexedDB con dati mergiati (server + preserva locale)...");
-            for (const frontendAudit of finalAudits) {
-              await fsProvider.saveAudit(frontendAudit);
-            }
-            console.log(`✅ [MERGE] ${finalAudits.length} audit mergiati salvati in IndexedDB`);
-          }
-
+        if (canTrustServerList) {
+          await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
           setAudits(finalAudits);
-          setCurrentAuditId(null); // Mostra sempre selector all'avvio
+          setCurrentAuditId(null);
           console.log(
-            `✅ Caricati ${finalAudits.length} audit (${serverAudits.length} server, ${localAudits.length} cache)`,
+            `✅ Caricati ${finalAudits.length} audit (${serverAudits.length} server, purge server-first)`,
+          );
+        } else if (finalAudits && finalAudits.length > 0) {
+          setAudits(finalAudits);
+          setCurrentAuditId(null);
+          console.log(
+            `✅ Caricati ${finalAudits.length} audit (solo cache locale — offline o download fallito)`,
           );
         } else if (useMockData) {
           // Prima inizializzazione: salva mock data in IndexedDB + ENQUEUE SYNC
@@ -1485,9 +1524,13 @@ export function StorageProvider({ children, useMockData = false }) {
   // === RELOAD AUDIT DOPO LOGIN ===
   useEffect(() => {
     const handleLoginSuccess = async () => {
-      console.log("🔄 [LOGIN] Avvio riconciliazione server/cache...");
+      console.log("🔄 [LOGIN] Purge server-first (queue → clear IDB → reconcile)...");
       if (fsProvider) {
-        await reconcileAuditsFromServer({ processQueueFirst: true });
+        await syncService.processQueue().catch(() => {});
+        if (typeof fsProvider.clearAuditsStore === "function") {
+          await fsProvider.clearAuditsStore();
+        }
+        await reconcileAuditsFromServer({ processQueueFirst: false });
       }
       // Sempre: dopo logout hasInitialized=false ma l'effect di load non riparte da solo;
       // incrementando authReloadNonce si rifà il download/merge come al primo avvio.
