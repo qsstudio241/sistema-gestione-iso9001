@@ -2,6 +2,21 @@
 
 **Sessione:** 31/05/2026 — pianificazione multi-slice (esecuzione deputy in autonomia)
 
+## Stato esecuzione (lead, 31/05/2026)
+
+| Campo | Valore |
+|-------|--------|
+| **Deputy** | **IN CORSO** — non compare TEST OK |
+| **Branch** | `feat/ai-docs-deeplink-chat-persist` (piano doc `779a85c`; codice A/B/C in WIP locale non committato) |
+| **Ordine approvato committente** | 1 questo task → 2 RBAC Fase 2 risorse critiche → 3 licenze per-azienda + UI → 4 MVP SAL Camellini |
+
+**Lead / altri agenti:** non duplicare slice A–D; attendere chiusura deputy.
+
+**Dopo TEST OK (lead, non deputy):** merge PR su `main`, deploy Netlify (solo FE), aggiornare `docs/GUIDA_CONSOLIDATA.md`; poi **sovrascrivere** questo file con brief **RBAC Fase 2** (predicato org/studio su NC, allegati, registry documenti, checklist custom, statistiche — vedi `docs/ARCHITETTURA_UTENTI_RBAC.md` § migrazione Fase 2, test L1 Jest/Vitest, chiusura autonoma).
+
+---
+
+
 ## Obiettivo
 
 Chiudere tre gap UX dell’Assistente AI e del Registro Documenti:
