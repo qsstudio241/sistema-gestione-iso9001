@@ -59,9 +59,57 @@ function studioScopeClause(reqUser, tableAlias = 'a') {
     return { clause: `(${t}.created_by = @user_id)`, params: { user_id } };
 }
 
+/**
+ * Suffisso SQL riusabile: ` AND (...)` oppure stringa vuota se org-wide.
+ * @param {{ clause: string, params: Record<string, unknown> }} scope
+ */
+function appendScopeSql(scope) {
+    if (!scope?.clause) return '';
+    return ` AND ${scope.clause}`;
+}
+
+/**
+ * Scope document registry: org-wide per admin/superadmin senza studio;
+ * per auditor con studio → auditor_org_id diretto, company dello studio, o bozze proprie.
+ * Documenti senza company né auditor_org_id: visibili solo al creatore (auditor) o org-wide (admin).
+ *
+ * @param {object} reqUser
+ * @param {string} tableAlias - alias tabella document_registry (es. 'dr')
+ */
+function documentRegistryScopeClause(reqUser, tableAlias = 'dr') {
+    const t = tableAlias;
+    const { auditor_org_id, role, user_id } = reqUser;
+    const r = normalizeRole(role);
+
+    if (isOrgWideAdmin(reqUser)) {
+        return { clause: '', params: {} };
+    }
+
+    if (auditor_org_id) {
+        return {
+            clause: `(
+                ${t}.auditor_org_id = @auditor_org_id
+                OR (${t}.auditor_org_id IS NULL AND ${t}.company_id IN (
+                    SELECT id FROM companies WHERE auditor_org_id = @auditor_org_id
+                ))
+                OR (${t}.auditor_org_id IS NULL AND ${t}.company_id IS NULL AND ${t}.created_by = @user_id)
+            )`,
+            params: { auditor_org_id, user_id },
+        };
+    }
+
+    if (r === 'auditor' || r === 'viewer') {
+        return { clause: `(${t}.created_by = @user_id)`, params: { user_id } };
+    }
+
+    return { clause: `(${t}.created_by = @user_id)`, params: { user_id } };
+}
+
 module.exports = {
     isOrgWideAdmin,
     hasNoStudio,
     normalizeRole,
     studioScopeClause,
+    appendScopeSql,
+    documentRegistryScopeClause,
 };

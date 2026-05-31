@@ -9,10 +9,24 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
+
+/** Join audit effettivo (diretto o via NC) + predicato scope studio. */
+function attachmentAuditScope(reqUser) {
+    const scope = studioScopeClause(reqUser, 'a');
+    return {
+        joinSql: `
+      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
+      INNER JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
+    `,
+        scopeSql: appendScopeSql(scope),
+        scopeParams: scope.params,
+    };
+}
 
 /**
  * GET /api/v1/attachments
@@ -39,35 +53,27 @@ async function listAttachments(req, res) {
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
-        // Build WHERE clause dinamicamente
-        let whereConditions = [];
-        let params = { organization_id, limit: parseInt(limit), offset };
+        const { joinSql, scopeSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
 
-        // Filtra per organization_id via audit o NC
+        let whereConditions = ['a.organization_id = @organization_id'];
+        let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
+        if (scope.clause) {
+            whereConditions.push(scope.clause);
+        }
+
         if (audit_id) {
-            // Supporta sia audit_id INT che audit_uuid (UUID)
             const numericAuditId = parseInt(audit_id);
             if (!isNaN(numericAuditId)) {
-                whereConditions.push('att.audit_id = @audit_id');
+                whereConditions.push('COALESCE(att.audit_id, nc.audit_id) = @audit_id');
                 params.audit_id = numericAuditId;
             } else {
-                // UUID: join su audits per risolvere a audit_id INT
                 whereConditions.push('a.audit_uuid = @audit_uuid');
                 params.audit_uuid = audit_id;
             }
-            whereConditions.push('a.organization_id = @organization_id');
         } else if (nc_id) {
             whereConditions.push('att.nc_id = @nc_id');
-            // Scope org via NC → audit (gli allegati NC hanno spesso audit_id NULL)
-            whereConditions.push(`EXISTS (
-                SELECT 1 FROM non_conformities nc_scope
-                INNER JOIN audits a_scope ON nc_scope.audit_id = a_scope.audit_id
-                WHERE nc_scope.nc_id = att.nc_id AND a_scope.organization_id = @organization_id
-            )`);
             params.nc_id = parseInt(nc_id);
-        } else {
-            // Lista generale per organizzazione
-            whereConditions.push('a.organization_id = @organization_id');
         }
 
         if (question_id) {
@@ -85,9 +91,8 @@ async function listAttachments(req, res) {
             params.category = category;
         }
 
-        const whereClause = whereConditions.length > 0 ? whereConditions.join(' AND ') : '1=1';
+        const whereClause = whereConditions.join(' AND ');
 
-        // Query principale
         const result = await query(`
       SELECT 
         att.*,
@@ -95,8 +100,7 @@ async function listAttachments(req, res) {
         a.audit_number,
         nc.nc_number
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
+      ${joinSql}
       LEFT JOIN users u ON att.uploaded_by = u.user_id
       WHERE ${whereClause}
       ORDER BY att.created_at DESC
@@ -104,12 +108,10 @@ async function listAttachments(req, res) {
       FETCH NEXT @limit ROWS ONLY
     `, params);
 
-        // Count totale
         const countResult = await query(`
       SELECT COUNT(*) AS total
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
+      ${joinSql}
       WHERE ${whereClause}
     `, params);
 
@@ -150,6 +152,10 @@ async function getAttachmentById(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
+        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+
         const result = await query(`
       SELECT 
         att.*,
@@ -158,18 +164,12 @@ async function getAttachmentById(req, res) {
         a.audit_number,
         nc.nc_number
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
+      ${joinSql}
       LEFT JOIN users u ON att.uploaded_by = u.user_id
       WHERE att.attachment_id = @id 
-        AND (
-          (a.organization_id = @organization_id) OR
-          (nc.nc_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM audits a2 
-            WHERE a2.audit_id = nc.audit_id AND a2.organization_id = @organization_id
-          ))
-        )
-    `, { id: parseInt(id), organization_id });
+        AND a.organization_id = @organization_id
+        ${scopeCond}
+    `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -254,7 +254,11 @@ async function uploadAttachment(req, res) {
             });
         }
 
-        // Verifica ownership audit o NC
+        // Verifica ownership audit o NC + scope studio
+        const uploadScope = studioScopeClause(req.user, 'a');
+        const uploadScopeSql = appendScopeSql(uploadScope);
+        const uploadScopeParams = uploadScope.params;
+
         if (audit_id) {
             // Supporta sia audit_id INT che audit_uuid (UUID)
             const numericAuditId = parseInt(audit_id);
@@ -263,9 +267,10 @@ async function uploadAttachment(req, res) {
 
             if (!isNaN(numericAuditId)) {
                 const auditCheck = await query(`
-        SELECT audit_id, custom_checklist_id FROM audits
-        WHERE audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0
-      `, { audit_id: numericAuditId, organization_id });
+        SELECT a.audit_id, a.custom_checklist_id FROM audits a
+        WHERE a.audit_id = @audit_id AND a.organization_id = @organization_id AND a.is_deleted = 0
+          ${uploadScopeSql}
+      `, { audit_id: numericAuditId, organization_id, ...uploadScopeParams });
                 if (auditCheck.recordset.length === 0) {
                     await fs.unlink(req.file.path).catch(() => { });
                     logger.warn('Upload: audit non trovato (INT)', { audit_id: numericAuditId, organization_id });
@@ -276,9 +281,10 @@ async function uploadAttachment(req, res) {
             } else {
                 // UUID: risolvi a numeric audit_id
                 const auditCheck = await query(`
-        SELECT audit_id, custom_checklist_id FROM audits
-        WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0
-      `, { audit_uuid: audit_id, organization_id });
+        SELECT a.audit_id, a.custom_checklist_id FROM audits a
+        WHERE a.audit_uuid = @audit_uuid AND a.organization_id = @organization_id AND a.is_deleted = 0
+          ${uploadScopeSql}
+      `, { audit_uuid: audit_id, organization_id, ...uploadScopeParams });
                 if (auditCheck.recordset.length === 0) {
                     await fs.unlink(req.file.path).catch(() => { });
                     logger.warn('Upload: audit non trovato (UUID)', { audit_uuid: audit_id, organization_id });
@@ -322,7 +328,8 @@ async function uploadAttachment(req, res) {
         FROM non_conformities nc
         INNER JOIN audits a ON nc.audit_id = a.audit_id
         WHERE nc.nc_id = @nc_id AND a.organization_id = @organization_id
-      `, { nc_id: parseInt(nc_id), organization_id });
+          ${uploadScopeSql}
+      `, { nc_id: parseInt(nc_id), organization_id, ...uploadScopeParams });
 
             if (ncCheck.recordset.length === 0) {
                 // Cleanup file uploaded
@@ -429,20 +436,18 @@ async function downloadAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
+        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+
         const result = await query(`
-      SELECT 
-        att.*,
-        a.organization_id AS audit_org_id
+      SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
-      LEFT JOIN audits a2 ON nc.audit_id = a2.audit_id
+      ${joinSql}
       WHERE att.attachment_id = @id 
-        AND (
-          a.organization_id = @organization_id OR
-          a2.organization_id = @organization_id
-        )
-    `, { id: parseInt(id), organization_id });
+        AND a.organization_id = @organization_id
+        ${scopeCond}
+    `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -495,20 +500,18 @@ async function deleteAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
+        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+
         const result = await query(`
-      SELECT 
-        att.*,
-        a.organization_id AS audit_org_id
+      SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
-      LEFT JOIN audits a2 ON nc.audit_id = a2.audit_id
+      ${joinSql}
       WHERE att.attachment_id = @id 
-        AND (
-          a.organization_id = @organization_id OR
-          a2.organization_id = @organization_id
-        )
-    `, { id: parseInt(id), organization_id });
+        AND a.organization_id = @organization_id
+        ${scopeCond}
+    `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -567,20 +570,18 @@ async function viewAttachment(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
+        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+
         const result = await query(`
-      SELECT 
-        att.*,
-        a.organization_id AS audit_org_id
+      SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
-      LEFT JOIN audits a ON att.audit_id = a.audit_id
-      LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
-      LEFT JOIN audits a2 ON nc.audit_id = a2.audit_id
+      ${joinSql}
       WHERE att.attachment_id = @id 
-        AND (
-          a.organization_id = @organization_id OR
-          a2.organization_id = @organization_id
-        )
-    `, { id: parseInt(id), organization_id });
+        AND a.organization_id = @organization_id
+        ${scopeCond}
+    `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -655,13 +656,18 @@ async function replaceAttachment(req, res) {
 
     try {
         // 1. Verifica ownership: allegato appartiene a un audit di questa org
+        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+
         const existing = await query(`
             SELECT att.attachment_id, att.storage_path, att.file_name
             FROM attachments att
-            LEFT JOIN audits a ON att.audit_id = a.audit_id
+            ${joinSql}
             WHERE att.attachment_id = @attachment_id
               AND a.organization_id = @organization_id
-        `, { attachment_id: parseInt(attachment_id), organization_id });
+              ${scopeCond}
+        `, { attachment_id: parseInt(attachment_id), organization_id, ...scopeParams });
 
         if (!existing.recordset?.length) {
             await fs.unlink(req.file.path).catch(() => { });
