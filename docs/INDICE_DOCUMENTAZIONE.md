@@ -173,7 +173,7 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 |------|-------|-----------|
 | **1** | **Fatto (2026-05-21)** | TOC in `GUIDA_CONSOLIDATA`, tag in questo indice, `COMMIT_MESSAGES` in archive, ADR 008–010 in `adr/README` — [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) |
 | **2** | **Fatto (2026-05-21)** | Cartelle `how-to/`, `reference/`, `specs/`; hub [deploy.md](how-to/deploy.md); stub redirect in root `docs/` |
-| **3** | **Pianificata** | Vedi slice 3a–3c sotto — **non** in parallelo ad ADR-009 Fase 2 (priorità prodotto) |
+| **3** | **In corso** | Slice 3a–3b chiuse 31/05/2026 (ADR-011, archivio `TASK_AI_*`); vedi [GUIDA — Procedura chiusura autonoma](GUIDA_CONSOLIDATA.md#procedura-chiusura-autonoma) |
 
 ### Fase 3 — piano operativo (prossima sessione doc)
 
@@ -181,8 +181,8 @@ Eseguire **una slice per commit**; dopo ogni slice: `rg` link rotti, aggiornare 
 
 | Slice | Priorità | Obiettivo | Definition of Done |
 |-------|----------|-----------|-------------------|
-| **3a** | Alta | **ADR leggibili** | In [adr/README.md](adr/README.md): tabella con ID univoco (suffissi `ADR-002a` / `ADR-003b` **senza** rinominare file); ogni duplicato 002/003 referenziato per **nome file**; link da GUIDA/INDICE verificati |
-| **3b** | Media | **Archivio agent-tasks** | `TASK_AI_*` e sprint completati → `docs/archive/agent-tasks/`; stub redirect in `agent-tasks/`; solo `DEPUTYTASK.md` resta brief attivo |
+| **3a** | Alta | **ADR leggibili** | **Fatto (31/05/2026)** — [adr/README.md](adr/README.md): ADR-011; tabella duplicati 002/003 per nome file |
+| **3b** | Media | **Archivio agent-tasks** | **Fatto (31/05/2026)** — `TASK_AI_*` → [archive/agent-tasks/](archive/agent-tasks/); stub in `agent-tasks/` |
 | **3c** | Bassa | **Cartella `explanation/`** (opzionale) | Spostare con `git mv`: `ARCHITETTURA_UTENTI_RBAC`, `FLUSSO_TIPOLOGIA_AUDIT`, `GESTIONE_PERDITA_CONNESSIONE`, `SCHEMA_UTENTI_*`; stub in root; riga in [README.md](README.md) |
 | **3d** | Bassa | **GUIDA più snella** | Estrarre how-to ripetibili (Word verbale, smoke L3, sync) in `docs/how-to/`; in `GUIDA_CONSOLIDATA` restano TOC + § *Esperienza* + link — **non** duplicare procedure intere |
 | **3e** | Differita | **Pulizia stub** | Rimuovere stub `docs/DEPLOY_*.md` ecc. solo se `rg` nel repo = 0 riferimenti (conservare ≥1 release dopo Fase 2) |
