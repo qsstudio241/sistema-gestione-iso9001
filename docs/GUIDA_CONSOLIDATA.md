@@ -13,6 +13,7 @@
 | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) | Catalogo componenti UI, duplicati, matrice moduli (~55% copertura Fase A) |
 | [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
 | [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
+| [Procedura chiusura autonoma](#procedura-chiusura-autonoma) | Ciclo slice agente: fix, test, smoke, doc, limiti |
 | [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
 | [**A** — Checklist, sync, deploy](#a-checklist-custom-sync-deploy-vps) | Procedure operative principali |
 | [**B** — Word Verbale](#b-report-word--checklist-custom-verbale) | Export OOXML / template |
@@ -94,6 +95,14 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 | Cleanup | Ordine FK: `document_history` → `document_registry` → company/studio; utenti smoke = hard-delete SQL (API = soft-delete). `--keep-data` / `--cleanup` per ispezione committente |
 | Dati reali | **Manitou** non cancellata dallo smoke (solo prefisso `RBAC_SMOKE_*`); scomparsa in UI = spesso filtro RBAC, non delete |
 | Error pattern | Primo smoke monolitico: `NC_NOT_FOUND` su upload (scope superadmin); password admin compromessa da workaround — ripristinata da backup |
+
+**Esperienza 31/05/2026 — chiusura slice D2 LIBRERIA_UI + smoke Registro Norme L1**
+
+| Voce | Esito |
+|------|--------|
+| D2 | Grep `app/src`: zero import di `NonConformitiesManager.jsx` / `AuditTabsLayout.jsx` → rimossi 4 file (jsx+css); catalogo [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) aggiornato |
+| Registro Norme L1 | Vitest mirato: `importNormCommit.test.js`, `standardsRegistry.test.js`, `normUploadResults.test.js` — esito registrato nel commit di chiusura |
+| RBAC L3 (riuso) | Solo se script + `.cursor/mcp.env` + DB raggiungibili: `--slice=attach,registry,admin`; altrimenti nota «non rieseguito» in commit |
 
 
 ---
@@ -178,6 +187,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 | A | Fix link HomePage `/nc`; contatore header vigenti (`rilasciato`+`vigente`, esclude `folder`); badge stato nascosto su cartelle via `shouldShowDocumentStatusBadge()` | `2640100` |
 | B | `.btn-primary` centralizzato in `index.css`; rimosso duplicato da `DocumentRegistry.css` (override per-pagina mantenuti) | `2640100` |
 | D | `@deprecated` su `NonConformitiesManager` e `AuditTabsLayout` (non in routing) | `2640100` |
+| D2 | Rimossi file morti `NonConformitiesManager` / `AuditTabsLayout` (grep zero import in `app/src`) | 31/05/2026 |
 | Backend | `backend/src/constants/documentStatus.js` + stats API allineate; deploy VPS `document.controller.js` + constants | deploy 26/05 |
 
 #### Test L1
@@ -1326,6 +1336,65 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 | **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([how-to/deploy.md](how-to/deploy.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
 | **L4 — Hardening** | Due sessioni, lock audit, licenze (`403 MODULE_NOT_LICENSED`), refresh sessione, PWA offline (cache vs server) | Dopo modifiche a `auth`, `moduleLicense`, `syncService`, `IndexedDB`, lock. |
 | **L5 — E2E / browser** (backlog prodotto) | Flussi completi su Netlify preview o staging | Pianificato in roadmap; non sostituisce L1–L4. |
+
+### Procedura chiusura autonoma
+
+> Ciclo **obbligatorio** per ogni slice verticale chiusa da agente (desktop o cloud) senza supervisione continua del committente. Complementa il DoD sopra e le regole in `.cursor/rules/sgq-operating-memory.mdc`.
+
+#### Obiettivo e chiusura slice
+
+| Fase | Cosa fare | Criterio chiusura |
+|------|-----------|-------------------|
+| **Perimetro** | Una slice = un obiettivo verificabile (bug, feature minima, doc) | Scope dichiarato in PR/commit; niente refactor paralleli |
+| **Fix minimo** | Solo codice necessario al perimetro; riuso componenti/pattern esistenti | Diff piccolo; nessun «profittare» per pulizie non richieste |
+| **Test L1** | Vitest/Jest mirati + build (`app/` o `backend/` secondo area) | Suite toccata verde; build ok |
+| **Smoke L2–L3 simulato** | Script o checklist con **input → output atteso** (tabella sotto) | Esito documentato in guida/PR; L3 reale solo se richiesto |
+| **Doc** | Aggiornare **questa guida** e/o **roadmap** se cambia procedura, vincolo o comando | Nessun nuovo `SESSION_NOTES_*` |
+| **Chiusura** | Commit/PR con messaggio «perché»; merge su `main` se CI verde | Stato slice = TEST OK o rischio residuo scritto |
+
+#### Smoke simulato L2–L3 (input → output atteso)
+
+Usare quando non c’è device reale o deploy immediato. Ogni riga è ripetibile da script (curl, Node, Playwright headless) o da checklist manuale breve.
+
+| Livello | Input | Output atteso |
+|---------|-------|---------------|
+| **L2 — API health** | `GET /api/v1/health` | `200`, body con stato servizio |
+| **L2 — Auth** | `POST /auth/login` credenziali smoke (env) | `200`, token + `organization_id` |
+| **L2 — Scope RBAC** | GET risorsa altra org con token tenant A | `403` o `404`, mai dati altrui |
+| **L3 — Flusso modulo** | CRUD minimo del modulo toccato (es. NC create → list → detail) | Persistenza coerente; UI o API allineate |
+| **L3 — Export** (se toccato Word) | Export audit con checklist custom | File OOXML scaricabile; placeholder critici presenti |
+| **L3 — Sync** (se toccato) | Modifica su device A, refresh device B (o script reconcile) | Server-wins o merge documentato in ADR-008 |
+
+**Nota:** smoke **L3 su dispositivi mobili reali** (PWA, lock, offline) resta **umana**: data, esecutore, device, note in guida o checklist dedicata — non marcare OK senza evidenza.
+
+#### Limiti (non autonomi)
+
+| Area | Regola |
+|------|--------|
+| **Schema DB produzione** | Nessun breaking change senza migrazione idempotente + piano rollback documentato |
+| **Decisioni prodotto** | Prezzi, priorità cliente, scope contrattuale → fermarsi e chiedere |
+| **Segreti** | Mai in repo/chat; usare `database.json`, `.cursor/mcp.env`, env cloud |
+| **Smoke L3 campo** | Agenti simulano L2–L3; prove su tablet/telefono reali = committente o utente pilota |
+| **Deploy VPS** | Autonomo se credenziali SGQ_* presenti; altrimenti documentare passi manuali |
+
+#### Multitasking (worker paralleli)
+
+| Consentito | Vietato |
+|------------|---------|
+| Task su **file/perimetri disgiunti** (es. TASK 0-A adapter vs 0-B migrazione SQL) | Due agenti sul **stesso file** o stesso endpoint |
+| Brief separati (`DEPUTYTASK.md` + task file) con branch distinti | Slice che condividono migrazione DB o refactor sync |
+| Merge sequenziale dopo CI verde per ogni branch | Parallelo su auth, licenze o `syncService` senza coordinamento |
+
+Mappa dipendenze: vedere overview task in `docs/archive/agent-tasks/` (es. Fase 0 AI: 0-D dopo 0-A).
+
+#### Slice documentazione — chiusura (31/05/2026)
+
+| Slice | Esito |
+|-------|-------|
+| **3a — ADR** | [adr/README.md](adr/README.md): ADR-011 in indice; numerazione duplicata 002/003 citata per **nome file** |
+| **3b — Archivio agent-tasks** | `TASK_AI_*` Fase 0 (implementati) → [archive/agent-tasks/](archive/agent-tasks/); stub redirect in `agent-tasks/` |
+
+Prossime slice doc (backlog): 3c–3f in [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md).
 
 ---
 
