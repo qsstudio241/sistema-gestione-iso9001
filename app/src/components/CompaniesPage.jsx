@@ -6,7 +6,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import SgqDataGrid from "./SgqDataGrid";
 import "./CompaniesPage.css";
+
+const GRID_COLUMNS = [
+  { id: "logo", label: "Logo", width: "56px" },
+  { id: "name", label: "Nome", sortable: true },
+  { id: "vat_number", label: "P.IVA", sortable: true },
+  { id: "sector", label: "Settore", sortable: true },
+  { id: "actions", label: "Azioni", width: "150px" },
+];
 
 function CompaniesPage({ onBack }) {
   const { user } = useAuth();
@@ -167,6 +176,38 @@ function CompaniesPage({ onBack }) {
     }
   };
 
+  function renderGridCell(row, col) {
+    switch (col.id) {
+      case "logo":
+        return row.logo_url ? (
+          <img
+            src={apiService.getCompanyLogoUrl(row.id) + `?t=${logoTimestamp}`}
+            alt={`Logo ${row.name}`}
+            className="company-logo-thumb"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
+        ) : (
+          <span className="company-logo-placeholder">{"\u2014"}</span>
+        );
+      case "actions":
+        return (
+          <div className="companies-row-actions">
+            <button type="button" className="btn-edit" onClick={() => openEdit(row)}>
+              Modifica
+            </button>
+            <button type="button" className="btn-delete" onClick={() => handleDelete(row.id)}>
+              Elimina
+            </button>
+          </div>
+        );
+      default: {
+        const val = row[col.id];
+        if (val == null || val === "") return "\u2014";
+        return val;
+      }
+    }
+  }
+
   return (
     <div className="companies-page">
       <div className="companies-header">
@@ -206,52 +247,21 @@ function CompaniesPage({ onBack }) {
         </button>
       </div>
 
-      {loading ? (
-        <div className="companies-loading">Caricamento...</div>
-      ) : (
-        <div className="companies-list">
-          {companies.length === 0 ? (
-            <p className="companies-empty">Nessuna azienda. Clicca "Nuova Azienda" per aggiungerne una.</p>
-          ) : (
-            <table className="companies-table">
-              <thead>
-                <tr>
-                  <th>Logo</th>
-                  <th>Nome</th>
-                  <th>P.IVA</th>
-                  <th>Settore</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map((c) => (
-                  <tr key={c.id}>
-                    <td className="company-logo-cell">
-                      {c.logo_url ? (
-                        <img
-                          src={apiService.getCompanyLogoUrl(c.id) + `?t=${logoTimestamp}`}
-                          alt={`Logo ${c.name}`}
-                          className="company-logo-thumb"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      ) : (
-                        <span className="company-logo-placeholder">-</span>
-                      )}
-                    </td>
-                    <td>{c.name}</td>
-                    <td>{c.vat_number || "-"}</td>
-                    <td>{c.sector || "-"}</td>
-                    <td>
-                      <button type="button" className="btn-edit" onClick={() => openEdit(c)}>Modifica</button>
-                      <button type="button" className="btn-delete" onClick={() => handleDelete(c.id)}>Elimina</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+      <section className="companies-grid-section" aria-label="Elenco aziende">
+        <SgqDataGrid
+          rows={companies}
+          columns={GRID_COLUMNS}
+          loading={loading}
+          emptyMessage={'Nessuna azienda. Clicca "Nuova Azienda" per aggiungerne una.'}
+          theme="plain"
+          renderCell={renderGridCell}
+          getRowKey={(row) => row.id}
+          getSortValue={(row, colId) => {
+            if (colId === "logo" || colId === "actions") return "";
+            return row[colId] ?? "";
+          }}
+        />
+      </section>
 
       {modalOpen && (
         <div className="companies-modal-overlay" onClick={closeModal}>
