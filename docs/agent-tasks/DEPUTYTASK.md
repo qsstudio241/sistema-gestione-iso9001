@@ -1,25 +1,18 @@
-# DEPUTYTASK — Registro documenti slice D2/D3
+# DEPUTYTASK — Registro documenti slice D2/D3 (chiuso)
 
-**Stato:** IN CORSO (cloud agent)  
-**Branch:** `cursor/doc-registry-scope-d2-d3-9c87`
+**Stato:** CHIUSO — **TEST OK** (01/06/2026)  
+**Branch:** `cursor/doc-registry-scope-d2-d3-9c87`  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/78 — **mergiata su main**
 
-## Obiettivo
+## Esito
 
-- **D2**: ambito azienda condiviso su Priorità + Catalogo + Albero; persistenza `localStorage`; prefill `DocumentForm`
-- **D3**: auto-provisioning albero documentale alla creazione azienda (backend idempotente)
+- **D2**: ambito azienda condiviso (Priorità / Catalogo / Albero), `localStorage`, prefill `DocumentForm`
+- **D3**: auto-provisioning albero in `POST /companies` (VPS deployato)
 
 ## Test L1
 
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/documentRegistryUrl.test.js src/tests/documentRegistryCompanyScope.test.js src/tests/useDocumentTree.companyScope.test.js
-```
+15/15 OK (`documentRegistryUrl`, `documentRegistryCompanyScope`, `useDocumentTree.companyScope`)
 
-## Deploy VPS (D3)
+## Smoke L3 (manuale)
 
-Dopo merge: `scp company.controller.js` + restart `sgq-backend.service`.
-
-## Smoke L3
-
-1. Registro → cambiare ambito in header → Priorità/Catalogo/Albero filtrati
-2. Refresh pagina → ambito ripristinato da URL o localStorage
-3. Anagrafica aziende → nuova azienda → tab Albero con ambito quella azienda mostra cartelle provisioning
+Registro → header Ambito → filtri coerenti; nuova azienda → albero con cartelle provisioning.
