@@ -3,6 +3,7 @@
  *
  * Lazy-loading: carica figli solo all'espansione del nodo.
  * Breadcrumb: aggiornato alla selezione del nodo.
+ * companyId: filtra cartelle/documenti per azienda (null = tutto lo studio).
  */
 import { useState, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
@@ -41,7 +42,15 @@ export function resolveNewFolderParentId(selectedNode) {
   return selectedNode.parent_id ?? null;
 }
 
-export default function useDocumentTree() {
+function normalizeCompanyId(companyId) {
+  if (companyId == null || companyId === "") return null;
+  const n = parseInt(companyId, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+export default function useDocumentTree(companyId = null) {
+  const scopedCompanyId = normalizeCompanyId(companyId);
+
   const [treeNodes, setTreeNodes] = useState([]);
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [selectedNodeId, setSelectedNodeId] = useState(null);
@@ -53,26 +62,24 @@ export default function useDocumentTree() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiService.get("/documents/tree");
+      const res = await apiService.getDocumentTree(2, scopedCompanyId);
       setTreeNodes(res.data ?? res ?? []);
     } catch (err) {
       setError(err.message || "Errore caricamento albero");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [scopedCompanyId]);
 
   const loadChildren = useCallback(async (parentId) => {
     try {
-      const res = await apiService.get(
-        "/documents/tree/" + parentId + "/children"
-      );
+      const res = await apiService.getDocumentTreeChildren(parentId, scopedCompanyId);
       const children = res.data ?? res ?? [];
       setTreeNodes((prev) => insertChildren(prev, parentId, children));
     } catch (err) {
       console.error("[useDocumentTree] loadChildren error:", err.message);
     }
-  }, []);
+  }, [scopedCompanyId]);
 
   const toggleNode = useCallback(
     (nodeId) => {
@@ -114,17 +121,21 @@ export default function useDocumentTree() {
     async (title, parentId) => {
       const resolvedParent =
         parentId !== undefined ? parentId : resolveNewFolderParentId(selectedNode);
-      const res = await apiService.post("/documents/folder", {
+      const payload = {
         title,
         parent_id: resolvedParent ?? null,
-      });
+      };
+      if (scopedCompanyId != null) {
+        payload.company_id = scopedCompanyId;
+      }
+      const res = await apiService.post("/documents/folder", payload);
       await loadTree();
       if (resolvedParent != null) {
         setExpandedIds((prev) => new Set(prev).add(resolvedParent));
       }
       return res.data ?? res;
     },
-    [loadTree, selectedNode]
+    [loadTree, selectedNode, scopedCompanyId]
   );
 
   const renameFolder = useCallback(
@@ -197,6 +208,12 @@ export default function useDocumentTree() {
     }
   }, [loadTree, loadChildren, selectNode]);
 
+  const resetSelection = useCallback(() => {
+    setSelectedNodeId(null);
+    setBreadcrumb([]);
+    setExpandedIds(new Set());
+  }, []);
+
   return {
     treeNodes,
     expandedIds,
@@ -204,6 +221,7 @@ export default function useDocumentTree() {
     breadcrumb,
     loading,
     error,
+    companyId: scopedCompanyId,
     loadTree,
     loadChildren,
     toggleNode,
@@ -214,5 +232,6 @@ export default function useDocumentTree() {
     deleteFolder,
     moveDocument,
     expandToDocument,
+    resetSelection,
   };
 }
