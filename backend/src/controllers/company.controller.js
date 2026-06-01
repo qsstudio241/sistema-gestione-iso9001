@@ -6,6 +6,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -146,8 +147,49 @@ async function createCompany(req, res) {
             address: address?.trim() || null
         });
 
-        logger.info('[COMPANIES] Created:', result.recordset[0].id);
-        res.status(201).json({ success: true, data: result.recordset[0] });
+        const newCompany = result.recordset[0];
+        const companyId = newCompany.id;
+        const parsedAuditorOrgId = parseInt(auditorOrgId, 10);
+
+        // Auto-provisioning albero documentale per la nuova azienda (idempotente)
+        try {
+            const orgRes = await query(
+                `SELECT organization_id FROM auditor_orgs WHERE id = @auditor_org_id`,
+                { auditor_org_id: parsedAuditorOrgId }
+            );
+            const organizationId = orgRes.recordset[0]?.organization_id || req.user.organization_id;
+
+            if (organizationId) {
+                const rootCheck = await query(
+                    `SELECT TOP 1 id FROM document_registry
+                     WHERE organization_id = @organization_id
+                       AND company_id = @company_id
+                       AND parent_id IS NULL`,
+                    { organization_id: organizationId, company_id: companyId }
+                );
+                if (rootCheck.recordset.length === 0) {
+                    const stdRes = await query(
+                        `SELECT standard_code FROM standards WHERE is_active = 1`
+                    );
+                    const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                    await documentTreeProvisioner.provisionTree(
+                        organizationId, companyId, null, standardCodes
+                    );
+                    logger.info('[COMPANIES] Auto-provisioned document tree', {
+                        company_id: companyId,
+                        organization_id: organizationId,
+                    });
+                }
+            }
+        } catch (provErr) {
+            logger.warn('[COMPANIES] Tree auto-provision failed (non-blocking)', {
+                company_id: companyId,
+                error: provErr.message,
+            });
+        }
+
+        logger.info('[COMPANIES] Created:', companyId);
+        res.status(201).json({ success: true, data: newCompany });
     } catch (error) {
         logger.error('[COMPANIES] create error:', error);
         res.status(500).json({ error: 'Errore creazione azienda', code: 'SERVER_ERROR' });

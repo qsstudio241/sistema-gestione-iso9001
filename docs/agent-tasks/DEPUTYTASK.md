@@ -1,28 +1,25 @@
-# DEPUTYTASK — Registro documenti slice D1 (chiuso)
+# DEPUTYTASK — Registro documenti slice D2/D3
 
-**Stato:** CHIUSO — **TEST OK** (01/06/2026)  
-**Branch:** `cursor/doc-tree-company-scope-d1-9c87`  
-**PR:** (aperta da cloud agent)
+**Stato:** IN CORSO (cloud agent)  
+**Branch:** `cursor/doc-registry-scope-d2-d3-9c87`
 
-## Esito
+## Obiettivo
 
-Slice **D1**: selettore ambito azienda sulla tab **Albero** del Registro documenti.
-
-- UI: «Tutto lo studio» / singola azienda (come Ricerca SGQ)
-- API: `GET /documents/tree?company_id=` e figli lazy con stesso filtro
-- URL: `?tab=tree&company_id=` (+ `select` per deep link)
-- Cartelle custom: aggiunta ok; cartelle provisioning (`is_system_folder`) non modificabili/eliminabili (invariato)
+- **D2**: ambito azienda condiviso su Priorità + Catalogo + Albero; persistenza `localStorage`; prefill `DocumentForm`
+- **D3**: auto-provisioning albero documentale alla creazione azienda (backend idempotente)
 
 ## Test L1
 
-- `documentRegistryUrl.test.js` (+ company_id)
-- `useDocumentTree.companyScope.test.js` (4 test)
+```bash
+cd app && NODE_ENV=test npx vitest run src/tests/documentRegistryUrl.test.js src/tests/documentRegistryCompanyScope.test.js src/tests/useDocumentTree.companyScope.test.js
+```
 
-## Smoke L3 (manuale)
+## Deploy VPS (D3)
 
-Registro documenti → tab Albero → cambiare ambito → verificare in Network `company_id` su tree/children.
+Dopo merge: `scp company.controller.js` + restart `sgq-backend.service`.
 
-## Prossimo backlog
+## Smoke L3
 
-- **D2**: scope condiviso Priorità + Catalogo; `localStorage` opzionale
-- **D3**: provisioning albero per singola `company` alla creazione cliente
+1. Registro → cambiare ambito in header → Priorità/Catalogo/Albero filtrati
+2. Refresh pagina → ambito ripristinato da URL o localStorage
+3. Anagrafica aziende → nuova azienda → tab Albero con ambito quella azienda mostra cartelle provisioning
