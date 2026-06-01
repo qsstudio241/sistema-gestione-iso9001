@@ -1656,6 +1656,14 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **Deploy VPS**: `deploy-controllers-to-vps.ps1` va **esteso** con `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` (oggi copia manuale post-push) + restart `sgq-backend`; smoke `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
 - **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
 
+**Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D1)**
+
+- **Regole cartelle**: ogni azienda può **aggiungere** cartelle custom (`is_system_folder = 0`); le cartelle da **provisioning** restano protette (UI + API 403 su rinomina/elimina/sposta).
+- **Tab Albero**: selettore **Ambito** (tutto lo studio / azienda X) allineato a Ricerca SGQ; `useDocumentTree(companyId)` propaga `company_id` a tree, lazy children e nuove cartelle custom.
+- **Deep link**: `/documents?tab=tree&company_id=N&select=DOC_ID`.
+- **Backend**: `GET /documents/tree/:parentId/children?company_id=` — stesso filtro di `getTree` (azienda + nodi con `company_id` NULL = condivisi studio). Deploy VPS `documentTree.controller.js` dopo merge.
+- **Backlog**: D2 scope su Priorità/Catalogo; D3 provisioning albero per `company_id` alla creazione cliente.
+
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 

@@ -889,13 +889,18 @@ function DocumentRegistry() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
+  // Ambito azienda tab Albero ("" = tutto lo studio)
+  const [treeCompanyId, setTreeCompanyId] = useState(
+    initialUrl.companyId != null ? String(initialUrl.companyId) : ""
+  );
+
   // Dati
   const [stats, setStats]         = useState(null);
   const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
 
-  // Albero documentale
-  const tree = useDocumentTree();
+  // Albero documentale (filtrato per treeCompanyId se impostato)
+  const tree = useDocumentTree(treeCompanyId || null);
   const { width: treeSidebarWidth, startResize: startTreeSidebarResize } = useDocTreeSidebarWidth();
 
   // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
@@ -963,15 +968,16 @@ function DocumentRegistry() {
   const LIMIT = 20;
 
   const syncRegistryUrl = useCallback(
-    (tab, selectId = null) => {
+    (tab, selectId = null, companyId = treeCompanyId) => {
       replace(
         buildDocumentRegistryPath({
           tab,
           selectId: tab === "tree" ? selectId : null,
+          companyId: tab === "tree" && companyId ? companyId : null,
         })
       );
     },
-    [replace]
+    [replace, treeCompanyId]
   );
 
   const handleTabChange = useCallback(
@@ -987,11 +993,16 @@ function DocumentRegistry() {
     [syncRegistryUrl]
   );
 
-  // URL ?tab= & ?select= al mount e su Back/Forward
+  // URL ?tab= & ?select= & ?company_id= al mount e su Back/Forward
   useEffect(() => {
     const applyFromUrl = () => {
-      const { tab, selectId } = parseDocumentRegistrySearch(window.location.search);
+      const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
       if (tab) setActiveTab(tab);
+      if (companyId != null) {
+        setTreeCompanyId(String(companyId));
+      } else if (tab === "tree") {
+        setTreeCompanyId("");
+      }
       if (selectId != null) {
         deepLinkSelectRef.current = selectId;
         deepLinkHandledRef.current = false;
@@ -1105,18 +1116,31 @@ function DocumentRegistry() {
 
   useEffect(() => {
     if (activeTab === "tree") tree.loadTree();
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, treeCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTreeCompanyChange = useCallback(
+    (value) => {
+      setTreeCompanyId(value);
+      tree.resetSelection();
+      setTreeListDocs([]);
+      setShowDetail(false);
+      setSelectedDoc(null);
+      setDocHistory([]);
+      syncRegistryUrl("tree", null, value);
+    },
+    [tree, syncRegistryUrl]
+  );
 
   // Quando si seleziona un nodo nell'albero, carica i documenti figli
   const handleTreeNodeSelect = useCallback(async (nodeId) => {
     tree.selectNode(nodeId);
     setTreeListLoading(true);
     try {
-      const res = await apiService.getDocumentTreeChildren(nodeId);
+      const res = await apiService.getDocumentTreeChildren(nodeId, treeCompanyId || null);
       setTreeListDocs(res.data || []);
     } catch { setTreeListDocs([]); }
     finally { setTreeListLoading(false); }
-  }, [tree]);
+  }, [tree, treeCompanyId]);
 
   // Quando si seleziona una clausola nell'albero per-standard
   const handleClauseSelect = useCallback(async (clauseCode) => {
@@ -1510,18 +1534,45 @@ function DocumentRegistry() {
             </div>
           ) : (
           <>
-          {/* Selettore vista albero */}
-          <div className="tree-view-selector">
-            <label className="tree-view-selector__label">Vista:</label>
-            <select
-              className="tree-view-selector__select"
-              value={treeViewMode}
-              onChange={(e) => handleTreeViewModeChange(e.target.value)}
-            >
-              {TREE_VIEW_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          {/* Ambito studio / azienda + selettore vista albero */}
+          <div className="tree-view-toolbar">
+            <div className="tree-view-selector">
+              <label className="tree-view-selector__label" htmlFor="tree-company-scope">
+                {"Ambito:"}
+              </label>
+              <select
+                id="tree-company-scope"
+                className="tree-company-scope-select"
+                value={treeCompanyId}
+                onChange={(e) => handleTreeCompanyChange(e.target.value)}
+                aria-label="Ambito albero documentale"
+              >
+                <option value="">{"Tutto lo studio"}</option>
+                {companies.map((c) => {
+                  const id = c.id || c.company_id;
+                  return (
+                    <option key={id} value={String(id)}>
+                      {c.name}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div className="tree-view-selector">
+              <label className="tree-view-selector__label" htmlFor="tree-view-mode">
+                {"Vista:"}
+              </label>
+              <select
+                id="tree-view-mode"
+                className="tree-view-selector__select"
+                value={treeViewMode}
+                onChange={(e) => handleTreeViewModeChange(e.target.value)}
+              >
+                {TREE_VIEW_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="docregistry-tree-layout">
