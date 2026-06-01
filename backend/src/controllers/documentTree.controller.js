@@ -100,13 +100,27 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
 }
 
 // GET /api/v1/documents/tree/:parentId/children
+// Query params: company_id — stesso filtro di getTree (azienda + condivisi studio)
 async function getChildren(req, res) {
     try {
         const { organization_id } = req.user;
         const parentId = parseInt(req.params.parentId);
+        const company_id = req.query.company_id ? parseInt(req.query.company_id) : null;
 
         if (isNaN(parentId)) {
             return res.status(400).json({ error: 'parentId non valido', code: 'VALIDATION_ERROR' });
+        }
+
+        const conditions = [
+            'dr.organization_id = @organization_id',
+            'dr.parent_id = @parent_id',
+            "ISNULL(dr.status, 'rilasciato') <> 'obsoleto'",
+        ];
+        const params = { organization_id, parent_id: parentId };
+
+        if (company_id) {
+            conditions.push('(dr.company_id = @company_id OR dr.company_id IS NULL)');
+            params.company_id = company_id;
         }
 
         const result = await query(`
@@ -116,10 +130,9 @@ async function getChildren(req, res) {
                     WHERE sub.parent_id = dr.id
                       AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
             FROM document_registry dr
-            WHERE dr.organization_id = @organization_id AND dr.parent_id = @parent_id
-              AND ISNULL(dr.status, 'rilasciato') <> 'obsoleto'
+            WHERE ${conditions.join(' AND ')}
             ORDER BY dr.display_order ASC, dr.title ASC
-        `, { organization_id, parent_id: parentId });
+        `, params);
 
         res.json({ success: true, data: result.recordset });
 
