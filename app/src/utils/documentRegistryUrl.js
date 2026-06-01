@@ -2,7 +2,7 @@
  * URL deep link Registro Documenti — contratto allineato a NCPage (?select=).
  * tab: priority | catalog | tree
  * select: id documento ? tab Albero + drawer dettaglio
- * company_id: ambito azienda sulla tab Albero (assente = tutto lo studio)
+ * company_id: ambito azienda condiviso (assente = tutto lo studio)
  */
 
 export const VALID_DOC_REGISTRY_TABS = ['priority', 'catalog', 'tree'];
@@ -62,7 +62,7 @@ export function buildDocumentRegistryPath({ tab, selectId, companyId } = {}) {
   const cid = parseOptionalInt(
     companyId != null && companyId !== '' ? String(companyId) : null
   );
-  if (cid != null && (tab === 'tree' || selectId != null)) {
+  if (cid != null) {
     params.set('company_id', String(cid));
   }
   const qs = params.toString();

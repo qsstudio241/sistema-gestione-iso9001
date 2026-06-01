@@ -538,7 +538,27 @@
   box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.12);
 }
 
-.tree-company-scope-select {
+.docregistry-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.docregistry-scope-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docregistry-scope-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+.docregistry-scope-select {
   min-width: 200px;
   padding: 7px 12px;
   border: 1px solid #d1d5db;
@@ -549,10 +569,20 @@
   font-weight: 500;
   cursor: pointer;
 }
-.tree-company-scope-select:focus {
+
+.docregistry-scope-select:focus {
   outline: none;
   border-color: #1e3a5f;
   box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.12);
+}
+
+.catalog-scope-hint {
+  font-size: 0.85rem;
+  color: #4b5563;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* ─── Nodo clausola nell'albero per-standard ──────────────────────────────── */

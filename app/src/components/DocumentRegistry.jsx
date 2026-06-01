@@ -20,6 +20,10 @@ import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
+import {
+  resolveInitialRegistryCompanyScope,
+  persistRegistryCompanyScope,
+} from "../utils/documentRegistryCompanyScope";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
@@ -612,10 +616,10 @@ function CatalogView({
             <option value="obsoleto">Obsoleto</option>
           </select>
           {companies.length > 0 && (
-            <select value={filters.company_id} onChange={(e) => setFilter("company_id", e.target.value)}>
-              <option value="">Tutte le aziende</option>
-              {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <span className="catalog-scope-hint">
+              {"Ambito: "}
+              {filters.scopeCompanyName}
+            </span>
           )}
           <label className="filter-check">
             <input
@@ -638,7 +642,6 @@ function CatalogView({
             onClick={() => {
               setFilter("doc_type", "");
               setFilter("status", "");
-              setFilter("company_id", "");
               setFilter("standard_id", "");
               setFilter("search", "");
               setFilter("expiring_days", null);
@@ -889,9 +892,9 @@ function DocumentRegistry() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
-  // Ambito azienda tab Albero ("" = tutto lo studio)
-  const [treeCompanyId, setTreeCompanyId] = useState(
-    initialUrl.companyId != null ? String(initialUrl.companyId) : ""
+  // Ambito azienda condiviso (Priorità / Catalogo / Albero)
+  const [registryCompanyScope, setRegistryCompanyScope] = useState(() =>
+    resolveInitialRegistryCompanyScope(initialUrl.companyId)
   );
 
   // Dati
@@ -899,8 +902,8 @@ function DocumentRegistry() {
   const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
 
-  // Albero documentale (filtrato per treeCompanyId se impostato)
-  const tree = useDocumentTree(treeCompanyId || null);
+  // Albero documentale (filtrato per registryCompanyScope se impostato)
+  const tree = useDocumentTree(registryCompanyScope || null);
   const { width: treeSidebarWidth, startResize: startTreeSidebarResize } = useDocTreeSidebarWidth();
 
   // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
@@ -944,7 +947,6 @@ function DocumentRegistry() {
     search: "",
     doc_type: "",
     status: "",
-    company_id: "",
     standard_id: "",
     expiring_days: null,
     without_file: false,
@@ -967,17 +969,30 @@ function DocumentRegistry() {
 
   const LIMIT = 20;
 
+  const scopeCompanyName = useMemo(() => {
+    if (!registryCompanyScope) return "Tutto lo studio";
+    const match = companies.find(
+      (c) => String(c.id || c.company_id) === String(registryCompanyScope)
+    );
+    return match?.name || `Azienda #${registryCompanyScope}`;
+  }, [registryCompanyScope, companies]);
+
+  const catalogFilters = useMemo(
+    () => ({ ...filters, scopeCompanyName }),
+    [filters, scopeCompanyName]
+  );
+
   const syncRegistryUrl = useCallback(
-    (tab, selectId = null, companyId = treeCompanyId) => {
+    (tab, selectId = null, companyId = registryCompanyScope) => {
       replace(
         buildDocumentRegistryPath({
           tab,
           selectId: tab === "tree" ? selectId : null,
-          companyId: tab === "tree" && companyId ? companyId : null,
+          companyId: companyId || null,
         })
       );
     },
-    [replace, treeCompanyId]
+    [replace, registryCompanyScope]
   );
 
   const handleTabChange = useCallback(
@@ -999,9 +1014,9 @@ function DocumentRegistry() {
       const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
       if (tab) setActiveTab(tab);
       if (companyId != null) {
-        setTreeCompanyId(String(companyId));
-      } else if (tab === "tree") {
-        setTreeCompanyId("");
+        const scope = String(companyId);
+        setRegistryCompanyScope(scope);
+        persistRegistryCompanyScope(scope);
       }
       if (selectId != null) {
         deepLinkSelectRef.current = selectId;
@@ -1024,6 +1039,7 @@ function DocumentRegistry() {
     try {
       const orgStandards = (standards || []).map(s => s.standard_code).filter(Boolean);
       await apiService.provisionDocumentTree({
+        ...(registryCompanyScope && { company_id: parseInt(registryCompanyScope, 10) }),
         standard_codes: orgStandards,
       });
       await tree.loadTree();
@@ -1032,7 +1048,7 @@ function DocumentRegistry() {
     } finally {
       setProvisioning(false);
     }
-  }, [standards, tree]);
+  }, [standards, tree, registryCompanyScope]);
 
   // ─── Caricamento dati ────────────────────────────────────────────────────
 
@@ -1046,10 +1062,13 @@ function DocumentRegistry() {
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
     try {
+      const companyFilter = registryCompanyScope
+        ? { company_id: registryCompanyScope }
+        : {};
       const [expRes, revRes, noFileRes] = await Promise.all([
-        apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50 }),
-        apiService.getDocuments({ status: "in_revisione", limit: 20 }),
-        apiService.getDocuments({ without_file: 1, status: "rilasciato", limit: 30 }),
+        apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50, ...companyFilter }),
+        apiService.getDocuments({ status: "in_revisione", limit: 20, ...companyFilter }),
+        apiService.getDocuments({ without_file: 1, status: "rilasciato", limit: 30, ...companyFilter }),
       ]);
       setPriorityDocs([
         ...(expRes.data || []),
@@ -1058,7 +1077,7 @@ function DocumentRegistry() {
       setReleasedWithoutFileDocs(noFileRes.data || []);
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
-  }, []);
+  }, [registryCompanyScope]);
 
   const loadCatalog = useCallback(async () => {
     setLoadingCatalog(true);
@@ -1069,7 +1088,7 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(registryCompanyScope && { company_id: registryCompanyScope }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
@@ -1083,7 +1102,7 @@ function DocumentRegistry() {
     } finally {
       setLoadingCatalog(false);
     }
-  }, [catalogPage, filters]);
+  }, [catalogPage, filters, registryCompanyScope]);
 
   const loadAuxiliary = useCallback(async () => {
     try {
@@ -1106,29 +1125,34 @@ function DocumentRegistry() {
   useEffect(() => {
     loadAuxiliary();
     loadStats();
-    loadPriorityDocs();
     loadOrphans();
-  }, [loadAuxiliary, loadStats, loadPriorityDocs, loadOrphans]);
+  }, [loadAuxiliary, loadStats, loadOrphans]);
 
   useEffect(() => {
     if (activeTab === "catalog") loadCatalog();
   }, [activeTab, loadCatalog]);
 
   useEffect(() => {
-    if (activeTab === "tree") tree.loadTree();
-  }, [activeTab, treeCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
+    loadPriorityDocs();
+  }, [registryCompanyScope, loadPriorityDocs]);
 
-  const handleTreeCompanyChange = useCallback(
+  useEffect(() => {
+    if (activeTab === "tree") tree.loadTree();
+  }, [activeTab, registryCompanyScope]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRegistryCompanyChange = useCallback(
     (value) => {
-      setTreeCompanyId(value);
+      setRegistryCompanyScope(value);
+      persistRegistryCompanyScope(value);
+      setCatalogPage(1);
       tree.resetSelection();
       setTreeListDocs([]);
       setShowDetail(false);
       setSelectedDoc(null);
       setDocHistory([]);
-      syncRegistryUrl("tree", null, value);
+      syncRegistryUrl(activeTab, null, value);
     },
-    [tree, syncRegistryUrl]
+    [tree, syncRegistryUrl, activeTab]
   );
 
   // Quando si seleziona un nodo nell'albero, carica i documenti figli
@@ -1136,11 +1160,11 @@ function DocumentRegistry() {
     tree.selectNode(nodeId);
     setTreeListLoading(true);
     try {
-      const res = await apiService.getDocumentTreeChildren(nodeId, treeCompanyId || null);
+      const res = await apiService.getDocumentTreeChildren(nodeId, registryCompanyScope || null);
       setTreeListDocs(res.data || []);
     } catch { setTreeListDocs([]); }
     finally { setTreeListLoading(false); }
-  }, [tree, treeCompanyId]);
+  }, [tree, registryCompanyScope]);
 
   // Quando si seleziona una clausola nell'albero per-standard
   const handleClauseSelect = useCallback(async (clauseCode) => {
@@ -1256,7 +1280,7 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(registryCompanyScope && { company_id: registryCompanyScope }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
@@ -1398,7 +1422,33 @@ function DocumentRegistry() {
             </span>
           )}
         </div>
-        <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+        <div className="docregistry-header-actions">
+          {companies.length > 0 && (
+            <div className="docregistry-scope-wrap">
+              <label className="docregistry-scope-label" htmlFor="docregistry-company-scope">
+                {"Ambito:"}
+              </label>
+              <select
+                id="docregistry-company-scope"
+                className="docregistry-scope-select"
+                value={registryCompanyScope}
+                onChange={(e) => handleRegistryCompanyChange(e.target.value)}
+                aria-label="Ambito registro documenti"
+              >
+                <option value="">{"Tutto lo studio"}</option>
+                {companies.map((c) => {
+                  const id = c.id || c.company_id;
+                  return (
+                    <option key={id} value={String(id)}>
+                      {c.name}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+          <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+        </div>
       </div>
 
       {/* Errore archiviazione */}
@@ -1494,7 +1544,7 @@ function DocumentRegistry() {
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
           onReload={loadCatalog}
-          filters={filters}
+          filters={catalogFilters}
           setFilter={setFilter}
           onExport={handleExport}
           companies={companies}
@@ -1534,30 +1584,8 @@ function DocumentRegistry() {
             </div>
           ) : (
           <>
-          {/* Ambito studio / azienda + selettore vista albero */}
+          {/* Selettore vista albero */}
           <div className="tree-view-toolbar">
-            <div className="tree-view-selector">
-              <label className="tree-view-selector__label" htmlFor="tree-company-scope">
-                {"Ambito:"}
-              </label>
-              <select
-                id="tree-company-scope"
-                className="tree-company-scope-select"
-                value={treeCompanyId}
-                onChange={(e) => handleTreeCompanyChange(e.target.value)}
-                aria-label="Ambito albero documentale"
-              >
-                <option value="">{"Tutto lo studio"}</option>
-                {companies.map((c) => {
-                  const id = c.id || c.company_id;
-                  return (
-                    <option key={id} value={String(id)}>
-                      {c.name}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
             <div className="tree-view-selector">
               <label className="tree-view-selector__label" htmlFor="tree-view-mode">
                 {"Vista:"}
@@ -1851,6 +1879,7 @@ function DocumentRegistry() {
           companies={companies}
           standards={standards}
           defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
+          defaultCompanyId={!editingDoc && registryCompanyScope ? registryCompanyScope : undefined}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />

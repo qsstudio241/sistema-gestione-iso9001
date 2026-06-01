@@ -100,7 +100,7 @@ function StepIndicator({ step }) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId }) {
+function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId }) {
   const isEdit = !!doc;
 
   const [step, setStep] = useState(1);
@@ -118,7 +118,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     retention_years: doc?.retention_years || '',
     standard_id:     doc?.standard_id     || '',
     clause_ref:      doc?.clause_ref      || '',
-    company_id:      doc?.company_id      || '',
+    company_id:      doc?.company_id      || defaultCompanyId || '',
     notes:           doc?.notes           || '',
   });
 
