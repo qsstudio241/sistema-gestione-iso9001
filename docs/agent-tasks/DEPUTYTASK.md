@@ -1,28 +1,28 @@
-# DEPUTYTASK — RBAC Fase 2 (chiuso)
+# DEPUTYTASK — Registro documenti slice D1 (chiuso)
 
-**Stato:** CHIUSO — **TEST OK** (31/05/2026)  
-**Branch:** `feat/rbac-phase-2-nc-attachments-registry`  
-**PR:** #76 (merge su `main` in chiusura sessione)
+**Stato:** CHIUSO — **TEST OK** (01/06/2026)  
+**Branch:** `cursor/doc-tree-company-scope-d1-9c87`  
+**PR:** (aperta da cloud agent)
 
 ## Esito
 
-RBAC Fase 2: scope studio su write path audit, NC, allegati e document registry. Jest L1 **22/22**. Smoke L3 a fette (`.cursor/rbac-smoke-l3-phase2.mjs`) — slice audit + nc **TEST OK**.
+Slice **D1**: selettore ambito azienda sulla tab **Albero** del Registro documenti.
 
-## Riferimenti
+- UI: «Tutto lo studio» / singola azienda (come Ricerca SGQ)
+- API: `GET /documents/tree?company_id=` e figli lazy con stesso filtro
+- URL: `?tab=tree&company_id=` (+ `select` per deep link)
+- Cartelle custom: aggiunta ok; cartelle provisioning (`is_system_folder`) non modificabili/eliminabili (invariato)
 
-| Voce | Dettaglio |
-|------|-----------|
-| Architettura | [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7 |
-| Smoke L3 | `node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data` |
-| Cleanup | `node .cursor/rbac-smoke-l3-phase2.mjs --cleanup` |
-| Esperienza | `GUIDA_CONSOLIDATA.md` — Esperienza 31/05/2026 RBAC Fase 2 |
+## Test L1
 
-## Prossimo task
+- `documentRegistryUrl.test.js` (+ company_id)
+- `useDocumentTree.companyScope.test.js` (4 test)
 
-**Lead committente:** Fase 3 backlog RBAC / hardening attach+registry in smoke, oppure priorità roadmap corrente.
+## Smoke L3 (manuale)
 
-## Comando deputy (archivio)
+Registro documenti → tab Albero → cambiare ambito → verificare in Network `company_id` su tree/children.
 
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+## Prossimo backlog
+
+- **D2**: scope condiviso Priorità + Catalogo; `localStorage` opzionale
+- **D3**: provisioning albero per singola `company` alla creazione cliente

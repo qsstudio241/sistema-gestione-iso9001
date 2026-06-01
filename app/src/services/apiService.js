@@ -1276,8 +1276,20 @@ class ApiService {
     async deleteDocumentRelation(relationId)    { return this.delete(`/document-relations/${relationId}`); }
 
     // ─── Document Tree ──────────────────────────────────────────────────────
-    async getDocumentTree(depth = 2)            { return this.get(`/documents/tree?depth=${depth}`); }
-    async getDocumentTreeChildren(parentId)     { return this.get(`/documents/tree/${parentId}/children`); }
+    async getDocumentTree(depth = 2, companyId = null) {
+        let url = `/documents/tree?depth=${depth}`;
+        if (companyId != null && companyId !== '') {
+            url += `&company_id=${encodeURIComponent(companyId)}`;
+        }
+        return this.get(url);
+    }
+    async getDocumentTreeChildren(parentId, companyId = null) {
+        let url = `/documents/tree/${parentId}/children`;
+        if (companyId != null && companyId !== '') {
+            url += `?company_id=${encodeURIComponent(companyId)}`;
+        }
+        return this.get(url);
+    }
     async moveDocument(docId, data)             { return this.put(`/documents/${docId}/move`, data); }
     async createFolder(data)                    { return this.post('/documents/folder', data); }
     async getDocumentBreadcrumb(docId)          { return this.get(`/documents/${docId}/breadcrumb`); }
