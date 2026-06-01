@@ -40,7 +40,7 @@ describe('documentRegistryUrl', () => {
     expect(parsed.tab).toBe('tree');
   });
 
-  it('buildDocumentRegistryPath include company_id sulla tab albero', () => {
+  it('buildDocumentRegistryPath include company_id su tutte le tab', () => {
     expect(buildDocumentRegistryPath({ tab: 'tree', companyId: 5 })).toBe(
       '/documents?tab=tree&company_id=5'
     );
@@ -48,7 +48,10 @@ describe('documentRegistryUrl', () => {
       '/documents?tab=tree&select=9&company_id=3'
     );
     expect(buildDocumentRegistryPath({ tab: 'catalog', companyId: 3 })).toBe(
-      '/documents?tab=catalog'
+      '/documents?tab=catalog&company_id=3'
+    );
+    expect(buildDocumentRegistryPath({ tab: 'priority', companyId: 7 })).toBe(
+      '/documents?company_id=7'
     );
   });
 
