@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const { query, getPool, sql } = require('../config/database');
 const logger = require('../utils/logger');
 const workflow = require('../services/contractReviewWorkflow.service');
+const crNotify = require('../services/contractReviewNotification.service');
 const contextBuilder = require('../services/aiContextBuilder.service');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
@@ -338,7 +339,18 @@ async function updateCase(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        return res.json(upd.recordset[0]);
+        const updatedRow = upd.recordset[0];
+        if (assigneeRaw !== undefined && assigneeId !== existing.current_assignee_id) {
+            await crNotify.notifyAfterAssigneeChange({
+                organizationId,
+                caseRow: updatedRow,
+                previousAssigneeId: existing.current_assignee_id,
+                newAssigneeId: assigneeId,
+                actorUserId: req.user.user_id,
+            });
+        }
+
+        return res.json(updatedRow);
     } catch (err) {
         logger.error('updateCase', err.message);
         return sendErr(res, 500, err.message, 'SERVER_ERROR');
@@ -438,6 +450,13 @@ async function transitionStatus(req, res) {
         await transaction.commit();
 
         const refreshed = await fetchCaseRow(caseId, organizationId);
+        await crNotify.notifyAfterStatusTransition({
+            organizationId,
+            caseRow: refreshed,
+            fromStatus,
+            toStatus,
+            actorUserId: userId,
+        });
         return res.json(refreshed);
     } catch (err) {
         try {

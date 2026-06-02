@@ -39,6 +39,11 @@ jest.mock('../services/contractReviewWorkflow.service', () => {
   };
 });
 
+jest.mock('../services/contractReviewNotification.service', () => ({
+  notifyAfterStatusTransition: jest.fn().mockResolvedValue(null),
+  notifyAfterAssigneeChange: jest.fn().mockResolvedValue(null),
+}));
+
 const { query, getPool, sql } = require('../config/database');
 const ctrl = require('./contractReview.controller');
 
