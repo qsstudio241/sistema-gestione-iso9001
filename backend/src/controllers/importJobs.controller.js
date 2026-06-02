@@ -69,7 +69,7 @@ async function getJob(req, res) {
         if (!j.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
         const files = await query(
             `SELECT id, original_name, mime_type, file_size, status, confidence_score,
-                    reviewed_by, reviewed_at, created_at,
+                    reviewed_by, reviewed_at, created_at, commercial_case_id,
                     extracted_text, error_message, reviewer_notes,
                     ai_extraction_json, ai_extraction_error, ai_extraction_at, ai_model
              FROM import_job_files WHERE job_id = @id ORDER BY id`,
