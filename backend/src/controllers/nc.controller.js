@@ -9,11 +9,43 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const {
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
     const role = user?.role;
     return role === 'admin' || role === 'superadmin';
+}
+
+/** Verifica scope NC + permesso write (RBAC Fase 4.1). */
+async function assertNcWriteAccess(req, res, ncId) {
+    const { organization_id } = req.user;
+    const scope = studioScopeClause(req.user, 'a');
+    const scopeSql = appendScopeSql(scope);
+    const result = await query(`
+      SELECT nc.nc_id, a.company_id, a.audit_id
+      FROM non_conformities nc
+      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE nc.nc_id = @id AND a.organization_id = @organization_id
+        ${scopeSql}
+    `, { id: parseInt(ncId, 10), organization_id, ...scope.params });
+
+    if (result.recordset.length === 0) {
+        return { notFound: true };
+    }
+
+    const writeDenied = await assertMutatingAllowed(req.user, {
+        companyId: result.recordset[0].company_id,
+    });
+    if (writeDenied) {
+        sendAccessDenied(res, writeDenied);
+        return { denied: true };
+    }
+
+    return { row: result.recordset[0] };
 }
 
 /** Risolve contact_id rubrica → nome testo fallback (retrocompatibilità). */
@@ -365,7 +397,7 @@ async function createNonConformity(req, res) {
             Object.assign(auditParams, scope.params);
         }
         const auditCheck = await query(`
-      SELECT audit_id FROM audits a
+      SELECT audit_id, company_id FROM audits a
       WHERE ${auditWhere}
     `, auditParams);
 
@@ -375,6 +407,11 @@ async function createNonConformity(req, res) {
                 code: 'AUDIT_NOT_FOUND'
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: auditCheck.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         // Recupera il primo standard_id dalla junction table audit_standards
         const standardResult = await query(`
@@ -536,7 +573,7 @@ async function updateNonConformity(req, res) {
 
         // Verifica esistenza, ownership org e perimetro studio RBAC
         const existingNC = await query(`
-      SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at, a.audit_id
+      SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at, a.audit_id, a.company_id
       FROM non_conformities nc
       INNER JOIN audits a ON nc.audit_id = a.audit_id
       WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
@@ -548,6 +585,11 @@ async function updateNonConformity(req, res) {
                 code: 'NC_NOT_FOUND'
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existingNC.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const currentStatus = existingNC.recordset[0].current_status;
         const audit_id = existingNC.recordset[0].audit_id;
@@ -777,6 +819,9 @@ async function deleteNonConformity(req, res) {
             });
         }
 
+        const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.denied) return;
+
         const audit_id = existingNC.recordset[0].audit_id;
 
         // Delete NC (CASCADE elimina anche attachments)
@@ -957,6 +1002,9 @@ async function createNcAction(req, res) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
         }
 
+        const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.denied) return;
+
         const responsibleResolved = await resolveNotificationContact(
             organization_id, responsible_contact_id, responsible,
         );
@@ -1018,6 +1066,9 @@ async function updateNcAction(req, res) {
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
         }
+
+        const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.denied) return;
 
         const updates = [];
         const params = { actionId: parseInt(actionId) };
@@ -1126,6 +1177,9 @@ async function deleteNcAction(req, res) {
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
         }
+
+        const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.denied) return;
 
         await query(`DELETE FROM nc_actions WHERE action_id = @actionId`, { actionId: parseInt(actionId) });
 

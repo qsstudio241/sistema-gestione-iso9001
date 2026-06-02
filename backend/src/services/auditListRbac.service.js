@@ -1,8 +1,38 @@
 /**
  * Filtro RBAC lista/dettaglio audit per tenant + studio (auditor org).
+ * Fase 4.1: company_access ha precedenza su auditor_org_id (cliente azienda).
  * Allineato a docs/ARCHITETTURA_UTENTI_RBAC: senza studio assegnato, auditor/viewer
  * non devono leggere audit di altri studi (solo i propri finché non viene assegnato uno studio).
  */
+
+function hasCompanyAccessRows(accessList) {
+    return Array.isArray(accessList) && accessList.length > 0;
+}
+
+/**
+ * Scope per utenti con user_company_access: solo company_id assegnate.
+ * @param {object} reqUser
+ * @param {string} tableAlias
+ * @param {string} [companyColumn='company_id']
+ */
+function companyAccessScopeClause(reqUser, tableAlias = 'a', companyColumn = 'company_id') {
+    const access = reqUser?.company_access;
+    if (!hasCompanyAccessRows(access)) {
+        return null;
+    }
+    const params = {};
+    const inParts = access.map((row, i) => {
+        const key = `ca_scope_${i}`;
+        params[key] = row.company_id;
+        return `@${key}`;
+    });
+    const t = tableAlias;
+    const col = companyColumn;
+    return {
+        clause: `${t}.${col} IN (${inParts.join(', ')})`,
+        params,
+    };
+}
 
 function hasNoStudio(auditorOrgId) {
     return auditorOrgId == null || auditorOrgId === '';
@@ -33,6 +63,11 @@ function studioScopeClause(reqUser, tableAlias = 'a') {
     const t = tableAlias;
     const { auditor_org_id, role, user_id } = reqUser;
     const r = normalizeRole(role);
+
+    const companyScope = companyAccessScopeClause(reqUser, t);
+    if (companyScope) {
+        return companyScope;
+    }
 
     if (isOrgWideAdmin(reqUser)) {
         return { clause: '', params: {} };
@@ -81,6 +116,11 @@ function documentRegistryScopeClause(reqUser, tableAlias = 'dr') {
     const { auditor_org_id, role, user_id } = reqUser;
     const r = normalizeRole(role);
 
+    const companyScope = companyAccessScopeClause(reqUser, t);
+    if (companyScope) {
+        return companyScope;
+    }
+
     if (isOrgWideAdmin(reqUser)) {
         return { clause: '', params: {} };
     }
@@ -108,6 +148,8 @@ function documentRegistryScopeClause(reqUser, tableAlias = 'dr') {
 module.exports = {
     isOrgWideAdmin,
     hasNoStudio,
+    hasCompanyAccessRows,
+    companyAccessScopeClause,
     normalizeRole,
     studioScopeClause,
     appendScopeSql,

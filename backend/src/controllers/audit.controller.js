@@ -10,6 +10,10 @@ const { getAllowedStandardIds } = require('./auth.controller');
 // assertWriteAllowed rimosso in T5 (lock solo UX, non blocca le scritture sul server)
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const {
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 const { resolveAuditForUser } = require('../services/auditLock.service');
 const { validateAuditDateRange } = require('../utils/auditDateRange');
 
@@ -266,6 +270,9 @@ async function createAudit(req, res) {
                 required: ['client_name', 'project_year', 'audit_date', 'auditor_name', 'audit_type']
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         let audit_number;
         const maxAttempts = 5;

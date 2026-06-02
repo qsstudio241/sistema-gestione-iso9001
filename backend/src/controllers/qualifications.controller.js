@@ -13,6 +13,12 @@
 
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // Soglie semaforo (giorni)
 const DAYS_WARNING = 60;   // giallo: scade entro 60 giorni
@@ -40,6 +46,8 @@ async function listQualifications(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'q');
         const {
             search = '', company_id = '', status = '',
             person_name = '', expiring_days = '',
@@ -49,7 +57,9 @@ async function listQualifications(req, res) {
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
         let where = ['q.organization_id = @orgId'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
         const r = pool.request().input('orgId', orgId).input('lim', parseInt(limit)).input('off', offset);
+        Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
 
         if (search) { r.input('search', `%${search}%`); where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)"); }
         if (company_id) { r.input('companyId', parseInt(company_id)); where.push('q.company_id = @companyId'); }
@@ -157,9 +167,6 @@ async function getOne(req, res) {
 /** POST /qualifications */
 async function createQualification(req, res) {
     try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
-        const userId = req.user.id;
         const {
             company_id, person_name, person_code, department,
             qualification_type, standard_ref, scope_detail,
@@ -172,6 +179,13 @@ async function createQualification(req, res) {
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona è obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica è obbligatorio.' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const userId = req.user.id;
 
         const r = await pool.request()
             .input('orgId',     orgId)
@@ -234,8 +248,12 @@ async function updateQualification(req, res) {
         } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const targetCompanyId = company_id !== undefined ? company_id : check.recordset[0].company_id;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: targetCompanyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await pool.request()
             .input('id',        id)
@@ -286,8 +304,11 @@ async function deleteQualification(req, res) {
         const id    = parseInt(req.params.id);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await pool.request().input('id', id).input('orgId', orgId)
             .query("UPDATE qualifications SET status='revocata', updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId");

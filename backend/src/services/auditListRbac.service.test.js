@@ -83,6 +83,20 @@ describe('documentRegistryScopeClause', () => {
         expect(s.params).toMatchObject({ auditor_org_id: 10, user_id: 3 });
     });
 
+    it('cliente azienda → filtro company_id assegnate', () => {
+        const s = documentRegistryScopeClause(
+            {
+                user_id: 8,
+                role: 'viewer',
+                auditor_org_id: 10,
+                company_access: [{ company_id: 11, permission: 'read' }],
+            },
+            'dr',
+        );
+        expect(s.clause).toContain('dr.company_id IN');
+        expect(s.params.ca_scope_0).toBe(11);
+    });
+
     it('admin senza studio → org-wide', () => {
         const s = documentRegistryScopeClause(
             { user_id: 1, role: 'admin', auditor_org_id: null },
