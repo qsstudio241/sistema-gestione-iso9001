@@ -162,6 +162,7 @@ Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/
 Copy-FileToVps "src/services/customChecklist.service.js" "$RemoteBase/src/services/customChecklist.service.js"
 Copy-FileToVps "src/services/reportTemplate.service.js" "$RemoteBase/src/services/reportTemplate.service.js"
 Copy-FileToVps "src/services/unifiedSearch.service.js" "$RemoteBase/src/services/unifiedSearch.service.js"
+Copy-FileToVps "src/services/companyAccess.service.js" "$RemoteBase/src/services/companyAccess.service.js"
 
 Write-Host "OK. Riavvio backend sul VPS..." -ForegroundColor Cyan
 
