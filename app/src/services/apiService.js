@@ -1575,6 +1575,81 @@ class ApiService {
         return this.put(`/contract-reviews/${caseId}/checklist/${itemId}`, data);
     }
 
+    async getContractReviewSummary() {
+        return this.get('/contract-reviews/summary');
+    }
+
+    async getContractReviewInbox(kind = 'assigned_to_me', limit = 20) {
+        const qs = new URLSearchParams({ kind, limit: String(limit) }).toString();
+        return this.get(`/contract-reviews/inbox?${qs}`);
+    }
+
+    async getContractReviewTransitionOptions(caseId) {
+        return this.get(`/contract-reviews/${caseId}/transition-options`);
+    }
+
+    async getContractReviewClarifications(caseId) {
+        return this.get(`/contract-reviews/${caseId}/clarifications`);
+    }
+
+    async createContractReviewClarification(caseId, data) {
+        return this.post(`/contract-reviews/${caseId}/clarifications`, data);
+    }
+
+    async updateContractReviewClarification(caseId, clarificationId, data) {
+        return this.patch(`/contract-reviews/${caseId}/clarifications/${clarificationId}`, data);
+    }
+
+    async getContractReviewDocuments(caseId) {
+        return this.get(`/contract-reviews/${caseId}/documents`);
+    }
+
+    async linkContractReviewDocument(caseId, data) {
+        return this.post(`/contract-reviews/${caseId}/documents/link`, data);
+    }
+
+    async unlinkContractReviewDocument(caseId, linkId) {
+        return this.delete(`/contract-reviews/${caseId}/documents/${linkId}`);
+    }
+
+    async getContractReviewAttachments(caseId) {
+        return this.get(`/contract-reviews/${caseId}/attachments`);
+    }
+
+    async uploadContractReviewAttachment(caseId, file, options = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (options.category) formData.append('category', options.category);
+        if (options.description) formData.append('description', options.description);
+        if (options.direction) formData.append('direction', options.direction);
+        if (options.counterparty) formData.append('counterparty', options.counterparty);
+        if (options.doc_role) formData.append('doc_role', options.doc_role);
+
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/contract-reviews/${caseId}/attachments/upload`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Upload allegato fallito',
+                response.status,
+                errorData.code || 'UPLOAD_ERROR',
+                errorData,
+            );
+        }
+        return response.json();
+    }
+
+    async analyzeContractRequirements(caseId, body = {}) {
+        return this.post(`/contract-reviews/${caseId}/ai/analyze-requirements`, body, {
+            timeout: 90000,
+        });
+    }
+
     async aiSuggest(feature, context) {
         return this.post('/ai/suggest', { feature, context }, { timeout: 90000 });
     }

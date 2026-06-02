@@ -2,45 +2,16 @@
  * contractReview.controller.js — Riesame requisiti contratto / ciclo commerciale (commercial_cases)
  */
 
+const path = require('path');
+const fs = require('fs').promises;
 const { query, getPool, sql } = require('../config/database');
 const logger = require('../utils/logger');
+const workflow = require('../services/contractReviewWorkflow.service');
+const contextBuilder = require('../services/aiContextBuilder.service');
+const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 
-/** Stati ammessi sul workflow lineare + terminali */
-const CASE_STATUSES = new Set([
-    'DRAFT',
-    'INTAKE_REVIEW',
-    'CLARIFICATION',
-    'QUOTE_PREP',
-    'QUOTE_APPROVAL',
-    'QUOTE_SENT',
-    'ORDER_RECEIVED',
-    'FINAL_REVIEW',
-    'APPROVED',
-    'CANCELLED',
-    'REJECTED',
-]);
-
-/** Transizioni esplicite (esclusi CANCELLED / REJECTED gestiti come “any”) */
-const ALLOWED_STATUS_TRANSITIONS = {
-    DRAFT: ['INTAKE_REVIEW'],
-    INTAKE_REVIEW: ['CLARIFICATION', 'QUOTE_PREP', 'DRAFT'],
-    CLARIFICATION: ['INTAKE_REVIEW', 'QUOTE_PREP'],
-    QUOTE_PREP: ['QUOTE_APPROVAL', 'INTAKE_REVIEW'],
-    QUOTE_APPROVAL: ['QUOTE_SENT', 'QUOTE_PREP'],
-    QUOTE_SENT: ['ORDER_RECEIVED', 'CANCELLED'],
-    ORDER_RECEIVED: ['FINAL_REVIEW'],
-    FINAL_REVIEW: ['APPROVED', 'ORDER_RECEIVED'],
-};
-
-/** Coppie from→to che sono “indietro” e richiedono motivazione */
-const BACKWARD_TRANSITION_KEYS = new Set([
-    'INTAKE_REVIEW|DRAFT',
-    'CLARIFICATION|INTAKE_REVIEW',
-    'QUOTE_PREP|INTAKE_REVIEW',
-    'QUOTE_APPROVAL|QUOTE_PREP',
-    'FINAL_REVIEW|ORDER_RECEIVED',
-]);
-
+const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
 
 const PRELIMINARY_ITEMS = [
@@ -79,19 +50,6 @@ function parseCaseId(raw) {
 function parseItemId(raw) {
     const id = parseInt(String(raw), 10);
     return Number.isFinite(id) && id > 0 ? id : null;
-}
-
-function requiresTransitionReason(fromStatus, toStatus) {
-    if (toStatus === 'CANCELLED' || toStatus === 'REJECTED') return true;
-    return BACKWARD_TRANSITION_KEYS.has(`${fromStatus}|${toStatus}`);
-}
-
-function isTransitionAllowed(fromStatus, toStatus) {
-    if (fromStatus === toStatus) return false;
-    if (TERMINAL_FROM_STATUSES.has(fromStatus)) return false;
-    if (toStatus === 'CANCELLED' || toStatus === 'REJECTED') return true;
-    const next = ALLOWED_STATUS_TRANSITIONS[fromStatus];
-    return Array.isArray(next) && next.includes(toStatus);
 }
 
 function normalizeReason(reason) {
@@ -151,7 +109,7 @@ async function getCase(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        const [historyRes, checklistRes] = await Promise.all([
+        const [historyRes, checklistRes, clarRes, docRes, attRes] = await Promise.all([
             query(
                 `
                 SELECT id, case_id, from_status, to_status, changed_by, reason, created_at
@@ -170,12 +128,45 @@ async function getCase(req, res) {
                 `,
                 { caseId },
             ),
+            query(
+                `
+                SELECT id, case_id, message, due_date, response_text, resolved_at, created_by, created_at, updated_at
+                FROM commercial_case_clarifications
+                WHERE case_id = @caseId
+                ORDER BY id ASC
+                `,
+                { caseId },
+            ).catch(() => ({ recordset: [] })),
+            query(
+                `
+                SELECT ccd.id, ccd.case_id, ccd.document_id, ccd.doc_role, ccd.direction, ccd.counterparty,
+                       ccd.linked_at, dr.title AS document_title, dr.doc_type
+                FROM commercial_case_documents ccd
+                INNER JOIN document_registry dr ON dr.id = ccd.document_id
+                WHERE ccd.case_id = @caseId AND dr.organization_id = @organizationId
+                ORDER BY ccd.linked_at DESC
+                `,
+                { caseId, organizationId },
+            ).catch(() => ({ recordset: [] })),
+            query(
+                `
+                SELECT attachment_id, attachment_uuid, file_name, file_size, mime_type, category,
+                       commercial_direction, commercial_counterparty, commercial_doc_role, created_at
+                FROM attachments
+                WHERE commercial_case_id = @caseId
+                ORDER BY created_at DESC
+                `,
+                { caseId },
+            ).catch(() => ({ recordset: [] })),
         ]);
 
         return res.json({
             case: caseRow,
             history: historyRes.recordset,
             checklist: checklistRes.recordset,
+            clarifications: clarRes.recordset,
+            documents: docRes.recordset,
+            attachments: attRes.recordset,
         });
     } catch (err) {
         logger.error('getCase', err.message);
@@ -372,13 +363,23 @@ async function transitionStatus(req, res) {
         }
 
         const fromStatus = row.status;
-        if (!isTransitionAllowed(fromStatus, toStatus)) {
+        if (!workflow.isTransitionAllowed(fromStatus, toStatus)) {
             await transaction.rollback();
             return sendErr(res, 400, 'Transizione di stato non consentita', 'INVALID_TRANSITION');
         }
 
+        const gate = await workflow.evaluateTransitionBlockers(caseId, fromStatus, toStatus);
+        if (gate.blocked) {
+            await transaction.rollback();
+            return res.status(409).json({
+                error: 'Requisiti mancanti per la transizione',
+                code: 'TRANSITION_BLOCKED',
+                missing_requirements: gate.missing,
+            });
+        }
+
         const reasonNorm = normalizeReason(reason);
-        if (requiresTransitionReason(fromStatus, toStatus)) {
+        if (workflow.requiresTransitionReason(fromStatus, toStatus)) {
             if (!reasonNorm) {
                 await transaction.rollback();
                 return sendErr(
@@ -568,6 +569,394 @@ async function generateChecklist(req, res) {
     }
 }
 
+async function getSummary(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const r = await query(
+            `
+            SELECT
+              COUNT(*) AS total,
+              SUM(CASE WHEN status NOT IN ('APPROVED','CANCELLED','REJECTED') THEN 1 ELSE 0 END) AS open_count,
+              SUM(CASE WHEN current_assignee_id = @userId AND status NOT IN ('APPROVED','CANCELLED','REJECTED') THEN 1 ELSE 0 END) AS assigned_to_me,
+              SUM(CASE WHEN status IN ('QUOTE_APPROVAL','FINAL_REVIEW') THEN 1 ELSE 0 END) AS pending_approval
+            FROM commercial_cases
+            WHERE organization_id = @organizationId
+            `,
+            { organizationId, userId },
+        );
+        return res.json(r.recordset[0] || {});
+    } catch (err) {
+        logger.error('getSummary', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function getInbox(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const kind = String(req.query.kind || 'assigned_to_me').trim();
+        const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+
+        let where = 'cc.organization_id = @organizationId AND cc.status NOT IN (\'APPROVED\',\'CANCELLED\',\'REJECTED\')';
+        if (kind === 'pending_approval') {
+            where += " AND cc.status IN ('QUOTE_APPROVAL','FINAL_REVIEW')";
+        } else if (kind === 'stale') {
+            where += ' AND cc.updated_at < DATEADD(day, -14, SYSUTCDATETIME())';
+        } else {
+            where += ' AND cc.current_assignee_id = @userId';
+        }
+
+        const r = await query(
+            `
+            SELECT TOP (@limit) cc.*, co.name AS company_name
+            FROM commercial_cases cc
+            LEFT JOIN companies co ON co.id = cc.company_id
+            WHERE ${where}
+            ORDER BY cc.updated_at DESC
+            `,
+            { organizationId, userId, limit },
+        );
+        return res.json({ kind, items: r.recordset });
+    } catch (err) {
+        logger.error('getInbox', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function getTransitionOptions(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+
+        const caseRow = await fetchCaseRow(caseId, organizationId);
+        if (!caseRow) return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+
+        const options = await workflow.buildTransitionOptions(caseRow.status, caseId);
+        return res.json({ from_status: caseRow.status, options });
+    } catch (err) {
+        logger.error('getTransitionOptions', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function listClarifications(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const r = await query(
+            `SELECT * FROM commercial_case_clarifications WHERE case_id = @caseId ORDER BY id ASC`,
+            { caseId },
+        );
+        return res.json(r.recordset);
+    } catch (err) {
+        logger.error('listClarifications', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function createClarification(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseCaseId(req.params.id);
+        const { message, due_date: dueDate } = req.body || {};
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!message || !String(message).trim()) {
+            return sendErr(res, 400, 'Il messaggio è obbligatorio', 'VALIDATION_ERROR');
+        }
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const ins = await query(
+            `
+            INSERT INTO commercial_case_clarifications (case_id, message, due_date, created_by)
+            OUTPUT INSERTED.*
+            VALUES (@caseId, @message, @dueDate, @userId)
+            `,
+            {
+                caseId,
+                message: String(message).trim(),
+                dueDate: dueDate || null,
+                userId,
+            },
+        );
+        return res.status(201).json(ins.recordset[0]);
+    } catch (err) {
+        logger.error('createClarification', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function updateClarification(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        const clarId = parseItemId(req.params.clarificationId);
+        const { response_text: responseText, resolved } = req.body || {};
+        if (!caseId || !clarId) return sendErr(res, 400, 'ID non valido', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const resolvedAt =
+            resolved === true || resolved === 'true' || resolved === 1 ? 'SYSUTCDATETIME()' : null;
+        const r = await query(
+            `
+            UPDATE commercial_case_clarifications
+            SET response_text = COALESCE(@responseText, response_text),
+                resolved_at = CASE WHEN @markResolved = 1 THEN SYSUTCDATETIME() ELSE resolved_at END,
+                updated_at = SYSUTCDATETIME()
+            OUTPUT INSERTED.*
+            WHERE id = @clarId AND case_id = @caseId
+            `,
+            {
+                clarId,
+                caseId,
+                responseText: responseText != null ? String(responseText) : null,
+                markResolved: resolvedAt ? 1 : 0,
+            },
+        );
+        if (!r.recordset.length) return sendErr(res, 404, 'Chiarimento non trovato', 'NOT_FOUND');
+        return res.json(r.recordset[0]);
+    } catch (err) {
+        logger.error('updateClarification', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function listCaseDocuments(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const r = await query(
+            `
+            SELECT ccd.*, dr.title AS document_title, dr.doc_type, dr.status AS document_status
+            FROM commercial_case_documents ccd
+            INNER JOIN document_registry dr ON dr.id = ccd.document_id
+            WHERE ccd.case_id = @caseId AND dr.organization_id = @organizationId
+            ORDER BY ccd.linked_at DESC
+            `,
+            { caseId, organizationId },
+        );
+        return res.json(r.recordset);
+    } catch (err) {
+        logger.error('listCaseDocuments', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function linkDocument(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseCaseId(req.params.id);
+        const { document_id: documentId, doc_role: docRole, direction, counterparty } = req.body || {};
+        if (!caseId || !documentId) {
+            return sendErr(res, 400, 'case id e document_id obbligatori', 'VALIDATION_ERROR');
+        }
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const docId = parseInt(documentId, 10);
+        const docCheck = await query(
+            `SELECT id FROM document_registry WHERE id = @docId AND organization_id = @organizationId`,
+            { docId, organizationId },
+        );
+        if (!docCheck.recordset.length) {
+            return sendErr(res, 404, 'Documento non trovato', 'NOT_FOUND');
+        }
+        const dir = direction === 'out' ? 'out' : 'in';
+        const cp =
+            counterparty === 'supplier' || counterparty === 'internal' ? counterparty : 'customer';
+        const role = docRole ? String(docRole).trim().substring(0, 30) : 'other';
+        const ins = await query(
+            `
+            INSERT INTO commercial_case_documents (case_id, document_id, doc_role, direction, counterparty, linked_by)
+            OUTPUT INSERTED.*
+            VALUES (@caseId, @docId, @role, @dir, @cp, @userId)
+            `,
+            { caseId, docId, role, dir, cp, userId },
+        );
+        return res.status(201).json(ins.recordset[0]);
+    } catch (err) {
+        if (String(err.message).includes('UQ_ccd_case_doc') || String(err.message).includes('UNIQUE')) {
+            return sendErr(res, 409, 'Documento già collegato al caso', 'DUPLICATE');
+        }
+        logger.error('linkDocument', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function unlinkDocument(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        const linkId = parseItemId(req.params.linkId);
+        if (!caseId || !linkId) return sendErr(res, 400, 'ID non valido', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const del = await query(
+            `DELETE FROM commercial_case_documents OUTPUT DELETED.id WHERE id = @linkId AND case_id = @caseId`,
+            { linkId, caseId },
+        );
+        if (!del.recordset.length) return sendErr(res, 404, 'Collegamento non trovato', 'NOT_FOUND');
+        return res.json({ success: true });
+    } catch (err) {
+        logger.error('unlinkDocument', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function listCaseAttachments(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const r = await query(
+            `
+            SELECT attachment_id, attachment_uuid, file_name, file_size, mime_type, category,
+                   commercial_direction, commercial_counterparty, commercial_doc_role, description, created_at
+            FROM attachments
+            WHERE commercial_case_id = @caseId
+            ORDER BY created_at DESC
+            `,
+            { caseId },
+        );
+        return res.json(r.recordset);
+    } catch (err) {
+        logger.error('listCaseAttachments', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function uploadCaseAttachment(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!req.file) return sendErr(res, 400, 'Nessun file caricato', 'VALIDATION_ERROR');
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            await fs.unlink(req.file.path).catch(() => {});
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const {
+            category = 'document',
+            description,
+            direction,
+            counterparty,
+            doc_role: docRole,
+        } = req.body || {};
+        const dir = direction === 'out' ? 'out' : 'in';
+        const cp =
+            counterparty === 'supplier' || counterparty === 'internal' ? counterparty : 'customer';
+        const result = await query(
+            `
+            INSERT INTO attachments (
+              commercial_case_id, file_name, file_type, file_size, mime_type, storage_path,
+              category, description, commercial_direction, commercial_counterparty, commercial_doc_role,
+              uploaded_by, created_at
+            )
+            OUTPUT INSERTED.attachment_id, INSERTED.attachment_uuid
+            VALUES (
+              @caseId, @fileName, @fileType, @fileSize, @mimeType, @storagePath,
+              @category, @description, @dir, @cp, @docRole,
+              @userId, GETDATE()
+            )
+            `,
+            {
+                caseId,
+                fileName: req.file.originalname,
+                fileType: path.extname(req.file.originalname).toLowerCase(),
+                fileSize: req.file.size,
+                mimeType: req.file.mimetype,
+                storagePath: req.file.path,
+                category: category || 'document',
+                description: description || null,
+                dir,
+                cp,
+                docRole: docRole ? String(docRole).trim().substring(0, 30) : null,
+                userId,
+            },
+        );
+        const row = result.recordset[0];
+        return res.status(201).json({
+            attachment_id: row.attachment_id,
+            attachment_uuid: row.attachment_uuid,
+            file_name: req.file.originalname,
+        });
+    } catch (err) {
+        if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
+        logger.error('uploadCaseAttachment', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function analyzeRequirements(req, res) {
+    try {
+        const provider = getActiveProvider();
+        if (!provider) {
+            return res.status(503).json({ error: 'Nessun provider AI configurato.', code: 'AI_NOT_CONFIGURED' });
+        }
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        const caseRow = await fetchCaseRow(caseId, organizationId);
+        if (!caseRow) return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+
+        let capitolatoText = req.body?.capitolatoText ? String(req.body.capitolatoText) : '';
+        if (!capitolatoText.trim() && caseRow.notes) {
+            capitolatoText = String(caseRow.notes);
+        }
+        if (!capitolatoText.trim()) {
+            return sendErr(res, 400, 'Fornire capitolatoText nel body o note sul caso', 'VALIDATION_ERROR');
+        }
+
+        const built = await contextBuilder.buildReviewRequirementsContext({
+            capitolatoText,
+            companyId: caseRow.company_id,
+            organizationId,
+        });
+        const systemPrompt = await enrichSystemPromptWithOrganization(built.systemPrompt, organizationId);
+        const result = await chat(
+            [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: built.userPrompt },
+            ],
+            { temperature: 0.3, responseFormat: 'json' },
+        );
+        let suggestion;
+        try {
+            suggestion = JSON.parse(String(result.content).replace(/^```json\s*/i, '').replace(/\s*```$/i, ''));
+        } catch {
+            suggestion = { raw: result.content };
+        }
+        return res.json({
+            feature: 'review_requirements',
+            case_id: caseId,
+            suggestion,
+            _aiMeta: { provider, model: result.model, contextSummary: built.contextSummary },
+        });
+    } catch (err) {
+        logger.error('analyzeRequirements', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 module.exports = {
     listCases,
     getCase,
@@ -576,4 +965,18 @@ module.exports = {
     transitionStatus,
     saveChecklistAnswer,
     generateChecklist,
+    getSummary,
+    getInbox,
+    getTransitionOptions,
+    listClarifications,
+    createClarification,
+    updateClarification,
+    listCaseDocuments,
+    linkDocument,
+    unlinkDocument,
+    listCaseAttachments,
+    uploadCaseAttachment,
+    analyzeRequirements,
+    isTransitionAllowed: workflow.isTransitionAllowed,
+    requiresTransitionReason: workflow.requiresTransitionReason,
 };

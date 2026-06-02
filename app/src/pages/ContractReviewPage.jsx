@@ -11,42 +11,13 @@ import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
 import { useAiAssist } from '../hooks/useAiAssist';
 import AiSuggestionInline from '../components/AiSuggestionInline';
+import {
+  STATUS_LABELS,
+  TERMINAL_STATUSES,
+  DETAIL_SLIDES,
+  INBOX_KIND_LABELS,
+} from '../utils/contractReviewLabels';
 import './ContractReviewPage.css';
-
-const STATUS_LABELS = {
-  DRAFT: 'Bozza',
-  INTAKE_REVIEW: 'Verifica acquisizione',
-  CLARIFICATION: 'Chiarimenti',
-  QUOTE_PREP: 'Preparazione offerta',
-  QUOTE_APPROVAL: 'Approvazione offerta',
-  QUOTE_SENT: 'Offerta inviata',
-  ORDER_RECEIVED: 'Ordine ricevuto',
-  FINAL_REVIEW: 'Riesame finale',
-  APPROVED: 'Approvato',
-  CANCELLED: 'Annullato',
-  REJECTED: 'Respinto',
-};
-
-const TERMINAL_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
-
-const ALLOWED_STATUS_TRANSITIONS = {
-  DRAFT: ['INTAKE_REVIEW'],
-  INTAKE_REVIEW: ['CLARIFICATION', 'QUOTE_PREP', 'DRAFT'],
-  CLARIFICATION: ['INTAKE_REVIEW', 'QUOTE_PREP'],
-  QUOTE_PREP: ['QUOTE_APPROVAL', 'INTAKE_REVIEW'],
-  QUOTE_APPROVAL: ['QUOTE_SENT', 'QUOTE_PREP'],
-  QUOTE_SENT: ['ORDER_RECEIVED', 'CANCELLED'],
-  ORDER_RECEIVED: ['FINAL_REVIEW'],
-  FINAL_REVIEW: ['APPROVED', 'ORDER_RECEIVED'],
-};
-
-const BACKWARD_TRANSITION_KEYS = new Set([
-  'INTAKE_REVIEW|DRAFT',
-  'CLARIFICATION|INTAKE_REVIEW',
-  'QUOTE_PREP|INTAKE_REVIEW',
-  'QUOTE_APPROVAL|QUOTE_PREP',
-  'FINAL_REVIEW|ORDER_RECEIVED',
-]);
 
 function parseCaseIdFromPath(pathname) {
   const m = pathname.match(/^\/contract-reviews\/(\d+)$/);
@@ -87,11 +58,6 @@ function statusBadgeClass(status) {
   if (status === 'CANCELLED' || status === 'REJECTED') return 'cr-badge cr-badge-negative';
   if (status === 'DRAFT') return 'cr-badge cr-badge-draft';
   return 'cr-badge cr-badge-progress';
-}
-
-function requiresTransitionReason(fromStatus, toStatus) {
-  if (toStatus === 'CANCELLED' || toStatus === 'REJECTED') return true;
-  return BACKWARD_TRANSITION_KEYS.has(`${fromStatus}|${toStatus}`);
 }
 
 function tokenize(s) {
@@ -165,6 +131,16 @@ export default function ContractReviewPage() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [detail, setDetail] = useState(null);
+  const [activeSlide, setActiveSlide] = useState('workflow');
+  const [transitionOptions, setTransitionOptions] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [inbox, setInbox] = useState([]);
+  const [inboxKind, setInboxKind] = useState('assigned_to_me');
+  const [newClarMessage, setNewClarMessage] = useState('');
+  const [linkDocId, setLinkDocId] = useState('');
+  const [attachDocRole, setAttachDocRole] = useState('order');
+  const [serverAiResult, setServerAiResult] = useState(null);
+  const [serverAiLoading, setServerAiLoading] = useState(false);
 
   const [companies, setCompanies] = useState([]);
   const [createOpen, setCreateOpen] = useState(false);
@@ -239,18 +215,46 @@ export default function ContractReviewPage() {
         case: c,
         history: data.history || [],
         checklist: (data.checklist || []).map(rowCheck),
+        clarifications: data.clarifications || [],
+        documents: data.documents || [],
+        attachments: data.attachments || [],
       });
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
       const cid = c.company_id != null ? String(c.company_id) : '';
       setAiCompanyContextId(cid);
+      try {
+        const tr = await apiService.getContractReviewTransitionOptions(id);
+        setTransitionOptions(tr?.options || []);
+      } catch {
+        setTransitionOptions([]);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : err.message || 'Errore dettaglio');
       setDetail(null);
+      setTransitionOptions([]);
     } finally {
       setDetailLoading(false);
     }
   }, []);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      const s = await apiService.getContractReviewSummary();
+      setSummary(s);
+    } catch {
+      setSummary(null);
+    }
+  }, []);
+
+  const loadInbox = useCallback(async () => {
+    try {
+      const res = await apiService.getContractReviewInbox(inboxKind, 15);
+      setInbox(res?.items || []);
+    } catch {
+      setInbox([]);
+    }
+  }, [inboxKind]);
 
   useEffect(() => {
     loadCompanies();
@@ -258,14 +262,25 @@ export default function ContractReviewPage() {
 
   useEffect(() => {
     loadList();
-  }, [loadList]);
+    loadSummary();
+  }, [loadList, loadSummary]);
+
+  useEffect(() => {
+    if (!caseId) {
+      loadInbox();
+      setActiveSlide('workflow');
+    }
+  }, [caseId, loadInbox]);
 
   useEffect(() => {
     loadDetail(caseId);
   }, [caseId, loadDetail]);
 
   useEffect(() => {
-    if (!caseId) clearAi();
+    if (!caseId) {
+      clearAi();
+      setServerAiResult(null);
+    }
   }, [caseId, clearAi]);
 
   async function handleSaveCaseMeta() {
@@ -308,13 +323,12 @@ export default function ContractReviewPage() {
     }
   }
 
-  function openTransition(toStatus) {
-    const from = detail?.case?.status;
-    if (!from) return;
-    if (requiresTransitionReason(from, toStatus)) {
-      setTransitionModal({ toStatus, reason: '' });
+  function openTransitionOption(opt) {
+    if (!opt?.allowed) return;
+    if (opt.requires_reason) {
+      setTransitionModal({ toStatus: opt.to_status, reason: '' });
     } else {
-      void commitTransition(toStatus, '');
+      void commitTransition(opt.to_status, '');
     }
   }
 
@@ -326,8 +340,114 @@ export default function ContractReviewPage() {
       setTransitionModal(null);
       await loadDetail(caseId);
       await loadList();
+      await loadSummary();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Transizione fallita');
+      if (err instanceof ApiError && err.code === 'TRANSITION_BLOCKED') {
+        const missing = err.data?.missing_requirements;
+        const msg = Array.isArray(missing) && missing.length
+          ? missing.join(' · ')
+          : err.message;
+        setError(msg);
+        try {
+          const tr = await apiService.getContractReviewTransitionOptions(caseId);
+          setTransitionOptions(tr?.options || []);
+        } catch {
+          /* ignore */
+        }
+      } else {
+        setError(err instanceof ApiError ? err.message : err.message || 'Transizione fallita');
+      }
+    }
+  }
+
+  async function handleAddClarification(e) {
+    e.preventDefault();
+    if (!caseId || !newClarMessage.trim()) return;
+    setError(null);
+    try {
+      await apiService.createContractReviewClarification(caseId, {
+        message: newClarMessage.trim(),
+      });
+      setNewClarMessage('');
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Errore chiarimento');
+    }
+  }
+
+  async function handleResolveClarification(clarId, responseText) {
+    if (!caseId) return;
+    setError(null);
+    try {
+      await apiService.updateContractReviewClarification(caseId, clarId, {
+        response_text: responseText,
+        resolved: true,
+      });
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Aggiornamento fallito');
+    }
+  }
+
+  async function handleLinkDocument(e) {
+    e.preventDefault();
+    if (!caseId) return;
+    const docId = parseInt(linkDocId, 10);
+    if (!Number.isFinite(docId) || docId <= 0) {
+      setError('Inserire un ID documento registro valido.');
+      return;
+    }
+    setError(null);
+    try {
+      await apiService.linkContractReviewDocument(caseId, {
+        document_id: docId,
+        doc_role: attachDocRole || 'other',
+        direction: 'in',
+        counterparty: 'customer',
+      });
+      setLinkDocId('');
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Collegamento fallito');
+    }
+  }
+
+  async function handleUploadAttachment(e) {
+    const file = e.target.files?.[0];
+    if (!caseId || !file) return;
+    setError(null);
+    try {
+      await apiService.uploadContractReviewAttachment(caseId, file, {
+        doc_role: attachDocRole || 'other',
+        direction: 'in',
+        counterparty: 'customer',
+      });
+      await loadDetail(caseId);
+      try {
+        const tr = await apiService.getContractReviewTransitionOptions(caseId);
+        setTransitionOptions(tr?.options || []);
+      } catch {
+        /* ignore */
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Upload fallito');
+    }
+    e.target.value = '';
+  }
+
+  async function handleServerAiAnalysis() {
+    if (!caseId) return;
+    setServerAiLoading(true);
+    setError(null);
+    try {
+      const res = await apiService.analyzeContractRequirements(caseId, {
+        capitolatoText: capitolatoText.trim() || undefined,
+      });
+      setServerAiResult(res?.suggestion || res);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Analisi server fallita');
+    } finally {
+      setServerAiLoading(false);
     }
   }
 
@@ -436,20 +556,15 @@ export default function ContractReviewPage() {
   }
 
   const transitionTargets = useMemo(() => {
-    const st = detail?.case?.status;
-    if (!st || TERMINAL_STATUSES.has(st)) return [];
-    const forward = ALLOWED_STATUS_TRANSITIONS[st] || [];
-    const rows = forward.map((to) => ({
-      to,
-      label: STATUS_LABELS[to] || to,
-      danger: false,
+    return (transitionOptions || []).map((opt) => ({
+      to: opt.to_status,
+      label: STATUS_LABELS[opt.to_status] || opt.to_status,
+      danger: opt.to_status === 'CANCELLED' || opt.to_status === 'REJECTED',
+      allowed: opt.allowed !== false,
+      requiresReason: Boolean(opt.requires_reason),
+      missing: opt.missing_requirements || [],
     }));
-    rows.push(
-      { to: 'CANCELLED', label: 'Annulla commessa', danger: true },
-      { to: 'REJECTED', label: 'Respingi', danger: true },
-    );
-    return rows;
-  }, [detail?.case?.status]);
+  }, [transitionOptions]);
 
   const checklistPreliminary = detail?.checklist?.filter((c) => c.phase === 'preliminary') || [];
   const checklistFinal = detail?.checklist?.filter((c) => c.phase === 'final') || [];
@@ -470,6 +585,65 @@ export default function ContractReviewPage() {
 
       {!caseId && (
         <>
+          {summary && (
+            <div className="cr-summary-grid">
+              <div className="cr-summary-card">
+                <div className="cr-summary-value">{summary.open_count ?? 0}</div>
+                <div className="cr-summary-label">Casi aperti</div>
+              </div>
+              <div className="cr-summary-card">
+                <div className="cr-summary-value">{summary.assigned_to_me ?? 0}</div>
+                <div className="cr-summary-label">Assegnati a me</div>
+              </div>
+              <div className="cr-summary-card">
+                <div className="cr-summary-value">{summary.pending_approval ?? 0}</div>
+                <div className="cr-summary-label">Da approvare</div>
+              </div>
+            </div>
+          )}
+
+          <div className="cr-panel" style={{ marginBottom: '1rem' }}>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>Inbox</h2>
+            <div className="contract-review-toolbar" style={{ marginBottom: '0.5rem' }}>
+              <select
+                value={inboxKind}
+                onChange={(e) => setInboxKind(e.target.value)}
+                aria-label="Tipo inbox"
+              >
+                {Object.entries(INBOX_KIND_LABELS).map(([k, lab]) => (
+                  <option key={k} value={k}>
+                    {lab}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {inbox.length === 0 ? (
+              <p className="contract-review-intro" style={{ margin: 0 }}>
+                Nessun elemento in questa inbox.
+              </p>
+            ) : (
+              <ul className="cr-inbox-list">
+                {inbox.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="cr-inbox-item"
+                      onClick={() => navigate(`/contract-reviews/${item.id}`)}
+                    >
+                      <strong>{item.title}</strong>
+                      <span className={statusBadgeClass(item.status)}>
+                        {STATUS_LABELS[item.status] || item.status}
+                      </span>
+                      <small>
+                        {item.company_name || (item.company_id ? `#${item.company_id}` : '-')}
+                      </small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="contract-review-toolbar">
             <button type="button" className="cr-btn cr-btn-primary" onClick={() => setCreateOpen(true)}>
               Nuovo Riesame
@@ -567,6 +741,21 @@ export default function ContractReviewPage() {
                 </div>
               </div>
 
+              <nav className="cr-slide-tabs" aria-label="Sezioni caso">
+                {DETAIL_SLIDES.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={activeSlide === id ? 'cr-slide-tab active' : 'cr-slide-tab'}
+                    onClick={() => setActiveSlide(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+
+              {activeSlide === 'workflow' && (
+              <>
               <div className="cr-panel">
                 <h2>Dati caso</h2>
                 <div className="cr-form-row">
@@ -607,17 +796,37 @@ export default function ContractReviewPage() {
                     Per annulli, respingimenti o passaggi indietro è richiesta una motivazione.
                   </p>
                   <div className="cr-transition-row">
-                    {transitionTargets.map(({ to, label, danger }) => (
+                    {transitionTargets.map(({ to, label, danger, allowed, missing }) => (
                       <button
                         key={to + label}
                         type="button"
                         className={danger ? 'cr-btn cr-btn-danger' : 'cr-btn cr-btn-primary'}
-                        onClick={() => openTransition(to)}
+                        disabled={!allowed}
+                        title={
+                          !allowed && missing.length
+                            ? missing.join('\n')
+                            : undefined
+                        }
+                        onClick={() => {
+                          const opt = transitionOptions.find((o) => o.to_status === to);
+                          if (opt) openTransitionOption(opt);
+                        }}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
+                  {transitionTargets.some((t) => !t.allowed && t.missing.length > 0) && (
+                    <ul className="cr-gate-hints">
+                      {transitionTargets
+                        .filter((t) => !t.allowed && t.missing.length)
+                        .map((t) => (
+                          <li key={t.to}>
+                            <strong>{t.label}:</strong> {t.missing.join(' · ')}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
                 </div>
               )}
 
@@ -643,7 +852,10 @@ export default function ContractReviewPage() {
                   )}
                 </ul>
               </div>
+              </>
+              )}
 
+              {activeSlide === 'checklist' && (
               <div className="cr-panel">
                 <h2>Checklist</h2>
                 <div className="cr-transition-row" style={{ marginBottom: '0.75rem' }}>
@@ -697,7 +909,119 @@ export default function ContractReviewPage() {
                   )}
                 </div>
               </div>
+              )}
 
+              {activeSlide === 'clarifications' && (
+              <div className="cr-panel">
+                <h2>Chiarimenti cliente</h2>
+                {!TERMINAL_STATUSES.has(detail.case.status) && (
+                  <form onSubmit={handleAddClarification} className="cr-form-row">
+                    <label htmlFor="cr-new-clar">Nuova richiesta</label>
+                    <textarea
+                      id="cr-new-clar"
+                      className="notes-textarea"
+                      value={newClarMessage}
+                      onChange={(e) => setNewClarMessage(e.target.value)}
+                      placeholder="Testo richiesta al cliente…"
+                    />
+                    <button type="submit" className="cr-btn cr-btn-primary">
+                      Aggiungi
+                    </button>
+                  </form>
+                )}
+                <ul className="cr-clar-list">
+                  {(detail.clarifications || []).length === 0 ? (
+                    <li>Nessun chiarimento registrato.</li>
+                  ) : (
+                    detail.clarifications.map((cl) => (
+                      <li key={cl.id} className={cl.resolved_at ? 'cr-clar-resolved' : ''}>
+                        <p>{cl.message}</p>
+                        {cl.response_text ? (
+                          <p>
+                            <em>Risposta:</em> {cl.response_text}
+                          </p>
+                        ) : !TERMINAL_STATUSES.has(detail.case.status) ? (
+                          <ClarificationReplyRow
+                            onSave={(text) => handleResolveClarification(cl.id, text)}
+                          />
+                        ) : null}
+                        {cl.resolved_at ? (
+                          <small>Risolto il {new Date(cl.resolved_at).toLocaleString('it-IT')}</small>
+                        ) : null}
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+              )}
+
+              {activeSlide === 'documents' && (
+              <div className="cr-panel">
+                <h2>Documenti e allegati</h2>
+                {!TERMINAL_STATUSES.has(detail.case.status) && (
+                  <>
+                    <form onSubmit={handleLinkDocument} className="cr-form-row">
+                      <label htmlFor="cr-link-doc">Collega da registro (ID documento)</label>
+                      <div className="cr-inline-fields">
+                        <input
+                          id="cr-link-doc"
+                          type="number"
+                          min="1"
+                          value={linkDocId}
+                          onChange={(e) => setLinkDocId(e.target.value)}
+                          placeholder="ID document_registry"
+                        />
+                        <select
+                          value={attachDocRole}
+                          onChange={(e) => setAttachDocRole(e.target.value)}
+                          aria-label="Ruolo documento"
+                        >
+                          <option value="order">Ordine</option>
+                          <option value="rfq">RFQ</option>
+                          <option value="quote">Offerta</option>
+                          <option value="other">Altro</option>
+                        </select>
+                        <button type="submit" className="cr-btn">
+                          Collega
+                        </button>
+                      </div>
+                    </form>
+                    <div className="cr-form-row">
+                      <label>Carica allegato caso</label>
+                      <input type="file" onChange={handleUploadAttachment} />
+                    </div>
+                  </>
+                )}
+                <h3 style={{ fontSize: '0.95rem' }}>Documenti registro</h3>
+                {(detail.documents || []).length === 0 ? (
+                  <p className="contract-review-intro">Nessun documento collegato.</p>
+                ) : (
+                  <ul className="cr-doc-list">
+                    {detail.documents.map((d) => (
+                      <li key={d.id}>
+                        {d.document_title || `Doc #${d.document_id}`} — ruolo:{' '}
+                        {d.doc_role || '-'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <h3 style={{ fontSize: '0.95rem' }}>Allegati file</h3>
+                {(detail.attachments || []).length === 0 ? (
+                  <p className="contract-review-intro">Nessun allegato.</p>
+                ) : (
+                  <ul className="cr-doc-list">
+                    {detail.attachments.map((a) => (
+                      <li key={a.attachment_id}>
+                        {a.file_name}
+                        {a.commercial_doc_role ? ` (${a.commercial_doc_role})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              )}
+
+              {activeSlide === 'ai' && (
               <div className="cr-panel">
                 <h2>Analisi AI del capitolato</h2>
                 <p className="contract-review-intro" style={{ marginTop: 0 }}>
@@ -736,7 +1060,15 @@ export default function ContractReviewPage() {
                     disabled={aiLoading}
                     onClick={() => handleRunAiAnalysis()}
                   >
-                    {aiLoading ? 'Analisi…' : 'Analisi AI del capitolato'}
+                    {aiLoading ? 'Analisi…' : 'Analisi AI (client)'}
+                  </button>
+                  <button
+                    type="button"
+                    className="cr-btn"
+                    disabled={serverAiLoading}
+                    onClick={() => handleServerAiAnalysis()}
+                  >
+                    {serverAiLoading ? 'Analisi server…' : 'Analisi AI (server)'}
                   </button>
                   {aiSuggestion && (
                     <button type="button" className="cr-btn" onClick={() => clearAi()}>
@@ -834,7 +1166,26 @@ export default function ContractReviewPage() {
                     </div>
                   </>
                 )}
+
+                {serverAiResult && (
+                  <div className="cr-server-ai-block" style={{ marginTop: '1rem' }}>
+                    <h3 style={{ fontSize: '0.95rem' }}>Risultato analisi server</h3>
+                    <pre className="cr-server-ai-json">
+                      {typeof serverAiResult === 'string'
+                        ? serverAiResult
+                        : JSON.stringify(serverAiResult, null, 2)}
+                    </pre>
+                    <button
+                      type="button"
+                      className="cr-btn"
+                      onClick={() => setServerAiResult(null)}
+                    >
+                      Chiudi risultato server
+                    </button>
+                  </div>
+                )}
               </div>
+              )}
             </>
           )}
         </>
@@ -922,6 +1273,31 @@ export default function ContractReviewPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ClarificationReplyRow({ onSave }) {
+  const [text, setText] = useState('');
+  return (
+    <div className="cr-clar-reply">
+      <textarea
+        className="notes-textarea"
+        placeholder="Risposta cliente…"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button
+        type="button"
+        className="cr-btn"
+        disabled={!text.trim()}
+        onClick={() => {
+          onSave(text.trim());
+          setText('');
+        }}
+      >
+        Segna risolto
+      </button>
     </div>
   );
 }
