@@ -125,6 +125,7 @@ Licenza modulo: `ai_review` (`requireLicensedModule('ai_review')`). Scope: `orga
 | GET | `/contract-reviews/inbox?kind=&limit=` | Inbox (`assigned_to_me`, `pending_approval`, `stale`) |
 | GET | `/contract-reviews?status=` | Lista casi |
 | POST | `/contract-reviews` | Crea caso (`title`, `company_id?`, `external_ref?`) |
+| POST | `/contract-reviews/import-from-job` | Crea caso DRAFT da import job. Body: `{ job_id, file_ids?, title?, company_id?, external_ref?, notes? }` — **409** `ALREADY_LINKED` se file già usato |
 | GET | `/contract-reviews/:id` | Dettaglio: `case`, `history`, `checklist`, `clarifications`, `documents`, `attachments` |
 | PUT | `/contract-reviews/:id` | Aggiorna metadati |
 | GET | `/contract-reviews/:id/transition-options` | Transizioni con gate (`allowed`, `missing_requirements`) |

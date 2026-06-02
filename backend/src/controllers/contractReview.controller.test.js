@@ -287,3 +287,101 @@ describe('saveChecklistAnswer', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 });
+
+// ─── importFromJob ───────────────────────────────────────────────────────────
+describe('importFromJob', () => {
+  const JOB_ID = 99;
+  const jobRow = { id: JOB_ID, title: 'Import RFQ', company_id: 12, notes: 'Note job' };
+  const fileRow = {
+    id: 501,
+    original_name: 'rfq.pdf',
+    storage_path: '/tmp/rfq.pdf',
+    mime_type: 'application/pdf',
+    file_size: 1000,
+    status: 'extracted',
+    extracted_text: 'Testo estratto dal PDF',
+    ai_extraction_json: '{"document_type_guess":"rfq"}',
+  };
+
+  function setupImportTransactionMock(createdRow) {
+    const tx = {
+      begin: jest.fn().mockResolvedValue(),
+      commit: jest.fn().mockResolvedValue(),
+      rollback: jest.fn().mockResolvedValue(),
+    };
+    sql.Transaction.mockReturnValue(tx);
+    sql.Request.mockImplementation(() => ({
+      input: jest.fn().mockReturnThis(),
+      query: jest.fn().mockResolvedValue({
+        recordset: [createdRow || { attachment_id: 1, attachment_uuid: 'uuid-att', file_name: 'rfq.pdf' }],
+        rowsAffected: [1],
+      }),
+    }));
+    getPool.mockResolvedValue({});
+  }
+
+  it('crea caso da job con file extracted (201)', async () => {
+    const created = {
+      id: 20,
+      uuid: 'case-uuid-20',
+      status: 'DRAFT',
+      title: 'Import RFQ',
+      organization_id: ORG_ID,
+    };
+    setupImportTransactionMock();
+    sql.Request.mockImplementationOnce(() => ({
+      input: jest.fn().mockReturnThis(),
+      query: jest.fn().mockResolvedValue({ recordset: [created] }),
+    }));
+
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [fileRow] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const body = res.json.mock.calls[0][0];
+    expect(body.case_id).toBe(20);
+    expect(body.uuid).toBe('case-uuid-20');
+    expect(body.job_id).toBe(JOB_ID);
+  });
+
+  it('job altra org → 404', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('file già collegato → 409', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [fileRow] })
+      .mockResolvedValueOnce({
+        recordset: [{ file_id: 501, case_id: 7, case_uuid: 'existing-uuid' }],
+      });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('ALREADY_LINKED');
+  });
+
+  it('job senza file idonei → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [{ ...fileRow, status: 'uploaded' }] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('NO_ELIGIBLE_FILES');
+  });
+});
