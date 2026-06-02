@@ -1,4 +1,4 @@
-# Guida consolidata — SGQ ISO 9001
+﻿# Guida consolidata — SGQ ISO 9001
 
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
@@ -2074,6 +2074,18 @@ Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test
 
 **URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
 
+
+### Bonifica dati test NC (org Al.project) — 02/06/2026
+
+Dati NC di simulazione auditor bonificati su **produzione** via API admin (dmin@sgq.local): approccio **A** (riapertura RQ → campi → erified → POST approve-closure → closed). Nessuno script SQL.
+
+| NC | Prima | Dopo |
+|----|--------|------|
+| **1042** | oot_cause vuoto; chiusura già con RQ | oot_cause compilata; pproved_at invariato (30/05/2026) |
+| **1043** | Chiusa senza pproved_at / pproved_by | RQ approvata 02/06/2026; note verifica bonifica; oot_cause allineata |
+| **1037** | Chiusa senza note verifica, senza RQ; azione verified senza erification_note | Note NC + nota azione + RQ + chiusura coerente |
+
+Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
 **Backlog P2 (solo su richiesta committente):** export PDF registro; agente AI CAPA; completamento catalogo LIBRERIA_UI (Fase B/C); smoke L3 email ricezione reale.
 
 ### NC Hardening — slice H1–H6 (30/05/2026, TEST OK)
