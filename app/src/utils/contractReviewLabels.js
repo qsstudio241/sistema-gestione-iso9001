@@ -30,3 +30,29 @@ export const INBOX_KIND_LABELS = {
   pending_approval: 'In attesa approvazione',
   stale: 'Inattivi (>14 gg)',
 };
+
+/** Controparte documento commerciale (ISO §8.2 — cliente / fornitore / interno) */
+export const COUNTERPARTY_LABELS = {
+  customer: 'Cliente',
+  supplier: 'Fornitore',
+  internal: 'Interno',
+};
+
+/** Direzione flusso documento */
+export const DIRECTION_LABELS = {
+  in: 'In entrata',
+  out: 'In uscita',
+};
+
+const DIRECTION_BADGE = {
+  in: 'in',
+  out: 'out',
+};
+
+/** Badge compatto per riga documento/allegato (es. «Fornitore · in») */
+export function formatCommercialDocMetaBadge(counterparty, direction) {
+  const cp =
+    COUNTERPARTY_LABELS[counterparty] || COUNTERPARTY_LABELS.customer;
+  const dir = DIRECTION_BADGE[direction] || DIRECTION_BADGE.in;
+  return `${cp} · ${dir}`;
+}
