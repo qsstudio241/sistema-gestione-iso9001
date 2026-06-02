@@ -18,7 +18,8 @@
 | Hotfix viewer | `7042532` | CRUD personale bloccato per viewer studio |
 | RBAC Fase 4 | `99c6803` | Migration 081 `user_company_access` |
 | VPS deploy RBAC 081 | *(sessione corrente)* | Migration prod + deploy + link test users |
-| S6 API overview | *(sessione corrente)* | `GET /api/v1/personnel?company_id=` |
+| S6 API overview | `3829f92` / `a3a1cd1` | `GET /api/v1/personnel?company_id=` |
+| Doc deploy 081 | `267b94f` | UTF-8 task + nota GUIDA |
 
 ## Prossima slice
 
