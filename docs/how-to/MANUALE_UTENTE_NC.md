@@ -72,6 +72,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 | Push da audit (chiusura) | **Sì** | **Sì** | **No** |
 | Allegati evidenze | **Sì** | **Sì** | **No** |
 | Approvazione chiusura RQ (H3) | **Sì** | **No** | **No** |
+| Riapertura NC chiusa | **Sì** | **No** | **No** |
 | Export CSV registro | **Sì** | **Sì** | **No** |
 
 ---
@@ -103,7 +104,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 | 4 | **Azioni correttive** | Elenco azioni con attuazione e verifica per singola azione |
 | 5 | **Evidenze** | Allegati facoltativi |
 | 6 | **Verifica efficacia** | Note e responsabile verifica NC; collassata con hint se NC ancora aperta/in corso |
-| 7 | **Chiusura** | Approva chiusura (RQ) e Chiudi NC (dopo approvazione) |
+| 7 | **Chiusura** | Approva chiusura (RQ), Chiudi NC (dopo approvazione), **Riapri NC** (solo RQ, se già chiusa) |
 | — | **Salva modifiche** | In fondo al drawer, dopo le sezioni editabili |
 
 **Domande che mi pongo (FAQ interne)**
@@ -260,6 +261,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 6. In stato **Verificata**, l'**admin/superadmin** (RQ) usa **7. Chiusura** → **Approva chiusura (RQ)** (H3). Compare badge «Approvata RQ» con data e nome approvatore.
 7. Solo dopo l'approvazione: **Chiudi NC** in sez. 7 (Verificata → Chiusa).
 8. Dopo stati **Verificata** (con approvazione) o **Chiusa**, i campi diventano in sola lettura.
+9. **Riapertura (solo admin/superadmin):** su una NC **Chiusa**, in sez. **7. Chiusura** compare **Riapri NC**. Confermare il dialogo; opzionalmente indicare il motivo (viene aggiunto alle note verifica con data e utente). La NC torna **In corso**, l’approvazione RQ viene revocata: per chiuderla di nuovo servono verifica, **Approva chiusura (RQ)** e **Chiudi NC**.
 
 **Domande che mi pongo**
 
@@ -329,7 +331,27 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.9 Approvazione RQ per chiusura (H3)
+### 3.9 Riapertura NC chiusa (RQ / admin)
+
+**Chi:** Admin o superadmin (Responsabile Qualità).
+
+**Quando:** Chiusura errata, nuova evidenza da trattare, correzione dopo audit di sorveglianza.
+
+**Passi**
+
+1. Aprire la NC in stato **Chiusa** nel drawer.
+2. In **7. Chiusura**, cliccare **Riapri NC** (visibile solo agli utenti RQ).
+3. Confermare; opzionale: motivo riapertura nel prompt.
+4. La NC passa a **In corso**: i campi tornano modificabili; il badge «Approvata RQ» scompare fino a una nuova approvazione.
+
+**Domande / Risposte**
+
+- *Perché non vedo «Riapri NC»?* — NC non chiusa, oppure utente senza ruolo admin/superadmin.
+- *Resta traccia della riapertura?* — Sì: riga in **Note verifica efficacia** con data e ID utente (e motivo se inserito).
+
+---
+
+### 3.10 Approvazione RQ per chiusura (H3)
 
 **Chi:** Admin o superadmin (Responsabile Qualità organizzativo).
 
@@ -348,7 +370,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.10 Filtri scadenze — NC scadute e in scadenza 7 giorni
+### 3.11 Filtri scadenze — NC scadute e in scadenza 7 giorni
 
 **Chi:** RQ, auditor.
 
@@ -366,7 +388,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.11 Export CSV registro (H5)
+### 3.12 Export CSV registro (H5)
 
 **Chi:** RQ, admin, auditor (con permesso modifica registro).
 
@@ -380,7 +402,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.12 Link audit → NC e deep-link
+### 3.13 Link audit → NC e deep-link
 
 **Chi:** Tutti gli utenti con licenza NC.
 
@@ -398,7 +420,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.13 Ruolo auditor vs admin (RBAC)
+### 3.14 Ruolo auditor vs admin (RBAC)
 
 **Chi:** Amministratore tenant, auditor.
 
@@ -417,7 +439,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.14 Errori comuni
+### 3.15 Errori comuni
 
 #### Sezione ISO incompatibile con lo standard audit
 
@@ -449,7 +471,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.15 Tab «Azioni in scadenza» (H6)
+### 3.16 Tab «Azioni in scadenza» (H6)
 
 **Chi:** RQ, auditor, admin.
 
@@ -573,7 +595,7 @@ Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su un
 |---------|----------------|
 | Qual è la differenza tra OSS e NC? | OSS = osservazione (miglioramento consigliato); NC = non conformità da trattare con maggiore rigore. Entrambe finiscono nel registro con severità e workflow uguale. |
 | Devo caricare allegati per chiudere? | No, non sono obbligatori. |
-| Posso modificare una NC chiusa? | No, i campi diventano readonly dopo chiusura (con approvazione RQ se applicabile). |
+| Posso modificare una NC chiusa? | No in consultazione; l’**admin/superadmin** può **Riapri NC** (sez. 7) per tornare a **In corso** e modificare di nuovo. |
 | Il push da audit elimina le risposte checklist? | No, copia nel registro; la checklist audit resta invariata. |
 | Come annullo un push errato? | Entro 10 secondi: **Annulla trasferimento** nel pannello chiusura audit. |
 | Il push include la checklist custom? | Sì (H1): stesso pulsante chiusura audit, idempotenza per item custom. |
@@ -666,6 +688,7 @@ stateDiagram-v2
     Risolta --> Verificata: Verifica\n(note verifica obbligatorie)
     Verificata --> ApprovataRQ: Approva chiusura RQ
     ApprovataRQ --> Chiusa: Chiudi NC
+    Chiusa --> InCorso: Riapri NC\n(solo RQ)
     Chiusa --> [*]
 ```
 
@@ -682,4 +705,4 @@ stateDiagram-v2
 
 ---
 
-*Ultimo aggiornamento: 02/06/2026 — rubrica referenti NC (migration 073/074), tab Notifiche in Il mio Studio, script import referenti.*
+*Ultimo aggiornamento: 02/06/2026 — riapertura NC chiusa (RQ/admin), rubrica referenti NC (073/074).*

@@ -36,6 +36,26 @@ export function canApproveNcClosure(user) {
   return role === 'admin' || role === 'superadmin';
 }
 
+/** RQ/admin possono riaprire una NC chiusa (ISO: nuova evidenza, correzione errore). */
+export function canReopenNc(user) {
+  return canApproveNcClosure(user);
+}
+
+/** Target stato dopo riapertura (workflow riparte da lavorazione). */
+export const NC_REOPEN_TARGET_STATUS = 'in_progress';
+
+/**
+ * @param {object} nc
+ * @param {{ role?: string }} user
+ * @returns {string|null} Stato destinazione se il pulsante Riapri va mostrato
+ */
+export function getNcReopenButton(nc, user) {
+  if (nc?.status === 'closed' && canReopenNc(user)) {
+    return NC_REOPEN_TARGET_STATUS;
+  }
+  return null;
+}
+
 /**
  * @param {object} nc
  * @param {string} newStatus

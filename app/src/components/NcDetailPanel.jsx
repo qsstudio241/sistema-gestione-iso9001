@@ -20,6 +20,7 @@ import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
 import {
   getNcWorkflowTransitionButtons,
   getNcClosureButton,
+  getNcReopenButton,
 } from "../utils/ncWorkflow";
 import "../components/ChecklistModule.css";
 
@@ -139,8 +140,9 @@ export default function NcDetailPanel({
     [nc?.status],
   );
   const closureButton = useMemo(() => getNcClosureButton(nc), [nc?.status, nc?.approved_at]);
+  const reopenButton = useMemo(() => getNcReopenButton(nc, user), [nc?.status, user?.role]);
   const showApproveClosure = nc?.status === "verified" && !nc?.approved_at && isRq;
-  const showClosureSection = showApproveClosure || !!closureButton;
+  const showClosureSection = showApproveClosure || !!closureButton || !!reopenButton;
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -450,6 +452,15 @@ export default function NcDetailPanel({
                 onClick={() => onStatusChange?.(closureButton)}
               >
                 {NC_WORKFLOW_CFG.closed.label}
+              </button>
+            )}
+            {reopenButton && (
+              <button
+                type="button"
+                className="status-btn partial"
+                onClick={() => onStatusChange?.(reopenButton)}
+              >
+                Riapri NC
               </button>
             )}
           </div>
