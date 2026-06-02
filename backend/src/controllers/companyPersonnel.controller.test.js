@@ -27,11 +27,17 @@ const COMPANY_ID = 42;
 
 function mockReq(overrides = {}) {
   return {
-    user: { auditor_org_id: AUDITOR_ORG_ID, organization_id: ORG_ID, role: 'auditor' },
     params: { companyId: String(COMPANY_ID) },
     query: {},
     body: {},
     ...overrides,
+    user: {
+      auditor_org_id: AUDITOR_ORG_ID,
+      organization_id: ORG_ID,
+      role: 'auditor',
+      company_access: [],
+      ...(overrides.user || {}),
+    },
   };
 }
 
@@ -63,7 +69,7 @@ describe('companyPersonnel  scope RBAC', () => {
   });
 
   it('listPersonnel 403 senza auditor_org_id', async () => {
-    const req = mockReq({ user: { role: 'admin' } });
+    const req = mockReq({ user: { role: 'admin', auditor_org_id: null } });
     const res = mockRes();
     await ctrl.listPersonnel(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
