@@ -405,9 +405,12 @@ async function createNonConformity(req, res) {
             });
         }
 
-        const responsibleResolved = await resolveNotificationContact(
-            organization_id, responsible_contact_id, responsible_person,
-        );
+        let responsibleResolved = { contact_id: null, text: null };
+        if (responsible_contact_id != null && responsible_contact_id !== '') {
+            responsibleResolved = await resolveNotificationContact(
+                organization_id, responsible_contact_id, null,
+            );
+        }
 
         // Crea NC (source_type manual: creazione diretta, non da push audit)
         const result = await query(`
@@ -571,21 +574,14 @@ async function updateNonConformity(req, res) {
             updates.push('corrective_action = @corrective_action');
             params.corrective_action = corrective_action;
         }
-        if (responsible_contact_id !== undefined || responsible_person !== undefined) {
-            if (responsible_contact_id !== undefined) {
-                const resolved = await resolveNotificationContact(
-                    organization_id, responsible_contact_id, responsible_person,
-                );
-                updates.push('responsible_person = @responsible_person');
-                params.responsible_person = resolved.text;
-                updates.push('responsible_contact_id = @responsible_contact_id');
-                params.responsible_contact_id = resolved.contact_id;
-            } else {
-                updates.push('responsible_person = @responsible_person');
-                params.responsible_person = responsible_person != null ? String(responsible_person).trim() || null : null;
-                updates.push('responsible_contact_id = @responsible_contact_id');
-                params.responsible_contact_id = null;
-            }
+        if (responsible_contact_id !== undefined) {
+            const resolved = await resolveNotificationContact(
+                organization_id, responsible_contact_id, null,
+            );
+            updates.push('responsible_person = @responsible_person');
+            params.responsible_person = resolved.text;
+            updates.push('responsible_contact_id = @responsible_contact_id');
+            params.responsible_contact_id = resolved.contact_id;
         }
         if (verification_contact_id !== undefined || verification_responsible !== undefined) {
             if (verification_contact_id !== undefined) {

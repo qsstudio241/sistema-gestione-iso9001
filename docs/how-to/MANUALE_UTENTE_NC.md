@@ -512,18 +512,17 @@ La **rubrica referenti NC** elenca le persone che possono ricevere email di prom
 
 ### 4.2 Selezione responsabile attuazione / verifica
 
-Su ogni NC e su ogni azione correttiva potete scegliere il responsabile in due modi:
+| Campo | Modalità selezione | Dove |
+|-------|-------------------|------|
+| **Responsabile NC** | Solo **rubrica** (dropdown referenti attivi) | Drawer NC → sezione **1. Scheda NC** |
+| **Responsabile verifica efficacia** | Rubrica **oppure** testo libero (retrocompatibilità) | Drawer NC → sezione **6. Verifica efficacia** |
+| **Responsabile attuazione azione** | Rubrica **oppure** testo libero | Drawer NC → sezione **4. Azioni correttive** → form azione |
 
-- **Da rubrica** — dropdown con i referenti attivi (consigliato: abilita le email di escalation).
-- **Testo libero** — nome scritto a mano (retrocompatibilità; **non** invia email al referente finché non è in rubrica con email valida).
+Per il **Responsabile NC** la scelta dalla rubrica è obbligatoria quando la rubrica contiene referenti attivi: abilita le email di escalation verso il referente corretto.
 
-**Dove si imposta**
+Per verifica NC e azioni correttive resta disponibile il testo libero (nome scritto a mano) per retrocompatibilità; **non** invia email al referente finché non è in rubrica con email valida.
 
-| Campo | Dove |
-|-------|------|
-| Responsabile NC (attuazione) | Drawer NC → sezione **1. Scheda NC** |
-| Responsabile verifica efficacia | Drawer NC → sezione **6. Verifica efficacia** |
-| Responsabile attuazione azione | Drawer NC → sezione **4. Azioni correttive** → form azione |
+**Dati legacy:** NC create in passato con solo nome testo (senza `contact_id`) mostrano il valore precedente in sola lettura finché non si seleziona un referente dalla rubrica. Usare lo script di import (§4.4) per collegare massivamente i nomi esistenti.
 
 ### 4.3 Notifiche email di escalation
 

@@ -277,6 +277,7 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
               contactId={form.responsible_contact_id}
               textValue={form.responsible}
               useExternal={form.useExternalResponsible}
+              allowExternal
               onContactIdChange={(id) => setForm((f) => ({ ...f, responsible_contact_id: id }))}
               onTextChange={(v) => setForm((f) => ({ ...f, responsible: v }))}
               onUseExternalChange={(v) => setForm((f) => ({
