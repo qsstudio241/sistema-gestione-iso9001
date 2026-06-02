@@ -364,3 +364,137 @@
   background: #fff8e1;
   color: #f57f17;
 }
+
+.cr-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cr-summary-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.cr-summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1565c0;
+}
+
+.cr-summary-label {
+  font-size: 0.78rem;
+  color: #607d8b;
+}
+
+.cr-inbox-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cr-inbox-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0;
+  border: none;
+  border-bottom: 1px solid #eee;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cr-inbox-item:hover {
+  background: #f5f7fb;
+}
+
+.cr-slide-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.cr-slide-tab {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #455a64;
+}
+
+.cr-slide-tab.active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1565c0;
+}
+
+.cr-gate-hints {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #c62828;
+}
+
+.cr-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cr-clar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cr-clar-list li {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.88rem;
+}
+
+.cr-clar-resolved {
+  opacity: 0.75;
+}
+
+.cr-clar-reply {
+  margin-top: 0.35rem;
+}
+
+.cr-inline-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.cr-inline-fields input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.cr-doc-list {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.86rem;
+}
+
+.cr-server-ai-json {
+  max-height: 240px;
+  overflow: auto;
+  font-size: 0.75rem;
+  background: #f5f5f5;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
