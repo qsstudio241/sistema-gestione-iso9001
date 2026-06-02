@@ -22,7 +22,8 @@
 | Export CSV registro | **Sì** (H5) |
 | Vista «Azioni in scadenza» cross-NC | **Sì** (H6) |
 | Sezioni ISO dinamiche in modale manuale | **Sì** (H4) |
-| Email alert scadenze NC | **Sì** (job backend); attivare `NC_ALERT_ENABLED` + SMTP sul VPS se non già configurato |
+| Email alert scadenze NC | **Sì** (job backend + rubrica referenti); attivare `NC_ALERT_ENABLED` + SMTP sul VPS se non già configurato |
+| Rubrica referenti NC (migrazioni 073/074) | **Sì** — selezione responsabili da rubrica + escalation verso referenti |
 
 Baseline documentata: chiusura **NC Fase 1** + hardening **H1–H6** (`ac9b1a8`), migrazione **072** su VPS. Dettaglio tecnico in `docs/GUIDA_CONSOLIDATA.md` (sezione NC Hardening).
 
@@ -469,7 +470,90 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-## 4. FAQ — Domande e risposte
+## 4. Rubrica referenti e notifiche email
+
+### 4.1 Dove trovare la rubrica referenti
+
+La **rubrica referenti NC** elenca le persone che possono ricevere email di promemoria sulle scadenze.
+
+| Percorso | Cosa potete fare |
+|----------|------------------|
+| **Il mio Studio → tab Notifiche** (`/settings/studio`) | Consultare e gestire la rubrica **inline** (aggiungere, modificare, disattivare referenti) |
+| **Impostazioni → Notifiche** (`/settings/notifications`, solo admin) | Rubrica + impostazioni avanzate: destinatari globali, soglie, orario invio, abilitazione alert |
+
+**Passi rapidi (tab Studio)**
+
+1. Menu **Gestione → Il mio Studio**.
+2. Cliccare il tab **Notifiche**.
+3. Usare **+ Aggiungi referente** oppure modificare/eliminare righe esistenti.
+4. Gli admin vedono anche il link **Impostazioni avanzate** per SMTP, destinatari globali e toggle alert.
+
+### 4.2 Selezione responsabile attuazione / verifica
+
+Su ogni NC e su ogni azione correttiva potete scegliere il responsabile in due modi:
+
+- **Da rubrica** — dropdown con i referenti attivi (consigliato: abilita le email di escalation).
+- **Testo libero** — nome scritto a mano (retrocompatibilità; **non** invia email al referente finché non è in rubrica con email valida).
+
+**Dove si imposta**
+
+| Campo | Dove |
+|-------|------|
+| Responsabile NC (attuazione) | Drawer NC → sezione **1. Scheda NC** |
+| Responsabile verifica efficacia | Drawer NC → sezione **6. Verifica efficacia** |
+| Responsabile attuazione azione | Drawer NC → sezione **4. Azioni correttive** → form azione |
+
+### 4.3 Notifiche email di escalation
+
+Il sistema invia email automatiche quando una NC o un'azione correttiva richiede attenzione.
+
+| Regola | Quando scatta |
+|--------|----------------|
+| **Prima soglia** | X giorni prima della scadenza (default 30 gg, configurabile) |
+| **Seconda soglia** | Y giorni prima della scadenza (default 7 gg) |
+| **Post-scadenza** | Promemoria **giornaliero** finché la NC/azione resta aperta e scaduta |
+| **NC senza data** | Dopo la prima soglia giorni dall'apertura |
+
+**Destinatari:** prima i referenti collegati in rubrica sulla NC/azione; se assenti, i destinatari globali configurati in **Impostazioni notifiche**.
+
+**Requisiti tecnici (VPS):** variabili `ALERT_ENABLED`, `NC_ALERT_ENABLED`, account SMTP; migration **073** (tabella rubrica) e **074** (collegamento FK su NC/azioni).
+
+### 4.4 Script import one-shot (referenti da NC esistenti)
+
+Se avete già NC con responsabili scritti solo a testo, un **script una tantum** li importa nella rubrica e collega le FK.
+
+**Quando usarlo:** subito dopo le migration 073/074, prima di affidarsi alle email di escalation, se in passato i nomi erano solo testo libero.
+
+**Comandi (sul server backend, dopo backup DB):**
+
+```bash
+# Simulazione (solo log, nessuna scrittura)
+node backend/scripts/import-notification-contacts-from-nc.js --dry-run
+
+# Esecuzione reale
+node backend/scripts/import-notification-contacts-from-nc.js
+```
+
+Lo script: legge `responsible_person`, `verification_responsible` (NC) e `responsible` (azioni); crea referenti se il nome non esiste già (case-insensitive per organizzazione); deduce l'email dal testo se presente, altrimenti usa un placeholder da completare in rubrica; aggiorna `*_contact_id` su NC e azioni.
+
+**Dopo l'import:** aprire **Il mio Studio → Notifiche** e completare le email placeholder prima di attendersi invii corretti.
+
+### 4.5 Passi VPS (migration 073 e 074)
+
+Eseguire **in ordine** sul VPS (idempotenti, sicuri da ripetere):
+
+```bash
+node backend/scripts/run-migration-073.js   # tabella notification_contacts
+node backend/scripts/run-migration-074.js   # FK su NC/azioni + log invii
+node backend/scripts/import-notification-contacts-from-nc.js --dry-run
+node backend/scripts/import-notification-contacts-from-nc.js
+```
+
+Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su una NC di prova, e (se SMTP attivo) email di test da **Impostazioni notifiche**.
+
+---
+
+## 5. FAQ — Domande e risposte
 
 | Domanda | Risposta breve |
 |---------|----------------|
@@ -480,13 +564,14 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 | Come annullo un push errato? | Entro 10 secondi: **Annulla trasferimento** nel pannello chiusura audit. |
 | Il push include la checklist custom? | Sì (H1): stesso pulsante chiusura audit, idempotenza per item custom. |
 | Chi deve approvare prima della chiusura? | Admin/superadmin con **Approva chiusura (RQ)** (H3). |
-| Arrivano email per scadenze NC? | Sì se ops attiva `ALERT_ENABLED`, `NC_ALERT_ENABLED` e SMTP sul VPS. |
+| Arrivano email per scadenze NC? | Sì se ops attiva alert + SMTP; i referenti in rubrica ricevono escalation diretta, altrimenti i destinatari globali. |
+| Dove gestisco la rubrica referenti? | **Il mio Studio → Notifiche** oppure **Impostazioni → Notifiche** (admin). |
 | Export del registro? | **Export CSV** in `/nc` con filtri correnti (H5). PDF registro: backlog P2. |
 | Dove vedo tutte le azioni in scadenza? | Tab **Azioni in scadenza** in `/nc` (H6). |
 
 ---
 
-## 5. Glossario
+## 6. Glossario
 
 | Termine | Significato |
 |---------|-------------|
@@ -503,7 +588,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 | Problema | Verifica | Azione |
 |--------|----------|--------|
@@ -518,7 +603,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-## 7. Riferimenti ISO semplificati
+## 8. Riferimenti ISO semplificati
 
 | Requisito ISO 9001:2015 | Cosa fa il modulo |
 |-------------------------|-------------------|
@@ -534,7 +619,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-## 8. Adattamento Canvas
+## 9. Adattamento Canvas
 
 **Canvas interattivo:** [canvases/manuale-modulo-nc.canvas.tsx](../../canvases/manuale-modulo-nc.canvas.tsx) — aprire in Cursor/Glass per navigazione per scenario, diagramma stati e FAQ flash.
 
@@ -583,4 +668,4 @@ stateDiagram-v2
 
 ---
 
-*Ultimo aggiornamento: 30/05/2026 — allineato a commit `ac9b1a8` (hardening H1–H6, migrazione 072).*
+*Ultimo aggiornamento: 02/06/2026 — rubrica referenti NC (migration 073/074), tab Notifiche in Il mio Studio, script import referenti.*

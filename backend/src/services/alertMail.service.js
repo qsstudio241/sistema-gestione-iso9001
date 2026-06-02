@@ -13,7 +13,7 @@ try {
  * Invia email alert se SMTP configurato in .env.
  * @returns {Promise<boolean>}
  */
-async function sendAlertEmail(recipients, subject, html) {
+async function sendAlertEmail(recipients, subject, html, cc) {
   if (!nodemailer) {
     logger.warn('[AlertMail] nodemailer non installato');
     return false;
@@ -33,12 +33,15 @@ async function sendAlertEmail(recipients, subject, html) {
     },
   });
 
-  await transporter.sendMail({
+  const mailOptions = {
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: recipients,
     subject,
     html,
-  });
+  };
+  if (cc) mailOptions.cc = cc;
+
+  await transporter.sendMail(mailOptions);
   return true;
 }
 

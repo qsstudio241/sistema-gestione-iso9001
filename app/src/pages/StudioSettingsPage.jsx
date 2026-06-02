@@ -7,7 +7,15 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import NotificationContactsPanel from "../components/NotificationContactsPanel";
 import "./StudioSettingsPage.css";
+import "./NotificationsSettingsPage.css";
+
+function hasNotificationsLicense(user) {
+  const list = user?.licensed_modules;
+  if (!list || !Array.isArray(list) || list.length === 0) return true;
+  return list.includes("notifications");
+}
 
 const DOC_TYPES = [
   "Procedura",
@@ -487,21 +495,44 @@ function TabDocumenti() {
 // --- Tab Notifiche ---
 
 function TabNotifiche() {
-  return (
-    <div className="studio-tab-content">
-      <div className="studio-card studio-notif-link-card">
-        <div>
-          <h3 className="studio-card-title" style={{ marginBottom: 6 }}>
-            Configurazione Notifiche
-          </h3>
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const licensed = hasNotificationsLicense(user);
+
+  if (!licensed) {
+    return (
+      <div className="studio-tab-content">
+        <div className="studio-card">
+          <h3 className="studio-card-title">Notifiche NC</h3>
           <p className="studio-card-desc">
-            Le impostazioni delle notifiche email (destinatari, soglie, orari) sono disponibili nella pagina dedicata.
+            Il modulo notifiche non è attivo per la vostra organizzazione. Contattare l&apos;amministratore per abilitare la licenza.
           </p>
-          <Link to="/settings/notifications" className="btn-studio-primary" style={{ display: "inline-block", marginTop: 12 }}>
-            Vai a Impostazioni Notifiche &rarr;
-          </Link>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="studio-tab-content studio-notif-tab">
+      <NotificationContactsPanel />
+
+      {isAdmin && (
+        <div className="studio-card studio-notif-link-card" style={{ marginTop: 16 }}>
+          <h3 className="studio-card-title" style={{ marginBottom: 6 }}>
+            Impostazioni avanzate
+          </h3>
+          <p className="studio-card-desc">
+            Destinatari globali, soglie di preavviso, orario invio giornaliero, toggle SMTP e tipi di alert.
+          </p>
+          <Link
+            to="/settings/notifications"
+            className="btn-studio-secondary"
+            style={{ display: "inline-block", marginTop: 12 }}
+          >
+            Apri impostazioni notifiche complete &rarr;
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

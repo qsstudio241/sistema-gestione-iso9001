@@ -58,6 +58,7 @@ export function buildManualNcPayload(form, auditNumber) {
       description,
       severity: form.severity,
       responsible_person: (form.responsible_person || '').trim() || null,
+      responsible_contact_id: form.useExternalResponsible ? null : form.responsible_contact_id,
       due_date: form.due_date || null,
     },
   };

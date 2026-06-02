@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import NotificationContactsPanel from "../components/NotificationContactsPanel";
 import "./NotificationsSettingsPage.css";
 
 function NotificationsSettingsPage() {
@@ -200,7 +201,7 @@ function NotificationsSettingsPage() {
             <span className="toggle-track" />
             <div className="toggle-info">
               <span className="toggle-title">⚠️ Non conformità aperte</span>
-              <span className="toggle-desc">Avviso per NC rimaste aperte oltre 30 giorni</span>
+              <span className="toggle-desc">Avviso per NC con scadenza entro le soglie configurate, NC scadute (giornaliero) o aperte oltre la prima soglia senza data</span>
             </div>
           </label>
 
@@ -238,6 +239,8 @@ function NotificationsSettingsPage() {
           </div>
         </label>
       </div>
+
+      <NotificationContactsPanel />
 
       {/* Footer azioni */}
       <div className="notif-actions">

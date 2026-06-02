@@ -11,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NcAttachmentsSection from "./NcAttachmentsSection";
 import NcActionsList from "./NcActionsList";
+import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
   clearNcFieldDraftsForScope,
@@ -70,6 +71,10 @@ function initForm(nc, organizationId) {
     ),
     severity: nc?.severity || "minor",
     responsible_person: nc?.responsible_person || "",
+    responsible_contact_id: nc?.responsible_contact_id ?? null,
+    verification_contact_id: nc?.verification_contact_id ?? null,
+    useExternalResponsible: !nc?.responsible_contact_id,
+    useExternalVerification: !nc?.verification_contact_id,
     due_date: normalizeDate(nc?.due_date),
   };
 }
@@ -111,6 +116,16 @@ export default function NcDetailPanel({
   const [error, setError] = useState(null);
   const [descError, setDescError] = useState(null);
   const [verifExpanded, setVerifExpanded] = useState(!earlyPhase);
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    if (typeof apiService.getNotificationContacts !== "function") return undefined;
+    let cancelled = false;
+    apiService.getNotificationContacts({ active: "true" })
+      .then((res) => { if (!cancelled) setContacts(res?.data || []); })
+      .catch(() => { if (!cancelled) setContacts([]); });
+    return () => { cancelled = true; };
+  }, [organizationId]);
 
   useEffect(() => {
     setForm(initForm(nc, organizationId));
@@ -152,9 +167,15 @@ export default function NcDetailPanel({
         description: form.description.trim(),
         root_cause: form.root_cause.trim() || null,
         verification_notes: form.verification_notes.trim() || null,
-        verification_responsible: form.verification_responsible.trim() || null,
+        verification_responsible: form.useExternalVerification
+          ? form.verification_responsible.trim() || null
+          : form.verification_responsible.trim() || null,
+        verification_contact_id: form.useExternalVerification ? null : form.verification_contact_id,
         severity: form.severity,
-        responsible_person: form.responsible_person.trim() || null,
+        responsible_person: form.useExternalResponsible
+          ? form.responsible_person.trim() || null
+          : form.responsible_person.trim() || null,
+        responsible_contact_id: form.useExternalResponsible ? null : form.responsible_contact_id,
         due_date: form.due_date || null,
       });
       if (organizationId && draftScope) {
@@ -253,17 +274,23 @@ export default function NcDetailPanel({
             />
           </div>
         </div>
-        <div className="nc-form-row">
-          <label htmlFor={`nc-resp-${nc.nc_id}`}>Responsabile NC</label>
-          <input
-            id={`nc-resp-${nc.nc_id}`}
-            type="text"
-            value={form.responsible_person}
-            readOnly={readOnly}
-            onChange={(e) => setField("responsible_person", e.target.value)}
-            placeholder="Referente generale della NC"
-          />
-        </div>
+        <NcResponsibleSelect
+          contacts={contacts}
+          roleFilter={["attuazione", "generico"]}
+          contactId={form.responsible_contact_id}
+          textValue={form.responsible_person}
+          useExternal={form.useExternalResponsible}
+          readOnly={readOnly}
+          fieldId={`nc-resp-${nc.nc_id}`}
+          onContactIdChange={(id) => setField("responsible_contact_id", id)}
+          onTextChange={(v) => setField("responsible_person", v)}
+          onUseExternalChange={(v) => {
+            setField("useExternalResponsible", v);
+            if (v) setField("responsible_contact_id", null);
+          }}
+          label="Responsabile NC"
+          placeholder="Referente generale della NC"
+        />
       </section>
 
       {/* 2. Stato workflow */}
@@ -379,21 +406,23 @@ export default function NcDetailPanel({
               organizationId={organizationId}
             />
           </div>
-          <div className="nc-form-row">
-            <label htmlFor={`nc-verif-resp-${nc.nc_id}`}>Responsabile verifica</label>
-            <RichTextField
-              id={`nc-verif-resp-${nc.nc_id}`}
-              rows={1}
-              value={form.verification_responsible}
-              readOnly={readOnly}
-              onChange={(e) => setField("verification_responsible", e.target.value)}
-              placeholder="Chi verifica l'efficacia delle azioni"
-              draftScopeId={draftScope}
-              draftFieldId="verification_responsible"
-              persistLocalDraft
-              organizationId={organizationId}
-            />
-          </div>
+          <NcResponsibleSelect
+            contacts={contacts}
+            roleFilter={["verifica", "generico"]}
+            contactId={form.verification_contact_id}
+            textValue={form.verification_responsible}
+            useExternal={form.useExternalVerification}
+            readOnly={readOnly}
+            fieldId={`nc-verif-resp-${nc.nc_id}`}
+            onContactIdChange={(id) => setField("verification_contact_id", id)}
+            onTextChange={(v) => setField("verification_responsible", v)}
+            onUseExternalChange={(v) => {
+              setField("useExternalVerification", v);
+              if (v) setField("verification_contact_id", null);
+            }}
+            label="Responsabile verifica"
+            placeholder="Chi verifica l'efficacia delle azioni"
+          />
         </div>
       </section>
 

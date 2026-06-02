@@ -16,6 +16,22 @@ function isNcClosureApprover(user) {
     return role === 'admin' || role === 'superadmin';
 }
 
+/** Risolve contact_id rubrica → nome testo fallback (retrocompatibilità). */
+async function resolveNotificationContact(organization_id, contactId, textFallback) {
+    const parsedId = contactId != null && contactId !== '' ? parseInt(contactId, 10) : null;
+    if (!parsedId) {
+        return { contact_id: null, text: textFallback != null ? String(textFallback).trim() || null : null };
+    }
+    const result = await query(`
+        SELECT id, name FROM notification_contacts
+        WHERE id = @id AND organization_id = @org AND active = 1
+    `, { id: parsedId, org: organization_id });
+    if (result.recordset.length === 0) {
+        return { contact_id: null, text: textFallback != null ? String(textFallback).trim() || null : null };
+    }
+    return { contact_id: parsedId, text: result.recordset[0].name };
+}
+
 async function resolveAuditStandardId(audit_id) {
     const standardResult = await query(`
         SELECT TOP 1 ast.standard_id FROM audit_standards ast
@@ -317,6 +333,7 @@ async function createNonConformity(req, res) {
             description,
             severity,
             responsible_person,
+            responsible_contact_id,
             due_date,
             corrective_action
         } = req.body;
@@ -388,6 +405,10 @@ async function createNonConformity(req, res) {
             });
         }
 
+        const responsibleResolved = await resolveNotificationContact(
+            organization_id, responsible_contact_id, responsible_person,
+        );
+
         // Crea NC (source_type manual: creazione diretta, non da push audit)
         const result = await query(`
       INSERT INTO non_conformities (
@@ -398,6 +419,7 @@ async function createNonConformity(req, res) {
         description,
         severity,
         responsible_person,
+        responsible_contact_id,
         due_date,
         corrective_action,
         status,
@@ -414,6 +436,7 @@ async function createNonConformity(req, res) {
         @description,
         @severity,
         @responsible_person,
+        @responsible_contact_id,
         @due_date,
         @corrective_action,
         'open',
@@ -428,7 +451,8 @@ async function createNonConformity(req, res) {
             section_code,
             description,
             severity,
-            responsible_person: responsible_person || null,
+            responsible_person: responsibleResolved.text,
+            responsible_contact_id: responsibleResolved.contact_id,
             due_date: due_date || null,
             corrective_action: corrective_action || null
         });
@@ -497,6 +521,8 @@ async function updateNonConformity(req, res) {
             resolution_date,
             verification_notes,
             verification_responsible,
+            responsible_contact_id,
+            verification_contact_id,
             root_cause
         } = req.body;
 
@@ -544,9 +570,38 @@ async function updateNonConformity(req, res) {
             updates.push('corrective_action = @corrective_action');
             params.corrective_action = corrective_action;
         }
-        if (responsible_person !== undefined) {
-            updates.push('responsible_person = @responsible_person');
-            params.responsible_person = responsible_person;
+        if (responsible_contact_id !== undefined || responsible_person !== undefined) {
+            if (responsible_contact_id !== undefined) {
+                const resolved = await resolveNotificationContact(
+                    organization_id, responsible_contact_id, responsible_person,
+                );
+                updates.push('responsible_person = @responsible_person');
+                params.responsible_person = resolved.text;
+                updates.push('responsible_contact_id = @responsible_contact_id');
+                params.responsible_contact_id = resolved.contact_id;
+            } else {
+                updates.push('responsible_person = @responsible_person');
+                params.responsible_person = responsible_person != null ? String(responsible_person).trim() || null : null;
+                updates.push('responsible_contact_id = @responsible_contact_id');
+                params.responsible_contact_id = null;
+            }
+        }
+        if (verification_contact_id !== undefined || verification_responsible !== undefined) {
+            if (verification_contact_id !== undefined) {
+                const resolved = await resolveNotificationContact(
+                    organization_id, verification_contact_id, verification_responsible,
+                );
+                updates.push('verification_responsible = @verification_responsible');
+                params.verification_responsible = resolved.text;
+                updates.push('verification_contact_id = @verification_contact_id');
+                params.verification_contact_id = resolved.contact_id;
+            } else {
+                updates.push('verification_responsible = @verification_responsible');
+                params.verification_responsible = verification_responsible != null
+                    ? String(verification_responsible).trim() || null : null;
+                updates.push('verification_contact_id = @verification_contact_id');
+                params.verification_contact_id = null;
+            }
         }
         if (due_date !== undefined) {
             updates.push('due_date = @due_date');
@@ -559,10 +614,6 @@ async function updateNonConformity(req, res) {
         if (verification_notes !== undefined) {
             updates.push('verification_notes = @verification_notes');
             params.verification_notes = verification_notes;
-        }
-        if (verification_responsible !== undefined) {
-            updates.push('verification_responsible = @verification_responsible');
-            params.verification_responsible = verification_responsible;
         }
         if (root_cause !== undefined) {
             updates.push('root_cause = @root_cause');
@@ -848,7 +899,7 @@ async function createNcAction(req, res) {
     try {
         const { id } = req.params;
         const { user_id, organization_id } = req.user;
-        const { action_type = 'corrective', description, responsible, due_date } = req.body;
+        const { action_type = 'corrective', description, responsible, responsible_contact_id, due_date } = req.body;
 
         if (!description) {
             return res.status(400).json({ error: 'Descrizione obbligatoria', code: 'VALIDATION_ERROR' });
@@ -876,15 +927,20 @@ async function createNcAction(req, res) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
         }
 
+        const responsibleResolved = await resolveNotificationContact(
+            organization_id, responsible_contact_id, responsible,
+        );
+
         const result = await query(`
-            INSERT INTO nc_actions (nc_id, action_type, description, responsible, due_date, created_by)
+            INSERT INTO nc_actions (nc_id, action_type, description, responsible, responsible_contact_id, due_date, created_by)
             OUTPUT INSERTED.action_id
-            VALUES (@nc_id, @action_type, @description, @responsible, @due_date, @created_by)
+            VALUES (@nc_id, @action_type, @description, @responsible, @responsible_contact_id, @due_date, @created_by)
         `, {
             nc_id: parseInt(id),
             action_type,
             description,
-            responsible: responsible || null,
+            responsible: responsibleResolved.text,
+            responsible_contact_id: responsibleResolved.contact_id,
             due_date: due_date || null,
             created_by: user_id
         });
@@ -913,7 +969,7 @@ async function updateNcAction(req, res) {
     try {
         const { id, actionId } = req.params;
         const { organization_id } = req.user;
-        const { status, description, responsible, due_date, verification_note } = req.body;
+        const { status, description, responsible, responsible_contact_id, due_date, verification_note } = req.body;
 
         const scope = studioScopeClause(req.user, 'au');
         const scopeSql = appendScopeSql(scope);
@@ -937,7 +993,15 @@ async function updateNcAction(req, res) {
         const params = { actionId: parseInt(actionId) };
 
         if (description !== undefined) { updates.push('description = @description'); params.description = description; }
-        if (responsible !== undefined) { updates.push('responsible = @responsible'); params.responsible = responsible; }
+        if (responsible !== undefined || responsible_contact_id !== undefined) {
+            const resolved = await resolveNotificationContact(
+                organization_id, responsible_contact_id, responsible,
+            );
+            updates.push('responsible = @responsible');
+            params.responsible = resolved.text;
+            updates.push('responsible_contact_id = @responsible_contact_id');
+            params.responsible_contact_id = resolved.contact_id;
+        }
         if (due_date !== undefined) { updates.push('due_date = @due_date'); params.due_date = due_date; }
         if (verification_note !== undefined) { updates.push('verification_note = @verification_note'); params.verification_note = verification_note; }
 

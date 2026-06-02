@@ -1249,6 +1249,14 @@ class ApiService {
         return this.post('/notifications-config/test', {});
     }
 
+    async getNotificationContacts(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/notification-contacts${qs ? '?' + qs : ''}`);
+    }
+    async createNotificationContact(data) { return this.post('/notification-contacts', data); }
+    async updateNotificationContact(id, data) { return this.put(`/notification-contacts/${id}`, data); }
+    async deleteNotificationContact(id) { return this.delete(`/notification-contacts/${id}`); }
+
     // ─── WebDAV / Office Round-trip (Sprint 12-A) ────────────────────────────
 
     async getWebdavLink(docId, mode = 'edit') {
