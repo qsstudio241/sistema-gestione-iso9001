@@ -21,8 +21,12 @@ const FALLBACK_SQL = '/tmp/068_commercial_case_extensions.sql';
         process.exit(1);
     }
     const sqlText = fs.readFileSync(resolvedPath, 'utf8');
+    const batches = sqlText.split(/^\s*GO\s*$/gim).map((b) => b.trim()).filter(Boolean);
     try {
-        await query(sqlText);
+        for (let i = 0; i < batches.length; i++) {
+            console.log(`Batch ${i + 1}/${batches.length}...`);
+            await query(batches[i]);
+        }
         const verify = await query(`
             SELECT COUNT(*) AS cnt FROM sys.tables
             WHERE name IN ('commercial_case_clarifications', 'commercial_case_documents')

@@ -87,6 +87,8 @@ BEGIN
   ALTER TABLE dbo.attachments ADD commercial_doc_role NVARCHAR(30) NULL;
 END;
 
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_attachments_commercial_case' AND object_id = OBJECT_ID('dbo.attachments'))
   CREATE INDEX IX_attachments_commercial_case ON attachments(commercial_case_id)
     WHERE commercial_case_id IS NOT NULL;
