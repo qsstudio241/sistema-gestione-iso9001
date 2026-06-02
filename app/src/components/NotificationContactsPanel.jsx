@@ -15,11 +15,18 @@ const ROLE_OPTIONS = [
 ];
 
 const GRID_COLUMNS = [
-  { id: "name", label: "Nome", sortable: true },
-  { id: "email", label: "Email", sortable: true },
-  { id: "role_type", label: "Ruolo", sortable: true },
-  { id: "active", label: "Stato", sortable: true },
-  { id: "actions", label: "Azioni", sortable: false, width: "100px" },
+  { id: "name", label: "Nome", sortable: true, width: "18%" },
+  { id: "email", label: "Email", sortable: true, width: "32%", cellClassName: "notif-col-email" },
+  { id: "role_type", label: "Ruolo", sortable: true, width: "16%" },
+  { id: "active", label: "Stato", sortable: true, width: "14%" },
+  {
+    id: "actions",
+    label: "Azioni",
+    sortable: false,
+    width: "100px",
+    headerClassName: "notif-col-actions",
+    cellClassName: "notif-col-actions",
+  },
 ];
 
 const EMPTY_FORM = { name: "", email: "", role_type: "generico", active: true };
