@@ -65,6 +65,24 @@ async function fetchCaseRow(caseId, organizationId) {
     return r.recordset[0] || null;
 }
 
+/** Valida supplier_id opzionale per collegamento documento (solo se counterparty=supplier). */
+async function resolveLinkSupplierId(supplierIdRaw, counterparty, organizationId) {
+    if (counterparty !== 'supplier') return { value: null };
+    if (supplierIdRaw == null || supplierIdRaw === '') return { value: null };
+    const sid = parseInt(supplierIdRaw, 10);
+    if (!Number.isFinite(sid) || sid <= 0) {
+        return { error: 'supplier_id non valido' };
+    }
+    const r = await query(
+        `SELECT id FROM suppliers WHERE id = @sid AND organization_id = @organizationId`,
+        { sid, organizationId },
+    );
+    if (!r.recordset.length) {
+        return { error: 'Fornitore non trovato' };
+    }
+    return { value: sid };
+}
+
 async function listCases(req, res) {
     try {
         const organizationId = req.user.organization_id;
@@ -140,9 +158,11 @@ async function getCase(req, res) {
             query(
                 `
                 SELECT ccd.id, ccd.case_id, ccd.document_id, ccd.doc_role, ccd.direction, ccd.counterparty,
-                       ccd.linked_at, dr.title AS document_title, dr.doc_type
+                       ccd.supplier_id, ccd.linked_at, dr.title AS document_title, dr.doc_type,
+                       s.name AS supplier_name
                 FROM commercial_case_documents ccd
                 INNER JOIN document_registry dr ON dr.id = ccd.document_id
+                LEFT JOIN suppliers s ON s.id = ccd.supplier_id AND s.organization_id = @organizationId
                 WHERE ccd.case_id = @caseId AND dr.organization_id = @organizationId
                 ORDER BY ccd.linked_at DESC
                 `,
@@ -740,9 +760,11 @@ async function listCaseDocuments(req, res) {
         }
         const r = await query(
             `
-            SELECT ccd.*, dr.title AS document_title, dr.doc_type, dr.status AS document_status
+            SELECT ccd.*, dr.title AS document_title, dr.doc_type, dr.status AS document_status,
+                   s.name AS supplier_name
             FROM commercial_case_documents ccd
             INNER JOIN document_registry dr ON dr.id = ccd.document_id
+            LEFT JOIN suppliers s ON s.id = ccd.supplier_id AND s.organization_id = @organizationId
             WHERE ccd.case_id = @caseId AND dr.organization_id = @organizationId
             ORDER BY ccd.linked_at DESC
             `,
@@ -760,7 +782,8 @@ async function linkDocument(req, res) {
         const organizationId = req.user.organization_id;
         const userId = req.user.user_id;
         const caseId = parseCaseId(req.params.id);
-        const { document_id: documentId, doc_role: docRole, direction, counterparty } = req.body || {};
+        const { document_id: documentId, doc_role: docRole, direction, counterparty, supplier_id: supplierIdRaw } =
+            req.body || {};
         if (!caseId || !documentId) {
             return sendErr(res, 400, 'case id e document_id obbligatori', 'VALIDATION_ERROR');
         }
@@ -778,14 +801,26 @@ async function linkDocument(req, res) {
         const dir = direction === 'out' ? 'out' : 'in';
         const cp =
             counterparty === 'supplier' || counterparty === 'internal' ? counterparty : 'customer';
+        const supplierResolved = await resolveLinkSupplierId(supplierIdRaw, cp, organizationId);
+        if (supplierResolved.error) {
+            return sendErr(res, 400, supplierResolved.error, 'VALIDATION_ERROR');
+        }
         const role = docRole ? String(docRole).trim().substring(0, 30) : 'other';
         const ins = await query(
             `
-            INSERT INTO commercial_case_documents (case_id, document_id, doc_role, direction, counterparty, linked_by)
+            INSERT INTO commercial_case_documents (case_id, document_id, doc_role, direction, counterparty, supplier_id, linked_by)
             OUTPUT INSERTED.*
-            VALUES (@caseId, @docId, @role, @dir, @cp, @userId)
+            VALUES (@caseId, @docId, @role, @dir, @cp, @supplierId, @userId)
             `,
-            { caseId, docId, role, dir, cp, userId },
+            {
+                caseId,
+                docId,
+                role,
+                dir,
+                cp,
+                supplierId: supplierResolved.value,
+                userId,
+            },
         );
         return res.status(201).json(ins.recordset[0]);
     } catch (err) {
