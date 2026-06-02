@@ -39,7 +39,7 @@ function mockCompanyScope() {
 
 afterEach(() => jest.clearAllMocks());
 
-describe('companyPersonnel — scope RBAC', () => {
+describe('companyPersonnel  scope RBAC', () => {
   it('listPersonnel 403 cross-studio se azienda non in auditor_org', async () => {
     query.mockResolvedValueOnce({ recordset: [] });
     const req = mockReq();
@@ -92,7 +92,7 @@ describe('companyPersonnel CRUD', () => {
       recordset: [{ id: 5, name: 'Luigi', organization_id: ORG_ID, company_id: COMPANY_ID }],
     });
     const req = mockReq({
-      body: { name: 'Luigi', job_title: 'Resp. qualità', can_actuation: true },
+      body: { name: 'Luigi', job_title: 'Resp. qualit', can_actuation: true },
     });
     const res = mockRes();
     await ctrl.createPersonnel(req, res);
@@ -142,6 +142,20 @@ describe('companyPersonnel CRUD', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, message: 'Personale disattivato' }),
     );
+  });
+
+  it('createPersonnel 403 per viewer (sola lettura)', async () => {
+    const req = mockReq({
+      user: { auditor_org_id: AUDITOR_ORG_ID, organization_id: ORG_ID, role: 'viewer' },
+      body: { name: 'Test Viewer' },
+    });
+    const res = mockRes();
+    await ctrl.createPersonnel(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'AUTH_FORBIDDEN' }),
+    );
+    expect(query).not.toHaveBeenCalled();
   });
 
   it('createPersonnel 403 se company_id non appartiene a org utente', async () => {
