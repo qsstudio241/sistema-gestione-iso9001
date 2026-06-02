@@ -572,6 +572,22 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Prossimo passo opzionale**: smoke L3 manuale tab slide + transizione con gate; Sprint 9–10 `import-from-job`.
 
+### Slice R1 import-from-job (02/06/2026 pomeriggio)
+
+**PR**: [#80](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/80) mergiata (`5403b1c`).
+
+| Elemento | Dettaglio |
+|---|---|
+| Endpoint | `POST /api/v1/contract-reviews/import-from-job` |
+| Effetto | Caso `DRAFT` + checklist preliminare + allegati da file job (`extracted`/`reviewed`) |
+| Idempotenza parziale | **409** `ALREADY_LINKED` se `storage_path` già su `attachments.commercial_case_id` |
+| Deploy | Backend VPS aggiornato; health OK |
+| Test L1 | Jest `contractReview.controller.test.js` (+4 test) |
+
+**Prossima slice**: **R2** — pulsante «Crea caso Riesame» in `ImportJobsPage.jsx` (brief in `docs/agent-tasks/DEPUTYTASK.md`).
+
+**Lezione**: piano slice in `TASK_RIESAME_ESTENSIONI_SLICES.md` va committato su `main` **prima** di delegare al deputy locale — altrimenti l'agente non trova la spec (commit `0e6160a`).
+
 #### Attività completate
 
 | # | Cosa | Risultato |

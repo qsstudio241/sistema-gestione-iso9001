@@ -1,6 +1,6 @@
 # TASK — Estensioni Riesame Requisiti (slice verticali)
 
-**Stato:** PIANIFICATO — pronto per nuova sessione  
+**Stato:** IN CORSO — slice **R2** (UI Import Jobs)  
 **Creato:** 02/06/2026  
 **Baseline completata:** PR [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) — pilota ordine diretto operativo  
 **Spec di riferimento:** [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md)
@@ -15,12 +15,12 @@ Leggi in ordine:
 2) docs/specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md
 3) docs/GUIDA_CONSOLIDATA.md (sezione sessione 02/06/2026)
 
-Esegui la SLICE indicata sotto (parti da R1 se non specificato).
+Esegui la SLICE indicata sotto (parti da R2 se non specificato).
 Una slice alla volta: implementa → test L1 → checkpoint → commit/PR → attendi OK committente prima della slice successiva.
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `R1` (import-from-job backend)
+**Slice corrente consigliata:** `R2` (UI Import Jobs — pulsante «Crea caso Riesame»)
 
 ---
 
@@ -34,6 +34,7 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 | Inbox + summary | ✅ |
 | Migrazione 068 (clarifications, documents, allegati commercial_*) | ✅ VPS |
 | Import job Sprint 9–10 → **solo** `commit-to-registry` | ✅ separato |
+| **R1** `POST /contract-reviews/import-from-job` | ✅ PR [#80](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/80) merge `5403b1c` |
 
 ---
 
@@ -102,9 +103,9 @@ flowchart LR
 | R1.7 | Test Jest | Happy path, job altra org 404, file già usato 409, job senza file 400 |
 
 **Checkpoint R1 (agente):**
-- [ ] Jest verde
-- [ ] `curl` autenticato crea caso e ritorna `{ case_id, uuid }`
-- [ ] Health API OK post-deploy VPS
+- [x] Jest verde
+- [x] Health API OK post-deploy VPS
+- [ ] `curl` autenticato crea caso e ritorna `{ case_id, uuid }` (opzionale committente)
 
 **Checkpoint R1 (committente — 3 min):**
 - [ ] Con Postman/curl o script: un job reale produce un caso visibile in lista ( anche solo via API )
