@@ -1,8 +1,8 @@
 /**
  * alertScheduler.js — Cron job giornaliero per invio email alert scadenze
  *
- * Eseguito automaticamente all'avvio del server.
- * Orario: ogni giorno alle 08:00 (ora server).
+ * Orario invio: letto da notifications_config.send_time per org (timezone = ora server Node).
+ * NC escalation: send_time + 5 min (separazione digest documenti / NC).
  *
  * Dipendenze: node-schedule, nodemailer
  * Installare sul VPS: npm install node-schedule nodemailer
@@ -14,10 +14,17 @@
  *   SMTP_PASS=<app-password>
  *   SMTP_FROM=SGQ Studio <alerts@qsstudio.it>
  *   ALERT_ENABLED=true
+ *   NC_ALERT_ENABLED=true
  */
 
 const logger = require('../utils/logger');
 const { sendAlertEmail } = require('./alertMail.service');
+const {
+  sendTimeToCron,
+  addMinutesToSendTime,
+  DEFAULT_SEND_TIME,
+} = require('./alertSchedulerHelpers');
+const { runNcEscalationForOrg } = require('./ncAlertEscalation.service');
 
 // Caricamento lazy delle dipendenze opzionali
 let schedule;
@@ -29,12 +36,9 @@ try {
 
 const { getPool } = require('../config/database');
 
-const ALERT_DAYS_1 = 30; // Prima soglia: 30 giorni
-const ALERT_DAYS_2 = 7;  // Seconda soglia: 7 giorni
+const scheduledJobs = [];
 
-// ─── Template email ───────────────────────────────────────────────────────────
-
-function buildEmailHtml(orgName, expiredDocs, expiringDocs) {
+function buildEmailHtml(orgName, expiredDocs, expiringDocs, alertDays1) {
   const formatDate = (d) => {
     if (!d) return '—';
     const s = String(d);
@@ -78,7 +82,7 @@ function buildEmailHtml(orgName, expiredDocs, expiringDocs) {
         </table>` : ''}
 
         ${expiringDocs.length > 0 ? `
-        <h3 style="color:#b45309;margin:0 0 12px">🟡 In scadenza entro ${ALERT_DAYS_1} giorni — ${expiringDocs.length}</h3>
+        <h3 style="color:#b45309;margin:0 0 12px">🟡 In scadenza entro ${alertDays1} giorni — ${expiringDocs.length}</h3>
         <table style="${tableStyle}">
           <thead><tr>
             <th style="${thStyle}">Documento</th>
@@ -100,10 +104,11 @@ function buildEmailHtml(orgName, expiredDocs, expiringDocs) {
 
 // ─── Query documenti urgenti ──────────────────────────────────────────────────
 
-async function fetchUrgentDocs(pool, orgId) {
+async function fetchUrgentDocs(pool, orgId, days) {
+  const windowDays = parseInt(days, 10) || 30;
   const result = await pool.request()
     .input('orgId', orgId)
-    .input('days', ALERT_DAYS_1)
+    .input('days', windowDays)
     .query(`
       SELECT
         dr.id, dr.title, dr.doc_code, dr.doc_type,
@@ -162,32 +167,37 @@ function buildNormValidityEmailHtml(orgName, supersededNorms) {
 
 // ─── Job principale ───────────────────────────────────────────────────────────
 
-async function runAlertJob() {
+async function runAlertJobForSendTime(sendTimeFilter) {
   if (!process.env.ALERT_ENABLED || process.env.ALERT_ENABLED !== 'true') {
     logger.info('[AlertScheduler] Alert disabilitati (ALERT_ENABLED != true)');
     return;
   }
 
-  logger.info('[AlertScheduler] Avvio job alert scadenze...');
+  logger.info(`[AlertScheduler] Avvio job alert scadenze documenti (send_time=${sendTimeFilter || 'all'})...`);
   const pool = await getPool();
 
   try {
-    // Recupera tutte le organizzazioni con notifiche abilitate
-    const orgsResult = await pool.request().query(`
-      SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1,
+    const orgsResult = await pool.request()
+      .input('sendTime', sendTimeFilter || null)
+      .query(`
+      SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1, nc.alert_days_2,
+             nc.send_time, nc.alert_doc_expiry, nc.alert_nc_open,
              o.organization_name
       FROM notifications_config nc
       JOIN organizations o ON nc.organization_id = o.organization_id
       WHERE nc.enabled = 1
+        AND nc.alert_doc_expiry = 1
+        AND (@sendTime IS NULL OR nc.send_time = @sendTime)
     `);
 
     const orgs = orgsResult.recordset || [];
-    logger.info(`[AlertScheduler] Organizzazioni con alert attivi: ${orgs.length}`);
+    logger.info(`[AlertScheduler] Org con alert documenti attivi: ${orgs.length}`);
 
     for (const org of orgs) {
-      const docs = await fetchUrgentDocs(pool, org.organization_id);
+      const days1 = parseInt(org.alert_days_1, 10) || 30;
+      const docs = await fetchUrgentDocs(pool, org.organization_id, days1);
       if (docs.length === 0) {
-        logger.info(`[AlertScheduler] Org ${org.organization_id}: nessun alert da inviare`);
+        logger.info(`[AlertScheduler] Org ${org.organization_id}: nessun alert documenti`);
         continue;
       }
 
@@ -195,16 +205,21 @@ async function runAlertJob() {
       const expiring = docs.filter(d => !d.is_expired);
 
       const subject = `[SGQ] ${expired.length > 0 ? `${expired.length} documenti scaduti` : ''} ${expiring.length > 0 ? `${expiring.length} in scadenza` : ''} — ${org.organization_name}`.trim();
-      const html    = buildEmailHtml(org.organization_name, expired, expiring);
+      const html    = buildEmailHtml(org.organization_name, expired, expiring, days1);
 
       const sent = await sendAlertEmail(org.recipients_email, subject, html);
       if (sent) {
-        logger.info(`[AlertScheduler] Email inviata a ${org.recipients_email} per org ${org.organization_id}`);
+        logger.info(`[AlertScheduler] Email documenti inviata a ${org.recipients_email} per org ${org.organization_id}`);
       }
     }
   } catch (err) {
-    logger.error('[AlertScheduler] Errore job:', err.message);
+    logger.error('[AlertScheduler] Errore job documenti:', err.message);
   }
+}
+
+/** @deprecated alias retrocompatibilita test */
+async function runAlertJob() {
+  return runAlertJobForSendTime(null);
 }
 
 // ─── Ottimizzazione knowledge base AI (notturna, dopo reindex) ────────────────
@@ -326,97 +341,7 @@ async function runKnowledgeIndexJob() {
   }
 }
 
-const NC_ALERT_DAYS = 7;
-
-function formatItDate(d) {
-  if (!d) return '\u2014';
-  const raw = String(d);
-  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : raw;
-}
-
-function buildNcDueEmailHtml(orgName, overdueNcs, dueSoonNcs, overdueActions, dueSoonActions) {
-  const thStyle = 'padding:8px 12px;background:#1e3a5f;color:#fff;text-align:left;font-size:12px';
-  const tableStyle = 'width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px';
-  const ncRow = (row, overdue) => `
-    <tr style="background:${overdue ? '#fff5f5' : '#fffbeb'}">
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${row.nc_number || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.title || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.status || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${overdue ? '#dc2626' : '#b45309'};font-weight:600">${overdue ? 'Scaduta' : `Scade ${formatItDate(row.due_date)}`}</td>
-    </tr>`;
-  const actionRow = (row, overdue) => `
-    <tr style="background:${overdue ? '#fff5f5' : '#fffbeb'}">
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${row.nc_number || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.description || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${row.responsible || '\u2014'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:${overdue ? '#dc2626' : '#b45309'};font-weight:600">${overdue ? 'Scaduta' : `Scade ${formatItDate(row.due_date)}`}</td>
-    </tr>`;
-
-  const section = (title, color, headers, rowsHtml) => rowsHtml ? `
-    <h3 style="color:${color};margin:0 0 12px">${title}</h3>
-    <table style="${tableStyle}"><thead><tr>${headers.map((h) => `<th style="${thStyle}">${h}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table>` : '';
-
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#111827">
-      <div style="background:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0">
-        <h2 style="margin:0;color:#fff;font-size:18px">SGQ Studio \u2014 Alert NC e azioni correttive</h2>
-        <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">${orgName} \u00b7 ${new Date().toLocaleDateString('it-IT')}</p>
-      </div>
-      <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
-        ${section('NC scadute', '#dc2626', ['Numero', 'Titolo', 'Stato', 'Scadenza'], overdueNcs.map((r) => ncRow(r, true)).join(''))}
-        ${section(`NC in scadenza entro ${NC_ALERT_DAYS} giorni`, '#b45309', ['Numero', 'Titolo', 'Stato', 'Scadenza'], dueSoonNcs.map((r) => ncRow(r, false)).join(''))}
-        ${section('Azioni scadute', '#dc2626', ['NC', 'Descrizione', 'Responsabile', 'Scadenza'], overdueActions.map((r) => actionRow(r, true)).join(''))}
-        ${section(`Azioni in scadenza entro ${NC_ALERT_DAYS} giorni`, '#b45309', ['NC', 'Descrizione', 'Responsabile', 'Scadenza'], dueSoonActions.map((r) => actionRow(r, false)).join(''))}
-        <p style="font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;margin:0">
-          Messaggio automatico SGQ Studio (NC_ALERT_ENABLED=true).
-        </p>
-      </div>
-    </div>`;
-}
-
-async function fetchNcDueItems(pool, orgId) {
-  const ncResult = await pool.request()
-    .input('orgId', orgId)
-    .input('days', NC_ALERT_DAYS)
-    .query(`
-      SELECT nc.nc_id, nc.nc_number, nc.title, nc.status, nc.due_date,
-        CASE WHEN nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
-      FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE a.organization_id = @orgId
-        AND nc.due_date IS NOT NULL
-        AND nc.status NOT IN ('closed', 'verified')
-        AND (
-          nc.due_date < CAST(GETDATE() AS DATE)
-          OR nc.due_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
-        )
-      ORDER BY nc.due_date ASC
-    `);
-
-  const actionResult = await pool.request()
-    .input('orgId', orgId)
-    .input('days', NC_ALERT_DAYS)
-    .query(`
-      SELECT na.action_id, na.nc_id, nc.nc_number, na.description, na.responsible, na.due_date, na.status,
-        CASE WHEN na.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
-      FROM nc_actions na
-      INNER JOIN non_conformities nc ON na.nc_id = nc.nc_id
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE a.organization_id = @orgId
-        AND na.due_date IS NOT NULL
-        AND na.status NOT IN ('verified')
-        AND (
-          na.due_date < CAST(GETDATE() AS DATE)
-          OR na.due_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
-        )
-      ORDER BY na.due_date ASC
-    `);
-
-  return { ncs: ncResult.recordset || [], actions: actionResult.recordset || [] };
-}
-
-async function runNcDueAlertJob() {
+async function runNcDueAlertJobForSendTime(sendTimeFilter) {
   if (process.env.ALERT_ENABLED !== 'true') {
     logger.info('[AlertScheduler] NC due alert skip (ALERT_ENABLED != true)');
     return;
@@ -426,37 +351,83 @@ async function runNcDueAlertJob() {
     return;
   }
 
-  logger.info('[AlertScheduler] Avvio job alert NC/azioni in scadenza...');
+  logger.info(`[AlertScheduler] Avvio escalation NC (send_time=${sendTimeFilter || 'all'})...`);
   const pool = await getPool();
 
   try {
-    const orgsResult = await pool.request().query(`
-      SELECT nc.organization_id, nc.recipients_email, o.organization_name
+    const orgsResult = await pool.request()
+      .input('sendTime', sendTimeFilter || null)
+      .query(`
+      SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1, nc.alert_days_2,
+             nc.send_time, nc.alert_doc_expiry, nc.alert_nc_open,
+             o.organization_name
       FROM notifications_config nc
       JOIN organizations o ON nc.organization_id = o.organization_id
       WHERE nc.enabled = 1
+        AND nc.alert_nc_open = 1
+        AND (@sendTime IS NULL OR nc.send_time = @sendTime)
     `);
     const orgs = orgsResult.recordset || [];
 
     for (const org of orgs) {
-      const { ncs, actions } = await fetchNcDueItems(pool, org.organization_id);
-      if (ncs.length === 0 && actions.length === 0) {
-        logger.info(`[AlertScheduler] Org ${org.organization_id}: nessuna NC/azione in alert`);
-        continue;
-      }
-
-      const overdueNcs = ncs.filter((r) => r.is_overdue);
-      const dueSoonNcs = ncs.filter((r) => !r.is_overdue);
-      const overdueActions = actions.filter((r) => r.is_overdue);
-      const dueSoonActions = actions.filter((r) => !r.is_overdue);
-
-      const subject = `[SGQ] NC/azioni in scadenza \u2014 ${org.organization_name}`;
-      const html = buildNcDueEmailHtml(org.organization_name, overdueNcs, dueSoonNcs, overdueActions, dueSoonActions);
-      const sent = await sendAlertEmail(org.recipients_email, subject, html);
-      logger.info(`[AlertScheduler] NC alert org ${org.organization_id}: inviato=${sent}`);
+      const result = await runNcEscalationForOrg(pool, org);
+      logger.info(`[AlertScheduler] NC escalation org ${org.organization_id}: email=${result.sent}`);
     }
   } catch (err) {
-    logger.error('[AlertScheduler] Errore job NC due alert:', err.message);
+    logger.error('[AlertScheduler] Errore job NC escalation:', err.message);
+  }
+}
+
+/** @deprecated alias retrocompatibilita test */
+async function runNcDueAlertJob() {
+  return runNcDueAlertJobForSendTime(null);
+}
+
+async function loadDistinctSendTimes(pool) {
+  const result = await pool.request().query(`
+    SELECT DISTINCT ISNULL(NULLIF(LTRIM(RTRIM(send_time)), ''), '${DEFAULT_SEND_TIME}') AS send_time
+    FROM notifications_config
+    WHERE enabled = 1
+  `);
+  const times = (result.recordset || []).map((r) => r.send_time);
+  return times.length > 0 ? times : [DEFAULT_SEND_TIME];
+}
+
+function cancelScheduledAlertJobs() {
+  for (const job of scheduledJobs) {
+    try { job.cancel(); } catch { /* ignore */ }
+  }
+  scheduledJobs.length = 0;
+}
+
+async function scheduleDynamicAlertJobs() {
+  if (!schedule) return;
+
+  cancelScheduledAlertJobs();
+
+  let sendTimes = [DEFAULT_SEND_TIME];
+  try {
+    const pool = await getPool();
+    sendTimes = await loadDistinctSendTimes(pool);
+  } catch (err) {
+    logger.warn('[AlertScheduler] Impossibile leggere send_time da DB, uso default 08:00:', err.message);
+  }
+
+  for (const sendTime of sendTimes) {
+    const docCron = sendTimeToCron(sendTime);
+    const ncSlot = addMinutesToSendTime(sendTime, 5);
+
+    const docJob = schedule.scheduleJob(docCron, () => {
+      runAlertJobForSendTime(sendTime).catch((err) => logger.error('[AlertScheduler] Errore doc alert:', err.message));
+    });
+    if (docJob) scheduledJobs.push(docJob);
+
+    const ncJob = schedule.scheduleJob(ncSlot.cron, () => {
+      runNcDueAlertJobForSendTime(sendTime).catch((err) => logger.error('[AlertScheduler] Errore NC alert:', err.message));
+    });
+    if (ncJob) scheduledJobs.push(ncJob);
+
+    logger.info(`[AlertScheduler] Job programmati send_time=${sendTime} (doc ${docCron}, NC ${ncSlot.cron})`);
   }
 }
 
@@ -467,9 +438,13 @@ function startAlertScheduler() {
     return;
   }
 
-  // Ogni giorno alle 08:00
-  schedule.scheduleJob('0 8 * * *', () => {
-    runAlertJob().catch(err => logger.error('[AlertScheduler] Errore non gestito:', err.message));
+  scheduleDynamicAlertJobs().catch((err) => {
+    logger.error('[AlertScheduler] Errore scheduling dinamico:', err.message);
+  });
+
+  // Ricarica send_time da DB ogni notte
+  schedule.scheduleJob('1 0 * * *', () => {
+    scheduleDynamicAlertJobs().catch((err) => logger.error('[AlertScheduler] Reload send_time:', err.message));
   });
 
   // Ogni lunedì alle 03:00 — verifica validità norme
@@ -492,11 +467,18 @@ function startAlertScheduler() {
     runKnowledgeL2Job().catch(err => logger.error('[AlertScheduler] Errore non gestito (knowledge L2):', err.message));
   });
 
-  schedule.scheduleJob('5 8 * * *', () => {
-    runNcDueAlertJob().catch(err => logger.error('[AlertScheduler] NC due alert:', err.message));
-  });
-
-  logger.info('[AlertScheduler] Scheduler avviato — alert 08:00, NC 08:05, norme lun 03:00, knowledge index 02:00, optimization 03:00, L2 synthesis dom 04:00');
+  logger.info('[AlertScheduler] Scheduler avviato — alert dinamici da notifications_config.send_time, norme lun 03:00, knowledge index 02:00');
 }
 
-module.exports = { startAlertScheduler, runAlertJob, runNormValidityJob, runKnowledgeIndexJob, runKnowledgeOptimizationJob, runKnowledgeL2Job, runNcDueAlertJob };
+module.exports = {
+  startAlertScheduler,
+  runAlertJob,
+  runAlertJobForSendTime,
+  runNormValidityJob,
+  runKnowledgeIndexJob,
+  runKnowledgeOptimizationJob,
+  runKnowledgeL2Job,
+  runNcDueAlertJob,
+  runNcDueAlertJobForSendTime,
+  scheduleDynamicAlertJobs,
+};

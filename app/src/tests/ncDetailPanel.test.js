@@ -6,11 +6,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const mockUpdateNcStatus = vi.hoisted(() => vi.fn());
+const mockGetNotificationContacts = vi.hoisted(() => vi.fn().mockResolvedValue({ data: [] }));
 
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),
     getNcActions: vi.fn().mockResolvedValue({ data: [] }),
+    getNotificationContacts: (...args) => mockGetNotificationContacts(...args),
     getAttachments: vi.fn().mockResolvedValue({ data: [] }),
     uploadAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
@@ -49,6 +51,7 @@ describe('NcDetailPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateNcStatus.mockResolvedValue({ success: true });
+    mockGetNotificationContacts.mockResolvedValue({ data: [] });
   });
 
   it('renderizza i campi popolati dalla NC', () => {
@@ -127,8 +130,10 @@ describe('NcDetailPanel', () => {
         root_cause: 'Causa radice di test',
         verification_notes: 'Note verifica di test',
         verification_responsible: 'Luigi Verdi',
+        verification_contact_id: null,
         severity: 'major',
         responsible_person: 'Mario Rossi',
+        responsible_contact_id: null,
         due_date: '2026-06-15',
       });
     });

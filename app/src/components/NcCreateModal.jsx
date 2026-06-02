@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
   clearNcFieldDraftsForScope,
@@ -30,6 +31,8 @@ const EMPTY_FORM = {
   description: "",
   severity: "minor",
   responsible_person: "",
+  responsible_contact_id: null,
+  useExternalResponsible: false,
   due_date: "",
 };
 
@@ -43,6 +46,14 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    if (!open) return;
+    apiService.getNotificationContacts({ active: "true" })
+      .then((res) => setContacts(res?.data || []))
+      .catch(() => setContacts([]));
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -225,16 +236,20 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">
-            <div>
-              <label htmlFor="nc-create-resp">Responsabile</label>
-              <input
-                id="nc-create-resp"
-                type="text"
-                value={form.responsible_person}
-                disabled={saving}
-                onChange={e => setField("responsible_person", e.target.value)}
-              />
-            </div>
+            <NcResponsibleSelect
+              contacts={contacts}
+              roleFilter={["attuazione", "generico"]}
+              contactId={form.responsible_contact_id}
+              textValue={form.responsible_person}
+              useExternal={form.useExternalResponsible}
+              onContactIdChange={(id) => setField("responsible_contact_id", id)}
+              onTextChange={(v) => setField("responsible_person", v)}
+              onUseExternalChange={(v) => {
+                setField("useExternalResponsible", v);
+                if (v) setField("responsible_contact_id", null);
+              }}
+              label="Responsabile"
+            />
             <div>
               <label htmlFor="nc-create-due">Scadenza</label>
               <input

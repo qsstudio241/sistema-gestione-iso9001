@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
   clearNcFieldDraftsForScope,
@@ -50,10 +51,13 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
       "new_action_description",
     ),
     responsible: "",
+    responsible_contact_id: null,
+    useExternalResponsible: false,
     due_date: "",
   }));
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState(null);
+  const [contacts, setContacts] = useState([]);
   const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
   const [verifyError, setVerifyError] = useState(null);
   const [dueFilter, setDueFilter] = useState("all");
@@ -72,6 +76,13 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (typeof apiService.getNotificationContacts !== "function") return undefined;
+    apiService.getNotificationContacts({ active: "true", role_type: "attuazione" })
+      .then((res) => setContacts(res?.data || []))
+      .catch(() => setContacts([]));
+  }, [organizationId]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.description.trim()) return;
@@ -81,7 +92,10 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
       await apiService.createNcAction(ncId, {
         action_type: form.action_type,
         description: form.description.trim(),
-        responsible: form.responsible.trim() || null,
+        responsible: form.useExternalResponsible
+          ? form.responsible.trim() || null
+          : form.responsible.trim() || null,
+        responsible_contact_id: form.useExternalResponsible ? null : form.responsible_contact_id,
         due_date: form.due_date || null,
       });
       if (organizationId) {
@@ -91,6 +105,8 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
         action_type: "corrective",
         description: "",
         responsible: "",
+        responsible_contact_id: null,
+        useExternalResponsible: false,
         due_date: "",
       });
       setShowForm(false);
@@ -255,15 +271,22 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
             />
           </div>
           <div className="nc-form-row nc-form-row-2col">
-            <div>
-              <label>Responsabile attuazione</label>
-              <input
-                type="text"
-                value={form.responsible}
-                onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
-                placeholder="Chi esegue l'azione"
-              />
-            </div>
+            <NcResponsibleSelect
+              contacts={contacts}
+              roleFilter={["attuazione", "generico"]}
+              contactId={form.responsible_contact_id}
+              textValue={form.responsible}
+              useExternal={form.useExternalResponsible}
+              onContactIdChange={(id) => setForm((f) => ({ ...f, responsible_contact_id: id }))}
+              onTextChange={(v) => setForm((f) => ({ ...f, responsible: v }))}
+              onUseExternalChange={(v) => setForm((f) => ({
+                ...f,
+                useExternalResponsible: v,
+                responsible_contact_id: v ? null : f.responsible_contact_id,
+              }))}
+              label="Responsabile attuazione"
+              placeholder="Chi esegue l'azione"
+            />
             <div>
               <label>Scadenza</label>
               <input
