@@ -117,11 +117,16 @@ Copy-FileToVps "src/controllers/document.controller.js" "$RemoteBase/src/control
 Copy-FileToVps "src/controllers/customChecklist.controller.js" "$RemoteBase/src/controllers/customChecklist.controller.js"
 Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controllers/admin.controller.js"
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
+Copy-FileToVps "src/controllers/companyPersonnel.controller.js" "$RemoteBase/src/controllers/companyPersonnel.controller.js"
+Copy-FileToVps "src/controllers/company.controller.js" "$RemoteBase/src/controllers/company.controller.js"
 Copy-FileToVps "src/controllers/organization.controller.js" "$RemoteBase/src/controllers/organization.controller.js"
 Copy-FileToVps "src/controllers/auth.controller.js" "$RemoteBase/src/controllers/auth.controller.js"
 Copy-FileToVps "src/controllers/aiChat.controller.js" "$RemoteBase/src/controllers/aiChat.controller.js"
 Copy-FileToVps "src/controllers/search.controller.js" "$RemoteBase/src/controllers/search.controller.js"
 Copy-FileToVps "src/utils/aiCitations.js" "$RemoteBase/src/utils/aiCitations.js"
+Copy-FileToVps "src/utils/docTypeConfigHelpers.js" "$RemoteBase/src/utils/docTypeConfigHelpers.js"
+Copy-FileToVps "src/services/docCodeGenerator.service.js" "$RemoteBase/src/services/docCodeGenerator.service.js"
+Copy-FileToVps "src/services/documentHistoryTracker.service.js" "$RemoteBase/src/services/documentHistoryTracker.service.js"
 
 # Routes (necessarie per esporre gli endpoint custom-checklist-responses)
 Copy-FileToVps "src/routes/audit.routes.js" "$RemoteBase/src/routes/audit.routes.js"
@@ -130,6 +135,7 @@ Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes
 Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
 Copy-FileToVps "src/routes/nc.routes.js" "$RemoteBase/src/routes/nc.routes.js"
 Copy-FileToVps "src/routes/search.routes.js" "$RemoteBase/src/routes/search.routes.js"
+Copy-FileToVps "src/routes/company.routes.js" "$RemoteBase/src/routes/company.routes.js"
 
 # Sprint 9/10: Import batch PDF → staging → document registry
 Copy-FileToVps "src/controllers/importJobs.controller.js" "$RemoteBase/src/controllers/importJobs.controller.js"
