@@ -225,6 +225,55 @@ describe('companyPersonnel CRUD', () => {
   });
 });
 
+describe('listPersonnelStudio (S6)', () => {
+  it('ritorna lista vuota con company_access ristretto', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({
+      params: {},
+      user: {
+        auditor_org_id: null,
+        role: 'auditor',
+        company_access: [{ company_id: 77, permission: 'read' }],
+      },
+    });
+    const res = mockRes();
+    await ctrl.listPersonnelStudio(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: [] });
+  });
+
+  it('filtra per auditor_org se utente studio', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [
+        {
+          id: 1,
+          company_id: COMPANY_ID,
+          company_name: 'Test Co',
+          name: 'Mario',
+          active: 1,
+        },
+      ],
+    });
+    const req = mockReq({ params: {} });
+    const res = mockRes();
+    await ctrl.listPersonnelStudio(req, res);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('c.auditor_org_id = @auditor_org_id'),
+      expect.objectContaining({ auditor_org_id: AUDITOR_ORG_ID }),
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true, data: expect.any(Array) }),
+    );
+  });
+
+  it('403 company_id fuori ambito studio', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ params: {}, query: { company_id: '9999' } });
+    const res = mockRes();
+    await ctrl.listPersonnelStudio(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+});
+
 describe('validateEmail', () => {
   it('accetta email nulla (opzionale)', () => {
     expect(ctrl.validateEmail(null)).toBe(true);

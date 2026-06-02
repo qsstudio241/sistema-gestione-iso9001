@@ -10,6 +10,7 @@ const {
   assertCompanyWriteAccess,
   ensureCompanyAccessLoaded,
   hasCompanyAccessRows,
+  getAllowedCompanyIds,
   sendAccessDenied,
   WRITE_STUDIO_ROLES,
 } = require('../services/companyAccess.service');
@@ -100,6 +101,87 @@ async function resolveCompanyScope(companyId, auditorOrgId) {
   `, { company_id: companyId, auditor_org_id: auditorOrgId });
 
   return result.recordset[0] || null;
+}
+
+/**
+ * GET /api/v1/personnel  overview studio (slice S6)
+ * Query: company_id (opzionale), active, auditor_org_id (superadmin)
+ */
+async function listPersonnelStudio(req, res) {
+  try {
+    const accessList = await ensureCompanyAccessLoaded(req.user);
+    const allowedIds = getAllowedCompanyIds(accessList);
+    const filterCompanyId = req.query.company_id != null && req.query.company_id !== ''
+      ? parseInt(req.query.company_id, 10)
+      : null;
+
+    if (filterCompanyId != null && !Number.isFinite(filterCompanyId)) {
+      return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
+    }
+
+    const where = [];
+    const params = {};
+
+    if (allowedIds) {
+      if (allowedIds.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+      if (filterCompanyId != null) {
+        const denied = await assertCompanyAccess(req.user, filterCompanyId, 'read');
+        if (denied) return sendAccessDenied(res, denied);
+        where.push('cp.company_id = @company_id');
+        params.company_id = filterCompanyId;
+      } else {
+        const idParams = allowedIds.map((id, i) => {
+          const key = `allowed_id_${i}`;
+          params[key] = id;
+          return `@${key}`;
+        });
+        where.push(`cp.company_id IN (${idParams.join(', ')})`);
+      }
+    } else {
+      const auditorOrgId = resolveAuditorOrgId(req);
+      if (!auditorOrgId) {
+        return res.status(403).json({
+          error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
+          code: 'AUDITOR_ORG_REQUIRED',
+        });
+      }
+      where.push('c.auditor_org_id = @auditor_org_id');
+      params.auditor_org_id = auditorOrgId;
+
+      if (filterCompanyId != null) {
+        const scope = await resolveCompanyScope(filterCompanyId, auditorOrgId);
+        if (!scope) {
+          return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+        }
+        where.push('cp.company_id = @company_id');
+        params.company_id = filterCompanyId;
+      }
+    }
+
+    const { active } = req.query;
+    if (active !== undefined && active !== '') {
+      where.push('cp.active = @active');
+      params.active = active === 'true' || active === '1' ? 1 : 0;
+    }
+
+    const result = await query(`
+      SELECT cp.id, cp.organization_id, cp.company_id, c.name AS company_name,
+             cp.name, cp.job_title, cp.email, cp.active,
+             cp.can_actuation, cp.can_verify, cp.notification_contact_id,
+             cp.created_at, cp.updated_at
+      FROM company_personnel cp
+      INNER JOIN companies c ON c.id = cp.company_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY c.name ASC, cp.name ASC
+    `, params);
+
+    res.json({ success: true, data: result.recordset });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] listStudio error:', err.message);
+    res.status(500).json({ error: 'Errore recupero personale studio', code: 'SERVER_ERROR' });
+  }
 }
 
 async function listPersonnel(req, res) {
@@ -324,6 +406,7 @@ async function deletePersonnel(req, res) {
 }
 
 module.exports = {
+  listPersonnelStudio,
   listPersonnel,
   createPersonnel,
   updatePersonnel,

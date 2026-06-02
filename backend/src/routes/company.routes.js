@@ -34,6 +34,9 @@ const uploadLogo = multer({ storage: logoStorage, fileFilter: logoFilter, limits
 
 router.use(authenticate);
 
+// Overview personale studio (slice S6) — prima delle route :id
+router.get('/personnel', companyPersonnelController.listPersonnelStudio);
+
 router.get('/companies', companyController.listCompanies);
 router.get('/companies/:id', companyController.getCompanyById);
 router.post('/companies', companyController.createCompany);
