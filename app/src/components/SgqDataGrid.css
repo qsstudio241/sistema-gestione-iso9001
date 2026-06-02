@@ -115,3 +115,40 @@
   color: #6b7280;
   background: #f9fafb;
 }
+
+/* Azioni riga — pattern condiviso griglie plain (CompaniesPage, rubrica NC, …) */
+.sgq-datagrid-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.sgq-datagrid .btn-edit,
+.sgq-datagrid .btn-delete {
+  padding: 0.25rem 0.4rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.sgq-datagrid .btn-edit {
+  color: #1d4ed8;
+}
+
+.sgq-datagrid .btn-edit:hover {
+  background: #dbeafe;
+}
+
+.sgq-datagrid .btn-delete {
+  color: #b91c1c;
+}
+
+.sgq-datagrid .btn-delete:hover {
+  background: #fee2e2;
+}
