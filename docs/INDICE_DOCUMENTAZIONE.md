@@ -83,6 +83,7 @@ I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** p
 |-----|-------|------|
 | attivo | Offline / sync / logout | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) |
 | attivo | RBAC multi-tenant | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+| agente | Alert, scadenze, tipi documento | [AGENT_ALERTS_AND_DOC_TYPES.md](AGENT_ALERTS_AND_DOC_TYPES.md) |
 | attivo | Utenti, checklist, report | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) |
 | attivo | Split tenant DB | [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md) |
 | attivo | Manuali utente/ops | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) |
