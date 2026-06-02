@@ -1,6 +1,7 @@
 # TASK — Estensioni Riesame Requisiti (slice verticali)
 
-**Stato:** IN CORSO — slice **R2** (UI Import Jobs)  
+**Stato:** IN CORSO — slice **R3** (link bidirezionale)  
+**Slice R2:** ✅ TEST OK — PR [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) + hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82)  
 **Creato:** 02/06/2026  
 **Baseline completata:** PR [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) — pilota ordine diretto operativo  
 **Spec di riferimento:** [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md)
@@ -20,7 +21,7 @@ Una slice alla volta: implementa → test L1 → checkpoint → commit/PR → at
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `R2` (UI Import Jobs — pulsante «Crea caso Riesame»)
+**Slice corrente consigliata:** `R3` (link bidirezionale job ↔ caso Riesame)
 
 ---
 
@@ -35,6 +36,7 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 | Migrazione 068 (clarifications, documents, allegati commercial_*) | ✅ VPS |
 | Import job Sprint 9–10 → **solo** `commit-to-registry` | ✅ separato |
 | **R1** `POST /contract-reviews/import-from-job` | ✅ PR [#80](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/80) merge `5403b1c` |
+| **R2** UI Import Jobs «Crea caso Riesame» | ✅ PR [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) + DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82) migrazione 069 |
 
 ---
 
@@ -123,8 +125,8 @@ flowchart LR
 | R2.5 | Errori | Messaggi 409/400 user-friendly (già usato, file non pronto) |
 
 **Checkpoint R2 (committente):**
-- [ ] Import PDF → estrai → **Crea caso Riesame** → caso aperto con allegato visibile
-- [ ] Hard refresh: dati persistono
+- [x] Import PDF → estrai → **Crea caso Riesame** → caso aperto con allegato visibile (smoke Playwright 02/06/2026, caso #5)
+- [x] Hard refresh: dati persistono
 
 ---
 
@@ -132,7 +134,7 @@ flowchart LR
 
 | # | Task | Dettaglio |
 |---|------|-----------|
-| R3.1 | Migrazione 069 | Colonne: `commercial_cases.source_import_job_id INT NULL`; `import_job_files.commercial_case_id INT NULL` (FK separate, no ON DELETE CASCADE) |
+| R3.1 | Migrazione **070** | Colonne: `commercial_cases.source_import_job_id INT NULL`; `import_job_files.commercial_case_id INT NULL` (FK separate, no ON DELETE CASCADE) |
 | R3.2 | UI caso | Badge «Origine: Import job #N» con link a pagina import |
 | R3.3 | UI job | Badge «Caso Riesame #N» se già creato; disabilita doppio create |
 | R3.4 | Idempotenza | Secondo click → 409 con link caso esistente |
