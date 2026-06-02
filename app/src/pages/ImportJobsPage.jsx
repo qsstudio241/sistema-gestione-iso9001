@@ -3,8 +3,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import apiService from "../services/apiService";
+import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "../contexts/RouterContext";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import {
@@ -31,6 +32,40 @@ function parseAiJson(val) {
   } catch {
     return null;
   }
+}
+
+function buildRiesameTitle(job, file) {
+  const ai = parseAiJson(file?.ai_extraction_json);
+  if (ai?.title) return String(ai.title).trim();
+  if (job?.title) return String(job.title).trim();
+  if (file?.original_name) return String(file.original_name).replace(/\.pdf$/i, "");
+  return "Riesame da import";
+}
+
+function textPreview(extractedText, maxLen = 400) {
+  const t = String(extractedText || "").trim();
+  if (!t) return "— Nessun testo estratto —";
+  if (t.length <= maxLen) return t;
+  return `${t.slice(0, maxLen)}…`;
+}
+
+function mapImportErrorMessage(err) {
+  if (!(err instanceof ApiError)) {
+    return err?.message || "Operazione fallita";
+  }
+  if (err.code === "ALREADY_LINKED") {
+    const caseId = err.data?.case_id;
+    return caseId
+      ? `Questo file è già collegato al caso Riesame #${caseId}.`
+      : (err.message || "File già collegato a un caso Riesame.");
+  }
+  if (err.code === "NO_ELIGIBLE_FILES" || err.code === "INVALID_FILE_STATUS") {
+    return "Il file deve essere in stato estratto o revisionato prima di creare il caso.";
+  }
+  if (err.code === "VALIDATION_ERROR") {
+    return err.message || "Dati non validi. Controlla titolo e cliente.";
+  }
+  return err.message || "Creazione caso Riesame fallita";
 }
 
 /**
@@ -182,6 +217,7 @@ function CommitNormStatusBadge({ normLookup, standardCode }) {
 
 export default function ImportJobsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -193,6 +229,8 @@ export default function ImportJobsPage() {
   const [busy, setBusy] = useState(false);
   const [commitDialog, setCommitDialog] = useState(null); // { file, isNorm, form, normLookup }
   const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
+  const [riesameDialog, setRiesameDialog] = useState(null); // { file, form }
+  const [companies, setCompanies] = useState([]);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -219,6 +257,17 @@ export default function ImportJobsPage() {
       setError(e.message || "Errore dettaglio job");
     }
   }, []);
+
+  const loadCompanies = useCallback(async () => {
+    try {
+      const params = user?.auditor_org_id ? { auditor_org_id: user.auditor_org_id } : {};
+      const res = await apiService.getCompanies(params);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setCompanies(list);
+    } catch {
+      setCompanies([]);
+    }
+  }, [user?.auditor_org_id]);
 
   useEffect(() => {
     loadList();
@@ -363,6 +412,71 @@ export default function ImportJobsPage() {
     const built = buildCommitFormFromFile(ai, file, jobHint);
     setCommitDialog({ file, ...built });
     setCommitResult(null);
+  }
+
+  async function handleOpenRiesame(file) {
+    const el = document.getElementById(`txt-${file.id}`);
+    const extractedText = el ? el.value : (file.extracted_text || "");
+    const job = detail?.job;
+    const defaultCompanyId =
+      job?.company_id != null ? String(job.company_id) : "";
+    setRiesameDialog({
+      file,
+      form: {
+        title: buildRiesameTitle(job, file),
+        company_id: defaultCompanyId,
+        external_ref: "",
+        textPreview: textPreview(extractedText),
+      },
+    });
+    if (!companies.length) {
+      await loadCompanies();
+    }
+  }
+
+  async function handleRiesameConfirm() {
+    if (!riesameDialog || !selectedId) return;
+    if (!riesameDialog.form.title?.trim()) {
+      setError("Il titolo del caso è obbligatorio.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const payload = {
+        job_id: selectedId,
+        file_ids: [riesameDialog.file.id],
+        title: riesameDialog.form.title.trim(),
+      };
+      if (riesameDialog.form.company_id) {
+        payload.company_id = parseInt(riesameDialog.form.company_id, 10);
+      }
+      const extRef = (riesameDialog.form.external_ref || "").trim();
+      if (extRef) payload.external_ref = extRef;
+
+      const res = await apiService.importContractCaseFromJob(payload);
+      const caseId = res?.case_id ?? res?.data?.case_id;
+      setRiesameDialog(null);
+      if (caseId) {
+        navigate(`/contract-reviews/${caseId}`);
+      } else {
+        setError("Caso creato ma ID non restituito dall'API.");
+      }
+    } catch (e) {
+      const msg = mapImportErrorMessage(e);
+      setError(msg);
+      if (e instanceof ApiError && e.code === "ALREADY_LINKED" && e.data?.case_id) {
+        const open = window.confirm(
+          `${msg}\n\nAprire il caso Riesame esistente (#${e.data.case_id})?`,
+        );
+        if (open) {
+          setRiesameDialog(null);
+          navigate(`/contract-reviews/${e.data.case_id}`);
+        }
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   function handleCommitDocTypeChange(nextType) {
@@ -623,6 +737,17 @@ export default function ImportJobsPage() {
                           Analisi AI strutturata
                         </button>
                       )}
+                      {(f.status === "extracted" || f.status === "reviewed") && (
+                        <button
+                          type="button"
+                          className="btn-small btn-riesame"
+                          disabled={busy}
+                          title="Crea un caso Riesame requisiti contratto da questo PDF"
+                          onClick={() => handleOpenRiesame(f)}
+                        >
+                          Crea caso Riesame
+                        </button>
+                      )}
                       {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
                         <button
                           type="button"
@@ -801,6 +926,87 @@ export default function ImportJobsPage() {
                 }
               >
                 {busy ? "Salvataggio…" : "Conferma e salva nel Registry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {riesameDialog && (
+        <div className="commit-dialog-overlay" onClick={() => setRiesameDialog(null)}>
+          <div className="commit-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Crea caso Riesame requisiti</h3>
+            <p className="commit-dialog-file">
+              File: <strong>{riesameDialog.file.original_name}</strong>
+            </p>
+            <div className="commit-form">
+              <label>Titolo caso *
+                <input
+                  type="text"
+                  value={riesameDialog.form.title}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, title: e.target.value },
+                    }))
+                  }
+                />
+              </label>
+              <label>Cliente (opzionale)
+                <select
+                  value={riesameDialog.form.company_id}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, company_id: e.target.value },
+                    }))
+                  }
+                >
+                  <option value="">— Nessun cliente —</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name || `ID ${c.id}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>Riferimento esterno (opzionale)
+                <input
+                  type="text"
+                  placeholder="es. RFQ-2026-042"
+                  value={riesameDialog.form.external_ref}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, external_ref: e.target.value },
+                    }))
+                  }
+                />
+              </label>
+              <label>Anteprima testo estratto
+                <textarea
+                  className="riesame-text-preview"
+                  rows={5}
+                  readOnly
+                  value={riesameDialog.form.textPreview}
+                />
+              </label>
+            </div>
+            <p className="commit-dialog-hint">
+              Verrà creato un caso in bozza (<em>DRAFT</em>) con checklist preliminare
+              e allegato PDF collegato. Potrai completare il riesame dalla pagina Riesame requisiti.
+            </p>
+            <div className="commit-dialog-actions">
+              <button type="button" className="btn-secondary" onClick={() => setRiesameDialog(null)} disabled={busy}>
+                Annulla
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleRiesameConfirm}
+                disabled={busy || !riesameDialog.form.title?.trim()}
+              >
+                {busy ? "Creazione…" : "Conferma e crea caso"}
               </button>
             </div>
           </div>
