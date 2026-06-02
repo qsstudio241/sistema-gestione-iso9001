@@ -29,7 +29,15 @@ describe('NCPage drawer', () => {
   it('CSS drawer NC con sezioni flusso operativo', () => {
     const css = readFileSync(ncPageCssPath, 'utf8');
     expect(css).toContain('.nc-detail-drawer');
+    expect(css).toContain('.nc-detail-drawer-resizer');
     expect(css).toContain('.nc-drawer-section');
     expect(css).not.toContain('.nc-detail-section');
+  });
+
+  it('integra hook resize drawer con persistenza localStorage', () => {
+    const src = readFileSync(ncPagePath, 'utf8');
+    expect(src).toContain('useNcDrawerWidth');
+    expect(src).toContain('nc-detail-drawer-resizer');
+    expect(src).toContain('startDrawerResize');
   });
 });

@@ -18,6 +18,10 @@ import {
   canTransitionNcStatus,
   canApproveNcClosure,
 } from "../utils/ncWorkflow";
+import useNcDrawerWidth, {
+  NC_DRAWER_WIDTH_MIN,
+  getNcDrawerMaxWidth,
+} from "../hooks/useNcDrawerWidth";
 import "../components/ChecklistModule.css";
 import "../components/DocumentDetailPanel.css";
 import "./NCPage.css";
@@ -75,6 +79,7 @@ export default function NCPage() {
   const [companies, setCompanies] = useState([]);
 
   const LIMIT = 20;
+  const { width: drawerWidth, startResize: startDrawerResize } = useNcDrawerWidth();
 
   useEffect(() => {
     apiService.getCompanies()
@@ -500,10 +505,21 @@ export default function NCPage() {
         <div className="doc-detail__overlay nc-detail-overlay" onClick={handleCloseDetail} role="presentation">
           <aside
             className="doc-detail nc-detail-drawer"
+            style={{ width: drawerWidth, maxWidth: drawerWidth }}
             onClick={(e) => e.stopPropagation()}
             role="complementary"
             aria-label={`Dettaglio ${selectedNc.nc_number}`}
           >
+            <div
+              className="nc-detail-drawer-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Ridimensiona pannello NC"
+              aria-valuenow={drawerWidth}
+              aria-valuemin={NC_DRAWER_WIDTH_MIN}
+              aria-valuemax={getNcDrawerMaxWidth()}
+              onMouseDown={startDrawerResize}
+            />
             <div className="doc-detail__header">
               <div className="doc-detail__header-top">
                 <h2 className="doc-detail__title nc-detail-drawer-title">
