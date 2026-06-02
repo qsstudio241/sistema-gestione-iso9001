@@ -5,12 +5,21 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import SgqDataGrid from "./SgqDataGrid";
+import { Badge } from "./SharedComponents";
 import { ROLE_LABELS } from "./NcResponsibleSelect";
 
 const ROLE_OPTIONS = [
   { value: "attuazione", label: "Attuazione" },
   { value: "verifica", label: "Verifica" },
   { value: "generico", label: "Generico" },
+];
+
+const GRID_COLUMNS = [
+  { id: "name", label: "Nome", sortable: true },
+  { id: "email", label: "Email", sortable: true },
+  { id: "role_type", label: "Ruolo", sortable: true },
+  { id: "active", label: "Stato", sortable: true },
+  { id: "actions", label: "Azioni", sortable: false, width: "100px" },
 ];
 
 const EMPTY_FORM = { name: "", email: "", role_type: "generico", active: true };
@@ -88,7 +97,7 @@ function ContactFormModal({ item, onSave, onClose }) {
           {error && <p className="notif-error">{error}</p>}
           <div className="notif-actions">
             <button type="button" className="btn-test" onClick={onClose}>Annulla</button>
-            <button type="submit" className="btn-save-notif" disabled={saving}>
+            <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? "Salvataggio..." : "Salva"}
             </button>
           </div>
@@ -96,6 +105,10 @@ function ContactFormModal({ item, onSave, onClose }) {
       </div>
     </div>
   );
+}
+
+function isContactActive(row) {
+  return row.active !== false && row.active !== 0;
 }
 
 export default function NotificationContactsPanel() {
@@ -137,13 +150,46 @@ export default function NotificationContactsPanel() {
     }
   }
 
-  const columns = [
-    { id: "name", label: "Nome", sortable: true },
-    { id: "email", label: "Email", sortable: true },
-    { id: "role_type", label: "Ruolo", sortable: true },
-    { id: "active", label: "Stato", sortable: true },
-    { id: "actions", label: "", sortable: false },
-  ];
+  function renderGridCell(row, col) {
+    switch (col.id) {
+      case "role_type":
+        return ROLE_LABELS[row.role_type] || row.role_type || "\u2014";
+      case "active":
+        return isContactActive(row) ? (
+          <Badge variant="success">Attivo</Badge>
+        ) : (
+          <Badge variant="default">Inattivo</Badge>
+        );
+      case "actions":
+        return (
+          <div className="sgq-datagrid-row-actions">
+            <button
+              type="button"
+              className="btn-edit"
+              title="Modifica"
+              aria-label="Modifica"
+              onClick={() => setModal({ item: row })}
+            >
+              {"\u270F\uFE0F"}
+            </button>
+            <button
+              type="button"
+              className="btn-delete"
+              title="Elimina"
+              aria-label="Elimina"
+              onClick={() => handleDelete(row)}
+            >
+              {"\uD83D\uDDD1\uFE0F"}
+            </button>
+          </div>
+        );
+      default: {
+        const val = row[col.id];
+        if (val == null || val === "") return "\u2014";
+        return val;
+      }
+    }
+  }
 
   return (
     <div className="notif-card notif-contacts-panel">
@@ -151,7 +197,7 @@ export default function NotificationContactsPanel() {
         <h3 className="notif-card-title">Rubrica referenti NC</h3>
         <button
           type="button"
-          className="btn-save-notif"
+          className="btn-primary"
           onClick={() => setModal({ item: null })}
         >
           + Aggiungi referente
@@ -163,25 +209,18 @@ export default function NotificationContactsPanel() {
 
       <SgqDataGrid
         rows={rows}
-        columns={columns}
+        columns={GRID_COLUMNS}
         loading={loading}
         emptyMessage="Nessun referente in rubrica."
+        theme="plain"
         getRowKey={(r) => r.id}
-        renderCell={(row, col) => {
-          if (col.id === "role_type") return ROLE_LABELS[row.role_type] || row.role_type;
-          if (col.id === "active") {
-            return row.active === false || row.active === 0 ? "Inattivo" : "Attivo";
-          }
-          if (col.id === "actions") {
-            return (
-              <>
-                <button type="button" className="btn-icon" title="Modifica" aria-label="Modifica" onClick={() => setModal({ item: row })}>Modifica</button>
-                <button type="button" className="btn-icon" title="Elimina" aria-label="Elimina" onClick={() => handleDelete(row)}>Elimina</button>
-              </>
-            );
-          }
-          return row[col.id] ?? "";
+        getSortValue={(row, colId) => {
+          if (colId === "active") return isContactActive(row) ? 1 : 0;
+          if (colId === "actions") return "";
+          if (colId === "role_type") return ROLE_LABELS[row.role_type] || row.role_type || "";
+          return row[colId] ?? "";
         }}
+        renderCell={renderGridCell}
       />
 
       {modal && (
