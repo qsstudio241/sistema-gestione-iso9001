@@ -288,6 +288,109 @@ describe('saveChecklistAnswer', () => {
   });
 });
 
+// ─── linkDocument (supplier_id S2) ───────────────────────────────────────────
+describe('linkDocument', () => {
+  const CASE_ID = 10;
+  const DOC_ID = 55;
+  const SUPPLIER_ID = 3;
+
+  it('collega documento con supplier_id valido (201)', async () => {
+    const linked = {
+      id: 100,
+      case_id: CASE_ID,
+      document_id: DOC_ID,
+      counterparty: 'supplier',
+      supplier_id: SUPPLIER_ID,
+    };
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: SUPPLIER_ID }] })
+      .mockResolvedValueOnce({ recordset: [linked] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        direction: 'in',
+        supplier_id: SUPPLIER_ID,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(linked);
+    const insertCall = query.mock.calls[3];
+    expect(insertCall[1]).toMatchObject({ supplierId: SUPPLIER_ID, cp: 'supplier' });
+  });
+
+  it('supplier_id inesistente → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        supplier_id: 999,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/Fornitore non trovato/);
+  });
+
+  it('supplier_id non valido → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        supplier_id: 'abc',
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/supplier_id non valido/);
+  });
+
+  it('ignora supplier_id se counterparty non è supplier', async () => {
+    const linked = { id: 101, case_id: CASE_ID, document_id: DOC_ID, supplier_id: null };
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [linked] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'customer',
+        supplier_id: SUPPLIER_ID,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const insertCall = query.mock.calls[2];
+    expect(insertCall[1]).toMatchObject({ supplierId: null });
+  });
+});
+
 // ─── importFromJob ───────────────────────────────────────────────────────────
 describe('importFromJob', () => {
   const JOB_ID = 99;

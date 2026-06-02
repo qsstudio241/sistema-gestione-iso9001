@@ -146,6 +146,23 @@
   color: #e65100;
 }
 
+.cr-doc-meta-hint {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.cr-checklist-item--supplier-evidence {
+  border-left: 3px solid #e65100;
+  padding-left: 0.5rem;
+  background: #fff8e1;
+}
+
+.cr-checklist-hint {
+  font-size: 0.8rem;
+  color: #e65100;
+  font-weight: 600;
+}
+
 .cr-row-click {
   cursor: pointer;
 }
