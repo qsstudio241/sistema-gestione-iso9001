@@ -145,6 +145,9 @@ export default function ContractReviewPage() {
   const [attachDocRole, setAttachDocRole] = useState('order');
   const [attachCounterparty, setAttachCounterparty] = useState('customer');
   const [attachDirection, setAttachDirection] = useState('in');
+  const [attachSupplierId, setAttachSupplierId] = useState('');
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
   const [serverAiResult, setServerAiResult] = useState(null);
   const [serverAiLoading, setServerAiLoading] = useState(false);
 
@@ -192,6 +195,18 @@ export default function ContractReviewPage() {
       setCompanies([]);
     }
   }, [user?.auditor_org_id]);
+
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const res = await apiService.getSuppliers({ is_active: 'true' });
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setSuppliers(list);
+      setSuppliersLoadFailed(false);
+    } catch {
+      setSuppliers([]);
+      setSuppliersLoadFailed(true);
+    }
+  }, []);
 
   const loadList = useCallback(async () => {
     setListLoading(true);
@@ -264,7 +279,8 @@ export default function ContractReviewPage() {
 
   useEffect(() => {
     loadCompanies();
-  }, [loadCompanies]);
+    loadSuppliers();
+  }, [loadCompanies, loadSuppliers]);
 
   useEffect(() => {
     loadList();
@@ -405,12 +421,16 @@ export default function ContractReviewPage() {
     }
     setError(null);
     try {
-      await apiService.linkContractReviewDocument(caseId, {
+      const linkPayload = {
         document_id: docId,
         doc_role: attachDocRole || 'other',
         direction: attachDirection,
         counterparty: attachCounterparty,
-      });
+      };
+      if (attachCounterparty === 'supplier' && attachSupplierId) {
+        linkPayload.supplier_id = parseInt(attachSupplierId, 10);
+      }
+      await apiService.linkContractReviewDocument(caseId, linkPayload);
       setLinkDocId('');
       await loadDetail(caseId);
     } catch (err) {
@@ -574,6 +594,16 @@ export default function ContractReviewPage() {
 
   const checklistPreliminary = detail?.checklist?.filter((c) => c.phase === 'preliminary') || [];
   const checklistFinal = detail?.checklist?.filter((c) => c.phase === 'final') || [];
+
+  const hasSupplierDocs = useMemo(() => {
+    if (!detail) return false;
+    const docs = detail.documents || [];
+    const atts = detail.attachments || [];
+    return (
+      docs.some((d) => d.counterparty === 'supplier' || d.supplier_id) ||
+      atts.some((a) => a.commercial_counterparty === 'supplier')
+    );
+  }, [detail]);
 
   const aiStructured =
     aiSuggestion &&
@@ -909,6 +939,7 @@ export default function ContractReviewPage() {
                         key={item.id}
                         item={item}
                         disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        highlightSubforniture={hasSupplierDocs}
                         onSave={(patch) => handleSaveChecklistItem(item.id, patch)}
                       />
                     ))
@@ -1006,8 +1037,15 @@ export default function ContractReviewPage() {
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
                           direction={attachDirection}
-                          onCounterpartyChange={setAttachCounterparty}
+                          onCounterpartyChange={(value) => {
+                            setAttachCounterparty(value);
+                            if (value !== 'supplier') setAttachSupplierId('');
+                          }}
                           onDirectionChange={setAttachDirection}
+                          supplierId={attachSupplierId}
+                          onSupplierIdChange={setAttachSupplierId}
+                          suppliers={suppliers}
+                          suppliersLoadFailed={suppliersLoadFailed}
                         />
                         <button type="submit" className="cr-btn">
                           Collega
@@ -1020,8 +1058,15 @@ export default function ContractReviewPage() {
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
                           direction={attachDirection}
-                          onCounterpartyChange={setAttachCounterparty}
+                          onCounterpartyChange={(value) => {
+                            setAttachCounterparty(value);
+                            if (value !== 'supplier') setAttachSupplierId('');
+                          }}
                           onDirectionChange={setAttachDirection}
+                          supplierId={attachSupplierId}
+                          onSupplierIdChange={setAttachSupplierId}
+                          suppliers={suppliers}
+                          suppliersLoadFailed={suppliersLoadFailed}
                         />
                         <input type="file" onChange={handleUploadAttachment} />
                       </div>
@@ -1037,6 +1082,7 @@ export default function ContractReviewPage() {
                       <li key={d.id}>
                         {d.document_title || `Doc #${d.document_id}`} — ruolo:{' '}
                         {d.doc_role || '-'}
+                        {d.supplier_name ? ` (${d.supplier_name})` : ''}
                         <CommercialDocMetaBadge
                           counterparty={d.counterparty}
                           direction={d.direction}
@@ -1326,6 +1372,10 @@ function CommercialDocMetaFields({
   direction,
   onCounterpartyChange,
   onDirectionChange,
+  supplierId,
+  onSupplierIdChange,
+  suppliers,
+  suppliersLoadFailed,
 }) {
   return (
     <>
@@ -1351,6 +1401,25 @@ function CommercialDocMetaFields({
           </option>
         ))}
       </select>
+      {counterparty === 'supplier' && onSupplierIdChange ? (
+        <select
+          value={supplierId || ''}
+          onChange={(e) => onSupplierIdChange(e.target.value)}
+          aria-label="Fornitore anagrafico"
+        >
+          <option value="">- Fornitore (opz.) -</option>
+          {(suppliers || []).map((s) => (
+            <option key={s.id} value={String(s.id)}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {counterparty === 'supplier' && suppliersLoadFailed ? (
+        <span className="cr-doc-meta-hint" title="Modulo reclami/fornitori non disponibile">
+          Anagrafica non caricata
+        </span>
+      ) : null}
     </>
   );
 }
@@ -1394,19 +1463,26 @@ function ClarificationReplyRow({ onSave }) {
   );
 }
 
-function ChecklistItemRow({ item, disabled, onSave }) {
+function ChecklistItemRow({ item, disabled, onSave, highlightSubforniture }) {
   const [notes, setNotes] = useState(item.notes || '');
   useEffect(() => {
     setNotes(item.notes || '');
   }, [item.id, item.notes]);
 
   const ans = item.answer;
+  const p9Highlight = item.item_ref === 'P9' && highlightSubforniture;
 
   return (
-    <div className="cr-checklist-item">
+    <div className={`cr-checklist-item${p9Highlight ? ' cr-checklist-item--supplier-evidence' : ''}`}>
       <div>
         <span className="cr-checklist-ref">{item.item_ref}</span>
         {item.item_text}
+        {p9Highlight ? (
+          <span className="cr-checklist-hint">
+            {' '}
+            — documenti fornitore collegati al caso
+          </span>
+        ) : null}
       </div>
       <div className="cr-answer-bar">
         {[
