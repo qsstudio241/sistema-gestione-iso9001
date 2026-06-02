@@ -1,5 +1,5 @@
 /**
- * NcResponsibleSelect ù select rubrica referenti + testo libero esterno
+ * NcResponsibleSelect ? select rubrica referenti + testo libero esterno
  */
 
 import React, { useMemo } from "react";
@@ -10,10 +10,20 @@ const ROLE_LABELS = {
   generico: "Generico",
 };
 
+const PLACEHOLDER_OPTION = "\u2014 Seleziona dalla rubrica \u2014";
+const EMPTY_RUBRICA_HINT =
+  "Nessun referente in rubrica. Aggiungine uno in Impostazioni \u2192 Notifiche.";
+
+/** Etichetta option: nome + ruolo, senza email (email solo in title). */
+export function formatContactOptionLabel(contact) {
+  const role = ROLE_LABELS[contact.role_type] || contact.role_type || "";
+  return role ? `${contact.name} (${role})` : contact.name;
+}
+
 /**
  * @param {object} props
  * @param {Array} props.contacts
- * @param {string[]} [props.roleFilter] ù es. ['attuazione','generico']
+ * @param {string[]} [props.roleFilter] ? es. ['attuazione','generico']
  * @param {number|string|null} props.contactId
  * @param {string} props.textValue
  * @param {boolean} props.useExternal
@@ -77,16 +87,16 @@ export default function NcResponsibleSelect({
             if (picked) onTextChange(picked.name);
           }}
         >
-          <option value="">ù Seleziona dalla rubrica ù</option>
+          <option value="">{PLACEHOLDER_OPTION}</option>
           {filtered.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({ROLE_LABELS[c.role_type] || c.role_type}) ù {c.email}
+            <option key={c.id} value={c.id} title={c.email || undefined}>
+              {formatContactOptionLabel(c)}
             </option>
           ))}
         </select>
       )}
       {!useExternal && filtered.length === 0 && (
-        <p className="notif-hint">Nessun referente in rubrica. Aggiungine uno in Impostazioni ? Notifiche.</p>
+        <p className="notif-hint">{EMPTY_RUBRICA_HINT}</p>
       )}
     </div>
   );
