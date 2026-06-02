@@ -295,14 +295,14 @@ Scegliere **una** opzione:
 
 | Slice | Stato | PR | Note |
 |-------|--------|-----|------|
-| R1 | ⬜ TODO | — | |
-| R2 | ⬜ TODO | — | |
-| R3 | ⬜ TODO | — | |
-| S1 | ⬜ TODO | — | |
-| S2 | ⬜ TODO | — | |
-| N1 | ⬜ TODO | — | |
-| N2 | ⬜ TODO | — | |
-| H0 | ⬜ DECISIONE | — | Committente sceglie H-A/B/C |
-| H1 | ⬜ TODO | — | Dopo H0 |
+| R1 | ✅ TEST OK | #81 | import-from-job |
+| R2 | ✅ TEST OK | #81 | UI Import Jobs |
+| R3 | ✅ TEST OK | #83/#84 | link bidirezionale |
+| S1 | ✅ TEST OK | #85 | counterparty UI |
+| S2 | ✅ TEST OK | #86 | supplier_id mig. 073 |
+| N1 | ✅ TEST OK | #87 | notifiche DB |
+| N2 | ✅ TEST OK | #87 | email immediata |
+| H0 | ✅ H-A | — | stub handoff |
+| H1 | ✅ TEST OK | #88 | handoff mig. 075 |
 
 **Legenda:** ⬜ TODO · 🔄 IN CORSO · ✅ TEST OK · ❌ BLOCCATO
