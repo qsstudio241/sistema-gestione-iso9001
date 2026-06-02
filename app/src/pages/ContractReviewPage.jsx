@@ -737,6 +737,22 @@ export default function ContractReviewPage() {
                     {detail.case.company_id != null
                       ? companiesById.get(detail.case.company_id) || `#${detail.case.company_id}`
                       : '-'}
+                    {detail.case.source_import_job_id != null && (
+                      <>
+                        {' · '}
+                        <button
+                          type="button"
+                          className="cr-origin-link"
+                          onClick={() =>
+                            navigate(
+                              `/settings/import-jobs?job=${detail.case.source_import_job_id}`,
+                            )
+                          }
+                        >
+                          {`Origine: Import job #${detail.case.source_import_job_id}`}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
