@@ -672,6 +672,16 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Deploy VPS | Migrazione 075 + deploy backend; health 200 |
 | PR | [#88](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/88) |
 
+### Personale azienda S4+S5 + VPS migration 078 (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| Migration **078** | Tabella `company_personnel` + bridge `notification_contacts`; script `backend/scripts/run-migration-078-vps.js` |
+| API | `GET/POST/PUT/DELETE /api/v1/companies/:companyId/personnel` |
+| UI | Route frontend `/companies/:id` — tab Anagrafica + Personale (`CompanyDetailPage`, `CompanyPersonnelPanel`) |
+| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://www.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
+| Test | Vitest `companyDetailPage.test.jsx` — 3/3 |
+
 ### Slice S1 UI counterparty fornitori (02/06/2026)
 
 | Elemento | Dettaglio |
