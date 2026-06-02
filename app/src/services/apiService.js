@@ -524,8 +524,9 @@ class ApiService {
         return this.get(`/companies${query ? '?' + query : ''}`);
     }
 
-    async getCompany(id) {
-        return this.get(`/companies/${id}`);
+    async getCompany(id, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${id}${query ? '?' + query : ''}`);
     }
 
     async createCompany(data) {
@@ -563,6 +564,26 @@ class ApiService {
 
     getCompanyLogoUrl(id) {
         return `${this.baseUrl}/companies/${id}/logo`;
+    }
+
+    async getCompanyPersonnel(companyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/personnel${query ? '?' + query : ''}`);
+    }
+
+    async createCompanyPersonnel(companyId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/personnel${query ? '?' + query : ''}`, data);
+    }
+
+    async updateCompanyPersonnel(companyId, personnelId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.put(`/companies/${companyId}/personnel/${personnelId}${query ? '?' + query : ''}`, data);
+    }
+
+    async deleteCompanyPersonnel(companyId, personnelId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.delete(`/companies/${companyId}/personnel/${personnelId}${query ? '?' + query : ''}`);
     }
 
     // ==========================================
