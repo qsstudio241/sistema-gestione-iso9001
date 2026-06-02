@@ -43,6 +43,7 @@ router.post('/contract-reviews/:id/ai/analyze-requirements', ...guard, ctrl.anal
 router.get('/contract-reviews/:id', ...guard, ctrl.getCase);
 router.put('/contract-reviews/:id', ...guard, ctrl.updateCase);
 router.post('/contract-reviews/:id/transition', ...guard, ctrl.transitionStatus);
+router.post('/contract-reviews/:id/handoff', ...guard, ctrl.registerHandoff);
 router.post('/contract-reviews/:id/generate-checklist', ...guard, ctrl.generateChecklist);
 router.put('/contract-reviews/:id/checklist/:itemId', ...guard, ctrl.saveChecklistAnswer);
 

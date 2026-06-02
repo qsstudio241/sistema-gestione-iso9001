@@ -1332,6 +1332,71 @@ async function analyzeRequirements(req, res) {
     }
 }
 
+async function registerHandoff(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) {
+            return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        }
+
+        const existing = await fetchCaseRow(caseId, organizationId);
+        if (!existing) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        if (existing.status !== 'APPROVED') {
+            return sendErr(
+                res,
+                409,
+                'Handoff consentito solo per casi approvati',
+                'FORBIDDEN_STATE',
+            );
+        }
+
+        const { handoff_ref: handoffRefRaw, notes } = req.body || {};
+        const handoffRef =
+            handoffRefRaw !== undefined && handoffRefRaw !== null
+                ? String(handoffRefRaw).trim()
+                : '';
+        if (!handoffRef) {
+            return sendErr(res, 400, 'handoff_ref obbligatorio', 'VALIDATION_ERROR');
+        }
+
+        const notesVal =
+            notes !== undefined && notes !== null ? String(notes).trim().substring(0, 500) : null;
+
+        const upd = await query(
+            `
+            UPDATE commercial_cases
+            SET handoff_ref = @handoffRef,
+                handoff_at = SYSUTCDATETIME(),
+                handoff_by = @userId,
+                handoff_notes = @notesVal,
+                updated_at = SYSUTCDATETIME()
+            OUTPUT INSERTED.*
+            WHERE id = @caseId AND organization_id = @organizationId
+            `,
+            {
+                handoffRef: handoffRef.substring(0, 100),
+                userId,
+                notesVal,
+                caseId,
+                organizationId,
+            },
+        );
+
+        if (!upd.recordset.length) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+
+        return res.json(upd.recordset[0]);
+    } catch (err) {
+        logger.error('registerHandoff', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 module.exports = {
     listCases,
     getCase,
@@ -1353,6 +1418,7 @@ module.exports = {
     uploadCaseAttachment,
     analyzeRequirements,
     importFromJob,
+    registerHandoff,
     isTransitionAllowed: workflow.isTransitionAllowed,
     requiresTransitionReason: workflow.requiresTransitionReason,
 };

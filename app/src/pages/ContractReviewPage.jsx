@@ -43,6 +43,9 @@ function rowCase(row) {
     notes: row.notes,
     updated_at: row.updated_at ?? row.updatedAt,
     source_import_job_id: row.source_import_job_id ?? row.sourceImportJobId ?? null,
+    handoff_ref: row.handoff_ref ?? row.handoffRef ?? null,
+    handoff_at: row.handoff_at ?? row.handoffAt ?? null,
+    handoff_notes: row.handoff_notes ?? row.handoffNotes ?? null,
   };
 }
 
@@ -165,6 +168,10 @@ export default function ContractReviewPage() {
 
   const [transitionModal, setTransitionModal] = useState(null);
 
+  const [handoffRef, setHandoffRef] = useState('');
+  const [handoffNotes, setHandoffNotes] = useState('');
+  const [handoffSaving, setHandoffSaving] = useState(false);
+
   const [capitolatoText, setCapitolatoText] = useState('');
   const [aiCompanyContextId, setAiCompanyContextId] = useState('');
   const [applyAiBusy, setApplyAiBusy] = useState(false);
@@ -242,6 +249,8 @@ export default function ContractReviewPage() {
       });
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
+      setHandoffRef(c.handoff_ref || '');
+      setHandoffNotes(c.handoff_notes || '');
       const cid = c.company_id != null ? String(c.company_id) : '';
       setAiCompanyContextId(cid);
       try {
@@ -379,6 +388,26 @@ export default function ContractReviewPage() {
       } else {
         setError(err instanceof ApiError ? err.message : err.message || 'Transizione fallita');
       }
+    }
+  }
+
+  async function handleRegisterHandoff(e) {
+    e.preventDefault();
+    if (!caseId || !handoffRef.trim()) return;
+    setHandoffSaving(true);
+    setError(null);
+    try {
+      await apiService.registerContractReviewHandoff(caseId, {
+        handoff_ref: handoffRef.trim(),
+        notes: handoffNotes.trim() || undefined,
+      });
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : err.message || 'Registrazione passaggio fallita',
+      );
+    } finally {
+      setHandoffSaving(false);
     }
   }
 
@@ -904,6 +933,61 @@ export default function ContractReviewPage() {
                   )}
                 </ul>
               </div>
+
+              {detail.case.status === 'APPROVED' && (
+                <div className="cr-panel">
+                  <h2>Passaggio a esecuzione</h2>
+                  {detail.case.handoff_ref ? (
+                    <div className="cr-handoff-summary">
+                      <p>
+                        <strong>Riferimento commessa:</strong> {detail.case.handoff_ref}
+                      </p>
+                      {detail.case.handoff_at ? (
+                        <p className="cr-muted">
+                          Registrato il{' '}
+                          {new Date(detail.case.handoff_at).toLocaleString('it-IT')}
+                        </p>
+                      ) : null}
+                      {detail.case.handoff_notes ? (
+                        <p>
+                          <em>Note:</em> {detail.case.handoff_notes}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <form onSubmit={handleRegisterHandoff}>
+                      <div className="cr-form-row">
+                        <label htmlFor="cr-handoff-ref">Riferimento commessa / ordine</label>
+                        <input
+                          id="cr-handoff-ref"
+                          type="text"
+                          maxLength={100}
+                          value={handoffRef}
+                          onChange={(e) => setHandoffRef(e.target.value)}
+                          placeholder="Es. COMM-2026-042"
+                        />
+                      </div>
+                      <div className="cr-form-row">
+                        <label htmlFor="cr-handoff-notes">Note (opzionale)</label>
+                        <textarea
+                          id="cr-handoff-notes"
+                          className="cr-notes-textarea"
+                          value={handoffNotes}
+                          onChange={(e) => setHandoffNotes(e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="cr-btn cr-btn-primary"
+                        disabled={handoffSaving || !handoffRef.trim()}
+                      >
+                        {handoffSaving ? 'Registrazione…' : 'Registra passaggio'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
               </>
               )}
 

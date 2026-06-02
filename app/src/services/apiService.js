@@ -1572,6 +1572,10 @@ class ApiService {
         });
     }
 
+    async registerContractReviewHandoff(id, payload) {
+        return this.post(`/contract-reviews/${id}/handoff`, payload);
+    }
+
     async generateReviewChecklist(id, phase) {
         return this.post(`/contract-reviews/${id}/generate-checklist`, { phase });
     }
