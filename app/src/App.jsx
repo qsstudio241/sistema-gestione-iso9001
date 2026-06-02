@@ -23,6 +23,7 @@ const HomePage = React.lazy(() => import("./pages/HomePage"));
 const Dashboard = React.lazy(() => import("./components/Dashboard"));
 const DocumentRegistry = React.lazy(() => import("./components/DocumentRegistry"));
 const CompaniesPage = React.lazy(() => import("./components/CompaniesPage"));
+const CompanyDetailPage = React.lazy(() => import("./pages/CompanyDetailPage"));
 const ChecklistAdminPage = React.lazy(() => import("./components/ChecklistAdminPage"));
 const UsersAdminPage = React.lazy(() => import("./components/UsersAdminPage"));
 const ReportTemplatesAdminPage = React.lazy(() => import("./components/ReportTemplatesAdminPage"));
@@ -140,7 +141,15 @@ function AppContent() {
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
 
-        {/* Gestione aziende */}
+        {/* Gestione aziende — dettaglio prima della lista (prefix match router) */}
+        <Route
+          path="/companies/"
+          element={
+            <BackWrapper>
+              <CompanyDetailPage />
+            </BackWrapper>
+          }
+        />
         <Route
           path="/companies"
           element={

@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import SgqDataGrid from "./SgqDataGrid";
@@ -18,6 +19,7 @@ const GRID_COLUMNS = [
 ];
 
 function CompaniesPage({ onBack }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [auditorOrgId, setAuditorOrgId] = useState(user?.auditor_org_id || null);
   const [auditorOrgs, setAuditorOrgs] = useState([]);
@@ -192,6 +194,13 @@ function CompaniesPage({ onBack }) {
       case "actions":
         return (
           <div className="companies-row-actions">
+            <button
+              type="button"
+              className="btn-edit"
+              onClick={() => navigate(`/companies/${row.id}`)}
+            >
+              Scheda
+            </button>
             <button type="button" className="btn-edit" onClick={() => openEdit(row)}>
               Modifica
             </button>
@@ -256,6 +265,7 @@ function CompaniesPage({ onBack }) {
           theme="plain"
           renderCell={renderGridCell}
           getRowKey={(row) => row.id}
+          onRowClick={(row) => navigate(`/companies/${row.id}`)}
           getSortValue={(row, colId) => {
             if (colId === "logo" || colId === "actions") return "";
             return row[colId] ?? "";
