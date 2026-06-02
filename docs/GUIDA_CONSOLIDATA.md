@@ -603,7 +603,25 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Lezione**: dopo ogni migrazione che aggiunge un nuovo «parent» agli allegati, aggiornare subito `CHK_attachments_parent` — altrimenti endpoint che linkano file senza audit/NC/document_id falliscono in produzione.
 
-**Prossima slice**: **R3** — colonne link job↔caso (migrazione **070**, non 069).
+**Prossima slice**: ~~**R3**~~ ✅ — vedi sotto. **S1** UI fornitori.
+
+### Slice R3 link bidirezionale (02/06/2026) — TEST OK
+
+**PR**: [#83](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/83) link job↔caso; hotfix [#84](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/84) badge origine.
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **070** | `commercial_cases.source_import_job_id`; `import_job_files.commercial_case_id` — VPS OK |
+| UI job | Badge «Caso Riesame #N»; pulsante create nascosto se collegato |
+| UI caso | Badge «Origine: Import job #N» → `/settings/import-jobs?job=N` |
+| Idempotenza | 409 `ALREADY_LINKED` con `case_id` |
+| Smoke L3 Epic R | Playwright 14/14 su `systemgest.netlify.app` (job #10 → caso #7) |
+
+**Bug smoke R3:** `rowCase()` in `ContractReviewPage.jsx` non propagava `source_import_job_id` → badge origine assente nonostante API corretta. Fix one-liner PR #84.
+
+**Lezione smoke import PDF:** usare PDF valido per `pdf-parse` (es. sample Mozilla); PDF minimali/generati possono fallire con «bad XRef entry». Login smoke cloud: preferire API login + `localStorage` token (`sgq_auth_token`) se il form React non invia POST.
+
+**Prossima slice**: **S1** — UI counterparty fornitori tab Documenti.
 
 #### Attività completate
 
