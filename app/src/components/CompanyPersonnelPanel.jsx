@@ -1,5 +1,5 @@
 /**
- * CompanyPersonnelPanel — griglia CRUD personale per singola azienda (slice S5)
+ * CompanyPersonnelPanel â€” griglia CRUD personale per singola azienda (slice S5)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -120,7 +120,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
               onChange={(e) => setForm((f) => ({ ...f, can_actuation: e.target.checked }))}
             />
             <span className="toggle-track" />
-            <span className="toggle-title">Può attuazione NC</span>
+            <span className="toggle-title">PuÃ² attuazione NC</span>
           </label>
           <label className="notif-toggle">
             <input
@@ -129,7 +129,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
               onChange={(e) => setForm((f) => ({ ...f, can_verify: e.target.checked }))}
             />
             <span className="toggle-track" />
-            <span className="toggle-title">Può verifica NC</span>
+            <span className="toggle-title">PuÃ² verifica NC</span>
           </label>
           {error && <p className="notif-error">{error}</p>}
           <div className="notif-actions">
