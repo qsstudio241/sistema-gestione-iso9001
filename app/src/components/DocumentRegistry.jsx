@@ -446,6 +446,7 @@ function PriorityView({
   onCancelArchive,
   onNewDoc,
   onFileDialog,
+  canWrite = true,
 }) {
   const total =
     expiredDocs.length +
@@ -468,7 +469,9 @@ function PriorityView({
         <span className="ok-icon">✅</span>
         <h3>Tutto in ordine</h3>
         <p>Nessun documento scaduto o in scadenza entro {alertWindowDays} giorni.</p>
-        <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+        {canWrite && (
+          <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+        )}
       </div>
     );
   }
@@ -571,6 +574,7 @@ function CatalogView({
   onNewDoc, onReload,
   filters, setFilter, onExport,
   companies, standards, onFileDialog,
+  canWrite = true,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -675,7 +679,9 @@ function CatalogView({
       {documents.length === 0 && !loading ? (
         <div className="docregistry-empty">
           <p>Nessun documento trovato.</p>
-          <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+          {canWrite && (
+            <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+          )}
         </div>
       ) : (
         <>
@@ -894,13 +900,14 @@ function DocumentRegistry() {
   const deepLinkSelectRef = useRef(initialUrl.selectId);
   const deepLinkHandledRef = useRef(false);
 
-  const { user } = useAuth();
+  const { user, canWriteModule } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   // Ambito azienda condiviso (Priorità / Catalogo / Albero)
   const [registryCompanyScope, setRegistryCompanyScope] = useState(() =>
     resolveInitialRegistryCompanyScope(initialUrl.companyId)
   );
+  const canWriteDocs = canWriteModule(registryCompanyScope || undefined);
 
   // Dati
   const [stats, setStats]         = useState(null);
@@ -1463,7 +1470,9 @@ function DocumentRegistry() {
               </select>
             </div>
           )}
-          <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+          {canWriteDocs && (
+            <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+          )}
         </div>
       </div>
 
@@ -1542,6 +1551,7 @@ function DocumentRegistry() {
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
           onFileDialog={setFileDialogDoc}
+          canWrite={canWriteDocs}
         />
       )}
 
@@ -1567,6 +1577,7 @@ function DocumentRegistry() {
           companies={companies}
           standards={standards}
           onFileDialog={setFileDialogDoc}
+          canWrite={canWriteDocs}
         />
       )}
 

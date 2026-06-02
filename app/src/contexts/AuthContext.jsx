@@ -19,7 +19,7 @@ import React, {
 } from "react";
 import apiService, { ApiError, clearAllAuditLockTokens } from "../services/apiService";
 import { syncService } from "../services/syncService";
-import { canEditCompany as resolveCanEditCompany, hasCompanyAccess } from "../utils/companyAccess";
+import { canEditCompany as resolveCanEditCompany, hasCompanyAccess, isCompanyClient as resolveIsCompanyClient, canWriteModule as resolveCanWriteModule } from "../utils/companyAccess";
 
 // Ruoli disponibili
 export const USER_ROLES = {
@@ -278,7 +278,12 @@ export function AuthProvider({ children }) {
    */
   const canEdit = useCallback(() => resolveCanEditCompany(user), [user]);
 
-  const isCompanyClient = useCallback(() => hasCompanyAccess(user), [user]);
+  const isCompanyClient = useCallback(() => resolveIsCompanyClient(user), [user]);
+
+  const canWriteModule = useCallback(
+    (companyId) => resolveCanWriteModule(user, companyId),
+    [user],
+  );
 
   /**
    * Verifica se è admin
@@ -335,6 +340,7 @@ export function AuthProvider({ children }) {
     hasRole,
     canEdit,
     isCompanyClient,
+    canWriteModule,
     canEditCompany: (companyId) => resolveCanEditCompany(user, companyId),
     isAdmin,
     hasLicensedModule,

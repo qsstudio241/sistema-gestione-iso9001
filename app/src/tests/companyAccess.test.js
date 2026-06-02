@@ -4,6 +4,8 @@ import {
   canEditCompany,
   getPrimaryCompanyId,
   getCompanyPermission,
+  isCompanyClient,
+  canWriteModule,
 } from "../utils/companyAccess";
 
 describe("companyAccess utils", () => {
@@ -31,5 +33,12 @@ describe("companyAccess utils", () => {
   it("getPrimaryCompanyId restituisce prima company", () => {
     expect(getPrimaryCompanyId(writeClient)).toBe(11);
     expect(getCompanyPermission(readClient, 11)).toBe("read");
+  });
+
+  it("isCompanyClient e canWriteModule Fase 4.1", () => {
+    expect(isCompanyClient(readClient)).toBe(true);
+    expect(isCompanyClient({ role: "auditor", is_company_client: true })).toBe(true);
+    expect(canWriteModule(writeClient, 11)).toBe(true);
+    expect(canWriteModule(readClient, 11)).toBe(false);
   });
 });

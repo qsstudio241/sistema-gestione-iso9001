@@ -88,7 +88,7 @@ function StatBox({ icon, label, value, subLabel, onClick, locked }) {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 function HomePage() {
-  const { user } = useAuth();
+  const { user, canWriteModule } = useAuth();
   const navigate = useNavigate();
 
   const [docStats, setDocStats] = useState(null);
@@ -254,14 +254,18 @@ function HomePage() {
       <section className="home-section">
         <h3 className="section-title">🚀 Accesso rapido</h3>
         <div className="quick-actions">
-          <button className="quick-action-btn" onClick={() => navigate("/audit")}>
-            <span className="qa-icon">🔍</span>
-            <span className="qa-label">Nuovo audit</span>
-          </button>
-          <button className="quick-action-btn" onClick={() => navigate("/documents")}>
-            <span className="qa-icon">📄</span>
-            <span className="qa-label">Aggiungi documento</span>
-          </button>
+          {canWriteModule() && (
+            <button className="quick-action-btn" onClick={() => navigate("/audit")}>
+              <span className="qa-icon">🔍</span>
+              <span className="qa-label">Nuovo audit</span>
+            </button>
+          )}
+          {canWriteModule() && (
+            <button className="quick-action-btn" onClick={() => navigate("/documents")}>
+              <span className="qa-icon">📄</span>
+              <span className="qa-label">Aggiungi documento</span>
+            </button>
+          )}
           <button className="quick-action-btn" onClick={() => navigate("/companies")}>
             <span className="qa-icon">🏢</span>
             <span className="qa-label">Aziende</span>
