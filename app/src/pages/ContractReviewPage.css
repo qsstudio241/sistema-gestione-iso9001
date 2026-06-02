@@ -492,6 +492,18 @@
   color: #c62828;
 }
 
+.cr-handoff-summary {
+  padding: 0.75rem 0.85rem;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.cr-handoff-summary p {
+  margin: 0.35rem 0;
+}
+
 .cr-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;

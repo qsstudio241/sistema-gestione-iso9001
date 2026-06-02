@@ -396,6 +396,84 @@ describe('linkDocument', () => {
   });
 });
 
+// ─── registerHandoff (H1) ────────────────────────────────────────────────────
+describe('registerHandoff', () => {
+  const CASE_ID = 10;
+
+  it('registra handoff su caso APPROVED (200)', async () => {
+    const approved = { id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID };
+    const updated = {
+      ...approved,
+      handoff_ref: 'COMM-2026-042',
+      handoff_at: '2026-06-02T10:00:00Z',
+      handoff_by: USER_ID,
+    };
+    query
+      .mockResolvedValueOnce({ recordset: [approved] })
+      .mockResolvedValueOnce({ recordset: [updated] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-2026-042', notes: 'Note test' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(updated);
+    expect(query.mock.calls[1][1]).toMatchObject({
+      handoffRef: 'COMM-2026-042',
+      caseId: CASE_ID,
+      organizationId: ORG_ID,
+      userId: USER_ID,
+    });
+  });
+
+  it('rifiuta se status non APPROVED (409)', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: CASE_ID, status: 'FINAL_REVIEW', organization_id: ORG_ID }],
+    });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-1' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].error).toMatch(/solo per casi approvati/);
+  });
+
+  it('handoff_ref mancante → 400', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID }],
+    });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: '   ' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/handoff_ref obbligatorio/);
+  });
+
+  it('caso non trovato → 404', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-1' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
 // ─── importFromJob ───────────────────────────────────────────────────────────
 describe('importFromJob', () => {
   const JOB_ID = 99;
