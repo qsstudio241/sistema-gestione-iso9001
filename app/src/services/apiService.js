@@ -1552,6 +1552,11 @@ class ApiService {
         return this.post('/contract-reviews', data);
     }
 
+    /** Epic R2: crea caso Riesame da import job (conferma utente in ImportJobsPage) */
+    async importContractCaseFromJob(payload) {
+        return this.post('/contract-reviews/import-from-job', payload);
+    }
+
     async getContractReview(id) {
         return this.get(`/contract-reviews/${id}`);
     }
