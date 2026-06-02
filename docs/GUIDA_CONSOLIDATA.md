@@ -584,9 +584,26 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Deploy | Backend VPS aggiornato; health OK |
 | Test L1 | Jest `contractReview.controller.test.js` (+4 test) |
 
-**Prossima slice**: **R2** — pulsante «Crea caso Riesame» in `ImportJobsPage.jsx` (brief in `docs/agent-tasks/DEPUTYTASK.md`).
+**Prossima slice**: ~~**R2**~~ ✅ — vedi sotto. **R3** link bidirezionale (migrazione **070**).
 
 **Lezione**: piano slice in `TASK_RIESAME_ESTENSIONI_SLICES.md` va committato su `main` **prima** di delegare al deputy locale — altrimenti l'agente non trova la spec (commit `0e6160a`).
+
+### Slice R2 UI Import Jobs (02/06/2026 sera) — TEST OK
+
+**PR**: [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) UI; hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82) migrazione 069.
+
+| Elemento | Dettaglio |
+|---|---|
+| UI | Pulsante «Crea caso Riesame» + modale (titolo, cliente, anteprima testo) in `ImportJobsPage.jsx` |
+| API client | `importContractCaseFromJob` → `POST /contract-reviews/import-from-job` |
+| Successo | Redirect `/contract-reviews/:id` (History API — usare `waitForFunction` su pathname in smoke Playwright) |
+| Smoke L3 | Playwright autonomo su `systemgest.netlify.app`: job PDF → estrai → conferma → allegato in tab Documenti → refresh OK |
+
+**Bug scoperto in smoke (R1 residuo):** `CHK_attachments_parent` (036) non accettava righe con solo `commercial_case_id` (068). Fix migrazione **069** su VPS.
+
+**Lezione**: dopo ogni migrazione che aggiunge un nuovo «parent» agli allegati, aggiornare subito `CHK_attachments_parent` — altrimenti endpoint che linkano file senza audit/NC/document_id falliscono in produzione.
+
+**Prossima slice**: **R3** — colonne link job↔caso (migrazione **070**, non 069).
 
 #### Attività completate
 
