@@ -906,6 +906,290 @@ async function uploadCaseAttachment(req, res) {
     }
 }
 
+const IMPORT_FILE_STATUSES = new Set(['extracted', 'reviewed']);
+const NOTES_PREFILL_MAX = 2000;
+
+function parseJobId(raw) {
+    const id = parseInt(String(raw), 10);
+    return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function parseFileIdList(raw) {
+    if (raw === undefined || raw === null) return null;
+    if (!Array.isArray(raw)) return [];
+    const ids = [];
+    for (const item of raw) {
+        const id = parseInt(String(item), 10);
+        if (!Number.isFinite(id) || id <= 0) return [];
+        ids.push(id);
+    }
+    return ids;
+}
+
+function guessDocRoleFromAi(aiJson) {
+    if (!aiJson) return 'rfq';
+    let data = aiJson;
+    if (typeof aiJson === 'string') {
+        try {
+            data = JSON.parse(aiJson);
+        } catch (_) {
+            return 'rfq';
+        }
+    }
+    const guess = String(
+        data.document_type_guess || data.document_type || data.doc_type || '',
+    )
+        .trim()
+        .toLowerCase();
+    if (guess.includes('ordine') || guess.includes('order')) return 'order';
+    if (guess.includes('offerta') || guess.includes('quote') || guess.includes('preventiv')) {
+        return 'quote';
+    }
+    if (guess.includes('capitolato') || guess.includes('rfq') || guess.includes('richiesta')) {
+        return 'rfq';
+    }
+    return 'rfq';
+}
+
+function buildNotesPrefill(explicitNotes, jobNotes, files) {
+    if (explicitNotes !== undefined && explicitNotes !== null && String(explicitNotes).trim() !== '') {
+        return String(explicitNotes);
+    }
+    const parts = [];
+    if (jobNotes && String(jobNotes).trim()) {
+        parts.push(String(jobNotes).trim());
+    }
+    for (const file of files) {
+        if (file.extracted_text && String(file.extracted_text).trim()) {
+            parts.push(String(file.extracted_text).trim());
+            break;
+        }
+    }
+    const merged = parts.join('\n\n');
+    if (!merged) return null;
+    return merged.length > NOTES_PREFILL_MAX ? `${merged.slice(0, NOTES_PREFILL_MAX)}…` : merged;
+}
+
+async function importFromJob(req, res) {
+    const pool = await getPool();
+    const transaction = new sql.Transaction(pool);
+
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const body = req.body || {};
+        const jobId = parseJobId(body.job_id);
+        const fileIds = parseFileIdList(body.file_ids);
+
+        if (!jobId) {
+            return sendErr(res, 400, 'job_id obbligatorio e valido', 'VALIDATION_ERROR');
+        }
+        if (body.file_ids !== undefined && body.file_ids !== null && fileIds !== null && fileIds.length === 0) {
+            return sendErr(res, 400, 'file_ids non valido', 'VALIDATION_ERROR');
+        }
+
+        const jobRes = await query(
+            `
+            SELECT id, title, company_id, notes
+            FROM import_jobs
+            WHERE id = @jobId AND organization_id = @organizationId
+            `,
+            { jobId, organizationId },
+        );
+        if (!jobRes.recordset.length) {
+            return sendErr(res, 404, 'Job non trovato', 'NOT_FOUND');
+        }
+        const job = jobRes.recordset[0];
+
+        const filesRes = await query(
+            `
+            SELECT f.id, f.original_name, f.storage_path, f.mime_type, f.file_size, f.status,
+                   f.extracted_text, f.ai_extraction_json
+            FROM import_job_files f
+            WHERE f.job_id = @jobId
+            ORDER BY f.id ASC
+            `,
+            { jobId },
+        );
+        let files = filesRes.recordset || [];
+
+        if (fileIds && fileIds.length > 0) {
+            const allowed = new Set(fileIds);
+            files = files.filter((f) => allowed.has(f.id));
+            if (files.length !== fileIds.length) {
+                return sendErr(res, 400, 'Uno o più file_ids non appartengono al job', 'VALIDATION_ERROR');
+            }
+        } else {
+            files = files.filter((f) => IMPORT_FILE_STATUSES.has(f.status));
+        }
+
+        if (!files.length) {
+            return sendErr(
+                res,
+                400,
+                'Nessun file in stato extracted o reviewed disponibile per il job',
+                'NO_ELIGIBLE_FILES',
+            );
+        }
+
+        for (const file of files) {
+            if (!IMPORT_FILE_STATUSES.has(file.status)) {
+                return sendErr(
+                    res,
+                    400,
+                    `Il file ${file.id} deve essere in stato extracted o reviewed`,
+                    'INVALID_FILE_STATUS',
+                );
+            }
+        }
+
+        const selectedIds = new Set(files.map((f) => f.id));
+        const linkedRes = await query(
+            `
+            SELECT f.id AS file_id, a.commercial_case_id AS case_id, c.uuid AS case_uuid
+            FROM import_job_files f
+            INNER JOIN attachments a ON a.storage_path = f.storage_path AND a.commercial_case_id IS NOT NULL
+            LEFT JOIN commercial_cases c ON c.id = a.commercial_case_id AND c.organization_id = @organizationId
+            WHERE f.job_id = @jobId
+            `,
+            { jobId, organizationId },
+        );
+        const alreadyLinked = (linkedRes.recordset || []).find((row) => selectedIds.has(row.file_id));
+        if (alreadyLinked) {
+            return res.status(409).json({
+                error: 'Uno o più file sono già collegati a un caso Riesame',
+                code: 'ALREADY_LINKED',
+                case_id: alreadyLinked.case_id,
+                uuid: alreadyLinked.case_uuid,
+                file_id: alreadyLinked.file_id,
+            });
+        }
+
+        let companyIdVal = job.company_id;
+        if (body.company_id != null && body.company_id !== '') {
+            const co = parseInt(body.company_id, 10);
+            if (!Number.isFinite(co) || co <= 0) {
+                return sendErr(res, 400, 'company_id non valido', 'VALIDATION_ERROR');
+            }
+            companyIdVal = co;
+        }
+
+        const titleRaw =
+            body.title !== undefined && body.title !== null && String(body.title).trim() !== ''
+                ? String(body.title).trim()
+                : String(job.title || files[0].original_name || 'Riesame da import').trim();
+        if (!titleRaw) {
+            return sendErr(res, 400, 'Il titolo è obbligatorio', 'VALIDATION_ERROR');
+        }
+
+        const externalRef =
+            body.external_ref != null && String(body.external_ref).trim() !== ''
+                ? String(body.external_ref).trim()
+                : null;
+        const notesVal = buildNotesPrefill(body.notes, job.notes, files);
+
+        await transaction.begin();
+
+        const insertReq = new sql.Request(transaction);
+        insertReq.input('organizationId', organizationId);
+        insertReq.input('companyId', companyIdVal);
+        insertReq.input('title', titleRaw.substring(0, 255));
+        insertReq.input('externalRef', externalRef);
+        insertReq.input('notes', notesVal);
+        insertReq.input('userId', userId);
+
+        const ins = await insertReq.query(`
+            INSERT INTO commercial_cases (
+                organization_id, company_id, title, external_ref, status, notes, created_by
+            )
+            OUTPUT INSERTED.*
+            VALUES (
+                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId
+            )
+        `);
+        const created = ins.recordset[0];
+        const newCaseId = created.id;
+
+        const histReq = new sql.Request(transaction);
+        histReq.input('caseId', newCaseId);
+        histReq.input('userId', userId);
+        await histReq.query(`
+            INSERT INTO commercial_case_history (case_id, from_status, to_status, changed_by, reason)
+            VALUES (@caseId, NULL, 'DRAFT', @userId, 'Creato da import job')
+        `);
+
+        for (const item of PRELIMINARY_ITEMS) {
+            const chkReq = new sql.Request(transaction);
+            chkReq.input('caseId', newCaseId);
+            chkReq.input('phase', 'preliminary');
+            chkReq.input('itemRef', item.ref);
+            chkReq.input('itemText', item.text);
+            await chkReq.query(`
+                INSERT INTO commercial_case_checklist (case_id, phase, item_ref, item_text)
+                SELECT @caseId, @phase, @itemRef, @itemText
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM commercial_case_checklist
+                    WHERE case_id = @caseId AND phase = @phase AND item_ref = @itemRef
+                )
+            `);
+        }
+
+        const linkedAttachments = [];
+        for (const file of files) {
+            const docRole = guessDocRoleFromAi(file.ai_extraction_json);
+            const attReq = new sql.Request(transaction);
+            attReq.input('caseId', newCaseId);
+            attReq.input('fileName', file.original_name || 'documento.pdf');
+            attReq.input(
+                'fileType',
+                path.extname(file.original_name || '').toLowerCase() || '.pdf',
+            );
+            attReq.input('fileSize', file.file_size || null);
+            attReq.input('mimeType', file.mime_type || 'application/pdf');
+            attReq.input('storagePath', file.storage_path);
+            attReq.input('docRole', docRole.substring(0, 30));
+            attReq.input('userId', userId);
+            const attIns = await attReq.query(`
+                INSERT INTO attachments (
+                  commercial_case_id, file_name, file_type, file_size, mime_type, storage_path,
+                  category, description, commercial_direction, commercial_counterparty, commercial_doc_role,
+                  uploaded_by, created_at
+                )
+                OUTPUT INSERTED.attachment_id, INSERTED.attachment_uuid, INSERTED.file_name
+                VALUES (
+                  @caseId, @fileName, @fileType, @fileSize, @mimeType, @storagePath,
+                  'document', NULL, 'in', 'customer', @docRole,
+                  @userId, GETDATE()
+                )
+            `);
+            linkedAttachments.push(attIns.recordset[0]);
+        }
+
+        await transaction.commit();
+
+        return res.status(201).json({
+            case_id: newCaseId,
+            uuid: created.uuid,
+            title: created.title,
+            status: created.status,
+            job_id: jobId,
+            linked_files: linkedAttachments.map((a) => ({
+                attachment_id: a.attachment_id,
+                attachment_uuid: a.attachment_uuid,
+                file_name: a.file_name,
+            })),
+        });
+    } catch (err) {
+        try {
+            await transaction.rollback();
+        } catch (_) {
+            /* ignore */
+        }
+        logger.error('importFromJob', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 async function analyzeRequirements(req, res) {
     try {
         const provider = getActiveProvider();
@@ -977,6 +1261,7 @@ module.exports = {
     listCaseAttachments,
     uploadCaseAttachment,
     analyzeRequirements,
+    importFromJob,
     isTransitionAllowed: workflow.isTransitionAllowed,
     requiresTransitionReason: workflow.requiresTransitionReason,
 };
