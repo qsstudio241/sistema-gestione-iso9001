@@ -1,5 +1,5 @@
 /**
- * CompanyDetailPage — scheda azienda con tab Anagrafica + Personale (slice S4/S5)
+ * CompanyDetailPage â€” scheda azienda con tab Anagrafica + Personale (slice S4/S5)
  * Route: /companies/:id
  */
 
@@ -238,7 +238,7 @@ function CompanyDetailPage({ onBack }) {
         </button>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda — anagrafica e personale collegato alle NC.
+          Scheda azienda â€” anagrafica e personale collegato alle NC.
         </p>
       </div>
 
