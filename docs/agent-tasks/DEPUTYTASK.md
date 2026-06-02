@@ -1,16 +1,25 @@
-# DEPUTYTASK — API complete Riesame requisiti (chiuso)
+# DEPUTYTASK — (nessun task attivo)
 
-**Stato:** CHIUSO — **TEST OK** — **MERGED** (02/06/2026)  
-**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79 → `main`  
-**UI:** https://systemgest.netlify.app/contract-reviews (deploy produzione post-merge)
+**Stato:** SESSIONE CHIUSA — **TEST OK** (02/06/2026)
 
-## Esito
+## Ultimo task completato
 
-- Backend: workflow gate, inbox/summary, chiarimenti, documenti, allegati, analisi AI caso
-- Migrazione **068** + script VPS `run-migration-068-vps.js`
-- Frontend: slide UI + integrazione API in `ContractReviewPage`
-- Test: Jest backend + Vitest labels
+**Riesame requisiti contratto** — API complete, slide UI, workflow gate, migrazione 068.
 
-## Smoke L3 (manuale)
+| Riferimento | Valore |
+|---|---|
+| PR | https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79 → mergiata su `main` |
+| App | https://systemgest.netlify.app/contract-reviews |
+| API | https://www.fr-busato.it:8443/api/v1/contract-reviews |
 
-Menu **Riesame Requisiti** → inbox → apri caso → tab Workflow/Checklist → transizione con gate visibile se checklist incompleta.
+## Esito sessione
+
+- Backend: inbox/summary, chiarimenti, documenti, allegati, analisi AI, gate transizioni (409)
+- Frontend: tab slide Workflow / Checklist / Chiarimenti / Documenti / Analisi AI
+- Test L1: Jest 18 + Vitest 3 + build OK
+- VPS: migrazione 068, deploy controller/routes/service
+- Incidente risolto: SQL Server Evaluation scaduta → Developer Edition; login ripristinato
+
+## Prossima sessione
+
+Sovrascrivere questo file con il nuovo brief. Smoke L3 slide UI e `import-from-job` restano opzionali in roadmap.

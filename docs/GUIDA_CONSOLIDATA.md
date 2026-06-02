@@ -555,6 +555,23 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Deploy VPS** (cloud agent): `scp` migration SQL + `run-migration-068-vps.js`; deploy `contractReview.controller.js`, `contractReview.routes.js`, `contractReviewWorkflow.service.js`; restart `sgq-backend` con verifica PID.
 
+**Chiusura sessione 02/06/2026** — **TEST OK**
+
+| Esito | Dettaglio |
+|---|---|
+| PR | [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) mergiata su `main` (`2521b5b`) |
+| UI produzione | https://systemgest.netlify.app/contract-reviews — tab slide deployate |
+| Migrazione 068 | Applicata VPS; fix batch `GO` prima dell'indice `IX_attachments_commercial_case` |
+| Incidente login | SQL Server **Evaluation scaduta** (errore 17051) → `mssql-conf -n set-edition` con `MSSQL_PID=Developer`; `systemctl reset-failed` + start; restart backend |
+
+**Lezioni (02/06/2026)**
+
+- **Login impossibile + health `unhealthy`**: verificare **prima** `GET /api/v1/health` e `systemctl status mssql-server`. Sintomo tipico: `Failed to connect to localhost:11043`. Log: `/var/opt/mssql/log/errorlog` — cercare `evaluation period has expired`.
+- **Recovery SQL Evaluation scaduta**: `sudo ACCEPT_EULA=Y MSSQL_PID=Developer /opt/mssql/bin/mssql-conf -n set-edition` → `sudo systemctl reset-failed mssql-server` → `sudo systemctl start mssql-server` → restart `sgq-backend`.
+- **Migrazione 068**: indice filtered su colonna appena aggiunta richiede separatore `GO` (SQL Server valida il batch prima del commit DDL).
+
+**Prossimo passo opzionale**: smoke L3 manuale tab slide + transizione con gate; Sprint 9–10 `import-from-job`.
+
 #### Attività completate
 
 | # | Cosa | Risultato |
