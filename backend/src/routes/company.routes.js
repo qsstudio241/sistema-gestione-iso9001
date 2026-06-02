@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const companyController = require('../controllers/company.controller');
+const companyPersonnelController = require('../controllers/companyPersonnel.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
 // Multer per upload logo (solo immagini, max 2MB, storage temporaneo)
@@ -43,5 +44,11 @@ router.delete('/companies/:id', companyController.deleteCompany);
 router.get('/companies/:id/logo', companyController.getLogo);
 router.post('/companies/:id/logo', uploadLogo.single('logo'), companyController.uploadLogo);
 router.delete('/companies/:id/logo', companyController.deleteLogo);
+
+// Personale azienda (ADR-012)
+router.get('/companies/:companyId/personnel', companyPersonnelController.listPersonnel);
+router.post('/companies/:companyId/personnel', companyPersonnelController.createPersonnel);
+router.put('/companies/:companyId/personnel/:id', companyPersonnelController.updatePersonnel);
+router.delete('/companies/:companyId/personnel/:id', companyPersonnelController.deletePersonnel);
 
 module.exports = router;

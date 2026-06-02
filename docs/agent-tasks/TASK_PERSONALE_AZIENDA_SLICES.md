@@ -1,6 +1,6 @@
 # TASK ù Anagrafica Personale per Azienda (slice verticali)
 
-**Stato:** IN CORSO ù S1 completata (ADR-012); slice corrente **S2** (migration DB)  
+**Stato:** IN CORSO ó S1ñS3 completate; slice corrente **S4** (scheda azienda UI)  
 **Creato:** 02/06/2026  
 **Collegamento:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md); open point roadmap ùNC ù rubrica dual-levelù
 
@@ -19,7 +19,7 @@ Una slice alla volta: implementa ? test L1/L2 ? checkpoint ? commit/PR ? attendi
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `S2` (migration `078_company_personnel.sql`)
+**Slice corrente consigliata:** `S4` (route `/companies/:id`, tab Anagrafica + Personale)
 
 ---
 
@@ -36,8 +36,8 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 | # | Slice | Obiettivo | TEST OK |
 |---|-------|-----------|---------|
 | S1 | Schema + regole | ADR breve, regole duplicati studio/azienda, GDPR minimo | ? [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md) |
-| S2 | Migration DB | `company_personnel` + colonne bridge su `notification_contacts` | Migration idempotente VPS |
-| S3 | API CRUD | `GET/POST/PUT/DELETE /companies/:id/personnel` + RBAC studio | Jest cross-studio 403 |
+| S2 | Migration DB | `company_personnel` + colonne bridge su `notification_contacts` | ? `078_company_personnel.sql` |
+| S3 | API CRUD | `GET/POST/PUT/DELETE /companies/:id/personnel` + RBAC studio | ? Jest `companyPersonnel.controller.test.js` |
 | S4 | Scheda azienda | Route `/companies/:id`, tab Anagrafica + Personale | Navigazione + Vitest smoke |
 | S5 | Griglia Personale | CRUD griglia per singola azienda | 3 righe add/edit/disattiva |
 | S6 | Overview studio | Filtro tutte le aziende / singola (Ambito) | Scope come documentRegistry |
