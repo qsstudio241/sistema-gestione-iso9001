@@ -539,6 +539,22 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Branch**: `cursor/adr-010-ai-agentic-architecture-7330` → mergiato su `main` (commit `49a6a6c`).
 
+### Sessione 02 giugno 2026 — API complete Riesame requisiti + UI slide
+
+**Branch**: `cursor/contract-review-api-complete-5351`  
+**Spec**: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md)
+
+| Area | Contenuto |
+|---|---|
+| Backend | `contractReviewWorkflow.service.js` (gate ISO §8.2), estensione controller/routes, migrazione **068** |
+| Frontend | `ContractReviewPage` con **slide** Workflow / Checklist / Chiarimenti / Documenti / Analisi AI; inbox + summary |
+| Test L1 | Jest workflow + controller; Vitest `contractReviewLabels.test.js` |
+| Doc API | Sezione in [BACKEND_API.md](reference/BACKEND_API.md) |
+
+**Slide UI dettaglio** (ordine operativo): tab orizzontali — non confondere con presentazioni; guidano il commerciale/tecnico fase per fase.
+
+**Deploy VPS** (cloud agent): `scp` migration SQL + `run-migration-068-vps.js`; deploy `contractReview.controller.js`, `contractReview.routes.js`, `contractReviewWorkflow.service.js`; restart `sgq-backend` con verifica PID.
+
 #### Attività completate
 
 | # | Cosa | Risultato |

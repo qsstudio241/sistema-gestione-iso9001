@@ -31,6 +31,14 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
+jest.mock('../services/contractReviewWorkflow.service', () => {
+  const actual = jest.requireActual('../services/contractReviewWorkflow.service');
+  return {
+    ...actual,
+    evaluateTransitionBlockers: jest.fn().mockResolvedValue({ blocked: false, missing: [] }),
+  };
+});
+
 const { query, getPool, sql } = require('../config/database');
 const ctrl = require('./contractReview.controller');
 

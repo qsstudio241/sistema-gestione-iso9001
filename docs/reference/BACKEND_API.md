@@ -115,6 +115,39 @@ Dati **master read-only** — pubblici, condivisi tra tutte le organizzazioni.
 
 ---
 
+## Riesame requisiti contratto — `/api/v1/contract-reviews`
+
+Licenza modulo: `ai_review` (`requireLicensedModule('ai_review')`). Scope: `organization_id` da JWT.
+
+| Metodo | Path | Descrizione |
+|---|---|---|
+| GET | `/contract-reviews/summary` | KPI: `open_count`, `assigned_to_me`, `pending_approval` |
+| GET | `/contract-reviews/inbox?kind=&limit=` | Inbox (`assigned_to_me`, `pending_approval`, `stale`) |
+| GET | `/contract-reviews?status=` | Lista casi |
+| POST | `/contract-reviews` | Crea caso (`title`, `company_id?`, `external_ref?`) |
+| GET | `/contract-reviews/:id` | Dettaglio: `case`, `history`, `checklist`, `clarifications`, `documents`, `attachments` |
+| PUT | `/contract-reviews/:id` | Aggiorna metadati |
+| GET | `/contract-reviews/:id/transition-options` | Transizioni con gate (`allowed`, `missing_requirements`) |
+| POST | `/contract-reviews/:id/transition` | Body: `{ to_status, reason? }` — **409** `TRANSITION_BLOCKED` se gate non soddisfatti |
+| POST | `/contract-reviews/:id/generate-checklist` | Body: `{ phase: preliminary \| final }` |
+| PUT | `/contract-reviews/:id/checklist/:itemId` | Body: `{ answer, notes? }` |
+| GET/POST/PATCH | `/contract-reviews/:id/clarifications` | Chiarimenti cliente |
+| GET/POST/DELETE | `/contract-reviews/:id/documents` | Link a `document_registry` |
+| GET/POST | `/contract-reviews/:id/attachments/upload` | Allegati caso (`multipart`, campo `file`) |
+| POST | `/contract-reviews/:id/ai/analyze-requirements` | Analisi AI server-side (`capitolatoText?`) |
+
+**Gate transizioni** (servizio `contractReviewWorkflow.service.js`):
+
+| Transizione | Requisito |
+|---|---|
+| `INTAKE_REVIEW` → `QUOTE_PREP` | Checklist preliminare completa |
+| `ORDER_RECEIVED` → `FINAL_REVIEW` | Evidenza ordine (`doc_role` order/ordine o allegato) |
+| `FINAL_REVIEW` → `APPROVED` | Checklist finale completa |
+
+Migrazione DB: `068_commercial_case_extensions.sql` (tabelle `commercial_case_clarifications`, `commercial_case_documents`; colonne `commercial_*` su `attachments`).
+
+---
+
 ## Sync — `/api/v1`
 
 | Metodo | Path | Auth | Descrizione |
