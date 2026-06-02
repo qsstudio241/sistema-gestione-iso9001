@@ -647,7 +647,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Backend | Nessuna modifica — API già accettava `counterparty`/`direction` |
 | Test L1 | `contractReviewLabels.test.js` + build Vite OK |
 
-**Prossima slice**: **S2** — migrazione **071** `supplier_id` + dropdown anagrafica.
+**Prossima slice**: ~~**S2**~~ ✅ PR [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86). **N1** notifiche.
 
 #### Attività completate
 
