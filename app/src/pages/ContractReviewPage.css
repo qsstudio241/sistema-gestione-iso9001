@@ -133,6 +133,19 @@
   color: #c62828;
 }
 
+.cr-badge-doc-meta {
+  background: #eceff1;
+  color: #455a64;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+.cr-badge-doc-supplier {
+  background: #fff3e0;
+  color: #e65100;
+}
+
 .cr-row-click {
   cursor: pointer;
 }

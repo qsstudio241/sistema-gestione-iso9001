@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { STATUS_LABELS, DETAIL_SLIDES, TERMINAL_STATUSES } from '../utils/contractReviewLabels';
+import {
+  STATUS_LABELS,
+  DETAIL_SLIDES,
+  TERMINAL_STATUSES,
+  COUNTERPARTY_LABELS,
+  DIRECTION_LABELS,
+  formatCommercialDocMetaBadge,
+} from '../utils/contractReviewLabels';
 
 describe('contractReviewLabels', () => {
   it('espone etichette per tutti gli stati pilota', () => {
@@ -16,5 +23,11 @@ describe('contractReviewLabels', () => {
   it('stati terminali', () => {
     expect(TERMINAL_STATUSES.has('APPROVED')).toBe(true);
     expect(TERMINAL_STATUSES.has('DRAFT')).toBe(false);
+  });
+
+  it('etichette controparte e direzione documenti', () => {
+    expect(COUNTERPARTY_LABELS.supplier).toBe('Fornitore');
+    expect(DIRECTION_LABELS.in).toBe('In entrata');
+    expect(formatCommercialDocMetaBadge('supplier', 'in')).toBe('Fornitore · in');
   });
 });

@@ -16,6 +16,9 @@ import {
   TERMINAL_STATUSES,
   DETAIL_SLIDES,
   INBOX_KIND_LABELS,
+  COUNTERPARTY_LABELS,
+  DIRECTION_LABELS,
+  formatCommercialDocMetaBadge,
 } from '../utils/contractReviewLabels';
 import './ContractReviewPage.css';
 
@@ -140,6 +143,8 @@ export default function ContractReviewPage() {
   const [newClarMessage, setNewClarMessage] = useState('');
   const [linkDocId, setLinkDocId] = useState('');
   const [attachDocRole, setAttachDocRole] = useState('order');
+  const [attachCounterparty, setAttachCounterparty] = useState('customer');
+  const [attachDirection, setAttachDirection] = useState('in');
   const [serverAiResult, setServerAiResult] = useState(null);
   const [serverAiLoading, setServerAiLoading] = useState(false);
 
@@ -403,8 +408,8 @@ export default function ContractReviewPage() {
       await apiService.linkContractReviewDocument(caseId, {
         document_id: docId,
         doc_role: attachDocRole || 'other',
-        direction: 'in',
-        counterparty: 'customer',
+        direction: attachDirection,
+        counterparty: attachCounterparty,
       });
       setLinkDocId('');
       await loadDetail(caseId);
@@ -420,8 +425,8 @@ export default function ContractReviewPage() {
     try {
       await apiService.uploadContractReviewAttachment(caseId, file, {
         doc_role: attachDocRole || 'other',
-        direction: 'in',
-        counterparty: 'customer',
+        direction: attachDirection,
+        counterparty: attachCounterparty,
       });
       await loadDetail(caseId);
       try {
@@ -998,6 +1003,12 @@ export default function ContractReviewPage() {
                           <option value="quote">Offerta</option>
                           <option value="other">Altro</option>
                         </select>
+                        <CommercialDocMetaFields
+                          counterparty={attachCounterparty}
+                          direction={attachDirection}
+                          onCounterpartyChange={setAttachCounterparty}
+                          onDirectionChange={setAttachDirection}
+                        />
                         <button type="submit" className="cr-btn">
                           Collega
                         </button>
@@ -1005,7 +1016,15 @@ export default function ContractReviewPage() {
                     </form>
                     <div className="cr-form-row">
                       <label>Carica allegato caso</label>
-                      <input type="file" onChange={handleUploadAttachment} />
+                      <div className="cr-inline-fields">
+                        <CommercialDocMetaFields
+                          counterparty={attachCounterparty}
+                          direction={attachDirection}
+                          onCounterpartyChange={setAttachCounterparty}
+                          onDirectionChange={setAttachDirection}
+                        />
+                        <input type="file" onChange={handleUploadAttachment} />
+                      </div>
                     </div>
                   </>
                 )}
@@ -1018,6 +1037,10 @@ export default function ContractReviewPage() {
                       <li key={d.id}>
                         {d.document_title || `Doc #${d.document_id}`} — ruolo:{' '}
                         {d.doc_role || '-'}
+                        <CommercialDocMetaBadge
+                          counterparty={d.counterparty}
+                          direction={d.direction}
+                        />
                       </li>
                     ))}
                   </ul>
@@ -1031,6 +1054,10 @@ export default function ContractReviewPage() {
                       <li key={a.attachment_id}>
                         {a.file_name}
                         {a.commercial_doc_role ? ` (${a.commercial_doc_role})` : ''}
+                        <CommercialDocMetaBadge
+                          counterparty={a.commercial_counterparty}
+                          direction={a.commercial_direction}
+                        />
                       </li>
                     ))}
                   </ul>
@@ -1291,6 +1318,54 @@ export default function ContractReviewPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function CommercialDocMetaFields({
+  counterparty,
+  direction,
+  onCounterpartyChange,
+  onDirectionChange,
+}) {
+  return (
+    <>
+      <select
+        value={counterparty}
+        onChange={(e) => onCounterpartyChange(e.target.value)}
+        aria-label="Controparte"
+      >
+        {Object.entries(COUNTERPARTY_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <select
+        value={direction}
+        onChange={(e) => onDirectionChange(e.target.value)}
+        aria-label="Direzione"
+      >
+        {Object.entries(DIRECTION_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
+
+function CommercialDocMetaBadge({ counterparty, direction }) {
+  const cp = counterparty || 'customer';
+  const dir = direction || 'in';
+  const supplierClass = cp === 'supplier' ? ' cr-badge-doc-supplier' : '';
+  return (
+    <span
+      className={`cr-badge cr-badge-doc-meta${supplierClass}`}
+      title={formatCommercialDocMetaBadge(cp, dir)}
+    >
+      {formatCommercialDocMetaBadge(cp, dir)}
+    </span>
   );
 }
 

@@ -1,6 +1,7 @@
 # TASK — Estensioni Riesame Requisiti (slice verticali)
 
-**Stato:** IN CORSO — slice **S1** (UI fornitori)  
+**Stato:** IN CORSO — slice **S2** (supplier_id)  
+**Slice S1:** ✅ PR aperta — UI counterparty tab Documenti  
 **Slice R3:** ✅ TEST OK — PR [#83](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/83) + hotfix [#84](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/84)  
 **Slice R2:** ✅ TEST OK — PR [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) + hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82)  
 **Creato:** 02/06/2026  
@@ -22,7 +23,7 @@ Una slice alla volta: implementa → test L1 → checkpoint → commit/PR → at
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `S1` (UI counterparty fornitori)
+**Slice corrente consigliata:** `S2` (supplier_id anagrafica)
 
 ---
 
@@ -165,6 +166,12 @@ flowchart LR
 
 **Checkpoint S1:** committente carica PDF da fornitore con metadata corretti.
 
+**Checkpoint S1 (agente):**
+- [x] Select controparte/direzione su collega registro e upload
+- [x] Badge per riga documenti/allegati
+- [x] Test L1 + build OK
+- [ ] Smoke L3 breve post-deploy Netlify (committente)
+
 ---
 
 ### Slice S2 — Collegamento anagrafica fornitore (se tabella suppliers esiste)
@@ -172,7 +179,7 @@ flowchart LR
 | # | Task | Dettaglio |
 |---|------|-----------|
 | S2.1 | Verifica schema | Tabella `suppliers` o equivalente in `DATABASE_SCHEMA.md` |
-| S2.2 | Migrazione 070 | `commercial_case_documents.supplier_id INT NULL` (+ index) |
+| S2.2 | Migrazione **071** | `commercial_case_documents.supplier_id INT NULL` (+ index) |
 | S2.3 | UI | Dropdown fornitore quando counterparty=supplier (opzionale) |
 | S2.4 | Checklist P9 | Evidenziare voce «Subforniture» se esistono doc supplier |
 

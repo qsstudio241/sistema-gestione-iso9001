@@ -621,7 +621,18 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Lezione smoke import PDF:** usare PDF valido per `pdf-parse` (es. sample Mozilla); PDF minimali/generati possono fallire con «bad XRef entry». Login smoke cloud: preferire API login + `localStorage` token (`sgq_auth_token`) se il form React non invia POST.
 
-**Prossima slice**: **S1** — UI counterparty fornitori tab Documenti.
+**Prossima slice**: ~~**S1**~~ ✅ — vedi sotto. **S2** supplier_id.
+
+### Slice S1 UI counterparty fornitori (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| UI tab Documenti | Select Controparte (Cliente/Fornitore/Interno) + Direzione (in/out) su collega registro e upload |
+| Badge riga | «Fornitore · in» (arancione se supplier) su documenti registro e allegati |
+| Backend | Nessuna modifica — API già accettava `counterparty`/`direction` |
+| Test L1 | `contractReviewLabels.test.js` + build Vite OK |
+
+**Prossima slice**: **S2** — migrazione **071** `supplier_id` + dropdown anagrafica.
 
 #### Attività completate
 
