@@ -1,6 +1,6 @@
 # DEPUTYTASK — Estensioni Riesame Requisiti
 
-**Stato:** CHIUSO — Epic estensioni R/S/N/H **TEST OK** (02/06/2026)  
+**Stato:** CHIUSO — Epic estensioni R/S/N/H **TEST OK e mergiate su main** (02/06/2026)  
 **Piano:** [TASK_RIESAME_ESTENSIONI_SLICES.md](TASK_RIESAME_ESTENSIONI_SLICES.md)
 
 ## Completato in sessione
