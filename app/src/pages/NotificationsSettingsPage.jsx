@@ -26,6 +26,9 @@ function NotificationsSettingsPage() {
     alert_doc_expiry:    true,
     alert_nc_open:       true,
     alert_qualif_expiry: false,
+    doc_escalation_enabled: true,
+    doc_use_legacy_digest: false,
+    doc_notify_responsible: false,
     enabled:             false,
   });
 
@@ -43,6 +46,9 @@ function NotificationsSettingsPage() {
         alert_doc_expiry:    res.alert_doc_expiry    ?? true,
         alert_nc_open:       res.alert_nc_open       ?? true,
         alert_qualif_expiry: res.alert_qualif_expiry ?? false,
+        doc_escalation_enabled: res.doc_escalation_enabled ?? true,
+        doc_use_legacy_digest:  res.doc_use_legacy_digest  ?? false,
+        doc_notify_responsible: res.doc_notify_responsible ?? false,
         enabled:             res.enabled             ?? false,
       });
     } catch (err) {
@@ -149,20 +155,26 @@ function NotificationsSettingsPage() {
 
         <div className="notif-row">
           <div className="notif-field">
-            <label>Prima notifica (giorni prima scadenza)</label>
+            <label>Finestra email documenti (giorni)</label>
             <input
               type="number" min="1" max="365"
               value={form.alert_days_1}
               onChange={handleChange("alert_days_1")}
             />
+            <span className="notif-hint">
+              Documenti in scadenza o già scaduti entro questo intervallo (tab Priorità, dashboard, email)
+            </span>
           </div>
           <div className="notif-field">
-            <label>Seconda notifica (giorni prima scadenza)</label>
+            <label>Soglia escalation NC (giorni)</label>
             <input
               type="number" min="1" max="365"
               value={form.alert_days_2}
               onChange={handleChange("alert_days_2")}
             />
+            <span className="notif-hint">
+              Seconda soglia per promemoria NC/azioni (oltre a 14, 7 e 1 giorno prima della scadenza)
+            </span>
           </div>
           <div className="notif-field">
             <label>Orario invio giornaliero</label>
@@ -188,7 +200,9 @@ function NotificationsSettingsPage() {
             <span className="toggle-track" />
             <div className="toggle-info">
               <span className="toggle-title">📄 Documenti in scadenza</span>
-              <span className="toggle-desc">Avviso quando un documento del registro si avvicina alla scadenza</span>
+              <span className="toggle-desc">
+                Una email riepilogativa al giorno con tutti i documenti urgenti — non invia promemoria separati per ogni documento
+              </span>
             </div>
           </label>
 
@@ -215,6 +229,62 @@ function NotificationsSettingsPage() {
             <div className="toggle-info">
               <span className="toggle-title">🎓 Qualifiche in scadenza</span>
               <span className="toggle-desc">Avviso per qualifiche saldatori e personale NDT in scadenza (attivo con Sprint D)</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div className="notif-card">
+        <h3 className="notif-card-title">Escalation documenti</h3>
+        <p className="notif-hint" style={{ marginBottom: 12 }}>
+          Con escalation attiva, ogni documento riceve promemoria alle soglie configurate
+          (es. 35, 28, 21, 14, 7, 3, 1 giorni prima + giornaliero dopo scadenza).
+          La finestra &quot;Finestra email documenti&quot; sopra definisce anche tab Priorità e dashboard.
+        </p>
+
+        <div className="notif-toggles">
+          <label className="notif-toggle">
+            <input
+              type="checkbox"
+              checked={form.doc_escalation_enabled}
+              onChange={handleChange("doc_escalation_enabled")}
+            />
+            <span className="toggle-track" />
+            <div className="toggle-info">
+              <span className="toggle-title">Curva escalation attiva</span>
+              <span className="toggle-desc">
+                Promemoria mirati per soglia con log anti-duplicati. Disattiva per non inviare email documenti (anche con toggle sopra attivo).
+              </span>
+            </div>
+          </label>
+
+          <label className="notif-toggle">
+            <input
+              type="checkbox"
+              checked={form.doc_use_legacy_digest}
+              onChange={handleChange("doc_use_legacy_digest")}
+            />
+            <span className="toggle-track" />
+            <div className="toggle-info">
+              <span className="toggle-title">Digest legacy (una email riepilogativa)</span>
+              <span className="toggle-desc">
+                Ripristina il comportamento precedente: un&apos;unica email giornaliera con tutti i documenti urgenti, senza curve per soglia
+              </span>
+            </div>
+          </label>
+
+          <label className="notif-toggle">
+            <input
+              type="checkbox"
+              checked={form.doc_notify_responsible}
+              onChange={handleChange("doc_notify_responsible")}
+            />
+            <span className="toggle-track" />
+            <div className="toggle-info">
+              <span className="toggle-title">Invia al responsabile documento</span>
+              <span className="toggle-desc">
+                Se il campo Responsabile contiene un indirizzo email, il promemoria va lì; altrimenti si usano i destinatari globali
+              </span>
             </div>
           </label>
         </div>

@@ -682,6 +682,19 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://www.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
 | Test | Vitest `companyDetailPage.test.jsx` — 3/3 |
 
+### Hotfix viewer + RBAC Fase 4 company_access (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| Hotfix | Viewer studio: POST/PUT/DELETE personnel → 403; UI nasconde CRUD (`canEdit`) |
+| Migration **081** | `user_company_access` (permission read/write per user+company) |
+| API admin | `GET/POST/DELETE /admin/users/:id/company-access` |
+| Auth | `company_access[]` in login e `GET /auth/me` |
+| UI | Menu ridotto cliente azienda; `CompaniesPage` senza Nuova/Elimina; `canEdit` da permission |
+| Test | Jest personnel 14 + service 6; Vitest `companyAccess.test.js` 3 |
+| Account test | `cliente.azienda11@…` write company 11; `viewer.azienda11@…` read — password in mcp.env |
+| VPS | `run-migration-081-vps.js` + `link-company-access-test-users.js` |
+
 ### Slice S1 UI counterparty fornitori (02/06/2026)
 
 | Elemento | Dettaglio |
@@ -2091,8 +2104,11 @@ Dati NC di simulazione auditor bonificati su **produzione** via API admin (dmin
 
 | NC | Prima | Dopo |
 |----|--------|------|
-| **1042** | oot_cause vuoto; chiusura già con RQ | oot_cause compilata; pproved_at invariato (30/05/2026) |
-| **1043** | Chiusa senza pproved_at / pproved_by | RQ approvata 02/06/2026; note verifica bonifica; oot_cause allineata |
+| **1042** | 
+oot_cause vuoto; chiusura già con RQ | 
+oot_cause compilata; pproved_at invariato (30/05/2026) |
+| **1043** | Chiusa senza pproved_at / pproved_by | RQ approvata 02/06/2026; note verifica bonifica; 
+oot_cause allineata |
 | **1037** | Chiusa senza note verifica, senza RQ; azione verified senza erification_note | Note NC + nota azione + RQ + chiusura coerente |
 
 Verifica: GET /non-conformities/1042|1043|1037 su API produzione.

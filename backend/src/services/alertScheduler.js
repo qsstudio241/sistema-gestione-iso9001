@@ -3,6 +3,7 @@
  *
  * Orario invio: letto da notifications_config.send_time per org (timezone = ora server Node).
  * NC escalation: send_time + 5 min (separazione digest documenti / NC).
+ * Documenti: escalation per soglia (docAlertEscalation) o digest legacy se doc_use_legacy_digest.
  *
  * Dipendenze: node-schedule, nodemailer
  * Installare sul VPS: npm install node-schedule nodemailer
@@ -25,6 +26,7 @@ const {
   DEFAULT_SEND_TIME,
 } = require('./alertSchedulerHelpers');
 const { runNcEscalationForOrg } = require('./ncAlertEscalation.service');
+const { runDocEscalationForOrg } = require('./docAlertEscalation.service');
 
 // Caricamento lazy delle dipendenze opzionali
 let schedule;
@@ -182,6 +184,8 @@ async function runAlertJobForSendTime(sendTimeFilter) {
       .query(`
       SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1, nc.alert_days_2,
              nc.send_time, nc.alert_doc_expiry, nc.alert_nc_open,
+             nc.doc_escalation_enabled, nc.doc_use_legacy_digest, nc.doc_notify_responsible,
+             nc.doc_escalation_profile_id,
              o.organization_name
       FROM notifications_config nc
       JOIN organizations o ON nc.organization_id = o.organization_id
@@ -194,23 +198,29 @@ async function runAlertJobForSendTime(sendTimeFilter) {
     logger.info(`[AlertScheduler] Org con alert documenti attivi: ${orgs.length}`);
 
     for (const org of orgs) {
-      const days1 = parseInt(org.alert_days_1, 10) || 30;
-      const docs = await fetchUrgentDocs(pool, org.organization_id, days1);
-      if (docs.length === 0) {
-        logger.info(`[AlertScheduler] Org ${org.organization_id}: nessun alert documenti`);
+      if (org.doc_use_legacy_digest) {
+        const days1 = parseInt(org.alert_days_1, 10) || 30;
+        const docs = await fetchUrgentDocs(pool, org.organization_id, days1);
+        if (docs.length === 0) {
+          logger.info(`[AlertScheduler] Org ${org.organization_id}: nessun alert documenti (digest legacy)`);
+          continue;
+        }
+
+        const expired  = docs.filter(d => d.is_expired);
+        const expiring = docs.filter(d => !d.is_expired);
+
+        const subject = `[SGQ] ${expired.length > 0 ? `${expired.length} documenti scaduti` : ''} ${expiring.length > 0 ? `${expiring.length} in scadenza` : ''} — ${org.organization_name}`.trim();
+        const html    = buildEmailHtml(org.organization_name, expired, expiring, days1);
+
+        const sent = await sendAlertEmail(org.recipients_email, subject, html);
+        if (sent) {
+          logger.info(`[AlertScheduler] Email digest legacy documenti inviata a ${org.recipients_email} per org ${org.organization_id}`);
+        }
         continue;
       }
 
-      const expired  = docs.filter(d => d.is_expired);
-      const expiring = docs.filter(d => !d.is_expired);
-
-      const subject = `[SGQ] ${expired.length > 0 ? `${expired.length} documenti scaduti` : ''} ${expiring.length > 0 ? `${expiring.length} in scadenza` : ''} — ${org.organization_name}`.trim();
-      const html    = buildEmailHtml(org.organization_name, expired, expiring, days1);
-
-      const sent = await sendAlertEmail(org.recipients_email, subject, html);
-      if (sent) {
-        logger.info(`[AlertScheduler] Email documenti inviata a ${org.recipients_email} per org ${org.organization_id}`);
-      }
+      const result = await runDocEscalationForOrg(pool, org);
+      logger.info(`[AlertScheduler] Doc escalation org ${org.organization_id}: email=${result.sent}`);
     }
   } catch (err) {
     logger.error('[AlertScheduler] Errore job documenti:', err.message);

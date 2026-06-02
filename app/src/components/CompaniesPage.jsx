@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import { hasCompanyAccess, canEditCompany } from "../utils/companyAccess";
 import SgqDataGrid from "./SgqDataGrid";
 import "./CompaniesPage.css";
 
@@ -34,6 +35,8 @@ function CompaniesPage({ onBack }) {
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
 
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
+  const isCompanyClient = hasCompanyAccess(user);
+  const canCreateCompany = canEditCompany(user) && !isCompanyClient;
 
   const loadAuditorOrgs = useCallback(async () => {
     try {
@@ -47,6 +50,21 @@ function CompaniesPage({ onBack }) {
   const effectiveOrgId = auditorOrgId || (isSuperadmin && auditorOrgs[0]?.id) || user?.auditor_org_id;
 
   const loadCompanies = useCallback(async () => {
+    if (isCompanyClient) {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiService.getCompanies({});
+        setCompanies(res.data || []);
+      } catch (err) {
+        setError(err.message || "Errore caricamento aziende");
+        setCompanies([]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const orgId = effectiveOrgId;
     if (!orgId) {
       if (isSuperadmin && auditorOrgs.length === 0) {
@@ -73,7 +91,7 @@ function CompaniesPage({ onBack }) {
     } finally {
       setLoading(false);
     }
-  }, [effectiveOrgId, isSuperadmin, auditorOrgs.length]);
+  }, [effectiveOrgId, isSuperadmin, auditorOrgs.length, isCompanyClient]);
 
   useEffect(() => {
     loadAuditorOrgs();
@@ -191,7 +209,8 @@ function CompaniesPage({ onBack }) {
         ) : (
           <span className="company-logo-placeholder">{"\u2014"}</span>
         );
-      case "actions":
+      case "actions": {
+        const rowCanEdit = canEditCompany(user, row.id);
         return (
           <div
             className="companies-row-actions"
@@ -209,30 +228,35 @@ function CompaniesPage({ onBack }) {
             >
               Scheda
             </button>
-            <button
-              type="button"
-              className="btn-edit"
-              title="Modifica rapida anagrafica"
-              onClick={(e) => {
-                e.stopPropagation();
-                openEdit(row);
-              }}
-            >
-              Modifica
-            </button>
-            <button
-              type="button"
-              className="btn-delete"
-              title="Elimina azienda"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(row.id);
-              }}
-            >
-              Elimina
-            </button>
+            {rowCanEdit && !isCompanyClient && (
+              <>
+                <button
+                  type="button"
+                  className="btn-edit"
+                  title="Modifica rapida anagrafica"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(row);
+                  }}
+                >
+                  Modifica
+                </button>
+                <button
+                  type="button"
+                  className="btn-delete"
+                  title="Elimina azienda"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(row.id);
+                  }}
+                >
+                  Elimina
+                </button>
+              </>
+            )}
           </div>
         );
+      }
       default: {
         const val = row[col.id];
         if (val == null || val === "") return "\u2014";
@@ -275,9 +299,11 @@ function CompaniesPage({ onBack }) {
       )}
 
       <div className="companies-actions">
-        <button type="button" className="btn-primary" onClick={openCreate} disabled={!effectiveOrgId}>
-          + Nuova Azienda
-        </button>
+        {canCreateCompany && (
+          <button type="button" className="btn-primary" onClick={openCreate} disabled={!effectiveOrgId}>
+            + Nuova Azienda
+          </button>
+        )}
       </div>
 
       <section className="companies-grid-section" aria-label="Elenco aziende">

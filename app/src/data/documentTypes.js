@@ -22,9 +22,12 @@ export const DOC_TYPE_OPTIONS = [
   { value: "wpqr",               label: "WPQR (Qualifica procedura)" },
   { value: "cert_ndt",           label: "Certificato NDT (ISO 9712)" },
   { value: "cert_taratura",      label: "Certificato taratura" },
+  { value: "certificato_materiale", label: "Certificato materiale (EN 10204)" },
   { value: "dichiarazione_ce",   label: "Dichiarazione CE" },
   { value: "report_ndt",         label: "Rapporto di prova NDT" },
   { value: "piano_qualita",      label: "Piano qualitù" },
+  { value: "sal",                label: "SAL ù Stato avanzamento lavori" },
+  { value: "rdp",                label: "RDP ù Rapporto di prova" },
   { value: "altro",              label: "Altro" },
 ];
 
@@ -40,7 +43,7 @@ export const DOC_TYPE_LABELS = Object.fromEntries(
 export const DOC_TYPE_GROUPS = [
   {
     group: "SGQ ù Sistema Gestione Qualitù",
-    types: ["procedura", "istruzione", "modulo", "manuale", "norma", "piano_qualita", "altro"],
+    types: ["procedura", "istruzione", "modulo", "manuale", "norma", "piano_qualita", "sal", "altro"],
   },
   {
     group: "Personale e qualifiche",
@@ -48,11 +51,11 @@ export const DOC_TYPE_GROUPS = [
   },
   {
     group: "Saldatura ISO 3834",
-    types: ["wps", "wpqr", "report_ndt"],
+    types: ["wps", "wpqr", "report_ndt", "rdp"],
   },
   {
     group: "Attrezzature e conformitù",
-    types: ["cert_taratura", "dichiarazione_ce"],
+    types: ["cert_taratura", "certificato_materiale", "dichiarazione_ce"],
   },
 ];
 

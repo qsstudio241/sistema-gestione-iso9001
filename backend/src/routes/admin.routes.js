@@ -19,6 +19,10 @@ router.patch('/admin/users/:id', adminOnly, adminController.updateUser);
 router.delete('/admin/users/:id', adminOnly, adminController.deactivateUser);
 router.put('/admin/users/:id/standards', adminOnly, adminController.updateUserStandards);
 
+router.get('/admin/users/:id/company-access', adminOnly, adminController.listUserCompanyAccess);
+router.post('/admin/users/:id/company-access', adminOnly, adminController.addUserCompanyAccess);
+router.delete('/admin/users/:id/company-access/:companyId', adminOnly, adminController.removeUserCompanyAccess);
+
 // Licenze: admin può LEGGERE le proprie licenze; solo superadmin può MODIFICARLE
 router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
 router.patch('/admin/licenses', superadminOnly, adminController.updateOrgLicenses);

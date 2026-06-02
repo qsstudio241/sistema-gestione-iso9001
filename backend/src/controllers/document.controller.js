@@ -17,12 +17,18 @@ const {
     buildCurrentFileApplySql,
     parseTruthyQueryFlag,
 } = require('../utils/documentRegistryFile');
+const { allocateDocCode, resolveExpiryDate } = require('../services/docCodeGenerator.service');
+
+/** Giorni finestra alert documenti (allineato a notifications_config.alert_days_1). */
+const DEFAULT_DOC_ALERT_WINDOW_DAYS = 30;
 
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
  * Lista documenti con filtri opzionali.
  * Query params:
  *   company_id, standard_id, doc_type, status, expiring_days,
+ *   expired_only (1/true: solo documenti già scaduti),
+ *   include_expired (1/true: con expiring_days include anche scaduti),
  *   search (testo libero su title/doc_code),
  *   without_file (1/true: solo documenti senza allegato),
  *   page (default 1), limit (default 50)
@@ -37,6 +43,8 @@ async function listDocuments(req, res) {
             doc_type,
             status,
             expiring_days,
+            expired_only,
+            include_expired,
             search,
             without_file,
             page  = 1,
@@ -75,12 +83,19 @@ async function listDocuments(req, res) {
             // (soft-deleted). Mostra rilasciato + bozza + in_revisione + in_approvazione.
             conditions.push("dr.status <> 'obsoleto'");
         }
-        if (expiring_days) {
+        if (parseTruthyQueryFlag(expired_only)) {
+            conditions.push(`dr.expiry_date IS NOT NULL
+                AND dr.expiry_date < CAST(GETDATE() AS DATE)
+                AND dr.status IN ${RELEASED_STATUS_SQL_IN}`);
+        } else if (expiring_days) {
+            const windowDays = parseInt(expiring_days, 10) || DEFAULT_DOC_ALERT_WINDOW_DAYS;
             conditions.push(`dr.expiry_date IS NOT NULL
                 AND dr.expiry_date <= DATEADD(DAY, @expiring_days, CAST(GETDATE() AS DATE))
-                AND dr.expiry_date >= CAST(GETDATE() AS DATE)
                 AND dr.status IN ${RELEASED_STATUS_SQL_IN}`);
-            params.expiring_days = parseInt(expiring_days);
+            params.expiring_days = windowDays;
+            if (!parseTruthyQueryFlag(include_expired)) {
+                conditions.push('dr.expiry_date >= CAST(GETDATE() AS DATE)');
+            }
         }
         if (search) {
             conditions.push('(dr.title LIKE @search OR dr.doc_code LIKE @search)');
@@ -126,7 +141,7 @@ async function listDocuments(req, res) {
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date BETWEEN CAST(GETDATE() AS DATE)
-                             AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
+                             AND DATEADD(DAY, ISNULL(nc_cfg.alert_days_1, ${DEFAULT_DOC_ALERT_WINDOW_DAYS}), CAST(GETDATE() AS DATE))
                          AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
                 END AS expiring_soon,
@@ -137,6 +152,7 @@ async function listDocuments(req, res) {
             LEFT JOIN companies     c ON dr.company_id   = c.id
             LEFT JOIN standards     s ON dr.standard_id  = s.standard_id
             LEFT JOIN users         u ON dr.created_by   = u.user_id
+            LEFT JOIN notifications_config nc_cfg ON nc_cfg.organization_id = dr.organization_id
             ${buildCurrentFileApplySql('dr')}
             WHERE ${where}
             ORDER BY
@@ -343,6 +359,27 @@ async function createDocument(req, res) {
 
         const parent_id = req.body.parent_id ? parseInt(req.body.parent_id) : null;
 
+        let finalDocCode = doc_code ? String(doc_code).trim().slice(0, 100) || null : null;
+        if (!finalDocCode) {
+            try {
+                finalDocCode = await allocateDocCode(organization_id, doc_type);
+            } catch (codeErr) {
+                logger.warn('doc_code auto-allocation failed, proceeding without code', {
+                    organization_id, doc_type, error: codeErr.message,
+                });
+            }
+        }
+
+        let finalExpiryDate = expiry_date || null;
+        if (!finalExpiryDate && status === 'rilasciato') {
+            finalExpiryDate = await resolveExpiryDate({
+                organization_id,
+                doc_type,
+                issue_date: issue_date || null,
+                expiry_date: null,
+            });
+        }
+
         let path_cache = null;
         if (parent_id) {
             const parentRow = await query(
@@ -380,14 +417,14 @@ async function createDocument(req, res) {
             standard_id:     standard_id     ? parseInt(standard_id)     : null,
             clause_ref:      clause_ref      || null,
             doc_type,
-            doc_code:        doc_code        || null,
+            doc_code:        finalDocCode,
             title,
             revision:        revision        || null,
             status,
             parent_id,
             path_cache,
             issue_date:      issue_date      || null,
-            expiry_date:     expiry_date     || null,
+            expiry_date:     finalExpiryDate,
             responsible:     responsible     || null,
             retention_years: retention_years ? parseInt(retention_years) : null,
             attachment_id:   attachment_id   ? parseInt(attachment_id)   : null,
@@ -418,7 +455,7 @@ async function createDocument(req, res) {
 
         res.status(201).json({
             success: true,
-            data:    { id: newId, doc_type, title, status, parent_id },
+            data:    { id: newId, doc_type, title, status, parent_id, doc_code: finalDocCode },
         });
 
     } catch (error) {
@@ -439,7 +476,8 @@ async function updateDocument(req, res) {
         const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, is_system_folder FROM document_registry dr
+            SELECT id, is_system_folder, doc_type, issue_date, expiry_date, status
+            FROM document_registry dr
             WHERE dr.id = @id AND dr.organization_id = @organization_id
               ${scopeSql}
         `, { id: parseInt(id), organization_id, ...docScope.params });
@@ -491,6 +529,23 @@ async function updateDocument(req, res) {
                 error: 'Nessun campo da aggiornare',
                 code:  'VALIDATION_ERROR',
             });
+        }
+
+        if (params.expiry_date === undefined && req.body.expiry_date === undefined) {
+            const becomingReleased = params.status === 'rilasciato' && doc.status !== 'rilasciato';
+            const targetDocType = params.doc_type || doc.doc_type;
+            if (becomingReleased && !doc.expiry_date && targetDocType) {
+                const computed = await resolveExpiryDate({
+                    organization_id,
+                    doc_type: targetDocType,
+                    issue_date: params.issue_date || doc.issue_date,
+                    expiry_date: null,
+                });
+                if (computed) {
+                    updates.push('expiry_date = @expiry_date');
+                    params.expiry_date = computed;
+                }
+            }
         }
 
         // Validazione status se presente
@@ -638,11 +693,28 @@ async function releaseRevision(req, res) {
         const newRevNum = (doc.revision_number || 0) + 1;
         const newRevLabel = revision_label || `Rev. ${String(newRevNum).padStart(2, '0')}`;
 
+        let finalExpiry = expiry_date || null;
+        if (!finalExpiry) {
+            const fullDoc = await query(
+                `SELECT doc_type, issue_date, expiry_date FROM document_registry WHERE id = @id`,
+                { id: parseInt(id) }
+            );
+            const row = fullDoc.recordset[0];
+            if (!row?.expiry_date) {
+                finalExpiry = await resolveExpiryDate({
+                    organization_id,
+                    doc_type: row?.doc_type,
+                    issue_date: row?.issue_date,
+                    expiry_date: null,
+                });
+            }
+        }
+
         const params = {
             id: parseInt(id),
             revision_number: newRevNum,
             revision:        newRevLabel,
-            expiry_date:     expiry_date || null,
+            expiry_date:     finalExpiry,
         };
 
         await query(`
@@ -680,15 +752,18 @@ const DOC_TYPE_FOLDER_MAP = {
     manuale:              '1.1',
     norma:                '2.3',
     cert_taratura:        '2.1',
+    certificato_materiale:'2.1',
     qualifica:            '4.3',
     patentino_saldatore:  '4.3',
     qualifica_14732:      '4.3',
-    wps:                  '9',
-    wpqr:                 '9',
-    cert_ndt:             '2.1',
-    report_ndt:           '2.1',
+    wps:                  '9.1',
+    wpqr:                 '9.1',
+    cert_ndt:             '9.3',
+    report_ndt:           '9.3',
     dichiarazione_ce:     '2.1',
     piano_qualita:        '1.2',
+    sal:                  '14',
+    rdp:                  '9.1',
     altro:                null,
 };
 

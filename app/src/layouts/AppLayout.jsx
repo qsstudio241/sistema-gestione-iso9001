@@ -15,6 +15,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { NavLink, useRouter, useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import "./AppLayout.css";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
@@ -26,8 +27,13 @@ function hasLicensedModule(user, key) {
 }
 
 function buildNavItems(user, alerts = {}) {
+  const isCompanyClient = hasCompanyAccess(user);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  const canManage = ["admin", "auditor", "superadmin"].includes(user?.role);
+  const canManage = !isCompanyClient && ["admin", "auditor", "superadmin"].includes(user?.role);
+  const primaryCompanyId = getPrimaryCompanyId(user);
+  const companiesNavItem = isCompanyClient && primaryCompanyId
+    ? { to: `/companies/${primaryCompanyId}`, icon: "🏢", label: "La mia Azienda" }
+    : { to: "/companies", icon: "🏢", label: "Aziende" };
 
   const filterByLicense = (items) =>
     (items || []).filter((it) => !it.licenseKey || hasLicensedModule(user, it.licenseKey));
@@ -67,13 +73,13 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
       ]),
     },
-    // Gestione (solo admin/auditor)
-    ...(canManage ? [{
+    // Gestione (studio admin/auditor o cliente azienda con menu ridotto)
+    ...(canManage || isCompanyClient ? [{
       group: "Gestione",
       items: filterByLicense([
-        { to: "/settings/studio", icon: "🏢", label: "Il mio Studio" },
-        { to: "/companies",   icon: "🏢", label: "Aziende" },
-        ...(isAdmin ? [
+        ...(!isCompanyClient ? [{ to: "/settings/studio", icon: "🏢", label: "Il mio Studio" }] : []),
+        companiesNavItem,
+        ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },

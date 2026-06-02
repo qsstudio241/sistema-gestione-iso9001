@@ -100,11 +100,18 @@ function HomePage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [docRes, ncRes, auditRes, expiringRes] = await Promise.allSettled([
+      let windowDays = 30;
+      try {
+        const cfg = await apiService.getNotificationsConfig();
+        windowDays = cfg?.alert_days_1 ?? 30;
+      } catch { /* default 30 */ }
+
+      const [docRes, ncRes, auditRes, expiringRes, expiredRes] = await Promise.allSettled([
         apiService.getDocumentStats(),
         apiService.getNonConformitiesStatistics?.() || Promise.resolve(null),
         apiService.getAudits?.({ page: 1, limit: 5, sort: "desc" }) || Promise.resolve(null),
-        apiService.getDocuments({ expiring_days: 30, status: "rilasciato", limit: 10 }),
+        apiService.getDocuments({ expiring_days: windowDays, status: "rilasciato", limit: 10 }),
+        apiService.getDocuments({ expired_only: 1, status: "rilasciato", limit: 10 }),
       ]);
 
       if (docRes.status === "fulfilled") setDocStats(docRes.value?.data || null);
@@ -112,8 +119,15 @@ function HomePage() {
       if (auditRes.status === "fulfilled" && auditRes.value) {
         setRecentAudits(auditRes.value?.data || []);
       }
-      if (expiringRes.status === "fulfilled") {
-        setExpiringDocs(expiringRes.value?.data || []);
+      if (expiringRes.status === "fulfilled" || expiredRes.status === "fulfilled") {
+        const merged = new Map();
+        for (const doc of [
+          ...(expiredRes.status === "fulfilled" ? (expiredRes.value?.data || []) : []),
+          ...(expiringRes.status === "fulfilled" ? (expiringRes.value?.data || []) : []),
+        ]) {
+          merged.set(doc.id, doc);
+        }
+        setExpiringDocs([...merged.values()]);
       }
     } catch {
       // errori silenziosi - la home mostra quello che riesce a caricare

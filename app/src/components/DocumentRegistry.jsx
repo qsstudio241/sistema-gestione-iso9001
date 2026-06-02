@@ -438,6 +438,7 @@ function PriorityView({
   revisionDocs,
   releasedWithoutFileDocs,
   loading,
+  alertWindowDays,
   onEdit,
   onArchive,
   archiveId,
@@ -466,7 +467,7 @@ function PriorityView({
       <div className="priority-all-ok">
         <span className="ok-icon">✅</span>
         <h3>Tutto in ordine</h3>
-        <p>Nessun documento scaduto o in scadenza entro 60 giorni.</p>
+        <p>Nessun documento scaduto o in scadenza entro {alertWindowDays} giorni.</p>
         <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
       </div>
     );
@@ -474,6 +475,10 @@ function PriorityView({
 
   return (
     <div className="priority-view">
+      <p className="priority-view-note">
+        Elenco operativo delle azioni urgenti nel registro. Non sostituisce la cartella
+        &quot;Scadenziario&quot; (codice 99) nell&apos;albero documenti, usata solo per archiviazione.
+      </p>
       {/* Rilasciati senza file */}
       {releasedWithoutFileDocs.length > 0 && (
         <section className="priority-section">
@@ -517,7 +522,7 @@ function PriorityView({
       {expiringDocs.length > 0 && (
         <section className="priority-section">
           <div className="priority-section-header priority-section-orange">
-            <span>🟡 In scadenza nei prossimi 60 giorni - {expiringDocs.length}</span>
+            <span>🟡 In scadenza entro {alertWindowDays} giorni - {expiringDocs.length}</span>
             <span className="ps-hint">Pianifica il rinnovo</span>
           </div>
           {expiringDocs.map((doc) => (
@@ -929,10 +934,11 @@ function DocumentRegistry() {
   const [treeListDocs, setTreeListDocs] = useState([]);
   const [treeListLoading, setTreeListLoading] = useState(false);
 
-  // Documenti priorità (scaduti + in scadenza 60gg + in revisione)
+  // Documenti priorità (scaduti + in scadenza + in revisione)
   const [priorityDocs, setPriorityDocs] = useState([]);
   const [releasedWithoutFileDocs, setReleasedWithoutFileDocs] = useState([]);
   const [loadingPriority, setLoadingPriority] = useState(true);
+  const [alertWindowDays, setAlertWindowDays] = useState(30);
 
   // Catalogo
   const [catalogDocs, setCatalogDocs]   = useState([]);
@@ -1065,15 +1071,25 @@ function DocumentRegistry() {
       const companyFilter = registryCompanyScope
         ? { company_id: registryCompanyScope }
         : {};
-      const [expRes, revRes, noFileRes] = await Promise.all([
-        apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50, ...companyFilter }),
+      let windowDays = 30;
+      try {
+        const cfg = await apiService.getNotificationsConfig();
+        windowDays = cfg?.alert_days_1 ?? 30;
+        setAlertWindowDays(windowDays);
+      } catch {
+        setAlertWindowDays(30);
+      }
+      const [expiredRes, expiringRes, revRes, noFileRes] = await Promise.all([
+        apiService.getDocuments({ expired_only: 1, status: "rilasciato", limit: 50, ...companyFilter }),
+        apiService.getDocuments({ expiring_days: windowDays, status: "rilasciato", limit: 50, ...companyFilter }),
         apiService.getDocuments({ status: "in_revisione", limit: 20, ...companyFilter }),
         apiService.getDocuments({ without_file: 1, status: "rilasciato", limit: 30, ...companyFilter }),
       ]);
-      setPriorityDocs([
-        ...(expRes.data || []),
-        ...(revRes.data || []),
-      ]);
+      const merged = new Map();
+      for (const doc of [...(expiredRes.data || []), ...(expiringRes.data || []), ...(revRes.data || [])]) {
+        merged.set(doc.id, doc);
+      }
+      setPriorityDocs([...merged.values()]);
       setReleasedWithoutFileDocs(noFileRes.data || []);
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
@@ -1518,6 +1534,7 @@ function DocumentRegistry() {
           revisionDocs={revisionDocs}
           releasedWithoutFileDocs={releasedWithoutFileDocs}
           loading={loadingPriority}
+          alertWindowDays={alertWindowDays}
           onEdit={handleEdit}
           onArchive={handleArchive}
           archiveId={archiveId}
