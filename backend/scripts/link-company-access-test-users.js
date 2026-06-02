@@ -80,6 +80,15 @@ async function upsertAccess(userId, organizationId, companyId, permission) {
   await upsertAccess(writeUser.user_id, company.organization_id, COMPANY_ID, 'write');
   await upsertAccess(readUser.user_id, company.organization_id, COMPANY_ID, 'read');
 
+  // Fase 4.1: account solo-azienda — rimuovi scope studio attenuato (opzionale via env)
+  if (process.env.CLEAR_AUDITOR_ORG !== '0') {
+    await query(`
+      UPDATE users SET auditor_org_id = NULL
+      WHERE user_id IN (@write_id, @read_id)
+    `, { write_id: writeUser.user_id, read_id: readUser.user_id });
+    console.log('auditor_org_id azzerato per account test company-only');
+  }
+
   console.log('OK');
   console.log(`Write user: ${writeUser.email} (user_id ${writeUser.user_id}) ? company ${COMPANY_ID} write`);
   console.log(`Read user:  ${readUser.email} (user_id ${readUser.user_id}) ? company ${COMPANY_ID} read`);

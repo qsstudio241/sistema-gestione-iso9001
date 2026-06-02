@@ -10,6 +10,10 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { documentRegistryScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const {
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 const multer = require('multer');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 const {
@@ -348,6 +352,9 @@ async function createDocument(req, res) {
             });
         }
 
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
@@ -476,7 +483,7 @@ async function updateDocument(req, res) {
         const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, is_system_folder, doc_type, issue_date, expiry_date, status
+            SELECT id, is_system_folder, doc_type, issue_date, expiry_date, status, company_id
             FROM document_registry dr
             WHERE dr.id = @id AND dr.organization_id = @organization_id
               ${scopeSql}
@@ -488,6 +495,11 @@ async function updateDocument(req, res) {
                 code:  'DOC_NOT_FOUND',
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         // Protezione cartelle di sistema
         const doc = existing.recordset[0];
@@ -594,7 +606,7 @@ async function deleteDocument(req, res) {
         const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, status, is_system_folder, doc_type FROM document_registry dr
+            SELECT id, status, is_system_folder, doc_type, company_id FROM document_registry dr
             WHERE dr.id = @id AND dr.organization_id = @organization_id
               ${scopeSql}
         `, { id: parseInt(id), organization_id, ...docScope.params });
@@ -605,6 +617,11 @@ async function deleteDocument(req, res) {
                 code:  'DOC_NOT_FOUND',
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const row = existing.recordset[0];
 
@@ -671,7 +688,7 @@ async function releaseRevision(req, res) {
         const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, status, revision_number, revision
+            SELECT id, status, revision_number, revision, company_id
             FROM document_registry dr
             WHERE dr.id = @id AND dr.organization_id = @organization_id
               ${scopeSql}
@@ -680,6 +697,11 @@ async function releaseRevision(req, res) {
         if (!existing.recordset.length) {
             return res.status(404).json({ error: 'Documento non trovato', code: 'DOC_NOT_FOUND' });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const doc = existing.recordset[0];
         if (doc.status !== 'bozza') {

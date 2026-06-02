@@ -13,7 +13,7 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
-const { getUserCompanyAccess } = require('../services/companyAccess.service');
+const { getUserCompanyAccess, isCompanyClient } = require('../services/companyAccess.service');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 
 // JWT_SECRET: fail-fast in produzione se mancante (vedi server.js).
@@ -280,6 +280,7 @@ async function login(req, res) {
                 allowed_standard_ids,
                 licensed_modules,
                 company_access,
+                is_company_client: isCompanyClient({ company_access }),
             },
             token,
             refreshToken
@@ -406,7 +407,13 @@ async function getCurrentUser(req, res) {
         const allowed_standard_ids = await getAllowedStandardIds(userId);
         const licensed_modules = await getLicensedModuleKeysForOrg(userRow.organization_id);
         const company_access = await getUserCompanyAccess(userId);
-        const user = { ...userRow, allowed_standard_ids, licensed_modules, company_access };
+        const user = {
+            ...userRow,
+            allowed_standard_ids,
+            licensed_modules,
+            company_access,
+            is_company_client: isCompanyClient({ company_access }),
+        };
 
         res.json({
             success: true,

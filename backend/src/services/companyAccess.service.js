@@ -1,5 +1,6 @@
 /**
  * RBAC Fase 4 — accesso per singola azienda (user_company_access)
+ * Fase 4.1 — guard write centralizzate + scope company
  * Complementa lo scope studio (auditor_org) per clienti azienda.
  */
 
@@ -33,6 +34,10 @@ function hasCompanyAccessRows(accessList) {
   return Array.isArray(accessList) && accessList.length > 0;
 }
 
+function isCompanyClient(user) {
+  return hasCompanyAccessRows(user?.company_access);
+}
+
 function findCompanyPermission(accessList, companyId) {
   const cid = parseInt(companyId, 10);
   return (accessList || []).find((a) => a.company_id === cid)?.permission || null;
@@ -41,6 +46,31 @@ function findCompanyPermission(accessList, companyId) {
 function getAllowedCompanyIds(accessList) {
   if (!hasCompanyAccessRows(accessList)) return null;
   return accessList.map((a) => a.company_id);
+}
+
+async function getAllowedCompanyIdsForUser(user) {
+  const accessList = await ensureCompanyAccessLoaded(user);
+  return getAllowedCompanyIds(accessList);
+}
+
+/**
+ * Filtro SQL IN (...) per utenti con company_access (solo lettura lista).
+ * @returns {{ clause: string, params: Record<string, number> }}
+ */
+function companyAccessSqlFilter(accessList, tableAlias, columnName = 'company_id', paramPrefix = 'uca') {
+  if (!hasCompanyAccessRows(accessList)) {
+    return { clause: '', params: {} };
+  }
+  const params = {};
+  const parts = accessList.map((a, i) => {
+    const key = `${paramPrefix}_${i}`;
+    params[key] = a.company_id;
+    return `@${key}`;
+  });
+  return {
+    clause: `${tableAlias}.${columnName} IN (${parts.join(', ')})`,
+    params,
+  };
 }
 
 /**
@@ -67,12 +97,50 @@ async function assertCompanyAccess(user, companyId, level = 'read') {
   return null;
 }
 
+async function assertCompanyRead(user, companyId) {
+  return assertCompanyAccess(user, companyId, 'read');
+}
+
 /**
- * Scrittura personale/azienda: company_access write OPPURE ruolo studio (non viewer).
+ * Scrittura personale/azienda/moduli: company_access write OPPURE ruolo studio (non viewer).
  */
 async function assertCompanyWriteAccess(user, companyId) {
   const accessList = await ensureCompanyAccessLoaded(user);
   if (hasCompanyAccessRows(accessList)) {
+    return assertCompanyAccess(user, companyId, 'write');
+  }
+
+  const role = normalizeRole(user?.role);
+  if (!WRITE_STUDIO_ROLES.has(role)) {
+    return {
+      status: 403,
+      body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+    };
+  }
+  return null;
+}
+
+async function assertCompanyWrite(user, companyId) {
+  return assertCompanyWriteAccess(user, companyId);
+}
+
+/**
+ * Guard centralizzata per API mutanti (POST/PUT/DELETE).
+ * Cliente azienda: write solo se permission=write e company_id match.
+ * Studio legacy (senza company_access): admin/auditor/superadmin ok; viewer ? 403.
+ *
+ * @returns {null|{ status: number, body: object }}
+ */
+async function assertMutatingAllowed(user, { companyId } = {}) {
+  const accessList = await ensureCompanyAccessLoaded(user);
+
+  if (hasCompanyAccessRows(accessList)) {
+    if (companyId == null || companyId === '') {
+      return {
+        status: 403,
+        body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+      };
+    }
     return assertCompanyAccess(user, companyId, 'write');
   }
 
@@ -94,10 +162,16 @@ module.exports = {
   getUserCompanyAccess,
   ensureCompanyAccessLoaded,
   hasCompanyAccessRows,
+  isCompanyClient,
   findCompanyPermission,
   getAllowedCompanyIds,
+  getAllowedCompanyIdsForUser,
+  companyAccessSqlFilter,
   assertCompanyAccess,
+  assertCompanyRead,
   assertCompanyWriteAccess,
+  assertCompanyWrite,
+  assertMutatingAllowed,
   sendAccessDenied,
   WRITE_STUDIO_ROLES,
 };

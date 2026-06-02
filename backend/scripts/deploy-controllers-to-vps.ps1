@@ -119,8 +119,11 @@ Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controller
 Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
 Copy-FileToVps "src/controllers/companyPersonnel.controller.js" "$RemoteBase/src/controllers/companyPersonnel.controller.js"
 Copy-FileToVps "src/controllers/company.controller.js" "$RemoteBase/src/controllers/company.controller.js"
+Copy-FileToVps "src/controllers/qualifications.controller.js" "$RemoteBase/src/controllers/qualifications.controller.js"
+Copy-FileToVps "src/controllers/risks.controller.js" "$RemoteBase/src/controllers/risks.controller.js"
 Copy-FileToVps "src/controllers/organization.controller.js" "$RemoteBase/src/controllers/organization.controller.js"
 Copy-FileToVps "src/controllers/auth.controller.js" "$RemoteBase/src/controllers/auth.controller.js"
+Copy-FileToVps "src/controllers/billing.controller.js" "$RemoteBase/src/controllers/billing.controller.js"
 Copy-FileToVps "src/controllers/aiChat.controller.js" "$RemoteBase/src/controllers/aiChat.controller.js"
 Copy-FileToVps "src/controllers/search.controller.js" "$RemoteBase/src/controllers/search.controller.js"
 Copy-FileToVps "src/utils/aiCitations.js" "$RemoteBase/src/utils/aiCitations.js"
@@ -157,12 +160,12 @@ Copy-FileToVps "src/middleware/auth.middleware.js" "$RemoteBase/src/middleware/a
 Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"
 Copy-FileToVps "src/services/auditListRbac.service.js" "$RemoteBase/src/services/auditListRbac.service.js"
 Copy-FileToVps "src/services/companyAccess.service.js" "$RemoteBase/src/services/companyAccess.service.js"
+Copy-FileToVps "src/services/billing.service.js" "$RemoteBase/src/services/billing.service.js"
 Copy-FileToVps "src/services/auditLock.service.js" "$RemoteBase/src/services/auditLock.service.js"
 Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/services/auditNumberAllocation.service.js"
 Copy-FileToVps "src/services/customChecklist.service.js" "$RemoteBase/src/services/customChecklist.service.js"
 Copy-FileToVps "src/services/reportTemplate.service.js" "$RemoteBase/src/services/reportTemplate.service.js"
 Copy-FileToVps "src/services/unifiedSearch.service.js" "$RemoteBase/src/services/unifiedSearch.service.js"
-Copy-FileToVps "src/services/companyAccess.service.js" "$RemoteBase/src/services/companyAccess.service.js"
 
 Write-Host "OK. Riavvio backend sul VPS..." -ForegroundColor Cyan
 

@@ -5,6 +5,12 @@
 
 const { getPool } = require('../config/database');
 const logger      = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // score (priorità) = probability × impact  →  1-9
 function riskScore(p, i) { return (p || 1) * (i || 1); }
@@ -15,11 +21,15 @@ async function listRisks(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
         const { status, context, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let where = ['r.organization_id = @orgId', 'r.is_deleted = 0'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
         const req2 = pool.request().input('orgId', orgId).input('limit', parseInt(limit)).input('offset', offset);
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
         if (status)  { where.push('r.status = @status');   req2.input('status', status); }
         if (context) { where.push('r.context = @context'); req2.input('context', context); }
@@ -90,6 +100,9 @@ async function createRisk(req, res) {
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
 
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         const r = await pool.request()
             .input('orgId', orgId).input('userId', userId)
             .input('title', title).input('description', description || null)
@@ -122,8 +135,11 @@ async function updateRisk(req, res) {
         const { title, description, context, category, probability, impact, treatment, treatment_desc, responsible, review_date, status } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT risk_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+            .query('SELECT risk_id, company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
         if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const sets = ['updated_at = GETDATE()'];
         // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
@@ -152,6 +168,14 @@ async function deleteRisk(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query('SELECT company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+        if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         await pool.request().input('id', id).input('orgId', orgId)
             .query('UPDATE risks SET is_deleted = 1, updated_at = GETDATE() WHERE risk_id = @id AND organization_id = @orgId');
         res.json({ success: true });
