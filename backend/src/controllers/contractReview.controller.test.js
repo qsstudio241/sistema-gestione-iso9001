@@ -301,6 +301,7 @@ describe('importFromJob', () => {
     status: 'extracted',
     extracted_text: 'Testo estratto dal PDF',
     ai_extraction_json: '{"document_type_guess":"rfq"}',
+    commercial_case_id: null,
   };
 
   function setupImportTransactionMock(createdRow) {
@@ -358,7 +359,23 @@ describe('importFromJob', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('file già collegato → 409', async () => {
+  it('file già collegato via commercial_case_id → 409', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({
+        recordset: [{ ...fileRow, commercial_case_id: 7 }],
+      })
+      .mockResolvedValueOnce({ recordset: [{ id: 7, uuid: 'existing-uuid' }] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('ALREADY_LINKED');
+    expect(res.json.mock.calls[0][0].case_id).toBe(7);
+  });
+
+  it('file già collegato via allegato → 409', async () => {
     query
       .mockResolvedValueOnce({ recordset: [jobRow] })
       .mockResolvedValueOnce({ recordset: [fileRow] })
