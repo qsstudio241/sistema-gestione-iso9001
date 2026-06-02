@@ -39,6 +39,7 @@ function rowCase(row) {
     external_ref: row.external_ref ?? row.externalRef,
     notes: row.notes,
     updated_at: row.updated_at ?? row.updatedAt,
+    source_import_job_id: row.source_import_job_id ?? row.sourceImportJobId ?? null,
   };
 }
 
