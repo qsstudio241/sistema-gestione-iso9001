@@ -274,6 +274,17 @@ export default function ImportJobsPage() {
   }, [loadList]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const jobParam = params.get('job');
+    if (jobParam) {
+      const id = parseInt(jobParam, 10);
+      if (Number.isFinite(id) && id > 0) {
+        setSelectedId(id);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     loadDetail(selectedId);
   }, [selectedId, loadDetail]);
 
@@ -415,6 +426,10 @@ export default function ImportJobsPage() {
   }
 
   async function handleOpenRiesame(file) {
+    if (file?.commercial_case_id) {
+      navigate(`/contract-reviews/${file.commercial_case_id}`);
+      return;
+    }
     const el = document.getElementById(`txt-${file.id}`);
     const extractedText = el ? el.value : (file.extracted_text || "");
     const job = detail?.job;
@@ -737,7 +752,7 @@ export default function ImportJobsPage() {
                           Analisi AI strutturata
                         </button>
                       )}
-                      {(f.status === "extracted" || f.status === "reviewed") && (
+                      {(f.status === "extracted" || f.status === "reviewed") && !f.commercial_case_id && (
                         <button
                           type="button"
                           className="btn-small btn-riesame"
@@ -746,6 +761,15 @@ export default function ImportJobsPage() {
                           onClick={() => handleOpenRiesame(f)}
                         >
                           Crea caso Riesame
+                        </button>
+                      )}
+                      {f.commercial_case_id && (
+                        <button
+                          type="button"
+                          className="file-riesame-badge"
+                          onClick={() => navigate(`/contract-reviews/${f.commercial_case_id}`)}
+                        >
+                          Caso Riesame #{f.commercial_case_id}
                         </button>
                       )}
                       {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
