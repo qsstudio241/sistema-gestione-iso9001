@@ -1,9 +1,9 @@
-# TASK ó RBAC Fase 4 (user_company_access)
+# TASK ù RBAC Fase 4 (user_company_access)
 
 **Stato:** ? Implementato 02/06/2026  
 **Migration:** `081_user_company_access.sql`  
 **ADR:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md)  
-**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ß7 Fase 4
+**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ù7 Fase 4
 
 ---
 
@@ -25,8 +25,8 @@
 
 | Username | company_id | permission |
 |----------|------------|------------|
-| `cliente.azienda11@qsstudio.local` | 11 | write |
-| `viewer.azienda11@qsstudio.local` | 11 | read |
+| `cliente.azienda11@alproject.sgq.local` | 11 | write |
+| `viewer.azienda11@alproject.sgq.local` | 11 | read |
 
 ---
 
@@ -42,7 +42,7 @@ ssh ... "cd /var/www/sgq-backend && node scripts/link-company-access-test-users.
 
 ---
 
-## Gap test 02/06/2026 ó chiusi
+## Gap test 02/06/2026 ù chiusi
 
 | Gap | Stato |
 |-----|-------|

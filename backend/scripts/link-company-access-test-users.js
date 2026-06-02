@@ -8,8 +8,8 @@
  * Credenziali: username in output; password in mcp.env (NON committare).
  *
  * Variabili opzionali:
- *   WRITE_EMAIL   default cliente.azienda11@qsstudio.local
- *   READ_EMAIL    default viewer.azienda11@qsstudio.local
+ *   WRITE_EMAIL   default cliente.azienda11@alproject.sgq.local
+ *   READ_EMAIL    default viewer.azienda11@alproject.sgq.local
  *   COMPANY_ID    default 11
  */
 
@@ -18,8 +18,8 @@ require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq
 
 const { query } = require('/var/www/sgq-backend/src/config/database');
 
-const WRITE_EMAIL = process.env.WRITE_EMAIL || 'cliente.azienda11@qsstudio.local';
-const READ_EMAIL = process.env.READ_EMAIL || 'viewer.azienda11@qsstudio.local';
+const WRITE_EMAIL = process.env.WRITE_EMAIL || 'cliente.azienda11@alproject.sgq.local';
+const READ_EMAIL = process.env.READ_EMAIL || 'viewer.azienda11@alproject.sgq.local';
 const COMPANY_ID = parseInt(process.env.COMPANY_ID || '11', 10);
 
 async function findUser(email) {
@@ -49,7 +49,7 @@ async function upsertAccess(userId, organizationId, companyId, permission) {
 }
 
 (async () => {
-  console.log('RBAC Fase 4 ó link account test user_company_access');
+  console.log('RBAC Fase 4 ù link account test user_company_access');
   console.log(`Company target: ${COMPANY_ID}`);
 
   const writeUser = await findUser(WRITE_EMAIL);
