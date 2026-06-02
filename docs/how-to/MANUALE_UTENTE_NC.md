@@ -92,7 +92,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 3. Usare il menu **Tutti i clienti** per restringere a un'azienda (es. *Azienda Test Fase 1*).
 4. Cercare per testo nel campo **Cerca per numero NC o descrizione...**.
 5. Affinare con **Tutti gli stati**, **Tutte le severità**, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
-6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra). La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`.
+6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra). La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`. Su schermo desktop potete **allargare il pannello** trascinando la maniglia sul bordo sinistro (larghezza minima 520 px, massima 900 px o 90% finestra; la preferenza viene ricordata).
 
 **Ordine sezioni nel drawer** (flusso ISO 10.2, dall'alto verso il basso):
 
