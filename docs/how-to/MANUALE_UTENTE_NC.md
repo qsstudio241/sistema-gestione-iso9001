@@ -540,14 +540,28 @@ Lo script: legge `responsible_person`, `verification_responsible` (NC) e `respon
 
 ### 4.5 Passi VPS (migration 073 e 074)
 
-Eseguire **in ordine** sul VPS (idempotenti, sicuri da ripetere):
+**Checklist rapida (Windows, dopo `git push`):**
+
+```powershell
+cd C:\ProgettoISO
+powershell -File backend/scripts/activate-nc-notifications-vps.ps1
+```
+
+Lo script (idempotente): verifica `.env` (`ALERT_ENABLED`, `NC_ALERT_ENABLED`, `SMTP_*`), copia i file backend NC sul VPS, esegue migration rubrica, import referenti (dry-run + reale), riavvia `sgq-backend`.
+
+**Comandi manuali sul VPS** (se preferisci SSH singolo):
 
 ```bash
-node backend/scripts/run-migration-073.js   # tabella notification_contacts
-node backend/scripts/run-migration-074.js   # FK su NC/azioni + log invii
-node backend/scripts/import-notification-contacts-from-nc.js --dry-run
-node backend/scripts/import-notification-contacts-from-nc.js
+cd /var/www/sgq-backend
+node scripts/run-migration-nc-contacts-073-vps.js   # tabella notification_contacts
+node scripts/run-migration-nc-contacts-074-vps.js   # FK su NC/azioni + log invii
+node scripts/import-notification-contacts-from-nc.js --dry-run
+node scripts/import-notification-contacts-from-nc.js
+sudo systemctl restart sgq-backend.service
+curl -s http://127.0.0.1:3000/api/v1/health
 ```
+
+> Nota: `run-migration-073-vps.js` / `074-vps.js` nel repo servono al modulo **Riesame** (commercial_case); per la rubrica NC usare gli script `run-migration-nc-contacts-*-vps.js`.
 
 Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su una NC di prova, e (se SMTP attivo) email di test da **Impostazioni notifiche**.
 
