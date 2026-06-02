@@ -1,9 +1,9 @@
-# TASK ó RBAC Fase 4 (user_company_access)
+# TASK ù RBAC Fase 4 (user_company_access)
 
 **Stato:** ? Implementato 02/06/2026  
 **Migration:** `081_user_company_access.sql`  
 **ADR:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md)  
-**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ß7 Fase 4
+**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ù7 Fase 4
 
 ---
 
@@ -51,11 +51,27 @@ ssh ... "cd /var/www/sgq-backend && WRITE_EMAIL=cliente.azienda11@alproject.sgq.
 
 ---
 
-## Gap test 02/06/2026 ó chiusi
+## Gap test 02/06/2026 ù chiusi
 
 | Gap | Stato |
 |-----|-------|
 | Viewer POST personnel ? 403 | ? Hotfix + company_access read |
 | UI nasconde CRUD personale viewer | ? CompanyPersonnelPanel canEdit |
 | Cliente azienda scope singola company | ? Fase 4 backend + menu |
-| Admin assegna accesso per company | ? API admin company-access |
+| Admin asigna accesso per company | ? API admin company-access |
+
+---
+
+## Fase 4.1 ó Scope moduli ? Completato 02/06/2026
+
+| Componente | Dettaglio |
+|------------|-----------|
+| Guard write | `assertMutatingAllowed`, `assertCompanyWrite` in `companyAccess.service.js` |
+| Scope company | `companyAccessScopeClause` in `auditListRbac.service.js` |
+| API | company PUT, documents, qualifications, risks, NC, audit create |
+| Auth | `is_company_client` in login e `/auth/me` |
+| UI | `canWriteModule`, HomePage e DocumentRegistry read-only |
+| Test | Jest service + rbac41; Vitest companyAccess |
+| Script test | `link-company-access-test-users.js` azzera `auditor_org_id` |
+
+Guida: [GUIDA_RBAC_FASE41.md](../GUIDA_RBAC_FASE41.md)
