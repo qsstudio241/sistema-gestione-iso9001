@@ -636,7 +636,31 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Nota numerazione:** la spec citava migrazione 071 ma quella è già usata per NC — S2 usa **073**.
 
-**Prossima slice**: **N1** — tabella `commercial_case_notifications` + eventi transizione/assegnazione.
+**Prossima slice**: ~~**N1**~~ ✅ — Epic estensioni **completa** (H1).
+
+### Slice N1+N2 notifiche approvazione (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **074** | Tabella `commercial_case_notifications` |
+| Service | `contractReviewNotification.service.js` — eventi `pending_approval` e `assigned` |
+| Email N2 | Trigger immediato via `alertMail.service.js` con link `/contract-reviews/:uuid` |
+| Test L1 | Jest service (6) + controller mock OK |
+| Deploy VPS | Migrazione 074 + deploy backend; health 200 |
+| PR | [#87](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/87) |
+
+### Slice H1 handoff stub H-A (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Decisione H0 | Opzione **H-A** (riferimento testo, nessun modulo commesse) |
+| Migrazione **075** | `handoff_ref`, `handoff_at`, `handoff_by`, `handoff_notes` su `commercial_cases` |
+| API | `POST /contract-reviews/:id/handoff` — solo status `APPROVED` |
+| UI | Tab Workflow: sezione «Passaggio a esecuzione» + riepilogo dopo registrazione |
+| Fix | `rowCase()` propagava campi handoff (pattern R3 `source_import_job_id`) |
+| Test L1 | Jest `registerHandoff` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 075 + deploy backend; health 200 |
+| PR | [#88](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/88) |
 
 ### Slice S1 UI counterparty fornitori (02/06/2026)
 
