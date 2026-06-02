@@ -16,6 +16,7 @@
 | **Mini-spec feature** | [specs/](specs/) |
 | **Decisioni architettura** | [adr/README.md](adr/README.md) |
 | **Task agente attivo** | [agent-tasks/DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
+| **Alert, scadenze, tipi documento** | [AGENT_ALERTS_AND_DOC_TYPES.md](AGENT_ALERTS_AND_DOC_TYPES.md) |
 
 ---
 

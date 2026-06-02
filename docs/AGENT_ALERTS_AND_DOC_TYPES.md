@@ -1,7 +1,7 @@
 # Guida agenti — Scadenze, alert e tipologie documento
 
 > **Per chi modifica codice** senza ri-analizzare il dominio.  
-> Ultimo aggiornamento: 2026-06-02 · commit feature `06c8cf7` (P0–P3 tipi doc + P0–P2 alert).
+> Ultimo aggiornamento: 2026-06-02 — commit feature `06c8cf7` (P0–P3 tipi doc + P0–P2 alert).
 
 **Non confondere:** scadenza del documento ? regola di reminder email ? priorità UI/roadmap.
 
@@ -16,8 +16,8 @@
 | **3 — Destinatari (a chi)** | Rubrica NC, email org, opzionale responsabile doc | `notification_contacts`, `notifications_config.recipients_email`, `document_registry.responsible` (solo se email) | Referente attuazione NC + CC studio |
 
 **Finestra operativa unificata:** `alert_days_1` (default 30) definisce:
-- quanti giorni avanti mostrare documenti “urgenti” in **Home**, **Registro documenti**, query scheduler;
-- soglia minima inclusa nella curva escalation (documenti e NC senza `due_date` “aperte da N giorni”).
+- quanti giorni avanti mostrare documenti «urgenti» in **Home**, **Registro documenti**, query scheduler;
+- soglia minima inclusa nella curva escalation (documenti e NC senza `due_date` «aperte da N giorni»).
 
 **`alert_days_2`:** seconda soglia org (tipico 7); usata nelle curve NC e documenti, non sostituisce `alert_days_1`.
 
@@ -51,7 +51,7 @@ Una riga per org — configurazione alert email e flag documenti.
 | `alert_doc_expiry` / `alert_nc_open` / `alert_qualif_expiry` | Abilitazione per categoria |
 | `enabled` | Master switch org |
 | `doc_escalation_enabled` | Curva escalation documenti (080) |
-| `doc_use_legacy_digest` | Se true: un’email riepilogo/giorno invece di escalation per soglia |
+| `doc_use_legacy_digest` | Se true: un'email riepilogo/giorno invece di escalation per soglia |
 | `doc_notify_responsible` | Se true e `responsible` contiene email valida ? destinatario primario |
 | `doc_escalation_profile_id` | FK profilo default org (fallback se nessun profilo per tipo) |
 
@@ -94,7 +94,7 @@ Anti-duplicati NC/azioni. UNIQUE su `(entity_type, entity_id, recipient_email, a
 | `backend/src/services/docAlertEscalation.service.js` | Escalation email documenti + log `doc_notification_log` |
 | `backend/src/services/ncAlertEscalation.service.js` | Escalation NC/azioni + log `nc_notification_log` |
 | `backend/src/services/alertMail.service.js` | SMTP via nodemailer |
-| `backend/src/server.js` | Avvia `startAlertScheduler()` all’boot |
+| `backend/src/server.js` | Avvia `startAlertScheduler()` all'avvio |
 
 **Env VPS:** `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*`. Senza scheduler attivo sul VPS **nessuna email** (Netlify non esegue cron).
 
@@ -139,11 +139,11 @@ Anti-duplicati NC/azioni. UNIQUE su `(entity_type, entity_id, recipient_email, a
 
 | # | File | Cosa fa |
 |---|------|---------|
-| **051** | `051_doc_type_config.sql` | Crea `doc_type_config` (prefisso, autonumerazione per org+tipo) |
-| **076** | `076_sgq_3834_tree_template.sql` | Template albero `sgq_3834_v1` (ISO 3834-2) — **non** alert; legato sessione tipi doc P0 |
-| **077** | `077_doc_type_config_counters_expiry.sql` | Aggiunge `next_number`, `default_expiry_months`, `updated_at` |
-| **079** | `079_doc_notification_log.sql` | Tabella log anti-duplicati alert documenti |
-| **080** | `080_doc_escalation.sql` | `doc_escalation_profile` + colonne doc su `notifications_config` |
+| **051** | `database/migrations/051_doc_type_config.sql` | Crea `doc_type_config` (prefisso, autonumerazione per org+tipo) |
+| **076** | `database/migrations/076_sgq_3834_tree_template.sql` | Template albero `sgq_3834_v1` (ISO 3834-2) — **non** alert; legato sessione tipi doc P0 |
+| **077** | `database/migrations/077_doc_type_config_counters_expiry.sql` | Aggiunge `next_number`, `default_expiry_months`, `updated_at` |
+| **079** | `database/migrations/079_doc_notification_log.sql` | Tabella log anti-duplicati alert documenti |
+| **080** | `database/migrations/080_doc_escalation.sql` | `doc_escalation_profile` + colonne doc su `notifications_config` |
 
 **Correlata NC:** **074** (`nc_notification_log` + FK contatti NC).
 
