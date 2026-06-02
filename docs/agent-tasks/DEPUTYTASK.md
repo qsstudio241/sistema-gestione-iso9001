@@ -15,8 +15,10 @@
 | S4 scheda azienda | `90e13dc` | Route `/companies/:id`, tab Anagrafica + Personale |
 | S5 griglia CRUD | `15cc73c` | `CompanyPersonnelPanel` + API personnel |
 | VPS deploy 078 | `35d865b` | Migration 078 prod; health OK |
-| Hotfix viewer | *(sessione corrente)* | CRUD personale bloccato per viewer studio |
-| RBAC Fase 4 | *(sessione corrente)* | Migration 081 `user_company_access` |
+| Hotfix viewer | `7042532` | CRUD personale bloccato per viewer studio |
+| RBAC Fase 4 | `99c6803` | Migration 081 `user_company_access` |
+| VPS deploy RBAC 081 | *(sessione corrente)* | Migration prod + deploy + link test users |
+| S6 API overview | *(sessione corrente)* | `GET /api/v1/personnel?company_id=` |
 
 ## Prossima slice
 
