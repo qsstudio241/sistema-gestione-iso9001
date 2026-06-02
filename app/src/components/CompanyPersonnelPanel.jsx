@@ -1,5 +1,5 @@
 /**
- * CompanyPersonnelPanel ‚Äî griglia CRUD personale per singola azienda (slice S5)
+ * CompanyPersonnelPanel ù griglia CRUD personale per singola azienda (slice S5)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -120,7 +120,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
               onChange={(e) => setForm((f) => ({ ...f, can_actuation: e.target.checked }))}
             />
             <span className="toggle-track" />
-            <span className="toggle-title">Pu√≤ attuazione NC</span>
+            <span className="toggle-title">Puù attuazione NC</span>
           </label>
           <label className="notif-toggle">
             <input
@@ -129,7 +129,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
               onChange={(e) => setForm((f) => ({ ...f, can_verify: e.target.checked }))}
             />
             <span className="toggle-track" />
-            <span className="toggle-title">Pu√≤ verifica NC</span>
+            <span className="toggle-title">Puù verifica NC</span>
           </label>
           {error && <p className="notif-error">{error}</p>}
           <div className="notif-actions">
@@ -150,7 +150,7 @@ function isPersonActive(row) {
   return row.active !== false && row.active !== 0;
 }
 
-export default function CompanyPersonnelPanel({ companyId, auditorOrgId }) {
+export default function CompanyPersonnelPanel({ companyId, auditorOrgId, canEdit = true }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -210,6 +210,7 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId }) {
         return parts.length ? parts.join(" / ") : "\u2014";
       }
       case "actions":
+        if (!canEdit) return "\u2014";
         return (
           <div className="sgq-datagrid-row-actions">
             <button
@@ -240,17 +241,23 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId }) {
     }
   }
 
+  const gridColumns = canEdit
+    ? GRID_COLUMNS
+    : GRID_COLUMNS.filter((col) => col.id !== "actions");
+
   return (
     <div className="notif-card notif-contacts-panel">
       <div className="notif-header-inline">
         <h3 className="notif-card-title">Personale azienda</h3>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setModal({ item: null })}
-        >
-          + Aggiungi
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setModal({ item: null })}
+          >
+            + Aggiungi
+          </button>
+        )}
       </div>
       <p className="notif-hint">
         Anagrafica dipendenti per NC e audit. Email opzionale; flag attuazione/verifica per bridge rubrica (S7).
@@ -258,7 +265,7 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId }) {
 
       <SgqDataGrid
         rows={rows}
-        columns={GRID_COLUMNS}
+        columns={gridColumns}
         loading={loading}
         emptyMessage="Nessun dipendente registrato."
         theme="plain"

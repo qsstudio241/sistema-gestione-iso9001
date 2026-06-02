@@ -1,5 +1,5 @@
 /**
- * companyPersonnel.controller.js ó CRUD anagrafica personale per azienda (ADR-012)
+ * companyPersonnel.controller.js ù CRUD anagrafica personale per azienda (ADR-012)
  * RBAC: stesso scope auditor_org di company.controller.js
  */
 
@@ -20,6 +20,21 @@ function resolveAuditorOrgId(req) {
 function validateEmail(email) {
   if (email === null || email === undefined || String(email).trim() === '') return true;
   return EMAIL_RE.test(String(email).trim());
+}
+
+/** Ruoli con permesso scrittura su personale azienda (viewer ? 403). */
+const COMPANY_WRITE_ROLES = new Set(['admin', 'auditor', 'superadmin']);
+
+function assertCompanyWriteRole(req, res) {
+  const role = String(req.user?.role || '').trim().toLowerCase();
+  if (!COMPANY_WRITE_ROLES.has(role)) {
+    res.status(403).json({
+      error: 'Permesso negato: sola lettura',
+      code: 'AUTH_FORBIDDEN',
+    });
+    return false;
+  }
+  return true;
 }
 
 async function resolveCompanyScope(companyId, auditorOrgId) {
@@ -80,6 +95,8 @@ async function listPersonnel(req, res) {
 
 async function createPersonnel(req, res) {
   try {
+    if (!assertCompanyWriteRole(req, res)) return;
+
     const auditorOrgId = resolveAuditorOrgId(req);
     if (!auditorOrgId) {
       return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
@@ -137,6 +154,8 @@ async function createPersonnel(req, res) {
 
 async function updatePersonnel(req, res) {
   try {
+    if (!assertCompanyWriteRole(req, res)) return;
+
     const auditorOrgId = resolveAuditorOrgId(req);
     if (!auditorOrgId) {
       return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
@@ -214,6 +233,8 @@ async function updatePersonnel(req, res) {
 
 async function deletePersonnel(req, res) {
   try {
+    if (!assertCompanyWriteRole(req, res)) return;
+
     const auditorOrgId = resolveAuditorOrgId(req);
     if (!auditorOrgId) {
       return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
@@ -248,7 +269,7 @@ async function deletePersonnel(req, res) {
       if (ncRefs.recordset.length > 0) {
         if (!personnel.active) {
           return res.status(409).json({
-            error: 'Personale collegato a NC: gi‡ disattivato',
+            error: 'Personale collegato a NC: giù disattivato',
             code: 'NC_LINKED',
           });
         }
@@ -285,4 +306,6 @@ module.exports = {
   deletePersonnel,
   resolveAuditorOrgId,
   validateEmail,
+  assertCompanyWriteRole,
+  COMPANY_WRITE_ROLES,
 };

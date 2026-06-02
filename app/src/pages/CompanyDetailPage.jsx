@@ -262,7 +262,11 @@ function CompanyDetailPage() {
           />
         )}
         {activeTab === "personale" && (
-          <CompanyPersonnelPanel companyId={company.id} auditorOrgId={auditorOrgId} />
+          <CompanyPersonnelPanel
+            companyId={company.id}
+            auditorOrgId={auditorOrgId}
+            canEdit={canEdit}
+          />
         )}
       </div>
     </div>
