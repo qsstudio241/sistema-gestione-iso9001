@@ -1,25 +1,25 @@
-# DEPUTYTASK — (nessun task attivo)
+# DEPUTYTASK — Estensioni Riesame Requisiti
 
-**Stato:** SESSIONE CHIUSA — **TEST OK** (02/06/2026)
+**Stato:** PIANIFICATO — slice **R1** da avviare  
+**Piano completo:** [TASK_RIESAME_ESTENSIONI_SLICES.md](TASK_RIESAME_ESTENSIONI_SLICES.md)
 
-## Ultimo task completato
+## Comando nuova chat
 
-**Riesame requisiti contratto** — API complete, slide UI, workflow gate, migrazione 068.
+```
+Leggi docs/agent-tasks/TASK_RIESAME_ESTENSIONI_SLICES.md ed esegui la slice R1 (import-from-job backend).
+Chiudi con TEST OK o FIX NON APPLICABILI.
+```
 
-| Riferimento | Valore |
-|---|---|
-| PR | https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79 → mergiata su `main` |
-| App | https://systemgest.netlify.app/contract-reviews |
-| API | https://www.fr-busato.it:8443/api/v1/contract-reviews |
+## Slice corrente: R1
 
-## Esito sessione
+Implementare API backend `import-from-job` → caso `commercial_cases` DRAFT + allegati, con test Jest e deploy VPS.
 
-- Backend: inbox/summary, chiarimenti, documenti, allegati, analisi AI, gate transizioni (409)
-- Frontend: tab slide Workflow / Checklist / Chiarimenti / Documenti / Analisi AI
-- Test L1: Jest 18 + Vitest 3 + build OK
-- VPS: migrazione 068, deploy controller/routes/service
-- Incidente risolto: SQL Server Evaluation scaduta → Developer Edition; login ripristinato
+Vedi checklist dettagliata in TASK_RIESAME_ESTENSIONI_SLICES.md § Epic R / Slice R1.
 
-## Prossima sessione
+## Epic successive (ordine)
 
-Sovrascrivere questo file con il nuovo brief. Smoke L3 slide UI e `import-from-job` restano opzionali in roadmap.
+1. R2 UI Import Jobs  
+2. R3 link bidirezionale (migrazione 069)  
+3. S1–S2 fornitori  
+4. N1–N2 notifiche  
+5. H0 decisione committente → H1 handoff  
