@@ -1,28 +1,19 @@
-# DEPUTYTASK — RBAC Fase 2 (chiuso)
+# DEPUTYTASK — Estensioni Riesame Requisiti
 
-**Stato:** CHIUSO — **TEST OK** (31/05/2026)  
-**Branch:** `feat/rbac-phase-2-nc-attachments-registry`  
-**PR:** #76 (merge su `main` in chiusura sessione)
+**Stato:** CHIUSO — Epic estensioni R/S/N/H **TEST OK e mergiate su main** (02/06/2026)  
+**Piano:** [TASK_RIESAME_ESTENSIONI_SLICES.md](TASK_RIESAME_ESTENSIONI_SLICES.md)
 
-## Esito
+## Completato in sessione
 
-RBAC Fase 2: scope studio su write path audit, NC, allegati e document registry. Jest L1 **22/22**. Smoke L3 a fette (`.cursor/rbac-smoke-l3-phase2.mjs`) — slice audit + nc **TEST OK**.
+| Slice | PR | Note |
+|-------|-----|------|
+| S1 counterparty | [#85](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/85) | UI tab Documenti |
+| S2 supplier_id | [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86) | Migrazione 073 |
+| N1+N2 notifiche | [#87](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/87) | Migrazione 074 + email |
+| H1 handoff H-A | [#88](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/88) | Migrazione 075 stub |
 
-## Riferimenti
+## Merge consigliato (ordine)
 
-| Voce | Dettaglio |
-|------|-----------|
-| Architettura | [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7 |
-| Smoke L3 | `node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data` |
-| Cleanup | `node .cursor/rbac-smoke-l3-phase2.mjs --cleanup` |
-| Esperienza | `GUIDA_CONSOLIDATA.md` — Esperienza 31/05/2026 RBAC Fase 2 |
+1. #85 → 2. #86 → 3. #87 → 4. #88
 
-## Prossimo task
-
-**Lead committente:** Fase 3 backlog RBAC / hardening attach+registry in smoke, oppure priorità roadmap corrente.
-
-## Comando deputy (archivio)
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+Dopo merge: Netlify rebuild frontend automatico su `main`.

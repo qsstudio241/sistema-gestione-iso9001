@@ -31,6 +31,19 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
+jest.mock('../services/contractReviewWorkflow.service', () => {
+  const actual = jest.requireActual('../services/contractReviewWorkflow.service');
+  return {
+    ...actual,
+    evaluateTransitionBlockers: jest.fn().mockResolvedValue({ blocked: false, missing: [] }),
+  };
+});
+
+jest.mock('../services/contractReviewNotification.service', () => ({
+  notifyAfterStatusTransition: jest.fn().mockResolvedValue(null),
+  notifyAfterAssigneeChange: jest.fn().mockResolvedValue(null),
+}));
+
 const { query, getPool, sql } = require('../config/database');
 const ctrl = require('./contractReview.controller');
 
@@ -277,5 +290,301 @@ describe('saveChecklistAnswer', () => {
     const res = mockRes();
     await ctrl.saveChecklistAnswer(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+// ─── linkDocument (supplier_id S2) ───────────────────────────────────────────
+describe('linkDocument', () => {
+  const CASE_ID = 10;
+  const DOC_ID = 55;
+  const SUPPLIER_ID = 3;
+
+  it('collega documento con supplier_id valido (201)', async () => {
+    const linked = {
+      id: 100,
+      case_id: CASE_ID,
+      document_id: DOC_ID,
+      counterparty: 'supplier',
+      supplier_id: SUPPLIER_ID,
+    };
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: SUPPLIER_ID }] })
+      .mockResolvedValueOnce({ recordset: [linked] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        direction: 'in',
+        supplier_id: SUPPLIER_ID,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(linked);
+    const insertCall = query.mock.calls[3];
+    expect(insertCall[1]).toMatchObject({ supplierId: SUPPLIER_ID, cp: 'supplier' });
+  });
+
+  it('supplier_id inesistente → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        supplier_id: 999,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/Fornitore non trovato/);
+  });
+
+  it('supplier_id non valido → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'supplier',
+        supplier_id: 'abc',
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/supplier_id non valido/);
+  });
+
+  it('ignora supplier_id se counterparty non è supplier', async () => {
+    const linked = { id: 101, case_id: CASE_ID, document_id: DOC_ID, supplier_id: null };
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ id: DOC_ID }] })
+      .mockResolvedValueOnce({ recordset: [linked] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: {
+        document_id: DOC_ID,
+        counterparty: 'customer',
+        supplier_id: SUPPLIER_ID,
+      },
+    });
+    const res = mockRes();
+    await ctrl.linkDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const insertCall = query.mock.calls[2];
+    expect(insertCall[1]).toMatchObject({ supplierId: null });
+  });
+});
+
+// ─── registerHandoff (H1) ────────────────────────────────────────────────────
+describe('registerHandoff', () => {
+  const CASE_ID = 10;
+
+  it('registra handoff su caso APPROVED (200)', async () => {
+    const approved = { id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID };
+    const updated = {
+      ...approved,
+      handoff_ref: 'COMM-2026-042',
+      handoff_at: '2026-06-02T10:00:00Z',
+      handoff_by: USER_ID,
+    };
+    query
+      .mockResolvedValueOnce({ recordset: [approved] })
+      .mockResolvedValueOnce({ recordset: [updated] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-2026-042', notes: 'Note test' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(updated);
+    expect(query.mock.calls[1][1]).toMatchObject({
+      handoffRef: 'COMM-2026-042',
+      caseId: CASE_ID,
+      organizationId: ORG_ID,
+      userId: USER_ID,
+    });
+  });
+
+  it('rifiuta se status non APPROVED (409)', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: CASE_ID, status: 'FINAL_REVIEW', organization_id: ORG_ID }],
+    });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-1' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].error).toMatch(/solo per casi approvati/);
+  });
+
+  it('handoff_ref mancante → 400', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: CASE_ID, status: 'APPROVED', organization_id: ORG_ID }],
+    });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: '   ' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/handoff_ref obbligatorio/);
+  });
+
+  it('caso non trovato → 404', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { handoff_ref: 'COMM-1' },
+    });
+    const res = mockRes();
+    await ctrl.registerHandoff(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
+// ─── importFromJob ───────────────────────────────────────────────────────────
+describe('importFromJob', () => {
+  const JOB_ID = 99;
+  const jobRow = { id: JOB_ID, title: 'Import RFQ', company_id: 12, notes: 'Note job' };
+  const fileRow = {
+    id: 501,
+    original_name: 'rfq.pdf',
+    storage_path: '/tmp/rfq.pdf',
+    mime_type: 'application/pdf',
+    file_size: 1000,
+    status: 'extracted',
+    extracted_text: 'Testo estratto dal PDF',
+    ai_extraction_json: '{"document_type_guess":"rfq"}',
+    commercial_case_id: null,
+  };
+
+  function setupImportTransactionMock(createdRow) {
+    const tx = {
+      begin: jest.fn().mockResolvedValue(),
+      commit: jest.fn().mockResolvedValue(),
+      rollback: jest.fn().mockResolvedValue(),
+    };
+    sql.Transaction.mockReturnValue(tx);
+    sql.Request.mockImplementation(() => ({
+      input: jest.fn().mockReturnThis(),
+      query: jest.fn().mockResolvedValue({
+        recordset: [createdRow || { attachment_id: 1, attachment_uuid: 'uuid-att', file_name: 'rfq.pdf' }],
+        rowsAffected: [1],
+      }),
+    }));
+    getPool.mockResolvedValue({});
+  }
+
+  it('crea caso da job con file extracted (201)', async () => {
+    const created = {
+      id: 20,
+      uuid: 'case-uuid-20',
+      status: 'DRAFT',
+      title: 'Import RFQ',
+      organization_id: ORG_ID,
+    };
+    setupImportTransactionMock();
+    sql.Request.mockImplementationOnce(() => ({
+      input: jest.fn().mockReturnThis(),
+      query: jest.fn().mockResolvedValue({ recordset: [created] }),
+    }));
+
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [fileRow] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const body = res.json.mock.calls[0][0];
+    expect(body.case_id).toBe(20);
+    expect(body.uuid).toBe('case-uuid-20');
+    expect(body.job_id).toBe(JOB_ID);
+  });
+
+  it('job altra org → 404', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('file già collegato via commercial_case_id → 409', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({
+        recordset: [{ ...fileRow, commercial_case_id: 7 }],
+      })
+      .mockResolvedValueOnce({ recordset: [{ id: 7, uuid: 'existing-uuid' }] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('ALREADY_LINKED');
+    expect(res.json.mock.calls[0][0].case_id).toBe(7);
+  });
+
+  it('file già collegato via allegato → 409', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [fileRow] })
+      .mockResolvedValueOnce({
+        recordset: [{ file_id: 501, case_id: 7, case_uuid: 'existing-uuid' }],
+      });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('ALREADY_LINKED');
+  });
+
+  it('job senza file idonei → 400', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [{ ...fileRow, status: 'uploaded' }] });
+
+    const req = mockReq({ body: { job_id: JOB_ID } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('NO_ELIGIBLE_FILES');
   });
 });

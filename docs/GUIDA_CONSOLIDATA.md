@@ -549,6 +549,140 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Branch**: `cursor/adr-010-ai-agentic-architecture-7330` → mergiato su `main` (commit `49a6a6c`).
 
+### Sessione 02 giugno 2026 — API complete Riesame requisiti + UI slide
+
+**Branch**: `cursor/contract-review-api-complete-5351`  
+**Spec**: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md)
+
+| Area | Contenuto |
+|---|---|
+| Backend | `contractReviewWorkflow.service.js` (gate ISO §8.2), estensione controller/routes, migrazione **068** |
+| Frontend | `ContractReviewPage` con **slide** Workflow / Checklist / Chiarimenti / Documenti / Analisi AI; inbox + summary |
+| Test L1 | Jest workflow + controller; Vitest `contractReviewLabels.test.js` |
+| Doc API | Sezione in [BACKEND_API.md](reference/BACKEND_API.md) |
+
+**Slide UI dettaglio** (ordine operativo): tab orizzontali — non confondere con presentazioni; guidano il commerciale/tecnico fase per fase.
+
+**Deploy VPS** (cloud agent): `scp` migration SQL + `run-migration-068-vps.js`; deploy `contractReview.controller.js`, `contractReview.routes.js`, `contractReviewWorkflow.service.js`; restart `sgq-backend` con verifica PID.
+
+**Chiusura sessione 02/06/2026** — **TEST OK**
+
+| Esito | Dettaglio |
+|---|---|
+| PR | [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) mergiata su `main` (`2521b5b`) |
+| UI produzione | https://systemgest.netlify.app/contract-reviews — tab slide deployate |
+| Migrazione 068 | Applicata VPS; fix batch `GO` prima dell'indice `IX_attachments_commercial_case` |
+| Incidente login | SQL Server **Evaluation scaduta** (errore 17051) → `mssql-conf -n set-edition` con `MSSQL_PID=Developer`; `systemctl reset-failed` + start; restart backend |
+
+**Lezioni (02/06/2026)**
+
+- **Login impossibile + health `unhealthy`**: verificare **prima** `GET /api/v1/health` e `systemctl status mssql-server`. Sintomo tipico: `Failed to connect to localhost:11043`. Log: `/var/opt/mssql/log/errorlog` — cercare `evaluation period has expired`.
+- **Recovery SQL Evaluation scaduta**: `sudo ACCEPT_EULA=Y MSSQL_PID=Developer /opt/mssql/bin/mssql-conf -n set-edition` → `sudo systemctl reset-failed mssql-server` → `sudo systemctl start mssql-server` → restart `sgq-backend`.
+- **Migrazione 068**: indice filtered su colonna appena aggiunta richiede separatore `GO` (SQL Server valida il batch prima del commit DDL).
+
+**Prossimo passo opzionale**: smoke L3 manuale tab slide + transizione con gate; Sprint 9–10 `import-from-job`.
+
+### Slice R1 import-from-job (02/06/2026 pomeriggio)
+
+**PR**: [#80](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/80) mergiata (`5403b1c`).
+
+| Elemento | Dettaglio |
+|---|---|
+| Endpoint | `POST /api/v1/contract-reviews/import-from-job` |
+| Effetto | Caso `DRAFT` + checklist preliminare + allegati da file job (`extracted`/`reviewed`) |
+| Idempotenza parziale | **409** `ALREADY_LINKED` se `storage_path` già su `attachments.commercial_case_id` |
+| Deploy | Backend VPS aggiornato; health OK |
+| Test L1 | Jest `contractReview.controller.test.js` (+4 test) |
+
+**Prossima slice**: ~~**R2**~~ ✅ — vedi sotto. **R3** link bidirezionale (migrazione **070**).
+
+**Lezione**: piano slice in `TASK_RIESAME_ESTENSIONI_SLICES.md` va committato su `main` **prima** di delegare al deputy locale — altrimenti l'agente non trova la spec (commit `0e6160a`).
+
+### Slice R2 UI Import Jobs (02/06/2026 sera) — TEST OK
+
+**PR**: [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) UI; hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82) migrazione 069.
+
+| Elemento | Dettaglio |
+|---|---|
+| UI | Pulsante «Crea caso Riesame» + modale (titolo, cliente, anteprima testo) in `ImportJobsPage.jsx` |
+| API client | `importContractCaseFromJob` → `POST /contract-reviews/import-from-job` |
+| Successo | Redirect `/contract-reviews/:id` (History API — usare `waitForFunction` su pathname in smoke Playwright) |
+| Smoke L3 | Playwright autonomo su `systemgest.netlify.app`: job PDF → estrai → conferma → allegato in tab Documenti → refresh OK |
+
+**Bug scoperto in smoke (R1 residuo):** `CHK_attachments_parent` (036) non accettava righe con solo `commercial_case_id` (068). Fix migrazione **069** su VPS.
+
+**Lezione**: dopo ogni migrazione che aggiunge un nuovo «parent» agli allegati, aggiornare subito `CHK_attachments_parent` — altrimenti endpoint che linkano file senza audit/NC/document_id falliscono in produzione.
+
+**Prossima slice**: ~~**R3**~~ ✅ — vedi sotto. **S1** UI fornitori.
+
+### Slice R3 link bidirezionale (02/06/2026) — TEST OK
+
+**PR**: [#83](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/83) link job↔caso; hotfix [#84](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/84) badge origine.
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **070** | `commercial_cases.source_import_job_id`; `import_job_files.commercial_case_id` — VPS OK |
+| UI job | Badge «Caso Riesame #N»; pulsante create nascosto se collegato |
+| UI caso | Badge «Origine: Import job #N» → `/settings/import-jobs?job=N` |
+| Idempotenza | 409 `ALREADY_LINKED` con `case_id` |
+| Smoke L3 Epic R | Playwright 14/14 su `systemgest.netlify.app` (job #10 → caso #7) |
+
+**Bug smoke R3:** `rowCase()` in `ContractReviewPage.jsx` non propagava `source_import_job_id` → badge origine assente nonostante API corretta. Fix one-liner PR #84.
+
+**Lezione smoke import PDF:** usare PDF valido per `pdf-parse` (es. sample Mozilla); PDF minimali/generati possono fallire con «bad XRef entry». Login smoke cloud: preferire API login + `localStorage` token (`sgq_auth_token`) se il form React non invia POST.
+
+**Prossima slice**: ~~**S2**~~ ✅ — vedi sotto. **N1** notifiche eventi.
+
+### Slice S2 supplier_id anagrafica (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **073** | `commercial_case_documents.supplier_id` + FK `suppliers` + indice |
+| Backend | `linkDocument` valida `supplier_id` org-scoped; `getCase`/`listCaseDocuments` espongono `supplier_name` |
+| UI | Dropdown fornitore se controparte=Fornitore; badge nome fornitore; highlight checklist P9 |
+| Test L1 | Jest `linkDocument` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 073 + controller deployato; health 200 |
+| PR | [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86) (include S1) |
+
+**Nota numerazione:** la spec citava migrazione 071 ma quella è già usata per NC — S2 usa **073**.
+
+**Prossima slice**: ~~**N1**~~ ✅ — Epic estensioni **completa** (H1).
+
+### Slice N1+N2 notifiche approvazione (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **074** | Tabella `commercial_case_notifications` |
+| Service | `contractReviewNotification.service.js` — eventi `pending_approval` e `assigned` |
+| Email N2 | Trigger immediato via `alertMail.service.js` con link `/contract-reviews/:uuid` |
+| Test L1 | Jest service (6) + controller mock OK |
+| Deploy VPS | Migrazione 074 + deploy backend; health 200 |
+| PR | [#87](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/87) |
+
+### Slice H1 handoff stub H-A (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Decisione H0 | Opzione **H-A** (riferimento testo, nessun modulo commesse) |
+| Migrazione **075** | `handoff_ref`, `handoff_at`, `handoff_by`, `handoff_notes` su `commercial_cases` |
+| API | `POST /contract-reviews/:id/handoff` — solo status `APPROVED` |
+| UI | Tab Workflow: sezione «Passaggio a esecuzione» + riepilogo dopo registrazione |
+| Fix | `rowCase()` propagava campi handoff (pattern R3 `source_import_job_id`) |
+| Test L1 | Jest `registerHandoff` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 075 + deploy backend; health 200 |
+| PR | [#88](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/88) |
+
+### Slice S1 UI counterparty fornitori (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| UI tab Documenti | Select Controparte (Cliente/Fornitore/Interno) + Direzione (in/out) su collega registro e upload |
+| Badge riga | «Fornitore · in» (arancione se supplier) su documenti registro e allegati |
+| Backend | Nessuna modifica — API già accettava `counterparty`/`direction` |
+| Test L1 | `contractReviewLabels.test.js` + build Vite OK |
+
+**Prossima slice**: ~~**S2**~~ ✅ PR [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86). **N1** notifiche.
+
 #### Attività completate
 
 | # | Cosa | Risultato |
@@ -1724,6 +1858,19 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **UX visibilità novità (30/05)**: deploy Netlify **systemgest.netlify.app** può essere OK mentre l'utente «non vede nulla» → aprire tab **Albero** nel Registro documenti, URL produzione corretto, provare **drag** sulla maniglia; se PWA/cache vecchia: hard refresh o reinstallazione PWA.
 - **Deploy VPS**: `deploy-controllers-to-vps.ps1` va **esteso** con `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` (oggi copia manuale post-push) + restart `sgq-backend`; smoke `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
 - **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
+
+**Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D1)**
+
+- **Regole cartelle**: ogni azienda può **aggiungere** cartelle custom (`is_system_folder = 0`); le cartelle da **provisioning** restano protette (UI + API 403 su rinomina/elimina/sposta).
+- **Tab Albero**: selettore **Ambito** (tutto lo studio / azienda X) allineato a Ricerca SGQ; `useDocumentTree(companyId)` propaga `company_id` a tree, lazy children e nuove cartelle custom.
+- **Deep link**: `/documents?tab=tree&company_id=N&select=DOC_ID`.
+- **Backend**: `GET /documents/tree/:parentId/children?company_id=` — stesso filtro di `getTree` (azienda + nodi con `company_id` NULL = condivisi studio). Deploy VPS `documentTree.controller.js` dopo merge.
+- **Backlog**: ~~D2 scope su Priorità/Catalogo~~; ~~D3 provisioning albero per `company_id` alla creazione cliente~~ (vedi slice D2/D3 sotto).
+
+**Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D2/D3)**
+
+- **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
+- **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
 
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
