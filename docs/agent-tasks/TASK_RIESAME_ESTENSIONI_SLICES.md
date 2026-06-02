@@ -1,6 +1,7 @@
 # TASK — Estensioni Riesame Requisiti (slice verticali)
 
-**Stato:** IN CORSO — slice **R3** (link bidirezionale)  
+**Stato:** IN CORSO — slice **S1** (UI fornitori)  
+**Slice R3:** ✅ TEST OK — PR [#83](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/83) + hotfix [#84](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/84)  
 **Slice R2:** ✅ TEST OK — PR [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) + hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82)  
 **Creato:** 02/06/2026  
 **Baseline completata:** PR [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) — pilota ordine diretto operativo  
@@ -21,7 +22,7 @@ Una slice alla volta: implementa → test L1 → checkpoint → commit/PR → at
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `R3` (link bidirezionale job ↔ caso Riesame)
+**Slice corrente consigliata:** `S1` (UI counterparty fornitori)
 
 ---
 
@@ -140,8 +141,8 @@ flowchart LR
 | R3.4 | Idempotenza | Secondo click → 409 con link caso esistente |
 
 **Checkpoint R3 (committente):**
-- [ ] Stesso file non crea due casi
-- [ ] Navigazione job ↔ caso funziona
+- [x] Stesso file non crea due casi (409 ALREADY_LINKED — smoke 02/06/2026)
+- [x] Navigazione job ↔ caso funziona (badge bidirezionale + deep-link — smoke 14/14)
 
 **Definition of Done Epic R:** flusso PDF → caso Riesame senza passare dal registro documenti (opzionale commit registro resta separato).
 
