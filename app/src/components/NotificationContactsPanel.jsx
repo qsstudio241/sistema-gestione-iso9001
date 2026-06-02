@@ -1,5 +1,5 @@
 /**
- * NotificationContactsPanel ó rubrica referenti NC (SgqDataGrid)
+ * NotificationContactsPanel ù rubrica referenti NC (SgqDataGrid)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -175,12 +175,12 @@ export default function NotificationContactsPanel() {
           if (col.id === "actions") {
             return (
               <>
-                <button type="button" className="btn-icon" title="Modifica" onClick={() => setModal({ item: row })}>??</button>
-                <button type="button" className="btn-icon" title="Elimina" onClick={() => handleDelete(row)}>???</button>
+                <button type="button" className="btn-icon" title="Modifica" aria-label="Modifica" onClick={() => setModal({ item: row })}>Modifica</button>
+                <button type="button" className="btn-icon" title="Elimina" aria-label="Elimina" onClick={() => handleDelete(row)}>Elimina</button>
               </>
             );
           }
-          return row[col.id] ?? "ó";
+          return row[col.id] ?? "ù";
         }}
       />
 
