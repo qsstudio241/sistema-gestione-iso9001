@@ -193,18 +193,42 @@ function CompaniesPage({ onBack }) {
         );
       case "actions":
         return (
-          <div className="companies-row-actions">
+          <div
+            className="companies-row-actions"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
-              className="btn-edit"
-              onClick={() => navigate(`/companies/${row.id}`)}
+              className="btn-scheda"
+              title="Apri scheda completa (anagrafica e personale)"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/companies/${row.id}`);
+              }}
             >
               Scheda
             </button>
-            <button type="button" className="btn-edit" onClick={() => openEdit(row)}>
+            <button
+              type="button"
+              className="btn-edit"
+              title="Modifica rapida anagrafica"
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(row);
+              }}
+            >
               Modifica
             </button>
-            <button type="button" className="btn-delete" onClick={() => handleDelete(row.id)}>
+            <button
+              type="button"
+              className="btn-delete"
+              title="Elimina azienda"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+            >
               Elimina
             </button>
           </div>

@@ -89,6 +89,7 @@
   white-space: nowrap;
 }
 
+.btn-scheda,
 .btn-edit,
 .btn-delete {
   padding: 0.25rem 0.55rem;
@@ -97,6 +98,16 @@
   cursor: pointer;
   font-size: 0.85rem;
   border: 1px solid transparent;
+}
+
+.btn-scheda {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.btn-scheda:hover {
+  background: #e5e7eb;
 }
 
 .btn-edit {

@@ -8,6 +8,19 @@ const mockNavigate = vi.fn();
 vi.mock("../contexts/RouterContext", () => ({
   useRouter: () => ({ path: "/companies/42" }),
   useNavigate: () => mockNavigate,
+  Link: ({ to, children, className, ...props }) => (
+    <a
+      href={to}
+      className={className}
+      onClick={(e) => {
+        e.preventDefault();
+        mockNavigate(to);
+      }}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock("../contexts/AuthContext", () => ({
@@ -72,5 +85,19 @@ describe("CompanyDetailPage", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Personale" }));
     expect(screen.getByTestId("personnel-panel")).toBeInTheDocument();
+  });
+
+  it('"Elenco aziende" naviga a /companies', async () => {
+    render(<CompanyDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Acme Srl" })).toBeInTheDocument();
+    });
+
+    const backLink = screen.getByRole("link", { name: /Elenco aziende/i });
+    expect(backLink).toHaveAttribute("href", "/companies");
+
+    await userEvent.click(backLink);
+    expect(mockNavigate).toHaveBeenCalledWith("/companies");
   });
 });
