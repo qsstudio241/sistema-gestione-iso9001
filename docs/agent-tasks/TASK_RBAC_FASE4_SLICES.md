@@ -1,9 +1,9 @@
-# TASK ù RBAC Fase 4 (user_company_access)
+# TASK ó RBAC Fase 4 (user_company_access)
 
 **Stato:** ? Implementato 02/06/2026  
 **Migration:** `081_user_company_access.sql`  
 **ADR:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md)  
-**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ù7 Fase 4
+**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ß7 Fase 4
 
 ---
 
@@ -36,13 +36,22 @@
 # Migration
 ssh ... "cd /var/www/sgq-backend && node scripts/run-migration-081-vps.js"
 
-# Link account test
-ssh ... "cd /var/www/sgq-backend && node scripts/link-company-access-test-users.js"
+# Link account test (email prod)
+ssh ... "cd /var/www/sgq-backend && WRITE_EMAIL=cliente.azienda11@alproject.sgq.local READ_EMAIL=viewer.azienda11@alproject.sgq.local node scripts/link-company-access-test-users.js"
 ```
+
+### VPS deploy 02/06/2026 (sessione corrente)
+
+| Step | Esito |
+|------|-------|
+| Migration 081 | ? tabella `user_company_access` creata (2 righe test) |
+| Deploy backend | ? `deploy-controllers-to-vps.ps1` + `companyAccess.service.js` |
+| Restart | ? `sgq-backend` MainPID rinnovato; health 200 |
+| Smoke API | ? cliente POST personnel 201; viewer POST 403 |
 
 ---
 
-## Gap test 02/06/2026 ù chiusi
+## Gap test 02/06/2026 ó chiusi
 
 | Gap | Stato |
 |-----|-------|

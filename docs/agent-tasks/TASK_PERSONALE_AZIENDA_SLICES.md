@@ -1,8 +1,8 @@
 # TASK — Anagrafica Personale per Azienda (slice verticali)
 
-**Stato:** IN CORSO — S4+S5 completate; prossima slice **S6** (overview studio)  
+**Stato:** IN CORSO — S4+S5 completate; **S6** API overview ? (UI tab StudioSettings **pending**)  
 **Creato:** 02/06/2026  
-**Collegamento:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md); open point roadmap «NC — rubrica dual-level»
+**Collegamento:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md); open point roadmap «NC / rubrica dual-level»
 
 ---
 
@@ -19,7 +19,7 @@ Una slice alla volta: implementa ? test L1/L2 ? checkpoint ? commit/PR ? attendi
 Chiudi ogni slice con TEST OK o elenco FIX residui.
 ```
 
-**Slice corrente consigliata:** `S6` (overview studio con filtro ambito)
+**Slice corrente consigliata:** `S6` UI overview (API già su `GET /api/v1/personnel`)
 
 ---
 
@@ -40,7 +40,7 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 | S3 | API CRUD | `GET/POST/PUT/DELETE /companies/:id/personnel` + RBAC studio | ? Jest `companyPersonnel.controller.test.js` |
 | S4 | Scheda azienda | Route `/companies/:id`, tab Anagrafica + Personale | ? Vitest `companyDetailPage.test.jsx` (3 test) |
 | S5 | Griglia Personale | CRUD griglia per singola azienda | ? `CompanyPersonnelPanel` + API |
-| S6 | Overview studio | Filtro tutte le aziende / singola (Ambito) | Scope come documentRegistry |
+| S6 | Overview studio | Filtro tutte le aziende / singola (Ambito) | ? API `GET /personnel?company_id=` — UI tab StudioSettings **pending** |
 | S7 | Bridge rubrica | Flag attuazione/verifica ? sync `notification_contacts` | FK NC intatti |
 | S8 | Select NC | Dropdown filtrati per `audit.company_id` (+ studio verifica) | ncResponsibleSelect + API |
 | S9 | Migrazione legacy | Script dry-run da NC/rubrica esistente | Report created/skipped |
@@ -69,4 +69,5 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 ## Deploy VPS (02/06/2026)
 
 - Migration **078** applicata (`run-migration-078-vps.js`); tabella `company_personnel` verificata
+- Migration **081** RBAC (`run-migration-081-vps.js`) — sessione deploy RBAC
 - Deploy `companyPersonnel.controller.js`, `company.routes.js`; health `https://www.fr-busato.it:8443/api/v1/health` OK

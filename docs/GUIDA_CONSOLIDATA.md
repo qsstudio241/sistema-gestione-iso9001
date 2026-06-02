@@ -693,7 +693,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | UI | Menu ridotto cliente azienda; `CompaniesPage` senza Nuova/Elimina; `canEdit` da permission |
 | Test | Jest personnel 14 + service 6; Vitest `companyAccess.test.js` 3 |
 | Account test | `cliente.azienda11@…` write company 11; `viewer.azienda11@…` read — password in mcp.env |
-| VPS | `run-migration-081-vps.js` + `link-company-access-test-users.js` |
+| VPS | Migration **081** applicata 02/06/2026 (tabella + 2 righe test); deploy `companyAccess.service.js` + controller; health 200; smoke viewer POST 403 / cliente write 201 |
 
 ### Slice S1 UI counterparty fornitori (02/06/2026)
 
