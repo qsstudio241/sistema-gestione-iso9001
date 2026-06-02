@@ -7,8 +7,12 @@
   margin-bottom: 20px;
 }
 
-.company-detail-header .btn-back {
+.company-detail-header .btn-back,
+.company-detail-page > .btn-back {
   margin-bottom: 12px;
+  display: inline-block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .company-detail-anagrafica .form-group {

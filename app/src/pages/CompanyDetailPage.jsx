@@ -1,10 +1,10 @@
 /**
- * CompanyDetailPage ‚Äî scheda azienda con tab Anagrafica + Personale (slice S4/S5)
+ * CompanyDetailPage ù scheda azienda con tab Anagrafica + Personale (slice S4/S5)
  * Route: /companies/:id
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter, useNavigate } from "../contexts/RouterContext";
+import { useRouter, useNavigate, Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
@@ -157,7 +157,7 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
   );
 }
 
-function CompanyDetailPage({ onBack }) {
+function CompanyDetailPage() {
   const { path } = useRouter();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -203,11 +203,6 @@ function CompanyDetailPage({ onBack }) {
     }
   }, [companyId, loading, navigate]);
 
-  const handleBack = () => {
-    if (onBack) onBack();
-    else navigate("/companies");
-  };
-
   if (loading) {
     return (
       <div className="company-detail-page">
@@ -222,9 +217,9 @@ function CompanyDetailPage({ onBack }) {
   if (error || !company) {
     return (
       <div className="company-detail-page">
-        <button type="button" className="btn-back" onClick={handleBack}>
-          &larr; Elenco aziende
-        </button>
+        <Link to="/companies" className="btn-back">
+          {"\u2190"} Elenco aziende
+        </Link>
         <div className="studio-warning-banner">{error || "Azienda non disponibile"}</div>
       </div>
     );
@@ -233,12 +228,12 @@ function CompanyDetailPage({ onBack }) {
   return (
     <div className="company-detail-page">
       <div className="company-detail-header">
-        <button type="button" className="btn-back" onClick={handleBack}>
-          &larr; Elenco aziende
-        </button>
+        <Link to="/companies" className="btn-back">
+          {"\u2190"} Elenco aziende
+        </Link>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda ‚Äî anagrafica e personale collegato alle NC.
+          Scheda azienda ù anagrafica e personale collegato alle NC.
         </p>
       </div>
 
