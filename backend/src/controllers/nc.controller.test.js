@@ -223,6 +223,64 @@ describe('updateNonConformity — gate approvazione RQ', () => {
     });
 });
 
+describe('updateNonConformity — riapertura NC chiusa', () => {
+    it('admin può riaprire closed ? in_progress e revoca approvazione', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    nc_id: 5,
+                    current_status: 'closed',
+                    verification_notes: 'Verifica OK',
+                    approved_at: '2026-05-01',
+                    audit_id: 99,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            params: { id: '5' },
+            user: { role: 'admin', organization_id: ORG_ID, user_id: USER_ID, auditor_org_id: null },
+            body: { status: 'in_progress', reopen_reason: 'Nuova evidenza' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true }),
+        );
+        const updateSql = query.mock.calls[1][0];
+        expect(updateSql).toContain('approved_at = NULL');
+        expect(updateSql).toContain('verification_notes = @reopen_verification_notes');
+        expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Riapertura RQ/);
+        expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Nuova evidenza/);
+    });
+
+    it('auditor non può riaprire NC chiusa', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                nc_id: 5,
+                current_status: 'closed',
+                verification_notes: 'Verifica OK',
+                approved_at: '2026-05-01',
+                audit_id: 99,
+            }],
+        });
+
+        const req = mockReq({
+            params: { id: '5' },
+            body: { status: 'in_progress' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'NC_REOPEN_FORBIDDEN' }),
+        );
+    });
+});
+
 describe('approveNcClosure', () => {
     it('auditor non può approvare', async () => {
         const req = mockReq({ params: { id: '5' }, user: { role: 'auditor', organization_id: ORG_ID, user_id: USER_ID } });

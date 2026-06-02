@@ -28,7 +28,7 @@ vi.mock('../contexts/RouterContext', () => ({
   Link: ({ children, to, ...rest }) => React.createElement('a', { href: to, ...rest }, children),
 }));
 vi.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { organization_id: 1001 } }),
+  useAuth: () => ({ user: { organization_id: 1001, role: 'admin' } }),
 }));
 
 import NcDetailPanel from '../components/NcDetailPanel';
@@ -143,12 +143,26 @@ describe('NcDetailPanel', () => {
 
   it('NC closed: campi read-only e senza pulsante Salva', () => {
     render(React.createElement(NcDetailPanel, {
-      nc: { ...baseNc, status: 'closed' },
+      nc: { ...baseNc, status: 'closed', approved_at: '2026-05-30' },
       onSaved: vi.fn(),
+      readOnly: true,
     }));
 
     expect(screen.getByLabelText(/Descrizione/i)).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Salva modifiche/i })).not.toBeInTheDocument();
+  });
+
+  it('NC closed + isRq: pulsante Riapri NC in sezione Chiusura', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, status: 'closed', approved_at: '2026-05-30' },
+      onSaved: vi.fn(),
+      readOnly: true,
+      isRq: true,
+      onStatusChange: vi.fn(),
+    }));
+
+    expect(screen.getByText('7. Chiusura')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Riapri NC/i })).toBeInTheDocument();
   });
 
   it('NC verified: campi read-only e senza pulsante Salva', () => {

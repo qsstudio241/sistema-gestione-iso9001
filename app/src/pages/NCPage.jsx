@@ -212,11 +212,23 @@ export default function NCPage() {
       alert(gate.message);
       return;
     }
+    let reopenReason;
+    if (nc.status === "closed" && newStatus === "in_progress") {
+      if (!window.confirm(`Riaprire ${nc.nc_number}? La NC tornerà in lavorazione e andrà ri-approvata prima di una nuova chiusura.`)) {
+        return;
+      }
+      const prompted = window.prompt("Motivo riapertura (opzionale, tracciato in note verifica):", "");
+      if (prompted === null) return;
+      reopenReason = prompted.trim() || undefined;
+    }
     try {
-      await apiService.updateNcStatus(nc.nc_id, { status: newStatus });
+      await apiService.updateNcStatus(nc.nc_id, {
+        status: newStatus,
+        ...(reopenReason !== undefined ? { reopen_reason: reopenReason } : {}),
+      });
       await loadNc();
-    } catch {
-      alert("Impossibile aggiornare lo stato della NC.");
+    } catch (err) {
+      alert(err?.response?.data?.error || "Impossibile aggiornare lo stato della NC.");
     }
   }
 

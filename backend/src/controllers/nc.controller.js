@@ -523,7 +523,8 @@ async function updateNonConformity(req, res) {
             verification_responsible,
             responsible_contact_id,
             verification_contact_id,
-            root_cause
+            root_cause,
+            reopen_reason
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -627,15 +628,26 @@ async function updateNonConformity(req, res) {
                 'in_progress': ['resolved', 'open'],
                 'resolved': ['verified', 'in_progress'],
                 'verified': ['closed', 'in_progress'],
-                'closed': [] // NC chiusa non può cambiare stato
+                'closed': ['in_progress'],
             };
 
-            if (!validTransitions[currentStatus].includes(status)) {
+            if (currentStatus === 'closed' && status === 'in_progress' && !isNcClosureApprover(req.user)) {
+                return res.status(403).json({
+                    error: 'Solo admin o responsabile qualità possono riaprire una NC chiusa',
+                    code: 'NC_REOPEN_FORBIDDEN',
+                });
+            }
+
+            const allowedTransitions = currentStatus === 'closed' && !isNcClosureApprover(req.user)
+                ? []
+                : (validTransitions[currentStatus] || []);
+
+            if (!allowedTransitions.includes(status)) {
                 return res.status(400).json({
                     error: `Transizione di stato non valida: ${currentStatus} → ${status}`,
                     code: 'INVALID_STATE_TRANSITION',
                     currentStatus,
-                    allowedTransitions: validTransitions[currentStatus]
+                    allowedTransitions
                 });
             }
 
@@ -666,10 +678,32 @@ async function updateNonConformity(req, res) {
             updates.push('status = @status');
             params.status = status;
 
+            // Riapertura: revoca approvazione RQ e traccia in note verifica
+            if (currentStatus === 'closed' && status === 'in_progress') {
+                updates.push('approved_at = NULL');
+                updates.push('approved_by = NULL');
+                const existingNotes = existingNC.recordset[0].verification_notes || '';
+                const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+                const reason = reopen_reason != null ? String(reopen_reason).trim() : '';
+                const auditLine = `\n\n[Riapertura RQ ${stamp} - utente ${req.user.user_id}]${reason ? ` ${reason}` : ''}`;
+                const mergedNotes = `${String(existingNotes).trimEnd()}${auditLine}`;
+                updates.push('verification_notes = @reopen_verification_notes');
+                params.reopen_verification_notes = mergedNotes;
+            }
+
             // Auto-set resolution_date quando si passa a 'resolved'
             if (status === 'resolved' && resolution_date === undefined) {
                 updates.push('resolution_date = CAST(GETDATE() AS DATE)');
             }
+
+            logger.info('NC status transition', {
+                nc_id: id,
+                organization_id,
+                user_id: req.user.user_id,
+                from: currentStatus,
+                to: status,
+                reopened: currentStatus === 'closed' && status === 'in_progress',
+            });
         }
 
         if (updates.length === 0) {
