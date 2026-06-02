@@ -1,25 +1,21 @@
 # DEPUTYTASK — Estensioni Riesame Requisiti
 
-**Stato:** PIANIFICATO — slice **R1** da avviare  
+**Stato:** R1 completata — slice **R2** da avviare  
 **Piano completo:** [TASK_RIESAME_ESTENSIONI_SLICES.md](TASK_RIESAME_ESTENSIONI_SLICES.md)
 
 ## Comando nuova chat
 
 ```
-Leggi docs/agent-tasks/TASK_RIESAME_ESTENSIONI_SLICES.md ed esegui la slice R1 (import-from-job backend).
+Leggi docs/agent-tasks/TASK_RIESAME_ESTENSIONI_SLICES.md ed esegui la slice R2 (UI Import Jobs).
 Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-## Slice corrente: R1
+## Slice corrente: R2
 
-Implementare API backend `import-from-job` → caso `commercial_cases` DRAFT + allegati, con test Jest e deploy VPS.
+Pulsante «Crea caso Riesame» in ImportJobsPage + modale conferma + apiService.
 
-Vedi checklist dettagliata in TASK_RIESAME_ESTENSIONI_SLICES.md § Epic R / Slice R1.
+## Slice R1 — TEST OK
 
-## Epic successive (ordine)
-
-1. R2 UI Import Jobs  
-2. R3 link bidirezionale (migrazione 069)  
-3. S1–S2 fornitori  
-4. N1–N2 notifiche  
-5. H0 decisione committente → H1 handoff  
+- Endpoint `POST /api/v1/contract-reviews/import-from-job`
+- Jest: happy path, 404 org, 409 già linkato, 400 senza file
+- Deploy VPS backend
