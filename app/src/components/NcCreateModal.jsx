@@ -32,7 +32,6 @@ const EMPTY_FORM = {
   severity: "minor",
   responsible_person: "",
   responsible_contact_id: null,
-  useExternalResponsible: false,
   due_date: "",
 };
 
@@ -240,15 +239,9 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
               contacts={contacts}
               roleFilter={["attuazione", "generico"]}
               contactId={form.responsible_contact_id}
-              textValue={form.responsible_person}
-              useExternal={form.useExternalResponsible}
               onContactIdChange={(id) => setField("responsible_contact_id", id)}
               onTextChange={(v) => setField("responsible_person", v)}
-              onUseExternalChange={(v) => {
-                setField("useExternalResponsible", v);
-                if (v) setField("responsible_contact_id", null);
-              }}
-              label="Responsabile"
+              label="Responsabile NC"
             />
             <div>
               <label htmlFor="nc-create-due">Scadenza</label>

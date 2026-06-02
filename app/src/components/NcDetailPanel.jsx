@@ -74,7 +74,6 @@ function initForm(nc, organizationId) {
     responsible_person: nc?.responsible_person || "",
     responsible_contact_id: nc?.responsible_contact_id ?? null,
     verification_contact_id: nc?.verification_contact_id ?? null,
-    useExternalResponsible: !nc?.responsible_contact_id,
     useExternalVerification: !nc?.verification_contact_id,
     due_date: normalizeDate(nc?.due_date),
   };
@@ -174,10 +173,8 @@ export default function NcDetailPanel({
           : form.verification_responsible.trim() || null,
         verification_contact_id: form.useExternalVerification ? null : form.verification_contact_id,
         severity: form.severity,
-        responsible_person: form.useExternalResponsible
-          ? form.responsible_person.trim() || null
-          : form.responsible_person.trim() || null,
-        responsible_contact_id: form.useExternalResponsible ? null : form.responsible_contact_id,
+        responsible_person: form.responsible_person.trim() || null,
+        responsible_contact_id: form.responsible_contact_id,
         due_date: form.due_date || null,
       });
       if (organizationId && draftScope) {
@@ -280,18 +277,16 @@ export default function NcDetailPanel({
           contacts={contacts}
           roleFilter={["attuazione", "generico"]}
           contactId={form.responsible_contact_id}
-          textValue={form.responsible_person}
-          useExternal={form.useExternalResponsible}
+          legacyText={
+            !form.responsible_contact_id && form.responsible_person
+              ? form.responsible_person
+              : null
+          }
           readOnly={readOnly}
           fieldId={`nc-resp-${nc.nc_id}`}
           onContactIdChange={(id) => setField("responsible_contact_id", id)}
           onTextChange={(v) => setField("responsible_person", v)}
-          onUseExternalChange={(v) => {
-            setField("useExternalResponsible", v);
-            if (v) setField("responsible_contact_id", null);
-          }}
           label="Responsabile NC"
-          placeholder="Referente generale della NC"
         />
       </section>
 
@@ -414,6 +409,7 @@ export default function NcDetailPanel({
             contactId={form.verification_contact_id}
             textValue={form.verification_responsible}
             useExternal={form.useExternalVerification}
+            allowExternal
             readOnly={readOnly}
             fieldId={`nc-verif-resp-${nc.nc_id}`}
             onContactIdChange={(id) => setField("verification_contact_id", id)}

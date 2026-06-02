@@ -67,7 +67,8 @@ describe('NcDetailPanel', () => {
     expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
     expect(screen.getByLabelText(/Note verifica efficacia/i)).toHaveValue('Note verifica di test');
     expect(screen.getByLabelText(/Responsabile verifica/i)).toHaveValue('Luigi Verdi');
-    expect(screen.getByLabelText(/Responsabile NC/i)).toHaveValue('Mario Rossi');
+    expect(screen.getByLabelText(/Responsabile NC/i)).toHaveValue('');
+    expect(screen.getByText(/Valore attuale: Mario Rossi/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Scadenza NC/i)).toHaveValue('2026-06-15');
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
