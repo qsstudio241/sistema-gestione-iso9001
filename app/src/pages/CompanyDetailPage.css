@@ -1,0 +1,42 @@
+.company-detail-page {
+  padding: 28px 32px;
+  max-width: 960px;
+}
+
+.company-detail-header {
+  margin-bottom: 20px;
+}
+
+.company-detail-header .btn-back {
+  margin-bottom: 12px;
+}
+
+.company-detail-anagrafica .form-group {
+  margin-bottom: 14px;
+}
+
+.company-detail-anagrafica label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.company-detail-anagrafica input,
+.company-detail-anagrafica textarea {
+  width: 100%;
+  max-width: 480px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.company-detail-logo-preview {
+  max-height: 64px;
+  max-width: 160px;
+  object-fit: contain;
+  margin-bottom: 8px;
+  display: block;
+}

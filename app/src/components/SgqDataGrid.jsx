@@ -42,6 +42,7 @@ function SgqDataGrid({
   onRowSelect,
   renderToolbar,
   onRowDoubleClick,
+  onRowClick,
   className = "",
 }) {
   const [sortCol, setSortCol] = useState(columns.find((c) => c.sortable)?.id || null);
@@ -161,15 +162,22 @@ function SgqDataGrid({
                 const rowKey = getRowKey(row);
                 const isSelected = selectable && selectedKey === rowKey;
                 const extraClass = rowClassName ? rowClassName(row) : "";
+                const clickable = !selectable && (onRowClick || onRowDoubleClick);
                 const trClass = isCatalog
-                  ? `datagrid-row${isSelected ? " datagrid-row--selected" : ""}${extraClass ? ` ${extraClass}` : ""}`
-                  : `sgq-datagrid-row${isSelected ? " sgq-datagrid-row--selected" : ""}${extraClass ? ` ${extraClass}` : ""}`;
+                  ? `datagrid-row${isSelected ? " datagrid-row--selected" : ""}${clickable ? " datagrid-row--clickable" : ""}${extraClass ? ` ${extraClass}` : ""}`
+                  : `sgq-datagrid-row${isSelected ? " sgq-datagrid-row--selected" : ""}${clickable ? " sgq-datagrid-row--clickable" : ""}${extraClass ? ` ${extraClass}` : ""}`;
                 const tdClass = isCatalog ? "datagrid-cell" : "sgq-datagrid-cell";
                 return (
                   <tr
                     key={rowKey}
                     className={trClass}
-                    onClick={selectable ? () => handleRowClick(row) : undefined}
+                    onClick={
+                      selectable
+                        ? () => handleRowClick(row)
+                        : onRowClick
+                          ? () => onRowClick(row)
+                          : undefined
+                    }
                     onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row) : undefined}
                     aria-selected={selectable ? isSelected : undefined}
                   >
