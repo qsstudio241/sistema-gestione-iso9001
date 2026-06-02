@@ -621,7 +621,22 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 **Lezione smoke import PDF:** usare PDF valido per `pdf-parse` (es. sample Mozilla); PDF minimali/generati possono fallire con «bad XRef entry». Login smoke cloud: preferire API login + `localStorage` token (`sgq_auth_token`) se il form React non invia POST.
 
-**Prossima slice**: ~~**S1**~~ ✅ — vedi sotto. **S2** supplier_id.
+**Prossima slice**: ~~**S2**~~ ✅ — vedi sotto. **N1** notifiche eventi.
+
+### Slice S2 supplier_id anagrafica (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **073** | `commercial_case_documents.supplier_id` + FK `suppliers` + indice |
+| Backend | `linkDocument` valida `supplier_id` org-scoped; `getCase`/`listCaseDocuments` espongono `supplier_name` |
+| UI | Dropdown fornitore se controparte=Fornitore; badge nome fornitore; highlight checklist P9 |
+| Test L1 | Jest `linkDocument` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 073 + controller deployato; health 200 |
+| PR | [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86) (include S1) |
+
+**Nota numerazione:** la spec citava migrazione 071 ma quella è già usata per NC — S2 usa **073**.
+
+**Prossima slice**: **N1** — tabella `commercial_case_notifications` + eventi transizione/assegnazione.
 
 ### Slice S1 UI counterparty fornitori (02/06/2026)
 
