@@ -24,6 +24,7 @@ router.get('/contract-reviews/inbox', ...guard, ctrl.getInbox);
 
 router.get('/contract-reviews', ...guard, ctrl.listCases);
 router.post('/contract-reviews', ...guard, ctrl.createCase);
+router.post('/contract-reviews/import-from-job', ...guard, ctrl.importFromJob);
 
 router.get('/contract-reviews/:id/transition-options', ...guard, ctrl.getTransitionOptions);
 router.get('/contract-reviews/:id/clarifications', ...guard, ctrl.listClarifications);
