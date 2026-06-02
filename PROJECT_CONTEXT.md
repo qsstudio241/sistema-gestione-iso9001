@@ -5,6 +5,7 @@
 > **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
 > **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
 > **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
+> **Scadenze documenti, alert email, tipologie doc** (3 livelli, tabelle DB, scheduler): → [docs/AGENT_ALERTS_AND_DOC_TYPES.md](docs/AGENT_ALERTS_AND_DOC_TYPES.md).  
 > **Open points trasversali** (logout vs bozze locali, mirror PC, coerenza cache menu audit): → [docs/PROJECT_ROADMAP.md](docs/PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).  
 > Dettagli tecnici: → [docs/README.md](docs/README.md) | [DATABASE](docs/reference/DATABASE.md) | [API](docs/reference/BACKEND_API.md) | [Deploy hub](docs/how-to/deploy.md) | [INDICE](docs/INDICE_DOCUMENTAZIONE.md) | [WebDAV spec](docs/specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
 
