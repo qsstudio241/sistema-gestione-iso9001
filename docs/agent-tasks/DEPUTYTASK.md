@@ -1,8 +1,8 @@
 # DEPUTYTASK — API complete Riesame requisiti (chiuso)
 
-**Stato:** CHIUSO — **TEST OK** (02/06/2026)  
-**Branch:** `cursor/contract-review-api-complete-5351`  
-**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79 (draft)
+**Stato:** CHIUSO — **TEST OK** — **MERGED** (02/06/2026)  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79 → `main`  
+**UI:** https://systemgest.netlify.app/contract-reviews (deploy produzione post-merge)
 
 ## Esito
 
