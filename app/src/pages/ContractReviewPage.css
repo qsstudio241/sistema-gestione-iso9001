@@ -157,6 +157,21 @@
   color: #666;
 }
 
+.cr-origin-link {
+  font: inherit;
+  color: #6a1b9a;
+  background: #f3e5f5;
+  border: 1px solid #ce93d8;
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cr-origin-link:hover {
+  background: #e1bee7;
+}
+
 .cr-panel {
   border: 1px solid #e0e0e0;
   border-radius: 8px;

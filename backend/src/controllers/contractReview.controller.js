@@ -1004,7 +1004,7 @@ async function importFromJob(req, res) {
         const filesRes = await query(
             `
             SELECT f.id, f.original_name, f.storage_path, f.mime_type, f.file_size, f.status,
-                   f.extracted_text, f.ai_extraction_json
+                   f.extracted_text, f.ai_extraction_json, f.commercial_case_id
             FROM import_job_files f
             WHERE f.job_id = @jobId
             ORDER BY f.id ASC
@@ -1044,6 +1044,29 @@ async function importFromJob(req, res) {
         }
 
         const selectedIds = new Set(files.map((f) => f.id));
+
+        const linkedByColumn = files.find((f) => f.commercial_case_id);
+        if (linkedByColumn) {
+            const caseRes = await query(
+                `
+                SELECT id, uuid
+                FROM commercial_cases
+                WHERE id = @caseId AND organization_id = @organizationId
+                `,
+                { caseId: linkedByColumn.commercial_case_id, organizationId },
+            );
+            const caseRow = caseRes.recordset[0];
+            if (caseRow) {
+                return res.status(409).json({
+                    error: 'Uno o più file sono già collegati a un caso Riesame',
+                    code: 'ALREADY_LINKED',
+                    case_id: caseRow.id,
+                    uuid: caseRow.uuid,
+                    file_id: linkedByColumn.id,
+                });
+            }
+        }
+
         const linkedRes = await query(
             `
             SELECT f.id AS file_id, a.commercial_case_id AS case_id, c.uuid AS case_uuid
@@ -1097,14 +1120,17 @@ async function importFromJob(req, res) {
         insertReq.input('externalRef', externalRef);
         insertReq.input('notes', notesVal);
         insertReq.input('userId', userId);
+        insertReq.input('sourceImportJobId', jobId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
-                organization_id, company_id, title, external_ref, status, notes, created_by
+                organization_id, company_id, title, external_ref, status, notes, created_by,
+                source_import_job_id
             )
             OUTPUT INSERTED.*
             VALUES (
-                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId
+                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId,
+                @sourceImportJobId
             )
         `);
         const created = ins.recordset[0];
@@ -1163,6 +1189,17 @@ async function importFromJob(req, res) {
                 )
             `);
             linkedAttachments.push(attIns.recordset[0]);
+        }
+
+        for (const file of files) {
+            const linkReq = new sql.Request(transaction);
+            linkReq.input('fileId', file.id);
+            linkReq.input('caseId', newCaseId);
+            await linkReq.query(`
+                UPDATE import_job_files
+                SET commercial_case_id = @caseId
+                WHERE id = @fileId AND commercial_case_id IS NULL
+            `);
         }
 
         await transaction.commit();
