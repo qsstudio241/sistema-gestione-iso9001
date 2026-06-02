@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useNavigate, Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
+import { canEditCompany } from "../utils/companyAccess";
 import apiService from "../services/apiService";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
 import "./CompanyDetailPage.css";
@@ -169,7 +170,7 @@ function CompanyDetailPage() {
 
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
   const auditorOrgId = user?.auditor_org_id || company?.auditor_org_id || null;
-  const canEdit = user?.role === "admin" || user?.role === "auditor" || user?.role === "superadmin";
+  const canEdit = canEditCompany(user, companyId);
 
   const loadCompany = useCallback(async () => {
     if (!companyId) {

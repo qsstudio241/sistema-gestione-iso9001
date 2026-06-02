@@ -1,7 +1,8 @@
-# DEPUTYTASK — Anagrafica Personale Azienda
+# DEPUTYTASK — Anagrafica Personale Azienda + RBAC Fase 4
 
-**Stato:** TEST OK — slice **S4+S5** completate (02/06/2026)  
-**Piano:** [TASK_PERSONALE_AZIENDA_SLICES.md](TASK_PERSONALE_AZIENDA_SLICES.md)  
+**Stato:** TEST OK — hotfix viewer + **RBAC Fase 4** (02/06/2026)  
+**Piano personale:** [TASK_PERSONALE_AZIENDA_SLICES.md](TASK_PERSONALE_AZIENDA_SLICES.md)  
+**Piano RBAC:** [TASK_RBAC_FASE4_SLICES.md](TASK_RBAC_FASE4_SLICES.md)  
 **ADR:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md)
 
 ## Completato
@@ -13,11 +14,22 @@
 | S2+S3 backend | `a80fecb` | Migration 078 + API CRUD, Jest 11/11 |
 | S4 scheda azienda | `90e13dc` | Route `/companies/:id`, tab Anagrafica + Personale |
 | S5 griglia CRUD | `15cc73c` | `CompanyPersonnelPanel` + API personnel |
-| VPS deploy | `35d865b` | Migration 078 prod; health OK; MainPID 376032→380883 |
+| VPS deploy 078 | `35d865b` | Migration 078 prod; health OK |
+| Hotfix viewer | *(sessione corrente)* | CRUD personale bloccato per viewer studio |
+| RBAC Fase 4 | *(sessione corrente)* | Migration 081 `user_company_access` |
 
 ## Prossima slice
 
 **S6** — Overview studio personale con filtro ambito (pattern registro documenti).
+
+## Gap test 02/06/2026 — chiusi
+
+| Gap | Stato |
+|-----|-------|
+| Viewer POST personnel → 403 | ✅ |
+| UI CRUD personale nascosto per viewer | ✅ |
+| Cliente azienda scope singola company | ✅ Fase 4 |
+| company_access write/read | ✅ API + test |
 
 ## Comando deputy S6
 

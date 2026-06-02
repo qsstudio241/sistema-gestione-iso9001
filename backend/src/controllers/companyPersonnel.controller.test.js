@@ -6,6 +6,17 @@ jest.mock('../config/database', () => ({ query: jest.fn() }));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn(),
 }));
+jest.mock('../services/companyAccess.service', () => {
+  const actual = jest.requireActual('../services/companyAccess.service');
+  return {
+    ...actual,
+    ensureCompanyAccessLoaded: jest.fn(async (user) => {
+      if (user?.company_access !== undefined) return user.company_access;
+      user.company_access = [];
+      return [];
+    }),
+  };
+});
 
 const { query } = require('../config/database');
 const ctrl = require('./companyPersonnel.controller');
@@ -155,7 +166,45 @@ describe('companyPersonnel CRUD', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'AUTH_FORBIDDEN' }),
     );
-    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('createPersonnel OK con company_access write (viewer cliente)', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ company_id: COMPANY_ID, organization_id: ORG_ID }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 8, name: 'Cliente Write', organization_id: ORG_ID, company_id: COMPANY_ID }],
+    });
+    const req = mockReq({
+      user: {
+        auditor_org_id: null,
+        organization_id: ORG_ID,
+        role: 'viewer',
+        company_access: [{ company_id: COMPANY_ID, permission: 'write' }],
+      },
+      body: { name: 'Cliente Write' },
+    });
+    const res = mockRes();
+    await ctrl.createPersonnel(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('createPersonnel 403 con company_access read-only', async () => {
+    const req = mockReq({
+      user: {
+        auditor_org_id: null,
+        organization_id: ORG_ID,
+        role: 'viewer',
+        company_access: [{ company_id: COMPANY_ID, permission: 'read' }],
+      },
+      body: { name: 'Solo lettura' },
+    });
+    const res = mockRes();
+    await ctrl.createPersonnel(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'AUTH_FORBIDDEN' }),
+    );
   });
 
   it('createPersonnel 403 se company_id non appartiene a org utente', async () => {

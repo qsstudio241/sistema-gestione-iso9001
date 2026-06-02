@@ -46,6 +46,39 @@ function buildEscalationThresholds(alertDays1, alertDays2) {
   return [...new Set(values)].sort((a, b) => b - a);
 }
 
+/**
+ * Soglie escalation documenti (Approccio A): org + curve 35/28/21/14/7/3/1.
+ * rulesJson opzionale: { "thresholds": [35, 28, ...] }
+ */
+function buildDocEscalationThresholds(alertDays1, alertDays2, rulesJson) {
+  let custom = [];
+  if (rulesJson) {
+    try {
+      const parsed = typeof rulesJson === 'string' ? JSON.parse(rulesJson) : rulesJson;
+      if (Array.isArray(parsed?.thresholds)) {
+        custom = parsed.thresholds;
+      }
+    } catch {
+      custom = [];
+    }
+  }
+  const defaults = custom.length > 0 ? custom : [35, 28, 21, 14, 7, 3, 1];
+  const values = [alertDays1, alertDays2, ...defaults, 14, 7, 1]
+    .map((d) => parseInt(d, 10))
+    .filter((d) => Number.isFinite(d) && d > 0);
+  return [...new Set(values)].sort((a, b) => b - a);
+}
+
+/** Documenti rilasciati/vigenti con expiry_date — soglie pre/post scadenza. */
+function matchDocAlertRule({ expiryDate, status, thresholds }) {
+  if (['obsoleto', 'bozza', 'in_approvazione'].includes(status)) return null;
+  const daysLeft = daysUntilDue(expiryDate);
+  if (daysLeft === null) return null;
+  if (daysLeft < 0) return { kind: 'overdue', thresholdDays: null };
+  if (thresholds.includes(daysLeft)) return { kind: 'threshold', thresholdDays: daysLeft };
+  return null;
+}
+
 /** Giorni interi fino a due_date (positivo = futuro, negativo = scaduto). */
 function daysUntilDue(dueDate) {
   if (!dueDate) return null;
@@ -112,9 +145,11 @@ module.exports = {
   addMinutesToSendTime,
   sendTimeToCron,
   buildEscalationThresholds,
+  buildDocEscalationThresholds,
   daysUntilDue,
   matchNcAlertRule,
   matchActionAlertRule,
+  matchDocAlertRule,
   parseRecipientList,
   uniqueEmails,
 };

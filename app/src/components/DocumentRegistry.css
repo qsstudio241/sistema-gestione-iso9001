@@ -156,6 +156,17 @@
   gap: 20px;
 }
 
+.priority-view-note {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  line-height: 1.45;
+}
+
 .priority-all-ok {
   text-align: center;
   padding: 60px 20px;

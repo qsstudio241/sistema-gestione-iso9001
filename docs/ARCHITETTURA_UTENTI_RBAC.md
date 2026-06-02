@@ -2,7 +2,7 @@
 
 > Documento di riferimento per rendere **robusta e affidabile** la gestione identità, deleghe e segregazione dati.  
 > **Allineare** implementazione (backend + UI) e **non** duplicare regole solo lato client.  
-> **Ultimo aggiornamento**: 2026-04-24.
+> **Ultimo aggiornamento**: 2026-06-02.
 
 **Correlati**: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (checklist licenze/sessioni), [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) (diagrammi obiettivo prodotto), [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (deploy e piano qualità).
 
@@ -38,7 +38,7 @@
 | **`superadmin`** | Piattaforma cross-tenant: vede tutti gli utenti e tutti gli studi di tutti i tenant. Unico che può modificare le licenze moduli (`PATCH /admin/licenses`). | Nessun `auditor_org_id`. |
 | **`admin`** | Intero tenant: gestisce utenti, vede le licenze in sola lettura, crea `auditor` e `viewer`. | Nessun `auditor_org_id` (admin "elevato"). |
 | **`auditor`** | Studio assegnato: audit, checklist, export, NC nel perimetro del proprio `auditor_org_id`. **Deve** avere `auditor_org_id` — validato in UI e consigliato in backend. | `auditor_org_id` obbligatorio. |
-| **`viewer`** | Sola lettura nel perimetro studio (oggi) o azienda (Fase 4). | `auditor_org_id` opzionale; scope azienda via `user_company_access` non ancora implementato. |
+| **`viewer`** | Sola lettura nel perimetro studio (oggi) o azienda (Fase 4). | `auditor_org_id` opzionale; scope azienda via `user_company_access` (migration 081). |
 
 **Nota**: evitare sinonimi ambigui tra codice e prodotto; documentare qui la mappa ufficiale ad ogni cambio ruoli.
 
@@ -96,7 +96,7 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 | **1** | Allineare **write path** audit (PUT/DELETE/sync/statistiche) allo stesso scope della lista/dettaglio. | In corso |
 | **2** | Estendere assert scope a NC, allegati, response legate ad audit. | Backlog |
 | **3** | Introdurre `studio_admin` e API creazione utenti per studio (se prodotto lo richiede). | Backlog |
-| **4** | `user_company_access` + ruolo `viewer` per azienda (clienti finali in sola lettura). | Backlog |
+| **4** | `user_company_access` + ruolo `viewer` per azienda (clienti finali in sola lettura). | ✅ Completato 02/06/2026 (migration 081) |
 
 ---
 
@@ -134,7 +134,7 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 | Gap | Priorità | Riferimento |
 |-----|----------|-------------|
 | **Stesso predicato RBAC** su *tutte* le risorse (NC, allegati, registry, checklist custom, statistiche) | Alta | §5–7, Fase 2 |
-| Tabella **`user_company_access`** + viewer **per azienda** (clienti finali in sola lettura) | Media-alta | Fase 4 |
+| Tabella **`user_company_access`** + viewer **per azienda** (clienti finali in sola lettura) | Media-alta | ✅ Fase 4 — migration 081 |
 | **Servizio centralizzato** `accessScope` / middleware unico su tutte le route | Alta man mano che cresce il codice | §6 |
 | **Provisioning multi-tenant** (creazione nuova `organizations` da UI) | Dipende dal business | Fuori §7 fino a decisione |
 | Flusso **invito email** invece di password condivise | Consigliato | §4 |

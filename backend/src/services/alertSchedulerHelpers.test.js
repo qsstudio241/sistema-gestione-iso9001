@@ -7,9 +7,11 @@ const {
   sendTimeToCron,
   addMinutesToSendTime,
   buildEscalationThresholds,
+  buildDocEscalationThresholds,
   daysUntilDue,
   matchNcAlertRule,
   matchActionAlertRule,
+  matchDocAlertRule,
   parseRecipientList,
 } = require('./alertSchedulerHelpers');
 
@@ -40,6 +42,43 @@ describe('addMinutesToSendTime', () => {
 describe('buildEscalationThresholds', () => {
   it('deduplica e ordina desc', () => {
     expect(buildEscalationThresholds(30, 7)).toEqual([30, 14, 7, 1]);
+  });
+});
+
+describe('buildDocEscalationThresholds', () => {
+  it('include curve default documenti', () => {
+    const t = buildDocEscalationThresholds(30, 7);
+    expect(t).toContain(35);
+    expect(t).toContain(30);
+    expect(t).toContain(1);
+    expect(t[0]).toBeGreaterThan(t[t.length - 1]);
+  });
+
+  it('accetta override rules_json', () => {
+    expect(buildDocEscalationThresholds(30, 7, '{"thresholds":[60,45]}')).toEqual([60, 45, 30, 14, 7, 1]);
+  });
+});
+
+describe('matchDocAlertRule', () => {
+  const thresholds = [30, 14, 7, 1];
+
+  it('match soglia pre-scadenza', () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(today);
+    due.setDate(due.getDate() + 7);
+    const iso = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`;
+    expect(matchDocAlertRule({ expiryDate: iso, status: 'rilasciato', thresholds }))
+      .toEqual({ kind: 'threshold', thresholdDays: 7 });
+  });
+
+  it('match overdue', () => {
+    expect(matchDocAlertRule({ expiryDate: '2020-01-01', status: 'vigente', thresholds }))
+      .toEqual({ kind: 'overdue', thresholdDays: null });
+  });
+
+  it('ignora obsoleti', () => {
+    expect(matchDocAlertRule({ expiryDate: '2020-01-01', status: 'obsoleto', thresholds })).toBeNull();
   });
 });
 

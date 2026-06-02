@@ -72,6 +72,35 @@ describe('listDocuments', () => {
         expect(listSql).toMatch(/has_file/i);
         expect(listSql).toMatch(/current_file_name/i);
         expect(listSql).toMatch(/OUTER APPLY/i);
+        expect(listSql).toMatch(/notifications_config nc_cfg/i);
+        expect(listSql).toMatch(/nc_cfg\.alert_days_1/i);
+    });
+
+    it('expired_only filtra documenti scaduti', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+
+        const req = mockReq({ query: { expired_only: '1', page: 1, limit: 10 } });
+        const res = mockRes();
+        await ctrl.listDocuments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toMatch(/expiry_date < CAST\(GETDATE\(\) AS DATE\)/i);
+    });
+
+    it('include_expired rimuove filtro futuro con expiring_days', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+
+        const req = mockReq({ query: { expiring_days: 30, include_expired: '1', page: 1, limit: 10 } });
+        const res = mockRes();
+        await ctrl.listDocuments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toMatch(/DATEADD\(DAY, @expiring_days/i);
+        expect(listSql).not.toMatch(/expiry_date >= CAST\(GETDATE\(\) AS DATE\)/i);
     });
 });
 

@@ -8,6 +8,8 @@ import { Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NotificationContactsPanel from "../components/NotificationContactsPanel";
+import SgqDataGrid from "../components/SgqDataGrid";
+import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS } from "../data/documentTypes";
 import "./StudioSettingsPage.css";
 import "./NotificationsSettingsPage.css";
 
@@ -16,16 +18,6 @@ function hasNotificationsLicense(user) {
   if (!list || !Array.isArray(list) || list.length === 0) return true;
   return list.includes("notifications");
 }
-
-const DOC_TYPES = [
-  "Procedura",
-  "Modulo",
-  "Istruzione Operativa",
-  "Piano",
-  "Registro",
-  "Specifica",
-  "Manuale",
-];
 
 // --- Tab Anagrafica ---
 
@@ -364,6 +356,13 @@ function TabAnagrafica() {
 
 // --- Tab Documenti ---
 
+const DOC_TYPE_GRID_COLUMNS = [
+  { id: "doc_type_label", label: "Tipo documento", sortable: true },
+  { id: "prefix", label: "Prefisso", sortable: true },
+  { id: "auto_number", label: "Numerazione automatica", sortable: true },
+  { id: "default_expiry_months", label: "Scadenza default (mesi)", sortable: true },
+];
+
 function TabDocumenti() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -376,19 +375,27 @@ function TabDocumenti() {
     setError(null);
     try {
       const res = await apiService.get("/doc-type-config");
-      const serverRows = Array.isArray(res) ? res : (res?.data ?? []);
-      const merged = DOC_TYPES.map((dt) => {
-        const existing = serverRows.find((r) => r.doc_type === dt);
+      const serverRows = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      const merged = DOC_TYPE_OPTIONS.map(({ value }) => {
+        const existing = serverRows.find((r) => r.doc_type === value);
         return {
-          doc_type: dt,
+          doc_type: value,
+          doc_type_label: DOC_TYPE_LABELS[value] || value,
           prefix: existing?.prefix ?? "",
           auto_number: existing?.auto_number ?? true,
+          default_expiry_months: existing?.default_expiry_months ?? "",
         };
       });
       setRows(merged);
     } catch (err) {
       if (err?.status === 404 || err?.status === 501) {
-        setRows(DOC_TYPES.map((dt) => ({ doc_type: dt, prefix: "", auto_number: true })));
+        setRows(DOC_TYPE_OPTIONS.map(({ value }) => ({
+          doc_type: value,
+          doc_type_label: DOC_TYPE_LABELS[value] || value,
+          prefix: "",
+          auto_number: true,
+          default_expiry_months: "",
+        })));
       } else {
         setError("Errore caricamento configurazione documenti: " + err.message);
       }
@@ -399,8 +406,10 @@ function TabDocumenti() {
 
   useEffect(() => { loadConfig(); }, [loadConfig]);
 
-  const handleRowChange = (idx, field, value) => {
-    setRows((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  const handleRowChange = (docType, field, value) => {
+    setRows((prev) => prev.map((r) => (
+      r.doc_type === docType ? { ...r, [field]: value } : r
+    )));
     setSaved(false);
   };
 
@@ -409,7 +418,15 @@ function TabDocumenti() {
     setError(null);
     setSaved(false);
     try {
-      await apiService.put("/doc-type-config", rows);
+      const payload = rows.map(({ doc_type, prefix, auto_number, default_expiry_months }) => ({
+        doc_type,
+        prefix: prefix || null,
+        auto_number,
+        default_expiry_months: default_expiry_months === "" || default_expiry_months == null
+          ? null
+          : parseInt(default_expiry_months, 10),
+      }));
+      await apiService.put("/doc-type-config", payload);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -419,71 +436,95 @@ function TabDocumenti() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="studio-loading">
-        <div className="loading-spinner-sm" />
-        <span>Caricamento configurazione documenti...</span>
-      </div>
-    );
-  }
+  const renderGridCell = (row, col) => {
+    if (col.id === "prefix") {
+      return (
+        <input
+          type="text"
+          value={row.prefix}
+          onChange={(e) => handleRowChange(row.doc_type, "prefix", e.target.value.toUpperCase().slice(0, 10))}
+          placeholder="es. PG"
+          className="studio-doc-prefix-input"
+          maxLength={10}
+        />
+      );
+    }
+    if (col.id === "auto_number") {
+      return (
+        <input
+          type="checkbox"
+          checked={!!row.auto_number}
+          onChange={(e) => handleRowChange(row.doc_type, "auto_number", e.target.checked)}
+        />
+      );
+    }
+    if (col.id === "default_expiry_months") {
+      return (
+        <input
+          type="number"
+          min={1}
+          max={120}
+          value={row.default_expiry_months}
+          onChange={(e) => handleRowChange(row.doc_type, "default_expiry_months", e.target.value)}
+          placeholder="—"
+          className="studio-doc-prefix-input"
+          style={{ width: 72 }}
+        />
+      );
+    }
+    return row[col.id] ?? "—";
+  };
 
   return (
     <div className="studio-tab-content">
       {error && (
         <div className="studio-error">
           {error}
-          <button onClick={() => setError(null)}>x</button>
+          <button type="button" onClick={() => setError(null)}>x</button>
         </div>
       )}
 
       <div className="studio-card">
         <h3 className="studio-card-title">Prefissi per tipo documento</h3>
         <p className="studio-card-desc">
-          Configura il prefisso usato nella numerazione automatica dei documenti (es. &quot;PG&quot; &rarr; PG-001).
+          Configura il prefisso usato nella numerazione automatica dei documenti nel registro SGQ
+          (es. &quot;PG&quot; &rarr; PG-001). Al rilascio, se la scadenza è vuota, viene calcolata
+          dai mesi indicati in colonna &quot;Scadenza default (mesi)&quot;.
+        </p>
+        <p className="studio-hint" style={{ marginBottom: 12 }}>
+          La scadenza default si applica solo al rilascio del documento (calcolo automatico della data).
+          Non invia email: le notifiche di scadenza si configurano in Impostazioni &rarr; Notifiche.
+        </p>
+        <p className="studio-hint" style={{ marginBottom: 12 }}>
+          Nota: il prefisso report audit (tab Anagrafica) e i prefissi documenti qui sotto sono
+          due sistemi separati — il primo numera i verbali di audit, il secondo i documenti del registro.
         </p>
 
-        <table className="studio-doc-table">
-          <thead>
-            <tr>
-              <th>Tipo documento</th>
-              <th>Prefisso</th>
-              <th>Numerazione automatica</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, idx) => (
-              <tr key={row.doc_type}>
-                <td className="studio-doc-type">{row.doc_type}</td>
-                <td>
-                  <input
-                    type="text"
-                    value={row.prefix}
-                    onChange={(e) => handleRowChange(idx, "prefix", e.target.value.toUpperCase().slice(0, 10))}
-                    placeholder="es. PG"
-                    className="studio-doc-prefix-input"
-                    maxLength={10}
-                  />
-                </td>
-                <td className="studio-doc-autonumber">
-                  <input
-                    type="checkbox"
-                    checked={row.auto_number}
-                    onChange={(e) => handleRowChange(idx, "auto_number", e.target.checked)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <SgqDataGrid
+          rows={rows}
+          columns={DOC_TYPE_GRID_COLUMNS}
+          loading={loading}
+          emptyMessage="Nessun tipo documento configurato."
+          theme="plain"
+          getRowKey={(r) => r.doc_type}
+          getSortValue={(row, colId) => {
+            if (colId === "auto_number") return row.auto_number ? 1 : 0;
+            if (colId === "default_expiry_months") {
+              return row.default_expiry_months === "" ? -1 : Number(row.default_expiry_months);
+            }
+            return row[colId] ?? "";
+          }}
+          renderCell={renderGridCell}
+        />
       </div>
 
       <div className="studio-actions">
         {saved && <span className="studio-saved">&#10003; Configurazione salvata</span>}
         <button
+          type="button"
           className="btn-studio-primary"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || loading}
         >
           {saving ? "Salvataggio..." : "Salva configurazione documenti"}
         </button>

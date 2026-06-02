@@ -5,6 +5,14 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+  assertCompanyAccess,
+  assertCompanyWriteAccess,
+  ensureCompanyAccessLoaded,
+  hasCompanyAccessRows,
+  sendAccessDenied,
+  WRITE_STUDIO_ROLES,
+} = require('../services/companyAccess.service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -22,8 +30,8 @@ function validateEmail(email) {
   return EMAIL_RE.test(String(email).trim());
 }
 
-/** Ruoli con permesso scrittura su personale azienda (viewer ? 403). */
-const COMPANY_WRITE_ROLES = new Set(['admin', 'auditor', 'superadmin']);
+/** Ruoli studio con permesso scrittura (viewer ? 403 se non ha company_access write). */
+const COMPANY_WRITE_ROLES = WRITE_STUDIO_ROLES;
 
 function assertCompanyWriteRole(req, res) {
   const role = String(req.user?.role || '').trim().toLowerCase();
@@ -35,6 +43,52 @@ function assertCompanyWriteRole(req, res) {
     return false;
   }
   return true;
+}
+
+async function resolvePersonnelScope(req, companyId, level = 'read') {
+  const companyIdNum = parseInt(companyId, 10);
+  if (!Number.isFinite(companyIdNum)) {
+    return {
+      denied: { status: 400, body: { error: 'companyId non valido', code: 'INVALID_COMPANY_ID' } },
+    };
+  }
+
+  const accessList = await ensureCompanyAccessLoaded(req.user);
+  if (hasCompanyAccessRows(accessList)) {
+    const denied = await assertCompanyAccess(req.user, companyIdNum, level);
+    if (denied) return { denied };
+
+    const result = await query(`
+      SELECT c.id AS company_id, ao.organization_id
+      FROM companies c
+      INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+      WHERE c.id = @company_id
+    `, { company_id: companyIdNum });
+    const scope = result.recordset[0];
+    if (!scope) {
+      return { denied: { status: 403, body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' } } };
+    }
+    return { scope };
+  }
+
+  const auditorOrgId = resolveAuditorOrgId(req);
+  if (!auditorOrgId) {
+    return {
+      denied: {
+        status: 403,
+        body: {
+          error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
+          code: 'AUDITOR_ORG_REQUIRED',
+        },
+      },
+    };
+  }
+
+  const scope = await resolveCompanyScope(companyIdNum, auditorOrgId);
+  if (!scope) {
+    return { denied: { status: 403, body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' } } };
+  }
+  return { scope };
 }
 
 async function resolveCompanyScope(companyId, auditorOrgId) {
@@ -50,23 +104,9 @@ async function resolveCompanyScope(companyId, auditorOrgId) {
 
 async function listPersonnel(req, res) {
   try {
-    const auditorOrgId = resolveAuditorOrgId(req);
-    if (!auditorOrgId) {
-      return res.status(403).json({
-        error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
-        code: 'AUDITOR_ORG_REQUIRED',
-      });
-    }
-
     const companyId = parseInt(req.params.companyId, 10);
-    if (!Number.isFinite(companyId)) {
-      return res.status(400).json({ error: 'companyId non valido', code: 'INVALID_COMPANY_ID' });
-    }
-
-    const scope = await resolveCompanyScope(companyId, auditorOrgId);
-    if (!scope) {
-      return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
-    }
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'read');
+    if (denied) return sendAccessDenied(res, denied);
 
     const { active } = req.query;
     const where = ['company_id = @company_id', 'organization_id = @organization_id'];
@@ -95,18 +135,12 @@ async function listPersonnel(req, res) {
 
 async function createPersonnel(req, res) {
   try {
-    if (!assertCompanyWriteRole(req, res)) return;
-
-    const auditorOrgId = resolveAuditorOrgId(req);
-    if (!auditorOrgId) {
-      return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
-    }
-
     const companyId = parseInt(req.params.companyId, 10);
-    const scope = await resolveCompanyScope(companyId, auditorOrgId);
-    if (!scope) {
-      return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
-    }
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
 
     const {
       name,
@@ -154,19 +188,14 @@ async function createPersonnel(req, res) {
 
 async function updatePersonnel(req, res) {
   try {
-    if (!assertCompanyWriteRole(req, res)) return;
-
-    const auditorOrgId = resolveAuditorOrgId(req);
-    if (!auditorOrgId) {
-      return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
-    }
-
     const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
     const personnelId = parseInt(req.params.id, 10);
-    const scope = await resolveCompanyScope(companyId, auditorOrgId);
-    if (!scope) {
-      return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
-    }
 
     const check = await query(`
       SELECT id FROM company_personnel
@@ -233,19 +262,14 @@ async function updatePersonnel(req, res) {
 
 async function deletePersonnel(req, res) {
   try {
-    if (!assertCompanyWriteRole(req, res)) return;
-
-    const auditorOrgId = resolveAuditorOrgId(req);
-    if (!auditorOrgId) {
-      return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
-    }
-
     const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
     const personnelId = parseInt(req.params.id, 10);
-    const scope = await resolveCompanyScope(companyId, auditorOrgId);
-    if (!scope) {
-      return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
-    }
 
     const row = await query(`
       SELECT id, notification_contact_id, active
@@ -304,6 +328,8 @@ module.exports = {
   createPersonnel,
   updatePersonnel,
   deletePersonnel,
+  resolvePersonnelScope,
+  resolveCompanyScope,
   resolveAuditorOrgId,
   validateEmail,
   assertCompanyWriteRole,
