@@ -762,7 +762,7 @@ body.sgq-doc-tree-resizing * {
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
@@ -782,24 +782,37 @@ body.sgq-doc-tree-resizing * {
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.tree-doc-card:hover .tree-doc-card__action-btn {
-  opacity: 0.5;
-}
-
-.tree-doc-card__action-btn:hover {
-  opacity: 1 !important;
+.tree-doc-card__action-btn:active {
   background: #dbeafe;
 }
 
-.tree-doc-card:hover .tree-doc-card__delete-btn,
-.tree-doc-card:hover .tree-doc-card__move-btn {
-  opacity: 0.5;
+/* Desktop: pulsanti compatti, visibili al passaggio del mouse */
+@media (hover: hover) {
+  .tree-doc-card__action-btn,
+  .tree-doc-card__delete-btn,
+  .tree-doc-card__move-btn {
+    opacity: 0;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__action-btn {
+    opacity: 0.5;
+  }
+
+  .tree-doc-card__action-btn:hover {
+    opacity: 1 !important;
+    background: #dbeafe;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__delete-btn,
+  .tree-doc-card:hover .tree-doc-card__move-btn {
+    opacity: 0.5;
+  }
 }
 
 .tree-doc-card__delete-btn:hover {
