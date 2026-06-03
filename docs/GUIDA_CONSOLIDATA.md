@@ -229,6 +229,16 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 ---
 
+### Sessione 03/06/2026 — Visualizzazione Excel in-app (SpreadsheetViewer)
+
+| PR | Contenuto |
+|---|---|
+| [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93) | `DocFileDialog`: `.xlsx` → `SpreadsheetViewer` (SheetJS) al posto di Office Online; download via `getDocFileBlob` |
+
+**Lezione**: Office Online (`view.officeapps.live.com`) non funziona con API su `:8443` e senza token pubblico — stesso pattern già risolto per Word con `DocumentDocxViewer`.
+
+**Smoke SAVECO scadenzario** (doc `1698`, org QS `1002`, file ~71 KB): 4 fogli (`TO_DO`, `SCADENZARIO`, `IMPIANTI TERMICI`, `PRESIDI ANTINCENDIO`) parsati con SheetJS su copia file da VPS. Verifica UI post-merge: login org Camellini → Registro documenti → SAVECO → Scadenzario → **Visualizza**.
+
 ### Sessione 25/05/2026 — Registro norme SoT R1–R7 (completato) e chiusura PR
 
 #### Attività completate
@@ -409,7 +419,7 @@ Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
 - Routing pulsante "Visualizza":
   - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
   - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
-  - `.xlsx` → fallback Office Online Viewer (Microsoft)
+  - `.xlsx` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
 
 #### DocumentDetailPanel (slide-in dettaglio documento)
 Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"
@@ -461,9 +471,7 @@ quando il pannello si apre.
    nell'endpoint `release-revision` che apre il `.docx` con `docxtemplater` (già nel
    progetto), sostituisce `{{data_rilascio}}`, `{{numero_revisione}}`, `{{revisione_label}}`,
    salva la nuova versione. Da implementare.
-2. **Excel viewer**: attualmente "Visualizza" su `.xlsx` cade su Office Online Viewer
-   (inaffidabile con porta 8443). Da valutare libreria browser-side equivalente a
-   docx-preview per Excel (es. `xlsx-preview` o `sheetjs` + custom renderer).
+2. ~~**Excel viewer**~~ → risolto PR #93 (`SpreadsheetViewer` + `getDocFileBlob`).
 3. **Test L1** della suite frontend non eseguiti dopo le modifiche di oggi (Vitest).
    Da lanciare prima di considerare definitivamente chiuso il modulo Word round-trip.
 4. **Pulsante "Visualizza" su .doc legacy**: docx-preview probabilmente non supporta
