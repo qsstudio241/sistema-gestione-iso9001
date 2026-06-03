@@ -218,25 +218,41 @@ async function createCompany(req, res) {
             const organizationId = orgRes.recordset[0]?.organization_id || req.user.organization_id;
 
             if (organizationId) {
-                const rootCheck = await query(
+                const studioRootCheck = await query(
                     `SELECT TOP 1 id FROM document_registry
                      WHERE organization_id = @organization_id
-                       AND company_id = @company_id
-                       AND parent_id IS NULL`,
-                    { organization_id: organizationId, company_id: companyId }
+                       AND company_id IS NULL
+                       AND parent_id IS NULL
+                       AND doc_type = 'folder'
+                       AND ISNULL(status, 'rilasciato') <> 'obsoleto'`,
+                    { organization_id: organizationId }
                 );
-                if (rootCheck.recordset.length === 0) {
-                    const stdRes = await query(
-                        `SELECT standard_code FROM standards WHERE is_active = 1`
-                    );
-                    const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
-                    await documentTreeProvisioner.provisionTree(
-                        organizationId, companyId, null, standardCodes
-                    );
-                    logger.info('[COMPANIES] Auto-provisioned document tree', {
+                if (studioRootCheck.recordset.length > 0) {
+                    logger.info('[COMPANIES] Skip tree provision: studio-wide tree already exists', {
                         company_id: companyId,
                         organization_id: organizationId,
                     });
+                } else {
+                    const rootCheck = await query(
+                        `SELECT TOP 1 id FROM document_registry
+                         WHERE organization_id = @organization_id
+                           AND company_id = @company_id
+                           AND parent_id IS NULL`,
+                        { organization_id: organizationId, company_id: companyId }
+                    );
+                    if (rootCheck.recordset.length === 0) {
+                        const stdRes = await query(
+                            `SELECT standard_code FROM standards WHERE is_active = 1`
+                        );
+                        const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                        await documentTreeProvisioner.provisionTree(
+                            organizationId, companyId, null, standardCodes
+                        );
+                        logger.info('[COMPANIES] Auto-provisioned document tree', {
+                            company_id: companyId,
+                            organization_id: organizationId,
+                        });
+                    }
                 }
             }
         } catch (provErr) {
