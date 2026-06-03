@@ -1,23 +1,20 @@
-# DEPUTYTASK — Albero documentale per-azienda (org QS 1002)
+# DEPUTYTASK — Visualizzazione Excel in-app
 
-**Stato:** TEST OK (migrazione + deploy VPS 03/06/2026)  
-**PR:** [#90](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/90)
+**Stato:** TEST OK (L1 + smoke file SAVECO scadenzario) — in attesa merge PR  
+**PR:** [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93)
 
 ## Completato
 
 | Step | Esito |
 |------|-------|
-| Migrazione DB org 1002 (15 aziende, albero condiviso archiviato) | ✅ |
-| SAVECO: 15 radici dopo cleanup folder obsoleti | ✅ |
-| API albero filtro stretto `company_id` | ✅ deploy VPS |
-| Test Jest `documentTreeCompanyScope` | ✅ 4/4 |
+| `DocFileDialog` → `SpreadsheetViewer` (no Office Online) | ✅ |
+| `SpreadsheetViewer` → `getDocFileBlob` (auth come PDF/Word) | ✅ |
+| Test L1 `spreadsheetViewer.test.jsx` | ✅ 10/10 |
+| Build Vite | ✅ |
+| Smoke file SAVECO scadenzario (71 KB, 4 fogli SheetJS) | ✅ |
 
-## Uso operativo (Camellini)
+## Smoke utente post-merge (org Camellini / QS)
 
-1. Registro documenti → tab **Albero**
-2. **Ambito** = nome cliente (es. SAVECO, RIVIAL) — non «tutto lo studio»
-3. Hard refresh PWA (Ctrl+Shift+R) se l’albero sembra vecchio
-
-## Smoke utente
-
-Ambito SAVECO e RIVIAL: **15 cartelle** radice, **nessun duplicato** (es. una sola DOCUMENTAZIONE INTERNA).
+1. Registro documenti → Ambito **SAVECO**
+2. Documento **Scadenzario** (SC01) → Allegato → **Visualizza**
+3. Atteso: overlay tabella con fogli TO_DO, SCADENZARIO, … (no errore Office Online)
