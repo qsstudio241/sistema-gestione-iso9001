@@ -72,17 +72,12 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
     ];
     const params = { organization_id: orgId, parent_id: parseInt(parentId) };
 
-    if (companyId) {
-        conditions.push('(dr.company_id = @company_id OR dr.company_id IS NULL)');
-        params.company_id = companyId;
-    }
+    appendCompanyScopeCondition(conditions, params, 'dr', companyId);
 
     const result = await query(`
         SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-               (SELECT COUNT(*) FROM document_registry sub
-                WHERE sub.parent_id = dr.id
-                  AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
+               ${childrenCountSubquery('dr', companyId)} AS children_count
         FROM document_registry dr
         WHERE ${conditions.join(' AND ')}
         ORDER BY dr.display_order ASC, dr.title ASC

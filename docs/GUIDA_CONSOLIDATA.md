@@ -1895,6 +1895,22 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
 - **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
 
+**Esperienza 03/06/2026 — Albero documentale per-azienda (Camellini / org 1002)**
+
+| Step | Cosa | File / comando |
+|------|------|----------------|
+| A | API albero con `?company_id=X`: filtro **stretto** (`dr.company_id = X`, niente `OR IS NULL`); `children_count` allineato | `documentTree.controller.js`, `documentTreeCompanyScope.js` |
+| B | Migrazione dati org QS: provision per ogni azienda, rimappa `parent_id` per `folder_code`, archivia albero condiviso (`company_id NULL` → `obsoleto`) | `backend/scripts/migrate-per-company-document-trees-vps.js` su VPS |
+| C | Nuove aziende: provisioning sempre su `company_id` (già in `company.controller.js`) | — |
+| Operativo | In Registro documenti → tab **Albero**, impostare **Ambito = nome cliente**; hard refresh PWA dopo deploy | — |
+
+```bash
+# VPS: anteprima poi apply (ORG_ID default 1002)
+scp -P 1122 -i $KEY backend/scripts/migrate-per-company-document-trees-vps.js user@vps:/tmp/
+ssh … "DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js"
+ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
+# Poi deploy documentTree.controller.js + utils e restart sgq-backend
+```
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
