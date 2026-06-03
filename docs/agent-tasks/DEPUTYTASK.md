@@ -1,22 +1,23 @@
 # DEPUTYTASK — Albero documentale per-azienda (org QS 1002)
 
-**Stato:** IN CORSO — implementazione + migrazione VPS  
-**Obiettivo:** un albero per ogni azienda cliente; isolamento documenti con Ambito = azienda.
+**Stato:** TEST OK (migrazione + deploy VPS 03/06/2026)  
+**PR:** [#90](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/90)
 
-## Piano operativo
+## Completato
 
-| # | Azione | Stato |
-|---|--------|-------|
-| A | Filtro API albero stretto `company_id` | ✅ codice |
-| B | Script migrazione org 1002 | ✅ script in repo |
-| C | Test Jest `documentTreeCompanyScope` | ✅ 4/4 |
-| D | Migrazione VPS `DRY_RUN` → apply | ⏳ |
-| E | Deploy `documentTree.controller.js` + restart | ⏳ |
-| F | Smoke: Ambito SAVECO/RIVIAL → 15 radici, no duplicati | ⏳ |
+| Step | Esito |
+|------|-------|
+| Migrazione DB org 1002 (15 aziende, albero condiviso archiviato) | ✅ |
+| SAVECO: 15 radici dopo cleanup folder obsoleti | ✅ |
+| API albero filtro stretto `company_id` | ✅ deploy VPS |
+| Test Jest `documentTreeCompanyScope` | ✅ 4/4 |
 
-## Comando deputy (smoke post-deploy)
+## Uso operativo (Camellini)
 
-```
-Verifica Registro documenti → Albero con Ambito SAVECO e RIVIAL: 15 cartelle radice, nessun duplicato.
-Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+1. Registro documenti → tab **Albero**
+2. **Ambito** = nome cliente (es. SAVECO, RIVIAL) — non «tutto lo studio»
+3. Hard refresh PWA (Ctrl+Shift+R) se l’albero sembra vecchio
+
+## Smoke utente
+
+Ambito SAVECO e RIVIAL: **15 cartelle** radice, **nessun duplicato** (es. una sola DOCUMENTAZIONE INTERNA).
