@@ -1227,11 +1227,24 @@ class ApiService {
     }
 
     async createDocument(data) {
-        return this.post('/documents', data);
+        const body = data?.status != null
+            ? { ...data, status: this._normalizeDocumentRegistryStatus(data.status) }
+            : data;
+        return this.post('/documents', body);
     }
 
     async updateDocument(id, data) {
-        return this.put(`/documents/${id}`, data);
+        const body = data?.status != null
+            ? { ...data, status: this._normalizeDocumentRegistryStatus(data.status) }
+            : data;
+        return this.put(`/documents/${id}`, body);
+    }
+
+    /** Alias legacy "vigente" → "rilasciato" (registro documenti, non validity_status norme). */
+    _normalizeDocumentRegistryStatus(raw) {
+        if (raw == null || String(raw).trim() === '') return 'rilasciato';
+        const s = String(raw).trim().toLowerCase();
+        return s === 'vigente' ? 'rilasciato' : s;
     }
 
     /** Soft delete: porta il documento a status='obsoleto' */
