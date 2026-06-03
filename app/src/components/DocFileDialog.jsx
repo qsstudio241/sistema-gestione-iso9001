@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentPdfViewer from "./DocumentPdfViewer";
 import DocumentDocxViewer from "./DocumentDocxViewer";
+import SpreadsheetViewer from "./SpreadsheetViewer";
 import "./DocFileDialog.css";
 
 /** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
@@ -60,6 +61,9 @@ function DocFileDialog({ doc, onClose }) {
   const [docxViewerOpen, setDocxViewerOpen] = useState(false);
   const [docxViewerAttId, setDocxViewerAttId] = useState(null);
   const [docxViewerName, setDocxViewerName] = useState(null);
+  const [xlsxViewerOpen, setXlsxViewerOpen] = useState(false);
+  const [xlsxViewerAttId, setXlsxViewerAttId] = useState(null);
+  const [xlsxViewerName, setXlsxViewerName] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -240,16 +244,16 @@ function DocFileDialog({ doc, onClose }) {
                       {e(128065)}{"\uFE0F"} Visualizza
                     </button>
                   )}
-                  {/* Excel: niente viewer browser, fallback Office Online Viewer */}
+                  {/* Excel: SpreadsheetViewer in-app (SheetJS), come docx-preview per Word */}
                   {OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
                       className="btn-docfile-office btn-docfile-office-view"
                       onClick={() => {
-                        const url = apiService.getDocFileDownloadUrl(doc.id, currentFile.id, false);
-                        const viewUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
-                        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+                        setXlsxViewerAttId(currentFile.id);
+                        setXlsxViewerName(currentFile.file_name);
+                        setXlsxViewerOpen(true);
                       }}
-                      title="Visualizza nel browser"
+                      title="Visualizza nel browser - solo lettura, no Excel richiesto"
                     >
                       {e(128065)}{"\uFE0F"} Visualizza
                     </button>
@@ -411,6 +415,14 @@ function DocFileDialog({ doc, onClose }) {
             attachmentId={docxViewerAttId}
             fileName={docxViewerName}
             onClose={() => setDocxViewerOpen(false)}
+          />
+        )}
+        {xlsxViewerOpen && (
+          <SpreadsheetViewer
+            docId={doc.id}
+            attachmentId={xlsxViewerAttId}
+            fileName={xlsxViewerName}
+            onClose={() => setXlsxViewerOpen(false)}
           />
         )}
       </div>
