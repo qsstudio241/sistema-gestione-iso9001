@@ -553,6 +553,11 @@
   .datagrid-toolbar__label {
     display: none;
   }
+  /* Su mobile mostra la scritta sul pulsante che apre Visualizza/Scarica */
+  .datagrid-toolbar__btn[title="Allegato"] .datagrid-toolbar__label {
+    display: inline;
+    font-size: 12px;
+  }
   .datagrid-toolbar__btn {
     padding: 7px 10px;
   }
