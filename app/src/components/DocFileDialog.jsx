@@ -1,6 +1,7 @@
 /**
  * DocFileDialog - Dialog gestione file allegato al documento del registro
- * Visualizza lista versioni, permette upload nuova revisione, anteprima browser
+ * Visualizza lista versioni, upload revisione, anteprima browser,
+ * apertura Word/Excel desktop via WebDAV (PC).
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -36,6 +37,13 @@ function getExt(filename) {
   return filename.slice(dot).toLowerCase();
 }
 
+/** Word/Excel desktop (URI ms-word/ms-excel): solo PC, non smartphone/tablet. */
+function canUseOfficeDesktop() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
 function DocFileDialog({ doc, onClose }) {
   const [data,        setData]        = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -65,10 +73,19 @@ function DocFileDialog({ doc, onClose }) {
   const [xlsxViewerAttId, setXlsxViewerAttId] = useState(null);
   const [xlsxViewerName, setXlsxViewerName] = useState(null);
 
+  const [officeLoading, setOfficeLoading] = useState(false);
+  const [officeError, setOfficeError] = useState(null);
+  const [webdavData, setWebdavData] = useState(null);
+  const [showEditAlert, setShowEditAlert] = useState(false);
+
   const fileInputRef = useRef(null);
+  const officeDesktop = canUseOfficeDesktop();
 
   useEffect(() => {
     loadFiles();
+    setWebdavData(null);
+    setOfficeError(null);
+    setShowEditAlert(false);
   }, [doc.id]);
 
   async function loadFiles() {
@@ -164,6 +181,43 @@ function DocFileDialog({ doc, onClose }) {
     }
   }, [doc.id, loadFiles]);
 
+  const handleOpenInOffice = useCallback(async (mode = 'edit') => {
+    setOfficeLoading(true);
+    setOfficeError(null);
+    try {
+      let link = webdavData;
+      const linkMode = link?.mode || 'edit';
+      if (!link || linkMode !== mode || new Date(link.expires_at) <= new Date()) {
+        link = await apiService.getWebdavLink(doc.id, mode === 'edit' ? 'edit' : 'read');
+        link.mode = mode;
+        setWebdavData(link);
+      }
+
+      if (mode === 'edit' && doc.status === 'rilasciato' && !showEditAlert) {
+        setShowEditAlert(true);
+        setOfficeLoading(false);
+        return;
+      }
+      setShowEditAlert(false);
+
+      if (mode === 'edit') {
+        if (!link.office_uri) {
+          setOfficeError("Formato file non supportato per l'apertura diretta in Office.");
+          return;
+        }
+        window.location.href = link.office_uri;
+      } else if (link.office_uri_view) {
+        window.location.href = link.office_uri_view;
+      } else {
+        setOfficeError('Visualizzazione Office non disponibile per questo formato.');
+      }
+    } catch (err) {
+      setOfficeError(`Errore: ${err.message}`);
+    } finally {
+      setOfficeLoading(false);
+    }
+  }, [doc.id, doc.status, webdavData, showEditAlert]);
+
   const currentFile = data?.files?.[0];
   const history     = data?.files?.slice(1) || [];
 
@@ -230,6 +284,29 @@ function DocFileDialog({ doc, onClose }) {
                     </button>
                   ) : null}
 
+                  {officeDesktop && OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
+                    <button
+                      type="button"
+                      className="btn-docfile-office btn-docfile-office-word"
+                      onClick={() => handleOpenInOffice('edit')}
+                      disabled={officeLoading}
+                      title="Apri in Word desktop - modifica e salva sul server"
+                    >
+                      {e(128196)} Apri in Word
+                    </button>
+                  )}
+                  {officeDesktop && OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
+                    <button
+                      type="button"
+                      className="btn-docfile-office btn-docfile-office-excel"
+                      onClick={() => handleOpenInOffice('edit')}
+                      disabled={officeLoading}
+                      title="Apri in Excel desktop - modifica e salva sul server"
+                    >
+                      {e(128202)} Apri in Excel
+                    </button>
+                  )}
+
                   {/* Visualizzazione browser nativa Word: docx-preview (sola lettura) */}
                   {OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
@@ -259,6 +336,10 @@ function DocFileDialog({ doc, onClose }) {
                     </button>
                   )}
 
+                  {officeLoading && (
+                    <span className="docfile-office-loading">{e(9696)} Apertura...</span>
+                  )}
+
                   <button
                     type="button"
                     className="btn-docfile-download"
@@ -267,6 +348,56 @@ function DocFileDialog({ doc, onClose }) {
                     {e(11015)}{"\uFE0F"} Scarica
                   </button>
                 </div>
+
+                {showEditAlert && (
+                  <div className="docfile-office-alert">
+                    <strong>{e(9888)}{"\uFE0F"} Documento rilasciato</strong>
+                    <p>
+                      Questo documento è in stato <strong>Rilasciato</strong>. Aprirlo in modifica
+                      creerà una nuova <strong>bozza</strong>: usa poi
+                      {" "}&quot;Rilascia revisione&quot; per renderlo di nuovo ufficiale.
+                    </p>
+                    <p>Per solo consultazione usa <strong>Visualizza</strong>.</p>
+                    <div className="docfile-alert-actions">
+                      <button
+                        type="button"
+                        className="btn-docfile-alert-confirm"
+                        onClick={() => handleOpenInOffice('edit')}
+                        disabled={officeLoading}
+                      >
+                        {e(9999)}{"\uFE0F"} Sì, apri in modifica
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-docfile-alert-cancel"
+                        onClick={() => setShowEditAlert(false)}
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {officeError && (
+                  <div className="docfile-office-error">
+                    {e(9888)}{"\uFE0F"} {officeError}
+                    <p className="docfile-office-fallback">
+                      Usa <strong>Scarica</strong>, modifica il file e ricaricalo con &quot;Carica nuova revisione&quot;.
+                    </p>
+                  </div>
+                )}
+
+                {webdavData && !officeError && !showEditAlert && officeDesktop && (
+                  <div className="docfile-office-info">
+                    {e(128274)} Link Office attivo: salva in Word/Excel per aggiornare il documento.
+                    Scade alle{" "}
+                    {new Date(webdavData.expires_at).toLocaleTimeString("it-IT", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    . Poi usa <strong>Rilascia revisione</strong> se il documento è in bozza.
+                  </div>
+                )}
 
                 {/* Pulsante RILASCIA REVISIONE (solo per bozze) */}
                 {doc.status === 'bozza' && (
