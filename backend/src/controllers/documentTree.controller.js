@@ -8,6 +8,10 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const historyTracker = require('../services/documentHistoryTracker.service');
 const provisioner = require('../services/documentTreeProvisioner.service');
+const {
+    appendCompanyScopeCondition,
+    childrenCountSubquery,
+} = require('../utils/documentTreeCompanyScope');
 
 /**
  * Ritorna l'albero documentale a partire dalle root.
@@ -24,19 +28,14 @@ async function getTree(req, res) {
         const conditions = ['dr.organization_id = @organization_id', 'dr.parent_id IS NULL'];
         const params = { organization_id };
 
-        if (company_id) {
-            conditions.push('(dr.company_id = @company_id OR dr.company_id IS NULL)');
-            params.company_id = company_id;
-        }
+        appendCompanyScopeCondition(conditions, params, 'dr', company_id);
 
         conditions.push("ISNULL(dr.status, 'rilasciato') <> 'obsoleto'");
 
         const roots = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-                   (SELECT COUNT(*) FROM document_registry sub
-                    WHERE sub.parent_id = dr.id
-                      AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
+                   ${childrenCountSubquery('dr', company_id)} AS children_count
             FROM document_registry dr
             WHERE ${conditions.join(' AND ')}
             ORDER BY dr.display_order ASC, dr.title ASC
@@ -72,17 +71,12 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
     ];
     const params = { organization_id: orgId, parent_id: parseInt(parentId) };
 
-    if (companyId) {
-        conditions.push('(dr.company_id = @company_id OR dr.company_id IS NULL)');
-        params.company_id = companyId;
-    }
+    appendCompanyScopeCondition(conditions, params, 'dr', companyId);
 
     const result = await query(`
         SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-               (SELECT COUNT(*) FROM document_registry sub
-                WHERE sub.parent_id = dr.id
-                  AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
+               ${childrenCountSubquery('dr', companyId)} AS children_count
         FROM document_registry dr
         WHERE ${conditions.join(' AND ')}
         ORDER BY dr.display_order ASC, dr.title ASC
@@ -100,7 +94,7 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
 }
 
 // GET /api/v1/documents/tree/:parentId/children
-// Query params: company_id — stesso filtro di getTree (azienda + condivisi studio)
+// Query params: company_id — filtro stretto (solo nodi di quell'azienda)
 async function getChildren(req, res) {
     try {
         const { organization_id } = req.user;
@@ -118,17 +112,12 @@ async function getChildren(req, res) {
         ];
         const params = { organization_id, parent_id: parentId };
 
-        if (company_id) {
-            conditions.push('(dr.company_id = @company_id OR dr.company_id IS NULL)');
-            params.company_id = company_id;
-        }
+        appendCompanyScopeCondition(conditions, params, 'dr', company_id);
 
         const result = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
-                   (SELECT COUNT(*) FROM document_registry sub
-                    WHERE sub.parent_id = dr.id
-                      AND ISNULL(sub.status, 'rilasciato') <> 'obsoleto') AS children_count
+                   ${childrenCountSubquery('dr', company_id)} AS children_count
             FROM document_registry dr
             WHERE ${conditions.join(' AND ')}
             ORDER BY dr.display_order ASC, dr.title ASC
