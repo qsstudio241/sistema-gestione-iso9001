@@ -21,6 +21,14 @@ jest.mock('../config/database', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('../services/aiCompanyScope.service', () => ({
+  resolveAiCompanyScope: jest.fn(),
+}));
+
+jest.mock('../services/companyAccess.service', () => ({
+  sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
+}));
+
 jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -34,6 +42,7 @@ const {
   resolveStandardCodesForFilter,
   buildStandardContextBlock,
 } = require('../services/aiStandardContext.service');
+const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { aiChat } = require('./aiChat.controller');
 
 function createRes() {
@@ -48,9 +57,10 @@ function createRes() {
   return res;
 }
 
-describe('aiChat.controller  aiChat', () => {
+describe('aiChat.controller ï¿½ aiChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
     getActiveProvider.mockReturnValue('gemini');
     searchKnowledge.mockResolvedValue([
       { id: 1, entity_type: 'audit_conclusion', entity_id: 1, chunk_text: 'Audit 2024-01 del 2024-01-15', score: 0.9 },
@@ -194,4 +204,35 @@ describe('aiChat.controller  aiChat', () => {
     );
     expect(chat.mock.calls[0][0][0].content).toContain('7.5');
   });
+
+  it('returns 403 when company scope is denied for company client', async () => {
+    resolveAiCompanyScope.mockResolvedValue({
+      companyId: null,
+      denied: { status: 403, body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' } },
+    });
+    const req = {
+      body: { message: 'Quante NC?', companyId: 99 },
+      user: { organization_id: 99, user_id: 5, company_access: [{ company_id: 45, permission: 'read' }] },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(chat).not.toHaveBeenCalled();
+  });
+
+  it('passes resolved companyId to searchKnowledge for studio user', async () => {
+    resolveAiCompanyScope.mockResolvedValue({ companyId: 45, denied: null });
+    const req = {
+      body: { message: 'Documenti in scadenza', companyId: 45 },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+    expect(searchKnowledge).toHaveBeenCalledWith(
+      'Documenti in scadenza',
+      99,
+      expect.objectContaining({ companyId: 45 })
+    );
+  });
+
 });

@@ -374,7 +374,7 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
   const kcParams = { orgId: organizationId };
 
   if (companyId) {
-    kcSql += ' AND (company_id = @compId OR company_id IS NULL)';
+    kcSql += ' AND company_id = @compId';
     kcParams.compId = companyId;
   }
 

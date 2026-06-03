@@ -17,6 +17,8 @@ const {
   buildStandardContextBlock,
 } = require('../services/aiStandardContext.service');
 const { buildCitationsFromChunks } = require('../utils/aiCitations');
+const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
+const { sendAccessDenied } = require('../services/companyAccess.service');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -48,14 +50,18 @@ function buildAuditFocusBlock({ auditId, clauseRef, questionId, questionText, st
 /**
  * Carica il profilo azienda da DB per arricchire il system prompt.
  */
-async function loadCompanyProfile(companyId, auditorOrgId) {
+async function loadCompanyProfile(companyId, user) {
   try {
-    const result = await query(
-      `SELECT name, vat_number, sector, address
+    const auditorOrgId = user?.auditor_org_id;
+    let sql = `SELECT name, vat_number, sector, address
        FROM companies
-       WHERE id = @id AND auditor_org_id = @auditorOrgId`,
-      { id: companyId, auditorOrgId }
-    );
+       WHERE id = @id`;
+    const params = { id: companyId };
+    if (auditorOrgId) {
+      sql += ' AND auditor_org_id = @auditorOrgId';
+      params.auditorOrgId = auditorOrgId;
+    }
+    const result = await query(sql, params);
     return (result.recordset || [])[0] || null;
   } catch (err) {
     logger.warn('[AI_CHAT] loadCompanyProfile failed:', err.message);
@@ -131,9 +137,13 @@ async function aiChat(req, res) {
     }
 
     const organizationId = req.user.organization_id;
-    const auditorOrgId = req.user.auditor_org_id;
     const userId = req.user.user_id;
-    const parsedCompanyId = companyId ? parseInt(companyId, 10) || null : null;
+
+    const scope = await resolveAiCompanyScope(req.user, companyId);
+    if (scope.denied) {
+      return sendAccessDenied(res, scope.denied);
+    }
+    const parsedCompanyId = scope.companyId;
     const parsedStandardId = standardId ? parseInt(standardId, 10) || null : null;
 
     let systemPrompt = await enrichSystemPromptWithOrganization(
@@ -150,7 +160,7 @@ async function aiChat(req, res) {
     }
 
     if (parsedCompanyId) {
-      const company = await loadCompanyProfile(parsedCompanyId, auditorOrgId);
+      const company = await loadCompanyProfile(parsedCompanyId, req.user);
       if (company) {
         const companyLines = [`\n\n--- CONTESTO AZIENDA ATTIVA ---`];
         companyLines.push(`Nome: ${company.name}`);
@@ -346,7 +356,7 @@ async function knowledgeHealth(req, res) {
       ),
     ]);
 
-    // Riorganizza coverage per azienda ù formato flat atteso dal frontend
+    // Riorganizza coverage per azienda ÔøΩ formato flat atteso dal frontend
     const coverageMap = {};
     for (const row of (coverageRes.recordset || [])) {
       if (!coverageMap[row.company_id]) {

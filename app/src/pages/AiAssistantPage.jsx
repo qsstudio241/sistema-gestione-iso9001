@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import { useStorage } from "../contexts/StorageContext";
 import {
   filterStandardsForUser,
@@ -94,6 +95,8 @@ function AiAssistantPage() {
   const prevAuditIdRef = useRef(null);
   const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isCompanyClient = hasCompanyAccess(user);
+  const primaryCompanyId = getPrimaryCompanyId(user);
 
   // --- Contesto azienda ---
   const [companies, setCompanies] = useState([]);
@@ -149,6 +152,21 @@ function AiAssistantPage() {
     window.addEventListener("sgq:userLoggedOut", onLogout);
     return () => window.removeEventListener("sgq:userLoggedOut", onLogout);
   }, [chatStorageKey]);
+
+  const visibleCompanies = useMemo(() => {
+    if (!isCompanyClient) return companies;
+    const allowed = new Set((user?.company_access || []).map((a) => a.company_id));
+    return companies.filter((c) => allowed.has(c.id || c.company_id));
+  }, [companies, isCompanyClient, user?.company_access]);
+
+  useEffect(() => {
+    if (!isCompanyClient || !companiesLoaded) return;
+    const cid = primaryCompanyId || visibleCompanies[0]?.id || visibleCompanies[0]?.company_id;
+    if (!cid) return;
+    const cName =
+      visibleCompanies.find((c) => (c.id || c.company_id) === cid)?.name || null;
+    setCompanyContext({ companyId: cid, companyName: cName, source: "auto" });
+  }, [isCompanyClient, companiesLoaded, primaryCompanyId, visibleCompanies]);
 
   // Carica lista aziende una volta
   useEffect(() => {
@@ -462,8 +480,13 @@ function AiAssistantPage() {
           <div className="ai-context-chip-wrapper" ref={dropdownRef}>
             <button
               className={`ai-context-chip ${contextIsCompany ? "ai-context-chip--company" : ""}`}
-              onClick={() => setDropdownOpen((v) => !v)}
-              title="Cambia contesto azienda"
+              onClick={() => {
+                if (isCompanyClient && visibleCompanies.length <= 1) return;
+                setDropdownOpen((v) => !v);
+              }}
+              title={isCompanyClient ? "Ambito della tua azienda" : "Cambia contesto azienda"}
+              type="button"
+              disabled={isCompanyClient && visibleCompanies.length <= 1}
             >
               <svg className="ai-context-chip-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 {contextIsCompany ? (
@@ -484,9 +507,16 @@ function AiAssistantPage() {
                   onClick={() => handleContextChange(null, null, "manual")}
                 >
                   <span className="ai-context-dropdown-icon">{"\uD83C\uDF10"}</span>
+                {!isCompanyClient && (
+                <button
+                  className={`ai-context-dropdown-item ${!companyContext.companyId ? "active" : ""}`}
+                  onClick={() => handleContextChange(null, null, "manual")}
+                >
+                  <span className="ai-context-dropdown-icon">{"\uD83C\uDF10"}</span>
                   Vista complessiva
+                )}
                 </button>
-                {companies.map((c) => {
+                {visibleCompanies.map((c) => {
                   const cId = c.id || c.company_id;
                   const cName = c.name;
                   return (

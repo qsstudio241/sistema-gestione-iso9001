@@ -71,6 +71,10 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
 
+**Esperienza 03/06/2026 — Ambito AI allineato ad albero per-azienda (RBAC)**
+
+Dopo la migrazione albero documentale per `company_id`, i chunk RAG con `company_id` obsoleto (albero condiviso) restavano recuperabili perché `searchKnowledge` usava `company_id = @compId OR company_id IS NULL`. Fix: (1) `backend/src/services/aiCompanyScope.service.js` — `resolveAiCompanyScope` su `POST /ai/chat` (cliente azienda: solo `user_company_access`, mai vista studio; studio: `companyId` opzionale, validato su `auditor_org_id`); (2) filtro stretto `company_id = @compId` in `knowledgeIndexer.service.js`; (3) UI `AiAssistantPage` — nasconde «Vista complessiva» e blocca cambio ambito per profili con `company_access`. Script verifica VPS: `verify-documents-and-ai-scope-org-1002-vps.js`. Deploy: `aiChat.controller.js`, `aiCompanyScope.service.js`, `knowledgeIndexer.service.js` + restart `sgq-backend`.
+
 **Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
 
 I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti. **UI guida flusso**: sezioni numerate nel drawer seguono l'ordine ISO 10.2 (Scheda → Stato workflow → Cause → Azioni → Evidenze → Verifica → Chiusura), non un form flat per tipo campo.
@@ -1895,22 +1899,6 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
 - **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
 
-**Esperienza 03/06/2026 — Albero documentale per-azienda (Camellini / org 1002)**
-
-| Step | Cosa | File / comando |
-|------|------|----------------|
-| A | API albero con `?company_id=X`: filtro **stretto** (`dr.company_id = X`, niente `OR IS NULL`); `children_count` allineato | `documentTree.controller.js`, `documentTreeCompanyScope.js` |
-| B | Migrazione dati org QS: provision per ogni azienda, rimappa `parent_id` per `folder_code`, archivia albero condiviso (`company_id NULL` → `obsoleto`) | `backend/scripts/migrate-per-company-document-trees-vps.js` su VPS |
-| C | Nuove aziende: provisioning sempre su `company_id` (già in `company.controller.js`) | — |
-| Operativo | In Registro documenti → tab **Albero**, impostare **Ambito = nome cliente**; hard refresh PWA dopo deploy | — |
-
-```bash
-# VPS: anteprima poi apply (ORG_ID default 1002)
-scp -P 1122 -i $KEY backend/scripts/migrate-per-company-document-trees-vps.js user@vps:/tmp/
-ssh … "DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js"
-ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
-# Poi deploy documentTree.controller.js + utils e restart sgq-backend
-```
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
