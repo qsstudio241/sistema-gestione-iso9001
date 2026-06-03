@@ -220,6 +220,22 @@ async function main() {
             console.log('  Provision albero per-azienda...');
             if (!DRY_RUN) {
                 await provisioner.provisionTree(ORG_ID, company.id, null, standardCodes);
+                const rootsAfter = await countActiveRoots(ORG_ID, company.id);
+                if (rootsAfter === 0) {
+                    const purged = await query(
+                        `
+                        DELETE FROM document_registry
+                        WHERE organization_id = @org_id AND company_id = @company_id
+                          AND status = 'obsoleto' AND doc_type = 'folder'
+                        `,
+                        { org_id: ORG_ID, company_id: company.id }
+                    );
+                    const n = purged.rowsAffected?.[0] ?? purged.rowsAffected ?? 0;
+                    if (n > 0) {
+                        console.log(`  Rimossi ${n} folder obsoleti che bloccavano provision; riprovo...`);
+                        await provisioner.provisionTree(ORG_ID, company.id, null, standardCodes);
+                    }
+                }
             }
         } else {
             console.log(`  Albero già presente (${roots} radici)`);
