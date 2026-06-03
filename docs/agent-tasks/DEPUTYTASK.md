@@ -1,7 +1,7 @@
 # DEPUTYTASK — Visualizzazione Excel in-app
 
-**Stato:** TEST OK (L1 + smoke file SAVECO scadenzario) — in attesa merge PR  
-**PR:** [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93)
+**Stato:** CHIUSO — merge su `main` 03/06/2026, deploy Netlify automatico  
+**PR:** [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93) (mergiata)
 
 ## Completato
 
