@@ -15,7 +15,11 @@ const {
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 const multer = require('multer');
-const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
+const {
+    RELEASED_STATUS_SQL_IN,
+    isReleasedDocStatus,
+    parseRegistryDocStatus,
+} = require('../constants/documentStatus');
 const {
     buildHasAnyFileSql,
     buildCurrentFileApplySql,
@@ -332,7 +336,7 @@ async function createDocument(req, res) {
             doc_code,
             title,
             revision,
-            status       = 'rilasciato',
+            status: statusRaw = 'rilasciato',
             issue_date,
             expiry_date,
             responsible,
@@ -355,14 +359,15 @@ async function createDocument(req, res) {
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-        const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
-        if (!validStatuses.includes(status)) {
+        const statusParsed = parseRegistryDocStatus(statusRaw);
+        if (!statusParsed.ok) {
             return res.status(400).json({
                 error:   'Status non valido',
                 code:    'VALIDATION_ERROR',
-                allowed: validStatuses,
+                allowed: statusParsed.allowed,
             });
         }
+        const status = statusParsed.status;
 
         const parent_id = req.body.parent_id ? parseInt(req.body.parent_id) : null;
 
@@ -544,7 +549,8 @@ async function updateDocument(req, res) {
         }
 
         if (params.expiry_date === undefined && req.body.expiry_date === undefined) {
-            const becomingReleased = params.status === 'rilasciato' && doc.status !== 'rilasciato';
+            const becomingReleased = isReleasedDocStatus(params.status)
+                && !isReleasedDocStatus(doc.status);
             const targetDocType = params.doc_type || doc.doc_type;
             if (becomingReleased && !doc.expiry_date && targetDocType) {
                 const computed = await resolveExpiryDate({
@@ -560,16 +566,16 @@ async function updateDocument(req, res) {
             }
         }
 
-        // Validazione status se presente
-        if (params.status) {
-            const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
-            if (!validStatuses.includes(params.status)) {
+        if (params.status !== undefined && params.status !== null) {
+            const statusParsed = parseRegistryDocStatus(params.status);
+            if (!statusParsed.ok) {
                 return res.status(400).json({
                     error:   'Status non valido',
                     code:    'VALIDATION_ERROR',
-                    allowed: validStatuses,
+                    allowed: statusParsed.allowed,
                 });
             }
+            params.status = statusParsed.status;
         }
 
         updates.push('updated_at = GETDATE()');
