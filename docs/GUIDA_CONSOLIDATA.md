@@ -201,7 +201,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 - **Due significati di "vigente"**: stato ciclo di vita (`document_registry.status`) vs vigore norma (`type_specific_data.validity_status` su `doc_type=norma`) — contatore header e badge albero usano solo il primo; non confonderli in query SQL o UI.
 - **Bug "0 vigenti" con badge verdi**: causa doppia — stats API ignorava status `vigente` (legacy migration 067) **e** cartelle mostravano badge per errore. Fix minimo: `RELEASED_STATUS_SQL_IN` condiviso FE/BE + `shouldShowDocumentStatusBadge()`.
-- **Deploy constants nuova cartella VPS**: `deploy-controllers-to-vps.ps1` non copia `document.controller.js` né `src/constants/` — usare `deploy-to-vps.sh` o SCP mirato + `mkdir -p` remoto; restart via fallback `fuser`+`nohup` se `sudo -n` non disponibile.
+- **Deploy constants nuova cartella VPS**: il manifest `backend/scripts/deploy-manifest.json` include `document.controller.js`, `src/constants/documentStatus.js` e tutti i servizi norme/NC; usare `deploy-controllers-to-vps.ps1` o `deploy-to-vps.sh` (non copia manuale). Preflight verifica file locali prima di SCP; post-deploy health check automatico.
 
 #### Prossimo step (backlog, non in scope sessione)
 
@@ -1887,7 +1887,7 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **UI albero** (`b2c0694` + `b3e5b51`): tooltip; rinomina/elimina solo cartelle **custom**; icone sistema vs custom; `FOLDER_NOT_EMPTY` se cartella non vuota. **Sidebar ridimensionabile**: maniglia sottile a destra dell'albero, larghezza in `localStorage` chiave `sgq-doc-tree-width`; su mobile barra **Cartella selezionata** sopra il dettaglio.
 - **Norme (lessico SGQ)**: niente campo *revisione* documentale — usare **edizione** / **anno edizione**, **vigore** e lookup **catalogo-first** (`norm-lookup`, import codici); cartelle **sistema** (es. NORME E LEGGI) **non** rinomina/elimina dall'UI.
 - **UX visibilità novità (30/05)**: deploy Netlify **systemgest.netlify.app** può essere OK mentre l'utente «non vede nulla» → aprire tab **Albero** nel Registro documenti, URL produzione corretto, provare **drag** sulla maniglia; se PWA/cache vecchia: hard refresh o reinstallazione PWA.
-- **Deploy VPS**: `deploy-controllers-to-vps.ps1` va **esteso** con `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` (oggi copia manuale post-push) + restart `sgq-backend`; smoke `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
+- **Deploy VPS**: `deploy-controllers-to-vps.ps1` (manifest unico `deploy-manifest.json`) copia tutti i file norme/NC/documenti + restart `sgq-backend`; smoke `npm run smoke:deploy`.
 - **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
 
 **Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D1)**

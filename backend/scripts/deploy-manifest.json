@@ -1,0 +1,124 @@
+{
+  "description": "Manifest unico per deploy backend VPS — ordine dependency-aware (services/utils prima di controller/routes)",
+  "remoteBase": "/var/www/sgq-backend",
+  "ensureRemoteDirs": [
+    "src/services/normConnectors"
+  ],
+  "groups": [
+    {
+      "name": "constants",
+      "files": [
+        "src/constants/documentStatus.js"
+      ]
+    },
+    {
+      "name": "utils",
+      "files": [
+        "src/utils/aiCitations.js",
+        "src/utils/docTypeConfigHelpers.js",
+        "src/utils/importPdfText.js",
+        "src/utils/documentTreeCompanyScope.js",
+        "src/utils/documentRegistryFile.js"
+      ]
+    },
+    {
+      "name": "services-core",
+      "files": [
+        "src/services/auditMaintenance.service.js",
+        "src/services/auditListRbac.service.js",
+        "src/services/companyAccess.service.js",
+        "src/services/auditLock.service.js",
+        "src/services/auditNumberAllocation.service.js",
+        "src/services/customChecklist.service.js",
+        "src/services/reportTemplate.service.js",
+        "src/services/billing.service.js",
+        "src/services/unifiedSearch.service.js",
+        "src/services/docCodeGenerator.service.js",
+        "src/services/documentHistoryTracker.service.js"
+      ]
+    },
+    {
+      "name": "services-nc",
+      "files": [
+        "src/services/ncDescriptionActions.service.js",
+        "src/services/ncResponsibleOptions.service.js"
+      ]
+    },
+    {
+      "name": "services-norms-documents",
+      "files": [
+        "src/services/documentRegistryNorm.service.js",
+        "src/services/normCodesImport.service.js",
+        "src/services/documentTreeProvisioner.service.js",
+        "src/services/normChunker.service.js",
+        "src/services/normCatalogLookup.service.js",
+        "src/services/normValidityChecker.service.js",
+        "src/services/importAiExtraction.service.js",
+        "src/services/aiProviderAdapter.js",
+        "src/services/aiContextBuilder.service.js",
+        "src/services/aiOrganizationContext.service.js",
+        "src/services/knowledgeIndexer.service.js",
+        "src/services/alertMail.service.js",
+        "src/services/alertScheduler.js"
+      ]
+    },
+    {
+      "name": "services-norm-connectors",
+      "files": [
+        "src/services/normConnectors/publicLawHttp.js",
+        "src/services/normConnectors/normativaConnector.js",
+        "src/services/normConnectors/eurLexConnector.js"
+      ]
+    },
+    {
+      "name": "controllers",
+      "files": [
+        "src/controllers/audit.controller.js",
+        "src/controllers/sync.controller.js",
+        "src/controllers/nc.controller.js",
+        "src/controllers/attachment.controller.js",
+        "src/controllers/document.controller.js",
+        "src/controllers/documentTree.controller.js",
+        "src/controllers/normUpload.controller.js",
+        "src/controllers/importJobs.controller.js",
+        "src/controllers/customChecklist.controller.js",
+        "src/controllers/admin.controller.js",
+        "src/controllers/auditorOrg.controller.js",
+        "src/controllers/companyPersonnel.controller.js",
+        "src/controllers/company.controller.js",
+        "src/controllers/qualifications.controller.js",
+        "src/controllers/risks.controller.js",
+        "src/controllers/organization.controller.js",
+        "src/controllers/auth.controller.js",
+        "src/controllers/billing.controller.js",
+        "src/controllers/aiChat.controller.js",
+        "src/controllers/search.controller.js",
+        "src/controllers/webdav.controller.js"
+      ]
+    },
+    {
+      "name": "routes",
+      "files": [
+        "src/routes/audit.routes.js",
+        "src/routes/customChecklist.routes.js",
+        "src/routes/admin.routes.js",
+        "src/routes/organization.routes.js",
+        "src/routes/nc.routes.js",
+        "src/routes/search.routes.js",
+        "src/routes/company.routes.js",
+        "src/routes/importJobs.routes.js",
+        "src/routes/webdav.routes.js",
+        "src/routes/document.routes.js",
+        "src/routes/documentTree.routes.js",
+        "src/routes/normUpload.routes.js"
+      ]
+    },
+    {
+      "name": "middleware-entry",
+      "files": [
+        "src/middleware/auth.middleware.js",
+        "src/server.js"
+      ]
+    }
+  ]
+}
