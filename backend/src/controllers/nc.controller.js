@@ -8,7 +8,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const { studioScopeClause, appendScopeSql, isOrgWideAdmin } = require('../services/auditListRbac.service');
 const {
     assertMutatingAllowed,
     sendAccessDenied,
@@ -297,13 +297,27 @@ async function listNcResponsibleOptionsHandler(req, res) {
             const denied = await assertCompanyAccess(req.user, companyId, 'read');
             if (denied) return sendAccessDenied(res, denied);
         } else {
-            const scopeClause = studioScopeClause(req.user, 'c');
-            const scopeSql = scopeClause.clause ? ` AND ${scopeClause.clause}` : '';
-            const check = await query(`
-                SELECT c.id FROM companies c
-                INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
-                WHERE c.id = @company_id AND ao.organization_id = @organization_id${scopeSql}
-            `, { company_id: companyId, organization_id, ...scopeClause.params });
+            const { auditor_org_id } = req.user;
+            let check;
+            if (isOrgWideAdmin(req.user)) {
+                check = await query(`
+                    SELECT c.id FROM companies c
+                    INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+                    WHERE c.id = @company_id AND ao.organization_id = @organization_id
+                `, { company_id: companyId, organization_id });
+            } else if (auditor_org_id) {
+                check = await query(`
+                    SELECT c.id FROM companies c
+                    INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+                    WHERE c.id = @company_id AND ao.organization_id = @organization_id
+                      AND c.auditor_org_id = @auditor_org_id
+                `, { company_id: companyId, organization_id, auditor_org_id });
+            } else {
+                return res.status(403).json({
+                    error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
+                    code: 'AUDITOR_ORG_REQUIRED',
+                });
+            }
             if (check.recordset.length === 0) {
                 return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
             }
