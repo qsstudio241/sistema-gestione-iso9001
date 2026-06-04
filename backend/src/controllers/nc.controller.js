@@ -12,7 +12,12 @@ const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac
 const {
     assertMutatingAllowed,
     sendAccessDenied,
+    assertCompanyAccess,
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
 } = require('../services/companyAccess.service');
+const { listNcResponsibleOptions, VALID_SCOPES } = require('../services/ncResponsibleOptions.service');
+const { materializeNcActionsFromDescription } = require('../services/ncDescriptionActions.service');
 
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
@@ -195,6 +200,7 @@ async function listNonConformities(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
+        a.company_id,
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
@@ -262,6 +268,59 @@ async function listNonConformities(req, res) {
 }
 
 /**
+ * GET /api/v1/non-conformities/responsible-options
+ * Personale azienda + rubrica per select responsabili NC (slice S8)
+ *
+ * Query: company_id (required), scope=attuazione|verifica
+ */
+async function listNcResponsibleOptionsHandler(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const companyId = parseInt(req.query.company_id, 10);
+        const scope = String(req.query.scope || '').trim().toLowerCase();
+
+        if (!Number.isFinite(companyId)) {
+            return res.status(400).json({
+                error: 'company_id obbligatorio',
+                code: 'MISSING_COMPANY_ID',
+            });
+        }
+        if (!VALID_SCOPES.has(scope)) {
+            return res.status(400).json({
+                error: 'scope non valido (attuazione|verifica)',
+                code: 'INVALID_SCOPE',
+            });
+        }
+
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            const denied = await assertCompanyAccess(req.user, companyId, 'read');
+            if (denied) return sendAccessDenied(res, denied);
+        } else {
+            const scopeClause = studioScopeClause(req.user, 'c');
+            const scopeSql = scopeClause.clause ? ` AND ${scopeClause.clause}` : '';
+            const check = await query(`
+                SELECT c.id FROM companies c
+                INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+                WHERE c.id = @company_id AND ao.organization_id = @organization_id${scopeSql}
+            `, { company_id: companyId, organization_id, ...scopeClause.params });
+            if (check.recordset.length === 0) {
+                return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+            }
+        }
+
+        const data = await listNcResponsibleOptions(organization_id, companyId, scope);
+        res.json({ success: true, data });
+    } catch (error) {
+        logger.error('Error listing NC responsible options', { error: error.message, stack: error.stack });
+        res.status(500).json({
+            error: 'Errore recupero responsabili NC',
+            code: 'NC_RESPONSIBLE_OPTIONS_ERROR',
+        });
+    }
+}
+
+/**
  * GET /api/v1/non-conformities/:id
  * Dettagli singola NC
  */
@@ -279,6 +338,7 @@ async function getNonConformityById(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
+        a.company_id,
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
@@ -941,7 +1001,8 @@ async function listNcActions(req, res) {
 
         // Verifica ownership NC + scope studio
         const ncCheck = await query(`
-            SELECT nc.nc_id FROM non_conformities nc
+            SELECT nc.nc_id, nc.description, nc.source_type
+            FROM non_conformities nc
             INNER JOIN audits a ON nc.audit_id = a.audit_id
             WHERE nc.nc_id = @id AND a.organization_id = @organization_id
               ${scopeSql}
@@ -949,6 +1010,23 @@ async function listNcActions(req, res) {
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
+        }
+
+        const ncRow = ncCheck.recordset[0];
+        const auditSourceTypes = new Set(['audit_nc', 'audit_oss']);
+        if (auditSourceTypes.has(ncRow.source_type)) {
+            const materialized = await materializeNcActionsFromDescription(query, {
+                ncId: parseInt(id, 10),
+                description: ncRow.description,
+                createdBy: req.user.user_id,
+            });
+            if (materialized > 0) {
+                logger.info('NC actions materialized from description', {
+                    nc_id: id,
+                    organization_id,
+                    count: materialized,
+                });
+            }
         }
 
         const result = await query(`
@@ -1367,6 +1445,12 @@ async function pushAuditToNcRegister(req, res) {
                 });
             }
 
+            await materializeNcActionsFromDescription(query, {
+                ncId: inserted.nc_id,
+                description,
+                createdBy: user_id,
+            });
+
             created.push({
                 nc_id: inserted.nc_id,
                 nc_number,
@@ -1672,6 +1756,7 @@ async function listAggregateDueNcActions(req, res) {
 
 module.exports = {
     listNonConformities,
+    listNcResponsibleOptionsHandler,
     getNonConformityById,
     createNonConformity,
     updateNonConformity,

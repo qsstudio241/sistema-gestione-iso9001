@@ -22,6 +22,11 @@ import {
   getNcClosureButton,
   getNcReopenButton,
 } from "../utils/ncWorkflow";
+import {
+  loadNcResponsibleContacts,
+  NC_SCOPE_ATTUAZIONE,
+  NC_SCOPE_VERIFICA,
+} from "../utils/ncResponsibleContacts";
 import "../components/ChecklistModule.css";
 
 const SEVERITY_OPTIONS = [
@@ -116,16 +121,31 @@ export default function NcDetailPanel({
   const [error, setError] = useState(null);
   const [descError, setDescError] = useState(null);
   const [verifExpanded, setVerifExpanded] = useState(!earlyPhase);
-  const [contacts, setContacts] = useState([]);
+  const [contactsAttuazione, setContactsAttuazione] = useState([]);
+  const [contactsVerifica, setContactsVerifica] = useState([]);
 
   useEffect(() => {
-    if (typeof apiService.getNotificationContacts !== "function") return undefined;
+    const companyId = nc?.company_id ?? null;
     let cancelled = false;
-    apiService.getNotificationContacts({ active: "true" })
-      .then((res) => { if (!cancelled) setContacts(res?.data || []); })
-      .catch(() => { if (!cancelled) setContacts([]); });
+
+    Promise.all([
+      loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_ATTUAZIONE }),
+      loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_VERIFICA }),
+    ])
+      .then(([attuazione, verifica]) => {
+        if (cancelled) return;
+        setContactsAttuazione(attuazione);
+        setContactsVerifica(verifica);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setContactsAttuazione([]);
+          setContactsVerifica([]);
+        }
+      });
+
     return () => { cancelled = true; };
-  }, [organizationId]);
+  }, [nc?.company_id, organizationId]);
 
   useEffect(() => {
     setForm(initForm(nc, organizationId));
@@ -274,7 +294,7 @@ export default function NcDetailPanel({
           </div>
         </div>
         <NcResponsibleSelect
-          contacts={contacts}
+          contacts={contactsAttuazione}
           roleFilter={["attuazione", "generico"]}
           contactId={form.responsible_contact_id}
           legacyText={
@@ -346,7 +366,7 @@ export default function NcDetailPanel({
         <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
           {"4. Azioni correttive"}
         </h3>
-        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} embedded />
+        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} companyId={nc.company_id} embedded />
       </section>
 
       {/* 5. Evidenze */}
@@ -404,7 +424,7 @@ export default function NcDetailPanel({
             />
           </div>
           <NcResponsibleSelect
-            contacts={contacts}
+            contacts={contactsVerifica}
             roleFilter={["verifica", "generico"]}
             contactId={form.verification_contact_id}
             textValue={form.verification_responsible}
