@@ -179,7 +179,7 @@ describe('NormUploadButton  flusso upload norme', () => {
     expect(screen.queryByText(/1 PDF selezionat/)).toBeNull();
   });
 
-  it('il pulsante Chiudi dopo i risultati resetta tutto', async () => {
+  it('il pulsante Chiudi dopo i risultati resetta tutto e aggiorna la cartella', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [{ success: true, documentId: 77, norm_title: 'Norma Test' }],
     });
@@ -200,12 +200,14 @@ describe('NormUploadButton  flusso upload norme', () => {
     await waitFor(() => {
       expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
     });
+    expect(onUploadComplete).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       fireEvent.click(screen.getByText('Chiudi'));
     });
 
     expect(screen.queryByText(/Risultati Upload/)).toBeNull();
+    expect(onUploadComplete).toHaveBeenCalledTimes(2);
   });
 
   it('l\'input accetta solo PDF (attributo accept)', () => {

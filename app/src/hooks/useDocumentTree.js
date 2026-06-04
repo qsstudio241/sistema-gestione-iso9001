@@ -71,7 +71,7 @@ export default function useDocumentTree(companyId = null) {
     }
   }, [scopedCompanyId]);
 
-  const loadChildren = useCallback(async (parentId) => {
+  const loadChildren = useCallback(async (parentId, options) => {
     try {
       const res = await apiService.getDocumentTreeChildren(parentId, scopedCompanyId);
       const children = res.data ?? res ?? [];

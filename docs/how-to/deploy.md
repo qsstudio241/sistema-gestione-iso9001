@@ -31,11 +31,26 @@
 
 ## Verifica rapida post-deploy
 
+```powershell
+# Dalla root del repo (Windows)
+.\backend\scripts\deploy-controllers-to-vps.ps1
+
+# Smoke health (da backend/)
+cd backend
+npm run smoke:deploy
+```
+
+Oppure curl manuale:
+
 ```bash
 curl -sk https://www.fr-busato.it:8443/api/v1/health
 ```
 
 Risposta attesa: JSON con stato OK. Se 502/404 → [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md).
+
+**Manifest deploy:** lo script PowerShell e `deploy-to-vps.sh` usano lo stesso elenco file in `backend/scripts/deploy-manifest.json` (services → utils → controller → routes → server.js). Preflight blocca il deploy se manca un file locale.
+
+**Release con norme / NC / documenti:** non serve copia manuale — il manifest include `normUpload`, `importJobs`, `documentTree`, `documentRegistryNorm`, `normCodesImport`, `ncResponsibleOptions`, ecc.
 
 **Restart backend (VPS):** preferire `sudo systemctl restart sgq-backend.service` e verificare che **MainPID** cambi (vedi checklist release).
 

@@ -1189,6 +1189,13 @@ function DocumentRegistry() {
     finally { setTreeListLoading(false); }
   }, [tree, registryCompanyScope]);
 
+  /** Dopo upload/import norme: aggiorna cache albero + lista documenti cartella. */
+  const handleNormFolderRefresh = useCallback(async (folderId) => {
+    if (folderId == null) return;
+    await tree.loadChildren(folderId, { forceRefresh: true });
+    await handleTreeNodeSelect(folderId);
+  }, [tree, handleTreeNodeSelect]);
+
   // Quando si seleziona una clausola nell'albero per-standard
   const handleClauseSelect = useCallback(async (clauseCode) => {
     if (!activeStandardReg) return;
@@ -1693,11 +1700,11 @@ function DocumentRegistry() {
                       <div className="norm-folder-actions">
                         <NormCodesImportButton
                           folderId={normsFolderId}
-                          onImportComplete={() => handleTreeNodeSelect(normsFolderId)}
+                          onImportComplete={() => handleNormFolderRefresh(normsFolderId)}
                         />
                         <NormUploadButton
                           folderId={normsFolderId}
-                          onUploadComplete={() => handleTreeNodeSelect(normsFolderId)}
+                          onUploadComplete={() => handleNormFolderRefresh(normsFolderId)}
                         />
                       </div>
                     ) : null;
