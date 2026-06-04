@@ -160,6 +160,7 @@ Copy-FileToVps "src/middleware/auth.middleware.js" "$RemoteBase/src/middleware/a
 Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"
 Copy-FileToVps "src/services/auditListRbac.service.js" "$RemoteBase/src/services/auditListRbac.service.js"
 Copy-FileToVps "src/services/companyAccess.service.js" "$RemoteBase/src/services/companyAccess.service.js"
+Copy-FileToVps "src/services/ncDescriptionActions.service.js" "$RemoteBase/src/services/ncDescriptionActions.service.js"
 Copy-FileToVps "src/services/billing.service.js" "$RemoteBase/src/services/billing.service.js"
 Copy-FileToVps "src/services/auditLock.service.js" "$RemoteBase/src/services/auditLock.service.js"
 Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/services/auditNumberAllocation.service.js"
