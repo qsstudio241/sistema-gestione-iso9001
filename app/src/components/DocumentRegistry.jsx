@@ -1688,15 +1688,16 @@ function DocumentRegistry() {
                         : tree.breadcrumb[tree.breadcrumb.length - 1];
                     const isNormsFolder = currentFolder?.folder_code === '2.3'
                       || (currentFolder?.title || '').toUpperCase().includes('NORME');
+                    const normsFolderId = currentFolder?.id ?? tree.selectedNodeId;
                     return isNormsFolder ? (
                       <div className="norm-folder-actions">
                         <NormCodesImportButton
-                          folderId={tree.selectedNodeId}
-                          onImportComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                          folderId={normsFolderId}
+                          onImportComplete={() => handleTreeNodeSelect(normsFolderId)}
                         />
                         <NormUploadButton
-                          folderId={tree.selectedNodeId}
-                          onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                          folderId={normsFolderId}
+                          onUploadComplete={() => handleTreeNodeSelect(normsFolderId)}
                         />
                       </div>
                     ) : null;

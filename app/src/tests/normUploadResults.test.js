@@ -35,9 +35,10 @@ describe('normUploadResults', () => {
     expect(row.norm_title).toBe('Già piatto');
   });
 
-  it('countNormUploadSuccesses ignora errori', () => {
+  it('countNormUploadSuccesses richiede documentId e ignora errori', () => {
     const n = countNormUploadSuccesses([
-      { success: true, norm_title: 'OK' },
+      { success: true, documentId: 99, norm_title: 'OK' },
+      { success: true, norm_title: 'Solo AI, non in archivio' },
       { error: 'fail', fileName: 'x.pdf' },
     ]);
     expect(n).toBe(1);

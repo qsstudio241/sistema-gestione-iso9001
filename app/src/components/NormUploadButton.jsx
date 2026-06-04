@@ -48,7 +48,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     setResults(null);
 
     try {
-      const res = await apiService.uploadNorms(selectedFiles);
+      const res = await apiService.uploadNorms(selectedFiles, folderId);
       const normalized = normalizeNormUploadResults(res.results || res.data || []);
       setResults(normalized);
       if (onUploadComplete && countNormUploadSuccesses(normalized) > 0) {
@@ -144,14 +144,16 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                 <span className="norm-upload__panel-title">Risultati Upload</span>
               </div>
               <ul className="norm-upload__results">
-                {results.map((r, i) => (
-                  <li key={i} className={`norm-upload__result-item ${r.error ? "norm-upload__result-item--error" : "norm-upload__result-item--success"}`}>
-                    {r.error ? (
+                {results.map((r, i) => {
+                  const archived = r.success && r.documentId && !r.error;
+                  return (
+                  <li key={i} className={`norm-upload__result-item ${archived ? "norm-upload__result-item--success" : "norm-upload__result-item--error"}`}>
+                    {!archived ? (
                       <div className="norm-upload__result-error">
                         <span className="norm-upload__result-icon">{"\u274C"}</span>
                         <div>
                           <strong>{r.fileName || `File ${i + 1}`}</strong>
-                          <p>{r.error}</p>
+                          <p>{r.error || "Non salvato in archivio (verifica cartella NORME E LEGGI / struttura documentale)."}</p>
                         </div>
                       </div>
                     ) : (
@@ -172,12 +174,14 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                                 {QUALITY_LABELS[r.text_quality]?.label || r.text_quality}
                               </span>
                             )}
+                            {r.documentId && <span>ID archivio: {r.documentId}</span>}
                           </div>
                         </div>
                       </div>
                     )}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               <div className="norm-upload__actions">
                 <button

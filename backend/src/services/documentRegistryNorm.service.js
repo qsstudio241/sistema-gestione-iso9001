@@ -1,7 +1,7 @@
 /**
  * documentRegistryNorm.service.js
  * Schema canonico type_specific_data per doc_type=norma nel registro documentale.
- * Contratto unico tra form manuale, upload bulk e job validitù (R1/R3/R6).
+ * Contratto unico tra form manuale, upload bulk e job validit? (R1/R3/R6).
  *
  * Allineato a documentTypeSchemas.norma (frontend + backend).
  */
@@ -31,10 +31,24 @@ const NORM_TSD_CANONICAL_KEYS = [
  * @param {string|null|undefined} raw
  * @returns {string}
  */
+/**
+ * Estrae codice norma plausibile dal nome file (es. ISO_9606_1_2017.pdf).
+ * @param {string} filename
+ * @returns {string}
+ */
+function guessStandardCodeFromFilename(filename) {
+  const base = String(filename || '').replace(/\.pdf$/i, '').trim();
+  if (!base) return '';
+  const forHint = base.replace(/_/g, ' ');
+  const normHint = /\b(ISO|IEC|EN|UNI|BS|DIN|AWS|ASME|CEN|AFNOR|ANSI)\b|D\.?\s*Lgs|decreto/i;
+  if (!normHint.test(forHint)) return '';
+  return forHint.replace(/\s+/g, ' ').trim();
+}
+
 function normalizeValidityStatus(raw) {
   const value = raw ? String(raw).trim() : '';
   if (VALID_VALIDITY_STATUSES.includes(value)) return value;
-  // "rilasciato" ù status documento, non vigore norma
+  // "rilasciato" ? status documento, non vigore norma
   if (value === 'rilasciato') return 'vigente';
   return 'vigente';
 }
@@ -155,6 +169,7 @@ function mergeMissingNormTypeSpecificData(existingRaw, sourceRaw = {}) {
 module.exports = {
   NORM_TSD_CANONICAL_KEYS,
   VALID_VALIDITY_STATUSES,
+  guessStandardCodeFromFilename,
   normalizeValidityStatus,
   buildNormTypeSpecificData,
   serializeNormTypeSpecificData,

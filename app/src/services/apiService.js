@@ -1518,6 +1518,46 @@ class ApiService {
         return this.patch(`/admin/organizations/${organizationId}/licenses`, body);
     }
 
+    // ─── Fatturazione (solo superadmin) ──────────────────────────────────────
+    async getBillingOverview() {
+        return this.get('/admin/billing/overview');
+    }
+
+    async getBillingCompanies(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/admin/billing/companies${qs ? '?' + qs : ''}`);
+    }
+
+    async getBillingEvents(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/admin/billing/events${qs ? '?' + qs : ''}`);
+    }
+
+    async downloadBillingExport(period) {
+        const token = this.getToken();
+        const qs = period ? `?period=${encodeURIComponent(period)}` : '';
+        const response = await fetch(`${this.baseUrl}/admin/billing/export${qs}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) {
+            let errMsg = 'Export fatturazione non riuscito';
+            try {
+                const j = await response.json();
+                errMsg = j.error || errMsg;
+            } catch (_) { /* ignore */ }
+            throw new Error(errMsg);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `billing-${period || 'export'}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
     // ─── Import job PDF batch (Sprint 9) ─────────────────────────────────────
     async getImportJobs() {
         return this.get('/import-jobs');
@@ -1791,10 +1831,17 @@ class ApiService {
 
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
-    async uploadNorms(files) {
+    /**
+     * @param {File[]} files
+     * @param {number|string|null} folderId — cartella NORME E LEGGI (parent_folder_id)
+     */
+    async uploadNorms(files, folderId = null) {
         const formData = new FormData();
         for (const file of files) {
             formData.append('files', file);
+        }
+        if (folderId != null && folderId !== '') {
+            formData.append('parent_folder_id', String(folderId));
         }
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
