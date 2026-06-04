@@ -1,5 +1,5 @@
 {
-  "description": "Manifest unico per deploy backend VPS ó ordine dependency-aware (services/utils prima di controller/routes)",
+  "description": "Manifest unico per deploy backend VPS ù ordine dependency-aware (services/utils prima di controller/routes)",
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors"
@@ -41,7 +41,8 @@
       "name": "services-nc",
       "files": [
         "src/services/ncDescriptionActions.service.js",
-        "src/services/ncResponsibleOptions.service.js"
+        "src/services/ncResponsibleOptions.service.js",
+        "src/services/personnelNotificationBridge.service.js"
       ]
     },
     {
