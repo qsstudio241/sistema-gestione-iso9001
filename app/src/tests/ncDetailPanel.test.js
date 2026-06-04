@@ -14,6 +14,10 @@ vi.mock('../utils/ncResponsibleContacts', () => ({
   NC_SCOPE_VERIFICA: 'verifica',
 }));
 
+vi.mock('../components/NcActionsList', () => ({
+  default: () => null,
+}));
+
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),
