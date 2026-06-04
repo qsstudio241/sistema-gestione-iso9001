@@ -285,5 +285,6 @@ module.exports = {
   parseEditionYearFromCode,
   catalogStatusToValidity,
   findExistingNormByCode,
+  resolveNormFolderId,
   importNormCodes,
 };

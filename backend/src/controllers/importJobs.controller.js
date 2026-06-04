@@ -11,7 +11,10 @@ const { extractStructuredByDocType } = require('../services/importAiExtraction.s
 const {
     buildNormTypeSpecificData,
     serializeNormTypeSpecificData,
+    guessStandardCodeFromFilename,
 } = require('../services/documentRegistryNorm.service');
+const { resolveNormFolderId } = require('../services/normCodesImport.service');
+const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
 
 async function listJobs(req, res) {
     try {
@@ -375,7 +378,7 @@ async function commitToRegistry(req, res) {
         // Verifica file e stato
         const f = await query(
             `SELECT id, status, original_name, storage_path, mime_type, file_size,
-                    ai_extraction_json, registry_document_id
+                    ai_extraction_json, registry_document_id, extracted_text, confidence_score
              FROM import_job_files WHERE id = @file_id AND job_id = @job_id`,
             { file_id: fileId, job_id: jobId }
         );
@@ -449,6 +452,10 @@ async function commitToRegistry(req, res) {
                 superseded_by: bodyTsd.superseded_by ?? aiTypeSpecific.superseded_by,
                 scope_summary: bodyTsd.scope_summary ?? aiTypeSpecific.scope_summary ?? aiData.summary,
             };
+            if (!normRaw.standard_code && file.original_name) {
+                const fromName = guessStandardCodeFromFilename(file.original_name);
+                if (fromName) normRaw.standard_code = fromName;
+            }
 
             const built = buildNormTypeSpecificData(normRaw);
             if (!built) {
@@ -487,22 +494,37 @@ async function commitToRegistry(req, res) {
             }
         }
 
+        let parentId = null;
+        if (isNorma) {
+            const requestedFolderId = body.parent_folder_id
+                ? parseInt(body.parent_folder_id, 10)
+                : null;
+            parentId = await resolveNormFolderId(organization_id, requestedFolderId);
+            if (!parentId) {
+                return res.status(404).json({
+                    error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. Inizializza la struttura documentale.',
+                    code: 'NORM_FOLDER_NOT_FOUND',
+                });
+            }
+        }
+
         // Crea record document_registry
         const ins = await query(
             `INSERT INTO document_registry
-             (organization_id, company_id, standard_id, clause_ref, doc_type, doc_code,
+             (organization_id, company_id, parent_id, standard_id, clause_ref, doc_type, doc_code,
               title, revision, status, issue_date, expiry_date, responsible,
               import_status, extraction_confidence, notes, type_specific_data,
               created_by, created_at, updated_at)
              OUTPUT INSERTED.id
              VALUES
-             (@organization_id, @company_id, @standard_id, @clause_ref, @doc_type, @doc_code,
+             (@organization_id, @company_id, @parent_id, @standard_id, @clause_ref, @doc_type, @doc_code,
               @title, @revision, 'in_approvazione', @issue_date, @expiry_date, @responsible,
               'ai_draft', @confidence, @notes, @type_specific_data,
               @created_by, GETDATE(), GETDATE())`,
             {
                 organization_id,
                 company_id,
+                parent_id: parentId,
                 standard_id,
                 clause_ref,
                 doc_type,
@@ -519,6 +541,14 @@ async function commitToRegistry(req, res) {
             }
         );
         const registryId = ins.recordset[0].id;
+
+        if (isNorma && parentId) {
+            const pathCache = await calculatePathCache(registryId, organization_id);
+            await query(
+                `UPDATE document_registry SET path_cache = @path_cache WHERE id = @id`,
+                { path_cache: pathCache, id: registryId }
+            );
+        }
 
         // Collega il PDF originale come prima versione file del documento
         if (file.storage_path && fs.existsSync(file.storage_path)) {
@@ -548,6 +578,43 @@ async function commitToRegistry(req, res) {
                 logger.info(`commitToRegistry: PDF ${file.original_name} allegato come v1 al documento #${registryId}`);
             } catch (attErr) {
                 logger.warn(`commitToRegistry: impossibile allegare PDF al documento #${registryId}`, { error: attErr.message });
+            }
+        }
+
+        if (isNorma && type_specific_data) {
+            try {
+                const tsd = typeof type_specific_data === 'string'
+                    ? JSON.parse(type_specific_data)
+                    : type_specific_data;
+                const textQuality = file.extracted_text && file.extracted_text.length >= 5000
+                    ? 'good'
+                    : (file.extracted_text && file.extracted_text.length >= 500 ? 'partial' : 'ocr_poor');
+                await query(
+                    `INSERT INTO norm_document_sources (
+                       document_id, organization_id, standard_code, norm_title,
+                       edition_year, issuing_body, extracted_text, text_quality,
+                       validity_status, created_at, updated_at
+                     )
+                     VALUES (
+                       @docId, @orgId, @stdCode, @normTitle,
+                       @editionYear, @issuingBody, @extractedText, @textQuality,
+                       'vigente', GETDATE(), GETDATE()
+                     )`,
+                    {
+                        docId: registryId,
+                        orgId: organization_id,
+                        stdCode: tsd.standard_code || null,
+                        normTitle: tsd.norm_title || null,
+                        editionYear: tsd.edition_year || null,
+                        issuingBody: tsd.issuing_body || null,
+                        extractedText: file.extracted_text || null,
+                        textQuality,
+                    }
+                );
+            } catch (normSrcErr) {
+                logger.warn(`commitToRegistry: norm_document_sources non creato per #${registryId}`, {
+                    error: normSrcErr.message,
+                });
             }
         }
 
