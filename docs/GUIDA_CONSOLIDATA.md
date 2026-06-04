@@ -229,6 +229,16 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 ---
 
+### Sessione 03/06/2026 — Visualizzazione Excel in-app (SpreadsheetViewer)
+
+| PR | Contenuto |
+|---|---|
+| [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93) | `DocFileDialog`: `.xlsx` → `SpreadsheetViewer` (SheetJS) al posto di Office Online; download via `getDocFileBlob` |
+
+**Lezione**: Office Online (`view.officeapps.live.com`) non funziona con API su `:8443` e senza token pubblico — stesso pattern già risolto per Word con `DocumentDocxViewer`.
+
+**Smoke SAVECO scadenzario** (doc `1698`, org QS `1002`, file ~71 KB): 4 fogli (`TO_DO`, `SCADENZARIO`, `IMPIANTI TERMICI`, `PRESIDI ANTINCENDIO`) parsati con SheetJS su copia file da VPS. Verifica UI post-merge: login org Camellini → Registro documenti → SAVECO → Scadenzario → **Visualizza**.
+
 ### Sessione 25/05/2026 — Registro norme SoT R1–R7 (completato) e chiusura PR
 
 #### Attività completate
@@ -409,7 +419,7 @@ Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
 - Routing pulsante "Visualizza":
   - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
   - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
-  - `.xlsx` → fallback Office Online Viewer (Microsoft)
+  - `.xlsx` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
 
 #### DocumentDetailPanel (slide-in dettaglio documento)
 Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"
@@ -461,9 +471,7 @@ quando il pannello si apre.
    nell'endpoint `release-revision` che apre il `.docx` con `docxtemplater` (già nel
    progetto), sostituisce `{{data_rilascio}}`, `{{numero_revisione}}`, `{{revisione_label}}`,
    salva la nuova versione. Da implementare.
-2. **Excel viewer**: attualmente "Visualizza" su `.xlsx` cade su Office Online Viewer
-   (inaffidabile con porta 8443). Da valutare libreria browser-side equivalente a
-   docx-preview per Excel (es. `xlsx-preview` o `sheetjs` + custom renderer).
+2. ~~**Excel viewer**~~ → risolto PR #93 (`SpreadsheetViewer` + `getDocFileBlob`).
 3. **Test L1** della suite frontend non eseguiti dopo le modifiche di oggi (Vitest).
    Da lanciare prima di considerare definitivamente chiuso il modulo Word round-trip.
 4. **Pulsante "Visualizza" su .doc legacy**: docx-preview probabilmente non supporta
@@ -1895,6 +1903,22 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
 - **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
 
+**Esperienza 03/06/2026 — Albero documentale per-azienda (Camellini / org 1002)**
+
+| Step | Cosa | File / comando |
+|------|------|----------------|
+| A | API albero con `?company_id=X`: filtro **stretto** (`dr.company_id = X`, niente `OR IS NULL`); `children_count` allineato | `documentTree.controller.js`, `documentTreeCompanyScope.js` |
+| B | Migrazione dati org QS: provision per ogni azienda, rimappa `parent_id` per `folder_code`, archivia albero condiviso (`company_id NULL` → `obsoleto`) | `backend/scripts/migrate-per-company-document-trees-vps.js` su VPS |
+| C | Nuove aziende: provisioning sempre su `company_id` (già in `company.controller.js`) | — |
+| Operativo | In Registro documenti → tab **Albero**, impostare **Ambito = nome cliente**; hard refresh PWA dopo deploy | — |
+
+```bash
+# VPS: anteprima poi apply (ORG_ID default 1002)
+scp -P 1122 -i $KEY backend/scripts/migrate-per-company-document-trees-vps.js user@vps:/tmp/
+ssh … "DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js"
+ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
+# Poi deploy documentTree.controller.js + utils e restart sgq-backend
+```
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
