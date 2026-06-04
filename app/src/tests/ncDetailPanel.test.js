@@ -8,6 +8,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 const mockUpdateNcStatus = vi.hoisted(() => vi.fn());
 const mockGetNotificationContacts = vi.hoisted(() => vi.fn().mockResolvedValue({ data: [] }));
 
+vi.mock('../utils/ncResponsibleContacts', () => ({
+  loadNcResponsibleContacts: vi.fn().mockResolvedValue([]),
+  NC_SCOPE_ATTUAZIONE: 'attuazione',
+  NC_SCOPE_VERIFICA: 'verifica',
+}));
+
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),

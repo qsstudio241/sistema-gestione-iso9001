@@ -16,6 +16,10 @@ import {
   filterActionsByDue,
   getActionDueStatus,
 } from "../utils/ncWorkflow";
+import {
+  loadNcResponsibleContacts,
+  NC_SCOPE_ATTUAZIONE,
+} from "../utils/ncResponsibleContacts";
 import "./ChecklistModule.css";
 
 const ACTION_STATUS_CFG = {
@@ -32,9 +36,9 @@ const ACTION_STEP_CFG = {
 };
 
 /**
- * @param {{ ncId: number, ncStatus: string, embedded?: boolean }} props
+ * @param {{ ncId: number, ncStatus: string, companyId?: number|null, embedded?: boolean }} props
  */
-export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
+export default function NcActionsList({ ncId, ncStatus, companyId = null, embedded = false }) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
   const actionDraftScope = `nc:${ncId}:actions`;
@@ -77,11 +81,12 @@ export default function NcActionsList({ ncId, ncStatus, embedded = false }) {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (typeof apiService.getNotificationContacts !== "function") return undefined;
-    apiService.getNotificationContacts({ active: "true", role_type: "attuazione" })
-      .then((res) => setContacts(res?.data || []))
-      .catch(() => setContacts([]));
-  }, [organizationId]);
+    let cancelled = false;
+    loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_ATTUAZIONE })
+      .then((rows) => { if (!cancelled) setContacts(rows); })
+      .catch(() => { if (!cancelled) setContacts([]); });
+    return () => { cancelled = true; };
+  }, [companyId, organizationId]);
 
   async function handleSubmit(e) {
     e.preventDefault();

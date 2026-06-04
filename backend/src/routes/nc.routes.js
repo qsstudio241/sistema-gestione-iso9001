@@ -21,6 +21,9 @@ router.get('/non-conformities/statistics/overview', ncController.getNonConformit
 // GET /api/v1/non-conformities/actions/due - Azioni correttive cross-NC (scadenze)
 router.get('/non-conformities/actions/due', ncController.listAggregateDueNcActions);
 
+// GET /api/v1/non-conformities/responsible-options - Personale + rubrica per select NC
+router.get('/non-conformities/responsible-options', ncController.listNcResponsibleOptionsHandler);
+
 // GET /api/v1/non-conformities/:id - Dettagli singola NC
 router.get('/non-conformities/:id', ncController.getNonConformityById);
 
