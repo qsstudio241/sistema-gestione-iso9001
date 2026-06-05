@@ -1920,6 +1920,12 @@ ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
 # Poi deploy documentTree.controller.js + utils e restart sgq-backend
 ```
 
+**Esperienza 05/06/2026 — DELETE azienda falliva con FK (AAA-NN / Camellini)**
+
+- **Sintomo**: `DELETE /companies/:id` → 500 «Errore eliminazione azienda»; SQL `FK_doc_registry_company` (azienda con albero provisionato + audit + chunk AI).
+- **Fix**: `companyMaintenance.service.js` — ordine cleanup: `audit_events` + `hardDeleteAudit` → `knowledge_chunks` → `document_history` / `attachments` / relazioni → `document_registry` → altre FK (`company_personnel`, billing, …) → `companies`. Controller `deleteCompany` delega al service.
+- **Deploy**: `company.controller.js` + `companyMaintenance.service.js` su VPS + restart `sgq-backend`. Smoke: azienda test `AAA-NN` (id 8) eliminata OK in produzione.
+
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
 - **Template giusto**: checklist custom → `VerbaleVisita-generic.docx`, **non** i template ISO 9001/14001; ramo `isCustomChecklist` + fallback `TEMPLATE_MAP.custom_checklist`.
