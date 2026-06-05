@@ -8,6 +8,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 const billingService = require('../services/billing.service');
+const { hardDeleteCompany } = require('../services/companyMaintenance.service');
 const {
     ensureCompanyAccessLoaded,
     hasCompanyAccessRows,
@@ -421,20 +422,21 @@ async function updateCompany(req, res) {
  */
 async function deleteCompany(req, res) {
     try {
+        const id = parseInt(req.params.id, 10);
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+
+        if (hasCompanyAccessRows(accessList)) {
+            const writeDenied = await assertCompanyWriteAccess(req.user, id);
+            if (writeDenied) return sendAccessDenied(res, writeDenied);
+        }
+
         const auditorOrgId = resolveAuditorOrgId(req);
         if (!auditorOrgId) {
             return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
         }
 
-        const id = parseInt(req.params.id, 10);
-
-        const result = await query(`
-            DELETE FROM companies
-            OUTPUT DELETED.id
-            WHERE id = @id AND auditor_org_id = @auditor_org_id
-        `, { id, auditor_org_id: auditorOrgId });
-
-        if (result.recordset.length === 0) {
+        const ok = await hardDeleteCompany(id, auditorOrgId);
+        if (!ok) {
             return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
         }
 

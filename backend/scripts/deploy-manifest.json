@@ -25,6 +25,7 @@
       "name": "services-core",
       "files": [
         "src/services/auditMaintenance.service.js",
+        "src/services/companyMaintenance.service.js",
         "src/services/auditListRbac.service.js",
         "src/services/companyAccess.service.js",
         "src/services/auditLock.service.js",
