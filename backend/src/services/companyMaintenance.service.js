@@ -38,6 +38,11 @@ async function deleteCompanyDocuments(companyId, organizationId) {
     WHERE source_document_id IN (${inClause}) OR target_document_id IN (${inClause})
   `);
 
+  await tryQuery('attachments', `
+    DELETE FROM attachments
+    WHERE document_id IN (${inClause})
+  `);
+
   await tryQuery('document_file_attachments', `
     DELETE FROM document_file_attachments
     WHERE document_id IN (${inClause})
@@ -59,7 +64,8 @@ async function deleteCompanyDocuments(companyId, organizationId) {
   `);
 
   await query(`
-    UPDATE document_registry SET parent_id = NULL
+    UPDATE document_registry
+    SET parent_id = NULL, attachment_id = NULL
     WHERE company_id = @company_id AND organization_id = @organization_id
   `, { company_id: companyId, organization_id: organizationId });
 
