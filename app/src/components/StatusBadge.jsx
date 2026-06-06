@@ -33,9 +33,10 @@ const STATUS_CONFIGS = {
     closed:      { label: "Chiusa",     color: "purple" },
   },
   norm_quality: {
-    good:    { label: "Buona",      color: "green"  },
-    partial: { label: "Parziale",   color: "yellow" },
-    poor:    { label: "OCR scarso", color: "red"    },
+    good:     { label: "Buona",      color: "green"  },
+    partial:  { label: "Parziale",   color: "yellow" },
+    ocr_poor: { label: "OCR scarso", color: "red"    },
+    poor:     { label: "OCR scarso", color: "red"    },
   },
   project: {
     offerta:     { label: "Offerta",     color: "blue"   },

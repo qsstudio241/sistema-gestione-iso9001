@@ -5,13 +5,8 @@
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import { normalizeNormUploadResults, countNormUploadSuccesses } from "../utils/normUploadResults";
+import StatusBadge from "./StatusBadge";
 import "./NormUploadButton.css";
-
-const QUALITY_LABELS = {
-  good: { label: "Buona", className: "norm-quality--good" },
-  partial: { label: "Parziale", className: "norm-quality--partial" },
-  ocr_poor: { label: "OCR scarso", className: "norm-quality--poor" },
-};
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -172,9 +167,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                             {r.edition_year && <span>Anno: {r.edition_year}</span>}
                             {r.issuing_body && <span>Ente: {r.issuing_body}</span>}
                             {r.text_quality && (
-                              <span className={`norm-quality-badge ${QUALITY_LABELS[r.text_quality]?.className || ""}`}>
-                                {QUALITY_LABELS[r.text_quality]?.label || r.text_quality}
-                              </span>
+                              <StatusBadge type="norm_quality" status={r.text_quality} size="small" />
                             )}
                             {r.documentId && <span>ID archivio: {r.documentId}</span>}
                           </div>
