@@ -32,6 +32,10 @@ const logoFilter = (req, file, cb) => {
 };
 const uploadLogo = multer({ storage: logoStorage, fileFilter: logoFilter, limits: { fileSize: 2 * 1024 * 1024 } });
 
+// Pubblica: il logo aziendale non è un dato sensibile e getLogo non usa req.user.
+// Accessibile senza token (utenti desktop con cookie httpOnly, link diretti, ecc.).
+router.get('/companies/:id/logo', companyController.getLogo);
+
 router.use(authenticate);
 
 // Overview personale studio (slice S6) — prima delle route :id
@@ -43,8 +47,7 @@ router.post('/companies', companyController.createCompany);
 router.put('/companies/:id', companyController.updateCompany);
 router.delete('/companies/:id', companyController.deleteCompany);
 
-// Logo
-router.get('/companies/:id/logo', companyController.getLogo);
+// Logo (upload e delete richiedono autenticazione)
 router.post('/companies/:id/logo', uploadLogo.single('logo'), companyController.uploadLogo);
 router.delete('/companies/:id/logo', companyController.deleteLogo);
 

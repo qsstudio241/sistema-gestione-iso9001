@@ -236,6 +236,12 @@ app.get(`${API_BASE}/health`, healthCheckHandler); // Health check API — esclu
 const responseController = require('./controllers/response.controller');
 app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
 
+// Logo aziendale: pubblico perché getLogo non usa req.user e il logo non è un dato sensibile.
+// DEVE stare qui: i router autenticati (auditRoutes, ecc.) usano router.use(authenticate) globale
+// che intercetterebbe qualsiasi richiesta /api/v1/* senza Bearer token, compresa questa.
+const companyController = require('./controllers/company.controller');
+app.get(`${API_BASE}/companies/:id/logo`, companyController.getLogo);
+
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
 app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
