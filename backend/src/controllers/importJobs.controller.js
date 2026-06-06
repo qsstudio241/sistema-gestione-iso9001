@@ -422,7 +422,7 @@ async function commitToRegistry(req, res) {
             || 'altro'
         ).substring(0, 50);
         const isNorma = doc_type === 'norma';
-        const company_id = body.company_id ? parseInt(body.company_id, 10) : (j.recordset[0].company_id || null);
+        let company_id = body.company_id ? parseInt(body.company_id, 10) : (j.recordset[0].company_id || null);
         const notes = body.notes != null ? String(body.notes).substring(0, 2000) : null;
 
         let title;
@@ -495,17 +495,24 @@ async function commitToRegistry(req, res) {
         }
 
         let parentId = null;
+        let resolvedNormFolderCompanyId = null;
         if (isNorma) {
             const requestedFolderId = body.parent_folder_id
                 ? parseInt(body.parent_folder_id, 10)
                 : null;
-            parentId = await resolveNormFolderId(organization_id, requestedFolderId);
-            if (!parentId) {
+            const normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
+            if (!normFolder) {
                 return res.status(404).json({
                     error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. Inizializza la struttura documentale.',
                     code: 'NORM_FOLDER_NOT_FOUND',
                 });
             }
+            parentId = normFolder.id;
+            resolvedNormFolderCompanyId = normFolder.company_id;
+        }
+
+        if (isNorma && company_id == null && resolvedNormFolderCompanyId != null) {
+            company_id = resolvedNormFolderCompanyId;
         }
 
         // Crea record document_registry
