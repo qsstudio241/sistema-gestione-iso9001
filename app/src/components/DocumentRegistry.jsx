@@ -38,6 +38,7 @@ import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
+import StatusBadge from "./StatusBadge";
 import { documentHasFile } from "../utils/documentRegistryFile";
 import "./DocumentRegistry.css";
 
@@ -1755,9 +1756,7 @@ function DocumentRegistry() {
                                   )}
                                   {shouldShowDocumentStatusBadge(doc) && ` · `}
                                   {shouldShowDocumentStatusBadge(doc) && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
-                                    </span>
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>
@@ -1865,9 +1864,7 @@ function DocumentRegistry() {
                                   {doc.clause_ref && ` · \u00A7${doc.clause_ref}`}
                                   {shouldShowDocumentStatusBadge(doc) && ` · `}
                                   {shouldShowDocumentStatusBadge(doc) && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
-                                    </span>
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>

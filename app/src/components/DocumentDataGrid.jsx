@@ -3,6 +3,7 @@ import { DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { formatDate } from "../utils/dateHelpers";
 import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { documentHasFile, formatDocumentFileLabel } from "../utils/documentRegistryFile";
+import StatusBadge from "./StatusBadge";
 import "./DocumentDataGrid.css";
 
 const COLUMNS = [
@@ -102,9 +103,7 @@ function DocumentCatalogCard({
           {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
         </span>
         {shouldShowDocumentStatusBadge(doc) && (
-          <span className={`status-badge status-${doc.status}`}>
-            {DOC_STATUS_LABELS[doc.status] || doc.status}
-          </span>
+          <StatusBadge type="document" status={doc.status} />
         )}
         {doc.revision && (
           <span className="catalog-doc-card__rev">Rev. {doc.revision}</span>
@@ -391,9 +390,7 @@ function DocumentDataGrid({
                     </td>
                     <td className="datagrid-cell datagrid-cell--status">
                       {shouldShowDocumentStatusBadge(doc) ? (
-                        <span className={`status-badge status-${doc.status}`}>
-                          {DOC_STATUS_LABELS[doc.status] || doc.status}
-                        </span>
+                        <StatusBadge type="document" status={doc.status} />
                       ) : (
                         "-"
                       )}
