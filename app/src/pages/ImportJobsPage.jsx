@@ -15,6 +15,7 @@ import {
   isNormDocType,
   buildInitialNormTypeData,
 } from "../utils/importNormCommit";
+import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
 
@@ -182,7 +183,7 @@ function CommitNormStatusBadge({ normLookup, standardCode }) {
     if (!result?.catalogUrl) return null;
     return (
       <div className="norm-status-row">
-        <span className="norm-status-badge norm-status-unknown">Stato non disponibile</span>
+        <StatusBadge type="norm_catalog" status="unknown" size="small" />
         <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
           Vedi catalogo →
         </a>
@@ -190,22 +191,13 @@ function CommitNormStatusBadge({ normLookup, standardCode }) {
     );
   }
 
-  let badgeClass;
-  let text;
-  if (result.status === "active") {
-    badgeClass = "norm-status-active";
-    text = "In vigore";
-  } else if (result.status === "withdrawn") {
-    badgeClass = "norm-status-withdrawn";
-    text = "Ritirata";
-  } else {
-    badgeClass = "norm-status-superseded";
-    text = result.supersededBy ? `Sostituita da ${result.supersededBy}` : "Sostituita";
-  }
+  const supersededLabel = result.supersededBy
+    ? `Sostituita da ${result.supersededBy}`
+    : undefined;
 
   return (
     <div className="norm-status-row">
-      <span className={`norm-status-badge ${badgeClass}`}>{text}</span>
+      <StatusBadge type="norm_catalog" status={result.status} label={supersededLabel} size="small" />
       {result.catalogUrl && (
         <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
           Vedi catalogo →

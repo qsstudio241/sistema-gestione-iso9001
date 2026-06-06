@@ -57,6 +57,13 @@ const STATUS_CONFIGS = {
     active:   { label: "Attivo",      color: "green" },
     inactive: { label: "Non attivo",  color: "grey"  },
   },
+  norm_catalog: {
+    active:     { label: "In vigore",            color: "green"  },
+    withdrawn:  { label: "Ritirata",             color: "red"    },
+    superseded: { label: "Sostituita",           color: "yellow" },
+    unknown:    { label: "Stato non disponibile", color: "grey"  },
+    loading:    { label: "Verifica in corso\u2026", color: "grey" },
+  },
 };
 
 export default function StatusBadge({
