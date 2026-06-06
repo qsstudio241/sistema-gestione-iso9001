@@ -23,25 +23,7 @@ import CustomChecklistAuditView from "./CustomChecklistAuditView";
 import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
 import AuditClosePanel from "./AuditClosePanel";
-
-/** Mappa status → etichetta italiana e classe CSS */
-const STATUS_LABELS = {
-  draft:       { label: "BOZZA",      cls: "draft"      },
-  in_progress: { label: "IN CORSO",   cls: "in-progress" },
-  suspended:   { label: "SOSPESO",    cls: "suspended"  },
-  completed:   { label: "COMPLETATO", cls: "completed"  },
-  approved:    { label: "APPROVATO",  cls: "approved"   },
-  archived:    { label: "ARCHIVIATO", cls: "archived"   },
-};
-
-function AuditStatusBadge({ status }) {
-  const cfg = STATUS_LABELS[status] || { label: (status || "").toUpperCase(), cls: "draft" };
-  return (
-    <span className={`audit-status-badge badge-status-${cfg.cls}`}>
-      {cfg.label}
-    </span>
-  );
-}
+import StatusBadge from "./StatusBadge";
 
 // Source of Truth degli standard supportati: importata da
 // `app/src/data/standardsRegistry.js` (ADR-009 Fase 1).
@@ -379,7 +361,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </span>
           </div>
           <div className="audit-meta">
-            <AuditStatusBadge status={currentAudit.metadata.status} />
+            <StatusBadge type="audit" status={currentAudit.metadata.status} />
             <span className="audit-date">
               {new Date(currentAudit.metadata.lastModified).toLocaleDateString(
                 "it-IT"
