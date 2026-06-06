@@ -27,6 +27,51 @@ function parseTypeSpecificData(raw) {
   }
 }
 
+/**
+ * Ricava la data di emissione per le norme quando issue_date è null.
+ * Priorità: issue_date → edition_year (anno intero) → anno estratto da standard_code.
+ */
+function resolveIssueDateDisplay(doc, normData) {
+  if (doc.issue_date) return formatDate(doc.issue_date);
+  if (doc.doc_type === "norma") {
+    const yr = normData?.editionYear;
+    if (yr != null) return String(yr);
+    const code = normData?.standardCode || doc.doc_code || "";
+    const years = code.match(/\b(19|20)\d{2}\b/g);
+    if (years && years.length > 0) return years[years.length - 1];
+  }
+  return formatDate(doc.issue_date);
+}
+
+/**
+ * Costruisce un URL statico al catalogo ufficiale dell'ente emittente.
+ *
+ * Campi scrapabili (senza autenticazione, per future integrazioni):
+ *  - normattiva.it  → testo integrale, data GU, data entrata in vigore, eventuali modifiche
+ *  - eur-lex.europa.eu → testo, data pubblicazione GUCE, stato (in vigore/abrogato), sostituita da
+ *  - iso.org        → titolo, edition year, status (Published/Withdrawn/Revised), replaced by
+ *  - store.uni.com  → titolo, codice, anno, stato
+ *  - shop.bsigroup.com → status (Current/Withdrawn/Superseded), superseded by
+ *  - asme.org       → limitato (prevalentemente dietro paywall, solo ricerca per codice)
+ *  - din.de         → titolo, stato, anno (tedesco/inglese)
+ */
+function buildStaticCatalogUrl(issuingBody, standardCode) {
+  const body = (issuingBody || "").toUpperCase();
+  const code = standardCode || "";
+  const enc  = encodeURIComponent(code);
+  const codeUpper = code.toUpperCase();
+
+  if (body === "IT")  return `https://www.normattiva.it/ricerca/semplice?str=${enc}`;
+  if (body === "UE")  return `https://eur-lex.europa.eu/search.html?query=${enc}`;
+  if (body === "BSI") return `https://shop.bsigroup.com/search?q=${enc}&type=standard`;
+  if (body === "UNI") return `https://store.uni.com/catalogo/ricerca?text=${enc}`;
+  if (body === "DIN") return `https://www.din.de/en/search?q=${enc}`;
+  if (body === "EN")  return `https://www.cencenelec.eu/search/?q=${enc}`;
+  if (body === "ASME" || /\bASME\b/.test(codeUpper))
+    return "https://www.asme.org/codes-standards/find-codes-standards";
+  return `https://www.iso.org/search.html?q=${enc}`;
+}
+
 function InfoRow({ label, value }) {
   if (value == null || value === "") return null;
   return (
@@ -131,7 +176,7 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <InfoRow label="Codice" value={doc.doc_code} />
             <InfoRow label="Tipo" value={DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type} />
             <InfoRow label="Revisione" value={doc.revision != null ? `Rev. ${doc.revision}` : null} />
-            <InfoRow label="Data emissione" value={formatDate(doc.issue_date)} />
+            <InfoRow label="Data emissione" value={resolveIssueDateDisplay(doc, normData)} />
             {doc.doc_type !== 'norma' && (
               <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
             )}
@@ -166,6 +211,13 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
               <InfoRow label="Sostituita da" value={lookupResult?.supersededBy || normData.supersededBy} />
               <InfoRow label="Ultima verifica" value={lookupResult?.checkedAt ? formatDate(lookupResult.checkedAt) : (normData.lastCheck ? formatDate(normData.lastCheck) : null)} />
               <InfoLinkRow label="Catalogo" href={lookupResult?.catalogUrl || normData.catalogUrl} text="Vedi su catalogo ente" />
+              {(normData.issuingBody || normData.standardCode) && (
+                <InfoLinkRow
+                  label="Catalogo ufficiale"
+                  href={buildStaticCatalogUrl(normData.issuingBody, normData.standardCode)}
+                  text={"\u2192 Apri nel catalogo ufficiale"}
+                />
+              )}
               {normData.standardCode && (
                 <div className="doc-detail__info-row">
                   <span className="doc-detail__info-label">Controllo online</span>
