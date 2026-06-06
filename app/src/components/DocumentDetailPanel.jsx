@@ -146,6 +146,7 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
       lastCheck: tsd.last_validity_check || doc.norm_last_check || null,
       catalogUrl: tsd.validity_check_url || null,
       supersededBy: tsd.superseded_by || null,
+      scopeSummary: tsd.scope_summary || null,
     };
   }, [doc]);
 
@@ -210,6 +211,16 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
               <InfoRow label="Titolo norma" value={normData.normTitle} />
               <InfoRow label="Ente emittente" value={normData.issuingBody} />
               <InfoRow label="Anno edizione" value={normData.editionYear != null ? String(normData.editionYear) : null} />
+              <div className="doc-detail__scope-summary">
+                <span className="doc-detail__info-label">Descrizione</span>
+                {normData.scopeSummary ? (
+                  <p className="doc-detail__scope-text">{normData.scopeSummary}</p>
+                ) : (
+                  <p className="doc-detail__placeholder doc-detail__scope-placeholder">
+                    Nessuna descrizione disponibile — usa Modifica per aggiungerne una
+                  </p>
+                )}
+              </div>
               {(normData.validityStatus || lookupResult?.status) && (() => {
                 const statusKey = lookupResult?.status || normData.validityStatus;
                 const colors = NORM_VALIDITY_COLORS[statusKey] || {};
