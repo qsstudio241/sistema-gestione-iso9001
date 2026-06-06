@@ -71,10 +71,10 @@ describe('catalogStatusToValidity', () => {
 });
 
 describe('importNormCodes', () => {
-  function mockFolderLookup() {
+  function mockFolderLookup(companyId = 55) {
     query.mockImplementation((sql) => {
       if (sql.includes("folder_code = '2.3'") || sql.includes('doc_type = \'folder\'')) {
-        return Promise.resolve({ recordset: [{ id: FOLDER_ID }] });
+        return Promise.resolve({ recordset: [{ id: FOLDER_ID, company_id: companyId }] });
       }
       if (sql.includes('JSON_VALUE(type_specific_data')) {
         return Promise.resolve({ recordset: [] });
@@ -105,6 +105,7 @@ describe('importNormCodes', () => {
     const insertCall = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
     expect(insertCall).toBeTruthy();
     const params = insertCall[1];
+    expect(params.companyId).toBe(55);
     expect(params.typeSpecificData).toContain('"standard_code":"D.Lgs. 81/2008"');
     expect(params.typeSpecificData).toContain('"validity_status":"vigente"');
     expect(params.typeSpecificData).toContain('"validity_check_url"');
@@ -113,7 +114,7 @@ describe('importNormCodes', () => {
   it('salta duplicati per standard_code nella stessa organizzazione', async () => {
     query.mockImplementation((sql) => {
       if (sql.includes("folder_code = '2.3'")) {
-        return Promise.resolve({ recordset: [{ id: FOLDER_ID }] });
+        return Promise.resolve({ recordset: [{ id: FOLDER_ID, company_id: null }] });
       }
       if (sql.includes('JSON_VALUE(type_specific_data')) {
         return Promise.resolve({ recordset: [{ id: 300, title: 'D.Lgs. 81/2008 esistente' }] });
