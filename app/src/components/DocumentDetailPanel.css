@@ -396,6 +396,26 @@ body.sgq-doc-detail-resizing * {
   user-select: none !important;
 }
 
+/* ---- scope summary ---- */
+
+.doc-detail__scope-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.doc-detail__scope-text {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.doc-detail__scope-placeholder {
+  font-style: italic;
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 768px) {

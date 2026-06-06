@@ -126,7 +126,7 @@ async function uploadNorms(req, res) {
       entry.textQuality = textQuality;
 
       // (b) AI metadata extraction (best effort)
-      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, abstract: null };
+      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, scope_summary: null };
       if (hasAiProvider && extractedText.length > 50) {
         try {
           const ctx = buildExtractNormMetadataContext({ text: extractedText });
