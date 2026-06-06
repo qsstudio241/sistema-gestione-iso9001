@@ -167,7 +167,11 @@ async function uploadNorms(req, res) {
         : null;
 
       // Stesso schema type_specific_data del form manuale (slice R3)
-      const typeSpecificData = serializeNormTypeSpecificData(metadata);
+      // validity_status impostato a 'vigente' di default; il job settimanale lo aggiorna
+      const typeSpecificData = serializeNormTypeSpecificData({
+        ...metadata,
+        validity_status: metadata.validity_status || 'vigente',
+      });
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(

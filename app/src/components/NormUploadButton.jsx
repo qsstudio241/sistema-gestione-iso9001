@@ -62,14 +62,13 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   }, [selectedFiles, onUploadComplete]);
 
   const handleDismiss = useCallback(() => {
-    if (results && onUploadComplete && countNormUploadSuccesses(results) > 0) {
-      onUploadComplete();
-    }
+    // onUploadComplete già chiamato in handleUpload se ci sono successi;
+    // non ripetere per evitare un doppio refresh inutile dell'albero.
     setSelectedFiles([]);
     setResults(null);
     setValidationErr(null);
     if (inputRef.current) inputRef.current.value = "";
-  }, [results, onUploadComplete]);
+  }, []);
 
   const hasResults = results && results.length > 0;
   const showPanel = selectedFiles.length > 0 || hasResults;

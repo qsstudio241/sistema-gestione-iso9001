@@ -54,10 +54,21 @@ function InfoLinkRow({ label, href, text }) {
   );
 }
 
+const NORM_VALIDITY_COLORS = {
+  vigente:     { bg: '#dcfce7', color: '#15803d' },
+  superata:    { bg: '#fef3c7', color: '#b45309' },
+  annullata:   { bg: '#fee2e2', color: '#b91c1c' },
+  in_revisione:{ bg: '#dbeafe', color: '#1d4ed8' },
+};
+
 function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
   // Files allegati: l'endpoint dell'albero non li popola, li carichiamo qui
   const [files, setFiles] = useState(doc?.files || []);
   const [filesLoading, setFilesLoading] = useState(false);
+
+  // Verifica validità norma sul catalogo ente
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState(null);
 
   useEffect(() => {
     if (!doc?.id) { setFiles([]); return; }
@@ -121,7 +132,9 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <InfoRow label="Tipo" value={DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type} />
             <InfoRow label="Revisione" value={doc.revision != null ? `Rev. ${doc.revision}` : null} />
             <InfoRow label="Data emissione" value={formatDate(doc.issue_date)} />
-            <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
+            {doc.doc_type !== 'norma' && (
+              <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
+            )}
             <InfoRow label="Responsabile" value={doc.responsible} />
             <InfoRow label="Azienda" value={doc.company_name} />
             <InfoRow label="Norma" value={doc.standard_reference || doc.standard_code} />
@@ -135,17 +148,47 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
               <InfoRow label="Titolo norma" value={normData.normTitle} />
               <InfoRow label="Ente emittente" value={normData.issuingBody} />
               <InfoRow label="Anno edizione" value={normData.editionYear != null ? String(normData.editionYear) : null} />
-              {normData.validityStatus && (
+              {(normData.validityStatus || lookupResult?.status) && (() => {
+                const statusKey = lookupResult?.status || normData.validityStatus;
+                const colors = NORM_VALIDITY_COLORS[statusKey] || {};
+                return (
+                  <div className="doc-detail__info-row">
+                    <span className="doc-detail__info-label">Vigore</span>
+                    <span
+                      className="doc-detail__validity-badge"
+                      style={{ background: colors.bg, color: colors.color }}
+                    >
+                      {NORM_VALIDITY_LABELS[statusKey] || statusKey}
+                    </span>
+                  </div>
+                );
+              })()}
+              <InfoRow label="Sostituita da" value={lookupResult?.supersededBy || normData.supersededBy} />
+              <InfoRow label="Ultima verifica" value={lookupResult?.checkedAt ? formatDate(lookupResult.checkedAt) : (normData.lastCheck ? formatDate(normData.lastCheck) : null)} />
+              <InfoLinkRow label="Catalogo" href={lookupResult?.catalogUrl || normData.catalogUrl} text="Vedi su catalogo ente" />
+              {normData.standardCode && (
                 <div className="doc-detail__info-row">
-                  <span className="doc-detail__info-label">Vigore</span>
-                  <span className={`doc-detail__validity doc-detail__validity--${normData.validityStatus}`}>
-                    {NORM_VALIDITY_LABELS[normData.validityStatus] || normData.validityStatus}
-                  </span>
+                  <span className="doc-detail__info-label">Controllo online</span>
+                  <button
+                    className="doc-detail__lookup-btn"
+                    disabled={lookupLoading}
+                    onClick={async () => {
+                      setLookupLoading(true);
+                      try {
+                        const r = await apiService.lookupNormStatus(normData.standardCode, normData.issuingBody, doc.id);
+                        setLookupResult(r);
+                      } finally {
+                        setLookupLoading(false);
+                      }
+                    }}
+                  >
+                    {lookupLoading ? 'Verifica…' : 'Verifica validità'}
+                  </button>
+                  {lookupResult && lookupResult.status === 'unknown' && (
+                    <span className="doc-detail__lookup-warn">Catalogo non raggiunto</span>
+                  )}
                 </div>
               )}
-              <InfoRow label="Sostituita da" value={normData.supersededBy} />
-              <InfoRow label="Ultima verifica catalogo" value={normData.lastCheck ? formatDate(normData.lastCheck) : null} />
-              <InfoLinkRow label="Catalogo" href={normData.catalogUrl} text="Vedi su catalogo ISO" />
             </section>
           )}
 
