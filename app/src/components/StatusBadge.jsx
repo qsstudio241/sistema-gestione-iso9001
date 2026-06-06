@@ -1,7 +1,7 @@
 /**
- * StatusBadge ó Componente badge di stato unificato
+ * StatusBadge ù Componente badge di stato unificato
  *
- * Copre: stato documento, audit, NC, qualit‡ norma, progetto, utente, licenza.
+ * Copre: stato documento, audit, NC, qualitù norma, progetto, utente, licenza.
  * Retrocompatibile: le classi CSS esistenti continuano a funzionare.
  */
 
@@ -40,6 +40,9 @@ const STATUS_CONFIGS = {
   },
   project: {
     offerta:     { label: "Offerta",     color: "blue"   },
+    aperta:      { label: "Aperta",      color: "green"  },
+    chiusa:      { label: "Chiusa",      color: "grey"   },
+    sospesa:     { label: "Sospesa",     color: "yellow" },
     attivo:      { label: "Attivo",      color: "green"  },
     sospeso:     { label: "Sospeso",     color: "yellow" },
     completato:  { label: "Completato",  color: "teal"   },

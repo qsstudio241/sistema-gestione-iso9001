@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import StatusBadge from "../components/StatusBadge";
 import "./ProjectsPage.css";
 
 const PROJECT_STATUSES = [
@@ -14,12 +15,6 @@ const PROJECT_STATUSES = [
   { value: "chiusa",  label: "Chiusa" },
   { value: "sospesa", label: "Sospesa" },
 ];
-
-function StatusBadge({ status }) {
-  const cls = `pj-status pj-status-${status || "offerta"}`;
-  const label = PROJECT_STATUSES.find((s) => s.value === status)?.label || status || "Offerta";
-  return <span className={cls}>{label}</span>;
-}
 
 // ??? Form modale commessa ???????????????????????????????????????????????????
 
@@ -328,7 +323,7 @@ function ProjectsPage() {
                 <tr key={p.id}>
                   <td><strong>{p.project_code}</strong></td>
                   <td>{p.client_name || "-"}</td>
-                  <td><StatusBadge status={p.status} /></td>
+                  <td><StatusBadge type="project" status={p.status || "offerta"} /></td>
                   <td>{formatDate(p.start_date)}</td>
                   <td>{formatDate(p.end_date)}</td>
                   <td>{getWpsCount(p)}</td>
