@@ -19,6 +19,7 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import AutoTextarea from "./AutoTextarea";
+import StatusBadge from "./StatusBadge";
 import "./ChecklistModule.css";
 import "./AuditOutcomeSection.css";
 import "./PendingIssuesCascade.css";
@@ -337,9 +338,7 @@ function PendingIssuesCascade({ onGoToQuestion }) {
                         <strong>{issue.nc_number || `#${issue.nc_id}`}</strong>
                       </Link>
                       {" - "}
-                      <span className={`issue-nc-status-badge nc-badge--${issue.nc_status}`}>
-                        {NC_STATUS_LABELS[issue.nc_status]?.label || issue.nc_status}
-                      </span>
+                      <StatusBadge type="nc" status={issue.nc_status} size="small" />
                       {NC_RESOLVED_STATUSES.has(issue.nc_status) && curStatus === "open" && (
                         <span className="issue-nc-suggest">
                           ✓ Suggerimento: NC risolta dal modulo → conferma "Risolto" qui sotto
