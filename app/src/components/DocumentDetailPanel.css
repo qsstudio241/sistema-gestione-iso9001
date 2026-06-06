@@ -181,6 +181,33 @@
 .doc-detail__validity--annullata { background: #e9ecef; color: #495057; }
 .doc-detail__validity--in_revisione { background: #fff3cd; color: #856404; }
 
+.doc-detail__validity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.doc-detail__lookup-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.doc-detail__lookup-btn:hover:not(:disabled) { background: #1d4ed8; }
+.doc-detail__lookup-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.doc-detail__lookup-warn {
+  font-size: 11px;
+  color: #b45309;
+  margin-left: 6px;
+}
+
 /* ---- file list ---- */
 
 .doc-detail__file-list {

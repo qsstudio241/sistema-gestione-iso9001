@@ -1743,6 +1743,16 @@ function DocumentRegistry() {
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+                                  {doc.doc_type === 'norma' && doc.standard_code && (
+                                    <span className="norm-code-inline"> · {doc.standard_code}</span>
+                                  )}
+                                  {doc.doc_type === 'norma' && doc.validity_status && (
+                                    <span className={`norm-validity-inline norm-validity-inline--${doc.validity_status}`}>
+                                      {doc.validity_status === 'vigente' ? ' · Vigente' :
+                                       doc.validity_status === 'superata' ? ' · Superata' :
+                                       doc.validity_status === 'ritirata' ? ' · Ritirata' : ` · ${doc.validity_status}`}
+                                    </span>
+                                  )}
                                   {shouldShowDocumentStatusBadge(doc) && ` · `}
                                   {shouldShowDocumentStatusBadge(doc) && (
                                     <span className={`status-badge status-${doc.status}`}>
