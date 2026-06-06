@@ -8,6 +8,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS, DOC_STATUS_BADGE_CLASS } from "../data/documentTypes";
 import apiService from "../services/apiService";
+import useDocDetailPanelWidth, {
+  DOC_DETAIL_WIDTH_MIN,
+  getDocDetailMaxWidth,
+} from "../hooks/useDocDetailPanelWidth";
 import "./DocumentDetailPanel.css";
 
 const NORM_VALIDITY_LABELS = {
@@ -107,6 +111,8 @@ const NORM_VALIDITY_COLORS = {
 };
 
 function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
+  const { width: panelWidth, startResize } = useDocDetailPanelWidth();
+
   // Files allegati: l'endpoint dell'albero non li popola, li carichiamo qui
   const [files, setFiles] = useState(doc?.files || []);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -152,10 +158,21 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
     <div className="doc-detail__overlay" onClick={onClose}>
       <aside
         className="doc-detail"
+        style={{ width: panelWidth, maxWidth: panelWidth }}
         onClick={(e) => e.stopPropagation()}
         role="complementary"
         aria-label="Dettagli documento"
       >
+        <div
+          className="doc-detail__resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Ridimensiona pannello documento"
+          aria-valuenow={panelWidth}
+          aria-valuemin={DOC_DETAIL_WIDTH_MIN}
+          aria-valuemax={getDocDetailMaxWidth()}
+          onMouseDown={startResize}
+        />
         {/* Header */}
         <div className="doc-detail__header">
           <div className="doc-detail__header-top">
