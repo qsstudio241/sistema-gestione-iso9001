@@ -48,7 +48,6 @@ describe("useCompanyLogoUrl", () => {
       "https://api.test/companies/42/logo?t=123",
       {
         headers: { Authorization: "Bearer test-token" },
-        credentials: "include",
       }
     );
   });
@@ -80,7 +79,6 @@ describe("useCompanyLogoUrl", () => {
       expect.stringContaining("https://api.test/uploads/logos/logo_42.png"),
       {
         headers: { Authorization: "Bearer test-token" },
-        credentials: "include",
       }
     );
   });

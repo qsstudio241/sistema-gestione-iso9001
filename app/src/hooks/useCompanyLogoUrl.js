@@ -69,7 +69,6 @@ export function useCompanyLogoUrl(companyId, logoUrl, cacheBust = 0) {
         try {
           const response = await fetch(url, {
             headers: requestHeaders,
-            credentials: "include",
           });
           if (!response.ok) continue;
 
