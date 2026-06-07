@@ -1,4 +1,4 @@
-﻿# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
+# Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 30 maggio 2026
@@ -12,7 +12,7 @@
 
 ## Open points e memoria trasversale (non perdere il filo)
 
-**Regola**: gli argomenti “aperti” che attraversano più sessioni vanno elencati **qui** (sintesi) e dettagliati nell’**ADR** o nel doc tecnico indicato. Le session AI devono leggere questa sezione + l’ADR collegato.
+**Regola**: gli argomenti “aperti” che attraversano più sessioni vanno elencati **qui** (sintesi) e dettagliati nell’**ADR** o nel doc tecnico indicato. Le session AI devono leggere questa sezione + l’ADR collegato. I **task futuri parcheggiati** (non prioritari) hanno una sezione dedicata: [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica).
 
 | Tema | Sintesi | Tracciamento |
 |------|---------|----------------|
@@ -24,6 +24,20 @@
 | **Tooling Cursor / MCP / Node** | ✅ Completato 30/05/2026 — estensioni, GitHub MCP (43 tools), Playwright MCP (23 tools), `.editorconfig`, script sync PAT. **Prossimo**: fix 2 test `importNormCommit` + smoke circuito Registro Norme. | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione) |
 | **Modulo NC — feedback campo** | Sviluppo pianificato **chiuso** 30/05/2026. Monitorare: email 08:05, push custom da audit reale, UX drawer (Camellini). Bug → nuova chat + [PROMPT_RIPRESA_NC](agent-tasks/PROMPT_RIPRESA_NC.md). | [GUIDA — chiusura NC](GUIDA_CONSOLIDATA.md#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti) |
 | **NC — rubrica dual-level Studio/Azienda** | **Epic Personale azienda** approvata 02/06/2026. **S1 ✅** — schema e regole in [ADR-012](adr/ADR-012-company-personnel-anagrafica.md) (`company_personnel` + bridge `notification_contacts`). **Prossimo:** S2 migration 078 → S3 API → S4–S5 UI ([TASK_PERSONALE_AZIENDA_SLICES.md](agent-tasks/TASK_PERSONALE_AZIENDA_SLICES.md)). Non rimuovere «referente esterno» su verifica/azioni finché S8 non è live. | [ADR-012](adr/ADR-012-company-personnel-anagrafica.md); [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+
+---
+
+## Backlog parcheggiato (task futuri — fonte unica)
+
+> Elenco **unico** dei task non prioritari, parcheggiati con motivo e condizione di ripresa. Quando un task riprende, spostarlo nella sequenza priorità attiva sotto. Le lezioni operative collegate stanno in [GUIDA_CONSOLIDATA.md § Lezioni apprese](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+| Task | Origine | Perché parcheggiato | Condizione di ripresa |
+|------|---------|---------------------|-----------------------|
+| **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | [PR #10](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/10) (resta **aperta**) | Non prioritaria; si sovrappone al **billing/licensing** in sviluppo (sequenza migrazioni condivisa ~082) | **Dopo la stabilizzazione del billing (082)**: rebase su `main`, rinumerare la migrazione 041 in coda e renderla idempotente, verificare `OrganizationProfileForm` vs pagine licenze |
+| **Caricamento verbale di audit con revisione = numeratore audit** | Chiusura [PR #52](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/52) (07/06/2026) | Il report Word deve restare **modificabile** e caricato **manualmente** (no automatismo audit-close → registry) | Tipo doc «Verbale di audit» (cartella 12 AUDIT); al caricamento `revision = audit.audit_number` read-only; valutare allargare `document_registry.revision` (NVARCHAR > 20); salvare `audit_id`/`audit_number` in `type_specific_data`. Dettaglio in [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
+| **T6 — Recovery UI + history API + compaction notturna** | Sprint sync T (ADR-008) | Dipende da T5 stabile | Compliance ISO 9001 §7.5; vedi [GUIDA § ADR-008](GUIDA_CONSOLIDATA.md#architettura-target-sync--event-sourced-adr-008) |
+| **Sicurezza link allegati Word — token download monouso** | Discussione 08/03/2026 | Bassa priorità; core stabilizzato prima | Sostituire JWT nei link Word con token a scadenza 48h (vedi *Fase 0.B* sotto) |
+| **Riorganizzazione doc Fase 3c–3f** | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) | Priorità inferiore allo sviluppo prodotto | Cartella `explanation/` opzionale, snellimento GUIDA, README root repo |
 
 ---
 
