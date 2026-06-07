@@ -17,6 +17,8 @@ const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
     assertMutatingAllowed,
+    assertCompanyRead,
+    hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 
@@ -58,12 +60,10 @@ async function listQualifications(req, res) {
         const offset = (parseInt(page) - 1) * parseInt(limit);
         let where = ['q.organization_id = @orgId'];
         if (companyFilter.clause) where.push(companyFilter.clause);
-        const r = pool.request().input('orgId', orgId).input('lim', parseInt(limit)).input('off', offset);
-        Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
-
-        if (search) { r.input('search', `%${search}%`); where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)"); }
-        if (company_id) { r.input('companyId', parseInt(company_id)); where.push('q.company_id = @companyId'); }
-        if (status)  { r.input('status', status); where.push('q.status = @status'); }
+        if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
+        if (company_id) where.push('q.company_id = @companyId');
+        if (status) where.push('q.status = @status');
+        let qualTypeLike = null;
         if (qualification_type) {
             const qualTypeMap = {
                 iso9606_1: '%9606-1%',
@@ -71,17 +71,29 @@ async function listQualifications(req, res) {
                 iso14732:  '%14732%',
                 ndt:       '%NDT%',
             };
-            const likePattern = qualTypeMap[qualification_type] || `%${qualification_type}%`;
-            r.input('qualType', likePattern);
+            qualTypeLike = qualTypeMap[qualification_type] || `%${qualification_type}%`;
             where.push('q.qualification_type LIKE @qualType');
         }
         if (expiring_days) {
-            r.input('expDays', parseInt(expiring_days));
             where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
         }
         const whereClause = where.join(' AND ');
 
-        const countResult = await pool.request().input('orgId', orgId).query(`SELECT COUNT(*) AS total FROM qualifications q WHERE ${whereClause}`);
+        const bindListFilters = (request) => {
+            Object.entries(companyFilter.params).forEach(([k, v]) => request.input(k, v));
+            if (search) request.input('search', `%${search}%`);
+            if (company_id) request.input('companyId', parseInt(company_id));
+            if (status) request.input('status', status);
+            if (qualTypeLike) request.input('qualType', qualTypeLike);
+            if (expiring_days) request.input('expDays', parseInt(expiring_days));
+        };
+
+        const r = pool.request().input('orgId', orgId).input('lim', parseInt(limit)).input('off', offset);
+        bindListFilters(r);
+
+        const countReq = pool.request().input('orgId', orgId);
+        bindListFilters(countReq);
+        const countResult = await countReq.query(`SELECT COUNT(*) AS total FROM qualifications q WHERE ${whereClause}`);
 
         const result = await r.query(`
             SELECT q.*,
@@ -116,22 +128,28 @@ async function listQualifications(req, res) {
 /** GET /qualifications/stats */
 async function getStats(req, res) {
     try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
+        const pool       = await getPool();
+        const orgId      = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'q');
 
-        const r = await pool.request().input('orgId', orgId).query(`
+        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const r = pool.request().input('orgId', orgId);
+        Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
+
+        const statsResult = await r.query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN status = 'valida' AND (expiry_date IS NULL OR expiry_date > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
-                SUM(CASE WHEN expiry_date IS NOT NULL AND expiry_date BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN expiry_date IS NOT NULL AND expiry_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
-                SUM(CASE WHEN expiry_date IS NOT NULL AND expiry_date < CAST(GETDATE() AS DATE) AND status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
-                SUM(CASE WHEN status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
-            FROM qualifications
-            WHERE organization_id = @orgId
+                SUM(CASE WHEN q.status = 'valida' AND (q.expiry_date IS NULL OR q.expiry_date > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
+                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
+                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
+                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
+                SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
+            FROM qualifications q
+            WHERE q.organization_id = @orgId${whereExtra}
         `);
 
-        const s = r.recordset[0];
+        const s = statsResult.recordset[0];
         res.json({
             total:          s.total,
             valide:         s.valide,
@@ -157,7 +175,18 @@ async function getOne(req, res) {
             .input('orgId', orgId)
             .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!r.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
-        res.json({ ...r.recordset[0], semaforo: semaforo(r.recordset[0].expiry_date, r.recordset[0].status) });
+
+        const row = r.recordset[0];
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            if (!row.company_id) {
+                return res.status(403).json({ error: 'Accesso non consentito', code: 'FORBIDDEN' });
+            }
+            const denied = await assertCompanyRead(req.user, row.company_id);
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
+        res.json({ ...row, semaforo: semaforo(row.expiry_date, row.status) });
     } catch (err) {
         logger.error('getOneQualif:', err.message);
         res.status(500).json({ error: err.message });
