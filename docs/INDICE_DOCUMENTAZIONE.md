@@ -1,6 +1,6 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-05-21.  
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-06-07.  
 > **TOC interno guida operativa**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#indice-rapido-navigazione).
 
 ---
@@ -23,7 +23,7 @@
 |-----|------|------|
 | attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, infra, workflow |
 | attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
-| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test |
+| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test, **[Lezioni apprese (fonte unica)](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)** |
 | attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
 | attivo | [README.md](README.md) | Mappa cartelle how-to / reference / specs |
 
@@ -158,9 +158,24 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 
 ---
 
+## Regole `.cursor/rules` (metodo e memoria operativa)
+
+| Tag | File | Scopo |
+|-----|------|-------|
+| metodo | [`.cursor/rules/sgq-operating-memory.mdc`](../.cursor/rules/sgq-operating-memory.mdc) | Golden rules, riuso UI, SSH/VPS, chiusura sessione (sempre attiva) |
+| metodo | [`.cursor/rules/sgq-workflow-method.mdc`](../.cursor/rules/sgq-workflow-method.mdc) | **Slice + multitasking + worktree + triage PR** (attiva su task corposi/paralleli) |
+| metodo | [`.cursor/rules/sgq-bug-fix-methodology.mdc`](../.cursor/rules/sgq-bug-fix-methodology.mdc) | Diagnosi bug, log VPS, smoke E2E |
+| metodo | [`.cursor/rules/sgq-self-learning.mdc`](../.cursor/rules/sgq-self-learning.mdc) | Protocollo chiusura sessione / lezioni |
+| qualità | [`.cursor/rules/sgq-encoding-quality.mdc`](../.cursor/rules/sgq-encoding-quality.mdc) | UTF-8 senza BOM, accenti, no `U+FFFD` |
+
+---
+
 ## Convenzioni operative
 
 - **Esperienza e procedure**: solo [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) + [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) — **non** creare `SESSION_NOTES_*.md`.
+- **Lezioni apprese (fonte unica)**: [GUIDA_CONSOLIDATA — Lezioni apprese consolidate](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+- **Metodo di lavoro (slice/multitasking)**: regola [`sgq-workflow-method.mdc`](../.cursor/rules/sgq-workflow-method.mdc).
+- **Task futuri parcheggiati**: [PROJECT_ROADMAP — Backlog parcheggiato](PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica).
 - **Principi di scrittura doc**: [GUIDA_CONSOLIDATA — Principi di documentazione](GUIDA_CONSOLIDATA.md#principi-di-documentazione-chiarezza-e-best-practice).
 - **Deputy**: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 

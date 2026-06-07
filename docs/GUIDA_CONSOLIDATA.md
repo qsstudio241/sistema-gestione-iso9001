@@ -8,6 +8,8 @@
 | Sezione | Contenuto |
 |---------|-----------|
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
+| [**Lezioni apprese (fonte unica)**](#lezioni-apprese-consolidate-fonte-unica) | Indice regole operative + link al dettaglio |
+| [Metodo di lavoro (slice + multitasking)](../.cursor/rules/sgq-workflow-method.mdc) | Regola `.cursor`: slice, parallelizzazione, worktree, triage PR |
 | [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
 | [Manuale NC + Canvas](how-to/MANUALE_UTENTE_NC.md) | Registro non conformità — guida utente e canvas interattivo Glass |
 | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) | Catalogo componenti UI, duplicati, matrice moduli (~55% copertura Fase A) |
@@ -23,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 29/05/2026](#esperienza-29052026---registro-norme-e-albero-documenti-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -40,6 +42,51 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 **Percorsi workspace (Windows)** — `C:\ProgettoISO` non è “un progetto diverso” dal repo su disco: sui PC configurati così è di solito una **junction verso Google Drive** (`G:\Il mio Drive\...`). Una cartella omonima sotto **OneDrive** può invece essere un **checkout separato**. Dettaglio e regole operative: sezione *Percorsi di lavoro locale* in **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)**.
 
 **Storico sessioni** (feb–mar 2026): cartella [archive/sessions/](archive/sessions/) — solo consultazione, non aggiornare.
+
+> **Come è organizzato questo file.** In alto: le **lezioni apprese consolidate** (sotto) + i **principi** + il **piano qualità/metodo** + le **procedure A–F**. In basso: il **diario cronologico delle sessioni** (consultazione, append-only). Per il *metodo* di lavoro ripetibile (slice, multitasking, worktree, triage PR) vedi la regola [`.cursor/rules/sgq-workflow-method.mdc`](../.cursor/rules/sgq-workflow-method.mdc).
+
+---
+
+## Lezioni apprese consolidate (fonte unica)
+
+> Indice unico delle lezioni operative: ogni riga è una **regola da applicare** + un link al dettaglio (sessione o doc). Quando emerge una nuova lezione, aggiungerla **qui** (sintesi) e linkare il dettaglio cronologico più sotto — non duplicare il racconto.
+
+### Architettura UI e form
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **Form HTML annidati** — «Salva azione» nel drawer NC non persisteva (nessun POST nei log VPS, drawer si chiudeva senza errore). HTML vieta `<form>` dentro `<form>`: il browser ignora il form interno e il submit va a quello esterno. | **Mai annidare `<form>`.** Un componente contenitore che usa `<form onSubmit>` va convertito in `<div>` se contiene figli con propri form di salvataggio; i pulsanti interni devono essere `type="button"` con `onClick`. | [Sessione 07/06/2026 — NC notifiche + form annidati](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
+| **Riuso UI «blocco unico»** | Prima di creare un elemento UI, verificare se esiste già un componente/classe nel repo (tabella in `sgq-operating-memory.mdc`). Usare sempre l'esistente. | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) |
+| **JSX: sequenze `\u` literal** | Gli escape `\uXXXX` tra tag JSX finiscono a schermo come testo. Metterli **dentro una stringa JS** (`{"\u26A0\uFE0F …"}`). | [Aggiornamento 22/05/2026 — JSX `\u`](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche) |
+
+### Multi-tenant, RBAC e dati
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **Isolamento dati AI multi-tenant** | Utente **STUDIO**: vista d'insieme, può selezionare solo tra le **proprie aziende clienti** (`auditor_org_id`). Utente **AZIENDA cliente**: il backend **forza** `company_id` sull'anagrafica primaria (mai fidarsi del `companyId` dal client), niente 403. **RAG**: filtro `company_id = @compId`, **niente** `OR IS NULL` / chunk globali. | [PR #91 — regola scope azienda AI](#pr-91--regola-di-prodotto-ambito-azienda-dellassistente-ai-07062026) |
+| **API 500 da `studioScopeClause` errato sulle `companies`** | Nelle clausole di scope su `companies` usare l'alias colonna corretto (`c.organization_id`, **non** `co.organization_id`) e la logica `isOrgWideAdmin` / `auditor_org_id` (mai `isSuperadmin` indiscriminato). | [Sessione 07/06/2026 — fix responsible-options](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
+| **Menu audit vs RBAC** | Lista e dettaglio audit filtrano con `studioScopeClause` (`auditListRbac.service`); `organization_id` sempre da `req.user`. | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+
+### Notifiche NC e alert
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **Notifiche NC — rubrica + escalation** | Ogni azienda ha una **rubrica referenti** (`notification_contacts`, mig. 073-074) con ruolo email. L'alert scadenza NC usa **priorità: personale azienda (`responsible_contact_id`) > rubrica (`recipients_email`)**. Lo scheduler (`docAlertEscalation.service`) gestisce l'escalation **allineata alla config**. I responsabili NC si scelgono dal **personale azienda** (`responsible-options`). | [Sessione 07/06/2026 — NC notifiche](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) · [ADR-012](adr/ADR-012-company-personnel-anagrafica.md) |
+
+### Ambiente di lavoro e tooling
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **Worktree su disco locale `C:`** | Il repo vive su **Google Drive** (`G:\…`) dietro junction `C:\ProgettoISO`: l'I/O è lento e la **suite Vitest completa si impalla**. Per task corposi/paralleli usare un **worktree su `C:`** da `origin/main`; come L1 affidarsi a **build Vite + Vitest mirato** (o CI Netlify), non alla suite intera. | [`sgq-workflow-method.mdc` § Worktree](../.cursor/rules/sgq-workflow-method.mdc) · [Workspace consigliato](#workspace-consigliato--ponte-cprogettoiso-cursor--terminale) |
+| **`gh` non autenticato → MCP GitHub** | Su questo PC `gh` di norma non è autenticato. Per chiudere/commentare PR, aprire PR, leggere stato, usare il **MCP GitHub** (`project-0-ProgettoISO-github`): leggere lo schema del tool prima di chiamarlo; commenti con `add_issue_comment`, chiusura con `update_pull_request`. | [`sgq-workflow-method.mdc` § Triage PR](../.cursor/rules/sgq-workflow-method.mdc) |
+| **Migrazioni DB — sequenza condivisa** | Numerazione **unica** (stato ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (check esistenza prima di `ALTER`/`CREATE`). FK SQL Server: statement separati. | [how-to/database-migrations.md](how-to/database-migrations.md) |
+| **Encoding UTF-8 senza BOM** | Lo strumento di salvataggio può produrre **ANSI/BOM** o interpretare `\n`/`\t` come newline/tab. Dopo ogni scrittura: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`**. Script: `backend/scripts/check-utf8-encoding.js`. | [Playbook caratteri non riconoscibili](#playbook-riutilizzabile--caratteri-non-riconoscibili-ufffd--tofu-in-ui) · [`sgq-encoding-quality.mdc`](../.cursor/rules/sgq-encoding-quality.mdc) |
+
+### Sync (vincolante)
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **Sync event-sourced (ADR-008)** | Nessuna nuova feature di sync può inviare lo **«stato corrente intero»**: ogni campo → evento atomico con `idempotency_key`. Server-wins all'apertura; debounce hydrate resettato al cambio audit. | [§ Architettura target sync — ADR-008](#architettura-target-sync--event-sourced-adr-008) |
 
 ---
 
@@ -1635,7 +1682,7 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 |--------|------|--------|
 | **L1 — Automatici app** | `cd app` → `NODE_ENV=test` → `npm run test:run` + `npm run build` | Ogni modifica sostanziale a React/utils (wordExport, converter, hook critici). Pattern Vitest: `src/**/*.{test,spec}.{js,jsx}` (incluso contratto `response-options` in `src/tests/integration/`, mock senza rete in CI). |
 | **L2 — Script / repro** | `node scripts/repro-custom-export.mjs`, `verify-template-repair.js` (se Word/template) | Dopo cambi a export OOXML o template. |
-| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([how-to/deploy.md](how-to/deploy.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
+| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([how-to/deploy.md](how-to/deploy.md)). Checklist strutturata: [Matrice smoke robustezza](#matrice-smoke-robustezza-checklist-manuale-ripetibile) (sotto). |
 | **L4 — Hardening** | Due sessioni, lock audit, licenze (`403 MODULE_NOT_LICENSED`), refresh sessione, PWA offline (cache vs server) | Dopo modifiche a `auth`, `moduleLicense`, `syncService`, `IndexedDB`, lock. |
 | **L5 — E2E / browser** (backlog prodotto) | Flussi completi su Netlify preview o staging | Pianificato in roadmap; non sostituisce L1–L4. |
 
@@ -2267,16 +2314,16 @@ Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test
 
 ### Bonifica dati test NC (org Al.project) — 02/06/2026
 
-Dati NC di simulazione auditor bonificati su **produzione** via API admin (dmin@sgq.local): approccio **A** (riapertura RQ → campi → erified → POST approve-closure → closed). Nessuno script SQL.
+Dati NC di simulazione auditor bonificati su **produzione** via API admin (admin@sgq.local): approccio **A** (riapertura RQ → campi → verified → POST approve-closure → closed). Nessuno script SQL.
 
 | NC | Prima | Dopo |
 |----|--------|------|
 | **1042** | 
 oot_cause vuoto; chiusura già con RQ | 
-oot_cause compilata; pproved_at invariato (30/05/2026) |
-| **1043** | Chiusa senza pproved_at / pproved_by | RQ approvata 02/06/2026; note verifica bonifica; 
+oot_cause compilata; approved_at invariato (30/05/2026) |
+| **1043** | Chiusa senza approved_at / approved_by | RQ approvata 02/06/2026; note verifica bonifica; 
 oot_cause allineata |
-| **1037** | Chiusa senza note verifica, senza RQ; azione verified senza erification_note | Note NC + nota azione + RQ + chiusura coerente |
+| **1037** | Chiusa senza note verifica, senza RQ; azione verified senza verification_note | Note NC + nota azione + RQ + chiusura coerente |
 
 Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
 **Backlog P2 (solo su richiesta committente):** export PDF registro; agente AI CAPA; completamento catalogo LIBRERIA_UI (Fase B/C); smoke L3 email ricezione reale.
@@ -2786,18 +2833,12 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 
 | Voce | Esito |
 |------|-------|
-| Rubrica referenti NC | NotificationContactsPanel.jsx + tabella 
-otification_contacts (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
-| Fix responsible-options 500 | GET /nc/:id/responsible-options: studioScopeClause errato sulle companies (usava co.organization_id invece di c.organization_id). Fix: alias c corretto in 
-c.controller.js. Commit 48124e0 |
-| Fix form annidati (bug critico) | NcDetailPanel aveva <form onSubmit> esterno che avvolgeva NcActionsList (con il suo form). Click su Salva azione submittava il form esterno invece del POST /non-conformities/:id/actions. Fix: form esterno -> <div>, pulsante 	ype="button" onClick. Commit 8464ca |
-| Pattern alert scalabile | Alert scadenza NC: 
-esponsible_contact_id (personale azienda) + 
-ecipients_email (fallback). Scheduler docAlertEscalation.service.js gestisce l'escalation con priorita' personale > rubrica |
-| Migrazione schema | mig. 073 (
-otification_contacts), 074 (
-c_notification_contacts), 081 (user_company_access) deployate su VPS |
+| Rubrica referenti NC | `NotificationContactsPanel.jsx` + tabella `notification_contacts` (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
+| Fix responsible-options 500 | `GET /nc/:id/responsible-options`: `studioScopeClause` errato sulle `companies` (usava `co.organization_id` invece di `c.organization_id`). Fix: alias `c` corretto in `nc.controller.js`. Commit `48124e0` |
+| Fix form annidati (bug critico) | `NcDetailPanel` aveva un `<form onSubmit>` esterno che avvolgeva `NcActionsList` (con il suo form). Click su «Salva azione» submittava il form esterno invece del `POST /non-conformities/:id/actions`. Fix: form esterno -> `<div>`, pulsante `type="button"` con `onClick`. Commit `8464ca` |
+| Pattern alert scalabile | Alert scadenza NC: `responsible_contact_id` (personale azienda) + `recipients_email` (fallback). Scheduler `docAlertEscalation.service.js` gestisce l'escalation con priorita' personale > rubrica |
+| Migrazione schema | mig. 073 (`notification_contacts`), 074 (`nc_notification_contacts`), 081 (`user_company_access`) deployate su VPS |
 | Punti aperti prossima sessione | (1) Email placeholder da sostituire con indirizzo reale nel seed; (2) NC-QS-260515-01-019 senza responsabile ne' scadenza da assegnare; (3) PR vecchie aperte (#15-97) da triaggiare |
-| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options,  ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
+| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options, ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
 
-**Lezione chiave - Form HTML annidati:** HTML vieta <form> dentro <form>. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa <form onSubmit> deve essere convertito in <div> quando contiene componenti figlio con propri form di salvataggio.
+**Lezione chiave — Form HTML annidati:** HTML vieta `<form>` dentro `<form>`. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa `<form onSubmit>` deve essere convertito in `<div>` quando contiene componenti figlio con propri form di salvataggio. Consolidata nella sezione [Lezioni apprese consolidate](#lezioni-apprese-consolidate-fonte-unica).

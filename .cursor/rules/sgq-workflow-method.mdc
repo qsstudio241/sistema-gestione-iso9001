@@ -1,0 +1,66 @@
+---
+description: Metodo di lavoro ripetibile per ProgettoISO - slice verticali, multitasking sicuro (worker async, worktree isolati), una sola operazione git pesante per repo, triage PR backlog. Attiva questa regola quando pianifichi un task corposo, lavori in parallelo, usi worktree, o fai triage di PR aperte.
+globs: "**/*"
+alwaysApply: false
+---
+
+# Metodo di lavoro - SGQ ISO 9001 (slice + multitasking)
+
+> **Fonte unica del metodo operativo.** Le procedure di chiusura slice e gli smoke ripetibili vivono in
+> [`docs/GUIDA_CONSOLIDATA.md` - Procedura chiusura autonoma](../../docs/GUIDA_CONSOLIDATA.md#procedura-chiusura-autonoma).
+> Le golden rules trasversali vivono in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc). Qui si codifica **come** lavorare, non cosa.
+
+## 1. Slice verticale (unita' minima di lavoro)
+
+Ogni attivita' si spezza in **slice verticali** indipendenti, ognuna chiudibile con un commit:
+
+```
+diagnosi (causa reale) -> fix minimo -> test L1 -> deploy (se serve) -> smoke -> commit/PR
+```
+
+Regole:
+- **Una slice = un obiettivo verificabile** (un bug, una feature minima, un blocco doc). Niente refactor paralleli non richiesti.
+- **Fix minimo e difensivo**: riusa componenti/pattern esistenti (tabella *Riuso UI* in `sgq-operating-memory.mdc`). Diff piccolo.
+- **Test L1 = build Vite + Vitest mirato** (`app/`). La suite completa **si impalla su Google Drive**: lavorare su disco locale `C:` e usare *build + test mirati* come L1 (vedi lezione *Worktree su C:*).
+- **Chiudere o documentare**: niente "fix a meta'". Se emergono sotto-problemi, chiuderli o annotare il rischio residuo in `GUIDA_CONSOLIDATA.md`.
+
+## 2. Multitasking sicuro (parallelizzazione)
+
+| Consentito | Vietato |
+|------------|---------|
+| Slice su **file/perimetri disgiunti** (es. adapter vs migrazione SQL) | Due worker sullo **stesso file** o stesso endpoint |
+| **Worker async in background** per esplorazione/lavoro lungo mentre si prosegue su altro | Slice che condividono migrazione DB o refactor sync senza coordinamento |
+| **Worktree isolato** quando c'e' WIP del committente nel working tree principale | Lavorare nel working tree principale se ha modifiche non committate altrui |
+| **Una sola operazione git pesante alla volta** sullo stesso repo (clone/worktree/fetch grandi) | Piu' `worktree add` / `fetch` concorrenti sullo stesso `.git` |
+
+**Worktree isolato (pattern):** per task corposi (specie doc) che non vanno mescolati con la WIP del committente, creare un worktree su disco locale `C:` da `origin/main` aggiornato, lavorare su un **branch dedicato**, aprire **PR** (mai merge diretto se c'e' overlap con WIP), poi **rimuovere il worktree**:
+
+```powershell
+git -C "C:\ProgettoISO" fetch origin main
+git -C "C:\ProgettoISO" worktree add -b <branch> "C:\<wt>" origin/main
+# ... lavoro nel worktree, commit, push del branch, PR via MCP GitHub ...
+git -C "C:\ProgettoISO" worktree remove "C:\<wt>"
+```
+
+## 3. Triage PR backlog (criterio deciso)
+
+Quando si trovano molte PR aperte, applicare in autonomia (senior lead):
+
+| Caso | Azione |
+|------|--------|
+| Contenuto **gia' in `main`** o stale/obsoleto | **Chiudi** con commento che spiega dove e' confluito / perche' superata |
+| Fix a **basso rischio, ancora utile, non in main** | **Mergia** (dopo CI verde / build), risolvendo conflitti tenendo `main` + nota |
+| **Feature di prodotto** o decisione commerciale | **Lascia aperta**; registra in backlog roadmap con prossimo passo |
+| Tocca **sync sensibile** (ADR-008) o **breaking change** | **Lascia aperta**; richiede review umana / coordinamento |
+
+- `gh` spesso **non e' autenticato** su questo PC: usare il **MCP GitHub** (server `project-0-ProgettoISO-github`); leggere lo schema del tool **prima** di chiamarlo. I commenti su PR si fanno con `add_issue_comment` (la PR e' un issue); la chiusura con `update_pull_request` (`state: closed`).
+- Ogni chiusura/parcheggio va **tracciato** in `docs/PROJECT_ROADMAP.md` (backlog) e/o `docs/agent-tasks/DEPUTYTASK.md`.
+
+## 4. Migrazioni DB - sequenza condivisa
+
+- La numerazione migrazioni e' **una sequenza unica e condivisa** (stato attuale ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (verificare esistenza colonna/tabella prima di `ALTER`/`CREATE`).
+- Per FK SQL Server usare statement separati (ALTER colonna, ADD CONSTRAINT senza `ON DELETE` problematici, CREATE INDEX), verificando ogni step.
+
+## 5. Encoding (vincolo bloccante)
+
+Su questo PC lo strumento di salvataggio puo' produrre **ANSI/BOM** o convertire i caratteri non-ASCII (em-dash, frecce, virgolette, accenti) in **U+FFFD**, oppure interpretare `\n`/`\t` come newline/tab reali. Dopo ogni scrittura doc/sorgente: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`** (tofu). Script: `backend/scripts/check-utf8-encoding.js`. Dettaglio: [`sgq-encoding-quality.mdc`](sgq-encoding-quality.mdc).
