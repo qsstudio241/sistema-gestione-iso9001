@@ -34,3 +34,20 @@
 - Al caricamento: selezione audit → `revision = audit.audit_number` (formato `PREFISSO-YYMMDD-NN`); campo revisione **read-only**.
 - Opzionale: riconoscimento audit dal nome file export (`{Cliente}_{NumeroAudit}_{Standard}.docx`, trattini resi come underscore).
 - Note tecniche: `document_registry.revision` è `NVARCHAR(20)` → valutare allargamento colonna (numeri audit fino a ~26 char); nessuna FK audit → salvare `audit_id`/`audit_number` in `type_specific_data`.
+
+
+---
+
+## Esito sessione 07/06/2026 - CHIUSA
+
+**Sessione chiusa il 07/06/2026.** main locale = origin/main = `9e6dae6` (allineato, nessun pull necessario). Tutte le PR di sessione gia' mergiate/chiuse; restano aperte SOLO:
+- **#98** (questa, docs reorg): DRAFT, lasciata per **review umana** del committente per overlap con la sua WIP docs locale non committata.
+- **#10** (settings org P.IVA/logo): **parcheggiata** in backlog, ripresa dopo stabilizzazione billing 082.
+
+**Working tree principale e WIP del committente NON toccati** (nessun commit/stash/pull su main; lavoro solo su branch docs reorg via API).
+
+**Azioni manuali del committente al rientro (in ordine):**
+1. Sistemare/committare la WIP docs nel working tree principale.
+2. Rivedere e mergiare la PR #98 (`docs/reorg-knowledge-base`).
+3. `git pull origin main`.
+4. Valutare #10 dopo stabilizzazione billing 082.
