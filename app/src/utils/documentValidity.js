@@ -7,6 +7,31 @@
 
 export const RELEASED_DOC_STATUSES = Object.freeze(["rilasciato", "vigente"]);
 
+/** Stati ciclo di vita ammessi in API (colonna document_registry.status). */
+export const REGISTRY_DOC_STATUSES = Object.freeze([
+  "rilasciato",
+  "bozza",
+  "in_revisione",
+  "obsoleto",
+  "in_approvazione",
+]);
+
+/**
+ * Normalizza status registro per POST/PUT documenti.
+ * "vigente" (legacy UI) ? "rilasciato". Non tocca validity_status (norme/leggi).
+ */
+export function normalizeRegistryDocStatusForApi(raw) {
+  if (raw == null || String(raw).trim() === "") return "rilasciato";
+  const s = String(raw).trim().toLowerCase();
+  if (s === "vigente") return "rilasciato";
+  return s;
+}
+
+/** Stato iniziale form: legacy vigente mostrato come rilasciato. */
+export function registryDocStatusForForm(raw) {
+  return normalizeRegistryDocStatusForApi(raw);
+}
+
 export function isDocumentFolder(doc) {
   if (!doc) return false;
   return (
