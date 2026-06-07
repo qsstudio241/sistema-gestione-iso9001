@@ -6,6 +6,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import StatusBadge from "../components/StatusBadge";
+import PencilIcon from "../components/icons/PencilIcon";
+import TrashIcon from "../components/icons/TrashIcon";
 import "./ProjectsPage.css";
 
 const PROJECT_STATUSES = [
@@ -14,12 +17,6 @@ const PROJECT_STATUSES = [
   { value: "chiusa",  label: "Chiusa" },
   { value: "sospesa", label: "Sospesa" },
 ];
-
-function StatusBadge({ status }) {
-  const cls = `pj-status pj-status-${status || "offerta"}`;
-  const label = PROJECT_STATUSES.find((s) => s.value === status)?.label || status || "Offerta";
-  return <span className={cls}>{label}</span>;
-}
 
 // ??? Form modale commessa ???????????????????????????????????????????????????
 
@@ -163,7 +160,7 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                 <div className="pj-checkbox-list">
                   {qualifications.map((q) => (
                     <label key={q.id} className="pj-checkbox-item">
-                      <input type="checkbox" disabled title="Funzionalit\u00E0 in sviluppo" />
+                      <input type="checkbox" disabled title="Funzionalità in sviluppo" />
                       <span>{q.person_name}</span>
                       <span className="pj-checkbox-sub">{q.qualification_type} - {q.certificate_number || "N/A"}</span>
                     </label>
@@ -328,7 +325,7 @@ function ProjectsPage() {
                 <tr key={p.id}>
                   <td><strong>{p.project_code}</strong></td>
                   <td>{p.client_name || "-"}</td>
-                  <td><StatusBadge status={p.status} /></td>
+                  <td><StatusBadge type="project" status={p.status || "offerta"} /></td>
                   <td>{formatDate(p.start_date)}</td>
                   <td>{formatDate(p.end_date)}</td>
                   <td>{getWpsCount(p)}</td>
@@ -340,10 +337,24 @@ function ProjectsPage() {
                         <button className="pj-confirm-no" onClick={() => setDeleteId(null)}>No</button>
                       </div>
                     ) : (
-                      <>
-                        <button className="pj-btn-icon" title="Modifica" onClick={() => handleEdit(p)}>&#x270F;&#xFE0F;</button>
-                        <button className="pj-btn-icon" title="Elimina" onClick={() => setDeleteId(p.id)}>&#x1F5D1;&#xFE0F;</button>
-                      </>
+                      <div className="pj-actions">
+                        <button
+                          className="grid-icon-btn"
+                          title="Modifica commessa"
+                          aria-label="Modifica commessa"
+                          onClick={() => handleEdit(p)}
+                        >
+                          <PencilIcon size={15} />
+                        </button>
+                        <button
+                          className="grid-icon-btn grid-icon-btn--danger"
+                          title="Elimina commessa"
+                          aria-label="Elimina commessa"
+                          onClick={() => setDeleteId(p.id)}
+                        >
+                          <TrashIcon size={15} />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

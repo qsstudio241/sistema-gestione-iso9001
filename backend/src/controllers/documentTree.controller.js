@@ -35,6 +35,10 @@ async function getTree(req, res) {
         const roots = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
+                   dr.company_id,
+                   JSON_VALUE(dr.type_specific_data, '$.standard_code') AS standard_code,
+                   JSON_VALUE(dr.type_specific_data, '$.validity_status') AS validity_status,
+                   JSON_VALUE(dr.type_specific_data, '$.issuing_body') AS issuing_body,
                    ${childrenCountSubquery('dr', company_id)} AS children_count
             FROM document_registry dr
             WHERE ${conditions.join(' AND ')}
@@ -76,6 +80,10 @@ async function _loadChildren(parentId, orgId, companyId, remainingDepth) {
     const result = await query(`
         SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                dr.display_order, dr.parent_id, dr.path_cache, dr.status,
+               dr.company_id,
+               JSON_VALUE(dr.type_specific_data, '$.standard_code') AS standard_code,
+               JSON_VALUE(dr.type_specific_data, '$.validity_status') AS validity_status,
+               JSON_VALUE(dr.type_specific_data, '$.issuing_body') AS issuing_body,
                ${childrenCountSubquery('dr', companyId)} AS children_count
         FROM document_registry dr
         WHERE ${conditions.join(' AND ')}
@@ -117,6 +125,10 @@ async function getChildren(req, res) {
         const result = await query(`
             SELECT dr.id, dr.title, dr.doc_type, dr.folder_code, dr.is_system_folder,
                    dr.display_order, dr.parent_id, dr.path_cache, dr.status,
+                   dr.company_id,
+                   JSON_VALUE(dr.type_specific_data, '$.standard_code') AS standard_code,
+                   JSON_VALUE(dr.type_specific_data, '$.validity_status') AS validity_status,
+                   JSON_VALUE(dr.type_specific_data, '$.issuing_body') AS issuing_body,
                    ${childrenCountSubquery('dr', company_id)} AS children_count
             FROM document_registry dr
             WHERE ${conditions.join(' AND ')}

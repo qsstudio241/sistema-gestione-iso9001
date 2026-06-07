@@ -71,6 +71,19 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
 
+**Esperienza 07/06/2026 — Fix logo azienda — Express Router auth intercept**
+
+Gli utenti desktop autenticati tramite cookie httpOnly hanno `getToken()` → `null` (nessun Bearer header). Il middleware `router.use(authenticate)` montato su `/api/v1` intercetta **ogni** richiesta priva di Bearer token — incluse quelle destinate ad altri router — rispondendo 401 prima che la route target venga raggiunta. Il componente `CompanyLogo` in `CompanyDetailPage` e `CompaniesPage` non riceveva mai la risposta immagine e cadeva in fallback silenzioso.
+
+**Soluzione:** registrare gli endpoint pubblici (logo, allegati non sensibili) direttamente in `server.js` **prima** dei router autenticati:
+```js
+// server.js — PRIMA di app.use('/api/v1', auditRoutes)
+app.get('/api/v1/companies/:id/logo', getLogo);
+```
+**Commit:** `3787ad1` — 07/06/2026 — TEST OK (verificato in produzione).
+
+**Lezione:** se un endpoint deve essere accessibile senza Bearer (es. risorse immagine da `<img src>`), non basta non chiamare `authenticate` nella route — bisogna uscire dal router autenticato. Registrare l'endpoint prima di `app.use('/api/v1', routerAutenticato)` in `server.js`.
+
 **Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
 
 I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti. **UI guida flusso**: sezioni numerate nel drawer seguono l'ordine ISO 10.2 (Scheda → Stato workflow → Cause → Azioni → Evidenze → Verifica → Chiusura), non un form flat per tipo campo.
@@ -140,6 +153,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 4. **Golden rule UI:** ordine drawer ISO 10.2 — Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura (non form flat per tipo campo).
 5. **Encoding:** UTF-8 reale o `\u` in **stringhe JS**; mai `\u` come testo JSX grezzo; validare con `check-utf8-encoding.js` anche su `.md` manuale.
 6. **Libreria UI:** catalogo Fase A ~52 pattern / ~55–65% UI reale — secondo passaggio su `pages/` e moduli secondari; consultare [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) prima di nuovi blocchi UI.
+7. **Form annidati (bug critico 07/06/2026):** HTML non supporta `<form>` nested. Se un componente contenitore (es. `NcDetailPanel`) usa `<form onSubmit>` e al suo interno c'è un altro `<form>` (es. `NcActionsList`), il browser ignora il form interno e il click su qualsiasi `type="submit"` submita il form esterno. Sintomo: nessun POST visibile nei log VPS, azione non salvata, "drawer chiuso senza errore". Fix: convertire il form contenitore in `<div>` e usare `type="button" onClick={handleSubmit}` per il pulsante di salvataggio esterno.
 
 **Monitoraggio post-chiusura:** email job 08:05 (SMTP + destinatari `notifications_config`); push custom da audit reale Camellini; feedback utenti su drawer/flusso.
 
@@ -1369,9 +1383,18 @@ Prima di implementare qualsiasi nuovo widget di domanda/item, verificare se esis
 #### Migration DB via SSH (non via cloud agent)
 Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risolve il server). Pattern consolidato:
 1. Scrivi script `run-migration-NNN-vps.js` che usa `require('/var/www/sgq-backend/src/config/database')`
-2. `scp` dello script sul VPS via `$SGQ_SSH_KEY_B64`
-3. `ssh` + `node /tmp/run-migration-NNN-vps.js`
+2. **Windows (Cursor desktop):** `.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-NNN-vps.js` (usa `.ssh-deploy.local.ps1`, **non** `SGQ_SSH_KEY_B64`). Preflight: `vps-preflight.ps1` → `VPS_ACCESS_OK`.
+3. **Cloud Agent (Linux):** `scp` via `$SGQ_SSH_KEY_B64` + `ssh` + `node /tmp/run-migration-NNN-vps.js`
+4. **PC con `database.json`:** migrazione diretta con Node/sqlcmd senza SSH.
 - **Nota SQL Server**: `ON DELETE SET NULL` in FK non è sempre supportato. Verificare con istruzione separata prima di aggiungere clausole ON DELETE/UPDATE.
+
+#### Accesso VPS da Windows — non usare SGQ_SSH_KEY_B64 (07/06/2026)
+Su Cursor desktop (Windows) `SGQ_SSH_KEY_B64` è **sempre vuota** — è un secret solo Cloud Agent. L'agente che si ferma con *"Impossibile verificare… va rieseguita dal cloud agent"* sbaglia percorso.
+- **Setup una tantum:** `backend/config/.ssh-deploy.local.ps1` (da `.example`) + `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- **Preflight obbligatorio:** `.\backend\scripts\vps-preflight.ps1` → `VPS_ACCESS_OK`.
+- **Script/query sul VPS:** `run-on-vps.ps1` (PuTTY `plink`/`pscp`, carica `.ssh-deploy.local.ps1`).
+- **Deploy:** `deploy-controllers-to-vps.ps1` (health check compatibile PowerShell 5.1: `Invoke-WebRequest -UseBasicParsing`).
+- **Lezione:** non cercare `.ppk` se non esiste — password SSH in file gitignored è il percorso documentato; chiave `.ppk` + Pageant è upgrade opzionale.
 
 #### Unificazione allegati ISO e custom (migration 047)
 `evidence_blocks` della custom già referenziava `attachment_id` dalla tabella `attachments` — erano già unificati a livello DB. Il gap era solo nel frontend: `AttachmentSection`/`AttachmentPreview` non sapevano filtrare per `custom_item_id`. Soluzione minima: aggiungere `custom_item_id` nullable a `attachments` + propagare il param nei 4 punti frontend.
@@ -2644,3 +2667,21 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Test L1 | Jest 10 (backend) + Vitest 5 (`searchResultLinks`, `SearchPage`) |
 | Deploy | `deploy-controllers-to-vps.ps1` include search routes/controller/service + `server.js` |
 | Smoke | `GET /api/v1/search?q=...` con JWT; verificare assenza leak cross-company con `companyId` |
+
+### Sessione 07/06/2026 - NC notifiche + form annidati (chiusura sessione)
+
+| Voce | Esito |
+|------|-------|
+| Rubrica referenti NC | NotificationContactsPanel.jsx + tabella 
+otification_contacts (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
+| Fix responsible-options 500 | GET /nc/:id/responsible-options: studioScopeClause errato sulle companies (usava co.organization_id invece di c.organization_id). Fix: alias c corretto in 
+c.controller.js. Commit 48124e0 |
+| Fix form annidati (bug critico) | NcDetailPanel aveva <form onSubmit> esterno che avvolgeva NcActionsList (con il suo form). Click su Salva azione submittava il form esterno invece del POST /non-conformities/:id/actions. Fix: form esterno -> <div>, pulsante 	ype="button" onClick. Commit 8464ca |
+| Pattern alert scalabile | Alert scadenza NC: esponsible_contact_id (personale azienda) + ecipients_email (fallback). Scheduler docAlertEscalation.service.js gestisce l'escalation con priorita' personale > rubrica |
+| Migrazione schema | mig. 073 (
+otification_contacts), 074 (
+c_notification_contacts), 081 (user_company_access) deployate su VPS |
+| Punti aperti prossima sessione | (1) Email placeholder da sostituire con indirizzo reale nel seed; (2) NC-QS-260515-01-019 senza responsabile ne' scadenza da assegnare; (3) PR vecchie aperte (#15-97) da triaggiare |
+| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options,  ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
+
+**Lezione chiave - Form HTML annidati:** HTML vieta <form> dentro <form>. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa <form onSubmit> deve essere convertito in <div> quando contiene componenti figlio con propri form di salvataggio.

@@ -11,7 +11,7 @@ import apiService from "../services/apiService";
 function insertChildren(nodes, parentId, children) {
   return nodes.map((n) => {
     if (n.id === parentId) {
-      return { ...n, children, _childrenLoaded: true };
+      return { ...n, children, _childrenLoaded: true, children_count: children.length };
     }
     if (n.children?.length) {
       return { ...n, children: insertChildren(n.children, parentId, children) };

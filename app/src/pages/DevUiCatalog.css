@@ -1,0 +1,104 @@
+/**
+ * DevUiCatalog — Stili pagina catalogo UI
+ */
+
+.uic-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.uic-header {
+  margin-bottom: 24px;
+}
+
+.uic-header h1 {
+  font-size: 1.6rem;
+  color: var(--color-primary, #1e3a5f);
+  margin: 0 0 6px;
+}
+
+.uic-header p {
+  color: var(--color-text-muted, #64748b);
+  margin: 0;
+}
+
+.uic-section {
+  margin-top: 28px;
+}
+
+.uic-section__title {
+  font-size: 1.2rem;
+  color: var(--color-text, #1e293b);
+  border-bottom: 2px solid var(--color-border, #e2e8f0);
+  padding-bottom: 8px;
+  margin: 0 0 16px;
+}
+
+.uic-subsection {
+  margin-bottom: 24px;
+}
+
+.uic-subsection__title {
+  font-size: 0.95rem;
+  color: var(--color-text-muted, #64748b);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.uic-badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.uic-btn-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.uic-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* Token display */
+.uic-token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.uic-token {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.uic-token__swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.uic-token__name {
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #334155;
+}
+
+.uic-token__value {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: auto;
+}

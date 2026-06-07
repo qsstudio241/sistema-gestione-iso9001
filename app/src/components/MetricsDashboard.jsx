@@ -9,6 +9,7 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAuditMetrics } from "../hooks/useAuditMetrics";
 import { NC_CATEGORY, NC_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
+import StatusBadge from "./StatusBadge";
 import "./MetricsDashboard.css";
 
 function MetricsDashboard() {
@@ -261,10 +262,8 @@ function MetricsDashboard() {
           </div>
           <div className="timeline-item">
             <div className="timeline-label">Status</div>
-            <div
-              className={`timeline-value status-badge ${currentAudit.metadata.status}`}
-            >
-              {currentAudit.metadata.status}
+            <div className="timeline-value">
+              <StatusBadge type="audit" status={currentAudit.metadata.status} />
             </div>
           </div>
           <div className="timeline-item">

@@ -115,7 +115,7 @@ if ($missing.Count -gt 0) {
     $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
     throw "Deploy annullato: $($missing.Count) file non trovati. Esegui git pull o verifica il branch."
 }
-Write-Host "  OK — tutti i $($AllFiles.Count) file presenti." -ForegroundColor Green
+Write-Host "  OK - tutti i $($AllFiles.Count) file presenti." -ForegroundColor Green
 
 # Preflight SSH
 Write-Host "`nPreflight SSH..." -ForegroundColor Cyan
@@ -138,7 +138,7 @@ if (-not $script:useSession) {
         throw "plink preflight fallito. Configura backend/config/.ssh-deploy.local.ps1, SGQ_PUTTY_SESSION o Pageant."
     }
 }
-Write-Host "  OK — connessione SSH." -ForegroundColor Green
+Write-Host "  OK - connessione SSH." -ForegroundColor Green
 
 # Crea directory remote se necessario
 if ($Manifest.ensureRemoteDirs) {
@@ -175,31 +175,32 @@ if ($env:SGQ_SUDO_PASSWORD) {
     }
 }
 
-$remoteCmd = @"
+$remoteCmd = @'
 bash -lc '
-cd $RemoteBase
+cd __REMOTE_BASE__
 echo deploy_restart_begin
 RESTARTED=0
 if sudo -n systemctl restart sgq-backend.service 2>/dev/null; then
   echo deploy_systemctl_nopass_ok
   RESTARTED=1
 fi
-if [ "`$RESTARTED" != "1" ]; then
+if [ "$RESTARTED" != "1" ]; then
   echo deploy_fallback_fuser_nohup
   fuser -k 3000/tcp 2>/dev/null || true
   sleep 3
-  cd $RemoteBase || exit 1
-  nohup node src/server.js >> $RemoteBase/app.log 2>&1 &
+  cd __REMOTE_BASE__ || exit 1
+  nohup node src/server.js >> __REMOTE_BASE__/app.log 2>&1 &
   sleep 4
 fi
-OLD_UPTIME=`$(curl -sk https://www.fr-busato.it:8443/api/v1/health 2>/dev/null | grep -o "\"uptime\":[0-9.]*" | head -1 || true)
-echo deploy_health_uptime `$OLD_UPTIME
+OLD_UPTIME=$(curl -sk https://www.fr-busato.it:8443/api/v1/health 2>/dev/null | grep -o "\"uptime\":[0-9.]*" | head -1 || true)
+echo deploy_health_uptime $OLD_UPTIME
 systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 15 || true
-grep -q normUpload.routes.js $RemoteBase/src/server.js && echo deploy_norm_upload_route_ok || echo deploy_norm_upload_route_MISSING
-grep -q ncResponsibleOptions $RemoteBase/src/controllers/nc.controller.js && echo deploy_nc_responsible_ok || echo deploy_nc_responsible_MISSING
-tail -n 20 $RemoteBase/app.log || true
+grep -q normUpload.routes __REMOTE_BASE__/src/server.js && echo deploy_norm_upload_route_ok || echo deploy_norm_upload_route_MISSING
+grep -q ncResponsibleOptions __REMOTE_BASE__/src/controllers/nc.controller.js && echo deploy_nc_responsible_ok || echo deploy_nc_responsible_MISSING
+tail -n 20 __REMOTE_BASE__/app.log || true
 '
-"@
+'@
+$remoteCmd = $remoteCmd.Replace('__REMOTE_BASE__', $RemoteBase)
 
 $remoteCmd = $remoteCmd -replace "`r", ""
 Invoke-Plink $remoteCmd
@@ -208,13 +209,14 @@ Invoke-Plink $remoteCmd
 Write-Host "`nVerifica health API..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3
 try {
-    $health = Invoke-RestMethod -Uri $HealthUrl -Method Get -TimeoutSec 15 -SkipCertificateCheck
+    $healthResponse = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 15
+    $health = $healthResponse.Content | ConvertFrom-Json
     $status = if ($health.status) { $health.status } elseif ($health.ok) { "ok" } else { "unknown" }
-    Write-Host "  OK — health $status (uptime: $($health.uptime))" -ForegroundColor Green
+    Write-Host "  OK - health $status (uptime: $($health.uptime))" -ForegroundColor Green
 } catch {
     Write-Host "  ATTENZIONE: health check fallito su $HealthUrl" -ForegroundColor Red
     Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "  Il deploy file e' completato; verifica manualmente systemctl status sgq-backend." -ForegroundColor Yellow
+    Write-Host "  Il deploy file e completato; verifica manualmente systemctl status sgq-backend." -ForegroundColor Yellow
     exit 1
 }
 

@@ -1,6 +1,9 @@
 /**
  * Filtro ambito azienda per API albero documentale.
- * Con company_id: solo nodi di quell'azienda (nessun OR company_id IS NULL).
+ * Con company_id: mostra nodi di quell'azienda + nodi condivisi (company_id IS NULL).
+ * I nodi condivisi (norme, cartelle di sistema) devono essere visibili in qualsiasi
+ * vista aziendale: un filtro STRICT company_id = X escluderebbe le norme e le
+ * cartelle di sistema che hanno company_id = NULL.
  */
 
 /**
@@ -12,7 +15,7 @@
 function appendCompanyScopeCondition(conditions, params, alias, companyId) {
     const parsed = companyId != null ? parseInt(companyId, 10) : null;
     if (parsed != null && !Number.isNaN(parsed)) {
-        conditions.push(`${alias}.company_id = @company_id`);
+        conditions.push(`(${alias}.company_id = @company_id OR ${alias}.company_id IS NULL)`);
         params.company_id = parsed;
     }
 }
@@ -25,7 +28,7 @@ function appendCompanyScopeCondition(conditions, params, alias, companyId) {
 function childrenCountSubquery(parentAlias, companyId) {
     const parsed = companyId != null ? parseInt(companyId, 10) : null;
     const companyFilter = parsed != null && !Number.isNaN(parsed)
-        ? ' AND sub.company_id = @company_id'
+        ? ' AND (sub.company_id = @company_id OR sub.company_id IS NULL)'
         : '';
 
     return `(SELECT COUNT(*) FROM document_registry sub

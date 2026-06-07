@@ -1,5 +1,5 @@
 /**
- * Projects Controller ó CRUD Commesse/Progetti ISO 3834
+ * Projects Controller ù CRUD Commesse/Progetti ISO 3834
  * Modulo Saldatura
  *
  * Tenant-isolated: ogni query filtra per organization_id dal JWT.
@@ -7,6 +7,12 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // GET /projects
 async function listProjects(req, res) {
@@ -21,9 +27,14 @@ async function listProjects(req, res) {
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'p');
+
         const conditions = ['p.organization_id = @organization_id'];
         const params = { organization_id, limit: parseInt(limit), offset };
+        Object.assign(params, companyFilter.params);
 
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
         if (search) {
             conditions.push('(p.project_code LIKE @search OR p.client_name LIKE @search OR p.description LIKE @search)');
             params.search = `%${search}%`;
@@ -93,17 +104,21 @@ async function listProjects(req, res) {
 async function getProjectStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'p');
+        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const params = { organization_id, ...companyFilter.params };
 
         const result = await query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN status = 'offerta' THEN 1 ELSE 0 END) AS offerta,
-                SUM(CASE WHEN status = 'attiva' THEN 1 ELSE 0 END) AS attiva,
-                SUM(CASE WHEN status = 'completata' THEN 1 ELSE 0 END) AS completata,
-                SUM(CASE WHEN status = 'chiusa' THEN 1 ELSE 0 END) AS chiusa
-            FROM projects
-            WHERE organization_id = @organization_id
-        `, { organization_id });
+                SUM(CASE WHEN p.status = 'offerta' THEN 1 ELSE 0 END) AS offerta,
+                SUM(CASE WHEN p.status = 'attiva' THEN 1 ELSE 0 END) AS attiva,
+                SUM(CASE WHEN p.status = 'completata' THEN 1 ELSE 0 END) AS completata,
+                SUM(CASE WHEN p.status = 'chiusa' THEN 1 ELSE 0 END) AS chiusa
+            FROM projects p
+            WHERE p.organization_id = @organization_id${whereExtra}
+        `, params);
 
         res.json({ success: true, data: result.recordset[0] });
     } catch (error) {

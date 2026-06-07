@@ -34,6 +34,7 @@ const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
+const BillingDashboardPage = React.lazy(() => import("./pages/BillingDashboardPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
@@ -44,6 +45,7 @@ const SearchPage = React.lazy(() => import("./pages/SearchPage"));
 const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProceduresPage"));
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
+const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -107,6 +109,11 @@ function AppContent() {
 
       <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
+        {/* Dev-only: catalogo UI */}
+        {import.meta.env.DEV && DevUiCatalog && (
+          <Route path="/dev/ui-catalog" element={<DevUiCatalog />} />
+        )}
+
         {/* Home dashboard */}
         <Route path="/" element={<HomePage />} />
 
@@ -217,6 +224,14 @@ function AppContent() {
           element={
             <BackWrapper>
               <LicensesSettingsPage />
+            </BackWrapper>
+          }
+        />
+        <Route
+          path="/settings/billing"
+          element={
+            <BackWrapper>
+              <BillingDashboardPage />
             </BackWrapper>
           }
         />
