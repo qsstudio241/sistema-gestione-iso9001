@@ -38,6 +38,11 @@
 /* Azioni */
 .pj-btn-icon { background:none; border:none; font-size:15px; cursor:pointer; padding:3px 5px; border-radius:6px; }
 .pj-btn-icon:hover { background:#f3f4f6; }
+.pj-actions { display:flex; align-items:center; gap:4px; }
+.grid-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; flex-shrink:0; padding:0; border-radius:6px; border:1px solid #d1d5db; background:#f9fafb; color:#374151; cursor:pointer; transition:background .15s ease,color .15s ease,border-color .15s ease; }
+.grid-icon-btn:hover { background:#e5e7eb; color:#1f2937; }
+.grid-icon-btn:focus-visible { outline:2px solid #2563eb; outline-offset:1px; }
+.grid-icon-btn--danger:hover { background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
 .pj-confirm { display:flex; align-items:center; gap:6px; font-size:12px; }
 .pj-confirm-yes { padding:3px 10px; background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
 .pj-confirm-no  { padding:3px 10px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer; font-size:12px; }
