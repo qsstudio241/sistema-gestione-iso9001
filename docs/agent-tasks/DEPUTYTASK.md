@@ -10,7 +10,7 @@
 - CSS: rimossa `.btn-scheda` (univoca di questa pagina); `.btn-edit`/`.btn-delete` mantenute perché ancora referenziate da altri componenti.
 - Test L1: `app/src/tests/companiesRowActions.test.jsx` (3 test, verde) — presenza icone matita/cestino, navigazione scheda, flusso eliminazione, assenza del "Modifica" di riga. Build Vite OK.
 
-**Commit:** `65fc2cf` su `main`.
+**Commit:** `2927ccd` su `main`.
 
 ---
 
