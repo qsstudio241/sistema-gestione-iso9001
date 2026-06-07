@@ -153,6 +153,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 4. **Golden rule UI:** ordine drawer ISO 10.2 — Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura (non form flat per tipo campo).
 5. **Encoding:** UTF-8 reale o `\u` in **stringhe JS**; mai `\u` come testo JSX grezzo; validare con `check-utf8-encoding.js` anche su `.md` manuale.
 6. **Libreria UI:** catalogo Fase A ~52 pattern / ~55–65% UI reale — secondo passaggio su `pages/` e moduli secondari; consultare [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) prima di nuovi blocchi UI.
+7. **Form annidati (bug critico 07/06/2026):** HTML non supporta `<form>` nested. Se un componente contenitore (es. `NcDetailPanel`) usa `<form onSubmit>` e al suo interno c'è un altro `<form>` (es. `NcActionsList`), il browser ignora il form interno e il click su qualsiasi `type="submit"` submita il form esterno. Sintomo: nessun POST visibile nei log VPS, azione non salvata, "drawer chiuso senza errore". Fix: convertire il form contenitore in `<div>` e usare `type="button" onClick={handleSubmit}` per il pulsante di salvataggio esterno.
 
 **Monitoraggio post-chiusura:** email job 08:05 (SMTP + destinatari `notifications_config`); push custom da audit reale Camellini; feedback utenti su drawer/flusso.
 
