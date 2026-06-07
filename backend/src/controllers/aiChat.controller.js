@@ -356,7 +356,7 @@ async function knowledgeHealth(req, res) {
       ),
     ]);
 
-    // Riorganizza coverage per azienda � formato flat atteso dal frontend
+    // Riorganizza coverage per azienda — formato flat atteso dal frontend
     const coverageMap = {};
     for (const row of (coverageRes.recordset || [])) {
       if (!coverageMap[row.company_id]) {
