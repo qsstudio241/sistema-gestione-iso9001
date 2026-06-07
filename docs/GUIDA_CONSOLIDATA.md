@@ -2661,3 +2661,21 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Test L1 | Jest 10 (backend) + Vitest 5 (`searchResultLinks`, `SearchPage`) |
 | Deploy | `deploy-controllers-to-vps.ps1` include search routes/controller/service + `server.js` |
 | Smoke | `GET /api/v1/search?q=...` con JWT; verificare assenza leak cross-company con `companyId` |
+
+### Sessione 07/06/2026 - NC notifiche + form annidati (chiusura sessione)
+
+| Voce | Esito |
+|------|-------|
+| Rubrica referenti NC | NotificationContactsPanel.jsx + tabella 
+otification_contacts (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
+| Fix responsible-options 500 | GET /nc/:id/responsible-options: studioScopeClause errato sulle companies (usava co.organization_id invece di c.organization_id). Fix: alias c corretto in 
+c.controller.js. Commit 48124e0 |
+| Fix form annidati (bug critico) | NcDetailPanel aveva <form onSubmit> esterno che avvolgeva NcActionsList (con il suo form). Click su Salva azione submittava il form esterno invece del POST /non-conformities/:id/actions. Fix: form esterno -> <div>, pulsante 	ype="button" onClick. Commit 8464ca |
+| Pattern alert scalabile | Alert scadenza NC: esponsible_contact_id (personale azienda) + ecipients_email (fallback). Scheduler docAlertEscalation.service.js gestisce l'escalation con priorita' personale > rubrica |
+| Migrazione schema | mig. 073 (
+otification_contacts), 074 (
+c_notification_contacts), 081 (user_company_access) deployate su VPS |
+| Punti aperti prossima sessione | (1) Email placeholder da sostituire con indirizzo reale nel seed; (2) NC-QS-260515-01-019 senza responsabile ne' scadenza da assegnare; (3) PR vecchie aperte (#15-97) da triaggiare |
+| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options,  ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
+
+**Lezione chiave - Form HTML annidati:** HTML vieta <form> dentro <form>. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa <form onSubmit> deve essere convertito in <div> quando contiene componenti figlio con propri form di salvataggio.
