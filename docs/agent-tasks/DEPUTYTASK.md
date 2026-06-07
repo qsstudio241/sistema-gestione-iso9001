@@ -1,34 +1,33 @@
-# DEPUTYTASK — Integrazione PR #91 con regola scope azienda AI (07/06/2026)
+# DEPUTYTASK — PR #38 parte B: editor foto pre-upload (07/06/2026)
 
 **Stato:** CHIUSO — TEST OK — 07/06/2026
 
-**Task:** Finalizzare l'integrazione della PR #91 (ambito azienda assistente AI) adattandola alla **regola di prodotto definitiva** del committente, mergiare su `main` via git locale.
+**Task:** Recuperare dalla PR #38 **solo** l'editor foto pre-upload (`PhotoEditModal`: crop, rotazione ±90°, zoom), integrarlo su `main` aggiornato (che già contiene la compressione foto, parte A, commit `0740d80`), mergiare via git locale e **chiudere la PR #38** (ora completata). Export Word **non** toccato (resize già in `main`).
 
-## Regola di prodotto applicata (diversa dalla PR originale)
-- **Utente AZIENDA cliente**: scope AI **forzato sulla propria anagrafica primaria** (`company_id` più basso in `user_company_access`), ignorando qualunque `companyId` inviato dal client. **Nessun 403** (la PR originale dava 403 al cliente multi-azienda; ora blocchiamo/forziamo).
-- **Utente STUDIO** (auditor_org / superadmin): invariato — può scegliere tra le SOLE aziende del suo `auditor_org_id`.
-- **Sicurezza RAG mantenuta**: filtro `searchKnowledge` su `company_id = @compId` (niente `OR IS NULL`, niente chunk globali).
-- **Frontend**: per l'utente azienda il chip selettore azienda è **disabilitato e fisso** sulla sua azienda (nessun dropdown).
+## Comportamento implementato
+- Alla scelta di una foto (Gallery/Camera) si apre `PhotoEditModal`: **ritaglio (crop), rotazione ±90°, zoom, aspect ratio**.
+- Editor **opzionale**: "Salta" usa l'originale, "Conferma" applica crop/rotazione (Canvas → JPEG 0.92), "Annulla tutto" non carica nulla. Più foto in sequenza (indice/totale).
+- Flusso: scelta file foto → **editor opzionale** → `addAttachments("foto", ...)` → **compressione esistente (parte A)** → upload. **Una sola compressione**; `customItemId` preservato.
 
 ## File toccati
-- `backend/src/services/aiCompanyScope.service.js` (+ `.test.js`)
-- `backend/src/controllers/aiChat.controller.test.js`
-- `app/src/pages/AiAssistantPage.jsx` (+ `.css`)
-- `docs/GUIDA_CONSOLIDATA.md` (registro decisioni: #91 MERGIATA + sottosezione regola scope)
+- `app/src/components/PhotoEditModal.jsx` (nuovo)
+- `app/src/components/PhotoEditModal.css` (nuovo)
+- `app/src/components/AttachmentSection.jsx` (wiring apertura modal per categoria "foto")
+- `app/package.json` + `app/package-lock.json` (dipendenza `react-easy-crop@^5.5.7`)
+- `docs/GUIDA_CONSOLIDATA.md` (registro decisioni: #38 chiusa, sottosezione parte B)
 
 ## Esito
-- **Test backend mirati (jest)**: 15/15 PASS (`aiCompanyScope.service.test.js`, `aiChat.controller.test.js`).
+- **Dipendenza**: `react-easy-crop@5.5.7` (peer `react >=16.4.0` → OK con React 18.2).
 - **Build app (Vite)**: OK.
+- **Test mirato**: `compressImageFile.test.js` 3/3 PASS (flusso compressione intatto). Nessun test dedicato editor (UI).
 - **Merge** su `main` via git locale (no force, no squash), push `origin main`.
-- Worktree dedicato `C:\sgq-pr91-wt` rimosso a fine sessione. Working tree principale (WIP committente) non toccato.
-
-## Note operative
-- Conflitto `GUIDA_CONSOLIDATA.md` (whole-file CRLF/LF) risolto tenendo la versione di `main` + nota PR #91.
-- `gh` non autenticato: merge via git locale; PR #91 si auto-chiude al push del merge su `main` (o chiudere manualmente con commento).
+- **PR #38**: CHIUSA su GitHub via MCP con commento (parte A + parte B recuperate, Word già in main).
+- Worktree dedicato `C:\sgq-pr38b-wt` rimosso a fine sessione. Working tree principale (WIP committente) non toccato.
 
 ## Passi manuali per il committente
-1. **Deploy VPS backend** per attivare la nuova logica `/ai/chat` (`backend/scripts/deploy-to-vps.sh` o `deploy-controllers-to-vps.ps1`).
-2. **`git pull origin main`** sul desktop per allineare il working tree principale.
+1. **`git pull origin main`** sul desktop per allineare il working tree principale.
+2. **`npm install`** in `app/` (nuova dipendenza `react-easy-crop`).
+3. **Deploy frontend**: automatico su **Netlify** al push su `main` (nessuna azione backend richiesta).
 
 ---
 

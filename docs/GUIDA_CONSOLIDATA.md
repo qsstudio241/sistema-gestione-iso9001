@@ -59,12 +59,12 @@ Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: m
 |----|--------|--------|
 | #28 | docs: diagnosi rinnovo Let's Encrypt | Parte operativa (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) consolidata in *Ops/Sysadmin — Rinnovo SSL Let's Encrypt* (più sotto). |
 | #52 | feat: audit close verso document_registry (ADR-009 F5) | **CHIUSA per decisione di prodotto (07/06/2026)**. L'automatismo audit-close → `document_registry` non è desiderato: il report Word esportato deve restare **modificabile** dall'utente e **caricato manualmente** nell'albero. Il requisito corretto (revisione documento = numeratore audit al caricamento di un verbale) è tracciato come **requisito futuro** (vedi sotto) e in `DEPUTYTASK.md`. |
+| #38 | feat: compressione foto + editor foto + Word resize | **CHIUSA il 07/06/2026 — completata**. Parte A (compressione foto) e parte B (editor `PhotoEditModal`) recuperate e integrate su `main`; il resize export Word è già presente in `main`. Vedi sottosezioni *PR #38 parte A* e *parte B*. |
 
 ### Lasciate aperte (feature/prodotto o sync sensibile — con prossimo passo)
 | PR | Titolo | Perché aperta | Prossimo passo |
 |----|--------|---------------|----------------|
 | #31 | perf(sync): debounce 1500ms + enqueueOrReplace | Sync sensibile (ADR-008 T3/T4/T5) | Rivalutare vs architettura sync + test L3 multi-device |
-| #38 | feat: compressione foto + Word resize + PhotoEditModal | **Parte A (compressione foto) integrata su `main` il 07/06/2026** (vedi sotto). Restano editor foto (`PhotoEditModal`) e resize export Word | Task separato per editor + resize Word; PR #38 **lasciata aperta** finché l'editor non è recuperato |
 | #10 | feat(settings): pagina Organizzazione P.IVA + logo | Si sovrappone al billing layer (migration 082) in sviluppo | Coordinare con billing per evitare doppioni, poi rebase |
 
 #### Requisito futuro (NON ora) — Caricamento verbale di audit con revisione = numeratore audit
@@ -87,7 +87,17 @@ Recuperata **solo** la compressione immagini dalla PR #38 (niente editor, niente
 - **Nessuna nuova dipendenza npm** (Canvas nativo del browser).
 - **NON replicata** la rimozione del blocco `customItemId` presente nella PR #38 (era una regressione): il supporto agli item checklist custom resta intatto.
 - **Verifica**: build Vite **OK**. Test mirato di gating (skip <300KB / solo immagini) aggiunto ed eseguibile in jsdom; il **runner vitest locale si impalla** in questo ambiente sandbox (pool threads/forks), quindi il test gira in **CI/Netlify** — build come L1.
-- **PR #38**: lasciata **aperta** su GitHub (editor foto ancora da recuperare in task separato).
+
+#### PR #38 parte B — Editor foto pre-upload `PhotoEditModal` (07/06/2026)
+
+Recuperata la **seconda e ultima parte** della PR #38: l'editor foto opzionale prima dell'upload. Con questo la PR #38 è **completata e chiusa** (parte A compressione + parte B editor; il resize export Word era già in `main`).
+
+- **File toccati**: `app/src/components/PhotoEditModal.jsx` (nuovo), `app/src/components/PhotoEditModal.css` (nuovo), `app/src/components/AttachmentSection.jsx` (wiring), `app/package.json` + `app/package-lock.json` (nuova dipendenza).
+- **Nuova dipendenza**: `react-easy-crop@^5.5.7` (peer `react >=16.4.0`, compatibile con React 18.2 del progetto).
+- **Comportamento**: alla scelta di una foto (Gallery/Camera) si apre `PhotoEditModal` per **ritaglio (crop), rotazione ±90°, zoom, aspect ratio**. L'editor è **opzionale**: l'utente può **"Salta"** (usa l'originale), **"Conferma"** (applica crop/rotazione via Canvas → JPEG 0.92) o **"Annulla tutto"** (nessun upload). Più foto vengono mostrate in sequenza.
+- **Flusso integrato**: scelta file foto → editor opzionale → `addAttachments("foto", ...)` → **compressione esistente (parte A, 0.82, max 1600px)** → upload. **Una sola compressione** (l'editor non comprime, produce JPEG ad alta qualità). `customItemId` preservato per gli item checklist custom.
+- **Verifica**: build Vite **OK** (`react-easy-crop` bundle in `vendor-react`); test mirato `compressImageFile.test.js` **3/3 PASS**. Nessun test dedicato all'editor (UI). Suite completa non eseguita (si impalla su Google Drive nel repo principale; worktree su disco locale `C:`).
+- **PR #38**: **CHIUSA** su GitHub via MCP (merge su `main` via git locale + push, no force/squash). L'export Word con resize era già presente in `main`, quindi non toccato.
 
 #### PR #91 — Regola di prodotto: ambito azienda dell'assistente AI (07/06/2026)
 

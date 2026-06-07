@@ -3,17 +3,23 @@
  *
  * Sezione allegati per domande checklist audit ISO 9001.
  * Gestisce upload foto, documenti e verbali con preview e rimozione.
+ * Per le foto mostra PhotoEditModal prima del caricamento (rotazione + crop opzionali).
  *
  * Props:
  * - questionId: ID domanda (es. "4.1", "7.5.3")
  * - attachmentManager: Hook useAttachmentManager
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import "./AttachmentSection.css";
+import PhotoEditModal from "./PhotoEditModal";
 
 function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, customItemId = null }) {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+
+  // Stato photo editor: null = modal chiuso, File[] = modal aperto con quelle foto
+  const [photoEditQueue, setPhotoEditQueue] = useState(null);
+  const photoInputRef = useRef(null);
 
   // Mostra solo allegati NON ancora confermati sul server (pendingSync=true o senza serverAttachmentId)
   // Quelli confermati sono già visibili in AttachmentPreview — evita doppio banner
@@ -24,11 +30,23 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
   const stats = attachmentManager.getStats(questionId);
 
   /**
-   * Handle file upload for specific category
+   * Handle file upload for specific category.
+   * Per le foto apre prima PhotoEditModal (editor opzionale); per documenti/verbali procede direttamente.
    */
   const handleUpload = async (category, source = "gallery") => {
     setShowUploadMenu(false);
 
+    if (category === "foto") {
+      // Apri file picker raw: i file vengono inviati al modal di editing (opzionale)
+      if (!photoInputRef.current) return;
+      photoInputRef.current.accept = "image/*";
+      photoInputRef.current.capture = source === "camera" ? "environment" : "";
+      photoInputRef.current.multiple = true;
+      photoInputRef.current.click();
+      return;
+    }
+
+    // Documenti / verbali: flusso diretto senza editing
     const result = await attachmentManager.openFilePicker(
       questionId,
       category,
@@ -55,6 +73,46 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
       onUploadSuccess(questionId);
     }
   };
+
+  /** Input change per le foto (hidden input ref) -> apre l'editor opzionale */
+  const handlePhotoInputChange = useCallback((e) => {
+    const files = Array.from(e.target.files || []);
+    // Reset input per permettere di riselezionare lo stesso file
+    e.target.value = "";
+    if (!files.length) return;
+    setPhotoEditQueue(files);
+  }, []);
+
+  /** PhotoEditModal: foto confermate (editate o originali) -> upload batch + compressione esistente */
+  const handlePhotoEditConfirmAll = useCallback(async (editedFiles) => {
+    setPhotoEditQueue(null);
+    const result = await attachmentManager.addAttachments(
+      questionId,
+      "foto",
+      editedFiles,
+      customItemId ? { customItemId } : {}
+    );
+
+    if (!result.success) {
+      alert(`❌ Errore: ${result.error}`);
+      return;
+    }
+    if (result.partial) {
+      alert(
+        `⚠️ Upload parziale:\n✅ ${result.uploaded} caricati\n❌ ${result.failed} falliti`
+      );
+    } else {
+      console.log(`✅ ${result.uploaded} foto caricate`);
+    }
+    if (result.success && onUploadSuccess) {
+      onUploadSuccess(questionId);
+    }
+  }, [attachmentManager, questionId, customItemId, onUploadSuccess]);
+
+  /** PhotoEditModal: annulla tutto -> non caricare nulla */
+  const handlePhotoEditCancel = useCallback(() => {
+    setPhotoEditQueue(null);
+  }, []);
 
   /**
    * Handle attachment removal
@@ -112,6 +170,23 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
 
   return (
     <div className="attachment-section">
+      {/* Input nascosto per selezione foto (attivato da handleUpload "foto") */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        style={{ display: "none" }}
+        onChange={handlePhotoInputChange}
+      />
+
+      {/* Modal editing foto (aperto solo quando photoEditQueue != null) */}
+      {photoEditQueue && (
+        <PhotoEditModal
+          files={photoEditQueue}
+          onConfirmAll={handlePhotoEditConfirmAll}
+          onCancel={handlePhotoEditCancel}
+        />
+      )}
+
       {/* Upload buttons con stats inline */}
       <div className="attachment-actions">
         <div className="upload-menu-wrapper">
