@@ -1,4 +1,14 @@
-# DEPUTYTASK — Catalogo UI e standardizzazione componenti
+# DEPUTYTASK — Fix visibilità logo azienda
+
+**Stato:** ✅ TEST OK — chiuso il 07/06/2026  
+**Task:** Fix visibilità logo azienda (`CompanyDetailPage` + `CompaniesPage` modal)  
+**Commit finale:** `3787ad1` — `fix(backend): rendi GET /companies/:id/logo endpoint pubblico`  
+**Causa:** Express Router auth intercept — middleware `authenticate` su `/api/v1` bloccava richieste senza Bearer token (utenti desktop con cookie httpOnly). Soluzione: endpoint logo registrato in `server.js` prima dei router autenticati.  
+**Lezione:** vedi `docs/GUIDA_CONSOLIDATA.md` → *Esperienza 07/06/2026 — Fix logo azienda*.
+
+---
+
+# Task precedente — Catalogo UI e standardizzazione componenti
 
 **Stato:** CHIUSO — commit `bc0db46` su `main` 06/06/2026, deploy Netlify automatico  
 **Origine:** `DEPUTYTASK_UI_CATALOG.md` (root)
