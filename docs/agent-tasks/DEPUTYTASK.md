@@ -29,3 +29,14 @@
 ## Passi manuali per il committente
 1. **Deploy VPS backend** per attivare la nuova logica `/ai/chat` (`backend/scripts/deploy-to-vps.sh` o `deploy-controllers-to-vps.ps1`).
 2. **`git pull origin main`** sul desktop per allineare il working tree principale.
+
+---
+
+## Task futuro pendente — Caricamento verbale di audit con revisione = numeratore audit
+
+**Origine:** chiusura **PR #52** (07/06/2026). L'automatismo audit-close → `document_registry` (ADR-009 Fase 5) **non** è desiderato: il report Word esportato deve restare **modificabile** e **caricato manualmente** nell'albero. Il requisito vero è allineare la revisione al numero audit al momento del caricamento manuale.
+
+- Tipo documento dedicato **"Verbale di audit"** nella cartella **12 AUDIT**.
+- Al caricamento: selezione audit → `revision = audit.audit_number` (formato `PREFISSO-YYMMDD-NN`); campo revisione **read-only**.
+- Opzionale: riconoscimento audit dal nome file export (`{Cliente}_{NumeroAudit}_{Standard}.docx`, trattini resi come underscore).
+- Note tecniche: `document_registry.revision` è `NVARCHAR(20)` → valutare allargamento colonna (numeri audit fino a ~26 char); nessuna FK audit → salvare `audit_id`/`audit_number` in `type_specific_data`.
