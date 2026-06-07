@@ -209,7 +209,8 @@ Invoke-Plink $remoteCmd
 Write-Host "`nVerifica health API..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3
 try {
-    $health = Invoke-RestMethod -Uri $HealthUrl -Method Get -TimeoutSec 15 -SkipCertificateCheck
+    $healthResponse = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 15
+    $health = $healthResponse.Content | ConvertFrom-Json
     $status = if ($health.status) { $health.status } elseif ($health.ok) { "ok" } else { "unknown" }
     Write-Host "  OK - health $status (uptime: $($health.uptime))" -ForegroundColor Green
 } catch {
