@@ -1,31 +1,31 @@
-# DEPUTYTASK — Chiusura sessione 07/06/2026 (triage PR backlog)
+# DEPUTYTASK — Integrazione PR #91 con regola scope azienda AI (07/06/2026)
 
-**Stato:** CHIUSO — 07/06/2026
+**Stato:** CHIUSO — TEST OK — 07/06/2026
 
-**Task:** Completamento backlog PR come senior lead in autonomia — triage delle 8 PR aperte residue (merge sicuri, recupero contenuti, decisioni motivate).
+**Task:** Finalizzare l'integrazione della PR #91 (ambito azienda assistente AI) adattandola alla **regola di prodotto definitiva** del committente, mergiare su `main` via git locale.
 
-## Esito triage (registro completo in `docs/GUIDA_CONSOLIDATA.md`, sezione *Registro decisioni triage PR backlog (07/06/2026)*)
+## Regola di prodotto applicata (diversa dalla PR originale)
+- **Utente AZIENDA cliente**: scope AI **forzato sulla propria anagrafica primaria** (`company_id` più basso in `user_company_access`), ignorando qualunque `companyId` inviato dal client. **Nessun 403** (la PR originale dava 403 al cliente multi-azienda; ora blocchiamo/forziamo).
+- **Utente STUDIO** (auditor_org / superadmin): invariato — può scegliere tra le SOLE aziende del suo `auditor_org_id`.
+- **Sicurezza RAG mantenuta**: filtro `searchKnowledge` su `company_id = @compId` (niente `OR IS NULL`, niente chunk globali).
+- **Frontend**: per l'utente azienda il chip selettore azienda è **disabilitato e fisso** sulla sua azienda (nessun dropdown).
 
-### Mergiate su `main`
-- **#97** fix(backend) eliminazione azienda con cleanup dipendenze FK — fix integrità DB. Conflitti GUIDA (whole-file CRLF) e codice risolti, push fast-forward, merge commit (no squash).
-- **#57** fix(ai) retry automatico Gemini su 503/429 — retry server-side mancante in main. Conflitti su `aiAssist.test.js` (allineato a `userId` reale) e GUIDA risolti, syntax-check OK, merge commit.
+## File toccati
+- `backend/src/services/aiCompanyScope.service.js` (+ `.test.js`)
+- `backend/src/controllers/aiChat.controller.test.js`
+- `app/src/pages/AiAssistantPage.jsx` (+ `.css`)
+- `docs/GUIDA_CONSOLIDATA.md` (registro decisioni: #91 MERGIATA + sottosezione regola scope)
 
-### Chiusa
-- **#28** docs Let's Encrypt — contenuto operativo (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) recuperato in `GUIDA_CONSOLIDATA.md` (sez. Ops/Sysadmin), PR chiusa con commento.
-
-### Lasciate aperte (con commento gh su perché + prossimo passo)
-- **#91** AI ambito azienda obbligatorio — feature, impatto chat/RAG da valutare con committente.
-- **#52** audit close verso document_registry (ADR-009 F5) — manca migration 066 idempotente.
-- **#31** debounce sync 1500ms + enqueueOrReplace — sync sensibile (ADR-008), test L3 multi-device prima del merge.
-- **#38** compressione foto + PhotoEditModal — feature grossa, nuove dipendenze npm, test a parte.
-- **#10** settings org P.IVA+logo — si sovrappone al billing layer (migration 082) in sviluppo.
+## Esito
+- **Test backend mirati (jest)**: 15/15 PASS (`aiCompanyScope.service.test.js`, `aiChat.controller.test.js`).
+- **Build app (Vite)**: OK.
+- **Merge** su `main` via git locale (no force, no squash), push `origin main`.
+- Worktree dedicato `C:\sgq-pr91-wt` rimosso a fine sessione. Working tree principale (WIP committente) non toccato.
 
 ## Note operative
-- Merge eseguiti in worktree dedicato (`C:\sgq-pr-wt`) per non toccare il working tree del committente (modifiche WIP non committate, incluso billing 082).
-- Nessun force push, nessun squash.
-- Conflitti GUIDA su tutte le PR dovuti a divergenza CRLF/LF (whole-file conflict): risolti prendendo la versione di `main` e re-inserendo le aggiunte specifiche della PR.
+- Conflitto `GUIDA_CONSOLIDATA.md` (whole-file CRLF/LF) risolto tenendo la versione di `main` + nota PR #91.
+- `gh` non autenticato: merge via git locale; PR #91 si auto-chiude al push del merge su `main` (o chiudere manualmente con commento).
 
-## Punti aperti prossima sessione
-1. PR aperte residue: #91, #52, #31, #38, #10 (5) — integrare secondo i prossimi passi sopra.
-2. Working tree committente con molte modifiche WIP (billing 082, ecc.): committare/ordinare a parte.
-3. Allineare il `main` locale dopo questa sessione (`git pull origin main`) quando il working tree è pulito.
+## Passi manuali per il committente
+1. **Deploy VPS backend** per attivare la nuova logica `/ai/chat` (`backend/scripts/deploy-to-vps.sh` o `deploy-controllers-to-vps.ps1`).
+2. **`git pull origin main`** sul desktop per allineare il working tree principale.
