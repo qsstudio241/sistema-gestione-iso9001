@@ -1383,9 +1383,18 @@ Prima di implementare qualsiasi nuovo widget di domanda/item, verificare se esis
 #### Migration DB via SSH (non via cloud agent)
 Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risolve il server). Pattern consolidato:
 1. Scrivi script `run-migration-NNN-vps.js` che usa `require('/var/www/sgq-backend/src/config/database')`
-2. `scp` dello script sul VPS via `$SGQ_SSH_KEY_B64`
-3. `ssh` + `node /tmp/run-migration-NNN-vps.js`
+2. **Windows (Cursor desktop):** `.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-NNN-vps.js` (usa `.ssh-deploy.local.ps1`, **non** `SGQ_SSH_KEY_B64`). Preflight: `vps-preflight.ps1` → `VPS_ACCESS_OK`.
+3. **Cloud Agent (Linux):** `scp` via `$SGQ_SSH_KEY_B64` + `ssh` + `node /tmp/run-migration-NNN-vps.js`
+4. **PC con `database.json`:** migrazione diretta con Node/sqlcmd senza SSH.
 - **Nota SQL Server**: `ON DELETE SET NULL` in FK non è sempre supportato. Verificare con istruzione separata prima di aggiungere clausole ON DELETE/UPDATE.
+
+#### Accesso VPS da Windows — non usare SGQ_SSH_KEY_B64 (07/06/2026)
+Su Cursor desktop (Windows) `SGQ_SSH_KEY_B64` è **sempre vuota** — è un secret solo Cloud Agent. L'agente che si ferma con *"Impossibile verificare… va rieseguita dal cloud agent"* sbaglia percorso.
+- **Setup una tantum:** `backend/config/.ssh-deploy.local.ps1` (da `.example`) + `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- **Preflight obbligatorio:** `.\backend\scripts\vps-preflight.ps1` → `VPS_ACCESS_OK`.
+- **Script/query sul VPS:** `run-on-vps.ps1` (PuTTY `plink`/`pscp`, carica `.ssh-deploy.local.ps1`).
+- **Deploy:** `deploy-controllers-to-vps.ps1` (health check compatibile PowerShell 5.1: `Invoke-WebRequest -UseBasicParsing`).
+- **Lezione:** non cercare `.ppk` se non esiste — password SSH in file gitignored è il percorso documentato; chiave `.ppk` + Pageant è upgrade opzionale.
 
 #### Unificazione allegati ISO e custom (migration 047)
 `evidence_blocks` della custom già referenziava `attachment_id` dalla tabella `attachments` — erano già unificati a livello DB. Il gap era solo nel frontend: `AttachmentSection`/`AttachmentPreview` non sapevano filtrare per `custom_item_id`. Soluzione minima: aggiungere `custom_item_id` nullable a `attachments` + propagare il param nei 4 punti frontend.

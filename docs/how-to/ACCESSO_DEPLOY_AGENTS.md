@@ -53,6 +53,14 @@ Login e password SQL stanno solo in **`backend/config/database.json`** (gitignor
 
 Cursor esegue script **sul workspace locale** (la tua macchina Windows dove è aperto il repo).
 
+**Regola agente (vincolante):** su Windows **non** usare `SGQ_SSH_KEY_B64` (esiste solo nei Cloud Secrets). Prima di ogni operazione VPS eseguire `backend/scripts/vps-preflight.ps1`; per script/query sul server usare `backend/scripts/run-on-vps.ps1`. Non dichiarare blocco VPS se il preflight stampa `VPS_ACCESS_OK`.
+
+| Script | Uso |
+|--------|-----|
+| `vps-preflight.ps1` | Verifica `.ssh-deploy.local.ps1` + SSH + health |
+| `run-on-vps.ps1` | Copia ed esegue script Node o comando remoto |
+| `deploy-controllers-to-vps.ps1` | Deploy manifest completo + restart |
+
 Per **deploy backend** (`backend/scripts/deploy-controllers-to-vps.ps1`):
 
 1. **Consigliato:** sessione PuTTY salvata + **Pageant** con chiave `.ppk`, oppure nome sessione in `SGQ_PUTTY_SESSION` / file `backend/config/.putty-session.local` (una riga, gitignored).
