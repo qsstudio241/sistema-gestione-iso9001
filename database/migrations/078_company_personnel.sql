@@ -1,5 +1,5 @@
 -- Migration 078: anagrafica personale per azienda + bridge notification_contacts
--- Idempotente — ADR-012 slice S2
+-- Idempotente ï¿½ ADR-012 slice S2
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.objects
@@ -28,7 +28,7 @@ BEGIN
     PRINT 'Tabella company_personnel creata.';
 END
 ELSE
-    PRINT 'Tabella company_personnel già esistente — skip.';
+    PRINT 'Tabella company_personnel giï¿½ esistente ï¿½ skip.';
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_company_personnel_org')

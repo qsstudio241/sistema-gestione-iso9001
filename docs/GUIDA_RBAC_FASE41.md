@@ -1,8 +1,8 @@
-# Guida rapida — RBAC Fase 4.1 (cliente azienda)
+# Guida rapida ï¿½ RBAC Fase 4.1 (cliente azienda)
 
 > Per committente e test manuali. Password account test in `mcp.env`.
 
-## Chi è il «cliente azienda»
+## Chi ï¿½ il ï¿½cliente aziendaï¿½
 
 Utente con almeno una riga in `user_company_access` (`company_access` in login/me).
 
@@ -23,7 +23,7 @@ Moduli protetti: companies PUT, documents, qualifications, risks, NC (via audit.
 ## Cosa fa il frontend
 
 - `canWriteModule()` / `canEditCompany()` da `AuthContext`
-- Pulsanti «Nuovo audit», «Aggiungi documento», «Salva anagrafica» nascosti se read-only
+- Pulsanti ï¿½Nuovo auditï¿½, ï¿½Aggiungi documentoï¿½, ï¿½Salva anagraficaï¿½ nascosti se read-only
 
 ## Test rapidi
 

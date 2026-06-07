@@ -1,5 +1,5 @@
 /**
- * Migration NC 074 — FK referenti NC/azioni + nc_notification_log
+ * Migration NC 074 ï¿½ FK referenti NC/azioni + nc_notification_log
  * Eseguire sul VPS: node scripts/run-migration-nc-contacts-074-vps.js
  */
 'use strict';
@@ -23,7 +23,7 @@ const candidates = [
         console.error('ERRORE: 074_nc_notification_contacts.sql non trovato');
         process.exit(1);
     }
-    console.log('Migration NC 074 — FK referenti + nc_notification_log');
+    console.log('Migration NC 074 ï¿½ FK referenti + nc_notification_log');
     console.log('File:', resolvedPath);
     const batches = fs.readFileSync(resolvedPath, 'utf8')
         .split(/^\s*GO\s*$/gim)

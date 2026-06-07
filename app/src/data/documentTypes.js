@@ -1,5 +1,5 @@
 /**
- * documentTypes.js ù Fonte unica di veritù per tipi e stati documento
+ * documentTypes.js ÔøΩ Fonte unica di veritÔøΩ per tipi e stati documento
  *
  * Importare SEMPRE da qui. Non dichiarare DOC_TYPE_LABELS o DOC_STATUS_LABELS
  * localmente nei componenti (causa divergenze tra form, catalogo e pannello dettaglio).
@@ -25,9 +25,9 @@ export const DOC_TYPE_OPTIONS = [
   { value: "certificato_materiale", label: "Certificato materiale (EN 10204)" },
   { value: "dichiarazione_ce",   label: "Dichiarazione CE" },
   { value: "report_ndt",         label: "Rapporto di prova NDT" },
-  { value: "piano_qualita",      label: "Piano qualitù" },
-  { value: "sal",                label: "SAL ù Stato avanzamento lavori" },
-  { value: "rdp",                label: "RDP ù Rapporto di prova" },
+  { value: "piano_qualita",      label: "Piano qualitÔøΩ" },
+  { value: "sal",                label: "SAL ÔøΩ Stato avanzamento lavori" },
+  { value: "rdp",                label: "RDP ÔøΩ Rapporto di prova" },
   { value: "altro",              label: "Altro" },
 ];
 
@@ -42,7 +42,7 @@ export const DOC_TYPE_LABELS = Object.fromEntries(
  */
 export const DOC_TYPE_GROUPS = [
   {
-    group: "SGQ ù Sistema Gestione Qualitù",
+    group: "SGQ ÔøΩ Sistema Gestione QualitÔøΩ",
     types: ["procedura", "istruzione", "modulo", "manuale", "norma", "piano_qualita", "sal", "altro"],
   },
   {
@@ -54,7 +54,7 @@ export const DOC_TYPE_GROUPS = [
     types: ["wps", "wpqr", "report_ndt", "rdp"],
   },
   {
-    group: "Attrezzature e conformitù",
+    group: "Attrezzature e conformitÔøΩ",
     types: ["cert_taratura", "certificato_materiale", "dichiarazione_ce"],
   },
 ];

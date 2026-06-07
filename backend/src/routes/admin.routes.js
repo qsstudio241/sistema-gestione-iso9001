@@ -9,6 +9,7 @@
 const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const adminController = require('../controllers/admin.controller');
+const billingController = require('../controllers/billing.controller');
 
 const adminOnly      = [authenticate, authorize('admin', 'superadmin')];
 const superadminOnly = [authenticate, authorize('superadmin')];
@@ -28,5 +29,10 @@ router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
 router.patch('/admin/licenses', superadminOnly, adminController.updateOrgLicenses);
 // Superadmin: gestione licenze per qualsiasi organizzazione (studi clienti)
 router.patch('/admin/organizations/:organizationId/licenses', superadminOnly, adminController.updateAnyOrgLicenses);
+
+router.get('/admin/billing/overview', superadminOnly, billingController.getOverview);
+router.get('/admin/billing/companies', superadminOnly, billingController.getCompanies);
+router.get('/admin/billing/events', superadminOnly, billingController.getEvents);
+router.get('/admin/billing/export', superadminOnly, billingController.exportCsv);
 
 module.exports = router;

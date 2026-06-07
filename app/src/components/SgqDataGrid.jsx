@@ -1,5 +1,5 @@
 /**
- * SgqDataGrid ù griglia tabellare riusabile (sort, loading, empty)
+ * SgqDataGrid ÔøΩ griglia tabellare riusabile (sort, loading, empty)
  * theme="plain" | theme="catalog" (classi datagrid-* da DocumentDataGrid.css)
  */
 import React, { useState, useMemo, useCallback, useEffect } from "react";

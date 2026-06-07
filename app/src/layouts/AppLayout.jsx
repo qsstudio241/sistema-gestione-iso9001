@@ -29,6 +29,7 @@ function hasLicensedModule(user, key) {
 function buildNavItems(user, alerts = {}) {
   const isCompanyClient = hasCompanyAccess(user);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isSuperadmin = user?.role === "superadmin";
   const canManage = !isCompanyClient && ["admin", "auditor", "superadmin"].includes(user?.role);
   const primaryCompanyId = getPrimaryCompanyId(user);
   const companiesNavItem = isCompanyClient && primaryCompanyId
@@ -82,6 +83,7 @@ function buildNavItems(user, alerts = {}) {
         ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
+          ...(isSuperadmin ? [{ to: "/settings/billing", icon: "💳", label: "Fatturazione" }] : []),
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),

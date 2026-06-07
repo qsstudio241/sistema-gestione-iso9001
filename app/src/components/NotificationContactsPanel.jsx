@@ -1,5 +1,5 @@
 /**
- * NotificationContactsPanel ù rubrica referenti NC (SgqDataGrid)
+ * NotificationContactsPanel ÔøΩ rubrica referenti NC (SgqDataGrid)
  */
 
 import React, { useState, useEffect, useCallback } from "react";

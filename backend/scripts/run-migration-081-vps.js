@@ -40,7 +40,7 @@ const STEPS = [
 ];
 
 (async () => {
-    console.log('Migration 081 — user_company_access (RBAC Fase 4)');
+    console.log('Migration 081 ï¿½ user_company_access (RBAC Fase 4)');
     try {
         for (let i = 0; i < STEPS.length; i++) {
             await query(STEPS[i]);

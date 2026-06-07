@@ -1,5 +1,5 @@
 -- Migration 080: profili escalation documenti + flag notifications_config
--- alert_days_1 resta la finestra operativa condivisa (Priorità, email, dashboard)
+-- alert_days_1 resta la finestra operativa condivisa (Prioritï¿½, email, dashboard)
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.objects
@@ -21,7 +21,7 @@ BEGIN
     PRINT 'Tabella doc_escalation_profile creata.';
 END
 ELSE
-    PRINT 'Tabella doc_escalation_profile gia esistente — skip.';
+    PRINT 'Tabella doc_escalation_profile gia esistente ï¿½ skip.';
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_doc_escalation_profile_org')

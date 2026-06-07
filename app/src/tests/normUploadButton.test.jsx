@@ -1,5 +1,5 @@
 /**
- * Test L1  NormUploadButton: flusso upload norme (PDF)
+ * Test L1 ï¿½ NormUploadButton: flusso upload norme (PDF)
  *
  * Copre:
  *   - Selezione file e stato UI
@@ -25,7 +25,7 @@ function createFile(name, size, type = 'application/pdf') {
   return new File([buffer], name, { type });
 }
 
-describe('NormUploadButton  flusso upload norme', () => {
+describe('NormUploadButton ï¿½ flusso upload norme', () => {
   let onUploadComplete;
 
   beforeEach(() => {

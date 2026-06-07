@@ -1,5 +1,5 @@
 /**
- * CompanyDetailPage ù scheda azienda con tab Anagrafica + Personale (slice S4/S5)
+ * CompanyDetailPage ? scheda azienda con tab Anagrafica + Personale (slice S4/S5)
  * Route: /companies/:id
  */
 
@@ -8,6 +8,7 @@ import { useRouter, useNavigate, Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import { canEditCompany } from "../utils/companyAccess";
 import apiService from "../services/apiService";
+import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
@@ -36,6 +37,13 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
 
+  const existingLogoBlob = useCompanyLogoUrl(
+    company?.id,
+    company?.logo_url && !logoFile ? company.logo_url : null,
+    logoTimestamp
+  );
+  const displayLogo = logoPreview || existingLogoBlob;
+
   useEffect(() => {
     if (!company) return;
     setForm({
@@ -44,12 +52,9 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
       sector: company.sector || "",
       address: company.address || "",
     });
-    setLogoPreview(
-      company.logo_url
-        ? apiService.getCompanyLogoUrl(company.id) + `?t=${logoTimestamp}`
-        : null
-    );
-  }, [company, logoTimestamp]);
+    setLogoFile(null);
+    setLogoPreview(null);
+  }, [company]);
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
@@ -130,11 +135,11 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
           <div className="form-group">
             <label>Logo aziendale</label>
             <div className="logo-upload-area">
-              {logoPreview && (
-                <img src={logoPreview} alt="Logo" className="company-detail-logo-preview" />
+              {displayLogo && (
+                <img src={displayLogo} alt="Logo" className="company-detail-logo-preview" />
               )}
               <label className="btn-upload-logo">
-                {logoPreview ? "Cambia logo" : "Carica logo"}
+                {displayLogo ? "Cambia logo" : "Carica logo"}
                 <input
                   type="file"
                   accept="image/*"
@@ -234,7 +239,7 @@ function CompanyDetailPage() {
         </Link>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda ù anagrafica e personale collegato alle NC.
+          Scheda azienda ? anagrafica e personale collegato alle NC.
         </p>
       </div>
 

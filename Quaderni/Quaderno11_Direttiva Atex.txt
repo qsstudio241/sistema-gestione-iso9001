@@ -1,0 +1,1390 @@
+n.11 
+
+2018 
+
+Guida pratica alla 
+Direttiva 2014/34/UE – ATEX 
+
+
+La riproduzione totale o parziale con qualunque mezzo di questo documento deve essere autorizzata 
+da CONFORMA che detiene tutti i diritti. 
+
+Ottobre 2018 
+
+
+Guida pratica alla 
+Direttiva 2014/34/UE – ATEX 
+
+
+La presente Linea Guida nasce come progetto del Gruppo di Lavoro NOTIFICHE E ABILITAZIONI di 
+Conforma coordinato da Stefano SIBILIO (IMQ), al quale aderiscono i seguenti Soci: 
+
+• CERTIQUALITY 
+• DEKRA 
+• DNV GL 
+• EUROFINS 
+• ICIM 
+• IMQ 
+• RINA SERVICES 
+• SGS 
+I soci aderenti al Gdl Notifiche e Abilitazioni e notificati per la Direttiva 2014/34/UE che hanno contribuito 
+ai lavori di redazione della guida pratica sono: 
+
+ICIM Igor BALASSI 
+ICIM Vincenzo DELACQUA 
+IMQ Daniele BRAZZAROLA 
+IMQ Paolo PARABOSCHI 
+RINA SERVICES Fabio OLIVIERI 
+
+
+Sommario 
+
+PREMESSA..................................................................................................................................... 6 
+
+2. TERMINI E DEFINIZIONI......................................................................................................... 7 
+3. GENERALITÀ........................................................................................................................... 10 
+
+4. CAMPO DI APPLICAZIONE ED ESCLUSIONI ....................................................................... 14 
+5. DIRETTIVA 1999/92/CE ...................................................................................................... 21 
+
+6. PROCEDURE DI VALUTAZIONE DELLA CONFORMITÁ........................................................ 22 
+
+7. DOCUMENTAZIONE DA PRODURRE..................................................................................... 33 
+8. FAQ.......................................................................................................................................... 40 
+
+
+PREMESSA 
+
+La presente guida vuole essere di ausilio a coloro si trovano ad affrontare la complessa materia degli 
+apparecchi elettrici e non, che possono essere impiegati in presenza di atmosfera potenzialmente 
+esplosiva in quanto rientrano nell’ambito di applicazione della direttiva Atex 2014/34/UE (rifusione 
+della direttiva 94/9/CE). Obiettivo della direttiva, immutato dalla precedente versione, è quello 
+di garantire il libero movimento dei prodotti cui si applica all’interno del territorio dell’Unione Europea. 
+A tale scopo la direttiva fornisce requisiti armonizzati e procedure per stabilire la rispondenza 
+dei prodotti che sono messi sul mercato Europeo per la prima volta. La direttiva sancisce obblighi 
+specici per le persone (siche e legali) che immettono prodotti sul mercato e/o in servizio, 
+indipendentemente che ne siano i fabbricanti, il suo rappresentante autorizzato, importatore o distributore. 
+La direttiva non regolamenta la sicurezza e la salute dei lavoratori in atmosfere esplosive, 
+che è coperta da una diversa direttiva (1999/92/CE) e da legislazioni nazionali (D.lgs 81/08 e s.m.i). 
+
+ATEX 137 
+Datore di lavoro 
+Direttiva 99/92/CE 
+ATEX 137 
+Fabbricante Direttiva 
+2014/34/UE 
+•Luoghi di lavoro dove possono 
+formarsi atmosfere 
+esplosive; 
+•Classicazione in zone; 
+•Gruppi e categorie di 
+apparecchi e sistemi di 
+protezione da utilizzare in 
+ciascuna zona. 
+•Luoghi di lavoro dove 
+possono formarsi atmosfere 
+esplosive; 
+•Classicazione in zone; 
+•Gruppi e categorie di 
+apparecchi e sistemi di 
+protezione da utilizzare in 
+ciascuna zona. 
+
+Questa guida è rivolta ai fabbricanti, agli Organismi Noticati, ai progettisti, agli installatori, agli 
+utilizzatori nali che possono essere coinvolti a vario titolo nel processo di progettazione, scelta, 
+installazione, valutazione della conformità, utilizzo, manutenzione di prodotti atti ad essere 
+utilizzati in atmosfera potenzialmente esplosiva per presenza di gas, vapori e nebbie, polveri. 
+Per maggiori approfondimenti sugli argomenti trattati in questa guida, si può fare riferimento al documento 
+“Guida alla Direttiva 2014/34/EU” seconda edizione, dicembre 2017 (solo versione in inglese): 
+
+https://ec.europa.eu/docsroom/documents/26861/attachments/1/translations/en/renditions/pdf 
+
+ed alla “Guida Blu all’attuazione della normativa UE sui prodotti 2016” pubblicata 
+sulla Gazzetta Ufciale dell’Unione Europea come documento C272 il 26 luglio 2016: 
+
+https://ec.europa.eu/docsroom/documents/18027/attachments/1/translations/it/renditions/pdf 
+
+di cui si consiglia la lettura in contemporanea con la Direttiva 2014/34/UE e le relative norme armonizzate 
+che sono raggruppate nell’elenco pubblicato sulla Gazzetta Ufciale dell’Unione Europea al link: 
+
+http://eur-lex.europa.eu/legal-content/IT/TXT/PDF/?uri=uriserv:OJ.C_.2018.092.01.0087.01.ITA 
+
+Nel paragrafo riguardante le FAQ viene affrontato il tema preliminare sull’applicabilità o meno della direttiva 
+Atex ai prodotti da immettere sul mercato o installare che consigliamo vivamente di consultare. 
+
+I QUADERNI DI CONFORMA 
+
+6 
+
+2 Termini e denizioni 
+Per poter essere allineati con la terminologia utilizzata nella direttiva si riportano di seguito le principali voci: 
+
+APPARECCHI: le macchine, le apparecchiature, i dispositivi ssi o mobili, gli organi di comando, la 
+strumentazione e i sistemi di rilevazione e di prevenzione che, da soli o combinati, sono destinati alla 
+generazione, al trasporto, allo stoccaggio, alla misurazione, alla regolazione e alla conversione di energia 
+e/o alla trasformazione di materiale e che, a causa delle potenziali sorgenti di innesco che sono loro 
+proprie, rischiano di provocare un’esplosione. 
+
+SISTEMI DI PROTEZIONE: dispositivi, diversi dai componenti degli apparecchi, la cui funzione 
+è bloccare sul nascere le esplosioni e/o circoscrivere la zona da esse colpita, messi a disposizione sul 
+mercato separatamente come sistemi con funzioni autonome. 
+
+COMPONENTI: tutte le parti essenziali per il funzionamento sicuro degli apparecchi e sistemi di 
+protezione, prive tuttavia di funziona autonoma. 
+
+ASSIEME: combinazione di due o più parti di apparecchi ed eventuali componenti immessa sul mercato 
+e/o messa in servizio da una persona responsabile (fabbricante) sotto forma di singola unità funzionale. 
+
+ATMOSFERA ESPLOSIVA: una miscela contenente aria, a condizioni atmosferiche, sostanze inammabili 
+allo stato di gas, vapori, nebbie o polveri nella quale, dopo l’innesco, la combustione si propaga all’intera 
+miscela non bruciata. 
+
+ATMOSFERA POTENZIALMENTE ESPLOSIVA: un’atmosfera suscettibile di trasformarsi in atmosfera 
+esplosiva a causa di condizioni locali e operative. 
+
+CONDIZIONI ATMOSFERICHE: la direttiva 94/9/CE non denisce le condizioni atmosferiche. Le relative 
+norme indicano una gamma di temperatura da –20° a 40° C ed una gamma di pressione tra 0,8 e 1,1 bar 
+come base per le prove di conformità alle norme (EN 50014, prEN 134631, parte 1). Ciò non esclude 
+che i prodotti possano essere progettati e valutati specicamente per funzionare occasionalmente anche 
+al di fuori di tali condizioni. 
+
+GRUPPO DI APPARECCHI I: apparecchi destinati a lavori in sotterraneo nelle miniere e nei loro impianti 
+di supercie, passibili di essere esposti al rischio di sprigionamento di grisù e/o di polveri combustibili, 
+comprendenti gli apparecchi appartenenti alle categorie M1 e M2 di cui all’allegato I. 
+
+I QUADERNI DI CONFORMA 
+
+7 
+
+GRUPPO DI APPARECCHI II: apparecchi destinati a essere utilizzati in altri siti passibili di essere messi 
+in pericolo da atmosfere esplosive, comprendenti apparecchi appartenenti alle categorie 1, 2 e 3 di cui 
+all’allegato I. 
+
+CATEGORIA DI APPARECCHI: la classicazione di apparecchi, in ogni gruppo di apparecchi, specicata 
+all’allegato I, che determina il livello di protezione richiesto. 
+
+USO PREVISTO: l’uso di un prodotto prescritto dal fabbricante assegnando l’apparecchio a un particolare 
+gruppo o categoria di apparecchi o fornendo tutte le indicazioni necessarie per il funzionamento sicuro 
+di un sistema protettivo, dispositivo o componente. 
+
+MESSA A DISPOSIZIONE SUL MERCATO: la fornitura sul mercato dell’Unione, nel corso di un’attività 
+commerciale, a titolo oneroso o gratuito, di un prodotto destinato a essere distribuito, consumato o 
+usato. 
+
+COMMERCIALIZZAZIONE: la prima messa a disposizione di un prodotto sul mercato dell’Unione. 
+
+FABBRICANTE: una persona sica o giuridica che fabbrica un prodotto oppure lo fa progettare o 
+fabbricare e lo commercializza apponendovi il proprio nome o marchio o lo utilizza a ni propri. 
+
+RAPPRESENTANTE AUTORIZZATO: una persona sica o giuridica stabilita nell’Unione che abbia 
+ricevuto da un fabbricante un mandato scritto che la autorizzi ad agire per suo conto in relazione a 
+determinati compiti. 
+
+IMPORTATORE: una persona sica o giuridica stabilita nell’Unione che commercializzi sul mercato UE 
+un prodotto originario di un paese terzo. 
+
+DISTRIBUTORE: una persona sica o giuridica nella catena di fornitura, diversa dal fabbricante o 
+dall’importatore, che metta un prodotto a disposizione sul mercato. 
+
+OPERATORI ECONOMICI: il fabbricante, il rappresentante autorizzato, l’importatore e il distributore. 
+
+SPECIFICAZIONE TECNICA: un documento che prescriva i requisiti tecnici che devono essere soddisfatti 
+da un prodotto. 
+
+I QUADERNI DI CONFORMA 
+
+8 
+
+9 9 
+NORMA ARMONIZZATA: la norma armonizzata di cui all’articolo 2, punto 1, lettera c), del regolamento 
+(UE) n. 1025/2012 (una norma europea adottata sulla base di una richiesta della Commissione ai ni 
+dell’applicazione della legislazione dell’Unione sull’armonizzazione). 
+
+VALUTAZIONE DELLA CONFORMITÀ: il processo atto a dimostrare che le prescrizioni speciche di 
+una direttiva relative a un prodotto sono state rispettate. 
+
+ORGANISMO DI VALUTAZIONE DELLA CONFORMITÀ: un organismo che svolge attività di 
+valutazione della conformità, come tarature, prove, certicazioni e ispezioni. 
+
+RICHIAMO: un provvedimento mirante a ottenere la restituzione di un prodotto, già messo a disposizione 
+dell’utente nale. 
+
+RITIRO: indica un provvedimento mirante a impedire che un prodotto presente nella catena della 
+fornitura, sia messo a disposizione sul mercato. 
+
+NORMATIVA DI ARMONIZZAZIONE DELL’UNIONE: indica una normativa dell’Unione che mira ad 
+armonizzare le condizioni della commercializzazione dei prodotti. 
+
+MARCATURA CE: indica il marchio mediante il quale il fabbricante attesta che il prodotto è conforme ai 
+requisiti applicabili stabiliti nella normativa di armonizzazione dell’Unione che ne prevede l’apposizione. 
+
+I QUADERNI DI CONFORMA 
+
+
+3 Generalità 3 Generalità 
+L’allegato I della Direttiva denisce quali sono i criteri per la suddivisione dei gruppi di apparecchi e 
+categorie, cui si deve riferire il fabbricante dopo aver stabilito l’uso del prodotto, per determinare la 
+corretta procedura di valutazione della conformità tra quelle descritte negli allegati dal III a IX della 
+direttiva (trattati al capitolo 5 della presente guida). 
+
+Segnaliamo che i prodotti devono seguire la procedura di valutazione della conformità corrispondente 
+alla categoria dell’apparecchio o sistema di protezione cui devono appartenere. Apparecchi e componenti 
+possono essere adatti a una o più categorie o gruppi. 
+Sono deniti due gruppi di apparecchi: 
+
+GRUPPO I: comprende apparecchi per l’uso nelle parti sotterranee delle miniere, ed in quelle parti di 
+installazione di supercie di quelle miniere, che possono essere messe in pericolo da fuoco e/o da polvere 
+combustibile; 
+
+GRUPPO II: comprende apparecchi per l’uso negli altri luoghi (diversi dalle miniere) che possono essere 
+messi in pericolo da atmosfere esplosive;
+
+ CLASSIFICAZIONE DEI PRODOTTI 
+
+
+I QUADERNI DI CONFORMA 
+
+10 
+
+11 11 
+Questi gruppi sono suddivisi in categorie che hanno particolarità principali: 
+il gruppo I, dipende se il prodotto deve essere de-energizzato in caso di presenza di atmosfera esplosiva; 
+il gruppo II, dipende da dove il prodotto sia destinato ad essere utilizzato e se un’atmosfera potenzialmente 
+
+esplosiva sia sempre presente o è probabile che si verichi per un lungo o un breve periodo di tempo. 
+Le varie categorie di apparecchi devono essere in grado di funzionare in conformità ai parametri operativi, 
+stabiliti dal costruttore, ad un certo livello di protezione secondo la tabella seguente: 
+
+LIVELLO DI 
+PROTEZIONE 
+GRUPPO I 
+(Miniere) 
+GRUPPO II 
+(No miniere) 
+PRESTAZIONI DI 
+PROTEZIONE 
+CONDIZIONI DI 
+FUNZIONAMENTO 
+Molto elevato CAT. M1 Due mezzi di protezione 
+indipendenti o sicurezza 
+garantita anche qualora 
+si manifestino due guasti 
+indipendenti uno dall’altro 
+Gli apparecchi restano 
+alimentati ed in funzione 
+anche in presenza 
+di atmosfera esplosiva 
+Molto elevato CAT. 1 Due mezzi di protezione 
+indipendenti o sicurezza 
+garantita anche qualora 
+si manifestino due guasti 
+indipendenti uno dall’altro 
+Gli apparecchi restano 
+alimentati ed in funzione nelle 
+zone 0,1,2 (G) e 20,21,22 (D) 
+Elevato Protezione adatta al 
+funzionamento normale 
+e a condizioni di 
+funzionamento gravose 
+Interruzione alimentazione 
+in caso di presenza 
+atmosfera esplosiva 
+Elevato CAT. M2 CAT. 2 Protezione adatta al 
+funzionamento normale 
+e a disturbi frequenti o 
+apparecchi in cui si tenga 
+conto normalmente dei guasti 
+Gli apparecchi restano 
+alimentati ed in funzione 
+nelle zone 1,2 (G) e 21,22 (D) 
+Normale CAT. 3 Protezione adatta al 
+funzionamento normale 
+Gli apparecchi restano 
+alimentati ed in funzione 
+nelle zone 2 (G) e 22 (D) 
+
+Fonte: guida alla Dir 94/9/CE ed. 05/2000. Le lettere (G) e (D) indicano rispettivamente gas e polveri. 
+
+I QUADERNI DI CONFORMA 
+
+
+ALLEGATO I della Direttiva 2014/34/EU: 
+
+CRITERI PER LA CLASSIFICAZIONE DEI GRUPPI DI APPARECCHI IN CATEGORIE 
+
+1. Gruppo di apparecchi I 
+a) La categoria di apparecchi M1 comprende gli apparecchi progettati e, se del caso, dotati di mezzi 
+di protezione speciali supplementari per funzionare conformemente ai parametri operativi stabiliti dal 
+fabbricante e assicurare un livello di protezione molto elevato. 
+Gli apparecchi di questa categoria sono destinati ai lavori in sotterraneo nelle miniere e nei loro impianti 
+di supercie esposti al rischio di sprigionamento di grisù e/o di polveri combustibili. 
+Gli apparecchi di questa categoria devono rimanere operativi in atmosfera esplosiva, anche in caso di 
+guasto eccezionale dell’apparecchio e sono caratterizzati da mezzi di protezione tali che: 
+- in caso di guasto di uno dei mezzi di protezione, almeno un secondo mezzo indipendente assicuri il 
+livello di protezione richiesto, 
+- oppure qualora si manifestino due guasti indipendenti uno dall’altro, sia garantito il livello di protezione 
+richiesto. 
+Gli apparecchi di questa categoria devono soddisfare i requisiti supplementari di cui all’allegato II, punto 
+2.0.1. 
+
+b) La categoria di apparecchi M2 comprende gli apparecchi progettati per funzionare conformemente 
+ai parametri operativi stabiliti dal fabbricante e basati su un livello di protezione elevato. 
+Gli apparecchi di questa categoria sono destinati ai lavori in sotterraneo nelle miniere e nei loro impianti 
+di supercie esposti al rischio di sprigionamento di grisù e/o di polveri combustibili. 
+In presenza di atmosfera potenzialmente esplosiva, l’alimentazione di energia di questi apparecchi deve 
+interrompersi. 
+I mezzi di protezione relativi agli apparecchi di questa categoria assicurano il livello di protezione 
+richiesto durante il funzionamento normale, compreso in condizioni di funzionamento gravose, 
+segnatamente quelle risultanti da forti sollecitazioni e da continue variazioni ambientali. 
+Gli apparecchi di questa categoria devono soddisfare i requisiti supplementari di cui all’allegato II, punto 2.0.2. 
+2. Gruppo di apparecchi II 
+a) La categoria di apparecchi 1 comprende gli apparecchi progettati per funzionare conformemente ai 
+parametri operativi stabiliti dal fabbricante e garantire un livello di protezione molto elevato. 
+Gli apparecchi di questa categoria sono destinati ad ambienti in cui si rileva, sempre, spesso o per lunghi 
+periodi, un’atmosfera esplosiva dovuta a miscele di aria e gas, vapori, nebbie o miscele di aria e polveri. 
+Gli apparecchi di questa categoria devono assicurare il livello di protezione richiesto, anche in caso di 
+I QUADERNI DI CONFORMA 
+
+12 
+
+13 13 
+guasto eccezionale dell’apparecchio e sono caratterizzati da mezzi di protezione tali che: 
+
+- in caso di guasto di uno dei mezzi di protezione, almeno un secondo mezzo indipendente assicuri il 
+livello di protezione richiesto, 
+- oppure qualora si manifestino due guasti indipendenti uno dall’altro, sia garantito il livello di protezione 
+richiesto. 
+Gli apparecchi di questa categoria devono soddisfare i requisiti supplementari di cui all’allegato II, punto 
+2.1. 
+
+b) La categoria di apparecchi 2 comprende gli apparecchi progettati per funzionare conformemente ai 
+parametri operativi stabiliti dal fabbricante e garantire un livello di protezione elevato. 
+Gli apparecchi di questa categoria sono destinati ad ambienti in cui vi è probabilità che si manifestino 
+atmosfere esplosive dovute a gas, vapori, nebbie o miscele di aria e polveri. 
+I mezzi di protezione relativi agli apparecchi di questa categoria garantiscono il livello di protezione 
+richiesto anche in presenza di anomalie ricorrenti o difetti di funzionamento degli apparecchi di cui 
+occorre abitualmente tener conto. 
+Gli apparecchi di questa categoria devono soddisfare i requisiti supplementari di cui all’allegato II, 
+punto 2.2. 
+c) La categoria di apparecchi 3 comprende gli apparecchi progettati per funzionare conformemente ai 
+parametri operativi stabiliti dal fabbricante e garantire un livello di protezione normale. 
+Gli apparecchi di questa categoria sono destinati ad ambienti in cui vi sono scarse probabilità che si 
+manifestino, e comunque solo per breve tempo, atmosfere esplosive dovute a gas, vapori, nebbie o 
+miscele di aria e polveri. 
+Gli apparecchi di questa categoria garantiscono il livello di protezione richiesto a funzionamento normale. 
+Gli apparecchi di questa categoria devono soddisfare i requisiti supplementari di cui all’allegato II, punto 
+2.3 
+L’allegato II della direttiva contiene l’elenco dei requisiti essenziali di sicurezza che il prodotto deve 
+soddisfare. 
+L’applicazione per intero di una o più norme armonizzate garantisce il soddisfacimento di tali requisiti 
+per il principio di presunzione della conformità (si rimanda per approfondimento al capitolo 5 della 
+presente guida). 
+
+I QUADERNI DI CONFORMA 
+
+
+4 
+4.1 
+4 
+4.1 
+Campo di applicazione ed esclusioni 
+
+Campo di applicazione 
+
+La Direttiva 2014/34/UE (ATEX) si applica ai seguenti prodotti (Art. 1 comma 1): 
+
+• Apparecchi e sistemi di protezione destinati a essere utilizzati in atmosfera potenzialmente esplosiva 
+e componenti destinati ad essere inseriti in tali apparecchi e sistemi; 
+• Dispositivi di sicurezza, di controllo e di regolazione destinati a essere utilizzati al di fuori di atmosfere 
+potenzialmente esplosive ma necessari o utili per il funzionamento sicuro degli apparecchi e sistemi di 
+protezione, rispetto ai rischi di esplosione. 
+Nel caso di assiemi/skid costituiti dai prodotti di cui sopra, il fabbricante deve vericare la conformità dei 
+singoli componenti (specialmente per quelli non marcati CE) ed effettuare una valutazione del rischio di 
+innesco relativamente ai pericoli derivanti dalla combinazione nale dell’assemblaggio. 
+
+4.2 Esclusioni 
+La Direttiva 2014/34/UE (ATEX) NON si applica, invece, ai seguenti prodotti (Art.1 comma 2): 
+
+• Apparecchiature mediche 
+destinate a impieghi 
+in ambiente medico; 
+• Apparecchi e sistemi di protezione, quando il pericolo 
+di esplosione è dovuto esclusivamente alla presenza 
+di materie esplosive o di materie chimiche 
+instabili (es. esplosivi); 
+• Apparecchi destinati a impieghi in ambienti domestici e non commerciali, 
+nei quali un’atmosfera potenzialmente esplosiva può essere provocata solo 
+raramente e unicamente in conseguenza di una fuga accidentale di gas; 
+I QUADERNI DI CONFORMA 
+
+
+14 
+
+• Attrezzature di protezione individuale (DPI) 
+oggetto della direttiva 89/686/CEE 
+e del Regolamento UE 2016/425; 
+• Navi marittime e unità mobili 
+offshore, nonché le attrezzature 
+utilizzate a bordo di esse; 
+• Mezzi di trasporto, vale a dire veicoli e loro rimorchi destinati unicamente al trasporto di persone per via 
+aerea oppure su reti stradali, ferroviarie o di navigazione e mezzi di trasporto, nella misura in cui sono 
+concepiti per trasportare merci per via aerea o su reti pubbliche stradali o ferroviarie o di navigazione. 
+I veicoli destinati a essere utilizzati in atmosfera potenzialmente esplosiva, non sono esclusi dall’ambito 
+di applicazione della direttiva; 
+• Prodotti contemplati dall’articolo 346, paragrafo 1, lettera b) del trattato sul funzionamento dell’Unione 
+europea (es. produzione e commercio di armi). 
+4.3 Borderline list - Atex products - esempi di prodotti rientranti in 
+direttiva Atex 
+Viene ora riportato a titolo di esempio un elenco dei prodotti rientranti nel campo di applicazione della 
+Direttiva ATEX, estrapolato dalla “Borderline List – ATEX Products” presente nella Linea Guida ATEX 
+2014/34/EU, alla quale si rimanda per ulteriori dettagli. 
+
+• Apparecchi: 
+-Elettrici: sistemi di lubricazione automatica, computer, morsetti di messa a terra complessi con e 
+senza cavo, motori elettrici, pompe elettriche con motore elettrico integrato, ventilatori elettrici con 
+
+I QUADERNI DI CONFORMA 
+
+15 
+
+motore elettrico integrato, cavi scaldanti, telefoni e apparecchi similari (es. walkie-talkies), spine e 
+prese di corrente, interruttori per impianti elettrici ssi, torce, prolunghe con prese; 
+
+-Non elettrici: ventilatore con motore 
+ad aria integrato, freni meccanici, 
+ingranaggi meccanici, valvole rotanti; 
+• Sistemi di protezione: ame arrestors (rompiamma), valvole rotanti (utilizzate come sistemi di 
+isolamento di esplosioni), pannelli di sato, sistemi di soppressione di esplosioni (elettrici), sensori PT 
+100 (da valutare caso per caso); 
+• Componenti Ex: custodie, spark arrestor; 
+• Dispositivi di sicurezza, controllo e regolazione: dispositivi di protezione 
+che impediscono l’attivazione di sorgenti di accensione oltre una certa 
+temperatura (es. relè per protezione motore Ex e). 
+I QUADERNI DI CONFORMA 
+
+
+16 
+
+4.4 Borderline list – Atex products – esempi di prodotti non 
+rientranti in direttiva Atex 
+Viene ora riportato a titolo di esempio un elenco dei prodotti NON rientranti nel campo di applicazione 
+della Direttiva ATEX, estrapolato dalla “Borderline List – ATEX Products“ presente nella Linea Guida ATEX 
+2014/34/EU, alla quale si rimanda per ulteriori dettagli. 
+
+• Apparecchi: morsetti semplici di messa a terra con e senza cavo, valvole manuali, frigoriferi e armadi 
+di stoccaggio per sostanze volatili; 
+• Sistemi di protezione: estintori, sensori PT 100 se inseriti in un sistema a sicurezza intrinseca (es. 
+barriera); 
+• Componenti Ex: occhiali da vista, contatti magnetici per porte, ecc.; 
+• Dispositivi di sicurezza, controllo e regolazione: pressostati, livellostati, termostati, ecc.; 
+• Altri prodotti esclusi dalla Direttiva ATEX: cavi e similari, tubazioni e condotti, bulloni con o senza 
+cavo, protezioni elettrostatiche ESD (scarpe, borse), porte, scale, vernici, serbatoi, utensili vari (es. 
+martelli, pinze). 
+4.5 Altri esempi - Guidelines Atex 2014/34/EU (§32) 
+Alcuni esempi di prodotti che potrebbero rientrare o meno nel campo di applicazione sono riportate 
+nella Linea Guida ATEX 2014/34/EU ai paragra §32 e dal §241 al §256: 
+
+• Sistemi di inertizzazione (§241): 
+-I sistemi che prevengono la formazione di un’atmosfera esplosiva NON rientrano nel campo di 
+applicazione della Direttiva ATEX (non sono, infatti, progettati per fermare o bloccare un incipiente 
+esplosione); 
+
+I QUADERNI DI CONFORMA 
+
+17 
+
+-Alcune parti dei sistemi di inertizzazione destinate ad essere utilizzate in un’atmosfera esplosiva e che 
+dispongono di una potenziale fonte di accensione propria rientrano nel campo di applicazione della 
+Direttiva; 
+
+-In termini generali la direttiva 2014/34/UE si applica ad un sistema di inertizzazione, se questo 
+sistema è destinato ad essere integrato in un apparecchio applicando un modo di protezione 
+(es. pressurizzazione con gas ai sensi della norma EN 60079-2) che impedisca che la sorgente di 
+accensione diventi attiva. 
+
+• Cabine di verniciatura (§242): 
+Le cabine come insiemi integrali non rientrano nel campo 
+di applicazione della direttiva ATEX 2014/34/EU e non vi si 
+può apporre la marcatura speciale per la protezione dalle 
+esplosioni e altre indicazioni di cui all’allegato II (1.05). 
+L’apparecchiatura, i sistemi di protezione e i componenti 
+destinati all’uso nell’atmosfera potenzialmente esplosiva 
+esaminata, compresi i dispositivi di sicurezza e di controllo 
+esterni, ma che contribuiscono al loro funzionamento 
+sicuro, rientrano, invece, nell’ambito di applicazione della 
+
+
+direttiva 2014/34/UE. 
+
+• Unità di ltraggio e silos (§243): 
+Se queste unità non presentano parti in movimento o apparecchiature 
+invece in Direttiva e devono soddisfare i requisiti applicabili. 
+i sistemi di protezione (es. pannelli, porte) facenti parte dei silos rientrano 
+di accensione. Gli apparecchi elettrici (es. interruttori, indicatori di livello) e 
+deve valutare se le parti in movimento creano una propria fonte potenziale 
+nel campo di applicazione della Direttiva ATEX. Diversamente il fabbricante 
+elettriche all’interno e si trovano in una zona non pericolosa allora non rientrano 
+
+• Turbine a gas (§244) e a vapore (§245): 
+se utilizzate in atmosfere potenzialmente esplosive devono essere 
+opportunamente marcate. 
+
+I QUADERNI DI CONFORMA 
+
+
+18 
+
+• Pompe di benzina (§246): 
+la commissione ATEX ritiene che, in condizioni normali, possano essere 
+classicate in Categoria 2 con intervento dell’Organismo Noticato 
+nell’ambito dell’opportuna procedura di valutazione della conformità. 
+
+
+• Cavi (§247): 
+
+non sono coperti da Direttiva ATEX in quanto non considerati sorgente di innesco. 
+
+
+• Guarnizioni meccaniche rotanti (§248) (esempio tenute meccaniche): 
+per determinate applicazioni (es. apparecchi in categoria 1) possono essere 
+classicate e vendute come componenti ATEX purché soddisno i requisiti 
+della Direttiva. 
+• Elevatori a benna (§249) e carrelli elevatori (§250): 
+in base ai risultati della classicazione dell’area di installazione, deve 
+essere denito il livello e il modo di protezione dell’apparecchio all’interno 
+dell’alloggiamento. 
+Gli autocarri a prova di esplosione vengono classicati in categoria 2 o 3. 
+
+
+• Cabine trasportabili pressurizzate (§251): 
+Se un fabbricante assembla e fornisce un prodotto che include un 
+certo numero di componenti certicati ATEX (es. moduli), deve 
+assicurare che il processo di progettazione/fabbricazione non 
+introduca ulteriori fonti di accensione o altri pericoli pertinenti. 
+
+• Sistemi di lubricazione automatica (§252): 
+È necessario un certicato di esame UE di tipo per la categoria 2 per quanto 
+riguarda i sistemi di lubricazione che contengono una o più celle di batterie 
+elettriche. 
+
+
+• Sistemi scaldanti a tracciatura elettrica (§253): 
+rientrano nel campo di applicazione della Direttiva ATEX (Vedere Paragrafo 3), l’allegato 2 della Linea 
+Guida al §253 riporta le procedure di valutazione della conformità applicabili. 
+
+I QUADERNI DI CONFORMA 
+
+19 
+
+20 20 
+• Protezioni per motori di Categoria 3 (§254): 
+vedere specica Linea guida al §253 e norme speciche (es EN 60079-15, armonizzata alla Direttiva). 
+
+• Punti di accesso Wi-Fi (§255): 
+come per le apparecchiature di telecomunicazione (es. telefoni e similari) sono coperti dalla Direttiva 
+ATEX qualora vengano utilizzati in zone pericolose, a causa delle caratteristiche elettriche ed 
+elettromagnetiche di tali dispositivi (possibili sorgenti di innesco). Devono essere previste opportune 
+disposizioni per quanto riguarda il calore sviluppato dovuto all’energia in gioco e le scintille al ne di 
+garantire condizioni di sicurezza in merito al rischio di esplosione. 
+
+
+• Frigoriferi e armadi di stoccaggio per sostanze 
+volatili (§256): 
+solitamente non vengono utilizzati in ambienti con 
+atmosfera potenzialmente esplosiva e quindi non 
+sono coperti da Direttiva ATEX, ma da altre Direttive 
+europee (es. Direttiva bassa tensione 2014/35/EU). È 
+comunque responsabilità del fabbricante effettuare 
+un’adeguata analisi dei rischi in tal senso, fornendo 
+le informazioni necessarie all’interno del manuale 
+d’uso e manutenzione. 
+
+I QUADERNI DI CONFORMA 
+
+
+5 DIRETTIVA 1999/92/CE 
+La direttiva ATEX 2014/34/UE comporta obblighi e responsabilità per gli operatori economici (fabbricante, 
+rappresentante autorizzato, importatore, distributore) che commercializzano prodotti rientranti nel 
+campo di applicazione di tale Direttiva. 
+La Direttiva 1999/92/CE del Parlamento europeo e del Consiglio del 16 dicembre 1999 indica, invece, 
+le “prescrizioni minime per il miglioramento della tutela della sicurezza e della salute dei lavoratori che 
+possono essere esposti al rischio di atmosfere esplosive”. 
+Il quadro ATEX è costituito fondamentalmente dalle due direttive sopra citate. La prima stabilisce i 
+requisiti dei prodotti (compresi i componenti) e la seconda stabilisce dove si possono usare. 
+
+La Sezione II della Direttiva 1999/92/CE descrive gli obblighi del datore di lavoro, tra cui: 
+
+• Adottare le misure tecniche e/o organizzative ai ni della prevenzione e della protezione contro le 
+esplosioni (Art. 3); 
+• Valutare i rischi specici derivanti da atmosfere esplosive (Art. 4); 
+• Strutturare gli ambienti di lavoro in modo da permettere di svolgere il lavoro in condizioni di sicurezza 
+e utilizzare mezzi tecnici tali da garantire un adeguato controllo durante la presenza dei lavoratori nelle 
+zone in cui possono svilupparsi atmosfere esplosive (Art. 5); 
+• Coordinamento nel caso in cui nello stesso luogo di lavoro operino lavoratori di più imprese (Art. 6); 
+• Ottemperare all’Art. 7, ovvero: 
+• Ripartire le aree in cui possono formarsi atmosfere esplosive a norma dell’Allegato I (Zona 0 più 
+pericolosa, Zona 1, Zona 2, Zona 20, Zona 21, Zona 22 meno pericolosa in condizioni normali); 
+-Assicurare che siano applicate le prescrizioni minime previste dall’Allegato II; 
+
+-Indicare tramite opportuni segnali nei punti di accesso le aree in cui possono 
+formarsi atmosfere esplosive in quantità tali da mettere in pericolo la sicurezza e 
+la salute dei lavoratori come riportato nell’ Allegato III (Art. 7). 
+
+
+• Elaborare e tenere aggiornato il “documento sulla protezione contro le esplosioni” 
+(Art. 8); 
+• Vericare il rispetto dei requisiti particolari di cui all’Art. 9 per attrezzature utilizzate prima oppure dopo 
+il 30 giugno 2003. 
+La suddetta Direttiva è stata recepita in Italia con il D.Lgs. 233/03 e risulta inglobata nel Titolo XI del 
+D.Lgs. 81/08 (Protezione da atmosfere esplosive. Articoli da 287 a 297) che disciplina la tutela della 
+sicurezza e della salute dei lavoratori esposti al rischio di atmosfere esplosive, integrato successivamente 
+dal D.Lgs. 106/09. 
+È in capo al datore di lavoro il rispetto dei obblighi sopra riportati, pena le sanzioni penali e amministrative 
+previste. 
+
+I QUADERNI DI CONFORMA 
+
+21 
+
+22 I QUADERNI DI CONFORMA 
+6 Direttiva ATEX: procedure di valutazione della 
+conformitá 
+http://ec.europa.eu/DocsRoom/documents/16402/attachments/1/translations: 
+22 I QUADERNI DI CONFORMA 
+6 Direttiva ATEX: procedure di valutazione della 
+conformitá 
+http://ec.europa.eu/DocsRoom/documents/16402/attachments/1/translations: 
+
+• Per il gruppo di apparecchi I e II, categoria M 1 e 1 (e loro componenti e dispositivi) e sistemi di 
+protezione, il fabbricante può applicare una delle seguenti procedure di valutazione della conformità: 
+-Allegato III (Modulo B: Esame UE del tipo) + Allegato IV (Modulo D: conformità al tipo basata sulla 
+garanzia della qualità del processo di produzione); 
+
+-Allegato III (Modulo B: Esame UE del tipo) + Allegato V (Modulo F: conformità al tipo basata sulla 
+verica del prodotto). 
+
+• Per il gruppo di apparecchi I e II, categoria M 2 e 2 (e loro componenti e dispositivi): 
+-Per i motori a combustione interna ed apparecchi elettrici, il fabbricante può applicare una delle 
+seguenti procedure di valutazione della conformità: 
+
+> Allegato III (Modulo B: Esame UE del tipo) + Allegato VI (Modulo C1: conformità al tipo basata sul 
+controllo interno della produzione unito a prove del prodotto sotto controllo ufciale); 
+> Allegato III (Modulo B: Esame UE del tipo) + Allegato VII (Modulo E: conformità al tipo basata sulla 
+garanzia della qualità del prodotto); 
+
+-Per apparecchi non elettrici il fabbricante può applicare: 
+> Allegato VIII (Modulo A: Controllo interno della produzione) e invio/deposito della documentazione 
+tecnica presso un Organismo Noticato che ne comunica l’avvenuta ricezione; 
+
+• Per il gruppo di apparecchi II, categoria 3 (e loro componenti e dispositivi) il fabbricante può applicare: 
+-Allegato VIII (Modulo A: Controllo interno della produzione). 
+
+• Per il gruppo di apparecchi I e II, categoria M 1, 1, M 2, 2 e 3 (e loro componenti e dispositivi) e sistemi 
+di protezione, il fabbricante può applicare: 
+-Allegato IX (Modulo G: Conformità basata sulla verica dell’unità). 
+
+I QUADERNI DI CONFORMA 
+
+23 
+
+6.1 ALLEGATO III - MODULO B: esame UE del tipo 
+L’esame UE del tipo è la parte di una procedura di valutazione della conformità con cui un organismo 
+noticato esamina il progetto tecnico di un prodotto, nonché verica e certica che esso rispetti i 
+requisiti della presente direttiva ad esso applicabili. Si tratta di uno dei moduli di verica del prodotto più 
+utilizzati nelle varie direttive di nuovo approccio e consiste nella verica della conformità del prototipo 
+rappresentativo del prodotto nale (pre-produzione di serie). 
+
+A questo modulo deve essere associato un modulo di controllo della produzione (di sistema – ad es. 
+Allegato IV o VII; o di prodotto – ad es. All. V o VI) in base alla categoria del prodotto come descritto dal 
+usso iniziale del presente capitolo. 
+
+Per poter avviare l’iter da un punto di vista tecnico (tralasciando gli aspetti economici) il fabbricante 
+presenta una richiesta di esame UE del tipo a un unico organismo noticato di sua scelta (domanda di 
+certicazione). 
+
+La domanda di certicazione, fornita dall’ente di certicazione, va compilata in tutte le sua parti per 
+permettere una corretta individuazione del tipo e delle attività da eseguire, al ne di denire la marcatura 
+desiderata del prodotto, riducendo il rischio di errori nel processo di certicazione. 
+
+4. L’organismo noticato [riferimento dalla direttiva: all III punto 4]: 
+4.1 esamina la documentazione tecnica, verica che i campioni siano stati fabbricati in conformità 
+alla documentazione tecnica, e individua gli elementi progettati conformemente alle relative 
+disposizioni delle norme armonizzate nonché gli elementi progettati conformemente alle altre 
+pertinenti speciche; 
+4.2 esegue o fa eseguire opportuni esami e prove per accertare se, ove il fabbricante abbia scelto 
+di applicare le soluzioni di cui alle pertinenti norme armonizzate, queste siano state applicate 
+correttamente; 
+4.3 esegue o fa eseguire opportuni esami e prove per controllare se, laddove non siano state applicate 
+le soluzioni di cui alle pertinenti norme armonizzate, le soluzioni adottate dal fabbricante, 
+applicando altre pertinenti speciche tecniche, soddisno i corrispondenti requisiti essenziali di 
+sicurezza e di salute della presente direttiva; 
+4.4 concorda con il fabbricante il luogo in cui si dovranno effettuare gli esami e le prove. 
+I QUADERNI DI CONFORMA 
+
+24 
+
+25 25 
+5. L’organismo noticato redige una relazione di valutazione che elenca le iniziative intraprese in 
+conformità al punto 4 e i relativi risultati (tipicamente rapporto di prova o rapporto di valutazione). 
+6. Se il tipo rispetta i requisiti della presente direttiva che si applicano al prodotto interessato, l’organismo 
+noticato rilascia al fabbricante un certicato di esame UE del tipo. Tale certicato riporta almeno: 
+• il nome e l’indirizzo del fabbricante, 
+• le conclusioni dell’esame, 
+• le eventuali condizioni di validità e i dati necessari per l’identicazione del tipo approvato. 
+Il certicato di esame UE del tipo e i suoi allegati devono contenere ogni utile informazione che 
+permetta di valutare la conformità dei prodotti fabbricati al tipo esaminato e consentire il controllo 
+del prodotto in funzione. 
+
+Se il tipo non soddisfa i requisiti della presente direttiva ad esso applicabili, l’organismo noticato 
+riuta di rilasciare un certicato di esame UE del tipo e informa di tale decisione il richiedente, 
+motivando dettagliatamente il suo riuto. 
+
+7. Il fabbricante deve informare l’organismo noticato, detentore della documentazione tecnica relativa 
+al certicato di esame UE del tipo, di tutte le modiche al tipo omologato che possano inuire 
+sulla conformità del prodotto ai requisiti essenziali di sicurezza e di salute o sulle condizioni di 
+validità di tale certicato. Tali modiche comportano una nuova approvazione sotto forma di un 
+supplemento al certicato di esame UE del tipo 
+Secondo quanto riportato nella Guida all’applicazione della direttiva 2014/34/EU al §33 (prodotti con 
+modiche sostanziali) le modiche sostanziali sono quelle che condizionano una variazione nei requisiti 
+essenziali di sicurezza (es. temperatura) o di integrità del modo di protezione. In questo caso la direttiva 
+deve essere applicata e quindi l’O.N. deve essere informato come sopra riportato. 
+
+I QUADERNI DI CONFORMA 
+
+
+26 26 
+6.2 ALLEGATO IV - MODULO D: conformità al tipo basata sulla 
+garanzia della qualità del processo di produzione; 
+ALLEGATO VII - MODULO E: conformità al tipo basata sulla 
+garanzia della qualità del prodotto 
+L’Allegato IV della Direttiva 2014/34/UE (Modulo D: conformità al tipo basata sulla garanzia 
+della qualità del processo di produzione) prevede che il fabbricante adotti un sistema qualità per la 
+produzione, l’ispezione e prova dei prodotti interessati, mentre l’Allegato VII (Modulo E: conformità al 
+tipo basata sulla garanzia della qualità del prodotto) prevede un sistema qualità per l’ispezione e le 
+prove, ma non legato strettamente al processo produttivo. 
+Fermo restando tale distinzione e gli ambiti di applicazione dei rispettivi Allegati della Direttiva, per 
+entrambi i moduli non è necessario che il fabbricante abbia una certicazione UNI EN ISO 9001 del 
+sistema di gestione, ma deve comunque possedere e sottoporre ad approvazione di un Organismo 
+Noticato la documentazione riguardante il proprio sistema di qualità come ad esempio procedure, 
+istruzioni, misure, schemi, manuali e registri. 
+Verrà vericato da parte dell’Organismo il soddisfacimento dei requisiti della Direttiva e in base alla 
+norma armonizzata EN ISO/IEC 80079-34. 
+Tale norma specica i requisiti particolari e le informazioni per stabilire e mantenere un sistema di gestione 
+per la qualità per la fabbricazione di apparecchi Ex, che includano sistemi di protezione in conformità al 
+certicato Ex (modulo B). 
+L’appendice ZB fornisce informazioni su quegli aspetti che il sistema di qualità dovrebbe affrontare in 
+relazione al modo di protezione specico denito nelle norme armonizzate pertinenti nell’ambito della 
+Direttiva, per esempio i tipi di protezione per gli apparecchi o i componenti non elettrici, sistemi di 
+protezione autonomi. 
+Tornando alla Direttiva, l’Allegato IV e VII prevedono che il fabbricante garantisca e dichiari, sotto la sua 
+esclusiva responsabilità, che i suoi prodotti sono conformi al tipo descritto nel certicato di esame UE del 
+tipo e rispondono ai requisiti della Direttiva. 
+L’iter per l’ottenimento della certicazione dei suddetti Allegati è il seguente: 
+
+1. Richiedere offerta economica a un Organismo Noticato ai sensi della Direttiva 2014/34/UE; 
+2. Presentare una domanda di certicazione all’Organismo Noticato scelto; 
+Tale domanda per la valutazione del sistema qualità deve contenere: 
+1. I riferimenti del fabbricante (e dell’eventuale rappresentante autorizzato), ovvero nome, 
+indirizzo e luoghi di produzione; 
+2. Documentazione relativa al sistema qualità (es. manuale, procedure e istruzioni speciche); 
+3. Documentazione tecnica relativa al tipo approvato, copia del/i certicato/i di esame UE del 
+tipo e tutte le informazioni utili sulla categoria dei prodotti. 
+
+I QUADERNI DI CONFORMA 
+
+
+27 27 
+3. A fronte dell’esito positivo del riesame documentale, l’Organismo provvederà alla pianicazione 
+della visita di valutazione presso i siti produttivi del fabbricante. Diversamente potranno essere 
+richiesti dall’Organismo ulteriori documenti o informazioni; 
+4. L’Organismo notica la decisione al fabbricante, ovvero comunica l’esito delle veriche in 
+conformità all’Allegato IV o VII, riportando le conclusioni del controllo e le relative motivazioni 
+circostanziate; 
+5. A fronte dell’esito positivo della valutazione e della ricezione del Certicato dell’Organismo 
+Noticato, il fabbricante deve: 
+1. Impegnarsi a soddisfare agli obblighi derivanti dal sistema qualità approvato, mantenendolo 
+adeguato ed efcace; 
+2. Apporre la marcatura CE e il numero di identicazione dell’Organismo Noticato (sotto 
+la responsabilità di quest’ultimo) ad ogni singolo prodotto diverso da un componente (il quale 
+avrà il suo marchio specico) e conforme al tipo descritto nel certicato di esame UE del tipo; 
+3. Compilare una dichiarazione scritta di conformità UE per ciascun prodotto diverso da 
+un componente (che identichi tale modello) e conservarla per un periodo di dieci anni 
+dall’immissione sul mercato (da tenere a disposizione delle autorità nazionali, insieme alla 
+documentazione tecnica e di sistema). Una copia della dichiarazione di conformità UE deve 
+accompagnare ogni prodotto diverso da un componente; 
+4. Compilare un attestato di conformità per ciascun modello di componente (che identichi 
+tale modello) e conservarlo per un periodo di dieci anni dall’immissione sul mercato (da tenere 
+a disposizione delle autorità nazionali, insieme alla documentazione tecnica e di sistema). Una 
+copia dell’attestato di conformità deve accompagnare ogni componente; 
+5. Informare l’Organismo Noticato sulle modiche che intende apportare al sistema di qualità 
+approvato. L’Organismo valuta le modiche proposte e decide se sia necessaria una nuova 
+verica; 
+6. Essere sottoposto a sorveglianza sotto la responsabilità dell’Organismo Noticato tramite 
+controlli periodici ed eventuali visite senza preavviso. 
+I QUADERNI DI CONFORMA 
+
+
+28 28 
+6.3 ALLEGATO V - MODULO F: conformità al tipo basata 
+sulla verica del prodotto 
+Per gli apparecchi di Gruppo I e II, categorie M 1 e 1 (e loro componenti e dispositivi) il fabbricante in 
+possesso di un certicato di esame UE del tipo, in alternativa all’Allegato IV, può decidere di applicare le 
+disposizioni previste dall’Allegato V. 
+La procedura di questo allegato prevede che il fabbricante prenda tutte le misure necessarie afnché il 
+processo di fabbricazione (e il suo controllo) garantiscano la conformità dei prodotti al tipo oggetto del 
+certicato di esame UE e ai requisiti applicabili della Direttiva. 
+L’iter per l’ottenimento della certicazione ai sensi dell’Allegato V della Direttiva è il seguente: 
+
+1. Il fabbricante richiede un’offerta economica a un Organismo Noticato ai sensi della Direttiva 
+2014/34/UE; 
+2. Il fabbricante presenta una domanda di certicazione all’Organismo Noticato scelto. Tale domanda 
+deve contenere almeno: 
+7. I riferimenti del fabbricante (e dell’eventuale rappresentante autorizzato), ovvero nome, indirizzo 
+e luoghi di produzione; 
+8. Documentazione tecnica relativa al tipo approvato, copia del/i certicato/i di esame UE del tipo. 
+3. A fronte dell’esito positivo del riesame documentale della domanda, l’Organismo provvederà alla 
+pianicazione delle prove e degli esami. Diversamente potranno essere richiesti ulteriori documenti 
+o informazioni; 
+4. L’Organismo Noticato effettua esami e prove adeguati (deniti nelle norme armonizzate o in altre 
+speciche che prevedano prove equivalenti, da far validare dall’Organismo) su ogni prodotto oggetto 
+di certicazione; 
+5. L’Organismo Noticato rilascia un certicato di conformità riguardo agli esami e alle prove effettuate; 
+6. L’Organismo Noticato appone o fa apporre sotto la sua responsabilità, il proprio numero di 
+identicazione a ogni prodotto omologato; 
+7. Il fabbricante deve: 
+• Apporre la marcatura CE e il numero di identicazione dell’Organismo Noticato (sotto la 
+responsabilità di quest’ultimo) ad ogni singolo prodotto diverso da un componente (il quale avrà 
+il suo marchio specico) e conforme al tipo descritto nel certicato di esame UE del tipo; 
+
+I QUADERNI DI CONFORMA 
+
+
+• Compilare una dichiarazione scritta di conformità UE per ciascun prodotto diverso da un 
+componente (che identichi tale modello) e conservarla per un periodo di dieci anni dall’immissione 
+sul mercato (da tenere a disposizione delle autorità nazionali, insieme alla documentazione tecnica 
+e di sistema). Una copia della dichiarazione di conformità UE deve accompagnare ogni prodotto 
+diverso da un componente; 
+• Compilare un attestato di conformità per ciascun modello di componente (che identichi tale 
+modello) e conservarlo per un periodo di dieci anni dall’immissione sul mercato (da tenere a 
+disposizione delle autorità nazionali, insieme alla documentazione tecnica e di sistema). Una copia 
+dell’attestato di conformità deve accompagnare ogni componente. 
+6.4 ALLEGATO VI - MODULO C1: conformità al tipo basata sul 
+controllo interno della produzione unito a prove del prodotto 
+sotto controllo ufciale 
+La conformità al tipo basata sul controllo interno della produzione, unito a prove del prodotto sotto 
+controllo ufciale è una procedura di valutazione della conformità con cui il fabbricante garantisce e 
+dichiara, sotto la sua esclusiva responsabilità, che i prodotti interessati sono conformi al tipo descritto nel 
+certicato di esame UE del tipo e soddisfano i requisiti della direttiva ad essi applicabili. Tale modulo deve 
+essere preceduto da un MODULO B di Esame UE del Tipo e si applica solo ad apparecchi e componenti 
+di categoria 2. 
+Il fabbricante prende tutte le misure necessarie afnché il processo di fabbricazione e il suo controllo 
+garantiscano la conformità dei prodotti fabbricati al tipo oggetto del certicato di esame UE e ai requisiti 
+applicabili della presente direttiva. 
+Per ogni singolo prodotto fabbricato, il fabbricante deve effettuare, o far effettuare, una o più prove su 
+uno o più aspetti specici del prodotto stesso per vericarne la conformità al tipo descritto nel certicato 
+di esame UE del tipo e ai requisiti pertinenti della presente direttiva. Tali prove sono eseguite sotto la 
+responsabilità di un organismo noticato scelto dal fabbricante. 
+Durante il processo di fabbricazione, il fabbricante appone, sotto la responsabilità dell’organismo 
+noticato, il numero d’identicazione di quest’ultimo. 
+
+In merito alla marcatura CE, dichiarazione di conformità UE e attestato di conformità vale quanto 
+specicato precedentemente. 
+
+I QUADERNI DI CONFORMA 
+
+29 
+
+30 30 
+6.5 ALLEGATO VIII - MODULO A: controllo interno della produzione 
+L’Allegato VIII della Direttiva 2014/34/UE (Modulo A: controllo interno della produzione) prevede che 
+il fabbricante, dopo aver identicato i requisiti della direttiva che possono essere applicabili ai propri 
+prodotti, garantisca e dichiari in completa autonomia, sotto la sua esclusiva responsabilità, che i prodotti 
+interessati soddisfano i rispettivi requisiti applicabili. 
+
+Il fabbricante deve quindi: 
+
+1. Predisporre la documentazione tecnica di cui ai prossimi paragra (documentazione da produrre a 
+carico del fabbricante), comprendente un’adeguata valutazione dei rischi; 
+2. Assicurarsi che il processo di fabbricazione e il relativo controllo garantiscano la conformità dei 
+prodotti alla documentazione tecnica e ai requisiti della direttiva; 
+3. Apporre la marcatura CE ad ogni singolo prodotto diverso da un componente (il quale avrà il suo 
+marchio specico) che soddisfa i requisiti applicabili; 
+4. Compilare una dichiarazione scritta di conformità UE per un modello del prodotto diverso da un 
+componente (che identichi tale modello) e conservarla per un periodo di dieci anni dall’immissione 
+sul mercato (da tenere a disposizione delle autorità nazionali, insieme alla documentazione tecnica). 
+Una copia della dichiarazione di conformità UE deve accompagnare ogni prodotto diverso da un 
+componente; 
+5. Compilare un attestato di conformità per ciascun modello di componente (che identichi tale 
+modello) e conservarlo per un periodo di dieci anni dall’immissione sul mercato (da tenere a 
+disposizione delle autorità nazionali, insieme alla documentazione tecnica). Una copia dell’attestato 
+di conformità deve accompagnare ogni componente. 
+6.6 ALLEGATO IX - MODULO G: conformità basata sulla verica 
+dell’unità 
+La procedura di questo allegato prevede che il fabbricante dichiari sotto la sua esclusiva responsabilità, 
+
+che il prodotto interessato è conforme ai requisiti della direttiva ad esso applicabili. 
+
+I QUADERNI DI CONFORMA 
+
+
+L’iter per l’ottenimento della certicazione ai sensi dell’Allegato IX della Direttiva è il seguente: 
+
+1. Il fabbricante richiede un’offerta economica a un Organismo Noticato ai sensi della Direttiva 
+2014/34/UE; 
+2. Il fabbricante presenta una domanda di certicazione all’Organismo Noticato scelto; 
+3. A fronte dell’esito positivo del riesame documentale della domanda, l’Organismo provvederà alla 
+pianicazione delle prove e degli esami. Diversamente potranno essere richiesti ulteriori documenti 
+o informazioni; 
+4. L’Organismo Noticato effettua esami e prove adeguati (deniti nelle norme armonizzate o in altre 
+speciche che prevedano prove equivalenti, da far validare dall’Organismo) sul prodotto oggetto di 
+certicazione; 
+5. L’Organismo Noticato rilascia un certicato di conformità riguardo agli esami e alle prove 
+effettuate; 
+6. L’Organismo Noticato appone o fa apporre sotto la sua responsabilità, il proprio numero di 
+identicazione su ogni prodotto approvato; 
+7. Il fabbricante deve: 
+• Apporre la marcatura CE e il numero di identicazione dell’Organismo Noticato (sotto la 
+responsabilità di quest’ultimo) ad ogni singolo prodotto diverso da un componente (il quale avrà 
+il suo marchio specico) e conforme al tipo descritto nel certicato di esame UE del tipo; 
+• Compilare una dichiarazione scritta di conformità UE per ciascun prodotto diverso da un 
+componente (che identichi tale modello) e conservarla per un periodo di dieci anni dall’immissione 
+sul mercato (da tenere a disposizione delle autorità nazionali, insieme alla documentazione tecnica 
+e ai certicati di conformità). Una copia della dichiarazione di conformità UE deve accompagnare 
+ogni prodotto diverso da un componente; 
+• Compilare un attestato di conformità per ciascun componente e conservarlo per un periodo di 
+dieci anni dall’immissione sul mercato (da tenere a disposizione delle autorità nazionali, insieme 
+alla documentazione tecnica e ai certicati di conformità). Una copia dell’attestato di conformità 
+deve accompagnare ogni componente. 
+I QUADERNI DI CONFORMA 
+
+31 
+
+32 32 
+6.7 DURATA E VALIDITA’ DEI CERTIFICATI 
+Limitatamente ai certicati di allegato V e IX che hanno durata e validità illimitate perché seguono il singolo 
+prodotto, se non modicato, i certicati emessi secondo allegato IV e VII sono rivisti periodicamente 
+dall’organismo (tipicamente ogni 3 anni, con sorveglianza annuale e visite senza preavviso) secondo lo 
+schema dei sistemi di gestione; nel caso il/i certicato/i di allegato III cui si riferisce il modulo di sistema 
+subisca delle variazioni, si rende necessaria la nuova emissione del certicato di sistema Atex. 
+
+Nel caso di certicati di allegato III, la validità è subordinata all’evoluzione del progresso tecnologico 
+generalmente riconosciuto (tipicamente variazione normativa di riferimento), pertanto può rendersi 
+necessario un processo di revisione degli stessi e l’Organismo Noticato informa il fabbricante se 
+tale progresso richiede ulteriori indagini e relativo iter procedurale. Conseguentemente, l’eventuale 
+aggiornamento di certicato di allegato III (esame UE del tipo) potrebbe richiedere la revisione del 
+certicato emesso in conformità all’allegato IV. 
+
+I QUADERNI DI CONFORMA 
+
+
+7 DOCUMENTAZIONE DA PRODURRE 
+7.1 
+DOCUMENTAZIONE A CARICO DEL FABBRICANTE 
+
+Le direttive comunitarie impongono che il fabbricante predisponga la documentazione del proprio 
+prodotto secondo quanto indicato nella descrizione del modulo prescelto. Questa deve contenere il 
+manuale per l’utente che ne descriva la funzione e la destinazione d’uso e spieghi le misure adottate 
+per garantire la sicurezza del prodotto durante il suo funzionamento. Inoltre per i moduli che valutano 
+il sistema qualità, occorre che il fabbricante disponga della documentazione pertinente al modulo 
+prescelto. Il grado di dettaglio delle informazioni inserite dipende dal tipo di prodotto e dagli elementi 
+ritenuti necessari, secondo le norme di riferimento applicate, per dimostrare la rispondenza ai requisiti 
+essenziali di sicurezza stabiliti dalla direttiva stessa. 
+La documentazione deve permettere di valutare la conformità del prodotto alle norme pertinenti e 
+comprende un’analisi e una valutazione adeguate dei rischi. 
+La documentazione tecnica deve specicare le prescrizioni applicabili e illustrare il progetto, la 
+fabbricazione e il funzionamento del prodotto. 
+La documentazione tecnica deve contenere, laddove applicabile, almeno gli elementi seguenti: 
+
+1 una descrizione generale del prodotto, se il prodotto è di una tipologia nota con funzione ovvia 
+(es. apparecchio di illuminazione) non serve una descrizione particolareggiata, importante denire la 
+destinazione d’uso. 
+
+2 disegni relativi alla progettazione di massima e alla fabbricazione, schemi delle componenti, 
+dei sottosistemi, dei circuiti, ecc. 
+In ambito ATEX è importante fornire disegni, schemi, sezioni, indicazioni di progettazione della parte 
+interessata che rende il prodotto conforme ATEX. 
+Ad esempio: 
+
+• se realizzo una custodia Ex d, quello che la mia documentazione deve descrivere sono i materiali 
+utilizzati, gli spessori, le lettature e gli accoppiamenti meccanici in genere (giunti “a tenuta di 
+amma”), il tipo di componenti adatti ad esservi montati. 
+• se realizzo un prodotto a sicurezza intrinseca Ex i devo produrre il documento di calcolo dei circuiti 
+a sicurezza intrinseca (contenente tensioni massime in gioco, capacità ed induttanza che possono 
+esserne coinvolte, distanze di separazione tra circuiti diversi, componenti infallibili), unito a schemi 
+a blocchi e disegni. 
+I QUADERNI DI CONFORMA 
+
+33 
+
+• Se realizzo un prodotto a sicurezza aumentata Ex e, è fondamentale un disegno in sezione ben 
+descritto, che evidenzi distanze in aria e superciali tra parti in tensione e verso terra, forme, 
+dimensioni e caratteristiche dei materiali isolanti. 
+• Per un prodotto incapsulato Ex m, devono essere evidenziati i diversi spessori della resina (tra 
+parti in tensione, verso parti metalliche a terra e verso l’esterno) oltre alle caratteristiche del 
+“contenitore”. 
+3 descrizioni e spiegazioni necessarie alla comprensione di tali disegni e schemi e del 
+funzionamento del prodotto: questo vale in particolare per descrivere la parte relativa al modo 
+di protezione se non di immediata identicazione. Va spiegato perché si è messo un determinato 
+disegno, cosa rappresenta e dove è importante concentrarsi. 
+
+4 un elenco delle norme armonizzate e/o di altre pertinenti specicazioni tecniche, i cui riferimenti 
+siano stati pubblicati nella Gazzetta ufciale dell’Unione europea, applicate completamente o in parte, 
+e delle descrizioni delle soluzioni approvate per soddisfare le prescrizioni fondamentali dello strumento 
+legislativo, se tali norme armonizzate non siano state applicate. In caso di applicazione parziale delle 
+norme armonizzate la documentazione tecnica specica le parti che sono state applicate. 
+È indispensabile che la documentazione tecnica di un prodotto conforme ATEX riporti l’elenco delle 
+norme armonizzate applicate, meglio se, punto per punto si evidenziano i requisiti essenziali che 
+risultano soddisfatti dai vari punti delle norme armonizzate. 
+
+5 risultati dei calcoli di progettazione effettuati, delle analisi svolte: è fondamentale che la 
+documentazione abbia una parte che dimostri in modo chiaro e sintetico la ratio applicata per le 
+soluzioni adottate. Es.: Perché ho scelto quel condensatore oppure la resina con quelle caratteristiche 
+allegando i “Data sheets” dei componenti. 
+
+6 verbali delle prove: i rapporti delle prove eseguite per dimostrare la conformità alle norme armonizzate/ 
+requisiti essenziali della direttiva devono essere disponibili e presenti nella documentazione tecnica. 
+[fascicolo tecnico del fabbricante] In caso di apparecchi soggetti a Certicazione da parte di Organismo 
+Noticato le prove saranno quelle eseguite dal laboratorio indicato dall’organismo stesso. 
+
+Lo scopo della documentazione tecnica è quindi quello di fornire in modo chiaro, sintetico ed esaustivo 
+le informazioni necessarie a dimostrare la rispondenza del prodotto ai requisiti essenziali. 
+
+I QUADERNI DI CONFORMA 
+
+34 
+
+35 35 
+7.2 LINGUA DELLA DOCUMENTAZIONE 
+Dal decreto di recepimento D.Lgs 85/16 si evidenzia che: 
+
+Per i fabbricanti: 
+
+Art 5.8 - I fabbricanti garantiscono che il prodotto sia accompagnato da istruzioni e informazioni sulla 
+sicurezza, in lingua italiana. Tali istruzioni e informazioni sulla sicurezza, al pari di qualunque etichettatura, 
+devono essere chiare, comprensibili e intelligibili. 
+
+Art. 5.10 - I fabbricanti, a seguito di una richiesta motivata di un’autorità nazionale competente, 
+forniscono a quest’ultima tutte le informazioni e la documentazione, in formato cartaceo o elettronico, 
+necessarie per dimostrare la conformità del prodotto al presente decreto, in una lingua che può essere 
+facilmente compresa da tale autorità e, per gli strumenti immessi sul mercato in Italia, in lingua italiana. 
+
+Cooperano con tale autorità, su sua richiesta, a ogni iniziativa tesa a eliminare i rischi presentati dai 
+prodotti da essi immessi sul mercato. 
+
+Per gli importatori: 
+
+Art. 7.4 - Gli importatori garantiscono che il prodotto sia accompagnato da istruzioni e informazioni sulla 
+sicurezza in lingua italiana. 
+
+La direttiva 2014/34/UE ATEX descrive chiaramente il contenuto delle istruzioni che 
+devono accompagnare l’apparecchio. 
+
+1.0.6. Istruzioni per l’uso 
+a) Ogni apparecchio e sistema di protezione deve essere corredato di istruzioni per l’uso, contenenti 
+almeno le seguenti indicazioni: 
+• un richiamo alle indicazioni previste per la marcatura, ad eccezione del numero di serie, 
+eventualmente completate dalle indicazioni che possono agevolare la manutenzione (ad esempio: 
+indirizzo dell’importatore, del riparatore, ecc.); 
+• le istruzioni per effettuare senza rischi: 
+I QUADERNI DI CONFORMA 
+
+
+> la messa in servizio, 
+
+> l’impiego, 
+
+> il montaggio e lo smontaggio, 
+
+> la manutenzione (ordinaria o straordinaria), 
+
+> l’installazione, 
+
+> la regolazione; 
+
+> se necessario, l’indicazione delle zone pericolose situate in prossimità degli scarichi di pressione; 
+
+> se necessario, le istruzioni per la formazione; 
+
+> ulteriori indicazioni necessarie per valutare, con cognizione di causa, se un apparecchio di una 
+
+categoria indicata oppure un sistema di protezione possa essere utilizzato senza pericoli nel 
+
+luogo e nelle condizioni di impiego previsti; 
+
+> i parametri elettrici, di pressione, le temperature massime delle superci o altri valori limite; 
+
+> eventualmente, le condizioni di impiego particolari, comprese le indicazioni relative agli errori 
+
+d’uso rivelatisi più probabili in base all’esperienza; 
+
+> se necessario, le caratteristiche essenziali degli strumenti che possono essere montati 
+
+sull’apparecchio o sul sistema di protezione. 
+
+b) Le istruzioni per l’uso contengono piani e schemi necessari alla messa in servizio, alla manutenzione, 
+all’ispezione, alla verica del corretto funzionamento e, eventualmente, alla riparazione dell’apparecchio 
+o del sistema di protezione, nonché tutte le istruzioni utili, segnatamente in materia di sicurezza. 
+c) Per quanto riguarda gli aspetti di sicurezza, qualsiasi documentazione relativa all’apparecchio o al 
+sistema di protezione non deve essere in contraddizione con le istruzioni per l’uso. 
+7.3 COSA FORNIRE CON IL PRODOTTO 
+Gli importatori e fabbricanti devono garantire che il prodotto sia accompagnato da istruzioni e 
+informazioni sulla sicurezza in una lingua facilmente comprensibile agli utenti nali, come stabilito dallo 
+Stato membro interessato. (art 6.8 direttiva 2014/34/UE) 
+
+I QUADERNI DI CONFORMA 
+
+36 
+
+A. Marcatura 
+I QUADERNI DI CONFORMA 
+Su ciascun apparecchio e sistema di protezione devono gurare in modo leggibile e indelebile almeno 
+le seguenti indicazioni: 
+• nome, denominazione commerciale registrata o marchio registrato e indirizzo del fabbricante 
+• marcatura CE [cfr. allegato II del regolamento (CE) n. 765/2008] 
+• designazione della serie o del tipo 
+• numero di lotto o di serie (se esiste) 
+• anno di costruzione 
+• marchio specico di protezione dalle esplosioni seguito dal simbolo del gruppo di apparecchi e 
+della categoria 
+• per il gruppo di apparecchi II, la lettera «G» (relativa alle atmosfere esplosive dovute alla presenza di 
+gas, di vapori o di nebbie) 
+e/o 
+• la lettera «D» relativa alle atmosfere esplosive dovute alla presenza di polveri. 
+Essi devono inoltre recare, se necessario, tutte le indicazioni indispensabili all’impiego in condizioni di 
+sicurezza 
+B. Dichiarazione di conformità UE 
+Contenuti minimi 
+• Modello di prodotto/prodotto (numero di prodotto, tipo, lotto o serie) 
+• Nome e indirizzo del fabbricante e, se del caso, del suo rappresentante autorizzato 
+• Dichiarazione di responsabilità del fabbricante 
+• Oggetto della dichiarazione (identicazione del prodotto che ne consenta la tracciabilità; se necessario 
+per l’identicazione del prodotto è possibile includere un’immagine): 
+-L’oggetto della dichiarazione di cui sopra è conforme alla pertinente normativa di armonizzazione 
+dell’Unione:... 
+-Riferimento alle pertinenti norme armonizzate utilizzate o riferimenti alle altre speciche tecniche in 
+relazione alle quali è dichiarata la conformità:... 
+-Se del caso, l’organismo noticato … (denominazione, numero) … ha effettuato (descrizione 
+dell’intervento) … e rilasciato il certicato: 
+37 
+
+• Informazioni aggiuntive: 
+-Firmato a nome e per conto di:... 
+-(luogo e data del rilascio):... 
+-(nome, funzione) (rma):... 
+Distinzione tra apparecchi e componenti 
+Si ricorda la denizione di componente: «componenti»: tutte le parti essenziali per il funzionamento 
+sicuro degli apparecchi e dei sistemi di protezione, prive tuttavia di funzione autonoma. 
+Si ritiene importante ricordare che ai componenti si applicano le stesse procedure valide per gli 
+apparecchi, esclusa l’apposizione del marchio CE e la compilazione della dichiarazione di conformità UE 
+(come spiegato nei paragra delle procedure di valutazione). 
+
+Il fabbricante deve rilasciare un attestato scritto di conformità dal quale risulti la conformità dei componenti 
+con le disposizioni applicabili della direttiva, ne specichi le caratteristiche e le modalità con cui devono 
+essere incorporati in apparecchi o sistemi di protezione per contribuire al rispetto dei requisiti essenziali 
+di salute e di sicurezza di cui all’allegato II. 
+
+C. Stringa di marcatura / Zona. 
+Riportiamo a titolo esemplicativo la composizione della stringa di marcatura di un apparecchio: 
+
+38 I QUADERNI DI CONFORMA 
+
+39 39 
+1) Marcatura CE 
+2) Numero dell’Organismo Noticato incaricato della sorveglianza (quatto cifre) 
+3) Simbolo che indica la conformità alla direttiva ATEX 
+4) Gruppo di appartenenza dell’apparecchiatura 
+5) Categoria dell’apparecchiatura e tipologia di sostanza combustibile: (G = Gas o vapori inammabili, 
+D = Polveri combustibili). 
+6) Ambiente Gas o Dust (polveri): 
+7) Modo di protezione dell’apparecchiatura elettrica (Ex d, Ex ia, Ex n, …); segue elenco non esaustivo 
+ma rappresentativo: 
+
+
+8) Gruppo del GAS previsto nella zona d’istallazione: 
+• I Miniere (Metano) 
+• II Industrie di supercie 
+• IIA Propano; IIB Etilene; IIC Idrogeno Acetilene (Gas d’innesco rappresentativi) 
+9) Classe di temperatura e Temperatura massima superciale: 
+• Classe di Temperatura (gruppo II, gas e vapori) 
+• Per i gas: T1 – 450°C; T2 – 300°C; T3 – 200°C; T4 – 135°C; T5 – 100°C; T6 – 85°C 
+• Per le polveri combustibili (gruppo III): Temperatura superciale massima [°C] (ad es. T107°C) 
+10) Temperatura di riferimento ambiente: -20°C ÷ 40°C (da indicare se è al di fuori del presente intervallo) 
+11) EPL: Equipment Protection Level – Grado equivalente di protezione dell’apparecchio, secondo 
+quanto stabilit dalle norme della serie EN 60079. 
+Per ulteriori approfondomenti si rimanda alla “Linea Guida Atex – seconda edizione” citata in premessa. 
+
+I QUADERNI DI CONFORMA 
+
+
+40 40 
+8 FAQ 
+FAQ 1: “Quale percorso devo seguire per poter denire se il prodotto che intendo realizzare può entrare in 
+contatto con atmosfere potenzialmente esplosive?” 
+
+R1: Occorre eseguire l’analisi ATEX che è riassunta nel diagramma di usso sotto riportato. I requisiti 
+riportati sono relativi alla direttiva di prodotto 94/9/CE che sono stati mantenuti con la rifusione nella 
+successiva 2014/34/UE. 
+
+
+I QUADERNI DI CONFORMA 
+
+
+41 41 
+FAQ 2: “Quale percorso devo seguire per poter denire la marcatura del prodotto che intendo realizzare 
+se ho l’informazione che questo può entrare in contatto con atmosfere potenzialmente esplosive?” 
+
+R2: In base alla categoria dell’apparecchio e alla classicazione della zona di installazione devo adottare la 
+procedura di valutazione della conformità richiesta dalla Direttiva, come sintetizzato nella tavola di seguito, 
+passando dall’autocerticazione del fabbricante al deposito del fascicolo tecnico presso un Organismo 
+Noticato, no alla certicazione secondo uno dei moduli previsti dalla Direttiva avvalendomi della 
+competenza di un Organismo Noticato per il modulo prescelto. [vedi capitolo 6 della presente guida]. 
+
+
+I QUADERNI DI CONFORMA 
+
+
+42 42 
+FAQ 3: “Ho vericato che i miei prodotti rientrano nel campo di applicazione della Direttiva 2014/34/UE, 
+come faccio a sapere quale modulo di certicazione devo seguire?” 
+
+R3: vedere prospetto riassuntivo di cui al punto 6 della presente Guida, nonché l’Articolo 13 della Direttiva. 
+
+FAQ 4: “Come mi devo comportare con prodotti per atmosfera esplosiva di vecchia data?” 
+
+R4: La direttiva 99/92/CE e i successivi decreti di recepimento stabiliscono la data del 30 giugno 2003 
+come limite a partire dal quale decorre l’obbligo di applicazione delle direttiva Atex, come schematizzato 
+dal diagramma seguente. 
+
+I QUADERNI DI CONFORMA 
+
+
+FAQ 5: “E’ possibile emettere un certicato di esame CE di tipo (come denito nell’allegato III della Direttiva 
+94/9/CE) per un prodotto in categoria 3?” 
+
+R5: L’emissione di Certicato di esame CE del tipo per prodotti in categoria 3 non è ammessa. Comunque è 
+invece possibile l’emissione di un certicato di esame volontario del tipo per prodotti coperti dall’allegato 
+
+VIII. L’organismo Noticato non deve riportare indicazioni della sua notica sul certicato, perché sta 
+operando non in virtù di tale autorizzazione, non vi è obiezione nell’impiego del simbolo dell’esagono. 
+[fonte: ExNB 00/06/20/CS] 
+FAQ 6: “Produco ventilatori in Categoria 2 (non elettrici), cosa devo fare per essere conforme alla Direttiva 
+2014/34/UE? Cosa devo inviare all’Organismo Noticato? 
+
+R6: va seguito l’iter previsto dall’Allegato VIII della direttiva (Modulo A: Controllo interno della 
+produzione), in aggiunta deve essere inviata la documentazione tecnica a un Organismo Noticato che 
+ne confermerà la ricevuta (Deposito del fascicolo tecnico). 
+Per questo tipo di attività l’Organismo solitamente richiede: 
+-Modulo di domanda di certicazione; 
+-Fascicolo tecnico, sigillato in busta chiusa. L’Organismo Noticato non deve aprire i sigilli perché non 
+
+è tenuto a vericare il contenuto della documentazione, può richiedere solamente gli estremi dei 
+
+prodotti e del fascicolo che riporterà nella Ricevuta di deposito di fascicolo tecnico; 
+-Marchio di fabbrica riportato sul prodotto; 
+-Dichiarazione su carta intestata in cui il fabbricante si impegna a mantenere la documentazione per 
+
+almeno 10 anni dall’ultima data di fabbricazione del prodotto come richiesto dalla Direttiva. 
+Per ulteriori approfondimenti vedere punto 6 della presente Guida. 
+
+FAQ 7: “Produco ventilatori in Categoria 2 (non elettrici), posso ottenere un Certicato di Esame UE del tipo 
+da parte dell’Organismo? 
+
+R7: sì ma solamente a livello volontario (Attestato di Esame del Tipo), non essendo una procedura di 
+valutazione di conformità cogente per questo tipo di apparecchio. 
+
+I QUADERNI DI CONFORMA 
+
+43 
+
+FAQ 8: “Cosa devo riportare nella dichiarazione di conformità UE? 
+
+R8: vedere punto 7.3 lettera b) della presente Guida (Allegato X della Direttiva). 
+Si ricorda in particolare che è richiesto esplicitamente di riportare nella dichiarazione di conformità UE 
+un’opportuna identicazione del prodotto tale da consentirne la tracciabilità (es. numero di lotto o di serie). 
+
+FAQ 9: “Cosa si intende per temperatura superciale?” 
+
+R9: Per le apparecchiature elettriche in un’atmosfera esplosiva per la presenza di polvere, questa 
+temperatura è riferita alla sulla supercie esterna della custodia e può comprendere una condizione che 
+prevede uno strato di polvere denito. 
+Per le apparecchiature elettriche in un’atmosfera esplosiva per la presenza di gas, questa temperatura è 
+riferita alla supercie esterna o alla componentistica interna, a seconda del modo di protezione adottato. 
+Tipicamente: 
+-è la temperatura della supercie esterna per apparecchiature protette con modo di protezione Ex d (EN 
+
+60079-1), Ex nR (EN 60079-15), Ex p (EN 60079-2), Ex m (EN 60079-18) 
+-è la temperatura dei componenti interni per apparecchiature protette con modo di protezione Ex e 
+(EN 60079-7), Ex t (EN 60079-31), Ex i (EN 60079-11, Ex nA (EN 60079-15) 
+
+FAQ 10: “I componenti e le apparecchiature che utilizzano gas combustibili e vengono impiegate in ambiente 
+domestico e/o commerciale quali ad esempio caldaie a gas o fornelli rientrano nella direttiva ATEX ?” 
+
+R10: No. La direttiva ATEX si applica ad apparecchi e componenti destinati ad essere utilizzati in ambiente 
+che potrebbe potenzialmente essere a rischio esplosione. 
+Gli apparecchi a gas sono destinati per essere utilizzati in ambiente che non può e non deve comportare 
+tale rischio. Se tale rischio fosse per assurdo presente nella nostra cucina, tutti i componenti dovrebbere 
+essere ATEX (Frigorifero, lavastoviglie, interruttori). 
+Gli apparecchi a gas rientrano nel regolamento 2016/426 che, tra l’altro, ne disciplina i requisiti essenziali 
+per evitare che gli stessi possano recare danni a persone, animali o cose. 
+
+I QUADERNI DI CONFORMA 
+
+44 
+
+45 45 
+FAQ 11: “Un mio cliente mi chiede un motore ATEX, ma non conosce la zona ATEX di installazione, come mi 
+devo comportare ?” 
+
+R11: E’ indispensabile chiedere al cliente in che tipo di zona (0,1,2) il prodotto debba essere installato. 
+Occorre infatti che il cliente esegua o faccia eseguire un analisi secondo la direttiva 1999/92/CE dell’area 
+dove si intende posizionare il prodotto per capire, innanzitutto se è possibile utilizzarvi un motore e, nel 
+caso di risposta positiva, capire come adattare il prodotto. 
+
+La direttiva oggetto della presente guida infatti riguarda i prodotti e componenti e le caratteristiche che 
+devono avere per essere utilizzati in una determinata zona. 
+
+Senza tale informazione non è possibile fare alcuna valutazione da parte dell’organismo noticato. 
+
+I QUADERNI DI CONFORMA 
+
+
+CONFORMA 
+
+CONFORMA - Associazione Organismi Certificazione Ispezione Prova e Taratura, opera nel 
+settore TIC (Testing, Inspection, Certification), ovvero nel settore della Valutazione della Conformità 
+intesa come l’insieme delle attività, generalmente svolte in regime di accreditamento e/o su autorizzazione 
+dei Ministeri competenti, in ambito volontario o cogente, di certificazione di sistemi di gestione, 
+prodotto, personale e servizi, ispezioni, marcatura CE e prove di laboratorio e taratura. 
+
+Costituita nel 2012 da alcune fra le più importanti Organizzazioni a livello nazionale ed internazionale 
+nel settore della Valutazione della Conformità di parte terza indipendente, conta oggi 29 Soci. 
+
+Sono Soci di CONFORMA: 
+
+AFNOR ITALIA SRL EUROFINS MODULO UNO SRL 
+AGROQUALITÀ SPA EUROFINS PRODUCT TESTING ITALY SRL 
+AICQ SICEV SRL ICIM SPA 
+APICE SRL ICMQ SPA 
+ASACERT SRL ISTITUTO ITALIANO DEI PLASTICI SRL 
+BOREAS SRL IMQ SPA 
+CCPB SRL IGQ 
+CERSA SRL ITA - ISTITUTO TECNOLOGIE AVANZATE SRL 
+CERTIQUALITY SRL MCJ SRL 
+CONTECO CHECK SRL NO GAP CONTROLS SRL 
+CSI SPA RINA SERVICES SPA 
+CSQA CERTIFICAZIONI SRL SGS ITALIA SPA 
+DEKRA TESTING AND CERTIFICATION SRL TUV NORD ITALIA SRL 
+DNV GL BUSINESS ASSURANCE ITALIA SRL UL INTERNATIONAL ITALIA SRL 
+ECO CERTIFICAZIONI SPA 
+
+
+OTTOBRE 2018 
+
+
+Elaborazione grafica: www.andreanobilio.com 
+
+Piazzale R. Morandi 2, 20121 Milano - Telefono 02.77790409 
+info@associazioneconforma.eu - c.f. e p. iva 07671900962 
+www.associazioneconforma.eu 
+
+

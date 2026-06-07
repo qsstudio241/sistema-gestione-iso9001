@@ -22,7 +22,7 @@ BEGIN
     PRINT 'Tabella notification_contacts creata.';
 END
 ELSE
-    PRINT 'Tabella notification_contacts gia esistente — skip.';
+    PRINT 'Tabella notification_contacts gia esistente ï¿½ skip.';
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_notification_contacts_org')

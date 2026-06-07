@@ -30,7 +30,7 @@ function extractActionLinesFromDescription(description) {
 }
 
 /**
- * Inserisce azioni correttive da descrizione se nc_actions è vuota (idempotente per NC).
+ * Inserisce azioni correttive da descrizione se nc_actions ï¿½ vuota (idempotente per NC).
  * @param {Function} queryFn - query DB del controller
  * @param {{ ncId: number, description: string, createdBy?: number|null }} params
  * @returns {Promise<number>} numero azioni create

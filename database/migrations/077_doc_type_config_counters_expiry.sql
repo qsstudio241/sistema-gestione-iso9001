@@ -1,8 +1,8 @@
 -- ============================================================================
--- Migration 077: doc_type_config — contatore numerazione + scadenza default
+-- Migration 077: doc_type_config ï¿½ contatore numerazione + scadenza default
 -- ============================================================================
 -- next_number: contatore atomico per generazione doc_code (PREFISSO-NNN)
--- default_expiry_months: mesi di validità default al rilascio (se expiry_date vuota)
+-- default_expiry_months: mesi di validitï¿½ default al rilascio (se expiry_date vuota)
 -- ============================================================================
 
 USE SGQ_ISO9001;
@@ -25,7 +25,7 @@ BEGIN
     PRINT '  Colonna next_number aggiunta';
 END
 ELSE
-    PRINT '  Colonna next_number già presente';
+    PRINT '  Colonna next_number giï¿½ presente';
 GO
 
 IF NOT EXISTS (
@@ -38,7 +38,7 @@ BEGIN
     PRINT '  Colonna default_expiry_months aggiunta';
 END
 ELSE
-    PRINT '  Colonna default_expiry_months già presente';
+    PRINT '  Colonna default_expiry_months giï¿½ presente';
 GO
 
 IF NOT EXISTS (
@@ -51,7 +51,7 @@ BEGIN
     PRINT '  Colonna updated_at aggiunta';
 END
 ELSE
-    PRINT '  Colonna updated_at già presente';
+    PRINT '  Colonna updated_at giï¿½ presente';
 GO
 
 PRINT '';

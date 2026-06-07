@@ -1,15 +1,15 @@
-# ADR-012 — Anagrafica personale per azienda (dual-level rubrica NC)
+# ADR-012 ï¿½ Anagrafica personale per azienda (dual-level rubrica NC)
 
-> **Stato**: Accettato — 02 giugno 2026  
+> **Stato**: Accettato ï¿½ 02 giugno 2026  
 > **Autori**: Lead architect (AI), Product owner  
-> **Epic**: [TASK_PERSONALE_AZIENDA_SLICES.md](../agent-tasks/TASK_PERSONALE_AZIENDA_SLICES.md) (slice S1–S10)  
-> **Collegamento roadmap**: open point «NC — rubrica dual-level Studio/Azienda»
+> **Epic**: [TASK_PERSONALE_AZIENDA_SLICES.md](../agent-tasks/TASK_PERSONALE_AZIENDA_SLICES.md) (slice S1ï¿½S10)  
+> **Collegamento roadmap**: open point ï¿½NC ï¿½ rubrica dual-level Studio/Aziendaï¿½
 
 ---
 
 ## Contesto e problema
 
-La rubrica `notification_contacts` è **org-wide** (studio): un unico elenco referenti per organizzazione, senza legame strutturato all’azienda auditata.
+La rubrica `notification_contacts` ï¿½ **org-wide** (studio): un unico elenco referenti per organizzazione, senza legame strutturato allï¿½azienda auditata.
 
 Conseguenze sul modulo NC:
 
@@ -17,7 +17,7 @@ Conseguenze sul modulo NC:
 |---------|---------|
 | Select responsabile/verifica non filtrati per `audit.company_id` | Rischio assegnazione referente sbagliato |
 | Duplicati manuali (stesso nome in rubrica studio e note NC) | Dati incoerenti, GDPR |
-| Nessuna anagrafica «dipendente/referente azienda» riusabile | Audit picker, qualifiche, personale azienda bloccati |
+| Nessuna anagrafica ï¿½dipendente/referente aziendaï¿½ riusabile | Audit picker, qualifiche, personale azienda bloccati |
 
 Serve un modello **dual-level**: referenti **studio** (rubrica org-wide, `company_id` NULL) + personale **per singola azienda** collegato al contesto audit.
 
@@ -32,8 +32,8 @@ Anagrafica minima per dipendente/referente aziendale:
 | Colonna | Tipo | Note |
 |---------|------|------|
 | `id` | INT PK | Identity |
-| `organization_id` | INT NOT NULL | FK `organizations` — scope tenant |
-| `company_id` | INT NOT NULL | FK `companies` — azienda auditata |
+| `organization_id` | INT NOT NULL | FK `organizations` ï¿½ scope tenant |
+| `company_id` | INT NOT NULL | FK `companies` ï¿½ azienda auditata |
 | `name` | NVARCHAR(200) NOT NULL | Nome visualizzato |
 | `job_title` | NVARCHAR(200) NULL | Mansione |
 | `email` | NVARCHAR(320) NULL | **Opzionale** (alert NC solo se valorizzata + bridge) |
@@ -51,10 +51,10 @@ Indici: `(organization_id, company_id)`, `(company_id, active)`.
 
 Estensione idempotente:
 
-- `company_id INT NULL` — NULL = referente studio; valorizzato = derivato da personale azienda
-- `personnel_id INT NULL` — FK logica verso `company_personnel.id`
+- `company_id INT NULL` ï¿½ NULL = referente studio; valorizzato = derivato da personale azienda
+- `personnel_id INT NULL` ï¿½ FK logica verso `company_personnel.id`
 
-Referenti studio restano con `company_id` NULL. Sync bidirezionale personale ? rubrica in **slice S7** (non in S1–S3).
+Referenti studio restano con `company_id` NULL. Sync bidirezionale personale ? rubrica in **slice S7** (non in S1ï¿½S3).
 
 ### 3. Regole prodotto
 
@@ -67,25 +67,25 @@ Referenti studio restano con `company_id` NULL. Sync bidirezionale personale ? r
 | **Duplicati studio/azienda** | Consentiti nomi uguali; distinzione per `company_id` |
 | **GDPR minimo** | Email opzionale; disattivazione invece di cancellazione quando storico NC |
 
-Fino a **slice S8** live: mantenere opzione «referente esterno» su verifica/azioni NC.
+Fino a **slice S8** live: mantenere opzione ï¿½referente esternoï¿½ su verifica/azioni NC.
 
 ---
 
-## Backend previsto (S2–S3)
+## Backend previsto (S2ï¿½S3)
 
 | Componente | Pattern di riferimento |
 |------------|------------------------|
-| Controller | `companyPersonnel.controller.js` — CRUD sotto `/api/v1/companies/:companyId/personnel` |
+| Controller | `companyPersonnel.controller.js` ï¿½ CRUD sotto `/api/v1/companies/:companyId/personnel` |
 | RBAC | `resolveAuditorOrgId` + verifica `companies.auditor_org_id` come `company.controller.js` |
-| Cross-studio | 403 se `company_id` non appartiene all’`auditor_org_id` dell’utente |
+| Cross-studio | 403 se `company_id` non appartiene allï¿½`auditor_org_id` dellï¿½utente |
 | Route | Registrate in `company.routes.js` |
 
 Operazioni API:
 
-- `GET` — lista personale attivo/inattivo per azienda
-- `POST` — creazione con validazione `company_id` ? org utente
-- `PUT` — aggiornamento campi anagrafica e flag `can_*`
-- `DELETE` — **disattivazione** (`active = 0`); 409 se vincoli NC impediscono rimozione bridge
+- `GET` ï¿½ lista personale attivo/inattivo per azienda
+- `POST` ï¿½ creazione con validazione `company_id` ? org utente
+- `PUT` ï¿½ aggiornamento campi anagrafica e flag `can_*`
+- `DELETE` ï¿½ **disattivazione** (`active = 0`); 409 se vincoli NC impediscono rimozione bridge
 
 ---
 
@@ -94,8 +94,8 @@ Operazioni API:
 | Livello | Scope | Casi |
 |---------|-------|------|
 | **Jest (S3)** | `companyPersonnel.controller.test.js` | list/create/update/disactivate; 403 cross-studio; validazione company ? org |
-| **Vitest (S4–S5)** | UI scheda azienda + griglia | Navigazione tab Personale; add/edit/disattiva 3 righe |
-| **Integrazione (S7–S8)** | Bridge + select NC | Sync rubrica; dropdown filtrati per `audit.company_id` |
+| **Vitest (S4ï¿½S5)** | UI scheda azienda + griglia | Navigazione tab Personale; add/edit/disattiva 3 righe |
+| **Integrazione (S7ï¿½S8)** | Bridge + select NC | Sync rubrica; dropdown filtrati per `audit.company_id` |
 
 ---
 
@@ -104,8 +104,8 @@ Operazioni API:
 | Alternativa | Pro | Contro | Esito |
 |-------------|-----|--------|-------|
 | Solo `notification_contacts.company_id` | Meno tabelle | Nessuna mansione/flag granulari; rubrica = contatti notifica | Scartata |
-| Tabella unificata «contacts» | Un solo CRUD | Mix responsabilità studio/azienda/NC; migrazione legacy pesante | Scartata |
-| **`company_personnel` + bridge** | Separazione anagrafica vs alert; estendibile audit/qualifiche | Due entità da sincronizzare (S7) | **Scelta** |
+| Tabella unificata ï¿½contactsï¿½ | Un solo CRUD | Mix responsabilitï¿½ studio/azienda/NC; migrazione legacy pesante | Scartata |
+| **`company_personnel` + bridge** | Separazione anagrafica vs alert; estendibile audit/qualifiche | Due entitï¿½ da sincronizzare (S7) | **Scelta** |
 
 ---
 
@@ -114,24 +114,24 @@ Operazioni API:
 ### Positivi
 
 - Select NC allineate al contesto audit (post S8)
-- Tracciabilità ISO 10.2 su responsabili per azienda
+- Tracciabilitï¿½ ISO 10.2 su responsabili per azienda
 - Base per overview studio multi-azienda (S6)
 
 ### Negativi / costi
 
-- Migration + API + UI (S2–S5) prima del valore utente completo
+- Migration + API + UI (S2ï¿½S5) prima del valore utente completo
 - Sync bridge S7 obbligatorio per email alert da anagrafica
 
 ---
 
-## Implementazione — checklist slice
+## Implementazione ï¿½ checklist slice
 
 | Slice | Deliverable | Stato |
 |-------|-------------|-------|
 | S1 | Questo ADR + regole prodotto | ? |
 | S2 | Migration 078 | S2 |
 | S3 | API CRUD + Jest | S3 |
-| S4–S5 | UI scheda azienda + griglia | Backlog |
+| S4ï¿½S5 | UI scheda azienda + griglia | Backlog |
 | S7 | Bridge `notification_contacts` | Backlog |
 | S8 | Select NC filtrati | Backlog |
 | S9 | Migrazione legacy dry-run | Backlog |

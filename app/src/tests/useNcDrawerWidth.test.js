@@ -1,5 +1,5 @@
 /**
- * Test L1 — larghezza drawer NC ridimensionabile
+ * Test L1 ï¿½ larghezza drawer NC ridimensionabile
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
