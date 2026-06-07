@@ -71,6 +71,19 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
 
+**Esperienza 07/06/2026 — Fix logo azienda — Express Router auth intercept**
+
+Gli utenti desktop autenticati tramite cookie httpOnly hanno `getToken()` → `null` (nessun Bearer header). Il middleware `router.use(authenticate)` montato su `/api/v1` intercetta **ogni** richiesta priva di Bearer token — incluse quelle destinate ad altri router — rispondendo 401 prima che la route target venga raggiunta. Il componente `CompanyLogo` in `CompanyDetailPage` e `CompaniesPage` non riceveva mai la risposta immagine e cadeva in fallback silenzioso.
+
+**Soluzione:** registrare gli endpoint pubblici (logo, allegati non sensibili) direttamente in `server.js` **prima** dei router autenticati:
+```js
+// server.js — PRIMA di app.use('/api/v1', auditRoutes)
+app.get('/api/v1/companies/:id/logo', getLogo);
+```
+**Commit:** `3787ad1` — 07/06/2026 — TEST OK (verificato in produzione).
+
+**Lezione:** se un endpoint deve essere accessibile senza Bearer (es. risorse immagine da `<img src>`), non basta non chiamare `authenticate` nella route — bisogna uscire dal router autenticato. Registrare l'endpoint prima di `app.use('/api/v1', routerAutenticato)` in `server.js`.
+
 **Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
 
 I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti. **UI guida flusso**: sezioni numerate nel drawer seguono l'ordine ISO 10.2 (Scheda → Stato workflow → Cause → Azioni → Evidenze → Verifica → Chiusura), non un form flat per tipo campo.
