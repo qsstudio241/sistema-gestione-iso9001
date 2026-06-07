@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import StatusBadge from "./StatusBadge";
 import "./UsersAdminPage.css";
 
 const STANDARDS_LIST = [
@@ -614,7 +615,7 @@ export default function UsersAdminPage({ onBack }) {
                     {u.role}
                   </span>
                   {!active && (
-                    <span className="user-status-badge inactive">Disattivato</span>
+                    <StatusBadge type="user" status="inactive" size="small" />
                   )}
                   {u.auditor_org_name ? (
                     <span className="user-studio">

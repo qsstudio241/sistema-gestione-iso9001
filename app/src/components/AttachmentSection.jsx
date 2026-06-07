@@ -210,7 +210,7 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
                     {attachment.pendingSync && (
                       <span
                         className="attachment-pending-badge"
-                        title="In attesa di upload al server - verr\u00e0 caricato al ripristino della connessione"
+                        title="In attesa di upload al server - verrà caricato al ripristino della connessione"
                       >
                         ⏳
                       </span>

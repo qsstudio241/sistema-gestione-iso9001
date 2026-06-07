@@ -10,7 +10,7 @@ describe('aiCompanyScope.service', () => {
     jest.clearAllMocks();
   });
 
-  it('cliente azienda: forza unica azienda consentita se companyId assente', async () => {
+  it('cliente azienda: forza la propria azienda se companyId assente', async () => {
     const user = {
       user_id: 1,
       company_access: [{ company_id: 45, permission: 'read' }],
@@ -20,17 +20,31 @@ describe('aiCompanyScope.service', () => {
     expect(r.companyId).toBe(45);
   });
 
-  it('cliente azienda: 403 se companyId di altra azienda', async () => {
+  it('cliente azienda: ignora companyId di altra azienda e forza la propria (no 403)', async () => {
     const user = {
       user_id: 1,
       company_access: [{ company_id: 45, permission: 'read' }],
     };
     const r = await resolveAiCompanyScope(user, 99);
-    expect(r.denied?.status).toBe(403);
-    expect(r.companyId).toBeNull();
+    expect(r.denied).toBeNull();
+    expect(r.companyId).toBe(45);
   });
 
-  it('cliente azienda: 403 se piu aziende e nessun companyId', async () => {
+  it('cliente azienda multi-accesso: blocca sull anagrafica primaria (company_id piu basso), no 403', async () => {
+    const user = {
+      user_id: 1,
+      company_access: [
+        { company_id: 45, permission: 'read' },
+        { company_id: 46, permission: 'read' },
+      ],
+    };
+    // anche passando una seconda azienda consentita, resta bloccato sulla primaria
+    const r = await resolveAiCompanyScope(user, 46);
+    expect(r.denied).toBeNull();
+    expect(r.companyId).toBe(45);
+  });
+
+  it('cliente azienda multi-accesso: nessun companyId -> primaria, no 403', async () => {
     const user = {
       user_id: 1,
       company_access: [
@@ -39,7 +53,8 @@ describe('aiCompanyScope.service', () => {
       ],
     };
     const r = await resolveAiCompanyScope(user, null);
-    expect(r.denied?.body?.code).toBe('COMPANY_SCOPE_REQUIRED');
+    expect(r.denied).toBeNull();
+    expect(r.companyId).toBe(45);
   });
 
   it('studio: overview se companyId assente', async () => {

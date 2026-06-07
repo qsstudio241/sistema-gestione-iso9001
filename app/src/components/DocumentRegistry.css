@@ -744,6 +744,22 @@ body.sgq-doc-tree-resizing * {
   gap: 4px;
 }
 
+.norm-code-inline {
+  font-family: monospace;
+  font-size: 11px;
+  color: #3b82f6;
+}
+
+.norm-validity-inline {
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.norm-validity-inline--vigente  { color: #15803d; background: #dcfce7; }
+.norm-validity-inline--superata { color: #b45309; background: #fef3c7; }
+.norm-validity-inline--ritirata { color: #b91c1c; background: #fee2e2; }
+
 .tree-doc-card__badge {
   background: #e5e7eb;
   color: #374151;
@@ -762,7 +778,7 @@ body.sgq-doc-tree-resizing * {
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
@@ -782,24 +798,37 @@ body.sgq-doc-tree-resizing * {
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.tree-doc-card:hover .tree-doc-card__action-btn {
-  opacity: 0.5;
-}
-
-.tree-doc-card__action-btn:hover {
-  opacity: 1 !important;
+.tree-doc-card__action-btn:active {
   background: #dbeafe;
 }
 
-.tree-doc-card:hover .tree-doc-card__delete-btn,
-.tree-doc-card:hover .tree-doc-card__move-btn {
-  opacity: 0.5;
+/* Desktop: pulsanti compatti, visibili al passaggio del mouse */
+@media (hover: hover) {
+  .tree-doc-card__action-btn,
+  .tree-doc-card__delete-btn,
+  .tree-doc-card__move-btn {
+    opacity: 0;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__action-btn {
+    opacity: 0.5;
+  }
+
+  .tree-doc-card__action-btn:hover {
+    opacity: 1 !important;
+    background: #dbeafe;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__delete-btn,
+  .tree-doc-card:hover .tree-doc-card__move-btn {
+    opacity: 0.5;
+  }
 }
 
 .tree-doc-card__delete-btn:hover {

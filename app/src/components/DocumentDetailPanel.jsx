@@ -8,6 +8,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateHelpers";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS, DOC_STATUS_BADGE_CLASS } from "../data/documentTypes";
 import apiService from "../services/apiService";
+import useDocDetailPanelWidth, {
+  DOC_DETAIL_WIDTH_MIN,
+  getDocDetailMaxWidth,
+} from "../hooks/useDocDetailPanelWidth";
 import "./DocumentDetailPanel.css";
 
 const NORM_VALIDITY_LABELS = {
@@ -25,6 +29,51 @@ function parseTypeSpecificData(raw) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Ricava la data di emissione per le norme quando issue_date è null.
+ * Priorità: issue_date → edition_year (anno intero) → anno estratto da standard_code.
+ */
+function resolveIssueDateDisplay(doc, normData) {
+  if (doc.issue_date) return formatDate(doc.issue_date);
+  if (doc.doc_type === "norma") {
+    const yr = normData?.editionYear;
+    if (yr != null) return String(yr);
+    const code = normData?.standardCode || doc.doc_code || "";
+    const years = code.match(/\b(19|20)\d{2}\b/g);
+    if (years && years.length > 0) return years[years.length - 1];
+  }
+  return formatDate(doc.issue_date);
+}
+
+/**
+ * Costruisce un URL statico al catalogo ufficiale dell'ente emittente.
+ *
+ * Campi scrapabili (senza autenticazione, per future integrazioni):
+ *  - normattiva.it  → testo integrale, data GU, data entrata in vigore, eventuali modifiche
+ *  - eur-lex.europa.eu → testo, data pubblicazione GUCE, stato (in vigore/abrogato), sostituita da
+ *  - iso.org        → titolo, edition year, status (Published/Withdrawn/Revised), replaced by
+ *  - store.uni.com  → titolo, codice, anno, stato
+ *  - shop.bsigroup.com → status (Current/Withdrawn/Superseded), superseded by
+ *  - asme.org       → limitato (prevalentemente dietro paywall, solo ricerca per codice)
+ *  - din.de         → titolo, stato, anno (tedesco/inglese)
+ */
+function buildStaticCatalogUrl(issuingBody, standardCode) {
+  const body = (issuingBody || "").toUpperCase();
+  const code = standardCode || "";
+  const enc  = encodeURIComponent(code);
+  const codeUpper = code.toUpperCase();
+
+  if (body === "IT")  return `https://www.normattiva.it/ricerca/semplice?str=${enc}`;
+  if (body === "UE")  return `https://eur-lex.europa.eu/search.html?query=${enc}`;
+  if (body === "BSI") return `https://shop.bsigroup.com/search?q=${enc}&type=standard`;
+  if (body === "UNI") return `https://store.uni.com/catalogo/ricerca?text=${enc}`;
+  if (body === "DIN") return `https://www.din.de/en/search?q=${enc}`;
+  if (body === "EN")  return `https://www.cencenelec.eu/search/?q=${enc}`;
+  if (body === "ASME" || /\bASME\b/.test(codeUpper))
+    return "https://www.asme.org/codes-standards/find-codes-standards";
+  return `https://www.iso.org/search.html?q=${enc}`;
 }
 
 function InfoRow({ label, value }) {
@@ -54,10 +103,23 @@ function InfoLinkRow({ label, href, text }) {
   );
 }
 
+const NORM_VALIDITY_COLORS = {
+  vigente:     { bg: '#dcfce7', color: '#15803d' },
+  superata:    { bg: '#fef3c7', color: '#b45309' },
+  annullata:   { bg: '#fee2e2', color: '#b91c1c' },
+  in_revisione:{ bg: '#dbeafe', color: '#1d4ed8' },
+};
+
 function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
+  const { width: panelWidth, startResize } = useDocDetailPanelWidth();
+
   // Files allegati: l'endpoint dell'albero non li popola, li carichiamo qui
   const [files, setFiles] = useState(doc?.files || []);
   const [filesLoading, setFilesLoading] = useState(false);
+
+  // Verifica validità norma sul catalogo ente
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState(null);
 
   useEffect(() => {
     if (!doc?.id) { setFiles([]); return; }
@@ -84,6 +146,7 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
       lastCheck: tsd.last_validity_check || doc.norm_last_check || null,
       catalogUrl: tsd.validity_check_url || null,
       supersededBy: tsd.superseded_by || null,
+      scopeSummary: tsd.scope_summary || null,
     };
   }, [doc]);
 
@@ -96,10 +159,21 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
     <div className="doc-detail__overlay" onClick={onClose}>
       <aside
         className="doc-detail"
+        style={{ width: panelWidth, maxWidth: panelWidth }}
         onClick={(e) => e.stopPropagation()}
         role="complementary"
         aria-label="Dettagli documento"
       >
+        <div
+          className="doc-detail__resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Ridimensiona pannello documento"
+          aria-valuenow={panelWidth}
+          aria-valuemin={DOC_DETAIL_WIDTH_MIN}
+          aria-valuemax={getDocDetailMaxWidth()}
+          onMouseDown={startResize}
+        />
         {/* Header */}
         <div className="doc-detail__header">
           <div className="doc-detail__header-top">
@@ -120,8 +194,10 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <InfoRow label="Codice" value={doc.doc_code} />
             <InfoRow label="Tipo" value={DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type} />
             <InfoRow label="Revisione" value={doc.revision != null ? `Rev. ${doc.revision}` : null} />
-            <InfoRow label="Data emissione" value={formatDate(doc.issue_date)} />
-            <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
+            <InfoRow label="Data emissione" value={resolveIssueDateDisplay(doc, normData)} />
+            {doc.doc_type !== 'norma' && (
+              <InfoRow label="Data scadenza" value={formatDate(doc.expiry_date)} />
+            )}
             <InfoRow label="Responsabile" value={doc.responsible} />
             <InfoRow label="Azienda" value={doc.company_name} />
             <InfoRow label="Norma" value={doc.standard_reference || doc.standard_code} />
@@ -135,17 +211,64 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
               <InfoRow label="Titolo norma" value={normData.normTitle} />
               <InfoRow label="Ente emittente" value={normData.issuingBody} />
               <InfoRow label="Anno edizione" value={normData.editionYear != null ? String(normData.editionYear) : null} />
-              {normData.validityStatus && (
+              <div className="doc-detail__scope-summary">
+                <span className="doc-detail__info-label">Descrizione</span>
+                {normData.scopeSummary ? (
+                  <p className="doc-detail__scope-text">{normData.scopeSummary}</p>
+                ) : (
+                  <p className="doc-detail__placeholder doc-detail__scope-placeholder">
+                    Nessuna descrizione disponibile — usa Modifica per aggiungerne una
+                  </p>
+                )}
+              </div>
+              {(normData.validityStatus || lookupResult?.status) && (() => {
+                const statusKey = lookupResult?.status || normData.validityStatus;
+                const colors = NORM_VALIDITY_COLORS[statusKey] || {};
+                return (
+                  <div className="doc-detail__info-row">
+                    <span className="doc-detail__info-label">Vigore</span>
+                    <span
+                      className="doc-detail__validity-badge"
+                      style={{ background: colors.bg, color: colors.color }}
+                    >
+                      {NORM_VALIDITY_LABELS[statusKey] || statusKey}
+                    </span>
+                  </div>
+                );
+              })()}
+              <InfoRow label="Sostituita da" value={lookupResult?.supersededBy || normData.supersededBy} />
+              <InfoRow label="Ultima verifica" value={lookupResult?.checkedAt ? formatDate(lookupResult.checkedAt) : (normData.lastCheck ? formatDate(normData.lastCheck) : null)} />
+              <InfoLinkRow label="Catalogo" href={lookupResult?.catalogUrl || normData.catalogUrl} text="Vedi su catalogo ente" />
+              {(normData.issuingBody || normData.standardCode) && (
+                <InfoLinkRow
+                  label="Catalogo ufficiale"
+                  href={buildStaticCatalogUrl(normData.issuingBody, normData.standardCode)}
+                  text={"\u2192 Apri nel catalogo ufficiale"}
+                />
+              )}
+              {normData.standardCode && (
                 <div className="doc-detail__info-row">
-                  <span className="doc-detail__info-label">Vigore</span>
-                  <span className={`doc-detail__validity doc-detail__validity--${normData.validityStatus}`}>
-                    {NORM_VALIDITY_LABELS[normData.validityStatus] || normData.validityStatus}
-                  </span>
+                  <span className="doc-detail__info-label">Controllo online</span>
+                  <button
+                    className="doc-detail__lookup-btn"
+                    disabled={lookupLoading}
+                    onClick={async () => {
+                      setLookupLoading(true);
+                      try {
+                        const r = await apiService.lookupNormStatus(normData.standardCode, normData.issuingBody, doc.id);
+                        setLookupResult(r);
+                      } finally {
+                        setLookupLoading(false);
+                      }
+                    }}
+                  >
+                    {lookupLoading ? 'Verifica…' : 'Verifica validità'}
+                  </button>
+                  {lookupResult && lookupResult.status === 'unknown' && (
+                    <span className="doc-detail__lookup-warn">Catalogo non raggiunto</span>
+                  )}
                 </div>
               )}
-              <InfoRow label="Sostituita da" value={normData.supersededBy} />
-              <InfoRow label="Ultima verifica catalogo" value={normData.lastCheck ? formatDate(normData.lastCheck) : null} />
-              <InfoLinkRow label="Catalogo" href={normData.catalogUrl} text="Vedi su catalogo ISO" />
             </section>
           )}
 

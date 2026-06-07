@@ -45,8 +45,17 @@ async function listRisks(req, res) {
                 ORDER BY (r.probability * r.impact) DESC, r.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
             `),
-            pool.request().input('orgId2', orgId)
-                .query(`SELECT COUNT(*) AS total FROM risks r WHERE r.organization_id = @orgId2 AND r.is_deleted = 0`)
+            (() => {
+                const cntReq = pool.request().input('orgId2', orgId);
+                Object.entries(companyFilter.params).forEach(([k, v]) => cntReq.input(k, v));
+                if (status)  cntReq.input('cntStatus', status);
+                if (context) cntReq.input('cntContext', context);
+                const cntWhere = ['r.organization_id = @orgId2', 'r.is_deleted = 0'];
+                if (companyFilter.clause) cntWhere.push(companyFilter.clause);
+                if (status)  cntWhere.push('r.status = @cntStatus');
+                if (context) cntWhere.push('r.context = @cntContext');
+                return cntReq.query(`SELECT COUNT(*) AS total FROM risks r WHERE ${cntWhere.join(' AND ')}`);
+            })(),
         ]);
 
         const data = dataRes.recordset.map(r => ({ ...r, score: riskScore(r.probability, r.impact) }));
@@ -59,16 +68,21 @@ async function listRisks(req, res) {
 
 async function getRiskStats(req, res) {
     try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
-        const r = await pool.request().input('orgId', orgId).query(`
+        const pool       = await getPool();
+        const orgId      = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
+        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const req2 = pool.request().input('orgId', orgId);
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
+        const r = await req2.query(`
             SELECT
                 COUNT(*) AS total,
                 SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS [open],
                 SUM(CASE WHEN status = 'in_treatment' THEN 1 ELSE 0 END) AS in_treatment,
                 SUM(CASE WHEN status = 'mitigated' THEN 1 ELSE 0 END) AS mitigated,
                 SUM(CASE WHEN (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority
-            FROM risks WHERE organization_id = @orgId AND is_deleted = 0
+            FROM risks r WHERE r.organization_id = @orgId AND r.is_deleted = 0${whereExtra}
         `);
         res.json({ success: true, data: r.recordset[0] });
     } catch (err) {

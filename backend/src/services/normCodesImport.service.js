@@ -111,27 +111,34 @@ async function findExistingNormByCode(orgId, standardCode) {
 }
 
 /**
+ * Cartella NORME E LEGGI (2.3) con company_id ereditabile dai figli.
  * @param {number} orgId
- * @returns {Promise<number|null>}
+ * @param {number|null|undefined} folderId
+ * @returns {Promise<{ id: number, company_id: number|null }|null>}
  */
 async function resolveNormFolderId(orgId, folderId) {
   if (folderId) {
     const explicit = await query(
-      `SELECT id FROM document_registry
+      `SELECT id, company_id FROM document_registry
        WHERE id = @folderId AND organization_id = @orgId AND doc_type = 'folder'`,
       { folderId, orgId }
     );
-    if (explicit.recordset.length > 0) return explicit.recordset[0].id;
+    if (explicit.recordset.length > 0) {
+      const row = explicit.recordset[0];
+      return { id: row.id, company_id: row.company_id ?? null };
+    }
   }
 
   const folderResult = await query(
-    `SELECT id FROM document_registry
+    `SELECT id, company_id FROM document_registry
      WHERE folder_code = '2.3'
        AND organization_id = @orgId
-       AND is_system_folder = 1`,
+       AND is_system_folder = 1
+     ORDER BY id ASC`,
     { orgId }
   );
-  return folderResult.recordset[0]?.id ?? null;
+  const row = folderResult.recordset[0];
+  return row ? { id: row.id, company_id: row.company_id ?? null } : null;
 }
 
 /**
@@ -155,12 +162,14 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
     throw err;
   }
 
-  const normFolderId = await resolveNormFolderId(orgId, options.folderId);
-  if (!normFolderId) {
+  const normFolder = await resolveNormFolderId(orgId, options.folderId);
+  if (!normFolder) {
     const err = new Error('Cartella "NORME E LEGGI" (folder_code 2.3) non trovata');
     err.code = 'NORM_FOLDER_NOT_FOUND';
     throw err;
   }
+  const normFolderId = normFolder.id;
+  const normFolderCompanyId = normFolder.company_id;
 
   const results = [];
   let created = 0;
@@ -184,7 +193,7 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
       if (existing) {
         entry.status = 'duplicate';
         entry.existingDocumentId = existing.id;
-        entry.message = `Codice gi‡ presente: "${existing.title}" (id ${existing.id})`;
+        entry.message = `Codice giù presente: "${existing.title}" (id ${existing.id})`;
         duplicates += 1;
         results.push(entry);
         continue;
@@ -218,13 +227,13 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
 
       const docResult = await query(
         `INSERT INTO document_registry (
-           organization_id, parent_id, title, doc_type, status,
+           organization_id, company_id, parent_id, title, doc_type, status,
            is_system_folder, issue_date, type_specific_data,
            created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
-           @orgId, @parentId, @title, 'norma', 'bozza',
+           @orgId, @companyId, @parentId, @title, 'norma', 'bozza',
            0,
            CASE WHEN @editionYear IS NOT NULL
                 THEN DATEFROMPARTS(@editionYear, 1, 1)
@@ -234,6 +243,7 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
          )`,
         {
           orgId,
+          companyId: normFolderCompanyId,
           parentId: normFolderId,
           title: code.substring(0, 255),
           editionYear,
@@ -285,5 +295,6 @@ module.exports = {
   parseEditionYearFromCode,
   catalogStatusToValidity,
   findExistingNormByCode,
+  resolveNormFolderId,
   importNormCodes,
 };

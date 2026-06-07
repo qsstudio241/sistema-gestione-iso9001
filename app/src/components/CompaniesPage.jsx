@@ -8,8 +8,28 @@ import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, canEditCompany } from "../utils/companyAccess";
+import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import SgqDataGrid from "./SgqDataGrid";
+import PencilIcon from "./icons/PencilIcon";
+import TrashIcon from "./icons/TrashIcon";
 import "./CompaniesPage.css";
+
+function CompanyLogoThumb({ companyId, logoUrl, cacheBust }) {
+  const src = useCompanyLogoUrl(companyId, logoUrl, cacheBust);
+  if (!logoUrl) {
+    return <span className="company-logo-placeholder">{"\u2014"}</span>;
+  }
+  if (!src) {
+    return <span className="company-logo-placeholder">{"\u2026"}</span>;
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="company-logo-thumb"
+    />
+  );
+}
 
 const GRID_COLUMNS = [
   { id: "logo", label: "Logo", width: "56px" },
@@ -33,6 +53,13 @@ function CompaniesPage({ onBack }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
+
+  const editingLogoBlob = useCompanyLogoUrl(
+    editingCompany?.id,
+    editingCompany?.logo_url && !logoFile ? editingCompany.logo_url : null,
+    logoTimestamp
+  );
+  const displayLogo = logoPreview || editingLogoBlob;
 
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
   const isCompanyClient = hasCompanyAccess(user);
@@ -118,19 +145,6 @@ function CompaniesPage({ onBack }) {
     setModalOpen(true);
   };
 
-  const openEdit = (c) => {
-    setEditingCompany(c);
-    setFormData({
-      name: c.name || "",
-      vat_number: c.vat_number || "",
-      sector: c.sector || "",
-      address: c.address || "",
-    });
-    setLogoFile(null);
-    setLogoPreview(c.logo_url ? apiService.getCompanyLogoUrl(c.id) + `?t=${logoTimestamp}` : null);
-    setModalOpen(true);
-  };
-
   const closeModal = () => {
     setModalOpen(false);
     setEditingCompany(null);
@@ -199,15 +213,12 @@ function CompaniesPage({ onBack }) {
   function renderGridCell(row, col) {
     switch (col.id) {
       case "logo":
-        return row.logo_url ? (
-          <img
-            src={apiService.getCompanyLogoUrl(row.id) + `?t=${logoTimestamp}`}
-            alt={`Logo ${row.name}`}
-            className="company-logo-thumb"
-            onError={(e) => { e.target.style.display = "none"; }}
+        return (
+          <CompanyLogoThumb
+            companyId={row.id}
+            logoUrl={row.logo_url}
+            cacheBust={logoTimestamp}
           />
-        ) : (
-          <span className="company-logo-placeholder">{"\u2014"}</span>
         );
       case "actions": {
         const rowCanEdit = canEditCompany(user, row.id);
@@ -219,40 +230,29 @@ function CompaniesPage({ onBack }) {
           >
             <button
               type="button"
-              className="btn-scheda"
-              title="Apri scheda completa (anagrafica e personale)"
+              className="grid-icon-btn"
+              title="Apri scheda azienda"
+              aria-label="Apri scheda azienda"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/companies/${row.id}`);
               }}
             >
-              Scheda
+              <PencilIcon />
             </button>
             {rowCanEdit && !isCompanyClient && (
-              <>
-                <button
-                  type="button"
-                  className="btn-edit"
-                  title="Modifica rapida anagrafica"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEdit(row);
-                  }}
-                >
-                  Modifica
-                </button>
-                <button
-                  type="button"
-                  className="btn-delete"
-                  title="Elimina azienda"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(row.id);
-                  }}
-                >
-                  Elimina
-                </button>
-              </>
+              <button
+                type="button"
+                className="grid-icon-btn grid-icon-btn--danger"
+                title="Elimina"
+                aria-label="Elimina"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(row.id);
+                }}
+              >
+                <TrashIcon />
+              </button>
             )}
           </div>
         );
@@ -364,14 +364,14 @@ function CompaniesPage({ onBack }) {
               <div className="form-group">
                 <label>Logo aziendale</label>
                 <div className="logo-upload-area">
-                  {logoPreview && (
+                  {displayLogo && (
                     <div className="logo-preview-container">
-                      <img src={logoPreview} alt="Anteprima logo" className="logo-preview" />
+                      <img src={displayLogo} alt="Anteprima logo" className="logo-preview" />
                       <button type="button" className="btn-remove-logo" onClick={handleRemoveLogo} title="Rimuovi logo">✕</button>
                     </div>
                   )}
                   <label className="btn-upload-logo">
-                    {logoPreview ? "Cambia logo" : "Carica logo"}
+                    {displayLogo ? "Cambia logo" : "Carica logo"}
                     <input
                       type="file"
                       accept="image/*"

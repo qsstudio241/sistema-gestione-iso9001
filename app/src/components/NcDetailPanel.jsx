@@ -22,6 +22,11 @@ import {
   getNcClosureButton,
   getNcReopenButton,
 } from "../utils/ncWorkflow";
+import {
+  loadNcResponsibleContacts,
+  NC_SCOPE_ATTUAZIONE,
+  NC_SCOPE_VERIFICA,
+} from "../utils/ncResponsibleContacts";
 import "../components/ChecklistModule.css";
 
 const SEVERITY_OPTIONS = [
@@ -116,16 +121,31 @@ export default function NcDetailPanel({
   const [error, setError] = useState(null);
   const [descError, setDescError] = useState(null);
   const [verifExpanded, setVerifExpanded] = useState(!earlyPhase);
-  const [contacts, setContacts] = useState([]);
+  const [contactsAttuazione, setContactsAttuazione] = useState([]);
+  const [contactsVerifica, setContactsVerifica] = useState([]);
 
   useEffect(() => {
-    if (typeof apiService.getNotificationContacts !== "function") return undefined;
+    const companyId = nc?.company_id ?? null;
     let cancelled = false;
-    apiService.getNotificationContacts({ active: "true" })
-      .then((res) => { if (!cancelled) setContacts(res?.data || []); })
-      .catch(() => { if (!cancelled) setContacts([]); });
+
+    Promise.all([
+      loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_ATTUAZIONE }),
+      loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_VERIFICA }),
+    ])
+      .then(([attuazione, verifica]) => {
+        if (cancelled) return;
+        setContactsAttuazione(attuazione);
+        setContactsVerifica(verifica);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setContactsAttuazione([]);
+          setContactsVerifica([]);
+        }
+      });
+
     return () => { cancelled = true; };
-  }, [organizationId]);
+  }, [nc?.company_id, organizationId]);
 
   useEffect(() => {
     setForm(initForm(nc, organizationId));
@@ -193,10 +213,8 @@ export default function NcDetailPanel({
   const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
 
   return (
-    <form
+    <div
       className="nc-detail-form nc-action-form"
-      onSubmit={handleSubmit}
-      noValidate
     >
       {/* 1. Scheda NC */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-scheda-${nc.nc_id}`}>
@@ -239,7 +257,7 @@ export default function NcDetailPanel({
             readOnly={readOnly}
             onChange={(e) => setField("description", e.target.value)}
             onBlur={() => { if (!readOnly) validateDescription(); }}
-            placeholder="Descrivi la non conformit\u00E0 riscontrata..."
+            placeholder="Descrivi la non conformità riscontrata..."
             draftScopeId={draftScope}
             draftFieldId="description"
             persistLocalDraft
@@ -274,7 +292,7 @@ export default function NcDetailPanel({
           </div>
         </div>
         <NcResponsibleSelect
-          contacts={contacts}
+          contacts={contactsAttuazione}
           roleFilter={["attuazione", "generico"]}
           contactId={form.responsible_contact_id}
           legacyText={
@@ -332,7 +350,7 @@ export default function NcDetailPanel({
             value={form.root_cause}
             readOnly={readOnly}
             onChange={(e) => setField("root_cause", e.target.value)}
-            placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
+            placeholder="5W, Ishikawa, 8D... Qual è la causa fondamentale del problema?"
             draftScopeId={draftScope}
             draftFieldId="root_cause"
             persistLocalDraft
@@ -346,7 +364,7 @@ export default function NcDetailPanel({
         <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
           {"4. Azioni correttive"}
         </h3>
-        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} embedded />
+        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} companyId={nc.company_id} embedded />
       </section>
 
       {/* 5. Evidenze */}
@@ -404,7 +422,7 @@ export default function NcDetailPanel({
             />
           </div>
           <NcResponsibleSelect
-            contacts={contacts}
+            contacts={contactsVerifica}
             roleFilter={["verifica", "generico"]}
             contactId={form.verification_contact_id}
             textValue={form.verification_responsible}
@@ -474,11 +492,11 @@ export default function NcDetailPanel({
 
       {!readOnly && (
         <div className="nc-form-actions nc-drawer-footer">
-          <button type="submit" className="btn-primary" disabled={saving}>
+          <button type="button" className="btn-primary" disabled={saving} onClick={handleSubmit}>
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </button>
         </div>
       )}
-    </form>
+    </div>
   );
 }

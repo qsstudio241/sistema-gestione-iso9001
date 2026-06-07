@@ -43,6 +43,67 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 
 ---
 
+## Registro decisioni triage PR backlog (07/06/2026)
+
+Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: mergiare solo fix a basso rischio ancora utili e non già in main; lasciare aperte feature di prodotto o modifiche al sync sensibile (eccezioni golden rules); chiudere ciò che è già recuperato altrove.
+
+### Mergiate su `main`
+| PR | Titolo | Note |
+|----|--------|------|
+| #97 | fix(backend): eliminazione azienda con cleanup dipendenze FK | Fix integrità DB. Conflitti GUIDA (whole-file CRLF) risolti tenendo main + nota esperienza FK. `companyMaintenance.service` + delega controller verificati. |
+| #57 | fix(ai): retry automatico Gemini su 503/429 | Retry server-side mancante in main (solo embeddings lo aveva). Conflitti su `aiAssist.test.js` (allineato a `userId` reale) e GUIDA risolti. Syntax-check OK. |
+| #91 | feat(ai): ambito azienda su chat+RAG (con **regola scope azienda bloccata**) | Mergiata con **adattamento prodotto deciso dal committente** (vedi sotto). Mantiene il fix sicurezza RAG (filtro `company_id = X`, niente `OR IS NULL`/chunk globali). Branch `pr-91-integ` (merge origin/main + fix encoding em-dash UTF-8). Conflitto GUIDA risolto tenendo main + questa nota. Test AI/scope L1 PASS, build OK. |
+
+### Chiuse (contenuto già recuperato / stale)
+| PR | Titolo | Motivo |
+|----|--------|--------|
+| #28 | docs: diagnosi rinnovo Let's Encrypt | Parte operativa (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) consolidata in *Ops/Sysadmin — Rinnovo SSL Let's Encrypt* (più sotto). |
+
+### Lasciate aperte (feature/prodotto o sync sensibile — con prossimo passo)
+| PR | Titolo | Perché aperta | Prossimo passo |
+|----|--------|---------------|----------------|
+| #52 | feat: audit close verso document_registry (ADR-009 F5) | Manca migration 066, feature additiva | Migration 066 idempotente + rebase + test chiusura audit |
+| #31 | perf(sync): debounce 1500ms + enqueueOrReplace | Sync sensibile (ADR-008 T3/T4/T5) | Rivalutare vs architettura sync + test L3 multi-device |
+| #38 | feat: compressione foto + Word resize + PhotoEditModal | Feature grossa, nuove dipendenze npm | Test a parte (bundle, upload, export Word, modal mobile) |
+| #10 | feat(settings): pagina Organizzazione P.IVA + logo | Si sovrappone al billing layer (migration 082) in sviluppo | Coordinare con billing per evitare doppioni, poi rebase |
+
+#### PR #91 — Regola di prodotto: ambito azienda dell'assistente AI (07/06/2026)
+
+Decisione committente sull'adattamento di #91 (diverso dalla PR originale):
+
+- **Utente STUDIO** (auditor_org / superadmin studio): può avere la vista complessiva e **selezionare** tra le **sole aziende clienti** del suo `auditor_org_id`. Comportamento invariato rispetto alla PR.
+- **Utente AZIENDA cliente** (ha righe in `user_company_access`): vede **solo i propri contenuti**. Il backend **forza** sempre `company_id` sulla sua **anagrafica primaria**, ignorando qualunque `companyId` inviato dal client. **Nessun errore 403** "scegli azienda" (la PR originale dava 403 al cliente multi-azienda che non sceglieva — qui invece blocchiamo/forziamo).
+  - **Anagrafica primaria** = primo record di `user_company_access` ordinato per `company_id` (il `company_id` più basso). Scelta **deterministica e documentata**: se il cliente ha accesso a più aziende via RBAC, l'AI resta comunque bloccata sulla primaria.
+  - **Frontend** (`AiAssistantPage.jsx`): per l'utente azienda il chip selettore azienda è **disabilitato** e preimpostato sulla sua azienda (nessun dropdown); l'inferenza automatica e i reset non lo sovrascrivono.
+- **Sicurezza RAG mantenuta**: il filtro `searchKnowledge` resta `company_id = @compId` (niente `OR IS NULL`), quindi nessun chunk globale/di altre aziende rientra nel contesto del cliente.
+- **File toccati**: `backend/src/services/aiCompanyScope.service.js` (+ test), `backend/src/controllers/aiChat.controller.test.js`, `app/src/pages/AiAssistantPage.jsx` (+ `.css`).
+
+---
+
+### Sessione 20 maggio 2026 — AI conclusioni: retry Gemini su 503 "model overloaded"
+
+#### Sintomo
+Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizio AI temporaneamente sovraccarico" (o, su bundle pre-fix, il messaggio Nginx "Server temporaneamente non disponibile"). Capita soprattutto in orari di picco perché Gemini 2.5 Flash restituisce intermittentemente **503 model overloaded**.
+
+#### Catena di fix (in ordine di scoperta)
+1. **Nginx intercettava 503**: `error_page 502 503 504 = @backend_down` mascherava il messaggio del backend con il generico Nginx. **Fix**: rimosso `503` (rimane `502 504`), perché 503 può essere un errore funzionale legittimo.
+2. **Controller AI usava 503 anche per upstream errors**: il fronte Nginx lo intercettava comunque. **Fix**: `aiAssist.controller.js` mappa errori upstream a HTTP **500** con messaggi italiani; 503 riservato solo a `AI_NOT_CONFIGURED`.
+3. **Tabelle `ai_feedback` / `ai_interactions` mancanti** + `req.user.id` invece di `req.user.user_id` → ogni "Accetta/Scarta" generava DB error. **Fix**: migrazione 071 + correzione field.
+4. **Nessun retry server-side per 503/429 da Gemini**: ogni picco di carico Google arrivava direttamente all'utente. **Fix definitivo**: `geminiAdapter.js` ora ritenta automaticamente su **429/500/502/503/504** con backoff esponenziale (800ms → 1600ms → 3200ms ± jitter 250ms, cap 5s) per default 3 tentativi (configurabile via `GEMINI_MAX_ATTEMPTS`). Rispetta `Retry-After` se presente.
+
+#### Regole consolidate
+- **Errori HTTP nei controller AI**: non usare 503 per errori runtime (Gemini down, timeout, quota). Usare **HTTP 500** con messaggio italiano leggibile. 503 solo per "provider non configurato".
+- **Retry server-side per provider AI**: tutti gli adapter (Gemini/Azure/OpenAI) devono assorbire gli errori transienti del provider prima di propagare al client. Codici retryable: **429, 500, 502, 503, 504**. Non retryable: 400 (richiesta invalida), `AI_REQUEST_FAILED` (rete locale), `AI_EMPTY_RESPONSE`.
+- **Diagnosi messaggio "non in repo"**: se un endpoint restituisce testo non grep-pabile nel repo backend, controllare `proxy_intercept_errors` + `error_page` in `/etc/nginx/sites-available/`.
+
+#### Tabelle AI
+| Tabella | Uso |
+|---|---|
+| `ai_feedback` | Feedback utente (accepted/rejected/rephrased) per personalizzazione |
+| `ai_interactions` | Audit trail ogni chiamata AI (provider, model, tokens, latency) |
+
+---
+
 ### Playbook riutilizzabile — Caratteri non riconoscibili (U+FFFD / tofu in UI)
 
 **Quando ripetere questa procedura:** in schermata compaiono **U+FFFD** (simbolo con punto interrogativo), **`??`**, o accenti **mancanti/sostituiti** (es. "Qualit" al posto di "Qualità"), spesso solo su **Windows** o solo in **produzione**.
@@ -71,9 +132,18 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
 
-**Esperienza 03/06/2026 — Ambito AI allineato ad albero per-azienda (RBAC)**
+**Esperienza 07/06/2026 — Fix logo azienda — Express Router auth intercept**
 
-Dopo la migrazione albero documentale per `company_id`, i chunk RAG con `company_id` obsoleto (albero condiviso) restavano recuperabili perché `searchKnowledge` usava `company_id = @compId OR company_id IS NULL`. Fix: (1) `backend/src/services/aiCompanyScope.service.js` — `resolveAiCompanyScope` su `POST /ai/chat` (cliente azienda: solo `user_company_access`, mai vista studio; studio: `companyId` opzionale, validato su `auditor_org_id`); (2) filtro stretto `company_id = @compId` in `knowledgeIndexer.service.js`; (3) UI `AiAssistantPage` — nasconde «Vista complessiva» e blocca cambio ambito per profili con `company_access`. Script verifica VPS: `verify-documents-and-ai-scope-org-1002-vps.js`. Deploy: `aiChat.controller.js`, `aiCompanyScope.service.js`, `knowledgeIndexer.service.js` + restart `sgq-backend`.
+Gli utenti desktop autenticati tramite cookie httpOnly hanno `getToken()` → `null` (nessun Bearer header). Il middleware `router.use(authenticate)` montato su `/api/v1` intercetta **ogni** richiesta priva di Bearer token — incluse quelle destinate ad altri router — rispondendo 401 prima che la route target venga raggiunta. Il componente `CompanyLogo` in `CompanyDetailPage` e `CompaniesPage` non riceveva mai la risposta immagine e cadeva in fallback silenzioso.
+
+**Soluzione:** registrare gli endpoint pubblici (logo, allegati non sensibili) direttamente in `server.js` **prima** dei router autenticati:
+```js
+// server.js — PRIMA di app.use('/api/v1', auditRoutes)
+app.get('/api/v1/companies/:id/logo', getLogo);
+```
+**Commit:** `3787ad1` — 07/06/2026 — TEST OK (verificato in produzione).
+
+**Lezione:** se un endpoint deve essere accessibile senza Bearer (es. risorse immagine da `<img src>`), non basta non chiamare `authenticate` nella route — bisogna uscire dal router autenticato. Registrare l'endpoint prima di `app.use('/api/v1', routerAutenticato)` in `server.js`.
 
 **Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
 
@@ -144,6 +214,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 4. **Golden rule UI:** ordine drawer ISO 10.2 — Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura (non form flat per tipo campo).
 5. **Encoding:** UTF-8 reale o `\u` in **stringhe JS**; mai `\u` come testo JSX grezzo; validare con `check-utf8-encoding.js` anche su `.md` manuale.
 6. **Libreria UI:** catalogo Fase A ~52 pattern / ~55–65% UI reale — secondo passaggio su `pages/` e moduli secondari; consultare [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) prima di nuovi blocchi UI.
+7. **Form annidati (bug critico 07/06/2026):** HTML non supporta `<form>` nested. Se un componente contenitore (es. `NcDetailPanel`) usa `<form onSubmit>` e al suo interno c'è un altro `<form>` (es. `NcActionsList`), il browser ignora il form interno e il click su qualsiasi `type="submit"` submita il form esterno. Sintomo: nessun POST visibile nei log VPS, azione non salvata, "drawer chiuso senza errore". Fix: convertire il form contenitore in `<div>` e usare `type="button" onClick={handleSubmit}` per il pulsante di salvataggio esterno.
 
 **Monitoraggio post-chiusura:** email job 08:05 (SMTP + destinatari `notifications_config`); push custom da audit reale Camellini; feedback utenti su drawer/flusso.
 
@@ -205,7 +276,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 - **Due significati di "vigente"**: stato ciclo di vita (`document_registry.status`) vs vigore norma (`type_specific_data.validity_status` su `doc_type=norma`) — contatore header e badge albero usano solo il primo; non confonderli in query SQL o UI.
 - **Bug "0 vigenti" con badge verdi**: causa doppia — stats API ignorava status `vigente` (legacy migration 067) **e** cartelle mostravano badge per errore. Fix minimo: `RELEASED_STATUS_SQL_IN` condiviso FE/BE + `shouldShowDocumentStatusBadge()`.
-- **Deploy constants nuova cartella VPS**: `deploy-controllers-to-vps.ps1` non copia `document.controller.js` né `src/constants/` — usare `deploy-to-vps.sh` o SCP mirato + `mkdir -p` remoto; restart via fallback `fuser`+`nohup` se `sudo -n` non disponibile.
+- **Deploy constants nuova cartella VPS**: il manifest `backend/scripts/deploy-manifest.json` include `document.controller.js`, `src/constants/documentStatus.js` e tutti i servizi norme/NC; usare `deploy-controllers-to-vps.ps1` o `deploy-to-vps.sh` (non copia manuale). Preflight verifica file locali prima di SCP; post-deploy health check automatico.
 
 #### Prossimo step (backlog, non in scope sessione)
 
@@ -232,6 +303,16 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 **B2 CSS:** `.btn-primary` / `.btn-secondary` in `index.css`; override colore solo con selettore scoped (`.nc-page`, `.companies-page`, …) — mai duplicare regole globali identiche.
 
 ---
+
+### Sessione 03/06/2026 — Visualizzazione Excel in-app (SpreadsheetViewer)
+
+| PR | Contenuto |
+|---|---|
+| [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93) | `DocFileDialog`: `.xlsx` → `SpreadsheetViewer` (SheetJS) al posto di Office Online; download via `getDocFileBlob` |
+
+**Lezione**: Office Online (`view.officeapps.live.com`) non funziona con API su `:8443` e senza token pubblico — stesso pattern già risolto per Word con `DocumentDocxViewer`.
+
+**Smoke SAVECO scadenzario** (doc `1698`, org QS `1002`, file ~71 KB): 4 fogli (`TO_DO`, `SCADENZARIO`, `IMPIANTI TERMICI`, `PRESIDI ANTINCENDIO`) parsati con SheetJS su copia file da VPS. Verifica UI post-merge: login org Camellini → Registro documenti → SAVECO → Scadenzario → **Visualizza**.
 
 ### Sessione 25/05/2026 — Registro norme SoT R1–R7 (completato) e chiusura PR
 
@@ -413,7 +494,7 @@ Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
 - Routing pulsante "Visualizza":
   - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
   - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
-  - `.xlsx` → fallback Office Online Viewer (Microsoft)
+  - `.xlsx` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
 
 #### DocumentDetailPanel (slide-in dettaglio documento)
 Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"
@@ -465,9 +546,7 @@ quando il pannello si apre.
    nell'endpoint `release-revision` che apre il `.docx` con `docxtemplater` (già nel
    progetto), sostituisce `{{data_rilascio}}`, `{{numero_revisione}}`, `{{revisione_label}}`,
    salva la nuova versione. Da implementare.
-2. **Excel viewer**: attualmente "Visualizza" su `.xlsx` cade su Office Online Viewer
-   (inaffidabile con porta 8443). Da valutare libreria browser-side equivalente a
-   docx-preview per Excel (es. `xlsx-preview` o `sheetjs` + custom renderer).
+2. ~~**Excel viewer**~~ → risolto PR #93 (`SpreadsheetViewer` + `getDocFileBlob`).
 3. **Test L1** della suite frontend non eseguiti dopo le modifiche di oggi (Vitest).
    Da lanciare prima di considerare definitivamente chiuso il modulo Word round-trip.
 4. **Pulsante "Visualizza" su .doc legacy**: docx-preview probabilmente non supporta
@@ -1273,6 +1352,27 @@ La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al fi
 
 **Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
 
+#### Ops/Sysadmin — Rinnovo SSL Let's Encrypt `www.fr-busato.it` (diagnosi HTTP-01)
+
+Recuperato dalla PR #28 (chiusa, contenuto consolidato qui).
+
+| Evidenza | Dettaglio |
+|----------|-----------|
+| Scadenza cert | `notAfter=May 5 11:32:22 2026 GMT` su `https://www.fr-busato.it:8443` |
+| Sintomo `certbot renew` | Let's Encrypt risponde **HTTP-01 unauthorized**: **404** su `http://www.fr-busato.it/.well-known/acme-challenge/...` |
+| Causa radice | La porta **80 pubblica** (e la redirect HTTPS) arriva ad **Apache su Raspbian** (`Server: Apache/2.4.66`), non all'**Nginx** del VPS Ubuntu dove gira Certbot. Il backend API (8443, Nginx verso Node) è corretto, ma il validatore ACME non colpisce quel Nginx. |
+| Trappola `/etc/hosts` | Rimuovere eventuale `127.0.0.1 www.fr-busato.it` sul VPS (fa risolvere il dominio in loopback; backup `/etc/hosts.bak`). Da solo **non** risolve il 404 esterno. |
+| **Porta 10880 (Nginx VPS)** | Virtual host dedicato `acme-challenge-10880.conf` (`sites-available` + symlink `sites-enabled`): **listen 10880**, serve solo `/.well-known/acme-challenge/` da `root /var/www/html`, resto **404**. Verifica da Internet: `curl -s http://www.fr-busato.it:10880/.well-known/acme-challenge/probe-10880` deve dare `probe-10880`. |
+| **Renewal config** | In `/etc/letsencrypt/renewal/www.fr-busato.it.conf`: `authenticator = webroot`, `webroot_path = /var/www/html` (niente plugin nginx al renew; backup `.bak.<timestamp>`). |
+
+**Per sbloccare il rinnovo** (azione su router / Raspberry — Let's Encrypt contatta *sempre* la 80 pubblica):
+
+1. **Consigliata:** sul router **WAN:80 verso IP LAN del VPS `fr-sql1`:10880** (TCP). Evitare che il Raspberry intercetti ancora la 80 in ingresso senza forward.
+2. **Alternativa:** **WAN:80 verso VPS:80** (se Nginx ascolta sulla 80 standard).
+3. **Oppure** completare HTTP-01 **su Apache** (host che oggi risponde sulla 80): webroot/proxy verso `/var/www/html` del VPS.
+
+Quando da rete esterna `curl -s http://www.fr-busato.it/.well-known/acme-challenge/probe-10880` restituisce `probe-10880` (non un **301** Apache verso HTTPS): sul VPS `sudo certbot renew --force-renewal` poi `sudo systemctl reload nginx`. Verifica date: `echo | openssl s_client -connect 127.0.0.1:8443 -servername www.fr-busato.it 2>/dev/null | openssl x509 -noout -dates`.
+
 ---
 
 ### Chiusura sessione 04 maggio 2026
@@ -1365,9 +1465,18 @@ Prima di implementare qualsiasi nuovo widget di domanda/item, verificare se esis
 #### Migration DB via SSH (non via cloud agent)
 Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risolve il server). Pattern consolidato:
 1. Scrivi script `run-migration-NNN-vps.js` che usa `require('/var/www/sgq-backend/src/config/database')`
-2. `scp` dello script sul VPS via `$SGQ_SSH_KEY_B64`
-3. `ssh` + `node /tmp/run-migration-NNN-vps.js`
+2. **Windows (Cursor desktop):** `.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-NNN-vps.js` (usa `.ssh-deploy.local.ps1`, **non** `SGQ_SSH_KEY_B64`). Preflight: `vps-preflight.ps1` → `VPS_ACCESS_OK`.
+3. **Cloud Agent (Linux):** `scp` via `$SGQ_SSH_KEY_B64` + `ssh` + `node /tmp/run-migration-NNN-vps.js`
+4. **PC con `database.json`:** migrazione diretta con Node/sqlcmd senza SSH.
 - **Nota SQL Server**: `ON DELETE SET NULL` in FK non è sempre supportato. Verificare con istruzione separata prima di aggiungere clausole ON DELETE/UPDATE.
+
+#### Accesso VPS da Windows — non usare SGQ_SSH_KEY_B64 (07/06/2026)
+Su Cursor desktop (Windows) `SGQ_SSH_KEY_B64` è **sempre vuota** — è un secret solo Cloud Agent. L'agente che si ferma con *"Impossibile verificare… va rieseguita dal cloud agent"* sbaglia percorso.
+- **Setup una tantum:** `backend/config/.ssh-deploy.local.ps1` (da `.example`) + `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- **Preflight obbligatorio:** `.\backend\scripts\vps-preflight.ps1` → `VPS_ACCESS_OK`.
+- **Script/query sul VPS:** `run-on-vps.ps1` (PuTTY `plink`/`pscp`, carica `.ssh-deploy.local.ps1`).
+- **Deploy:** `deploy-controllers-to-vps.ps1` (health check compatibile PowerShell 5.1: `Invoke-WebRequest -UseBasicParsing`).
+- **Lezione:** non cercare `.ppk` se non esiste — password SSH in file gitignored è il percorso documentato; chiave `.ppk` + Pageant è upgrade opzionale.
 
 #### Unificazione allegati ISO e custom (migration 047)
 `evidence_blocks` della custom già referenziava `attachment_id` dalla tabella `attachments` — erano già unificati a livello DB. Il gap era solo nel frontend: `AttachmentSection`/`AttachmentPreview` non sapevano filtrare per `custom_item_id`. Soluzione minima: aggiungere `custom_item_id` nullable a `attachments` + propagare il param nei 4 punti frontend.
@@ -1883,7 +1992,7 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **UI albero** (`b2c0694` + `b3e5b51`): tooltip; rinomina/elimina solo cartelle **custom**; icone sistema vs custom; `FOLDER_NOT_EMPTY` se cartella non vuota. **Sidebar ridimensionabile**: maniglia sottile a destra dell'albero, larghezza in `localStorage` chiave `sgq-doc-tree-width`; su mobile barra **Cartella selezionata** sopra il dettaglio.
 - **Norme (lessico SGQ)**: niente campo *revisione* documentale — usare **edizione** / **anno edizione**, **vigore** e lookup **catalogo-first** (`norm-lookup`, import codici); cartelle **sistema** (es. NORME E LEGGI) **non** rinomina/elimina dall'UI.
 - **UX visibilità novità (30/05)**: deploy Netlify **systemgest.netlify.app** può essere OK mentre l'utente «non vede nulla» → aprire tab **Albero** nel Registro documenti, URL produzione corretto, provare **drag** sulla maniglia; se PWA/cache vecchia: hard refresh o reinstallazione PWA.
-- **Deploy VPS**: `deploy-controllers-to-vps.ps1` va **esteso** con `document.controller.js`, `documentTree.controller.js`, `document.routes.js`, `normCodesImport.service.js` (oggi copia manuale post-push) + restart `sgq-backend`; smoke `grep FOLDER_NOT_EMPTY` sul VPS e `GET /api/v1/health`.
+- **Deploy VPS**: `deploy-controllers-to-vps.ps1` (manifest unico `deploy-manifest.json`) copia tutti i file norme/NC/documenti + restart `sgq-backend`; smoke `npm run smoke:deploy`.
 - **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
 
 **Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D1)**
@@ -1899,6 +2008,28 @@ Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → *
 - **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
 - **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
 
+**Esperienza 03/06/2026 — Albero documentale per-azienda (Camellini / org 1002)**
+
+| Step | Cosa | File / comando |
+|------|------|----------------|
+| A | API albero con `?company_id=X`: filtro **stretto** (`dr.company_id = X`, niente `OR IS NULL`); `children_count` allineato | `documentTree.controller.js`, `documentTreeCompanyScope.js` |
+| B | Migrazione dati org QS: provision per ogni azienda, rimappa `parent_id` per `folder_code`, archivia albero condiviso (`company_id NULL` → `obsoleto`) | `backend/scripts/migrate-per-company-document-trees-vps.js` su VPS |
+| C | Nuove aziende: provisioning sempre su `company_id` (già in `company.controller.js`) | — |
+| Operativo | In Registro documenti → tab **Albero**, impostare **Ambito = nome cliente**; hard refresh PWA dopo deploy | — |
+
+```bash
+# VPS: anteprima poi apply (ORG_ID default 1002)
+scp -P 1122 -i $KEY backend/scripts/migrate-per-company-document-trees-vps.js user@vps:/tmp/
+ssh … "DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js"
+ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
+# Poi deploy documentTree.controller.js + utils e restart sgq-backend
+```
+
+**Esperienza 05/06/2026 — DELETE azienda falliva con FK (AAA-NN / Camellini)**
+
+- **Sintomo**: `DELETE /companies/:id` → 500 «Errore eliminazione azienda»; SQL `FK_doc_registry_company` (azienda con albero provisionato + audit + chunk AI).
+- **Fix**: `companyMaintenance.service.js` — ordine cleanup: `audit_events` + `hardDeleteAudit` → `knowledge_chunks` → `document_history` / `attachments` / relazioni → `document_registry` → altre FK (`company_personnel`, billing, …) → `companies`. Controller `deleteCompany` delega al service.
+- **Deploy**: `company.controller.js` + `companyMaintenance.service.js` su VPS + restart `sgq-backend`. Smoke: azienda test `AAA-NN` (id 8) eliminata OK in produzione.
 
 **Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
 
@@ -2618,3 +2749,23 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Test L1 | Jest 10 (backend) + Vitest 5 (`searchResultLinks`, `SearchPage`) |
 | Deploy | `deploy-controllers-to-vps.ps1` include search routes/controller/service + `server.js` |
 | Smoke | `GET /api/v1/search?q=...` con JWT; verificare assenza leak cross-company con `companyId` |
+
+### Sessione 07/06/2026 - NC notifiche + form annidati (chiusura sessione)
+
+| Voce | Esito |
+|------|-------|
+| Rubrica referenti NC | NotificationContactsPanel.jsx + tabella 
+otification_contacts (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
+| Fix responsible-options 500 | GET /nc/:id/responsible-options: studioScopeClause errato sulle companies (usava co.organization_id invece di c.organization_id). Fix: alias c corretto in 
+c.controller.js. Commit 48124e0 |
+| Fix form annidati (bug critico) | NcDetailPanel aveva <form onSubmit> esterno che avvolgeva NcActionsList (con il suo form). Click su Salva azione submittava il form esterno invece del POST /non-conformities/:id/actions. Fix: form esterno -> <div>, pulsante 	ype="button" onClick. Commit 8464ca |
+| Pattern alert scalabile | Alert scadenza NC: 
+esponsible_contact_id (personale azienda) + 
+ecipients_email (fallback). Scheduler docAlertEscalation.service.js gestisce l'escalation con priorita' personale > rubrica |
+| Migrazione schema | mig. 073 (
+otification_contacts), 074 (
+c_notification_contacts), 081 (user_company_access) deployate su VPS |
+| Punti aperti prossima sessione | (1) Email placeholder da sostituire con indirizzo reale nel seed; (2) NC-QS-260515-01-019 senza responsabile ne' scadenza da assegnare; (3) PR vecchie aperte (#15-97) da triaggiare |
+| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options,  ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
+
+**Lezione chiave - Form HTML annidati:** HTML vieta <form> dentro <form>. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa <form onSubmit> deve essere convertito in <div> quando contiene componenti figlio con propri form di salvataggio.

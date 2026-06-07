@@ -1,7 +1,17 @@
 /**
  * Ambito azienda per assistente AI (allineato a RBAC Fase 4).
- * - Cliente azienda (user_company_access): solo aziende consentite, mai vista studio.
- * - Studio: companyId opzionale; se presente deve appartenere a auditor_org_id.
+ *
+ * REGOLA DI PRODOTTO (committente, PR #91):
+ * - Cliente azienda (user_company_access): ambito SEMPRE forzato sulla propria
+ *   anagrafica primaria (azienda di appartenenza). Non puo' scegliere altre aziende
+ *   e non riceve mai 403 "scegli azienda". Qualsiasi companyId passato dal client
+ *   viene ignorato: vale solo la sua azienda primaria.
+ *   - Anagrafica primaria = primo record di user_company_access ordinato per
+ *     company_id (company_id piu' basso). Scelta deterministica e documentata:
+ *     se il cliente ha accesso a piu' aziende via RBAC, l'AI resta bloccata sulla
+ *     primaria.
+ * - Studio (auditor_org / superadmin studio): companyId opzionale; se presente
+ *   deve appartenere a auditor_org_id (puo' selezionare tra le SOLE aziende clienti).
  */
 
 const { query } = require('../config/database');
@@ -22,40 +32,12 @@ async function resolveAiCompanyScope(user, requestedCompanyId) {
   const accessList = user?.company_access || [];
 
   if (hasCompanyAccessRows(accessList)) {
+    // Utente azienda cliente: ambito SEMPRE forzato sulla propria anagrafica
+    // primaria. Ignoriamo qualsiasi companyId passato dal client e non emettiamo
+    // mai 403: il cliente vede solo i propri contenuti, niente "scegli azienda".
     const allowedIds = getAllowedCompanyIds(accessList);
-    const parsed =
-      requestedCompanyId != null && requestedCompanyId !== ''
-        ? parseInt(requestedCompanyId, 10)
-        : null;
-
-    if (parsed != null && Number.isFinite(parsed) && !allowedIds.includes(parsed)) {
-      return {
-        companyId: null,
-        denied: {
-          status: 403,
-          body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' },
-        },
-      };
-    }
-
-    if (parsed != null && Number.isFinite(parsed)) {
-      return { companyId: parsed, denied: null };
-    }
-
-    if (allowedIds.length === 1) {
-      return { companyId: allowedIds[0], denied: null };
-    }
-
-    return {
-      companyId: null,
-      denied: {
-        status: 403,
-        body: {
-          error: 'Ambito azienda obbligatorio per il tuo profilo',
-          code: 'COMPANY_SCOPE_REQUIRED',
-        },
-      },
-    };
+    const primaryCompanyId = allowedIds[0];
+    return { companyId: primaryCompanyId, denied: null };
   }
 
   if (requestedCompanyId == null || requestedCompanyId === '') {

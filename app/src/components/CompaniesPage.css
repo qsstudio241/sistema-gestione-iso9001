@@ -89,7 +89,38 @@
   white-space: nowrap;
 }
 
-.btn-scheda,
+.grid-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.grid-icon-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.grid-icon-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.grid-icon-btn--danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
 .btn-edit,
 .btn-delete {
   padding: 0.25rem 0.55rem;
@@ -98,16 +129,6 @@
   cursor: pointer;
   font-size: 0.85rem;
   border: 1px solid transparent;
-}
-
-.btn-scheda {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #d1d5db;
-}
-
-.btn-scheda:hover {
-  background: #e5e7eb;
 }
 
 .btn-edit {

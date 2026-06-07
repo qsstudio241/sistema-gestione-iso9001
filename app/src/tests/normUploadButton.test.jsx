@@ -1,5 +1,5 @@
 /**
- * Test L1 — NormUploadButton: flusso upload norme (PDF)
+ * Test L1  NormUploadButton: flusso upload norme (PDF)
  *
  * Copre:
  *   - Selezione file e stato UI
@@ -25,7 +25,7 @@ function createFile(name, size, type = 'application/pdf') {
   return new File([buffer], name, { type });
 }
 
-describe('NormUploadButton — flusso upload norme', () => {
+describe('NormUploadButton  flusso upload norme', () => {
   let onUploadComplete;
 
   beforeEach(() => {
@@ -70,6 +70,7 @@ describe('NormUploadButton — flusso upload norme', () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [{
         success: true,
+        documentId: 501,
         norm_title: 'BS EN ISO 9606-1:2017 Qualification testing of welders',
         standard_code: 'BS EN ISO 9606-1:2017',
         edition_year: 2017,
@@ -93,6 +94,8 @@ describe('NormUploadButton — flusso upload norme', () => {
 
     expect(apiService.uploadNorms).toHaveBeenCalledTimes(1);
     const calledFiles = apiService.uploadNorms.mock.calls[0][0];
+    const calledFolderId = apiService.uploadNorms.mock.calls[0][1];
+    expect(calledFolderId).toBe(42);
     expect(calledFiles).toHaveLength(1);
     expect(calledFiles[0].name).toBe('BS_EN_ISO_9606-1_2017.pdf');
 
@@ -127,8 +130,8 @@ describe('NormUploadButton — flusso upload norme', () => {
   it('gestisce upload multiplo (batch di file)', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [
-        { success: true, norm_title: 'Norma 1', standard_code: 'ISO 1' },
-        { success: true, norm_title: 'Norma 2', standard_code: 'ISO 2' },
+        { success: true, documentId: 1, norm_title: 'Norma 1', standard_code: 'ISO 1' },
+        { success: true, documentId: 2, norm_title: 'Norma 2', standard_code: 'ISO 2' },
       ],
     });
 
@@ -176,9 +179,9 @@ describe('NormUploadButton — flusso upload norme', () => {
     expect(screen.queryByText(/1 PDF selezionat/)).toBeNull();
   });
 
-  it('il pulsante Chiudi dopo i risultati resetta tutto', async () => {
+  it('il pulsante Chiudi dopo i risultati resetta tutto e aggiorna la cartella', async () => {
     apiService.uploadNorms.mockResolvedValue({
-      results: [{ success: true, norm_title: 'Norma Test' }],
+      results: [{ success: true, documentId: 77, norm_title: 'Norma Test' }],
     });
 
     render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
@@ -197,12 +200,14 @@ describe('NormUploadButton — flusso upload norme', () => {
     await waitFor(() => {
       expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
     });
+    expect(onUploadComplete).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       fireEvent.click(screen.getByText('Chiudi'));
     });
 
     expect(screen.queryByText(/Risultati Upload/)).toBeNull();
+    expect(onUploadComplete).toHaveBeenCalledTimes(2);
   });
 
   it('l\'input accetta solo PDF (attributo accept)', () => {
@@ -247,7 +252,7 @@ describe('NormUploadButton — flusso upload norme', () => {
   it('mostra errore parziale quando un file ha errore e altri no', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [
-        { success: true, norm_title: 'Norma OK', standard_code: 'ISO 1' },
+        { success: true, documentId: 10, norm_title: 'Norma OK', standard_code: 'ISO 1' },
         { error: 'PDF danneggiato', fileName: 'broken.pdf' },
       ],
     });

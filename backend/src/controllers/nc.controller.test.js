@@ -206,6 +206,28 @@ describe('createNonConformity  source_type manual', () => {
     });
 });
 
+describe('listNcResponsibleOptionsHandler', () => {
+    it('ritorna 400 se manca company_id', async () => {
+        const req = mockReq({ query: { scope: 'attuazione' } });
+        const res = mockRes();
+        await ctrl.listNcResponsibleOptionsHandler(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'MISSING_COMPANY_ID' }),
+        );
+    });
+
+    it('ritorna 400 se scope non valido', async () => {
+        const req = mockReq({ query: { company_id: '11', scope: 'invalid' } });
+        const res = mockRes();
+        await ctrl.listNcResponsibleOptionsHandler(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'INVALID_SCOPE' }),
+        );
+    });
+});
+
 describe('deleteNonConformity  RBAC studio', () => {
     it('applica studioScopeClause nella verifica pre-delete', async () => {
         query

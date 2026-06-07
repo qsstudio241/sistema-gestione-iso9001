@@ -24,5 +24,7 @@ export function normalizeNormUploadResults(raw) {
 }
 
 export function countNormUploadSuccesses(results) {
-  return normalizeNormUploadResults(results).filter((r) => r.success && !r.error).length;
+  return normalizeNormUploadResults(results).filter(
+    (r) => r.success && r.documentId && !r.error
+  ).length;
 }

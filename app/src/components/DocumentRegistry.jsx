@@ -38,6 +38,7 @@ import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
+import StatusBadge from "./StatusBadge";
 import { documentHasFile } from "../utils/documentRegistryFile";
 import "./DocumentRegistry.css";
 
@@ -1189,6 +1190,13 @@ function DocumentRegistry() {
     finally { setTreeListLoading(false); }
   }, [tree, registryCompanyScope]);
 
+  /** Dopo upload/import norme: aggiorna cache albero + lista documenti cartella. */
+  const handleNormFolderRefresh = useCallback(async (folderId) => {
+    if (folderId == null) return;
+    await tree.loadChildren(folderId, { forceRefresh: true });
+    await handleTreeNodeSelect(folderId);
+  }, [tree, handleTreeNodeSelect]);
+
   // Quando si seleziona una clausola nell'albero per-standard
   const handleClauseSelect = useCallback(async (clauseCode) => {
     if (!activeStandardReg) return;
@@ -1688,15 +1696,16 @@ function DocumentRegistry() {
                         : tree.breadcrumb[tree.breadcrumb.length - 1];
                     const isNormsFolder = currentFolder?.folder_code === '2.3'
                       || (currentFolder?.title || '').toUpperCase().includes('NORME');
+                    const normsFolderId = currentFolder?.id ?? tree.selectedNodeId;
                     return isNormsFolder ? (
                       <div className="norm-folder-actions">
                         <NormCodesImportButton
-                          folderId={tree.selectedNodeId}
-                          onImportComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                          folderId={normsFolderId}
+                          onImportComplete={() => handleNormFolderRefresh(normsFolderId)}
                         />
                         <NormUploadButton
-                          folderId={tree.selectedNodeId}
-                          onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
+                          folderId={normsFolderId}
+                          onUploadComplete={() => handleNormFolderRefresh(normsFolderId)}
                         />
                       </div>
                     ) : null;
@@ -1735,11 +1744,19 @@ function DocumentRegistry() {
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+                                  {doc.doc_type === 'norma' && doc.standard_code && (
+                                    <span className="norm-code-inline"> · {doc.standard_code}</span>
+                                  )}
+                                  {doc.doc_type === 'norma' && doc.validity_status && (
+                                    <span className={`norm-validity-inline norm-validity-inline--${doc.validity_status}`}>
+                                      {doc.validity_status === 'vigente' ? ' · Vigente' :
+                                       doc.validity_status === 'superata' ? ' · Superata' :
+                                       doc.validity_status === 'ritirata' ? ' · Ritirata' : ` · ${doc.validity_status}`}
+                                    </span>
+                                  )}
                                   {shouldShowDocumentStatusBadge(doc) && ` · `}
                                   {shouldShowDocumentStatusBadge(doc) && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
-                                    </span>
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>
@@ -1847,9 +1864,7 @@ function DocumentRegistry() {
                                   {doc.clause_ref && ` · \u00A7${doc.clause_ref}`}
                                   {shouldShowDocumentStatusBadge(doc) && ` · `}
                                   {shouldShowDocumentStatusBadge(doc) && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
-                                    </span>
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>
