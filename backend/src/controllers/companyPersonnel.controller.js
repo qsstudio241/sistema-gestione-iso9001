@@ -1,5 +1,5 @@
 /**
- * companyPersonnel.controller.js ù CRUD anagrafica personale per azienda (ADR-012)
+ * companyPersonnel.controller.js ÔøΩ CRUD anagrafica personale per azienda (ADR-012)
  * RBAC: stesso scope auditor_org di company.controller.js
  */
 
@@ -104,7 +104,7 @@ async function resolveCompanyScope(companyId, auditorOrgId) {
 }
 
 /**
- * GET /api/v1/personnel ù overview studio (slice S6)
+ * GET /api/v1/personnel ÔøΩ overview studio (slice S6)
  * Query: company_id (opzionale), active, auditor_org_id (superadmin)
  */
 async function listPersonnelStudio(req, res) {
@@ -375,7 +375,7 @@ async function deletePersonnel(req, res) {
       if (ncRefs.recordset.length > 0) {
         if (!personnel.active) {
           return res.status(409).json({
-            error: 'Personale collegato a NC: giù disattivato',
+            error: 'Personale collegato a NC: giÔøΩ disattivato',
             code: 'NC_LINKED',
           });
         }

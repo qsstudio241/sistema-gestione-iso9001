@@ -1,0 +1,2882 @@
+IQQUU 
+2016 
+IQQUU 
+2016 
+
+©2016 UNI - Milano 
+
+TUTTI I DIRITTI SONO RISERVATI 
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi, 
+fotocopie, microfilm, o altro senza il consenso scritto dell’editore. 
+
+ALL RIGHTS RESERVED 
+No part of this work may be reproduced, stored in a retrieval system or transmitted in any form or by any 
+means electronic, photocopying recording or otherwise, without the written permission from the publisher. 
+
+Questa pubblicazione non è un documento normativo. 
+La responsabilità dei concetti espressi è unicamente dell’autore. 
+
+Autore 
+
+Conforma - Associazione Organismi Cerificazione Ispezione Prove Taratura 
+
+Editore 
+
+UNI – Ente Nazionale Italiano di Unifi cazione 
+Via Sannio, 2 – 20137 Milano - Italia 
+Tel. 02 70024.1 – Fax 02 5515256 
+www.uni.com 
+
+Maggio 2016 
+
+
+La presente Linea Guida nasce come progetto del Gruppo di Lavoro AMBIENTE di Conforma al quale 
+
+aderiscono i seguenti Soci: 
+
+• ASACERT 
+• AICQ SICEV 
+• CERTIQUALITY 
+• CSI 
+• CSQA 
+• DEKRA 
+• DNV GL 
+• ICIM 
+• ICMQ 
+• IGQ 
+• Istituto Italiano dei Plastici 
+• IMQ 
+• RINA SERVICES 
+• SGS 
+• U.L. International 
+Il documento è il risultato di un tavolo tecnico CONFORMA ISO 14001:2015, al quale hanno partecipato: 
+
+Stefano ALDINI Certiquality 
+Chiara BERNARDI SGS 
+Luigi BOTTOS DNV-GL 
+Massimo CASSINARI ICMQ 
+Valentina DORONZO CONFORMA 
+Matteo FERRARI CSQA 
+Cecilia GALIMBERTI AGHION IGQ 
+Lidia GELLI CERTIQUALITY 
+Giulia PENSIERO RINA Services 
+Anna Lisa POLIMENI IMQ 
+Carlo SCALFI Dekra 
+Marco SCANAGATTA CSI 
+Saverio SFORZINI ICIM 
+Caterina VILLA U.L. 
+
+COORDINATORE 
+
+
+Sommario 
+
+Introduzione ...................................................................................................................................... 7 
+4 Contesto dell’Organizzazione ......................................................................................................... 9 
+5 Leadership ..................................................................................................................................... 13 
+6 Pianifi cazione ................................................................................................................................. 15 
+7 Supporto ....................................................................................................................................... 21 
+8 Attività operative ........................................................................................................................... 26 
+9 Valutazione delle prestazioni ......................................................................................................... 29 
+10 Miglioramento ............................................................................................................................ 31 
+
+ALLEGATO - 1 
+
+Contesto dell’Organizzazione: ESEMPI FATTORI ESTERNI ................................................................. 34 
+
+ALLEGATO - 2 
+
+Contesto dell’Organizzazione: ESEMPI FATTORI INTERNI ................................................................. 36 
+
+ALLEGATO - 3 
+
+Esempi rischi.................................................................................................................................... 37 
+
+
+Introduzione 
+
+Linea Guida applicativa sulla UNI EN ISO 14001:2015 
+
+Con la pubblicazione della nuova edizione della UNI EN ISO 14001 (che di poco ha anticipato quella 
+della ISO 9001:2015), gli Organismi di Certificazione sono stati i primi, tra gli operatori interessati, a 
+trovarsi a valutare ed affrontare l’impatto, dal punto di vista interpretativo e, soprattutto, applicativo 
+della nuova norma. 
+
+In attesa di chiarimenti interpretativi “ufficiali” sui nuovi requisiti da parte di UNI (con la auspicabile 
+revisione del documento UNI TR 11331:2009 e del documento UNI TR 11405:2011) e delle indicazioni 
+Accredia, rilevanti ai fini dell’accreditamento (RT 09), da parte di CONFORMA si è ritenuto utile e 
+opportuno, sulla scorta di quanto già avvenuto per la ISO 9001:2015, predisporre la presente guida. 
+
+Il documento non ha pertanto alcuna pretesa di interpretazione autentica della nuova norma ma è 
+finalizzato a fornire sintetiche indicazioni di carattere pratico applicativo per gli auditor degli Organismi 
+di Certificazione sui principali elementi da considerare per la verifica dei requisiti previsti dalla ISO 
+14001:2015 e su quali evidenze è ragionevole aspettarsi di ritrovare nella verifica della conformità 
+ai medesimi. Di riflesso, anche le Organizzazioni certifi cate/certificande potranno utilizzare queste 
+informazioni per orientarsi nel percorso di adeguamento alla nuova norma. 
+
+Particolare attenzione nella stesura del documento è stata dedicata alle novità introdotte dalla nuova 
+edizione della UNI EN ISO 14001: analisi del contesto, approccio basato sul rischio, prospettiva del ciclo 
+di vita. E’ stata condotta inoltre una rilettura ragionata dei criteri già presenti nella precedente edizione 
+e riproposti in chiave migliorativa nell’edizione 2015, alla luce dell’impostazione complessiva del nuovo 
+standard che richiede un’effettiva integrazione del Sistema di Gestione Ambientale nei processi di 
+business dell’Organizzazione, con il pieno supporto del top management. 
+
+L’impostazione metodologica seguita per la stesura del presente documento ha inteso fornire 
+indicazioni sintetiche per gli audit di portata generale, a prescindere dai settori di appartenenza e dal 
+contesto specifico delle Organizzazioni. Questo indubbiamente potrebbe comportare dei limiti sotto 
+il profilo della completezza e del livello di approfondimento delle informazioni contenute nella Linea 
+Guida, ma è del tutto coerente con le finalità del documento che non ha pretese di esaustività o, come 
+già detto, di interpretazione autentica dei requisiti della nuova norma. In attesa che si consolidi una base 
+significativa di esperienze di audit sulla UNI EN ISO 14001:2015 e che i soggetti proposti provvedano a 
+fornire indicazioni “ufficiali” sull’applicazione dei nuovi requisiti, agli Organismi di Certifi cazione aderenti 
+a CONFORMA è apparso logico e ragionevole optare per una impostazione quale quella adottata per la 
+presente Linea Guida. 
+
+Nel descrivere gli esempi delle evidenze da raccogliere per rispondere ai requisiti della UNI EN ISO 
+14001:2015, in particolare a quelli che rappresentano novità vere e proprie rispetto alla precedente 
+edizione, si è privilegiato un approccio orientato alla “conformità sostanziale”, valorizzando strumenti 
+
+I QUADERNI DI CONFORMA 
+
+7 
+
+8 8 
+ed elementi effettivamente a disposizione dell’Organizzazione e pienamente integrati nei suoi processi 
+e nel suo sistema, ed evitando formalismi eccessivi, inutili e privi di valore aggiunto, magari creati 
+appositamente in vista degli audit di certifi cazione. 
+
+Questo, beninteso, non significa che l’Organizzazione, oltre ai casi in cui viene richiesto 
+obbligatoriamente, non debba documentare o registrare alcunché. In molti casi sarà invece necessario e 
+inevitabile disporre di informazioni documentate per tenere sotto controllo in modo efficace un rischio, 
+un aspetto ambientale, un’attività, un processo, un adempimento, etc. coerentemente con gli obiettivi 
+del sistema di gestione ambientale. Si richiede che questi strumenti, finalizzati a descrivere le modalità di 
+un processo o a dare evidenza dello svolgimento di una certa attività siano in grado di assicurare l’effi cace 
+attuazione del sistema in conformità ai pertinenti requisiti e di migliorare la gestione dell’Organizzazione 
+nel suo complesso. 
+
+Si tratta di un principio generale sottolineato e condiviso da tutte le nuove norme sui sistemi di 
+gestione, la cui effettiva applicazione, con il contributo di tutti gli operatori interessati (organizzazioni, 
+consulenti e Organismi di Certificazione) rappresenta uno dei principali fattori di successo della UNI EN 
+ISO 14001:2015 e della sua credibilità. 
+
+Nel testo della Linea Guida viene riportata una sintetica descrizione dei requisiti (colonna a sinistra), 
+con a fronte l’indicazione delle possibili evidenze a supporto della conformità (colonna a destra). Come 
+più volte ribadito, mentre per la descrizione dei requisiti ci si è attenuti a quanto riportato nella testo della 
+UNI EN ISO 14001:2015 (testo con traduzione italiana), compresi gli importantissimi approfondimenti 
+riportati nell’appendice A alla norma (“Guida all’uso della presente norma internazionale”), gli esempi 
+di evidenze riportate in questo documento non sono comunque da considerarsi esaustivi, ben potendo 
+un’Organizzazione dimostrare la propria conformità altrimenti. 
+
+Per la tabella di confronto e corrispondenza tra la ISO 14001:2004 e la ISO 14001:2015 si rinvia 
+all’appendice B alla norma. 
+
+Scopi e finalità della presente Linea Guida sono stati riconosciuti anche da UNI che ne ha confermato 
+la congruenza terminologica con il corpo normativo dedicato alla gestione ambientale ed alla valutazione 
+della conformità. 
+
+I QUADERNI DI CONFORMA 
+
+
+I QUADERNI DI CONFORMADESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+A 9 I QUADERNI DI CONFORMA 
+Il punto è completamente nuovo rispetto alla prece-
+dente ISO 14001:2004. 
+L’Organizzazione deve individuare ed analizzare 
+i fattori interni ed esterni (positivi e negativi), che 
+sono rilevanti per i suoi obiettivi strategici e che in-
+fluenzano la sua capacità di ottenere i risultati attesi 
+dal sistema di gestione ambientale. 
+L’obiettivo è di elevare il livello di visione strategi-
+ca dell’Organizzazione nel progettare il sistema di 
+gestione ambientale, tenendo conto del contesto in 
+cui la stessa opera. 
+Identificare i fattori che possono influenzare la capa-
+cità dell’Organizzazione di raggiungere i risultati de-
+siderati è fondamentale per ragionare in una ottica 
+di “Risk Based Thinking” (vedi 6.1) e di conseguenza 
+definire e sviluppare opportunamente il sistema di 
+gestione ambientale. 
+L’analisi dei fattori esterni e interni rilevanti che ca-
+ratterizzano il contesto dell’Organizzazione potreb-
+be richiedere il coinvolgimento di funzioni aziendali 
+diverse da quelle più direttamente coinvolte nella 
+gestione ambientale: marketing e vendite, acquisti, 
+amministrazione e finanza, risorse umane, legal & 
+compliance. 
+I fattori esterni includono le condizioni ambientali 
+(correlate al clima, alla qualità dell’aria, alla qualità 
+dell’acqua, all’utilizzo del terreno, alla contamina-
+zione esistente, alla disponibilità di risorse naturali 
+e alla biodiversità) ma non dovrebbero limitarsi a 
+queste. 
+L’Organizzazione infatti dovrebbe considerare altri 
+fattori esterni che potrebbero influenzare i risultati 
+attesi del Sistema di gestione ambientale, quali, ad 
+esempio, circostanze culturali, sociali, politiche, le-
+gali, normative, finanziarie, tecnologiche, economi-
+che, naturali e competitive, internazionali, nazionali, 
+regionali o locali. 
+Inoltre debbono essere prese in considerazione le 
+caratteristiche o condizioni interne dell’organizza-
+zione, come le sue attività, prodotti e servizi, orien-
+tamento strategico, culturale e capacità (per esem-
+pio conoscenze, processi, sistemi). 
+Si rimanda all’allegato 1 “Contesto dell’Organizza-
+zione: esempi fattori esterni” e all’allegato 2 ““Con-
+testo dell’Organizzazione: esempi fattori interni”. 
+Il requisito non richiede in modo specifi co di 
+dare evidenza dell’analisi del contesto, ma, 
+considerato che tale analisi costituisce la base 
+conoscitiva per pianificare e mantenere il Si-
+stema di gestione e determinare rischi e op-
+portunità per l’Organizzazione e le azioni per 
+affrontarli, è ragionevole aspettarsi che gli esi-
+ti siano documentati per non compromettere 
+l’efficacia e la ripercorribilità del processo di 
+pianificazione del Sistema. 
+Il livello di approfondimento delle informazio-
+ni documentate dipende, come da previsione 
+della norma, dalle dimensioni, dal tipo e dal-
+la complessità dell’Organizzazione e del suo 
+contesto. 
+Dalla lettura combinata dei requisiti del par. 
+4 e del par. 5 della norma, la responsabilità 
+circa gli esiti dell’analisi del contesto dipen-
+de dall’Alta Direzione dell’Organizzazione 
+(direttamente o tramite un suo delegato) e 
+dovrebbe pertanto essere fornita evidenza del 
+suo coinvolgimento al riguardo. 
+Ad esempio, l’intervista con il top manage-
+ment (o suo delegato) potrebbe fornire indi-
+cazioni su come sono stati considerati i fattori 
+che concorrono alla comprensione del conte-
+sto in cui si colloca l’Organizzazione. 
+Le informazioni relative all’analisi del contesto 
+devono essere mantenute aggiornate in rela-
+zione ai cambiamenti intervenuti che potreb-
+bero influire sul mantenimento del sistema di 
+gestione ambientale con implicazioni per la 
+direzione strategica dell’Organizzazione (vedi 
+9.3 – Riesame di Direzione). 
+Molte Organizzazioni certificate con la vec-
+chia edizione della norma potrebbero già 
+avere parte delle informazioni sul contesto nel 
+documento di analisi ambientale (verosimil-
+mente riferite alle cosiddette condizioni am-
+bientali), da riesaminare opportunamente per 
+valutare la congruità e l’aggiornamento delle 
+informazioni. Potrebbero essere anche accet-
+tabili relazioni specifiche, verbali di meeting, 
+o la valutazione potrebbe essere parte, come 
+detto, del riesame della direzione (vedi 9.3). 
+4.1 Comprendere l’Organizzazione e il suo contesto 
+4 Contesto dell’Organizzazione 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+A 9 I QUADERNI DI CONFORMA 
+Il punto è completamente nuovo rispetto alla prece-
+dente ISO 14001:2004. 
+L’Organizzazione deve individuare ed analizzare 
+i fattori interni ed esterni (positivi e negativi), che 
+sono rilevanti per i suoi obiettivi strategici e che in-
+fluenzano la sua capacità di ottenere i risultati attesi 
+dal sistema di gestione ambientale. 
+L’obiettivo è di elevare il livello di visione strategi-
+ca dell’Organizzazione nel progettare il sistema di 
+gestione ambientale, tenendo conto del contesto in 
+cui la stessa opera. 
+Identificare i fattori che possono influenzare la capa-
+cità dell’Organizzazione di raggiungere i risultati de-
+siderati è fondamentale per ragionare in una ottica 
+di “Risk Based Thinking” (vedi 6.1) e di conseguenza 
+definire e sviluppare opportunamente il sistema di 
+gestione ambientale. 
+L’analisi dei fattori esterni e interni rilevanti che ca-
+ratterizzano il contesto dell’Organizzazione potreb-
+be richiedere il coinvolgimento di funzioni aziendali 
+diverse da quelle più direttamente coinvolte nella 
+gestione ambientale: marketing e vendite, acquisti, 
+amministrazione e finanza, risorse umane, legal & 
+compliance. 
+I fattori esterni includono le condizioni ambientali 
+(correlate al clima, alla qualità dell’aria, alla qualità 
+dell’acqua, all’utilizzo del terreno, alla contamina-
+zione esistente, alla disponibilità di risorse naturali 
+e alla biodiversità) ma non dovrebbero limitarsi a 
+queste. 
+L’Organizzazione infatti dovrebbe considerare altri 
+fattori esterni che potrebbero influenzare i risultati 
+attesi del Sistema di gestione ambientale, quali, ad 
+esempio, circostanze culturali, sociali, politiche, le-
+gali, normative, finanziarie, tecnologiche, economi-
+che, naturali e competitive, internazionali, nazionali, 
+regionali o locali. 
+Inoltre debbono essere prese in considerazione le 
+caratteristiche o condizioni interne dell’organizza-
+zione, come le sue attività, prodotti e servizi, orien-
+tamento strategico, culturale e capacità (per esem-
+pio conoscenze, processi, sistemi). 
+Si rimanda all’allegato 1 “Contesto dell’Organizza-
+zione: esempi fattori esterni” e all’allegato 2 ““Con-
+testo dell’Organizzazione: esempi fattori interni”. 
+Il requisito non richiede in modo specifi co di 
+dare evidenza dell’analisi del contesto, ma, 
+considerato che tale analisi costituisce la base 
+conoscitiva per pianificare e mantenere il Si-
+stema di gestione e determinare rischi e op-
+portunità per l’Organizzazione e le azioni per 
+affrontarli, è ragionevole aspettarsi che gli esi-
+ti siano documentati per non compromettere 
+l’efficacia e la ripercorribilità del processo di 
+pianificazione del Sistema. 
+Il livello di approfondimento delle informazio-
+ni documentate dipende, come da previsione 
+della norma, dalle dimensioni, dal tipo e dal-
+la complessità dell’Organizzazione e del suo 
+contesto. 
+Dalla lettura combinata dei requisiti del par. 
+4 e del par. 5 della norma, la responsabilità 
+circa gli esiti dell’analisi del contesto dipen-
+de dall’Alta Direzione dell’Organizzazione 
+(direttamente o tramite un suo delegato) e 
+dovrebbe pertanto essere fornita evidenza del 
+suo coinvolgimento al riguardo. 
+Ad esempio, l’intervista con il top manage-
+ment (o suo delegato) potrebbe fornire indi-
+cazioni su come sono stati considerati i fattori 
+che concorrono alla comprensione del conte-
+sto in cui si colloca l’Organizzazione. 
+Le informazioni relative all’analisi del contesto 
+devono essere mantenute aggiornate in rela-
+zione ai cambiamenti intervenuti che potreb-
+bero influire sul mantenimento del sistema di 
+gestione ambientale con implicazioni per la 
+direzione strategica dell’Organizzazione (vedi 
+9.3 – Riesame di Direzione). 
+Molte Organizzazioni certificate con la vec-
+chia edizione della norma potrebbero già 
+avere parte delle informazioni sul contesto nel 
+documento di analisi ambientale (verosimil-
+mente riferite alle cosiddette condizioni am-
+bientali), da riesaminare opportunamente per 
+valutare la congruità e l’aggiornamento delle 
+informazioni. Potrebbero essere anche accet-
+tabili relazioni specifiche, verbali di meeting, 
+o la valutazione potrebbe essere parte, come 
+detto, del riesame della direzione (vedi 9.3). 
+4.1 Comprendere l’Organizzazione e il suo contesto 
+4 Contesto dell’Organizzazione 
+
+10 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+4.2 Comprensione delle esigenze e delle aspettative delle parti terze interessate 
+L’auditor dovrebbe verificare e valutare: 
+- la coerenza tra il contesto determinato 
+dall’Organizzazione, l’analisi dei rischi e la 
+pianificazione del sistema di gestione am-
+bientale (vedi 6.1); 
+- che l’Organizzazione aggiorni regolarmente 
+le informazioni sui fattori esterni ed interni. 
+Nel caso in cui l’analisi appaia incompleta o 
+insufficiente, si dovrebbe valutare se, per ef-
+fetto di tali carenze, vi possa essere un perico-
+lo concreto ed attuale per la capacità dell’Or-
+ganizzazione di pianificare e mantenere il 
+sistema di gestione ambientale e di program-
+mare gli interventi necessari ad affrontare i 
+rischi e le opportunità. 
+Laddove l’analisi del contesto dell’Organizza-
+zione abbia omesso di considerare, ad esem-
+pio, la situazione di elevata conflittualità a li-
+vello locale/territoriale rispetto a determinati 
+impatti ambientali dell’Organizzazione (ov-
+vero le implicazioni derivanti dalla necessità 
+di adeguamento a una nuova normativa am-
+bientale o a una prescrizione imposta da una 
+nuova autorizzazione), e per effetto di tale 
+carenza il sistema di gestione abbia omesso 
+di pianificare le azioni necessarie, rischiando 
+di compromettere la propria effi cacia, potrà 
+essere formalizzato un rilievo al riguardo. 
+Non è richiesto esplicitamente di disporre di 
+evidenze documentate di questa analisi, ma 
+potrebbe essere ragionevole aspettarsi, come 
+specificato al punto precedente, che queste 
+informazioni siano raccolte in un documen-
+to, riesaminate e aggiornate periodicamente 
+(vedi 4.1). 
+Il riesame di direzione (documentato) deve 
+includere le considerazioni su eventuali cam-
+biamenti riguardanti le esigenze e le aspetta-
+tive rilevanti delle parti interessate. 
+A mero scopo esemplificativo, un rilievo su 
+questo punto potrebbe essere rilasciato, a se-
+conda del livello di criticità, in presenza di due 
+situazioni: 
+1) l’Organizzazione, per pianificare il sistema 
+di gestione ambientale, ha omesso di con-
+siderare e prendersi carico di un’esigenza 
+Il punto è completamente nuovo rispetto alla pre-
+cedente ISO 14001.2004 e, sebbene il concetto di 
+parti interessate fosse già presente in alcuni punti 
+della vecchia edizione della norma, nella nuova edi-
+zione esso risulta più esteso ed esplicito. 
+L’Organizzazione deve individuare e prendere in 
+considerazione le esigenze e le aspettative delle par-
+ti interessate: 
+1) rilevanti, ovvero che possono influenzare la ge-
+stione ambientale in relazione al proprio conte-
+sto e che riguardano le performance ambientali; 
+2) di cui è a conoscenza o rese note dalle parti in-
+teressate. 
+L’Organizzazione deve dimostrare di poter soddisfa-
+re queste esigenze e aspettative delle parti interes-
+sate traducendole in requisiti del sistema di gestione 
+ambientale. Alcuni lo sono in quanto previsti da 
+fonti «cogenti» (leggi, regolamenti, autorizzazioni, 
+10 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+4.2 Comprensione delle esigenze e delle aspettative delle parti terze interessate 
+L’auditor dovrebbe verificare e valutare: 
+- la coerenza tra il contesto determinato 
+dall’Organizzazione, l’analisi dei rischi e la 
+pianificazione del sistema di gestione am-
+bientale (vedi 6.1); 
+- che l’Organizzazione aggiorni regolarmente 
+le informazioni sui fattori esterni ed interni. 
+Nel caso in cui l’analisi appaia incompleta o 
+insufficiente, si dovrebbe valutare se, per ef-
+fetto di tali carenze, vi possa essere un perico-
+lo concreto ed attuale per la capacità dell’Or-
+ganizzazione di pianificare e mantenere il 
+sistema di gestione ambientale e di program-
+mare gli interventi necessari ad affrontare i 
+rischi e le opportunità. 
+Laddove l’analisi del contesto dell’Organizza-
+zione abbia omesso di considerare, ad esem-
+pio, la situazione di elevata conflittualità a li-
+vello locale/territoriale rispetto a determinati 
+impatti ambientali dell’Organizzazione (ov-
+vero le implicazioni derivanti dalla necessità 
+di adeguamento a una nuova normativa am-
+bientale o a una prescrizione imposta da una 
+nuova autorizzazione), e per effetto di tale 
+carenza il sistema di gestione abbia omesso 
+di pianificare le azioni necessarie, rischiando 
+di compromettere la propria effi cacia, potrà 
+essere formalizzato un rilievo al riguardo. 
+Non è richiesto esplicitamente di disporre di 
+evidenze documentate di questa analisi, ma 
+potrebbe essere ragionevole aspettarsi, come 
+specificato al punto precedente, che queste 
+informazioni siano raccolte in un documen-
+to, riesaminate e aggiornate periodicamente 
+(vedi 4.1). 
+Il riesame di direzione (documentato) deve 
+includere le considerazioni su eventuali cam-
+biamenti riguardanti le esigenze e le aspetta-
+tive rilevanti delle parti interessate. 
+A mero scopo esemplificativo, un rilievo su 
+questo punto potrebbe essere rilasciato, a se-
+conda del livello di criticità, in presenza di due 
+situazioni: 
+1) l’Organizzazione, per pianificare il sistema 
+di gestione ambientale, ha omesso di con-
+siderare e prendersi carico di un’esigenza 
+Il punto è completamente nuovo rispetto alla pre-
+cedente ISO 14001.2004 e, sebbene il concetto di 
+parti interessate fosse già presente in alcuni punti 
+della vecchia edizione della norma, nella nuova edi-
+zione esso risulta più esteso ed esplicito. 
+L’Organizzazione deve individuare e prendere in 
+considerazione le esigenze e le aspettative delle par-
+ti interessate: 
+1) rilevanti, ovvero che possono influenzare la ge-
+stione ambientale in relazione al proprio conte-
+sto e che riguardano le performance ambientali; 
+2) di cui è a conoscenza o rese note dalle parti in-
+teressate. 
+L’Organizzazione deve dimostrare di poter soddisfa-
+re queste esigenze e aspettative delle parti interes-
+sate traducendole in requisiti del sistema di gestione 
+ambientale. Alcuni lo sono in quanto previsti da 
+fonti «cogenti» (leggi, regolamenti, autorizzazioni, 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+prescrizioni, etc.), altri diventano «obblighi di cono 
+aspettativa di una parte interessata rileformità
+» (o anche requisiti del sistema) in quanto vante (nel suo contesto territoriale e am-
+l’Organizzazione li adotta volontariamente per ribientale) 
+in modo tale che il sistema di 
+spondere a tali bisogni e aspettative. gestione non è in grado di rispondere in 
+Come specificato nei successivi paragrafi tutti que-modo efficace ai requisiti nel suo complessti 
+requisiti diventano “obblighi di conformità”, un so (rischi/opportunità, pianifi cazione di 
+termine che prende il posto di “requisiti legali e altri azioni opportune, gestione degli obblighi 
+requisiti che l’organizzazione sottoscrive”. di conformità, comunicazione, controllo 
+operativo e valutazioni delle performan-
+Esempi di parti interessate possono essere: ce). 
+- Istituzioni 2) L’Organizzazione pur avendo individuato 
+- enti di controllo l’esigenza o aspettativa della parte inte-
+- organi giurisdizionali ressata, rilevante, nota e conosciuta, non 
+- clienti/consumatori dimostra di averla adeguatamente presa 
+- comunità locale in considerazione quale obbligo di con- 
+associazioni ambientaliste e comitati formità per pianificare il proprio sistema. 
+- soci e azionisti In questo caso la valutazione di conformi- 
+investitori tà andrà effettuata in parallelo con quel- 
+soggetti della fi liera upstream/downstream la di altri requisiti che presuppongono la 
+- fornitori presa in carico da parte del sistema delle 
+- banche e fi nanziatori esigenze ed aspettative rilevanti delle parti 
+- compagnie assicurative interessate (es. rischi e opportunità, piani- 
+associazioni di categoria ficazione, gestione degli obblighi di con- 
+associazioni di consumatorI formità, controllo operativo, etc.). 
+- gruppo societario Queste considerazioni valgono anche lad-
+- dipendenti e sindacati. dove il sistema di gestione ambientale abbia 
+Esigenze e aspettative rilevanti delle parti interessate omesso di recepire cambiamenti signifi cativi 
+costituiscono, con le informazioni sul contesto, in-che riguardano esigenze e aspettative delle 
+put per la pianificazione e per il mantenimento del parti interessate rilevanti, note o conosciute 
+sistema di gestione ambientale (vedi 6.1.1, 6.1.3 e dall’Organizzazione. 
+6.1.4) e del riesame di direzione (vedi 9.3). L’auditor dovrebbe verificare e valutare la coerenza 
+delle conoscenze acquisite al punto 
+4.2 con quanto analizzato al punto 6.1.3. 
+4.3 Determinare il campo di applicazione del sistema di gestione ambientale 
+Il campo di applicazione del sistema di gestione am-Rimane fondamentale l’analisi approfondita 
+bientale determina il perimetro entro il quale sono della correttezza del campo di applicazione 
+applicati i requisiti della norma. del sistema di gestione ambientale che non 
+Il campo di applicazione deve essere documentato e dovrebbe essere fuorviante per le parti inte-
+deve essere disponibile alla parti interessate se l’Orressate. 
+È anche richiesto di verificarne la coeganizzazione 
+dichiara di essere conforme allo stanrenza 
+con il contesto interno ed esterno in cui 
+dard. opera l’Organizzazione, con i requisiti delle 
+È ora esplicitato cosa si deve tenere in considera-parti interessate e con le attività, prodotti e 
+zione per definire il campo di applicazione. Oltre servizi dell’Organizzazione. 
+agli elementi previsti dalla precedente edizione della Sarebbe opportuno verificare che tutti i pro-
+norma quali attività, prodotti e servizi, le funzioni dotti/servizi oggetto del campo di applica-
+organizzative e i confi ni fisici, il campo di applicaziozione 
+della certificazione siano coperti dal 
+ne deve comprendere i fattori interni ed esterni e gli sistema di gestione ambientale e che una 
+
+11 
+I QUADERNI DI CONFORMA 
+
+
+12 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+4.4 Sistema di gestione ambientale 
+eventuale esclusione di attività, prodotti e/o 
+servizi sia supportata da analisi pertinenti. 
+In particolare è necessario verificare che l’Or-
+ganizzazione abbia preso in carico anche i 
+processi in outsourcing secondo quanto in-
+dicato nella norma stessa, se rilevanti per il 
+sistema di gestione ambientale (vedi 8.1). A 
+tal fine è necessario quindi che il campo di 
+applicazione consideri anche la capacità di 
+influenza e autorità sui processi affi dati all’e-
+sterno in modo da definire il livello di respon-
+sabilità dell’Organizzazione verso gli stessi. 
+Esempi: 
+- Si consideri il caso di un processo di lavora-
+zione affidato in conto terzi. E’ ragionevole 
+aspettarsi che in tal caso, dove fra l’altro 
+il processo affidato all’esterno può essere 
+percepito dalle parti interessate come effet-
+tuato dall’Organizzazione, vi sia un eleva-
+to livello di controllo ed infl uenza stabilito 
+contrattualmente (es. facoltà di accesso 
+agli impianti, di effettuare ispezioni e au-
+dit, obblighi di fornire documenti, di infor-
+mativa, di reporting, etc.). Se dal processo 
+in questione, secondo una visione estesa 
+all’intero ciclo di vita, derivino aspetti am-
+bientali significativi la cui esclusione po-
+trebbe compromettere la credibilità del si-
+stema, allora questo processo dovrà essere 
+compreso nel campo di applicazione. 
+- Si consideri il caso diverso in cui la gestione 
+di un impianto di titolarità dell’Organizza-
+zione sia stato affi dato a un soggetto ester-
+no. Laddove vi siano, ad esempio, aspet-
+ti cogenti (titolarità dell’autorizzazione, 
+dell’impianto, rispetto delle prescrizioni, 
+titolarità dei rifiuti prodotti) per i quali la 
+responsabilità è riconducibile (anche par-
+zialmente) all’Organizzazione, anche in 
+questo caso il processo e il relativo livello di 
+controllo dovrà essere compreso nel cam-
+po di applicazione. 
+Seppur non sia esplicitamente richiesto di 
+disporre di evidenze documentate relative al 
+punto specifico, è necessario che il sistema di 
+gestione ambientale sia integrato nei processi 
+obblighi di conformità derivanti dalle esigenze delle 
+parti interessate, la capacità di esercitare il controllo 
+e l’influenza su attività, prodotti e servizi in coerenza 
+con la prospettiva di ciclo di vita (vedi paragrafi 6 e 
+8). 
+Una volta definito il campo di applicazione, tutte le 
+attività, tutti i prodotti e tutti i servizi (anche rag-
+gruppati per tipologia) dell’organizzazione che rien-
+trano in tale campo di applicazione devono essere 
+compresi nel sistema di gestione ambientale. 
+La definizione dello scopo e campo di applicazione 
+non deve essere utilizzata per escludere attività, pro-
+dotti, servizi o strutture che hanno o possono avere 
+aspetti ambientali significativi o per sfuggire ai pro-
+pri obblighi di conformità. 
+Coerentemente con la prospettiva del ciclo di vita, 
+a seconda dell’autorità e la capacità di esercitare il 
+controllo e l’influenza dell’Organizzazione, anche i 
+processi affidati all’esterno (outsourcing) potrebbe-
+ro rientrare nel campo di applicazione se però rile-
+vanti per il sistema di gestione ambientale. 
+Per determinare la rilevanza di un processo affi dato 
+all’esterno, in questo caso, è fondamentale che l’or-
+ganizzazione valuti: 
+- se il processo è percepito dalle parti interessate 
+come se fosse effettuato da parte dell’Organizzazio-
+ne; 
+- se la responsabilità di conformarsi ai requisiti resta 
+in capo all’Organizzazione. 
+Il requisito era già presente al punto 4.1. della ISO 
+14001:2004 (“Requisiti generali”). 
+Focus sull’obiettivo generale, citato anche al punto 
+4.1 della edizione 2015, di raggiungimento degli 
+12 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+4.4 Sistema di gestione ambientale 
+eventuale esclusione di attività, prodotti e/o 
+servizi sia supportata da analisi pertinenti. 
+In particolare è necessario verificare che l’Or-
+ganizzazione abbia preso in carico anche i 
+processi in outsourcing secondo quanto in-
+dicato nella norma stessa, se rilevanti per il 
+sistema di gestione ambientale (vedi 8.1). A 
+tal fine è necessario quindi che il campo di 
+applicazione consideri anche la capacità di 
+influenza e autorità sui processi affi dati all’e-
+sterno in modo da definire il livello di respon-
+sabilità dell’Organizzazione verso gli stessi. 
+Esempi: 
+- Si consideri il caso di un processo di lavora-
+zione affidato in conto terzi. E’ ragionevole 
+aspettarsi che in tal caso, dove fra l’altro 
+il processo affidato all’esterno può essere 
+percepito dalle parti interessate come effet-
+tuato dall’Organizzazione, vi sia un eleva-
+to livello di controllo ed infl uenza stabilito 
+contrattualmente (es. facoltà di accesso 
+agli impianti, di effettuare ispezioni e au-
+dit, obblighi di fornire documenti, di infor-
+mativa, di reporting, etc.). Se dal processo 
+in questione, secondo una visione estesa 
+all’intero ciclo di vita, derivino aspetti am-
+bientali significativi la cui esclusione po-
+trebbe compromettere la credibilità del si-
+stema, allora questo processo dovrà essere 
+compreso nel campo di applicazione. 
+- Si consideri il caso diverso in cui la gestione 
+di un impianto di titolarità dell’Organizza-
+zione sia stato affi dato a un soggetto ester-
+no. Laddove vi siano, ad esempio, aspet-
+ti cogenti (titolarità dell’autorizzazione, 
+dell’impianto, rispetto delle prescrizioni, 
+titolarità dei rifiuti prodotti) per i quali la 
+responsabilità è riconducibile (anche par-
+zialmente) all’Organizzazione, anche in 
+questo caso il processo e il relativo livello di 
+controllo dovrà essere compreso nel cam-
+po di applicazione. 
+Seppur non sia esplicitamente richiesto di 
+disporre di evidenze documentate relative al 
+punto specifico, è necessario che il sistema di 
+gestione ambientale sia integrato nei processi 
+obblighi di conformità derivanti dalle esigenze delle 
+parti interessate, la capacità di esercitare il controllo 
+e l’influenza su attività, prodotti e servizi in coerenza 
+con la prospettiva di ciclo di vita (vedi paragrafi 6 e 
+8). 
+Una volta definito il campo di applicazione, tutte le 
+attività, tutti i prodotti e tutti i servizi (anche rag-
+gruppati per tipologia) dell’organizzazione che rien-
+trano in tale campo di applicazione devono essere 
+compresi nel sistema di gestione ambientale. 
+La definizione dello scopo e campo di applicazione 
+non deve essere utilizzata per escludere attività, pro-
+dotti, servizi o strutture che hanno o possono avere 
+aspetti ambientali significativi o per sfuggire ai pro-
+pri obblighi di conformità. 
+Coerentemente con la prospettiva del ciclo di vita, 
+a seconda dell’autorità e la capacità di esercitare il 
+controllo e l’influenza dell’Organizzazione, anche i 
+processi affidati all’esterno (outsourcing) potrebbe-
+ro rientrare nel campo di applicazione se però rile-
+vanti per il sistema di gestione ambientale. 
+Per determinare la rilevanza di un processo affi dato 
+all’esterno, in questo caso, è fondamentale che l’or-
+ganizzazione valuti: 
+- se il processo è percepito dalle parti interessate 
+come se fosse effettuato da parte dell’Organizzazio-
+ne; 
+- se la responsabilità di conformarsi ai requisiti resta 
+in capo all’Organizzazione. 
+Il requisito era già presente al punto 4.1. della ISO 
+14001:2004 (“Requisiti generali”). 
+Focus sull’obiettivo generale, citato anche al punto 
+4.1 della edizione 2015, di raggiungimento degli 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+esiti attesi, sull’accrescimento delle prestazioni ambientali 
+e sull’approccio per processi. 
+Di fatto, nella ISO 14001:2015 si richiede all’Organizzazione 
+di integrare i requisiti del sistema di 
+gestione ambientale nei diversi processi, tenendo 
+conto anche delle interazioni tra di essi. 
+Si specifica, inoltre, che nello stabilire, attuare e 
+mantenere il sistema di gestione ambientale, l’Organizzazione 
+deve tener conto della conoscenza 
+acquisita nella determinazione del contesto (4.1) e 
+delle parti interessate (4.2), includendo quindi nel 
+sistema di gestione ambientale gli elementi identificati 
+nella fase di comprensione generale, ossia i 
+fattori interni ed esterni nonché le esigenze e aspettative 
+delle parti interessate che si tradurranno in 
+requisiti per l’Organizzazione. 
+Non è più richiesto di “documentare” il sistema di 
+gestione ambientale. Tuttavia, resta il requisito del 
+mantenimento come “informazione documentata” 
+- resa anche disponibile alle parti interessate - in 
+riferimento al campo di applicazione del sistema di 
+gestione ambientale, ora al punto 4.3. 
+5 Leadership 
+5.1 Leadership e impegno 
+Sono state enfatizzate le responsabilità della Direzione 
+ed il ruolo che essa ha, in termini di supporto 
+e motivazione nei confronti delle risorse umane, 
+nell’attuazione del sistema di gestione ambientale. 
+La nuova norma non parla più di un Rappresentante 
+della Direzione, ma coinvolge esplicitamente l’“alta 
+direzione”. 
+A riguardo, si nota come la nuova norma introduca 
+il concetto di alta direzione come: 
+“Persona o gruppo di persone che, dal livello più 
+elevato, guidano e tengono sotto controllo un’Organizzazione”. 
+In primis chi dovrebbe dimostrare la consapevolezza 
+sull’importanza del sistema di gestione ambientale 
+dovrebbe essere proprio l’alta direzione. 
+Il coinvolgimento della Direzione aziendale è fondamentale 
+per l’efficace attuazione di un sistema di 
+gestione ambientale, ed è richiamato in molti requisiti 
+di norma. 
+dell’Organizzazione e pertanto nella documentazione 
+aziendale (ad es. piani operativi, 
+procedure interne, documenti di valutazione, 
+programmazioni pluriennali, …). 
+L’auditor dovrebbe verificare e valutare, mediante 
+l’esame delle informazioni documentate 
+ed interviste al top management e al personale 
+(a diversi livelli e funzioni), la capacità 
+dell’Organizzazione di: 
+- incorporare il sistema di gestione ambientale 
+nel sistema aziendale, mediante un idoneo 
+controllo dei processi; 
+- gestire gli aspetti ambientali, adempiere 
+agli obblighi di conformità, valutare rischi 
+e opportunità, coerentemente con quanto 
+analizzato ai punti 6.1, 6.2 e 6.3; 
+- pianificare la revisione del sistema alla luce 
+di potenziali o effettivi cambiamenti. 
+Il rispetto del requisito di norma, dovrebbe 
+essere verificato attraverso modalità diverse: 
+- colloquio con l’alta direzione per valutarne: 
+1) l’effettivo impegno e consapevolezza 
+del proprio ruolo e dell’efficacia del proprio 
+sistema di gestione ambientale; 
+2) l’effettivo coinvolgimento e conoscenza 
+delle principali forme di integrazione del 
+sistema nei processi di business dell’organizzazione; 
+3) la conoscenza della performance ambientale 
+attesa e di quella conseguita in 
+funzione del miglioramento atteso 
+- riesame di direzione; 
+- obiettivi, politiche e strategia Organizzazione; 
+- interviste al personale; 
+- comunicazioni dell’alta direzione; 
+- effettiva disponibilità di risorse adeguate; 
+- effettivo coinvolgimento del personale. 
+
+13 
+I QUADERNI DI CONFORMA 
+
+
+14 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Dovrebbero essere disponibili defi nizioni di 
+strategie e obiettivi relativi a: 
+- business dei prodotti/servizi oggetto del 
+campo di applicazione del sistema; 
+- aspetti ambientali signifi cativi; 
+- obblighi di conformità; 
+- rischi e alle opportunità. 
+Inoltre dovrebbe essere valutata: 
+- l’evidenza della declinazione degli obietti-
+vi all’interno dell’organizzazione; 
+- l’evidenza dell’attività di verifica dello sta-
+to di attuazione degli obiettivi defi niti. 
+Occorrerebbe accertarsi che la politica sia co-
+erente con: 
+- l’analisi del contesto; 
+- le strategie dell’Organizzazione; 
+- gli impatti ambientali delle attività, prodot-
+ti, servizi dell’Organizzazione. 
+e contenga i seguenti impegni: 
+- protezione dell’ambiente; 
+- soddisfacimento degli obblighi di conformi-
+tà dell’Organizzazione; 
+- miglioramento continuo del sistema di ge-
+stione ambientale al fine di migliorare la 
+prestazione ambientale. 
+È necessario verificare che la politica sia di-
+sponibile come documento, sia stata oppor-
+tunamente comunicata all’interno dell’Orga-
+nizzazione e di conseguenza sia conosciuta 
+ed applicata. 
+Sarebbe opportuno verificare che siano state 
+individuate le parti interessate alle quali può 
+essere resa disponibile la politica, ad esempio: 
+investitori e azionisti, contrattisti, subappalta-
+tori, terzisti, ecc. 
+Infine occorrerebbe accertarsi che sia revisio-
+nata in maniera coerente ai cambiamenti che 
+possono interessare l’Organizzazione e il suo 
+contesto. 
+Le prescrizioni riportate ai punti b e c rendono più 
+esplicito il concetto di integrazione tra il sistema di 
+gestione ambientale e i processi di business dell’Or-
+ganizzazione. 
+Le novità consistono nel richiamo al contesto in cui 
+opera l’Organizzazione e nella comunicazione dello 
+stesso verso le pertinenti parti interessate. 
+A fronte della nuova edizione della norma, si può 
+dire che sia definitivamente tramontato il periodo 
+delle politiche ambientali generiche e statiche. 
+I contenuti della politica devono essere coerenti 
+con i risultati dell’analisi del contesto, con gli im-
+patti delle attività/prodotti/servizi dell’Organizza-
+zione, con gli obiettivi ambientali, con la protezione 
+dell’ambiente, con il soddisfacimento degli obblighi 
+di conformità. 
+L’impegno di proteggere l’ambiente ha lo scopo 
+non solo di prevenire impatti ambientali negativi 
+attraverso la prevenzione dell’inquinamento, ma di 
+proteggere l’ambiente naturale dal danno e dal de-
+grado derivanti da attività, prodotti e servizi dell’Or-
+ganizzazione. Gli impegni specifici che un’Organiz-
+zazione persegue dovrebbero essere pertinenti al 
+contesto dell’organizzazione, comprese le condizio-
+ni ambientali locali o regionali. Questi impegni pos-
+sono affrontare, per esempio, la qualità dell’acqua, 
+il riciclaggio o la qualità dell’aria e possono com-
+prendere anche impegni correlati alla mitigazione e 
+adattamento del cambiamento climatico, alla pro-
+tezione della biodiversità e di ecosistemi e al ripristi-
+no ambientale. 
+La politica ambientale deve essere comunicata 
+all’interno dell’Organizzazione, e deve essere resa 
+disponibile alle altre parti interessate, al fine di pro-
+muoverne il relativo coinvolgimento. 
+Le continue mutazioni della Organizzazione e del 
+contesto in cui la stessa opera, impongono una re-
+visione periodica della politica. 
+5.2 Politica ambientale 
+14 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Dovrebbero essere disponibili defi nizioni di 
+strategie e obiettivi relativi a: 
+- business dei prodotti/servizi oggetto del 
+campo di applicazione del sistema; 
+- aspetti ambientali signifi cativi; 
+- obblighi di conformità; 
+- rischi e alle opportunità. 
+Inoltre dovrebbe essere valutata: 
+- l’evidenza della declinazione degli obietti-
+vi all’interno dell’organizzazione; 
+- l’evidenza dell’attività di verifica dello sta-
+to di attuazione degli obiettivi defi niti. 
+Occorrerebbe accertarsi che la politica sia co-
+erente con: 
+- l’analisi del contesto; 
+- le strategie dell’Organizzazione; 
+- gli impatti ambientali delle attività, prodot-
+ti, servizi dell’Organizzazione. 
+e contenga i seguenti impegni: 
+- protezione dell’ambiente; 
+- soddisfacimento degli obblighi di conformi-
+tà dell’Organizzazione; 
+- miglioramento continuo del sistema di ge-
+stione ambientale al fine di migliorare la 
+prestazione ambientale. 
+È necessario verificare che la politica sia di-
+sponibile come documento, sia stata oppor-
+tunamente comunicata all’interno dell’Orga-
+nizzazione e di conseguenza sia conosciuta 
+ed applicata. 
+Sarebbe opportuno verificare che siano state 
+individuate le parti interessate alle quali può 
+essere resa disponibile la politica, ad esempio: 
+investitori e azionisti, contrattisti, subappalta-
+tori, terzisti, ecc. 
+Infine occorrerebbe accertarsi che sia revisio-
+nata in maniera coerente ai cambiamenti che 
+possono interessare l’Organizzazione e il suo 
+contesto. 
+Le prescrizioni riportate ai punti b e c rendono più 
+esplicito il concetto di integrazione tra il sistema di 
+gestione ambientale e i processi di business dell’Or-
+ganizzazione. 
+Le novità consistono nel richiamo al contesto in cui 
+opera l’Organizzazione e nella comunicazione dello 
+stesso verso le pertinenti parti interessate. 
+A fronte della nuova edizione della norma, si può 
+dire che sia definitivamente tramontato il periodo 
+delle politiche ambientali generiche e statiche. 
+I contenuti della politica devono essere coerenti 
+con i risultati dell’analisi del contesto, con gli im-
+patti delle attività/prodotti/servizi dell’Organizza-
+zione, con gli obiettivi ambientali, con la protezione 
+dell’ambiente, con il soddisfacimento degli obblighi 
+di conformità. 
+L’impegno di proteggere l’ambiente ha lo scopo 
+non solo di prevenire impatti ambientali negativi 
+attraverso la prevenzione dell’inquinamento, ma di 
+proteggere l’ambiente naturale dal danno e dal de-
+grado derivanti da attività, prodotti e servizi dell’Or-
+ganizzazione. Gli impegni specifici che un’Organiz-
+zazione persegue dovrebbero essere pertinenti al 
+contesto dell’organizzazione, comprese le condizio-
+ni ambientali locali o regionali. Questi impegni pos-
+sono affrontare, per esempio, la qualità dell’acqua, 
+il riciclaggio o la qualità dell’aria e possono com-
+prendere anche impegni correlati alla mitigazione e 
+adattamento del cambiamento climatico, alla pro-
+tezione della biodiversità e di ecosistemi e al ripristi-
+no ambientale. 
+La politica ambientale deve essere comunicata 
+all’interno dell’Organizzazione, e deve essere resa 
+disponibile alle altre parti interessate, al fine di pro-
+muoverne il relativo coinvolgimento. 
+Le continue mutazioni della Organizzazione e del 
+contesto in cui la stessa opera, impongono una re-
+visione periodica della politica. 
+5.2 Politica ambientale 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+5.3 Ruoli, responsabilità e autorità nell’organizzazione 
+All’Alta Direzione delle Organizzazioni è richiesto di Nella maggior parte dei casi dovrebbero es-
+definire le responsabilità e le autorità nell’ambito dei sere disponibili organigrammi, disposizioni 
+processi e delle attività svolte. organizzative, mansionari. Tuttavia è accettabile, 
+a seconda della complessità delle Orga-
+Ancorché il requisito di norma non faccia riferimennizzazioni 
+e delle relative attività, una defi nito 
+ad informazioni documentate, vi possono essere zione delle responsabilità a livello di: 
+diverse forme di definizione delle responsabilità e - flussi dei processi; 
+autorità che dipendono dalle prassi in atto e comun-- procedure gestionali; 
+que dalla complessità organizzativa. - istruzioni operative; 
+- accessi riservati ai sistemi informative azien-
+Non è più prevista, a livello di specifi co requisito, dali. 
+la figura del “rappresentante della direzione”, ma è 
+pur sempre richiesto che siano assegnate le respon-Sarebbe sempre comunque opportuno accersabilità 
+per assicurare la conformità del sistema di tarsi della effettiva rilevanza dei ruoli cui siano 
+gestione ambientale e di riferirne i risultati all’Alta state assegnate le responsabilità ed autorità e 
+Direzione, siano assegnate. È comunque opportuno della coerenza fra queste ultime e quelle effet-
+che il canale di comunicazione della Direzione con tivamente riscontrate durante l’audit nell’aml’interno 
+e l’esterno, per quanto riguarda il sistema di bito dei processi aziendali. 
+gestione ambientale sia definito in modo chiaro, at-In ogni caso dovrebbero essere disponibili evi-
+traverso l’assegnazione delle relative responsabilità. denze di avvenuta comunicazione all’interno 
+dell’organizzazione dei ruoli e delle responsa-
+Le responsabilità e autorità assegnate, anche a più bilità definite. Sarebbe da valutare altresì, ad 
+di una persona, per quanto di loro competenza, de-esempio mediante interviste con il personale, 
+vono essere comunicate e note all’interno della Orl’efficacia 
+di dette forme di comunicazione. 
+ganizzazione. 
+L’eliminazione del requisito relativo al rappresentante 
+della Direzione non deve necessariamente comportare 
+la cancellazione di tale figura dal sistema di 
+gestione ambientale. 
+Le responsabilità e autorità assegnate, anche a più 
+di una persona, per quanto di loro competenza, devono 
+essere comunicate e note all’interno dell’Organizzazione. 
+6 Pianifi cazione 
+La pianificazione rappresenta il corpo dei requisiti 
+“core” della norma, i quali ricoprono nel loro complesso 
+un ruolo apicale nella gerarchia dei vari punti 
+norma. 
+L’impostazione ed i risultati della fase di pianifi cazio-
+ne del sistema di gestione ambientale si ripercuotono 
+e producono effetti in modo trasversale sull’implementazione 
+dei rimanenti requisiti della norma. 
+Nella fase di pianificazione trovano attuazione e si 
+
+15 
+I QUADERNI DI CONFORMA 
+
+
+16 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+L’attenzione dell’auditor dovrebbe concen-
+trarsi sulla verifica del/i processo/i di pianifi -
+cazione nel suo complesso. In particolare do-
+vrebbe essere possibile all’auditor, partendo 
+dai principali esiti della fase di pianifi cazione 
+che devono essere documentati (ossia obiet-
+tivi del sistema (6.2.2) e rischi ed opportuni-
+tà (6.1.1) da trattare), ripercorrere a ritroso 
+le attività svolte per giungere a tali risultati e 
+verificare che queste: 
+- rispondano ai dettami della norma (analisi 
+di significatività degli aspetti ambientali, in-
+dividuazione degli obblighi di conformità); 
+- siano allineate al processo documentato; 
+- consentano di stabilire un fi lo conduttore 
+che connetta in modo coerente gli elemen-
+ti rilevanti del contesto (4.1) e delle parti 
+interessate agli esiti documentati (4.2). 
+Dovrebbe essere verificato se l’Organizza-
+zione applica tecniche di analisi dei rischi, 
+come ad esempio FMEA di progetto, pro-
+cesso, prodotto. 
+Nell’ambito delle attività di analisi dei rischi è 
+auspicabile che le Organizzazioni individuino 
+opportune metodologie per assegnare delle 
+priorità ai rischi come ad esempio indici ba-
+sati sulla gravità (delle conseguenze) e sulla 
+probabilità di accadimento di eventi. 
+Dovrebbe essere verificato, inoltre, se l’Or-
+ganizzazione ha identifi cato/pianifi cato le 
+esigenze per la revisione dei propri rischi ed 
+connettono tra loro i tre principali concetti innova-
+tivi introdotti dalla norma, ossia: 
+- l’analisi del contesto trattata al p.to 4; 
+- l’approccio basato sul rischio (Risk-based thin-
+king); 
+- la prospettiva di “Ciclo di vita”. 
+Al contempo la norma conferma l’importanza di 
+attività consolidate come la determinazione degli 
+aspetti ambientali significativi e degli obblighi di 
+conformità (cogenti e volontari); è richiesto tuttavia 
+che tali attività siano rivisitate alla luce degli elemen-
+ti di novità sopra elencati. 
+Il concetto di rischio è un aspetto innovativo comu-
+ne a tutte le revisionate norme di sistemi di gestio-
+ne. L’intento, impostando una fase pianifi catoria 
+che sia frutto di un approccio basato sul rischio (Risk 
+Based Thinking), è di integrare e rendere il sistema 
+di gestione ambientale funzionale alle strategie di 
+business dell’Organizzazione, facendo parlare al 
+sistema lo stesso linguaggio degli “strateghi” che 
+detengono il potere decisionale. 
+Va sottolineato che in ambito HLS il rischio è de-
+finito come un effetto dell’incertezza, ossia uno 
+“scostamento/deviazione” (in più o in meno) ri-
+spetto ai risultati attesi che, nella fattispecie della 
+ISO14001:2015, includono come minimo: 
+- il miglioramento delle prestazioni ambientali; 
+- il soddisfacimento degli obblighi di conformità; 
+- il raggiungimento degli obiettivi ambientali. 
+Il concetto di rischio assume quindi in linea generale 
+una connotazione di “neutralità” rispetto al poten-
+ziale risultato e può avere un’accezione sia positiva 
+che negativa. 
+Allo stesso tempo la norma ritiene opportuno intro-
+durre anche l’ulteriore definizione di “rischi ed op-
+portunità” (vedi 3.2.11), chiarendo il signifi cato da 
+attribuire ai due termini, quando utilizzati in modo 
+“accoppiato” nel corpo normativo. In tal caso, in 
+base all’aggiuntiva definizione, si deve interpretare 
+il termine “rischi” come i “potenziali effetti negativi 
+(minacce/rischi negativi)” e il termine “opportuni-
+tà” come “potenziali effetti positivi” (rischi positi-
+vi). “Rischi” e “opportunità” vanno pertanto intesi 
+6.1 Azioni per affrontare rischi e opportunità 
+6.1.2 Aspetti ambientali 
+16 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+L’attenzione dell’auditor dovrebbe concen-
+trarsi sulla verifica del/i processo/i di pianifi -
+cazione nel suo complesso. In particolare do-
+vrebbe essere possibile all’auditor, partendo 
+dai principali esiti della fase di pianifi cazione 
+che devono essere documentati (ossia obiet-
+tivi del sistema (6.2.2) e rischi ed opportuni-
+tà (6.1.1) da trattare), ripercorrere a ritroso 
+le attività svolte per giungere a tali risultati e 
+verificare che queste: 
+- rispondano ai dettami della norma (analisi 
+di significatività degli aspetti ambientali, in-
+dividuazione degli obblighi di conformità); 
+- siano allineate al processo documentato; 
+- consentano di stabilire un fi lo conduttore 
+che connetta in modo coerente gli elemen-
+ti rilevanti del contesto (4.1) e delle parti 
+interessate agli esiti documentati (4.2). 
+Dovrebbe essere verificato se l’Organizza-
+zione applica tecniche di analisi dei rischi, 
+come ad esempio FMEA di progetto, pro-
+cesso, prodotto. 
+Nell’ambito delle attività di analisi dei rischi è 
+auspicabile che le Organizzazioni individuino 
+opportune metodologie per assegnare delle 
+priorità ai rischi come ad esempio indici ba-
+sati sulla gravità (delle conseguenze) e sulla 
+probabilità di accadimento di eventi. 
+Dovrebbe essere verificato, inoltre, se l’Or-
+ganizzazione ha identifi cato/pianifi cato le 
+esigenze per la revisione dei propri rischi ed 
+connettono tra loro i tre principali concetti innova-
+tivi introdotti dalla norma, ossia: 
+- l’analisi del contesto trattata al p.to 4; 
+- l’approccio basato sul rischio (Risk-based thin-
+king); 
+- la prospettiva di “Ciclo di vita”. 
+Al contempo la norma conferma l’importanza di 
+attività consolidate come la determinazione degli 
+aspetti ambientali significativi e degli obblighi di 
+conformità (cogenti e volontari); è richiesto tuttavia 
+che tali attività siano rivisitate alla luce degli elemen-
+ti di novità sopra elencati. 
+Il concetto di rischio è un aspetto innovativo comu-
+ne a tutte le revisionate norme di sistemi di gestio-
+ne. L’intento, impostando una fase pianifi catoria 
+che sia frutto di un approccio basato sul rischio (Risk 
+Based Thinking), è di integrare e rendere il sistema 
+di gestione ambientale funzionale alle strategie di 
+business dell’Organizzazione, facendo parlare al 
+sistema lo stesso linguaggio degli “strateghi” che 
+detengono il potere decisionale. 
+Va sottolineato che in ambito HLS il rischio è de-
+finito come un effetto dell’incertezza, ossia uno 
+“scostamento/deviazione” (in più o in meno) ri-
+spetto ai risultati attesi che, nella fattispecie della 
+ISO14001:2015, includono come minimo: 
+- il miglioramento delle prestazioni ambientali; 
+- il soddisfacimento degli obblighi di conformità; 
+- il raggiungimento degli obiettivi ambientali. 
+Il concetto di rischio assume quindi in linea generale 
+una connotazione di “neutralità” rispetto al poten-
+ziale risultato e può avere un’accezione sia positiva 
+che negativa. 
+Allo stesso tempo la norma ritiene opportuno intro-
+durre anche l’ulteriore definizione di “rischi ed op-
+portunità” (vedi 3.2.11), chiarendo il signifi cato da 
+attribuire ai due termini, quando utilizzati in modo 
+“accoppiato” nel corpo normativo. In tal caso, in 
+base all’aggiuntiva definizione, si deve interpretare 
+il termine “rischi” come i “potenziali effetti negativi 
+(minacce/rischi negativi)” e il termine “opportuni-
+tà” come “potenziali effetti positivi” (rischi positi-
+vi). “Rischi” e “opportunità” vanno pertanto intesi 
+6.1 Azioni per affrontare rischi e opportunità 
+6.1.2 Aspetti ambientali 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+come due concetti speculari. 
+Infi ne, dalla norma traspare chiaramente che il concetto 
+di rischio può comportare conseguenze positive 
+o negative sia nei confronti dell’ambiente esterno, 
+inteso in senso fisico-naturale, sia nei confronti 
+dell’Organizzazione stessa. 
+Esempi di rischi verso l’ambiente possono includere: 
+- inquinamento della falda acquifera dovuto a perdite 
+di sostanze pericolose da serbatoi interrati 
+non rimossi o non provvisti di sistemi di controllo 
+(rischio negativo); 
+- progettazione, sviluppo ed implementazione nel 
+processo di tecnologie per la produzione energia 
+termica e elettrica da recuperi di calore, con conseguente 
+riduzione dei consumi di risorse (rischio 
+positivo/opportunità). 
+Esempi di rischi verso l’Organizzazione possono invece 
+includere: 
+- aumento del rischio di piena e di inondazioni con 
+ripercussioni sulle strutture dell’Organizzazione 
+(rischi negativo); 
+- sviluppo di un prodotto che risponda a determinati 
+requisiti ambientali comportando una maggiore 
+competitività sul mercato dell’Organizzazione 
+(rischio positivo/opportunità). 
+Si rimanda all’allegato 3 – Esempi di rischi per maggiori 
+dettagli 
+I rischi e le opportunità sono di fatto un risultato 
+“intermedio” del/i processo/i di pianifi cazione e 
+rappresentano il punto di partenza fondamentale 
+per la definizione degli obiettivi ambientali e delle 
+azioni da intraprendere nell’ambito dei processi 
+del sistema di gestione ambientale o di altri processi 
+dell’Organizzazione. 
+Un’efficace determinazione dei “rischi ed opportunità” 
+che è necessario trattare e gestire è infatti 
+riconosciuta dalla norma come la premessa per assicurare 
+non solo che il sistema raggiunga i propri 
+risultati attesi, ma anche che sia a tutti gli effetti uno 
+strumento di prevenzione, in grado di evitare e/o 
+mitigare potenziali effetti e conseguenze indesiderati 
+sull’Organizzazione. 
+La fase di pianificazione del sistema di gestione 
+ambientale consta di processi che hanno come 
+elementi in ingresso l’analisi del contesto (interno 
+ed esterno) in cui opera l’Organizzazione (4.1), la 
+valutazione delle esigenze e delle aspettative delle 
+pertinenti parti interessate (4.2) ed i limiti defi niti 
+dell’ambito di applicazione del sistema di gestio-
+opportunità e delle relative azioni. 
+Dovrebbe essere verificato se il personale 
+dell’Organizzazione è consapevole che l’approccio 
+del sistema di gestione per l’ambiente 
+e sui processi è basato sul rischio (Risk-based 
+Thinking). Ciò potrebbe essere fatto tramite 
+interviste del personale a diversi livelli e funzioni, 
+(Vedi 7.3) andando ad indagare le motivazioni 
+delle scelte operative individuali e/o 
+dei comportamenti adottati nell’ambito dei 
+processi a cui contribuiscono (vedi 5.1). 
+Di particolare importanza nella verifi ca di 
+questo punto si ritiene il confronto con l’Alta 
+Direzione, per comprendere il livello di integrazione 
+e l’effettivo contributo del sistema 
+di gestione ambientale agli indirizzi strategici 
+dell’Organizzazione. 
+L’analisi dei rischi dovrebbe considerare anche 
+il quadro delle responsabilità previste dal 
+D.Lgs 231/2001 per i reati ambientali ivi previsti. 
+Questa tematica ha assunto particolare 
+rilevanza a seguito della recente introduzione 
+di nuovi delitti ambientali (disastro e inquinamento) 
+puniti anche a titolo di colpa. Se da 
+tale analisi dovessero emergere rischi rilevanti 
+per l’Organizzazione (che potrebbero essere 
+valutati con apposito risk assessment), l’Organizzazione 
+dovrà dimostrare di aver preso in 
+considerazione anche questi rischi per pianifi care 
+e mantenere il proprio sistema di gestione 
+ambientale, attuando, se del caso, tutte 
+le sinergie e le integrazioni con il sistema di 
+controllo richiesto dal modello organizzativo 
+per la prevenzione dei reati ambientali ai sensi 
+del D.Lgs. 231/2001. 
+La norma non richiede espressamente un’”analisi 
+dei rischi” formale o un processo documentato 
+di gestione del rischio. È infatti facoltà 
+delle Organizzazioni individuare il metodo 
+più appropriato per determinare i propri rischi 
+ed opportunità, in funzione delle caratteristiche 
+dell’Organizzazione stessa (complessità, 
+tipo di processi, settore di attività, natura, 
+contesto, ecc.). Ciò può comportare diversi 
+livelli di dettaglio dell’approccio metodologico 
+adottato, che possono variare da una 
+semplice analisi qualitativa sino ad un formale 
+processo di analisi quantitativa dei rischi. 
+
+17 
+I QUADERNI DI CONFORMA 
+
+
+18 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Parimenti, l’Organizzazione può scegliere di 
+condurre l’analisi integrando le diverse attivi-
+tà richieste nella fase di pianificazione (ad es. 
+adottando criteri di significatività degli aspet-
+ti ambientali che siano Risk-based) oppure 
+mantenendole separate e quindi procedendo 
+alla determinazione degli aspetti ambienta-
+li significativi, degli obblighi di conformità e 
+dei conseguenti rischi ed opportunità in step 
+successivi. 
+In base alla norma, l’Organizzazione è tutta-
+via tenuta a mantenere informazioni docu-
+mentate di: 
+- rischi e delle opportunità che devono essere 
+trattati/gestiti 
+- il/i processo/i di pianificazione in misura 
+tale da avere confidenza che vengano at-
+tuati come previsto. 
+Nella valutazione dei rischi può essere utile ri-
+ferirsi a metodologie già riconosciute a livello 
+internazionale (esempio: ISO 31000 - 31010, 
+od altre) e citate in allegato, ma, come già 
+detto, non obbligatorie. 
+Nei casi di Organizzazioni che applicano già 
+tecniche di analisi dei rischi, come ad esem-
+pio FMEA di progetto, processo, prodotto, le 
+stesse potranno essere prese in considerazio-
+ne, fermo restando la necessità di applicarle 
+alle tematiche proprie del sistema di gestione 
+ambientale. 
+Gli aspetti ambientali e la valutazione della 
+loro significatività dovrebbero essere verifi ca-
+ti in concomitanza alla verifica del processo 
+di pianificazione nel suo complesso (6.1.1), 
+avendo riguardo di ottenere evidenza delle 
+informazioni documentate richieste per que-
+sto punto di norma, ossia: 
+- aspetti ambientali signifi cativi; 
+- criteri utilizzati per determinare la signifi ca-
+tività. 
+ne ambientale (4.3). In tale fase l’Organizzazione è 
+chiamata a determinare: 
+- gli aspetti ambientali e la loro signifi catività 
+(6.1.2); 
+- gli obblighi di conformità (6.1.3); 
+- i rischi e le opportunità legati agli elementi prece-
+denti o derivanti dall’analisi del contesto. 
+La fase di pianificazione ha inoltre il compito di 
+identificare gli scenari emergenziali ambientali che 
+possono avere impatti sull’ambiente o comportare 
+effetti negativi per l’Organizzazione. 
+In particolare, tenendo conto degli elementi sopra 
+indicati ed applicando una logica di Risk-based thin-
+king, l’Organizzazione deve identificare i rischi e le 
+opportunità legati al raggiungimento dei risultati 
+attesi individuando i fattori che possono interferi-
+re con il raggiungimento degli obiettivi, o che al 
+contrario costituiscono potenziali opportunità di 
+miglioramento. 
+La valutazione dei rischi e delle opportunità do-
+vrebbe essere riesaminata, aggiornata o ripetuta nel 
+tempo, ed in ogni caso quando ritenuto necessario. 
+Necessità di una nuova valutazione o della revisione 
+dei rischi e delle opportunità possono emergere a 
+fronte di: 
+- risultati dell’analisi del contesto; 
+- risultati dell’analisi delle esigenze e delle aspettati-
+ve delle pertinenti parti interessate; 
+- risultati dell’analisi del rispetto degli obblighi di 
+conformità (cogenti e volontari); 
+- cambiamenti all’interno dell’Organizzazione che 
+possano avere un impatto sulle prestazioni am-
+bientali (gestionali, organizzativi, di processo, 
+operativi, ecc.). 
+L’individuazione degli aspetti ambientali e la valu-
+tazione della loro significatività è confermata come 
+un’attività basilare della fase di pianificazione del si-
+stema di gestione ambientale. 
+Nei requisiti della norma è esplicitata la necessità di 
+considerare una prospettiva di Ciclo di Vita nell’i-
+dentificazione, valutazione e gestione dei propri 
+aspetti ambientali, siano essi associati alle attività, 
+prodotti o servizi. 
+Gli aspetti ambientali ed i relativi impatti devono 
+pertanto essere il frutto di un’analisi che oltrepassa 
+il perimetro produttivo dell’Organizzazione ed inve-
+6.1.1 Generalità 
+18 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Parimenti, l’Organizzazione può scegliere di 
+condurre l’analisi integrando le diverse attivi-
+tà richieste nella fase di pianificazione (ad es. 
+adottando criteri di significatività degli aspet-
+ti ambientali che siano Risk-based) oppure 
+mantenendole separate e quindi procedendo 
+alla determinazione degli aspetti ambienta-
+li significativi, degli obblighi di conformità e 
+dei conseguenti rischi ed opportunità in step 
+successivi. 
+In base alla norma, l’Organizzazione è tutta-
+via tenuta a mantenere informazioni docu-
+mentate di: 
+- rischi e delle opportunità che devono essere 
+trattati/gestiti 
+- il/i processo/i di pianificazione in misura 
+tale da avere confidenza che vengano at-
+tuati come previsto. 
+Nella valutazione dei rischi può essere utile ri-
+ferirsi a metodologie già riconosciute a livello 
+internazionale (esempio: ISO 31000 - 31010, 
+od altre) e citate in allegato, ma, come già 
+detto, non obbligatorie. 
+Nei casi di Organizzazioni che applicano già 
+tecniche di analisi dei rischi, come ad esem-
+pio FMEA di progetto, processo, prodotto, le 
+stesse potranno essere prese in considerazio-
+ne, fermo restando la necessità di applicarle 
+alle tematiche proprie del sistema di gestione 
+ambientale. 
+Gli aspetti ambientali e la valutazione della 
+loro significatività dovrebbero essere verifi ca-
+ti in concomitanza alla verifica del processo 
+di pianificazione nel suo complesso (6.1.1), 
+avendo riguardo di ottenere evidenza delle 
+informazioni documentate richieste per que-
+sto punto di norma, ossia: 
+- aspetti ambientali signifi cativi; 
+- criteri utilizzati per determinare la signifi ca-
+tività. 
+ne ambientale (4.3). In tale fase l’Organizzazione è 
+chiamata a determinare: 
+- gli aspetti ambientali e la loro signifi catività 
+(6.1.2); 
+- gli obblighi di conformità (6.1.3); 
+- i rischi e le opportunità legati agli elementi prece-
+denti o derivanti dall’analisi del contesto. 
+La fase di pianificazione ha inoltre il compito di 
+identificare gli scenari emergenziali ambientali che 
+possono avere impatti sull’ambiente o comportare 
+effetti negativi per l’Organizzazione. 
+In particolare, tenendo conto degli elementi sopra 
+indicati ed applicando una logica di Risk-based thin-
+king, l’Organizzazione deve identificare i rischi e le 
+opportunità legati al raggiungimento dei risultati 
+attesi individuando i fattori che possono interferi-
+re con il raggiungimento degli obiettivi, o che al 
+contrario costituiscono potenziali opportunità di 
+miglioramento. 
+La valutazione dei rischi e delle opportunità do-
+vrebbe essere riesaminata, aggiornata o ripetuta nel 
+tempo, ed in ogni caso quando ritenuto necessario. 
+Necessità di una nuova valutazione o della revisione 
+dei rischi e delle opportunità possono emergere a 
+fronte di: 
+- risultati dell’analisi del contesto; 
+- risultati dell’analisi delle esigenze e delle aspettati-
+ve delle pertinenti parti interessate; 
+- risultati dell’analisi del rispetto degli obblighi di 
+conformità (cogenti e volontari); 
+- cambiamenti all’interno dell’Organizzazione che 
+possano avere un impatto sulle prestazioni am-
+bientali (gestionali, organizzativi, di processo, 
+operativi, ecc.). 
+L’individuazione degli aspetti ambientali e la valu-
+tazione della loro significatività è confermata come 
+un’attività basilare della fase di pianificazione del si-
+stema di gestione ambientale. 
+Nei requisiti della norma è esplicitata la necessità di 
+considerare una prospettiva di Ciclo di Vita nell’i-
+dentificazione, valutazione e gestione dei propri 
+aspetti ambientali, siano essi associati alle attività, 
+prodotti o servizi. 
+Gli aspetti ambientali ed i relativi impatti devono 
+pertanto essere il frutto di un’analisi che oltrepassa 
+il perimetro produttivo dell’Organizzazione ed inve-
+6.1.1 Generalità 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+
+ste tutta la catena del valore considerandone i processi 
+upstream (es. approvvigionamento, progettazione) 
+e downstream (es. vendita, uso, smaltimento 
+a fine vita) indipendentemente dal luogo fi sico ove 
+hanno luogo e dai rispettivi owner, che possono essere 
+entità diverse dall’Organizzazione. 
+Il dettaglio dell’analisi sarà funzionale al livello di 
+controllo detenuto dall’Organizzazione sul singolo 
+processo o all’influenza esercitabile sui soggetti della 
+fi liera. 
+Oltre agli aspetti ed impatti ambientali e agli aspetti 
+ambientali significativi, all’Organizzazione è richiesto 
+di documentare anche i criteri di signifi catività 
+adottati. 
+Gli aspetti ambientali significativi devono essere comunicati 
+ai vari livelli e funzioni rilevanti all’interno 
+dell’Organizzazione. 
+Gli aspetti ambientali significativi possono comportare 
+rischi ed opportunità l’Organizzazione è chiamata 
+a gestire. 
+
+6.1.3 Obblighi di conformità 
+Gli obblighi di conformità derivano dall’analisi dei 
+bisogni e delle aspettative dei portatori di interesse, 
+sia interni che esterni all’Organizzazione. 
+In particolare sono obblighi di conformità i bisogni 
+e le aspettative a cui l’Organizzazione deve o sceglie 
+di essere conforme. Negli obblighi di conformità 
+cogenti sono inclusi i requisiti legali, in quanto 
+espressione delle aspettative del legislatore o di altre 
+autorità che hanno potere prescrittivo nei confronti 
+dell’Organizzazione. 
+Gli obblighi di conformità devono essere presenti in 
+forma documentata. 
+Gli obblighi di conformità possono comportare rischi 
+ed opportunità che è necessario gestire da parte 
+dell’Organizzazione. 
+
+Gli obblighi di conformità dovrebbero essere 
+verificati in concomitanza alla verifi ca del 
+processo di pianificazione nel suo complesso 
+(vedi 6.1.1), avendo riguardo di ottenere evidenza 
+delle informazioni documentate richieste 
+per questo punto di norma. 
+
+Esempi di informazioni documentate di obblighi 
+di conformità potrebbero essere: 
+
+- Registri adempimenti 
+- Clausole contrattuali 
+- Convenzioni 
+- Accordi di fi liera 
+Particolare attenzione dovrebbe essere prestata 
+ai criteri utilizzati per individuare gli obblighi 
+di conformità a partire dall’analisi delle 
+parti interessate (4.2) e se questi siano coerenti 
+con gli esiti ottenuti da tale analisi. 
+
+6.1.4 Attività di pianifi cazione 
+Gli esiti del processo di pianificazione devono essere Per le evidenze si rimanda la punto 6.2.2 e al 
+utilizzati per l’impostazione del sistema di gestione capitolo 8. 
+per l’ambiente, in tutte le sue fasi. In particolare 
+l’output del processo deve portare all’identifi cazio
+
+
+19 I QUADERNI DI CONFORMA 
+
+20 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+L’Alta Direzione può definire obiettivi am-
+bientali a diversi livelli, ad es. strategico, tat-
+tico, operativo. A seconda del livello l’auditor 
+dovrebbe verificare che le azioni individuate 
+per ciascun obiettivo e le risorse assegnate 
+dall’Organizzazione siano coerenti con le fi -
+nalità da essa perseguite per garantirne, al-
+meno in tale fase e a parità di variabili, un 
+positivo raggiungimento. 
+L’attenzione dell’auditor dovrebbe focalizzarsi 
+prioritariamente nel verificare se gli obiettivi 
+identificati dall’Organizzazione sono coerenti 
+con la realtà organizzativa nel suo complesso 
+e con i processi / le attività dell’Organizzazio-
+ne. 
+L’Organizzazione dovrebbe rendere disponi-
+bili informazioni documentate a tale scopo 
+(es. piano degli obiettivi, programmi ambien-
+tali, riesame della direzione, etc.). 
+In merito alla coerenza tra gli obiettivi e la 
+politica ambientale è necessario che l’auditor 
+verifichi che gli stessi siano coerenti ed alline-
+ati con gli impegni assunti dall’Alta Direzione. 
+ne delle azioni da intraprendere per trattare: 
+- gli aspetti ambientali signifi cativi; 
+- gli obblighi di conformità; 
+- i rischi e le opportunità. 
+Le azioni possono essere sia attività da integrare in 
+processi già esistenti ed implementati del sistema 
+gestione ambientale (es. la revisione delle modali-
+tà di comunicazione interna all’Organizzazione) sia 
+elementi di un piano predisposto per il raggiungi-
+mento di uno specifico obiettivo ambientale (6.2.2), 
+sia azioni specifi che finalizzate al controllo dei rischi. 
+Con l’individuazione di azioni efficaci mirate a gesti-
+re gli aspetti critici del sistema gestione ambientale 
+si sostanzia di fatto il carattere di strumento pre-
+ventivo del sistema. Nell’attuale norma scompaiono 
+pertanto i requisiti puntuali sulle “azioni preventi-
+ve”, in quanto è il sistema stesso, con il suo approc-
+cio basato sul rischio, a prevenire l’accadimento 
+di eventi che possano inficiare le prestazioni e gli 
+obiettivi ambientali dell’Organizzazione. 
+Come parte integrante del processo di pianifi cazio-
+ne, l’Alta Direzione, nel fissare gli obiettivi ambien-
+tali, deve considerare l’esito derivante dall’analisi 
+dei rischi e delle opportunità e perseguire il miglio-
+ramento continuo non solo in termini di riduzione 
+degli impatti generati dalle proprie attività / pro-
+cessi, ma anche dal saper cogliere le opportunità 
+offerte dal contesto in cui opera. 
+A seguito del processo di pianificazione e al fi ne di 
+perseguire il miglioramento continuo ed una ge-
+stione effi cace dei rischi e delle opportunità, l’Orga-
+nizzazione deve definire degli obiettivi di carattere 
+ambientale che siano coerenti con: 
+- la Politica ambientale; 
+- gli aspetti ambientali significativi da essa indivi-
+duati; 
+- l’output dell’analisi dei rischi e delle opportunità; 
+ed assicurare che gli stessi siano strutturati in modo 
+tale di essere misurabili (ove applicabile – “pratica-
+bile”), monitorati, comunicati e periodicamente 
+aggiornati. 
+6.2 Obiettivi ambientali e pianificazione per il loro raggiungimento 
+6.2.1 Obiettivi ambientali 
+20 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+L’Alta Direzione può definire obiettivi am-
+bientali a diversi livelli, ad es. strategico, tat-
+tico, operativo. A seconda del livello l’auditor 
+dovrebbe verificare che le azioni individuate 
+per ciascun obiettivo e le risorse assegnate 
+dall’Organizzazione siano coerenti con le fi -
+nalità da essa perseguite per garantirne, al-
+meno in tale fase e a parità di variabili, un 
+positivo raggiungimento. 
+L’attenzione dell’auditor dovrebbe focalizzarsi 
+prioritariamente nel verificare se gli obiettivi 
+identificati dall’Organizzazione sono coerenti 
+con la realtà organizzativa nel suo complesso 
+e con i processi / le attività dell’Organizzazio-
+ne. 
+L’Organizzazione dovrebbe rendere disponi-
+bili informazioni documentate a tale scopo 
+(es. piano degli obiettivi, programmi ambien-
+tali, riesame della direzione, etc.). 
+In merito alla coerenza tra gli obiettivi e la 
+politica ambientale è necessario che l’auditor 
+verifichi che gli stessi siano coerenti ed alline-
+ati con gli impegni assunti dall’Alta Direzione. 
+ne delle azioni da intraprendere per trattare: 
+- gli aspetti ambientali signifi cativi; 
+- gli obblighi di conformità; 
+- i rischi e le opportunità. 
+Le azioni possono essere sia attività da integrare in 
+processi già esistenti ed implementati del sistema 
+gestione ambientale (es. la revisione delle modali-
+tà di comunicazione interna all’Organizzazione) sia 
+elementi di un piano predisposto per il raggiungi-
+mento di uno specifico obiettivo ambientale (6.2.2), 
+sia azioni specifi che finalizzate al controllo dei rischi. 
+Con l’individuazione di azioni efficaci mirate a gesti-
+re gli aspetti critici del sistema gestione ambientale 
+si sostanzia di fatto il carattere di strumento pre-
+ventivo del sistema. Nell’attuale norma scompaiono 
+pertanto i requisiti puntuali sulle “azioni preventi-
+ve”, in quanto è il sistema stesso, con il suo approc-
+cio basato sul rischio, a prevenire l’accadimento 
+di eventi che possano inficiare le prestazioni e gli 
+obiettivi ambientali dell’Organizzazione. 
+Come parte integrante del processo di pianifi cazio-
+ne, l’Alta Direzione, nel fissare gli obiettivi ambien-
+tali, deve considerare l’esito derivante dall’analisi 
+dei rischi e delle opportunità e perseguire il miglio-
+ramento continuo non solo in termini di riduzione 
+degli impatti generati dalle proprie attività / pro-
+cessi, ma anche dal saper cogliere le opportunità 
+offerte dal contesto in cui opera. 
+A seguito del processo di pianificazione e al fi ne di 
+perseguire il miglioramento continuo ed una ge-
+stione effi cace dei rischi e delle opportunità, l’Orga-
+nizzazione deve definire degli obiettivi di carattere 
+ambientale che siano coerenti con: 
+- la Politica ambientale; 
+- gli aspetti ambientali significativi da essa indivi-
+duati; 
+- l’output dell’analisi dei rischi e delle opportunità; 
+ed assicurare che gli stessi siano strutturati in modo 
+tale di essere misurabili (ove applicabile – “pratica-
+bile”), monitorati, comunicati e periodicamente 
+aggiornati. 
+6.2 Obiettivi ambientali e pianificazione per il loro raggiungimento 
+6.2.1 Obiettivi ambientali 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+In particolare dovrebbero essere comunicati a colo-Per ogni aspetto ambientale signifi cativo non 
+ro che, sotto il controllo dell’Organizzazione, sono deve essere obbligatoriamente defi nito un 
+coinvolti nel processo e a diversi livelli lo possono obiettivo ambientale. 
+infl uenzare. L’auditor dovrebbe verificare le modalità di 
+comunicazione degli obiettivi al personale 
+L’Alta Direzione può definire obiettivi ambientali di coinvolto (7.4.2). 
+tipo strategico (applicabili alla generalità dell’organizzazione: 
+es. riconversione impianti a fonti energia 
+rinnovabile), tattico e operativo (ottimizzazione 
+curva di cottura del forno). 
+6.2.2 Azioni di pianificazione per raggiungere gli obiettivi ambientali 
+Definiti gli obiettivi ambientali l’Organizzazione L’auditor dovrebbe verificare che : 
+deve stabilire le azioni necessarie al loro raggiungimento 
+per consentire un controllo sistematico del - gli obiettivi siano compatibili con le strate-
+loro stato di avanzamento ed eventualmente appor-gie di business dell’Organizzazione; 
+tare i necessari correttivi / aggiustamenti. - per ogni obiettivo siano definiti gli interventi, 
+le risorse impiegate, le responsabilità, le 
+A tal scopo devono essere defi niti: scadenze; 
+- gli interventi; - gli indicatori individuati siano appropria- 
+le risorse impiegate; ti per monitorare lo stato di avanzamento 
+- le responsabilità; delle azioni defi nite. 
+- le scadenze. 
+Per ulteriori approfondimenti sugli indicato-
+Lo stato di attuazione degli obiettivi deve essere ri ambientali l’auditor può fare riferimento a 
+periodicamente e sistematicamente monitorato vari strumenti tra cui la norma ISO 14031. 
+attraverso l’individuazione di opportuni indicatori, 
+anche per valutare i risultati conseguiti. 
+Gli obiettivi debbono essere compatibili con le linee 
+strategiche generali dell’Organizzazione, in modo 
+da assicurare l’integrazione con i processi aziendali. 
+7 Supporto 
+7.1 Risorse 
+L’Organizzazione deve definire e fornire tutte le ri-Il sistema di gestione ambientale dovrebbe 
+sorse (es. umane, economiche, infrastrutturali, etc.) includere (es. nell’analisi del contesto, nel rie-
+interne ed esterne, necessarie per consentire l’attuasame 
+della direzione, negli obiettivi di miglio-
+zione, il mantenimento e il miglioramento nel temramento, 
+nei budegt aziendali, etc.) conside-
+po, del sistema di gestione ambientale. razioni e/o evidenze di un’analisi delle risorse 
+necessarie e delle relative azioni da intraprendere, 
+per colmare eventuali carenze. 
+Dovrebbe poter essere verificato se siano state 
+destinate risorse umane e infrastrutturali, 
+interne ed esterne, adeguate in congruenza 
+
+21 
+I QUADERNI DI CONFORMA 
+
+
+22 22 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+
+con gli obiettivi stabiliti mediante: 
+
+- sopralluoghi presso i reparti/uffici e aree 
+aziendali; 
+- interviste con il personale; 
+- valutazione della capacità di gestione, mantenimento 
+e miglioramento delle attività/ 
+impianti, infrastrutture aziendali e delle sue 
+performance; 
+- analisi dello stato di conformità alla normativa 
+cogente/volontaria sottoscritta. 
+7.2 Competenza 
+7.3 Consapevolezza 
+Il concetto espresso dalla norma è che devono essere 
+determinate le competenze necessarie per ogni 
+persona (interna ed esterna) che svolge per l’Organizzazione 
+attività sotto il suo controllo e che possono 
+influenzano le prestazioni ambientali dell’organizzazione 
+e la capacità di adempiere agli obblighi 
+di conformità. 
+Il rispetto del requisito potrebbe essere veri-
+fi cato attraverso: 
+- l’identificazione e l’analisi delle competenze 
+necessarie (profili di competenza), anche 
+nel caso di modifi che; 
+- il Riesame di Direzione (identifi cazione, 
+conferma, aggiornamento delle compe-
+La competenza può essere acquisita in molti modi e 
+non è strettamente legata alla formazione che rappresenta 
+solo uno degli elementi da considerare. 
+tenze, richiesta di nuove competenze per 
+nuovi business); 
+- la verifica di eventuali piani di sviluppo del 
+personale e relativi obiettivi; 
+- la verifica di eventuali piani di sviluppo delle 
+competenze; 
+- la verifica di eventuali piani di monitoraggio 
+delle competenze; 
+- le azioni correttive; 
+- l’esame dei risultati degli audit interni per 
+la valutazione di competenze nuove o da 
+aggiornare; 
+- l’esame dei risultati degli audit di verifi ca 
+dello stato di conformità alla normativa applicabile; 
+- le valutazioni in campo (es, mediante interviste 
+e/o osservazione) della capacità di 
+agire delle persone nell’ambito dell’espletamento 
+delle proprie mansioni. 
+Particolare attenzione deve essere dedicata 
+alla valutazione delle modalità attraverso le 
+quali l’Organizzazione valuta l’effi cacia delle 
+azioni intraprese per garantire un livello di 
+competenza adeguato. 
+
+Il requisito della “consapevolezza” viene conferma-La consapevolezza del personale dovrebbe 
+to ed è focalizzato sulla politica ambientale, sugli essere valutata dall’auditor durante la condu-
+
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+aspetti e impatti ambientali signifi cativi associati 
+all’attività lavorativa di ogni persona, sul contributo 
+di ciascuna persona (non solo al personale dell’Organizzazione 
+ma anche dei fornitori e del personale 
+esterno) all’efficacia del sistema di gestione e ai benefici 
+collegati al miglioramento delle prestazioni e 
+alle implicazioni/ricadute di situazioni non conformi 
+relative al sistema di gestione. 
+7.4 Comunicazione 
+7.4.1 Generalità 
+È uno dei requisiti di norma che ha subito le maggiori 
+modifiche in quanto prevede: 
+- la definizione di un processo di comunicazione 
+(interno ed esterno) articolato in una serie di 
+punti chiave per definire i quali, risulta necessario 
+aver condotto un’adeguata Analisi del Contesto 
+comprendente l’ identificazione delle parti interessate 
+(ad esempio la comunicazione ambientale 
+dovrebbe essere funzionale alla comprensione del 
+contesto, alla consapevolezza ambientale delle 
+parti interessate, all’immagine aziendale rispetto 
+ad un tema specifi co, al ruolo e all’infl uenza degli 
+opinion leader su determinate questioni, etc.); 
+- la pianificazione degli strumenti più opportuni, 
+mediante i quali deve avvenire la comunicazione 
+che dovrebbe comprendere, ad esempio: 
+- questioni rilevanti su cui è necessario comunicare; 
+- questioni rilevanti su cui è strategico comunicare; 
+- fabbisogni informativi e aspettative delle parti interessate. 
+È richiesto che il processo di comunicazione sia in 
+grado di rispondere alle richieste derivanti da obblighi 
+di conformità e da quanto previsto dal proprio 
+processo di comunicazione. 
+È inoltre richiesta la coerenza delle informazioni ambientali 
+comunicate con le informazioni fornite dal 
+sistema di gestione ambientale (es. mediante gli indicatori 
+di performance) e la correttezza/affi dabilità 
+di tali informazioni. 
+zione dell’intero audit principalmente attraverso 
+interviste al personale e anche attraverso 
+evidenze che possono comprendere: 
+- comunicazioni dirette; 
+- riunioni; 
+- audit sul sistema di gestione; 
+- formazione specifi ca; 
+- condivisione di obiettivi/risultati; 
+- condivisione non conformità riscontrate; 
+- condivisione dei contenuti della politica 
+ambientale; 
+- eventuali istruzioni / procedure. 
+Il rispetto del requisito potrebbe essere verifi -
+cato attraverso: 
+- un Piano/strategia di comunicazione ambientale 
+all’interno e all’esterno dell’organizzazione; 
+- registrazioni documentate delle forme 
+di comunicazione ambientale effettuate 
+(esempi di comunicazioni esterne possono 
+essere la Dichiarazione Ambientale prevista 
+dal Regolamento 1221/2009/CE - EMAS, 
+ovvero la Dichiarazione Ambientale di prodotto 
+- EPD); 
+- reclami, segnalazioni e/o richieste dalle parti 
+interessate; 
+- obblighi cogenti/volontari applicabili; 
+- verifica di comunicazioni ambientali a organi 
+di controllo e/o autorità preposte (qualora 
+vi siano prescrizioni in tale senso) ai sensi 
+della normativa ambientale applicabile (es. 
+autorizzazioni, decreti, ecc.); 
+- procedure per la comunicazione stabilite 
+dall’Organizzazione; 
+- presenza di ruoli, responsabilità e risorse allocate 
+per la comunicazione ambientale; 
+- situazioni emerse nell’ambito dell’analisi del 
+contesto e dell’identificazione delle esigenze 
+e aspettative della parti interessate. 
+
+23 
+I QUADERNI DI CONFORMA 
+
+
+24 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+7.4.2 Comunicazione interna 
+Il rispetto del requisito potrebbe essere verifi -
+cato oltre che mediante interviste fi nalizzate a 
+valutare l’efficacia della comunicazione inter-
+na, attraverso: 
+- evidenza di comunicazioni ambientali effet-
+tuate (es. mail, fax, circolari interne, ordini 
+di servizio, etc.); 
+- proposte migliorative (es. cassetta delle 
+idee); 
+- obiettivi di miglioramento e politica; 
+- verbali di riunioni. 
+La conformità a tale requisiti di norma po-
+trebbe già esser stata verifi cata nell’ambito 
+delle attività di controllo effettuate in rispo-
+sta ai requisiti del punto 7.4.1 della presente 
+norma. 
+Le informazioni documentate esplicitamente 
+richieste dalla norma sono le seguenti: 
+- Campo di applicazione (4.3) 
+- Politica ambientale (5.2) 
+- Rischi e opportunità che è necessario af-
+frontare (6.1.1) 
+- Processo(i) richiesto(i) nei punti da 6.1.1 a 
+6.1.4 
+- Aspetti ambientali e impatti associati (6.1.2) 
+- Criteri utilizzati per determinare gli aspetti 
+ambientali signifi cativi (6.1.2) 
+- Aspetti ambientali signifi cativi (6.1.2) 
+- Obblighi di conformità (6.1.3) 
+- Obiettivi ambientali (vedi 6.2.1) 
+- Evidenze della competenza (vedi 7.2) 
+- Comunicazioni ambientali (7.4.1) 
+- Dimostrazione della conformità del proces-
+so come pianificato (vedi 8.1) 
+- Dimostrazione della conformità del proces-
+Il requisito non è cambiato in modo signifi cativo ri-
+spetto all’edizione precedente della norma, se non 
+per l’introduzione del concetto per cui la comuni-
+cazione interna deve garantire una adeguata cono-
+scenza a tutti i livelli dei cambiamenti interni e delle 
+modalità di gestione degli stessi. 
+Come nel caso del requisito precedente anche nel 
+presente non sono stati introdotti concetti differenti 
+rispetto a quanto già caratterizzante l’edizione pre-
+cedente della norma. 
+E’ richiamata la necessità di prevedere opportune 
+forme di comunicazione se richiesto da prescrizio-
+ni normative applicabili all’Organizzazione e/o se 
+e quando previsto dai processi di comunicazione 
+dell’Organizzazione. 
+L’espressione “informazione documentata” sostitui-
+sce i termini registrazione e procedura documenta-
+ta, presenti nelle edizioni precedenti della norma. 
+Tale concetto costituisce una delle principali innova-
+zioni della nuova edizione della norma, contribuen-
+do in maniera determinante ad una semplifi cazione 
+dei requisiti documentali. 
+L’Organizzazione deve determinare quali documen-
+ti sono necessari per la gestione ed efficacia del si-
+stema, e come questi devono essere gestiti. 
+E’ chiaramente indicato che il dimensionamento 
+dell’apparato documentale del sistema di gestio-
+ne ambientale dell’Organizzazione è variabile in 
+funzione degli elementi espressamente indicati 
+dalla norma di cui è necessario tener conto anche 
+nell’ambito delle attività di audit. 
+Nella norma si chiarisce che le espressioni: 
+- “conservare informazioni documentate” è riferita 
+a quei documenti che la precedente versione della 
+7.4.3 Comunicazione esterna 
+7.5 Informazioni documentate 
+7.5.1 Generalità 
+24 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+7.4.2 Comunicazione interna 
+Il rispetto del requisito potrebbe essere verifi -
+cato oltre che mediante interviste fi nalizzate a 
+valutare l’efficacia della comunicazione inter-
+na, attraverso: 
+- evidenza di comunicazioni ambientali effet-
+tuate (es. mail, fax, circolari interne, ordini 
+di servizio, etc.); 
+- proposte migliorative (es. cassetta delle 
+idee); 
+- obiettivi di miglioramento e politica; 
+- verbali di riunioni. 
+La conformità a tale requisiti di norma po-
+trebbe già esser stata verifi cata nell’ambito 
+delle attività di controllo effettuate in rispo-
+sta ai requisiti del punto 7.4.1 della presente 
+norma. 
+Le informazioni documentate esplicitamente 
+richieste dalla norma sono le seguenti: 
+- Campo di applicazione (4.3) 
+- Politica ambientale (5.2) 
+- Rischi e opportunità che è necessario af-
+frontare (6.1.1) 
+- Processo(i) richiesto(i) nei punti da 6.1.1 a 
+6.1.4 
+- Aspetti ambientali e impatti associati (6.1.2) 
+- Criteri utilizzati per determinare gli aspetti 
+ambientali signifi cativi (6.1.2) 
+- Aspetti ambientali signifi cativi (6.1.2) 
+- Obblighi di conformità (6.1.3) 
+- Obiettivi ambientali (vedi 6.2.1) 
+- Evidenze della competenza (vedi 7.2) 
+- Comunicazioni ambientali (7.4.1) 
+- Dimostrazione della conformità del proces-
+so come pianificato (vedi 8.1) 
+- Dimostrazione della conformità del proces-
+Il requisito non è cambiato in modo signifi cativo ri-
+spetto all’edizione precedente della norma, se non 
+per l’introduzione del concetto per cui la comuni-
+cazione interna deve garantire una adeguata cono-
+scenza a tutti i livelli dei cambiamenti interni e delle 
+modalità di gestione degli stessi. 
+Come nel caso del requisito precedente anche nel 
+presente non sono stati introdotti concetti differenti 
+rispetto a quanto già caratterizzante l’edizione pre-
+cedente della norma. 
+E’ richiamata la necessità di prevedere opportune 
+forme di comunicazione se richiesto da prescrizio-
+ni normative applicabili all’Organizzazione e/o se 
+e quando previsto dai processi di comunicazione 
+dell’Organizzazione. 
+L’espressione “informazione documentata” sostitui-
+sce i termini registrazione e procedura documenta-
+ta, presenti nelle edizioni precedenti della norma. 
+Tale concetto costituisce una delle principali innova-
+zioni della nuova edizione della norma, contribuen-
+do in maniera determinante ad una semplifi cazione 
+dei requisiti documentali. 
+L’Organizzazione deve determinare quali documen-
+ti sono necessari per la gestione ed efficacia del si-
+stema, e come questi devono essere gestiti. 
+E’ chiaramente indicato che il dimensionamento 
+dell’apparato documentale del sistema di gestio-
+ne ambientale dell’Organizzazione è variabile in 
+funzione degli elementi espressamente indicati 
+dalla norma di cui è necessario tener conto anche 
+nell’ambito delle attività di audit. 
+Nella norma si chiarisce che le espressioni: 
+- “conservare informazioni documentate” è riferita 
+a quei documenti che la precedente versione della 
+7.4.3 Comunicazione esterna 
+7.5 Informazioni documentate 
+7.5.1 Generalità 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+norma indicava come “registrazioni”; so di preparazione e risposta alle emergen-
+- “mantenere informazioni documentate” è riferita ze come pianificato (vedi 8.2) 
+a quei documenti che la precedente versione della - Documentazione circa le attività di valuta-
+norma indicava come ad esempio procedura do-zione, analisi, misurazione e monitoraggio 
+cumentata, ecc. per i quali è prevista una gestione delle proprie prestazioni (vedi 9.1.1) 
+controllata e servono per la gestione del sistema. - Evidenze della propria valutazione di con-
+La norma indica puntualmente per quali requisiti è formità (9.1.2) 
+necessario conservare una registrazione (conserva- 
+Evidenze della applicazione ed effettuazio-
+re informazioni documentate) o mantenere attivo ne del programma di audit interni e i relativi 
+un documento gestionale (mantenere informazioni risultati (vedi 9.2.2) 
+documentate). - Risultati del riesame di direzione (9.3) 
+- Natura delle non conformità, correzioni ed 
+azioni correttive (10.2.). 
+Dovrebbe essere verificato se l’Organizzazione 
+ha determinato come necessaria la documentazione 
+di origine esterna (7.5.3). 
+7.5.2 Creazione e aggiornamento 
+Sostanzialmente non ci sono differenze rispetto alla Il rispetto del requisito potrebbe essere ve-
+precedente edizione della norma. rificato nel corso dell’intera attività di audit 
+L’Organizzazione, nel creare ed aggiornare l’infor-attraverso l’esame dello stato delle varie tipo-
+mazione documentata, dovrà stabilire le modalità di logie di informazioni documentate applicate 
+identificazione e descrizione, il formato ed assicurar-dall’organizzazione, della loro gestione com-
+ne l’adeguatezza attraverso opportuno riesame ed preso lo stato di aggiornamento. 
+approvazione. 
+7.5.3 Controllo delle informazioni documentate 
+Sostanzialmente non ci sono differenze con la pre-Il rispetto del requisito potrebbe essere valu-
+cedente edizione della norma. tato attraverso l’esame delle modalità di ge-
+Le informazioni documentate richieste dal sistema stione delle informazioni documentate e veri-
+di gestione ambientale dovranno essere corretta-ficato attraverso l’esame: 
+mente gestite per garantire la loro disponibilità e - dell’applicazione delle modalità di gestione, 
+idoneità all’utilizzo, dove e quando necessario, e controllo e protezione delle informazioni 
+adeguatamente protette (es: dalla perdita di riser-documentate; 
+vatezza, uso improprio, o perdita di integrità). - delle modalità di identificazione ed aggior-
+Per il controllo dell’informazione documentata l’Ornamento 
+della documentazione di origine 
+ganizzazione dovrà tenere conto della distribuzio-esterna; 
+ne, accesso, recupero e utilizzo, archiviazione e con- 
+di un eventuale elenco di informazioni do-
+servazione - inclusa quella per la lettura e il controllo cumentate riportante lo stato di aggiorna-
+delle modifiche (stato di revisione del documento) mento; 
+- e destinazione. Salvo quanto previsto dagli obbli-- della disponibilità della documentazione 
+ghi di conformità a riguardo, non c’è un riferimento appropriata ove necessario; 
+diretto al tempo di conservazione. - delle forme di protezione della documenta-
+La documentazione di origine esterna necessaria zione adottate anche in conformità a politi-
+per la pianificazione e operatività del sistema di ge-che di privacy. 
+stione ambientale dovrà essere appropriata e tenuta 
+sotto controllo. 
+
+25 
+I QUADERNI DI CONFORMA 
+
+
+26 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Dovrebbe essere verificato come l’Organiz-
+zazione ha identificato i processi operativi, 
+come ne ha pianificato il controllo e la gestio-
+ne dei cambiamenti. 
+Per la gestione operativa sarebbe opportuno 
+verificare la presenza, ad esempio, di: 
+- Prassi, procedure, istruzioni sulla gestione 
+operativa degli aspetti ambientali connessi 
+ai processi dell’Organizzazione. Ad esempio: 
+• Procedure – istruzioni gestione rifi uti, ge-
+stione impianto depurazione, gestione 
+impianti trattamento emissioni, ecc) 
+- Attività di gestione e controllo volte ad as-
+sicurare che gli aspetti ambientali e i rela-
+tivi requisiti applicabili siano considerati 
+nell’ambito dei processi di progettazione e 
+sviluppo di prodotti e servizi tenendo conto 
+delle varie fasi del ciclo di vita. Ad esempio: 
+• Protocolli da seguire per la progettazione 
+che tengano conto di aspetti e impatti 
+ambientali. 
+• Definizione di requisiti ambientali da 
+tenere in considerazione per le funzioni 
+che curano il marketing dell’organizza-
+zione. 
+• Piani di sviluppo – progetto di prodotti e 
+servizi che definiscano per ogni tappa del 
+progetto i requisiti ambientali. 
+- Documenti nei quali l’Organizzazione abbia 
+determinato i propri requisiti ambientali per 
+l’approvvigionamento di prodotti – servizi. 
+Ad esempio: 
+• capitolati - contratti di acquisto di pro-
+dotti che contengano specifi ci requisiti 
+ambientali per l’approvvigionamento 
+(es. prodotti ecolabel, prodotti a minor 
+impatto ambientale, risorse energetiche 
+prodotte da fonti rinnovabili, materiali a 
+maggiore riciclabilità a fine vita, ecc) 
+• capitolati – contratti per l’acquisto-
+appalto di servizi, nell’ambito dei qua-
+L’Organizzazione deve stabilire, attuare, tenere sot-
+to controllo e mantenere i processi necessari per 
+soddisfare i requisiti del sistema di gestione am-
+bientale e per attuare le azioni identificate nelle fasi 
+di determinazione dei rischi /opportunità correlati 
+agli aspetti ambientali, considerando il ciclo di vita 
+(6.1.2), agli obblighi di conformità e agli altri fattori 
+stabiliti nel corso della analisi del contesto. 
+L’Organizzazione dovrebbe stabilire i criteri operati-
+vi per i processi ed attuare i controlli relativi ai pro-
+cessi stessi. 
+Il livello di intensità ed approfondimento di tale re-
+quisito è funzionale alle caratteristiche dell’Organiz-
+zazione e del campo di applicazione del suo sistema 
+di gestione, tenendo conto di quanto è stato pianifi -
+cato per assicurare il raggiungimento degli obiettivi 
+e prevenire, o ridurre, i rischi. 
+In questo capitolo della norma si prende anche in 
+considerazione la gestione dei processi affi dati a 
+soggetti esterni e la norma chiede che tali processi 
+risultino tenuti sotto controllo o infl uenzati. 
+8. Attività operative 
+8.1 Pianificazione e controllo operativi 
+26 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+Dovrebbe essere verificato come l’Organiz-
+zazione ha identificato i processi operativi, 
+come ne ha pianificato il controllo e la gestio-
+ne dei cambiamenti. 
+Per la gestione operativa sarebbe opportuno 
+verificare la presenza, ad esempio, di: 
+- Prassi, procedure, istruzioni sulla gestione 
+operativa degli aspetti ambientali connessi 
+ai processi dell’Organizzazione. Ad esempio: 
+• Procedure – istruzioni gestione rifi uti, ge-
+stione impianto depurazione, gestione 
+impianti trattamento emissioni, ecc) 
+- Attività di gestione e controllo volte ad as-
+sicurare che gli aspetti ambientali e i rela-
+tivi requisiti applicabili siano considerati 
+nell’ambito dei processi di progettazione e 
+sviluppo di prodotti e servizi tenendo conto 
+delle varie fasi del ciclo di vita. Ad esempio: 
+• Protocolli da seguire per la progettazione 
+che tengano conto di aspetti e impatti 
+ambientali. 
+• Definizione di requisiti ambientali da 
+tenere in considerazione per le funzioni 
+che curano il marketing dell’organizza-
+zione. 
+• Piani di sviluppo – progetto di prodotti e 
+servizi che definiscano per ogni tappa del 
+progetto i requisiti ambientali. 
+- Documenti nei quali l’Organizzazione abbia 
+determinato i propri requisiti ambientali per 
+l’approvvigionamento di prodotti – servizi. 
+Ad esempio: 
+• capitolati - contratti di acquisto di pro-
+dotti che contengano specifi ci requisiti 
+ambientali per l’approvvigionamento 
+(es. prodotti ecolabel, prodotti a minor 
+impatto ambientale, risorse energetiche 
+prodotte da fonti rinnovabili, materiali a 
+maggiore riciclabilità a fine vita, ecc) 
+• capitolati – contratti per l’acquisto-
+appalto di servizi, nell’ambito dei qua-
+L’Organizzazione deve stabilire, attuare, tenere sot-
+to controllo e mantenere i processi necessari per 
+soddisfare i requisiti del sistema di gestione am-
+bientale e per attuare le azioni identificate nelle fasi 
+di determinazione dei rischi /opportunità correlati 
+agli aspetti ambientali, considerando il ciclo di vita 
+(6.1.2), agli obblighi di conformità e agli altri fattori 
+stabiliti nel corso della analisi del contesto. 
+L’Organizzazione dovrebbe stabilire i criteri operati-
+vi per i processi ed attuare i controlli relativi ai pro-
+cessi stessi. 
+Il livello di intensità ed approfondimento di tale re-
+quisito è funzionale alle caratteristiche dell’Organiz-
+zazione e del campo di applicazione del suo sistema 
+di gestione, tenendo conto di quanto è stato pianifi -
+cato per assicurare il raggiungimento degli obiettivi 
+e prevenire, o ridurre, i rischi. 
+In questo capitolo della norma si prende anche in 
+considerazione la gestione dei processi affi dati a 
+soggetti esterni e la norma chiede che tali processi 
+risultino tenuti sotto controllo o infl uenzati. 
+8. Attività operative 
+8.1 Pianificazione e controllo operativi 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+
+li risultino stabiliti anche dei requisiti di 
+tipo ambientale (es. utilizzo di prodotti 
+a basso impatto ambientale, modalità di 
+gestione dei rifiuti generati, riduzione dei 
+consumi di risorse energetiche, ecc) 
+
+- Comunicazioni rivolte a fornitori esterni, ivi 
+compresi gli appaltatori, relative ai propri 
+requisiti ambientali. Ad esempio: 
+• contratti di appalto 
+• informative 
+• prassi – procedure condivise tra organizzazione 
+e appaltatore 
+- Informazioni su impatti ambientali associati 
+a trasporto o consegna, utilizzo, trattamento 
+di fine vita e smaltimento finale dei propri 
+prodotti e servizi. Ad esempio: 
+• schede informative relative ai prodotti 
+della Organizzazione 
+• documenti contrattuali con le aziende 
+che curano i trasporti dei prodotti presso 
+i clienti 
+• identificazione su informative che accompagnino 
+il prodotto in relazione alla 
+gestione del materiale al termine del suo 
+utilizzo 
+In relazione a quelle attività / processi affi dati 
+a soggetti esterni, l’auditor dovrebbe 
+verificare presso l’Organizzazione i seguenti 
+elementi: 
+
+- accordi contrattuali con i soggetti esterni 
+ai quali vengono affidati in outsourcing dei 
+processi, con specifico riferimento a requisiti 
+di tipo ambientale e a regole di gestione 
+degli stessi; 
+- attività di controllo sulla gestione degli 
+aspetti ambientali connessi alle attività affi date 
+a soggetti esterni; 
+- definizione di specifiche contrattuali contenenti 
+requisiti di tipo ambientale anche in 
+reazione a soggetti esterni che non si configurano 
+come outsourcer ma fornitori di 
+servizi (es. servizi di pulizie, servizi di manutenzione, 
+ecc); 
+- definizione di attività di controllo e valutazione 
+/ qualificazione dei fornitori in relazio27 
+I QUADERNI DI CONFORMA 
+
+
+28 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+ne al rispetto dei requisiti ambientali inseriti 
+nei contratti / accordi di cui sopra. 
+Dovrebbe essere verificata la presenza di in-
+formazioni documentate, sia relativamente 
+a documenti di programmazione che a regi-
+strazioni, che diano evidenza di quanto defi -
+nito sopra. 
+L’auditor dovrebbe verificare la presenza di: 
+- prassi/istruzioni/procedure/piani che defi -
+niscano le operazioni da eseguire per gesti-
+re situazioni di emergenza; 
+- registrazioni di eventuali situazioni di emer-
+genza verificatesi e delle azioni intraprese 
+per mitigarne/eliminarne gli effetti/impatti 
+negativi; 
+- registrazioni di simulazioni di situazioni di 
+emergenza, delle azioni intraprese e dei ri-
+sultati ottenuti; 
+- registrazioni di riesami periodici delle situa-
+zioni di emergenza verificatesi e/o simulate 
+e della conferma di validità o necessità di 
+aggiornamento delle prassi/istruzioni/pro-
+cedure previste; 
+- registrazioni della formazione effettuata. 
+L’Organizzazione deve stabilire, attuare e mantene-
+re attivi i processi necessari per prepararsi a come 
+dovrà affrontare e rispondere alle potenziali situa-
+zioni di emergenza che possano causare: 
+- effetti indesiderati, compresa la possibilità che le 
+condizioni ambientali esterne possano infl uenzare 
+l’Organizzazione; 
+- un impatto ambientale. 
+L’Organizzazione deve: 
+- pianificare azioni per prevenire o mitigare gli im-
+patti ambientali negativi; 
+- rispondere a situazioni di emergenza reali; 
+- intraprendere azioni per prevenire o mitigare le 
+conseguenze di situazioni di emergenza e i poten-
+ziali impatti; 
+- provare periodicamente le azioni di risposta; 
+- riesaminare e aggiornare periodicamente processi 
+e azioni di risposta pianifi cate, in particolare dopo 
+che si sono verificate situazioni di emergenza o di 
+prova; 
+- fornire alle parti interessate, incluse persone che 
+svolgono attività sotto il suo controllo, informa-
+zioni e formazione pertinente. 
+La nuova norma esplicita che gli effetti indesiderati 
+possono essere causati da situazioni di emergenza 
+derivanti da condizioni ambientali esterne. 
+8.2 Preparazione e risposta alle emergenze 
+28 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+ne al rispetto dei requisiti ambientali inseriti 
+nei contratti / accordi di cui sopra. 
+Dovrebbe essere verificata la presenza di in-
+formazioni documentate, sia relativamente 
+a documenti di programmazione che a regi-
+strazioni, che diano evidenza di quanto defi -
+nito sopra. 
+L’auditor dovrebbe verificare la presenza di: 
+- prassi/istruzioni/procedure/piani che defi -
+niscano le operazioni da eseguire per gesti-
+re situazioni di emergenza; 
+- registrazioni di eventuali situazioni di emer-
+genza verificatesi e delle azioni intraprese 
+per mitigarne/eliminarne gli effetti/impatti 
+negativi; 
+- registrazioni di simulazioni di situazioni di 
+emergenza, delle azioni intraprese e dei ri-
+sultati ottenuti; 
+- registrazioni di riesami periodici delle situa-
+zioni di emergenza verificatesi e/o simulate 
+e della conferma di validità o necessità di 
+aggiornamento delle prassi/istruzioni/pro-
+cedure previste; 
+- registrazioni della formazione effettuata. 
+L’Organizzazione deve stabilire, attuare e mantene-
+re attivi i processi necessari per prepararsi a come 
+dovrà affrontare e rispondere alle potenziali situa-
+zioni di emergenza che possano causare: 
+- effetti indesiderati, compresa la possibilità che le 
+condizioni ambientali esterne possano infl uenzare 
+l’Organizzazione; 
+- un impatto ambientale. 
+L’Organizzazione deve: 
+- pianificare azioni per prevenire o mitigare gli im-
+patti ambientali negativi; 
+- rispondere a situazioni di emergenza reali; 
+- intraprendere azioni per prevenire o mitigare le 
+conseguenze di situazioni di emergenza e i poten-
+ziali impatti; 
+- provare periodicamente le azioni di risposta; 
+- riesaminare e aggiornare periodicamente processi 
+e azioni di risposta pianifi cate, in particolare dopo 
+che si sono verificate situazioni di emergenza o di 
+prova; 
+- fornire alle parti interessate, incluse persone che 
+svolgono attività sotto il suo controllo, informa-
+zioni e formazione pertinente. 
+La nuova norma esplicita che gli effetti indesiderati 
+possono essere causati da situazioni di emergenza 
+derivanti da condizioni ambientali esterne. 
+8.2 Preparazione e risposta alle emergenze 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+In generale, in tutti i paragrafi, non si parla più di “conservare le registrazioni”, ma piuttosto 
+di “conservare informazioni documentate” 
+9. Valutazione delle prestazioni 
+9.1 Monitoraggio, misurazione, analisi e valutazione 
+9.1.1 Generalità 
+Il requisito dettaglia meglio il 4.5.1. della versione La conformità al requisito dovrebbe essere valu2004 
+ma, di fatto, non chiede nulla di nuovo. tata attraverso la verifica dei seguenti strumenti: 
+Sono richieste informazioni documentate sulle atti- 
+piano di monitoraggio ambientale che deve 
+vità di monitoraggio. contenere i monitoraggi previsti dalle auto-
+Il requisito esplicita la necessità di pianificare le atrizzazioni 
+in essere (scarichi idrici, emissioni 
+tività di monitoraggio sul processo produttivo, in in atmosfera ecc…), nonché quelli fi nalizza-
+modo da controllare la propria prestazione ambienti 
+ad assicurare il controllo sugli aspetti am-
+tale, dettagliando i punti che l’Organizzazione do-bientali signifi cativi; 
+vrebbe seguire. - evidenza dei monitoraggi eseguiti in con-
+Accanto alla valutazione della prestazione ambienformità 
+al piano (rapporti di analisi). L’Orga-
+tale viene ribadito che le attività di monitoraggio, nizzazione deve garantire che i risultati delle 
+misurazione, analisi dovrebbero servire a stimare analisi vengano esaminati mettendo in evi-
+anche l’efficacia del sistema di gestione ambientale denza eventuali situazioni critiche (avvicina-
+e, quindi, il costante soddisfacimento dei requisiti/ mento o superamento dei limiti autorizzati); 
+obiettivi che l’Organizzazione stessa ha stabilito. - evidenze di taratura della strumentazione 
+L’Organizzazione dovrebbe quindi individuare cosa usata per misurare valori signifi cativi dal 
+monitorare e come, le tecniche e le frequenze di punto di vista ambientale (fonometro, siste-
+controllo più idonee per lo svolgimento di queste mi di monitoraggio in continuo delle emis-
+attività e dovrebbe assicurare che queste siano efsioni 
+ecc…); 
+fettuate. Dovrebbe, inoltre, conservare delle infor-- nel caso l’Organizzazione utilizzi fornitori 
+mazioni documentate quale evidenza dei risultati. esterni per le analisi ambientali, deve accer-
+Viene qui esplicitata e sottolineata l’importanza tarsi che questi tengano sotto controllo la 
+della comunicazione interna ed esterna delle pre-propria strumentazione (accreditamento, 
+stazioni ambientali, che dovrebbe essere effettuata certificazione ISO 9001 o richiesta dei cer-
+dall’Organizzazione in linea con il processo di cotificati 
+di taratura degli strumenti utilizzati); 
+municazione definito e come richiesto dagli obbli-- modalità di comunicazione dei risultati 
+ghi di conformità. del monitoraggio alle autorità di controllo 
+(Arpa, Comune, Provincia, ove richiesto) e 
+alle altre parti interessate, ove previsto. 
+9.1.2 Valutazione della conformità 
+Rispetto al p.to 4.5.2 della precedente edizione del-La conformità al requisito dovrebbe essere vala 
+norma, scompare la richiesta di una procedura, lutata attraverso la verifica dei seguenti stru-
+sostituita con il riferimento invece all’istituzione di menti: 
+un processo per la valutazione della conformità, - pianificazione della valutazione della con-
+inserito nella normale attività operativa dell’Orgaformità 
+e suo inserimento nell’operatività 
+nizzazione e che preveda chiaramente le eventuali dell’Organizzazione in coerenza con il qua-
+azioni da intraprendere. Tale processo deve garandro 
+delle responsabilità aziendali al riguardo; 
+tire che l’Organizzazione mantenga conoscenza e - documentazione degli esiti della valutazio
+
+
+29 
+I QUADERNI DI CONFORMA 
+
+
+30 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+ne della conformità; 
+- eventuali azioni messe in atto a seguito di 
+mancata conformità nell’applicazione del 
+piano di monitoraggio; 
+- eventuali azioni messe in atto a seguito a 
+mancata analisi e/o risposta agli eventuali 
+esiti negativi del monitoraggio. 
+La conformità al presente requisito dovrebbe 
+essere valutata attraverso la verifica dei rap-
+porti di audit interno. 
+La conformità al requisito dovrebbe essere va-
+lutata attraverso la verifica dei seguenti stru-
+menti: 
+- pianificazione degli audit; 
+- criteri per la selezione degli auditors (com-
+petenza, indipendenza dall’attività sottopo-
+sta ad audit e imparzialità); 
+- coerenza tra le qualifiche del personale che 
+ha effettuato gli audit e i criteri defi niti; 
+- rapporti di audit interno inclusa la verifi ca 
+della risoluzione non conformità e/o valu-
+tazione dell’efficacia della delle azioni intra-
+prese a seguito dei precedenti audit; 
+- comunicazione dei risultati degli audit al 
+“pertinente livello direzionale”. 
+La conformità al requisito dovrebbe essere 
+valutata attraverso la verifica dei seguenti 
+strumenti: 
+- pianificazione del/i riesame/i; 
+- verbale di riesame. 
+Gli argomenti possono essere affrontati anche 
+in momenti distinti, effettuando il riesame in 
+un più riunioni ad hoc, avvero svolgendolo 
+consapevolezza circa il proprio stato di conformità. 
+La periodicità con cui si fanno le verifi che potrebbe 
+variare nel caso in cui cambiassero l’operatività e/o 
+gli obblighi di conformità. 
+La norma chiarisce che “Una mancanza di confor-
+mità non è necessariamente elevata a non conformità 
+se, per esempio, è identificata e corretta mediante i 
+processi del sistema di gestione ambientale”. 
+Gli obiettivi dell’audit sono invariati rispetto al p.to 
+4.5.5 della precedente edizione della norma. 
+La norma esplicita modalità e requisiti da tenere in 
+considerazione nella preparazione del programma 
+degli audit interni. 
+Per la conduzione degli audit si fa sempre riferimen-
+to alla norma ISO 19011. 
+Dove prima si parlava di fornire i risultati degli audit 
+alla direzione, adesso si estende il concetto parlan-
+do di “pertinente livello direzionale”. 
+Viene aggiunto il fatto di tener conto, oltre che de-
+gli audit precedenti e dell’importanza ambientale 
+dei processi, anche dei cambiamenti che infl uenza-
+no l’Organizzazione. 
+I dati di input del riesame sono meglio dettagliati e 
+comprendono alcune novità, tra cui: 
+- i risultati dalle attività precedenti di riesame, au-
+dit, monitoraggio e di andamento delle azioni in-
+traprese (correttive e/o per non conformità e di 
+soddisfacimento degli obblighi di conformità) 
+- i cambiamenti: 
+• nel contesto (fattori interni ed esterni rilevanti 
+9.2 Audit interno 
+9.2.1 Generalità 
+9.2.2 Programma di audit Interno 
+9.3 Riesame di direzione 
+30 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+ne della conformità; 
+- eventuali azioni messe in atto a seguito di 
+mancata conformità nell’applicazione del 
+piano di monitoraggio; 
+- eventuali azioni messe in atto a seguito a 
+mancata analisi e/o risposta agli eventuali 
+esiti negativi del monitoraggio. 
+La conformità al presente requisito dovrebbe 
+essere valutata attraverso la verifica dei rap-
+porti di audit interno. 
+La conformità al requisito dovrebbe essere va-
+lutata attraverso la verifica dei seguenti stru-
+menti: 
+- pianificazione degli audit; 
+- criteri per la selezione degli auditors (com-
+petenza, indipendenza dall’attività sottopo-
+sta ad audit e imparzialità); 
+- coerenza tra le qualifiche del personale che 
+ha effettuato gli audit e i criteri defi niti; 
+- rapporti di audit interno inclusa la verifi ca 
+della risoluzione non conformità e/o valu-
+tazione dell’efficacia della delle azioni intra-
+prese a seguito dei precedenti audit; 
+- comunicazione dei risultati degli audit al 
+“pertinente livello direzionale”. 
+La conformità al requisito dovrebbe essere 
+valutata attraverso la verifica dei seguenti 
+strumenti: 
+- pianificazione del/i riesame/i; 
+- verbale di riesame. 
+Gli argomenti possono essere affrontati anche 
+in momenti distinti, effettuando il riesame in 
+un più riunioni ad hoc, avvero svolgendolo 
+consapevolezza circa il proprio stato di conformità. 
+La periodicità con cui si fanno le verifi che potrebbe 
+variare nel caso in cui cambiassero l’operatività e/o 
+gli obblighi di conformità. 
+La norma chiarisce che “Una mancanza di confor-
+mità non è necessariamente elevata a non conformità 
+se, per esempio, è identificata e corretta mediante i 
+processi del sistema di gestione ambientale”. 
+Gli obiettivi dell’audit sono invariati rispetto al p.to 
+4.5.5 della precedente edizione della norma. 
+La norma esplicita modalità e requisiti da tenere in 
+considerazione nella preparazione del programma 
+degli audit interni. 
+Per la conduzione degli audit si fa sempre riferimen-
+to alla norma ISO 19011. 
+Dove prima si parlava di fornire i risultati degli audit 
+alla direzione, adesso si estende il concetto parlan-
+do di “pertinente livello direzionale”. 
+Viene aggiunto il fatto di tener conto, oltre che de-
+gli audit precedenti e dell’importanza ambientale 
+dei processi, anche dei cambiamenti che infl uenza-
+no l’Organizzazione. 
+I dati di input del riesame sono meglio dettagliati e 
+comprendono alcune novità, tra cui: 
+- i risultati dalle attività precedenti di riesame, au-
+dit, monitoraggio e di andamento delle azioni in-
+traprese (correttive e/o per non conformità e di 
+soddisfacimento degli obblighi di conformità) 
+- i cambiamenti: 
+• nel contesto (fattori interni ed esterni rilevanti 
+9.2 Audit interno 
+9.2.1 Generalità 
+9.2.2 Programma di audit Interno 
+9.3 Riesame di direzione 
+I QUADERNI DI CONFORMA 
+
+
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+per il sistema di gestione ambientale); 
+• nelle esigenze e aspettative delle parti interessate; 
+• nei rischi e nelle opportunità. 
+- La valutazione dell’adeguatezza delle risorse 
+Anche il tema “parti interessate” trattato al 4.2 non 
+richiede informazioni documentate, qui è necessaria 
+una registrazione, almeno delle variazioni. 
+Anche gli elementi in uscita sono meglio dettagliati 
+e comprendono: 
+- decisioni sulle opportunità di miglioramento continuo; 
+- di decisioni riguardanti le modifiche necessarie al 
+sistema di gestione ambientale, inclusa la necessità 
+di risorse; 
+- azioni da intraprendere in caso non siano raggiunti 
+gli obiettivi ambientali; 
+- opportunità di migliorare l’integrazione del sistema 
+di gestione con gli altri processi aziendali 
+e tutte le implicazioni sulla direzione strategica 
+dell’Organizzazione. 
+Di fatto si chiede all’Alta Direzione di prendere posizione 
+definendo e/o rivedendo le strategie. 
+nell’ambito di altre occasioni previste dalla 
+normale operatività aziendale (ad esempio 
+riunioni, incontri, ecc.). In tale ultimo caso 
+devono comunque essere presenti e verifi -
+cati tutti i requisiti previsti nella norma per il 
+riesame di direzione. 
+10. Miglioramento 
+10.1 Generalità 
+Capitolo dedicato al miglioramento in generale, 
+che riprende i punti precedenti (9.1, 9.2, 9.3) in cui 
+si individuano le opportunità di miglioramento e le 
+azioni da poter intraprendere. Per miglioramento 
+non si intende solo miglioramento della prestazione 
+ambientale, ma anche miglioramento del sistema di 
+gestione in sé. 
+10.2 Non conformità e azioni correttive 
+Nella sostanza non ci sono modifi che signifi cative 
+al requisito. 
+Scompaiono le azioni preventive. Come strumento 
+La conformità al requisito dovrebbe essere valutata 
+attraverso la verifi ca dell’effi cacia delle 
+azioni intraprese a seguito delle valutazioni 
+delle prestazioni, della conformità, degli audit, 
+del riesame di direzione. 
+Le evidenze delle azioni da intraprendere, potrebbero 
+essere riscontrate come: 
+- elementi in uscita agli audit e al riesame di 
+direzione; 
+- conseguenza dell’applicazione di un’azione 
+correttiva; 
+- conseguenza di riorganizzazioni aziendali o 
+di cambiamenti processuali o di signifi catività 
+degli aspetti ambientali. 
+La conformità al requisito dovrebbe essere 
+valutata attraverso la verifica dei seguenti 
+registrazioni relative alla gestione di: 
+
+31 
+I QUADERNI DI CONFORMA 
+
+
+32 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+- non conformità, inclusa l’analisi delle cause; 
+- eventuali reclami; 
+- di azioni correttive, inclusa la verifi ca dell’ef-
+fi cacia. 
+La conformità al requisito dovrebbe essere va-
+lutata attraverso: 
+- l’esame delle modifiche apportate al siste-
+ma di gestione: motivi che hanno portato 
+alla modifica, modalità di gestione della 
+stessa (continuando a garantire la confor-
+mità) e verifi ca dell’effi cacia; 
+- l’esame delle eventuali strategie e politiche 
+per il miglioramento. 
+Gli elementi da verificare con riferimento a 
+questo requisito si ritrovano anche in riferi-
+mento ad altri punti della norma (ad esempio 
+riesame di direzione, audit interni, monito-
+raggio delle prestazioni ambientali, ecc.) 
+di prevenzione si fa riferimento nei punti 4.1 e 6.1. 
+Scompare la richiesta di una procedura. 
+Viene aggiunta la necessità di tenere sotto control-
+lo, oltre che correggere, le non conformità. 
+Viene chiarito che l’Organizzazione deve “affronta-
+re le conseguenze” delle non conformità. 
+Viene specificato di valutare se possono verifi carsi 
+non conformità simili e di valutare l’effi cacia delle 
+azioni correttive. 
+Il miglioramento deve essere vissuto come un’at-
+tività continua, ogni volta che un’opportunità di 
+miglioramento dell’idoneità, dell’adeguatezza, 
+dell’efficacia del sistema gestione ambientale e della 
+prestazione ambientale viene identificata. Le azioni 
+per migliorare il sistema di gestione potrebbero na-
+scere dal riesame di direzione, da azioni correttive 
+o dalla identificazioni di opportunità per il miglio-
+ramento. 
+10.3 Miglioramento continuo 
+32 
+DESCRIZIONE DEL REQUISITO E RELATIVE CONSIDERAZIONI POSSIBILI EVIDENZE A SUPPORTO DELLA CONFORMITÀ 
+- non conformità, inclusa l’analisi delle cause; 
+- eventuali reclami; 
+- di azioni correttive, inclusa la verifi ca dell’ef-
+fi cacia. 
+La conformità al requisito dovrebbe essere va-
+lutata attraverso: 
+- l’esame delle modifiche apportate al siste-
+ma di gestione: motivi che hanno portato 
+alla modifica, modalità di gestione della 
+stessa (continuando a garantire la confor-
+mità) e verifi ca dell’effi cacia; 
+- l’esame delle eventuali strategie e politiche 
+per il miglioramento. 
+Gli elementi da verificare con riferimento a 
+questo requisito si ritrovano anche in riferi-
+mento ad altri punti della norma (ad esempio 
+riesame di direzione, audit interni, monito-
+raggio delle prestazioni ambientali, ecc.) 
+di prevenzione si fa riferimento nei punti 4.1 e 6.1. 
+Scompare la richiesta di una procedura. 
+Viene aggiunta la necessità di tenere sotto control-
+lo, oltre che correggere, le non conformità. 
+Viene chiarito che l’Organizzazione deve “affronta-
+re le conseguenze” delle non conformità. 
+Viene specificato di valutare se possono verifi carsi 
+non conformità simili e di valutare l’effi cacia delle 
+azioni correttive. 
+Il miglioramento deve essere vissuto come un’at-
+tività continua, ogni volta che un’opportunità di 
+miglioramento dell’idoneità, dell’adeguatezza, 
+dell’efficacia del sistema gestione ambientale e della 
+prestazione ambientale viene identificata. Le azioni 
+per migliorare il sistema di gestione potrebbero na-
+scere dal riesame di direzione, da azioni correttive 
+o dalla identificazioni di opportunità per il miglio-
+ramento. 
+10.3 Miglioramento continuo 
+I QUADERNI DI CONFORMA 
+
+
+33 33 
+I QUADERNI DI CONFORMA 
+
+
+Allegato 1 
+
+Contesto dell’Organizzazione: ESEMPI FATTORI ESTERNI 
+
+SUPPLY CHAIN 
+
+• Fornitori strategici per la gestione AMB 
+• Capacità del fornitore di rispondere ai requisiti per 
+garantire la continuità della fornitura 
+• Disponibilità di fornitori 
+COMPLIANCE & REGULATION 
+
+• Quadro di riferimento legislativo e regolamentare AMB 
+• Violazioni o sanzioni AMB 
+• Contenziosi ambientali in essere o pregressi 
+RISORSE FINANZIARIE 
+
+• Disponibilità risorse finanziarie per investimenti o 
+ORGANIZ 
+
+interventi di adeguamento AMB 
+
+• Accesso al credito, etc. 
+CONDIZIONI AMBIENTALI 
+
+• Stato della qualità dell’aria, dell’acqua, del suolo, etc. 
+• Biodiversità 
+• Localizzazione (area industriale, residenziale, di pregio 
+naturalistico/ambientale) 
+• Condizioni climatiche, etc. 
+RISORSE TECNOLOGICHE 
+• Disponibilità e accessibilità risorse tecnologiche rilevanti 
+34 I QUADERNI DI CONFORMA 
+
+35 35 
+FATTORI ECONOMICI 
+• Prossimità, disponibilità, e costi materie prime, utilities 
+(EE, gas, acqua, etc.) 
+• Infrastrutture logistiche e trasporti 
+ZAZIONE 
+
+MKT E COMPETITIVITÀ 
+
+• Domanda di prodotti/servizi a minore impatto ambientale 
+su mkt attuali o potenziali 
+• Presenza competitor su mkt di riferimento 
+• Riconoscimento del brand ambientale 
+• Aspettative dei clienti 
+ISTITUZIONI 
+
+• Sensibilità verso tematiche ambientali 
+• Prassi applicate per rilascio permessi e autorizzazioni, 
+compresi i tempi dei procedimenti 
+• Promozione iniziative pubbliche AMB e sostenibilità 
+• Vigilanza ambientale sul territorio 
+• Valorizzazione delle iniziative di miglioramento ambientale 
+• Adesione ed accordi e protocolli in ambito ambientale 
+COMUNITÀ 
+
+• Livello di attenzione dei media su aspetti ambientali 
+dell’organizzazione 
+• Comitati ambientali e loro rilevanza 
+• Individui o aggiornamenti più direttamente interessati da 
+impatti ambientali 
+I QUADERNI DI CONFORMA 
+
+
+36 36 
+Allegato 2 
+
+Contesto dell’Organizzazione: ESEMPI FATTORI INTERNI 
+
+• Indirizzi e linee strategiche aziendali 
+• Livelli di condivisione interna dei valori aziendali 
+• Governance, assetti proprietari e management 
+• Sistema contrattuale 
+• Assets, risorse tecnologiche, know how, competenze 
+• Fatturato aziendale e indici di redditività 
+• Investimenti ambientali 
+• Linee guida, codici volontari, best practices ambientali 
+• Attività di comunicazione e marketing ambientale 
+• Formazione ambientale 
+• Sistemi di controllo interno 
+• Clima aziendale interno e sensibilità su questioni ambientali 
+I QUADERNI DI CONFORMA 
+
+
+37 37 
+Allegato 3 
+
+ESEMPI RISCHI 
+
+Esempi di rischi che potrebbero compromettere i risultati attesi del SGA: 
+
+• Rischi di danni materiali alla proprietà dell’impresa 
+• Rischi di danni materiali alle proprietà altrui che si ripercuotono sull’impresa 
+• Rischi di danni ambientali (irreversibili o con costi di ripristino elevatissimi) 
+• Rischi dall’applicazione di sanzioni (personali o a carico dell’impresa) 
+• Rischi di danni all’integrità fisica delle persone (dipendenti e non) 
+• Rischi di mercato (scarso sviluppo rispetto ad una crescente domanda «green»; accessibilità a bandi 
+di gara; carenza di fornitori in grado di garantire determinati requisiti ambientali; aumento dei costi 
+delle risorse naturali impiegate nei processi) 
+• Rischi fi nanziari (performance commerciali negative di prodotti/servizi sui quali sono stati effettuati 
+significativi investimenti ambientali; accessibilità al credito o disponibilità di prodotti assicurativi idonei) 
+• Rischi reputazionali (attacchi negativi mediatici a seguito di fatti di cronaca, azioni e provvedimenti 
+giudiziari, pubblicazione di ricerche e studi, messa in commercio di prodotti non conformi, alterazione 
+dolosa da parte di terzi di prodotti/servizi, revoca di autorizzazioni e permessi, incidenti che coinvolgono 
+fornitori/appaltatori) 
+• Rischi che compromettono la Business Continuity (incidenti ambientali anche presso fornitori, 
+distributori e terzi; mancanza di fornitori con determinati requisiti ambientali; revoca di autorizzazioni/ 
+permessi; eventi negativi che interessano la fornitura/distribuzione con ricadute sulla fi liera; sistema 
+contrattuale inadeguato) 
+• Rischi da cambiamenti politici e da rapporti istituzionali 
+• Rischi di innovazione (tecnologie e processi obsoleti anche a fronte di richieste di legge o altri 
+provvedimenti «restrittivi»; carenza di know how e reperibilità di risorse esterne) 
+I QUADERNI DI CONFORMA 
+
+
+38 38 
+CONFORMA - Associazione Organismi Certificazione Ispezione Prova e Taratura, opera nel settore TIC 
+(Testing, Inspection, Certification), ovvero nel settore della Valutazione della Conformità intesa come 
+l’insieme delle attività, generalmente svolte in regime di accreditamento e/o su autorizzazione dei Ministeri 
+competenti, in ambito volontario o cogente, di attività di certificazione di sistemi di gestione, 
+prodotto, personale e servizi, ispezioni, marcatura CE e prove di laboratorio e taratura. 
+Costituita nel 2012 da alcune fra le più importanti Organizzazioni a livello nazionale ed internazionale 
+nel settore della Valutazione della Conformità di parte terza indipendente, ha sede nel centro di Milano 
+ed è strutturata in 4 settori tecnici: Certificazione, Ispezione, Prove e Taratura 
+
+UNI - Ente Nazionale Italiano di Unifi cazione - è un’associazione privata senza scopo di lucro riconosciuta 
+dallo Stato e dall’Unione Europea, che da quasi 100 anni elabora e pubblica norme tecniche 
+volontarie – le norme UNI – in tutti i settori industriali, commerciali e del terziario. 
+Sono soci UNI le imprese, i professionisti, le associazioni, gli enti pubblici, i centri di ricerca, gli istituti 
+scolastici e accademici, le rappresentanze dei consumatori e dei lavoratori, il terzo settore e le organizzazione 
+non governative, che insieme costituiscono una piattaforma multi-stakeholder di confronto 
+tecnico unica a livello nazionale. 
+UNI rappresenta l’Italia presso le organizzazioni di normazione europea (CEN) e mondiale (ISO) e organizza 
+la partecipazione delle delegazioni nazionali ai lavori di normazione sovranazionale, con lo scopo di: 
+
+- promuovere l’armonizzazione delle norme necessaria al funzionamento del mercato unico, 
+- sostenere e trasporre le peculiarità del modo di produrre italiano in specifi che tecniche che valorizzino 
+l’esperienza e la tradizione produttiva nazionale. 
+I QUADERNI DI CONFORMA 
+
+
+39 39 
+I QUADERNI DI CONFORMA 
+
+
+APRILE 2016 
+
+Piazzale R. Morandi 2, 20121 Milano - Telefono 02.77790408 - 02.77790409 
+info@associazioneconforma.eu - c.f. e p. iva 07671900962 
+www.associazioneconforma.eu 
+Via Sannio, 2 - 20137 Milano - Telefono 02.70024200 - fax 02.5515256 
+www.uni.com 
+c.f./p.iva. 06786300159 
+Elaborazione grafica: www.andreanobilio.com 
+

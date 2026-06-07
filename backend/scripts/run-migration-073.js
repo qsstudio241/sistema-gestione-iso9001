@@ -1,5 +1,5 @@
 /**
- * run-migration-073.js — notification_contacts
+ * run-migration-073.js ï¿½ notification_contacts
  */
 const sql = require('mssql');
 const path = require('path');

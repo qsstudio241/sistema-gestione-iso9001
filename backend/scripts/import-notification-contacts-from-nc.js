@@ -4,9 +4,9 @@
  * Import one-shot referenti NC da campi testo esistenti verso notification_contacts
  * e aggiorna le FK *_contact_id su non_conformities / nc_actions.
  *
- * Per ogni valore testo non vuoto SENZA contact_id già valorizzato:
+ * Per ogni valore testo non vuoto SENZA contact_id giï¿½ valorizzato:
  *   - crea riga in notification_contacts (email dedotta dal testo o placeholder)
- *   - se stesso nome esiste già nell'org (case-insensitive) riusa l'id
+ *   - se stesso nome esiste giï¿½ nell'org (case-insensitive) riusa l'id
  *   - aggiorna NC/azione con il contact_id trovato o creato
  *
  * Uso locale:
@@ -146,7 +146,7 @@ async function processField(pool, { orgId, entityType, entityId, text, contactId
 
 async function main() {
   const pool = await getPool();
-  console.log(`Import referenti NC avviato${dryRun ? ' (DRY-RUN — nessuna scrittura)' : ''}...`);
+  console.log(`Import referenti NC avviato${dryRun ? ' (DRY-RUN ï¿½ nessuna scrittura)' : ''}...`);
 
   await loadExistingContacts(pool);
 

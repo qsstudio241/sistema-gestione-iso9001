@@ -24,7 +24,7 @@ BEGIN
     PRINT 'Tabella doc_notification_log creata.';
 END
 ELSE
-    PRINT 'Tabella doc_notification_log gia esistente — skip.';
+    PRINT 'Tabella doc_notification_log gia esistente ï¿½ skip.';
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_doc_notification_log_org')

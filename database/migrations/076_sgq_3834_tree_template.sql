@@ -21,7 +21,7 @@ BEGIN
     VALUES (
         'sgq_3834_v1',
         'Struttura SGQ + Saldatura ISO 3834-2',
-        'Albero SGQ standard con sotto-cartelle WPS/WPQR, qualifiche saldatori e CND sotto Produzione quando ISO 3834-2 è attivo.',
+        'Albero SGQ standard con sotto-cartelle WPS/WPQR, qualifiche saldatori e CND sotto Produzione quando ISO 3834-2 ï¿½ attivo.',
         N'[
   {"code":"1","title":"DOCUMENTAZIONE INTERNA","children":[
     {"code":"1.1","title":"MANUALE"},
@@ -81,7 +81,7 @@ BEGIN
     PRINT '  Template sgq_3834_v1 inserito';
 END
 ELSE
-    PRINT '  Template sgq_3834_v1 già presente';
+    PRINT '  Template sgq_3834_v1 giï¿½ presente';
 GO
 
 PRINT '';

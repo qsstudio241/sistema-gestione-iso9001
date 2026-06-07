@@ -13,6 +13,7 @@ const {
     clearLicensedModulesOverride,
 } = require('../services/moduleLicense.service');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
+const billingService = require('../services/billing.service');
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -638,6 +639,12 @@ async function updateOrgLicenses(req, res) {
         if (use_defaults === true) {
             await clearLicensedModulesOverride(organization_id);
             const updated = await getLicensedModuleKeysForOrg(organization_id);
+            await billingService.onLicensesUpdated({
+                organizationId: organization_id,
+                modules: updated,
+                useDefaults: true,
+                updatedBy: req.user.user_id,
+            });
             logger.info('Admin licenses reset to defaults', { organization_id });
             return res.json({ success: true, data: { modules: updated } });
         }
@@ -651,6 +658,12 @@ async function updateOrgLicenses(req, res) {
         }
 
         const updated = await setLicensedModulesForOrg(organization_id, modules);
+        await billingService.onLicensesUpdated({
+            organizationId: organization_id,
+            modules: updated,
+            useDefaults: false,
+            updatedBy: req.user.user_id,
+        });
         logger.info('Admin licenses updated', { organization_id, modules: updated });
         res.json({ success: true, data: { modules: updated } });
     } catch (error) {
@@ -684,6 +697,12 @@ async function updateAnyOrgLicenses(req, res) {
         if (use_defaults === true) {
             await clearLicensedModulesOverride(targetOrgId);
             const updated = await getLicensedModuleKeysForOrg(targetOrgId);
+            await billingService.onLicensesUpdated({
+                organizationId: targetOrgId,
+                modules: updated,
+                useDefaults: true,
+                updatedBy: req.user.user_id,
+            });
             logger.info('Superadmin reset org licenses to defaults', { targetOrgId, actor: req.user.user_id });
             return res.json({ success: true, data: { modules: updated } });
         }
@@ -693,6 +712,12 @@ async function updateAnyOrgLicenses(req, res) {
         }
 
         const updated = await setLicensedModulesForOrg(targetOrgId, modules);
+        await billingService.onLicensesUpdated({
+            organizationId: targetOrgId,
+            modules: updated,
+            useDefaults: false,
+            updatedBy: req.user.user_id,
+        });
         logger.info('Superadmin updated org licenses', { targetOrgId, modules: updated, actor: req.user.user_id });
         res.json({ success: true, data: { modules: updated } });
     } catch (error) {

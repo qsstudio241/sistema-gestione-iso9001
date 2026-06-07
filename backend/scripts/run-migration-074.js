@@ -1,5 +1,5 @@
 /**
- * run-migration-074.js — FK referenti NC + nc_notification_log
+ * run-migration-074.js ï¿½ FK referenti NC + nc_notification_log
  */
 const sql = require('mssql');
 const path = require('path');

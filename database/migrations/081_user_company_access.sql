@@ -1,4 +1,4 @@
--- Migration 081: accesso utente per singola azienda (RBAC Fase 4 — ADR-012)
+-- Migration 081: accesso utente per singola azienda (RBAC Fase 4 ï¿½ ADR-012)
 -- Idempotente
 
 IF NOT EXISTS (
@@ -24,7 +24,7 @@ BEGIN
     PRINT 'Tabella user_company_access creata.';
 END
 ELSE
-    PRINT 'Tabella user_company_access già esistente — skip.';
+    PRINT 'Tabella user_company_access giï¿½ esistente ï¿½ skip.';
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_user_company_access_user')

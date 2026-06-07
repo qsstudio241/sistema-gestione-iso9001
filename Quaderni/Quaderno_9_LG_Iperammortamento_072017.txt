@@ -1,0 +1,138 @@
+La riproduzione totale o parziale con qualunque mezzo di questo documento deve essere autorizzata 
+da CONFORMA che detiene tutti i diritti.
+
+Luglio 2017
+
+
+
+Il presente documento è stato realizzato da un Gruppo di Lavoro CONFORMA composto da:
+
+• Armando Romaniello - Certiquality 
+
+• Alessandro Bondioli - IMQ
+
+• Paolo Gianoglio – ICIM
+
+• Marcello Manca – UL
+
+• Fabio Olivieri - Rina 
+
+Alla revisione del documento hanno contribuito Bruno Panieri e Paolo Manfredi per Confartigianato e 
+Paolo Giuiuzza per Conforma.
+
+Sommario
+
+INTRODUZIONE
+
+1. ATTESTAZIONI DI CONFORMITA’, CERTIFICAZIONE E ACCREDITAMENTO .................... 6
+
+1.1. Certificazione di sistema ........................................................................................................ 10
+
+1.2. Certificazione di prodotto ...................................................................................................... 10
+
+2. L’ATTESTAZIONE DI CONFORMITA’ NEL PIANO INDUSTRIA 4.0 .................................... 11
+
+3 IL PROCESSO DI VERIFICA PER IL RILASCIO DELL’ATTESTAZIONE ................................ 14
+
+3.1. L’iter di Attestazione .............................................................................................................. 14
+
+3.2. Le caratteristiche che devono avere i beni per beneficiare dell’agevolazione fiscale 
+dell’iperammortamento ......................................................................................................... 15
+
+3.3. Il revamping dell’esistente ...................................................................................................... 18
+
+4. LE RIPERCUSSIONI DI INDUSTRIA 4.0 ............................................................................... 19
+
+4.1. Le ripercussioni di Industria 4.0 sui sistemi organizzativi ......................................................... 21
+
+ 
+
+ALLEGATO:
+
+Estratto dalla Circolare n.4/E dell’Agenzia delle Entrate del 30/03/2017 -
+
+Interconnessione e Analisi Tecnica .................................................................................................... 23
+
+
+
+INTRODUZIONE
+
+Il Piano Industria 4.0, inserito nella Legge di Bilancio 2017 per incentivare gli investimenti privati in tecnologie, 
+prevede in particolare:
+
+• l’introduzione di una maggiorazione del 150% (iper ammortamento) sul costo di acquisto di beni 
+strumentali funzionali alla trasformazione tecnologica e digitale delle imprese in chiave Industria 4.0;
+
+• l’introduzione di una maggiorazione del 40% sul costo di acquisto di beni strumentali immateriali 
+(alcuni software, sistemi IT e attività di system integration) per i soggetti che beneficiano dell’iper 
+ammortamento.
+
+L’obiettivo è quello di supportare e incentivare le imprese che investono in beni strumentali nuovi e in 
+beni materiali e immateriali (software e sistemi IT) funzionali alla trasformazione tecnologica e digitale 
+dei processi produttivi. 
+
+I beni oggetto degli incentivi devono essere riconducibili ad alcune famiglie tecnologiche quali: le tecnologie 
+per la manifattura additiva (la cosiddetta stampa 3D), le tecnologie per la digitalizzazione dei processi 
+produttivi attraverso la connessione tra sistemi fisici e digitali (Robot collaborativi interconnessi), le 
+tecnologie per la realtà virtuale e la realtà aumentata, le tecnologie per l’Industrial Internet e l’Internet of 
+things (IoT), le tecnologie per la simulazione e la virtualizzazione digitale di processi e prodotti, le tecnologie 
+per il cloud computing, le tecnologie per le analisi complesse delle informazioni attraverso l’utilizzo 
+dei BigData, le tecnologie per la Cyber security, le tecnologie per l’integrazione delle informazioni lungo 
+la catena del valore dal fornitore al consumatore.
+
+L’iperammortamento vale per beni acquistati, anche in leasing, dal 1 gennaio 2017 fino al 31 dicembre 
+2017. È possibile beneficiarne anche per beni consegnati, installati e messi in funzione fino al 31 Luglio 
+2018 purché sia stato emesso l’ordine e pagato un acconto — pari o maggiore al 20% — entro il 31 
+dicembre 2017. Tuttavia l’effettuazione dell’investimento nel periodo agevolato non è una condizione 
+sufficiente per godere dell’agevolazione per la quale è richiesta in aggiunta l’interconnessione dei beni 
+al sistema produttivo.
+
+Per beneficiare dell’iperammortamento per i beni dell’allegato A o dell’ulteriore agevolazione prevista 
+per i beni dell’allegato B, è richiesta una dichiarazione del Legale Rappresentante dell’impresa che attesti 
+che il bene possiede le caratteristiche tecniche tali da includerlo nei rispettivi elenchi (A o B) ed è interconnesso 
+al sistema aziendale di gestione. 
+
+
+
+L’art. 1 comma 11 della Legge di Bilancio 2017 così come modificato dall’art. 7 novies del Decreto Legge 
+243/2016 convertito con modificazioni dalla legge 18/2017, stabilisce in particolare che per la fruizione 
+dei benefici di cui ai commi 9 e 10, l’impresa è tenuta a produrre una dichiarazione resa dal Legale 
+Rappresentante ai sensi del DpR 445/2000, ovvero, per i beni aventi ciascuno un costo di acquisizione 
+superiore a 500.000 €, una perizia tecnica giurata rilasciata da un ingegnere o da un perito industriale 
+iscritti nei rispettivi albi professionali, ovvero un attestato di conformità rilasciato da un ente di certificazione 
+accreditato attestante che il bene possiede caratteristiche tecniche tali da includerlo negli elenchi 
+di cui all’allegato A o all’allegato B della Legge ed è interconnesso al sistema aziendale di gestione della 
+produzione o alla rete di fornitura. 
+
+L’Attestazione di Conformità è quindi obbligatoria per i beni aventi ciascuno un costo di acquisizione 
+superiore a 500.000 €. 
+
+Il ricorso all’Attestazione di Conformità anche per investimenti inferiori a 500 mila euro è non solo possibile, 
+ma caldamente consigliato, alla luce delle importanti implicazioni economico/finanziarie e delle 
+conseguenti responsabilità (anche di carattere penale) che sono poste in capo al titolare dell’impresa che 
+effettua gli investimenti.
+
+Il presente documento è stato redatto su input e con la collaborazione di Confartigianato con lo scopo di 
+fornire alle imprese un supporto operativo sul tema dell’attestazione di conformità in ambito Industria 4.0. 
+
+
+
+Elaborazione grafica: www.andreanobilio.com
+
+LUGLIO 2017
+
+Piazzale R. Morandi 2, 20121 Milano - Telefono 02.77790409 
+
+info@associazioneconforma.eu - c.f. e p. iva 07671900962
+
+www.associazioneconforma.eu
+
+
+Via di San Giovanni in Laterano, 152, 00184 Roma - Telefono 06.703741
+
+confartigianato@confartigianato.it - c.f. 80429270582
+
+www.confartigianato.it 
+
+
+

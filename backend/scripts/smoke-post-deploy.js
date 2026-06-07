@@ -1,5 +1,5 @@
 /**
- * Smoke test post-deploy — verifica health API e route norme montate.
+ * Smoke test post-deploy ï¿½ verifica health API e route norme montate.
  * Uso: node scripts/smoke-post-deploy.js
  * Env: SGQ_HEALTH_URL (default produzione VPS)
  */
@@ -54,7 +54,7 @@ async function main() {
   }
 
   const status = parsed.status || parsed.ok || 'unknown';
-  console.log(`? Health OK — status=${status}, uptime=${parsed.uptime ?? 'n/a'}`);
+  console.log(`? Health OK ï¿½ status=${status}, uptime=${parsed.uptime ?? 'n/a'}`);
 
   if (parsed.database && parsed.database !== 'connected' && parsed.db !== 'ok') {
     console.warn(`? Database: ${JSON.stringify(parsed.database || parsed.db)}`);

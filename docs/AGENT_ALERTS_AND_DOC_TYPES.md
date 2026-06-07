@@ -1,9 +1,9 @@
-# Guida agenti — Scadenze, alert e tipologie documento
+# Guida agenti ï¿½ Scadenze, alert e tipologie documento
 
 > **Per chi modifica codice** senza ri-analizzare il dominio.  
-> Ultimo aggiornamento: 2026-06-02 — commit feature `06c8cf7` (P0–P3 tipi doc + P0–P2 alert).
+> Ultimo aggiornamento: 2026-06-02 ï¿½ commit feature `06c8cf7` (P0ï¿½P3 tipi doc + P0ï¿½P2 alert).
 
-**Non confondere:** scadenza del documento ? regola di reminder email ? priorità UI/roadmap.
+**Non confondere:** scadenza del documento ? regola di reminder email ? prioritï¿½ UI/roadmap.
 
 ---
 
@@ -11,17 +11,17 @@
 
 | Livello | Cosa rappresenta | Dove vive | Esempio |
 |---------|------------------|-----------|---------|
-| **1 — Scadenza (dato)** | Data fine validità del singolo documento | `document_registry.expiry_date` (+ calcolo da `doc_type_config.default_expiry_months` al rilascio) | Procedura PG-012 scade il 15/09/2026 |
-| **2 — Regole reminder (quando avvisare)** | Soglie giorni prima/dopo scadenza; curva escalation | `notifications_config`, `doc_escalation_profile.rules_json`, helper `alertSchedulerHelpers.js` | Email a 35, 28, 21… giorni e promemoria giornaliero post-scadenza |
-| **3 — Destinatari (a chi)** | Rubrica NC, email org, opzionale responsabile doc | `notification_contacts`, `notifications_config.recipients_email`, `document_registry.responsible` (solo se email) | Referente attuazione NC + CC studio |
+| **1 ï¿½ Scadenza (dato)** | Data fine validitï¿½ del singolo documento | `document_registry.expiry_date` (+ calcolo da `doc_type_config.default_expiry_months` al rilascio) | Procedura PG-012 scade il 15/09/2026 |
+| **2 ï¿½ Regole reminder (quando avvisare)** | Soglie giorni prima/dopo scadenza; curva escalation | `notifications_config`, `doc_escalation_profile.rules_json`, helper `alertSchedulerHelpers.js` | Email a 35, 28, 21ï¿½ giorni e promemoria giornaliero post-scadenza |
+| **3 ï¿½ Destinatari (a chi)** | Rubrica NC, email org, opzionale responsabile doc | `notification_contacts`, `notifications_config.recipients_email`, `document_registry.responsible` (solo se email) | Referente attuazione NC + CC studio |
 
 **Finestra operativa unificata:** `alert_days_1` (default 30) definisce:
-- quanti giorni avanti mostrare documenti «urgenti» in **Home**, **Registro documenti**, query scheduler;
-- soglia minima inclusa nella curva escalation (documenti e NC senza `due_date` «aperte da N giorni»).
+- quanti giorni avanti mostrare documenti ï¿½urgentiï¿½ in **Home**, **Registro documenti**, query scheduler;
+- soglia minima inclusa nella curva escalation (documenti e NC senza `due_date` ï¿½aperte da N giorniï¿½).
 
 **`alert_days_2`:** seconda soglia org (tipico 7); usata nelle curve NC e documenti, non sostituisce `alert_days_1`.
 
-**Priorità roadmap (P0/P1/P2):** backlog prodotto in `PROJECT_ROADMAP.md` — **non** mappare su colonne DB alert.
+**Prioritï¿½ roadmap (P0/P1/P2):** backlog prodotto in `PROJECT_ROADMAP.md` ï¿½ **non** mappare su colonne DB alert.
 
 ---
 
@@ -33,7 +33,7 @@ Per org: prefisso codice, autonumerazione, contatore, scadenza default per tipo.
 
 | Colonna | Ruolo |
 |---------|--------|
-| `doc_type` | Chiave canonica snake_case (`procedura`, `modulo`, …) — vedi `app/src/data/documentTypes.js` |
+| `doc_type` | Chiave canonica snake_case (`procedura`, `modulo`, ï¿½) ï¿½ vedi `app/src/data/documentTypes.js` |
 | `prefix` | Prefisso codice (es. `PG`) |
 | `auto_number` | Se generare `doc_code` automaticamente |
 | `next_number` | Contatore atomico NNN in `PREFISSO-NNN` |
@@ -41,11 +41,11 @@ Per org: prefisso codice, autonumerazione, contatore, scadenza default per tipo.
 
 ### `notifications_config` (030 + 080)
 
-Una riga per org — configurazione alert email e flag documenti.
+Una riga per org ï¿½ configurazione alert email e flag documenti.
 
 | Colonna | Ruolo |
 |---------|--------|
-| `recipients_email` | Destinatari default (virgola/punto e virgola) — obbligatori in UI |
+| `recipients_email` | Destinatari default (virgola/punto e virgola) ï¿½ obbligatori in UI |
 | `alert_days_1` / `alert_days_2` | Soglie org (30 / 7 default) |
 | `send_time` | Orario cron documenti (`HH:MM`, timezone server Node) |
 | `alert_doc_expiry` / `alert_nc_open` / `alert_qualif_expiry` | Abilitazione per categoria |
@@ -62,7 +62,7 @@ Profili curva reminder per tipo documento.
 | Colonna | Ruolo |
 |---------|--------|
 | `doc_type` | `NULL` = default org; altrimenti match su `document_registry.doc_type` |
-| `rules_json` | JSON es. `{"thresholds":[35,28,21,14,7,3,1]}` — se assente usa default helper |
+| `rules_json` | JSON es. `{"thresholds":[35,28,21,14,7,3,1]}` ï¿½ se assente usa default helper |
 | Risoluzione | Profilo per tipo ? profilo default (`doc_type IS NULL`) ? `doc_escalation_profile_id` |
 
 ### `doc_notification_log` (079)
@@ -77,7 +77,7 @@ Anti-duplicati NC/azioni. UNIQUE su `(entity_type, entity_id, recipient_email, a
 
 ### Correlati (NC escalation)
 
-- `notification_contacts` — rubrica referenti (tab Notifiche)
+- `notification_contacts` ï¿½ rubrica referenti (tab Notifiche)
 - `non_conformities.responsible_contact_id` / `verification_contact_id`
 - `nc_actions.responsible_contact_id`
 
@@ -104,7 +104,7 @@ Anti-duplicati NC/azioni. UNIQUE su `(entity_type, entity_id, recipient_email, a
 |-------|------------|
 | `GET/PUT /notifications-config` | `notifications.controller.js` |
 | `GET/PUT /doc-type-config` | `organization.controller.js` |
-| `GET /alerts`, `GET /alerts/count` | `alert.controller.js` (badge sidebar; doc count usa 30 gg fissi — vedi gap) |
+| `GET /alerts`, `GET /alerts/count` | `alert.controller.js` (badge sidebar; doc count usa 30 gg fissi ï¿½ vedi gap) |
 
 ### Tipi documento e codici
 
@@ -140,14 +140,14 @@ Anti-duplicati NC/azioni. UNIQUE su `(entity_type, entity_id, recipient_email, a
 | # | File | Cosa fa |
 |---|------|---------|
 | **051** | `database/migrations/051_doc_type_config.sql` | Crea `doc_type_config` (prefisso, autonumerazione per org+tipo) |
-| **076** | `database/migrations/076_sgq_3834_tree_template.sql` | Template albero `sgq_3834_v1` (ISO 3834-2) — **non** alert; legato sessione tipi doc P0 |
+| **076** | `database/migrations/076_sgq_3834_tree_template.sql` | Template albero `sgq_3834_v1` (ISO 3834-2) ï¿½ **non** alert; legato sessione tipi doc P0 |
 | **077** | `database/migrations/077_doc_type_config_counters_expiry.sql` | Aggiunge `next_number`, `default_expiry_months`, `updated_at` |
 | **079** | `database/migrations/079_doc_notification_log.sql` | Tabella log anti-duplicati alert documenti |
 | **080** | `database/migrations/080_doc_escalation.sql` | `doc_escalation_profile` + colonne doc su `notifications_config` |
 
 **Correlata NC:** **074** (`nc_notification_log` + FK contatti NC).
 
-Script VPS esempio: `backend/scripts/run-migration-051-vps.js`; per 077–080 eseguire SQL su VPS come da `docs/how-to/database-migrations.md` (non tutti hanno runner dedicato).
+Script VPS esempio: `backend/scripts/run-migration-051-vps.js`; per 077ï¿½080 eseguire SQL su VPS come da `docs/how-to/database-migrations.md` (non tutti hanno runner dedicato).
 
 ---
 
@@ -155,9 +155,9 @@ Script VPS esempio: `backend/scripts/run-migration-051-vps.js`; per 077–080 eseg
 
 | Target | Cosa deploya | Alert |
 |--------|--------------|-------|
-| **Netlify** | Solo frontend React (`app/`) | Nessun cron — legge `/alerts` via API |
+| **Netlify** | Solo frontend React (`app/`) | Nessun cron ï¿½ legge `/alerts` via API |
 | **VPS** | Backend Node `/var/www/sgq-backend` | Scheduler + SMTP; restart `sgq-backend` dopo deploy |
-| **DB** | SQL Server remoto | Migrazioni **manuali** (script Node o SQL diretto) — non automatiche da Netlify |
+| **DB** | SQL Server remoto | Migrazioni **manuali** (script Node o SQL diretto) ï¿½ non automatiche da Netlify |
 
 Flusso tipico: `git push` ? deploy Netlify auto ? `deploy-controllers-to-vps.ps1` + migrazioni mancanti + restart backend.  
 Dettaglio: `docs/how-to/deploy.md`, `docs/how-to/DEPLOY_BACKEND_VPS.md`.
@@ -170,7 +170,7 @@ Dettaglio: `docs/how-to/deploy.md`, `docs/how-to/DEPLOY_BACKEND_VPS.md`.
 
 Usato coerentemente in: escalation documenti (finestra query + soglia curva), escalation NC (`open_stale`), Home/Registro (se API config caricata).
 
-**Eccezione nota:** `alert.controller.js` usa ancora costante 30 gg per badge `/alerts/count` — allineamento backlog.
+**Eccezione nota:** `alert.controller.js` usa ancora costante 30 gg per badge `/alerts/count` ï¿½ allineamento backlog.
 
 ### Curva escalation documenti (default)
 
@@ -185,7 +185,7 @@ Post-scadenza: un promemorio/giorno/destinatario (`threshold_days = -1`).
 
 Configurato per tipo in tab Studio ? Documenti. Applicato in creazione/rilascio quando manca `expiry_date` esplicita (`docCodeGenerator.service.js`).
 
-### Modalità legacy digest
+### Modalitï¿½ legacy digest
 
 `doc_use_legacy_digest = 1`: una email riepilogativa/giorno a `recipients_email` (comportamento pre-P2). Disattivare per escalation per soglia.
 
@@ -201,12 +201,12 @@ Configurato per tipo in tab Studio ? Documenti. Applicato in creazione/rilascio 
 
 | Gap | Dettaglio |
 |-----|-----------|
-| **UI profili escalation per doc_type** | Tabella e backend pronti; **manca CRUD UI** per `doc_escalation_profile` — oggi solo default helper + eventuale seed SQL |
-| **Responsabile documento** | `doc_notify_responsible` invia solo se `responsible` **è un indirizzo email** (non lookup personale/rubrica) |
+| **UI profili escalation per doc_type** | Tabella e backend pronti; **manca CRUD UI** per `doc_escalation_profile` ï¿½ oggi solo default helper + eventuale seed SQL |
+| **Responsabile documento** | `doc_notify_responsible` invia solo se `responsible` **ï¿½ un indirizzo email** (non lookup personale/rubrica) |
 | **Badge `/alerts/count`** | Finestra 30 gg hardcoded, non legge `alert_days_1` live |
 | **Cartelle / norme** | `doc_type=folder` senza lifecycle scadenza SGQ; norme hanno vigore normativo separato (`type_specific_data.validity_status`) |
 | **Qualifiche saldatura** | `alert_qualif_expiry` flag presente; copertura scheduler parziale vs documenti/NC |
-| **Timezone** | Cron usa ora locale server VPS — documentare in ops |
+| **Timezone** | Cron usa ora locale server VPS ï¿½ documentare in ops |
 | **Duplicati tipi legacy** | GET `doc-type-config` auto-migra etichette italiane ? snake_case (`docTypeConfigHelpers.js`) |
 
 ---
@@ -215,7 +215,7 @@ Configurato per tipo in tab Studio ? Documenti. Applicato in creazione/rilascio 
 
 - [ ] `documentTypes.js` e `documentTypeSchemas.js` (app + backend mirror) allineati su nuovo tipo
 - [ ] Riga `doc_type_config` per org con `prefix` / `default_expiry_months` sensati
-- [ ] Migrazioni 077–080 applicate su DB target
+- [ ] Migrazioni 077ï¿½080 applicate su DB target
 - [ ] `notifications_config.enabled=1`, destinatari compilati, `alert_doc_expiry=1`
 - [ ] VPS: `ALERT_ENABLED=true`, SMTP ok, backend riavviato (`app.log` ? `[AlertScheduler]`)
 - [ ] Test L1: `npm test -- alertSchedulerHelpers docAlertEscalation` (backend)
@@ -230,4 +230,4 @@ Configurato per tipo in tab Studio ? Documenti. Applicato in creazione/rilascio 
 - Esperienza operativa SMTP/VPS: `GUIDA_CONSOLIDATA.md` (sezione Alert Engine)
 - Schema DB completo: `docs/reference/DATABASE_SCHEMA.md`
 - Ripresa modulo NC: `docs/agent-tasks/PROMPT_RIPRESA_NC.md`
-- Roadmap priorità prodotto: `docs/PROJECT_ROADMAP.md`
+- Roadmap prioritï¿½ prodotto: `docs/PROJECT_ROADMAP.md`

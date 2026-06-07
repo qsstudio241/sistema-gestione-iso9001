@@ -1,0 +1,1860 @@
+ 
+
+Titolo/Title 
+
+ 
+
+Prescrizioni per l’accreditamento degli Organismi operanti 
+la certificazione dei sistemi di gestione ambientale (SGA) 
+
+Directives for accreditation of Bodies performing the 
+certification of Environmental Management Systems (EMS) 
+
+Sigla/Reference 
+
+ 
+
+RT-09 
+
+Revisione/Revision 
+
+ 
+
+03 
+
+Data/Date 
+
+ 
+
+ 18-07-2017 
+
+
+
+ 
+
+ 
+
+
+
+ 
+
+Redazione 
+
+ 
+
+Approvazione 
+
+ 
+
+Autorizzazione 
+all’emissione 
+
+ 
+
+Entrata in vigore 
+
+Il Direttore di 
+Dipartimento 
+
+ 
+
+Il Consiglio Direttivo 
+
+ 
+
+Il Presidente 
+
+ 
+
+01-01-2018 
+
+
+
+
+INDICE 
+
+ 
+
+INTRODUZIONE .................................................................................................. 4 
+RIFERIMENTI ..................................................................................................... 4 
+1. SCELTA DEI SETTORI CRITICI NELL’AMBITO DEI “TECHNICAL CLUSTER” DEL 
+DOCUMENTO IAF MD 17 AI FINI DELL’ACCREDITAMENTO E DELLA 
+PIANIFICAZIONE DELLE ATTIVITÀ DI SORVEGLIANZA ............................... 5 
+2. VERIFICHE PREVISTE IN STAGE 1 .............................................................. 8 
+3. VERIFICHE ATTINENTI ALLA CONFORMITÀ LEGISLATIVA DELLE 
+ORGANIZZAZIONI RICHIEDENTI LA CERTIFICAZIONE AMBIENTALE ........ 10 
+3.1. RESPONSABILITÀ DEGLI ORGANISMI DI CERTIFICAZIONE E DELLE 
+ORGANIZZAZIONI ...................................................................................... 10 
+3.2. RELAZIONE TRA LE “AUTORIZZAZIONI” E LE CERTIFICAZIONI RILASCIATE AI 
+SENSI DELLA NORMA UNI EN ISO 14001 ....................................................... 11 
+3.3. VALUTAZIONE DELLA CONFORMITÀ DEGLI ASPETTI DI NATURA TECNICA, 
+OPERATIVA E ANALITICA IN FASE DI CERTIFICAZIONE ................................... 11 
+3.4. VALUTAZIONE DEGLI ASPETTI COGENTI IN OCCASIONE DEGLI AUDIT DI 
+SORVEGLIANZA E RINNOVO ........................................................................ 12 
+3.5. PROCEDIMENTI LEGALI IN CORSO .......................................................... 12 
+4. GESTIONE DEGLI AUDIT DI SORVEGLIANZA - PROCEDURE DI 
+SORVEGLIANZA E RINNOVO ..................................................................... 13 
+4.1. LA PROGRAMMAZIONE DELLE ATTIVITÀ DI SORVEGLIANZA ....................... 14 
+4.2. LE PROBLEMATICHE RICORRENTI ........................................................... 14 
+4.3. CRITERI DI CONDUZIONE DELLE ATTIVITÀ DI SORVEGLIANZA .................. 15 
+5. PRESCRIZIONI PER LA CONDUZIONE DI VERIFICHE EFFICACI ED 
+OMOGENEE IN RELAZIONE AL POSSESSO DEL CERTIFICATO PREVENZIONE 
+INCENDI (CPI) DA PARTE DELLE ORGANIZZAZIONI CHE RICHIEDONO LA 
+CERTIFICAZIONE UNI EN ISO 14001 ........................................................ 16 
+5.1. REQUISITI GENERALI ............................................................................ 17 
+5.2. REQUISITI PER LE ATTIVITÀ DI CATEGORIA B E C .................................... 17 
+5.3. REQUISITI PER LE ATTIVITÀ DI CATEGORIA A.......................................... 18 
+5.4. MANTENIMENTO DELLA CERTIFICAZIONE ................................................ 18 
+5.5. ORGANIZZAZIONI SOGGETTE ALLE PROCEDURE INTEGRATE DI CUI AL D.LGS. 
+105/2015 .................................................................................................. 18 
+6. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED OMOGENEI IN 
+RELAZIONE ALL’INDIVIDUAZIONE DI “PERICOLO CONCRETO E ATTUALE DI 
+SUPERAMENTO DEI LIMITI” AI SENSI DEL D.LGS. 152/2006 E SUE 
+MODIFICHE E INTEGRAZIONI ................................................................... 19 
+7. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED OMOGENEI IN 
+RELAZIONE ALLA DEFINIZIONE DELLO SCOPO DI CERTIFICAZIONE ........ 20 
+7.1. ESCLUSIONI ........................................................................................ 21 
+8. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED OMOGENEI 
+RISPETTO AL PUNTO 8.1 DELLA NORMA UNI EN ISO 14001 IN RIFERIMENTO 
+ALLA GESTIONE DEI RAPPORTI CON FORNITORI ED APPALTATORI ......... 22 
+9. CRITERI PER LA DEFINIZIONE DEL CONFINE TRA REQUISITI AMBIENTALI E 
+DI IGIENE E SICUREZZA SUL LAVORO, AI FINI DELLE VERIFICHE DI 
+CONFORMITÀ ALLA NORMA UNI EN ISO 14001 ........................................ 22 
+9.1. CONSIDERAZIONI GENERALI ................................................................. 23 
+9.2. PRECISAZIONI SUI CONFINI TRA I DUE SCHEMI ...................................... 23 
+10. PRESCRIZIONI PER LA CERTIFICAZIONE AI SENSI DELLA NORMA UNI EN 
+ISO 14001 NEL SETTORE IAF 36 CON RIFERIMENTO ALLE PUBBLICHE 
+AMMINISTRAZIONI CON COMPETENZE TERRITORIALI ............................. 25 
+10.1. CONTINUITÀ E COERENZA DELLA POLITICA, DEGLI OBIETTIVI E DEL SISTEMA 
+DI GESTIONE AMBIENTALE .......................................................................... 25 
+10.2. ASPETTI AMBIENTALI DIRETTI ED INDIRETTI ........................................... 26 
+10.3. CONFORMITÀ LEGISLATIVA ................................................................... 26 
+10.4. COMPETENZE DEL PERSONALE ............................................................... 29 
+10.5. COMUNICAZIONE CON IL PUBBLICO E LE PARTI INTERESSATE .................. 29 
+10.6. EMERGENZE ......................................................................................... 30 
+10.7. AUDIT INTERNI .................................................................................... 30 
+10.8. ENTITÀ MINIMA CERTIFICABILE ............................................................. 31 
+10.9. DETERMINAZIONE DELLA DURATA DELLE VISITE ISPETTIVE (CALCOLO DEI 
+“MAN-DAYS”) ............................................................................................. 32 
+
+INTRODUZIONE 
+
+Il presente documento ACCREDIA Dipartimento Organismi di Certificazione e Ispezione (ACCREDIA-
+DC) contiene una serie di specificazioni rispetto alla norma di riferimento UNI CEI EN ISO/IEC 17021-
+1, concordate con gli Organismi di Certificazione, al fine di rendere omogeneo il comportamento degli 
+auditor e degli stessi Organismi accreditati, facendo riferimento anche ai documenti ISO/IEC ed 
+EA/IAF applicabili. 
+
+La presente revisione 03 del RT-09 si è resa necessaria a seguito della fine del periodo transitorio 
+per l’applicazione della norma ISO/IEC TS 17021-2, della pubblicazione delle norme UNI CEI EN 
+ISO/IEC 17021-1:2015, UNI EN ISO 14001:2015, della revisione del Regolamento ACCREDIA RG-
+01-01 “Regolamento per l’accreditamento degli Organismi di Certificazione del sistema di gestione” 
+e della pubblicazione di ulteriori documenti prescrittivi pertinenti le attività di accreditamento e di 
+certificazione (es.: IAF MD17). 
+
+Si ricorda che i contenuti del presente Regolamento Tecnico RT-09 devono essere rispettati dagli 
+Organismi accreditati, unitamente ai contenuti dei Rapporti Tecnici UNI/TR 11311 e UNI/TR 11405. 
+
+RIFERIMENTI 
+
+Il presente Regolamento fa riferimento a quanto prescritto dai seguenti documenti/norme, nella 
+revisione/edizione in corso di validità: 
+
+. UNI CEI EN ISO/IEC 17021-1 “Requisiti per gli Organismi che forniscono audit e certificazione 
+di sistemi di gestione”; 
+. Regolamento Generale ACCREDIA RG-01 “Regolamento per l’accreditamento degli Organismi 
+di Certificazione, di Ispezione, di Verifica e di Convalida-Parte Generale”; 
+. IAF MD 1 “Certification of Multiple Sites Based on Sampling”; 
+. IAF MD 2 “Transfer of Accredited Certification of Management Systems”; 
+. IAF MD 3 “Advanced Surveillance and Recertification Procedures (ASRP)”; 
+. IAF MD 5 “Duration of QMS and EMS Audits”; 
+. IAF MD 11 “Application of ISO/IEC 17021 for Audits of Integrated Management Systems 
+(IMS)” 
+. IAF MD 12 Assessment of Certification Activities for Cross Frontier Accreditation; 
+. ISO/IEC TS 17021-2 “Requirements for bodies providing audit and certification of 
+management systems – Part 2 Competence requirements for auditing and certification of 
+environmental management systems”; 
+. EA 7/04 “Legal compliance as a part of accredited ISO 14001 certification"; 
+. IAF MD 17 “Witnessing activities for the accreditation of management systems certification 
+bodies”; 
+. Rapporto Tecnico UNI/TR 11331 “Indicazioni relative all’applicazione della UNI EN ISO 14001 
+in Italia, formulate a partire dalle criticità emerse e dalle esperienze pratiche”; 
+. Rapporto Tecnico UNI/TR 11405 “Sistemi di Gestione Ambientale – Applicazione della norma 
+UNI EN ISO 14001 nella Pubblica Amministrazione con competenze di gestione del territorio”. 
+
+
+
+NOTA: Nel presente RT le norme e i documenti non datati si intendono applicabili nella versione 
+corrente 
+
+1. SCELTA DEI SETTORI CRITICI NELL’AMBITO DEI “TECHNICAL 
+CLUSTER” DEL DOCUMENTO IAF MD 17 AI FINI 
+DELL’ACCREDITAMENTO E DELLA PIANIFICAZIONE DELLE ATTIVITÀ 
+DI SORVEGLIANZA 
+
+Il documento IAF MD17 fornisce prescrizioni per le procedure di accreditamento e di mantenimento 
+dell’accreditamento. In particolare, i “Technical cluster” definiti al capitolo 6 del citato documento 
+IAF devono essere considerati da ACCREDIA-DC per la definizione e la gestione del programma di 
+valutazione quadriennale sui CAB per assicurare la copertura dello scopo dell’accreditamento. 
+
+Nell’ambito delle facoltà concesse ai singoli AB (“Each AB can decide to designate different critical 
+codes within each technical cluster according to national regulations, local market conditions and 
+effective use. The technical justification for these modifications shall be recorded” - IAF MD17, §6), 
+ACCREDIA-DC ha sostituito alcuni dei settori EA critici in relazione alle caratteristiche ed alle esigenze 
+del mercato italiano. 
+
+Le sostituzioni non comportano un aumento del numero delle verifiche in accompagnamento. 
+
+Le giustificazioni delle sostituzioni eseguite sono riportate in calce alla tabella. 
+
+Technical 
+cluster 
+
+Settore 
+IAF 
+
+Descrizione del settore economica 
+
+(rif. IAF ID1) 
+
+Codici IAF 
+critici 
+
+Note 
+
+Agricoltura, 
+foreste, pesca 
+
+1 
+
+Agricoltura, foreste, pesca 
+
+1 
+
+ 
+
+Alimentare 
+
+3 
+
+Prodotti alimentari, bevande e tabacco 
+
+3 
+
+ 
+
+30 
+
+Hotel e ristoranti 
+
+Meccanica 
+
+17 
+
+Limitato a prodotti in metallo 
+
+17 o 18 
+
+Settore IAF 17 
+“limitato a prodotti 
+in metallo” 
+corrisponde al 
+settore 25 codifica 
+NACE rev.2 
+
+18 
+
+Macchine e attrezzature 
+
+19 
+
+Apparecchiature elettriche e ottiche 
+
+20 
+
+Costruzioni e cantieri navali 
+
+21 
+
+Aerospaziale 
+
+22 
+
+Altri mezzi di trasporto 
+
+
+
+
+Carta 
+
+7 
+
+Limitato a prodotti in carta 
+
+9 
+
+Settore IAF 7 
+“limitato a prodotti 
+in carta” 
+corrisponde ai 
+settori 17.2 e 18 
+della codifica NACE 
+rev.2 
+
+8 
+
+Editrici 
+
+9 
+
+Tipografie 
+
+Costruzioni 
+
+28 
+
+Costruzioni 
+
+28 
+
+ 
+
+34 
+
+Servizi di ingegneria 
+
+Produzione di 
+beni 
+
+4 
+
+Tessile e prodotti tessili 
+
+5 e 6 
+
+ 
+
+5 
+
+Lavorazione della pelle e prodotti in 
+pelle 
+
+6 
+
+Lavorazione del legno e prodotti in 
+legno 
+
+23 
+
+Manifattura di altri prodotti non 
+specificati altrimenti 
+
+Chimica 
+
+7 
+
+Limitato alla “fabbricazione di cellulosa 
+e carta” 
+
+10 e 12 e 
+16 e 17 
+
+Settore IAF 7 
+“limitato alla 
+fabbricazione di 
+cellulosa e carta” 
+corrisponde al 
+settore 17.1 della 
+codifica NACE rev.2 
+
+Settore IAF 17 
+“limitato a 
+produzione di 
+metalli a caldo” 
+corrisponde al 
+settore 24 della 
+codifica NACE rev.2 
+
+10 
+
+Produzione di coke e prodotti petroliferi 
+
+12 
+
+Prodotti chimici e fibre 
+
+13 
+
+Farmaceutica 
+
+14 
+
+Prodotti in gomma e plastica 
+
+15 
+
+Prodotti minerali non metallici 
+
+16 
+
+Calcestruzzo, cemento, argilla, malte 
+
+17 
+
+Limitato a “produzione di metalli a 
+caldo” 
+
+Cave e miniere 
+
+2 
+
+Cave e miniere 
+
+2 
+
+ 
+
+
+
+
+Forniture 
+
+25 
+
+Fornitura di elettricità 
+
+25 o 26 
+
+ 
+
+26 
+
+Fornitura di gas 
+
+27 
+
+Fornitura di acqua 
+
+Trasporti e 
+gestione rifiuti 
+
+31 
+
+Trasporti, stoccaggio e comunicazione 
+
+24 e 39 
+
+Il settore IAF 39 è 
+critico solo in 
+relazione ai codici 
+NACE 37, 38.1, 
+38.2, 39 
+
+24 
+
+Riciclaggio 
+
+39 
+
+Altri servizi sociali 
+
+Servizi 
+
+29 
+
+Vendita all’ingrosso e al dettaglio; 
+riparazione di veicoli a motore e beni 
+personali e casalinghi 
+
+29 o 35 o 
+36 
+
+ 
+
+32 
+
+Intermediazione finanziaria, 
+immobiliare, noleggi 
+
+33 
+
+Tecnologie informatiche 
+
+35 
+
+Altri servizi 
+
+36 
+
+Pubblica amministrazione 
+
+37 
+
+Educazione 
+
+Nucleare 
+
+11 
+
+Combustibili nucleari 
+
+11 
+
+ 
+
+Sanità 
+
+38 
+
+Sanità e attività sociali 
+
+38 
+
+ 
+
+
+
+Giustificazione della scelta dei settori IAF critici 
+
+Nel seguito si esplicitano le giustificazioni che hanno condotto alla sostituzione di alcuni settori IAF 
+indicati nel documento IAF MD17 come “critici”. 
+
+Cluster “meccanica” 
+
+Sono stati sostituiti i settori critici IAF 20 e IAF 21 con i settori critici IAF 17 e IAF 18 perché 
+rappresentativi degli aspetti ambientali del “cluster” e più presenti nel mercato italiano sia in termini 
+di numero di certificazioni che di accreditamenti. 
+
+ 
+
+
+Cluster “produzione di beni” 
+
+E’ stato sostituito il settore critico IAF 4 con il settore critico IAF 6 perché negli ultimi anni in Italia è 
+diminuita la presenza di produzioni tessili significative; al contrario il settore legno e arredo è 
+comunque caratterizzato da significativi aspetti ambientali nell’ambito del “cluster” e rimane 
+fortemente rappresentato. 
+
+Cluster “chimica” 
+
+Il settore critico IAF 13 è stato sostituito perché in Italia non è significativamente rappresentata la 
+produzione farmaceutica di base e, di conseguenza, la competenza richiesta sarebbe 
+sufficientemente garantita in caso di accreditamento nel settore IAF 12. Per la stessa ragione è stato 
+sostituito il settore critico IAF 7. In sostituzione sono stati introdotti come critici i settori IAF 16 e IAF 
+17 perché significativamente presenti in Italia e perché richiedono competenze specifiche. 
+
+Nota 1: Per i cluster “Forniture” e “Servizi”, nei casi in cui l’OdC abbia, tra i settori IAF di interesse, 
+accreditati o accreditandi, rispettivamente il settore IAF 25 o IAF 36, tali settori saranno scelti 
+prioritariamente tra tutti i settori IAF “critici” per eseguire accompagnamenti ai fini 
+dell’accreditamento. 
+
+Nota 2: Questa classificazione in “cluster” non rappresenta le aree tecniche che l’OdC stabilisce ai 
+fini delle qualifiche del personale dell’OdC. 
+
+Ai fini della qualifica del personale del CAB e della costituzione dei gruppi di verifica, a seguito 
+dell’entrata in vigore del documento ISO/IEC TS 17021-2, ACCREDIA-DC fa riferimento ai requisiti 
+in esso contenuti ed è responsabilità degli OdC dimostrare la conformità dei criteri da loro adottati - 
+anche in applicazione dei criteri indicati nelle precedenti revisioni del RT-09. Si conferma che resta 
+piena responsabilità degli OdC adottare le modalità più opportune per qualificare il proprio personale, 
+i propri auditor e per comporre i GVI al fine di garantire adeguata competenza. 
+
+2. VERIFICHE PREVISTE IN STAGE 1 
+
+Questo capitolo intende fornire alcune indicazioni operative per un approccio efficace ed omogeneo 
+alle verifiche che la norma richiede siano effettuate nel corso dello Stage 1. 
+
+Qualunque sia la terminologia utilizzata dall’OdC, dovranno essere documentate in modo trasparente 
+ed inequivocabile ad ACCREDIA-DC quali fasi dell’iter di certificazione siano riconducibili allo Stage 
+1. 
+
+Lo Stage 1 può essere preceduto, qualora l’organizzazione lo richieda, da un pre-audit il quale, però, 
+non può avere durata superiore ai 2 (due) gg-uomo. 
+
+Tra gli scopi dello Stage 1 vi è anche la corretta pianificazione dello Stage 2. L’intervallo di tempo tra 
+le due fasi deve consentire: 
+
+. la preparazione e la comunicazione all’organizzazione da certificare di un piano di audit per 
+lo Stage 2, dopo il completamento dello Stage 1; 
+. l’adeguata gestione da parte dell’organizzazione dei problemi che nell’audit di stage 2 
+potrebbero essere classificati come non conformità. 
+
+
+
+Nel caso di organizzazioni con meno di 10 dipendenti e di impatto ambientale “basso” o “limitato” 
+(come definito dal documento IAF MD 5), è possibile eseguire gli Stage 1 e 2 in giornate consecutive. 
+Tuttavia resta confermato che, qualora l’esito dell’audit dello Stage 1 dimostri la presenza di problemi 
+che potrebbero essere classificati come non conformità tali da precludere la possibilità del rilascio 
+della certificazione, cioè di carenze nel soddisfare uno o più requisiti della norma o situazioni che 
+sollevano dubbi significativi in merito alla capacità del sistema di gestione ambientale del cliente di 
+conseguire i risultati previsti (cfr. UNI CEI EN ISO/IEC 17021-1 punto 9.4.8.3), non è ovviamente 
+possibile procedere all’esecuzione dello Stage 2 consecutivo allo Stage 1. 
+
+L’OdC deve informare esplicitamente le Organizzazioni clienti che – nei casi sopra descritti - lo Stage 
+2 deve essere ripianificato ad una adeguata distanza di tempo per consentire all’organizzazione la 
+soluzione dei problemi riscontrati e la visita ispettiva interrotta al termine dello Stage 1. 
+
+Si ricorda inoltre che “la risoluzione di criticità identificate nello Stage 1” può determinare “modifiche 
+significative che potrebbero avere impatto sul sistema di gestione”, rendendo necessario “ripetere lo 
+Stage 1, in tutto o in parte” per rivalutare gli elementi modificati (UNI CEI EN ISO/IEC 17021-1 punto 
+9.3.1.2.4). Questa possibilità, che le procedure ed i regolamenti del CAB devono considerare, 
+costituisce un ulteriore fattore critico nello stabilire Stage 1 e 2 in forma consecutiva. 
+
+Si precisa che, per raggiungere gli obiettivi fissati dal punto 9.3.1.2.2 della norma UNI CEI EN 
+ISO/IEC 17021-1, nel corso dello Stage 1, l’OdC è tenuto a: 
+
+. valutare che la documentazione del SGA dell’organizzazione, inclusi rischi, opportunità e 
+procedure, copra tutti i requisiti della norma e sia ad essi conforme; 
+. verificare che l’organizzazione abbia sviluppato un’analisi del contesto completa, consapevole 
+ed organica, acquisendo direttamente dalla Direzione le evidenze che assicurino confidenza 
+che l’analisi del contesto sia efficace nel conferire al sistema di gestione ambientale la 
+capacità di ottenere i risultati attesi, e registrando informazioni circostanziate sulle verifiche 
+eseguite; 
+. verificare che “all’interno del campo di applicazione definito per il sistema di gestione 
+ambientale” l’organizzazione abbia identificato e sottoposto a valutazione tutti “gli aspetti 
+ambientali delle sue attività, prodotti e servizi che può tenere sotto controllo e quelli sui quali 
+essa può esercitare un’influenza, e i loro impatti ambientali, considerando una prospettiva di 
+ciclo di vita”, al fine di identificare quali siano quelli significativi su cui sviluppare il proprio 
+SGA; 
+. Si ritiene infatti determinante che l’attenzione dell’OdC sia focalizzata sulla completezza, 
+coerenza e correttezza delle fasi di analisi del contesto e di identificazione e valutazione degli 
+aspetti ambientali, piuttosto che sulla mera esistenza formale dei relativi documenti (“Analisi 
+del contesto” e “Analisi Ambientale Iniziale” (AAI)). L’OdC deve verificare che la fase di 
+valutazione sia supportata da opportuni collegamenti con i risultati dell’analisi del contesto e 
+dei rischi e da dati e informazioni di natura qualitativa e quantitativa per i diversi aspetti 
+ambientali identificati, i quali dovranno essere raccolti e resi disponibili in modo organico 
+dall’organizzazione. Ciò non esclude comunque che gli OdC richiedano, anche in termini 
+vincolanti, all’interno del proprio Regolamento di Certificazione, l’esistenza dell’AAI; 
+
+
+ 
+
+
+. verificare che l’organizzazione disponga di tutte le necessarie autorizzazioni di natura 
+ambientale afferenti a tutte le attività collegate allo scopo di certificazione e verificarne la 
+validità, la completezza e la correttezza. Il rapporto, o altro documento predisposto dall’OdC 
+a conclusione della fase di Stage 1, dovrà registrare tutti i riferimenti ai documenti e/o alle 
+autorizzazioni esaminati (vedi anche Cap. 3.3); 
+. discutere, verificare e documentare lo scopo di certificazione. 
+
+
+Con particolare riferimento ai punti 2, 3 e 4, è indispensabile (UNI CEI EN ISO 17021-1 § 9.3.1.2.2 
+b)) che il GVI esegua i sopralluoghi pertinenti e necessari, al fine di ottenere un quadro complessivo 
+del contesto, delle attività e degli impatti ambientali dell’organizzazione. 
+
+Il piano di audit per lo Stage 2 dovrà essere realizzato in base alle conclusioni dello Stage 1 e dovrà 
+tenere in considerazione l’importanza specifica degli aspetti ambientali significativi, il livello di 
+conformità legislativa ed i risultati del ciclo di audit interno. 
+
+3. VERIFICHE ATTINENTI ALLA CONFORMITÀ LEGISLATIVA DELLE 
+ORGANIZZAZIONI RICHIEDENTI LA CERTIFICAZIONE AMBIENTALE 
+
+3.1. RESPONSABILITÀ DEGLI ORGANISMI DI CERTIFICAZIONE E DELLE 
+ORGANIZZAZIONI 
+
+L’Organismo di Certificazione deve valutare la volontà e la capacità del sistema di gestione del cliente 
+di garantire che il cliente soddisfi i requisiti applicabili di natura cogente e contrattuale (UNI CEI EN 
+ISO/IEC 17021-1, punto 9.2.1.2 b), sebbene “un audit di certificazione di sistema di gestione non 
+sia un audit di conformità legale” (UNI CEI EN ISO/IEC 17021-1, al punto 9.2.1.2)1. 
+
+1 L’obiettivo di un audit di conformità legale è quello di valutare in modo puntuale il soddisfacimento dei requisiti 
+applicabili di natura legale e regolamentari. Non quindi la valutazione delle capacità e volontà di arrivare al 
+risultato, ma il risultato stesso, che deve essere coerente con le disposizioni applicabili. Un’attività simile ad 
+un’ispezione insomma, e non una valutazione di un sistema gestionale. 
+
+In particolare nell’audit di sistema di gestione, invece, l’obiettivo dell’audit non è solo la ricerca della conformità 
+o non conformità alla disposizione cogente applicabile, ma è determinante l’analisi del metodo e della strategia 
+che l’organizzazione ha adottato per arrivare ad un dato risultato. 
+
+Non si deve inoltre trascurare il fatto che le parti interessate richiedono che la certificazione di SGA 
+fornisca fiducia che i requisiti cogenti coerenti col campo di applicazione del Sistema certificato siano 
+sotto adeguato e continuo controllo da parte dell’organizzazione. 
+
+Ciò premesso, qualora l’Organismo durante le verifiche mirate a valutare la capacità e volontà 
+dell’organizzazione di rispettare i requisiti di tipo legislativo, dovesse individuare delle violazioni alla 
+normativa cogente, che abbiano una relazione diretta con l’ambito di applicazione oggetto di 
+certificazione, dovrà emettere una NC la cui gravità verrà definita in accordo alla norma di 
+riferimento. Ove però la carenza di natura legislativa individuata possa costituire evidenza della 
+mancata volontà o capacità del SGA dell’organizzazione di soddisfare in modo continuativo i requisiti 
+cogenti, l’OdC deve emettere una non conformità di livello tale da non consentire il rilascio della 
+certificazione, fino alla soluzione dell’impedimento che ha determinato tale conseguenza. 
+
+
+Nel caso invece in cui vi siano dei dubbi interpretativi (cfr UNI/TR 11331 capitolo 4.5.1), l’OdC può 
+emettere un rilievo di livello tale da consentire il rilascio della certificazione, rispondendo della 
+coerenza di tale scelta rispetto agli obiettivi della norma. 
+
+3.2. RELAZIONE TRA LE “AUTORIZZAZIONI” E LE CERTIFICAZIONI RILASCIATE 
+AI SENSI DELLA NORMA UNI EN ISO 14001 
+
+Per prevenire discriminazioni tra organizzazioni operanti nelle varie realtà locali italiane, nei casi di 
+formale non conformità previsti dal capitolo 4.2 del documento UNI/TR 11331 e solo nelle condizioni 
+ivi descritte, ACCREDIA-DC accetta che gli OdC rilascino la certificazione UNI EN ISO 14001. 
+
+ACCREDIA-DC richiede agli OdC accreditati di eseguire le verifiche necessarie a dimostrare che 
+l’organizzazione abbia comunque fatto tutto quanto previsto dal citato capitolo 4.2 del documento 
+UNI/TR 11331. 
+
+In particolare l’OdC deve tenere sotto controllo il comportamento dell’organizzazione nell’ambito di 
+eventuali iter autorizzativi non completati o in fase di modifica, integrazione o aggiornamento. 
+
+Qualora l’OdC abbia accertato nello Stage 1 che l’organizzazione non ha presentato domanda di 
+autorizzazione nei tempi definiti dal capitolo 4.2 del Rapporto Tecnico UNI/TR 11331, non può 
+comunque rilasciare la certificazione prima che siano trascorsi i suddetti tempi. Ad esempio se la 
+domanda è stata presentata il 1° gennaio e lo Stage 1 viene eseguito il 1° febbraio, deve essere 
+emessa una non conformità “maggiore” e la certificazione non può essere rilasciata comunque prima 
+che siano trascorsi i tempi definiti. 
+
+In ogni caso, nel momento in cui l’organizzazione ottiene le autorizzazioni richieste, ogni non 
+conformità relativa a quell’aspetto deve ritenersi risolta. 
+
+Quanto sopra non esclude che le organizzazioni rimangono comunque pienamente responsabili dal 
+punto di vista penale ed amministrativo per le loro scelte di operare in assenza delle necessarie 
+autorizzazioni e che gli OdC rimangono comunque responsabili delle scelte operate in questo 
+contesto. 
+
+3.3. VALUTAZIONE DELLA CONFORMITÀ DEGLI ASPETTI DI NATURA TECNICA, 
+OPERATIVA E ANALITICA IN FASE DI CERTIFICAZIONE 
+
+L’evidenza della mancata volontà o capacità dell’organizzazione di rispettare i requisiti legislativi 
+pertinenti allo scopo e ambito dell’audit (es: violazioni di legge o di prescrizioni autorizzative ripetute 
+o perduranti nel tempo) che mettono in dubbio la capacità dell’organizzazione di tenere sotto 
+controllo tale criticità attraverso adeguate ed efficaci procedure e modalità operative deve essere 
+formalizzata nei rapporti di audit come Non Conformità di livello tale da non consentire il rilascio della 
+certificazione fino alla completa risoluzione della stessa. 
+
+Qualora l’OdC, in conformità a quanto previsto dal capitolo 4.3 del rapporto tecnico UNI/TR11331, 
+decida di assumersi la responsabilità di emettere una non conformità di livello minore, (ovvero tale 
+da consentire il rilascio della certificazione o il suo mantenimento), dovrà dare evidenza che l’azione 
+correttiva proposta dall’organizzazione sia di impegno commisurato al peso minore del rilievo e dovrà 
+conservare e tenere a disposizione di ACCREDIA-DC la documentazione completa del caso (testo 
+della NC, Azione Correttiva proposta dall’organizzazione e motivazioni che hanno portato alla 
+decisione di proseguire nell’iter, incluse eventuali decisioni dei propri organi decisionali). 
+
+
+ACCREDIA-DC si riserva la possibilità di chiedere di esaminare le pratiche interessate nel corso delle 
+verifiche ispettive effettuate presso la sede dell’OdC. 
+
+3.4. VALUTAZIONE DEGLI ASPETTI COGENTI IN OCCASIONE DEGLI AUDIT DI 
+SORVEGLIANZA E RINNOVO 
+
+Nel caso in cui durante le sorveglianze, i rinnovi o le visite straordinarie o supplementari, vengano 
+evidenziati da parte dell’OdC situazioni di non conformità autorizzativa non riscontrate negli audit 
+precedenti (ad esempio una autorizzazione scaduta, oppure un nuovo impianto per il quale non è 
+stata ottenuta l’autorizzazione) è comunque necessario emettere NC maggiori. 
+
+Se la domanda non è stata presentata, l’OdC deve chiedere all’organizzazione di provvedere 
+immediatamente all’inoltro della necessaria domanda, completa e esatta, pena la sospensione o il 
+ritiro della certificazione. 
+
+Nel caso in cui, invece, la domanda sia stata presentata nei tempi corretti o comunque previsti dal 
+capitolo 4.2 del documento UNI/TR 11331, l’OdC può considerare la situazione conforme e dovrà 
+comunque richiedere all’organizzazione di essere informato di ogni sviluppo della pratica in questione. 
+
+Per le situazioni di natura tecnica, operativa e/o analitica, è necessario prendere in considerazione il 
+contesto di riferimento per valutare le condizioni del mantenimento della certificazione. Pertanto, in 
+presenza di una situazione puntuale, riconducibile a condizioni di eccezionalità/casualità dell’evento 
+ed in cui l’organizzazione è in grado di dimostrare una corretta modalità di gestione e tempi di rientro 
+definiti, l’OdC può emettere una NC minore che non comprometta il mantenimento della certificazione 
+oppure documentare quanto riscontrato in altro modo (es. check list, raccomandazione, diario, ecc), 
+garantendo comunque la conservazione della documentazione per le eventuali verifiche da parte di 
+ACCREDIA-DC. 
+
+In caso contrario sarà necessario, invece, emettere una NC maggiore che, in assenza di un’adeguata 
+e tempestiva azione correttiva da parte dell’organizzazione, potrà portare alla sospensione della 
+certificazione prima ed alla revoca della stessa poi. 
+
+3.5. PROCEDIMENTI LEGALI IN CORSO 
+
+Nel caso di un’organizzazione coinvolta, direttamente o tramite persone fisiche che la rappresentino, 
+in procedimenti legali in corso o in sentenze passate in giudicato in merito ad aspetti ambientali, 
+l’OdC deve assicurare adeguata e sistematica sorveglianza del problema specifico ed il monitoraggio 
+sullo stato di avanzamento del contenzioso in tutte le visite di Stage 1 e Stage 2, di sorveglianza e 
+di rinnovo e deve raccogliere evidenze sufficienti a dimostrare che, riguardo l’oggetto della condanna 
+o del procedimento, l'organizzazione ne abbia identificato le cause e le eventuali ricadute sul proprio 
+sistema di gestione ambientale, predisponendo e attuando gli interventi necessari ad impedirne il 
+ripetersi. In ogni caso l'OdC nel corso dell’audit deve raccogliere tutte le informazioni disponibili ed 
+accessibili relative al procedimento in corso e farne un riesame indipendente. 
+
+Inoltre l’OdC deve considerare l’opportunità di eseguire visite aggiuntive. 
+
+L’OdC deve richiedere all’organizzazione di essere informato di tutti gli sviluppi dei procedimenti in 
+essere. 
+
+ 
+
+
+Si rileva che l’esistenza di procedimenti penali in corso è collegata ad una ipotesi di reato ma non 
+dimostra la colpevolezza del rappresentante legale dell’organizzazione (o di altra persona fisica 
+operante per conto dell’organizzazione) e che l’eventuale condanna (reclusione, ammenda, ecc.) 
+porta alla espiazione della pena. 
+
+In conformità a quanto previsto dal capitolo 4.4 del rapporto tecnico UNI/TR 11331, non si può 
+escludere che organizzazioni coinvolte in procedimenti penali in corso o in condanne penali siano 
+certificate o certificabili secondo la norma UNI EN ISO 14001. 
+
+Nel caso in cui aree, attività, impianti compresi nello scopo del certificato siano oggetto di sequestro, 
+l’OdC deve valutare se il sequestro renda impossibile verificare che il sistema di gestione continui ad 
+essere conforme ed efficacemente attuato e, in caso negativo, deve sospendere il certificato. 
+
+4. GESTIONE DEGLI AUDIT DI SORVEGLIANZA - PROCEDURE DI 
+SORVEGLIANZA E RINNOVO 
+
+Questo capitolo contiene indicazioni per gestire in modo affidabile le attività di sorveglianza. 
+
+La norma UNI CEI EN ISO/IEC 17021-1 fornisce indicazioni affinché gli OdC possano pianificare 
+correttamente i loro audit di sorveglianza nell’arco del periodo di validità della certificazione. 
+
+Tuttavia è necessario fornire indicazioni per l’applicazione di tali requisiti allo scopo di assicurare che 
+le prassi e le procedure degli OdC per la gestione delle attività di sorveglianza siano più omogenee e 
+garantiscano un efficace controllo sul SGA certificato. 
+
+Gli audit di sorveglianza hanno, per gli OdC, il fondamentale obiettivo di poter “mantenere la 
+certificazione basandosi sulla dimostrazione che il cliente continui a rispettare i requisiti della norma 
+relativa al sistema di gestione” (UNI CEI EN ISO/IEC 17021-1, punto 9.6.1). 
+
+La norma UNI CEI EN ISO/IEC 17021-1 richiede, in generale per le attività di sorveglianza nel loro 
+complesso, che l’OdC sviluppi le proprie attività di sorveglianza “in modo che le aree e le funzioni 
+rappresentative, coperte dal campo di applicazione del sistema di gestione, siano monitorate 
+periodicamente, nonché al fine di tener conto delle modifiche relative al suo cliente certificato ed al 
+suo sistema di gestione” (UNI CEI EN ISO/IEC 17021-1, punto 9.6.2.1.1). 
+
+La norma afferma inoltre che “gli audit di sorveglianza sono audit in campo, ma non sono 
+necessariamente audit dell’intero sistema e devono essere pianificati unitamente alle altre attività di 
+sorveglianza, in modo che l’OdC possa continuare ad aver fiducia che il sistema di gestione certificato 
+del cliente continui a rispettare i requisiti nel periodo intercorrente fra gli audit di rinnovo della 
+certificazione” (UNI CEI EN ISO/IEC 17021-1, punto 9.6.2.2) e richiede che l’OdC includa nel piano 
+di attività della visita di sorveglianza la verifica che l’azienda assicuri, tra l’altro, “il controllo operativo 
+su base continua” (punto 9.6.2.2, lettera f). 
+
+ 
+
+
+Tutto ciò premesso, negli audit di sorveglianza dello schema ambientale, durante l’attuazione del 
+programma triennale di audit, vi sono diversi aspetti che richiedono adeguato dettaglio nella 
+pianificazione dei contenuti della verifica. Alcuni esempi significativi sono: 
+
+. il mantenimento del possesso delle autorizzazioni, complete e in corso di validità e/o il 
+controllo dei procedimenti autorizzativi in corso; 
+. il controllo e la sorveglianza delle attività collegate ai diversi aspetti ambientali significativi; 
+. la verifica della gestione della manutenzione e dei fornitori/appaltatori, aspetti tutti trattati 
+all’interno del punto 8.1 “Pianificazione e controllo operativi” della norma UNI EN ISO 14001; 
+. il controllo e la corretta gestione da parte dell’organizzazione di tutte le aree fisiche in cui si 
+svolgono attività (reparti, depositi, piazzali, ecc.). 
+
+
+4.1. LA PROGRAMMAZIONE DELLE ATTIVITÀ DI SORVEGLIANZA 
+
+La programmazione delle attività di sorveglianza – che comprende sempre e comunque il programma 
+triennale di audit – deve essere effettuata in modo tale da pre-definire, per quanto possibile, anche 
+i contenuti dei singoli audit oltre che le tempistiche correlate. 
+
+Il programma triennale di audit ed i piani dei singoli audit potranno essere successivamente 
+perfezionati ed adattati, in funzione delle risultanze delle verifiche o di altri input relativi allo stato 
+del sistema. 
+
+Programmazioni prive dei necessari dettagli e relative motivazioni non sono ritenute accettabili (vedi 
+anche punto 4.3). 
+
+4.2. LE PROBLEMATICHE RICORRENTI 
+
+Nel corso degli audit di sorveglianza sono normalmente applicati – in modo pianificato o meno - 
+criteri di verifica a campione che riguardano molte scelte. 
+
+Dette scelte riguardano, per esempio: 
+
+. i punti della norma di riferimento da verificare; 
+. le funzioni dell’organizzazione presso cui eseguire verifiche (ad esempio tramite interviste); 
+. i reparti produttivi presso cui eseguire verifiche; 
+. i reparti o aree di lavoro, deposito, movimentazione presso cui eseguire sopralluoghi; 
+. gli aspetti ambientali per i quali verificare: 
+- la capacità dell’organizzazione di assicurare adeguato controllo e sorveglianza; 
+- il rispetto dei requisiti legislativi ed in particolare il possesso delle autorizzazioni ed il 
+recepimento delle relative prescrizioni; 
+. specifici elementi inclusi nei singoli paragrafi della norma di riferimento; ad esempio, per il 
+controllo operativo la manutenzione, la gestione di fornitori ed appaltatori, il controllo delle 
+attività connesse agli aspetti ambientali significativi; per la comunicazione interna e la 
+comunicazione esterna. 
+
+
+
+Il campionamento che l’OdC esegue secondo la propria migliore professionalità e sotto propria 
+responsabilità, comporta inevitabilmente il fatto che in una sorveglianza, più che in un audit di 
+certificazione, l’oggetto dell’audit sia significativamente parziale rispetto allo scopo del certificato. 
+
+Risulta pertanto indispensabile, per assicurare l’obiettivo fondamentale degli audit di sorveglianza - 
+intesi come programma triennale di audit o ciclo di sorveglianza - che gli OdC mettano i GVI incaricati 
+nelle condizioni di eseguire gli audit in modo che si tenga conto di quali siano stati l’oggetto e le 
+risultanze degli audit precedenti (descritto con adeguato dettaglio), allo scopo di assicurare, nel 
+triennio di validità del certificato, una copertura adeguata di tutti gli aspetti delle attività 
+dell’organizzazione certificata. 
+
+Si forniscono di seguito alcuni esempi di circostanze che dimostrano la necessità di quanto sopra 
+richiesto: 
+
+. nel corso di un audit di certificazione viene evidenziato il fatto che l’organizzazione ha 
+presentato domanda di autorizzazione allo scarico ed è in attesa della autorizzazione: l’OdC 
+che abbia rilasciato la certificazione in assenza di autorizzazione deve assicurare che nella 
+prima sorveglianza sia verificato l’effettivo possesso dell’autorizzazione o comunque il pieno 
+controllo della pratica (solleciti periodici documentati, visite all’autorità competente, 
+acquisizione di pareri o autorizzazioni provvisori, ecc.) da parte dell’organizzazione; 
+. nella prima sorveglianza vengono omesse verifiche sul controllo di fornitori ed appaltatori 
+(rif. §8.1): l’OdC deve tenere traccia di ciò allo scopo di decidere consapevolmente se inserire 
+questi aspetti nella successiva sorveglianza o se rinviare motivatamente tale verifica alla 
+visita di rinnovo; 
+. in una sorveglianza non vengono eseguiti sopralluoghi ai piazzali esterni destinati alla 
+movimentazione merci ed al deposito temporaneo dei rifiuti: l’OdC deve tenere traccia di ciò 
+allo scopo di decidere consapevolmente se inserire un sopralluogo specifico nella sorveglianza 
+successiva; 
+. in un audit emerge che l’organizzazione sta progettando una nuova attività che risulta 
+soggetta al controllo dei VVF: l’OdC deve pianificare per l’audit successivo la verifica che 
+l’Organizzazione abbia attivato e tenga sotto controllo la pratica presso i VVF. 
+
+
+4.3. CRITERI DI CONDUZIONE DELLE ATTIVITÀ DI SORVEGLIANZA 
+
+Gli OdC, tenuto conto delle problematiche ricorrenti esposte nel paragrafo precedente, devono 
+individuare quali siano le informazioni necessarie per descrivere con adeguato dettaglio l’oggetto 
+specifico degli audit di sorveglianza; queste informazioni devono comprendere almeno: 
+
+. le autorizzazioni esaminate con data di scadenza e/o lo stato degli adempimenti collegati alle 
+autorizzazioni in essere o in corso di modifica o acquisizione; 
+. gli aspetti ambientali per i quali è stata eseguita la verifica della capacità dell’organizzazione 
+di assicurare adeguato controllo e/o sorveglianza; 
+. la specifica delle procedure o delle istruzioni esaminate (ad esempio manutenzione, controllo 
+fornitori e appaltatori, gestione del depuratore, gestione dei depositi temporanei di rifiuti, 
+ecc.), ricomprese nell’ambito di punti molto ampi della norma di riferimento, quali ad esempio 
+8.1, 8.2, 9.1; 
+. reparti e aree presso cui sono stati eseguiti sopralluoghi per l’esame delle prassi in essere; 
+
+
+
+. funzioni e reparti presso cui sono state eseguite interviste per la verifica delle prassi in essere 
+e del grado di coinvolgimento e formazione del personale. 
+
+
+Inoltre l’OdC deve: 
+
+. stabilire in quale/i documento/i queste informazioni debbano essere inserite; 
+. stabilire a chi spetti (ad esempio all’OdC o al RGVI) ed in quale momento (ad esempio in fase 
+di preparazione del piano di audit di sorveglianza) stabilire l’oggetto specifico di un audit 
+tenendo conto dell’oggetto specifico degli audit precedenti; 
+. mettere a disposizione del RGVI le informazioni necessarie; 
+. registrare quanto realmente verificato negli audit. 
+
+
+Si noti che le problematiche discusse emergono con particolare evidenza a causa della parzialità degli 
+audit di sorveglianza, ma gli OdC devono assicurare la continuità nella trasmissione delle informazioni 
+tra i successivi audit indipendentemente dal tipo di audit (certificazione, sorveglianza, 
+supplementare, rinnovo). 
+
+Esempi di azioni che gli OdC possono attuare per rispondere ai requisiti esposti: 
+
+. predisporre programmi triennali di sorveglianza con adeguato dettaglio; in questo caso l’OdC 
+deve essere in grado di modificare il piano triennale a seguito di particolari evidenze emerse 
+nei successivi audit; 
+. predisporre piani di audit per le singole sorveglianze tenendo conto dell’oggetto specifico 
+degli audit (non solo sorveglianze) precedenti, includendo indicazioni di adeguato dettaglio 
+per le verifiche che l’RGVI dovrà condurre; 
+. prevedere spazi specifici nei rapporti di audit affinché gli RGVI possano indicare le verifiche 
+eseguite ed eventualmente inserire indicazioni per verifiche da pianificare negli audit (non 
+necessariamente solo sorveglianze) successivi; 
+. prevedere modalità di compilazione delle liste di riscontro o dei diari di audit e consegnare al 
+RGVI, prima di ogni audit di sorveglianza, oltre al piano di audit, ai rapporti di audit precedenti 
+ed alle non conformità, anche le liste di riscontro e/o i diari di audit. 
+
+
+Queste azioni possono essere attuate singolarmente o in modo combinato. È responsabilità dell’OdC 
+stabilire modalità e responsabilità organiche per assicurare l’efficacia del ciclo degli audit di 
+sorveglianza. 
+
+5. PRESCRIZIONI PER LA CONDUZIONE DI VERIFICHE EFFICACI ED 
+OMOGENEE IN RELAZIONE AL POSSESSO DEL CERTIFICATO 
+PREVENZIONE INCENDI (CPI) DA PARTE DELLE ORGANIZZAZIONI CHE 
+RICHIEDONO LA CERTIFICAZIONE UNI EN ISO 14001 
+
+La prevenzione incendi costituisce un aspetto con ricadute “ambientali” e come tale è ritenuto 
+pertinente all’applicazione della norma UNI EN ISO 14001. 
+
+Nel presente capitolo si forniscono indirizzi agli OdC per favorire l’adozione di un approccio omogeneo 
+nella valutazione della capacità dei SGA delle organizzazioni di mantenere la conformità alle 
+prescrizioni di cui al DPR 151/2011 che individua le attività soggette ai controlli di prevenzione 
+incendi. 
+
+
+5.1. REQUISITI GENERALI 
+
+Gli OdC devono richiedere alle organizzazioni certificate e certificande: 
+
+. che l’organizzazione abbia individuato tutte le proprie attività ricadenti nella lista delle attività 
+soggette ed il procedimento applicabile in funzione della “categoria” di appartenenza; 
+. che l’organizzazione abbia attivato i procedimenti amministrativi pertinenti e li conduca con 
+correttezza e tempestività, nel rispetto dei requisiti e dei tempi dettati dalla legge; 
+. che eventuali richieste di integrazioni delle autorità competenti siano state evase con 
+tempestività e completezza. 
+
+
+Se una delle verifiche sopra riportate evidenzia un esito negativo, l’organizzazione non può essere 
+certificata e l’OdC deve richiedere la reazione dell’organizzazione prima di rilasciare il certificato. 
+
+5.2. REQUISITI PER LE ATTIVITÀ DI CATEGORIA B E C 
+
+Per le attività appartenenti alle categorie B e C, gli OdC devono inoltre richiedere alle organizzazioni 
+certificate e certificande: 
+
+. che i lavori di adeguamento siano in corso di esecuzione secondo quanto stabilito nel progetto 
+approvato dal Comando dei VVF, in conformità ad eventuali scadenze prestabilite o 
+prescrizioni dei VVF, con tempestività e completezza; 
+. che, in relazione ai lavori ancora da completare o ai dispositivi di sicurezza non ancora attuati, 
+siano in essere misure di sicurezza tali da rendere il rischio accettabile a giudizio dell’OdC; 
+. che sia definito un programma di messa a norma adeguato ai rischi presenti, comprendente 
+fasi e tempi per il completamento dei lavori previsti e per il perfezionamento sia del 
+procedimento amministrativo che dei lavori di messa a norma. 
+
+
+L’OdC dovrà basare le valutazioni sul grado di implementazione del progetto antincendio approvato 
+dai VVF. Le valutazioni di merito saranno responsabilità degli OdC i quali terranno in conto anche i 
+rischi residui al momento della VI. 
+
+Nei casi di progetti di adeguamento di lunga durata e grande impegno economico, l’OdC deve 
+accertare che la messa a norma proceda nel tempo in conformità al programma concordato in fase 
+di certificazione; il perdurare delle condizioni di non conformità oltre i tempi stabiliti dal programma 
+concordato non dovrebbe essere accettato dall’OdC. In questi casi, l’OdC deve monitorare nel tempo, 
+eventualmente con visite supplementari o sorveglianze pianificate allo scopo, il comportamento 
+dell’organizzazione nei riguardi della pratica antincendio. 
+
+Fatto salvo quanto sopra esposto, nei casi in cui l’organizzazione abbia presentato l’istanza di cui 
+all’art.4 c.1 (SCIA) nel rispetto dei requisiti e dei tempi dettati dalla legge, e sia in possesso della 
+ricevuta rilasciata dal Comando competente, la certificazione potrà essere concessa. 
+
+ 
+
+
+5.3. REQUISITI PER LE ATTIVITÀ DI CATEGORIA A 
+
+Per le attività appartenenti alla categoria A, considerato che non è prevista l’approvazione del 
+progetto da parte dei VVF e che quindi non è documentato uno “stato di progetto” a fronte del quale 
+i GVI possano valutare lo stato dei lavori ed i rischi collegati, gli OdC devono richiedere alle 
+organizzazioni – prima dell’emissione del certificato - evidenza dell’avvenuta presentazione della 
+SCIA nel rispetto dei requisiti e dei tempi dettati dalla legge. 
+
+5.4. MANTENIMENTO DELLA CERTIFICAZIONE 
+
+Per le organizzazioni già in possesso di una certificazione UNI EN ISO 14001 si applica il principio 
+secondo cui, prima di avviare qualsiasi nuova attività soggetta al controllo dei VVF o di modificarne 
+una esistente e già “a norma”, l’organizzazione deve avere prima assicurato la sussistenza di tutte 
+le condizioni previste dalla legge per il legittimo esercizio dell’attività, inclusa in primo luogo 
+l’applicazione delle misure di sicurezza. 
+
+Nel caso un’organizzazione certificata esercisca un’attività/impianto soggetti al controllo dei VVF al 
+di fuori delle condizioni sopra esposte, l’OdC deve emettere una non conformità tale da richiedere 
+una reazione immediata da parte dell’organizzazione stessa, con eventuale visita supplementare, 
+pena la sospensione o la revoca della certificazione a discrezione dell’OdC. 
+
+5.5. ORGANIZZAZIONI SOGGETTE ALLE PROCEDURE INTEGRATE DI CUI AL 
+D.LGS. 105/2015 
+
+Fermi restando tutti gli obblighi di legge applicabili nel caso specifico, in questo caso il procedimento 
+presso il “comitato” per gli accertamenti relativi alla notifica integra quello presso i VVF per il rilascio 
+del CPI. 
+
+I tempi del procedimento sono fissati dalla normativa applicabile vigente (articolo 31 Dlgs 105/2015 
+e loro eventuali modifiche e integrazioni). E’ quindi possibile che organizzazioni che abbiano avviato 
+correttamente i procedimenti di cui sopra non ricevano risposte dagli enti competenti per periodi 
+significativi. Si ritiene pertanto che, in questi casi, valgano i principi di cui al capitolo 4.2 del 
+documento UNI TR 11331 e, nei casi di organizzazioni non soggette a notifica, non si applichi invece 
+quanto sopra previsto in relazione al “silenzio diniego” previsto dalle normali procedure per il rilascio 
+del CPI. 
+
+Pertanto l’OdC dovrà verificare che l’organizzazione: 
+
+. abbia avviato la pratica prima del rilascio della certificazione con anticipo adeguato a quanto 
+previsto dal capitolo 4.2 del documento UNI TR 11331; 
+. continui a seguire con tempestività la pratica, trasmettendo agli organi competenti (Comitato 
+e Comando) le istanze ed i documenti previsti dalla legge e sollecitando gli enti competenti 
+per quanto di propria competenza; 
+. abbia in essere gli interventi e i dispositivi previsti dal Rapporto di Sicurezza. 
+
+
+
+6. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED 
+OMOGENEI IN RELAZIONE ALL’INDIVIDUAZIONE DI “PERICOLO 
+CONCRETO E ATTUALE DI SUPERAMENTO DEI LIMITI” AI SENSI DEL 
+D.LGS. 152/2006 E SUE MODIFICHE E INTEGRAZIONI 
+
+Tra i diversi aspetti normati dal titolo V della parte IV del D.Lgs. 152/2006 e sue modifiche ed 
+integrazioni, ed in particolare dall’articolo 242, si trova una fattispecie la cui applicazione e 
+interpretazione richiede alcune specificazioni integrative. 
+
+Si tratta del caso in cui, presso siti con attività in esercizio, il GVI di un OdC raccolga evidenze tali 
+da far ritenere che vi sia la possibilità “di individuazione di contaminazioni storiche che possano 
+ancora comportare rischi di aggravamento della situazione di contaminazione” (articolo 242 comma 
+1) a fronte di eventi avvenuti anteriormente2 oppure del caso in cui il rischio di contaminazione 
+appaia possibile a causa di attività in essere (incidenti, nuovi fenomeni di inquinamento). 
+
+2 Si veda anche il comma 1 dell’articolo 242 del D.Lgs. 152/2006 e s.m.i. 
+
+3 L’organizzazione, nel caso ritenga di non avere responsabilità, potrà rivalersi sui terzi. 
+
+Si tratta, ad esempio, di situazioni in cui si possano ipotizzare potenziali fenomeni di percolazione da 
+serbatoi, da depositi di rifiuti o materiali potenzialmente contaminanti, da stoccaggi di fusti di 
+sostanze pericolose, da percolazioni da piazzali non impermeabilizzati e adibiti ad attività inquinanti, 
+ecc. 
+
+Durante la fase di certificazione (Stage 1 o 2) l’OdC può trovarsi nelle situazioni descritte nel seguito: 
+
+. presso i siti dell’organizzazione il GVI non rileva alcuna evidenza che faccia pensare a 
+possibilità di contaminazione. In questo caso l’OdC deve richiedere comunque 
+all’organizzazione di descrivere nei propri documenti (analisi iniziale e/o documenti di 
+sistema) l’aspetto, con particolare riferimento alle attività pregresse, e di esplicitare le 
+motivazioni per cui non sussiste il pericolo di superamento dei limiti; 
+. Il GVI dell’OdC raccoglie, durante sopralluoghi presso i siti dell’organizzazione o esame di 
+documenti, evidenze tali da far ritenere che vi sia possibilità di contaminazione. In questo 
+caso il GVI deve esaminare i documenti del SGA – ed in particolare quelli relativi 
+all’applicazione dei punti 6.1.2 e 9.1.1 ed eventualmente altri che si rivelassero rilevanti nella 
+circostanza – e: 
+- se l’organizzazione ha a sua volta identificato possibilità di contaminazione ed ha 
+avviato le procedure previste dal D.Lgs. 152/2006 e s.m.i., l’OdC deve verificare, a 
+prescindere da chi sia responsabile dell’inquinamento3 la progressiva e tempestiva 
+applicazione delle prescrizioni del decreto stesso da parte dell’organizzazione a partire 
+dall’obbligo di dare comunicazione agli enti competenti ed emettere eventuali NC 
+secondo i principi di cui al capitolo 4 del rapporto tecnico UNI/TR 11331; si ritiene 
+scontato in questo caso che l’Organizzazione abbia valutato significativo questo 
+aspetto; 
+
+
+ 
+
+
+- se l’organizzazione non ha dato comunicazione agli enti competenti, né pianificato o 
+eseguito un piano della caratterizzazione, ma ha valutato in qualche misura 
+“significativo” l’aspetto ed ha eseguito indagini preliminari per valutare le 
+concentrazioni di inquinanti nel suolo, sottosuolo e/o acque sotterranee allo scopo di 
+confrontarle con i valori limite applicabili, l’OdC deve valutare le risultanze delle indagini 
+svolte e comportarsi di conseguenza (se le concentrazioni non superano i valori limite 
+CSC, l’organizzazione non è soggetta ad obblighi specifici); 
+- se l’organizzazione, nella stessa situazione di cui al punto precedente, non ha eseguito 
+indagini preliminari, l’OdC deve richiedere, emettendo non conformità, misure di 
+controllo, sorveglianza o miglioramento da parte dell’organizzazione in relazione 
+all’aspetto ed in particolare dovrà richiedere monitoraggi diretti o indiretti (ad esempio 
+prove di tenuta dei serbatoi) della qualità di suolo, sottosuolo e/o acque sotterranee, 
+comunque tali da consentire di escludere il rischio di contaminazione; 
+- se l’organizzazione non ha ritenuto di individuare possibilità di contaminazione e non 
+ha quindi redatto comunicazioni, non ha pianificato o eseguito un piano della 
+caratterizzazione, non ha fatto indagini preliminari e non ha valutato in qualche misura 
+“significativo” l’aspetto o non lo ha identificato per nulla, l’OdC deve verificare 
+l’affidabilità del procedimento adottato dall’organizzazione per la valutazione degli 
+aspetti ambientali e deve emettere una NC che evidenzi una carenza sostanziale del 
+SGA nella affidabilità della procedura di identificazione o valutazione degli aspetti 
+ambientali ed eventualmente richiedere subito l’esecuzione di verifiche ambientali 
+come al punto precedente. 
+
+
+Le non conformità che l’OdC deve emettere nei casi 1 e 2 sono da riferire alla non efficace gestione 
+della conformità legislativa e devono avere un peso coerente con i principi di cui al capitolo 4 del 
+rapporto tecnico UNI/TR 11331. 
+
+Nelle visite di sorveglianza, rinnovo o straordinarie, gli OdC devono applicare criteri interpretativi 
+uguali a quelli sopra esposti. 
+
+Le non conformità che l’OdC deve emettere nei casi 3 e 4 sono da riferire in linea di massima al SGA 
+e non alla gestione della conformità legislativa, salvo diversa scelta motivata dell’OdC e devono avere 
+un peso coerente con i principi di cui al capitolo 4 del rapporto tecnico UNI/TR 11331. 
+
+7. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED 
+OMOGENEI IN RELAZIONE ALLA DEFINIZIONE DELLO SCOPO DI 
+CERTIFICAZIONE 
+
+Si ritiene che, nell’ambito della certificazione dei SGA, il “cliente” sia da identificare con l’ambiente 
+in senso lato, ovvero con il pubblico ed ogni altro soggetto interessato alle prestazioni ambientali 
+dell’organizzazione. 
+
+Pertanto l’informazione “critica” per le parti interessate, pur comprendendo anche il prodotto, 
+consiste essenzialmente nelle attività e nei processi svolti dall’organizzazione oggetto di 
+certificazione. 
+
+ 
+
+
+Nel formulare lo scopo di una certificazione ambientale, rilasciata ai sensi della norma UNI EN ISO 
+14001, gli OdC devono riportare, oltre eventualmente al prodotto, le tipologie di attività (processi) 
+sotto il controllo dell’organizzazione incluse nel campo di applicazione del SGA certificato; il grado di 
+dettaglio ragionevole potrà essere stabilito in funzione della complessità produttiva 
+dell’organizzazione, ma dovrà sempre fornire l’idea dei possibili impatti ambientali collegati. 
+
+A integrazione di quanto descritto dal Regolamento RG-01-01 al punto “Criteri per la formulazione 
+dello scopo dei certificati dei sistemi di gestione ambientale”, viene precisato che, gli eventuali termini 
+generali che descrivono le attività comprese nello scopo di certificazione quali, ad esempio, 
+progettazione, sviluppo, fabbricazione, ecc, seguiti dall’oggetto delle attività devono essere integrati 
+da termini più specifici, appropriati e rilevanti (es.: “lavorazioni meccaniche” “verniciatura” “sintesi 
+organica” “produzione di energia con olio denso / carbone ..”) allo scopo di fornire l’idea dei possibili 
+impatti ambientali collegati. 
+
+La correttezza e completezza dello scopo della certificazione deve sempre essere confermata dopo 
+gli audit di Stage 1. 
+
+Si forniscono di seguito alcune esemplificazioni. 
+
+Esempi di scopi formulati in modo non corretto: 
+
+. produzione di bulloneria ad alta resistenza; 
+. strumentazione di controllo e regolamentazione; 
+. materiale elettrico da installazione per applicazioni civili e industriali, canalette di cablaggio 
+e da installazione; 
+. produzione di energia elettrica e termica per teleriscaldamento. 
+
+
+Esempi di scopi formulati in modo corretto: 
+
+. termocombustione di RSU, di rifiuti sanitari a rischio infettivo e di farmaci e cosmetici scaduti 
+con recupero energetico; 
+. produzione di motori asincroni in bassa tensione tramite le fasi di assemblaggio, verniciatura 
+e collaudo; 
+. stampaggio ad iniezione di articoli tecnici in materiali termoplastici e termoindurenti; 
+. approvvigionamento, selezione, stoccaggio e selezionamento di prodotti ortofrutticoli. 
+
+
+7.1. ESCLUSIONI 
+
+Tenendo conto dell’interpretazione di unità operativa fornita nel documento UNI/TR 11331 al punto 
+3.1, qualora all’interno di un sito sia possibile certificare una (o più) unità operative 
+dell’organizzazione, ma non tutte quelle presenti all’interno del sito stesso, le unità operative non 
+coperte da certificazione dovranno essere riportate sul certificato come esclusioni. 
+
+ 
+
+
+Nel caso di attività di servizi, lo scopo del certificato e le esclusioni dovranno essere congruenti con 
+quanto riportato nel documento UNI/TR 11331 al punto 3.2. In particolare, se l’esclusione riguarda 
+attività - tipicamente di servizio - che si svolgono nel territorio o in siti mobili, le esclusioni dovranno 
+essere esplicitate nello scopo oppure, in alternativa, le attività comprese nel campo di applicazione 
+del sistema di gestione e indicate nel certificato dovranno essere precedute dall’indicazione 
+“limitatamente alle attività di…….” o da analoga dicitura, in modo tale da escludere che il pubblico 
+possa pensare che le attività non comprese nel campo di applicazione del sistema siano certificate. 
+
+Nei casi sopra citati, l’Organismo di Certificazione non deve accettare esclusioni dal campo di 
+applicazione del SGA certificato di una o più “unità operative”, o di una o più attività di servizio, nei 
+casi in cui tale esclusione si configuri come “cherry picking”. 
+
+Non si configurano come casi di “cherry picking” le situazioni in cui la volontà da parte 
+dell’Organizzazione di escludere unità operative o attività dallo scopo del certificato sia accompagnata 
+da una adeguata conoscenza dei problemi e da un programma di estensione. Questo anche se la 
+parte esclusa è non conforme alla norma e/o alla legge in quanto l’organizzazione dimostra la sua 
+volontà di risolvere il problema e di eliminare eventuali situazioni non conformi. 
+
+L’attuazione del programma di estensione deve essere monitorato nel tempo da parte dell’OdC. 
+
+8. PRESCRIZIONI PER LA CONDUZIONE DI AUDIT EFFICACI ED 
+OMOGENEI RISPETTO AL PUNTO 8.1 DELLA NORMA UNI EN ISO 14001 
+IN RIFERIMENTO ALLA GESTIONE DEI RAPPORTI CON FORNITORI ED 
+APPALTATORI 
+
+Si richiede agli OdC di pianificare ed eseguire nell’ambito degli audit di certificazione e nel corso del 
+programma triennale di audit, verifiche mirate ad accertare che l’organizzazione abbia attuato quanto 
+previsto dal capitolo 6 del rapporto tecnico UNI/TR 11331. 
+
+9. CRITERI PER LA DEFINIZIONE DEL CONFINE TRA REQUISITI 
+AMBIENTALI E DI IGIENE E SICUREZZA SUL LAVORO, AI FINI DELLE 
+VERIFICHE DI CONFORMITÀ ALLA NORMA UNI EN ISO 14001 
+
+Questo capitolo contiene i criteri che sono stati definiti a fronte delle numerose richieste di chiarimenti 
+pervenute ad ACCREDIA-DC dagli OdC e dal mercato, affinché sia definito un limite operativamente 
+preciso tra i requisiti applicabili ai SGA ed i requisiti applicabili ai sistemi di gestione per la salute e 
+la sicurezza sul lavoro (SCR). 
+
+Detti criteri riguardano sia gli aspetti da trattare, ovvero le attività da sottoporre a controllo 
+operativo, sia i requisiti legislativi da considerare e applicare nell’ambito del sistema di gestione 
+ambientale. 
+
+Precisato che, alla luce dei principi espressi dal rapporto tecnico UNI/TR 11331, il rispetto della 
+legislazione applicabile è sostanzialmente considerato un prerequisito per la certificazione - e questo 
+vale anche per lo schema SCR - l’obiettivo principale è assicurare il mercato che gli Organismi 
+applichino criteri omogenei nelle verifiche. 
+
+A questo fine vengono dati per assodati i contenuti del capitolo 3.3 del rapporto tecnico UNI/TR 
+11331. Si ritiene comunque necessario fornire chiarimenti ulteriori per dare la possibilità agli OdC di 
+migliorare l’omogeneità dei comportamenti. 
+
+
+9.1. CONSIDERAZIONI GENERALI 
+
+Si raccomanda vivamente agli OdC di chiarire nei propri contratti e/o nei regolamenti applicabili ai 
+diversi schemi di certificazione l’oggetto degli audit che verranno condotti. 
+
+Si conferma pertanto che ciò che riguarda gli aspetti di sicurezza e igiene del lavoro non deve 
+costituire elemento per rilevare non conformità rispetto alla norma UNI EN ISO 14001. 
+
+9.2. PRECISAZIONI SUI CONFINI TRA I DUE SCHEMI 
+
+La definizione di “ambiente”, in particolare il contenuto della “nota”, è utilizzata nel rapporto tecnico 
+UNI/TR 11331 per orientare la definizione del confine nei casi dubbi. 
+
+In effetti, l’inquinamento ambientale può anche avere origine dall’interno dei luoghi di lavoro o degli 
+impianti, ovvero dall’interno di una organizzazione. 
+
+La Tabella (non esaustiva) riportata nella pagina seguente fornisce, in coerenza con i principi di cui 
+al capitolo 3.3 del rapporto tecnico UNI/TR 11331, alcune indicazioni per valutare se un aspetto sia 
+da considerare o meno nel campo di applicazione dei requisiti della norma UNI EN ISO 14001. 
+
+In ogni caso l’OdC deve limitare i suoi requisiti, le attività di valutazione e le decisioni sulla 
+certificazione a quegli aspetti specificatamente connessi al campo di applicazione della certificazione 
+stessa. Ne consegue che – nella valutazione della conformità del sistema di gestione ambientale – 
+l’Auditor è tenuto, per contratto, ad accertare il soddisfacimento dei soli requisiti previsti dalla norma 
+UNI EN ISO 14001. Pertanto, qualora nel corso della verifica ispettiva l’Auditor dovesse riscontrare il 
+mancato rispetto di un requisito relativo a sistemi di gestione diversi da quello ambientale (e che non 
+abbia un’influenza diretta sull’ambiente), tale violazione non potrà essere formalizzata come non 
+conformità del sistema oggetto di valutazione. 
+
+Aspetto 
+
+Da considerare requisito di SGA 
+
+Licenza Edilizia 
+
+Da considerare nei casi in cui vi sia impatto ambientale (es. aree 
+sotto vincolo paesaggistico). 
+
+Agibilità 
+
+NO 
+
+Industrie insalubri 
+
+SI 
+
+Incidenti rilevanti 
+
+SI 
+
+Prevenzione incendi 
+
+SI 
+
+Documento di valutazione dei rischi 
+
+NO 
+
+Valutazione esposizione personale al 
+rumore 
+
+NO – può essere richiesto in quanto riporta misure di rumorosità 
+di macchine ed impianti, ovunque siano situati. 
+
+Impianti di messa a terra 
+
+NO (aspetto di sicurezza e preliminare al conseguimento del CPI). 
+
+
+
+
+Conformità impianti elettrici e 
+termoidraulici 
+
+NO (aspetto di sicurezza e preliminare al conseguimento del CPI). 
+
+Libretti caldaie 
+
+SI 
+
+Verifiche apparecchi a pressione 
+
+NO – può essere richiesto nei casi in cui possibili incidenti 
+possano avere ripercussioni all’esterno. 
+
+Concentrazione di inquinanti in ambiente 
+di lavoro 
+
+NO – può essere richiesto nei casi in cui gli inquinanti possano 
+disperdersi all’esterno ed è senz’altro richiesto nei casi di 
+“emissioni convogliabili” (Dlgs 152/2006 e s.m.i., parte V). 
+
+Livello di campo elettrico e magnetico in 
+ambiente di lavoro 
+
+NO – può essere richiesto nei casi in cui l’inquinamento possa 
+disperdersi all’esterno. 
+
+Manipolazione, identificazione ed 
+etichettatura di sostanze e preparati 
+pericolosi 
+
+SI 
+
+Valutazione del rischio di dispersione di 
+fibre di amianto nell’ambiente di lavoro 
+
+NO – può essere richiesto nei casi in cui l’inquinamento possa 
+disperdersi all’esterno; esclusi i requisiti specifici sulla sicurezza 
+dei lavoratori. 
+
+Valutazione del rischio di dispersione di 
+fibre di amianto nell’ambiente esterno 
+
+SI 
+
+ADR 
+
+SI 
+
+Radioattività 
+
+SI 
+
+Sostanze lesive dello strato di ozono 
+
+SI 
+
+Gas serra 
+
+SI 
+
+PCB/PCT 
+
+SI 
+
+HACCP 
+
+NO 
+
+Direttiva Rohs 
+
+SI 
+
+
+
+Nota: qualora un requisito sia da considerare tra gli aspetti da verificare in un SGA, i relativi requisiti 
+legislativi dovranno essere applicati dall’organizzazione e verificati dall’OdC secondo i principi di cui 
+al capitolo 4 del rapporto tecnico UNI/TR 11331 e nei termini descritti nel precedente Capitolo 3 del 
+presente Regolamento Tecnico. 
+
+
+10. PRESCRIZIONI PER LA CERTIFICAZIONE AI SENSI DELLA NORMA UNI 
+EN ISO 14001 NEL SETTORE IAF 36 CON RIFERIMENTO ALLE 
+PUBBLICHE AMMINISTRAZIONI CON COMPETENZE TERRITORIALI 
+
+Questo capitolo fornisce prescrizioni per favorire un’omogenea applicazione da parte degli Organismi 
+di Certificazione accreditati per la certificazione di Sistemi di Gestione Ambientale (SGA) di Pubbliche 
+Amministrazioni dotate di specifiche competenze di governo del territorio. Si tratta degli Enti Locali 
+Territoriali (Regioni, Province, Comuni, Città Metropolitane, Comunità Montane, Unioni di Comuni, 
+Consorzi cui partecipano Enti Locali) e degli Enti Parco (per la tutela e la gestione delle aree naturali 
+protette) che sono titolari di attribuzioni e competenze per il governo del territorio di elevata rilevanza 
+ambientale. 
+
+Le prescrizioni sono formulate tenendo conto delle esperienze maturate nel mercato e degli indirizzi 
+forniti da UNI tramite i Rapporti Tecnici pertinenti emessi. 
+
+La definizione di prescrizioni specifiche per le PA dotate di competenze per il governo del territorio è 
+opportuna in considerazione del particolare ruolo delle PA nei rapporti con i cittadini ed in generale 
+con tutte le parti interessate. 
+
+10.1. CONTINUITÀ E COERENZA DELLA POLITICA, DEGLI OBIETTIVI E DEL 
+SISTEMA DI GESTIONE AMBIENTALE 
+
+Gli Organismi di Certificazione devono richiedere esplicitamente alle PA di dimostrare che i principi 
+della politica ambientale e gli obiettivi di miglioramento del SGA trovino coerente applicazione negli 
+atti di pianificazione e di controllo operativo, ovvero nei contenuti degli strumenti di governo del 
+territorio (piani regolatori, piani territoriali, zonizzazioni acustiche, regolamenti, norme tecniche di 
+attuazione, ecc.). 
+
+L’OdC deve verificare che la PA sia in grado di motivare la coerenza delle proprie scelte 
+amministrative e di pianificazione con la politica e con gli obiettivi ambientali, anche di fronte alle 
+parti interessate. 
+
+L’OdC deve verificare che le risorse per il SGA, e per gli obiettivi in particolare, siano inserite 
+esplicitamente negli strumenti di programmazione economica e finanziaria dell’ente (es. Piani 
+Esecutivi di Gestione (PEG), Budget, controllo di gestione) e che siano supportate da atti di 
+appropriato livello (delibere, determinazioni, ecc.). In altre parole, gli strumenti di programmazione 
+economica della PA devono includere le risorse necessarie per mantenere il SGA ed in particolare per 
+raggiungere gli obiettivi. 
+
+L’OdC deve richiedere che la PA, nello stabilire i propri obiettivi ambientali, non si limiti agli aspetti 
+diretti, ma prenda in considerazione gli aspetti indiretti al fine del miglioramento dello stato 
+dell’ambiente nel territorio di competenza, anche coinvolgendo altri soggetti pubblici e privati; nel 
+richiedere ciò l’OdC terrà comunque conto delle competenze proprie della PA che richiede la 
+certificazione. 
+
+Qualora concorrano più soggetti al raggiungimento degli obiettivi (ad es. nel miglioramento di aspetti 
+ambientali indiretti, negli accordi di programma, nelle azioni previste dai piani di azione locale in 
+ambito Agenda 21 locale), l’OdC dovrà verificare che la PA tenga monitorate le azioni intraprese dai 
+diversi soggetti coinvolti, nel rispetto delle singole responsabilità. 
+
+
+L’OdC deve verificare che, in occasione dei cambi dell’alta Direzione4, sia confermata o modificata la 
+Politica Ambientale con specifico atto di approvazione da parte della nuova Giunta (o dal nuovo 
+Consiglio) e che sia assicurata la continuità dell’applicazione efficace del SGA da parte della struttura 
+amministrativa. 
+
+4 Con questa prescrizione ci si riferisce al fatto che in occasione delle elezioni amministrative possono verificarsi 
+cambiamenti nell’orientamento politico della maggioranza e quindi nelle scelte di governo del territorio 
+dell’amministrazione certificata o da certificare. 
+
+ 
+
+10.2. ASPETTI AMBIENTALI DIRETTI ED INDIRETTI 
+
+Gli OdC devono verificare che tutti gli aspetti ambientali, sia diretti che indiretti, siano stati individuati 
+e valutati dalla PA. 
+
+Per quanto riguarda la verifica della corretta individuazione e valutazione degli aspetti ambientali 
+diretti ed indiretti, gli OdC devono seguire i requisiti della norma UNI EN ISO 14001, tenendo conto 
+di quanto specificato nel presente documento. 
+
+L’OdC deve richiedere innanzitutto un’analisi delle attività e delle competenze, in particolare quelle 
+definite per legge, della PA che richiede la certificazione. L’analisi deve consentire alla PA di 
+identificare gli aspetti ambientali diretti e quelli indiretti e, per questi ultimi, le modalità con cui le è 
+possibile influenzare i comportamenti di altri soggetti sul territorio e, di conseguenza, influenzare lo 
+stato dell’ambiente. 
+
+L’OdC deve richiedere, inoltre, che siano presi in considerazione e mantenuti aggiornati i dati e le 
+informazioni ambientali sullo stato dell’ambiente nel territorio di competenza per tutti i comparti 
+ambientali, con appropriato grado di dettaglio e di approfondimento, tenendo conto degli indirizzi 
+forniti nei Rapporti Tecnici UNI pertinenti. 
+
+Devono quindi essere individuate le categorie di soggetti che causano pressione sul territorio, che 
+concorrono all’impatto ambientale e che possono essere influenzate dalla PA. 
+
+La valutazione della significatività degli aspetti ambientali dovrà tenere conto delle peculiarità 
+ambientali del territorio. 
+
+Discorso diverso vale per gli aspetti ambientali sui quali le PA non hanno competenze. In questo caso 
+gli OdC devono limitarsi, eventualmente, a verificare che le PA stesse abbiano definito ed avviato un 
+programma conoscitivo delle problematiche ambientali insistenti sul proprio territorio ma controllate 
+da altri soggetti con i quali non sono in essere – per legge, competenza o accordi – rapporti. 
+
+10.3. CONFORMITÀ LEGISLATIVA 
+
+10.3.1 Individuazione dei requisiti legislativi 
+
+L’OdC deve estendere le proprie verifiche alla capacità della PA di gestire i propri obblighi in relazione 
+a tutte le tipologie indicate nei Rapporti Tecnici UNI pertinenti. 
+
+
+Si sottolinea che i piani settoriali ambientali di livello sovraordinato costituiscono riferimenti legislativi 
+la cui cogenza deve essere valutata caso per caso e a cui è comunque necessario fare riferimento. 
+
+10.3.2 Valutazione della conformità legislativa della PA da parte dell’OdC 
+
+Si raccomanda agli OdC di ripartire il tempo per la verifica della conformità legislativa in modo 
+equilibrato tra gli aspetti diretti e quelli indiretti, coerentemente con il reale impatto ambientale degli 
+aspetti e con la realtà ambientale del territorio. 
+
+Si ribadisce la necessità di mantenere un approccio di rigore, trasparenza e credibilità nella verifica 
+dell’applicazione delle leggi ambientali nella certificazione UNI EN ISO 14001, conformemente alle 
+prescrizioni di cui al presente RT e della guida EA 7/04. 
+
+In particolare, l’OdC deve emettere una NC di tipo “legislativo”, in accordo con il capitolo 3 del 
+presente documento, qualora accerti il non rispetto di una legge applicabile ad una qualsiasi attività 
+della PA che richiede la certificazione. 
+
+L’entità del rilievo deve essere di norma critica, ovvero tale da precludere la certificazione. 
+
+Eccezionalmente, solo in presenza di fatti oggettivamente accertati e riconducibili alle particolarità 
+esposte nei Rapporti Tecnici UNI pertinenti e solamente con le limitazioni e nel rispetto delle 
+prescrizioni indicate al punto 10.3.3, l’entità del rilievo potrà essere minore e quindi tale da consentire 
+il rilascio della certificazione. 
+
+Solo in questi termini l’OdC può procedere sotto propria responsabilità alla certificazione di PA che 
+non presentino una totale conformità legislativa. 
+
+In ogni caso gli OdC, nell’emettere un certificato ad una PA con competenze territoriali, devono 
+salvaguardare la credibilità del sistema delle certificazioni di fronte alle parti interessate. 
+
+10.3.3 Limitazioni e prescrizioni 
+
+Gli OdC dovranno rispettare le seguenti limitazioni e prescrizioni in tutti i casi in cui procedano, sotto 
+la loro responsabilità, alla certificazione di PA che non presentino una totale conformità legislativa. 
+
+L’eventuale rilievo o concessione in deroga per una certificazione a fronte di un mancato rispetto di 
+un requisito di legge dovrà essere comunque mantenuto aperto e monitorato nel tempo fino alla 
+completa messa a norma. Ciò allo scopo di assicurare la massima trasparenza e per stimolare la 
+capacità del SGA della PA che richiede la certificazione ad acquisire e mantenere la completa 
+conformità. In deroga a quanto sopra, nei casi in cui i regolamenti degli OdC non consentono di 
+mantenere aperto un rilievo per più verifiche ispettive, l’OdC deve assicurare comunque all’organo 
+deliberante ed eventualmente ai comitati per la salvaguardia dell’imparzialità e ad ACCREDIA-DC di 
+poter analizzare su base documentale, anche in accompagnamento, la storia del rilievo fin dal suo 
+inizio. 
+
+ 
+
+
+Nel caso di prescrizioni che si applicano in modo specifico al patrimonio della PA (ad es. gestione 
+dell’amianto, acquisizione dei CPI, messa a norma di scarichi, ecc.) per il rispetto delle quali si accerti 
+la necessità di risorse economico-finanziarie ingenti rispetto alle disponibilità di bilancio, l’OdC può 
+rilasciare un rilievo che consenta la certificazione, ma deve richiedere alla PA, in modo vincolante, 
+un programma lavori e di controllo del mantenimento della conformità nel tempo, che espliciti tempi 
+e scadenze, risorse economiche e responsabilità per il rispetto di tutti i requisiti legislativi applicabili 
+a tutte le attività della PA. A questo proposito l’OdC deve entrare nel merito della pianificazione 
+generale della PA ed accertarsi che l’ente sia stato in grado di stimare le previsioni e gli impegni di 
+spesa necessari alla completa messa a norma e deve acquisire dall’ente stesso elementi relativi alle 
+previsioni di spesa complessivi e alla loro distribuzione negli esercizi futuri all’interno dei Bilanci, dei 
+PEG e/o nel piano triennale delle opere. Questo tipo di programma di lavori deve essere richiesto in 
+tutti i casi in cui vi sia la necessità di un processo di messa a norma. 
+
+In fase di certificazione il programma dei lavori deve risultare avviato per tutte le tipologie di obblighi 
+relativi al patrimonio e, nelle visite successive di sorveglianza, l’OdC deve eseguire verifiche 
+sistematiche sulla continuità delle attività previste da programma mantenendo aperto il rilievo fino 
+alla completa messa a norma o adottando metodi alternativi per consentire ad ACCREDIA-DC di 
+analizzare su base documentale, anche in accompagnamento, la storia del rilievo fin dal suo inizio. 
+
+La massima estensione ammissibile nel tempo del programma dei lavori di adeguamento deve essere 
+valutata dall’OdC tenendo conto della rilevanza oggettiva degli impatti ambientali legati alla mancata 
+messa a norma e del rapporto tra l’entità delle risorse richieste e delle risorse che la PA può 
+impegnare. 
+
+Per il caso specifico dei CPI, si precisa quanto segue: 
+
+. se tutte le attività soggette al controllo dei VVF rispettano le condizioni di cui al paragrafo 
+5.1 del presente RT, non sussistono problemi ostativi alla certificazione, fermo restando 
+l’obbligo ad aprire un rilievo rispetto al requisito di legge; 
+. non si ritiene sia possibile rilasciare il certificato, indipendentemente dalle dimensioni del 
+patrimonio dell’ente, se l’ente non ha dimostrato di essere giunto ad un avanzato stato di 
+progettazione - ove per avanzato stato di progettazione si intende generalmente l’aver 
+ottenuto l’esplicita approvazione del progetto da parte dei VVF - almeno per tutti gli edifici 
+obbligatoriamente aperti al pubblico (es.: scuole) o che possono essere comunque al centro 
+dell’interesse delle parti (es.: palazzetto dello sport). 
+
+
+In ogni caso, prima di emettere certificati in assenza di totale conformità legislativa, l’OdC deve, in 
+base ad una analisi del rischio collegato alla specifica certificazione, valutare che lo stato della 
+conformità legislativa sia sufficientemente elevato da assicurare la credibilità del certificato di fronte 
+alle parti interessate. 
+
+Le motivazioni delle decisioni nei casi particolari vanno comunque documentate e, se comportano 
+rischi di imparzialità, portati al Comitato rappresentativo delle parti. 
+
+Per i casi di condivisione di responsabilità, come per la gestione del ciclo delle acque e dei rifiuti, 
+l’OdC deve esigere che la PA che richiede la certificazione si sia fatta carico di chiarire i confini delle 
+responsabilità e abbia assunto in proprio le iniziative per attuare appieno le proprie competenze e 
+per finalizzare quanto previsto dalla legge, attivando azioni conseguenti. 
+
+ 
+
+
+Coerentemente con gli indirizzi forniti dalla guida EA 7/04 e dai Rapporti Tecnici UNI pertinenti, si 
+richiede che per l’attuazione dei propri programmi di adeguamento, le PA si attivino nei confronti 
+delle altre amministrazioni concorrenti o complementari nella gestione degli obblighi di legge; l’OdC 
+deve valutare l’efficacia dell’azione della PA certificata/certificanda (ad es. valutando la correttezza 
+delle procedure di comunicazione, la scelta degli interlocutori idonei da coinvolgere, l’utilizzo di 
+efficaci processi amministrativi) e la continuità nel tempo della sua azione, anche e soprattutto a 
+fronte di eventuali inerzia o dinieghi da parte delle altre amministrazioni coinvolte. 
+
+Nei casi di condivisione di responsabilità ambientalmente rilevanti (acque, rifiuti, trasporto pubblico 
+locale, ecc.) indipendentemente dagli obblighi attribuiti alla PA dalle leggi, gli OdC devono chiedere 
+alla PA di dare evidenza di esercitare la propria influenza verso gli altri soggetti coinvolti per la 
+salvaguardia degli interessi delle parti interessate. 
+
+10.4. COMPETENZE DEL PERSONALE 
+
+Particolare attenzione deve essere rivolta dagli OdC alla verifica delle competenze del personale della 
+PA che opera nell’ambito delle attività di pianificazione (anche se esterno) e per il rilascio delle 
+autorizzazioni, considerata la notevole valenza che tali atti hanno come ricaduta sul territorio. 
+
+10.5. COMUNICAZIONE CON IL PUBBLICO E LE PARTI INTERESSATE 
+
+La corretta comunicazione interna, il coinvolgimento dei dipendenti, così come la gestione dei rapporti 
+con il pubblico e le parti interessate, sono aspetti fondamentali nella certificazione ambientale della 
+PA. 
+
+10.5.1 Comunicazione interna e coinvolgimento 
+
+Gli OdC devono richiedere alla PA di avere attuato politiche di comunicazione e coinvolgimento dei 
+propri dipendenti e collaboratori tali da: 
+
+. assicurare la condivisione dei principi della Politica, degli obiettivi e delle procedure del SGA; 
+. far sì che l’Ente veicoli all’esterno, anche attraverso azioni ed esempi concreti, messaggi tali 
+da confermare la consapevolezza nei cittadini che la protezione ambientale è un valore della 
+comunità che dipende dalle scelte di ciascun soggetto. 
+
+
+10.5.2 Come trattare e considerare le comunicazioni ricevute 
+
+Gli OdC devono richiedere alla PA che, nel valutare i propri aspetti ambientali e nello stabilire i 
+contenuti dei propri strumenti di governo del territorio, tenga in considerazione le segnalazioni e/o 
+proteste dei cittadini. 
+
+A fronte di segnalazioni su tematiche ambientali fatte da parti interessate (soggetti singoli o 
+collettivi), l’OdC deve verificare che la PA, in aggiunta a quanto già definito per legge sulla 
+disponibilità pubblica delle informazioni ambientali, fornisca risposte mirate e capaci di soddisfare – 
+pur nel rispetto dell’interesse collettivo e delle politiche di governo già assunte - le richieste dei 
+segnalanti. 
+
+
+L’OdC deve adottare un atteggiamento di grande considerazione delle segnalazioni, anche se ricevute 
+da singoli cittadini, ed essere particolarmente puntuale e proattivo nell’analisi dei problemi e nelle 
+risposte. Tale approccio dovrà essere richiesto dagli OdC alle PA. 
+
+10.5.3 Coinvolgimento dei cittadini 
+
+Gli OdC devono richiedere alla PA che intende certificarsi e che fornisce informazioni all’esterno sul 
+proprio programma di certificazione, di fornire al pubblico ed alle parti interessate anche informazioni 
+sugli aspetti ambientali significativi, diretti e indiretti, e su eventuali limitazioni dello scopo di 
+certificazione. 
+
+Gli OdC devono inoltre richiedere evidenza di specifiche valutazioni della PA sull’opportunità di 
+trasmettere al pubblico ed alle parti interessate ulteriori elementi informativi, ad esempio su obiettivi 
+di miglioramento. 
+
+10.5.4 Coinvolgimento dei soggetti sui quali la PA non ha rapporti di competenza 
+diretta 
+
+Gli OdC devono sollecitare la PA affinché attivi e promuova contatti anche con altri soggetti nel 
+territorio con i quali non sono in essere già rapporti di alcun genere, allo scopo di acquisire 
+informazioni più approfondite sullo stato dell’ambiente o informazioni sulle attività con ricadute 
+ambientali di tali soggetti in modo da poter valutare l’avvio di iniziative volontarie comuni comunque 
+orientate al miglioramento dello stato ambientale del proprio territorio e promuovere iniziative 
+congiunte intese al miglioramento ambientale complessivo. 
+
+10.6. EMERGENZE 
+
+L’OdC deve verificare che la PA abbia preso in considerazione tutte le tipologie di emergenze 
+ambientali segnalate nei Rapporti Tecnici UNI pertinenti. 
+
+La PA deve dimostrare all’OdC di aver preso in carico nell’ambito del SGA tutti gli aspetti ambientali 
+in condizioni di emergenza con modalità appropriate, secondo le competenze affidate all’ente dalle 
+leggi vigenti. 
+
+10.7. AUDIT INTERNI 
+
+La programmazione del ciclo di audit interni, in linea con quanto già definito nella norma UNI EN ISO 
+19011 “Linee guida per audit di sistemi di gestione”, ha valore particolarmente importante nelle PA. 
+L’OdC deve verificare che la PA abbia sviluppato tale programma al fine di avere un controllo efficace 
+delle attività che possono avere impatto diretto o indiretto sull’ambiente, con adeguati tempi e risorse 
+per le verifiche nei luoghi dove svolge le sue attività (uffici, sedi di proprietà, sedi operative), con 
+particolare riferimento agli uffici che controllano procedimenti amministrativi con aspetti ambientali 
+indiretti significativi. 
+
+Gli immobili di proprietà dell’ente, presso cui l’ente non effettua alcuna attività, non necessariamente 
+devono essere ricompresi nel programma di verifiche ispettive interne. L’OdC deve però richiedere 
+alla PA di dimostrare la conoscenza dello stato delle strutture in relazione agli aspetti ambientali 
+presenti (es. strutture contenenti fibre di amianto, serbatoi interrati, ecc.). 
+
+
+L’OdC dovrà anche verificare che la PA abbia preso in considerazione l’eventualità di attuare degli 
+audit di seconda parte verso i fornitori, appaltatori e gestori maggiormente critici e presso soggetti 
+di interfaccia. 
+
+10.8. ENTITÀ MINIMA CERTIFICABILE 
+
+In sede di applicazione dei criteri inerenti la definizione del campo di applicazione del SGA stabiliti 
+dai Rapporti Tecnici UNI pertinenti, gli OdC possono considerare “PA dotate di competenze e struttura 
+organizzativa particolarmente complesse” esclusivamente le Regioni, le Province Autonome e le Città 
+Metropolitane. 
+
+Pertanto, solamente per tali tipologie di PA, potranno essere emessi certificati UNI EN ISO 14001 per 
+parti di PA che rispondano ai requisiti di “Unità funzionale” definiti dalla norma UNI EN ISO 14001 e 
+dai Rapporti Tecnici UNI pertinenti; tali certificati potranno essere mantenuti a tempo indeterminato 
+senza che sia richiesta l’estensione dello scopo del SGA all’intera PA. 
+
+Pertanto, per le PA diverse da quelle dotate di competenze e struttura organizzativa particolarmente 
+complesse, fatte salve le eccezioni sotto descritte, non è possibile la parzializzazione: nessuna attività 
+può essere esclusa dal campo di applicazione del SGA certificato. 
+
+10.8.1 Province e grandi Comuni 
+
+Per favorire l’applicazione dei SGA in un settore caratterizzato da importanti ricadute nel territorio, 
+per i Comuni con un numero di abitanti superiore a 40.000 e per le Province è ammessa la 
+parzializzazione, a patto che: 
+
+. l’Alta Direzione sia rappresentata da un soggetto o organismo interno che abbia autorità sulle 
+risorse dell’intera organizzazione (es. per un Comune o Provincia è rappresentato dal 
+Sindaco/Presidente, dalla Giunta o dal Consiglio); 
+. esista una Politica approvata dall’Alta Direzione; 
+. l’Alta Direzione della PA approvi ufficialmente un impegno scritto a pervenire, sulla base di 
+uno specifico programma documentato di estensione, alla certificazione dell’intera PA; il 
+programma dovrà completarsi entro sei anni; 
+. la certificazione progressiva di tutta l’organizzazione sia avviata a partire da un’entità minima 
+corrispondente a tutta quella parte di organizzazione che risponde ad un Dirigente cui 
+compete la gestione amministrativa, finanziaria e tecnica, con autonomi poteri di spesa, di 
+organizzazione delle risorse umane, strumentali e di controllo, ovvero ad un Dirigente di 
+Settore o Dipartimento; 
+. siano chiaramente definite le interfacce con le altre parti/funzioni della PA ed in particolare i 
+limiti di competenza e responsabilità; 
+. le informazioni sul campo di applicazione della certificazione date alle parti interessate siano 
+chiaramente riferite all’Entità parziale certificata ed esplicitamente riportate nello scopo di 
+certificazione, avendo cura di menzionare la parte certificata e poi la PA di appartenenza; 
+. il logo non sia utilizzato in abbinamento alla PA nella sua complessità, ma dovrà sempre 
+essere chiaramente riconducibile all’Entità certificata; 
+
+
+
+. la PA raccolga dati e informazioni sull’intero territorio di pertinenza al fine di sviluppare una 
+fase di identificazione e valutazione degli aspetti ambientali che non sia limitata alla sola 
+attività oggetto della parzializzazione. Questi dati sono necessari per una corretta 
+impostazione del programma di estensione e dei possibili obiettivi di miglioramento. 
+
+
+Non possono comunque essere escluse attività di competenza della PA che presentino impatti 
+ambientali particolarmente significativi o che presentano problemi di conformità ai requisiti legislativi 
+o ai requisiti della norma di riferimento (divieto di “cherry-picking”). 
+
+Non è considerato “cherry-picking” l’esclusione temporanea dallo scopo di certificazione di parti della 
+PA che presentano problemi di conformità legislativa, se la PA fornisce evidenza di avere identificato 
+i problemi di conformità legislativa ed ha approvato il programma di estensione dello scopo di 
+certificazione all’intero Ente. 
+
+L'organizzazione non può essere parzializzata se: 
+
+. la parte certificata o certificanda copre soltanto parti delle attività che non sono 
+rappresentative, in termini di rilevanza degli aspetti e degli impatti ambientali, delle attività 
+dell'organizzazione; 
+. non è possibile comprendere chiaramente i motivi delle scelte effettuate e identificare 
+univocamente dall'esterno quale parte delle attività dell'organizzazione è compresa nel 
+sistema di gestione ambientale. 
+
+
+10.8.2 Descrizione dello scopo 
+
+Per assicurare la massima trasparenza al pubblico, lo scopo del certificato deve essere espresso 
+riportando l’indicazione dei processi erogati dall’ente che rientrano nello scopo del certificato, con un 
+ragionevole dettaglio delle principali attività di tutti i Settori o Dipartimenti in cui l’ente è suddiviso. 
+
+Per alcune competenze di particolare rilevanza ambientale, come le fasi della gestione del ciclo delle 
+acque o della gestione dei rifiuti urbani, è necessario che sia indicato, in modo trasparente e 
+comprensibile, se la PA svolge l’attività in modo diretto o tramite convenzioni o accordi con altri enti 
+o soggetti. 
+
+10.9. DETERMINAZIONE DELLA DURATA DELLE VISITE ISPETTIVE (CALCOLO DEI 
+“MAN-DAYS”) 
+
+La durata degli audit viene stabilita utilizzando le revisioni vigenti dei documenti IAF pertinenti 
+adottando però una particolare chiave di ingresso alla tabella. La complessità ambientale di una PA 
+è legata a diversi elementi di criticità che in ordine di importanza decrescente possono essere 
+riassunti in: 
+
+. complessità gestionale (numero e significatività delle competenze dell’ente, attività gestite 
+direttamente, complessità e significatività delle attività affidate a terzi, ecc.). 
+Es: enti con dipendenti che eseguono direttamente attività di manutenzione stradale o di 
+gestione di impianti ed enti che affidano grandi lavori edili o stradali, presentano una elevata 
+complessità gestionale; 
+
+
+ 
+
+
+. criticità ambientale: criticità dal punto di vista delle caratteristiche, dello stato e della 
+pressione del territorio (es.: n. di attività presenti nel territorio, ecc). 
+Es: enti con competenza su territori classificati “di interesse nazionale” ai sensi del titolo V 
+della parte IV del Dlgs 152/06 e s.m.i., enti che hanno competenza su aree protette (parchi), 
+enti con aziende a rischio di incidente rilevante nel proprio territorio hanno rilevante criticità 
+ambientale; 
+. numero degli abitanti; 
+. estensione del territorio. 
+
+
+Questi elementi determinano la complessità variabile da “low” – adatta, ad esempio, ad Enti che 
+abbiano alienato una parte consistente delle proprie competenze e governino territori privi di 
+complessità - ad “alta” – appropriata per Comuni che controllano direttamente o tramite società 
+controllate le attività connesse alle principali tematiche ambientali (rifiuti, ciclo delle acque, ecc.) in 
+un territorio complesso. 
+
+In ogni caso il numero dei giorni uomo non potrà essere inferiore a quanto risulta dall’adozione della 
+classe “low”. 
+
+Per i Comuni, Province e Regioni si deve comunque adottare, vista la caratteristica complessità 
+gestionale, almeno la classe Medium. 
+
+La colonna di complessità dovrà poi essere incrociata con il numero di addetti (dipendenti, 
+collaboratori a progetto, ecc.) della PA per determinare l’esatto numero di giornate-uomo da 
+impiegare per l’attività di certificazione. Ogni OdC dovrà stabilire al proprio interno regole 
+documentate che consentano di discriminare le PA con diversa complessità ambientale. 
+
+

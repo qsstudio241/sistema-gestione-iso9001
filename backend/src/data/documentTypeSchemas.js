@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * documentTypeSchemas.js — Versione backend (prompt AI e schema atteso)
+ * documentTypeSchemas.js ï¿½ Versione backend (prompt AI e schema atteso)
  * Mantenere sincronizzato con app/src/data/documentTypeSchemas.js
  */
 
@@ -11,7 +11,7 @@ const AI_SCHEMAS = {
     label: 'Patentino saldatore (ISO 9606-1)',
     aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON di risposta.
-Se un campo non è presente nel documento, usa null.
+Se un campo non ï¿½ presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name, certificate_number, issuing_body, welding_process, joint_type (BW|FW),
@@ -146,7 +146,7 @@ welding_process, equipment_type, exam_date, expiry_date (YYYY-MM-DD).`,
   },
 
   sal: {
-    label: 'SAL — Stato avanzamento lavori',
+    label: 'SAL ï¿½ Stato avanzamento lavori',
     aiPrompt: `Documento SAL consulenza SGQ. Estrai: client_name, standards_tracked, period_label.`,
     aiExpectedSchema: {
       client_name: 'string|null',
@@ -156,7 +156,7 @@ welding_process, equipment_type, exam_date, expiry_date (YYYY-MM-DD).`,
   },
 
   rdp: {
-    label: 'RDP — Rapporto di prova',
+    label: 'RDP ï¿½ Rapporto di prova',
     aiPrompt: `Rapporto di prova RDP. Estrai: report_number, test_type, component_ref, test_date (YYYY-MM-DD).`,
     aiExpectedSchema: {
       report_number: 'string|null',

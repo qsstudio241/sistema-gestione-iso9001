@@ -52,7 +52,10 @@ function QualificationForm({ qualification, onSave, onClose }) {
   const [customType, setCustomType] = useState(false);
 
   useEffect(() => {
-    apiService.getCompanies?.().then(r => setCompanies(r?.companies || r || [])).catch(() => {});
+    apiService.getCompanies?.().then((res) => {
+      const list = res?.data || res?.companies || res || [];
+      setCompanies(Array.isArray(list) ? list : []);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

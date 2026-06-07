@@ -1,0 +1,2073 @@
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Titolo/Title 
+
+ 
+
+Regolamento per l’accreditamento degli Organismi di 
+Certificazione e Ispezione - Parte Generale 
+
+Regulation for the accreditation of Certification and Inspec-
+tion Bodies – General Requirements 
+
+Sigla/Reference 
+
+ 
+
+RG-01 
+
+Revisione/Revision 
+
+ 
+
+03 
+
+Data/Date 
+
+ 
+
+2014-04-14 
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Redazione 
+
+ 
+
+Approvazione 
+
+ 
+
+ 
+
+Autorizzazione all’emissione 
+
+ 
+
+Entrata in vigore 
+
+Il Direttore del Dipartimento 
+Certificazione e Ispezione 
+
+ 
+
+Il Consiglio Direttivo 
+
+ 
+
+Il Presidente ACCREDIA 
+
+ 
+
+ 2015-01-01 
+
+
+
+ 
+
+
+INDICE 
+
+ 
+0. PREMESSA ................................................................................................................... 3 
+0.1 INTRODUZIONE ............................................................................................................ 3 
+0.2 SCOPO E CAMPO DI APPLICAZIONE ............................................................................ 4 
+0.3 RIFERIMENTI NORMATIVI ............................................................................................. 5 
+0.4 TERMINI E DEFINIZIONI ................................................................................................ 5 
+0.5 ACRONIMI ............................................................................................................................... 9 
+PARTE 1 - PRESCRIZIONI GENERALI RELATIVE AL PROCESSO DI ACCREDITAMENTO ... 10 
+1. CRITERI ED INFORMAZIONI PER L’ACCREDITAMENTO ............................................ 10 
+1.1 INFORMAZIONI GENERALI ........................................................................................ 10 
+1.2 PRESENTAZIONE E ISTRUZIONE DELLA DOMANDA DI ACCREDITAMENTO ............. 12 
+1.3 PROCESSO DI ACCREDITAMENTO ........................................................................... 12 
+1.4 PROCESSO DECISIONALE E CONCESSIONE DELL’ACCREDITAMENTO ................... 14 
+1.5 SORVEGLIANZA E RINNOVO DELL'ACCREDITAMENTO ............................................ 16 
+1.6 ESTENSIONE DELL’ACCREDITAMENTO .................................................................... 20 
+1.7 PROCESSO DECISIONALE E CONCESSIONE DELL’ESTENSIONE 
+DELL’ACCREDITAMENTO .......................................................................................... 21 
+1.8 SOSPENSIONE, REVOCA E RIDUZIONE DELL’ACCREDITAMENTO ........................... 21 
+1.9 RECLAMI, RISERVE E APPELLI ................................................................................. 25 
+1.10 OBBLIGAZIONI A CARICO DELL’ORGANISMO ........................................................... 26 
+1.11 OBBLIGAZIONI A CARICO DI ACCREDIA ................................................................... 27 
+2. CLAUSOLA DI ACCETTAZIONE ................................................................................. 28 
+
+PREMESSA 
+
+ 
+
+Designato dal Governo il 22 dicembre 2009, ACCREDIA è l’unico ente autorizzato a svolgere attività di ac-
+creditamento in Italia. 
+
+L’ente di accreditamento attesta che gli Organismi di Certificazione e di Ispezione e i Laboratori di Prova e 
+di Taratura abbiano le competenze per valutare la conformità dei prodotti, dei processi e dei sistemi agli 
+standard di riferimento. Il Dipartimento Organismi di Certificazione e Ispezione accredita Organismi di Certi-
+ficazione, di Verifica e di Ispezione. 
+
+Obiettivo di ACCREDIA, Dipartimento Organismi di Certificazione e Ispezione è quello di contribuire alla 
+creazione della fiducia nel sistema di valutazione della conformità – chiamato a valutare ed attestare la con-
+formità dei prodotti, processi, sistemi di gestione e persone ai requisiti stabiliti dalle norme tecniche nazionali 
+ed internazionali applicabili – e di assicurare efficacia ed uniformità di approccio da parte degli Operatori del 
+sistema, favorendo, in tal modo, la crescita della competitività del sistema produttivo nazionale ed il miglio-
+ramento del benessere dei cittadini. 
+
+A tal fine, ACCREDIA, Dipartimento Organismi di Certificazione e Ispezione, in completa continuità con le 
+attività svolte precedentemente da SINCERT, accredita gli Organismi di valutazione della conformità, accer-
+tando che questi possiedano e mantengano nel tempo i requisiti organizzativi, procedurali, tecnici e profes-
+sionali richiesti, in termini tali da ingenerare, in tutte le parti sociali ed economiche interessate – e, in partico-
+lare, negli utilizzatori e consumatori finali – un elevato grado di fiducia nell’operato di tali Soggetti e nel valore 
+delle attestazioni di conformità da essi rilasciate. 
+
+In coerenza con gli obiettivi sopra indicati e conformemente agli indirizzi espressi dai propri Organi statutari – 
+allo scopo di meglio assicurare l’efficacia del processo di accreditamento e garantire l’efficacia e 
+l’omogeneità dei comportamenti dei Soggetti accreditati – ACCREDIA, Dipartimento Organismi di Certifica-
+zione e Ispezione ha elaborato apposite regole e opportuni criteri di applicazione dei requisiti generali dei ri-
+ferimenti normativi applicabili, formalizzati tramite l’emissione del presente Regolamento Generale e di Re-
+golamenti contenenti le specificità relative all’accreditamento degli: 
+
+- Organismi di Certificazione di sistemi di gestione aziendale; 
+
+- Organismi di certificazione del prodotto; 
+
+- Organismi di certificazione del personale; 
+
+- Organismi di Ispezione. 
+
+che tengono conto dell’evoluzione intercorsa nei riferimenti normativi applicabili, delle esperienze maturate 
+da SINCERT e successivamente da ACCREDIA e delle indicazioni espresse dagli Organi di ACCREDIA, te-
+se a migliorare il sistema di accreditamento e certificazione nazionale. 
+
+ 
+
+ 
+
+0.1 INTRODUZIONE 
+
+ 
+
+L’accreditamento degli Organismi di certificazione e di Ispezione è un processo complesso la cui rilevanza 
+varia peraltro al variare dell’oggetto della certificazione (sistema, prodotto, personale) e dell’oggetto delle at-
+tività ispettive (progetto, prodotto, servizio, processo o impianto) – data l’inevitabile genericità dei riferimenti 
+normativi utilizzati. 
+
+Per promuovere l’efficacia e la credibilità del processo di accreditamento, è pertanto necessario introdurre 
+criteri applicativi specifici che, senza trascendere lo spirito e la lettera della norma, ne favoriscano la piena e 
+sostanziale applicazione da parte dei Soggetti accreditati, costituendo al contempo riferimenti univoci, ogget-
+tivi ed imparziali per le valutazioni condotte dall’Ente di Accreditamento nei confronti dei medesimi. 
+
+Tale obiettivo può essere conseguito grazie alla corretta ed efficace applicazione del presente Regolamento 
+generale e dei Regolamenti specifici per schema di accreditamento che è stato elaborato, sia sulla base del-
+le indicazioni esplicitamente espresse da un apposito Gruppo di lavoro comprendente ampia rappresentan-
+za delle parti interessate alle attività di accreditamento e certificazione, sia tenendo conto del miglior stato 
+delle conoscenze ed esperienze nel settore (stato dell’arte). 
+
+ 
+
+ 
+
+ 
+
+
+0.2 SCOPO E CAMPO DI APPLICAZIONE 
+
+ 
+
+Il presente Regolamento si applica all’accreditamento degli Organismi di Certificazione di sistemi di gestione, 
+di prodotto e di personale e degli Organismi di Ispezione (nel seguito indicati genericamente tutti con 
+l’acronimo OdC). Qualora ACCREDIA svolga attività di valutazione finalizzate al riconoscimento di OdC da 
+parte di soggetti pubblici e/o da parte di soggetti proprietari di schemi di valutazione della conformità, even-
+tuali prescrizioni aggiuntive e/o in contrasto con i requisiti contenuti nel presente Regolamento generale e 
+nei Regolamenti specifici per schema di accreditamento, vengono formalizzate agli OdC, in ambito contrat-
+tuale specifico. 
+
+Questo Regolamento, in particolare, stabilisce le condizioni e le procedure per la concessione, la sorve-
+glianza, l'estensione, il rinnovo, la riduzione, l’autoriduzione, la sospensione, l’autosospensione, la rinuncia e 
+la revoca dell'accreditamento degli OdC, nel rispetto delle norme e guide applicabili, con l’introduzione di ap-
+posite precisazioni laddove il corpo normativo di riferimento riporta requisiti del tutto generali. 
+
+ 
+
+Il presente Regolamento – Parte Generale non può essere disgiunto dal Regolamento specifico per 
+lo schema del quale si richiede l’accreditamento. 
+
+ 
+
+Il presente Regolamento generale e i Regolamenti specifici per schema di accreditamento, sono fonte di ob-
+bligazione contrattuale nel rapporto tra ACCREDIA e i Soggetti accreditati, in virtù della quale: 
+
+- ACCREDIA si impegna a svolgere, con competenza, obiettività, diligenza, imparzialità e integrità 
+professionale, la valutazione della conformità dell’OdC, ai requisiti delle norme e dei documenti di ri-
+ferimento e, in caso di esito positivo, a concedere l’accreditamento, il mantenimento, l’estensione, il 
+rinnovo del medesimo e, a provvedere all’inserimento dell’Organismo e relativi dati nell’apposito Re-
+gistro degli Organismi accreditati; 
+
+- L’Organismo si impegna a conformarsi alle prescrizioni qui contenute, inizialmente e a mantenere 
+tale conformità durante tutto il ciclo di accreditamento. 
+
+ 
+
+Vanno altresì considerate fonte di obbligazione contrattuale nel rapporto tra ACCREDIA e i Soggetti accredi-
+tati le specifiche circolari/disposizioni che verranno mano a mano emesse da ACCREDIA, come allegati al 
+presente Regolamento - Parte Generale e ai Regolamenti specifici per schema. 
+
+ 
+
+ACCREDIA non assume alcun obbligo, a priori, circa l’esito positivo delle valutazioni condotte e, quindi, in 
+merito alla concessione/mantenimento/rinnovo dell’accreditamento (o all’estensione). 
+
+ACCREDIA ha la responsabilità di verificare – nei limiti propri di valutazioni tipicamente campionatorie – che 
+l’OdC disponga delle competenze richieste, in termini di organizzazione, procedure e documenti di lavo-
+ro/operativi, risorse umane e strumentali, per lo svolgimento della propria attività di certificazione, secondo il 
+presente Regolamento ed ogni altra prescrizione pertinente. 
+
+È responsabilità dell’Organismo di Certificazione assicurare e mantenere la piena e sistematica conformità 
+alle prescrizioni di cui sopra, in ogni momento e per ogni aspetto della propria attività. 
+
+ 
+
+ 
+
+Il presente Regolamento generale e i Regolamenti specifici per schema di accreditamento sono sottoposti a 
+specifica approvazione del Consiglio Direttivo di ACCREDIA (Art. 14 dello Statuto ACCREDIA), previo pare-
+re favorevole del Comitato per l’attività di accreditamento e viene emesso sotto l’autorità del Presidente 
+ACCREDIA. 
+
+ 
+
+ 
+
+
+0.3 RIFERIMENTI NORMATIVI 
+
+ 
+
+I riferimenti normativi da considerare per l’applicazione del presente Regolamento generale e dei Regola-
+menti specifici per schema di accreditamento sono riportati nei documenti ACCREDIA LS-02 “Norme e do-
+cumenti di riferimento per l’accreditamento degli Organismi di certificazione” e ACCREDIA LS-03 “Norme e 
+documenti di riferimento per l’accreditamento degli Organismi di Ispezione”, nelle revisioni in vigore”. 
+
+Ne consegue che – nell’ambito di un determinato schema di accreditamento – l’uso del Regolamento Parte 
+Generale e del Regolamento specifico di schema è integrato dai Regolamenti Tecnici (RT) /Documenti Tec-
+nici (DT) eventualmente applicabili allo schema, ove esistenti. 
+
+Le disposizioni generali si applicano invece a tutte le attività di certificazione e di ispezione svolte sotto ac-
+creditamento ACCREDIA Dipartimento Organismi di Certificazione e Ispezione, sia all’interno sia all’esterno 
+del territorio nazionale. L’applicazione delle prescrizioni di cui ai singoli documenti RT ad attività di certifica-
+zione svolte al di fuori del territorio nazionale, è da intendersi come facoltativa, salvo che diversamente spe-
+cificato nei documenti medesimi. 
+
+ 
+
+Il presente Regolamento e i Regolamenti specifici per schema di accreditamento fanno, altresì, riferimento, 
+ove e per quanto applicabile, alle seguenti norme statutarie e regolamentari di ACCREDIA, nell’ultima ver-
+sione in vigore: 
+
+ 
+
+- Statuto ACCREDIA (ST); 
+- Regolamento Generale di applicazione dello Statuto (ST-01); 
+- Regolamento di funzionamento del Comitato di Accreditamento (RG-04); 
+- Regolamento di funzionamento dei Comitati Settoriali di Accreditamento (RG-04-DC); 
+- Regolamento di funzionamento dei Sottocomitati Settoriali di Accreditamento (RG-04-01); 
+- Regolamento di funzionamento del Comitato di Indirizzo e Garanzia (RG-05); 
+- Regolamento di funzionamento della Commissione di Appello (RG-06); 
+- Regolamento per l’utilizzo del marchio di accreditamento ACCREDIA (RG-09); 
+- Tariffario ACCREDIA (TA-00); 
+- Convenzione di Accreditamento (CO-00); 
+- Domande di accreditamento/estensione; 
+- Regolamenti Tecnici ACCREDIA applicabili; 
+- Normativa cogente, ove applicabile. 
+
+
+ 
+
+e ai Documenti EA, IAF e di altri schemi applicabili agli Organismi di Certificazione. 
+
+Per ciascuno dei documenti ACCREDIA citati vale l’ultima revisione vigente e scaricabile liberamente 
+dall’area documenti istituzionali e di funzionamento e/o dall’area Organismi di Certificazione e Ispezione del 
+sito ACCREDIA. 
+
+ 
+
+ 
+
+0.4 TERMINI E DEFINIZIONI 
+
+ 
+
+* Accreditamento: attestazione da parte di un organismo nazionale di accreditamento che certifica che 
+un determinato organismo di valutazione della conformità soddisfa i criteri stabiliti da norme armo-
+nizzate e, ove appropriato, ogni altro requisito supplementare, compresi quelli definiti nei rilevanti 
+programmi settoriali, per svolgere una specifica attività di valutazione della conformità (Reg. CE N. 
+765/2008 Capo 1, Art. 2, Comma 10). 
+
+ 
+
+* Organismo Nazionale di Accreditamento: l’unico organismo che in uno Stato Membro è stato auto-
+rizzato da tale Stato a svolgere attività di accreditamento (Reg. CE N. 765/2008 Capo 1, Art. 2, 
+Comma 11). 
+
+ 
+
+
+* Certificazione: attestazione di parte terza della conformità di prodotti, processi, sistemi o persone 
+(vedi ISO/IEC 17000). 
+
+ 
+
+* Ispezione: esame di un prodotto, di un processo, di un servizio, o di installazione, o di una loro pro-
+gettazione, e determinazione della sua conformità a requisiti specifici, o sulla base di un giudizio pro-
+fessionale a requisiti generali. 
+
+Nota 1: L’ispezione di processi può comprendere persone, impianti, tecnologie o metodologie (vedi 
+UNI CEI EN ISO/IEC 17020). 
+
+ 
+
+* Organismo di Ispezione: Organismo che esegue ispezioni (UNI CEI EN ISO/IEC 17020). 
+
+ 
+
+Organismo di Ispezione di Tipo “A”- Organismo di “parte terza”-: Operatore della valutazione della 
+conformità impegnato esclusivamente in attività ispettive o impegnato altresì in altre attività di va-
+lutazione della conformità; 
+
+ 
+
+Organismo di Ispezione di Tipo “B”: apposite unità/divisioni tecnicamente indipendenti che formano 
+una parte separata ed identificabile di una organizzazione coinvolta nella progettazione, fabbrica-
+zione, fornitura, installazione, utilizzo o manutenzione degli oggetti sottoposti ad ispezione e che è 
+stata incaricata di fornire servizi ispettivi alla propria organizzazione di appartenenza (o da orga-
+nizzazioni ad essa societariamente collegate); 
+
+Organismo di Ispezione di Tipo “C”: unità tecnicamente indipendenti coinvolte nella progettazione, 
+fabbricazione, fornitura, installazione, utilizzo o manutenzione degli oggetti sottoposti ad ispezione 
+o di oggetti similari concorrenziali, interne ad organizzazioni che forniscono servizi di ispezione a 
+terzi, ivi incluse altre organizzazioni comunque collegate. 
+
+ 
+
+* Organismo di Verifica (VB): Organismo che effettua validazioni o verifiche delle asserzioni relative ai 
+GHG (gas ad effetto serra) in conformità alla norma internazionale (UNI EN ISO 14065, p.to 3.3.3). 
+
+ 
+
+* Organismo di valutazione della conformità (CAB): Organismo che svolge attività di valutazione della 
+conformità, fra cui tarature, prove, certificazioni e ispezioni (Reg. CE N. 765/2008 Capo 1, Art. 2, 
+Comma 13). Ai fini del presente regolamento per CAB si devono intendere sia gli Organismi di Certi-
+ficazione, che di Ispezione. 
+
+ 
+
+* Organismo di certificazione: Organismo che effettua la certificazione di conformità. 
+
+L'utilizzo della sigla OdC (o della dizione “Organismo”) per le prescrizioni contenute nel presente 
+Regolamento generale e nei Regolamenti specifici per schema di accreditamento indica che le stes-
+se si applicano, indifferentemente, agli Organismi di certificazione di sistemi di gestione (qualità, 
+ambiente, salute e sicurezza sul lavoro, ecc..), prodotti e personale. 
+
+. 
+
+* Verifiche Ispettive (VI): verifiche effettuate da ACCREDIA (iniziale, supplementare, di sorveglianza 
+programmata o straordinaria, estensione, rinnovo) strumentali al processo di concessione, manteni-
+mento e rinnovo dell'accreditamento. Per le prescrizioni contenute nel presente Regolamento, tale 
+dicitura è denominata dalla norma ISO/IEC 17011 “valutazioni su campo”. 
+
+ 
+
+* Verifiche Ispettive in Accompagnamento (VA): verifiche condotte da ispettori (ed eventuali esperti) 
+ACCREDIA sull’Organismo di Certificazione mentre lo stesso effettua attività di valutazione. Per le 
+prescrizioni contenute nel presente Regolamento, tale dicitura è denominata dalla norma ISO/IEC 
+17011 “valutazioni su campo”. 
+
+ 
+
+* Trasferimento dell’Accreditamento: Procedimento per trasferire l’accreditamento in capo ad un OdC 
+mediante Verifiche, da un Organismo di Accreditamento firmatario degli accordi EA o IAF MLA, ad 
+ACCREDIA. Con il trasferimento il CAB perde l’accreditamento originario, per iniziare 
+l’accreditamento con ACCREDIA. 
+
+
+ 
+
+* Market Surveillance visit: Visita breve di un giorno presso una organizzazione certificata per verifica-
+re il grado di fiducia nella conformità del sistema di gestione a requisiti specifici nonché l’efficacia del 
+processo di certificazione accreditata (IAF ID 4). 
+
+In questi casi, ove applicabile, ACCREDIA, scelta una pratica, può richiedere all’Organismo di rice-
+vere in anticipo una copia dei precedenti rapporti di audit. 
+
+ 
+
+* Rilievo: Risultato della valutazione formalizzato da ACCREDIA e classificato come Non Conformità, 
+Osservazione e Commento. 
+
+ 
+
+* Non conformità: 
+
+ 
+
+ Mancato soddisfacimento di un requisito. 
+
+ Tale rilievo segnala la presenza di una deviazione/mancanza che: 
+
+a) mette a rischio l’affidabilità dei risultati/prestazioni/servizi prodotti dall’OdC e/o; 
+b) inficia la capacità del sistema di gestione qualità (SGQ) di mantenere il livello qualitativo stabilito 
+delle prestazioni di valutazione della conformità o indica un blocco nel funzionamento del SGQ 
+e/o; 
+c) minaccia la credibilità della procedura di accreditamento o dell’integrità/onestà di ACCREDIA 
+e/o; 
+d) evidenzia il mancato rispetto di requisiti cogenti applicabili; 
+e) deriva dal reiterato mancato efficace superamento di una Osservazione precedentemente for-
+malizzata all’Organismo. 
+
+
+ 
+
+La NC può dar luogo all’adozione di uno dei provvedimenti sanzionatori descritti nel § 1.8. 
+
+ 
+
+* Osservazione: 
+
+ 
+
+rilievo causato da una parziale attuazione di un requisito (di norma o riferito ai Regolamenti di accre-
+ditamento) il cui risultato non inficia o non è suscettibile d’inficiare direttamente o immediatamente la 
+qualità delle prestazioni e dei risultati dell’OdC. 
+
+Una osservazione non chiusa alla verifica periodica successiva può essere ri-classificata come Non 
+Conformità. 
+
+Questo tipo di rilievo richiede sempre l’apertura di un trattamento - azione correttiva entro tempi de-
+finiti la cui attuazione verrà verificata nella visita successiva. 
+
+Se necessario le evidenze connesse all’azione correttiva vengono valutate in forma documentale da 
+parte di ACCREDIA, prima della visita successiva di sorveglianza. 
+
+ 
+
+* Commento: 
+
+ 
+
+il rilievo sollevato da ACCREDIA nei confronti dell’OdC viene classificato come commento quando 
+non è conseguente al riscontro di una situazione oggettiva di mancato soddisfacimento di un requisi-
+to, ma è finalizzato a prevenire che tale situazione si verifichi (in quanto potenzialmente realizzabile) 
+e/o a fornire indicazioni per il miglioramento dei documenti e/o delle modalità operative dell’OdC. 
+
+Questo tipo di rilievo può essere gestito con l’apertura di una Azione Preventiva / di miglioramento, o 
+può essere non recepito; in questo secondo caso le ragioni devono essere registrate. 
+
+
+ 
+
+* Gestione dei rilievi da parte degli OdC: attività che devono essere condotte dagli OdC a fronte dei ri-
+lievi formalizzati da ACCREDIA. 
+
+Tutte le Non conformità e Osservazioni formalizzate da ACCREDIA – in base ai criteri sopra enun-
+ciati – devono formare oggetto dei necessari trattamenti e azioni correttive da parte dell’OdC, nei 
+termini applicabili alle diverse fattispecie e approvati da ACCREDIA. Se un OdC non dovesse tra-
+smettere ad ACCREDIA i pertinenti trattamenti e azioni correttive, nei termini applicabili alle diverse 
+fattispecie, la Direzione ACCREDIA potrà trasmettere la pratica al CsA competente per l’adozione di 
+provvedimenti sanzionatori (vedi successivo paragrafo 1.8). 
+
+Non è richiesto un immediato, formale, riscontro ai rilevi formulati in veste di commenti. Tuttavia, il 
+grado di recepimento delle indicazioni fornite da ACCREDIA può essere verificato da ACCREDIA in 
+occasione della prima verifica utile. 
+
+ 
+
+Ogni Non Conformità richiede sempre l’apertura di una azione correttiva, con l’evidenza della verifica 
+della chiusura, prima della delibera (di nuovo accreditamento, rinnovo od estensione) del competen-
+te Comitato Settoriale di Accreditamento. Il Comitato Settoriale di Accreditamento può emettere una 
+delibera positiva, condizionata alla piena attuazione dell’Azione Correttiva. 
+
+Per mantenimento e rinnovo, la NC deve essere chiusa entro tempi stabiliti. 
+
+Può rendersi necessaria una valutazione in campo per assicurarsi che le Azioni Correttive siano sta-
+te attuate efficacemente. 
+
+ 
+
+* Schema di accreditamento: insieme di regole, procedure definite e attività svolte da ACCREDIA per 
+la concessione, l’estensione ed il mantenimento degli accreditamenti per le diverse categorie di atti-
+vità certificative coperte da accreditamento ACCREDIA e contraddistinte da differenziazioni signifi-
+cative ai fini delle procedure di accreditamento. 
+
+ 
+
+* Schema di certificazione: insieme di regole, procedure e attività svolte dagli OdC per l’attestazione 
+della conformità di sistemi di gestione prodotti/servizi e personale. 
+
+ 
+
+* Settore di certificazione: insieme di regole, procedure e attività svolte dagli OdC per l’attestazione di 
+conformità come sopra e specificatamente riferite: 
+
+- per le certificazioni di sistemi di gestione: a specifici settori di attività economica e sociale (settori IAF 
+e relativi sotto-settori, ove esistenti); 
+
+- per le certificazioni di prodotti/servizi: a tipologie di prodotti/servizi coperte da regole tecniche (cogen-
+ti), norme tecniche (volontarie), specifiche tecniche, disciplinari, ecc; 
+
+- per le certificazioni di personale: a figure professionali con caratteristiche definite da appositi riferi-
+menti normativi. 
+
+ Quando coperto da accreditamento assume il nome di settore di certificazione accreditato. 
+
+ 
+
+* Macrosettore: aggregazione di settori di certificazione tra loro omogenei e affini. 
+
+ 
+
+* Settore di attività ispettiva: insieme di regole e procedure adottate e attività svolte dagli Organismi per 
+effettuare le attività ispettive in un determinato ambito costituito da tipologie di progetti, prodotti, ser-
+vizi, processi e impianti, con riferimento a regole tecniche (cogenti), norme tecniche (volontarie), 
+specifiche tecniche, capitolati, disciplinari, e requisiti in genere, espressi in termini, sia specifici, sia 
+generici, anche definiti dai committenti dell’Organismo. 
+
+ 
+
+* Imparzialità: Presenza reale e percepita di obiettività. 
+
+ Le tipologie di conflitti di interesse applicabili ai diversi schemi di accreditamento vengono trattate nei 
+Regolamenti specifici. 
+
+ 
+
+* Rischio: Effetto su un’attività che può derivare da determinati processi/attività svolti dall’Organismo, 
+compreso l’operato del suo personale interno e collaboratore. 
+
+L’Organismo dovrebbe identificare degli indicatori di rischio proporzionali all'effetto atteso e alla pro-
+babilità di accadimento di una determinata situazione. 
+
+
+ 
+
+* Sorveglianza intensificata: provvedimento sanzionatorio minore causato da evidenze non positive a 
+carico di un OdC, consistente nell’esecuzione di verifiche ispettive supplementari o anticipate rispet-
+to alle sorveglianze periodiche – a carico dello stesso OdC – per accertare l’effettiva implementazio-
+ne dei trattamenti e azioni correttive richiesti entro limiti temporali definiti, in relazione ad un determi-
+nato schema/settore di accreditamento. 
+
+ 
+
+* Blocco delle estensioni di accreditamento o di concessioni di nuovi accreditamenti: provvedimento 
+sanzionatorio minore che prevede il blocco della concessione di estensioni dell’accreditamento, per 
+un periodo di tempo definito, in relazione a uno o più schemi e/o settori di accreditamento, nonché il 
+blocco delle concessioni di accreditamento per nuovi schemi di certificazione. 
+
+ 
+
+* Riduzione dell'accreditamento: provvedimento sanzionatorio che prevede la riduzione dello scopo di 
+accreditamento di un Organismo nell'ambito di un determinato schema di certificazione, di carattere 
+sia permanente, sia temporaneo. 
+
+ 
+
+* Sospensione dell'accreditamento: provvedimento sanzionatorio di sospensione dell'accreditamento 
+di un Organismo per un intero schema di accreditamento per un periodo determinato. 
+
+ 
+
+* Revoca dell'accreditamento: provvedimento sanzionatorio definitivo di ritiro dell'accreditamento di un 
+Organismo per un intero schema di accreditamento. 
+
+ 
+
+* Rinuncia dell’accreditamento: richiesta di rinuncia all’accreditamento presentata dall’Organismo per 
+qualsivoglia motivazione (es. non accettazione di variazioni del Tariffario, non accettazione di modi-
+fiche intervenute nelle prescrizioni regolanti l’attività di accreditamento, ecc..). 
+
+ 
+
+* Tempo di adeguamento: periodo intercorrente tra la data di emissione (1a emissione o revisione) di 
+un qualsivoglia documento di prescrizioni ACCREDIA e la data di entrata in vigore delle prescrizioni 
+medesime. 
+
+ 
+
+* Funzionario Tecnico: Persona incaricata da ACCREDIA di gestire le fasi delle valutazioni ai fini 
+dell’accreditamento, sorveglianza, mantenimento, rinnovo, estensione, riduzione, sospensione o re-
+voca dell’accreditamento, coordinando le attività degli Ispettori. 
+
+ 
+
+* Responsabile di Area: Persona delegata dalla Direzione di Dipartimento a supervisionare e coordina-
+re tutte le fasi di accreditamento per gli schemi di competenza della propria area. 
+
+ 
+
+* Ispettore : Persona qualificata e incaricata, da sola o come parte di un gruppo di valutazione, da 
+ACCREDIA per la valutazione della conformità del sistema di Gestione per la Qualità di un Organi-
+smo di Certificazione alla Norma di riferimento applicabile e alle prescrizioni ACCREDIA. 
+
+ 
+
+* Esperto Tecnico: Persona qualificata e incaricata da ACCREDIA di fornire specifica conoscenza o 
+esperienza in merito alla valutazione di particolari schemi/settori. 
+
+ 
+
+ 
+
+0.5 ACRONIMI 
+
+ 
+
+- ACCREDIA – DC: ACCREDIA Dipartimento Organismi di Certificazione e Ispezione; 
+- CSA: Comitato Settoriale di Accreditamento; 
+- CdA: Comitato per l’Attività di accreditamento; 
+- DDC: Direzione Dipartimento Organismi di Certificazione e Ispezione; 
+- FT: Funzionario Tecnico. 
+
+
+ 
+
+
+PARTE 1 - PRESCRIZIONI GENERALI RELATIVE AL PROCESSO DI 
+ACCREDITAMENTO 
+
+1. CRITERI ED INFORMAZIONI PER L’ACCREDITAMENTO 
+
+1.1 INFORMAZIONI GENERALI 
+
+ 
+
+1.1.1 Qualsiasi Organismo può trasmettere ad ACCREDIA-DC una richiesta, scritta, verbale o per via in-
+formatica, per conoscere i dettagli relativi all’accreditamento. 
+
+Al ricevimento della richiesta ACCREDIA-DC fornisce all’Ente l’indirizzo del sito web www.accredia.it 
+da cui si può scaricare l’elenco dei documenti ACCREDIA vigenti, che comprende la documentazio-
+ne utile ai fini dell’accreditamento. 
+
+ Salvo diversamente indicato, i riferimenti per la corrispondenza ordinaria sono i seguenti: 
+
+Sede Legale: ACCREDIA, Via Guglielmo Saliceto, 7/9 - 00161 Roma; 
+
+ Sede Operativa: ACCREDIA Dipartimento Organismi di Certificazione e di Ispezione, Via Tonale 26, 
+20125- Milano. 
+
+ In caso di ricorso alla e-mail o al fax è richiesto che tutte le comunicazioni siano indirizzate alle ap-
+posite caselle di posta elettronica o ai numeri indicati nel sito www.accredia.it. 
+
+ Quando necessario, può essere organizzato un incontro preliminare presso la sede di ACCREDIA-
+DC con un impegno temporale non superiore a mezza giornata, per chiarire all’Organismo interessa-
+to l’iter di accreditamento. Questi incontri non implicano alcun reciproco impegno e non devono as-
+sumere carattere di consulenza (anche involontaria). 
+
+ Qualora il Richiedente l’accreditamento proponga una visita preliminare, questa viene specificata in 
+apposito preventivo tecnico economico e fatturata in giorni-uomo, secondo le condizioni previste dal 
+tariffario vigente di ACCREDIA. Da questa visita può scaturire l’identificazione di carenze nel siste-
+ma o nelle competenze del Richiedente l’accreditamento, per i quali non vengono richieste da 
+ACCREDIA correzioni o azioni correttive. In ogni caso gli esiti di tale verifica non avranno influenza 
+sull’esito e sulla durata dell’eventuale successiva richiesta di accreditamento. Nei confronti di un sin-
+golo CAB può essere condotto un solo audit preliminare. 
+
+ 
+
+1.1.2 L'accreditamento e la conseguente iscrizione nel pertinente Registro di ACCREDIA, sono concessi 
+agli Organismi che operano la certificazione di conformità, a fronte delle norme e dei documenti di ri-
+ferimento loro applicabili e riportati nel documento ACCREDIA LS-02 e agli Organismi che effettuano 
+attività ispettive a fronte delle norme e documenti di riferimento loro applicabili e riportati nel docu-
+mento ACCREDIA LS-03. 
+
+ 
+
+1.1.3 Condizione perché un OdC possa essere accreditato è che: 
+
+ 
+
+• sia conforme ai requisiti applicabili e definiti nel presente Regolamento generale, nelle norme e 
+nei documenti di riferimento riportati nei documenti ACCREDIA LS-02 e LS-03 e mantenga co-
+stantemente un comportamento ispirato a correttezza, trasparenza e collaborazione con 
+ACCREDIA; 
+
+• soddisfi i requisiti minimi specifici, riportati nei Regolamenti specifici per schema di accreditamen-
+to; 
+
+• Abbia trasferito ai propri clienti, tramite adeguato documento contrattuale (Regolamento o simile), 
+gli obblighi ad essi applicabili, ivi compreso il riconoscimento del diritto, degli ispettori ACCREDIA, 
+di accedere alle sedi dei clienti medesimi (in accompagnamento all’OdC), anche con preavviso 
+
+
+minimo di 7 giorni lavorativi, pena la mancata concessione della certificazione o la sospensione o 
+revoca della certificazione in caso di persistente inadempienza all’obbligo medesimo. 
+
+Al momento della verifica iniziale presso la propria sede, l'Organismo deve avere, altresì, comple-
+tato almeno una verifica ispettiva interna di tutto il suo sistema di gestione e avere definito il rela-
+tivo piano di azioni correttive, ove richiesto. Deve aver inoltre effettuato almeno un riesame del 
+sistema ed avere pianificato le relative azioni correttive e preventive, ove applicabili. 
+
+ 
+
+Eventuali deroghe sono descritte nei Regolamenti specifici per schema di accreditamento e de-
+vono essere sottoposte ad apposita delibera del CSA pertinente. 
+
+ 
+
+1.1.4 L'Organismo può indicare, a sua scelta, eventuali limitazioni dello scopo di accreditamento nell'ambi-
+to del settore richiesto o dello schema di certificazione. Limitazioni possono altresì essere imposte 
+da ACCREDIA a seguito degli esiti dell'istruttoria e/o a seguito delle verifiche ispettive, ove non siano 
+presenti evidenze documentali e/o applicative dell’intero scopo richiesto. In assenza di tali limitazioni, 
+la competenza si intende estesa a tutto il settore di accreditamento richiesto. 
+
+ 
+
+1.1.5 L'Organismo deve dimostrare, tramite presentazione di apposita documentazione contabile (bilancio 
+o documento equivalente, con note integrative e relazione sulla gestione) di disporre delle o di esse-
+re, comunque, in grado di reperire le risorse finanziarie richieste per lo svolgimento delle attività di 
+certificazione (rilascio e mantenimento) almeno per il successivo ciclo di accreditamento. 
+
+ 
+
+Le eventuali fonti di finanziamento non derivanti dall’attività di certificazione / ispezione devono esse-
+re evidenziate e non devono compromettere l’indipendenza e l’imparzialità dell’Organismo. Ove non 
+direttamente deducibile dai dati di bilancio, tale informazione deve essere fornita tramite apposita 
+documentazione (es.: nota integrativa al bilancio, altri documenti contabili richiesti dalla Direzione o 
+dagli Ispettori ACCREDIA). 
+
+L’Organismo deve identificare, nella documentazione contabile di cui sopra, i proventi di ogni attività 
+differente da quelle oggetto di accreditamento. 
+
+Oltre a quanto precede, l’Organismo deve trasmettere annualmente (entro il primo semestre 
+dell’anno) a ACCREDIA, tramite compilazione di apposito modulo disponibile nell’area riservata Or-
+ganismi del sito web di ACCREDIA, i dati economici e dimensionali relativi alle attività svolte sotto 
+accreditamento, come indicati nei Regolamenti specifici per schema di accreditamento. 
+
+In caso di mancata ricezione di suddetti dati entro i termini previsti, ACCREDIA potrà assumere nei 
+confronti degli OdC inadempienti un provvedimento sanzionatorio minore. 
+
+ 
+
+1.1.6 L'Organismo (inclusi i dipendenti e i collaboratori esterni con contratto continuativo) non deve fornire 
+e si impegna a non svolgere attività che possano generare conflitti di interesse. Il dettaglio di tali atti-
+vità è contenuto nei Regolamenti specifici per schema di accreditamento. 
+
+ 
+
+1.1.7 Ove l'Organismo assegni una o più attività inerenti allo schema di certificazione e/o al settore accre-
+ditato o accreditando a un soggetto esterno, sia esso persona fisica, o giuridica (outsourcing), deve 
+assicurarsi ed essere in grado di dimostrare che tale soggetto sia competente per fornire il servizio 
+in questione, conosca ed applichi le procedure dell’Organismo e, quando applicabile, soddisfi i criteri 
+indicati nelle norme applicabili della serie ISO/IEC 17000). I nominativi di tali soggetti devono essere 
+comunicati a ACCREDIA preventivamente, in sede di domanda, e periodicamente aggiornati. 
+
+ 
+
+1.1.8 Qualora ACCREDIA-DC riceva domande di accreditamento riguardanti attività di certificazione svolte 
+da OdC in sedi estere si applica quanto previsto dal Regolamento (CE) 765/2008, da PG-12 “Politica 
+per l’applicazione degli accreditamenti Cross Frontier” e dai documenti EA e IAF pertinenti. 
+
+ 
+
+ 
+
+
+1.2 PRESENTAZIONE E ISTRUZIONE DELLA DOMANDA DI ACCREDITAMENTO 
+
+ 
+
+1.2.1 La Domanda di accreditamento di un Organismo deve essere presentata a ACCREDIA -DC utiliz-
+zando gli appositi moduli, disponibili sul sito web di ACCREDIA, corredati della documentazione ivi 
+richiesta. La domanda deve essere compilata con cura, chiarezza e completezza, fornendo tutte le 
+informazioni e dati richiesti e motivando le eventuali inapplicabilità in caso di mancata compilazione, 
+pena la non accettazione della domanda stessa. La domanda deve essere firmata da un rappresen-
+tante dell’Organismo, debitamente autorizzato. Nel caso di un Organismo già accreditato per altri 
+schemi, i moduli di domanda di accreditamento prevedono l’invio della documentazione in forma 
+semplificata. 
+
+ 
+
+1.2.2 Qualora la documentazione allegata alla domanda risulti completa e conforme alle richieste, entro 30 
+giorni solari dalla data del protocollo di ricezione, ACCREDIA formalizza l’accettazione della stessa e 
+predispone un preventivo tecnico economico per le attività di accreditamento, che dovrà essere fir-
+mato da DDC o dai Responsabili di Area per il successivo invio all’OdC. I criteri minimi per la deter-
+minazione dei giorni di verifica ACCREDIA sono descritti nelle procedure interne di ACCREDIA, i cui 
+principi sono riportati nei Regolamenti specifici per schema di accreditamento. 
+
+Se la documentazione trasmessa dal richiedente è incompleta o non chiara o se non sussistono, 
+comunque, tutte le condizioni applicabili, ACCREDIA non accetta la domanda e, sempre entro il ter-
+mine di 30 giorni lavorativi, richiede per iscritto le necessarie integrazioni documentali. Le integrazio-
+ni richieste devono essere fornite entro due mesi, pena la decadenza della domanda stessa. Se 
+suddette integrazioni risultano adeguate, la domanda viene quindi accettata e viene predisposto il 
+preventivo tecnico economico come sopra. 
+
+ 
+
+1.2.3 Gli Organismi di certificazione (e/o altri Soggetti) che intendono richiedere l’accreditamento per uno 
+schema di certificazione (sistema, prodotto/servizio/processo, personale) che non sia riferito ad una 
+norma emessa da un Ente Normatore ufficiale (es. UNI, CEI, ISO, IEC, ecc.), deve trasmettere pre-
+ventivamente ad ACCREDIA DDC una relazione atta a dimostrare la rispondenza dello schema di 
+certificazione in oggetto, ai requisiti del documento ACCREDIA PG-13. 
+
+DDC procede quindi all’esame di congruenza tra la relazione presentata e il citato documento PG-
+13. Tale esame è a titolo oneroso per l’Organismo richiedente. 
+
+Se l’esito dell’istruttoria è positivo, la richiesta viene presentata ai competenti Organi di ACCREDIA 
+per la delibera sull’avvio e per la definizione dei relativi criteri di accreditamento. Solo successiva-
+mente si procederà con l’avvio dell’iter di accreditamento. 
+
+ 
+
+ 
+
+1.3 PROCESSO DI ACCREDITAMENTO 
+
+ 
+
+1.3.1 ESAME DELLA DOCUMENTAZIONE 
+
+ 
+
+1.3.1.1 A seguito dell'accettazione del preventivo tecnico economico da parte dell’Organismo richiedente, 
+viene avviato l’iter di accreditamento con la verifica approfondita dei contenuti della relativa docu-
+mentazione. L’esame documentale di cui sopra viene effettuato entro 60 giorni dalla data di accetta-
+zione del preventivo tecnico economico. 
+
+Se l'esito delle verifiche sulla documentazione trasmessa dall’Organismo è positivo, si procede all'e-
+secuzione delle verifiche ispettive. 
+
+Se l'esito delle verifiche documentali non è positivo, ovvero in presenza di rilievi che richiedono 
+l’invio di documentazione revisionata, che dovrà essere rivalutata su base documentale, prima di 
+procedere con la pianificazione e lo svolgimento delle verifiche ispettive, ACCREDIA-DC notifica al 
+richiedente la necessità di procedere ai necessari adeguamenti della documentazione in funzione 
+dei rilievi evidenziati. 
+
+Il primo riesame viene effettuato a carico di ACCREDIA. Tutti gli ulteriori esami documentali che si 
+rendessero necessari successivamente saranno onerosi per gli Organismi. 
+
+
+Trascorso il termine di tre mesi dalla richiesta di adeguamento, senza che l'Organismo richiedente 
+abbia provveduto in tal senso, la Domanda di accreditamento decade e dovrà essere ripresentata 
+una nuova domanda di accreditamento con tutti gli oneri, anche economici, correlati. 
+
+ 
+
+1.3.1.2 Qualora dall’esame della documentazione presentata – nonché a seguito di eventuali contatti diretti 
+con l’Organismo richiedente – risulti evidente che l’Organismo non dispone di un sufficiente grado di 
+competenza, ACCREDIA - DC provvede a definire un periodo di tempo minimo che dovrà trascorre-
+re prima che il richiedente possa presentare una nuova domanda di accreditamento, essendo la 
+prima da considerarsi decaduta. 
+
+ 
+
+1.3.1.3 Qualora l’Organismo non provveda al pagamento del corrispettivo relativo all’esame documentale 
+effettuato, ACCREDIA procede all’interruzione dell’iter di accreditamento e quindi alla decadenza 
+della domanda. 
+
+ 
+
+ 
+
+1.3.2 VERIFICHE ISPETTIVE 
+
+ 
+
+1.3.2.1 Ad avvenuto espletamento, con esito positivo, dell’esame documentale di cui sopra, FT dispone 
+l’effettuazione della Verifica Ispettiva (VI) iniziale presso la sede dell’Organismo. 
+
+Essa ha lo scopo di verificare che le prassi operative adottate dall’Organismo, relativamente alle at-
+tività svolte, siano conformi alle prescrizioni del presente Regolamento e di ogni altro riferimento 
+normativo/legislativo generale e settoriale applicabile, nonché ai regolamenti e alle procedure stabiliti 
+dall’Organismo stesso, così come formalizzati nella documentazione relativa al sistema di gestione 
+del medesimo (Manuale, Regolamenti, procedure, istruzioni, liste di controllo, piani di controllo, quali-
+fiche del personale, ecc..). 
+
+ 
+
+1.3.2.2 Nel caso in cui vengano riscontrate e formalizzate una o più Non Conformità (secondo la definizione 
+di cui al § 0.4), si applicano le prescrizioni di cui al successivo § 1.3.2.5. 
+
+Qualora l’esito complessivo della verifica presso la sede dell’Organismo sia positivo, si procede con 
+la pianificazione delle Verifiche in Accompagnamento (VA), come richiesto dai Regolamenti specifici 
+di schema. La suddetta pianificazione potrà essere annullata in caso di mancato pagamento del cor-
+rispettivo relativo alla verifica già effettuata in sede. 
+
+Questa condizione può essere causa di interruzione dell’iter di accreditamento e quindi della deca-
+denza della domanda. 
+
+ 
+
+Le verifiche ispettive in accompagnamento hanno i seguenti scopi: 
+
+ 
+
+. verificare l’efficacia delle procedure dell’OdC, con particolare riferimento alla messa in campo di audi-
+tor (o ispettori, commissari d’esame) provvisti delle necessarie esperienze e competenze; 
+. osservare il comportamento degli auditor (o ispettori, esaminatori) e la conformità di tale comporta-
+mento alle procedure dell’Organismo e ad ogni altro riferimento normativo applicabile all’Organismo 
+stesso. 
+
+
+ 
+
+Le VA sono eseguite da almeno un ispettore ACCREDIA. Per quegli schemi di certificazione e/o set-
+tori di accreditamento nei quali tra gli ispettori ACCREDIA non esista la necessaria competenza rela-
+tivamente ai processi e prodotti dell’organizzazione interessata dalla VA (o relativamente alle figure 
+professionali esaminate), all’ispettore viene affiancato un esperto tecnico scelto dall'apposito Elenco 
+di cui al § 1.3.2.3. 
+
+In casi eccezionali, giustificati da oggettive difficoltà nell’organizzazione delle verifiche ispettive in 
+accompagnamento, ACCREDIA può autorizzare l’effettuazione di tali verifiche, prima 
+dell’effettuazione della verifica ispettiva iniziale presso la sede dell’Organismo. In questi casi, l’iter di 
+accreditamento resta comunque sospeso fino al positivo completamento della fase di verifica ispetti-
+va presso la sede dell’OdC. 
+
+Per le VA, l’Organismo è tenuto ad inviare ad ACCREDIA il piano di verifica almeno 3 giorni lavorati-
+vi prima dell’effettuazione delle verifica stessa. 
+
+
+ 
+
+1.3.2.3 I nominativi degli ispettori e degli esperti ACCREDIA-DC, qualificati sulla base delle procedure 
+ACCREDIA, sono approvati dal CdA, su proposta della Direzione del Dipartimento. 
+
+I riferimenti degli ispettori e degli esperti designati per le attività di valutazione (nominativi e organiz-
+zazioni di appartenenza) vengono comunicati preventivamente all'Organismo, il quale ha facoltà di 
+ricusarli, nei termini specificati nella comunicazione di notifica, motivandone per iscritto le ragioni. 
+
+ 
+
+ACCREDIA non fornisce i curricula vitae dei propri Ispettori ed Esperti Tecnici. 
+
+ 
+
+Tuttavia, su richiesta può fornire informazioni circa le collaborazioni in essere dei propri Ispettori ed 
+Esperti con gli Organismi potenzialmente in concorrenza. 
+
+ 
+
+Gli Organismi possono ricusare gli Ispettori (o chiedere che vengano sostituiti) per i seguenti motivi: 
+
+ 
+
+. comportamento deontologicamente scorretto (da dimostrare ad ACCREDIA con prove oggettive 
+relative al loro comportamento in campo e solo dopo che il CAB abbia espresso riserve 
+sull’operato dell’Ispettore; tali riserve vengono valutate dal direttore di dipartimento); 
+
+
+ 
+
+. conflitto di interessi (da comunicare ad ACCREDIA che ne verificherà la consistenza sulla base 
+delle dichiarazioni preventive fornite dall’Ispettore); se le ragioni addotte vengono ritenute valide 
+la questione sarà oggetto di valutazione nell'ambito dei rapporti ACCREDIA/Ispettore. 
+
+
+ 
+
+Gli Ispettori dipendenti di ACCREDIA non possono essere ricusati dall’Organismo interessato se non 
+per gravi motivi di incompatibilità che devono essere esplicitati direttamente alla Direzione del Dipar-
+timento. 
+
+ 
+
+1.3.2.4 L'Organismo deve permettere l'accesso dei componenti del GVI ACCREDIA alla sua sede e alla 
+propria documentazione e deve prestare a essi la massima cooperazione. 
+
+ 
+
+Analogamente, l’OdC deve adottare provvedimenti atti a consentire l’accesso dei GVI ACCREDIA 
+presso le sedi delle organizzazioni certificate o certificande o presso i siti ove le attività ispettive 
+vengono svolte. 
+
+ 
+
+1.3.2.5 Qualora, nel corso delle verifiche in sede e/o in accompagnamento, vengano riscontrate e formaliz-
+zate una o più Non Conformità, il processo di accreditamento viene sospeso fino alla conferma 
+dell’avvenuta applicazione dei necessari trattamenti, della chiusura delle corrispondenti azioni corret-
+tive e relativa verifica di efficacia da parte di ACCREDIA - DC. Suddetti adempimenti possono esse-
+re verificati da ACCREDIA - DC tramite apposite verifiche supplementari. 
+
+Il termine ultimo per l'attuazione delle azioni correttive e relativa dimostrazione di efficacia non deve 
+superare sei mesi, pena la decadenza dell’iter di accreditamento, salvo diverse disposizioni dei Re-
+golamenti specifici di schema. 
+
+ 
+
+ 
+
+1.4 PROCESSO DECISIONALE E CONCESSIONE DELL’ACCREDITAMENTO 
+
+ 
+
+1.4.1. Al termine dell’esecuzione delle verifiche ispettive di cui sopra e a fronte dell’esito positivo finale del-
+le stesse, FT predispone, secondo le procedure e con l’utilizzo della modulistica in vigore, apposito 
+documento riassuntivo delle valutazioni effettuate (scheda di accreditamento), che, rivisto e validato 
+da DDC o dai Responsabili di Area, viene sottoposto, all’esame dei CSA di ACCREDIA per 
+l’assunzione delle relative delibere. 
+
+ Le verifiche ispettive di cui sopra, devono essere concluse in una data precedente ai 15 giorni lavo-
+rativi dalla data della riunione del CSA utile, ciò al fine di consentire la corretta e completa prepara-
+zione della relativa documentazione. 
+
+
+La concessione dell’accreditamento è di esclusiva pertinenza del CSA, che delibera esaminando 
+approfonditamente gli esiti delle istruttorie condotte dalla struttura ed in modo indipendente dalla 
+proposta formulata da DDC. In caso di delibera non positiva, il CSA registra le motivazioni alla base 
+della propria decisione, così come quando dispone verifiche aggiuntive, supplementari, o pone altre 
+condizioni. 
+
+In ogni caso, la concessione dell’accreditamento è subordinata al versamento degli importi indicati 
+nelle offerte presentate da ACCREDIA-DC e comunque definiti a consuntivo, in funzione 
+dell’apposito Tariffario ACCREDIA. 
+
+ 
+
+1.4.2. L’accreditamento si intende rilasciato esclusivamente per ogni specifico schema di certificazione e 
+settore indicato nella delibera dei CSA. 
+
+1.4.3. La concessione dell'accreditamento viene formalizzata mediante un’apposita Convenzione (CO-00) 
+fra ACCREDIA-DC e l'Organismo, con l'emissione del relativo Certificato di Accreditamento e corri-
+spondente Allegato contenente la descrizione dello scopo di accreditamento e con l'iscrizione 
+dell'OdC nel "Registro degli Organismi accreditati" e relativa pubblicazione sul sito web di 
+ACCREDIA. Con la concessione dell’accreditamento, le certificazioni volontarie rilasciate dall’OdC 
+antecedentemente al conseguimento del medesimo acquistano lo stato di certificazioni accreditate, 
+salvo diversa disposizione in materia da parte del CSA. Per quanto attiene agli OdI, solo i rapporti 
+(certificati) di ispezione emessi successivamente alla data di accreditamento avranno lo stato di rap-
+porti accreditati. 
+
+Le attestazioni di conformità (certificati di conformità) o valutazioni di conformità (rapporti di ispezio-
+ne) o dichiarazioni di verifica degli inventari GHG in ambito volontario rilasciate da Organismi accre-
+ditati da ACCREDIA, nell’ambito dello scopo di accreditamento, devono riportare il Marchio 
+ACCREDIA, secondo i criteri di cui al Regolamento RG-09, salvo il caso in cui l’Organismo possieda 
+più accreditamenti rilasciati da Enti di Accreditamento firmatari degli Accordi MLA/MRA EA, IAF o 
+ILAC, nel qual caso può scegliere di apporre uno qualsiasi dei Marchi di Accreditamento di cui di-
+spone. 
+
+ L'accreditamento e la relativa convenzione hanno una validità di quattro anni a partire dalla data di 
+delibera. 
+
+Il Certificato di Accreditamento viene inviato all’Organismo solo dopo la sottoscrizione della conven-
+zione, nella quale vengono richiamate tutte le disposizioni regolanti la concessione e l’uso 
+dell’accreditamento. Il certificato di accreditamento non può essere ceduto a terzi. 
+
+ 
+
+1.4.4. La sottoscrizione della convenzione e l'iscrizione nel Registro impegna l'Organismo a mantenere la 
+propria struttura organizzativa ed il proprio funzionamento conforme ai requisiti stabiliti nel presente 
+Regolamento generale e nei Regolamenti specifici per schema di accreditamento, nelle norme e nei 
+riferimenti normativi generali e settoriali applicabili. 
+
+1.4.5. Per quanto riguarda l’uso di riferimenti all’accreditamento e, in particolare, l’utilizzo del marchio di 
+accreditamento ACCREDIA, l’OdC è tenuto a conformarsi alle disposizioni dell’apposito Regolamen-
+to, dei Regolamenti specifici per schema di accreditamento e del Regolamento per l’utilizzo del mar-
+chio ACCREDIA RG-09. 
+
+1.4.6. In caso di mancata concessione dell'accreditamento, DDC comunica all’Organismo richiedente, en-
+tro 15 giorni dalla data della delibera, le relative motivazioni e le eventuali condizioni per la prosecu-
+zione o la ripresa dell’iter di accreditamento, compreso il dettaglio della documentazione da presen-
+tare. 
+
+ 
+
+ 
+
+
+1.5 SORVEGLIANZA E RINNOVO DELL'ACCREDITAMENTO 
+
+1.5.1 SORVEGLIANZA DELL’ACCREDITAMENTO 
+
+ 
+
+1.5.1.1 GENERALITÀ 
+
+ 
+
+Nel periodo di validità dell'accreditamento, ACCREDIA è tenuta ad effettuare le attività periodiche di sorve-
+glianza sugli Organismi accreditati, in conformità ai requisiti imposti dalle norme e regole discendenti dal Re-
+golamento CE 765/2008 (Norme ISO/IEC e documenti EA/IAF) ed eventualmente dai Proprietari di schemi di 
+certificazione volontari. Pertanto tutti gli Organismi accreditati devono essere sottoposti ad attività di sorve-
+glianza sia tramite verifiche programmate (comunicate formalmente tramite un programma annuale di sorve-
+glianza), sia mediante verifiche non programmate, onde accertare il continuo rispetto delle prescrizioni del 
+presente Regolamento, delle norme e guide internazionali e di ogni altro riferimento normativo applicabile. 
+
+ 
+
+Ai fini di suddette verifiche, tutte le sedi dell'Organismo devono essere accessibili ai GVI ACCREDIA. 
+
+ 
+
+L'Organismo deve comunicare a ACCREDIA-DC gli aggiornamenti apportati alla sua organizzazione ed alla 
+sua documentazione, rispetto alle informazioni e dati forniti con la domanda iniziale di accreditamento (e 
+successive domande di estensione), che comportino mutamenti significativi nelle risorse e procedimenti uti-
+lizzati per l’attività certificativa. 
+
+ 
+
+L’attività di mantenimento dell’accreditamento è subordinata al versamento degli importi indicati nelle offerte 
+presentate da ACCREDIA-DC e comunque definiti a consuntivo, in funzione dell’apposito Tariffario 
+ACCREDIA (v. § 1.8.2.4). 
+
+ 
+
+ 
+
+1.5.1.2 SORVEGLIANZA PROGRAMMATA DELL’ACCREDITAMENTO 
+
+ 
+
+Per quanto attiene alle verifiche programmate (concordate con l’OdC tramite un preventivo tecnico economi-
+co, inviato da ACCREDIA, orientativamente entro la fine di Gennaio) la prima attività di sorveglianza consiste 
+in una verifica presso la sede dell'Organismo effettuata a distanza di sei mesi, dalla data di concessione 
+dell’accreditamento. 
+
+ 
+
+Variazioni rispetto a tale regola generale sono riportate nei Regolamenti specifici per schema di accredita-
+mento. 
+
+Le successive Verifiche sono effettuate ad intervalli annuali a decorrere dalla data della 1a verifica di sorve-
+glianza e comprendono verifiche ispettive, sia in sede, sia in accompagnamento. 
+
+ 
+
+In generale le verifiche in sede e in accompagnamento vengono pianificate in modo da permettere una com-
+pleta copertura dell’intero scopo di accreditamento, nell’arco dei quattro anni di durata della convenzione e 
+le caratteristiche (estensione e durata delle verifiche) sono stabilite in funzione dei criteri definiti nelle proce-
+dure interne e in applicazione dei pertinenti documenti EA/IAF. 
+
+ 
+
+I criteri di massima per la determinazione dei giorni uomo di verifica di sorveglianza in se-
+de/accompagnamento così come modalità di VA di sorveglianza più specifiche, sono indicati nei Regola-
+menti specifici per schema di accreditamento. 
+
+ 
+
+
+ 
+
+1.5.1.3 SORVEGLIANZA NON PROGRAMMATA DELL’ACCREDITAMENTO 
+
+ 
+
+Le attività di sorveglianza di cui sopra (verifiche in sede, in accompagnamento, market surveillance visit) 
+possono essere intensificate in funzione di quanto segue. 
+
+Verifiche supplementari e/o straordinarie, anche in forma di VA, possono essere disposte da ACCREDIA-
+DC, posteriormente alla concessione dell'accreditamento/estensione, a seguito dell’identificazione di situa-
+zioni critiche, sia direttamente da parte di ACCREDIA, sia a fronte di segnalazioni e/o reclami scritti e ogget-
+tivamente motivati, pervenuti a ACCREDIA, o di situazioni inadeguate delle quali ACCREDIA viene comun-
+que a conoscenza. 
+
+Queste esigenze vengono comunicate tempestivamente all'Organismo coinvolto preannunciando, se del ca-
+so, l’effettuazione di una verifica ispettiva specifica e chiarendo il contesto della segnalazione. 
+
+A tali verifiche – che si configurano a tutti gli effetti come verifiche ispettive non programmate– si applica un 
+preavviso minimo di 7 (sette) giorni lavorativi, entro i quali l’OdC può, se del caso, esercitare tempestiva-
+mente il diritto di ricusazione del GVI ACCREDIA. 
+
+I costi delle verifiche straordinarie (in sede, in accompagnamento / market surveillance visit) vengono adde-
+bitati all’OdC, nel caso in cui vengano individuate non conformità, o si riscontrino numerose osservazioni tali 
+da portare ad un esito negativo della verifica stessa. 
+
+In caso contrario, i costi sono sostenuti da ACCREDIA. 
+
+ 
+
+Un’ulteriore forma di sorveglianza è rappresentata da verifiche ispettive (sia in sede, sia in accompagnamen-
+to) disposte dai pertinenti Organi di ACCREDIA presso Organismi operanti in settori/aree che abbiano evi-
+denziato gravi e diffuse criticità comunque connesse alla efficacia delle certificazioni /ispezioni. Tali verifiche 
+sono a titolo oneroso per gli Organismi interessati. 
+
+ 
+
+Altri metodi di controllo potranno essere adottati da ACCREDIA per verificare l’operatività degli OdC (es. ri-
+chiesta di notizie da parte di ACCREDIA ad organizzazioni o società di consulenza, partecipazione di ispet-
+tori o FT del Dipartimento alle riunioni dei Comitati per la Salvaguardia dell’Imparzialità, o altri metodi di con-
+trollo previa regolamentazione). 
+
+ 
+
+ 
+
+1.5.1.4 PROCESSO DECISIONALE E CONCESSIONE DEL MANTENIMENTO 
+DELL’ACCREDITAMENTO 
+
+ 
+
+Gli esiti delle attività di sorveglianza di cui sopra vengono analizzati da FT, DDC e dai Responsabili di Area. 
+A seguito delle risultanze delle valutazioni di sorveglianza (rapporti degli ispettori ACCREDIA), nonché delle 
+successive analisi condotte da DDC, si procede come segue: 
+
+ 
+
+a) Nel caso di assenza di Non Conformità: viene confermato il mantenimento dell’accreditamento, da 
+un FT ACCREDIA, tramite semplici registrazioni di conferma degli esiti, con relative richieste di trat-
+tamenti e azioni correttive per le eventuali osservazioni; 
+
+b) In presenza di una o più Non Conformità, il rilievo viene esaminato e confermato all’Organismo da 
+DDC o dai Responsabili di Area. Nei casi gravi, il caso viene sottoposto all’attenzione del CSA, co-
+me “caso critico”; 
+
+Negli altri casi, si richiedono il trattamento e le azioni correttive, che devono essere attuate dall’OdC 
+di norma entro 2 mesi e comunque in accordo con DDC. In caso di azioni correttive insoddisfacenti o 
+non attuate in modo efficace, il caso viene sottoposto al CSA. 
+
+c) Nel caso in cui venga riscontrata una situazione di non conformità particolarmente critica, in termini 
+di numerosità e gravità delle violazioni, e/o nel caso in cui vengano rilevati, a carico dell’OdC, com-
+portamenti professionalmente scorretti: la pratica viene sottoposta direttamente al CSA. 
+
+ 
+
+
+1.5.1.5 VARIAZIONE DEL CAMPO DI ACCREDITAMENTO E DELLE NORME DI 
+
+ACCREDITAMENTO 
+
+ 
+
+Nel caso le norme di riferimento utilizzate dagli OdC per le attività di certificazione/ispezione, come riportate 
+nel Certificato di accreditamento, vengano aggiornate / modificate, o nel caso in cui le norme di accredita-
+mento vengano aggiornate/modificate, ACCREDIA procede alla verifica delle modifiche / integrazioni neces-
+sarie, di norma durante le attività di sorveglianza e di rinnovo, già previste nel normale ciclo di accreditamen-
+to (senza aggravio di costi), in conformità alle disposizioni emesse dagli Enti preposti (ISO/EA/IAF, ecc.), op-
+pure emesse da ACCREDIA stessa. 
+
+Gli esiti di tali verifiche vengono sottoposti al CSA competente per la conseguente delibera. 
+
+In caso di esito negativo della verifica di transizione ad una nuova edizione di norma di certificazio-
+ne/accreditamento, se sono scaduti i tempi per la transizione, dopo aver sottoposto il caso al CSA di compe-
+tenza, DDC comunica all’Organismo interessato, entro 15 giorni dalla data della delibera, la revoca del certi-
+ficato con le relative motivazioni e le condizioni per la ripresa dell’iter di accreditamento. 
+
+In particolare l’OdC dovrà ripresentare domanda di accreditamento, corredata solo della documentazione 
+aggiornata. ACCREDIA valuterà poi il tipo di attività di verifica da effettuare nell’ambito del processo di ac-
+creditamento (se esame documentale o verifica in sede o verifica in accompagnamento). Per tali attività, 
+ACCREDIA procederà all’emissione di un preventivo tecnico economico, che dovrà essere restituito per ac-
+cettazione da parte dell’OdC prima dell’avvio dell’iter. 
+
+ 
+
+ 
+
+1.5.1.6 TRASFERIMENTO DELL’ACCREDITAMENTO TRA ENTI DI ACCREDITAMENTO 
+
+ 
+
+L’OdC, che intende richiedere ad ACCREDIA il trasferimento dell’accreditamento, da altro Ente di accredita-
+mento firmatario degli accordi EA MLA , è tenuto a presentare domanda di accreditamento secondo le moda-
+lità di cui al § 1.2, corredata di tutta la documentazione ivi richiesta, dell’ultimo rapporto di verifica dell’Ente di 
+accreditamento cedente e del Certificato di accreditamento in corso di validità. Il processo di trasferimento 
+dell'accreditamento si svolge con le stesse modalità del processo di accreditamento, salvo che per le verifi-
+che in accompagnamento per le quali viene effettuato un campionamento degli schemi di certificazione e/o 
+dei settori, tenendo conto della criticità degli stessi. Nello specifico alcuni settori verranno verificati in accom-
+pagnamento, mentre altri campionati durante la verifica in sede. 
+
+Nel caso in cui l’OdC intende richiedere ad ACCREDIA il trasferimento dell’accreditamento, da altro Ente di 
+accreditamento non firmatario degli accordi EA MLA, si applicheranno in toto le prescrizioni 
+dell’accreditamento. 
+
+ 
+
+ 
+
+1.5.1.7 TRASFERIMENTO TITOLARITA’ DELL’ACCREDITAMENTO 
+
+ 
+
+La titolarità dell’accreditamento può esser trasferita ad un nuovo soggetto giuridico – a seguito di modifica 
+della ragione sociale dell’OdC, fusione, incorporazione o cessione di ramo d’azienda ad altro Ente - previa 
+valutazione, da parte di ACCREDIA-DC, del mantenimento delle condizioni richieste con riferimento a: 
+
+- visura camerale o documento equivalente attestante l’identità giuridica dell’OdC; 
+- assetti organizzativi; 
+- risorse umane (in termini quantitativi e di competenze); 
+- ogni altra condizione applicabile. 
+
+
+ 
+
+La valutazione si baserà sull’esame della documentazione (condotto a seconda dei casi con un esame do-
+cumentale specifico o direttamente dall’Ufficio Tecnico) inviata dall’OdC, salvo che la complessità del caso 
+non comporti una verifica in sede. 
+
+La verifica in sede è sempre applicabile nel caso di trasferimento della titolarità dell’accreditamento ad Or-
+ganismo non accreditato. 
+
+
+La concessione del trasferimento della titolarità dell’accreditamento è di esclusiva pertinenza del CSA, che 
+delibera esaminando gli esiti delle istruttorie condotte dalla struttura e può eventualmente chiedere 
+l’effettuazione di ulteriori verifiche. 
+
+La concessione del trasferimento dell’accreditamento comporta l’aggiornamento dell’ apposita Convenzione 
+(CO-00) fra ACCREDIA-DC e l'Organismo, l’aggiornamento del relativo Certificato di Accreditamento e 
+l’aggiornamento del Registro degli Organismi accreditati e relativa pubblicazione sul sito web di ACCREDIA. 
+
+ 
+
+ 
+
+1.5.2 RINNOVO DELL’ACCREDITAMENTO 
+
+ 
+
+1.5.2.1 EFFETTUAZIONE DEL PROCESSO DI RINNOVO DELL’ACCREDITAMENTO 
+
+ 
+
+Prima dello scadere dei quattro anni di validità dell’accreditamento, ACCREDIA- DC attiva la procedura di 
+rinnovo (concordata con l’OdC tramite un preventivo tecnico economico) che si svolge con un riesame com-
+pleto(1) della documentazione (a titolo oneroso per l’OdC) e con l’esecuzione, di apposita verifica ispettiva in 
+sede e in accompagnamento quando necessario. 
+
+ 
+
+L'esito delle verifiche di rinnovo viene analizzato da FT, congiuntamente al riesame dell’andamento com-
+plessivo dell’OdC nel quadriennio di accreditamento, comprensivo dei dati relativi all’attività di monitoraggio 
+effettuata sull’Organismo stesso (situazione reclami pervenuti dai clienti o dal mercato, ecc..). 
+
+ 
+
+Nota 1: Nel riesame documentale per rinnovo di uno schema di accreditamento, si terrà conto degli eventuali riesami 
+documentali effettuati nel corso dell’anno in altri schemi di certificazione/settori, per i quali l’OdC è accreditato. Rimarrà 
+facoltà di ACCREDIA valutare se effettuare l’esame documentale di rinnovo durante la verifica in sede. 
+
+ 
+
+ 
+
+1.5.2.2 PROCESSO DECISIONALE E CONCESSIONE DEL RINNOVO 
+DELL’ACCREDITAMENTO 
+
+ 
+
+Le operazioni si svolgono in modo analogo a quanto previsto per il processo di accreditamento, di cui al p.to 
+1.4 “PROCESSO DECISIONALE E CONCESSIONE DELL’ACCREDITAMENTO”, ad eccezione di quanto 
+di seguito riportato: 
+
+ 
+
+Quando la verifica di rinnovo dovesse essere stata condotta in una data troppo ravvicinata alla riunione del 
+pertinente Comitato Settoriale di Accreditamento, la validità dell’accreditamento può essere prorogata da 
+DDC o dal CSA oltre la data di scadenza e fino alla data della prima riunione del CSA successiva alla sca-
+denza stessa. Il certificato di accreditamento non dura comunque mai più di 5 anni. 
+
+ 
+
+In caso di mancata concessione del rinnovo dell’accreditamento, viene revocato l’accreditamento e DDC 
+comunica all’Organismo interessato, entro 15 giorni dalla data della delibera, le relative motivazioni e le 
+condizioni per la ripresa dell’iter di accreditamento. 
+
+In particolare l’OdC dovrà ripresentare domanda di accreditamento; ACCREDIA valuterà il tipo di attività di 
+verifica da effettuare nell’ambito del processo di accreditamento (se esame documentale e verifica in sede o 
+solo verifica in sede). Per tali attività, ACCREDIA procederà all’emissione di un preventivo tecnico economi-
+co, che dovrà essere restituito per accettazione da parte dell’OdC prima dell’avvio dell’iter. 
+
+ 
+
+
+1.6 ESTENSIONE DELL’ACCREDITAMENTO 
+
+ 
+
+1.6.1 INFORMAZIONI GENERALI 
+
+ 
+
+Ai fini della richiesta di estensione dell'accreditamento a nuovi schemi di certificazione, settori (es. : nuove 
+tipologie di prodotti, nuovi settori IAF, nuove figure professionali, nuove tipologie di ispezioni su progetti, pro-
+dotti, impianti, ecc..) – sempre all'interno dello schema già coperto da accreditamento – l’OdC deve soddi-
+sfare i requisiti minimi riportati nei Regolamenti specifici per schema di accreditamento. 
+
+1.6.2 PRESENTAZIONE E ISTRUZIONE DELLA DOMANDA DI ESTENSIONE 
+
+ 
+
+1.6.2.1 La domanda di estensione dell'accreditamento di un Organismo deve essere presentata a 
+ACCREDIA - DC utilizzando gli appositi moduli, disponibili sul sito web di ACCREDIA, corredati della 
+documentazione ivi richiesta. 
+
+La domanda deve essere firmata da un rappresentante dell’Organismo debitamente autorizzato. 
+
+ La domanda deve essere compilata fornendo tutte le informazioni e dati richiesti, motivando le even-
+tuali inapplicabilità in caso di mancata compilazione, pena la non accettazione della domanda stes-
+sa. Nel caso di un Organismo già accreditato per altri schemi, i moduli di domanda di estensione 
+
+dell’accreditamento prevedono l’invio della documentazione in forma semplificata. 
+
+ 
+
+La domanda di estensione non può essere istruita in presenza di provvedimenti sanzionatori di 
+“blocco delle estensioni” di cui al § 1.8. 
+
+ 
+
+1.6.2.2 Qualora la documentazione allegata alla domanda risulti completa e conforme alle richieste, entro 30 
+giorni solari dalla data del protocollo di ricezione, FT formalizza l’accettazione della stessa e predi-
+spone un preventivo tecnico economico per le attività di estensione, che dovrà essere firmato da 
+DDC per il successivo invio all’OdC. 
+
+Se la documentazione trasmessa dal richiedente è incompleta o non chiara o se non sussistono, 
+comunque, tutte le condizioni applicabili, FT non accetta la domanda e, sempre entro il termine di 30 
+giorni di cui sopra, richiede per iscritto le necessarie integrazioni documentali. Le integrazioni richie-
+ste devono essere fornite entro due mesi, pena la decadenza della domanda stessa. Se suddette in-
+tegrazioni risultano adeguate, la domanda viene quindi accettata e viene predisposto un preventivo 
+tecnico economico come sopra. 
+
+ 
+
+ 
+
+1.6.3 ESAME DELLA DOCUMENTAZIONE 
+
+ 
+
+A seguito dell'accettazione del preventivo tecnico economico da parte dell’Organismo richiedente, viene av-
+viato l’iter di estensione con la verifica dei contenuti della documentazione (esame documentale) che viene 
+completato entro il termine massimo di 30 giorni dalla data di accettazione del preventivo. 
+
+ Se l'esito delle verifiche documentali non è positivo, ovvero in presenza di rilievi che richiedono l’invio di 
+documentazione revisionata, che dovrà essere rivalutata su base documentale, prima di procedere con la 
+pianificazione e lo svolgimento delle verifiche ispettive, ACCREDIA- DC notifica al richiedente la necessità di 
+procedere ai necessari adeguamenti della documentazione in funzione dei rilievi evidenziati. Tali adegua-
+menti devono essere trasmessi entro due mesi, pena la decadenza della domanda stessa. 
+
+ Quanto precede non si applica in presenza di provvedimenti sanzionatori di “blocco” delle pratiche di 
+estensione di cui al § 1.8. 
+
+ 
+
+
+1.6.4 VERIFICHE ISPETTIVE 
+
+ 
+
+1.6.4.1 A seguito dell’esito positivo dell’esame documentale di cui sopra, l’iter di estensione si sviluppa in 
+funzione dello schema di accreditamento, come precisato nei Regolamenti specifici. 
+
+ 
+
+In casi eccezionali, giustificati da oggettive difficoltà nell’organizzazione delle verifiche ispettive in 
+accompagnamento (es. numero particolarmente esiguo di certificazioni nel settore in estensione), 
+ACCREDIA può autorizzare l’effettuazione di tali verifiche, prima del completamento dell’esame do-
+cumentale. 
+
+In questi casi, l’iter di estensione dell’accreditamento resta comunque sospeso fino al completamen-
+to della fase di esame documentale. 
+
+Quanto precede non si applica in presenza di provvedimenti sanzionatori di “blocco” delle pratiche di 
+estensione di cui al § 1.8. 
+
+ 
+
+1.6.4.2 Per la composizione dei GVI per le verifiche di estensione, si applicano criteri analoghi a quelli relati-
+vi alle verifiche di primo accreditamento. 
+
+ 
+
+1.6.4.3 Qualora, nel corso delle verifiche in accompagnamento, vengano riscontrate e formalizzate una o 
+più non conformità, o l’esito della verifica sia comunque non positivo, il processo di estensione 
+dell’accreditamento viene sospeso fino alla chiusura delle corrispondenti azioni correttive e relativa 
+dimostrazione di efficacia che ACCREDIA-DC provvederà a verificare tramite apposite verifiche 
+supplementari. Il termine ultimo per l'attuazione di suddette azioni correttive non deve superare di 
+norma due mesi. Il pertinente CSA può disporre verifiche supplementari a valle della concessione 
+dell’estensione, in presenza di un numero significativo di rilievi classificati come Osservazioni. 
+
+ 
+
+1.7 PROCESSO DECISIONALE E CONCESSIONE DELL’ESTENSIONE 
+DELL’ACCREDITAMENTO 
+
+ 
+
+Le operazioni si svolgono in modo analogo a quanto previsto per il processo di accreditamento, di cui al p.to 
+1.4 “PROCESSO DECISIONALE E CONCESSIONE DELL’ACCREDITAMENTO”. 
+
+A fronte della concessione dell’estensione dell’accreditamento, ACCREDIA aggiorna il certificato di accredi-
+tamento, già in essere, inserendo il nuovo scopo di accreditamento. 
+
+L’estensione dell’accreditamento non prolunga la validità dell’accreditamento. 
+
+Ciò nell’ambito della convenzione di accreditamento già in vigore, che non deve essere rifirmata. 
+
+ 
+
+ 
+
+1.8 SOSPENSIONE, REVOCA E RIDUZIONE DELL’ACCREDITAMENTO 
+
+1.8.1 PROVVEDIMENTI SANZIONATORI MINORI 
+
+ 
+
+Qualora gli esiti di verifiche ispettive in sede e in accompagnamento condotte nell’ambito delle attività di sor-
+veglianza o di procedimenti di estensione dello scopo di accreditamento e qualsiasi altro accertamento –– 
+forniscano chiare evidenze di situazioni tali da compromettere il valore delle certificazioni rilasciate 
+dall’Organismo (senza mettere in dubbio la fiducia nell’Organismo) – contestualmente alle attività supple-
+mentari connesse alla verifica di adeguatezza e efficacia delle relative azioni correttive – la Direzione 
+ACCREDIA, di concerto con il Presidente, provvede a comminare all’OdC interessato sanzioni minori, quali: 
+
+ 
+
+- blocco delle richieste di estensione o delle pratiche di estensione eventualmente già in corso, per un 
+periodo temporale stabilito; 
+- blocco delle richieste di accreditamento riferite ad altri schemi per un periodo di tempo stabilito; 
+- richiesta di attuazione di correzioni/azioni correttive nel caso di certificazioni indebitamente rilasciate. 
+
+
+ 
+
+ 
+
+
+Tali sanzioni minori vengono comunicate all’OdC interessato con lettera a firma della Direzione di Diparti-
+mento di ACCREDIA ed eventualmente successivamente pubblicate (senza ulteriori dettagli) sul sito web di 
+ACCREDIA (ma non evidenziate sul Registro degli Organismi accreditati). Esse vengono riferite, al CSA 
+(che può eventualmente disporne la revisione) con tutte le informazioni del caso. 
+
+Provvedimenti sanzionatori minori possono essere deliberati anche dal pertinente CSA. 
+
+ 
+
+ 
+
+1.8.2 PROVVEDIMENTI SANZIONATORI MAGGIORI 
+
+ 
+
+1.8.2.1 Se dalle verifiche di sorveglianza, supplementari, straordinarie, di rinnovo o da altri controlli e accer-
+tamenti (es. da segnalazioni) emergono situazioni di particolare gravità, sia sul piano tecnico, sia sul 
+piano deontologico viene disposta da ACCREDIA, in funzione della gravità della situazione stessa, 
+la riduzione (temporanea o permanente), la sospensione o la revoca dell'accreditamento. 
+
+ 
+
+ 
+
+Fra suddette condizioni di particolare gravità, rientrano, a titolo di esempio: 
+
+ 
+
+. la mancata rimozione delle cause che hanno condotto all’adozione di provvedimenti sanzionatori; 
+. minori e il mancato adempimento degli obblighi correlati; 
+
+
+. la mancata risoluzione delle Non Conformità in accordo alle procedure di ACCREDIA; 
+. la mancata gestione dei reclami; 
+. la violazione di requisiti di norme di accreditamento/requisiti del presente Regolamento Generale e dei 
+Regolamenti specifici per schema di accreditamento; 
+. la mancata attuazione di correzioni/azioni correttive nel caso di certificazioni indebitamente rilasciate 
+(una azione correttiva potrebbe per esempio portare anche alla decisione, a carico dell’OdC, di sospen-
+dere o revocare un certificato indebitamente rilasciato, perché fuori dall’accreditamento di ACCREDIA, o 
+perché non conforme alle norme applicabili allo schema di certificazione); 
+. l’uso improprio del marchio ACCREDIA; 
+. il mancato rispetto degli obblighi definiti nella convenzione di accreditamento e/o nei Regolamenti speci-
+fici per schema di accreditamento, in relazione alla trasmissione dei dati delle entità certificate secondo 
+le procedure ACCREDIA; 
+. i casi in cui l’OdC non consenta a ACCREDIA di effettuare le verifiche ispettive, secondo quanto 
+. previsto dal presente Regolamento. 
+
+
+
+
+ 
+
+Conformemente al disposto delle norme statutarie e regolamentari, suddetti provvedimenti sanziona-
+tori maggiori vengono adottati su delibera del CSA. Ove ritenuto necessario, Il Presidente o il Diret-
+tore Generale di ACCREDIA possono richiedere che vengano indette apposite riunioni straordinarie 
+del CSA, anche a mezzo e-mail per l’assunzione di delibere. 
+
+ 
+
+Le delibere del CSA, che devono essere adeguatamente motivate, vengono pubblicate sul sito web 
+e comunicate all’OdC interessato tramite lettera raccomandata A.R., o a mezzo PEC, a firma del 
+Presidente di ACCREDIA. 
+
+ 
+
+DDD provvede all’immediata attuazione del provvedimento sanzionatorio e di tutte le delibere del 
+CSA ad esso connesse. 
+
+ 
+
+1.8.2.2 La durata dei provvedimenti di riduzione temporanea e sospensione dell’accreditamento è stabilita 
+dal CSA (nel rispetto dei vincoli di cui al seguito) contestualmente alla delibera del provvedimento. 
+La riduzione temporanea e la sospensione dell’accreditamento non comportano la decadenza degli 
+obblighi contrattuali nei confronti di ACCREDIA. 
+
+ Al termine del periodo di durata del provvedimento di riduzione temporanea, o di sospensione 
+dell’accreditamento, deliberato dal CSA e qualora le verifiche effettuate da ACCREDIA per accertare 
+l’efficace rimozione delle cause origine del provvedimento, abbiano avuto esito positivo, il provvedi-
+mento stesso decade e l’accreditamento viene ripristinato mantenendo la scadenza originale del 
+certificato di accreditamento. Gli esiti delle verifiche vengono comunque sottoposti all’esame del 
+CSA alla prima riunione utile. 
+
+
+ Qualora, invece, al termine della durata del provvedimento sanzionatorio stabilita dal CSA le verifi-
+che effettuate da ACCREDIA non abbiano accertato l’efficace superamento delle cause origine del 
+provvedimento, il caso viene sottoposto all’esame del CSA per l’adozione di ulteriori provvedimenti 
+sanzionatori, comunicati all’OdC come prescritto al punto 1.8.2.1. 
+
+I provvedimenti di riduzione temporanea e di sospensione possono avere una durata massima di sei 
+mesi dalla data di delibera del CSA. 
+
+Trascorso tale termine come sopra, in assenza del ripristino della conformità da parte 
+dell’Organismo, la riduzione dello scopo diviene permanente e/o la sospensione viene trasformata in 
+revoca dell'accreditamento, sempre con delibera del CSA. 
+
+DDD provvede all’immediata attuazione del provvedimento. 
+
+La revoca dei provvedimenti di riduzione temporanea e di sospensione, con conseguente ripristino 
+dell’accreditamento deve essere sottoposto a delibera del CSA. 
+
+ 
+
+1.8.2.3 Fatte salve specifiche disposizioni contenute nei Regolamenti specifici di accreditamento, nel perio-
+do di vigenza della riduzione temporanea e sospensione, l'Organismo non deve rilasciare nuove at-
+testazioni di conformità sotto accreditamento ACCREDIA. Può, tuttavia, procedere alla sorveglianza 
+ed al rinnovo delle certificazioni precedentemente rilasciate esclusivamente nei termini in cui sono 
+state emesse (non è consentita l’estensione degli scopi di certificazione). Le attività di mantenimento 
+e rinnovo delle certificazioni ricadenti nel periodo di riduzione temporanea/sospensione sono preven-
+tivamente sottoposte ad ACCREDIA DC, che definisce eventuali attività di accompagnamento al ri-
+guardo, con oneri a carico dell’OdC. 
+
+In suddetto periodo, l’OdC deve inoltre conformarsi alle prescrizioni di cui al Regolamento relativo 
+all’utilizzo del marchio ACCREDIA. 
+
+ 
+
+1.8.2.4 La sospensione dell’accreditamento può essere disposta d’ufficio dalla Direzione Generale di 
+ACCREDIA, nel caso in cui il pagamento dei corrispettivi dovuti ad ACCREDIA venga ritardato di ol-
+tre 60 giorni rispetto alla data prevista dalle condizioni contrattuali (data di pagamento indicata nella 
+fattura), nonostante il sollecito inviato da ACCREDIA allo scadere del 45esimo giorno di ritardo. So-
+no fatti salvi eventuali accordi di dilazione dei pagamenti, che devono essere autorizzati dalla Dire-
+zione Generale di ACCREDIA. 
+
+ 
+
+1.8.2.5 I provvedimenti sanzionatori di cui ai precedenti §§ 1.8.1 e 1.8.2 possono essere revocati prima del-
+la scadenza stabilita dal CSA pertinente (se applicabile), quando l’Organismo dimostra di aver ri-
+mosso le cause alla base delle non conformità che ne hanno determinato l’adozione e con delibera 
+dell’Organo che aveva deliberato la sanzione. 
+
+DDD provvede all’immediata attuazione del provvedimento e di tutti gli atti connessi. 
+
+ 
+
+1.8.2.6 I provvedimenti di riduzione temporanea e sospensione vengono pubblicati sul sito web di 
+ACCREDIA e evidenziati nel Registro degli Organismi accreditati e in altre eventuali sedi applicabili. 
+
+ 
+
+1.8.2.7 L'accreditamento viene ridotto in modo permanente o revocato in alcuni casi, quali a titolo di 
+
+ esempio: 
+
+ 
+
+. mancata rimozione delle cause che hanno condotto al provvedimento di sospensione, entro i termini pre-
+visti; 
+. delibera non positiva del rinnovo dell’accreditamento da parte del CSA; 
+. comportamenti illeciti o dolosi o gravemente scorretti in termini di etica professionale; 
+. mancato versamento delle somme dovute, qualora l’Organismo persista nel suo inadempimento, tra-
+scorsi sei mesi dalla comunicazione del provvedimento di sospensione disposto d’ufficio; 
+. uso dell’accreditamento tale da portare grave nocumento e discredito ad ACCREDIA e/o al sistema di 
+accreditamento e certificazione. 
+
+
+ 
+
+L'accreditamento decade altresì in caso di cessazione dell’attività dell’OdC, qualunque ne sia la ra-
+gione, e nel caso di rinuncia da parte dell'Organismo. 
+
+
+ 
+
+1.8.2.8 A seguito di riduzione permanente, revoca o di decadenza dell'accreditamento, l'Organismo deve 
+cessare di emettere attestazioni di conformità con riferimento all'accreditamento ACCREDIA e ri-
+muovere il marchio ACCREDIA: 
+
+ 
+
+. per i sistemi di gestione aziendale dai certificati già emessi; 
+. per lo schema prodotto, alla prima verifica di sorveglianza o rinnovo, e comunque alla prima modifica 
+sul prodotto che richieda l’intervento dell’Organismo. 
+
+
+L’Organismo è tenuto inoltre a restituire ad ACCREDIA l'originale del certificato in suo possesso, 
+non utilizzare eventuali copie o riproduzioni dello stesso, nonché conformarsi alle disposizioni di cui 
+al Regolamento relativo all’utilizzo del marchio ACCREDIA. 
+
+La revoca, la riduzione permanente o la decadenza dell’accreditamento vengono pubblicate su sito 
+web di ACCREDIA. Il nominativo dell’OdC viene cancellato dal Registro degli Organismi accreditati e 
+da ogni altra sede applicabile. 
+
+ 
+
+1.8.2.9 In caso di revoca dell'accreditamento o di riduzione permanente, l'Organismo non può presentare 
+una nuova domanda di accreditamento prima di sei (6) mesi dalla data di delibera del CSA di ado-
+zione del provvedimento di revoca, salvo diversa decisione del CSA. 
+
+ 
+
+1.8.2.10 La revoca dell'accreditamento o la riduzione permanente non comporta la decadenza degli obblighi 
+contrattuali nei confronti di ACCREDIA che si riserva di poter avviare le procedure di riscossione 
+coattiva e di recupero delle spese, maggiorate di interessi, nelle forme previste dalla legge. 
+
+ 
+
+ 
+
+1.8.3 SOSPENSIONE RICHIESTA DALL’ORGANISMO 
+
+ 
+
+L’Organismo ha facoltà di richiedere l’autosospensione del proprio accreditamento per un periodo non supe-
+riore a dodici mesi, alla scadenza dei quali l’auto sospensione viene trasformata in revoca. 
+
+Le motivazioni e la durata connesse con la richiesta di auto sospensione, vengono valutate da DDC che può 
+modificare e/o integrare le condizioni e i tempi previsti per il ripristino della conformità, disponendo in ogni 
+caso gli accertamenti necessari alla verifica della piena conformità, al termine del periodo di auto sospensio-
+ne. 
+
+Dell’auto-sospensione dell’accreditamento vengono informati il CSA e viene data notizia sul sito web di 
+ACCREDIA e sul Registro degli Organismi accreditati. 
+
+ 
+
+ 
+
+1.8.4 RIDUZIONE PROCEDURALE DI SCOPO E RINUNCIA ALL'ACCREDITAMENTO 
+
+ 
+
+1.8.4.1 La riduzione dell'accreditamento (restrizione dello scopo del medesimo) viene disposta da 
+ACCREDIA, su delibera del CSA, a fronte di specifica richiesta dell'Organismo o su iniziativa di 
+ACCREDIA stessa, nel caso in cui l'Organismo non abbia effettuato attività di verifica, certificazione 
+o sorveglianza per la durata del ciclo di accreditamento, relativamente ad un determinato schema di 
+certificazione, settore. 
+
+Della riduzione dell’accreditamento deliberata dal CSA viene data notizia sul sito web di ACCREDIA 
+e sul Registro degli Organismi accreditati e alle Autorità eventualmente competenti. 
+
+ 
+
+1.8.4.2 Un OdC accreditato può rinunciare all’accreditamento in qualunque momento e per qualsivoglia mo-
+tivazione (es. non accettazione di variazioni del Tariffario, non accettazione di modifiche intervenute 
+nelle prescrizioni regolanti l’attività di accreditamento, ecc..). 
+
+
+
+
+
+
+
+
+ Della rinuncia dell’accreditamento vengono informati il CSA e viene data notizia sul sito web di 
+ACCREDIA e sul Registro degli Organismi accreditati. 
+
+1.8.4.3 La rinuncia dell'accreditamento non comporta la decadenza degli obblighi contrattuali nei confronti di 
+ACCREDIA che si riserva di poter avviare le procedure di riscossione coattiva e di recupero delle 
+spese, maggiorate di interessi, nelle forme previste dalla legge 
+
+
+1.8.5 RIPRISTINO DELL’ACCREDITAMENTO 
+
+ 
+
+In base al motivo della sospensione/autosospensione/riduzione/autoriduzione, ACCREDIA effettua la verifica 
+del ripristino della conformità tramite una o più delle seguenti azioni: 
+
+a) esame della documentazione; 
+b) verifica in sede; 
+c) verifica in accompagnamento. 
+
+
+Verificato il ripristino della conformità, FT prepara un rapporto sulle attività di verifica svolte che, valutato da 
+DDC o dai Responsabili di area viene presentato al CSA di pertinenza che delibera la possibilità o meno del-
+la ripresa dell’attività dell’Organismo sospeso/con riduzione di scopo. 
+
+Nel caso dell’autosospensione e qualora non siano necessarie attività di verifica (vedi § 1.8.3), il provvedi-
+mento di ripristino dell’accreditamento viene adottato da DDC, che ne dà informativa al primo CSA utile. 
+
+L’elenco degli Organismi pubblicato nel sito web di ACCREDIA viene aggiornato per segnalare il ripristino 
+dell’accreditamento. 
+
+ 
+
+ 
+
+1.9 RECLAMI, RISERVE E APPELLI 
+
+ 
+
+1.9.1 RECLAMI 
+
+ 
+
+I reclami in ordine alle attività operative di ACCREDIA – DC (es. comportamenti degli ispettori, modalità di 
+gestione delle pratiche, presunte disparità di trattamenti, ecc..) devono essere formalizzati per iscritto e van-
+no indirizzati a DDC che provvede a gestire il reclamo secondo le procedure in vigore, dando comunque ri-
+sposta al reclamante entro un mese. 
+
+ 
+
+Con riferimento al comportamento degli Ispettori ACCREDIA, gli eventuali reclami potranno essere presenta-
+ti entro 10 giorni lavorativi dall’effettuazione delle attività di verifica. 
+
+ 
+
+ 
+
+1.9.2 RISERVE 
+
+ 
+
+Con riferimento ai rilievi emessi dagli Ispettori ACCREDIA, eventuali riserve potranno essere presentate entro 
+3 giorni lavorativi dall’effettuazione della verifica. 
+
+ 
+
+ACCREDIA si impegna a fornire all’Organismo che ha presentato riserva, l’esito della valutazione effettuata, 
+nei termini di accoglimento o meno della riserva stessa, con le relative motivazioni. 
+
+ 
+
+L’accettazione o meno delle riserve formulate dall’Organismo è demandata al Direttore di Dipartimento e ai 
+Responsabili di Area. 
+
+ 
+
+ 
+
+1.9.3 APPELLI 
+
+ 
+
+Qualora l’OdC accreditato, o in corso di accreditamento, intenda richiedere ad ACCREDIA di riconsiderare i 
+provvedimenti presi a suo carico, può presentare appello, con le modalità descritte nel documento 
+ACCREDIA RG-06. 
+
+La gestione dell’appello è di competenza della Commissione di Appello e non richiede alcun coinvolgimento 
+da parte dei Comitati Settoriali di Accreditamento, che vengono tuttavia informati della presentazione e 
+dell’esito dei ricorsi. In vigenza del ricorso in appello, le decisioni relative alle pratiche di accreditamento 
+dell’OdC relative allo stesso schema di certificazione (es: rinnovi, transizioni o estensioni) vengono adottate 
+dalla Commissione d’Appello, che opera in luogo del CSA. 
+
+ 
+
+
+1.10 OBBLIGAZIONI A CARICO DELL’ORGANISMO 
+
+ 
+
+1.10.1 Gli OdC si impegnano a pagare i diritti annui di mantenimento dell'accreditamento previsti nel Tarif-
+fario. 
+1.10.2 Gli OdC si impegnano a mantenere la conformità ai requisiti di accreditamento applicabili e a man-
+tenere costantemente un comportamento ispirato a correttezza, trasparenza e collaborazione con 
+ACCREDIA. 
+1.10.3 Gli OdC devono inviare, su richiesta di ACCREDIA, in maniera tempestiva all’indirizzo e-mail pro-
+grammazione@accredia.it l’elenco delle verifiche ispettive in pianificazione relative agli schemi/ ma-
+crosettori/ settori oggetto di VA. Per gli schemi di certificazione che non prevedono una pianificazio-
+ne come per alcune certificazioni e ispezioni in ambito cogente, l’OdC dovrà comunque fornire la 
+massima collaborazione con ACCREDIA per l’individuazione delle attività che dovranno essere og-
+getto di VA. 
+1.10.4 Gli OdC si impegnano a permettere le verifiche ispettive da parte dei GVI di ACCREDIA presso la 
+propria sede e presso i luoghi ove si svolgono le attività ispettive. 
+
+
+
+
+
+
+1.10.5 Gli OdC devono comunicare formalmente ad ACCREDIA variazioni significative della composizione 
+societaria, trasferimento della titolarità dell’accreditamento ad un nuovo soggetto giuridico, a seguito 
+modifica della ragione sociale o di cessione di ramo d’azienda ad altro OdC. 
+
+1.10.6 Gli OdC devono riportare sui certificati emessi sotto accreditamento ACCREDIA il riferimento al Re-
+golamento Tecnico (RT) di schema o settore applicabile, ove esistente, tramite la dizione: “Certifica-
+zione rilasciata in conformità al Regolamento Tecnico ACCREDIA/SINCERT RT…” (tale obbligo è 
+vietato agli OdC non ancora accreditati). 
+
+1.10.7 È obbligo degli OdC, quando richiesto, trasmettere ad ACCREDIA, le informazioni tempestive e cor-
+rette in merito ai certificati emessi, di cui gli OdC sono gli unici e soli proprietari e responsabili, com-
+presa ogni informazione relativa alla revoca. 
+
+1.10.8 Gli OdC rimarranno quindi responsabili in via esclusiva nei confronti degli enti fruitori del servizio of-
+ferto (Es: AVCP, SOA, società appaltanti, mercato in generale…), ed ACCREDIA, per qualsiasi dan-
+no derivante da inesattezze e/o non tempestiva pubblicazione dei dati, manlevando di conseguenza 
+ACCREDIA, da qualsiasi onere, contestazione o richiesta di risarcimento danni in merito a tali negli-
+genze o inadempimenti. 
+
+1.10.9 Le informazioni raccolte da ACCREDIA potranno quindi essere pubblicate sul sito web di 
+ACCREDIA, ed, essendo comunque informazioni già disponibili al pubblico sullo stesso sito di 
+ACCREDIA, le stesse potranno essere fornite da ACCREDIA a soggetti terzi (es: Camere di Com-
+mercio, Istituti di Ricerca, CRIF, CERVED, AVCP), anche nella loro totalità e completezza, perché i 
+soggetti destinatari possano a loro volta farsi tramite per la loro divulgazione al pubblico, quando le 
+stesse informazioni fossero già state divulgate da ACCREDIA. 
+
+1.10.10Gli OdC sono tenuti al rispetto di modalità particolari di trasmissione dei dati relativi ai soggetti certifi-
+cati che possono essere contenute all’interno dei Regolamenti Tecnici applicabili a specifici schemi o 
+di altre istruzioni specifiche. 
+
+1.10.11 In caso di mancata ricezione di suddetti dati entro i termini previsti, ACCREDIA potrà assumere nei 
+confronti degli OdC inadempienti un provvedimento sanzionatorio. 
+
+
+
+
+
+
+1.10.12 Gli OdC sono tenuti in caso di revoca di un certificato, a prescindere dal motivo della revoca (tecni-
+ca o amministrativa), nel caso in cui il certificato dovesse essere ri-emesso, a riemetterlo con una 
+nuova data di emissione corrente, anche se dovesse essere mantenuto lo stesso numero di certifi-
+cato ed eventualmente la stessa data di prima emissione. 
+
+1.10.13 Per tutto quanto non espressamente previsto dal presente Regolamento si applica quanto riportato 
+all’art.4 della Convenzione (CO-00). 
+
+
+1.10.14 Gli OdC si impegnano a comunicare situazioni in cui essi stessi siano stati citati in giudizio, per reati 
+che riguardano le attività svolte nell’ambito dello scopo di accreditamento. 
+
+
+
+
+
+
+ 
+
+1.11 OBBLIGAZIONI A CARICO DI ACCREDIA 
+
+ 
+
+1.11.1 Nel caso di variazione delle condizioni di accreditamento (ad esempio: modifica delle norme e delle 
+prescrizioni in genere di riferimento per l’accreditamento, nonché delle norme relative alle entità cer-
+tificate), ACCREDIA- DC ne dà comunicazione all'Organismo, il quale ha la facoltà di mantenere 
+l'accreditamento, adeguando la propria organizzazione ed il proprio funzionamento ai nuovi riferi-
+menti entro il termine e le disposizioni emesse da ACCREDIA, o di rinunciare all'accreditamento 
+stesso. ACCREDIA-DC provvederà a rinnovare la convenzione con gli OdC. 
+
+1.11.2 In caso di variazione delle tariffe, ancorché vi sia un preventivo accettato, i servizi verranno fatturati 
+alle tariffe vigenti al momento della prestazione eseguita. Pertanto, nel caso in cui, le tariffe dovesse-
+ro cambiare, subito dopo l’approvazione da parte della CSI (Commissione di Sorveglianza Intermini-
+steriale), l’OdC verrà prontamente informato (tramite mail o PEC), delle variazioni, tenendo presente 
+che il Tariffario aggiornato sarà pubblicato sul sito di ACCREDIA. 
+
+L’ OdC ha il diritto di rinunciare all'accreditamento entro sei mesi dalla data di ricezione della comuni-
+cazione. 
+
+Nel periodo di preavviso, all’OdC che si avvale della facoltà di rinuncia, vengono praticate le tariffe 
+anteriori alla variazione, per le sole attività svolte fino al momento della rinuncia. 
+
+1.11.3 ACCREDIA-DC è tenuta ad aggiornare periodicamente Il Registro degli Organismi accreditati e ren-
+derlo disponibile al pubblico, in formato elettronico sul sito web di ACCREDIA. 
+
+1.11.4 ACCREDIA provvederà, nel caso di schemi proprietari a caricare su database specifici tutte le in-
+formazioni inerenti gli OdC accreditati ( es. database OASIS per schema aerospaziale). 
+
+1.11.5 Per tutto quanto non espressamente previsto dal presente Regolamento si applica quanto riportato 
+all’art.3 della Convenzione (CO-00). 
+
+1.11.6 ACCREDIA sottopone a verifica ispettiva interna l’applicazione delle procedure interne relative alla 
+definizione ed attuazione della durata e della estensione delle verifiche ispettive in sede ed in ac-
+compagnamento, connesse alla concessione, mantenimento e rinnovo degli accreditamenti. 
+
+
+2. CLAUSOLA DI ACCETTAZIONE 
+
+ 
+
+Il presente Regolamento costituisce parte integrante della Convenzione tra ACCREDIA e l’Organismo (Con-
+venzione di Accreditamento). 
+
+Tramite la sottoscrizione in calce, l’Organismo dichiara di accettare come di fatto accetta tutte le clausole 
+stabilite nel presente Regolamento e nei Regolamenti specifici per schema di accreditamento, nonché nelle 
+norme, guide e documenti di riferimento esplicitamente citati nel Regolamento stesso. 
+
+ 
+
+ 
+
+ 
+
+Data …………………… Timbro dell'Organismo di certificazione e firma 
+
+ del Legale Rappresentante o Procuratore abilitato 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Ai sensi degli Articoli 1341, 1342 del Codice Civile, si approvano specificatamente le clausole del presente 
+Regolamento e le clausole dei Regolamenti specifici per schema di accreditamento. 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Timbro dell’Organismo di certificazione e firma del Legale Rappresentante o Procuratore abilitato 
+
+ 
+
+ 
+
+

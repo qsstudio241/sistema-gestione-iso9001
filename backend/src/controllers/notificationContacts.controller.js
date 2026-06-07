@@ -1,5 +1,5 @@
 /**
- * notificationContacts.controller.js — CRUD rubrica referenti notifiche NC
+ * notificationContacts.controller.js ï¿½ CRUD rubrica referenti notifiche NC
  */
 
 const { query } = require('../config/database');

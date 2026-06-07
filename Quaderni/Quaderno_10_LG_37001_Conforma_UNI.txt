@@ -1,0 +1,314 @@
+©2018 Conforma - Milano
+
+TUTTI I DIRITTI SONO RISERVATI
+
+Nessuna parte del libro può essere riprodotta o diffusa con un mezzo qualsiasi,
+
+fotocopie, microfilm, o altro senza il consenso scritto dell’editore.
+
+ALL RIGHTS RESERVED
+
+No part of this work may be reproduced, stored in a retrieval system or transmitted in any form or by any
+
+means electronic, photocopying recording or otherwise, without the written permission from the publisher.
+
+Questa pubblicazione non è un documento normativo.
+
+La responsabilità dei concetti espressi è unicamente dell’autore.
+
+Autore
+
+Conforma - Associazione Organismi Cerificazione Ispezione Prove Taratura
+
+Piazzale R.Morandi, 2 – 20121 Milano
+
+Editore
+
+Conforma - Associazione Organismi Certificazione Ispezione Prove Taratura
+
+Piazzale R.Morandi, 2 – 20121 Milano
+
+Giugno 2018
+
+ 
+
+
+
+La presente Linea Guida nasce come progetto del Gruppo di Lavoro UNI ISO 37001 di Conforma al quale 
+aderiscono i seguenti Soci:
+
+• ASACERT 
+
+• AICQ SICEV 
+
+• CERTIQUALITY 
+
+• DNV GL 
+
+• ICIM 
+
+• ICMQ 
+
+• IMQ 
+
+• RINA SERVICES 
+
+• SGS
+
+Il documento è il risultato di un tavolo tecnico CONFORMA UNI ISO 37001:2016, al quale hanno 
+partecipato:
+
+Stefano ALDINI Certiquality COORDINATORE 
+
+Fabrizio CAPACCIOLI ASACERT
+
+Federico CARRARO RINA SERVICES 
+
+Massimo CASSINARI ICMQ
+
+Laura CATELLANI IMQ
+
+Vincenzo DELACQUA ICIM
+
+Laura LIGI SGS 
+
+Claudio ROSSO AICQ SICEV
+
+Valentina SALVI DNV-GL
+
+Si ringrazia l’Avv. Mario CASELLATO dello Studio Casellato Avvocati Penalisti di Roma per il prezioso 
+contributo prestato nella revisione delle bozze finali del documento.
+
+
+
+Sommario
+
+INTRODUZIONE ............................................................................................................................... 7
+
+4 CONTESTO DELL’ORGANIZZAZIONE .................................................................................... 9
+
+4.1. Comprendere l’organizzazione e il suo contesto......................................................................... 9
+
+4.2. Comprendere le esigenze e le aspettative degli stakeholder...................................................... 11
+
+4.3 Determinare il campo di applicazione del Sistema di Gestione per la prevenzione
+
+ della corruzione ...................................................................................................................... 12
+
+4.4 Sistema di Gestione per la Prevenzione della Corruzione.......................................................... 15
+
+4.5 Valutazione del Rischio di Corruzione ...................................................................................... 16
+
+5 LEADERSHIP ......................................................................................................................... 20
+
+5.1 Leadership e impegno............................................................................................................. 20
+
+5.2 Politica per la prevenzione della corruzione............................................................................. 22
+
+5.3 Ruoli organizzativi, responsabilità ed autorità........................................................................... 23
+
+6 PIANIFICAZIONE ......................................................................................................................... 27
+
+6.1 Azioni per affrontare rischi e opportunità ................................................................................ 27
+
+6.2 Obiettivi per la prevenzione della corruzione e pianificazione per il loro raggiungimento ........ 28
+
+7 SUPPORTO .................................................................................................................................. 29
+
+7.1 Risorse .................................................................................................................................... 29
+
+7.2 Competenza ........................................................................................................................... 30
+
+7.3 Consapevolezza e formazione ................................................................................................. 32
+
+7.4 Comunicazione ....................................................................................................................... 33
+
+7.5 Informazioni documentate ...................................................................................................... 34
+
+8 ATTIVITÀ OPERATIVE ................................................................................................................ 35
+
+8.1 Pianificazione e controllo operativi .......................................................................................... 35
+
+8.2 Due Diligence ......................................................................................................................... 36
+
+8.3 Controlli finanziari .................................................................................................................. 39
+
+8.4 Controlli non finanziari ............................................................................................................ 41
+
+8.5 Attuazione dei controlli da parte dei soci in affari .................................................................... 44
+
+8.6 Impegni per la prevenzione della corruzione ........................................................................... 46
+
+8.7 Regali, ospitalità, donazioni e benefici simili ............................................................................ 47
+
+8.8 Gestione dell’inadeguatezza dei controlli per la prevenzione della corruzione ......................... 47
+
+8.9 Segnalazione di sospetti .......................................................................................................... 48
+
+8.10 Indagini e gestione della corruzione ........................................................................................ 49
+
+9 VALUTAZIONE DELLE PRESTAZIONI ........................................................................................ 50
+
+9.1. Monitoraggio, misurazione, analisi e valutazione .................................................................... 50
+
+9.2. Audit interno .......................................................................................................................... 52
+
+9.3. Riesame di direzione ............................................................................................................... 53
+
+9.4 Riesame da parte della funzione di conformità per la prevenzione della corruzione.................. 55
+
+10 MIGLIORAMENTO .................................................................................................................... 56
+
+10.1. Non conformità e azione correttiva ........................................................................................ 56
+
+10.2. Miglioramento continuo ........................................................................................................ 57
+
+ALLEGATO 1 TABELLA DI CORRELAZIONE PTPC / MOG 231 / SISTEMI DI GESTIONE ISO 37001.... 58
+
+ALLEGATO 2 TABELLA INTEGRAZIONE REQUISITI ISO 37001 VS ISO 9001:2015............................. 60
+
+
+
+
+
+
+
+
+
+
+
+MOG D.Lgs. 231
+
+SISTEMA DI GESTIONE ISO 37001
+
+
+
+
+
+
+
+Prevenzione reati ex artt. 24 e 25 
+del D.L.gs 231/2001 se commessi 
+nell’interesse o a vantaggio dell’ente
+
+Prevenzione della corruzione in applicazione
+
+di leggi vigenti o di altri impegni 
+volontariamente assunti
+
+
+
+
+
+X
+
+X
+
+
+
+
+
+X
+
+X
+
+
+
+
+
+
+
+
+
+X
+
+X
+
+
+
+
+
+
+
+
+
+
+
+X
+
+X
+
+(da estendersi a organizzazioni controllate
+
+e «soci in affari» con livelli di rischio
+
+superiori al basso)
+
+
+
+ 
+
+X
+
+X
+
+
+
+ 
+
+X
+
+X
+
+
+
+ 
+
+X
+
+X
+
+
+
+
+
+-----
+
+X
+
+
+
+
+
+(aggiornamento MOG a seguito
+
+di violazioni/cambiamenti)
+
+X
+
+
+
+
+
+X
+
+X
+
+
+
+
+
+X
+
+-----
+
+
+
+
+
+59
+
+I QUADERNI DI CONFORMA
+
+
+

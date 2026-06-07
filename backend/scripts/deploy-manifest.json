@@ -1,5 +1,5 @@
 {
-  "description": "Manifest unico per deploy backend VPS ù ordine dependency-aware (services/utils prima di controller/routes)",
+  "description": "Manifest unico per deploy backend VPS ÔøΩ ordine dependency-aware (services/utils prima di controller/routes)",
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors"

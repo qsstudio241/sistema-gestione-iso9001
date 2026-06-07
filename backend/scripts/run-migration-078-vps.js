@@ -64,7 +64,7 @@ const STEPS = [
 ];
 
 (async () => {
-    console.log('Migration 078 — company_personnel + bridge notification_contacts');
+    console.log('Migration 078 ï¿½ company_personnel + bridge notification_contacts');
     try {
         for (let i = 0; i < STEPS.length; i++) {
             await query(STEPS[i]);

@@ -49,7 +49,7 @@ async function upsertAccess(userId, organizationId, companyId, permission) {
 }
 
 (async () => {
-  console.log('RBAC Fase 4 ù link account test user_company_access');
+  console.log('RBAC Fase 4 ÔøΩ link account test user_company_access');
   console.log(`Company target: ${COMPANY_ID}`);
 
   const writeUser = await findUser(WRITE_EMAIL);
@@ -80,7 +80,7 @@ async function upsertAccess(userId, organizationId, companyId, permission) {
   await upsertAccess(writeUser.user_id, company.organization_id, COMPANY_ID, 'write');
   await upsertAccess(readUser.user_id, company.organization_id, COMPANY_ID, 'read');
 
-  // Fase 4.1: account solo-azienda ó rimuovi scope studio attenuato (opzionale via env)
+  // Fase 4.1: account solo-azienda ÔøΩ rimuovi scope studio attenuato (opzionale via env)
   if (process.env.CLEAR_AUDITOR_ORG !== '0') {
     await query(`
       UPDATE users SET auditor_org_id = NULL

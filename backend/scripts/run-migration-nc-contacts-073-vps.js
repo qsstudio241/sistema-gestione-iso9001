@@ -1,5 +1,5 @@
 /**
- * Migration NC 073 — notification_contacts (rubrica referenti)
+ * Migration NC 073 ï¿½ notification_contacts (rubrica referenti)
  * Eseguire sul VPS: node scripts/run-migration-nc-contacts-073-vps.js
  */
 'use strict';
@@ -23,7 +23,7 @@ const candidates = [
         console.error('ERRORE: 073_notification_contacts.sql non trovato');
         process.exit(1);
     }
-    console.log('Migration NC 073 — notification_contacts');
+    console.log('Migration NC 073 ï¿½ notification_contacts');
     console.log('File:', resolvedPath);
     const batches = fs.readFileSync(resolvedPath, 'utf8')
         .split(/^\s*GO\s*$/gim)

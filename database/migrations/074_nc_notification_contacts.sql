@@ -75,7 +75,7 @@ BEGIN
     PRINT 'Tabella nc_notification_log creata.';
 END
 ELSE
-    PRINT 'Tabella nc_notification_log gia esistente ù skip.';
+    PRINT 'Tabella nc_notification_log gia esistente ÔøΩ skip.';
 GO
 
 PRINT 'Migration 074 completata.';

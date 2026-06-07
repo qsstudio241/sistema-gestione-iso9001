@@ -1,15 +1,15 @@
 /**
- * documentTypeSchemas.js ù Schemi tipo-specifici per la gestione documentale
+ * documentTypeSchemas.js ÔøΩ Schemi tipo-specifici per la gestione documentale
  *
  * Ogni schema definisce:
  *   - fields: campi UI da mostrare nel form (oltre ai campi base)
  *   - aiPrompt: istruzioni specializzate per l'estrazione AI
  *   - aiExpectedSchema: struttura JSON attesa dall'AI (per validazione)
  *   - expiryField: chiave del campo che contiene la data di scadenza (semaforo)
- *   - rangeFields: campi che descrivono il range di qualifica (per future verifiche idoneitù)
+ *   - rangeFields: campi che descrivono il range di qualifica (per future verifiche idoneitÔøΩ)
  *
  * Importare SEMPRE da qui. Non dichiarare schemi localmente nei componenti.
- * Estende documentTypes.js ù i tipi devono essere giù registrati lù.
+ * Estende documentTypes.js ÔøΩ i tipi devono essere giÔøΩ registrati lÔøΩ.
  */
 
 // ??? patentino_saldatore (ISO 9606-1) ????????????????????????????????????????
@@ -43,7 +43,7 @@ const patentino_saldatore = {
       label: "Numero certificato",
       type: "text",
       required: true,
-      hint: "Es. TùV-IT-9606-2024-00123",
+      hint: "Es. TÔøΩV-IT-9606-2024-00123",
     },
     {
       key: "issuing_body",
@@ -51,7 +51,7 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "tuv",   label: "TùV" },
+        { value: "tuv",   label: "TÔøΩV" },
         { value: "bv",    label: "Bureau Veritas (BV)" },
         { value: "dnv",   label: "DNV GL" },
         { value: "rina",  label: "RINA" },
@@ -68,15 +68,15 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "111",  label: "111 ù Elettrodo rivestito (MMA)" },
-        { value: "121",  label: "121 ù Arco sommerso (SAW) filo" },
-        { value: "131",  label: "131 ù MIG (GMAW) filo solido" },
-        { value: "135",  label: "135 ù MAG (GMAW) filo solido" },
-        { value: "136",  label: "136 ù MAG filo animato (FCAW)" },
-        { value: "138",  label: "138 ù MAG filo animato metallo (MCAW)" },
-        { value: "141",  label: "141 ù TIG (GTAW) elettrodo tungsteno" },
-        { value: "145",  label: "145 ù TIG + filo freddo (GTAW-CW)" },
-        { value: "311",  label: "311 ù Ossiacetilenica (OAW)" },
+        { value: "111",  label: "111 ÔøΩ Elettrodo rivestito (MMA)" },
+        { value: "121",  label: "121 ÔøΩ Arco sommerso (SAW) filo" },
+        { value: "131",  label: "131 ÔøΩ MIG (GMAW) filo solido" },
+        { value: "135",  label: "135 ÔøΩ MAG (GMAW) filo solido" },
+        { value: "136",  label: "136 ÔøΩ MAG filo animato (FCAW)" },
+        { value: "138",  label: "138 ÔøΩ MAG filo animato metallo (MCAW)" },
+        { value: "141",  label: "141 ÔøΩ TIG (GTAW) elettrodo tungsteno" },
+        { value: "145",  label: "145 ÔøΩ TIG + filo freddo (GTAW-CW)" },
+        { value: "311",  label: "311 ÔøΩ Ossiacetilenica (OAW)" },
         { value: "outro", label: "Altro" },
       ],
       hint: "Codice processo secondo ISO 4063",
@@ -87,8 +87,8 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "BW", label: "BW ù Giunto testa a testa (Butt Weld)" },
-        { value: "FW", label: "FW ù Giunto a T / angolare (Fillet Weld)" },
+        { value: "BW", label: "BW ÔøΩ Giunto testa a testa (Butt Weld)" },
+        { value: "FW", label: "FW ÔøΩ Giunto a T / angolare (Fillet Weld)" },
       ],
       hint: "BW = full penetration, FW = angolare",
     },
@@ -98,18 +98,18 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "1.1", label: "1.1 ù Acciai con Re ? 275 MPa" },
-        { value: "1.2", label: "1.2 ù Acciai con Re 275ù360 MPa" },
-        { value: "1.3", label: "1.3 ù Acciai con Re > 360 MPa" },
-        { value: "2",   label: "2 ù Acciai a grani fini termotrattati" },
-        { value: "3",   label: "3 ù Acciai per alte temperature" },
-        { value: "4",   label: "4 ù Acciai bassolegati Cr-Mo" },
-        { value: "5",   label: "5 ù Acciai inossidabili martensitici/ferritici" },
-        { value: "6",   label: "6 ù Acciai inossidabili austenitici" },
-        { value: "7",   label: "7 ù Acciai inossidabili duplex" },
-        { value: "8",   label: "8 ù Acciai inossidabili austenitici ad alto Ni" },
-        { value: "9",   label: "9 ù Nichel e leghe di nichel" },
-        { value: "10",  label: "10 ù Rame e leghe di rame" },
+        { value: "1.1", label: "1.1 ÔøΩ Acciai con Re ? 275 MPa" },
+        { value: "1.2", label: "1.2 ÔøΩ Acciai con Re 275ÔøΩ360 MPa" },
+        { value: "1.3", label: "1.3 ÔøΩ Acciai con Re > 360 MPa" },
+        { value: "2",   label: "2 ÔøΩ Acciai a grani fini termotrattati" },
+        { value: "3",   label: "3 ÔøΩ Acciai per alte temperature" },
+        { value: "4",   label: "4 ÔøΩ Acciai bassolegati Cr-Mo" },
+        { value: "5",   label: "5 ÔøΩ Acciai inossidabili martensitici/ferritici" },
+        { value: "6",   label: "6 ÔøΩ Acciai inossidabili austenitici" },
+        { value: "7",   label: "7 ÔøΩ Acciai inossidabili duplex" },
+        { value: "8",   label: "8 ÔøΩ Acciai inossidabili austenitici ad alto Ni" },
+        { value: "9",   label: "9 ÔøΩ Nichel e leghe di nichel" },
+        { value: "10",  label: "10 ÔøΩ Rame e leghe di rame" },
         { value: "altro", label: "Altro" },
       ],
       hint: "Gruppo materiale della piastra / tubo qualificato",
@@ -136,28 +136,28 @@ const patentino_saldatore = {
       type: "multiselect",
       required: false,
       options: [
-        { value: "PA",     label: "PA ù Piana / sotto testa" },
-        { value: "PB",     label: "PB ù Orizzontale su verticale" },
-        { value: "PC",     label: "PC ù Orizzontale" },
-        { value: "PD",     label: "PD ù Sopratesta orizzontale" },
-        { value: "PE",     label: "PE ù Sopratesta" },
-        { value: "PF",     label: "PF ù Verticale ascendente" },
-        { value: "PG",     label: "PG ù Verticale discendente" },
-        { value: "H-L045", label: "H-L045 ù Tubo inclinato 45ù" },
-        { value: "J-L045", label: "J-L045 ù Tubo inclinato 45ù discendente" },
+        { value: "PA",     label: "PA ÔøΩ Piana / sotto testa" },
+        { value: "PB",     label: "PB ÔøΩ Orizzontale su verticale" },
+        { value: "PC",     label: "PC ÔøΩ Orizzontale" },
+        { value: "PD",     label: "PD ÔøΩ Sopratesta orizzontale" },
+        { value: "PE",     label: "PE ÔøΩ Sopratesta" },
+        { value: "PF",     label: "PF ÔøΩ Verticale ascendente" },
+        { value: "PG",     label: "PG ÔøΩ Verticale discendente" },
+        { value: "H-L045", label: "H-L045 ÔøΩ Tubo inclinato 45ÔøΩ" },
+        { value: "J-L045", label: "J-L045 ÔøΩ Tubo inclinato 45ÔøΩ discendente" },
       ],
       hint: "Posizioni di saldatura secondo ISO 6947 (seleziona tutte quelle incluse)",
     },
     {
       key: "thickness_min_mm",
-      label: "Spessore qualificato ù minimo (mm)",
+      label: "Spessore qualificato ÔøΩ minimo (mm)",
       type: "number",
       required: false,
       hint: "Spessore minimo del range qualificato dalla prova",
     },
     {
       key: "thickness_max_mm",
-      label: "Spessore qualificato ù massimo (mm)",
+      label: "Spessore qualificato ÔøΩ massimo (mm)",
       type: "number",
       required: false,
       hint: "Spessore massimo del range qualificato (es. 2t per piastre)",
@@ -181,7 +181,7 @@ const patentino_saldatore = {
       label: "Data esame",
       type: "date",
       required: true,
-      hint: "Data in cui si ù svolta la prova di qualifica",
+      hint: "Data in cui si ÔøΩ svolta la prova di qualifica",
     },
     {
       key: "expiry_date",
@@ -195,7 +195,7 @@ const patentino_saldatore = {
       label: "Data ultima conferma semestrale",
       type: "date",
       required: false,
-      hint: "Il datore di lavoro deve confermare ogni 6 mesi che il saldatore ù attivo",
+      hint: "Il datore di lavoro deve confermare ogni 6 mesi che il saldatore ÔøΩ attivo",
     },
     {
       key: "next_confirmation_due",
@@ -210,9 +210,9 @@ const patentino_saldatore = {
       type: "select",
       required: false,
       options: [
-        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 ù Saldatura per fusione, acciai" },
-        { value: "ISO 9606-2",      label: "ISO 9606-2 ù Alluminio e leghe di alluminio" },
-        { value: "ISO 14732",       label: "ISO 14732 ù Qualifica operatori saldatura automatica" },
+        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 ÔøΩ Saldatura per fusione, acciai" },
+        { value: "ISO 9606-2",      label: "ISO 9606-2 ÔøΩ Alluminio e leghe di alluminio" },
+        { value: "ISO 14732",       label: "ISO 14732 ÔøΩ Qualifica operatori saldatura automatica" },
         { value: "EN 287-1",        label: "EN 287-1 (sostituita da ISO 9606-1)" },
       ],
       hint: "Norma tecnica di riferimento della qualifica",
@@ -228,20 +228,20 @@ const patentino_saldatore = {
 
   aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON.
-Se un campo non ù presente nel documento, usa null.
+Se un campo non ÔøΩ presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
-- issuing_body: ente certificatore (TùV, Bureau Veritas, DNV, RINA, IMQ, ecc.)
+- issuing_body: ente certificatore (TÔøΩV, Bureau Veritas, DNV, RINA, IMQ, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
-- joint_type: tipo giunto ù "BW" (testa a testa) o "FW" (angolare)
+- joint_type: tipo giunto ÔøΩ "BW" (testa a testa) o "FW" (angolare)
 - material_group: gruppo materiale base ISO/TR 15608 (es. "1.1", "6", "8")
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
-- thickness_min_mm: numero ù spessore minimo qualificato in mm
-- thickness_max_mm: numero ù spessore massimo qualificato in mm
-- pipe_diameter_mm: numero ù diametro esterno tubi qualificato in mm (null se solo piastre)
+- thickness_min_mm: numero ÔøΩ spessore minimo qualificato in mm
+- thickness_max_mm: numero ÔøΩ spessore massimo qualificato in mm
+- pipe_diameter_mm: numero ÔøΩ diametro esterno tubi qualificato in mm (null se solo piastre)
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
@@ -270,7 +270,7 @@ Campi da estrarre:
   },
 };
 
-// ??? wps (schema minimo ù da sviluppare) ?????????????????????????????????????
+// ??? wps (schema minimo ÔøΩ da sviluppare) ?????????????????????????????????????
 
 const wps = {
   id: "wps",
@@ -335,7 +335,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
   },
 };
 
-// ??? norma (Norma tecnica ù schema completo) ?????????????????????????????????
+// ??? norma (Norma tecnica ÔøΩ schema completo) ?????????????????????????????????
 
 const norma = {
   id: "norma",
@@ -456,7 +456,7 @@ Estrai nell'oggetto "type_specific_data":
 - scope_summary: oggetto/scopo dalla Sezione 1 (max 200 caratteri)
 - ics_code: codice ICS se presente
 - technical_committee: comitato tecnico responsabile
-- is_harmonized: true se ù una norma EN armonizzata
+- is_harmonized: true se ÔøΩ una norma EN armonizzata
 Usa null per i campi non trovati.`,
 
   aiExpectedSchema: {
@@ -484,10 +484,10 @@ const certificato_materiale = {
   fields: [
     { key: "certificate_type", label: "Tipo certificato EN 10204", type: "select", required: true,
       options: [
-        { value: "2.1", label: "2.1 ù Dichiarazione di conformitù" },
-        { value: "2.2", label: "2.2 ù Dichiarazione con ispezione campione" },
-        { value: "3.1", label: "3.1 ù Certificato di ispezione 3.1" },
-        { value: "3.2", label: "3.2 ù Certificato di ispezione 3.2" },
+        { value: "2.1", label: "2.1 ÔøΩ Dichiarazione di conformitÔøΩ" },
+        { value: "2.2", label: "2.2 ÔøΩ Dichiarazione con ispezione campione" },
+        { value: "3.1", label: "3.1 ÔøΩ Certificato di ispezione 3.1" },
+        { value: "3.2", label: "3.2 ÔøΩ Certificato di ispezione 3.2" },
       ] },
     { key: "material_grade", label: "Grado / designazione materiale", type: "text", required: true },
     { key: "heat_number", label: "Colata / heat number", type: "text", required: false },
@@ -518,11 +518,11 @@ const cert_ndt = {
     { key: "certificate_number", label: "Numero certificato", type: "text", required: true },
     { key: "ndt_method", label: "Metodo NDT", type: "select", required: true,
       options: [
-        { value: "UT", label: "UT ù Ultrasoni" },
-        { value: "RT", label: "RT ù Raggi X" },
-        { value: "MT", label: "MT ù Magnetoscopia" },
-        { value: "PT", label: "PT ù Liquidi penetranti" },
-        { value: "VT", label: "VT ù Visivo" },
+        { value: "UT", label: "UT ÔøΩ Ultrasoni" },
+        { value: "RT", label: "RT ÔøΩ Raggi X" },
+        { value: "MT", label: "MT ÔøΩ Magnetoscopia" },
+        { value: "PT", label: "PT ÔøΩ Liquidi penetranti" },
+        { value: "VT", label: "VT ÔøΩ Visivo" },
       ] },
     { key: "certification_level", label: "Livello", type: "select", required: false,
       options: [
@@ -632,11 +632,11 @@ approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
   },
 };
 
-// --- sal / rdp (roadmap ù schemi base) ---
+// --- sal / rdp (roadmap ÔøΩ schemi base) ---
 
 const sal = {
   id: "sal",
-  label: "SAL ù Stato avanzamento lavori",
+  label: "SAL ÔøΩ Stato avanzamento lavori",
   expiryField: null,
   rangeFields: [],
   fields: [
@@ -656,7 +656,7 @@ Estrai in type_specific_data: client_name, standards_tracked, period_label. Usa 
 
 const rdp = {
   id: "rdp",
-  label: "RDP ù Rapporto di prova",
+  label: "RDP ÔøΩ Rapporto di prova",
   expiryField: null,
   rangeFields: ["test_type"],
   fields: [

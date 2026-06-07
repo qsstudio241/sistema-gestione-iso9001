@@ -1,9 +1,9 @@
-# TASK ù RBAC Fase 4 (user_company_access)
+# TASK ÔøΩ RBAC Fase 4 (user_company_access)
 
 **Stato:** ? Implementato 02/06/2026  
 **Migration:** `081_user_company_access.sql`  
 **ADR:** [ADR-012](../adr/ADR-012-company-personnel-anagrafica.md)  
-**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ù7 Fase 4
+**Architettura:** [ARCHITETTURA_UTENTI_RBAC.md](../ARCHITETTURA_UTENTI_RBAC.md) ÔøΩ7 Fase 4
 
 ---
 
@@ -51,7 +51,7 @@ ssh ... "cd /var/www/sgq-backend && WRITE_EMAIL=cliente.azienda11@alproject.sgq.
 
 ---
 
-## Gap test 02/06/2026 ù chiusi
+## Gap test 02/06/2026 ÔøΩ chiusi
 
 | Gap | Stato |
 |-----|-------|
@@ -62,7 +62,7 @@ ssh ... "cd /var/www/sgq-backend && WRITE_EMAIL=cliente.azienda11@alproject.sgq.
 
 ---
 
-## Fase 4.1 ó Scope moduli ? Completato 02/06/2026
+## Fase 4.1 ÔøΩ Scope moduli ? Completato 02/06/2026
 
 | Componente | Dettaglio |
 |------------|-----------|

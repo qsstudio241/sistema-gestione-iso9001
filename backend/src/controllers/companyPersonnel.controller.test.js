@@ -56,7 +56,7 @@ function mockCompanyScope() {
 
 afterEach(() => jest.clearAllMocks());
 
-describe('companyPersonnel ù scope RBAC', () => {
+describe('companyPersonnel ÔøΩ scope RBAC', () => {
   it('listPersonnel 403 cross-studio se azienda non in auditor_org', async () => {
     query.mockResolvedValueOnce({ recordset: [] });
     const req = mockReq();
@@ -109,7 +109,7 @@ describe('companyPersonnel CRUD', () => {
       recordset: [{ id: 5, name: 'Luigi', organization_id: ORG_ID, company_id: COMPANY_ID }],
     });
     const req = mockReq({
-      body: { name: 'Luigi', job_title: 'Resp. qualitù', can_actuation: true },
+      body: { name: 'Luigi', job_title: 'Resp. qualitÔøΩ', can_actuation: true },
     });
     const res = mockRes();
     await ctrl.createPersonnel(req, res);

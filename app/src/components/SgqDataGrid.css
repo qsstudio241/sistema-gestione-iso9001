@@ -1,4 +1,4 @@
-/* SgqDataGrid — tema plain (catalogo admin, anagrafiche) */
+/* SgqDataGrid ï¿½ tema plain (catalogo admin, anagrafiche) */
 
 .sgq-datagrid {
   display: flex;
@@ -116,7 +116,7 @@
   background: #f9fafb;
 }
 
-/* Azioni riga — pattern condiviso griglie plain (CompaniesPage, rubrica NC, …) */
+/* Azioni riga ï¿½ pattern condiviso griglie plain (CompaniesPage, rubrica NC, ï¿½) */
 .sgq-datagrid-row-actions {
   display: flex;
   flex-wrap: nowrap;

@@ -73,7 +73,7 @@ async function moveNormsFromObsoleteFolder() {
   }
   const folder = target.recordset[0];
   if (folder.status === 'obsoleto') {
-    throw new Error(`Cartella #${TARGET_FOLDER_ID} è obsoleta`);
+    throw new Error(`Cartella #${TARGET_FOLDER_ID} ï¿½ obsoleta`);
   }
   if (!folder.company_id) {
     throw new Error(`Cartella #${TARGET_FOLDER_ID} senza company_id`);
