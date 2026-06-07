@@ -1,39 +1,34 @@
-# DEPUTYTASK — PR #38 parte B: editor foto pre-upload (07/06/2026)
+# DEPUTYTASK — Riorganizzazione profonda documentazione + triage PR (07/06/2026)
 
-**Stato:** CHIUSO — TEST OK — 07/06/2026
+**Stato:** IN REVISIONE (PR aperta) — branch `docs/reorg-knowledge-base`
 
-**Task:** Recuperare dalla PR #38 **solo** l'editor foto pre-upload (`PhotoEditModal`: crop, rotazione ±90°, zoom), integrarlo su `main` aggiornato (che già contiene la compressione foto, parte A, commit `0740d80`), mergiare via git locale e **chiudere la PR #38** (ora completata). Export Word **non** toccato (resize già in `main`).
+**Task:** Riorganizzazione profonda della knowledge base (solo documentazione/regole, **nessun codice applicativo**), eseguita in **worktree isolato** su disco locale `C:` da `origin/main` aggiornato (HEAD `9e6dae6`) per **non** toccare la WIP del committente nel working tree principale (Google Drive). Risultato su branch dedicato + **PR da rivedere** (overlap con WIP docs del committente).
 
-## Comportamento implementato
-- Alla scelta di una foto (Gallery/Camera) si apre `PhotoEditModal`: **ritaglio (crop), rotazione ±90°, zoom, aspect ratio**.
-- Editor **opzionale**: "Salta" usa l'originale, "Conferma" applica crop/rotazione (Canvas → JPEG 0.92), "Annulla tutto" non carica nulla. Più foto in sequenza (indice/totale).
-- Flusso: scelta file foto → **editor opzionale** → `addAttachments("foto", ...)` → **compressione esistente (parte A)** → upload. **Una sola compressione**; `customItemId` preservato.
+## Cosa è stato fatto
+- **Lezioni apprese consolidate (fonte unica)**: nuova sezione in `docs/GUIDA_CONSOLIDATA.md` con tabella regole + link al dettaglio (form annidati, isolamento AI multi-tenant, notifiche NC + escalation, fix `studioScopeClause`, encoding UTF-8, worktree su `C:`, `gh`→MCP GitHub, numerazione migrazioni, sync ADR-008).
+- **Metodo di lavoro codificato**: nuova regola `.cursor/rules/sgq-workflow-method.mdc` (slice verticali, multitasking sicuro, worktree isolati, una sola op git pesante per repo, triage PR backlog, sequenza migrazioni, encoding).
+- **Backlog parcheggiato (fonte unica)**: nuova sezione in `docs/PROJECT_ROADMAP.md` (include #10 P.IVA/logo dopo billing 082, requisito verbale audit, T6, token Word, doc Fase 3c–3f).
+- **Encoding bonificato** in `GUIDA_CONSOLIDATA.md`: rimossi 8 caratteri di controllo (`\a`/`\v`/`\f`/NUL che mangiavano la lettera iniziale) e ripristinate le parole (`admin`, `verified`, `approved_at/by`, `verification_note`, hash commit). Mantenuto l'unico `U+FFFD` voluto nel playbook caratteri.
+- **Indice**: aggiornati `GUIDA` (TOC) e `INDICE_DOCUMENTAZIONE.md` con i nuovi ingressi.
 
-## File toccati
-- `app/src/components/PhotoEditModal.jsx` (nuovo)
-- `app/src/components/PhotoEditModal.css` (nuovo)
-- `app/src/components/AttachmentSection.jsx` (wiring apertura modal per categoria "foto")
-- `app/package.json` + `app/package-lock.json` (dipendenza `react-easy-crop@^5.5.7`)
-- `docs/GUIDA_CONSOLIDATA.md` (registro decisioni: #38 chiusa, sottosezione parte B)
+## Triage PR
+- **PR #31** (perf sync debounce + Word page break): **CHIUSA** via MCP GitHub — superata in tutte le parti (sync coperto da ADR-008/T2–T5; page break Word già rimossi; lezioni già in guida/regole). Commento dettagliato pubblicato.
+- **PR #10** (settings org P.IVA + logo): **resta APERTA** — commentata come **parcheggiata** (ripresa dopo stabilizzazione billing 082). Registrata nel backlog roadmap.
 
-## Esito
-- **Dipendenza**: `react-easy-crop@5.5.7` (peer `react >=16.4.0` → OK con React 18.2).
-- **Build app (Vite)**: OK.
-- **Test mirato**: `compressImageFile.test.js` 3/3 PASS (flusso compressione intatto). Nessun test dedicato editor (UI).
-- **Merge** su `main` via git locale (no force, no squash), push `origin main`.
-- **PR #38**: CHIUSA su GitHub via MCP con commento (parte A + parte B recuperate, Word già in main).
-- Worktree dedicato `C:\sgq-pr38b-wt` rimosso a fine sessione. Working tree principale (WIP committente) non toccato.
+## Verifica
+- Encoding: 0 caratteri di controllo residui; nessun BOM; accenti italiani corretti.
+- Link interni nuovi verificati; nessun file spostato (struttura cartelle invariata) → nessun anchor rotto.
+- Nessuna modifica a codice `app/` o `backend/`.
 
 ## Passi manuali per il committente
-1. **`git pull origin main`** sul desktop per allineare il working tree principale.
-2. **`npm install`** in `app/` (nuova dipendenza `react-easy-crop`).
-3. **Deploy frontend**: automatico su **Netlify** al push su `main` (nessuna azione backend richiesta).
+1. Sistemare la propria **WIP docs** nel working tree principale, poi rivedere e **mergiare la PR** `docs/reorg-knowledge-base` quando non c'è più overlap.
+2. `git pull origin main` dopo il merge.
 
 ---
 
 ## Task futuro pendente — Caricamento verbale di audit con revisione = numeratore audit
 
-**Origine:** chiusura **PR #52** (07/06/2026). L'automatismo audit-close → `document_registry` (ADR-009 Fase 5) **non** è desiderato: il report Word esportato deve restare **modificabile** e **caricato manualmente** nell'albero. Il requisito vero è allineare la revisione al numero audit al momento del caricamento manuale.
+**Origine:** chiusura **PR #52** (07/06/2026). L'automatismo audit-close → `document_registry` (ADR-009 Fase 5) **non** è desiderato: il report Word esportato deve restare **modificabile** e **caricato manualmente** nell'albero. Tracciato anche in [PROJECT_ROADMAP.md § Backlog parcheggiato](../PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica).
 
 - Tipo documento dedicato **"Verbale di audit"** nella cartella **12 AUDIT**.
 - Al caricamento: selezione audit → `revision = audit.audit_number` (formato `PREFISSO-YYMMDD-NN`); campo revisione **read-only**.
