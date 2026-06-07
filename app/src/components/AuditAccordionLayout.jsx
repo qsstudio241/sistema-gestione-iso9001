@@ -260,6 +260,19 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }
   }, [currentAudit?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Quando il PC torna online con un audit già aperto, ri-scarica le risposte dal server.
+  // Senza questo, reconcileAuditsFromServer aggiorna la lista ma non il contenuto dell'audit corrente.
+  useEffect(() => {
+    const numericId = currentAudit?.metadata?.auditId;
+    if (!numericId) return;
+    const handleOnline = () => {
+      setServerDataStatus('loading');
+      setTimeout(() => fetchAndApplyServerResponses(numericId), 300);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [currentAudit?.metadata?.auditId, fetchAndApplyServerResponses, setServerDataStatus]);
+
   const handleStandardsUpdate = (updatedStandards) => {
     const previousStandards = currentAudit.metadata.selectedStandards || [];
 

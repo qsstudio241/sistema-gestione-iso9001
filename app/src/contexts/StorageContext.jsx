@@ -2730,7 +2730,13 @@ export function StorageProvider({ children, useMockData = false }) {
     // CRUD operations
     updateCurrentAudit,
     switchAudit,
-    deselectAudit: () => setCurrentAuditId(null),
+    deselectAudit: () => {
+      // Flush immediato della coda prima di uscire: evita che dati scritti poc'anzi
+      // rimangano nella coda locale per i 30s dell'auto-sync e non siano visibili
+      // sull'altro dispositivo che apre l'audit subito dopo.
+      if (navigator.onLine) syncService.processQueue().catch(() => {});
+      setCurrentAuditId(null);
+    },
     createAudit,
     duplicateAudit,
     deleteAudit,
