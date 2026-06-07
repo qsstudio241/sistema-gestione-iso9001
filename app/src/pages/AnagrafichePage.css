@@ -42,7 +42,13 @@
 .data-table tbody tr:hover { background: #fafafa; cursor: pointer; }
 .row-selected { background: #e8f0fe !important; }
 .empty-cell { text-align: center; color: #aaa; padding: 2rem !important; }
-.actions-cell { white-space: nowrap; }
+.actions-cell { white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+
+/* ── Pulsanti icona riga (standard condiviso con tab Aziende) ── */
+.grid-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; flex-shrink:0; padding:0; border-radius:6px; border:1px solid #d1d5db; background:#f9fafb; color:#374151; cursor:pointer; transition:background .15s ease,color .15s ease,border-color .15s ease; }
+.grid-icon-btn:hover { background:#e5e7eb; color:#1f2937; }
+.grid-icon-btn:focus-visible { outline:2px solid #2563eb; outline-offset:1px; }
+.grid-icon-btn--danger:hover { background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
 
 .vat-note { color: #aaa; font-size: .8rem; }
 .indent-arrow { color: #bbb; }
