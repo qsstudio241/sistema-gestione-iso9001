@@ -89,6 +89,11 @@ app.set('trust proxy', 1);
 // MIDDLEWARE
 // ==========================================
 
+// Trust the first proxy (Nginx) so that express-rate-limit reads the real
+// client IP from X-Forwarded-For instead of counting all requests as coming
+// from the loopback address 127.0.0.1.
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet({
     // CSP: il server espone JSON API + static uploads (immagini/allegati).
@@ -235,6 +240,12 @@ const API_BASE = process.env.API_BASE_PATH || '/api/v1';
 app.get(`${API_BASE}/health`, healthCheckHandler); // Health check API — escluso da rate limit
 const responseController = require('./controllers/response.controller');
 app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
+
+// Logo aziendale: pubblico perché getLogo non usa req.user e il logo non è un dato sensibile.
+// DEVE stare qui: i router autenticati (auditRoutes, ecc.) usano router.use(authenticate) globale
+// che intercetterebbe qualsiasi richiesta /api/v1/* senza Bearer token, compresa questa.
+const companyController = require('./controllers/company.controller');
+app.get(`${API_BASE}/companies/:id/logo`, companyController.getLogo);
 
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register

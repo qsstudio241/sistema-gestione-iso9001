@@ -205,19 +205,36 @@ describe('aiChat.controller — aiChat', () => {
     expect(chat.mock.calls[0][0][0].content).toContain('7.5');
   });
 
-  it('returns 403 when company scope is denied for company client', async () => {
+  it('returns 403 when company scope is denied (studio fuori ambito)', async () => {
     resolveAiCompanyScope.mockResolvedValue({
       companyId: null,
-      denied: { status: 403, body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' } },
+      denied: { status: 403, body: { error: 'Azienda non nel tuo ambito studio', code: 'FORBIDDEN' } },
     });
     const req = {
       body: { message: 'Quante NC?', companyId: 99 },
-      user: { organization_id: 99, user_id: 5, company_access: [{ company_id: 45, permission: 'read' }] },
+      user: { organization_id: 99, user_id: 5, auditor_org_id: 10 },
     };
     const res = createRes();
     await aiChat(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(chat).not.toHaveBeenCalled();
+  });
+
+  it('forza lo scope sulla azienda del cliente e filtra il RAG su quella company', async () => {
+    // Cliente azienda: lo scope service forza la sua azienda (45) ignorando il companyId del client.
+    resolveAiCompanyScope.mockResolvedValue({ companyId: 45, denied: null });
+    const req = {
+      body: { message: 'Quante NC aperte?', companyId: 99 },
+      user: { organization_id: 99, user_id: 5, company_access: [{ company_id: 45, permission: 'read' }] },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+    expect(res.status).not.toHaveBeenCalledWith(403);
+    expect(searchKnowledge).toHaveBeenCalledWith(
+      'Quante NC aperte?',
+      99,
+      expect.objectContaining({ companyId: 45 })
+    );
   });
 
   it('passes resolved companyId to searchKnowledge for studio user', async () => {

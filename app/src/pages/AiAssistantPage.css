@@ -130,6 +130,16 @@
   background: rgba(99, 179, 237, 0.35);
 }
 
+.ai-context-chip--locked {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.ai-context-chip--locked:hover {
+  background: rgba(99, 179, 237, 0.25);
+  border-color: rgba(99, 179, 237, 0.5);
+}
+
 .ai-context-chip--standard-active {
   background: rgba(237, 137, 54, 0.25);
   border-color: rgba(237, 137, 54, 0.55);

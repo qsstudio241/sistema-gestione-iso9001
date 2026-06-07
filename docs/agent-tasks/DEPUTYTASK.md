@@ -1,23 +1,31 @@
-# DEPUTYTASK — Albero documentale per-azienda (org QS 1002)
+# DEPUTYTASK — Chiusura sessione 07/06/2026 (triage PR backlog)
 
-**Stato:** TEST OK (migrazione + deploy VPS 03/06/2026)  
-**PR:** [#90](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/90)
+**Stato:** CHIUSO — 07/06/2026
 
-## Completato
+**Task:** Completamento backlog PR come senior lead in autonomia — triage delle 8 PR aperte residue (merge sicuri, recupero contenuti, decisioni motivate).
 
-| Step | Esito |
-|------|-------|
-| Migrazione DB org 1002 (15 aziende, albero condiviso archiviato) | ✅ |
-| SAVECO: 15 radici dopo cleanup folder obsoleti | ✅ |
-| API albero filtro stretto `company_id` | ✅ deploy VPS |
-| Test Jest `documentTreeCompanyScope` | ✅ 4/4 |
+## Esito triage (registro completo in `docs/GUIDA_CONSOLIDATA.md`, sezione *Registro decisioni triage PR backlog (07/06/2026)*)
 
-## Uso operativo (Camellini)
+### Mergiate su `main`
+- **#97** fix(backend) eliminazione azienda con cleanup dipendenze FK — fix integrità DB. Conflitti GUIDA (whole-file CRLF) e codice risolti, push fast-forward, merge commit (no squash).
+- **#57** fix(ai) retry automatico Gemini su 503/429 — retry server-side mancante in main. Conflitti su `aiAssist.test.js` (allineato a `userId` reale) e GUIDA risolti, syntax-check OK, merge commit.
 
-1. Registro documenti → tab **Albero**
-2. **Ambito** = nome cliente (es. SAVECO, RIVIAL) — non «tutto lo studio»
-3. Hard refresh PWA (Ctrl+Shift+R) se l’albero sembra vecchio
+### Chiusa
+- **#28** docs Let's Encrypt — contenuto operativo (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) recuperato in `GUIDA_CONSOLIDATA.md` (sez. Ops/Sysadmin), PR chiusa con commento.
 
-## Smoke utente
+### Lasciate aperte (con commento gh su perché + prossimo passo)
+- **#91** AI ambito azienda obbligatorio — feature, impatto chat/RAG da valutare con committente.
+- **#52** audit close verso document_registry (ADR-009 F5) — manca migration 066 idempotente.
+- **#31** debounce sync 1500ms + enqueueOrReplace — sync sensibile (ADR-008), test L3 multi-device prima del merge.
+- **#38** compressione foto + PhotoEditModal — feature grossa, nuove dipendenze npm, test a parte.
+- **#10** settings org P.IVA+logo — si sovrappone al billing layer (migration 082) in sviluppo.
 
-Ambito SAVECO e RIVIAL: **15 cartelle** radice, **nessun duplicato** (es. una sola DOCUMENTAZIONE INTERNA).
+## Note operative
+- Merge eseguiti in worktree dedicato (`C:\sgq-pr-wt`) per non toccare il working tree del committente (modifiche WIP non committate, incluso billing 082).
+- Nessun force push, nessun squash.
+- Conflitti GUIDA su tutte le PR dovuti a divergenza CRLF/LF (whole-file conflict): risolti prendendo la versione di `main` e re-inserendo le aggiunte specifiche della PR.
+
+## Punti aperti prossima sessione
+1. PR aperte residue: #91, #52, #31, #38, #10 (5) — integrare secondo i prossimi passi sopra.
+2. Working tree committente con molte modifiche WIP (billing 082, ecc.): committare/ordinare a parte.
+3. Allineare il `main` locale dopo questa sessione (`git pull origin main`) quando il working tree è pulito.

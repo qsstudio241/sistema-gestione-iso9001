@@ -15,6 +15,10 @@ import {
   buildManualNcPayload,
   mapApiSectionsToOptions,
 } from "../utils/ncCreateHelpers";
+import {
+  loadNcResponsibleContacts,
+  NC_SCOPE_ATTUAZIONE,
+} from "../utils/ncResponsibleContacts";
 import "../components/ChecklistModule.css";
 
 const CREATE_SCOPE = "nc-create";
@@ -46,13 +50,19 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
 
   useEffect(() => {
     if (!open) return;
-    apiService.getNotificationContacts({ active: "true" })
-      .then((res) => setContacts(res?.data || []))
-      .catch(() => setContacts([]));
-  }, [open]);
+    let cancelled = false;
+    loadNcResponsibleContacts(apiService, {
+      companyId: selectedCompanyId,
+      scope: NC_SCOPE_ATTUAZIONE,
+    })
+      .then((rows) => { if (!cancelled) setContacts(rows); })
+      .catch(() => { if (!cancelled) setContacts([]); });
+    return () => { cancelled = true; };
+  }, [open, selectedCompanyId]);
 
   useEffect(() => {
     if (!open) return;
@@ -76,6 +86,7 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
   useEffect(() => {
     if (!open || !form.audit_id) {
       setSectionOptions(NC_MANUAL_SECTIONS);
+      setSelectedCompanyId(null);
       return;
     }
     let cancelled = false;
@@ -83,6 +94,9 @@ export default function NcCreateModal({ open, onClose, onCreated }) {
     apiService.getAudit(form.audit_id)
       .then(res => {
         const audit = res?.data || res;
+        if (!cancelled) {
+          setSelectedCompanyId(audit?.company_id ?? null);
+        }
         const standardId = audit?.standards?.[0]?.standard_id;
         if (!standardId) {
           if (!cancelled) {

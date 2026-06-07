@@ -94,6 +94,18 @@ function AiAssistantPage() {
   const prevAuditIdRef = useRef(null);
   const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  // Utente azienda cliente: selettore azienda bloccato sulla propria anagrafica.
+  const isCompanyClient =
+    !!user?.is_company_client ||
+    (Array.isArray(user?.company_access) && user.company_access.length > 0);
+  // Anagrafica primaria del cliente = company_id piu' basso (coerente col backend).
+  const clientPrimaryCompanyId = useMemo(() => {
+    if (!isCompanyClient) return null;
+    const ids = (user?.company_access || [])
+      .map((a) => a.company_id)
+      .filter((n) => Number.isFinite(n));
+    return ids.length ? Math.min(...ids) : null;
+  }, [isCompanyClient, user?.company_access]);
 
   // --- Contesto azienda ---
   const [companies, setCompanies] = useState([]);
@@ -173,6 +185,8 @@ function AiAssistantPage() {
   const autoCompanyName = autoCompany.companyName;
 
   useEffect(() => {
+    // Cliente azienda: il contesto e' bloccato sulla propria anagrafica, mai auto.
+    if (isCompanyClient) return;
     if (companyContext.source === "auto") {
       setCompanyContext({
         companyId: autoCompanyId,
@@ -180,7 +194,28 @@ function AiAssistantPage() {
         source: "auto",
       });
     }
-  }, [autoCompanyId, autoCompanyName, companyContext.source]);
+  }, [autoCompanyId, autoCompanyName, companyContext.source, isCompanyClient]);
+
+  // Cliente azienda: forza il contesto sulla propria azienda primaria (fisso).
+  useEffect(() => {
+    if (!isCompanyClient || !companiesLoaded) return;
+    const primary = companies.find(
+      (c) => (c.id || c.company_id) === clientPrimaryCompanyId
+    );
+    const lockedName = primary?.name || user?.organization_name || "La tua azienda";
+    setCompanyContext((prev) => {
+      if (prev.companyId === clientPrimaryCompanyId && prev.source === "locked") {
+        return prev;
+      }
+      return { companyId: clientPrimaryCompanyId, companyName: lockedName, source: "locked" };
+    });
+  }, [
+    isCompanyClient,
+    companiesLoaded,
+    companies,
+    clientPrimaryCompanyId,
+    user?.organization_name,
+  ]);
 
   const standardsForUser = useMemo(
     () => filterStandardsForUser(user?.allowed_standard_ids),
@@ -233,11 +268,13 @@ function AiAssistantPage() {
         setContextSeparatorIndex(nextMsgs.length - 1);
         return nextMsgs;
       });
-      setCompanyContext({
-        companyId: autoCompanyId,
-        companyName: autoCompanyName,
-        source: "auto",
-      });
+      if (!isCompanyClient) {
+        setCompanyContext({
+          companyId: autoCompanyId,
+          companyName: autoCompanyName,
+          source: "auto",
+        });
+      }
       setStandardContext({
         standardId: autoStandard?.standardId ?? null,
         label: autoStandard?.label ?? null,
@@ -337,17 +374,19 @@ function AiAssistantPage() {
     clearChatMessages(chatStorageKey);
     setMessages([]);
     setContextSeparatorIndex(-1);
-    setCompanyContext({
-      companyId: autoCompanyId,
-      companyName: autoCompanyName,
-      source: "auto",
-    });
+    if (!isCompanyClient) {
+      setCompanyContext({
+        companyId: autoCompanyId,
+        companyName: autoCompanyName,
+        source: "auto",
+      });
+    }
     setStandardContext({
       standardId: autoStandard?.standardId ?? null,
       label: autoStandard?.label ?? null,
       source: "auto",
     });
-  }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard]);
+  }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard, isCompanyClient]);
 
   const handleSend = useCallback(async (text) => {
     const msg = (text || input).trim();
@@ -463,9 +502,11 @@ function AiAssistantPage() {
           {/* Chip contesto azienda */}
           <div className="ai-context-chip-wrapper" ref={dropdownRef}>
             <button
-              className={`ai-context-chip ${contextIsCompany ? "ai-context-chip--company" : ""}`}
-              onClick={() => setDropdownOpen((v) => !v)}
-              title="Cambia contesto azienda"
+              className={`ai-context-chip ${contextIsCompany ? "ai-context-chip--company" : ""} ${isCompanyClient ? "ai-context-chip--locked" : ""}`}
+              onClick={() => { if (!isCompanyClient) setDropdownOpen((v) => !v); }}
+              disabled={isCompanyClient}
+              aria-disabled={isCompanyClient}
+              title={isCompanyClient ? "Ambito fissato sulla tua azienda" : "Cambia contesto azienda"}
             >
               <svg className="ai-context-chip-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 {contextIsCompany ? (
@@ -475,11 +516,13 @@ function AiAssistantPage() {
                 )}
               </svg>
               <span className="ai-context-chip-label">{contextLabel}</span>
-              <svg className="ai-context-chip-arrow" viewBox="0 0 12 12" width="10" height="10" fill="currentColor">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-              </svg>
+              {!isCompanyClient && (
+                <svg className="ai-context-chip-arrow" viewBox="0 0 12 12" width="10" height="10" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                </svg>
+              )}
             </button>
-            {dropdownOpen && (
+            {!isCompanyClient && dropdownOpen && (
               <div className="ai-context-dropdown">
                 <button
                   className={`ai-context-dropdown-item ${!companyContext.companyId ? "active" : ""}`}

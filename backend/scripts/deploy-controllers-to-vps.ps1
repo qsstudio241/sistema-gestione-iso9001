@@ -1,28 +1,35 @@
-# Deploy backend (controllers + routes + server.js + middleware auth + servizi correlati) sul VPS
+# Deploy backend (manifest unico) sul VPS
 #
 # IMPORTANTE: /var/www/sgq-backend sul VPS e' una COPIA di file (deploy), non un repository Git.
 # Dopo `git push` su GitHub, Netlify aggiorna il frontend; il backend si aggiorna solo eseguendo questo script
-# (o copiando manualmente gli stessi file) + restart sgq-backend.
+# (o deploy-to-vps.sh) + restart sgq-backend.
 #
-# Esegui da PowerShell nella root del repo.
-# Usa PuTTY (pscp/plink) in modalita' -batch per evitare prompt interattivi.
-# Nota: la prima volta potrebbe essere necessario accettare la host key manualmente (una sola volta),
-# poi -batch funzionera' senza blocchi.
+# Esegui da PowerShell nella root del repo:
+#   .\backend\scripts\deploy-controllers-to-vps.ps1
 #
-# --- Autenticazione SSH (ordine consigliato, best practice) ---
-# 1) File backend/config/.ssh-deploy.local.ps1 (gitignored; vedi .ssh-deploy.local.ps1.example) — imposta $env:SGQ_* senza chat/repo.
-# 2) Variabile SGQ_PUTTY_SESSION o file .putty-session.local — sessione PuTTY salvata + Pageant/chiave.
-# 3) Chiave SSH + Pageant senza sessione dedicata (plink/pscp -hostkey, nessun -pw).
-# 4) Solo se inevitabile: SGQ_SSH_PASSWORD (compare in history processi; ruotare se esposta).
-# Se SGQ_SSH_PASSWORD e' valorizzata, la sessione PuTTY viene ignorata per evitare batch falliti con sessioni obsolete.
+# Manifest file list: backend/scripts/deploy-manifest.json (ordine dependency-aware)
+#
+# --- Autenticazione SSH (ordine consigliato) ---
+# 1) backend/config/.ssh-deploy.local.ps1 (gitignored)
+# 2) SGQ_PUTTY_SESSION o .putty-session.local
+# 3) Chiave SSH + Pageant
+# 4) SGQ_SSH_PASSWORD (sconsigliata)
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $BackendRoot = Join-Path $ProjectRoot "backend"
+$ManifestPath = Join-Path $PSScriptRoot "deploy-manifest.json"
 $VPS = "spascarella@www.fr-busato.it"
 $Port = "1122"
 $RemoteBase = "/var/www/sgq-backend"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
+$HealthUrl = if ($env:SGQ_HEALTH_URL) { $env:SGQ_HEALTH_URL } else { "https://www.fr-busato.it:8443/api/v1/health" }
+
+if (-not (Test-Path -LiteralPath $ManifestPath)) {
+    throw "Manifest non trovato: $ManifestPath"
+}
+$Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+if ($Manifest.remoteBase) { $RemoteBase = $Manifest.remoteBase }
 
 $DeployLocalPs1 = Join-Path $BackendRoot "config\.ssh-deploy.local.ps1"
 if (Test-Path -LiteralPath $DeployLocalPs1) {
@@ -34,10 +41,9 @@ if (Test-Path -LiteralPath $DeployLocalPs1) {
     }
 }
 
-$PuttySession = $env:SGQ_PUTTY_SESSION  # opzionale: nome sessione PuTTY salvata (consigliato)
-$SshPassword = $env:SGQ_SSH_PASSWORD    # opzionale: password SSH (sconsigliata; evita prompt in batch)
+$PuttySession = $env:SGQ_PUTTY_SESSION
+$SshPassword = $env:SGQ_SSH_PASSWORD
 
-# Opzionale: file locale gitignored — una sola riga = nome sessione PuTTY (stesso valore di SGQ_PUTTY_SESSION)
 $PuttySessionFile = Join-Path $BackendRoot "config\.putty-session.local"
 if (-not $PuttySession -and (Test-Path $PuttySessionFile)) {
     $PuttySession = (Get-Content -LiteralPath $PuttySessionFile -Raw).Trim()
@@ -48,7 +54,7 @@ if (-not $PuttySession -and (Test-Path $PuttySessionFile)) {
 
 if ($SshPassword) {
     if ($PuttySession) {
-        Write-Host "SGQ_SSH_PASSWORD attiva: sessione PuTTY '$PuttySession' ignorata (deploy via hostkey + -pw)." -ForegroundColor DarkYellow
+        Write-Host "SGQ_SSH_PASSWORD attiva: sessione PuTTY '$PuttySession' ignorata." -ForegroundColor DarkYellow
     }
     $PuttySession = $null
 }
@@ -56,182 +62,163 @@ if ($SshPassword) {
 $Pscp = "C:\Program Files\PuTTY\pscp.exe"
 $Plink = "C:\Program Files\PuTTY\plink.exe"
 
-if (-not (Test-Path $Pscp)) {
-    throw "pscp.exe non trovato in: $Pscp"
-}
-if (-not (Test-Path $Plink)) {
-    throw "plink.exe non trovato in: $Plink"
+if (-not (Test-Path $Pscp)) { throw "pscp.exe non trovato in: $Pscp" }
+if (-not (Test-Path $Plink)) { throw "plink.exe non trovato in: $Plink" }
+
+function Invoke-Plink([string]$RemoteCommand) {
+    if ($PuttySession -and $script:useSession) {
+        & $Plink -batch -load $PuttySession $RemoteCommand
+    } elseif ($SshPassword) {
+        & $Plink -batch -pw $SshPassword -hostkey $HostKey -P $Port $VPS $RemoteCommand
+    } else {
+        & $Plink -batch -hostkey $HostKey -P $Port $VPS $RemoteCommand
+    }
+    if ($LASTEXITCODE -ne 0) { throw "plink fallito (exit $LASTEXITCODE): $RemoteCommand" }
 }
 
 function Copy-FileToVps([string]$LocalRelPath, [string]$RemoteAbsPath) {
-    $local = Join-Path $BackendRoot $LocalRelPath
-    if (-not (Test-Path $local)) { throw "File locale non trovato: $local" }
+    $local = Join-Path $BackendRoot ($LocalRelPath -replace '/', '\')
+    if (-not (Test-Path -LiteralPath $local)) { throw "File locale non trovato: $local" }
 
-    Write-Host "  -> Copia: $LocalRelPath  =>  $RemoteAbsPath" -ForegroundColor Gray
-    if ($PuttySession) {
-        & $Pscp -batch -load $PuttySession $local "$VPS`:$RemoteAbsPath"
+    Write-Host "  -> $LocalRelPath" -ForegroundColor Gray
+    if ($PuttySession -and $script:useSession) {
+        & $Pscp -batch -load $PuttySession $local "${VPS}:${RemoteAbsPath}"
+    } elseif ($SshPassword) {
+        & $Pscp -batch -pw $SshPassword -hostkey $HostKey -P $Port $local "${VPS}:${RemoteAbsPath}"
     } else {
-        if ($SshPassword) {
-            & $Pscp -batch -pw $SshPassword -hostkey $HostKey -P $Port $local "$VPS`:$RemoteAbsPath"
-        } else {
-            & $Pscp -batch -hostkey $HostKey -P $Port $local "$VPS`:$RemoteAbsPath"
-        }
+        & $Pscp -batch -hostkey $HostKey -P $Port $local "${VPS}:${RemoteAbsPath}"
     }
     if ($LASTEXITCODE -ne 0) { throw "pscp fallito per $LocalRelPath (exit $LASTEXITCODE)" }
 }
 
-Write-Host "Copia backend su VPS (porta $Port)..." -ForegroundColor Cyan
+# Raccogli tutti i file dal manifest
+$AllFiles = @()
+foreach ($group in $Manifest.groups) {
+    foreach ($rel in $group.files) {
+        $AllFiles += [PSCustomObject]@{ Group = $group.name; Path = $rel }
+    }
+}
+
+Write-Host "=== Deploy SGQ Backend -> VPS ===" -ForegroundColor Cyan
+Write-Host "Manifest: $($AllFiles.Count) file in $($Manifest.groups.Count) gruppi" -ForegroundColor Cyan
 Set-Location $BackendRoot
 
-# Preflight: assicura che la host key sia in cache per evitare prompt.
-# Se e' la prima connessione e chiede "store key in cache (y/n)?", rispondiamo "y".
-# Se invece chiede la password (autenticazione non a chiave), il deploy non puo' proseguire in modo non interattivo.
-Write-Host "Preflight SSH (verifica host key)..." -ForegroundColor Cyan
-$useSession = $false
+# Preflight: tutti i file locali devono esistere PRIMA di aprire SSH
+Write-Host "`nPreflight locale (verifica file manifest)..." -ForegroundColor Cyan
+$missing = @()
+foreach ($item in $AllFiles) {
+    $local = Join-Path $BackendRoot ($item.Path -replace '/', '\')
+    if (-not (Test-Path -LiteralPath $local)) { $missing += $item.Path }
+}
+if ($missing.Count -gt 0) {
+    Write-Host "ERRORE: file mancanti nel workspace locale:" -ForegroundColor Red
+    $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    throw "Deploy annullato: $($missing.Count) file non trovati. Esegui git pull o verifica il branch."
+}
+Write-Host "  OK - tutti i $($AllFiles.Count) file presenti." -ForegroundColor Green
+
+# Preflight SSH
+Write-Host "`nPreflight SSH..." -ForegroundColor Cyan
+$script:useSession = $false
 if ($PuttySession) {
     & $Plink -batch -load $PuttySession "exit" | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        $useSession = $true
+        $script:useSession = $true
     } else {
-        Write-Host "⚠ Sessione PuTTY '$PuttySession' non valida o non trovata: fallback su hostkey." -ForegroundColor DarkYellow
-        $useSession = $false
+        Write-Host "Sessione PuTTY '$PuttySession' non valida: fallback hostkey." -ForegroundColor DarkYellow
     }
 }
-if (-not $useSession) {
+if (-not $script:useSession) {
     if ($SshPassword) {
         & $Plink -batch -pw $SshPassword -hostkey $HostKey -P $Port $VPS "exit" | Out-Null
     } else {
         & $Plink -batch -hostkey $HostKey -P $Port $VPS "exit" | Out-Null
     }
     if ($LASTEXITCODE -ne 0) {
-        throw "plink preflight fallito (exit $LASTEXITCODE). Serve autenticazione non-interattiva: backend/config/.ssh-deploy.local.ps1 (vedi .example), oppure SGQ_PUTTY_SESSION / .putty-session.local, oppure Pageant/chiave SSH."
+        throw "plink preflight fallito. Configura backend/config/.ssh-deploy.local.ps1, SGQ_PUTTY_SESSION o Pageant."
+    }
+}
+Write-Host "  OK - connessione SSH." -ForegroundColor Green
+
+# Crea directory remote se necessario
+if ($Manifest.ensureRemoteDirs) {
+    $mkdirParts = @()
+    foreach ($dir in $Manifest.ensureRemoteDirs) {
+        $mkdirParts += "mkdir -p ${RemoteBase}/${dir}"
+    }
+    if ($mkdirParts.Count -gt 0) {
+        Write-Host "`nCreazione directory remote..." -ForegroundColor Cyan
+        Invoke-Plink ($mkdirParts -join " && ")
     }
 }
 
-# Controllers
-Copy-FileToVps "src/controllers/audit.controller.js" "$RemoteBase/src/controllers/audit.controller.js"
-Copy-FileToVps "src/controllers/sync.controller.js" "$RemoteBase/src/controllers/sync.controller.js"
-Copy-FileToVps "src/controllers/nc.controller.js" "$RemoteBase/src/controllers/nc.controller.js"
-Copy-FileToVps "src/controllers/attachment.controller.js" "$RemoteBase/src/controllers/attachment.controller.js"
-Copy-FileToVps "src/controllers/document.controller.js" "$RemoteBase/src/controllers/document.controller.js"
-Copy-FileToVps "src/controllers/customChecklist.controller.js" "$RemoteBase/src/controllers/customChecklist.controller.js"
-Copy-FileToVps "src/controllers/admin.controller.js" "$RemoteBase/src/controllers/admin.controller.js"
-Copy-FileToVps "src/controllers/auditorOrg.controller.js" "$RemoteBase/src/controllers/auditorOrg.controller.js"
-Copy-FileToVps "src/controllers/companyPersonnel.controller.js" "$RemoteBase/src/controllers/companyPersonnel.controller.js"
-Copy-FileToVps "src/controllers/company.controller.js" "$RemoteBase/src/controllers/company.controller.js"
-Copy-FileToVps "src/controllers/qualifications.controller.js" "$RemoteBase/src/controllers/qualifications.controller.js"
-Copy-FileToVps "src/controllers/risks.controller.js" "$RemoteBase/src/controllers/risks.controller.js"
-Copy-FileToVps "src/controllers/organization.controller.js" "$RemoteBase/src/controllers/organization.controller.js"
-Copy-FileToVps "src/controllers/auth.controller.js" "$RemoteBase/src/controllers/auth.controller.js"
-Copy-FileToVps "src/controllers/billing.controller.js" "$RemoteBase/src/controllers/billing.controller.js"
-Copy-FileToVps "src/controllers/aiChat.controller.js" "$RemoteBase/src/controllers/aiChat.controller.js"
-Copy-FileToVps "src/controllers/search.controller.js" "$RemoteBase/src/controllers/search.controller.js"
-Copy-FileToVps "src/utils/aiCitations.js" "$RemoteBase/src/utils/aiCitations.js"
-Copy-FileToVps "src/utils/docTypeConfigHelpers.js" "$RemoteBase/src/utils/docTypeConfigHelpers.js"
-Copy-FileToVps "src/services/docCodeGenerator.service.js" "$RemoteBase/src/services/docCodeGenerator.service.js"
-Copy-FileToVps "src/services/documentHistoryTracker.service.js" "$RemoteBase/src/services/documentHistoryTracker.service.js"
+# Copia per gruppo (ordine manifest = dependency-aware)
+Write-Host "`nCopia file sul VPS..." -ForegroundColor Cyan
+foreach ($group in $Manifest.groups) {
+    Write-Host "[$($group.name)]" -ForegroundColor DarkCyan
+    foreach ($rel in $group.files) {
+        $remotePath = "$RemoteBase/$($rel -replace '\\', '/')"
+        Copy-FileToVps $rel $remotePath
+    }
+}
 
-# Routes (necessarie per esporre gli endpoint custom-checklist-responses)
-Copy-FileToVps "src/routes/audit.routes.js" "$RemoteBase/src/routes/audit.routes.js"
-Copy-FileToVps "src/routes/customChecklist.routes.js" "$RemoteBase/src/routes/customChecklist.routes.js"
-Copy-FileToVps "src/routes/admin.routes.js" "$RemoteBase/src/routes/admin.routes.js"
-Copy-FileToVps "src/routes/organization.routes.js" "$RemoteBase/src/routes/organization.routes.js"
-Copy-FileToVps "src/routes/nc.routes.js" "$RemoteBase/src/routes/nc.routes.js"
-Copy-FileToVps "src/routes/search.routes.js" "$RemoteBase/src/routes/search.routes.js"
-Copy-FileToVps "src/routes/company.routes.js" "$RemoteBase/src/routes/company.routes.js"
+Write-Host "`nOK. Riavvio backend sul VPS..." -ForegroundColor Cyan
 
-# Sprint 9/10: Import batch PDF → staging → document registry
-Copy-FileToVps "src/controllers/importJobs.controller.js" "$RemoteBase/src/controllers/importJobs.controller.js"
-Copy-FileToVps "src/routes/importJobs.routes.js" "$RemoteBase/src/routes/importJobs.routes.js"
-Copy-FileToVps "src/services/importAiExtraction.service.js" "$RemoteBase/src/services/importAiExtraction.service.js"
-Copy-FileToVps "src/utils/importPdfText.js" "$RemoteBase/src/utils/importPdfText.js"
-
-# Sprint 12-A: WebDAV Office Round-trip
-Copy-FileToVps "src/controllers/webdav.controller.js" "$RemoteBase/src/controllers/webdav.controller.js"
-Copy-FileToVps "src/routes/webdav.routes.js" "$RemoteBase/src/routes/webdav.routes.js"
-
-# Entry point server (include customChecklistRoutes)
-Copy-FileToVps "src/server.js" "$RemoteBase/src/server.js"
-
-# Middleware (JWT / req.user — es. normalizzazione ruolo per RBAC lista audit)
-Copy-FileToVps "src/middleware/auth.middleware.js" "$RemoteBase/src/middleware/auth.middleware.js"
-
-# Services richiesti dai controller (evita crash MODULE_NOT_FOUND su VPS)
-Copy-FileToVps "src/services/auditMaintenance.service.js" "$RemoteBase/src/services/auditMaintenance.service.js"
-Copy-FileToVps "src/services/auditListRbac.service.js" "$RemoteBase/src/services/auditListRbac.service.js"
-Copy-FileToVps "src/services/companyAccess.service.js" "$RemoteBase/src/services/companyAccess.service.js"
-Copy-FileToVps "src/services/billing.service.js" "$RemoteBase/src/services/billing.service.js"
-Copy-FileToVps "src/services/auditLock.service.js" "$RemoteBase/src/services/auditLock.service.js"
-Copy-FileToVps "src/services/auditNumberAllocation.service.js" "$RemoteBase/src/services/auditNumberAllocation.service.js"
-Copy-FileToVps "src/services/customChecklist.service.js" "$RemoteBase/src/services/customChecklist.service.js"
-Copy-FileToVps "src/services/reportTemplate.service.js" "$RemoteBase/src/services/reportTemplate.service.js"
-Copy-FileToVps "src/services/unifiedSearch.service.js" "$RemoteBase/src/services/unifiedSearch.service.js"
-
-Write-Host "OK. Riavvio backend sul VPS..." -ForegroundColor Cyan
-
-# Opzionale: $env:SGQ_SUDO_PASSWORD — restart systemd prima del blocco bash (evita quoting annidato).
-# Mai committare password. Se non impostata, si usa sudo -n poi fallback fuser+nohup.
 if ($env:SGQ_SUDO_PASSWORD) {
     Write-Host "  Tentativo systemctl restart con SGQ_SUDO_PASSWORD..." -ForegroundColor DarkGray
     $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD))
     $sudoLine = "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend.service"
-    if ($PuttySession -and $useSession) {
-        & $Plink -batch -load $PuttySession "bash -lc `"$sudoLine`""
-    } elseif ($SshPassword) {
-        & $Plink -batch -pw $SshPassword -hostkey $HostKey -P $Port $VPS "bash -lc `"$sudoLine`""
-    } else {
-        & $Plink -batch -hostkey $HostKey -P $Port $VPS "bash -lc `"$sudoLine`""
+    try {
+        Invoke-Plink "bash -lc `"$sudoLine`""
+    } catch {
+        Write-Host "  systemctl con password non riuscito, proseguo con fallback." -ForegroundColor DarkYellow
     }
-    Write-Host "  (esito systemctl con password: exit $LASTEXITCODE)" -ForegroundColor DarkGray
 }
 
-# Ordine nel remoto: (1) sudo -n NOPASSWD, (2) fallback DEPLOY_CHECKLIST_RELEASE.md (fuser + nohup)
-$remoteCmd = @"
+$remoteCmd = @'
 bash -lc '
-cd $RemoteBase
+cd __REMOTE_BASE__
 echo deploy_restart_begin
 RESTARTED=0
 if sudo -n systemctl restart sgq-backend.service 2>/dev/null; then
   echo deploy_systemctl_nopass_ok
   RESTARTED=1
 fi
-if [ "`$RESTARTED" != "1" ]; then
+if [ "$RESTARTED" != "1" ]; then
   echo deploy_fallback_fuser_nohup
   fuser -k 3000/tcp 2>/dev/null || true
   sleep 3
-  cd $RemoteBase || exit 1
-  nohup node src/server.js >> $RemoteBase/app.log 2>&1 &
+  cd __REMOTE_BASE__ || exit 1
+  nohup node src/server.js >> __REMOTE_BASE__/app.log 2>&1 &
   sleep 4
 fi
-systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 40 || true
-echo deploy_routes_preview_custom_checklist
-sed -n '1,20p' $RemoteBase/src/routes/customChecklist.routes.js || true
-echo deploy_server_organization_mount
-grep -n -e organizationRoutes -e /organizations $RemoteBase/src/server.js 2>/dev/null | head -n 12 || true
-tail -n 25 $RemoteBase/app.log || true
+OLD_UPTIME=$(curl -sk https://www.fr-busato.it:8443/api/v1/health 2>/dev/null | grep -o "\"uptime\":[0-9.]*" | head -1 || true)
+echo deploy_health_uptime $OLD_UPTIME
+systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 15 || true
+grep -q normUpload.routes __REMOTE_BASE__/src/server.js && echo deploy_norm_upload_route_ok || echo deploy_norm_upload_route_MISSING
+grep -q ncResponsibleOptions __REMOTE_BASE__/src/controllers/nc.controller.js && echo deploy_nc_responsible_ok || echo deploy_nc_responsible_MISSING
+tail -n 20 __REMOTE_BASE__/app.log || true
 '
-"@
+'@
+$remoteCmd = $remoteCmd.Replace('__REMOTE_BASE__', $RemoteBase)
 
-# Windows usa CRLF: rimuoviamo i '\r' per evitare errori su bash remoto.
 $remoteCmd = $remoteCmd -replace "`r", ""
+Invoke-Plink $remoteCmd
 
-if ($PuttySession) {
-    if ($useSession) {
-        & $Plink -batch -load $PuttySession $remoteCmd
-    } else {
-        if ($SshPassword) {
-            & $Plink -batch -pw $SshPassword -hostkey $HostKey -P $Port $VPS $remoteCmd
-        } else {
-            & $Plink -batch -hostkey $HostKey -P $Port $VPS $remoteCmd
-        }
-    }
-} else {
-    if ($SshPassword) {
-        & $Plink -batch -pw $SshPassword -hostkey $HostKey -P $Port $VPS $remoteCmd
-    } else {
-        & $Plink -batch -hostkey $HostKey -P $Port $VPS $remoteCmd
-    }
+# Health check locale post-deploy
+Write-Host "`nVerifica health API..." -ForegroundColor Cyan
+Start-Sleep -Seconds 3
+try {
+    $healthResponse = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 15
+    $health = $healthResponse.Content | ConvertFrom-Json
+    $status = if ($health.status) { $health.status } elseif ($health.ok) { "ok" } else { "unknown" }
+    Write-Host "  OK - health $status (uptime: $($health.uptime))" -ForegroundColor Green
+} catch {
+    Write-Host "  ATTENZIONE: health check fallito su $HealthUrl" -ForegroundColor Red
+    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Il deploy file e completato; verifica manualmente systemctl status sgq-backend." -ForegroundColor Yellow
+    exit 1
 }
-if ($LASTEXITCODE -ne 0) { throw "plink (restart) fallito (exit $LASTEXITCODE)" }
 
-Write-Host "DONE. Verifica ora: GET /api/v1/health e salva risposte checklist custom." -ForegroundColor Green
+Write-Host "`nDEPLOY COMPLETATO." -ForegroundColor Green
+Write-Host "Smoke opzionale: npm run smoke:deploy (da backend/)" -ForegroundColor DarkGray

@@ -21,7 +21,7 @@
 
 /* Pannello */
 .doc-detail {
-  width: 360px;
+  width: 420px;
   max-width: 90vw;
   height: 100%;
   background: #fff;
@@ -31,6 +31,7 @@
   overflow: hidden;
   animation: doc-detail-slide-in 0.25s ease;
   font-family: inherit;
+  position: relative;
 }
 
 @keyframes doc-detail-slide-in {
@@ -180,6 +181,33 @@
 .doc-detail__validity--superata { background: #f8d7da; color: #721c24; }
 .doc-detail__validity--annullata { background: #e9ecef; color: #495057; }
 .doc-detail__validity--in_revisione { background: #fff3cd; color: #856404; }
+
+.doc-detail__validity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.doc-detail__lookup-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.doc-detail__lookup-btn:hover:not(:disabled) { background: #1d4ed8; }
+.doc-detail__lookup-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.doc-detail__lookup-warn {
+  font-size: 11px;
+  color: #b45309;
+  margin-left: 6px;
+}
 
 /* ---- file list ---- */
 
@@ -331,11 +359,72 @@
   font-weight: 500;
 }
 
+/* ---- drag handle per ridimensionamento ---- */
+
+.doc-detail__resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  margin-left: -3px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 3;
+  touch-action: none;
+}
+
+.doc-detail__resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: #e2e8f0;
+  transition: background 0.15s ease;
+}
+
+.doc-detail__resizer:hover::after,
+body.sgq-doc-detail-resizing .doc-detail__resizer::after {
+  background: #1a73e8;
+}
+
+body.sgq-doc-detail-resizing,
+body.sgq-doc-detail-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* ---- scope summary ---- */
+
+.doc-detail__scope-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.doc-detail__scope-text {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.doc-detail__scope-placeholder {
+  font-style: italic;
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 768px) {
   .doc-detail {
-    width: 100%;
-    max-width: 100vw;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .doc-detail__resizer {
+    display: none;
   }
 }

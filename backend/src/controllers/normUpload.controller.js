@@ -12,8 +12,13 @@ const pdfParse = require('pdf-parse');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
-const { serializeNormTypeSpecificData } = require('../services/documentRegistryNorm.service');
+const {
+  serializeNormTypeSpecificData,
+  guessStandardCodeFromFilename,
+} = require('../services/documentRegistryNorm.service');
+const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const normChunker = require('../services/normChunker.service');
+const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
 
 function stripCodeFences(raw) {
   let s = String(raw || '').trim();
@@ -82,25 +87,20 @@ async function uploadNorms(req, res) {
     return res.status(400).json({ error: 'Nessun file caricato', code: 'VALIDATION_ERROR' });
   }
 
-  // Find the "NORME E LEGGI" system folder for this org
-  let normFolderId;
+  // Cartella destinazione: quella selezionata in UI (parent_folder_id) o fallback 2.3
+  const requestedFolderId = req.body?.parent_folder_id
+    ? parseInt(req.body.parent_folder_id, 10)
+    : null;
+  let normFolder;
   try {
-    const folderResult = await query(
-      `SELECT id FROM document_registry
-       WHERE folder_code = '2.3'
-         AND organization_id = @orgId
-         AND is_system_folder = 1`,
-      { orgId: organization_id }
-    );
-    if (folderResult.recordset.length === 0) {
-      // cleanup uploaded files
+    normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
+    if (!normFolder) {
       for (const f of req.files) await fs.unlink(f.path).catch(() => {});
       return res.status(404).json({
-        error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. Eseguire il provisioning dell\'albero documentale.',
+        error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. In Albero → vista libera, usa «Inizializza struttura documentale».',
         code: 'NORM_FOLDER_NOT_FOUND',
       });
     }
-    normFolderId = folderResult.recordset[0].id;
   } catch (err) {
     for (const f of req.files) await fs.unlink(f.path).catch(() => {});
     logger.error('[NormUpload] Errore lookup cartella norme:', err.message);
@@ -126,7 +126,7 @@ async function uploadNorms(req, res) {
       entry.textQuality = textQuality;
 
       // (b) AI metadata extraction (best effort)
-      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, abstract: null };
+      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, scope_summary: null };
       if (hasAiProvider && extractedText.length > 50) {
         try {
           const ctx = buildExtractNormMetadataContext({ text: extractedText });
@@ -148,6 +148,15 @@ async function uploadNorms(req, res) {
           logger.warn(`[NormUpload] AI extraction fallita per ${file.originalname}:`, aiErr.message);
         }
       }
+      if (!metadata.standard_code) {
+        const fromName = guessStandardCodeFromFilename(file.originalname);
+        if (fromName) metadata.standard_code = fromName;
+      }
+      if (!metadata.issuing_body && metadata.standard_code) {
+        const u = String(metadata.standard_code).toUpperCase();
+        if (u.startsWith('UNI')) metadata.issuing_body = 'UNI';
+        else if (/\bISO\b|\bIEC\b/.test(u)) metadata.issuing_body = 'ISO';
+      }
       entry.metadata = metadata;
 
       const docTitle = formatReadableTitle(metadata)
@@ -158,18 +167,22 @@ async function uploadNorms(req, res) {
         : null;
 
       // Stesso schema type_specific_data del form manuale (slice R3)
-      const typeSpecificData = serializeNormTypeSpecificData(metadata);
+      // validity_status impostato a 'vigente' di default; il job settimanale lo aggiorna
+      const typeSpecificData = serializeNormTypeSpecificData({
+        ...metadata,
+        validity_status: metadata.validity_status || 'vigente',
+      });
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(
         `INSERT INTO document_registry (
-           organization_id, parent_id, title, doc_type, status,
+           organization_id, company_id, parent_id, title, doc_type, status,
            is_system_folder, issue_date, type_specific_data,
            created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
-           @orgId, @parentId, @title, 'norma', 'rilasciato',
+           @orgId, @companyId, @parentId, @title, 'norma', 'rilasciato',
            0,
            CASE WHEN @editionYear IS NOT NULL
                 THEN DATEFROMPARTS(@editionYear, 1, 1)
@@ -179,7 +192,8 @@ async function uploadNorms(req, res) {
          )`,
         {
           orgId: organization_id,
-          parentId: normFolderId,
+          companyId: normFolder.company_id,
+          parentId: normFolder.id,
           title: docTitle.substring(0, 255),
           editionYear,
           typeSpecificData,
@@ -188,6 +202,12 @@ async function uploadNorms(req, res) {
       );
       const documentId = docResult.recordset[0].id;
       entry.documentId = documentId;
+
+      const pathCache = await calculatePathCache(documentId, organization_id);
+      await query(
+        `UPDATE document_registry SET path_cache = @path_cache WHERE id = @id`,
+        { path_cache: pathCache, id: documentId }
+      );
 
       // (d) Create attachments row linked to this document
       const attResult = await query(
@@ -234,7 +254,7 @@ async function uploadNorms(req, res) {
          VALUES (
            @docId, @orgId, @stdCode, @normTitle,
            @editionYear, @issuingBody, @extractedText, @textQuality,
-           'rilasciato', GETDATE(), GETDATE()
+           'vigente', GETDATE(), GETDATE()
          )`,
         {
           docId: documentId,

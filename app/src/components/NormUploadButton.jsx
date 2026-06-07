@@ -5,13 +5,8 @@
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import { normalizeNormUploadResults, countNormUploadSuccesses } from "../utils/normUploadResults";
+import StatusBadge from "./StatusBadge";
 import "./NormUploadButton.css";
-
-const QUALITY_LABELS = {
-  good: { label: "Buona", className: "norm-quality--good" },
-  partial: { label: "Parziale", className: "norm-quality--partial" },
-  ocr_poor: { label: "OCR scarso", className: "norm-quality--poor" },
-};
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -48,7 +43,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     setResults(null);
 
     try {
-      const res = await apiService.uploadNorms(selectedFiles);
+      const res = await apiService.uploadNorms(selectedFiles, folderId);
       const normalized = normalizeNormUploadResults(res.results || res.data || []);
       setResults(normalized);
       if (onUploadComplete && countNormUploadSuccesses(normalized) > 0) {
@@ -61,12 +56,14 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     }
   }, [selectedFiles, onUploadComplete]);
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
+    // onUploadComplete già chiamato in handleUpload se ci sono successi;
+    // non ripetere per evitare un doppio refresh inutile dell'albero.
     setSelectedFiles([]);
     setResults(null);
     setValidationErr(null);
     if (inputRef.current) inputRef.current.value = "";
-  };
+  }, []);
 
   const hasResults = results && results.length > 0;
   const showPanel = selectedFiles.length > 0 || hasResults;
@@ -144,14 +141,16 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                 <span className="norm-upload__panel-title">Risultati Upload</span>
               </div>
               <ul className="norm-upload__results">
-                {results.map((r, i) => (
-                  <li key={i} className={`norm-upload__result-item ${r.error ? "norm-upload__result-item--error" : "norm-upload__result-item--success"}`}>
-                    {r.error ? (
+                {results.map((r, i) => {
+                  const archived = r.success && r.documentId && !r.error;
+                  return (
+                  <li key={i} className={`norm-upload__result-item ${archived ? "norm-upload__result-item--success" : "norm-upload__result-item--error"}`}>
+                    {!archived ? (
                       <div className="norm-upload__result-error">
                         <span className="norm-upload__result-icon">{"\u274C"}</span>
                         <div>
                           <strong>{r.fileName || `File ${i + 1}`}</strong>
-                          <p>{r.error}</p>
+                          <p>{r.error || "Non salvato in archivio (verifica cartella NORME E LEGGI / struttura documentale)."}</p>
                         </div>
                       </div>
                     ) : (
@@ -168,16 +167,16 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                             {r.edition_year && <span>Anno: {r.edition_year}</span>}
                             {r.issuing_body && <span>Ente: {r.issuing_body}</span>}
                             {r.text_quality && (
-                              <span className={`norm-quality-badge ${QUALITY_LABELS[r.text_quality]?.className || ""}`}>
-                                {QUALITY_LABELS[r.text_quality]?.label || r.text_quality}
-                              </span>
+                              <StatusBadge type="norm_quality" status={r.text_quality} size="small" />
                             )}
+                            {r.documentId && <span>ID archivio: {r.documentId}</span>}
                           </div>
                         </div>
                       </div>
                     )}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               <div className="norm-upload__actions">
                 <button

@@ -23,25 +23,7 @@ import CustomChecklistAuditView from "./CustomChecklistAuditView";
 import AuditOutcomeSection from "./AuditOutcomeSection";
 import ExportPanel from "./ExportPanel";
 import AuditClosePanel from "./AuditClosePanel";
-
-/** Mappa status → etichetta italiana e classe CSS */
-const STATUS_LABELS = {
-  draft:       { label: "BOZZA",      cls: "draft"      },
-  in_progress: { label: "IN CORSO",   cls: "in-progress" },
-  suspended:   { label: "SOSPESO",    cls: "suspended"  },
-  completed:   { label: "COMPLETATO", cls: "completed"  },
-  approved:    { label: "APPROVATO",  cls: "approved"   },
-  archived:    { label: "ARCHIVIATO", cls: "archived"   },
-};
-
-function AuditStatusBadge({ status }) {
-  const cfg = STATUS_LABELS[status] || { label: (status || "").toUpperCase(), cls: "draft" };
-  return (
-    <span className={`audit-status-badge badge-status-${cfg.cls}`}>
-      {cfg.label}
-    </span>
-  );
-}
+import StatusBadge from "./StatusBadge";
 
 // Source of Truth degli standard supportati: importata da
 // `app/src/data/standardsRegistry.js` (ADR-009 Fase 1).
@@ -278,6 +260,19 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }
   }, [currentAudit?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Quando il PC torna online con un audit già aperto, ri-scarica le risposte dal server.
+  // Senza questo, reconcileAuditsFromServer aggiorna la lista ma non il contenuto dell'audit corrente.
+  useEffect(() => {
+    const numericId = currentAudit?.metadata?.auditId;
+    if (!numericId) return;
+    const handleOnline = () => {
+      setServerDataStatus('loading');
+      setTimeout(() => fetchAndApplyServerResponses(numericId), 300);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [currentAudit?.metadata?.auditId, fetchAndApplyServerResponses, setServerDataStatus]);
+
   const handleStandardsUpdate = (updatedStandards) => {
     const previousStandards = currentAudit.metadata.selectedStandards || [];
 
@@ -379,7 +374,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
             </span>
           </div>
           <div className="audit-meta">
-            <AuditStatusBadge status={currentAudit.metadata.status} />
+            <StatusBadge type="audit" status={currentAudit.metadata.status} />
             <span className="audit-date">
               {new Date(currentAudit.metadata.lastModified).toLocaleDateString(
                 "it-IT"
