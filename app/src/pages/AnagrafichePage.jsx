@@ -15,6 +15,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import PencilIcon from "../components/icons/PencilIcon";
+import TrashIcon from "../components/icons/TrashIcon";
 import "./AnagrafichePage.css";
 
 const SCORE_STARS = (n) => n ? "\u2B50".repeat(Math.min(n, 5)) : "-";
@@ -175,15 +177,21 @@ function SuppliersTab() {
                   </td>
                   <td className="actions-cell">
                     <button
-                      className="btn-icon"
+                      className="grid-icon-btn"
                       onClick={e => { e.stopPropagation(); setEditItem(s); setShowForm(true); }}
-                      title="Modifica"
-                    >✏️</button>
+                      title="Modifica fornitore"
+                      aria-label="Modifica fornitore"
+                    >
+                      <PencilIcon size={15} />
+                    </button>
                     <button
-                      className="btn-icon danger"
+                      className="grid-icon-btn grid-icon-btn--danger"
                       onClick={e => { e.stopPropagation(); handleDelete(s); }}
-                      title="Elimina"
-                    >🗑️</button>
+                      title="Elimina fornitore"
+                      aria-label="Elimina fornitore"
+                    >
+                      <TrashIcon size={15} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -563,15 +571,21 @@ function DepartmentsTab() {
                 </td>
                 <td className="actions-cell">
                   <button
-                    className="btn-icon"
+                    className="grid-icon-btn"
                     onClick={() => { setEditItem(d); setShowForm(true); }}
-                    title="Modifica"
-                  >✏️</button>
+                    title="Modifica reparto"
+                    aria-label="Modifica reparto"
+                  >
+                    <PencilIcon size={15} />
+                  </button>
                   <button
-                    className="btn-icon danger"
+                    className="grid-icon-btn grid-icon-btn--danger"
                     onClick={() => handleDelete(d)}
-                    title="Elimina"
-                  >🗑️</button>
+                    title="Elimina reparto"
+                    aria-label="Elimina reparto"
+                  >
+                    <TrashIcon size={15} />
+                  </button>
                 </td>
               </tr>
             ))}

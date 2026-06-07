@@ -5,13 +5,8 @@
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import { normalizeNormUploadResults, countNormUploadSuccesses } from "../utils/normUploadResults";
+import StatusBadge from "./StatusBadge";
 import "./NormUploadButton.css";
-
-const QUALITY_LABELS = {
-  good: { label: "Buona", className: "norm-quality--good" },
-  partial: { label: "Parziale", className: "norm-quality--partial" },
-  ocr_poor: { label: "OCR scarso", className: "norm-quality--poor" },
-};
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -62,14 +57,13 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   }, [selectedFiles, onUploadComplete]);
 
   const handleDismiss = useCallback(() => {
-    if (results && onUploadComplete && countNormUploadSuccesses(results) > 0) {
-      onUploadComplete();
-    }
+    // onUploadComplete già chiamato in handleUpload se ci sono successi;
+    // non ripetere per evitare un doppio refresh inutile dell'albero.
     setSelectedFiles([]);
     setResults(null);
     setValidationErr(null);
     if (inputRef.current) inputRef.current.value = "";
-  }, [results, onUploadComplete]);
+  }, []);
 
   const hasResults = results && results.length > 0;
   const showPanel = selectedFiles.length > 0 || hasResults;
@@ -173,9 +167,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                             {r.edition_year && <span>Anno: {r.edition_year}</span>}
                             {r.issuing_body && <span>Ente: {r.issuing_body}</span>}
                             {r.text_quality && (
-                              <span className={`norm-quality-badge ${QUALITY_LABELS[r.text_quality]?.className || ""}`}>
-                                {QUALITY_LABELS[r.text_quality]?.label || r.text_quality}
-                              </span>
+                              <StatusBadge type="norm_quality" status={r.text_quality} size="small" />
                             )}
                             {r.documentId && <span>ID archivio: {r.documentId}</span>}
                           </div>

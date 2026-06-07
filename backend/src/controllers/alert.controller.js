@@ -10,6 +10,10 @@
  */
 
 const { getPool } = require('../config/database');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+} = require('../services/companyAccess.service');
 
 // Giorni default per alert scadenza documenti
 const DEFAULT_ALERT_DAYS = 30;
@@ -23,33 +27,38 @@ async function getAlertCount(req, res) {
   try {
     const pool = await getPool();
     const orgId = req.user.organization_id;
+    const accessList = await ensureCompanyAccessLoaded(req.user);
 
-    // Documenti scaduti o in scadenza nei prossimi DEFAULT_ALERT_DAYS giorni
-    const docResult = await pool.request()
-      .input('orgId', orgId)
-      .input('days', DEFAULT_ALERT_DAYS)
-      .query(`
-        SELECT COUNT(*) AS cnt
-        FROM document_registry
-        WHERE organization_id = @orgId
-          AND status NOT IN ('obsoleto')
-          AND expiry_date IS NOT NULL
-          AND expiry_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
-      `);
+    // Filtro company_access per documenti e qualifiche
+    const docFilter    = companyAccessSqlFilter(accessList, 'document_registry', 'company_id', 'uca_doc');
+    const ncFilter     = companyAccessSqlFilter(accessList, 'a',                 'company_id', 'uca_nc');
+    const qualifFilter = companyAccessSqlFilter(accessList, 'qualifications',    'company_id', 'uca_q');
 
-    // NC aperte da più di 30 giorni (join audits per organization_id)
+    const docReq = pool.request().input('orgId', orgId).input('days', DEFAULT_ALERT_DAYS);
+    Object.entries(docFilter.params).forEach(([k, v]) => docReq.input(k, v));
+    const docResult = await docReq.query(`
+      SELECT COUNT(*) AS cnt
+      FROM document_registry
+      WHERE organization_id = @orgId
+        AND status NOT IN ('obsoleto')
+        AND expiry_date IS NOT NULL
+        AND expiry_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+        ${docFilter.clause ? `AND ${docFilter.clause}` : ''}
+    `);
+
     let ncCount = 0;
     try {
-      const ncResult = await pool.request()
-        .input('orgId', orgId)
-        .query(`
-          SELECT COUNT(*) AS cnt
-          FROM non_conformities nc
-          INNER JOIN audits a ON nc.audit_id = a.audit_id
-          WHERE a.organization_id = @orgId
-            AND nc.status NOT IN ('closed', 'verified')
-            AND DATEDIFF(day, nc.created_at, GETDATE()) > 30
-        `);
+      const ncReq = pool.request().input('orgId', orgId);
+      Object.entries(ncFilter.params).forEach(([k, v]) => ncReq.input(k, v));
+      const ncResult = await ncReq.query(`
+        SELECT COUNT(*) AS cnt
+        FROM non_conformities nc
+        INNER JOIN audits a ON nc.audit_id = a.audit_id
+        WHERE a.organization_id = @orgId
+          AND nc.status NOT IN ('closed', 'verified')
+          AND DATEDIFF(day, nc.created_at, GETDATE()) > 30
+          ${ncFilter.clause ? `AND ${ncFilter.clause}` : ''}
+      `);
       ncCount = ncResult.recordset[0]?.cnt || 0;
     } catch {
       // Non bloccante
@@ -57,19 +66,19 @@ async function getAlertCount(req, res) {
 
     const docCount = docResult.recordset[0]?.cnt || 0;
 
-    // Qualifiche scadute o in scadenza entro 30 giorni (Sprint 4)
     let qualifCount = 0;
     try {
-      const qualifResult = await pool.request()
-        .input('orgId', orgId)
-        .query(`
-          SELECT COUNT(*) AS cnt
-          FROM qualifications
-          WHERE organization_id = @orgId
-            AND status NOT IN ('revocata','sospesa')
-            AND expiry_date IS NOT NULL
-            AND expiry_date <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
-        `);
+      const qualifReq = pool.request().input('orgId', orgId);
+      Object.entries(qualifFilter.params).forEach(([k, v]) => qualifReq.input(k, v));
+      const qualifResult = await qualifReq.query(`
+        SELECT COUNT(*) AS cnt
+        FROM qualifications
+        WHERE organization_id = @orgId
+          AND status NOT IN ('revocata','sospesa')
+          AND expiry_date IS NOT NULL
+          AND expiry_date <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+          ${qualifFilter.clause ? `AND ${qualifFilter.clause}` : ''}
+      `);
       qualifCount = qualifResult.recordset[0]?.cnt || 0;
     } catch {
       // Tabella qualifications non ancora creata — non bloccante
@@ -98,11 +107,12 @@ async function getAlerts(req, res) {
     const pool = await getPool();
     const orgId = req.user.organization_id;
     const days  = parseInt(req.query.days) || DEFAULT_ALERT_DAYS;
+    const accessList = await ensureCompanyAccessLoaded(req.user);
+    const docFilter  = companyAccessSqlFilter(accessList, 'dr', 'company_id', 'uca_adoc');
 
-    const docResult = await pool.request()
-      .input('orgId', orgId)
-      .input('days', days)
-      .query(`
+    const docReq = pool.request().input('orgId', orgId).input('days', days);
+    Object.entries(docFilter.params).forEach(([k, v]) => docReq.input(k, v));
+    const docResult = await docReq.query(`
         SELECT
           dr.id,
           dr.title,
@@ -123,6 +133,7 @@ async function getAlerts(req, res) {
           AND dr.status NOT IN ('obsoleto')
           AND dr.expiry_date IS NOT NULL
           AND dr.expiry_date <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+          ${docFilter.clause ? `AND ${docFilter.clause}` : ''}
         ORDER BY dr.expiry_date ASC
       `);
 

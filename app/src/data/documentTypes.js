@@ -62,7 +62,6 @@ export const DOC_TYPE_GROUPS = [
 // ??? Stati documento ??????????????????????????????????????????????????????????
 
 export const DOC_STATUS_OPTIONS = [
-  { value: "vigente",          label: "Vigente" },
   { value: "rilasciato",       label: "Rilasciato" },
   { value: "bozza",            label: "Bozza" },
   { value: "in_revisione",     label: "In revisione" },
@@ -70,10 +69,11 @@ export const DOC_STATUS_OPTIONS = [
   { value: "obsoleto",         label: "Obsoleto" },
 ];
 
-/** Mappa value ? label. Copre tutti i valori inclusi 'rilasciato' e 'vigente' (sinonimi). */
-export const DOC_STATUS_LABELS = Object.fromEntries(
-  DOC_STATUS_OPTIONS.map(({ value, label }) => [value, label])
-);
+/** Mappa value ? label. Include alias legacy "vigente" (equiv. rilasciato). */
+export const DOC_STATUS_LABELS = {
+  ...Object.fromEntries(DOC_STATUS_OPTIONS.map(({ value, label }) => [value, label])),
+  vigente: "Rilasciato",
+};
 
 /**
  * Classe CSS badge per stato documento nel DocumentDetailPanel.

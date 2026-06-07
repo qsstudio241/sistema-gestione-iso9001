@@ -8,7 +8,6 @@ import apiService from "../services/apiService";
 import QualificationForm from "./QualificationForm";
 import { formatDate } from "../utils/dateHelpers";
 import "./QualificationsPage.css";
-
 // ── Semaforo ────────────────────────────────────────────────────────────────
 
 const SEMAFORO_LABEL = {
@@ -63,10 +62,11 @@ function QualificationsPage() {
   const [error,          setError]          = useState(null);
   const [total,          setTotal]          = useState(0);
   const [page,           setPage]           = useState(1);
+  const [companies,      setCompanies]      = useState([]);
   const LIMIT = 30;
 
   const [filters, setFiltersState] = useState({
-    search: "", status: "", expiring_days: "", qualification_type: "",
+    search: "", status: "", expiring_days: "", qualification_type: "", company_id: "",
   });
 
   const [formOpen,    setFormOpen]    = useState(false);
@@ -78,6 +78,13 @@ function QualificationsPage() {
     setPage(1);
   }, []);
 
+  useEffect(() => {
+    apiService.getCompanies?.().then((res) => {
+      const list = res?.data || res?.companies || res || [];
+      setCompanies(Array.isArray(list) ? list : []);
+    }).catch(() => {});
+  }, []);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -87,13 +94,17 @@ function QualificationsPage() {
       if (filters.status)             params.status             = filters.status;
       if (filters.expiring_days)      params.expiring_days      = filters.expiring_days;
       if (filters.qualification_type) params.qualification_type = filters.qualification_type;
+      if (filters.company_id)         params.company_id         = filters.company_id;
 
       const [res, statsRes] = await Promise.all([
         apiService.getQualifications(params),
         apiService.getQualificationsStats(),
       ]);
-      setQualifications(res.qualifications || []);
-      setTotal(res.total || 0);
+      const list = Array.isArray(res?.qualifications)
+        ? res.qualifications
+        : (Array.isArray(res?.data) ? res.data : []);
+      setQualifications(list);
+      setTotal(res?.total ?? res?.pagination?.total ?? 0);
       setStats(statsRes);
     } catch (err) {
       setError(err.message);
@@ -187,6 +198,18 @@ function QualificationsPage() {
             <option value="generico">Generiche</option>
           </optgroup>
         </select>
+        {companies.length > 0 && (
+          <select
+            className="sq-select"
+            value={filters.company_id}
+            onChange={e => setFilter("company_id", e.target.value)}
+          >
+            <option value="">Tutte le aziende</option>
+            {companies.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
         <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">↻</button>
       </div>
 

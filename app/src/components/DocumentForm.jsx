@@ -19,6 +19,10 @@ import apiService from "../services/apiService";
 import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { getSuggestedFolderCode } from "../data/documentFolderMapping";
+import {
+  normalizeRegistryDocStatusForApi,
+  registryDocStatusForForm,
+} from "../utils/documentValidity";
 import "./DocumentForm.css";
 
 const DOC_TYPES = DOC_TYPE_OPTIONS;
@@ -111,7 +115,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     doc_code:        doc?.doc_code        || '',
     title:           doc?.title           || '',
     revision:        doc?.revision        || '',
-    status:          doc?.status          || 'vigente',
+    status:          registryDocStatusForForm(doc?.status) || 'rilasciato',
     issue_date:      toDateInput(doc?.issue_date),
     expiry_date:     toDateInput(doc?.expiry_date),
     responsible:     doc?.responsible     || '',
@@ -475,8 +479,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     setError(null);
     try {
       const schema = getSchemaForDocType(form.doc_type);
+      const registryStatus = normalizeRegistryDocStatusForApi(
+        isNormaType ? 'rilasciato' : form.status,
+      );
+
       const payload = {
         ...form,
+        status: registryStatus,
         retention_years: form.retention_years ? parseInt(form.retention_years) : null,
         standard_id:     form.standard_id     ? parseInt(form.standard_id)     : null,
         company_id:      form.company_id      ? parseInt(form.company_id)      : null,

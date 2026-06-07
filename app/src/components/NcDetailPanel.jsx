@@ -213,10 +213,8 @@ export default function NcDetailPanel({
   const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
 
   return (
-    <form
+    <div
       className="nc-detail-form nc-action-form"
-      onSubmit={handleSubmit}
-      noValidate
     >
       {/* 1. Scheda NC */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-scheda-${nc.nc_id}`}>
@@ -259,7 +257,7 @@ export default function NcDetailPanel({
             readOnly={readOnly}
             onChange={(e) => setField("description", e.target.value)}
             onBlur={() => { if (!readOnly) validateDescription(); }}
-            placeholder="Descrivi la non conformit\u00E0 riscontrata..."
+            placeholder="Descrivi la non conformità riscontrata..."
             draftScopeId={draftScope}
             draftFieldId="description"
             persistLocalDraft
@@ -352,7 +350,7 @@ export default function NcDetailPanel({
             value={form.root_cause}
             readOnly={readOnly}
             onChange={(e) => setField("root_cause", e.target.value)}
-            placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
+            placeholder="5W, Ishikawa, 8D... Qual è la causa fondamentale del problema?"
             draftScopeId={draftScope}
             draftFieldId="root_cause"
             persistLocalDraft
@@ -494,11 +492,11 @@ export default function NcDetailPanel({
 
       {!readOnly && (
         <div className="nc-form-actions nc-drawer-footer">
-          <button type="submit" className="btn-primary" disabled={saving}>
+          <button type="button" className="btn-primary" disabled={saving} onClick={handleSubmit}>
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </button>
         </div>
       )}
-    </form>
+    </div>
   );
 }

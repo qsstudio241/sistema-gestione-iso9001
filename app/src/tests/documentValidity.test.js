@@ -8,7 +8,24 @@ import {
   isReleasedDocStatus,
   isDocumentVigente,
   shouldShowDocumentStatusBadge,
+  normalizeRegistryDocStatusForApi,
+  registryDocStatusForForm,
 } from "../utils/documentValidity";
+
+describe("documentValidity — normalizeRegistryDocStatusForApi", () => {
+  it("mappa vigente legacy a rilasciato", () => {
+    expect(normalizeRegistryDocStatusForApi("vigente")).toBe("rilasciato");
+  });
+
+  it("non confonde con validity_status norme (superata resta invalida lato API)", () => {
+    expect(normalizeRegistryDocStatusForApi("superata")).toBe("superata");
+  });
+
+  it("registryDocStatusForForm normalizza documenti legacy", () => {
+    expect(registryDocStatusForForm("vigente")).toBe("rilasciato");
+    expect(registryDocStatusForForm("bozza")).toBe("bozza");
+  });
+});
 
 describe("documentValidity — isDocumentFolder", () => {
   it("ritorna true per doc_type folder", () => {

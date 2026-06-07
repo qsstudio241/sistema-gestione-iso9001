@@ -91,10 +91,10 @@ async function uploadNorms(req, res) {
   const requestedFolderId = req.body?.parent_folder_id
     ? parseInt(req.body.parent_folder_id, 10)
     : null;
-  let normFolderId;
+  let normFolder;
   try {
-    normFolderId = await resolveNormFolderId(organization_id, requestedFolderId);
-    if (!normFolderId) {
+    normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
+    if (!normFolder) {
       for (const f of req.files) await fs.unlink(f.path).catch(() => {});
       return res.status(404).json({
         error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. In Albero → vista libera, usa «Inizializza struttura documentale».',
@@ -126,7 +126,7 @@ async function uploadNorms(req, res) {
       entry.textQuality = textQuality;
 
       // (b) AI metadata extraction (best effort)
-      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, abstract: null };
+      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, scope_summary: null };
       if (hasAiProvider && extractedText.length > 50) {
         try {
           const ctx = buildExtractNormMetadataContext({ text: extractedText });
@@ -167,18 +167,22 @@ async function uploadNorms(req, res) {
         : null;
 
       // Stesso schema type_specific_data del form manuale (slice R3)
-      const typeSpecificData = serializeNormTypeSpecificData(metadata);
+      // validity_status impostato a 'vigente' di default; il job settimanale lo aggiorna
+      const typeSpecificData = serializeNormTypeSpecificData({
+        ...metadata,
+        validity_status: metadata.validity_status || 'vigente',
+      });
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(
         `INSERT INTO document_registry (
-           organization_id, parent_id, title, doc_type, status,
+           organization_id, company_id, parent_id, title, doc_type, status,
            is_system_folder, issue_date, type_specific_data,
            created_by, created_at, updated_at
          )
          OUTPUT INSERTED.id
          VALUES (
-           @orgId, @parentId, @title, 'norma', 'rilasciato',
+           @orgId, @companyId, @parentId, @title, 'norma', 'rilasciato',
            0,
            CASE WHEN @editionYear IS NOT NULL
                 THEN DATEFROMPARTS(@editionYear, 1, 1)
@@ -188,7 +192,8 @@ async function uploadNorms(req, res) {
          )`,
         {
           orgId: organization_id,
-          parentId: normFolderId,
+          companyId: normFolder.company_id,
+          parentId: normFolder.id,
           title: docTitle.substring(0, 255),
           editionYear,
           typeSpecificData,

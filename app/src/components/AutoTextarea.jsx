@@ -97,7 +97,12 @@ function AutoTextarea({
         isListeningRef.current = false;
         clearTimeout(restartTimerRef.current);
         setIsListening(false);
-        setVoiceError(e.error);
+        // "network" copre due casi distinti: distinguiamo tramite navigator.onLine
+        if (e.error === "network" && !navigator.onLine) {
+          setVoiceError("network-offline");
+        } else {
+          setVoiceError(e.error);
+        }
       };
 
       recognition.onend = () => {
@@ -160,8 +165,10 @@ function AutoTextarea({
       "Servizio vocale non disponibile. Prova: Impostazioni Android \u2192 App \u2192 Google \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti.",
     "audio-capture":
       "Microfono non accessibile. Un'altra app potrebbe averlo occupato. Chiudi altre app e riprova.",
+    "network-offline":
+      "Nessuna connessione internet. Riconnettiti e riprova la dettatura.",
     "network":
-      "Connessione assente. La dettatura richiede internet. Riprova con connessione attiva.",
+      "Servizio di riconoscimento vocale non raggiungibile (rete presente ma server Google Speech irresponsivo). Verifica la connessione e riprova.",
     "language-not-supported":
       "Lingua it-IT non supportata su questo dispositivo.",
     "unavailable":

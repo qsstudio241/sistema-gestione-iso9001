@@ -18,6 +18,11 @@ jest.mock('../services/docCodeGenerator.service', () => ({
   resolveExpiryDate: jest.fn(),
 }));
 
+jest.mock('../services/companyAccess.service', () => ({
+  assertMutatingAllowed: jest.fn().mockResolvedValue(null),
+  sendAccessDenied: jest.fn(),
+}));
+
 const { query } = require('../config/database');
 const { allocateDocCode, resolveExpiryDate } = require('../services/docCodeGenerator.service');
 const ctrl = require('./document.controller');
@@ -73,6 +78,27 @@ describe('createDocument', () => {
     );
     const insertParams = query.mock.calls[0][1];
     expect(insertParams.doc_code).toBe('PG-001');
+  });
+
+  it('accetta status legacy "vigente" mappandolo a rilasciato', async () => {
+    resolveExpiryDate.mockResolvedValueOnce(null);
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 101 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      body: {
+        doc_type: 'procedura',
+        title: 'Doc vigente legacy',
+        status: 'vigente',
+      },
+    });
+    const res = mockRes();
+
+    await ctrl.createDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(query.mock.calls[0][1].status).toBe('rilasciato');
   });
 
   it('non sovrascrive doc_code fornito esplicitamente', async () => {
