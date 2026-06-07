@@ -58,14 +58,24 @@ Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: m
 | PR | Titolo | Motivo |
 |----|--------|--------|
 | #28 | docs: diagnosi rinnovo Let's Encrypt | Parte operativa (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) consolidata in *Ops/Sysadmin — Rinnovo SSL Let's Encrypt* (più sotto). |
+| #52 | feat: audit close verso document_registry (ADR-009 F5) | **CHIUSA per decisione di prodotto (07/06/2026)**. L'automatismo audit-close → `document_registry` non è desiderato: il report Word esportato deve restare **modificabile** dall'utente e **caricato manualmente** nell'albero. Il requisito corretto (revisione documento = numeratore audit al caricamento di un verbale) è tracciato come **requisito futuro** (vedi sotto) e in `DEPUTYTASK.md`. |
 
 ### Lasciate aperte (feature/prodotto o sync sensibile — con prossimo passo)
 | PR | Titolo | Perché aperta | Prossimo passo |
 |----|--------|---------------|----------------|
-| #52 | feat: audit close verso document_registry (ADR-009 F5) | Manca migration 066, feature additiva | Migration 066 idempotente + rebase + test chiusura audit |
 | #31 | perf(sync): debounce 1500ms + enqueueOrReplace | Sync sensibile (ADR-008 T3/T4/T5) | Rivalutare vs architettura sync + test L3 multi-device |
 | #38 | feat: compressione foto + Word resize + PhotoEditModal | Feature grossa, nuove dipendenze npm | Test a parte (bundle, upload, export Word, modal mobile) |
 | #10 | feat(settings): pagina Organizzazione P.IVA + logo | Si sovrappone al billing layer (migration 082) in sviluppo | Coordinare con billing per evitare doppioni, poi rebase |
+
+#### Requisito futuro (NON ora) — Caricamento verbale di audit con revisione = numeratore audit
+
+Nato dalla chiusura di #52. Quando l'utente caricherà **manualmente** un verbale di audit nell'albero documentale, la revisione del documento deve coincidere con il **numeratore dell'audit**:
+
+- **Tipo documento dedicato** "Verbale di audit" (cartella **12 AUDIT**).
+- **Al caricamento**: selezione dell'audit → `revision = audit.audit_number` (formato `PREFISSO-YYMMDD-NN`); campo revisione **read-only**.
+- **Opzionale**: riconoscimento automatico dell'audit dal nome file di export (`{Cliente}_{NumeroAudit}_{Standard}.docx`, trattini resi come underscore).
+- **Nota tecnica DB**: `document_registry.revision` è `NVARCHAR(20)` → potrebbe servire **allargare la colonna** (numeri audit fino a ~26 caratteri).
+- **Tracciabilità**: nessuna FK audit attuale in `document_registry` → salvare `audit_id` / `audit_number` in `type_specific_data` (JSON).
 
 #### PR #91 — Regola di prodotto: ambito azienda dell'assistente AI (07/06/2026)
 
