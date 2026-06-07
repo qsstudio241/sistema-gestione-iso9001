@@ -89,6 +89,11 @@ app.set('trust proxy', 1);
 // MIDDLEWARE
 // ==========================================
 
+// Trust the first proxy (Nginx) so that express-rate-limit reads the real
+// client IP from X-Forwarded-For instead of counting all requests as coming
+// from the loopback address 127.0.0.1.
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet({
     // CSP: il server espone JSON API + static uploads (immagini/allegati).
