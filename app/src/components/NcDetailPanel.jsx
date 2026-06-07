@@ -213,10 +213,8 @@ export default function NcDetailPanel({
   const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
 
   return (
-    <form
+    <div
       className="nc-detail-form nc-action-form"
-      onSubmit={handleSubmit}
-      noValidate
     >
       {/* 1. Scheda NC */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-scheda-${nc.nc_id}`}>
@@ -494,11 +492,11 @@ export default function NcDetailPanel({
 
       {!readOnly && (
         <div className="nc-form-actions nc-drawer-footer">
-          <button type="submit" className="btn-primary" disabled={saving}>
+          <button type="button" className="btn-primary" disabled={saving} onClick={handleSubmit}>
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </button>
         </div>
       )}
-    </form>
+    </div>
   );
 }

@@ -116,8 +116,8 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
       });
       setShowForm(false);
       await load();
-    } catch {
-      setError("Errore durante il salvataggio dell'azione.");
+    } catch (err) {
+      setError(err?.message || "Errore durante il salvataggio dell'azione.");
     } finally {
       setSaving(false);
     }
