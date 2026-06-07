@@ -257,7 +257,7 @@ export default function NcDetailPanel({
             readOnly={readOnly}
             onChange={(e) => setField("description", e.target.value)}
             onBlur={() => { if (!readOnly) validateDescription(); }}
-            placeholder="Descrivi la non conformit\u00E0 riscontrata..."
+            placeholder="Descrivi la non conformità riscontrata..."
             draftScopeId={draftScope}
             draftFieldId="description"
             persistLocalDraft
@@ -350,7 +350,7 @@ export default function NcDetailPanel({
             value={form.root_cause}
             readOnly={readOnly}
             onChange={(e) => setField("root_cause", e.target.value)}
-            placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
+            placeholder="5W, Ishikawa, 8D... Qual è la causa fondamentale del problema?"
             draftScopeId={draftScope}
             draftFieldId="root_cause"
             persistLocalDraft
