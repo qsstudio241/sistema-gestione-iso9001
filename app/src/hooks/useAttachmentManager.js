@@ -5,12 +5,12 @@
  * Adattato da useEvidenceManager (ESG app) per struttura ISO 9001.
  * 
  * Categorie allegati:
- * - foto: Immagini da fotocamera/gallery
+ * - foto: Immagini da fotocamera/gallery (compresse lato client prima dell'upload)
  * - documenti: PDF, Excel, Word, etc.
  * - verbali: Documenti testuali specifici
  * 
  * Differenze rispetto a ESG:
- * - NO compressione immagini (mantiene qualità originale)
+ * - Compressione JPEG lato client per categoria "foto" (max 1600px, qualità 0.82)
  * - NO fallback base64 (richiede File System API)
  * - Struttura: Allegati/{Foto,Documenti,Verbali}/
  * - Metadata salvati in audit.attachments (non in IndexedDB)
@@ -36,9 +36,86 @@ const CATEGORY_FOLDERS = {
  */
 const LIMITS = {
     maxFilesPerQuestion: 10, // Max 10 file per domanda
-    maxFileSize: 10 * 1024 * 1024, // 10MB per file
+    maxFileSize: 10 * 1024 * 1024, // 10MB per file (prima della compressione)
     maxCumulativeSize: 50 * 1024 * 1024, // 50MB totali per domanda
 };
+
+/**
+ * Parametri compressione JPEG lato client (solo categoria "foto").
+ * Riduce foto da telefono (tipicamente 5-15MB) a <500KB mantenendo qualità audit.
+ */
+const IMAGE_COMPRESS = {
+    maxDim: 1600,           // lato lungo max in px (1600px ≈ Full HD)
+    quality: 0.82,          // qualità JPEG (0.82 = ottimo balance qualità/peso)
+    minSizeToSkip: 300 * 1024, // file già < 300KB: non comprimere
+};
+
+/**
+ * Comprime un file immagine lato client usando Canvas API.
+ * Ridimensiona al maxDim preservando il rapporto d'aspetto, poi re-encode in JPEG.
+ * Restituisce il file originale se: non è un'immagine, la compressione fallisce,
+ * o il risultato è più grande dell'originale.
+ *
+ * @param {File} file - File immagine da comprimere
+ * @param {{ maxDim?: number, quality?: number, minSizeToSkip?: number }} opts
+ * @returns {Promise<File>} File compresso (o originale in caso di fallback)
+ */
+export async function compressImageFile(file, opts = {}) {
+    const { maxDim, quality, minSizeToSkip } = { ...IMAGE_COMPRESS, ...opts };
+
+    if (!file.type.startsWith('image/')) return file;
+    if (file.size < minSizeToSkip) return file;
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            let { naturalWidth: w, naturalHeight: h } = img;
+
+            if (w > maxDim || h > maxDim) {
+                if (w >= h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                else        { w = Math.round(w * (maxDim / h)); h = maxDim; }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width  = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { resolve(file); return; }
+            ctx.drawImage(img, 0, 0, w, h);
+
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob || blob.size >= file.size) {
+                        resolve(file);
+                        return;
+                    }
+                    const compressed = new File(
+                        [blob],
+                        file.name.replace(/\.[^.]+$/, '.jpg'),
+                        { type: 'image/jpeg', lastModified: Date.now() }
+                    );
+                    console.log(
+                        `[compress] ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ` +
+                        `${(compressed.size / 1024).toFixed(0)}KB (${w}×${h}px)`
+                    );
+                    resolve(compressed);
+                },
+                'image/jpeg',
+                quality
+            );
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(file);
+        };
+
+        img.src = objectUrl;
+    });
+}
 
 /**
  * Accept types per categoria
@@ -178,8 +255,14 @@ export function useAttachmentManager(audit, onUpdate) {
                     try {
                         const auditId = audit?.metadata?.auditId || audit?.metadata?.id || audit?.id;
                         const serverQuestionId = toNumericChecklistQuestionId(questionId);
+
+                        // Comprimi foto lato client prima dell'upload (solo categoria "foto" e immagini)
+                        const fileToUpload = (category === 'foto')
+                            ? await compressImageFile(file)
+                            : file;
+
                         const metadata = await storage.fsProvider.saveAttachment(
-                            file,
+                            fileToUpload,
                             category,
                             questionId,
                             { auditId }
@@ -193,10 +276,10 @@ export function useAttachmentManager(audit, onUpdate) {
                                 ? { customItemId: Number(opts.customItemId) }
                                 : {}),
                             category,
-                            name: file.name,
+                            name: fileToUpload.name,
                             storedName: metadata.storedName,
-                            type: file.type,
-                            size: file.size,
+                            type: fileToUpload.type,
+                            size: fileToUpload.size,
                             path: metadata.relativePath,
                             uploadDate: new Date().toISOString(),
                         };
@@ -220,18 +303,18 @@ export function useAttachmentManager(audit, onUpdate) {
                                 ? { auditId, customItemId: opts.customItemId, category: serverCategory, description: `${category} - ${questionId}` }
                                 : { auditId, questionId: serverQuestionId, category: serverCategory, description: `${category} - ${questionId}` };
                             try {
-                                const serverResult = await apiService.uploadAttachment(file, uploadParams);
+                                const serverResult = await apiService.uploadAttachment(fileToUpload, uploadParams);
                                 attachment.serverAttachmentId = serverResult?.data?.attachment_id || null;
-                                console.log(`☁️ [UPLOAD] File ${file.name} caricato su server`);
+                                console.log(`☁️ [UPLOAD] File ${fileToUpload.name} caricato su server`);
                             } catch (uploadErr) {
                                 // Offline o errore server: salva blob in IDB per sync futuro
-                                console.warn(`📦 [OFFLINE] Upload fallito per ${file.name}, enqueue per sync:`, uploadErr.message);
+                                console.warn(`📦 [OFFLINE] Upload fallito per ${fileToUpload.name}, enqueue per sync:`, uploadErr.message);
                                 try {
-                                    const buffer = await file.arrayBuffer();
-                                    const blobKey = `att_${Date.now()}_${file.name}`;
+                                    const buffer = await fileToUpload.arrayBuffer();
+                                    const blobKey = `att_${Date.now()}_${fileToUpload.name}`;
                                     await syncService.storeFileBlob(blobKey, buffer, {
-                                        mimeType: file.type,
-                                        fileName: file.name,
+                                        mimeType: fileToUpload.type,
+                                        fileName: fileToUpload.name,
                                     });
                                     await syncService.enqueue('upload_attachment', {
                                         blobKey,
@@ -242,12 +325,12 @@ export function useAttachmentManager(audit, onUpdate) {
                                             : { questionId: serverQuestionId }),
                                         category: serverCategory,
                                         description: `${category} - ${questionId}`,
-                                        fileName: file.name,
+                                        fileName: fileToUpload.name,
                                     });
                                     attachment.pendingSync = true;
                                     attachment.blobKey = blobKey;
                                 } catch (syncErr) {
-                                    console.error(`❌ [OFFLINE] Errore enqueue sync per ${file.name}:`, syncErr);
+                                    console.error(`❌ [OFFLINE] Errore enqueue sync per ${fileToUpload.name}:`, syncErr);
                                 }
                             }
                         }

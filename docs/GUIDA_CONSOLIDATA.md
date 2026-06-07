@@ -1,4 +1,4 @@
-﻿# Guida consolidata — SGQ ISO 9001
+# Guida consolidata — SGQ ISO 9001
 
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
@@ -64,7 +64,7 @@ Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: m
 | PR | Titolo | Perché aperta | Prossimo passo |
 |----|--------|---------------|----------------|
 | #31 | perf(sync): debounce 1500ms + enqueueOrReplace | Sync sensibile (ADR-008 T3/T4/T5) | Rivalutare vs architettura sync + test L3 multi-device |
-| #38 | feat: compressione foto + Word resize + PhotoEditModal | Feature grossa, nuove dipendenze npm | Test a parte (bundle, upload, export Word, modal mobile) |
+| #38 | feat: compressione foto + Word resize + PhotoEditModal | **Parte A (compressione foto) integrata su `main` il 07/06/2026** (vedi sotto). Restano editor foto (`PhotoEditModal`) e resize export Word | Task separato per editor + resize Word; PR #38 **lasciata aperta** finché l'editor non è recuperato |
 | #10 | feat(settings): pagina Organizzazione P.IVA + logo | Si sovrappone al billing layer (migration 082) in sviluppo | Coordinare con billing per evitare doppioni, poi rebase |
 
 #### Requisito futuro (NON ora) — Caricamento verbale di audit con revisione = numeratore audit
@@ -76,6 +76,18 @@ Nato dalla chiusura di #52. Quando l'utente caricherà **manualmente** un verbal
 - **Opzionale**: riconoscimento automatico dell'audit dal nome file di export (`{Cliente}_{NumeroAudit}_{Standard}.docx`, trattini resi come underscore).
 - **Nota tecnica DB**: `document_registry.revision` è `NVARCHAR(20)` → potrebbe servire **allargare la colonna** (numeri audit fino a ~26 caratteri).
 - **Tracciabilità**: nessuna FK audit attuale in `document_registry` → salvare `audit_id` / `audit_number` in `type_specific_data` (JSON).
+
+#### PR #38 parte A — Compressione foto allegati lato client (07/06/2026)
+
+Recuperata **solo** la compressione immagini dalla PR #38 (niente editor, niente modifiche export Word), integrata in modo pulito su `main` attuale.
+
+- **File toccato**: `app/src/hooks/useAttachmentManager.js` (+ test `app/src/tests/compressImageFile.test.js`).
+- **Comportamento**: per allegati di categoria **"foto"** (e solo se `image/*`), compressione lato client con **Canvas + `toBlob('image/jpeg')`** prima di salvataggio/upload. Parametri: **maxDim 1600px** (lato lungo, aspect ratio preservato), **qualità 0.82**, **skip < 300KB** (`minSizeToSkip`). PDF e altri tipi: **nessuna compressione**.
+- **Fallback robusti**: ritorna il file originale se non è immagine, se il canvas fallisce, o se il JPEG risulta più grande dell'originale. Il file compresso eredita nome `.jpg`; `name/type/size` dei metadata allegato usano il file effettivamente salvato (`fileToUpload`).
+- **Nessuna nuova dipendenza npm** (Canvas nativo del browser).
+- **NON replicata** la rimozione del blocco `customItemId` presente nella PR #38 (era una regressione): il supporto agli item checklist custom resta intatto.
+- **Verifica**: build Vite **OK**. Test mirato di gating (skip <300KB / solo immagini) aggiunto ed eseguibile in jsdom; il **runner vitest locale si impalla** in questo ambiente sandbox (pool threads/forks), quindi il test gira in **CI/Netlify** — build come L1.
+- **PR #38**: lasciata **aperta** su GitHub (editor foto ancora da recuperare in task separato).
 
 #### PR #91 — Regola di prodotto: ambito azienda dell'assistente AI (07/06/2026)
 
