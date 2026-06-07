@@ -76,7 +76,7 @@ describe('aiAssist.controller — suggest', () => {
           ncList: [{ clauseRef: '8.5.1', description: 'testo NC' }],
         },
       },
-      user: { organization_id: 99 },
+      user: { id: 42, organization_id: 99 },
     };
     const res = createRes();
 
@@ -85,7 +85,7 @@ describe('aiAssist.controller — suggest', () => {
     expect(contextBuilder.buildAuditConclusionsContext).toHaveBeenCalledWith({
       ...req.body.context,
       organizationId: 99,
-      userId: undefined,
+      userId: 42,
     });
     expect(chat).toHaveBeenCalledWith(
       [
