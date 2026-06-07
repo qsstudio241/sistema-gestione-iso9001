@@ -4,16 +4,62 @@
  * Usa fetch via Axios (con cookie httpOnly) + blob URL per l'iframe.
  * Evita il problema del token mancante in querystring quando l'auth
  * desktop usa cookie httpOnly (non leggibili da JavaScript).
+ *
+ * Su mobile (Android/iOS) l'iframe con blob mostra il placeholder nativo
+ * «Apri» che spesso non funziona: usiamo pulsanti propri con blob + share.
  */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import "./DocumentPdfViewer.css";
 
+/** Touch / viewport stretto: iframe PDF blob inaffidabile (Chrome Android). */
+export function prefersMobilePdfFallback() {
+  if (typeof window === "undefined") return false;
+  if (window.matchMedia("(pointer: coarse)").matches) return true;
+  if (window.matchMedia("(max-width: 640px)").matches) return true;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+}
+
+function triggerBlobLink(blobUrl, { download, fileName, newTab } = {}) {
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  if (download) link.download = fileName || "documento.pdf";
+  if (newTab) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export async function openPdfBlob(blob, blobUrl, fileName) {
+  const safeName = fileName || "documento.pdf";
+
+  if (navigator.canShare && blob instanceof Blob) {
+    try {
+      const file = new File([blob], safeName, { type: blob.type || "application/pdf" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: safeName });
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+  }
+
+  triggerBlobLink(blobUrl, { newTab: true });
+}
+
 export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClose }) {
-  const [blobUrl,   setBlobUrl]   = useState(null);
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [loadError, setLoadError] = useState(false);
-  const [loading,   setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [opening, setOpening] = useState(false);
   const revokeRef = useRef(null);
+  const blobRef = useRef(null);
+  const useMobileLayout = prefersMobilePdfFallback();
 
   useEffect(() => {
     if (!docId) return;
@@ -21,10 +67,15 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
     setLoading(true);
     setLoadError(false);
     setBlobUrl(null);
+    setPdfBlob(null);
+    blobRef.current = null;
 
-    apiService.getDocFileBlob(docId, attachmentId || null)
-      .then(blob => {
+    apiService
+      .getDocFileBlob(docId, attachmentId || null)
+      .then((blob) => {
         if (cancelled) return;
+        blobRef.current = blob;
+        setPdfBlob(blob);
         const url = URL.createObjectURL(blob);
         revokeRef.current = url;
         setBlobUrl(url);
@@ -42,34 +93,49 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
         URL.revokeObjectURL(revokeRef.current);
         revokeRef.current = null;
       }
+      blobRef.current = null;
     };
   }, [docId, attachmentId]);
 
-  const downloadUrl = apiService.getDocFileDownloadUrl(docId, attachmentId || null, false);
+  const handleDownload = useCallback(() => {
+    if (!blobUrl) return;
+    triggerBlobLink(blobUrl, { download: true, fileName: fileName || "documento.pdf" });
+  }, [blobUrl, fileName]);
+
+  const handleOpen = useCallback(async () => {
+    if (!blobUrl || !blobRef.current) return;
+    setOpening(true);
+    try {
+      await openPdfBlob(blobRef.current, blobUrl, fileName);
+    } catch {
+      triggerBlobLink(blobUrl, { newTab: true });
+    } finally {
+      setOpening(false);
+    }
+  }, [blobUrl, fileName]);
 
   if (!docId) return null;
 
   return (
     <div className="pdf-viewer-overlay" onClick={onClose}>
       <div className="pdf-viewer-container" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="pdf-viewer-header">
           <div className="pdf-viewer-header__info">
             <span className="pdf-viewer-header__icon" aria-hidden>{"\u{1F4C4}"}</span>
-            <span className="pdf-viewer-header__title">
-              {fileName || "Documento PDF"}
-            </span>
+            <span className="pdf-viewer-header__title">{fileName || "Documento PDF"}</span>
           </div>
           <div className="pdf-viewer-header__actions">
-            <a
-              href={downloadUrl}
+            <button
+              type="button"
               className="pdf-viewer-btn pdf-viewer-btn--download"
-              download
+              onClick={handleDownload}
+              disabled={!blobUrl}
               title="Scarica file"
             >
               {"\u{1F4BE}"} Scarica
-            </a>
+            </button>
             <button
+              type="button"
               className="pdf-viewer-btn pdf-viewer-btn--close"
               onClick={onClose}
               title="Chiudi"
@@ -79,7 +145,6 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
           </div>
         </div>
 
-        {/* Viewer */}
         <div className="pdf-viewer-body">
           {loading && (
             <div className="pdf-viewer-fallback">
@@ -89,12 +154,38 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
           {!loading && loadError && (
             <div className="pdf-viewer-fallback">
               <p>Il browser non riesce a visualizzare questo PDF.</p>
-              <a href={downloadUrl} className="pdf-viewer-btn pdf-viewer-btn--download" download>
+              <button
+                type="button"
+                className="pdf-viewer-btn pdf-viewer-btn--download"
+                onClick={() => {
+                  const url = apiService.getDocFileDownloadUrl(docId, attachmentId || null, false);
+                  triggerBlobLink(url, { download: true, fileName: fileName || "documento.pdf" });
+                }}
+              >
                 {"\u{1F4BE}"} Scarica il file per visualizzarlo
-              </a>
+              </button>
             </div>
           )}
-          {!loading && blobUrl && (
+          {!loading && blobUrl && useMobileLayout && (
+            <div className="pdf-viewer-fallback pdf-viewer-mobile">
+              <span className="pdf-viewer-mobile__icon" aria-hidden>
+                PDF
+              </span>
+              <p className="pdf-viewer-mobile__name">{fileName || "Documento PDF"}</p>
+              <p className="pdf-viewer-mobile__hint">
+                Su mobile il PDF si apre nel visualizzatore di sistema o tramite condividi.
+              </p>
+              <button
+                type="button"
+                className="pdf-viewer-btn pdf-viewer-btn--open pdf-viewer-btn--open-lg"
+                onClick={handleOpen}
+                disabled={opening}
+              >
+                {opening ? "Apertura..." : "Apri"}
+              </button>
+            </div>
+          )}
+          {!loading && blobUrl && !useMobileLayout && (
             <iframe
               src={blobUrl}
               className="pdf-viewer-iframe"

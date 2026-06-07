@@ -9,7 +9,8 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 1. **Chi prepara il task** (di solito sessione desktop): crea o aggiorna un file `CASE_STUDY_*.md` o `TASK_*.md` in questa cartella con obiettivo, vincoli, criteri di completamento e branch suggerito. Esempio numerazione audit Mason: `TASK_AUDIT_NUMBER_MASON_FORMAT.md`.
 2. **Chi delega su Cursor web** (solo quando serve): incolla un prompt breve che **punta al file** (vedi sezione “Prompt pronto” dentro ogni case study).
 3. **Restituzione risultati**: commit sul branch indicato + **PR verso `main`** (mai push forzato su `main` senza review consapevole).
-4. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare.
+4. **Brief attivo**: solo **`DEPUTYTASK.md`**. Task completati (es. `TASK_AI_*` Fase 0) → [archive/agent-tasks/](../archive/agent-tasks/) con stub redirect qui.
+5. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare.
 
 ## Stabilità del progetto
 
@@ -21,4 +22,6 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 
 - Per la revisione rapida del lavoro delegato usare: `docs/agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md`.
 - Per anomalie report cliente Mason (export Word): `docs/agent-tasks/TASK_MASON_REPORT_ANOMALIE_2026-04-20.md`.
+- Refactor registro = SoT normativa (**completato 25/05/2026**): piano storico `PLAN_REGISTRY_NORM_SOT_SLICES.md`; ADR [ADR-011](../adr/ADR-011-registry-norm-sot.md). Task slice R1: `TASK_REGISTRY_NORM_R1_VALIDITY_JOB.md` (archivio).
+- Fase 0 AI ADR-010 (**implementata**): brief in [archive/agent-tasks/](../archive/agent-tasks/) (`TASK_AI_*`).
 - Per audit non visibile in menu Mason (`2026-04`): `docs/agent-tasks/TASK_MASON_AUDIT_2026-04_VISIBILITY_2026-04-20.md`.

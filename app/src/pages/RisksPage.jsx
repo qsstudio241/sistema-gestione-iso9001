@@ -65,7 +65,7 @@ function RiskForm({ initial, onSave, onClose }) {
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{initial?.risk_id ? "Modifica rischio" : "Nuovo rischio"}</h3>
-          <button className="modal-close" onClick={onClose}>\u2715</button>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
           <div className="form-row">
@@ -96,7 +96,7 @@ function RiskForm({ initial, onSave, onClose }) {
           </div>
           <div className="form-row-3col">
             <div>
-              <label>Probabilit\u00e0</label>
+              <label>Probabilità</label>
               <select value={form.probability} onChange={e => upd("probability", parseInt(e.target.value))}>
                 {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
               </select>
@@ -168,7 +168,7 @@ function ObjectiveForm({ initial, onSave, onClose }) {
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{initial?.objective_id ? "Modifica obiettivo" : "Nuovo obiettivo"}</h3>
-          <button className="modal-close" onClick={onClose}>\u2715</button>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
           <div className="form-row">
@@ -274,7 +274,7 @@ function RisksTab() {
           <div className="stat-item"><span className="stat-num">{stats.total}</span><span className="stat-lbl">Totale</span></div>
           <div className="stat-item stat-open"><span className="stat-num">{stats.open}</span><span className="stat-lbl">Aperti</span></div>
           <div className="stat-item stat-treat"><span className="stat-num">{stats.in_treatment}</span><span className="stat-lbl">In trattamento</span></div>
-          <div className="stat-item stat-high"><span className="stat-num">{stats.high_priority}</span><span className="stat-lbl">Alta priorit\u00e0</span></div>
+          <div className="stat-item stat-high"><span className="stat-num">{stats.high_priority}</span><span className="stat-lbl">Alta priorità</span></div>
         </div>
       )}
 
@@ -305,19 +305,19 @@ function RisksTab() {
                   </div>
                   <div className="risk-card-actions">
                     <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>
-                    <button className="btn-icon" onClick={() => setModal({ mode: "edit", data: r })} title="Modifica">\u270F\uFE0F</button>
-                    <button className="btn-icon btn-del" onClick={() => handleDelete(r)} title="Elimina">\uD83D\uDDD1\uFE0F</button>
+                    <button type="button" className="btn-icon" onClick={() => setModal({ mode: "edit", data: r })} title="Modifica">{"\u270F\uFE0F"}</button>
+                    <button type="button" className="btn-icon btn-del" onClick={() => handleDelete(r)} title="Elimina">{"\uD83D\uDDD1\uFE0F"}</button>
                   </div>
                 </div>
                 {r.description && <p className="risk-desc">{r.description}</p>}
                 <div className="risk-meta">
-                  <span>\uD83D\uDCA1 {TREATMENT_LABEL[r.treatment]}</span>
-                  {r.responsible && <span>\uD83D\uDC64 {r.responsible}</span>}
-                  {r.review_date && <span>\uD83D\uDCC5 Revisione: {formatDate(r.review_date)}</span>}
-                  <span className="risk-prob-imp">P:{r.probability} \u00d7 I:{r.impact}</span>
+                  <span>{"\uD83D\uDCA1 "}{TREATMENT_LABEL[r.treatment]}</span>
+                  {r.responsible && <span>{"\uD83D\uDC64 "}{r.responsible}</span>}
+                  {r.review_date && <span>{"\uD83D\uDCC5 "}Revisione: {formatDate(r.review_date)}</span>}
+                  <span className="risk-prob-imp">P:{r.probability} × I:{r.impact}</span>
                 </div>
                 {r.treatment_desc && (
-                  <p className="risk-treatment">\uD83D\uDEE1\uFE0F {r.treatment_desc}</p>
+                  <p className="risk-treatment">{"\uD83D\uDEE1\uFE0F "}{r.treatment_desc}</p>
                 )}
               </div>
             );
@@ -416,13 +416,13 @@ function ObjectivesTab() {
               <div key={o.objective_id} className={`obj-card${isOverdue ? " obj-overdue" : ""}`}>
                 <div className="obj-card-top">
                   <div className="obj-card-title">
-                    {o.iso_clause && <span className="obj-clause">\u00a7{o.iso_clause}</span>}
+                    {o.iso_clause && <span className="obj-clause">{"\u00A7"}{o.iso_clause}</span>}
                     <strong>{o.title}</strong>
                   </div>
                   <div className="risk-card-actions">
                     <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>
-                    <button className="btn-icon" onClick={() => setModal({ mode: "edit", data: o })} title="Modifica">\u270F\uFE0F</button>
-                    <button className="btn-icon btn-del" onClick={() => handleDelete(o)} title="Elimina">\uD83D\uDDD1\uFE0F</button>
+                    <button type="button" className="btn-icon" onClick={() => setModal({ mode: "edit", data: o })} title="Modifica">{"\u270F\uFE0F"}</button>
+                    <button type="button" className="btn-icon btn-del" onClick={() => handleDelete(o)} title="Elimina">{"\uD83D\uDDD1\uFE0F"}</button>
                   </div>
                 </div>
 
@@ -433,12 +433,16 @@ function ObjectivesTab() {
                 </div>
 
                 <div className="risk-meta">
-                  {o.target_value  && <span>\uD83C\uDFAF Target: {o.target_value}</span>}
-                  {o.current_value && <span>\uD83D\uDCC8 Attuale: {o.current_value}</span>}
-                  {o.responsible   && <span>\uD83D\uDC64 {o.responsible}</span>}
-                  {o.due_date      && <span className={isOverdue ? "overdue-text" : ""}>\uD83D\uDCC5 {formatDate(o.due_date)}{isOverdue ? " \u26A0\uFE0F" : ""}</span>}
+                  {o.target_value  && <span>{"\uD83C\uDFAF "}Target: {o.target_value}</span>}
+                  {o.current_value && <span>{"\uD83D\uDCC8 "}Attuale: {o.current_value}</span>}
+                  {o.responsible   && <span>{"\uD83D\uDC64 "}{o.responsible}</span>}
+                  {o.due_date      && (
+                    <span className={isOverdue ? "overdue-text" : ""}>
+                      {"\uD83D\uDCC5 "}{formatDate(o.due_date)}{isOverdue ? " \u26A0\uFE0F" : ""}
+                    </span>
+                  )}
                 </div>
-                {o.kpi_description && <p className="risk-treatment">\uD83D\uDCCA {o.kpi_description}</p>}
+                {o.kpi_description && <p className="risk-treatment">{"\uD83D\uDCCA "}{o.kpi_description}</p>}
               </div>
             );
           })}
@@ -464,16 +468,16 @@ export default function RisksPage() {
   return (
     <div className="risks-page">
       <div className="risks-page-header">
-        <h1>\u26A0\uFE0F Rischi & Obiettivi</h1>
-        <p className="risks-page-sub">ISO 9001:2015 \u00a76.1 Rischi e opportunit\u00e0 - \u00a76.2 Obiettivi per la qualit\u00e0</p>
+        <h1>{"\u26A0\uFE0F Rischi & Obiettivi"}</h1>
+        <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 6.1 Rischi e opportunit\u00e0 - \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
       </div>
 
       <div className="risks-tabs">
-        <button className={`risks-tab-btn${activeTab === "risks" ? " active" : ""}`} onClick={() => setActiveTab("risks")}>
-          \uD83D\uDEA7 Registro Rischi
+        <button type="button" className={`risks-tab-btn${activeTab === "risks" ? " active" : ""}`} onClick={() => setActiveTab("risks")}>
+          {"\uD83D\uDEA7 Registro Rischi"}
         </button>
-        <button className={`risks-tab-btn${activeTab === "objectives" ? " active" : ""}`} onClick={() => setActiveTab("objectives")}>
-          \uD83C\uDFAF Obiettivi Qualit\u00e0
+        <button type="button" className={`risks-tab-btn${activeTab === "objectives" ? " active" : ""}`} onClick={() => setActiveTab("objectives")}>
+          {"\uD83C\uDFAF Obiettivi Qualit\u00e0"}
         </button>
       </div>
 

@@ -15,6 +15,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { NavLink, useRouter, useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import "./AppLayout.css";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
@@ -26,8 +27,13 @@ function hasLicensedModule(user, key) {
 }
 
 function buildNavItems(user, alerts = {}) {
+  const isCompanyClient = hasCompanyAccess(user);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  const canManage = ["admin", "auditor", "superadmin"].includes(user?.role);
+  const canManage = !isCompanyClient && ["admin", "auditor", "superadmin"].includes(user?.role);
+  const primaryCompanyId = getPrimaryCompanyId(user);
+  const companiesNavItem = isCompanyClient && primaryCompanyId
+    ? { to: `/companies/${primaryCompanyId}`, icon: "🏢", label: "La mia Azienda" }
+    : { to: "/companies", icon: "🏢", label: "Aziende" };
 
   const filterByLicense = (items) =>
     (items || []).filter((it) => !it.licenseKey || hasLicensedModule(user, it.licenseKey));
@@ -39,6 +45,7 @@ function buildNavItems(user, alerts = {}) {
       items: [
         { to: "/",        icon: "🏠", label: "Home",    exact: true },
         { to: "/audit",   icon: "🔍", label: "Audit" },
+        { to: "/search",  icon: "🔎", label: "Ricerca" },
       ],
     },
     // Modulo SGQ
@@ -66,13 +73,13 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
       ]),
     },
-    // Gestione (solo admin/auditor)
-    ...(canManage ? [{
+    // Gestione (studio admin/auditor o cliente azienda con menu ridotto)
+    ...(canManage || isCompanyClient ? [{
       group: "Gestione",
       items: filterByLicense([
-        { to: "/settings/studio", icon: "🏢", label: "Il mio Studio" },
-        { to: "/companies",   icon: "🏢", label: "Aziende" },
-        ...(isAdmin ? [
+        ...(!isCompanyClient ? [{ to: "/settings/studio", icon: "🏢", label: "Il mio Studio" }] : []),
+        companiesNavItem,
+        ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
@@ -88,18 +95,45 @@ function buildNavItems(user, alerts = {}) {
   ];
 }
 
-// ─── Bottom navigation (mobile - max 5 voci) ─────────────────────────────────
+// ─── Bottom navigation (mobile - max 5 voci, allineata a licenze) ────────────
 
-function BottomNav({ navItems }) {
-  const { path } = useRouter();
-  // Seleziona le 5 voci più importanti per il mobile
-  const mobileItems = [
-    { to: "/",          icon: "🏠", label: "Home",     exact: true },
-    { to: "/audit",     icon: "🔍", label: "Audit" },
-    { to: "/documents", icon: "📄", label: "Documenti" },
-    { to: "/companies", icon: "🏢", label: "Aziende" },
-    { to: "/settings/users", icon: "⚙️", label: "Impostazioni" },
+function buildMobileNavItems(user, alerts) {
+  const groups = buildNavItems(user, alerts);
+  const flat = groups.flatMap((g) => g.items).filter((it) => !it.locked);
+
+  const find = (to) => flat.find((it) => it.to === to);
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
+  const items = [
+    { to: "/", icon: "🏠", label: "Home", exact: true },
   ];
+
+  const audit = find("/audit");
+  if (audit) items.push({ to: audit.to, icon: audit.icon, label: audit.label });
+
+  const docs = find("/documents");
+  if (docs) items.push({ to: docs.to, icon: docs.icon, label: docs.label });
+
+  const nc = find("/nc");
+  if (nc) items.push({ to: nc.to, icon: nc.icon, label: "NC" });
+
+  const settings = find("/settings/users");
+  const companies = find("/companies");
+  if (isAdmin && settings) {
+    items.push({ to: settings.to, icon: "⚙️", label: "Impostazioni" });
+  } else if (companies) {
+    items.push({ to: companies.to, icon: companies.icon, label: companies.label });
+  } else {
+    const reclami = find("/reclami");
+    if (reclami) items.push({ to: reclami.to, icon: reclami.icon, label: reclami.label });
+  }
+
+  return items.slice(0, 5);
+}
+
+function BottomNav({ user, alerts }) {
+  const { path } = useRouter();
+  const mobileItems = buildMobileNavItems(user, alerts);
 
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Navigazione principale">
@@ -291,6 +325,15 @@ function AppLayout({ children }) {
             <h1 className="layout-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
               SGQ - Sistema di Gestione
             </h1>
+            <button
+              type="button"
+              className="layout-search-btn"
+              onClick={() => navigate("/search")}
+              title="Ricerca globale"
+              aria-label="Ricerca globale"
+            >
+              {"\uD83D\uDD0D"} Ricerca
+            </button>
           </div>
           <div className="layout-header-right">
             <div className="user-chip">
@@ -327,7 +370,7 @@ function AppLayout({ children }) {
       </div>
 
       {/* Bottom navigation mobile */}
-      <BottomNav navGroups={navGroups} />
+      <BottomNav user={user} alerts={alerts} />
     </div>
   );
 }

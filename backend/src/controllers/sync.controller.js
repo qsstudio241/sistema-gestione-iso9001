@@ -7,7 +7,8 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
 const { validateAuditDateRange } = require('../utils/auditDateRange');
-const { studioScopeClause } = require('../services/auditListRbac.service');
+const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const { resolveAuditForUser } = require('../services/auditLock.service');
 
 /**
  * POST /api/v1/sync/audits
@@ -42,19 +43,35 @@ async function syncAudits(req, res) {
         // Processa ogni audit
         for (const clientAudit of audits) {
             try {
-                // Verifica se audit esiste su server
+                const scope = studioScopeClause(syncUser, 'audits');
+                const scopeSql = appendScopeSql(scope);
                 const existing = await query(`
           SELECT audit_id, audit_uuid, updated_at
           FROM audits
           WHERE audit_uuid = @audit_uuid
             AND organization_id = @organization_id
+            AND is_deleted = 0
+            ${scopeSql}
         `, {
                     audit_uuid: clientAudit.id,
-                    organization_id: organizationId
+                    organization_id: organizationId,
+                    ...scope.params,
                 });
 
                 if (existing.recordset.length === 0) {
-                    // Nuovo audit → CREATE
+                    // Nuovo audit → CREATE (oppure audit esistente fuori scope → errore)
+                    const existsAny = await query(`
+          SELECT audit_id FROM audits
+          WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0
+        `, { audit_uuid: clientAudit.id, organization_id: organizationId });
+                    if (existsAny.recordset.length > 0) {
+                        results.errors.push({
+                            auditId: clientAudit.id,
+                            error: 'Audit fuori scope studio',
+                            code: 'AUDIT_FORBIDDEN',
+                        });
+                        continue;
+                    }
                     const created = await createAuditFromSync(clientAudit, userId, organizationId);
                     results.created.push(created);
                 } else {

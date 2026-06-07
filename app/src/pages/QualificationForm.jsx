@@ -269,7 +269,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
           </div>
         </div>
 
-        {error && <div className="qf-error">\u26A0\uFE0F {error}</div>}
+        {error && <div className="qf-error">{"\u26A0\uFE0F "}{error}</div>}
 
         <div className="qf-footer">
           <button className="qf-btn-cancel" onClick={onClose}>Annulla</button>

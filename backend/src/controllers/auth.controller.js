@@ -13,6 +13,7 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
+const { getUserCompanyAccess, isCompanyClient } = require('../services/companyAccess.service');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 
 // JWT_SECRET: fail-fast in produzione se mancante (vedi server.js).
@@ -260,6 +261,7 @@ async function login(req, res) {
 
         const allowed_standard_ids = await getAllowedStandardIds(user.user_id);
         const licensed_modules = await getLicensedModuleKeysForOrg(user.organization_id);
+        const company_access = await getUserCompanyAccess(user.user_id);
 
         logger.info(`✅ Login: ${user.email} (org: ${user.organization_name})`);
 
@@ -277,6 +279,8 @@ async function login(req, res) {
                 auditor_org_id: user.auditor_org_id ?? null,
                 allowed_standard_ids,
                 licensed_modules,
+                company_access,
+                is_company_client: isCompanyClient({ company_access }),
             },
             token,
             refreshToken
@@ -402,7 +406,14 @@ async function getCurrentUser(req, res) {
         const userRow = result.recordset[0];
         const allowed_standard_ids = await getAllowedStandardIds(userId);
         const licensed_modules = await getLicensedModuleKeysForOrg(userRow.organization_id);
-        const user = { ...userRow, allowed_standard_ids, licensed_modules };
+        const company_access = await getUserCompanyAccess(userId);
+        const user = {
+            ...userRow,
+            allowed_standard_ids,
+            licensed_modules,
+            company_access,
+            is_company_client: isCompanyClient({ company_access }),
+        };
 
         res.json({
             success: true,

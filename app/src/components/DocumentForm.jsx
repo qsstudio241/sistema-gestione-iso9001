@@ -19,12 +19,17 @@ import apiService from "../services/apiService";
 import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { getSuggestedFolderCode } from "../data/documentFolderMapping";
+import {
+  normalizeRegistryDocStatusForApi,
+  registryDocStatusForForm,
+} from "../utils/documentValidity";
 import "./DocumentForm.css";
 
 const DOC_TYPES = DOC_TYPE_OPTIONS;
 const DOC_STATUSES = DOC_STATUS_OPTIONS;
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const HARD_LIMIT = 200 * 1024 * 1024; // 200 MB — backend rejects above this
+const WARN_SIZE  =  50 * 1024 * 1024; // 50 MB — soft warning
 const ACCEPTED_TYPES = {
   'application/pdf': '.pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
@@ -68,7 +73,9 @@ function formatFileSize(bytes) {
 
 function isFileAccepted(file) {
   if (ACCEPTED_TYPES[file.type]) return true;
-  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  const dot = file.name.lastIndexOf('.');
+  if (dot === -1) return false;
+  const ext = file.name.slice(dot).toLowerCase();
   return ACCEPTED_EXTENSIONS.includes(ext);
 }
 
@@ -97,26 +104,30 @@ function StepIndicator({ step }) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId }) {
+function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId }) {
   const isEdit = !!doc;
+
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
 
   const [form, setForm] = useState({
-    doc_type:        doc?.doc_type        || "procedura",
-    doc_code:        doc?.doc_code        || "",
-    title:           doc?.title           || "",
-    revision:        doc?.revision        || "",
-    status:          doc?.status          || "vigente",
+    doc_type:        doc?.doc_type        || 'procedura',
+    doc_code:        doc?.doc_code        || '',
+    title:           doc?.title           || '',
+    revision:        doc?.revision        || '',
+    status:          registryDocStatusForForm(doc?.status) || 'rilasciato',
     issue_date:      toDateInput(doc?.issue_date),
     expiry_date:     toDateInput(doc?.expiry_date),
-    responsible:     doc?.responsible     || "",
-    retention_years: doc?.retention_years || "",
-    standard_id:     doc?.standard_id     || "",
-    clause_ref:      doc?.clause_ref      || "",
-    company_id:      doc?.company_id      || "",
-    notes:           doc?.notes           || "",
+    responsible:     doc?.responsible     || '',
+    retention_years: doc?.retention_years || '',
+    standard_id:     doc?.standard_id     || '',
+    clause_ref:      doc?.clause_ref      || '',
+    company_id:      doc?.company_id      || defaultCompanyId || '',
+    notes:           doc?.notes           || '',
   });
+
+  // Tipi "documento esterno": norme tecniche — nascondono azienda/codice, mostrano standard_code
+  const isNormaType = form.doc_type === 'norma';
 
   // Dati tipo-specifici
   const [typeData, setTypeData] = useState(() => {
@@ -135,8 +146,16 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   // ─── File upload state ────────────────────────────────────────────
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState(null);
+  const [fileSizeWarning, setFileSizeWarning] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ─── AI pre-estrazione ────────────────────────────────────────────
+  const [aiExtracting, setAiExtracting] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);  // banner "dati pre-compilati"
+  const [aiExtractError, setAiExtractError] = useState(null);
+  const [aiFilledFields, setAiFilledFields] = useState(new Set()); // campi pre-compilati da AI
+  const aiAbortRef = useRef(null); // per annullare estrazione precedente se docType cambia
 
   // ─── Folder selection state ───────────────────────────────────────
   const [folders, setFolders] = useState([]);
@@ -145,6 +164,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const [suggestedFolderId, setSuggestedFolderId] = useState(null);
   const [folderSuggestionConfidence, setFolderSuggestionConfidence] = useState(null);
   const [userOverrodeFolder, setUserOverrodeFolder] = useState(!!defaultFolderId);
+
+  // ─── Norm status lookup ───────────────────────────────────────────
+  // { loading: bool, result: { status, supersededBy, catalogUrl, checkedAt } | null }
+  const [normStatus, setNormStatus] = useState({ loading: false, result: null });
+  const normLookupTimerRef = useRef(null);
 
   // ─── Save state ───────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
@@ -172,6 +196,38 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     if (isEdit || userOverrodeFolder) return;
     loadFolderSuggestion(form.doc_type);
   }, [form.doc_type, isEdit, userOverrodeFolder]);
+
+  // Verifica automatica stato norma nel catalogo dell'ente (debounce 1.5 s)
+  useEffect(() => {
+    if (!isNormaType) {
+      setNormStatus({ loading: false, result: null });
+      return;
+    }
+    const code = (typeData.standard_code || '').trim();
+    if (!code) {
+      setNormStatus({ loading: false, result: null });
+      return;
+    }
+
+    clearTimeout(normLookupTimerRef.current);
+    setNormStatus({ loading: true, result: null });
+
+    normLookupTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await apiService.lookupNormStatus(
+          code,
+          typeData.issuing_body || '',
+          isEdit ? doc?.id : undefined
+        );
+        setNormStatus({ loading: false, result });
+      } catch {
+        setNormStatus({ loading: false, result: { status: 'unknown', supersededBy: null, catalogUrl: null } });
+      }
+    }, 1500);
+
+    return () => clearTimeout(normLookupTimerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeData.standard_code, typeData.issuing_body, isNormaType]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") handleCloseAttempt(); };
@@ -215,6 +271,88 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     }
   }, [userOverrodeFolder, defaultFolderId]);
 
+  // ─── AI pre-estrazione metadati ───────────────────────────────────
+  const runAiExtraction = useCallback(async (file, docType) => {
+    if (!file || !docType) return;
+    // Solo PDF supportati
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.pdf') return;
+
+    // Annulla eventuale estrazione precedente (flag di abort)
+    const abortFlag = { cancelled: false };
+    aiAbortRef.current = abortFlag;
+
+    setAiExtracting(true);
+    setAiExtracted(false);
+    setAiExtractError(null);
+    setAiFilledFields(new Set());
+
+    try {
+      const result = await apiService.preExtractDocumentMetadata(file, docType);
+      if (abortFlag.cancelled) return;
+
+      const meta = result?.metadata || {};
+      const filledKeys = new Set();
+
+      // Pre-compila il titolo se non già inserito dall'utente
+      if (meta.titolo) {
+        setForm((f) => {
+          if (!f.title.trim()) {
+            filledKeys.add('title');
+            return { ...f, title: meta.titolo };
+          }
+          return f;
+        });
+        filledKeys.add('title');
+      }
+
+      // Pre-compila i campi tipo-specifici (tutti i campi extra tranne quelli generici)
+      const genericKeys = new Set(['titolo', 'sommario', 'warnings']);
+      const typeSpecificEntries = Object.entries(meta).filter(
+        ([k, v]) => !genericKeys.has(k) && v !== null && v !== undefined && v !== ''
+      );
+      if (typeSpecificEntries.length > 0) {
+        setTypeData((prev) => {
+          const next = { ...prev };
+          for (const [k, v] of typeSpecificEntries) {
+            if (!prev[k] || prev[k] === '') {
+              next[k] = v;
+              filledKeys.add(`type_${k}`);
+            }
+          }
+          return next;
+        });
+      }
+
+      setAiFilledFields(filledKeys);
+      if (filledKeys.size > 0) {
+        setAiExtracted(true);
+      }
+    } catch (err) {
+      if (abortFlag.cancelled) return;
+      const code = err.status;
+      // 422 = PDF scansionato/non testuale, 503 = AI non configurata → messaggi discreti
+      if (code === 422 || code === 503 || code === 502) {
+        setAiExtractError('Estrazione automatica non disponibile — compila manualmente');
+      } else {
+        setAiExtractError('Estrazione automatica non disponibile — compila manualmente');
+      }
+    } finally {
+      if (!abortFlag.cancelled) setAiExtracting(false);
+    }
+  }, []);
+
+  // Ri-avvia estrazione se cambia il tipo documento (con file già presente)
+  useEffect(() => {
+    if (isEdit || !selectedFile) return;
+    if (form.doc_type) {
+      // Annulla estrazione in corso
+      if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+      runAiExtraction(selectedFile, form.doc_type);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.doc_type]);
+
   // ─── Handlers generali ────────────────────────────────────────────
 
   const handleChange = (field) => (e) =>
@@ -236,16 +374,27 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
   const validateAndSetFile = (file) => {
     setFileError(null);
+    setFileSizeWarning(null);
     if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      setFileError(`File troppo grande (${formatFileSize(file.size)}). Massimo consentito: 50 MB.`);
+    if (file.size > HARD_LIMIT) {
+      setFileError(`Il file supera il limite massimo di 200 MB (${formatFileSize(file.size)}).`);
       return;
     }
     if (!isFileAccepted(file)) {
       setFileError(`Formato non supportato. Tipi accettati: PDF, DOCX, DOC, XLSX, XLS, PNG, JPG, GIF, WEBP, TIFF.`);
       return;
     }
+    if (file.size > WARN_SIZE) {
+      setFileSizeWarning(`File di grandi dimensioni (${formatFileSize(file.size)}) \u2014 l\u2019upload potrebbe richiedere alcuni minuti`);
+    }
     setSelectedFile(file);
+    // Avvia estrazione AI se tipo documento già selezionato
+    if (form.doc_type) {
+      if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+      setAiExtracted(false);
+      setAiExtractError(null);
+      runAiExtraction(file, form.doc_type);
+    }
   };
 
   const handleFileBrowse = () => {
@@ -261,6 +410,12 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError(null);
+    setFileSizeWarning(null);
+    if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+    setAiExtracting(false);
+    setAiExtracted(false);
+    setAiExtractError(null);
+    setAiFilledFields(new Set());
   };
 
   const handleDragOver = (e) => {
@@ -324,8 +479,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     setError(null);
     try {
       const schema = getSchemaForDocType(form.doc_type);
+      const registryStatus = normalizeRegistryDocStatusForApi(
+        isNormaType ? 'rilasciato' : form.status,
+      );
+
       const payload = {
         ...form,
+        status: registryStatus,
         retention_years: form.retention_years ? parseInt(form.retention_years) : null,
         standard_id:     form.standard_id     ? parseInt(form.standard_id)     : null,
         company_id:      form.company_id      ? parseInt(form.company_id)      : null,
@@ -336,7 +496,17 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         responsible:     form.responsible.trim() || null,
         clause_ref:      form.clause_ref.trim() || null,
         notes:           form.notes.trim()    || null,
-        type_specific_data: schema ? typeData : null,
+        type_specific_data: schema
+          ? (isNormaType && normStatus.result && normStatus.result.status !== 'unknown'
+              ? {
+                  ...typeData,
+                  validity_status:   normStatus.result.status === 'active' ? 'vigente' : 'superata',
+                  last_validity_check: normStatus.result.checkedAt || new Date().toISOString(),
+                  validity_check_url:  normStatus.result.catalogUrl   || typeData.validity_check_url || null,
+                  superseded_by:       normStatus.result.supersededBy || typeData.superseded_by     || null,
+                }
+              : typeData)
+          : null,
         parent_id:       (!isEdit && selectedFolderId) ? selectedFolderId : undefined,
       };
 
@@ -390,12 +560,17 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const renderTypeField = (fieldDef) => {
     const { key, label, type, required, options, hint } = fieldDef;
     const value = typeData[key] ?? "";
+    const isAiPrefilled = aiFilledFields.has(`type_${key}`);
 
     if (type === "select") {
       return (
         <div key={key} className="docform-field">
           <label>{label}{required && <span className="required"> *</span>}</label>
-          <select value={value} onChange={handleTypeDataChange(key)}>
+          <select
+            value={value}
+            onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
+            className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
+          >
             <option value="">— Seleziona —</option>
             {(options || []).map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -435,9 +610,35 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           <textarea
             rows={3}
             value={value}
-            onChange={handleTypeDataChange(key)}
+            onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
             placeholder={hint || ""}
+            className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
           />
+        </div>
+      );
+    }
+
+    if (type === "boolean") {
+      const checked = typeData[key] === true || typeData[key] === 'true';
+      return (
+        <div key={key} className="docform-field">
+          <label
+            className="docform-multiselect-item"
+            style={{ textTransform: 'none', letterSpacing: 'normal', fontSize: '0.88rem', fontWeight: 500 }}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => {
+                setTypeData((d) => ({ ...d, [key]: e.target.checked }));
+                setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; });
+              }}
+              style={{ width: 15, height: 15, cursor: 'pointer' }}
+            />
+            {label}
+            {isAiPrefilled && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#2563eb', fontWeight: 600 }}>(AI)</span>}
+          </label>
+          {hint && <span className="docform-hint">{hint}</span>}
         </div>
       );
     }
@@ -448,10 +649,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         <input
           type={type === "date" ? "date" : type === "number" ? "number" : "text"}
           value={value}
-          onChange={handleTypeDataChange(key)}
+          onChange={(e) => { handleTypeDataChange(key)(e); setAiFilledFields((p) => { const n = new Set(p); n.delete(`type_${key}`); return n; }); }}
           placeholder={hint || ""}
           step={type === "number" ? "0.1" : undefined}
           min={type === "number" ? "0" : undefined}
+          className={isAiPrefilled ? 'docform-input-ai-prefilled' : ''}
         />
         {hint && type !== "date" && type !== "number" && (
           <span className="docform-hint">{hint}</span>
@@ -460,9 +662,114 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     );
   };
 
+  // Badge stato norma (vigente / ritirata / sostituita) da catalogo pubblico
+  const renderNormStatusBadge = () => {
+    if (!isNormaType) return null;
+    const code = (typeData.standard_code || '').trim();
+    if (!code) return null;
+
+    const { loading, result } = normStatus;
+
+    if (loading) {
+      return (
+        <div className="norm-status-row">
+          <span className="norm-status-badge norm-status-loading">&#9203; Verifica in corso...</span>
+        </div>
+      );
+    }
+
+    if (!result || result.status === 'unknown') {
+      if (result) {
+        return (
+          <div className="norm-status-row">
+            <span className="norm-status-badge norm-status-unknown">Stato non disponibile</span>
+            {result.catalogUrl && (
+              <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+                Vedi catalogo &#8594;
+              </a>
+            )}
+          </div>
+        );
+      }
+      return null;
+    }
+
+    let badgeClass, icon, text;
+    if (result.status === 'active') {
+      badgeClass = 'norm-status-active';
+      icon = '\uD83D\uDFE2';
+      text = 'In vigore';
+    } else if (result.status === 'withdrawn') {
+      badgeClass = 'norm-status-withdrawn';
+      icon = '\uD83D\uDD34';
+      text = 'Ritirata';
+    } else {
+      badgeClass = 'norm-status-superseded';
+      icon = '\uD83D\uDFE1';
+      text = result.supersededBy ? `Sostituita da ${result.supersededBy}` : 'Sostituita';
+    }
+
+    return (
+      <div className="norm-status-row">
+        <span className={`norm-status-badge ${badgeClass}`}>{icon} {text}</span>
+        {result.catalogUrl && (
+          <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+            Vedi catalogo &#8594;
+          </a>
+        )}
+      </div>
+    );
+  };
+
+  // Link verifica catalogo per norme tecniche — richiede standard_code compilato
+  const renderNormaVerifyLinks = () => {
+    const code = typeData.standard_code || '';
+    if (!isNormaType || !code) return null;
+    const issuer = (typeData.issuing_body || '').toUpperCase();
+    const enc = encodeURIComponent(code);
+    const links = [];
+    if (issuer.includes('BSI') || issuer.includes('BS ')) {
+      links.push({ label: '\uD83D\uDD17 Verifica su BSI Group', href: `https://shop.bsigroup.com/search?q=${enc}` });
+    }
+    if (issuer.includes('ISO') || (!issuer || issuer.includes('EN ISO') || issuer.includes('CEN'))) {
+      links.push({ label: '\uD83D\uDD17 Verifica su ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+    }
+    if (issuer.includes('UNI')) {
+      links.push({ label: '\uD83D\uDD17 Verifica su UNI', href: `https://www.uni.com/index.php?option=com_content&view=article&id=1408` });
+    }
+    if (links.length === 0) {
+      links.push({ label: '\uD83D\uDD17 Verifica su ISO.org', href: `https://www.iso.org/search.html?q=${enc}` });
+    }
+    return (
+      <div className="docform-norma-links">
+        {links.map((l, i) => (
+          <span key={l.label}>
+            {i > 0 && ' — '}
+            <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  // Campi norma renderizzati inline in step 2 — da escludere dalla sezione collassabile
+  const NORMA_INLINE_KEYS = new Set(['issuing_body', 'edition_year', 'scope_summary', 'ics_code', 'is_harmonized']);
+
   const renderTypeSpecificSection = () => {
     const schema = getSchemaForDocType(form.doc_type);
     if (!schema) return null;
+
+    // Per norma: standard_code è in step 1; i campi primari sono inline in step 2
+    const fieldsToRender = isNormaType
+      ? schema.fields.filter((f) => f.key !== 'standard_code' && !NORMA_INLINE_KEYS.has(f.key))
+      : schema.fields;
+
+    if (fieldsToRender.length === 0) return null;
+
+    const sectionTitle = isNormaType
+      ? `Dettagli — ${schema.label}`
+      : `Dettagli qualifica — ${schema.label}`;
+
     return (
       <div className="docform-type-section">
         <button
@@ -472,18 +779,23 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           aria-expanded={typeDetailsOpen}
         >
           <span className="docform-type-section-icon">{typeDetailsOpen ? "▾" : "▸"}</span>
-          Dettagli qualifica — {schema.label}
+          {sectionTitle}
         </button>
         {typeDetailsOpen && (
           <div className="docform-type-section-body">
-            {schema.fields.map(renderTypeField)}
+            {/* Banner AI in step 2 (dettagli tipo-specifici) */}
+            {aiExtracted && !aiExtracting && (
+              <div className="docform-ai-banner docform-ai-banner-compact">
+                <span className="docform-ai-banner-icon">&#10003;</span>
+                Metadati estratti automaticamente — verifica e correggi se necessario
+              </div>
+            )}
+            {fieldsToRender.map(renderTypeField)}
           </div>
         )}
       </div>
     );
   };
-
-  // ─── Upload zone (Step 1) ─────────────────────────────────────────
 
   const renderFileUploadZone = () => (
     <div className="docform-field">
@@ -506,7 +818,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
               Trascina qui il file o <strong>clicca per selezionare</strong>
             </span>
             <span className="docform-dropzone-hint">
-              PDF, DOCX, XLSX, immagini — max 50 MB
+              PDF, DOCX, XLSX, immagini — max 200 MB
             </span>
           </div>
           <input
@@ -523,7 +835,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           )}
         </>
       ) : (
-        <div className="docform-file-preview">
+        <div className={`docform-file-preview${aiExtracting ? ' docform-file-preview-analyzing' : ''}`}>
           <span
             className="docform-file-preview-icon"
             style={{ color: getFileTypeColor(selectedFile.name) }}
@@ -533,6 +845,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           <div className="docform-file-preview-info">
             <span className="docform-file-preview-name">{selectedFile.name}</span>
             <span className="docform-file-preview-size">{formatFileSize(selectedFile.size)}</span>
+            {aiExtracting && (
+              <span className="docform-ai-analyzing">
+                <span className="docform-ai-spinner" aria-hidden="true" /> Analisi AI in corso...
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -548,6 +865,15 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       {fileError && (
         <div className="docform-file-error">{fileError}</div>
+      )}
+
+      {fileSizeWarning && !fileError && (
+        <div className="docform-file-size-warning">{fileSizeWarning}</div>
+      )}
+
+      {/* Messaggio errore AI (discreto, non bloccante) */}
+      {!aiExtracting && aiExtractError && (
+        <div className="docform-ai-error">{aiExtractError}</div>
       )}
     </div>
   );
@@ -619,179 +945,282 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           type="text"
           placeholder="es. Procedura Controllo Qualità Saldature"
           value={form.title}
-          onChange={handleChange("title")}
+          onChange={(e) => {
+            handleChange("title")(e);
+            // Se l'utente modifica manualmente, rimuovi il bordo AI dal titolo
+            setAiFilledFields((prev) => { const next = new Set(prev); next.delete('title'); return next; });
+          }}
+          className={aiFilledFields.has('title') ? 'docform-input-ai-prefilled' : ''}
           autoFocus={!isEdit}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
         />
       </div>
 
-      <div className="docform-row">
+      {/* Codice documento + Azienda — nascosti per tipo norma */}
+      {!isNormaType && (
+        <div className="docform-row">
+          <div className="docform-field">
+            <label>Codice documento</label>
+            <input
+              type="text"
+              placeholder="es. PG-01, WPS-141-001"
+              value={form.doc_code}
+              onChange={handleChange("doc_code")}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
+            />
+          </div>
+          {companies.length > 0 && (
+            <div className="docform-field">
+              <label>Azienda</label>
+              <select value={form.company_id} onChange={handleChange("company_id")}>
+                <option value="">- Documento di studio -</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Codice norma — solo per tipo norma */}
+      {isNormaType && (
         <div className="docform-field">
-          <label>Codice documento</label>
+          <label>Codice norma <span className="required">*</span></label>
           <input
             type="text"
-            placeholder="es. PG-01, WPS-141-001"
-            value={form.doc_code}
-            onChange={handleChange("doc_code")}
+            placeholder="es. BS EN ISO 9606-1:2017"
+            value={typeData.standard_code || ''}
+            onChange={(e) => {
+              handleTypeDataChange('standard_code')(e);
+              setAiFilledFields((prev) => { const next = new Set(prev); next.delete('type_standard_code'); return next; });
+            }}
+            className={aiFilledFields.has('type_standard_code') ? 'docform-input-ai-prefilled' : ''}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
           />
+          {renderNormStatusBadge()}
+          {renderNormaVerifyLinks()}
         </div>
-        {companies.length > 0 && (
-          <div className="docform-field">
-            <label>Azienda</label>
-            <select value={form.company_id} onChange={handleChange("company_id")}>
-              <option value="">- Documento di studio -</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Zona upload file */}
       {renderFileUploadZone()}
+
+      {/* Banner AI estrazione completata */}
+      {aiExtracted && !aiExtracting && (
+        <div className="docform-ai-banner">
+          <span className="docform-ai-banner-icon">&#10003;</span>
+          Metadati estratti automaticamente dal file — verifica e correggi se necessario
+        </div>
+      )}
     </div>
   );
 
   // ─── Step 2 / Edit render ─────────────────────────────────────────
 
-  const renderStep2orEdit = () => (
-    <div className="docform-step-content">
-      {isEdit && (
-        <>
-          <div className="docform-field">
-            <label>Tipo documento</label>
-            <select value={form.doc_type} onChange={handleChange("doc_type")}>
-              {DOC_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="docform-field">
-            <label>Titolo <span className="required">*</span></label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={handleChange("title")}
-              autoFocus
-            />
-          </div>
-          <div className="docform-row">
+  const renderStep2orEdit = () => {
+    // Helper per recuperare campo tipo-specifico norma da rendere inline
+    const normaSchema = isNormaType ? getSchemaForDocType('norma') : null;
+    const normaField = (key) => normaSchema?.fields.find((f) => f.key === key);
+
+    return (
+      <div className="docform-step-content">
+        {isEdit && (
+          <>
             <div className="docform-field">
-              <label>Codice documento</label>
-              <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
+              <label>Tipo documento</label>
+              <select value={form.doc_type} onChange={handleChange("doc_type")}>
+                {DOC_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
             </div>
-            {companies.length > 0 && (
+            <div className="docform-field">
+              <label>Titolo <span className="required">*</span></label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={handleChange("title")}
+                autoFocus
+              />
+            </div>
+            {/* Codice norma (solo modifica norma) */}
+            {isNormaType && (
               <div className="docform-field">
-                <label>Azienda</label>
-                <select value={form.company_id} onChange={handleChange("company_id")}>
-                  <option value="">- Documento di studio -</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <label>Codice norma</label>
+                <input
+                  type="text"
+                  placeholder="es. BS EN ISO 9606-1:2017"
+                  value={typeData.standard_code || ''}
+                  onChange={(e) => handleTypeDataChange('standard_code')(e)}
+                />
+                {renderNormStatusBadge()}
+                {renderNormaVerifyLinks()}
               </div>
             )}
+            {/* Codice documento + Azienda — nascosti per tipo norma */}
+            {!isNormaType && (
+              <div className="docform-row">
+                <div className="docform-field">
+                  <label>Codice documento</label>
+                  <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
+                </div>
+                {companies.length > 0 && (
+                  <div className="docform-field">
+                    <label>Azienda</label>
+                    <select value={form.company_id} onChange={handleChange("company_id")}>
+                      <option value="">- Documento di studio -</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+            <hr className="docform-divider" />
+          </>
+        )}
+
+        {/* Sezione archiviazione (solo nuovo) */}
+        {renderFolderPicker()}
+
+        {/* Ente emittente + Anno edizione — solo norma, in cima ai dettagli, pre-compilati AI */}
+        {isNormaType && normaSchema && (
+          <div className="docform-row">
+            {renderTypeField(normaField('issuing_body'))}
+            {renderTypeField(normaField('edition_year'))}
           </div>
-          <hr className="docform-divider" />
-        </>
-      )}
+        )}
 
-      {/* Sezione archiviazione (solo nuovo) */}
-      {renderFolderPicker()}
+        {/* Revisione + Stato — nascosti per norma (le norme hanno edizioni, non revisioni interne) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field docform-field-sm">
+              <label>Revisione</label>
+              <input
+                type="text"
+                placeholder="es. Rev.2"
+                value={form.revision}
+                onChange={handleChange("revision")}
+              />
+            </div>
+            <div className="docform-field">
+              <label>Stato</label>
+              <select value={form.status} onChange={handleChange("status")}>
+                {DOC_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
-      <div className="docform-row">
-        <div className="docform-field docform-field-sm">
-          <label>Revisione</label>
-          <input
-            type="text"
-            placeholder="es. Rev.2"
-            value={form.revision}
-            onChange={handleChange("revision")}
+        <div className="docform-row">
+          <div className="docform-field">
+            {/* Per norma rinominato in "Data pubblicazione" */}
+            <label>{isNormaType ? 'Data pubblicazione' : 'Data emissione'}</label>
+            <input type="date" value={form.issue_date} onChange={handleChange("issue_date")} />
+          </div>
+          {/* Data scadenza — nascosta per norma (le norme vengono sostituite, non scadono) */}
+          {!isNormaType && (
+            <div className="docform-field">
+              <label>Data scadenza</label>
+              <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
+            </div>
+          )}
+        </div>
+
+        {/* Responsabile — nascosto per norma (responsabile è l'ente esterno, non una persona interna) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field">
+              <label>Responsabile</label>
+              <input
+                type="text"
+                placeholder="Nome / funzione"
+                value={form.responsible}
+                onChange={handleChange("responsible")}
+              />
+            </div>
+            <div className="docform-field docform-field-xs">
+              <label>Conservazione (anni)</label>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                placeholder="10"
+                value={form.retention_years}
+                onChange={handleChange("retention_years")}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Campo di applicazione + Codice ICS + Norma armonizzata + Conservazione — solo norma, inline */}
+        {isNormaType && normaSchema && (
+          <>
+            {renderTypeField(normaField('scope_summary'))}
+            <div className="docform-row">
+              {renderTypeField(normaField('ics_code'))}
+              {renderTypeField(normaField('is_harmonized'))}
+            </div>
+            <div className="docform-field docform-field-xs">
+              <label>Conservazione (anni)</label>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                placeholder="10"
+                value={form.retention_years}
+                onChange={handleChange("retention_years")}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Norma di riferimento + Paragrafo — nascosti per norma (questo documento IS una norma) */}
+        {!isNormaType && (
+          <div className="docform-row">
+            <div className="docform-field">
+              <label>Norma di riferimento</label>
+              <select value={form.standard_id} onChange={handleChange("standard_id")}>
+                <option value="">- Nessuna -</option>
+                {standards.map((s) => (
+                  <option key={s.standard_id} value={s.standard_id}>
+                    {s.standard_code} - {s.standard_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="docform-field docform-field-sm">
+              <label>Paragrafo</label>
+              <input
+                type="text"
+                placeholder="es. 7.5"
+                value={form.clause_ref}
+                onChange={handleChange("clause_ref")}
+                disabled={!form.standard_id}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="docform-field">
+          <label>Note</label>
+          <textarea
+            rows={3}
+            placeholder="Note aggiuntive..."
+            value={form.notes}
+            onChange={handleChange("notes")}
           />
         </div>
-        <div className="docform-field">
-          <label>Stato</label>
-          <select value={form.status} onChange={handleChange("status")}>
-            {DOC_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Data emissione</label>
-          <input type="date" value={form.issue_date} onChange={handleChange("issue_date")} />
-        </div>
-        <div className="docform-field">
-          <label>Data scadenza</label>
-          <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
-        </div>
+        {/* Sezione collassabile: per norma mostra solo campi secondari (norm_title, supersedes, validity_status, language, technical_committee) */}
+        {renderTypeSpecificSection()}
       </div>
-
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Responsabile</label>
-          <input
-            type="text"
-            placeholder="Nome / funzione"
-            value={form.responsible}
-            onChange={handleChange("responsible")}
-          />
-        </div>
-        <div className="docform-field docform-field-xs">
-          <label>Conservazione (anni)</label>
-          <input
-            type="number"
-            min="1"
-            max="99"
-            placeholder="10"
-            value={form.retention_years}
-            onChange={handleChange("retention_years")}
-          />
-        </div>
-      </div>
-
-      <div className="docform-row">
-        <div className="docform-field">
-          <label>Norma di riferimento</label>
-          <select value={form.standard_id} onChange={handleChange("standard_id")}>
-            <option value="">- Nessuna -</option>
-            {standards.map((s) => (
-              <option key={s.standard_id} value={s.standard_id}>
-                {s.standard_code} - {s.standard_name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="docform-field docform-field-sm">
-          <label>Paragrafo</label>
-          <input
-            type="text"
-            placeholder="es. 7.5"
-            value={form.clause_ref}
-            onChange={handleChange("clause_ref")}
-            disabled={!form.standard_id}
-          />
-        </div>
-      </div>
-
-      <div className="docform-field">
-        <label>Note</label>
-        <textarea
-          rows={3}
-          placeholder="Note aggiuntive..."
-          value={form.notes}
-          onChange={handleChange("notes")}
-        />
-      </div>
-
-      {renderTypeSpecificSection()}
-    </div>
-  );
+    );
+  };
 
   // ─── Render ────────────────────────────────────────────────────────────────
 

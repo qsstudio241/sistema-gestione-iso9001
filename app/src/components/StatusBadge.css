@@ -1,0 +1,83 @@
+/**
+ * StatusBadge — Stili unificati per tutti i badge di stato
+ */
+
+.sgq-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+}
+
+/* Dimensioni */
+.sgq-badge--small {
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  border-radius: 10px;
+}
+
+.sgq-badge--large {
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  border-radius: 14px;
+}
+
+/* Colori */
+.sgq-badge--green {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+
+.sgq-badge--blue {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.sgq-badge--yellow {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.sgq-badge--red {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.sgq-badge--orange {
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fdba74;
+}
+
+.sgq-badge--purple {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+.sgq-badge--grey {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.sgq-badge--teal {
+  background: #ccfbf1;
+  color: #115e59;
+  border-color: #5eead4;
+}
+
+.sgq-badge--slate {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}

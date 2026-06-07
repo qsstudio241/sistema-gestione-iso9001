@@ -3,30 +3,45 @@
  * Sprint 2B
  */
 
-const express       = require('express');
-const router        = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
+const express = require('express');
+const router = express.Router();
+const { authenticate, authenticateDownload } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const { uploadDocFile } = require('../config/multer');
-const ctrl          = require('../controllers/docfile.controller');
+const ctrl = require('../controllers/docfile.controller');
 
-router.use(authenticate);
-router.use(requireLicensedModule('documents'));
+const requireDocuments = requireLicensedModule('documents');
 
-// Lista versioni file per documento
-router.get('/documents/:docId/files', ctrl.listDocFiles);
+// Download: accetta Bearer o ?token= (link diretti, Office Online Viewer, <a download>)
+router.get(
+    '/documents/:docId/file/download',
+    authenticateDownload,
+    requireDocuments,
+    ctrl.downloadDocFile
+);
+router.get(
+    '/documents/:docId/file/:attId/download',
+    authenticateDownload,
+    requireDocuments,
+    ctrl.downloadDocFile
+);
 
-// Wrappo uploadDocFile.single per gestire l'errore Multer e restituire 415 invece di 500
+// Lista / upload: solo Bearer
+router.get(
+    '/documents/:docId/files',
+    authenticate,
+    requireDocuments,
+    ctrl.listDocFiles
+);
+
 const uploadDocFileMiddleware = (req, res, next) => {
     uploadDocFile.single('file')(req, res, function (err) {
         if (err) {
-            // Se l'errore è generato dal nostro fileFilter in multer.js
             if (err.message && err.message.includes('Formato non consentito per sicurezza')) {
                 return res.status(415).json({ error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' });
             }
-            // Altri errori di Multer (es. file troppo grande)
             if (err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(413).json({ error: 'File troppo grande. Il limite è 500 MB.', code: 'PAYLOAD_TOO_LARGE' });
+                return res.status(413).json({ error: 'Il file supera il limite massimo di 200 MB', code: 'PAYLOAD_TOO_LARGE' });
             }
             return res.status(400).json({ error: err.message || 'Errore durante l\'upload del file', code: 'UPLOAD_ERROR' });
         }
@@ -34,13 +49,12 @@ const uploadDocFileMiddleware = (req, res, next) => {
     });
 };
 
-// Upload nuova versione file
-router.post('/documents/:docId/file', uploadDocFileMiddleware, ctrl.uploadDocFile);
-
-// Download versione corrente (inline=1 per PDF viewer)
-router.get('/documents/:docId/file/download', ctrl.downloadDocFile);
-
-// Download versione specifica
-router.get('/documents/:docId/file/:attId/download', ctrl.downloadDocFile);
+router.post(
+    '/documents/:docId/file',
+    authenticate,
+    requireDocuments,
+    uploadDocFileMiddleware,
+    ctrl.uploadDocFile
+);
 
 module.exports = router;

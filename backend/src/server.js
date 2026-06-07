@@ -74,6 +74,7 @@ const normUploadRoutes       = require('./routes/normUpload.routes');
 const aiChatRoutes           = require('./routes/aiChat.routes');
 const weldingRoutes          = require('./routes/welding.routes');
 const projectsRoutes         = require('./routes/projects.routes');
+const searchRoutes           = require('./routes/search.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -87,6 +88,11 @@ app.set('trust proxy', 1);
 // ==========================================
 // MIDDLEWARE
 // ==========================================
+
+// Trust the first proxy (Nginx) so that express-rate-limit reads the real
+// client IP from X-Forwarded-For instead of counting all requests as coming
+// from the loopback address 127.0.0.1.
+app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet({
@@ -235,6 +241,12 @@ app.get(`${API_BASE}/health`, healthCheckHandler); // Health check API — esclu
 const responseController = require('./controllers/response.controller');
 app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
 
+// Logo aziendale: pubblico perché getLogo non usa req.user e il logo non è un dato sensibile.
+// DEVE stare qui: i router autenticati (auditRoutes, ecc.) usano router.use(authenticate) globale
+// che intercetterebbe qualsiasi richiesta /api/v1/* senza Bearer token, compresa questa.
+const companyController = require('./controllers/company.controller');
+app.get(`${API_BASE}/companies/:id/logo`, companyController.getLogo);
+
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
 app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
@@ -275,6 +287,7 @@ app.use(API_BASE, aiAssistRoutes);
 app.use(API_BASE, aiChatRoutes);
 app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
+app.use(API_BASE, searchRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 // Sprint 12-A: WebDAV — endpoint REST (genera link) + endpoint WebDAV (Office R/W)
 app.use(API_BASE, webdavApiRoutes);

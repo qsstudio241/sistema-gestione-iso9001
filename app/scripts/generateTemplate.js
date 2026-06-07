@@ -202,7 +202,7 @@ function createSection1() {
 // â”€â”€â”€ Sezione 2 â€“ Obiettivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function createSection2() {
     return [
-        new Paragraph({ text: "2 - OBIETTIVO DELL'AUDIT", style: 'Titolo1', spacing: { before: 0, after: 300 } }),
+        new Paragraph({ text: "2 \u2013 OBIETTIVO DELL'AUDIT", style: 'Titolo1', spacing: { before: 0, after: 300 } }),
         // Descrizione obiettivo (testo lungo)
         new Paragraph({ text: '{objectiveDescription}', spacing: { after: 300 } }),
 
@@ -272,9 +272,9 @@ function createChecklistMarker() {
 function createSection11() {
     // Tabella metriche con segnaposto
     const metricsRows = [
-        ['Non ConformitÃ  (NC)', '{ncCount}'],
+        ['Non Conformit\u00e0 (NC)', '{ncCount}'],
         ['Osservazioni (OSS)', '{ossCount}'],
-        ['OpportunitÃ  di Miglioramento (OM)', '{omCount}'],
+        ['Opportunit\u00e0 di Miglioramento (OM)', '{omCount}'],
         ['Non Valutato (NV)', '{nvCount}']
     ].map(([label, count]) => new TableRow({
         children: [
@@ -292,15 +292,11 @@ function createSection11() {
 
     return [
         new Paragraph({
-            text: "11 - ESITO DELL'AUDIT",
+            text: "11 \u2013 ESITO DELL'AUDIT",
             style: 'Titolo1',
             spacing: { before: 0, after: 300 },
             pageBreakBefore: true
         }),
-
-        // Conclusioni
-        new Paragraph({ text: 'Conclusioni', style: 'Titolo2', spacing: { before: 200, after: 150 } }),
-        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } }),
 
         // RILIEVI â€“ tabella iniettata a runtime
         new Paragraph({ text: 'RILIEVI', style: 'Titolo2', spacing: { before: 300, after: 150 }, alignment: AlignmentType.CENTER }),
@@ -317,7 +313,10 @@ function createSection11() {
             borders: stdBorders()
         }),
         new Paragraph({ text: '', spacing: { after: 200 } }),
-        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } })
+        new Paragraph({ text: '{summaryText}', spacing: { after: 300 } }),
+
+        new Paragraph({ text: 'Conclusioni', style: 'Titolo2', spacing: { before: 300, after: 150 } }),
+        new Paragraph({ text: '{conclusions}', spacing: { after: 300 } })
     ];
 }
 

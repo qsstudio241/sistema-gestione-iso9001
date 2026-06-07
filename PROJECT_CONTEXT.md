@@ -5,8 +5,9 @@
 > **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
 > **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
 > **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
+> **Scadenze documenti, alert email, tipologie doc** (3 livelli, tabelle DB, scheduler): → [docs/AGENT_ALERTS_AND_DOC_TYPES.md](docs/AGENT_ALERTS_AND_DOC_TYPES.md).  
 > **Open points trasversali** (logout vs bozze locali, mirror PC, coerenza cache menu audit): → [docs/PROJECT_ROADMAP.md](docs/PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).  
-> Dettagli tecnici: → [DATABASE.md](docs/DATABASE.md) | [BACKEND_API.md](docs/BACKEND_API.md) | [docs/INDICE_DOCUMENTAZIONE.md](docs/INDICE_DOCUMENTAZIONE.md) | [docs/ACCESSO_DEPLOY_AGENTS.md](docs/ACCESSO_DEPLOY_AGENTS.md) (API/SSH/deploy autonomo) | [docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](docs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
+> Dettagli tecnici: → [docs/README.md](docs/README.md) | [DATABASE](docs/reference/DATABASE.md) | [API](docs/reference/BACKEND_API.md) | [Deploy hub](docs/how-to/deploy.md) | [INDICE](docs/INDICE_DOCUMENTAZIONE.md) | [WebDAV spec](docs/specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
 
 ---
 
@@ -56,8 +57,8 @@ Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che p
 | **Frontend** | Netlify (auto-deploy da `main`) |
 | **VPS** | `www.fr-busato.it` — Ubuntu |
 | **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH**, sessione **PuTTY**, oppure file locale gitignored **`backend/config/.ssh-deploy.local.ps1`** (vedi `.ssh-deploy.local.ps1.example`). **Non** versionare password SSH. |
-| **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/REFERENCE.md](docs/REFERENCE.md), [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md). |
-| **Assistente AI (Cursor)** | Esegue comandi **solo sul PC del workspace**. Può lanciare deploy (`deploy-controllers-to-vps.ps1`) e migrazioni se esistono file locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, Pageant/sessione PuTTY). Dettaglio: [docs/ACCESSO_DEPLOY_AGENTS.md](docs/ACCESSO_DEPLOY_AGENTS.md) e [docs/REFERENCE.md](docs/REFERENCE.md) (*Assistente AI e accesso remoto*). |
+| **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/how-to/deploy.md](docs/how-to/deploy.md), [docs/REFERENCE.md](docs/REFERENCE.md). |
+| **Assistente AI (Cursor)** | Esegue comandi **solo sul PC del workspace**. Può lanciare deploy (`deploy-controllers-to-vps.ps1`) e migrazioni se esistono file locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, Pageant/sessione PuTTY). Dettaglio: [docs/how-to/ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md) e [docs/REFERENCE.md](docs/REFERENCE.md) (*Assistente AI e accesso remoto*). |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **App log** | `/var/www/sgq-backend/app.log` |
 | **GitHub** | `qsstudio241/sistema-gestione-iso9001` |
@@ -153,7 +154,7 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 |---|---|---|---|---|
 | ISO 9001:2015 | ✅ 35 domande | ✅ | ✅ | ✅ |
 | ISO 14001:2015 | ✅ 46 domande | ✅ | ✅ fix `9894ed5` | ❌ Backlog |
-| ISO 45001:2018 | ❌ 0 domande | ⚠️ Placeholder | ❌ | ❌ |
+| ISO 45001:2018 | ✅ 53 domande (id 276-328) | ✅ allegati fix | ❌ | ❌ |
 
 ### 🔲 Backlog (Fase 2) — con file coinvolti
 
@@ -165,7 +166,7 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 | 🔴 | **Modal Re-Audit con lista pending** | `AuditSelector.jsx`, nuovo `ReauditModal.jsx` |
 | 🟡 | **Fix Auth Mobile (ADR-004)** | `auth.controller.js`, `apiService.js`, `AuthContext.jsx`, `auth.middleware.js` |
 | 🟡 | **SyncService offline allegati** | `syncService.js`, `IndexedDBProvider.js` (v3), `useAttachmentManager.js` |
-| 🟡 | **Seed ISO 45001** | `database/migrations/019_seed_iso45001.sql` |
+| ✅ | **Seed ISO 45001** | domande in DB (id 276-328); template frontend allineato (fix allegati) |
 | 🟢 | Refresh token automatico | `apiService.js` interceptor 401, `POST /auth/refresh` |
 | 🟢 | Auto-logout inattività 4h | `AuthContext.jsx` |
 | 🟢 | Allineamento `/audits` vs `/audits/sync` | debito tecnico — standard_ids[] vs standard_id scalare |
@@ -244,7 +245,7 @@ git push origin main
 ```
 
 ### Backend (manuale SCP / script)
-Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.ps1` (usa pscp; richiede PuTTY). Copia controller, route, `server.js`, servizi correlati e **`src/middleware/auth.middleware.js`** (RBAC / JWT). In alternativa, copia manualmente gli stessi file e riavvia Node sul VPS. Dettaglio: [docs/DEPLOY_CHECKLIST_RELEASE.md](docs/DEPLOY_CHECKLIST_RELEASE.md).
+Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.ps1` (usa pscp; richiede PuTTY). Copia controller, route, `server.js`, servizi correlati e **`src/middleware/auth.middleware.js`** (RBAC / JWT). In alternativa, copia manualmente gli stessi file e riavvia Node sul VPS. Dettaglio: [docs/how-to/deploy.md](docs/how-to/deploy.md).
 ```bash
 # 1. Copia i file (es. audit + customChecklist controller)
 scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js \

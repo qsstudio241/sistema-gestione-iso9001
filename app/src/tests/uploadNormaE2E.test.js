@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// ??? Test 1: Schema norma – campi ???????????????????????????????????????????
+// ??? Test 1: Schema norma ï¿½ campi ???????????????????????????????????????????
 
 describe('Schema norma - campi', () => {
   it('lo schema norma contiene tutti i campi attesi', async () => {
@@ -62,7 +62,7 @@ describe('Document folder mapping', () => {
   });
 });
 
-// ??? Test 3: DocumentForm – validazione file upload ?????????????????????????
+// ??? Test 3: DocumentForm ï¿½ validazione file upload ?????????????????????????
 
 describe('DocumentForm - upload unificato', () => {
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -98,22 +98,22 @@ describe('DocumentForm - upload unificato', () => {
   });
 });
 
-// ??? Test 4: OrphanInbox – logica orfano ????????????????????????????????????
+// ??? Test 4: OrphanInbox ï¿½ logica orfano ????????????????????????????????????
 
 describe('OrphanInbox - archiviazione', () => {
   const isOrphan = (doc) => doc.parent_id === null || doc.parent_id === 0;
 
-  it('un documento senza parent_id è considerato orfano', () => {
+  it('un documento senza parent_id ï¿½ considerato orfano', () => {
     const doc = { id: 1, title: 'Test', parent_id: null, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(true);
   });
 
-  it('un documento con parent_id=0 è considerato orfano', () => {
+  it('un documento con parent_id=0 ï¿½ considerato orfano', () => {
     const doc = { id: 2, title: 'Test 2', parent_id: 0, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(true);
   });
 
-  it('un documento con parent_id valido NON è orfano', () => {
+  it('un documento con parent_id valido NON ï¿½ orfano', () => {
     const doc = { id: 3, title: 'Test 3', parent_id: 15, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(false);
   });
@@ -156,7 +156,7 @@ describe('BS EN ISO 9606-1 - metadati attesi', () => {
     });
   });
 
-  it('il campo is_harmonized è di tipo boolean', async () => {
+  it('il campo is_harmonized ï¿½ di tipo boolean', async () => {
     const DOCUMENT_TYPE_SCHEMAS = (await import('../data/documentTypeSchemas.js')).default;
     const isHarmonizedField = DOCUMENT_TYPE_SCHEMAS.norma.fields.find(
       f => f.key === 'is_harmonized'

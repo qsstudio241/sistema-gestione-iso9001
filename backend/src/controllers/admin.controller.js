@@ -193,6 +193,33 @@ async function createUser(req, res) {
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole });
 
+        const { company_access: companyAccessInput } = req.body || {};
+        if (Array.isArray(companyAccessInput) && companyAccessInput.length > 0 && newId) {
+            for (const entry of companyAccessInput) {
+                const companyId = parseInt(entry?.company_id, 10);
+                const permission = String(entry?.permission || 'read').toLowerCase();
+                if (!Number.isFinite(companyId)) continue;
+                if (!['read', 'write'].includes(permission)) continue;
+                const valid = await validateCompanyInOrg(companyId, organization_id);
+                if (!valid) continue;
+                await query(`
+                    MERGE user_company_access AS target
+                    USING (SELECT @user_id AS user_id, @company_id AS company_id) AS source
+                    ON target.user_id = source.user_id AND target.company_id = source.company_id
+                    WHEN MATCHED THEN
+                        UPDATE SET permission = @permission, organization_id = @organization_id
+                    WHEN NOT MATCHED THEN
+                        INSERT (user_id, company_id, permission, organization_id)
+                        VALUES (@user_id, @company_id, @permission, @organization_id);
+                `, {
+                    user_id: newId,
+                    company_id: companyId,
+                    permission,
+                    organization_id,
+                });
+            }
+        }
+
         // Auto-provisioning albero documentale se non esiste ancora
         try {
             const rootCheck = await query(
@@ -674,6 +701,134 @@ async function updateAnyOrgLicenses(req, res) {
     }
 }
 
+async function validateCompanyInOrg(companyId, organizationId) {
+    const r = await query(`
+        SELECT c.id
+        FROM companies c
+        INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+        WHERE c.id = @company_id AND ao.organization_id = @organization_id
+    `, { company_id: companyId, organization_id: organizationId });
+    return r.recordset.length > 0;
+}
+
+async function resolveTargetUser(req, targetUserId) {
+    const { organization_id: actorOrgId, role: actorRole } = req.user;
+    const isSuperadmin = actorRole === 'superadmin';
+    const parsedId = parseInt(targetUserId, 10);
+    if (!Number.isFinite(parsedId)) return null;
+
+    const userCheck = isSuperadmin
+        ? await query(
+            `SELECT user_id, organization_id FROM users WHERE user_id = @user_id`,
+            { user_id: parsedId }
+        )
+        : await query(
+            `SELECT user_id, organization_id FROM users
+             WHERE user_id = @user_id AND organization_id = @organization_id`,
+            { user_id: parsedId, organization_id: actorOrgId }
+        );
+
+    return userCheck.recordset[0] || null;
+}
+
+/**
+ * GET /api/v1/admin/users/:id/company-access
+ */
+async function listUserCompanyAccess(req, res) {
+    try {
+        const target = await resolveTargetUser(req, req.params.id);
+        if (!target) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+
+        const result = await query(`
+            SELECT uca.id, uca.company_id, uca.permission, c.name AS company_name
+            FROM user_company_access uca
+            INNER JOIN companies c ON c.id = uca.company_id
+            WHERE uca.user_id = @user_id
+            ORDER BY c.name
+        `, { user_id: target.user_id });
+
+        res.json({ success: true, data: result.recordset || [] });
+    } catch (error) {
+        logger.error('Admin listUserCompanyAccess error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore recupero accessi azienda' });
+    }
+}
+
+/**
+ * POST /api/v1/admin/users/:id/company-access
+ * body: { company_id, permission: 'read'|'write' }
+ */
+async function addUserCompanyAccess(req, res) {
+    try {
+        const target = await resolveTargetUser(req, req.params.id);
+        if (!target) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+
+        const companyId = parseInt(req.body?.company_id, 10);
+        const permission = String(req.body?.permission || 'read').toLowerCase();
+        if (!Number.isFinite(companyId)) {
+            return res.status(400).json({ success: false, error: 'company_id obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+        if (!['read', 'write'].includes(permission)) {
+            return res.status(400).json({ success: false, error: 'permission deve essere read o write', code: 'VALIDATION_ERROR' });
+        }
+        if (!(await validateCompanyInOrg(companyId, target.organization_id))) {
+            return res.status(400).json({ success: false, error: 'Azienda non valida per questa organizzazione', code: 'INVALID_COMPANY' });
+        }
+
+        await query(`
+            MERGE user_company_access AS target
+            USING (SELECT @user_id AS user_id, @company_id AS company_id) AS source
+            ON target.user_id = source.user_id AND target.company_id = source.company_id
+            WHEN MATCHED THEN
+                UPDATE SET permission = @permission, organization_id = @organization_id
+            WHEN NOT MATCHED THEN
+                INSERT (user_id, company_id, permission, organization_id)
+                VALUES (@user_id, @company_id, @permission, @organization_id);
+        `, {
+            user_id: target.user_id,
+            company_id: companyId,
+            permission,
+            organization_id: target.organization_id,
+        });
+
+        res.status(201).json({ success: true, data: { company_id: companyId, permission } });
+    } catch (error) {
+        logger.error('Admin addUserCompanyAccess error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore assegnazione accesso azienda' });
+    }
+}
+
+/**
+ * DELETE /api/v1/admin/users/:id/company-access/:companyId
+ */
+async function removeUserCompanyAccess(req, res) {
+    try {
+        const target = await resolveTargetUser(req, req.params.id);
+        if (!target) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+
+        const companyId = parseInt(req.params.companyId, 10);
+        if (!Number.isFinite(companyId)) {
+            return res.status(400).json({ success: false, error: 'companyId non valido', code: 'VALIDATION_ERROR' });
+        }
+
+        await query(`
+            DELETE FROM user_company_access
+            WHERE user_id = @user_id AND company_id = @company_id
+        `, { user_id: target.user_id, company_id: companyId });
+
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Admin removeUserCompanyAccess error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore rimozione accesso azienda' });
+    }
+}
+
 module.exports = {
     listUsers,
     createUser,
@@ -683,4 +838,7 @@ module.exports = {
     getOrgLicenses,
     updateOrgLicenses,
     updateAnyOrgLicenses,
+    listUserCompanyAccess,
+    addUserCompanyAccess,
+    removeUserCompanyAccess,
 };

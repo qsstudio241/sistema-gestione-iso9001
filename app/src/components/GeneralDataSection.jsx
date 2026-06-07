@@ -222,7 +222,7 @@ function GeneralDataSection({
             className="field-textarea"
             value={formData.scope}
             onChange={(e) => handleChange("scope", e.target.value)}
-            placeholder="Es: Sistema di Gestione per la Qualit\u00e0 - Contesto, Pianificazione, Supporto..."
+            placeholder="Es: Sistema di Gestione per la Qualità - Contesto, Pianificazione, Supporto..."
             disabled={readOnly}
           />
         </div>

@@ -41,6 +41,7 @@ import {
     wordEmbeddableExtFromMime,
     getImagePixelDimensions,
     scaleImageToMaxEmu,
+    normalizeImageDataUrlForWordEmbed,
 } from './wordExportHelpers.js';
 import { formatAuditPeriodIt, formatDateIt } from './auditDatePeriod.js';
 
@@ -52,6 +53,14 @@ const LOGO_CLIENT_MAX_W_EMU = 540000;
 const LOGO_ORG_MAX_W_EMU    = 792000;
 const LOGO_MAX_H_EMU        = 540000;
 
+// ─── Mappa standard → etichetta leggibile ─────────────────────────────────────
+const NORM_LABELS = {
+    'ISO_9001':   'ISO 9001:2015',
+    'ISO_14001':  'ISO 14001:2015',
+    'ISO_45001':  'ISO 45001:2018',
+    'ISO_3834_2': 'ISO 3834-2:2021',
+};
+
 // ─── Mappa standard → template ────────────────────────────────────────────────
 // PER AGGIUNGERE UNA NUOVA NORMA: inserire qui la coppia chiave→percorso template.
 // Nient'altro da modificare nel codice.
@@ -61,7 +70,8 @@ const TEMPLATE_MAP = {
     'ISO_45001':  '/templates/ISO45001-audit-report.docx',
     'ISO_3834_2': '/templates/ISO3834-audit-report.docx',
     'default':    '/templates/ISO9001-audit-report.docx',
-    'custom_checklist': '/templates/Verbale_di_riunione_QTAFI_VIS001.docx',
+    // Fallback allineato a migration 026 / report_templates (placeholder + sommario)
+    'custom_checklist': '/templates/VerbaleVisita-generic.docx',
 };
 
 /**
@@ -98,19 +108,15 @@ const saveAs =
 
 function formatDate(dateStr) {
     if (!dateStr) return 'N/D';
-    try {
-        const d = new Date(dateStr);
-        return isNaN(d.getTime())
-            ? String(dateStr)
-            : d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return String(dateStr); }
+    const formatted = formatDateIt(dateStr);
+    return formatted || 'N/D';
 }
 
 function normalizeMimeType(mimeType) {
     return String(mimeType || '').split(';')[0].trim().toLowerCase();
 }
 
-function buildTemplateData(audit, normKey = null) {
+export function buildTemplateData(audit, normKey = null) {
     const meta    = audit.metadata       || {};
     const gd      = meta.generalData     || {};
     const obj     = meta.auditObjective  || {};
@@ -230,6 +236,32 @@ function buildTemplateData(audit, normKey = null) {
                 'Totale: ' + m.total + ' | Risposte: ' + m.answered +
                 ' | NC: ' + m.totalNC + ' | OSS: ' + m.totalOSS + ' | OM: ' + m.totalOM +
                 ' | N.A.: ' + m.totalNA + ' | NV: ' + m.totalNV),
+        // ── Nuovi placeholder estesi ──────────────────────────────────────────
+        revisionNumber:    String(meta.revisionNumber ?? meta.revision ?? ''),
+        auditorEmail:      meta.auditorEmail  || '',
+        auditorPhone:      meta.auditorPhone  || '',
+        companyAddress:    meta.exportCompanyAddress || meta.companyAddress || meta.clientAddress || '',
+        nextAuditDate:     formatDate(meta.nextAuditDate || outcome.nextAuditDate),
+        referenceStandard: normKey
+            ? (NORM_LABELS[normKey] || normKey)
+            : (meta.selectedStandards || []).map(k => NORM_LABELS[k] || k).join(', '),
+        overallOutcome: (() => {
+            if (m.total === 0 || m.answered === 0) return 'Non valutato';
+            if (m.totalNC > 0) return 'Non conforme';
+            if (m.totalOSS > 0 || m.totalOM > 0) return 'Con osservazioni';
+            return 'Conforme';
+        })(),
+        auditType:         meta.auditType || '',
+        projectYear:       String(meta.projectYear || new Date().getFullYear()),
+        totalQuestions:    String(m.total),
+        answeredQuestions: String(m.answered),
+        notAnsweredCount:  String(m.totalNotAnswered),
+        auditStatus:       meta.status || '',
+        completedDate:     formatDate(meta.completedAt),
+        approvedDate:      formatDate(meta.approvedAt),
+        createdDate:       formatDate(meta.createdAt),
+        lastModifiedDate:  formatDate(meta.lastModified),
+        agenda:            obj.agenda || '',
     };
 }
 
@@ -266,6 +298,215 @@ function normalizeNegativeTableIndentsInZip(zip) {
  * Ripara attributi OOXML non quotati (template salvati/exportati in modo non conforme).
  * Word e parser XML rigidi possono rifiutare il documento o corrompere la struttura.
  */
+/** Testo concatenato da paragrafo OOXML (solo w:t). */
+export function wordExportParaText(pXml) {
+    if (!pXml || typeof pXml !== 'string') return '';
+    const ts = [];
+    const re = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    let m;
+    while ((m = re.exec(pXml))) ts.push(m[1]);
+    return ts.join('');
+}
+
+/** Blocchi top-level w:p / w:tbl nell'ordine del documento. */
+export function wordExportSplitTopLevelBlocks(xml) {
+    const blocks = [];
+    const re = /<w:p[\s>][\s\S]*?<\/w:p>|<w:tbl[\s>][\s\S]*?<\/w:tbl>/g;
+    let m;
+    while ((m = re.exec(xml))) {
+        const isP = m[0].startsWith('<w:p');
+        blocks.push({
+            xml: m[0],
+            text: isP ? wordExportParaText(m[0]).trim() : '[table]',
+            index: m.index,
+        });
+    }
+    return blocks;
+}
+
+function wordExportIsEsitoHeading(text) {
+    const t = (text || '').trim();
+    return (
+        (/^\s*11\s/.test(t) && /ESITO|VISITA ISPETTIVA/i.test(t)) ||
+        /^\s*3\s*[\u2013\u2014-]\s*ESITO/i.test(t) ||
+        /^ESITO DELL'?AUDIT\s*$/i.test(t)
+    );
+}
+
+function wordExportIsConclusionHeading(text) {
+    const t = (text || '').trim();
+    return (
+        /^Conclusioni\s*$/i.test(t) ||
+        /^\s*3\.2\s*[\u2013\u2014-]\s*CONCLUSIONI\s*$/i.test(t)
+    );
+}
+
+function wordExportIsConclusionsPlaceholder(text) {
+    return /\{conclusions\}/.test(text);
+}
+
+function wordExportIsRilieviHeading(text) {
+    const t = (text || '').trim();
+    return (
+        /^RILIEVI\s*$/i.test(t) ||
+        /^\s*3\.1\s*[\u2013\u2014-]\s*RILIEVI\s*$/i.test(t)
+    );
+}
+
+const VERBALE_EN_DASH = '\u2013';
+
+/** Paragrafo Titolo 1 allineato ai capitoli 1–2 del verbale custom. */
+function wordExportTitolo1HeadingXml(text, { pageBreakBefore = false, spacingBefore = '0', spacingAfter = '300' } = {}) {
+    const pageBreak = pageBreakBefore ? '<w:pageBreakBefore/>' : '';
+    return (
+        `<w:p><w:pPr><w:pStyle w:val="Titolo1"/>${pageBreak}` +
+        `<w:spacing w:before="${spacingBefore}" w:after="${spacingAfter}"/></w:pPr>` +
+        `<w:r><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`
+    );
+}
+
+/** Paragrafo introduttivo in grassetto (non compare nel sommario). */
+function wordExportBoldIntroParagraphXml(text, { spacingBefore = '300', spacingAfter = '150' } = {}) {
+    return (
+        `<w:p><w:pPr><w:spacing w:before="${spacingBefore}" w:after="${spacingAfter}"/></w:pPr>` +
+        `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`
+    );
+}
+
+/** Verbale custom: sezioni 3 / 3.1 / 3.2 con stile Titolo 1 come i capitoli 1–2. */
+export function normalizeVerbaleVisitaSectionHeadings(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    const isVerbale =
+        /1\s*[\u2013\u2014-]\s*DATI GENERALI/.test(xml) &&
+        /CHECKLIST_MARKER/.test(xml) &&
+        (/ESITO DELL'?AUDIT/.test(xml) || /3\s*[\u2013\u2014-]\s*ESITO/.test(xml)) &&
+        !/11\s*[\u2013\u2014-]\s*ESITO DELL'?AUDIT/.test(xml);
+    if (!isVerbale) return xml;
+
+    let changed = false;
+    const out = xml.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (pXml) => {
+        const text = wordExportParaText(pXml).trim();
+        if (/^ESITO DELL'?AUDIT\s*$/i.test(text) || /^\s*3\s*[\u2013\u2014-]\s*ESITO/i.test(text)) {
+            changed = true;
+            const pageBreak = /<w:pageBreakBefore\s*\/>/.test(pXml);
+            return wordExportTitolo1HeadingXml(
+                `3 ${VERBALE_EN_DASH} ESITO DELL'AUDIT`,
+                { pageBreakBefore: pageBreak }
+            );
+        }
+        if (/^RILIEVI\s*$/i.test(text) || /^\s*3\.1\s*[\u2013\u2014-]\s*RILIEVI\s*$/i.test(text)) {
+            changed = true;
+            return wordExportTitolo1HeadingXml(
+                `3.1 ${VERBALE_EN_DASH} RILIEVI`,
+                { spacingBefore: '300', spacingAfter: '300' }
+            );
+        }
+        if (/^(Rilievi Emersi|Riepilogo Rilievi)\s*$/i.test(text)) {
+            changed = true;
+            return wordExportBoldIntroParagraphXml('Rilievi Emersi');
+        }
+        if (/^Conclusioni\s*$/i.test(text) || /^\s*3\.2\s*[\u2013\u2014-]\s*CONCLUSIONI\s*$/i.test(text)) {
+            changed = true;
+            return wordExportTitolo1HeadingXml(
+                `3.2 ${VERBALE_EN_DASH} CONCLUSIONI`,
+                { spacingBefore: '300', spacingAfter: '300' }
+            );
+        }
+        return pXml;
+    });
+    return changed ? out : xml;
+}
+
+function wordExportIsSummaryPlaceholder(text) {
+    return /\{summaryText\}/.test(text);
+}
+
+/**
+ * Sezione 11: ESITO → RILIEVI (+ conteggi) → Conclusioni per ultime.
+ * Copia logica patch-audit-template-structure.cjs (template Verbale/ISO legacy).
+ */
+export function reorderConclusionsAfterRilievi(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    const blocks = wordExportSplitTopLevelBlocks(xml);
+    let esitoIdx = -1;
+    for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].text.includes('CHECKLIST_MARKER')) {
+            for (let j = i + 1; j < blocks.length; j++) {
+                if (wordExportIsEsitoHeading(blocks[j].text)) {
+                    esitoIdx = j;
+                    break;
+                }
+            }
+            if (esitoIdx >= 0) break;
+        }
+    }
+    if (esitoIdx < 0) return xml;
+
+    let concHeadIdx = -1;
+    let concBodyIdx = -1;
+    let rilStart = -1;
+    let sectionEnd = blocks.length;
+
+    for (let i = esitoIdx + 1; i < blocks.length; i++) {
+        const t = blocks[i].text;
+        if (concHeadIdx < 0 && wordExportIsConclusionHeading(t)) concHeadIdx = i;
+        else if (concHeadIdx >= 0 && concBodyIdx < 0 && wordExportIsConclusionsPlaceholder(t)) concBodyIdx = i;
+        else if (rilStart < 0 && wordExportIsRilieviHeading(t)) rilStart = i;
+    }
+
+    if (concHeadIdx < 0 || concBodyIdx < 0 || rilStart < 0) return xml;
+    if (rilStart < concBodyIdx) return xml;
+
+    for (let i = rilStart; i < blocks.length; i++) {
+        if (wordExportIsSummaryPlaceholder(blocks[i].text)) {
+            sectionEnd = i + 1;
+            break;
+        }
+    }
+
+    const concHeadStart = blocks[concHeadIdx].index;
+    const concBodyEnd = blocks[concBodyIdx].index + blocks[concBodyIdx].xml.length;
+    const rilStartOff = blocks[rilStart].index;
+    const sectionEndOff = blocks[sectionEnd - 1].index + blocks[sectionEnd - 1].xml.length;
+
+    return (
+        xml.slice(0, concHeadStart) +
+        xml.slice(rilStartOff, sectionEndOff) +
+        xml.slice(concHeadStart, concBodyEnd) +
+        xml.slice(sectionEndOff)
+    );
+}
+
+/**
+ * Rimuove righe Sommario cache obsolete dentro w:sdt TOC (Word le rigenera aprendo il doc).
+ */
+export function clearStaleTocCacheInDocumentXml(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    return xml.replace(
+        /(<w:sdt>[\s\S]*?<w:sdtContent>)([\s\S]*?)(<\/w:sdtContent>[\s\S]*?<\/w:sdt>)/g,
+        (full, open, content, close) => {
+            if (!/w:instrText[^>]*>\s*TOC /i.test(content)) return full;
+            const cleaned = content.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (pXml) => {
+                if (/w:instrText[^>]*>\s*TOC /i.test(pXml)) return pXml;
+                if (/w:hyperlink w:anchor="_Toc/i.test(pXml)) return '';
+                return pXml;
+            });
+            if (cleaned === content) return full;
+            return open + cleaned + close;
+        }
+    );
+}
+
+/** Normalizza struttura report audit prima del render e dopo (ordine + sommario). */
+export function normalizeAuditReportDocumentStructure(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    let out = clearStaleTocCacheInDocumentXml(xml);
+    out = normalizeVerbaleVisitaSectionHeadings(out);
+    out = reorderConclusionsAfterRilievi(out);
+    out = clearStaleTocCacheInDocumentXml(out);
+    return out;
+}
+
 function repairWordDocumentXmlMalformedAttrs(xml) {
     if (!xml || typeof xml !== 'string') return xml;
     let s = xml;
@@ -355,7 +596,53 @@ export function repairDocxtemplaterFragmentedTags(xml) {
 const MOJIBAKE_W_RUN_BRIDGE =
     '(?:<\\/w:t><\\/w:r>(?:<w:proofErr[^>]*\\/>)*<w:r(?:\\s[^>]*)?>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?<w:t(?:\\s[^>]*)?>)?';
 
-function fixWordXmlMojibake(xml) {
+/** Decodifica coppia Latin-1 (UTF-8 mal interpretato) → carattere Unicode. */
+function latin1Utf8PairToChar(lead, trail, before = '') {
+    const b1 = lead.charCodeAt(0);
+    const b2 = trail.charCodeAt(0);
+    // ConformitÂ° / OpportunitÂ°: à (C3 A0) salvato come C2 B0 (simbolo grado)
+    if (lead === '\u00C2' && trail === '\u00B0' && /it$/i.test(before)) {
+        return '\u00e0';
+    }
+    if ((b1 === 0xC2 || b1 === 0xC3) && b2 >= 0x80 && b2 <= 0xBF) {
+        return String.fromCodePoint(((b1 & 0x1F) << 6) | (b2 & 0x3F));
+    }
+    return lead + trail;
+}
+
+/** -ità italiane corrotte in ° o Â° (dopo fixLead generico). */
+function fixItalianItaDegreeMojibake(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    let s = xml;
+    const bridge = MOJIBAKE_W_RUN_BRIDGE;
+    const itaWord = '(Conformit|Opportunit|conformit|opportunit|qualit|Quantit|identit|unit|attivit|priorit|autorit|specialit|generalit|localit|personalit|formalit|legalit|mortalit|neutralit|periodicit|specificit|temperatur|societ)';
+    s = s.replace(new RegExp(`${itaWord}\u00c2${bridge}?\u00b0`, 'g'), '$1\u00e0');
+    s = s.replace(new RegExp(`${itaWord}\u00b0`, 'g'), '$1\u00e0');
+    return s;
+}
+
+/** Accenti italiani UTF-8 letti come Latin-1 (es. ConformitÃ + NBSP → Conformità). */
+function fixItalianAccentMojibake(xml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    let s = xml;
+    const bridge = MOJIBAKE_W_RUN_BRIDGE;
+    const fixLead = (lead) => {
+        s = s.replace(
+            new RegExp(`([\\w]{0,24})${lead}${bridge}([\\u0080-\\u00BF])`, 'g'),
+            (_, before, b) => before + latin1Utf8PairToChar(lead, b, before)
+        );
+        s = s.replace(
+            new RegExp(`([\\w]{0,24})${lead}([\\u0080-\\u00BF])`, 'g'),
+            (_, before, b) => before + latin1Utf8PairToChar(lead, b, before)
+        );
+    };
+    fixLead('\u00C3');
+    fixLead('\u00C2');
+    s = fixItalianItaDegreeMojibake(s);
+    return s;
+}
+
+export function fixWordXmlMojibake(xml) {
     if (!xml || typeof xml !== 'string') return xml;
     let s = xml;
     const bridge = MOJIBAKE_W_RUN_BRIDGE;
@@ -367,6 +654,7 @@ function fixWordXmlMojibake(xml) {
     s = s.replace(ap, '\u2019');
     s = s.replace(/\u00E2\u20AC\u0153/g, '\u201C');
     s = s.replace(/\u00E2\u20AC\u009D/g, '\u201D');
+    s = fixItalianAccentMojibake(s);
     return s;
 }
 
@@ -396,6 +684,9 @@ function preprocessDocxtemplaterPartsInZip(zip) {
         t = fixWordXmlMojibake(t);
         t = repairDocxtemplaterFragmentedTags(t);
         t = repairWordDocumentXmlMalformedAttrs(t);
+        if (p === 'word/document.xml') {
+            t = normalizeAuditReportDocumentStructure(t);
+        }
         zip.file(p, t);
     }
 }
@@ -482,19 +773,58 @@ function replaceLogoMarkerParagraph(xml, markerIndex, imageRunsXml, markerText) 
     return xml.slice(0, pStart) + replacement + xml.slice(pEnd + 6);
 }
 
+/** Rimuove marker logo testuale se l'embed non è possibile (evita riquadro rotto in Word). */
+function stripLogoMarkersInZip(zip, markerText) {
+    const marker = markerText || '[LOGO]';
+    const partPaths = Object.keys(zip.files).filter((p) =>
+        /^word\/(document|header\d+|footer\d+)\.xml$/.test(p)
+    );
+    for (const partPath of partPaths) {
+        let xml = zip.files[partPath]?.asText();
+        if (!xml || !xml.includes(marker)) continue;
+        while (xml.includes(marker)) {
+            xml = replaceLogoMarkerParagraph(
+                xml,
+                xml.indexOf(marker),
+                '<w:r><w:t xml:space="preserve"></w:t></w:r>',
+                marker
+            );
+        }
+        zip.file(partPath, repairWordDocumentXmlMalformedAttrs(xml));
+    }
+}
+
 /**
  * Sostituisce [LOGO] in document/header/footer con immagine da data URL (jpeg/png/gif).
  * Usa un solo file in word/media/; ogni parte ottiene una relazione immagine dedicata.
  */
-function injectCompanyLogoInZip(zip, dataUrl) {
-    const parsed = parseImageDataUrl(dataUrl);
+async function injectCompanyLogoInZip(zip, dataUrl) {
+    let normalizedUrl = dataUrl;
+    try {
+        const parsedPreview = parseImageDataUrl(dataUrl);
+        if (parsedPreview?.mime) {
+            normalizedUrl = await normalizeImageDataUrlForWordEmbed(dataUrl, parsedPreview.mime);
+        }
+    } catch (e) {
+        console.warn('[wordExport] Logo: normalizzazione EXIF non riuscita:', e.message);
+    }
+
+    const parsed = parseImageDataUrl(normalizedUrl);
     if (!parsed) {
         console.warn('[wordExport] Logo: data URL non valido.');
+        stripLogoMarkersInZip(zip, '[LOGO]');
         return;
     }
     const ext = wordEmbeddableExtFromMime(parsed.mime);
     if (!ext) {
         console.warn('[wordExport] Logo: formato non embeddabile in Word:', parsed.mime);
+        stripLogoMarkersInZip(zip, '[LOGO]');
+        return;
+    }
+    const dims = getImagePixelDimensions(parsed.base64, parsed.mime);
+    if (!dims?.w || !dims?.h) {
+        console.warn('[wordExport] Logo: payload immagine non decodificabile, marker rimosso.');
+        stripLogoMarkersInZip(zip, '[LOGO]');
         return;
     }
     const mediaRelTarget = `media/company_logo_export.${ext}`;
@@ -522,9 +852,8 @@ function injectCompanyLogoInZip(zip, dataUrl) {
         relsXml = appendImageRelationship(relsXml, rId, mediaRelTarget);
         zip.file(relsPath, relsXml);
 
-        const dims = getImagePixelDimensions(parsed.base64, parsed.mime);
         const { cx: logoCx, cy: logoCy } = scaleImageToMaxEmu(
-            dims?.w, dims?.h, LOGO_CLIENT_MAX_W_EMU, LOGO_MAX_H_EMU
+            dims.w, dims.h, LOGO_CLIENT_MAX_W_EMU, LOGO_MAX_H_EMU
         );
         let imgIdLocal = 88001;
         while (xml.includes('[LOGO]')) {
@@ -540,15 +869,33 @@ const ORG_LOGO_MARKER = '[LOGO_ORG]';
 /**
  * Come injectCompanyLogoInZip ma per logo tenant (marker [LOGO_ORG] nei template Word).
  */
-function injectOrganizationLogoInZip(zip, dataUrl) {
-    const parsed = parseImageDataUrl(dataUrl);
+async function injectOrganizationLogoInZip(zip, dataUrl) {
+    let normalizedUrl = dataUrl;
+    try {
+        const parsedPreview = parseImageDataUrl(dataUrl);
+        if (parsedPreview?.mime) {
+            normalizedUrl = await normalizeImageDataUrlForWordEmbed(dataUrl, parsedPreview.mime);
+        }
+    } catch (e) {
+        console.warn('[wordExport] Logo org: normalizzazione EXIF non riuscita:', e.message);
+    }
+
+    const parsed = parseImageDataUrl(normalizedUrl);
     if (!parsed) {
         console.warn('[wordExport] Logo org: data URL non valido.');
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
         return;
     }
     const ext = wordEmbeddableExtFromMime(parsed.mime);
     if (!ext) {
         console.warn('[wordExport] Logo org: formato non embeddabile in Word:', parsed.mime);
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
+        return;
+    }
+    const orgDims = getImagePixelDimensions(parsed.base64, parsed.mime);
+    if (!orgDims?.w || !orgDims?.h) {
+        console.warn('[wordExport] Logo org: payload immagine non decodificabile, marker rimosso.');
+        stripLogoMarkersInZip(zip, ORG_LOGO_MARKER);
         return;
     }
     const mediaRelTarget = `media/org_logo_export.${ext}`;
@@ -577,9 +924,8 @@ function injectOrganizationLogoInZip(zip, dataUrl) {
         zip.file(relsPath, relsXml);
 
         let imgIdLocal = 89001;
-        const orgDims = getImagePixelDimensions(parsed.base64, parsed.mime);
         const { cx: orgCx, cy: orgCy } = scaleImageToMaxEmu(
-            orgDims?.w, orgDims?.h, LOGO_ORG_MAX_W_EMU, LOGO_MAX_H_EMU
+            orgDims.w, orgDims.h, LOGO_ORG_MAX_W_EMU, LOGO_MAX_H_EMU
         );
         while (xml.includes(ORG_LOGO_MARKER)) {
             const drawingRun = buildWordInlineImageRun(rId, imgIdLocal++, orgCx, orgCy);
@@ -851,7 +1197,9 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
     if (processedZip.files[docPath]) {
         processedZip.file(
             docPath,
-            repairWordDocumentXmlMalformedAttrs(processedZip.files[docPath].asText())
+            normalizeAuditReportDocumentStructure(
+                repairWordDocumentXmlMalformedAttrs(processedZip.files[docPath].asText())
+            )
         );
     }
 
@@ -863,18 +1211,20 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
     const logoUrl = auditForGen?.embedCompanyLogo?.dataUrl;
     if (logoUrl) {
         try {
-            injectCompanyLogoInZip(processedZip, logoUrl);
+            await injectCompanyLogoInZip(processedZip, logoUrl);
         } catch (e) {
             console.warn('[wordExport] Inserimento logo fallito:', e.message);
+            stripLogoMarkersInZip(processedZip, '[LOGO]');
         }
     }
 
     const orgLogoUrl = auditForGen?.embedOrganizationLogo?.dataUrl;
     if (orgLogoUrl) {
         try {
-            injectOrganizationLogoInZip(processedZip, orgLogoUrl);
+            await injectOrganizationLogoInZip(processedZip, orgLogoUrl);
         } catch (e) {
             console.warn('[wordExport] Inserimento logo organizzazione fallito:', e.message);
+            stripLogoMarkersInZip(processedZip, ORG_LOGO_MARKER);
         }
     }
 
@@ -913,7 +1263,10 @@ async function preloadImagesIntoAudit(audit, getViewUrl) {
                     console.warn('[wordExport] allegato ignorato: tipo reale non è immagine', { stored: att.mimeType, real: realMimeType, id });
                     return;
                 }
-                att.imageBase64   = await blobToBase64(blob);
+                att.imageBase64 = await normalizeImageDataUrlForWordEmbed(
+                    await blobToBase64(blob),
+                    realMimeType
+                );
                 att.imageMimeType = realMimeType;
             } catch (e) {
                 console.warn('[wordExport] preload image failed for att', id, e.message);

@@ -8,6 +8,12 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // ─── Generazione complaint_number progressivo ─────────────────────────────
 
@@ -30,9 +36,14 @@ async function listComplaints(req, res) {
         const { organization_id } = req.user;
         const { complaint_type, status, severity } = req.query;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'c');
+
         let where = ['c.organization_id = @org'];
         const params = { org: organization_id };
+        Object.assign(params, companyFilter.params);
 
+        if (companyFilter.clause) where.push(companyFilter.clause);
         if (complaint_type) { where.push('c.complaint_type = @ct'); params.ct = complaint_type; }
         if (status)         { where.push('c.status = @st');         params.st = status; }
         if (severity)       { where.push('c.severity = @sev');      params.sev = severity; }

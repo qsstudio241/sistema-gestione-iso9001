@@ -6,6 +6,18 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
+const billingService = require('../services/billing.service');
+const { hardDeleteCompany } = require('../services/companyMaintenance.service');
+const {
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
+    getAllowedCompanyIds,
+    assertCompanyAccess,
+    assertCompanyWriteAccess,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -33,19 +45,40 @@ function resolveAuditorOrgId(req) {
  */
 async function listCompanies(req, res) {
     try {
-        const auditorOrgId = resolveAuditorOrgId(req);
-        if (!auditorOrgId) {
-            return res.status(403).json({
-                error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
-                code: 'AUDITOR_ORG_REQUIRED'
-            });
-        }
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const allowedIds = getAllowedCompanyIds(accessList);
 
         const { page = 1, limit = 50, search, is_active } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
-        let whereConditions = ['auditor_org_id = @auditor_org_id'];
-        const params = { auditor_org_id: auditorOrgId, limit: parseInt(limit), offset };
+        let whereConditions = [];
+        const params = { limit: parseInt(limit), offset };
+
+        if (allowedIds) {
+            if (allowedIds.length === 0) {
+                return res.json({
+                    success: true,
+                    data: [],
+                    pagination: { page: parseInt(page), limit: parseInt(limit), total: 0, totalPages: 0 },
+                });
+            }
+            const idParams = allowedIds.map((id, i) => {
+                const key = `allowed_id_${i}`;
+                params[key] = id;
+                return `@${key}`;
+            });
+            whereConditions.push(`id IN (${idParams.join(', ')})`);
+        } else {
+            const auditorOrgId = resolveAuditorOrgId(req);
+            if (!auditorOrgId) {
+                return res.status(403).json({
+                    error: 'Specificare auditor_org_id (superadmin) o appartenere a un auditor_org',
+                    code: 'AUDITOR_ORG_REQUIRED'
+                });
+            }
+            whereConditions.push('auditor_org_id = @auditor_org_id');
+            params.auditor_org_id = auditorOrgId;
+        }
 
         if (search) {
             whereConditions.push('(name LIKE @search OR vat_number LIKE @search)');
@@ -91,12 +124,31 @@ async function listCompanies(req, res) {
  */
 async function getCompanyById(req, res) {
     try {
+        const id = parseInt(req.params.id, 10);
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+
+        if (hasCompanyAccessRows(accessList)) {
+            const denied = await assertCompanyAccess(req.user, id, 'read');
+            if (denied) return sendAccessDenied(res, denied);
+
+            const result = await query(`
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            FROM companies
+            WHERE id = @id
+        `, { id });
+
+            if (result.recordset.length === 0) {
+                return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+            }
+
+            return res.json({ success: true, data: result.recordset[0] });
+        }
+
         const auditorOrgId = resolveAuditorOrgId(req);
         if (!auditorOrgId) {
             return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
         }
 
-        const id = parseInt(req.params.id, 10);
         const result = await query(`
             SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
             FROM companies
@@ -119,6 +171,14 @@ async function getCompanyById(req, res) {
  */
 async function createCompany(req, res) {
     try {
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            return sendAccessDenied(res, {
+                status: 403,
+                body: { error: 'Permesso negato: sola lettura', code: 'AUTH_FORBIDDEN' },
+            });
+        }
+
         const auditorOrgId = req.body.auditor_org_id || req.user.auditor_org_id;
         if (!auditorOrgId) {
             return res.status(400).json({ error: 'auditor_org_id obbligatorio', code: 'MISSING_AUDITOR_ORG' });
@@ -146,8 +206,83 @@ async function createCompany(req, res) {
             address: address?.trim() || null
         });
 
-        logger.info('[COMPANIES] Created:', result.recordset[0].id);
-        res.status(201).json({ success: true, data: result.recordset[0] });
+        const newCompany = result.recordset[0];
+        const companyId = newCompany.id;
+        const parsedAuditorOrgId = parseInt(auditorOrgId, 10);
+
+        // Auto-provisioning albero documentale per la nuova azienda (idempotente)
+        try {
+            const orgRes = await query(
+                `SELECT organization_id FROM auditor_orgs WHERE id = @auditor_org_id`,
+                { auditor_org_id: parsedAuditorOrgId }
+            );
+            const organizationId = orgRes.recordset[0]?.organization_id || req.user.organization_id;
+
+            if (organizationId) {
+                const studioRootCheck = await query(
+                    `SELECT TOP 1 id FROM document_registry
+                     WHERE organization_id = @organization_id
+                       AND company_id IS NULL
+                       AND parent_id IS NULL
+                       AND doc_type = 'folder'
+                       AND ISNULL(status, 'rilasciato') <> 'obsoleto'`,
+                    { organization_id: organizationId }
+                );
+                if (studioRootCheck.recordset.length > 0) {
+                    logger.info('[COMPANIES] Skip tree provision: studio-wide tree already exists', {
+                        company_id: companyId,
+                        organization_id: organizationId,
+                    });
+                } else {
+                    const rootCheck = await query(
+                        `SELECT TOP 1 id FROM document_registry
+                         WHERE organization_id = @organization_id
+                           AND company_id = @company_id
+                           AND parent_id IS NULL`,
+                        { organization_id: organizationId, company_id: companyId }
+                    );
+                    if (rootCheck.recordset.length === 0) {
+                        const stdRes = await query(
+                            `SELECT standard_code FROM standards WHERE is_active = 1`
+                        );
+                        const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                        await documentTreeProvisioner.provisionTree(
+                            organizationId, companyId, null, standardCodes
+                        );
+                        logger.info('[COMPANIES] Auto-provisioned document tree', {
+                            company_id: companyId,
+                            organization_id: organizationId,
+                        });
+                    }
+                }
+            }
+        } catch (provErr) {
+            logger.warn('[COMPANIES] Tree auto-provision failed (non-blocking)', {
+                company_id: companyId,
+                error: provErr.message,
+            });
+        }
+
+        try {
+            const orgResBilling = await query(
+                `SELECT organization_id FROM auditor_orgs WHERE id = @auditor_org_id`,
+                { auditor_org_id: parsedAuditorOrgId }
+            );
+            await billingService.onCompanyCreated({
+                companyId,
+                auditorOrgId: parsedAuditorOrgId,
+                organizationId: orgResBilling.recordset[0]?.organization_id || req.user.organization_id,
+                createdBy: req.user.user_id,
+            });
+        } catch (billErr) {
+            logger.warn('[COMPANIES] Billing hook on create failed (non-blocking)', {
+                company_id: companyId,
+                error: billErr.message,
+            });
+        }
+
+        logger.info('[COMPANIES] Created:', companyId);
+        res.status(201).json({ success: true, data: newCompany });
     } catch (error) {
         logger.error('[COMPANIES] create error:', error);
         res.status(500).json({ error: 'Errore creazione azienda', code: 'SERVER_ERROR' });
@@ -159,21 +294,72 @@ async function createCompany(req, res) {
  */
 async function updateCompany(req, res) {
     try {
+        const id = parseInt(req.params.id, 10);
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+
+        if (hasCompanyAccessRows(accessList)) {
+            const writeDenied = await assertCompanyWriteAccess(req.user, id);
+            if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+            const check = await query(`
+            SELECT id, is_active FROM companies WHERE id = @id
+        `, { id });
+
+            if (check.recordset.length === 0) {
+                return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+            }
+
+            const previousIsActive = check.recordset[0].is_active;
+            const { name, vat_number, sector, address, is_active } = req.body;
+
+            const updates = [];
+            const params = { id };
+            if (name !== undefined) { updates.push('name = @name'); params.name = name.trim(); }
+            if (vat_number !== undefined) { updates.push('vat_number = @vat_number'); params.vat_number = vat_number?.trim() || null; }
+            if (sector !== undefined) { updates.push('sector = @sector'); params.sector = sector?.trim() || null; }
+            if (address !== undefined) { updates.push('address = @address'); params.address = address?.trim() || null; }
+            if (is_active !== undefined) {
+                return res.status(403).json({
+                    error: 'Non puoi modificare lo stato attivo dell\'azienda',
+                    code: 'AUTH_FORBIDDEN',
+                });
+            }
+
+            if (updates.length === 0) {
+                const current = await query('SELECT * FROM companies WHERE id = @id', { id });
+                return res.json({ success: true, data: current.recordset[0] });
+            }
+
+            updates.push('updated_at = GETDATE()');
+            await query(`
+            UPDATE companies SET ${updates.join(', ')}
+            WHERE id = @id
+        `, params);
+
+            const updated = await query(`
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            FROM companies WHERE id = @id
+        `, { id });
+
+            return res.json({ success: true, data: updated.recordset[0] });
+        }
+
         const auditorOrgId = resolveAuditorOrgId(req);
         if (!auditorOrgId) {
             return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
         }
 
-        const id = parseInt(req.params.id, 10);
         const { name, vat_number, sector, address, is_active } = req.body;
 
         const check = await query(`
-            SELECT id FROM companies WHERE id = @id AND auditor_org_id = @auditor_org_id
+            SELECT id, is_active FROM companies WHERE id = @id AND auditor_org_id = @auditor_org_id
         `, { id, auditor_org_id: auditorOrgId });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
         }
+
+        const previousIsActive = check.recordset[0].is_active;
 
         const updates = [];
         const params = { id, auditor_org_id: auditorOrgId };
@@ -199,6 +385,31 @@ async function updateCompany(req, res) {
             FROM companies WHERE id = @id
         `, { id });
 
+        if (is_active !== undefined) {
+            const newActive = is_active === true || is_active === 1;
+            const prevActive = previousIsActive === true || previousIsActive === 1;
+            if (newActive !== prevActive) {
+                try {
+                    const orgRes = await query(
+                        `SELECT organization_id FROM auditor_orgs WHERE id = @auditor_org_id`,
+                        { auditor_org_id: auditorOrgId }
+                    );
+                    await billingService.syncCompanyActiveStatus({
+                        companyId: id,
+                        auditorOrgId,
+                        organizationId: orgRes.recordset[0]?.organization_id,
+                        isActive: newActive,
+                        updatedBy: req.user.user_id,
+                    });
+                } catch (billErr) {
+                    logger.warn('[COMPANIES] Billing hook on is_active failed (non-blocking)', {
+                        company_id: id,
+                        error: billErr.message,
+                    });
+                }
+            }
+        }
+
         res.json({ success: true, data: updated.recordset[0] });
     } catch (error) {
         logger.error('[COMPANIES] update error:', error);
@@ -211,20 +422,21 @@ async function updateCompany(req, res) {
  */
 async function deleteCompany(req, res) {
     try {
+        const id = parseInt(req.params.id, 10);
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+
+        if (hasCompanyAccessRows(accessList)) {
+            const writeDenied = await assertCompanyWriteAccess(req.user, id);
+            if (writeDenied) return sendAccessDenied(res, writeDenied);
+        }
+
         const auditorOrgId = resolveAuditorOrgId(req);
         if (!auditorOrgId) {
             return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
         }
 
-        const id = parseInt(req.params.id, 10);
-
-        const result = await query(`
-            DELETE FROM companies
-            OUTPUT DELETED.id
-            WHERE id = @id AND auditor_org_id = @auditor_org_id
-        `, { id, auditor_org_id: auditorOrgId });
-
-        if (result.recordset.length === 0) {
+        const ok = await hardDeleteCompany(id, auditorOrgId);
+        if (!ok) {
             return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
         }
 

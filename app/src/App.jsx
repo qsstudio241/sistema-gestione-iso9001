@@ -23,6 +23,7 @@ const HomePage = React.lazy(() => import("./pages/HomePage"));
 const Dashboard = React.lazy(() => import("./components/Dashboard"));
 const DocumentRegistry = React.lazy(() => import("./components/DocumentRegistry"));
 const CompaniesPage = React.lazy(() => import("./components/CompaniesPage"));
+const CompanyDetailPage = React.lazy(() => import("./pages/CompanyDetailPage"));
 const ChecklistAdminPage = React.lazy(() => import("./components/ChecklistAdminPage"));
 const UsersAdminPage = React.lazy(() => import("./components/UsersAdminPage"));
 const ReportTemplatesAdminPage = React.lazy(() => import("./components/ReportTemplatesAdminPage"));
@@ -33,15 +34,18 @@ const NCPage = React.lazy(() => import("./pages/NCPage"));
 const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
+const BillingDashboardPage = React.lazy(() => import("./pages/BillingDashboardPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
 const AiAssistantPage = React.lazy(() => import("./pages/AiAssistantPage"));
 const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage"));
+const SearchPage = React.lazy(() => import("./pages/SearchPage"));
 const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProceduresPage"));
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
+const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -105,6 +109,11 @@ function AppContent() {
 
       <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
+        {/* Dev-only: catalogo UI */}
+        {import.meta.env.DEV && DevUiCatalog && (
+          <Route path="/dev/ui-catalog" element={<DevUiCatalog />} />
+        )}
+
         {/* Home dashboard */}
         <Route path="/" element={<HomePage />} />
 
@@ -132,13 +141,22 @@ function AppContent() {
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_assist"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_assist"><KnowledgeHealthPage /></LicensedRoute>} />
+        <Route path="/search"          element={<SearchPage />} />
         <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
 
-        {/* Gestione aziende */}
+        {/* Gestione aziende — dettaglio prima della lista (prefix match router) */}
+        <Route
+          path="/companies/"
+          element={
+            <BackWrapper>
+              <CompanyDetailPage />
+            </BackWrapper>
+          }
+        />
         <Route
           path="/companies"
           element={
@@ -206,6 +224,14 @@ function AppContent() {
           element={
             <BackWrapper>
               <LicensesSettingsPage />
+            </BackWrapper>
+          }
+        />
+        <Route
+          path="/settings/billing"
+          element={
+            <BackWrapper>
+              <BillingDashboardPage />
             </BackWrapper>
           }
         />

@@ -7,9 +7,10 @@ alwaysApply: false
 # SysAdmin — Gestione Infrastruttura SGQ
 
 ## Deploy VPS e Accesso Server
+- **Windows (Cursor desktop)**: `backend/scripts/vps-preflight.ps1` poi `run-on-vps.ps1` o `deploy-controllers-to-vps.ps1` + `backend/config/.ssh-deploy.local.ps1`. **Non** usare `SGQ_SSH_KEY_B64` ne' dire "impossibile verificare" senza preflight.
+- **Cloud Agent (Linux)**: `backend/scripts/deploy-to-vps.sh` + secrets `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`.
 - **Invariato**: Nessun segreto nei file versionati. Usa `database.json`, `.ssh-deploy.local.ps1` o variabili d'ambiente.
 - **Verifica PID Obbligatoria**: Dopo `systemctl restart`, verifica che il `MainPID` sia cambiato. Se invariato, usa: `echo $SGQ_SUDO_PASSWORD | sudo -S systemctl restart sgq-backend.service`.
-- **Script Standard**: Usa sempre `backend/scripts/deploy-to-vps.sh`, non comandi manuali sparsi.
 
 ## Migrazioni SQL Server (Ground Truth)
 - **Autonomia**: Esegui le migrazioni usando `backend/config/database.json`. Non delegare all'utente se le credenziali sono presenti.

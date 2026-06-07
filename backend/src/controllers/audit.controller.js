@@ -9,7 +9,12 @@ const { hardDeleteAudit } = require('../services/auditMaintenance.service');
 const { getAllowedStandardIds } = require('./auth.controller');
 // assertWriteAllowed rimosso in T5 (lock solo UX, non blocca le scritture sul server)
 const { allocateAuditReportNumber } = require('../services/auditNumberAllocation.service');
-const { studioScopeClause } = require('../services/auditListRbac.service');
+const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const {
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
+const { resolveAuditForUser } = require('../services/auditLock.service');
 const { validateAuditDateRange } = require('../utils/auditDateRange');
 
 /**
@@ -266,6 +271,9 @@ async function createAudit(req, res) {
             });
         }
 
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         let audit_number;
         const maxAttempts = 5;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -443,13 +451,19 @@ async function updateAudit(req, res) {
             fornitore_name
         } = req.body;
 
-        // Verifica esistenza e ownership (con timestamp, status e audit_extra_data per merge)
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+        const scopeParams = { id: parseInt(id), organization_id, ...scope.params };
+
+        // Verifica esistenza, tenant e scope studio (RBAC Fase 2)
         const existingAudit = await query(`
-      SELECT audit_id, status, updated_at, audit_date, audit_date_end, audit_extra_data FROM audits
-      WHERE audit_id = @id 
-        AND organization_id = @organization_id
-        AND is_deleted = 0
-    `, { id: parseInt(id), organization_id });
+      SELECT a.audit_id, a.status, a.updated_at, a.audit_date, a.audit_date_end, a.audit_extra_data
+      FROM audits a
+      WHERE a.audit_id = @id 
+        AND a.organization_id = @organization_id
+        AND a.is_deleted = 0
+        ${scopeSql}
+    `, scopeParams);
 
         if (existingAudit.recordset.length === 0) {
             return res.status(404).json({
@@ -663,16 +677,22 @@ async function deleteAudit(req, res) {
         const numericId = parseInt(id, 10);
         const isUuid = isNaN(numericId) && typeof id === 'string' && id.length > 10;
 
-        // Recupera audit (id numerico, status) per UUID o ID
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+        const scopeParams = isUuid
+            ? { audit_uuid: id, organization_id, ...scope.params }
+            : { id: numericId, organization_id, ...scope.params };
+
+        // Recupera audit (id numerico, status) per UUID o ID — con scope studio
         const existingAudit = await query(
             isUuid
-                ? `SELECT audit_id, audit_number, status 
-                   FROM audits 
-                   WHERE audit_uuid = @audit_uuid AND organization_id = @organization_id AND is_deleted = 0`
-                : `SELECT audit_id, audit_number, status 
-                   FROM audits 
-                   WHERE audit_id = @id AND organization_id = @organization_id AND is_deleted = 0`,
-            isUuid ? { audit_uuid: id, organization_id } : { id: numericId, organization_id }
+                ? `SELECT a.audit_id, a.audit_number, a.status 
+                   FROM audits a
+                   WHERE a.audit_uuid = @audit_uuid AND a.organization_id = @organization_id AND a.is_deleted = 0${scopeSql}`
+                : `SELECT a.audit_id, a.audit_number, a.status 
+                   FROM audits a
+                   WHERE a.audit_id = @id AND a.organization_id = @organization_id AND a.is_deleted = 0${scopeSql}`,
+            scopeParams
         );
 
         if (existingAudit.recordset.length === 0) {
@@ -733,11 +753,14 @@ async function getAuditStatistics(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        // Verifica ownership
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
         const auditCheck = await query(`
-      SELECT audit_id FROM audits
-      WHERE audit_id = @id AND organization_id = @organization_id AND is_deleted = 0
-    `, { id: parseInt(id), organization_id });
+      SELECT a.audit_id FROM audits a
+      WHERE a.audit_id = @id AND a.organization_id = @organization_id AND a.is_deleted = 0
+        ${scopeSql}
+    `, { id: parseInt(id), organization_id, ...scope.params });
 
         if (auditCheck.recordset.length === 0) {
             return res.status(404).json({
@@ -898,6 +921,14 @@ async function upsertAudit(req, res) {
 
         if (existing.recordset.length > 0) {
             // ========== UPDATE ESISTENTE ==========
+            const inScope = await resolveAuditForUser(req.user, audit_uuid);
+            if (!inScope) {
+                return res.status(404).json({
+                    error: 'Audit non trovato',
+                    code: 'AUDIT_NOT_FOUND',
+                });
+            }
+
             const existingAudit = existing.recordset[0];
             const audit_id = existingAudit.audit_id;
             const immutableAuditNumber = existingAudit.audit_number || audit_number;
@@ -1256,34 +1287,45 @@ async function getPendingIssues(req, res) {
     try {
         logger.info(`[PENDING_ISSUES] Audit ID: ${audit_id}`);
 
+        const inScope = await resolveAuditForUser(req.user, audit_id);
+        if (!inScope) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
+        const target_audit_id = inScope.audit_id;
+
         // Step 1: Trova audit corrente (target)
         const currentAuditResult = await query(`
             SELECT audit_id, client_name, audit_date
             FROM audits
-            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+            WHERE audit_id = @target_audit_id
               AND organization_id = @organization_id
               AND is_deleted = 0
-        `, { audit_id, organization_id });
+        `, { target_audit_id, organization_id });
 
         if (!currentAuditResult.recordset || currentAuditResult.recordset.length === 0) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
         }
 
-        const { audit_id: target_audit_id, client_name, audit_date: current_audit_date } =
+        const { client_name, audit_date: current_audit_date } =
             currentAuditResult.recordset[0];
 
-        // Step 2: Trova l'ultimo audit COMPLETATO dello stesso cliente precedente
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
+        // Step 2: Trova l'ultimo audit COMPLETATO dello stesso cliente precedente (stesso scope)
         const lastAuditResult = await query(`
             SELECT TOP 1 audit_id
-            FROM audits
-            WHERE organization_id = @organization_id
-              AND client_name = @client_name
-              AND audit_id <> @target_audit_id
-              AND (audit_date < @current_audit_date OR @current_audit_date IS NULL)
-              AND status IN ('completed', 'finalized', 'approved')
-              AND is_deleted = 0
-            ORDER BY audit_date DESC, audit_id DESC
-        `, { organization_id, client_name, current_audit_date, target_audit_id });
+            FROM audits a
+            WHERE a.organization_id = @organization_id
+              AND a.client_name = @client_name
+              AND a.audit_id <> @target_audit_id
+              AND (a.audit_date < @current_audit_date OR @current_audit_date IS NULL)
+              AND a.status IN ('completed', 'finalized', 'approved')
+              AND a.is_deleted = 0
+              ${scopeSql}
+            ORDER BY a.audit_date DESC, a.audit_id DESC
+        `, { organization_id, client_name, current_audit_date, target_audit_id, ...scope.params });
 
         if (!lastAuditResult.recordset || lastAuditResult.recordset.length === 0) {
             return res.json({ pending_issues: [], source_audit_id: null, count: 0 });
@@ -1400,18 +1442,11 @@ async function updatePendingIssue(req, res) {
     }
 
     try {
-        // Risolve audit_id (UUID o intero)
-        const auditRow = await query(`
-            SELECT audit_id FROM audits
-            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
-              AND organization_id = @organization_id
-              AND is_deleted = 0
-        `, { audit_id, organization_id });
-
-        if (!auditRow.recordset || auditRow.recordset.length === 0) {
+        const inScope = await resolveAuditForUser(req.user, audit_id);
+        if (!inScope) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
         }
-        const target_audit_id = auditRow.recordset[0].audit_id;
+        const target_audit_id = inScope.audit_id;
 
         const result = await query(`
             UPDATE [dbo].[pending_issues]
@@ -1467,13 +1502,18 @@ async function completeAudit(req, res) {
     const { organization_id } = req.user;
 
     try {
+        const inScope = await resolveAuditForUser(req.user, audit_id);
+        if (!inScope) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
         const existingResult = await query(`
             SELECT audit_id, status, audit_extra_data
             FROM audits
-            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+            WHERE audit_id = @audit_id
               AND organization_id = @organization_id
               AND is_deleted = 0
-        `, { audit_id, organization_id });
+        `, { audit_id: inScope.audit_id, organization_id });
 
         if (!existingResult.recordset || existingResult.recordset.length === 0) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
@@ -1545,6 +1585,9 @@ async function checkReaudit(req, res) {
         //     nascondere le NC dell'audit ancora più precedente)
         // Filtra solo audit completati/approvati — un audit ancora in bozza non
         // deve comparire come sorgente di rilievi da re-auditare
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
         const lastAuditResult = await query(`
             SELECT TOP 1
                 a.audit_id,
@@ -1560,9 +1603,10 @@ async function checkReaudit(req, res) {
               AND a.status IN ('completed', 'finalized', 'approved')
               AND a.is_deleted = 0
               AND (@exclude_uuid IS NULL OR a.audit_uuid <> TRY_CAST(@exclude_uuid AS UNIQUEIDENTIFIER))
+              ${scopeSql}
             GROUP BY a.audit_id, a.audit_date, a.audit_number
             ORDER BY a.audit_date DESC, a.audit_id DESC
-        `, { organization_id, client_name: client_name.trim(), exclude_uuid: current_audit_uuid || null });
+        `, { organization_id, client_name: client_name.trim(), exclude_uuid: current_audit_uuid || null, ...scope.params });
 
         if (!lastAuditResult.recordset || lastAuditResult.recordset.length === 0) {
             return res.json({
@@ -1613,15 +1657,11 @@ async function bulkSaveResponses(req, res) {
     }
 
     try {
-        // Recupera audit_id interno dalla UUID
-        const auditResult = await query(
-            'SELECT audit_id FROM audits WHERE audit_uuid = @audit_uuid AND organization_id = @org_id',
-            { audit_uuid: auditUuid, org_id: organizationId }
-        );
-        if (!auditResult.recordset?.length) {
+        const audit = await resolveAuditForUser(req.user, auditUuid);
+        if (!audit) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
         }
-        const auditId = auditResult.recordset[0].audit_id;
+        const auditId = audit.audit_id;
 
         let saved = 0;
         const errors = [];
@@ -1683,6 +1723,9 @@ async function getNcResponses(req, res) {
     const { organization_id } = req.user;
 
     try {
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+
         const result = await query(
             `SELECT
                 ar.response_id,
@@ -1698,8 +1741,9 @@ async function getNcResponses(req, res) {
              WHERE (ar.audit_id = TRY_CAST(@audit_id AS INT) OR a.audit_uuid = @audit_id)
                AND a.organization_id = @organization_id
                AND ar.conformity_status IN ('NC', 'OSS', 'NV')
+               ${scopeSql}
              ORDER BY ar.conformity_status, cq.section_code`,
-            { audit_id: String(audit_id), organization_id }
+            { audit_id: String(audit_id), organization_id, ...scope.params }
         );
 
         return res.json({
@@ -1727,13 +1771,18 @@ async function approveAudit(req, res) {
     const { organization_id } = req.user;
 
     try {
+        const inScope = await resolveAuditForUser(req.user, audit_id);
+        if (!inScope) {
+            return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+        }
+
         const existingResult = await query(`
             SELECT audit_id, status, audit_extra_data
             FROM audits
-            WHERE (audit_id = TRY_CAST(@audit_id AS INT) OR audit_uuid = @audit_id)
+            WHERE audit_id = @audit_id
               AND organization_id = @organization_id
               AND is_deleted = 0
-        `, { audit_id, organization_id });
+        `, { audit_id: inScope.audit_id, organization_id });
 
         if (!existingResult.recordset || existingResult.recordset.length === 0) {
             return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });

@@ -285,6 +285,79 @@
   color: inherit;
 }
 
+.notif-header-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* Rubrica referenti NC — griglia a tutta larghezza card (Studio + impostazioni notifiche) */
+.notif-contacts-panel .sgq-datagrid,
+.notif-contacts-panel .sgq-datagrid-table-wrap {
+  width: 100%;
+  max-width: 100%;
+}
+
+.notif-contacts-panel .sgq-datagrid-table {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 0;
+}
+
+.notif-contacts-panel .sgq-datagrid-th {
+  white-space: normal;
+}
+
+.notif-contacts-panel .sgq-datagrid-cell {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notif-contacts-panel .notif-col-email {
+  max-width: 0;
+}
+
+.notif-contacts-panel .notif-col-actions {
+  white-space: nowrap;
+  width: 100px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.notif-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.notif-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 24px;
+  width: min(480px, 100%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.nc-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin: 6px 0 8px;
+}
+
+.nc-responsible-select select,
+.nc-responsible-select input[type="text"] {
+  width: 100%;
+}
+
 /* ?? Responsive ????????????????????????????????????????? */
 @media (max-width: 600px) {
   .notif-page {

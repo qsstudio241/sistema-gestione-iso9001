@@ -10,13 +10,40 @@ const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge, indexAllEntities } = require('../services/knowledgeIndexer.service');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
+const {
+  loadStandardProfile,
+  resolveStandardCodesForFilter,
+  buildStandardContextBlock,
+} = require('../services/aiStandardContext.service');
+const { buildCitationsFromChunks } = require('../utils/aiCitations');
 
-const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit? ISO 9001 di questa organizzazione.
+const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
 Quando citi dati specifici (audit, NC, documenti, rischi), indica il riferimento (numero, codice, data) per permettere all'utente di verificare.
 Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto per i punti chiave.`;
+
+/**
+ * Blocco opzionale: audit aperto + clausola/domanda checklist attiva.
+ */
+function buildAuditFocusBlock({ auditId, clauseRef, questionId, questionText, standardKey }) {
+  if (!auditId && !clauseRef) return '';
+  const lines = ['\n\n--- CONTESTO AUDIT APERTO ---'];
+  if (auditId) lines.push(`Audit (UUID): ${auditId}`);
+  if (standardKey) lines.push(`Norma checklist: ${String(standardKey).replace(/_/g, ' ')}`);
+  if (clauseRef) lines.push(`Clausola attiva: \u00A7${clauseRef}`);
+  if (questionId) {
+    const qText = questionText ? ` \u2014 ${String(questionText).substring(0, 200)}` : '';
+    lines.push(`Domanda checklist: ${questionId}${qText}`);
+  }
+  lines.push('--- FINE CONTESTO AUDIT ---');
+  lines.push(
+    'Prioritizza risposte su questa clausola e sui rilievi collegati quando pertinenti.'
+  );
+  return lines.join('\n');
+}
 
 /**
  * Carica il profilo azienda da DB per arricchire il system prompt.
@@ -82,7 +109,7 @@ async function logUsage({ organizationId, userId, companyId, message, reply, con
 
 /**
  * POST /ai/chat
- * Body: { message: string, companyId?: number|null }
+ * Body: { message: string, companyId?: number|null, standardId?: number|null }
  */
 async function aiChat(req, res) {
   const startTime = Date.now();
@@ -95,7 +122,7 @@ async function aiChat(req, res) {
       });
     }
 
-    const { message, companyId } = req.body;
+    const { message, companyId, standardId, auditId, clauseRef, questionId, questionText, standardKey } = req.body;
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({
         error: 'Il campo "message" \u00e8 obbligatorio.',
@@ -107,8 +134,21 @@ async function aiChat(req, res) {
     const auditorOrgId = req.user.auditor_org_id;
     const userId = req.user.user_id;
     const parsedCompanyId = companyId ? parseInt(companyId, 10) || null : null;
+    const parsedStandardId = standardId ? parseInt(standardId, 10) || null : null;
 
-    let systemPrompt = BASE_SYSTEM_PROMPT;
+    let systemPrompt = await enrichSystemPromptWithOrganization(
+      BASE_SYSTEM_PROMPT,
+      organizationId
+    );
+
+    let activeStandard = null;
+    if (parsedStandardId) {
+      activeStandard = await loadStandardProfile(parsedStandardId);
+      if (activeStandard) {
+        systemPrompt += buildStandardContextBlock(activeStandard);
+      }
+    }
+
     if (parsedCompanyId) {
       const company = await loadCompanyProfile(parsedCompanyId, auditorOrgId);
       if (company) {
@@ -123,12 +163,25 @@ async function aiChat(req, res) {
       }
     }
 
+    systemPrompt += buildAuditFocusBlock({
+      auditId: auditId || null,
+      clauseRef: clauseRef || null,
+      questionId: questionId || null,
+      questionText: questionText || null,
+      standardKey: standardKey || null,
+    });
+
     let contextChunks = [];
     try {
+      const standardCodes = activeStandard
+        ? resolveStandardCodesForFilter(activeStandard)
+        : [];
       contextChunks = await searchKnowledge(message.trim(), organizationId, {
         topK: 15,
         minScore: 0.2,
         companyId: parsedCompanyId,
+        standardId: activeStandard ? parsedStandardId : null,
+        standardCodes,
       });
     } catch (err) {
       logger.warn('[AI_CHAT] searchKnowledge failed, proceeding without context:', err.message);
@@ -167,9 +220,14 @@ async function aiChat(req, res) {
       responseTimeMs,
     }).catch(err => logger.warn('[AI_CHAT] Usage log failed:', err.message));
 
+    const citations = buildCitationsFromChunks(contextChunks);
+
     res.json({
       reply: result.content,
       contextUsed: contextChunks.length,
+      sourcesCount: citations.length,
+      citations,
+      standardId: activeStandard ? parsedStandardId : null,
       _aiMeta: {
         provider,
         model: result.model,

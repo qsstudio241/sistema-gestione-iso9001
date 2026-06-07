@@ -4,11 +4,43 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import { hasCompanyAccess, canEditCompany } from "../utils/companyAccess";
+import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
+import SgqDataGrid from "./SgqDataGrid";
+import PencilIcon from "./icons/PencilIcon";
+import TrashIcon from "./icons/TrashIcon";
 import "./CompaniesPage.css";
 
+function CompanyLogoThumb({ companyId, logoUrl, cacheBust }) {
+  const src = useCompanyLogoUrl(companyId, logoUrl, cacheBust);
+  if (!logoUrl) {
+    return <span className="company-logo-placeholder">{"\u2014"}</span>;
+  }
+  if (!src) {
+    return <span className="company-logo-placeholder">{"\u2026"}</span>;
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="company-logo-thumb"
+    />
+  );
+}
+
+const GRID_COLUMNS = [
+  { id: "logo", label: "Logo", width: "56px" },
+  { id: "name", label: "Nome", sortable: true },
+  { id: "vat_number", label: "P.IVA", sortable: true },
+  { id: "sector", label: "Settore", sortable: true },
+  { id: "actions", label: "Azioni", width: "150px" },
+];
+
 function CompaniesPage({ onBack }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [auditorOrgId, setAuditorOrgId] = useState(user?.auditor_org_id || null);
   const [auditorOrgs, setAuditorOrgs] = useState([]);
@@ -22,7 +54,16 @@ function CompaniesPage({ onBack }) {
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
 
+  const editingLogoBlob = useCompanyLogoUrl(
+    editingCompany?.id,
+    editingCompany?.logo_url && !logoFile ? editingCompany.logo_url : null,
+    logoTimestamp
+  );
+  const displayLogo = logoPreview || editingLogoBlob;
+
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
+  const isCompanyClient = hasCompanyAccess(user);
+  const canCreateCompany = canEditCompany(user) && !isCompanyClient;
 
   const loadAuditorOrgs = useCallback(async () => {
     try {
@@ -36,6 +77,21 @@ function CompaniesPage({ onBack }) {
   const effectiveOrgId = auditorOrgId || (isSuperadmin && auditorOrgs[0]?.id) || user?.auditor_org_id;
 
   const loadCompanies = useCallback(async () => {
+    if (isCompanyClient) {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiService.getCompanies({});
+        setCompanies(res.data || []);
+      } catch (err) {
+        setError(err.message || "Errore caricamento aziende");
+        setCompanies([]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const orgId = effectiveOrgId;
     if (!orgId) {
       if (isSuperadmin && auditorOrgs.length === 0) {
@@ -62,7 +118,7 @@ function CompaniesPage({ onBack }) {
     } finally {
       setLoading(false);
     }
-  }, [effectiveOrgId, isSuperadmin, auditorOrgs.length]);
+  }, [effectiveOrgId, isSuperadmin, auditorOrgs.length, isCompanyClient]);
 
   useEffect(() => {
     loadAuditorOrgs();
@@ -86,19 +142,6 @@ function CompaniesPage({ onBack }) {
     setFormData({ name: "", vat_number: "", sector: "", address: "" });
     setLogoFile(null);
     setLogoPreview(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (c) => {
-    setEditingCompany(c);
-    setFormData({
-      name: c.name || "",
-      vat_number: c.vat_number || "",
-      sector: c.sector || "",
-      address: c.address || "",
-    });
-    setLogoFile(null);
-    setLogoPreview(c.logo_url ? apiService.getCompanyLogoUrl(c.id) + `?t=${logoTimestamp}` : null);
     setModalOpen(true);
   };
 
@@ -167,6 +210,61 @@ function CompaniesPage({ onBack }) {
     }
   };
 
+  function renderGridCell(row, col) {
+    switch (col.id) {
+      case "logo":
+        return (
+          <CompanyLogoThumb
+            companyId={row.id}
+            logoUrl={row.logo_url}
+            cacheBust={logoTimestamp}
+          />
+        );
+      case "actions": {
+        const rowCanEdit = canEditCompany(user, row.id);
+        return (
+          <div
+            className="companies-row-actions"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="grid-icon-btn"
+              title="Apri scheda azienda"
+              aria-label="Apri scheda azienda"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/companies/${row.id}`);
+              }}
+            >
+              <PencilIcon />
+            </button>
+            {rowCanEdit && !isCompanyClient && (
+              <button
+                type="button"
+                className="grid-icon-btn grid-icon-btn--danger"
+                title="Elimina"
+                aria-label="Elimina"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(row.id);
+                }}
+              >
+                <TrashIcon />
+              </button>
+            )}
+          </div>
+        );
+      }
+      default: {
+        const val = row[col.id];
+        if (val == null || val === "") return "\u2014";
+        return val;
+      }
+    }
+  }
+
   return (
     <div className="companies-page">
       <div className="companies-header">
@@ -201,57 +299,29 @@ function CompaniesPage({ onBack }) {
       )}
 
       <div className="companies-actions">
-        <button type="button" className="btn-primary" onClick={openCreate} disabled={!effectiveOrgId}>
-          + Nuova Azienda
-        </button>
+        {canCreateCompany && (
+          <button type="button" className="btn-primary" onClick={openCreate} disabled={!effectiveOrgId}>
+            + Nuova Azienda
+          </button>
+        )}
       </div>
 
-      {loading ? (
-        <div className="companies-loading">Caricamento...</div>
-      ) : (
-        <div className="companies-list">
-          {companies.length === 0 ? (
-            <p className="companies-empty">Nessuna azienda. Clicca "Nuova Azienda" per aggiungerne una.</p>
-          ) : (
-            <table className="companies-table">
-              <thead>
-                <tr>
-                  <th>Logo</th>
-                  <th>Nome</th>
-                  <th>P.IVA</th>
-                  <th>Settore</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map((c) => (
-                  <tr key={c.id}>
-                    <td className="company-logo-cell">
-                      {c.logo_url ? (
-                        <img
-                          src={apiService.getCompanyLogoUrl(c.id) + `?t=${logoTimestamp}`}
-                          alt={`Logo ${c.name}`}
-                          className="company-logo-thumb"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      ) : (
-                        <span className="company-logo-placeholder">-</span>
-                      )}
-                    </td>
-                    <td>{c.name}</td>
-                    <td>{c.vat_number || "-"}</td>
-                    <td>{c.sector || "-"}</td>
-                    <td>
-                      <button type="button" className="btn-edit" onClick={() => openEdit(c)}>Modifica</button>
-                      <button type="button" className="btn-delete" onClick={() => handleDelete(c.id)}>Elimina</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+      <section className="companies-grid-section" aria-label="Elenco aziende">
+        <SgqDataGrid
+          rows={companies}
+          columns={GRID_COLUMNS}
+          loading={loading}
+          emptyMessage={'Nessuna azienda. Clicca "Nuova Azienda" per aggiungerne una.'}
+          theme="plain"
+          renderCell={renderGridCell}
+          getRowKey={(row) => row.id}
+          onRowClick={(row) => navigate(`/companies/${row.id}`)}
+          getSortValue={(row, colId) => {
+            if (colId === "logo" || colId === "actions") return "";
+            return row[colId] ?? "";
+          }}
+        />
+      </section>
 
       {modalOpen && (
         <div className="companies-modal-overlay" onClick={closeModal}>
@@ -294,14 +364,14 @@ function CompaniesPage({ onBack }) {
               <div className="form-group">
                 <label>Logo aziendale</label>
                 <div className="logo-upload-area">
-                  {logoPreview && (
+                  {displayLogo && (
                     <div className="logo-preview-container">
-                      <img src={logoPreview} alt="Anteprima logo" className="logo-preview" />
+                      <img src={displayLogo} alt="Anteprima logo" className="logo-preview" />
                       <button type="button" className="btn-remove-logo" onClick={handleRemoveLogo} title="Rimuovi logo">✕</button>
                     </div>
                   )}
                   <label className="btn-upload-logo">
-                    {logoPreview ? "Cambia logo" : "Carica logo"}
+                    {displayLogo ? "Cambia logo" : "Carica logo"}
                     <input
                       type="file"
                       accept="image/*"

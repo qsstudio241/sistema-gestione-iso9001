@@ -1,71 +1,194 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-04-19.
+> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-05-21.  
+> **TOC interno guida operativa**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#indice-rapido-navigazione).
 
 ---
 
-## Dove trovare cosa
+## Legenda tag
 
-| Scopo | File | Note |
-|-------|------|------|
-| **Contesto progetto (AI / onboarding)** | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) (root) | Stack, infra, workflow deploy, regole operative |
-| **Roadmap e stato** | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, stato avanzamento |
-| **Mini-specifica commerciale / §8.2** | [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) | Pilota riesame requisiti contratto; stati, ruoli, integrazione ingest |
-| **Mini-specifica Office round-trip** | [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) | Editing Word/Excel desktop con WebDAV/Helper custom (Windows-first) |
-| **Esperienza operativa (unica guida)** | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Deploy, Word Verbale, DB/repro; **sezione “Piano qualità”** = fasi sviluppo, DoD, piramide test e smoke robustezza — aggiornare qui, non creare nuovi SESSION_NOTES |
-| **Storico sessioni** | [archive/sessions/](archive/sessions/) | Solo consultazione |
-| **Schema DB** | [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Leggere prima di modificare il DB |
-| **Quick-ref DB e API** | [DATABASE.md](DATABASE.md), [BACKEND_API.md](BACKEND_API.md) | Riferimento rapido (spostati da root) |
-| **Deploy Netlify** | [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) | Build, deploy, convenzioni Git |
-| **Checklist deploy release** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) | Passi per release (build, backend VPS, push, smoke test) |
-| **Perdita connessione (offline/mobile)** | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) | Comportamento offline, sync, health check, mobile; **§ Logout** = limiti vs ADR-007 |
-| **Open points: logout, backup PC, cache audit** | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Fonte unica per non “perdere” requisiti tra sessioni |
-| **Utenti, checklist, sistemi, report** | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) | Organization/user, ruoli, checklist ISO e custom, template report, self-assessment |
-| **Architettura utenti e RBAC** | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) | Tenant → studio → azienda; ruoli canonici; deleghe; scope API; piano migrazione (fonte per hardening sicurezza) |
-| **Migrazione DB: split tenant** | [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md) | Da un solo `organization_id` a più organizzazioni (QS_Studio, MASON, ERAM); fasi, inventario tabelle, checklist |
-| **Decisioni architetturali** | [adr/README.md](adr/README.md) | Indice ADR; dettaglio in `adr/ADR-*.md` |
-| **Manuali** | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) | Uso applicazione e procedure |
-| **Riferimenti tecnici** | [REFERENCE.md](REFERENCE.md), [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Infra prod., **SSH vs SQL**, ruolo assistente Cursor |
-| **API/SSH e deploy da agente** | [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) | URL health, host SSH/SQL pubblici; credenziali solo file gitignored (`.ssh-deploy.local.ps1`, `database.json`) |
-| **Storico / archive** | [archive/](archive/) | CLEANUP_ROADMAP, ROADMAP_RESET_COMPLETO (doc storici) |
+| Tag | Significato |
+|-----|-------------|
+| **attivo** | Documentazione corrente — aggiornare quando cambia il sistema |
+| **storico** | Solo consultazione — non duplicare contenuti altrove |
+| **agente** | Brief/task per Cursor Agents (`DEPUTYTASK`, backlog AI) |
+| **normativa** | Testi norma o checklist di dominio (non doc tecnica deploy) |
+| **tooling** | Istruzioni GitHub Copilot / agenti IDE |
 
 ---
 
-## Convenzione: istruzioni e workflow
+## Ingressi obbligatori (ordine sessione)
 
-Le **regole operative** e il **workflow deploy** stanno in **PROJECT_CONTEXT.md**.  
-L’**esperienza accumulata** (bug risolti, procedure) va in **`GUIDA_CONSOLIDATA.md`** — non creare nuovi `SESSION_NOTES_YYYYMMDD.md`.
-
-**Chiarezza e best practice sulla documentazione** (struttura, fonte unica, cosa evitare): sezione *Principi di documentazione* in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md).
-
----
-
-## Proposta riorganizzazione (opzionale)
-
-Se in futuro si vuole riordinare la documentazione, una struttura possibile è:
-
-### 1. Root: solo ingressi essenziali
-- **PROJECT_CONTEXT.md** — contesto progetto, stack, workflow, regole (resta il principale per AI/sviluppatori)
-- **README.md** — descrizione repo, come avviare app/backend (se presente)
-- Eventuali **COMMIT_MESSAGES.md** / **CURSOR_HANDOFF.md** come riferimenti operativi
-
-### 2. docs/: tutto il resto
-- **PROJECT_ROADMAP.md**, **DATABASE_SCHEMA.md**, **NETLIFY_DEPLOYMENT.md** — già in docs/
-- **SESSION_NOTES_*.md** — in `docs/sessions/` (riorganizzazione applicata)
-- **adr/** — già ordinata; da aggiornare solo l’indice in `adr/README.md` (vedi sotto)
-- **Normative/** — documenti normativi (resta com’è)
-
-### 3. ADR: numerazione univoca
-- Oggi ci sono **due ADR-002** (offline-first-sync, checklist-alignment-strategy) e **tre ADR-003** (bidirectional-sync, database-architecture, pwa-mobile-android).
-- Proposta: rinumerare in sequenza univoca (ADR-002, ADR-003, …) e aggiornare **solo** `docs/adr/README.md` con la tabella aggiornata e i link ai file (i nomi file possono restare per storia, oppure rinominare in `ADR-NNN-titolo-kebab-case.md`).
-- Non è obbligatorio farlo subito: si può fare in un unico passaggio quando si tocca la documentazione ADR.
-
-### 4. Riduzione duplicati
-- **CLEANUP_ROADMAP.md**, **ROADMAP_RESET_COMPLETO.md**: valutare se unificarli con **PROJECT_ROADMAP.md** (o marcare come “storico” e tenere un solo roadmap attivo).
-- **COMMIT_MESSAGES.md**: è di sessione; si può spostare in `docs/sessions/` o rinominare con data (es. `COMMIT_MESSAGES_20260208.md`) e citare da SESSION_NOTES.
+| Tag | File | Note |
+|-----|------|------|
+| attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, infra, workflow |
+| attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
+| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test |
+| attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
+| attivo | [README.md](README.md) | Mappa cartelle how-to / reference / specs |
 
 ---
 
-**Riorganizzazione applicata**: session notes e COMMIT_MESSAGES in `docs/sessions/`; CLEANUP e ROADMAP_RESET in `docs/archive/`; DATABASE e BACKEND_API in `docs/`; indice ADR completo in `adr/README.md`.
+## Struttura cartelle (Fase 2)
 
-Riepilogo: **sì, ha senso riorganizzare in modo organico** (meno file in root, indice chiaro, ADR con numeri univoci). Si può fare in modo incrementale; questo file serve da indice e da traccia per la riorganizzazione futura.
+| Cartella | Contenuto | README |
+|----------|-----------|--------|
+| [how-to/](how-to/) | Procedure deploy, migrazioni DB | [how-to/README.md](how-to/README.md) |
+| [reference/](reference/) | Schema DB, API, mapping | [reference/README.md](reference/README.md) |
+| [specs/](specs/) | Mini-specifiche prodotto | [specs/README.md](specs/README.md) |
+| [docs/README.md](README.md) | Ingresso umano | — |
+
+I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** per link vecchi.
+
+---
+
+## How-to — procedure
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | **Hub deploy** | [how-to/deploy.md](how-to/deploy.md) |
+| attivo | Checklist release | [how-to/DEPLOY_CHECKLIST_RELEASE.md](how-to/DEPLOY_CHECKLIST_RELEASE.md) |
+| attivo | Deploy backend VPS | [how-to/DEPLOY_BACKEND_VPS.md](how-to/DEPLOY_BACKEND_VPS.md) |
+| attivo | Troubleshooting deploy | [how-to/DEPLOY_TROUBLESHOOTING.md](how-to/DEPLOY_TROUBLESHOOTING.md) |
+| attivo | Deploy Netlify | [how-to/NETLIFY_DEPLOYMENT.md](how-to/NETLIFY_DEPLOYMENT.md) |
+| attivo | Accesso SSH/API agenti | [how-to/ACCESSO_DEPLOY_AGENTS.md](how-to/ACCESSO_DEPLOY_AGENTS.md) |
+| attivo | Hub migrazioni DB | [how-to/database-migrations.md](how-to/database-migrations.md) |
+
+---
+
+## Reference — schemi e API
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | Schema DB | [reference/DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) |
+| attivo | Quick-ref DB | [reference/DATABASE.md](reference/DATABASE.md) |
+| attivo | Quick-ref API | [reference/BACKEND_API.md](reference/BACKEND_API.md) |
+| attivo | Mapping tabelle | [reference/DATABASE_MAPPING.md](reference/DATABASE_MAPPING.md) |
+
+---
+
+## Specs — requisiti prodotto
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | Riesame requisiti §8.2 | [specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
+| attivo | Office WebDAV | [specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
+| attivo | Modulo saldatura | [specs/piano_modulo_saldatura_v2.plan.md](specs/piano_modulo_saldatura_v2.plan.md) |
+
+---
+
+## Documentazione attiva (root `docs/`)
+
+| Tag | Scopo | File |
+|-----|-------|------|
+| attivo | Offline / sync / logout | [GESTIONE_PERDITA_CONNESSIONE.md](GESTIONE_PERDITA_CONNESSIONE.md) |
+| attivo | RBAC multi-tenant | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+| agente | Alert, scadenze, tipi documento | [AGENT_ALERTS_AND_DOC_TYPES.md](AGENT_ALERTS_AND_DOC_TYPES.md) |
+| attivo | Utenti, checklist, report | [SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md](SCHEMA_UTENTI_CHECKLIST_SISTEMI_REPORT.md) |
+| attivo | Split tenant DB | [MIGRATION_PLAN_SPLIT_TENANTS.md](MIGRATION_PLAN_SPLIT_TENANTS.md) |
+| attivo | Manuali utente/ops | [MANUALE_UTENTE.md](MANUALE_UTENTE.md), [MANUALE_OPERATIVO_FASE1.md](MANUALE_OPERATIVO_FASE1.md) |
+| attivo | Riferimenti infra | [REFERENCE.md](REFERENCE.md) |
+| attivo | Flussi audit / tipologie | [FLUSSO_TIPOLOGIA_AUDIT.md](FLUSSO_TIPOLOGIA_AUDIT.md), [TIPI_AUDIT_E_FLESSIBILITA.md](TIPI_AUDIT_E_FLESSIBILITA.md) |
+| attivo | Assegnazioni | [ASSEGNAZIONE_REPORT_E_CHECKLIST.md](ASSEGNAZIONE_REPORT_E_CHECKLIST.md), [ASSEGNAZIONE_STANDARD_UTENTI.md](ASSEGNAZIONE_STANDARD_UTENTI.md) |
+| attivo | Template Word placeholder | [ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md](ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md) |
+| attivo | Roadmap template custom | [ROADMAP_TEMPLATE_E_CHECKLIST_PERSONALIZZATE.md](ROADMAP_TEMPLATE_E_CHECKLIST_PERSONALIZZATE.md) |
+| attivo | Backup DB / branch | [BACKUP_DATABASE_E_USO_BRANCH.md](BACKUP_DATABASE_E_USO_BRANCH.md) |
+| attivo | Verifica isolamento dati | [VERIFICA_ISOLAMENTO_DATI.md](VERIFICA_ISOLAMENTO_DATI.md) |
+| attivo | Debug mobile | [MOBILE_DEBUG_UTILS.md](MOBILE_DEBUG_UTILS.md) |
+
+**Deploy:** ingresso unico [how-to/deploy.md](how-to/deploy.md). Esperienza operativa: [GUIDA_CONSOLIDATA § A](GUIDA_CONSOLIDATA.md#a-checklist-custom-sync-deploy-vps).
+
+**Open points trasversali:** [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (*Open points e memoria trasversale*) + [adr/ADR-007](adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).
+
+---
+
+## ADR — decisioni architetturali
+
+| Tag | File | Note |
+|-----|------|------|
+| attivo | [adr/README.md](adr/README.md) | Indice completo; numeri duplicati (002/003) — identificare dal **nome file** |
+| attivo | [adr/ADR-008-event-sourcing-sync.md](adr/ADR-008-event-sourcing-sync.md) | **Vincolante** per sync — leggere prima di toccare sync/lock |
+| attivo | [adr/ADR-009-multi-standard-architettura-per-norma.md](adr/ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / document_type |
+| attivo | [adr/ADR-010-ai-agentic-architecture.md](adr/ADR-010-ai-agentic-architecture.md) | AI agentica, NormBroker, licenze |
+
+Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
+
+---
+
+## Agent tasks (`docs/agent-tasks/`)
+
+| Tag | File | Note |
+|-----|------|------|
+| agente | [agent-tasks/DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) | **Unico brief attivo** — sovrascritto a ogni task |
+| agente | [agent-tasks/README.md](agent-tasks/README.md) | Convenzione deputy |
+| agente | `TASK_AI_*.md`, `TASK_SPRINT*.md`, … | Backlog/spec — **non** aggiornare come fonte operativa |
+| agente | [agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md](agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md) | Chiusura deputy |
+
+---
+
+## Storico e archive
+
+| Tag | Percorso | Note |
+|-----|----------|------|
+| storico | [archive/sessions/](archive/sessions/) | `SESSION_NOTES_*` feb–mar 2026 |
+| storico | [archive/sessions/COMMIT_MESSAGES.md](archive/sessions/COMMIT_MESSAGES.md) | Template commit sessione 08/02/2026 |
+| storico | [archive/](archive/) | `CLEANUP_ROADMAP`, `ROADMAP_RESET_COMPLETO` |
+| storico | [sessions/README.md](sessions/README.md) | Punta a guida + archive |
+
+---
+
+## Normative e checklist cliente (dominio)
+
+| Tag | Percorso | Note |
+|-----|----------|------|
+| normativa | [Normative/](Normative/) | UNI ISO 9001, 14001, 45001, 3834-* |
+| normativa | [../CheckList/](../CheckList/) | Template checklist cliente |
+| normativa | [../Check List Audit/](../Check%20List%20Audit/) | Checklist audit in campo |
+
+---
+
+## Root e moduli
+
+| Tag | File | Note |
+|-----|------|------|
+| attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI |
+| tooling | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot |
+| tooling | [../.github/agents/](../.github/agents/) | Planner / Implementer / Reviewer |
+| attivo | [../app/README.md](../app/README.md), [../backend/README.md](../backend/README.md) | Avvio moduli |
+
+---
+
+## Convenzioni operative
+
+- **Esperienza e procedure**: solo [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) + [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) — **non** creare `SESSION_NOTES_*.md`.
+- **Principi di scrittura doc**: [GUIDA_CONSOLIDATA — Principi di documentazione](GUIDA_CONSOLIDATA.md#principi-di-documentazione-chiarezza-e-best-practice).
+- **Deputy**: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+---
+
+## Roadmap riorganizzazione documentazione
+
+**Chiusura sessione 2026-05-21:** Fase 1 e 2 su `main`. [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) (Fase 1) **merged**; Fase 2 in commit `b5f303b`. Nessuna azione GitHub pendente.
+
+| Fase | Stato | Contenuto |
+|------|-------|-----------|
+| **1** | **Fatto (2026-05-21)** | TOC in `GUIDA_CONSOLIDATA`, tag in questo indice, `COMMIT_MESSAGES` in archive, ADR 008–010 in `adr/README` — [PR #58](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/58) |
+| **2** | **Fatto (2026-05-21)** | Cartelle `how-to/`, `reference/`, `specs/`; hub [deploy.md](how-to/deploy.md); stub redirect in root `docs/` |
+| **3** | **In corso** | Slice 3a–3b chiuse 31/05/2026 (ADR-011, archivio `TASK_AI_*`); vedi [GUIDA — Procedura chiusura autonoma](GUIDA_CONSOLIDATA.md#procedura-chiusura-autonoma) |
+
+### Fase 3 — piano operativo (prossima sessione doc)
+
+Eseguire **una slice per commit**; dopo ogni slice: `rg` link rotti, aggiornare questo indice.
+
+| Slice | Priorità | Obiettivo | Definition of Done |
+|-------|----------|-----------|-------------------|
+| **3a** | Alta | **ADR leggibili** | **Fatto (31/05/2026)** — [adr/README.md](adr/README.md): ADR-011; tabella duplicati 002/003 per nome file |
+| **3b** | Media | **Archivio agent-tasks** | **Fatto (31/05/2026)** — `TASK_AI_*` → [archive/agent-tasks/](archive/agent-tasks/); stub in `agent-tasks/` |
+| **3c** | Bassa | **Cartella `explanation/`** (opzionale) | Spostare con `git mv`: `ARCHITETTURA_UTENTI_RBAC`, `FLUSSO_TIPOLOGIA_AUDIT`, `GESTIONE_PERDITA_CONNESSIONE`, `SCHEMA_UTENTI_*`; stub in root; riga in [README.md](README.md) |
+| **3d** | Bassa | **GUIDA più snella** | Estrarre how-to ripetibili (Word verbale, smoke L3, sync) in `docs/how-to/`; in `GUIDA_CONSOLIDATA` restano TOC + § *Esperienza* + link — **non** duplicare procedure intere |
+| **3e** | Differita | **Pulizia stub** | Rimuovere stub `docs/DEPLOY_*.md` ecc. solo se `rg` nel repo = 0 riferimenti (conservare ≥1 release dopo Fase 2) |
+| **3f** | Bassa | **README root repo** | Breve ingresso umano accanto a `PROJECT_CONTEXT.md` (stack, link a `docs/README.md`) |
+
+**Ordine consigliato:** 3a → 3b → (3c se serve) → 3d; 3e solo a distanza; 3f quando utile.
+
+**Non fare in Fase 3:** rinominare file ADR (rischio link esterni); creare `SESSION_NOTES_*`; spostare normative/checklist cliente.

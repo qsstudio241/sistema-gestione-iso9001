@@ -1,28 +1,28 @@
 /**
- * Registro globale dei campi testo in modifica (textarea audit).
- * Evita che hydrate/reconcile sovrascrivano il testo mentre l'utente digita.
+ * Registro globale dei campi testo in modifica (textarea audit / NC).
+ * Evita che hydrate/reconcile o reload lista sovrascrivano il testo mentre l'utente digita.
  */
 
-const activeDrafts = new Map(); // key -> { auditUuid, clearedAt }
+const activeDrafts = new Map(); // key -> { scopeId, fieldId, touchedAt }
 const clearTimers = new Map(); // key -> timeoutId
 
-export function draftFieldKey(auditUuid, fieldId) {
-  if (!auditUuid || fieldId == null) return null;
-  return `${auditUuid}:${fieldId}`;
+export function draftFieldKey(scopeId, fieldId) {
+  if (!scopeId || fieldId == null) return null;
+  return `${scopeId}:${fieldId}`;
 }
 
-export function markDraft(auditUuid, fieldId) {
-  const key = draftFieldKey(auditUuid, fieldId);
+export function markDraft(scopeId, fieldId) {
+  const key = draftFieldKey(scopeId, fieldId);
   if (!key) return;
   if (clearTimers.has(key)) {
     clearTimeout(clearTimers.get(key));
     clearTimers.delete(key);
   }
-  activeDrafts.set(key, { auditUuid, fieldId, touchedAt: Date.now() });
+  activeDrafts.set(key, { scopeId, fieldId, touchedAt: Date.now() });
 }
 
-export function clearDraft(auditUuid, fieldId) {
-  const key = draftFieldKey(auditUuid, fieldId);
+export function clearDraft(scopeId, fieldId) {
+  const key = draftFieldKey(scopeId, fieldId);
   if (!key) return;
   activeDrafts.delete(key);
   if (clearTimers.has(key)) {
@@ -32,8 +32,8 @@ export function clearDraft(auditUuid, fieldId) {
 }
 
 /** Rimuove la bozza dopo un delay (blur) — tempo per autosave/sync. */
-export function scheduleClearDraft(auditUuid, fieldId, delayMs = 1500) {
-  const key = draftFieldKey(auditUuid, fieldId);
+export function scheduleClearDraft(scopeId, fieldId, delayMs = 1500) {
+  const key = draftFieldKey(scopeId, fieldId);
   if (!key) return;
   if (clearTimers.has(key)) clearTimeout(clearTimers.get(key));
   clearTimers.set(
@@ -45,17 +45,22 @@ export function scheduleClearDraft(auditUuid, fieldId, delayMs = 1500) {
   );
 }
 
-export function isDraft(auditUuid, fieldId) {
-  const key = draftFieldKey(auditUuid, fieldId);
+export function isDraft(scopeId, fieldId) {
+  const key = draftFieldKey(scopeId, fieldId);
   return key ? activeDrafts.has(key) : false;
 }
 
-export function hasAnyDraftForAudit(auditUuid) {
-  if (!auditUuid) return false;
-  for (const { auditUuid: uuid } of activeDrafts.values()) {
-    if (uuid === auditUuid) return true;
+export function hasAnyDraftForScope(scopeId) {
+  if (!scopeId) return false;
+  for (const { scopeId: sid } of activeDrafts.values()) {
+    if (sid === scopeId) return true;
   }
   return false;
+}
+
+/** @deprecated alias audit — usare hasAnyDraftForScope */
+export function hasAnyDraftForAudit(auditUuid) {
+  return hasAnyDraftForScope(auditUuid);
 }
 
 /** Solo per test — azzera stato. */

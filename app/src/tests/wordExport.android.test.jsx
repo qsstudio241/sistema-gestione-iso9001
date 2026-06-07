@@ -139,7 +139,7 @@ describe("Android Export Word Fallback", () => {
 
       // Verifica fallback attivato
       expect(result.fallback).toBe(true);
-      expect(result.fileName).toContain("Audit_AUDIT_001_Test_Cliente"); // Note: - replaced with _
+      expect(result.fileName).toContain("Test_Cliente_AUDIT_001"); // formato: client_number
       expect(result.path).toContain("Download/");
 
       // Verifica che saveAs sia stato chiamato (blob download)
@@ -169,7 +169,7 @@ describe("Android Export Word Fallback", () => {
 
       // Verifica NO fallback
       expect(result.fallback).toBeUndefined();
-      expect(result.fileName).toContain("Audit_AUDIT_001_Test_Cliente"); // Note: - replaced with _
+      expect(result.fileName).toContain("Test_Cliente_AUDIT_001"); // formato: client_number
       expect(result.path).toContain("Audit/");
 
       // Verifica che File System API sia stato usato
