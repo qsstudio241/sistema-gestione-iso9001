@@ -57,7 +57,7 @@ function createRes() {
   return res;
 }
 
-describe('aiChat.controller � aiChat', () => {
+describe('aiChat.controller — aiChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
