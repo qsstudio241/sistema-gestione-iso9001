@@ -43,6 +43,32 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 
 ---
 
+## Registro decisioni triage PR backlog (07/06/2026)
+
+Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: mergiare solo fix a basso rischio ancora utili e non già in main; lasciare aperte feature di prodotto o modifiche al sync sensibile (eccezioni golden rules); chiudere ciò che è già recuperato altrove.
+
+### Mergiate su `main`
+| PR | Titolo | Note |
+|----|--------|------|
+| #97 | fix(backend): eliminazione azienda con cleanup dipendenze FK | Fix integrità DB. Conflitti GUIDA (whole-file CRLF) risolti tenendo main + nota esperienza FK. `companyMaintenance.service` + delega controller verificati. |
+| #57 | fix(ai): retry automatico Gemini su 503/429 | Retry server-side mancante in main (solo embeddings lo aveva). Conflitti su `aiAssist.test.js` (allineato a `userId` reale) e GUIDA risolti. Syntax-check OK. |
+
+### Chiuse (contenuto già recuperato / stale)
+| PR | Titolo | Motivo |
+|----|--------|--------|
+| #28 | docs: diagnosi rinnovo Let's Encrypt | Parte operativa (HTTP-01, Apache vs Nginx, port forwarding WAN:80 verso VPS:10880) consolidata in *Ops/Sysadmin — Rinnovo SSL Let's Encrypt* (più sotto). |
+
+### Lasciate aperte (feature/prodotto o sync sensibile — con prossimo passo)
+| PR | Titolo | Perché aperta | Prossimo passo |
+|----|--------|---------------|----------------|
+| #91 | feat(ai): ambito azienda obbligatorio chat+RAG | Feature recente non in main, impatto su chat/RAG esistenti | Valutare impatto con committente, poi rebase + test RAG/chat |
+| #52 | feat: audit close verso document_registry (ADR-009 F5) | Manca migration 066, feature additiva | Migration 066 idempotente + rebase + test chiusura audit |
+| #31 | perf(sync): debounce 1500ms + enqueueOrReplace | Sync sensibile (ADR-008 T3/T4/T5) | Rivalutare vs architettura sync + test L3 multi-device |
+| #38 | feat: compressione foto + Word resize + PhotoEditModal | Feature grossa, nuove dipendenze npm | Test a parte (bundle, upload, export Word, modal mobile) |
+| #10 | feat(settings): pagina Organizzazione P.IVA + logo | Si sovrappone al billing layer (migration 082) in sviluppo | Coordinare con billing per evitare doppioni, poi rebase |
+
+---
+
 ### Sessione 20 maggio 2026 — AI conclusioni: retry Gemini su 503 "model overloaded"
 
 #### Sintomo
@@ -1314,6 +1340,27 @@ La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al fi
 | G5/G7/G9 P2 | Backlog |
 
 **Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
+
+#### Ops/Sysadmin — Rinnovo SSL Let's Encrypt `www.fr-busato.it` (diagnosi HTTP-01)
+
+Recuperato dalla PR #28 (chiusa, contenuto consolidato qui).
+
+| Evidenza | Dettaglio |
+|----------|-----------|
+| Scadenza cert | `notAfter=May 5 11:32:22 2026 GMT` su `https://www.fr-busato.it:8443` |
+| Sintomo `certbot renew` | Let's Encrypt risponde **HTTP-01 unauthorized**: **404** su `http://www.fr-busato.it/.well-known/acme-challenge/...` |
+| Causa radice | La porta **80 pubblica** (e la redirect HTTPS) arriva ad **Apache su Raspbian** (`Server: Apache/2.4.66`), non all'**Nginx** del VPS Ubuntu dove gira Certbot. Il backend API (8443, Nginx verso Node) è corretto, ma il validatore ACME non colpisce quel Nginx. |
+| Trappola `/etc/hosts` | Rimuovere eventuale `127.0.0.1 www.fr-busato.it` sul VPS (fa risolvere il dominio in loopback; backup `/etc/hosts.bak`). Da solo **non** risolve il 404 esterno. |
+| **Porta 10880 (Nginx VPS)** | Virtual host dedicato `acme-challenge-10880.conf` (`sites-available` + symlink `sites-enabled`): **listen 10880**, serve solo `/.well-known/acme-challenge/` da `root /var/www/html`, resto **404**. Verifica da Internet: `curl -s http://www.fr-busato.it:10880/.well-known/acme-challenge/probe-10880` deve dare `probe-10880`. |
+| **Renewal config** | In `/etc/letsencrypt/renewal/www.fr-busato.it.conf`: `authenticator = webroot`, `webroot_path = /var/www/html` (niente plugin nginx al renew; backup `.bak.<timestamp>`). |
+
+**Per sbloccare il rinnovo** (azione su router / Raspberry — Let's Encrypt contatta *sempre* la 80 pubblica):
+
+1. **Consigliata:** sul router **WAN:80 verso IP LAN del VPS `fr-sql1`:10880** (TCP). Evitare che il Raspberry intercetti ancora la 80 in ingresso senza forward.
+2. **Alternativa:** **WAN:80 verso VPS:80** (se Nginx ascolta sulla 80 standard).
+3. **Oppure** completare HTTP-01 **su Apache** (host che oggi risponde sulla 80): webroot/proxy verso `/var/www/html` del VPS.
+
+Quando da rete esterna `curl -s http://www.fr-busato.it/.well-known/acme-challenge/probe-10880` restituisce `probe-10880` (non un **301** Apache verso HTTPS): sul VPS `sudo certbot renew --force-renewal` poi `sudo systemctl reload nginx`. Verifica date: `echo | openssl s_client -connect 127.0.0.1:8443 -servername www.fr-busato.it 2>/dev/null | openssl x509 -noout -dates`.
 
 ---
 
