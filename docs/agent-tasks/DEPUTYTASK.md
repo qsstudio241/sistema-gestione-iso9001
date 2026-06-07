@@ -1,3 +1,19 @@
+# DEPUTYTASK — Tab Aziende: azioni riga a icone
+
+**Stato:** ✅ TEST OK — chiuso il 07/06/2026
+**Task:** Consolidare i pulsanti di riga della tab Aziende (`CompaniesPage`) in icone e rimuovere il "Modifica" ridondante.
+**Cosa fatto:**
+- Rimosso il pulsante testuale "Modifica" di riga (era ridondante con la Scheda); il modale resta attivo solo per la creazione ("+ Nuova Azienda"). Rimossa la funzione `openEdit` non più usata; creazione/navigazione/eliminazione invariate.
+- "Scheda" → pulsante icona matita (`title`/`aria-label` "Apri scheda azienda", naviga a `/companies/:id`).
+- "Elimina" → pulsante icona cestino (`title`/`aria-label` "Elimina", flusso `deleteCompany` con conferma).
+- **Nuovo standard pulsante-icona riutilizzabile:** icone SVG inline in `app/src/components/icons/` (`PencilIcon.jsx`, `TrashIcon.jsx`) secondo `design-system/ICONS.md` (props `size`/`className`, `currentColor`, nessuna dipendenza) + classe CSS unica `.grid-icon-btn` (+ variante `--danger`) in `CompaniesPage.css`. **Riusabile per Commesse/Anagrafiche.**
+- CSS: rimossa `.btn-scheda` (univoca di questa pagina); `.btn-edit`/`.btn-delete` mantenute perché ancora referenziate da altri componenti.
+- Test L1: `app/src/tests/companiesRowActions.test.jsx` (3 test, verde) — presenza icone matita/cestino, navigazione scheda, flusso eliminazione, assenza del "Modifica" di riga. Build Vite OK.
+
+**Commit:** `65fc2cf` su `main`.
+
+---
+
 # DEPUTYTASK — Fix visibilità logo azienda
 
 **Stato:** ✅ TEST OK — chiuso il 07/06/2026  
