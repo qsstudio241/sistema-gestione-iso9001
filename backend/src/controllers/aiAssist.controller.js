@@ -1,6 +1,12 @@
 const logger = require('../utils/logger');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const contextBuilder = require('../services/aiContextBuilder.service');
+const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
+const {
+  loadStandardProfile,
+  resolveStandardCodesForFilter,
+  buildStandardContextBlock,
+} = require('../services/aiStandardContext.service');
 
 function stripCodeFences(raw) {
   let s = String(raw || '').trim();
@@ -52,9 +58,25 @@ async function suggest(req, res) {
         });
     }
 
+    const systemPromptBase = await enrichSystemPromptWithOrganization(
+      built.systemPrompt,
+      req.user.organization_id
+    );
+
+    let systemPrompt = systemPromptBase;
+    const parsedStandardId = context.standardId
+      ? parseInt(context.standardId, 10) || null
+      : null;
+    if (parsedStandardId) {
+      const activeStandard = await loadStandardProfile(parsedStandardId);
+      if (activeStandard) {
+        systemPrompt += buildStandardContextBlock(activeStandard);
+      }
+    }
+
     const result = await chat(
       [
-        { role: 'system', content: built.systemPrompt },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: built.userPrompt },
       ],
       { temperature: 0.3, responseFormat: 'json' }

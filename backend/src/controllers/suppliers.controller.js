@@ -7,6 +7,12 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // ─── LIST ─────────────────────────────────────────────────────────────────
 
@@ -15,9 +21,14 @@ async function listSuppliers(req, res) {
         const { organization_id } = req.user;
         const { supplier_type, is_active } = req.query;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 's');
+
         let where = ['s.organization_id = @org'];
         const params = { org: organization_id };
+        Object.assign(params, companyFilter.params);
 
+        if (companyFilter.clause) where.push(companyFilter.clause);
         if (supplier_type) { where.push('s.supplier_type = @st'); params.st = supplier_type; }
         if (is_active !== undefined) { where.push('s.is_active = @ia'); params.ia = is_active === 'false' ? 0 : 1; }
 

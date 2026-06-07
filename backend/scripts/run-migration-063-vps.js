@@ -1,5 +1,5 @@
 /**
- * Migrazione 063 — aggiunge company_id a knowledge_chunks
+ * Migrazione 063 ï¿½ aggiunge company_id a knowledge_chunks
  * Eseguire sul VPS: node /tmp/run-migration-063-vps.js
  */
 const sql = require('/var/www/sgq-backend/node_modules/mssql');

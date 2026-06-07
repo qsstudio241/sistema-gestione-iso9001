@@ -37,23 +37,37 @@
 .docregistry-subtitle {
   font-size: 0.85rem;
   color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.docregistry-file-alert {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: #b45309;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.docregistry-file-alert:hover {
+  color: #92400e;
+}
+
+.docregistry-file-alert-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 /* ─── Pulsanti globali ─────────────────────────────────────────────────────── */
-
-.btn-primary {
-  padding: 8px 18px;
-  background: #1e3a5f;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.btn-primary:hover { background: #2c5282; }
+/* .btn-primary definito in index.css (fonte unica) */
 
 .btn-reset {
   padding: 6px 12px;
@@ -142,6 +156,17 @@
   gap: 20px;
 }
 
+.priority-view-note {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  line-height: 1.45;
+}
+
 .priority-all-ok {
   text-align: center;
   padding: 60px 20px;
@@ -165,6 +190,11 @@
 .priority-section-red    { background: #fef2f2; color: #991b1b; }
 .priority-section-orange { background: #fffbeb; color: #92400e; }
 .priority-section-blue   { background: #eff6ff; color: #1e40af; }
+.priority-section-amber  { background: #fffbeb; color: #92400e; }
+
+.priority-card-amber { border-left: 4px solid #f59e0b; }
+.dot-amber { background: #f59e0b; }
+.text-amber { color: #b45309; font-size: 0.82rem; }
 
 .ps-hint {
   font-weight: 400;
@@ -428,64 +458,7 @@
 }
 .docregistry-empty p { margin-bottom: 16px; font-size: 1rem; }
 
-/* ─── Tabella ──────────────────────────────────────────────────────────────── */
-
-.docregistry-table-wrap {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-}
-
-.docregistry-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.docregistry-table thead {
-  background: #1e3a5f;
-  color: #fff;
-}
-.docregistry-table th {
-  padding: 10px 12px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.docregistry-table tbody tr {
-  border-bottom: 1px solid #f3f4f6;
-  transition: background 0.1s;
-}
-.docregistry-table tbody tr:hover { background: #f8fafc; }
-.docregistry-table td {
-  padding: 9px 12px;
-  vertical-align: middle;
-}
-
-/* Semaforo righe */
-.docregistry-table tr.expiry-scaduto       { background: #fff5f5; }
-.docregistry-table tr.expiry-scaduto:hover { background: #fee2e2; }
-.docregistry-table tr.expiry-warning       { background: #fffbeb; }
-.docregistry-table tr.expiry-warning:hover { background: #fef3c7; }
-.docregistry-table tr.expiry-obsoleto      { opacity: 0.55; }
-
-/* Colonne */
-.col-code        { white-space: nowrap; font-family: monospace; font-size: 0.8rem; color: #374151; }
-.col-title       { min-width: 200px; }
-.col-type        { white-space: nowrap; }
-.col-rev         { text-align: center; color: #6b7280; }
-.col-status      { white-space: nowrap; }
-.col-expiry      { white-space: nowrap; }
-.col-expiry.expiry-scaduto { color: #991b1b; font-weight: 600; }
-.col-expiry.expiry-warning { color: #92400e; font-weight: 600; }
-.col-company     { white-space: nowrap; color: #6b7280; }
-.col-responsible { color: #6b7280; font-size: 0.82rem; }
-.col-actions     { white-space: nowrap; text-align: right; }
-
-.doc-title  { display: block; font-weight: 500; color: #111827; }
-.doc-clause { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+/* Badge tipo/stato (usati anche da DocumentDataGrid) */
 
 .doc-type-badge {
   display: inline-block;
@@ -537,11 +510,18 @@
 
 /* ─── Selettore vista albero ───────────────────────────────────────────────── */
 
+.tree-view-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-bottom: 12px;
+}
+
 .tree-view-selector {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
 }
 
 .tree-view-selector__label {
@@ -567,6 +547,53 @@
   outline: none;
   border-color: #1e3a5f;
   box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.12);
+}
+
+.docregistry-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.docregistry-scope-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docregistry-scope-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+.docregistry-scope-select {
+  min-width: 200px;
+  padding: 7px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: #1e3a5f;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.docregistry-scope-select:focus {
+  outline: none;
+  border-color: #1e3a5f;
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.12);
+}
+
+.catalog-scope-hint {
+  font-size: 0.85rem;
+  color: #4b5563;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* ─── Nodo clausola nell'albero per-standard ──────────────────────────────── */
@@ -617,12 +644,47 @@
 }
 
 .docregistry-tree-sidebar {
-  width: 260px;
-  min-width: 260px;
-  border-right: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  min-width: 0;
+  border-right: none;
   background: #f8f9fa;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   max-height: 75vh;
+}
+
+.docregistry-tree-resizer {
+  flex-shrink: 0;
+  width: 6px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  touch-action: none;
+}
+
+.docregistry-tree-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: #e5e7eb;
+  transition: background 0.15s ease;
+}
+
+.docregistry-tree-resizer:hover::after,
+body.sgq-doc-tree-resizing .docregistry-tree-resizer::after {
+  background: #1a73e8;
+}
+
+body.sgq-doc-tree-resizing,
+body.sgq-doc-tree-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .docregistry-tree-content {
@@ -682,6 +744,22 @@
   gap: 4px;
 }
 
+.norm-code-inline {
+  font-family: monospace;
+  font-size: 11px;
+  color: #3b82f6;
+}
+
+.norm-validity-inline {
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.norm-validity-inline--vigente  { color: #15803d; background: #dcfce7; }
+.norm-validity-inline--superata { color: #b45309; background: #fef3c7; }
+.norm-validity-inline--ritirata { color: #b91c1c; background: #fee2e2; }
+
 .tree-doc-card__badge {
   background: #e5e7eb;
   color: #374151;
@@ -700,7 +778,7 @@
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
@@ -720,24 +798,37 @@
   font-size: 14px;
   padding: 4px 6px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.tree-doc-card:hover .tree-doc-card__action-btn {
-  opacity: 0.5;
-}
-
-.tree-doc-card__action-btn:hover {
-  opacity: 1 !important;
+.tree-doc-card__action-btn:active {
   background: #dbeafe;
 }
 
-.tree-doc-card:hover .tree-doc-card__delete-btn,
-.tree-doc-card:hover .tree-doc-card__move-btn {
-  opacity: 0.5;
+/* Desktop: pulsanti compatti, visibili al passaggio del mouse */
+@media (hover: hover) {
+  .tree-doc-card__action-btn,
+  .tree-doc-card__delete-btn,
+  .tree-doc-card__move-btn {
+    opacity: 0;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__action-btn {
+    opacity: 0.5;
+  }
+
+  .tree-doc-card__action-btn:hover {
+    opacity: 1 !important;
+    background: #dbeafe;
+  }
+
+  .tree-doc-card:hover .tree-doc-card__delete-btn,
+  .tree-doc-card:hover .tree-doc-card__move-btn {
+    opacity: 0.5;
+  }
 }
 
 .tree-doc-card__delete-btn:hover {
@@ -1151,11 +1242,13 @@
     flex-direction: column;
   }
   .docregistry-tree-sidebar {
-    width: 100%;
-    min-width: 0;
+    width: 100% !important;
+    flex-basis: auto !important;
     max-height: 200px;
-    border-right: none;
     border-bottom: 1px solid #e5e7eb;
+  }
+  .docregistry-tree-resizer {
+    display: none;
   }
   .docregistry-tree-content {
     max-height: none;

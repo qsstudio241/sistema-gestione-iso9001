@@ -1,5 +1,5 @@
 /**
- * NormUploadButton  stili coerenti con il design system SGQ
+ * NormUploadButton — stili coerenti con il design system SGQ
  */
 
 .norm-upload {
@@ -255,27 +255,113 @@
   margin-top: 2px;
 }
 
-/* Badge qualità */
+.norm-upload__validation-error {
+  font-size: 13px;
+  color: #dc2626;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+}
+.norm-upload__size-warning {
+  font-size: 13px;
+  color: #92400e;
+  padding: 8px 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+}
 
-.norm-quality-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+/* Import da lista codici (Fase 3) */
+
+.norm-folder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.norm-folder-actions .norm-upload {
+  margin-bottom: 0;
+}
+
+.norm-codes-import__hint {
+  margin: 0 16px 12px;
+  font-size: 0.85rem;
+  color: #5a6478;
+  line-height: 1.45;
+}
+
+.norm-codes-import__textarea {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border: 1px solid #d0d5e0;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.norm-codes-import__textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+}
+
+.norm-codes-import__count {
+  margin: 0 16px 12px;
+  font-size: 0.82rem;
+  color: #007bff;
   font-weight: 600;
 }
 
-.norm-quality--good {
-  background: #dcfce7;
-  color: #166534;
+.norm-codes-import__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
 }
 
-.norm-quality--partial {
-  background: #fef9c3;
-  color: #854d0e;
+.norm-codes-import__pill {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
-.norm-quality--poor {
-  background: #fee2e2;
-  color: #991b1b;
+.norm-codes-import__pill--ok {
+  background: #ecfdf5;
+  color: #047857;
 }
+
+.norm-codes-import__pill--dup {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.norm-codes-import__pill--warn {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.norm-codes-import__pill--err {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.norm-upload__result-item--warn {
+  border-left-color: #f59e0b;
+}
+
+.norm-codes-import__link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #007bff;
+}
+

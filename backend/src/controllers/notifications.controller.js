@@ -20,6 +20,8 @@ async function getConfig(req, res) {
         SELECT id, organization_id, recipients_email,
                alert_days_1, alert_days_2, send_time,
                alert_doc_expiry, alert_nc_open, alert_qualif_expiry,
+               doc_escalation_enabled, doc_use_legacy_digest, doc_notify_responsible,
+               doc_escalation_profile_id,
                enabled, updated_at
         FROM notifications_config
         WHERE organization_id = @orgId
@@ -36,6 +38,10 @@ async function getConfig(req, res) {
         alert_doc_expiry: true,
         alert_nc_open: true,
         alert_qualif_expiry: false,
+        doc_escalation_enabled: true,
+        doc_use_legacy_digest: false,
+        doc_notify_responsible: false,
+        doc_escalation_profile_id: null,
         enabled: false,
       });
     }
@@ -47,6 +53,9 @@ async function getConfig(req, res) {
       alert_doc_expiry:    !!row.alert_doc_expiry,
       alert_nc_open:       !!row.alert_nc_open,
       alert_qualif_expiry: !!row.alert_qualif_expiry,
+      doc_escalation_enabled: row.doc_escalation_enabled == null ? true : !!row.doc_escalation_enabled,
+      doc_use_legacy_digest:  !!row.doc_use_legacy_digest,
+      doc_notify_responsible: !!row.doc_notify_responsible,
       enabled:             !!row.enabled,
     });
   } catch (err) {
@@ -68,6 +77,10 @@ async function saveConfig(req, res) {
       alert_doc_expiry    = true,
       alert_nc_open       = true,
       alert_qualif_expiry = false,
+      doc_escalation_enabled = true,
+      doc_use_legacy_digest  = false,
+      doc_notify_responsible = false,
+      doc_escalation_profile_id = null,
       enabled             = true,
     } = req.body;
 
@@ -86,6 +99,10 @@ async function saveConfig(req, res) {
       .input('docExp',   alert_doc_expiry    ? 1 : 0)
       .input('ncOpen',   alert_nc_open       ? 1 : 0)
       .input('qualExp',  alert_qualif_expiry ? 1 : 0)
+      .input('docEsc',   doc_escalation_enabled ? 1 : 0)
+      .input('legacyDigest', doc_use_legacy_digest ? 1 : 0)
+      .input('docResp',  doc_notify_responsible ? 1 : 0)
+      .input('docProfileId', doc_escalation_profile_id || null)
       .input('enabled',  enabled             ? 1 : 0)
       .query(`
         MERGE notifications_config AS target
@@ -100,13 +117,20 @@ async function saveConfig(req, res) {
             alert_doc_expiry    = @docExp,
             alert_nc_open       = @ncOpen,
             alert_qualif_expiry = @qualExp,
+            doc_escalation_enabled = @docEsc,
+            doc_use_legacy_digest  = @legacyDigest,
+            doc_notify_responsible = @docResp,
+            doc_escalation_profile_id = @docProfileId,
             enabled             = @enabled,
             updated_at          = GETDATE()
         WHEN NOT MATCHED THEN
           INSERT (organization_id, recipients_email, alert_days_1, alert_days_2,
-                  send_time, alert_doc_expiry, alert_nc_open, alert_qualif_expiry, enabled)
+                  send_time, alert_doc_expiry, alert_nc_open, alert_qualif_expiry,
+                  doc_escalation_enabled, doc_use_legacy_digest, doc_notify_responsible,
+                  doc_escalation_profile_id, enabled)
           VALUES (@orgId, @emails, @days1, @days2,
-                  @time, @docExp, @ncOpen, @qualExp, @enabled);
+                  @time, @docExp, @ncOpen, @qualExp,
+                  @docEsc, @legacyDigest, @docResp, @docProfileId, @enabled);
       `);
 
     logger.info(`[Notifications] Config salvata per org ${orgId}`);

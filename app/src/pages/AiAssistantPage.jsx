@@ -2,6 +2,21 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useStorage } from "../contexts/StorageContext";
+import {
+  filterStandardsForUser,
+  resolveAutoStandardFromAudit,
+  resolveAutoCompanyFromAudit,
+  resolveActiveChecklistFocus,
+  buildAuditContextSeparatorLabel,
+  buildAiChatContextPayload,
+} from "../utils/aiAssistantContext";
+import AiAssistantCitations from "../components/AiAssistantCitations";
+import {
+  buildChatStorageKey,
+  loadChatMessages,
+  saveChatMessages,
+  clearChatMessages,
+} from "../utils/aiAssistantChatPersist";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS = [
@@ -65,13 +80,19 @@ function formatAiText(text) {
 
 function AiAssistantPage() {
   const { user } = useAuth();
-  const { currentAudit } = useStorage();
-  const [messages, setMessages] = useState([]);
+  const { currentAudit, currentAuditId } = useStorage();
+  const chatStorageKey = useMemo(
+    () => buildChatStorageKey(user?.organization_id, user?.id ?? user?.user_id),
+    [user?.organization_id, user?.id, user?.user_id]
+  );
+  const [messages, setMessages] = useState(() => loadChatMessages(chatStorageKey));
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [reindexing, setReindexing] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const prevAuditIdRef = useRef(null);
+  const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   // --- Contesto azienda ---
@@ -80,6 +101,10 @@ function AiAssistantPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // --- Contesto norma ---
+  const [standardDropdownOpen, setStandardDropdownOpen] = useState(false);
+  const standardDropdownRef = useRef(null);
+
   // companyContext: { companyId, companyName, source: 'auto'|'manual' }
   const [companyContext, setCompanyContext] = useState({
     companyId: null,
@@ -87,8 +112,43 @@ function AiAssistantPage() {
     source: "auto",
   });
 
+  // standardContext: { standardId, label, source: 'auto'|'manual' }
+  const [standardContext, setStandardContext] = useState({
+    standardId: null,
+    label: null,
+    source: "auto",
+  });
+
   // Indice ultimo separatore di contesto inserito (posizione nei messaggi)
   const [contextSeparatorIndex, setContextSeparatorIndex] = useState(-1);
+
+  // Ricarica messaggi se cambia org/utente (es. switch account)
+  useEffect(() => {
+    setMessages(loadChatMessages(chatStorageKey));
+    setContextSeparatorIndex(-1);
+  }, [chatStorageKey]);
+
+  // Persistenza sessionStorage (debounced, esclude stato loading UI)
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveChatMessages(chatStorageKey, messages);
+    }, 400);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [messages, chatStorageKey]);
+
+  // Pulizia chat al logout
+  useEffect(() => {
+    const onLogout = () => {
+      clearChatMessages(chatStorageKey);
+      setMessages([]);
+      setContextSeparatorIndex(-1);
+    };
+    window.addEventListener("sgq:userLoggedOut", onLogout);
+    return () => window.removeEventListener("sgq:userLoggedOut", onLogout);
+  }, [chatStorageKey]);
 
   // Carica lista aziende una volta
   useEffect(() => {
@@ -105,14 +165,12 @@ function AiAssistantPage() {
   }, []);
 
   // Inferenza automatica dal currentAudit (solo se source === 'auto')
-  const autoCompanyId = currentAudit?.metadata?.companyId || currentAudit?.company_id || null;
-  const autoCompanyName = useMemo(() => {
-    if (!autoCompanyId || !companiesLoaded) return null;
-    const found = companies.find(
-      (c) => c.id === autoCompanyId || c.company_id === autoCompanyId
-    );
-    return found?.name || currentAudit?.metadata?.clientName || null;
-  }, [autoCompanyId, companies, companiesLoaded, currentAudit]);
+  const autoCompany = useMemo(
+    () => resolveAutoCompanyFromAudit(currentAudit, companies),
+    [currentAudit, companies]
+  );
+  const autoCompanyId = autoCompany.companyId;
+  const autoCompanyName = autoCompany.companyName;
 
   useEffect(() => {
     if (companyContext.source === "auto") {
@@ -124,11 +182,87 @@ function AiAssistantPage() {
     }
   }, [autoCompanyId, autoCompanyName, companyContext.source]);
 
+  const standardsForUser = useMemo(
+    () => filterStandardsForUser(user?.allowed_standard_ids),
+    [user?.allowed_standard_ids]
+  );
+
+  const autoStandard = useMemo(
+    () => resolveAutoStandardFromAudit(currentAudit?.metadata?.selectedStandards),
+    [currentAudit?.metadata?.selectedStandards]
+  );
+
+  useEffect(() => {
+    if (standardContext.source === "auto") {
+      setStandardContext({
+        standardId: autoStandard?.standardId ?? null,
+        label: autoStandard?.label ?? null,
+        source: "auto",
+      });
+    }
+  }, [autoStandard, standardContext.source]);
+
+  const checklistFocus = useMemo(
+    () => resolveActiveChecklistFocus(currentAudit),
+    [currentAudit]
+  );
+
+  // Separatore chat quando cambia audit aperto
+  useEffect(() => {
+    const auditUuid = currentAudit?.metadata?.id || currentAudit?.id || null;
+    if (!auditUuid || !companiesLoaded) return;
+
+    if (prevAuditIdRef.current && prevAuditIdRef.current !== auditUuid) {
+      const auditNumber =
+        currentAudit?.metadata?.auditNumber ||
+        currentAudit?.metadata?.generalData?.auditNumber ||
+        auditUuid.slice(0, 8);
+      const separatorText = buildAuditContextSeparatorLabel({
+        auditLabel: auditNumber,
+        companyName: autoCompanyName,
+        standardLabel: autoStandard?.label,
+        focus: checklistFocus,
+      });
+      setMessages((prevMsgs) => {
+        const separator = {
+          role: "context-separator",
+          text: separatorText,
+          time: new Date(),
+        };
+        const nextMsgs = [...prevMsgs, separator];
+        setContextSeparatorIndex(nextMsgs.length - 1);
+        return nextMsgs;
+      });
+      setCompanyContext({
+        companyId: autoCompanyId,
+        companyName: autoCompanyName,
+        source: "auto",
+      });
+      setStandardContext({
+        standardId: autoStandard?.standardId ?? null,
+        label: autoStandard?.label ?? null,
+        source: "auto",
+      });
+    }
+    prevAuditIdRef.current = auditUuid;
+  }, [
+    currentAuditId,
+    currentAudit,
+    companiesLoaded,
+    autoCompanyId,
+    autoCompanyName,
+    autoStandard,
+    checklistFocus,
+  ]);
+
   // Chiudi dropdown al click fuori
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (standardDropdownRef.current && !standardDropdownRef.current.contains(e.target)) {
+        setStandardDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -176,8 +310,31 @@ function AiAssistantPage() {
     setDropdownOpen(false);
   }, [companyContext]);
 
-  // Clear conversazione
+  const handleStandardChange = useCallback((newStandardId, newLabel, source) => {
+    if (standardContext.standardId === newStandardId) {
+      setStandardDropdownOpen(false);
+      return;
+    }
+
+    setStandardContext({ standardId: newStandardId, label: newLabel, source });
+
+    const normLabel = newLabel || "Tutte le norme";
+    setMessages((prevMsgs) => {
+      const separator = {
+        role: "context-separator",
+        text: `Norma: ${normLabel}`,
+        time: new Date(),
+      };
+      const nextMsgs = [...prevMsgs, separator];
+      setContextSeparatorIndex(nextMsgs.length - 1);
+      return nextMsgs;
+    });
+    setStandardDropdownOpen(false);
+  }, [standardContext]);
+
+  // Nuova conversazione — reset stato + sessionStorage
   const handleClear = useCallback(() => {
+    clearChatMessages(chatStorageKey);
     setMessages([]);
     setContextSeparatorIndex(-1);
     setCompanyContext({
@@ -185,7 +342,12 @@ function AiAssistantPage() {
       companyName: autoCompanyName,
       source: "auto",
     });
-  }, [autoCompanyId, autoCompanyName]);
+    setStandardContext({
+      standardId: autoStandard?.standardId ?? null,
+      label: autoStandard?.label ?? null,
+      source: "auto",
+    });
+  }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard]);
 
   const handleSend = useCallback(async (text) => {
     const msg = (text || input).trim();
@@ -201,8 +363,18 @@ function AiAssistantPage() {
     }
 
     try {
-      const res = await apiService.aiChat(msg, companyContext.companyId);
+      const chatCtx = buildAiChatContextPayload(currentAudit, companies);
+      const res = await apiService.aiChat(msg, {
+        companyId: companyContext.companyId,
+        standardId: standardContext.standardId,
+        auditId: chatCtx.auditId,
+        clauseRef: chatCtx.clauseRef,
+        questionId: chatCtx.questionId,
+        questionText: chatCtx.questionText,
+        standardKey: chatCtx.standardKey,
+      });
       const data = res.data || res;
+      const citations = Array.isArray(data.citations) ? data.citations : [];
       setMessages((prev) => [
         ...prev,
         {
@@ -210,6 +382,8 @@ function AiAssistantPage() {
           text: data.reply || "Nessuna risposta ricevuta.",
           time: new Date(),
           contextUsed: data.contextUsed || 0,
+          sourcesCount: data.sourcesCount ?? citations.length,
+          citations,
         },
       ]);
     } catch (err) {
@@ -222,7 +396,7 @@ function AiAssistantPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, companyContext.companyId]);
+  }, [input, loading, companyContext.companyId, standardContext.standardId, currentAudit, companies]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -262,6 +436,11 @@ function AiAssistantPage() {
 
   const contextLabel = companyContext.companyName || "Vista complessiva";
   const contextIsCompany = !!companyContext.companyId;
+  const standardLabel = standardContext.label || "Tutte le norme";
+  const contextIsStandard = !!standardContext.standardId;
+  const activeStandardEntry = standardsForUser.find(
+    (s) => s.standardId === standardContext.standardId
+  );
 
   return (
     <div className="ai-assistant-page">
@@ -271,7 +450,11 @@ function AiAssistantPage() {
           <span className="ai-assistant-header-icon">{"\uD83E\uDD16"}</span>
           <div>
             <h2>Assistente AI</h2>
-            <p>Chiedi qualsiasi cosa sui dati del tuo SGQ</p>
+            <p>
+              {user?.organization_name
+                ? `Studio: ${user.organization_name} — chiedi qualsiasi cosa sui dati del tuo SGQ`
+                : "Chiedi qualsiasi cosa sui dati del tuo SGQ"}
+            </p>
           </div>
         </div>
         <div className="ai-assistant-header-actions">
@@ -321,12 +504,53 @@ function AiAssistantPage() {
             )}
           </div>
 
-          {/* Pulsante clear */}
+          {/* Chip contesto norma */}
+          <div className="ai-context-chip-wrapper" ref={standardDropdownRef}>
+            <button
+              className={`ai-context-chip ai-context-chip--standard ${contextIsStandard ? "ai-context-chip--standard-active" : ""}`}
+              onClick={() => setStandardDropdownOpen((v) => !v)}
+              title="Cambia norma di riferimento"
+            >
+              <span className="ai-context-chip-icon" aria-hidden="true">
+                {contextIsStandard
+                  ? activeStandardEntry?.icon || "\uD83D\uDCCB"
+                  : "\uD83D\uDCDA"}
+              </span>
+              <span className="ai-context-chip-label">{standardLabel}</span>
+              <svg className="ai-context-chip-arrow" viewBox="0 0 12 12" width="10" height="10" fill="currentColor">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </button>
+            {standardDropdownOpen && (
+              <div className="ai-context-dropdown">
+                <button
+                  className={`ai-context-dropdown-item ${!standardContext.standardId ? "active" : ""}`}
+                  onClick={() => handleStandardChange(null, null, "manual")}
+                >
+                  <span className="ai-context-dropdown-icon">{"\uD83D\uDCDA"}</span>
+                  Tutte le norme
+                </button>
+                {standardsForUser.map((entry) => (
+                  <button
+                    key={entry.key}
+                    className={`ai-context-dropdown-item ${standardContext.standardId === entry.standardId ? "active" : ""}`}
+                    onClick={() => handleStandardChange(entry.standardId, entry.shortLabel, "manual")}
+                  >
+                    <span className="ai-context-dropdown-icon">{entry.icon}</span>
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Nuova conversazione */}
           {messages.length > 0 && (
             <button
               className="ai-assistant-clear-btn"
               onClick={handleClear}
-              title="Pulisci conversazione"
+              title="Nuova conversazione"
+              aria-label="Nuova conversazione"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -360,6 +584,20 @@ function AiAssistantPage() {
             {contextIsCompany && (
               <p className="ai-assistant-empty-context">
                 Contesto attivo: <strong>{contextLabel}</strong>
+                {contextIsStandard && (
+                  <> — Norma: <strong>{standardLabel}</strong></>
+                )}
+              </p>
+            )}
+            {!contextIsCompany && contextIsStandard && (
+              <p className="ai-assistant-empty-context">
+                Norma attiva: <strong>{standardLabel}</strong>
+              </p>
+            )}
+            {checklistFocus?.clauseRef && (
+              <p className="ai-assistant-empty-context">
+                Clausola attiva: <strong>{"\u00A7"}{checklistFocus.clauseRef}</strong>
+                {checklistFocus.questionId ? ` \u2014 dom. ${checklistFocus.questionId}` : ""}
               </p>
             )}
             <div className="ai-assistant-suggestions">
@@ -414,10 +652,12 @@ function AiAssistantPage() {
                     : msg.text}
                 </div>
                 <div className="ai-msg-time">{formatTime(msg.time)}</div>
-                {msg.role === "assistant" && msg.contextUsed > 0 && (
-                  <div className="ai-msg-context-info">
-                    Basato su {msg.contextUsed} fonti dati
-                  </div>
+                {msg.role === "assistant" && (
+                  <AiAssistantCitations
+                    citations={msg.citations}
+                    sourcesCount={msg.sourcesCount}
+                    contextUsed={msg.contextUsed}
+                  />
                 )}
               </div>
             </div>

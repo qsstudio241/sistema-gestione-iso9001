@@ -8,20 +8,38 @@
  * Tab "Albero": navigazione gerarchica con pannello dettaglio
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import useDocTreeSidebarWidth, {
+  DOC_TREE_WIDTH_MIN,
+  DOC_TREE_WIDTH_MAX,
+} from "../hooks/useDocTreeSidebarWidth";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from "../contexts/RouterContext";
+import {
+  parseDocumentRegistrySearch,
+  buildDocumentRegistryPath,
+} from "../utils/documentRegistryUrl";
+import {
+  resolveInitialRegistryCompanyScope,
+  persistRegistryCompanyScope,
+} from "../utils/documentRegistryCompanyScope";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
 import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import NormUploadButton from "./NormUploadButton";
+import NormCodesImportButton from "./NormCodesImportButton";
 import useDocumentTree from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
+import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
+import DocumentDataGrid from "./DocumentDataGrid";
+import StatusBadge from "./StatusBadge";
+import { documentHasFile } from "../utils/documentRegistryFile";
 import "./DocumentRegistry.css";
 
 // ─── Alberi clausole per vista per-standard ──────────────────────────────────
@@ -213,7 +231,7 @@ function StandardClauseNode({ node, level, selectedCode, expandedCodes, onToggle
         <span className="doc-tree__icon" aria-hidden="true">
           {hasChildren ? "\uD83D\uDCC2" : "\uD83D\uDCC4"}
         </span>
-        <span className="doc-tree__label">
+        <span className="doc-tree__label" title={`\u00A7${node.code} ${node.label}`}>
           <span className="std-tree__code">{"\u00A7"}{node.code}</span>{" "}
           {node.label}
         </span>
@@ -295,10 +313,15 @@ function getExpiryClass(doc) {
 // ─── Export CSV ───────────────────────────────────────────────────────────────
 
 function exportToCSV(documents) {
-  const headers = ["Codice", "Titolo", "Tipo", "Revisione", "Stato", "Emissione", "Scadenza", "Responsabile", "Azienda", "Norma", "Paragrafo", "Note"];
+  const headers = [
+    "Codice", "Titolo", "File", "Nome file", "Tipo", "Revisione", "Stato",
+    "Emissione", "Scadenza", "Responsabile", "Azienda", "Norma", "Paragrafo", "Note",
+  ];
   const rows = documents.map((d) => [
     d.doc_code || "",
     d.title,
+    documentHasFile(d) ? "Sì" : "No",
+    d.current_file_name || "",
     DOC_TYPE_LABELS[d.doc_type] || d.doc_type,
     d.revision || "",
     DOC_STATUS_LABELS[d.status] || d.status,
@@ -338,7 +361,7 @@ function PriorityCard({ doc, onEdit, onArchive, archiveId, onConfirmArchive, onC
       <div className="pcard-left">
         <span className={`pcard-dot dot-${doc.is_expired ? "red" : "orange"}`} />
         <div className="pcard-info">
-          <span className="pcard-title">{doc.title}</span>
+          <span className="pcard-title" title={doc.title}>{doc.title}</span>
           <span className="pcard-meta">
             {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
             {doc.doc_code && ` · ${doc.doc_code}`}
@@ -376,8 +399,61 @@ function PriorityCard({ doc, onEdit, onArchive, archiveId, onConfirmArchive, onC
 
 // ─── Tab Priorità ─────────────────────────────────────────────────────────────
 
-function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading, onEdit, onArchive, archiveId, onConfirmArchive, onCancelArchive, onNewDoc }) {
-  const total = expiredDocs.length + expiringDocs.length + revisionDocs.length;
+function ReleasedWithoutFileCard({ doc, onEdit, onFileDialog }) {
+  return (
+    <div className="priority-card priority-card-amber">
+      <div className="pcard-left">
+        <span className="pcard-dot dot-amber" />
+        <div className="pcard-info">
+          <span className="pcard-title" title={doc.title}>{doc.title}</span>
+          <span className="pcard-meta">
+            {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
+            {doc.doc_code && ` · ${doc.doc_code}`}
+            {doc.company_name && ` · ${doc.company_name}`}
+          </span>
+          <span className="pcard-expiry text-amber">
+            {"\u26A0\uFE0F"} Rilasciato senza file PDF allegato
+          </span>
+        </div>
+      </div>
+      <div className="pcard-actions">
+        <button
+          type="button"
+          className="btn-icon-sm"
+          title="Carica allegato"
+          onClick={() => onFileDialog?.(doc)}
+        >
+          {"\uD83D\uDCCE"} Carica file
+        </button>
+        <button className="btn-icon-sm" title="Modifica" onClick={() => onEdit(doc)}>
+          {"\u270F\uFE0F"} Modifica
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PriorityView({
+  expiredDocs,
+  expiringDocs,
+  revisionDocs,
+  releasedWithoutFileDocs,
+  loading,
+  alertWindowDays,
+  onEdit,
+  onArchive,
+  archiveId,
+  onConfirmArchive,
+  onCancelArchive,
+  onNewDoc,
+  onFileDialog,
+  canWrite = true,
+}) {
+  const total =
+    expiredDocs.length +
+    expiringDocs.length +
+    revisionDocs.length +
+    releasedWithoutFileDocs.length;
 
   if (loading) {
     return (
@@ -393,14 +469,38 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
       <div className="priority-all-ok">
         <span className="ok-icon">✅</span>
         <h3>Tutto in ordine</h3>
-        <p>Nessun documento scaduto o in scadenza entro 60 giorni.</p>
-        <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+        <p>Nessun documento scaduto o in scadenza entro {alertWindowDays} giorni.</p>
+        {canWrite && (
+          <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="priority-view">
+      <p className="priority-view-note">
+        Elenco operativo delle azioni urgenti nel registro. Non sostituisce la cartella
+        &quot;Scadenziario&quot; (codice 99) nell&apos;albero documenti, usata solo per archiviazione.
+      </p>
+      {/* Rilasciati senza file */}
+      {releasedWithoutFileDocs.length > 0 && (
+        <section className="priority-section">
+          <div className="priority-section-header priority-section-amber">
+            <span>{"\uD83D\uDCCE"} Rilasciati senza file — {releasedWithoutFileDocs.length}</span>
+            <span className="ps-hint">Carica il PDF per audit e distribuzione</span>
+          </div>
+          {releasedWithoutFileDocs.map((doc) => (
+            <ReleasedWithoutFileCard
+              key={doc.id}
+              doc={doc}
+              onEdit={onEdit}
+              onFileDialog={onFileDialog}
+            />
+          ))}
+        </section>
+      )}
+
       {/* Scaduti */}
       {expiredDocs.length > 0 && (
         <section className="priority-section">
@@ -426,7 +526,7 @@ function PriorityView({ stats, expiredDocs, expiringDocs, revisionDocs, loading,
       {expiringDocs.length > 0 && (
         <section className="priority-section">
           <div className="priority-section-header priority-section-orange">
-            <span>🟡 In scadenza nei prossimi 60 giorni - {expiringDocs.length}</span>
+            <span>🟡 In scadenza entro {alertWindowDays} giorni - {expiringDocs.length}</span>
             <span className="ps-hint">Pianifica il rinnovo</span>
           </div>
           {expiringDocs.map((doc) => (
@@ -475,6 +575,7 @@ function CatalogView({
   onNewDoc, onReload,
   filters, setFilter, onExport,
   companies, standards, onFileDialog,
+  canWrite = true,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -525,10 +626,10 @@ function CatalogView({
             <option value="obsoleto">Obsoleto</option>
           </select>
           {companies.length > 0 && (
-            <select value={filters.company_id} onChange={(e) => setFilter("company_id", e.target.value)}>
-              <option value="">Tutte le aziende</option>
-              {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <span className="catalog-scope-hint">
+              {"Ambito: "}
+              {filters.scopeCompanyName}
+            </span>
           )}
           <label className="filter-check">
             <input
@@ -538,9 +639,24 @@ function CatalogView({
             />
             Solo in scadenza (30gg)
           </label>
+          <label className="filter-check">
+            <input
+              type="checkbox"
+              checked={Boolean(filters.without_file)}
+              onChange={(e) => setFilter("without_file", e.target.checked)}
+            />
+            Senza file allegato
+          </label>
           <button
             className="btn-reset"
-            onClick={() => { setFilter("doc_type", ""); setFilter("status", ""); setFilter("company_id", ""); setFilter("standard_id", ""); setFilter("search", ""); setFilter("expiring_days", null); }}
+            onClick={() => {
+              setFilter("doc_type", "");
+              setFilter("status", "");
+              setFilter("standard_id", "");
+              setFilter("search", "");
+              setFilter("expiring_days", null);
+              setFilter("without_file", false);
+            }}
           >
             Reset
           </button>
@@ -560,97 +676,30 @@ function CatalogView({
         <div className="catalog-count">{total} documento{total !== 1 ? "i" : ""}</div>
       )}
 
-      {/* Tabella */}
-      {loading ? (
-        <div className="docregistry-loading">
-          <div className="loading-spinner-sm" />
-          <span>Caricamento...</span>
-        </div>
-      ) : documents.length === 0 ? (
+      {/* DataGrid */}
+      {documents.length === 0 && !loading ? (
         <div className="docregistry-empty">
           <p>Nessun documento trovato.</p>
-          <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+          {canWrite && (
+            <button className="btn-primary" onClick={onNewDoc}>+ Aggiungi documento</button>
+          )}
         </div>
       ) : (
         <>
-          <div className="docregistry-table-wrap">
-            <table className="docregistry-table">
-              <thead>
-                <tr>
-                  <th>Codice</th>
-                  <th>Titolo</th>
-                  <th>Tipo</th>
-                  <th>Rev.</th>
-                  <th>Stato</th>
-                  <th>Scadenza</th>
-                  <th>Azienda</th>
-                  <th>Responsabile</th>
-                  <th style={{ width: 90 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((doc) => {
-                  const isConfirming = archiveId === doc.id;
-                  return (
-                    <tr key={doc.id} className={getExpiryClass(doc)}>
-                      <td className="col-code">{doc.doc_code || "-"}</td>
-                      <td className="col-title">
-                        <span className="doc-title">{doc.title}</span>
-                        {doc.clause_ref && (
-                          <span className="doc-clause">{doc.standard_code} §{doc.clause_ref}</span>
-                        )}
-                      </td>
-                      <td className="col-type">
-                        <span className="doc-type-badge">
-                          {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
-                        </span>
-                      </td>
-                      <td className="col-rev">{doc.revision || "-"}</td>
-                      <td className="col-status">
-                        <span className={`status-badge status-${doc.status}`}>
-                          {DOC_STATUS_LABELS[doc.status] || doc.status}
-                        </span>
-                      </td>
-                      <td className={`col-expiry ${getExpiryClass(doc)}`}>
-                        {doc.expiry_date ? (
-                          <span>
-                            {doc.is_expired   && "⚠️ "}
-                            {doc.expiring_soon && !doc.is_expired && "🟡 "}
-                            {formatDate(doc.expiry_date)}
-                          </span>
-                        ) : "-"}
-                      </td>
-                      <td className="col-company">{doc.company_name || "-"}</td>
-                      <td className="col-responsible">{doc.responsible || "-"}</td>
-                      <td className="col-actions" style={isConfirming ? { minWidth: 220 } : {}}>
-                        {isConfirming ? (
-                          <div className="inline-confirm">
-                            <span className="inline-confirm-text">Archiviare?</span>
-                            <button className="btn-confirm-yes" onClick={() => onConfirmArchive(doc.id)}>Sì</button>
-                            <button className="btn-confirm-no" onClick={onCancelArchive}>No</button>
-                          </div>
-                        ) : (
-                          <>
-                            <button className="btn-icon" title="File allegato" onClick={() => onFileDialog(doc)}>📎</button>
-                            <button className="btn-icon" title="Modifica" onClick={() => onEdit(doc)}>✏️</button>
-                            {doc.status !== "obsoleto" && (
-                              <button className="btn-icon" title="Archivia" onClick={() => onArchive(doc.id)}>🗄️</button>
-                            )}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DocumentDataGrid
+            documents={documents}
+            loading={loading}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            onFileDialog={onFileDialog}
+            onDocSelect={onEdit}
+          />
 
           {totalPages > 1 && (
             <div className="docregistry-pagination">
-              <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>← Prec.</button>
+              <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>{"\u2190"} Prec.</button>
               <span>Pagina {page} di {totalPages}</span>
-              <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Succ. →</button>
+              <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Succ. {"\u2192"}</button>
             </div>
           )}
         </>
@@ -840,19 +889,35 @@ function OrphanInbox({ orphans, folders, onArchive, onArchiveAll, archiving }) {
 // ─── Componente principale ────────────────────────────────────────────────────
 
 function DocumentRegistry() {
-  // Tab attiva: "priority" | "catalog" | "tree"
-  const [activeTab, setActiveTab] = useState("priority");
+  const { replace } = useRouter();
+  const initialUrl = parseDocumentRegistrySearch(
+    typeof window !== "undefined" ? window.location.search : ""
+  );
 
-  const { user } = useAuth();
+  // Tab attiva: "priority" | "catalog" | "tree"
+  const [activeTab, setActiveTab] = useState(
+    initialUrl.selectId ? "tree" : (initialUrl.tab || "priority")
+  );
+  const deepLinkSelectRef = useRef(initialUrl.selectId);
+  const deepLinkHandledRef = useRef(false);
+
+  const { user, canWriteModule } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
+  // Ambito azienda condiviso (Priorità / Catalogo / Albero)
+  const [registryCompanyScope, setRegistryCompanyScope] = useState(() =>
+    resolveInitialRegistryCompanyScope(initialUrl.companyId)
+  );
+  const canWriteDocs = canWriteModule(registryCompanyScope || undefined);
 
   // Dati
   const [stats, setStats]         = useState(null);
   const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
 
-  // Albero documentale
-  const tree = useDocumentTree();
+  // Albero documentale (filtrato per registryCompanyScope se impostato)
+  const tree = useDocumentTree(registryCompanyScope || null);
+  const { width: treeSidebarWidth, startResize: startTreeSidebarResize } = useDocTreeSidebarWidth();
 
   // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
   const [treeViewMode, setTreeViewMode] = useState("free");
@@ -877,9 +942,11 @@ function DocumentRegistry() {
   const [treeListDocs, setTreeListDocs] = useState([]);
   const [treeListLoading, setTreeListLoading] = useState(false);
 
-  // Documenti priorità (scaduti + in scadenza 60gg + in revisione)
+  // Documenti priorità (scaduti + in scadenza + in revisione)
   const [priorityDocs, setPriorityDocs] = useState([]);
+  const [releasedWithoutFileDocs, setReleasedWithoutFileDocs] = useState([]);
   const [loadingPriority, setLoadingPriority] = useState(true);
+  const [alertWindowDays, setAlertWindowDays] = useState(30);
 
   // Catalogo
   const [catalogDocs, setCatalogDocs]   = useState([]);
@@ -891,7 +958,12 @@ function DocumentRegistry() {
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
-    search: "", doc_type: "", status: "", company_id: "", standard_id: "", expiring_days: null,
+    search: "",
+    doc_type: "",
+    status: "",
+    standard_id: "",
+    expiring_days: null,
+    without_file: false,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -911,6 +983,66 @@ function DocumentRegistry() {
 
   const LIMIT = 20;
 
+  const scopeCompanyName = useMemo(() => {
+    if (!registryCompanyScope) return "Tutto lo studio";
+    const match = companies.find(
+      (c) => String(c.id || c.company_id) === String(registryCompanyScope)
+    );
+    return match?.name || `Azienda #${registryCompanyScope}`;
+  }, [registryCompanyScope, companies]);
+
+  const catalogFilters = useMemo(
+    () => ({ ...filters, scopeCompanyName }),
+    [filters, scopeCompanyName]
+  );
+
+  const syncRegistryUrl = useCallback(
+    (tab, selectId = null, companyId = registryCompanyScope) => {
+      replace(
+        buildDocumentRegistryPath({
+          tab,
+          selectId: tab === "tree" ? selectId : null,
+          companyId: companyId || null,
+        })
+      );
+    },
+    [replace, registryCompanyScope]
+  );
+
+  const handleTabChange = useCallback(
+    (tab) => {
+      setActiveTab(tab);
+      if (tab !== "tree") {
+        setShowDetail(false);
+        setSelectedDoc(null);
+        setDocHistory([]);
+      }
+      syncRegistryUrl(tab, null);
+    },
+    [syncRegistryUrl]
+  );
+
+  // URL ?tab= & ?select= & ?company_id= al mount e su Back/Forward
+  useEffect(() => {
+    const applyFromUrl = () => {
+      const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
+      if (tab) setActiveTab(tab);
+      if (companyId != null) {
+        const scope = String(companyId);
+        setRegistryCompanyScope(scope);
+        persistRegistryCompanyScope(scope);
+      }
+      if (selectId != null) {
+        deepLinkSelectRef.current = selectId;
+        deepLinkHandledRef.current = false;
+        setActiveTab("tree");
+      }
+    };
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, []);
+
   // ─── Provisioning albero documentale ───────────────────────────────────
   const [provisioning, setProvisioning] = useState(false);
   const [provisionError, setProvisionError] = useState(null);
@@ -921,6 +1053,7 @@ function DocumentRegistry() {
     try {
       const orgStandards = (standards || []).map(s => s.standard_code).filter(Boolean);
       await apiService.provisionDocumentTree({
+        ...(registryCompanyScope && { company_id: parseInt(registryCompanyScope, 10) }),
         standard_codes: orgStandards,
       });
       await tree.loadTree();
@@ -929,7 +1062,7 @@ function DocumentRegistry() {
     } finally {
       setProvisioning(false);
     }
-  }, [standards, tree]);
+  }, [standards, tree, registryCompanyScope]);
 
   // ─── Caricamento dati ────────────────────────────────────────────────────
 
@@ -943,18 +1076,32 @@ function DocumentRegistry() {
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
     try {
-      // Scaduti + in scadenza 60gg
-      const [expRes, revRes] = await Promise.all([
-        apiService.getDocuments({ expiring_days: 60, status: "rilasciato", limit: 50 }),
-        apiService.getDocuments({ status: "in_revisione", limit: 20 }),
+      const companyFilter = registryCompanyScope
+        ? { company_id: registryCompanyScope }
+        : {};
+      let windowDays = 30;
+      try {
+        const cfg = await apiService.getNotificationsConfig();
+        windowDays = cfg?.alert_days_1 ?? 30;
+        setAlertWindowDays(windowDays);
+      } catch {
+        setAlertWindowDays(30);
+      }
+      const [expiredRes, expiringRes, revRes, noFileRes] = await Promise.all([
+        apiService.getDocuments({ expired_only: 1, status: "rilasciato", limit: 50, ...companyFilter }),
+        apiService.getDocuments({ expiring_days: windowDays, status: "rilasciato", limit: 50, ...companyFilter }),
+        apiService.getDocuments({ status: "in_revisione", limit: 20, ...companyFilter }),
+        apiService.getDocuments({ without_file: 1, status: "rilasciato", limit: 30, ...companyFilter }),
       ]);
-      setPriorityDocs([
-        ...(expRes.data || []),
-        ...(revRes.data || []),
-      ]);
+      const merged = new Map();
+      for (const doc of [...(expiredRes.data || []), ...(expiringRes.data || []), ...(revRes.data || [])]) {
+        merged.set(doc.id, doc);
+      }
+      setPriorityDocs([...merged.values()]);
+      setReleasedWithoutFileDocs(noFileRes.data || []);
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
-  }, []);
+  }, [registryCompanyScope]);
 
   const loadCatalog = useCallback(async () => {
     setLoadingCatalog(true);
@@ -965,9 +1112,10 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(registryCompanyScope && { company_id: registryCompanyScope }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
+        ...(filters.without_file && { without_file: 1 }),
       };
       const res = await apiService.getDocuments(params);
       setCatalogDocs(res.data || []);
@@ -978,7 +1126,7 @@ function DocumentRegistry() {
     } finally {
       setLoadingCatalog(false);
     }
-  }, [catalogPage, filters]);
+  }, [catalogPage, filters, registryCompanyScope]);
 
   const loadAuxiliary = useCallback(async () => {
     try {
@@ -1001,28 +1149,53 @@ function DocumentRegistry() {
   useEffect(() => {
     loadAuxiliary();
     loadStats();
-    loadPriorityDocs();
     loadOrphans();
-  }, [loadAuxiliary, loadStats, loadPriorityDocs, loadOrphans]);
+  }, [loadAuxiliary, loadStats, loadOrphans]);
 
   useEffect(() => {
     if (activeTab === "catalog") loadCatalog();
   }, [activeTab, loadCatalog]);
 
   useEffect(() => {
+    loadPriorityDocs();
+  }, [registryCompanyScope, loadPriorityDocs]);
+
+  useEffect(() => {
     if (activeTab === "tree") tree.loadTree();
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, registryCompanyScope]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRegistryCompanyChange = useCallback(
+    (value) => {
+      setRegistryCompanyScope(value);
+      persistRegistryCompanyScope(value);
+      setCatalogPage(1);
+      tree.resetSelection();
+      setTreeListDocs([]);
+      setShowDetail(false);
+      setSelectedDoc(null);
+      setDocHistory([]);
+      syncRegistryUrl(activeTab, null, value);
+    },
+    [tree, syncRegistryUrl, activeTab]
+  );
 
   // Quando si seleziona un nodo nell'albero, carica i documenti figli
   const handleTreeNodeSelect = useCallback(async (nodeId) => {
     tree.selectNode(nodeId);
     setTreeListLoading(true);
     try {
-      const res = await apiService.getDocumentTreeChildren(nodeId);
+      const res = await apiService.getDocumentTreeChildren(nodeId, registryCompanyScope || null);
       setTreeListDocs(res.data || []);
     } catch { setTreeListDocs([]); }
     finally { setTreeListLoading(false); }
-  }, [tree]);
+  }, [tree, registryCompanyScope]);
+
+  /** Dopo upload/import norme: aggiorna cache albero + lista documenti cartella. */
+  const handleNormFolderRefresh = useCallback(async (folderId) => {
+    if (folderId == null) return;
+    await tree.loadChildren(folderId, { forceRefresh: true });
+    await handleTreeNodeSelect(folderId);
+  }, [tree, handleTreeNodeSelect]);
 
   // Quando si seleziona una clausola nell'albero per-standard
   const handleClauseSelect = useCallback(async (clauseCode) => {
@@ -1056,17 +1229,53 @@ function DocumentRegistry() {
   const handleDocSelect = useCallback(async (doc) => {
     setSelectedDoc(doc);
     setShowDetail(true);
+    syncRegistryUrl("tree", doc?.id ?? null);
     try {
-      const res = await apiService.getDocumentHistory(doc.id);
-      setDocHistory(res.data || []);
-    } catch { setDocHistory([]); }
-  }, []);
+      const [detailRes, historyRes] = await Promise.all([
+        apiService.getDocument(doc.id),
+        apiService.getDocumentHistory(doc.id),
+      ]);
+      if (detailRes?.data) setSelectedDoc(detailRes.data);
+      setDocHistory(historyRes.data || []);
+    } catch {
+      setDocHistory([]);
+    }
+  }, [syncRegistryUrl]);
 
   const handleCloseDetail = useCallback(() => {
     setShowDetail(false);
     setSelectedDoc(null);
     setDocHistory([]);
-  }, []);
+    syncRegistryUrl("tree", null);
+  }, [syncRegistryUrl]);
+
+  // Deep link ?select=<docId> → tab Albero + espansione + drawer
+  useEffect(() => {
+    const docId = deepLinkSelectRef.current;
+    if (docId == null || deepLinkHandledRef.current || activeTab !== "tree") return;
+
+    let cancelled = false;
+    deepLinkHandledRef.current = true;
+
+    (async () => {
+      setTreeViewMode("free");
+      const doc = await tree.expandToDocument(docId);
+      if (cancelled || !doc) return;
+
+      if (doc.doc_type === "folder") {
+        await handleTreeNodeSelect(doc.id);
+      } else if (doc.parent_id != null) {
+        await handleTreeNodeSelect(doc.parent_id);
+        await handleDocSelect(doc);
+      } else {
+        await handleDocSelect(doc);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, tree.expandToDocument]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Azioni ────────────────────────────────────────────────────────────
 
@@ -1102,9 +1311,10 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(filters.company_id    && { company_id:   filters.company_id }),
+        ...(registryCompanyScope && { company_id: registryCompanyScope }),
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
+        ...(filters.without_file && { without_file: 1 }),
       };
       const res = await apiService.getDocuments(params);
       exportToCSV(res.data || []);
@@ -1201,7 +1411,17 @@ function DocumentRegistry() {
   const expiredDocs  = priorityDocs.filter((d) => d.is_expired);
   const expiringDocs = priorityDocs.filter((d) => d.expiring_soon && !d.is_expired);
   const revisionDocs = priorityDocs.filter((d) => d.status === "in_revisione");
-  const priorityCount = expiredDocs.length + expiringDocs.length + revisionDocs.length;
+  const priorityCount =
+    expiredDocs.length +
+    expiringDocs.length +
+    revisionDocs.length +
+    releasedWithoutFileDocs.length;
+
+  const openCatalogWithoutFile = useCallback(() => {
+    handleTabChange("catalog");
+    setFiltersState((f) => ({ ...f, without_file: true }));
+    setCatalogPage(1);
+  }, [handleTabChange]);
 
   return (
     <div className="docregistry-page">
@@ -1212,10 +1432,56 @@ function DocumentRegistry() {
           {stats && (
             <span className="docregistry-subtitle">
               {stats.total} documenti · {stats.vigenti} vigenti
+              {Number(stats.senza_file) > 0 && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="docregistry-file-alert"
+                    onClick={openCatalogWithoutFile}
+                    title="Apri catalogo filtrato su documenti senza allegato"
+                  >
+                    {stats.senza_file} senza allegato
+                  </button>
+                </>
+              )}
+              {Number(stats.rilasciati_senza_file) > 0 && (
+                <span className="docregistry-file-alert-hint">
+                  {" "}({stats.rilasciati_senza_file} rilasciati)
+                </span>
+              )}
             </span>
           )}
         </div>
-        <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+        <div className="docregistry-header-actions">
+          {companies.length > 0 && (
+            <div className="docregistry-scope-wrap">
+              <label className="docregistry-scope-label" htmlFor="docregistry-company-scope">
+                {"Ambito:"}
+              </label>
+              <select
+                id="docregistry-company-scope"
+                className="docregistry-scope-select"
+                value={registryCompanyScope}
+                onChange={(e) => handleRegistryCompanyChange(e.target.value)}
+                aria-label="Ambito registro documenti"
+              >
+                <option value="">{"Tutto lo studio"}</option>
+                {companies.map((c) => {
+                  const id = c.id || c.company_id;
+                  return (
+                    <option key={id} value={String(id)}>
+                      {c.name}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+          {canWriteDocs && (
+            <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
+          )}
+        </div>
       </div>
 
       {/* Errore archiviazione */}
@@ -1255,7 +1521,7 @@ function DocumentRegistry() {
       <div className="docregistry-tabs">
         <button
           className={`doc-tab${activeTab === "priority" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("priority")}
+          onClick={() => handleTabChange("priority")}
         >
           ⚠️ Priorità
           {priorityCount > 0 && (
@@ -1264,14 +1530,14 @@ function DocumentRegistry() {
         </button>
         <button
           className={`doc-tab${activeTab === "catalog" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("catalog")}
+          onClick={() => handleTabChange("catalog")}
         >
           📋 Catalogo
           {stats && <span className="tab-count">{stats.total}</span>}
         </button>
         <button
           className={`doc-tab${activeTab === "tree" ? " doc-tab-active" : ""}`}
-          onClick={() => setActiveTab("tree")}
+          onClick={() => handleTabChange("tree")}
         >
           🗂️ Albero
         </button>
@@ -1280,17 +1546,20 @@ function DocumentRegistry() {
       {/* Contenuto tab */}
       {activeTab === "priority" && (
         <PriorityView
-          stats={stats}
           expiredDocs={expiredDocs}
           expiringDocs={expiringDocs}
           revisionDocs={revisionDocs}
+          releasedWithoutFileDocs={releasedWithoutFileDocs}
           loading={loadingPriority}
+          alertWindowDays={alertWindowDays}
           onEdit={handleEdit}
           onArchive={handleArchive}
           archiveId={archiveId}
           onConfirmArchive={handleConfirmArchive}
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
+          onFileDialog={setFileDialogDoc}
+          canWrite={canWriteDocs}
         />
       )}
 
@@ -1310,12 +1579,13 @@ function DocumentRegistry() {
           onCancelArchive={handleCancelArchive}
           onNewDoc={handleNew}
           onReload={loadCatalog}
-          filters={filters}
+          filters={catalogFilters}
           setFilter={setFilter}
           onExport={handleExport}
           companies={companies}
           standards={standards}
           onFileDialog={setFileDialogDoc}
+          canWrite={canWriteDocs}
         />
       )}
 
@@ -1351,30 +1621,41 @@ function DocumentRegistry() {
           ) : (
           <>
           {/* Selettore vista albero */}
-          <div className="tree-view-selector">
-            <label className="tree-view-selector__label">Vista:</label>
-            <select
-              className="tree-view-selector__select"
-              value={treeViewMode}
-              onChange={(e) => handleTreeViewModeChange(e.target.value)}
-            >
-              {TREE_VIEW_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="tree-view-toolbar">
+            <div className="tree-view-selector">
+              <label className="tree-view-selector__label" htmlFor="tree-view-mode">
+                {"Vista:"}
+              </label>
+              <select
+                id="tree-view-mode"
+                className="tree-view-selector__select"
+                value={treeViewMode}
+                onChange={(e) => handleTreeViewModeChange(e.target.value)}
+              >
+                {TREE_VIEW_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="docregistry-tree-layout">
-            {/* Sidebar albero */}
-            <div className="docregistry-tree-sidebar">
+            {/* Sidebar albero (larghezza ridimensionabile desktop) */}
+            <div
+              className="docregistry-tree-sidebar"
+              style={{ width: treeSidebarWidth, flexBasis: treeSidebarWidth }}
+            >
               {treeViewMode === "free" ? (
                 <DocumentTree
                   nodes={tree.treeNodes}
                   expandedIds={tree.expandedIds}
                   selectedNodeId={tree.selectedNodeId}
+                  selectedNode={tree.selectedNode}
                   onToggle={tree.toggleNode}
                   onSelect={handleTreeNodeSelect}
                   onCreateFolder={tree.createFolder}
+                  onRenameFolder={tree.renameFolder}
+                  onDeleteFolder={tree.deleteFolder}
                 />
               ) : (
                 <StandardTreeView
@@ -1385,6 +1666,17 @@ function DocumentRegistry() {
                 />
               )}
             </div>
+
+            <div
+              className="docregistry-tree-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Ridimensiona pannello albero"
+              aria-valuenow={treeSidebarWidth}
+              aria-valuemin={DOC_TREE_WIDTH_MIN}
+              aria-valuemax={DOC_TREE_WIDTH_MAX}
+              onMouseDown={startTreeSidebarResize}
+            />
 
             {/* Contenuto centrale */}
             <div className="docregistry-tree-content">
@@ -1398,14 +1690,24 @@ function DocumentRegistry() {
                   )}
 
                   {tree.selectedNodeId && tree.breadcrumb.length > 0 && (() => {
-                    const currentFolder = tree.breadcrumb[tree.breadcrumb.length - 1];
+                    const currentFolder =
+                      tree.selectedNode?.doc_type === 'folder'
+                        ? tree.selectedNode
+                        : tree.breadcrumb[tree.breadcrumb.length - 1];
                     const isNormsFolder = currentFolder?.folder_code === '2.3'
                       || (currentFolder?.title || '').toUpperCase().includes('NORME');
+                    const normsFolderId = currentFolder?.id ?? tree.selectedNodeId;
                     return isNormsFolder ? (
-                      <NormUploadButton
-                        folderId={tree.selectedNodeId}
-                        onUploadComplete={() => handleTreeNodeSelect(tree.selectedNodeId)}
-                      />
+                      <div className="norm-folder-actions">
+                        <NormCodesImportButton
+                          folderId={normsFolderId}
+                          onImportComplete={() => handleNormFolderRefresh(normsFolderId)}
+                        />
+                        <NormUploadButton
+                          folderId={normsFolderId}
+                          onUploadComplete={() => handleNormFolderRefresh(normsFolderId)}
+                        />
+                      </div>
                     ) : null;
                   })()}
 
@@ -1418,8 +1720,7 @@ function DocumentRegistry() {
                     <div className="tree-doc-list">
                       {treeListDocs.length === 0 ? (
                         <div className="docregistry-empty">
-                          <p>Nessun elemento in questa cartella.</p>
-                          <button className="btn-primary" onClick={handleNew}>+ Aggiungi documento</button>
+                          <p>Nessun documento in questa cartella. Usa «+ Nuovo documento» per aggiungerne uno.</p>
                         </div>
                       ) : (
                         <div className="tree-doc-cards">
@@ -1427,21 +1728,35 @@ function DocumentRegistry() {
                             <div
                               key={doc.id}
                               className={`tree-doc-card${selectedDoc?.id === doc.id ? ' tree-doc-card--selected' : ''}`}
-                              onClick={() => handleDocSelect(doc)}
+                              onClick={() => {
+                                if (doc.doc_type === 'folder') {
+                                  handleTreeNodeSelect(doc.id);
+                                } else {
+                                  handleDocSelect(doc);
+                                }
+                              }}
                             >
                               <span className="tree-doc-card__icon">
                                 {doc.doc_type === 'folder' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'}
                               </span>
                               <div className="tree-doc-card__info">
-                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__title" title={doc.title}>{doc.title}</span>
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
-                                  {doc.status && ` · `}
-                                  {doc.status && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
+                                  {doc.doc_type === 'norma' && doc.standard_code && (
+                                    <span className="norm-code-inline"> · {doc.standard_code}</span>
+                                  )}
+                                  {doc.doc_type === 'norma' && doc.validity_status && (
+                                    <span className={`norm-validity-inline norm-validity-inline--${doc.validity_status}`}>
+                                      {doc.validity_status === 'vigente' ? ' · Vigente' :
+                                       doc.validity_status === 'superata' ? ' · Superata' :
+                                       doc.validity_status === 'ritirata' ? ' · Ritirata' : ` · ${doc.validity_status}`}
                                     </span>
+                                  )}
+                                  {shouldShowDocumentStatusBadge(doc) && ` · `}
+                                  {shouldShowDocumentStatusBadge(doc) && (
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>
@@ -1542,16 +1857,14 @@ function DocumentRegistry() {
                             >
                               <span className="tree-doc-card__icon">{"\uD83D\uDCC4"}</span>
                               <div className="tree-doc-card__info">
-                                <span className="tree-doc-card__title">{doc.title}</span>
+                                <span className="tree-doc-card__title" title={doc.title}>{doc.title}</span>
                                 <span className="tree-doc-card__meta">
                                   {doc.doc_code && `${doc.doc_code} · `}
                                   {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
                                   {doc.clause_ref && ` · \u00A7${doc.clause_ref}`}
-                                  {doc.status && ` · `}
-                                  {doc.status && (
-                                    <span className={`status-badge status-${doc.status}`}>
-                                      {DOC_STATUS_LABELS[doc.status] || doc.status}
-                                    </span>
+                                  {shouldShowDocumentStatusBadge(doc) && ` · `}
+                                  {shouldShowDocumentStatusBadge(doc) && (
+                                    <StatusBadge type="document" status={doc.status} />
                                   )}
                                 </span>
                               </div>
@@ -1609,6 +1922,7 @@ function DocumentRegistry() {
           companies={companies}
           standards={standards}
           defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
+          defaultCompanyId={!editingDoc && registryCompanyScope ? registryCompanyScope : undefined}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />
@@ -1618,7 +1932,11 @@ function DocumentRegistry() {
       {fileDialogDoc && (
         <DocFileDialog
           doc={fileDialogDoc}
-          onClose={() => setFileDialogDoc(null)}
+          onClose={async () => {
+            setFileDialogDoc(null);
+            await Promise.all([loadStats(), loadPriorityDocs()]);
+            if (activeTab === "catalog") await loadCatalog();
+          }}
         />
       )}
 

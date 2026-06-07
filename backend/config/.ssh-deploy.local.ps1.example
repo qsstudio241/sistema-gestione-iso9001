@@ -2,8 +2,10 @@
 # Il file .ps1 reale e' in .gitignore: non finira' mai su GitHub.
 #
 # Scopo: permettere a Cursor (sul tuo PC) di eseguire deploy/migration senza
-# incollare password in chat. Lo script deploy-controllers-to-vps.ps1 carica
-# automaticamente .ssh-deploy.local.ps1 all'avvio, se esiste.
+# incollare password in chat. Caricato automaticamente da:
+#   deploy-controllers-to-vps.ps1, run-on-vps.ps1, vps-preflight.ps1
+# Verifica: .\backend\scripts\vps-preflight.ps1  (deve stampare VPS_ACCESS_OK)
+# SGQ_SSH_KEY_B64 e' SOLO per Cloud Agent — non serve su Windows.
 #
 # --- Opzione A (consigliata in produzione): solo sessione PuTTY + Pageant ---
 # $env:SGQ_PUTTY_SESSION = "SGQ-VPS"

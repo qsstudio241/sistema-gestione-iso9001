@@ -28,9 +28,13 @@ function AutoTextarea({
   className = "outcome-textarea",
   /** UUID audit — abilita protezione draft da hydrate/reconcile */
   auditUuid = null,
-  /** es. q:123 o custom:item-uuid */
+  /** Scope generico (audit UUID, nc:123, nc-create) — ha priorità su auditUuid */
+  draftScopeId = null,
+  /** es. q:123 o custom:item-uuid o description */
   draftFieldId = null,
+  onFocus,
 }) {
+  const draftScope = draftScopeId || auditUuid || null;
   const ref = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
@@ -68,7 +72,7 @@ function AutoTextarea({
   };
 
   const touchDraft = () => {
-    if (auditUuid && draftFieldId) markDraft(auditUuid, draftFieldId);
+    if (draftScope && draftFieldId) markDraft(draftScope, draftFieldId);
   };
 
   const startRecognition = () => {
@@ -93,7 +97,12 @@ function AutoTextarea({
         isListeningRef.current = false;
         clearTimeout(restartTimerRef.current);
         setIsListening(false);
-        setVoiceError(e.error);
+        // "network" copre due casi distinti: distinguiamo tramite navigator.onLine
+        if (e.error === "network" && !navigator.onLine) {
+          setVoiceError("network-offline");
+        } else {
+          setVoiceError(e.error);
+        }
       };
 
       recognition.onend = () => {
@@ -156,8 +165,10 @@ function AutoTextarea({
       "Servizio vocale non disponibile. Prova: Impostazioni Android \u2192 App \u2192 Google \u2192 Autorizzazioni \u2192 Microfono \u2192 Consenti.",
     "audio-capture":
       "Microfono non accessibile. Un'altra app potrebbe averlo occupato. Chiudi altre app e riprova.",
+    "network-offline":
+      "Nessuna connessione internet. Riconnettiti e riprova la dettatura.",
     "network":
-      "Connessione assente. La dettatura richiede internet. Riprova con connessione attiva.",
+      "Servizio di riconoscimento vocale non raggiungibile (rete presente ma server Google Speech irresponsivo). Verifica la connessione e riprova.",
     "language-not-supported":
       "Lingua it-IT non supportata su questo dispositivo.",
     "unavailable":
@@ -173,12 +184,13 @@ function AutoTextarea({
     onChange?.(e);
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e) => {
     touchDraft();
+    onFocus?.(e);
   };
 
   const handleBlur = (e) => {
-    if (auditUuid && draftFieldId) scheduleClearDraft(auditUuid, draftFieldId, 2000);
+    if (draftScope && draftFieldId) scheduleClearDraft(draftScope, draftFieldId, 2000);
     onBlur?.(e);
   };
 

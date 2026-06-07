@@ -524,8 +524,9 @@ class ApiService {
         return this.get(`/companies${query ? '?' + query : ''}`);
     }
 
-    async getCompany(id) {
-        return this.get(`/companies/${id}`);
+    async getCompany(id, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${id}${query ? '?' + query : ''}`);
     }
 
     async createCompany(data) {
@@ -563,6 +564,26 @@ class ApiService {
 
     getCompanyLogoUrl(id) {
         return `${this.baseUrl}/companies/${id}/logo`;
+    }
+
+    async getCompanyPersonnel(companyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/personnel${query ? '?' + query : ''}`);
+    }
+
+    async createCompanyPersonnel(companyId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/personnel${query ? '?' + query : ''}`, data);
+    }
+
+    async updateCompanyPersonnel(companyId, personnelId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.put(`/companies/${companyId}/personnel/${personnelId}${query ? '?' + query : ''}`, data);
+    }
+
+    async deleteCompanyPersonnel(companyId, personnelId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.delete(`/companies/${companyId}/personnel/${personnelId}${query ? '?' + query : ''}`);
     }
 
     // ==========================================
@@ -760,8 +781,26 @@ class ApiService {
         return this.get(`/non-conformities/statistics/overview${qs ? '?' + qs : ''}`);
     }
 
+    /** Alias per HomePage e codice legacy — delega a getNcStats */
+    async getNonConformitiesStatistics(params = {}) {
+        return this.getNcStats(params);
+    }
+
     async updateNcStatus(id, data) {
         return this.put(`/non-conformities/${id}`, data);
+    }
+
+    async approveNcClosure(id) {
+        return this.post(`/non-conformities/${id}/approve-closure`, {});
+    }
+
+    async getAggregateDueNcActions(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/non-conformities/actions/due${qs ? '?' + qs : ''}`);
+    }
+
+    async getChecklistSectionsByStandard(standardId) {
+        return this.get(`/checklist/sections?standard_id=${standardId}`);
     }
 
     // NC Actions
@@ -1015,6 +1054,41 @@ class ApiService {
     }
 
     /**
+     * Carica un template Word (.docx) per l'organizzazione (admin/auditor)
+     * @param {File} file - file .docx (max 5 MB)
+     * @param {{ name?: string, scope?: string }} options
+     */
+    async uploadReportTemplate(file, options = {}) {
+        const { name, scope = 'audit' } = options;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('scope', scope);
+        if (name && String(name).trim()) {
+            formData.append('name', String(name).trim());
+        }
+
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/report-templates`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Caricamento template fallito',
+                response.status,
+                errorData.code || 'REPORT_TEMPLATE_UPLOAD_ERROR'
+            );
+        }
+
+        return response.json();
+    }
+
+    /**
      * Assegna template a standard per l'org
      */
     async assignReportTemplateToStandard(standardId, reportTemplateId) {
@@ -1026,6 +1100,30 @@ class ApiService {
      */
     async assignReportTemplateToCustomChecklist(customChecklistId, reportTemplateId) {
         return this.put(`/report-template-assignments/custom-checklist/${customChecklistId}`, { report_template_id: reportTemplateId });
+    }
+
+    /**
+     * Assegnazioni template per standard (org corrente)
+     */
+    async getReportTemplateStandardAssignments() {
+        return this.get('/report-template-assignments/standards');
+    }
+
+    /**
+     * Duplica template di sistema nello studio
+     * @param {number} templateId
+     * @param {string} name
+     */
+    async duplicateReportTemplate(templateId, name) {
+        return this.post(`/report-templates/${templateId}/duplicate`, { name: String(name).trim() });
+    }
+
+    /**
+     * Elimina template dello studio
+     * @param {number} templateId
+     */
+    async deleteReportTemplate(templateId) {
+        return this.delete(`/report-templates/${templateId}`);
     }
 
     // ==========================================
@@ -1042,6 +1140,10 @@ class ApiService {
 
     async createCustomChecklist(data) {
         return this.post('/custom-checklists', data);
+    }
+
+    async seedLegislativoAmbientaleChecklist() {
+        return this.post('/custom-checklists/seed/legislativo-ambientale', {});
     }
 
     async updateCustomChecklist(id, data) {
@@ -1125,11 +1227,24 @@ class ApiService {
     }
 
     async createDocument(data) {
-        return this.post('/documents', data);
+        const body = data?.status != null
+            ? { ...data, status: this._normalizeDocumentRegistryStatus(data.status) }
+            : data;
+        return this.post('/documents', body);
     }
 
     async updateDocument(id, data) {
-        return this.put(`/documents/${id}`, data);
+        const body = data?.status != null
+            ? { ...data, status: this._normalizeDocumentRegistryStatus(data.status) }
+            : data;
+        return this.put(`/documents/${id}`, body);
+    }
+
+    /** Alias legacy "vigente" → "rilasciato" (registro documenti, non validity_status norme). */
+    _normalizeDocumentRegistryStatus(raw) {
+        if (raw == null || String(raw).trim() === '') return 'rilasciato';
+        const s = String(raw).trim().toLowerCase();
+        return s === 'vigente' ? 'rilasciato' : s;
     }
 
     /** Soft delete: porta il documento a status='obsoleto' */
@@ -1168,6 +1283,14 @@ class ApiService {
         return this.post('/notifications-config/test', {});
     }
 
+    async getNotificationContacts(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/notification-contacts${qs ? '?' + qs : ''}`);
+    }
+    async createNotificationContact(data) { return this.post('/notification-contacts', data); }
+    async updateNotificationContact(id, data) { return this.put(`/notification-contacts/${id}`, data); }
+    async deleteNotificationContact(id) { return this.delete(`/notification-contacts/${id}`); }
+
     // ─── WebDAV / Office Round-trip (Sprint 12-A) ────────────────────────────
 
     async getWebdavLink(docId, mode = 'edit') {
@@ -1195,8 +1318,20 @@ class ApiService {
     async deleteDocumentRelation(relationId)    { return this.delete(`/document-relations/${relationId}`); }
 
     // ─── Document Tree ──────────────────────────────────────────────────────
-    async getDocumentTree(depth = 2)            { return this.get(`/documents/tree?depth=${depth}`); }
-    async getDocumentTreeChildren(parentId)     { return this.get(`/documents/tree/${parentId}/children`); }
+    async getDocumentTree(depth = 2, companyId = null) {
+        let url = `/documents/tree?depth=${depth}`;
+        if (companyId != null && companyId !== '') {
+            url += `&company_id=${encodeURIComponent(companyId)}`;
+        }
+        return this.get(url);
+    }
+    async getDocumentTreeChildren(parentId, companyId = null) {
+        let url = `/documents/tree/${parentId}/children`;
+        if (companyId != null && companyId !== '') {
+            url += `?company_id=${encodeURIComponent(companyId)}`;
+        }
+        return this.get(url);
+    }
     async moveDocument(docId, data)             { return this.put(`/documents/${docId}/move`, data); }
     async createFolder(data)                    { return this.post('/documents/folder', data); }
     async getDocumentBreadcrumb(docId)          { return this.get(`/documents/${docId}/breadcrumb`); }
@@ -1209,6 +1344,38 @@ class ApiService {
 
     /** Documenti orfani (senza parent_id, non in cartella) */
     async getOrphanDocuments()                  { return this.get('/documents/orphans'); }
+
+    /**
+     * Pre-estrazione metadati AI da un PDF (nessun record DB creato).
+     * @param {File} file — oggetto File/Blob del PDF
+     * @param {string} docType — chiave tipo documento (es. "norma", "patentino_saldatore")
+     * @returns {Promise<{ metadata: object, confidence: number, model: string }>}
+     */
+    async preExtractDocumentMetadata(file, docType) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (docType) formData.append('doc_type', docType);
+        const token = this.getToken();
+        const response = await fetch(
+            `${this.baseUrl}/documents/pre-extract`,
+            {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData,
+            }
+        );
+        if (!response.ok) {
+            let errMsg = `Errore ${response.status}`;
+            try {
+                const errJson = await response.json();
+                errMsg = errJson.error || errMsg;
+            } catch { /* non json */ }
+            const err = new Error(errMsg);
+            err.status = response.status;
+            throw err;
+        }
+        return response.json();
+    }
 
     // ─── File allegati documenti (Sprint 2B) ──────────────────────────────────
 
@@ -1262,6 +1429,22 @@ class ApiService {
             throw new Error(`HTTP ${response.status}`);
         }
         return response.blob();
+    }
+
+    /** Scarica file registro documenti via Bearer (affidabile anche senza token in URL). */
+    async downloadDocFile(docId, attId = null, suggestedName = null) {
+        const blob = await this.getDocFileBlob(docId, attId);
+        const url = URL.createObjectURL(blob);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = suggestedName || 'documento';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
     }
 
     // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────
@@ -1348,6 +1531,46 @@ class ApiService {
         return this.patch(`/admin/organizations/${organizationId}/licenses`, body);
     }
 
+    // ─── Fatturazione (solo superadmin) ──────────────────────────────────────
+    async getBillingOverview() {
+        return this.get('/admin/billing/overview');
+    }
+
+    async getBillingCompanies(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/admin/billing/companies${qs ? '?' + qs : ''}`);
+    }
+
+    async getBillingEvents(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/admin/billing/events${qs ? '?' + qs : ''}`);
+    }
+
+    async downloadBillingExport(period) {
+        const token = this.getToken();
+        const qs = period ? `?period=${encodeURIComponent(period)}` : '';
+        const response = await fetch(`${this.baseUrl}/admin/billing/export${qs}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) {
+            let errMsg = 'Export fatturazione non riuscito';
+            try {
+                const j = await response.json();
+                errMsg = j.error || errMsg;
+            } catch (_) { /* ignore */ }
+            throw new Error(errMsg);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `billing-${period || 'export'}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
     // ─── Import job PDF batch (Sprint 9) ─────────────────────────────────────
     async getImportJobs() {
         return this.get('/import-jobs');
@@ -1411,6 +1634,11 @@ class ApiService {
         return this.post('/contract-reviews', data);
     }
 
+    /** Epic R2: crea caso Riesame da import job (conferma utente in ImportJobsPage) */
+    async importContractCaseFromJob(payload) {
+        return this.post('/contract-reviews/import-from-job', payload);
+    }
+
     async getContractReview(id) {
         return this.get(`/contract-reviews/${id}`);
     }
@@ -1426,12 +1654,91 @@ class ApiService {
         });
     }
 
+    async registerContractReviewHandoff(id, payload) {
+        return this.post(`/contract-reviews/${id}/handoff`, payload);
+    }
+
     async generateReviewChecklist(id, phase) {
         return this.post(`/contract-reviews/${id}/generate-checklist`, { phase });
     }
 
     async saveChecklistAnswer(caseId, itemId, data) {
         return this.put(`/contract-reviews/${caseId}/checklist/${itemId}`, data);
+    }
+
+    async getContractReviewSummary() {
+        return this.get('/contract-reviews/summary');
+    }
+
+    async getContractReviewInbox(kind = 'assigned_to_me', limit = 20) {
+        const qs = new URLSearchParams({ kind, limit: String(limit) }).toString();
+        return this.get(`/contract-reviews/inbox?${qs}`);
+    }
+
+    async getContractReviewTransitionOptions(caseId) {
+        return this.get(`/contract-reviews/${caseId}/transition-options`);
+    }
+
+    async getContractReviewClarifications(caseId) {
+        return this.get(`/contract-reviews/${caseId}/clarifications`);
+    }
+
+    async createContractReviewClarification(caseId, data) {
+        return this.post(`/contract-reviews/${caseId}/clarifications`, data);
+    }
+
+    async updateContractReviewClarification(caseId, clarificationId, data) {
+        return this.patch(`/contract-reviews/${caseId}/clarifications/${clarificationId}`, data);
+    }
+
+    async getContractReviewDocuments(caseId) {
+        return this.get(`/contract-reviews/${caseId}/documents`);
+    }
+
+    async linkContractReviewDocument(caseId, data) {
+        return this.post(`/contract-reviews/${caseId}/documents/link`, data);
+    }
+
+    async unlinkContractReviewDocument(caseId, linkId) {
+        return this.delete(`/contract-reviews/${caseId}/documents/${linkId}`);
+    }
+
+    async getContractReviewAttachments(caseId) {
+        return this.get(`/contract-reviews/${caseId}/attachments`);
+    }
+
+    async uploadContractReviewAttachment(caseId, file, options = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (options.category) formData.append('category', options.category);
+        if (options.description) formData.append('description', options.description);
+        if (options.direction) formData.append('direction', options.direction);
+        if (options.counterparty) formData.append('counterparty', options.counterparty);
+        if (options.doc_role) formData.append('doc_role', options.doc_role);
+
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/contract-reviews/${caseId}/attachments/upload`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Upload allegato fallito',
+                response.status,
+                errorData.code || 'UPLOAD_ERROR',
+                errorData,
+            );
+        }
+        return response.json();
+    }
+
+    async analyzeContractRequirements(caseId, body = {}) {
+        return this.post(`/contract-reviews/${caseId}/ai/analyze-requirements`, body, {
+            timeout: 90000,
+        });
     }
 
     async aiSuggest(feature, context) {
@@ -1442,10 +1749,29 @@ class ApiService {
         return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
     }
 
-    async aiChat(message, companyId = null) {
+    async aiChat(message, options = {}) {
         const body = { message };
-        if (companyId) body.companyId = companyId;
+        const opts = typeof options === 'object' && options !== null ? options : {};
+        if (opts.companyId) body.companyId = opts.companyId;
+        if (opts.standardId) body.standardId = opts.standardId;
+        if (opts.auditId) body.auditId = opts.auditId;
+        if (opts.clauseRef) body.clauseRef = opts.clauseRef;
+        if (opts.questionId) body.questionId = opts.questionId;
+        if (opts.questionText) body.questionText = opts.questionText;
+        if (opts.standardKey) body.standardKey = opts.standardKey;
         return this.post('/ai/chat', body, { timeout: 120000 });
+    }
+
+    async globalSearch(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.q) qs.set('q', params.q);
+        if (params.companyId != null && params.companyId !== '') {
+            qs.set('companyId', String(params.companyId));
+        }
+        if (params.entityTypes) qs.set('entityTypes', params.entityTypes);
+        if (params.limit) qs.set('limit', String(params.limit));
+        const query = qs.toString();
+        return this.get(`/search${query ? `?${query}` : ''}`);
     }
 
     async aiReindex() {
@@ -1482,12 +1808,53 @@ class ApiService {
     async deleteProject(id)          { return this.delete(`/projects/${id}`); }
     async getProjectStats()          { return this.get('/projects/stats'); }
 
+    /**
+     * Verifica stato validità norma su catalogo pubblico ente (BSI / ISO / UNI).
+     * Non bloccante: in caso di errore restituisce { status: 'unknown' }.
+     *
+     * @param {string} standardCode - Es. "BS EN ISO 9606-1:2017"
+     * @param {string} issuingBody  - Es. "BSI", "ISO", "UNI"
+     * @returns {Promise<{ status: 'active'|'withdrawn'|'superseded'|'unknown', supersededBy: string|null, catalogUrl: string|null, checkedAt: string }>}
+     */
+    async lookupNormStatus(standardCode, issuingBody, documentId) {
+        try {
+            const body = {
+                standard_code: standardCode,
+                issuing_body:  issuingBody || '',
+            };
+            if (documentId) body.document_id = documentId;
+            const res = await this.post('/documents/norm-lookup', body, { timeout: 8000 });
+            return res?.data || { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };
+        } catch {
+            return { status: 'unknown', supersededBy: null, catalogUrl: null, checkedAt: new Date().toISOString() };
+        }
+    }
+
+    /**
+     * Import batch codici norma/legge (senza PDF obbligatorio).
+     * @param {string|string[]} codes
+     * @param {number|null} folderId
+     */
+    async importNormCodes(codes, folderId = null) {
+        const body = { codes };
+        if (folderId) body.folder_id = folderId;
+        const res = await this.post('/documents/norm-import-codes', body, { timeout: 120000 });
+        return res?.data ?? res;
+    }
+
     // ─── Norme upload (Sprint Norme AI) ─────────────────────────────────────
 
-    async uploadNorms(files) {
+    /**
+     * @param {File[]} files
+     * @param {number|string|null} folderId — cartella NORME E LEGGI (parent_folder_id)
+     */
+    async uploadNorms(files, folderId = null) {
         const formData = new FormData();
         for (const file of files) {
             formData.append('files', file);
+        }
+        if (folderId != null && folderId !== '') {
+            formData.append('parent_folder_id', String(folderId));
         }
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};

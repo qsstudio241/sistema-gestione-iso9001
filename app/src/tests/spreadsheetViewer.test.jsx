@@ -1,5 +1,5 @@
 /**
- * Test suite – SpreadsheetViewer component
+ * Test suite ï¿½ SpreadsheetViewer component
  *
  * Verifica: rendering overlay, fogli multipli, gestione errori, pulsante download.
  */
@@ -10,7 +10,7 @@ import SpreadsheetViewer from "../components/SpreadsheetViewer";
 // Mock xlsx module
 vi.mock("xlsx", () => {
   const sheetData = [
-    ["Nome", "Cognome", "Età"],
+    ["Nome", "Cognome", "Etï¿½"],
     ["Mario", "Rossi", 42],
     ["Anna", "Verdi", 35],
   ];
@@ -42,42 +42,36 @@ vi.mock("xlsx", () => {
 });
 
 // Mock apiService
+const mockGetDocFileBlob = vi.fn();
+const mockGetDocFileDownloadUrl = vi.fn((docId, attId, inline) =>
+  `http://localhost/api/v1/documents/${docId}/file/download?token=test${inline ? "&inline=1" : ""}`
+);
+
 vi.mock("../services/apiService", () => ({
   default: {
-    getDocFileDownloadUrl: vi.fn((docId, attId, inline) =>
-      `http://localhost/api/v1/documents/${docId}/file/download?token=test${inline ? "&inline=1" : ""}`
-    ),
-    getToken: vi.fn(() => "fake-token"),
+    getDocFileDownloadUrl: (...args) => mockGetDocFileDownloadUrl(...args),
+    getDocFileBlob: (...args) => mockGetDocFileBlob(...args),
   },
 }));
 
-function mockFetchSuccess() {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: true,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
-    })
-  );
+function mockBlobSuccess() {
+  mockGetDocFileBlob.mockResolvedValue({
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
+  });
 }
 
-function mockFetchError(status = 500) {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: false,
-      status,
-    })
-  );
+function mockBlobError() {
+  mockGetDocFileBlob.mockRejectedValue(new Error("Errore download: HTTP 500"));
 }
 
 describe("SpreadsheetViewer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchSuccess();
+    mockBlobSuccess();
   });
 
   it("mostra spinner durante il caricamento", () => {
-    // Non risolvere mai la promise fetch per mantenere lo stato loading
-    global.fetch = vi.fn(() => new Promise(() => {}));
+    mockGetDocFileBlob.mockImplementation(() => new Promise(() => {}));
 
     render(
       <SpreadsheetViewer docId={1} fileName="test.xlsx" onClose={() => {}} />
@@ -96,7 +90,7 @@ describe("SpreadsheetViewer", () => {
     });
 
     expect(screen.getByText("Cognome")).toBeInTheDocument();
-    expect(screen.getByText("Età")).toBeInTheDocument();
+    expect(screen.getByText("Etï¿½")).toBeInTheDocument();
     expect(screen.getByText("Mario")).toBeInTheDocument();
     expect(screen.getByText("Rossi")).toBeInTheDocument();
   });
@@ -131,7 +125,7 @@ describe("SpreadsheetViewer", () => {
   });
 
   it("mostra errore se il fetch fallisce", async () => {
-    mockFetchError(500);
+    mockBlobError();
 
     render(
       <SpreadsheetViewer docId={1} fileName="broken.xlsx" onClose={() => {}} />
@@ -147,7 +141,7 @@ describe("SpreadsheetViewer", () => {
   });
 
   it("mostra il pulsante Scarica come fallback su errore", async () => {
-    mockFetchError(404);
+    mockGetDocFileBlob.mockRejectedValue(new Error("Errore download: HTTP 404"));
 
     render(
       <SpreadsheetViewer docId={1} fileName="missing.xlsx" onClose={() => {}} />
@@ -196,7 +190,7 @@ describe("SpreadsheetViewer", () => {
     });
   });
 
-  it("non renderizza nulla se docId è null", () => {
+  it("non renderizza nulla se docId ï¿½ null", () => {
     const { container } = render(
       <SpreadsheetViewer docId={null} fileName="test.xlsx" onClose={() => {}} />
     );

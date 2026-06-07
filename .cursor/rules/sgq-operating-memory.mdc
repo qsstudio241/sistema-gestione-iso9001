@@ -46,7 +46,31 @@ Sollevare al committente SOLO: decisioni di prodotto, breaking change senza roll
 
 ## Accesso SSH al VPS (pattern autonomo — usare SEMPRE senza chiedere)
 
-Le credenziali SSH sono disponibili come variabili d'ambiente nel cloud agent. Pattern standard:
+### Windows locale (Cursor desktop) — PRIMA SCELTA
+
+**Vietato** dichiarare *"Impossibile verificare: SGQ_SSH_KEY_B64 vuota"* sul terminale Windows senza aver prima:
+
+1. Verificato `backend/config/.ssh-deploy.local.ps1` (gitignored)
+2. Eseguito `backend/scripts/vps-preflight.ps1` (deve stampare `VPS_ACCESS_OK`)
+3. Usato `backend/scripts/run-on-vps.ps1` o `deploy-controllers-to-vps.ps1` (PuTTY `plink`/`pscp`)
+
+`SGQ_SSH_KEY_B64` **non esiste** sul PC Windows — e' solo un secret **Cloud Agent**.
+
+```powershell
+# Preflight (obbligatorio prima di arrendersi su VPS)
+.\backend\scripts\vps-preflight.ps1
+
+# Comando remoto / script Node sul VPS (es. migrazione *-vps.js)
+.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-081-vps.js
+.\backend\scripts\run-on-vps.ps1 -Command "hostname"
+
+# Deploy completo backend
+.\backend\scripts\deploy-controllers-to-vps.ps1
+```
+
+Credenziali: `backend/config/.ssh-deploy.local.ps1` (`SGQ_SSH_PASSWORD` e/o `SGQ_PUTTY_SESSION` + Pageant).
+
+### Cloud Agent (Linux) — solo se non c'e' terminale Windows
 
 ```bash
 # Setup chiave (una volta per sessione shell)
@@ -72,7 +96,7 @@ Se la verifica mostra che il problema non esiste, **non fare nulla** e aggiornar
 
 ## Fase sviluppo e priorita' (contesto committente)
 - **Default fino a diverso avviso esplicito** (roadmap o messaggio utente): ambiente di lavoro orientato a **dati di prova**, priorita' su **funzionalita'**, **deploy VPS** e **commit/push** senza perdere tempo.
-- **Accesso server / deploy**: non fermare il flusso con blocchi o moniti lunghi su "sicurezza operativa" (es. rotazione password) quando l'unico ostacolo e' configurazione locale gia' prevista da doc: usare subito variabili `SGQ_SSH_KEY_B64` + `SGQ_SUDO_PASSWORD` (vedi sezione sopra), `database.json` — eseguire deploy e proseguire. Chiedere all'utente **solo** se le variabili SGQ_* risultano vuote/assenti.
+- **Accesso server / deploy**: su **Windows** usare subito `.ssh-deploy.local.ps1` + `vps-preflight.ps1` / `run-on-vps.ps1` (mai attendere `SGQ_SSH_KEY_B64`). Su **Cloud Agent** usare `SGQ_SSH_KEY_B64` + `SGQ_SUDO_PASSWORD`. Per SQL diretto da PC: `database.json`. Chiedere all'utente **solo** se `vps-preflight.ps1` fallisce e `.ssh-deploy.local.ps1` manca o e' incompleto.
 - **Invariato**: nessun segreto nei **file versionati** su Git; resta valido l'uso di file gitignored e credenziali solo sul PC.
 
 ## Modalita' operativa autonoma (affidabile, robusta, coerente)
@@ -147,8 +171,18 @@ Riferimento rapido — blocchi gia' collaudati da riutilizzare:
 
 **Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
 
+## UI guida flusso operativo (golden rule committente)
+- **UI guida flusso**: il layout dei moduli deve seguire l'ordine operativo reale (ISO/process), non un form unico alfabetico o per tipo campo. Usare sezioni numerate collassabili o gate per fasi non ancora rilevanti (es. drawer NC: Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura).
+
 ## Workflow default consigliato
 1) Identifica causa reale (non solo sintomo).
 2) Applica fix robusto e difensivo.
 3) Esegui test automatici completi disponibili.
 4) Deploy produzione (se applicabile) + smoke; poi **commit e push** quando l'esito e' positivo. In alternativa, commit prima del deploy se serve tracciare lo stato prima del rilascio — l'importante e' non chiudere senza verifica e senza allineare repo e ambiente.
+
+## Chiusura sessione — merge obbligatorio
+Quando il committente chiude la sessione (o il task e' TEST OK):
+1. **Merge su `main`** di ogni PR aperta dalla sessione: `gh pr ready <n>` (se draft) → `gh pr merge <n> --merge`.
+2. **`git pull origin main`** nel workspace per allinearsi.
+3. Aggiornare **`GUIDA_CONSOLIDATA.md`** (lezione appresa + PR mergiata) e **`DEPUTYTASK.md`** (stato chiuso).
+4. **Non** lasciare PR aperte alla chiusura, salvo breaking change o review umana esplicita.

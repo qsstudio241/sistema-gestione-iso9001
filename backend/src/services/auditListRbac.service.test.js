@@ -6,6 +6,8 @@ const {
     studioScopeClause,
     isOrgWideAdmin,
     normalizeRole,
+    documentRegistryScopeClause,
+    appendScopeSql,
 } = require('./auditListRbac.service');
 
 describe('normalizeRole', () => {
@@ -60,5 +62,46 @@ describe('studioScopeClause', () => {
         );
         expect(s.clause).toBe('');
         expect(s.params).toEqual({});
+    });
+});
+
+describe('appendScopeSql', () => {
+    it('restituisce suffisso AND o stringa vuota', () => {
+        expect(appendScopeSql({ clause: '', params: {} })).toBe('');
+        expect(appendScopeSql({ clause: 'a.x = 1', params: {} })).toBe(' AND a.x = 1');
+    });
+});
+
+describe('documentRegistryScopeClause', () => {
+    it('auditor con studio → auditor_org_id e company collegate', () => {
+        const s = documentRegistryScopeClause(
+            { user_id: 3, role: 'auditor', auditor_org_id: 10 },
+            'dr',
+        );
+        expect(s.clause).toContain('dr.auditor_org_id = @auditor_org_id');
+        expect(s.clause).toContain('companies WHERE auditor_org_id');
+        expect(s.params).toMatchObject({ auditor_org_id: 10, user_id: 3 });
+    });
+
+    it('cliente azienda → filtro company_id assegnate', () => {
+        const s = documentRegistryScopeClause(
+            {
+                user_id: 8,
+                role: 'viewer',
+                auditor_org_id: 10,
+                company_access: [{ company_id: 11, permission: 'read' }],
+            },
+            'dr',
+        );
+        expect(s.clause).toContain('dr.company_id IN');
+        expect(s.params.ca_scope_0).toBe(11);
+    });
+
+    it('admin senza studio → org-wide', () => {
+        const s = documentRegistryScopeClause(
+            { user_id: 1, role: 'admin', auditor_org_id: null },
+            'dr',
+        );
+        expect(s.clause).toBe('');
     });
 });

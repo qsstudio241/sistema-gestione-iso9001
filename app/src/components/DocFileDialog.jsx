@@ -1,13 +1,14 @@
 /**
  * DocFileDialog - Dialog gestione file allegato al documento del registro
- * Sprint 2B: visualizza lista versioni, permette upload nuova revisione
- * Sprint 12-A: "Apri in Word/Excel" (Office URI Scheme + WebDAV) e anteprima browser
+ * Visualizza lista versioni, upload revisione, anteprima browser,
+ * apertura Word/Excel desktop via WebDAV (PC).
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import DocumentPdfViewer from "./DocumentPdfViewer";
 import DocumentDocxViewer from "./DocumentDocxViewer";
+import SpreadsheetViewer from "./SpreadsheetViewer";
 import "./DocFileDialog.css";
 
 /** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
@@ -15,26 +16,32 @@ function e(dec) {
   return String.fromCodePoint(dec);
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 const BLOCKED_EXT = [".exe",".bat",".cmd",".ps1",".sh",".msi",".vbs",".jar",".com",".scr",".pif",".reg",".dll",".sys"];
 
 function isBlocked(filename) {
-  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1) return false;
+  const ext = filename.slice(dot).toLowerCase();
   return BLOCKED_EXT.includes(ext);
 }
 
-// Estensioni supportate da "Apri in Office" e "Visualizza nel browser"
 const OFFICE_WORD_EXTS  = ['.docx', '.doc', '.docm', '.rtf'];
 const OFFICE_EXCEL_EXTS = ['.xlsx', '.xls', '.xlsm'];
-const OFFICE_VIEW_EXTS  = [...OFFICE_WORD_EXTS, ...OFFICE_EXCEL_EXTS, '.pptx', '.ppt'];
 
 function getExt(filename) {
   if (!filename) return '';
-  return filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  const dot = filename.lastIndexOf('.');
+  if (dot === -1) return '';
+  return filename.slice(dot).toLowerCase();
 }
 
-// URL Microsoft Office Online Viewer (gratuito, nessuna dipendenza)
-function buildOfficOnlineViewUrl(webdavUrl) {
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(webdavUrl)}`;
+/** Word/Excel desktop (URI ms-word/ms-excel): solo PC, non smartphone/tablet. */
+function canUseOfficeDesktop() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
 function DocFileDialog({ doc, onClose }) {
@@ -42,6 +49,7 @@ function DocFileDialog({ doc, onClose }) {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState(null);
   const [uploading,   setUploading]   = useState(false);
+  const [uploadPct,   setUploadPct]   = useState(0);
   const [uploadErr,   setUploadErr]   = useState(null);
   // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
   const openTimeRef = useRef(Date.now());
@@ -50,11 +58,6 @@ function DocFileDialog({ doc, onClose }) {
   const [fileObj,     setFileObj]     = useState(null);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Sprint 12-A: stato per apertura/anteprima Office
-  const [officeLoading,  setOfficeLoading]  = useState(false);
-  const [officeError,    setOfficeError]    = useState(null);
-  const [webdavData,     setWebdavData]     = useState(null);
-  const [showEditAlert,  setShowEditAlert]  = useState(false);
   // Sprint 12-B: stato per rilascio revisione
   const [releasing,      setReleasing]      = useState(false);
   const [releaseError,   setReleaseError]   = useState(null);
@@ -66,13 +69,23 @@ function DocFileDialog({ doc, onClose }) {
   const [docxViewerOpen, setDocxViewerOpen] = useState(false);
   const [docxViewerAttId, setDocxViewerAttId] = useState(null);
   const [docxViewerName, setDocxViewerName] = useState(null);
+  const [xlsxViewerOpen, setXlsxViewerOpen] = useState(false);
+  const [xlsxViewerAttId, setXlsxViewerAttId] = useState(null);
+  const [xlsxViewerName, setXlsxViewerName] = useState(null);
+
+  const [officeLoading, setOfficeLoading] = useState(false);
+  const [officeError, setOfficeError] = useState(null);
+  const [webdavData, setWebdavData] = useState(null);
+  const [showEditAlert, setShowEditAlert] = useState(false);
 
   const fileInputRef = useRef(null);
+  const officeDesktop = canUseOfficeDesktop();
 
   useEffect(() => {
     loadFiles();
     setWebdavData(null);
     setOfficeError(null);
+    setShowEditAlert(false);
   }, [doc.id]);
 
   async function loadFiles() {
@@ -89,12 +102,18 @@ function DocFileDialog({ doc, onClose }) {
     }
   }
 
-  function handleFileChange(e) {
-    const f = e.target.files[0];
+  function handleFileChange(ev) {
+    const f = ev.target.files[0];
     if (!f) return;
     if (isBlocked(f.name)) {
-      setUploadErr(`Formato non consentito per sicurezza: ${f.name.slice(f.name.lastIndexOf("."))}`);
-      e.target.value = "";
+      const ext = getExt(f.name) || f.name;
+      setUploadErr(`Formato non consentito per sicurezza: ${ext}`);
+      ev.target.value = "";
+      return;
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      setUploadErr(`Il file supera il limite di 50 MB (${(f.size / 1024 / 1024).toFixed(1)} MB)`);
+      ev.target.value = "";
       return;
     }
     setFileObj(f);
@@ -105,10 +124,36 @@ function DocFileDialog({ doc, onClose }) {
   async function handleUpload() {
     if (!fileObj) return;
     setUploading(true);
+    setUploadPct(0);
     setUploadErr(null);
     setUploadOk(null);
+
     try {
-      const res = await apiService.uploadDocFile(doc.id, fileObj, version);
+      const formData = new FormData();
+      formData.append('file', fileObj);
+      if (version) formData.append('version', version);
+
+      const token = apiService.getToken?.() || localStorage.getItem('sgq_auth_token');
+      const url = `${apiService.baseUrl}/documents/${doc.id}/file`;
+
+      const res = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
+        };
+        xhr.onload = () => {
+          let body;
+          try { body = JSON.parse(xhr.responseText); } catch { body = {}; }
+          if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+          else reject(new Error(body.error || `Upload fallito (${xhr.status})`));
+        };
+        xhr.onerror = () => reject(new Error('Errore di rete durante il caricamento'));
+        xhr.send(formData);
+      });
+
+      setUploadPct(100);
       setUploadOk(`File "${res.file_name}" (${res.file_size_label}) caricato con successo.`);
       setFileObj(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -136,13 +181,10 @@ function DocFileDialog({ doc, onClose }) {
     }
   }, [doc.id, loadFiles]);
 
-  // Sprint 12-A: genera link WebDAV e apre Office (editing) o viewer (lettura)
   const handleOpenInOffice = useCallback(async (mode = 'edit') => {
     setOfficeLoading(true);
     setOfficeError(null);
     try {
-      // I link 'edit' e 'read' sono distinti lato server (token diversi).
-      // Cache solo se la modalita' coincide e non e' scaduto.
       let link = webdavData;
       const linkMode = link?.mode || 'edit';
       if (!link || linkMode !== mode || new Date(link.expires_at) <= new Date()) {
@@ -159,23 +201,22 @@ function DocFileDialog({ doc, onClose }) {
       setShowEditAlert(false);
 
       if (mode === 'edit') {
-        // Apertura diretta in Word/Excel desktop via URI Scheme (modifica)
         if (!link.office_uri) {
-          setOfficeError('Formato file non supportato per l\'apertura diretta in Office.');
+          setOfficeError("Formato file non supportato per l'apertura diretta in Office.");
           return;
         }
         window.location.href = link.office_uri;
+      } else if (link.office_uri_view) {
+        window.location.href = link.office_uri_view;
       } else {
-        // Per la visualizzazione il routing avviene direttamente sul pulsante
-        // (apre il viewer browser docx-preview), non passa di qui.
-        setOfficeError('Funzione non disponibile.');
+        setOfficeError('Visualizzazione Office non disponibile per questo formato.');
       }
     } catch (err) {
       setOfficeError(`Errore: ${err.message}`);
     } finally {
       setOfficeLoading(false);
     }
-  }, [doc.id, webdavData]);
+  }, [doc.id, doc.status, webdavData, showEditAlert]);
 
   const currentFile = data?.files?.[0];
   const history     = data?.files?.slice(1) || [];
@@ -243,23 +284,24 @@ function DocFileDialog({ doc, onClose }) {
                     </button>
                   ) : null}
 
-                  {/* Office: apri in Word/Excel desktop (Sprint 12-A) */}
-                  {OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
+                  {officeDesktop && OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
+                      type="button"
                       className="btn-docfile-office btn-docfile-office-word"
                       onClick={() => handleOpenInOffice('edit')}
                       disabled={officeLoading}
-                      title="Apri in Word desktop - modifica e salva direttamente"
+                      title="Apri in Word desktop - modifica e salva sul server"
                     >
                       {e(128196)} Apri in Word
                     </button>
                   )}
-                  {OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
+                  {officeDesktop && OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
+                      type="button"
                       className="btn-docfile-office btn-docfile-office-excel"
                       onClick={() => handleOpenInOffice('edit')}
                       disabled={officeLoading}
-                      title="Apri in Excel desktop - modifica e salva direttamente"
+                      title="Apri in Excel desktop - modifica e salva sul server"
                     >
                       {e(128202)} Apri in Excel
                     </button>
@@ -279,16 +321,16 @@ function DocFileDialog({ doc, onClose }) {
                       {e(128065)}{"\uFE0F"} Visualizza
                     </button>
                   )}
-                  {/* Excel: niente viewer browser, fallback Office Online Viewer */}
+                  {/* Excel: SpreadsheetViewer in-app (SheetJS), come docx-preview per Word */}
                   {OFFICE_EXCEL_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
                       className="btn-docfile-office btn-docfile-office-view"
                       onClick={() => {
-                        const url = apiService.getDocFileDownloadUrl(doc.id, currentFile.id, false);
-                        const viewUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
-                        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+                        setXlsxViewerAttId(currentFile.id);
+                        setXlsxViewerName(currentFile.file_name);
+                        setXlsxViewerOpen(true);
                       }}
-                      title="Visualizza nel browser"
+                      title="Visualizza nel browser - solo lettura, no Excel richiesto"
                     >
                       {e(128065)}{"\uFE0F"} Visualizza
                     </button>
@@ -298,27 +340,27 @@ function DocFileDialog({ doc, onClose }) {
                     <span className="docfile-office-loading">{e(9696)} Apertura...</span>
                   )}
 
-                  <a
-                    href={apiService.getDocFileDownloadUrl(doc.id)}
-                    download
+                  <button
+                    type="button"
                     className="btn-docfile-download"
+                    onClick={() => apiService.downloadDocFile(doc.id, null, currentFile.file_name).catch((err) => setError(err.message))}
                   >
                     {e(11015)}{"\uFE0F"} Scarica
-                  </a>
+                  </button>
                 </div>
 
-                {/* Alert: documento rilasciato → conferma apertura in modifica */}
                 {showEditAlert && (
                   <div className="docfile-office-alert">
                     <strong>{e(9888)}{"\uFE0F"} Documento rilasciato</strong>
                     <p>
                       Questo documento è in stato <strong>Rilasciato</strong>. Aprirlo in modifica
-                      creerà una nuova <strong>bozza</strong>: dovrai poi usare
-                      "Rilascia revisione" per renderlo di nuovo ufficiale.
+                      creerà una nuova <strong>bozza</strong>: usa poi
+                      {" "}&quot;Rilascia revisione&quot; per renderlo di nuovo ufficiale.
                     </p>
-                    <p>Se vuoi solo leggere, usa il pulsante <strong>Visualizza</strong>.</p>
+                    <p>Per solo consultazione usa <strong>Visualizza</strong>.</p>
                     <div className="docfile-alert-actions">
                       <button
+                        type="button"
                         className="btn-docfile-alert-confirm"
                         onClick={() => handleOpenInOffice('edit')}
                         disabled={officeLoading}
@@ -326,12 +368,34 @@ function DocFileDialog({ doc, onClose }) {
                         {e(9999)}{"\uFE0F"} Sì, apri in modifica
                       </button>
                       <button
+                        type="button"
                         className="btn-docfile-alert-cancel"
                         onClick={() => setShowEditAlert(false)}
                       >
                         Annulla
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {officeError && (
+                  <div className="docfile-office-error">
+                    {e(9888)}{"\uFE0F"} {officeError}
+                    <p className="docfile-office-fallback">
+                      Usa <strong>Scarica</strong>, modifica il file e ricaricalo con &quot;Carica nuova revisione&quot;.
+                    </p>
+                  </div>
+                )}
+
+                {webdavData && !officeError && !showEditAlert && officeDesktop && (
+                  <div className="docfile-office-info">
+                    {e(128274)} Link Office attivo: salva in Word/Excel per aggiornare il documento.
+                    Scade alle{" "}
+                    {new Date(webdavData.expires_at).toLocaleTimeString("it-IT", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    . Poi usa <strong>Rilascia revisione</strong> se il documento è in bozza.
                   </div>
                 )}
 
@@ -352,23 +416,6 @@ function DocFileDialog({ doc, onClose }) {
                   </div>
                 )}
 
-                {/* Errore apertura Office */}
-                {officeError && (
-                  <div className="docfile-office-error">
-                    {e(9888)}{"\uFE0F"} {officeError}
-                    <p className="docfile-office-fallback">
-                      Usa il pulsante <strong>Scarica</strong>, modifica il file e ricaricalo con "Carica nuova revisione".
-                    </p>
-                  </div>
-                )}
-
-                {/* Info post-apertura Office */}
-                {webdavData && !officeError && !showEditAlert && (
-                  <div className="docfile-office-info">
-                    {e(128274)} Link Office attivo - salva in Word/Excel per aggiornare il documento.
-                    Scade alle {new Date(webdavData.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
-                  </div>
-                )}
               </div>
             ) : (
               <div className="docfile-empty">
@@ -410,13 +457,14 @@ function DocFileDialog({ doc, onClose }) {
                             {e(128065)}{"\uFE0F"}
                           </button>
                         )}
-                        <a
-                          href={apiService.getDocFileDownloadUrl(doc.id, f.id)}
-                          download
+                        <button
+                          type="button"
                           className="btn-docfile-hist-dl"
+                          title="Scarica"
+                          onClick={() => apiService.downloadDocFile(doc.id, f.id, f.file_name).catch((err) => setError(err.message))}
                         >
                           {e(11015)}{"\uFE0F"}
-                        </a>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -459,6 +507,15 @@ function DocFileDialog({ doc, onClose }) {
                   </div>
                 )}
 
+                {uploading && (
+                  <div className="docfile-progress-wrap">
+                    <div className="docfile-progress-bar">
+                      <div className="docfile-progress-fill" style={{ width: `${uploadPct}%` }} />
+                    </div>
+                    <span className="docfile-progress-label">{uploadPct}%</span>
+                  </div>
+                )}
+
                 {uploadErr && <div className="docfile-upload-error">{e(9888)}{"\uFE0F"} {uploadErr}</div>}
                 {uploadOk  && <div className="docfile-upload-ok">{e(9989)} {uploadOk}</div>}
 
@@ -489,6 +546,14 @@ function DocFileDialog({ doc, onClose }) {
             attachmentId={docxViewerAttId}
             fileName={docxViewerName}
             onClose={() => setDocxViewerOpen(false)}
+          />
+        )}
+        {xlsxViewerOpen && (
+          <SpreadsheetViewer
+            docId={doc.id}
+            attachmentId={xlsxViewerAttId}
+            fileName={xlsxViewerName}
+            onClose={() => setXlsxViewerOpen(false)}
           />
         )}
       </div>

@@ -1,27 +1,37 @@
 /**
  * NCPage - Registro Non Conformità & Azioni Correttive
- * Sprint 5: vista cross-audit, workflow stati, azioni correttive strutturate
+ * NC Fase 1: griglia SgqDataGrid, creazione manuale, filtri scadenze
  * ISO 9001:2015 §8.7 + §10.2
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import { Link, useRouter } from "../contexts/RouterContext";
+import { useAuth } from "../contexts/AuthContext";
+import NcDetailPanel from "../components/NcDetailPanel";
+import NcCreateModal from "../components/NcCreateModal";
+import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
+import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import { downloadNcCsv } from "../utils/ncExportHelpers";
+import {
+  canTransitionNcStatus,
+  canApproveNcClosure,
+} from "../utils/ncWorkflow";
+import useNcDrawerWidth, {
+  NC_DRAWER_WIDTH_MIN,
+  getNcDrawerMaxWidth,
+} from "../hooks/useNcDrawerWidth";
+import "../components/ChecklistModule.css";
+import "../components/DocumentDetailPanel.css";
 import "./NCPage.css";
 
 const NC_STATUS_CFG = {
-  open:        { label: "Aperta",     cls: "nc-open",        icon: "🔴" },
-  in_progress: { label: "In corso",   cls: "nc-in-progress", icon: "🟡" },
-  resolved:    { label: "Risolta",    cls: "nc-resolved",    icon: "🟢" },
-  verified:    { label: "Verificata", cls: "nc-verified",    icon: "✅" },
-  closed:      { label: "Chiusa",     cls: "nc-closed",      icon: "⚫" },
-};
-
-const ACTION_STATUS_CFG = {
-  open:        { label: "Aperta",     cls: "act-open" },
-  in_progress: { label: "In corso",   cls: "act-in-progress" },
-  completed:   { label: "Completata", cls: "act-completed" },
-  verified:    { label: "Verificata", cls: "act-verified" },
+  open:        { label: "Aperta",     cls: "nc-open",        icon: "\uD83D\uDD34" },
+  in_progress: { label: "In corso",   cls: "nc-in-progress", icon: "\uD83D\uDFE1" },
+  resolved:    { label: "Risolta",    cls: "nc-resolved",    icon: "\uD83D\uDFE2" },
+  verified:    { label: "Verificata", cls: "nc-verified",    icon: "\u2705" },
+  closed:      { label: "Chiusa",     cls: "nc-closed",      icon: "\u26AB" },
 };
 
 const SEVERITY_CFG = {
@@ -29,6 +39,16 @@ const SEVERITY_CFG = {
   minor:       { label: "Lieve",        cls: "sev-minor" },
   observation: { label: "Osservazione", cls: "sev-obs" },
 };
+
+const NC_GRID_COLUMNS = [
+  { id: "nc_number", label: "N\u00B0 NC", sortable: true },
+  { id: "status", label: "Stato", sortable: true },
+  { id: "severity", label: "Severit\u00E0", sortable: true },
+  { id: "client_name", label: "Cliente", sortable: true },
+  { id: "audit_number", label: "Audit", sortable: true },
+  { id: "due_date", label: "Scadenza", sortable: true },
+  { id: "source_type", label: "Origine", sortable: true },
+];
 
 function NcStatusTag({ status }) {
   const c = NC_STATUS_CFG[status] || { label: status, cls: "", icon: "" };
@@ -40,220 +60,54 @@ function SeverityTag({ severity }) {
   return <span className={`sev-tag ${c.cls}`}>{c.label}</span>;
 }
 
-// ── Componente azioni correttive ─────────────────────────────────────────────
-
-function ActionsList({ ncId, ncStatus }) {
-  const [actions, setActions]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState({ action_type: "corrective", description: "", responsible: "", due_date: "" });
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.getNcActions(ncId);
-      setActions(res?.data || []);
-    } catch {
-      setActions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [ncId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.description.trim()) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await apiService.createNcAction(ncId, {
-        action_type: form.action_type,
-        description: form.description.trim(),
-        responsible: form.responsible.trim() || null,
-        due_date: form.due_date || null,
-      });
-      setForm({ action_type: "corrective", description: "", responsible: "", due_date: "" });
-      setShowForm(false);
-      await load();
-    } catch (err) {
-      setError("Errore durante il salvataggio dell'azione.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleStatus(action, newStatus) {
-    try {
-      await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
-      await load();
-    } catch {
-      alert("Impossibile aggiornare lo stato dell'azione.");
-    }
-  }
-
-  async function handleDelete(action) {
-    if (!window.confirm(`Eliminare l'azione "${action.description.substring(0, 50)}..."?`)) return;
-    try {
-      await apiService.deleteNcAction(ncId, action.action_id);
-      await load();
-    } catch {
-      alert("Errore durante l'eliminazione.");
-    }
-  }
-
-  const isClosed = ["closed", "verified"].includes(ncStatus);
-
-  if (loading) return <p className="nc-loading">Caricamento azioni...</p>;
-
-  return (
-    <div className="nc-actions-panel">
-      <div className="nc-actions-header">
-        <h4>Azioni correttive ({actions.length})</h4>
-        {!isClosed && (
-          <button className="btn-add-action" onClick={() => setShowForm(v => !v)}>
-            {showForm ? "✕ Annulla" : "+ Aggiungi azione"}
-          </button>
-        )}
-      </div>
-
-      {showForm && (
-        <form className="nc-action-form" onSubmit={handleSubmit}>
-          <div className="nc-form-row">
-            <label>Tipo</label>
-            <select value={form.action_type} onChange={e => setForm(f => ({ ...f, action_type: e.target.value }))}>
-              <option value="immediate">Immediata</option>
-              <option value="corrective">Correttiva</option>
-              <option value="preventive">Preventiva</option>
-            </select>
-          </div>
-          <div className="nc-form-row">
-            <label>Descrizione *</label>
-            <textarea
-              required
-              rows={2}
-              value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              placeholder="Descrivi l'azione da intraprendere..."
-            />
-          </div>
-          <div className="nc-form-row nc-form-row-2col">
-            <div>
-              <label>Responsabile</label>
-              <input
-                type="text"
-                value={form.responsible}
-                onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
-                placeholder="Nome responsabile"
-              />
-            </div>
-            <div>
-              <label>Scadenza</label>
-              <input
-                type="date"
-                value={form.due_date}
-                onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-              />
-            </div>
-          </div>
-          {error && <p className="nc-error">{error}</p>}
-          <div className="nc-form-actions">
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? "Salvataggio..." : "Salva azione"}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {actions.length === 0 ? (
-        <p className="nc-empty-actions">Nessuna azione correttiva registrata.</p>
-      ) : (
-        <ul className="nc-actions-list">
-          {actions.map(a => {
-            const cfg = ACTION_STATUS_CFG[a.status] || { label: a.status, cls: "" };
-            const nextSteps = {
-              open:        ["in_progress"],
-              in_progress: ["completed"],
-              completed:   ["verified"],
-              verified:    [],
-            };
-            return (
-              <li key={a.action_id} className={`nc-action-item ${cfg.cls}`}>
-                <div className="nc-action-top">
-                  <span className={`act-type-badge at-${a.action_type}`}>
-                    {a.action_type === "immediate" ? "Immediata" : a.action_type === "corrective" ? "Correttiva" : "Preventiva"}
-                  </span>
-                  <span className={`act-status ${cfg.cls}`}>{cfg.label}</span>
-                  <span className="nc-action-date">{formatDate(a.created_at)}</span>
-                </div>
-                <p className="nc-action-desc">{a.description}</p>
-                {(a.responsible || a.due_date) && (
-                  <div className="nc-action-meta">
-                    {a.responsible && <span>👤 {a.responsible}</span>}
-                    {a.due_date && <span>📅 Scadenza: {formatDate(a.due_date)}</span>}
-                    {a.completed_at && <span>✅ Completata: {formatDate(a.completed_at)}</span>}
-                  </div>
-                )}
-                {!isClosed && (
-                  <div className="nc-action-btns">
-                    {(nextSteps[a.status] || []).map(ns => {
-                      const labels = { in_progress: "Avvia", completed: "Completa", verified: "Verifica" };
-                      return (
-                        <button key={ns} className="btn-action-status" onClick={() => handleStatus(a, ns)}>
-                          {labels[ns] || ns}
-                        </button>
-                      );
-                    })}
-                    {a.status === "open" && (
-                      <button className="btn-action-del" onClick={() => handleDelete(a)}>Elimina</button>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-// ── Pagina principale ────────────────────────────────────────────────────────
-
 export default function NCPage() {
+  const { replace } = useRouter();
+  const { user } = useAuth();
   const [ncList, setNcList]         = useState([]);
   const [stats, setStats]           = useState(null);
   const [loading, setLoading]       = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
-  // Filtri server-side
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", company_id: "" });
+  const [selectedNcId, setSelectedNcId] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewMode, setViewMode] = useState("nc");
+  const [dueActions, setDueActions] = useState([]);
+  const [dueActionsLoading, setDueActionsLoading] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  // Filtro locale per numero NC (ricerca testuale istantanea)
   const [searchNc, setSearchNc] = useState("");
-  // Lista clienti per il dropdown
   const [companies, setCompanies] = useState([]);
 
   const LIMIT = 20;
+  const { width: drawerWidth, startResize: startDrawerResize } = useNcDrawerWidth();
 
-  // Carica aziende una volta sola al mount
   useEffect(() => {
     apiService.getCompanies()
       .then(res => setCompanies(res?.data || []))
       .catch(() => setCompanies([]));
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selectId = params.get("select");
+    if (selectId) {
+      const id = parseInt(selectId, 10);
+      if (!Number.isNaN(id)) {
+        setSelectedNcId(id);
+        setViewMode("nc");
+      }
+    }
+  }, []);
+
   const loadNc = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, limit: LIMIT };
-      if (filters.status)     params.status     = filters.status;
-      if (filters.severity)   params.severity   = filters.severity;
-      if (filters.overdue)    params.overdue    = filters.overdue;
-      if (filters.company_id) params.company_id = filters.company_id;
+      if (filters.status)           params.status           = filters.status;
+      if (filters.severity)         params.severity         = filters.severity;
+      if (filters.overdue)          params.overdue          = filters.overdue;
+      if (filters.due_within_days)  params.due_within_days  = filters.due_within_days;
+      if (filters.company_id)       params.company_id       = filters.company_id;
 
       const [listRes, statsRes] = await Promise.all([
         apiService.getAllNonConformities(params),
@@ -272,7 +126,46 @@ export default function NCPage() {
 
   useEffect(() => { loadNc(); }, [loadNc]);
 
-  // Filtro locale per numero NC: istantaneo, senza round-trip al server
+  const loadDueActions = useCallback(async () => {
+    setDueActionsLoading(true);
+    try {
+      const res = await apiService.getAggregateDueNcActions({ due_within_days: 30, overdue: "true" });
+      setDueActions(res?.data || []);
+    } catch {
+      setDueActions([]);
+    } finally {
+      setDueActionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === "actions_due") loadDueActions();
+  }, [viewMode, loadDueActions]);
+
+  const isRq = canApproveNcClosure(user);
+
+  function handleExportCsv() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadNcCsv(`registro-nc-${stamp}.csv`, filteredList);
+  }
+
+  async function handleApproveClosure(nc) {
+    if (!isRq) {
+      alert("Solo admin o responsabile qualità possono approvare la chiusura.");
+      return;
+    }
+    if (!window.confirm(`Confermi l'approvazione chiusura per ${nc.nc_number}?`)) return;
+    setApproveLoading(true);
+    try {
+      await apiService.approveNcClosure(nc.nc_id);
+      await loadNc();
+    } catch (err) {
+      alert(err?.response?.data?.error || "Impossibile approvare la chiusura.");
+    } finally {
+      setApproveLoading(false);
+    }
+  }
+
   const filteredList = useMemo(() => {
     if (!searchNc.trim()) return ncList;
     const q = searchNc.trim().toLowerCase();
@@ -282,70 +175,174 @@ export default function NCPage() {
     );
   }, [ncList, searchNc]);
 
+  const selectedNc = useMemo(
+    () => filteredList.find(nc => nc.nc_id === selectedNcId) || ncList.find(nc => nc.nc_id === selectedNcId) || null,
+    [filteredList, ncList, selectedNcId]
+  );
+
   function handleFilter(key, val) {
-    setFilters(f => ({ ...f, [key]: val }));
+    if (key === "overdue" && val) {
+      setFilters(f => ({ ...f, overdue: val, due_within_days: "" }));
+    } else if (key === "due_within_days" && val) {
+      setFilters(f => ({ ...f, due_within_days: val, overdue: "" }));
+    } else {
+      setFilters(f => ({ ...f, [key]: val }));
+    }
     setPage(1);
-    setExpandedId(null);
+    setSelectedNcId(null);
   }
 
   function resetFilters() {
-    setFilters({ status: "", severity: "", overdue: "", company_id: "" });
+    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
     setSearchNc("");
     setPage(1);
-    setExpandedId(null);
+    setSelectedNcId(null);
+    replace("/nc");
+  }
+
+  function handleRowSelect(rowKey, row) {
+    const id = rowKey ?? row?.nc_id ?? null;
+    setSelectedNcId(id);
+    replace(id ? `/nc?select=${id}` : "/nc");
+  }
+
+  function handleCloseDetail() {
+    setSelectedNcId(null);
+    replace("/nc");
   }
 
   async function handleStatusChange(nc, newStatus) {
-    try {
-      await apiService.updateNcStatus(nc.nc_id, { status: newStatus });
-      await loadNc();
-    } catch {
-      alert("Impossibile aggiornare lo stato della NC.");
+    const gate = canTransitionNcStatus(nc, newStatus);
+    if (!gate.ok) {
+      alert(gate.message);
+      return;
     }
+    let reopenReason;
+    if (nc.status === "closed" && newStatus === "in_progress") {
+      if (!window.confirm(`Riaprire ${nc.nc_number}? La NC tornerà in lavorazione e andrà ri-approvata prima di una nuova chiusura.`)) {
+        return;
+      }
+      const prompted = window.prompt("Motivo riapertura (opzionale, tracciato in note verifica):", "");
+      if (prompted === null) return;
+      reopenReason = prompted.trim() || undefined;
+    }
+    try {
+      await apiService.updateNcStatus(nc.nc_id, {
+        status: newStatus,
+        ...(reopenReason !== undefined ? { reopen_reason: reopenReason } : {}),
+      });
+      await loadNc();
+    } catch (err) {
+      alert(err?.response?.data?.error || "Impossibile aggiornare lo stato della NC.");
+    }
+  }
+
+  function handleCreated() {
+    setShowCreateModal(false);
+    loadNc();
   }
 
   const openCount    = stats?.open     ?? 0;
   const inProgCount  = stats?.in_progress ?? 0;
   const overdueCount = stats?.overdue  ?? 0;
+  const dueSoonCount = stats?.due_soon ?? 0;
 
-  // Determina quale card è attiva per evidenziarla
   function getActiveCard() {
     if (filters.overdue === "true") return "overdue";
+    if (filters.due_within_days === "7") return "due_soon";
     if (filters.status === "open")        return "open";
     if (filters.status === "in_progress") return "in_progress";
-    if (!filters.status && !filters.overdue) return "total";
+    if (!filters.status && !filters.overdue && !filters.due_within_days) return "total";
     return null;
   }
 
   function handleCardFilter(card) {
     const active = getActiveCard();
     if (active === card) {
-      setFilters(f => ({ ...f, status: "", overdue: "" }));
+      setFilters(f => ({ ...f, status: "", overdue: "", due_within_days: "" }));
       setPage(1);
       return;
     }
-    if (card === "open")        setFilters(f => ({ ...f, status: "open",        overdue: "" }));
-    if (card === "in_progress") setFilters(f => ({ ...f, status: "in_progress", overdue: "" }));
-    if (card === "overdue")     setFilters(f => ({ ...f, status: "",             overdue: "true" }));
-    if (card === "total")       setFilters(f => ({ ...f, status: "",             overdue: "" }));
+    if (card === "open")        setFilters(f => ({ ...f, status: "open",        overdue: "", due_within_days: "" }));
+    if (card === "in_progress") setFilters(f => ({ ...f, status: "in_progress", overdue: "", due_within_days: "" }));
+    if (card === "overdue")     setFilters(f => ({ ...f, status: "",             overdue: "true", due_within_days: "" }));
+    if (card === "due_soon")    setFilters(f => ({ ...f, status: "",             overdue: "", due_within_days: "7" }));
+    if (card === "total")       setFilters(f => ({ ...f, status: "",             overdue: "", due_within_days: "" }));
     setPage(1);
-    setExpandedId(null);
+    setSelectedNcId(null);
   }
 
   const activeCard = getActiveCard();
-  const hasActiveFilter = !!(filters.status || filters.severity || filters.overdue || filters.company_id || searchNc);
+  const hasActiveFilter = !!(
+    filters.status || filters.severity || filters.overdue
+    || filters.due_within_days || filters.company_id || searchNc
+  );
+
+  function renderGridCell(row, col) {
+    switch (col.id) {
+      case "nc_number":
+        return (
+          <span className="nc-grid-number">
+            {row.nc_number}
+            {(row.is_overdue === 1 || row.is_overdue === true) && (
+              <span className="nc-overdue-badge" title="Scaduta">{"\u26A0\uFE0F"}</span>
+            )}
+          </span>
+        );
+      case "status":
+        return <NcStatusTag status={row.status} />;
+      case "severity":
+        return <SeverityTag severity={row.severity} />;
+      case "audit_number":
+        return (
+          <span className="nc-grid-audit" title={row.client_name || ""}>
+            {"\uD83D\uDCCB"} {row.audit_number || "\u2014"}
+          </span>
+        );
+      case "due_date":
+        return row.due_date ? formatDate(row.due_date) : "\u2014";
+      case "source_type":
+        return NC_SOURCE_TYPE_LABELS[row.source_type] || row.source_type || "\u2014";
+      default:
+        return row[col.id] ?? "\u2014";
+    }
+  }
+
+  function gridRowClassName(row) {
+    const classes = [];
+    if (row.nc_id === selectedNcId) classes.push("sgq-datagrid-row-selected");
+    if (row.is_overdue === 1 || row.is_overdue === true) classes.push("nc-grid-row-overdue");
+    return classes.join(" ");
+  }
 
   return (
     <div className="nc-page">
       <div className="nc-page-header">
-        <h1>🚨 Non Conformità &amp; Azioni Correttive</h1>
-        <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
+        <div>
+          <h1>{"\uD83D\uDEA8 Non Conformit\u00E0 & Azioni Correttive"}</h1>
+          <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
+        </div>
+        <div className="nc-page-header-actions">
+          <button
+            type="button"
+            className={`btn-secondary${viewMode === "actions_due" ? " nc-view-active" : ""}`}
+            onClick={() => setViewMode(v => v === "actions_due" ? "nc" : "actions_due")}
+          >
+            {viewMode === "actions_due" ? "Registro NC" : "Azioni in scadenza"}
+          </button>
+          <button type="button" className="btn-secondary" onClick={handleExportCsv} disabled={!filteredList.length}>
+            Export CSV
+          </button>
+          <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
+            + Nuova NC
+          </button>
+        </div>
       </div>
 
-      {/* Stats bar - ogni card è un pulsante filtro */}
       {stats && (
         <div className="nc-stats-bar">
           <button
+            type="button"
             className={`nc-stat nc-stat-open${activeCard === "open" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("open")}
             title="Filtra: solo NC aperte"
@@ -354,6 +351,7 @@ export default function NCPage() {
             <span className="nc-stat-label">Aperte</span>
           </button>
           <button
+            type="button"
             className={`nc-stat nc-stat-prog${activeCard === "in_progress" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("in_progress")}
             title="Filtra: solo NC in corso"
@@ -362,6 +360,7 @@ export default function NCPage() {
             <span className="nc-stat-label">In corso</span>
           </button>
           <button
+            type="button"
             className={`nc-stat nc-stat-over${activeCard === "overdue" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("overdue")}
             title="Filtra: solo NC scadute"
@@ -369,7 +368,19 @@ export default function NCPage() {
             <span className="nc-stat-num">{overdueCount}</span>
             <span className="nc-stat-label">Scadute</span>
           </button>
+          {dueSoonCount > 0 && (
+            <button
+              type="button"
+              className={`nc-stat nc-stat-soon${activeCard === "due_soon" ? " nc-stat-active" : ""}`}
+              onClick={() => handleCardFilter("due_soon")}
+              title="Filtra: NC in scadenza entro 7 giorni"
+            >
+              <span className="nc-stat-num">{dueSoonCount}</span>
+              <span className="nc-stat-label">In scadenza</span>
+            </button>
+          )}
           <button
+            type="button"
             className={`nc-stat nc-stat-tot${activeCard === "total" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("total")}
             title="Mostra tutte le NC"
@@ -380,9 +391,7 @@ export default function NCPage() {
         </div>
       )}
 
-      {/* Filtri */}
       <div className="nc-filters">
-        {/* Filtro cliente - primo nella barra per dare priorità visiva */}
         {companies.length > 0 && (
           <select
             className="nc-filter-company"
@@ -396,7 +405,6 @@ export default function NCPage() {
           </select>
         )}
 
-        {/* Ricerca per numero NC */}
         <input
           type="search"
           className="nc-search"
@@ -421,110 +429,148 @@ export default function NCPage() {
           <option value="observation">Osservazione</option>
         </select>
 
-        <select value={filters.overdue} onChange={e => handleFilter("overdue", e.target.value)}>
-          <option value="">Tutte</option>
-          <option value="true">Solo scadute</option>
+        <select
+          value={filters.overdue ? "overdue" : filters.due_within_days ? "due_soon" : ""}
+          onChange={e => {
+            const v = e.target.value;
+            if (v === "overdue") handleFilter("overdue", "true");
+            else if (v === "due_soon") handleFilter("due_within_days", "7");
+            else {
+              setFilters(f => ({ ...f, overdue: "", due_within_days: "" }));
+              setPage(1);
+            }
+          }}
+        >
+          <option value="">Tutte le scadenze</option>
+          <option value="overdue">Solo scadute</option>
+          <option value="due_soon">In scadenza (7 gg)</option>
         </select>
 
         {hasActiveFilter && (
-          <button className="btn-reset-filters" onClick={resetFilters}>
+          <button type="button" className="btn-secondary btn-reset-filters" onClick={resetFilters}>
             Azzera filtri
           </button>
         )}
       </div>
 
-      {/* Lista NC */}
-      {loading ? (
-        <div className="nc-loading-main">Caricamento...</div>
-      ) : filteredList.length === 0 ? (
-        <div className="nc-empty">
-          <p>Nessuna non conformità trovata con i filtri selezionati.</p>
-        </div>
-      ) : (
-        <div className="nc-list">
-          {filteredList.map(nc => {
-            const isExpanded = expandedId === nc.nc_id;
-            const isOverdue  = nc.is_overdue === 1 || nc.is_overdue === true;
-            const validNext  = {
-              open:        ["in_progress"],
-              in_progress: ["resolved"],
-              resolved:    ["verified"],
-              verified:    ["closed"],
-              closed:      [],
-            };
+      <section className="nc-grid-section" aria-label="Registro non conformità">
+        {viewMode === "actions_due" ? (
+          <div className="nc-due-actions-panel">
+            <h3>Azioni correttive in scadenza (30 gg) o scadute</h3>
+            {dueActionsLoading && <p>Caricamento...</p>}
+            {!dueActionsLoading && dueActions.length === 0 && (
+              <p className="nc-empty-hint">Nessuna azione in scadenza.</p>
+            )}
+            {!dueActionsLoading && dueActions.length > 0 && (
+              <ul className="nc-due-actions-list">
+                {dueActions.map(a => (
+                  <li key={a.action_id} className={a.is_overdue ? "nc-due-overdue" : ""}>
+                    <Link to={`/nc?select=${a.nc_id}`} className="nc-due-link">
+                      <strong>{a.nc_number}</strong> — {a.description?.slice(0, 120)}
+                    </Link>
+                    <span className="nc-due-meta">
+                      {a.responsible || "—"} · scadenza {a.due_date ? formatDate(a.due_date) : "—"}
+                      {a.is_overdue ? " · SCADUTA" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+        <SgqDataGrid
+          rows={filteredList}
+          columns={NC_GRID_COLUMNS}
+          loading={loading}
+          emptyMessage="Nessuna non conformità trovata con i filtri selezionati."
+          theme="plain"
+          renderCell={renderGridCell}
+          getRowKey={row => row.nc_id}
+          getSortValue={(row, colId) => {
+            if (colId === "due_date") return row.due_date || "";
+            if (colId === "status") return NC_STATUS_CFG[row.status]?.label || row.status;
+            if (colId === "severity") return SEVERITY_CFG[row.severity]?.label || row.severity;
+            if (colId === "source_type") return NC_SOURCE_TYPE_LABELS[row.source_type] || row.source_type;
+            return row[colId] ?? "";
+          }}
+          rowClassName={gridRowClassName}
+          selectable
+          selectedRowKey={selectedNcId}
+          onRowSelect={handleRowSelect}
+        />
+        )}
+      </section>
 
-            return (
-              <div key={nc.nc_id} className={`nc-card${isOverdue ? " nc-overdue" : ""}${isExpanded ? " nc-expanded" : ""}`}>
-                <div className="nc-card-header" onClick={() => setExpandedId(prev => prev === nc.nc_id ? null : nc.nc_id)}>
-                  <div className="nc-card-title">
-                    <span className="nc-number">{nc.nc_number}</span>
-                    <NcStatusTag status={nc.status} />
-                    <SeverityTag severity={nc.severity} />
-                    {isOverdue && <span className="nc-overdue-badge">⚠️ Scaduta</span>}
-                  </div>
-                  <div className="nc-card-meta">
-                    <span className="nc-audit-ref">📋 {nc.audit_number} - {nc.client_name}</span>
-                    <span className="nc-section">{nc.section_title}</span>
-                    {nc.due_date && <span className="nc-due">📅 {formatDate(nc.due_date)}</span>}
-                  </div>
-                  <span className="nc-expand-arrow">{isExpanded ? "▲" : "▼"}</span>
-                </div>
-
-                {isExpanded && (
-                  <div className="nc-card-body">
-                    <div className="nc-description">
-                      <strong>Descrizione:</strong>
-                      <p>{nc.description}</p>
-                    </div>
-                    {nc.corrective_action && (
-                      <div className="nc-corrective-note">
-                        <strong>Nota azione (legacy):</strong>
-                        <p>{nc.corrective_action}</p>
-                      </div>
-                    )}
-                    {nc.responsible_person && (
-                      <p className="nc-responsible">
-                        👤 Responsabile: <strong>{nc.responsible_person}</strong>
-                      </p>
-                    )}
-
-                    {/* Workflow buttons */}
-                    {(validNext[nc.status] || []).length > 0 && (
-                      <div className="nc-workflow-btns">
-                        {(validNext[nc.status] || []).map(ns => {
-                          const labels = {
-                            in_progress: "Avvia lavorazione",
-                            resolved:    "Segna come risolta",
-                            verified:    "Verifica",
-                            closed:      "Chiudi NC",
-                          };
-                          return (
-                            <button key={ns} className="btn-nc-workflow" onClick={() => handleStatusChange(nc, ns)}>
-                              {labels[ns] || ns}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Azioni correttive strutturate */}
-                    <ActionsList ncId={nc.nc_id} ncStatus={nc.status} />
-                  </div>
-                )}
+      {selectedNc && viewMode === "nc" && (
+        <div className="doc-detail__overlay nc-detail-overlay" onClick={handleCloseDetail} role="presentation">
+          <aside
+            className="doc-detail nc-detail-drawer"
+            style={{ width: drawerWidth, maxWidth: drawerWidth }}
+            onClick={(e) => e.stopPropagation()}
+            role="complementary"
+            aria-label={`Dettaglio ${selectedNc.nc_number}`}
+          >
+            <div
+              className="nc-detail-drawer-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Ridimensiona pannello NC"
+              aria-valuenow={drawerWidth}
+              aria-valuemin={NC_DRAWER_WIDTH_MIN}
+              aria-valuemax={getNcDrawerMaxWidth()}
+              onMouseDown={startDrawerResize}
+            />
+            <div className="doc-detail__header">
+              <div className="doc-detail__header-top">
+                <h2 className="doc-detail__title nc-detail-drawer-title">
+                  {selectedNc.nc_number}
+                  {" "}
+                  <NcStatusTag status={selectedNc.status} />
+                  {selectedNc.approved_at && (
+                    <span className="nc-approved-badge" title={selectedNc.approved_by_name || ""}>
+                      {" "}· Approvata RQ {formatDate(selectedNc.approved_at)}
+                    </span>
+                  )}
+                </h2>
+                <button
+                  type="button"
+                  className="doc-detail__close"
+                  onClick={handleCloseDetail}
+                  aria-label="Chiudi dettaglio NC"
+                >
+                  {"\u2715"}
+                </button>
               </div>
-            );
-          })}
+            </div>
+
+            <div className="doc-detail__body nc-detail-drawer-body">
+              <NcDetailPanel
+                nc={selectedNc}
+                onSaved={loadNc}
+                readOnly={["closed", "verified"].includes(selectedNc.status) && !!selectedNc.approved_at}
+                onStatusChange={(newStatus) => handleStatusChange(selectedNc, newStatus)}
+                onApproveClosure={() => handleApproveClosure(selectedNc)}
+                isRq={isRq}
+                approveLoading={approveLoading}
+              />
+            </div>
+          </aside>
         </div>
       )}
 
-      {/* Paginazione */}
       {totalPages > 1 && (
         <div className="nc-pagination">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Prec</button>
+          <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>{"\u2190 Prec"}</button>
           <span>Pagina {page} di {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Succ →</button>
+          <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>{"Succ \u2192"}</button>
         </div>
       )}
+
+      <NcCreateModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleCreated}
+      />
     </div>
   );
 }

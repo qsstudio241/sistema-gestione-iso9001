@@ -1,0 +1,154 @@
+/* SgqDataGrid — tema plain (catalogo admin, anagrafiche) */
+
+.sgq-datagrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sgq-datagrid--loading {
+  padding: 2rem;
+}
+
+.sgq-datagrid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6b7280;
+  padding: 2rem;
+}
+
+.sgq-datagrid-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.sgq-datagrid-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.sgq-datagrid-th {
+  padding: 12px 16px;
+  text-align: left;
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.sgq-datagrid-th--sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sgq-datagrid-th--sortable:hover {
+  background: #e5e7eb;
+}
+
+.sgq-datagrid-th--active {
+  color: #1e40af;
+  background: #eff6ff;
+}
+
+.sgq-datagrid-th__label {
+  margin-right: 4px;
+}
+
+.sgq-datagrid-th__arrow {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.sgq-datagrid-th__arrow--active {
+  color: #2563eb;
+}
+
+.sgq-datagrid-th--select {
+  width: 36px;
+  padding: 12px 8px;
+}
+
+.sgq-datagrid-row:hover {
+  background: #f9fafb;
+}
+
+.sgq-datagrid-row--selected {
+  background: #eff6ff;
+}
+
+.sgq-datagrid-cell {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.sgq-datagrid-cell--select {
+  width: 36px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.sgq-datagrid-select {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+}
+
+.sgq-datagrid-select--on {
+  border-color: #2563eb;
+  background: #2563eb;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+.sgq-datagrid-empty-cell {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+/* Azioni riga — pattern condiviso griglie plain (CompaniesPage, rubrica NC, …) */
+.sgq-datagrid-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.sgq-datagrid .btn-edit,
+.sgq-datagrid .btn-delete {
+  padding: 0.25rem 0.4rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.sgq-datagrid .btn-edit {
+  color: #1d4ed8;
+}
+
+.sgq-datagrid .btn-edit:hover {
+  background: #dbeafe;
+}
+
+.sgq-datagrid .btn-delete {
+  color: #b91c1c;
+}
+
+.sgq-datagrid .btn-delete:hover {
+  background: #fee2e2;
+}

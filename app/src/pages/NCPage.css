@@ -2,8 +2,64 @@
 
 .nc-page {
   padding: 24px;
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
+}
+
+.nc-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.nc-page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.nc-view-active {
+  border-color: #3182ce;
+  background: #ebf8ff;
+}
+
+.nc-approved-badge {
+  font-size: 0.85rem;
+  color: #276749;
+  font-weight: normal;
+}
+
+.nc-due-actions-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.nc-due-actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nc-due-actions-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.nc-due-overdue .nc-due-link {
+  color: #c53030;
+}
+
+.nc-due-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 4px;
 }
 
 /* Header */
@@ -47,7 +103,9 @@
 .nc-stat-open  .nc-stat-num { color: #e53e3e; }
 .nc-stat-prog  .nc-stat-num { color: #d69e2e; }
 .nc-stat-over  .nc-stat-num { color: #c05621; }
+.nc-stat-soon  .nc-stat-num { color: #d69e2e; }
 .nc-stat-tot   .nc-stat-num { color: #2d3748; }
+.nc-stat-soon.nc-stat-active { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 
 /* Filtri */
 .nc-filters {
@@ -93,6 +151,7 @@
   border-color: #4299e1;
   box-shadow: 0 0 0 2px rgba(66,153,225,.15);
 }
+.btn-reset-filters {
   padding: 7px 14px;
   background: #edf2f7;
   border: 1px solid #cbd5e0;
@@ -183,19 +242,31 @@
 .nc-corrective-note { background: #fffbeb; border-left: 3px solid #f6e05e; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; }
 .nc-responsible { font-size: 0.875rem; color: #4a5568; margin: 6px 0; }
 
-/* Workflow buttons */
-.nc-workflow-btns { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
-.btn-nc-workflow {
-  padding: 7px 14px;
-  background: #3182ce;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
+/* Workflow buttons — status-btn da ChecklistModule.css (etichette testo, non codici C/NC) */
+.nc-workflow-btns {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-.btn-nc-workflow:hover { background: #2b6cb0; }
+.nc-workflow-btns .status-btn {
+  width: auto;
+  min-width: 7.5rem;
+  height: auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  border-radius: 6px;
+}
+.nc-workflow-btns .status-btn:hover {
+  transform: none;
+}
 
 /* Actions panel */
 .nc-actions-panel { margin-top: 16px; }
@@ -216,6 +287,18 @@
   cursor: pointer;
 }
 .btn-add-action:hover { background: #38a169; }
+
+/* Detail panel (Slice 4) */
+.nc-detail-form { margin-bottom: 12px; }
+.nc-corrective-legacy .nc-legacy-readonly {
+  margin: 0;
+  padding: 8px 10px;
+  background: #edf2f7;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #4a5568;
+  white-space: pre-wrap;
+}
 
 /* Action form */
 .nc-action-form {
@@ -252,9 +335,221 @@
 }
 .btn-primary:hover { background: #2b6cb0; }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.nc-page .btn-secondary {
+  padding: 8px 18px;
+  background: #fff;
+  color: #2d3748;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.nc-page .btn-secondary:hover { background: #f7fafc; border-color: #a0aec0; }
+.nc-page .btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
 .nc-error { color: #c53030; font-size: 0.85rem; margin: 6px 0; }
 
+/* Griglia registro */
+.nc-grid-section { margin-bottom: 20px; }
+.nc-grid-section .sgq-datagrid-row-selected { background: #ebf8ff !important; }
+.nc-grid-row-overdue { background: #fff5f5; }
+.nc-grid-number { font-weight: 600; font-family: monospace; }
+.nc-grid-audit { font-size: 0.85rem; }
+
+/* Drawer dettaglio NC — riuso .doc-detail da DocumentDetailPanel.css */
+.doc-detail__overlay.nc-detail-overlay {
+  z-index: 400;
+}
+.nc-detail-drawer {
+  position: relative;
+  width: min(520px, 92vw);
+  max-width: min(520px, 92vw);
+}
+
+.nc-detail-drawer-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  margin-left: -3px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 3;
+  touch-action: none;
+}
+
+.nc-detail-drawer-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: #e2e8f0;
+  transition: background 0.15s ease;
+}
+
+.nc-detail-drawer-resizer:hover::after,
+body.sgq-nc-drawer-resizing .nc-detail-drawer-resizer::after {
+  background: #1a73e8;
+}
+
+body.sgq-nc-drawer-resizing,
+body.sgq-nc-drawer-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+.nc-detail-drawer-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+.nc-detail-drawer-body {
+  padding: 16px 20px 24px;
+}
+.nc-detail-drawer .nc-drawer-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf2f7;
+}
+.nc-detail-drawer .nc-drawer-section:last-of-type {
+  border-bottom: none;
+}
+.nc-drawer-section-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 12px;
+}
+.nc-drawer-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.nc-drawer-section-heading .nc-drawer-section-title {
+  margin-bottom: 0;
+}
+.nc-drawer-section-toggle {
+  padding: 4px 10px !important;
+  font-size: 0.75rem !important;
+}
+.nc-drawer-section-hint {
+  font-size: 0.78rem;
+  color: #718096;
+  font-style: italic;
+  margin: 0 0 10px;
+}
+.nc-drawer-section--highlight {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  border-radius: 8px;
+  padding: 12px;
+  border-bottom: none;
+}
+.nc-drawer-section--collapsed .nc-drawer-section-body {
+  display: none;
+}
+.nc-drawer-section--workflow.nc-workflow-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  padding-top: 4px;
+  margin-top: -4px;
+  box-shadow: 0 6px 8px -6px rgba(0, 0, 0, 0.12);
+}
+.nc-drawer-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f7;
+}
+.nc-actions-panel--embedded {
+  margin-top: 0;
+}
+.nc-actions-panel--embedded .nc-actions-header {
+  margin-bottom: 8px;
+}
+.nc-actions-count {
+  font-size: 0.85rem;
+  color: #718096;
+}
+.nc-detail-meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nc-source-badge,
+.nc-complaint-link,
+.nc-audit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  background: #f7fafc;
+  color: #4a5568;
+}
+.nc-complaint-link:hover,
+.nc-audit-link:hover { background: #ebf8ff; border-color: #90cdf4; color: #2c5282; }
+
+/* Modal creazione NC */
+.nc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.nc-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+.nc-modal h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.nc-modal-desc { margin: 0 0 16px; color: #718096; font-size: 0.875rem; }
+
 /* Actions list */
+.nc-action-due-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.nc-due-filter-btn {
+  border: 1px solid #cbd5e0;
+  background: #fff;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.nc-due-filter-btn.active {
+  border-color: #3182ce;
+  background: #ebf8ff;
+  color: #2c5282;
+  font-weight: 600;
+}
+.nc-due-filter-overdue.active { border-color: #e53e3e; background: #fff5f5; color: #c53030; }
+.nc-due-filter-soon.active { border-color: #d69e2e; background: #fffff0; color: #975a16; }
+
 .nc-actions-list { list-style: none; padding: 0; margin: 0; }
 .nc-action-item {
   background: #fff;
@@ -263,6 +558,16 @@
   padding: 10px 12px;
   margin-bottom: 8px;
 }
+.nc-action-item.nc-action-overdue { border-left: 4px solid #e53e3e; }
+.nc-action-item.nc-action-due-soon { border-left: 4px solid #d69e2e; }
+.nc-action-due-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.nc-action-due-badge.overdue { background: #fed7d7; color: #742a2a; }
+.nc-action-due-badge.due-soon { background: #fefcbf; color: #744210; }
 .nc-action-top {
   display: flex;
   align-items: center;
@@ -292,6 +597,15 @@
 .nc-action-date { margin-left: auto; font-size: 0.75rem; color: #a0aec0; }
 .nc-action-desc { font-size: 0.875rem; color: #2d3748; margin: 0 0 6px; }
 .nc-action-meta { display: flex; gap: 14px; font-size: 0.8rem; color: #718096; flex-wrap: wrap; margin-bottom: 8px; }
+.nc-action-verify-note { font-size: 0.8rem; color: #4a5568; margin: 0 0 8px; }
+.nc-action-verify-form {
+  margin: 8px 0 10px;
+  padding: 10px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.nc-action-verify-form label { display: block; font-size: 0.8rem; margin-bottom: 4px; color: #4a5568; }
 .nc-action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn-action-status {
   padding: 4px 10px;
@@ -339,6 +653,46 @@
 }
 .nc-pagination button:disabled { opacity: .4; cursor: not-allowed; }
 .nc-pagination button:hover:not(:disabled) { background: #edf2f7; }
+
+/* Allegati NC (NcAttachmentsSection) */
+.nc-attachments-section { margin-top: 4px; }
+.nc-attachments-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.nc-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+.nc-attachment-link {
+  background: none;
+  border: none;
+  color: #2b6cb0;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  text-align: left;
+}
+.nc-attachment-link:hover { text-decoration: underline; }
+.nc-attachment-meta { font-size: 0.75rem; color: #718096; }
+.nc-attachments-actions { margin-top: 6px; }
+.nc-file-input-hidden { display: none; }
+
+@media (max-width: 768px) {
+  .nc-detail-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .nc-detail-drawer-resizer {
+    display: none;
+  }
+}
 
 @media (max-width: 640px) {
   .nc-page { padding: 16px; }

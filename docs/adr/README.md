@@ -22,7 +22,34 @@ Ogni ADR segue il template standard:
 
 ## Indice ADR
 
-Tutti i documenti in `docs/adr/`. Per numeri con più file (es. due ADR-002, tre ADR-003) il nome file è univoco.
+Tutti i documenti in `docs/adr/`.
+
+### Numerazione duplicata (legacy)
+
+Esistono **più file con lo stesso prefisso numerico**. **Non rinominare** i file (rischio link rotti). Per citare un ADR usare sempre il **nome file completo**, non solo il numero.
+
+| Prefisso | File distinti | Quando citare quale |
+|----------|---------------|---------------------|
+| **ADR-002** | [ADR-002-offline-first-sync](./ADR-002-offline-first-sync.md) | Sync offline-first, strategia cache |
+| | [ADR-002-checklist-alignment-strategy](./ADR-002-checklist-alignment-strategy.md) | Allineamento checklist ISO/custom |
+| **ADR-003** | [ADR-003-pwa-mobile-android-strategy](./ADR-003-pwa-mobile-android-strategy.md) | PWA Android |
+| | [ADR-003-bidirectional-sync](./ADR-003-bidirectional-sync.md) | Sync bidirezionale (pre–ADR-008) |
+| | [ADR-003-database-architecture-processes-analysis](./ADR-003-database-architecture-processes-analysis.md) | Architettura DB / processi |
+
+**Sync corrente:** [ADR-008](./ADR-008-event-sourcing-sync.md) sostituisce parzialmente 002/003/006 — citare ADR-008 per nuovo codice sync.
+
+Rinumerazione sequenziale univoca: backlog doc Fase 3 (vedi [INDICE_DOCUMENTAZIONE.md](../INDICE_DOCUMENTAZIONE.md)).
+
+### ADR critici per sviluppo corrente
+
+| File | Titolo | Stato |
+|------|--------|-------|
+| [ADR-008-event-sourcing-sync](./ADR-008-event-sourcing-sync.md) | Event-Sourced Sync (target sync) | Accettato |
+| [ADR-009-multi-standard-architettura-per-norma](./ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / document_type per norma | Accettato |
+| [ADR-010-ai-agentic-architecture](./ADR-010-ai-agentic-architecture.md) | Architettura AI agentica (NormBroker, RAG) | Accettato |
+| [ADR-011-registry-norm-sot](./ADR-011-registry-norm-sot.md) | Registro documentale SoT metadati norma | Accettato |
+
+### Elenco completo
 
 | File | Titolo | Stato |
 |------|--------|-------|
@@ -36,6 +63,10 @@ Tutti i documenti in `docs/adr/`. Per numeri con più file (es. due ADR-002, tre
 | [ADR-005-attachment-storage-strategy](./ADR-005-attachment-storage-strategy.md) | Strategia storage allegati | Accettato |
 | [ADR-006-auto-reconcile-cache-sync](./ADR-006-auto-reconcile-cache-sync.md) | Auto-reconcile cache / multi-device | Proposta approvata |
 | [ADR-007-logout-offline-backup-e-mirror-cartella-pc](./ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Logout senza perdita lavoro locale + backup PC | Proposto |
+| [ADR-008-event-sourcing-sync](./ADR-008-event-sourcing-sync.md) | Event-Sourced Sync (sostituisce parzialmente 002/003/006) | Accettato |
+| [ADR-009-multi-standard-architettura-per-norma](./ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / AI-ready per norma | Accettato |
+| [ADR-010-ai-agentic-architecture](./ADR-010-ai-agentic-architecture.md) | AI agentica: NormBroker, RAG, licenze | Accettato |
+| [ADR-011-registry-norm-sot](./ADR-011-registry-norm-sot.md) | Registro documentale SoT metadati norma (R1–R7) | Accettato |
 
 ## Convenzioni
 

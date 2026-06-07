@@ -3,15 +3,39 @@
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
 
+## Indice rapido (navigazione)
+
+| Sezione | Contenuto |
+|---------|-----------|
+| [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
+| [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
+| [Manuale NC + Canvas](how-to/MANUALE_UTENTE_NC.md) | Registro non conformità — guida utente e canvas interattivo Glass |
+| [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) | Catalogo componenti UI, duplicati, matrice moduli (~55% copertura Fase A) |
+| [Principi documentazione](#principi-di-documentazione-chiarezza-e-best-practice) | Dove scrivere cosa, cosa evitare |
+| [Piano qualità / test](#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
+| [Procedura chiusura autonoma](#procedura-chiusura-autonoma) | Ciclo slice agente: fix, test, smoke, doc, limiti |
+| [Sync ADR-008](#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
+| [**A** — Checklist, sync, deploy](#a-checklist-custom-sync-deploy-vps) | Procedure operative principali |
+| [**B** — Word Verbale](#b-report-word--checklist-custom-verbale) | Export OOXML / template |
+| [**C** — Database e repro](#c-database-e-repro) | Script SQL, repro bug |
+| [**D** — Verifica rapida](#d-comandi-di-verifica-rapida) | Comandi curl/test |
+| [**E** — SAL / import / RAG](#e-flusso-2--sal--sopralluoghi--evidenze-documentali--import--rag-retrieval) | Flusso documentale avanzato |
+| [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
+| [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
+
+Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 29/05/2026](#esperienza-29052026---registro-norme-e-albero-documenti-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischiprogetti), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+
+---
+
 ## Cosa leggere a inizio sessione (ordine)
 
 1. **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)** — stack, infra, workflow.  
 2. **[PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)** — fasi e backlog.  
 3. **[ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md)** — gerarchia utenti, segregazione dati, ruoli e piano migrazione RBAC (aspetto portante; aggiornare quando si toccano auth o scope query).  
 4. **Questo file** — lezioni apprese, procedure ripetibili e **piano qualità / test di robustezza** (sezione omonima sotto).  
-5. **[DATABASE.md](DATABASE.md)** — connessione DB, script repro, ambienti `development` / `test`.  
-6. Per deploy: [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md), [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md), [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md) (API prod., SSH, file locale sicuro per Cursor).
-7. Se il task tocca editing documentale desktop: **[MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)**.
+5. **[DATABASE.md](reference/DATABASE.md)** — connessione DB, script repro, ambienti `development` / `test`.  
+6. Per deploy: **[how-to/deploy.md](how-to/deploy.md)** (hub) → checklist, VPS, troubleshooting, accesso agenti.
+7. Se il task tocca editing documentale desktop: **[MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)**.
 
 **Percorsi workspace (Windows)** — `C:\ProgettoISO` non è “un progetto diverso” dal repo su disco: sui PC configurati così è di solito una **junction verso Google Drive** (`G:\Il mio Drive\...`). Una cartella omonima sotto **OneDrive** può invece essere un **checkout separato**. Dettaglio e regole operative: sezione *Percorsi di lavoro locale* in **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)**.
 
@@ -55,19 +79,285 @@ Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizi
 | 2 | **Glifo assente** nel font effettivo: `›` U+203A, `—` U+2014 | Schermo OK su un PC, tofu su un altro |
 | 3 | **Emoji/simboli** senza glifo nella stack font | Icone che diventano tofu |
 | 4 | **Bundle o Service Worker obsoleto** (Netlify / PWA) | Repo a posto, browser ancora su JS vecchio |
+| 5 | **Escape `\uXXXX` dentro testo JSX** (non in stringa JS) | La UI mostra **letterale** `\u26A0` o `\u00e0` invece di emoji/accenti |
 
 #### Checklist operativa (ordine consigliato)
 
 1. **Trovare il file** (cerca stringa spezzata nel repo; React DevTools sul testo).
-2. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
-3. **Correggere:** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in stringhe JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
-4. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
-5. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
+2. **React/JSX:** se compaiono **sequenze letterali `\u`** (spesso dopo `>` su titoli, pulsanti o label), il testo **non è** una stringa JavaScript → le escape Unicode **non valgono**. Corregere con **`{"..."}`** dove tra virgolette c'è una **stringa** JS (escape `\u`), oppure **`String.fromCodePoint(...)`**, oppure UTF-8 reale nel sorgente (accenti). Fare grep su `\u` **fuori** da `{ ... }` dopo un tag JSX.
+3. **Validare UTF-8** su `app/src` / `backend/src`: script `backend/scripts/check-utf8-encoding.js` (walk file + segnalazioni).
+4. **Correggere (encoding):** lettere italiane corrette **oppure**, per robustezza, **escape Unicode** in **stringhe** JS (`conformit\u00E0`, `pi\u00F9`, … — stesso effetto a video). Per separatori **visibili**: preferire **ASCII** (`/`, ` - `) o **SVG**; evitare in UI critica `›` ed em dash lungo se non necessari.
+5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` e `wordExport.imageDimensions.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
+6. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
 
 #### Riferimenti vincolanti
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
 - Esempio di batch chiuso su `main`: commit `a5e7876` (maggio 2026), con deploy Netlify e verifica post-cache.
+
+**Esperienza 07/06/2026 — Fix logo azienda — Express Router auth intercept**
+
+Gli utenti desktop autenticati tramite cookie httpOnly hanno `getToken()` → `null` (nessun Bearer header). Il middleware `router.use(authenticate)` montato su `/api/v1` intercetta **ogni** richiesta priva di Bearer token — incluse quelle destinate ad altri router — rispondendo 401 prima che la route target venga raggiunta. Il componente `CompanyLogo` in `CompanyDetailPage` e `CompaniesPage` non riceveva mai la risposta immagine e cadeva in fallback silenzioso.
+
+**Soluzione:** registrare gli endpoint pubblici (logo, allegati non sensibili) direttamente in `server.js` **prima** dei router autenticati:
+```js
+// server.js — PRIMA di app.use('/api/v1', auditRoutes)
+app.get('/api/v1/companies/:id/logo', getLogo);
+```
+**Commit:** `3787ad1` — 07/06/2026 — TEST OK (verificato in produzione).
+
+**Lezione:** se un endpoint deve essere accessibile senza Bearer (es. risorse immagine da `<img src>`), non basta non chiamare `authenticate` nella route — bisogna uscire dal router autenticato. Registrare l'endpoint prima di `app.use('/api/v1', routerAutenticato)` in `server.js`.
+
+**Esperienza 30/05/2026 — encoding UI NC + drawer dettaglio**
+
+I testi NC (Camellini e altre org) mostravano `?` o caratteri spezzati perché diversi sorgenti (`NcDetailPanel`, `NcCreateModal`, `ncWorkflow`, helper export/create) contenevano byte Latin-1/Windows-1252 invalidi in file dichiarati UTF-8. Fix: riscrittura stringhe UI con UTF-8 reale o escape `\u00E0`/`\u00F9` in **stringhe JS**; validazione con `backend/scripts/check-utf8-encoding.js`. Per UX registro lungo: il dettaglio NC non va più sotto la griglia ma in **drawer laterale destro**, riusando le classi `doc-detail__overlay` / `doc-detail` del modulo Documenti (`DocumentDetailPanel.css`); deep-link `/nc?select=` apre il drawer; mobile full-width come documenti. **UI guida flusso**: sezioni numerate nel drawer seguono l'ordine ISO 10.2 (Scheda → Stato workflow → Cause → Azioni → Evidenze → Verifica → Chiusura), non un form flat per tipo campo.
+
+**Esperienza 30/05/2026 — campi testo NC = standard audit (`RichTextField`)**
+
+Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + `draftFieldRegistry` (scope `nc:<id>`) + `ncFieldDraftStorage` (localStorage, debounce 800 ms) + `textFieldHistory` (ultime versioni su blur, ripristino UI). Applicato a dettaglio NC, modale creazione, azioni e nota verifica azione. Validazione descrizione NC resta su blur/submit. Test L1: `ncTextFields.test.js`, `ncDetailPanel.test.js`.
+
+**Esperienza 30/05/2026 — pulsanti workflow NC nel drawer (`.status-btn` 40×40)**
+
+`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
+
+**Esperienza 31/05/2026 — RBAC Fase 2 (chiusura sessione — TEST OK)**
+
+| Voce | Esito / lezione |
+|------|-----------------|
+| Codice | PR [#76](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/76) merge `main` — commit `cf5a556`; predicato `studioScopeClause` / `documentRegistryScopeClause` su write path audit, NC, allegati, registry ([ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7) |
+| Jest L1 | **22/22** (`auditListRbac`, `nc.controller`, `attachment.controller`) — 31/05/2026 |
+| Smoke L3 | Script `.cursor/rbac-smoke-l3-phase2.mjs`: approccio **a fette** (`--slice`), non monolite; upload allegato non deve bloccare test audit/NC |
+| Credenziali smoke | Solo `.cursor/mcp.env` + `.cursor/sync-sgq-smoke-env.ps1` — **mai** `_rbac-temp-pw.cjs` / rotazione hash DB admin |
+| Token setup NC/allegati | `superadmin` con `auditor_org_id` **non** è org-wide per upload: usare token **tenant admin** org-wide |
+| Cleanup | Ordine FK: `document_history` → `document_registry` → company/studio; utenti smoke = hard-delete SQL (API = soft-delete). `--keep-data` / `--cleanup` per ispezione committente |
+| Dati reali | **Manitou** non cancellata dallo smoke (solo prefisso `RBAC_SMOKE_*`); scomparsa in UI = spesso filtro RBAC, non delete |
+| Error pattern | Primo smoke monolitico: `NC_NOT_FOUND` su upload (scope superadmin); password admin compromessa da workaround — ripristinata da backup |
+
+**Esperienza 31/05/2026 — chiusura slice D2 LIBRERIA_UI + smoke Registro Norme L1**
+
+| Voce | Esito |
+|------|--------|
+| D2 | Grep `app/src`: zero import di `NonConformitiesManager.jsx` / `AuditTabsLayout.jsx` → rimossi 4 file (jsx+css); catalogo [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) aggiornato |
+| Registro Norme L1 | **30/30 OK** — `importNormCommit` (8), `standardsRegistry` (19), `normUploadResults` (3) |
+| RBAC L3 (riuso) | **Non rieseguito** — `.cursor/rbac-smoke-l3-phase2.mjs` richiede `database.json` → SQL Server; fallito `localhost:1433` (DNS/host produzione non raggiungibile da desktop). Credenziali `mcp.env` OK; riuso smoke Fase 2 già in tabella sopra |
+
+
+---
+
+### Sessione 30/05/2026 — Modulo NC (chiusura sessione — attesa feedback utenti)
+
+**Stato committente:** modulo NC **considerato terminato** per sviluppo pianificato; eventuali bug o ritocchi UX arrivano in **nuova chat** con feedback campo (es. Camellini).
+
+#### Delta iniziale vs soluzione corretta
+
+| Ipotesi iniziale | Realtà |
+|------------------|--------|
+| Registro NC = estensione tabella audit | Serve **modulo organizzativo** cross-audit ISO §10.2 con workflow proprio, push ISO+custom, gate RQ |
+| Dettaglio sotto la griglia | **Drawer laterale** (pattern Documenti) + deep-link `/nc?select=` |
+| Pulsanti workflow testuali custom | **`.status-btn`** con override dimensioni nel drawer, non nuove classi parallele |
+| Encoding «solo produzione» | Byte Latin-1 in sorgenti dichiarati UTF-8 — fix repo + `check-utf8-encoding.js` (lezione **ripetuta**) |
+
+#### Commit di riferimento (sessione)
+
+| Hash | Contenuto |
+|------|-----------|
+| `8f66d93`–`b23f79d` | Fase 1 slice 5–11 — griglia, creazione, scadenze |
+| `d80dafa` | Fase 1 chiusura — alert scadenze, simulazione |
+| `ac9b1a8` | Hardening H1–H6 — push custom, RQ, CSV, azioni cross-NC |
+| `327be94` | RichTextField + dettatura + draft offline |
+| `6810518` | Drawer guidato flusso ISO 10.2 |
+| `505e551` | Drawer laterale + encoding UI |
+| `527a04d` | Layout pulsanti workflow nel drawer |
+
+#### Lezioni consolidate (tutta la sessione NC)
+
+1. **Simulazione NC audit → gap ISO:** `onRowSelect(rowKey, row)`; audit `status: active` per dropdown creazione; sezioni HLS su audit non ISO 9001 → **400** esplicito; E2E griglia preferire `/nc?select=<id>`.
+2. **Slice verticali:** Fase 1 (griglia, modal, workflow, scadenze) poi H1–H6 senza mescolare migrazioni e refactor UI nella stessa consegna.
+3. **Hardening:** push custom checklist (072), email 08:05 (`NC_ALERT_ENABLED`), approvazione RQ, export CSV client-side, tab azioni cross-NC.
+4. **Golden rule UI:** ordine drawer ISO 10.2 — Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura (non form flat per tipo campo).
+5. **Encoding:** UTF-8 reale o `\u` in **stringhe JS**; mai `\u` come testo JSX grezzo; validare con `check-utf8-encoding.js` anche su `.md` manuale.
+6. **Libreria UI:** catalogo Fase A ~52 pattern / ~55–65% UI reale — secondo passaggio su `pages/` e moduli secondari; consultare [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md) prima di nuovi blocchi UI.
+7. **Form annidati (bug critico 07/06/2026):** HTML non supporta `<form>` nested. Se un componente contenitore (es. `NcDetailPanel`) usa `<form onSubmit>` e al suo interno c'è un altro `<form>` (es. `NcActionsList`), il browser ignora il form interno e il click su qualsiasi `type="submit"` submita il form esterno. Sintomo: nessun POST visibile nei log VPS, azione non salvata, "drawer chiuso senza errore". Fix: convertire il form contenitore in `<div>` e usare `type="button" onClick={handleSubmit}` per il pulsante di salvataggio esterno.
+
+**Monitoraggio post-chiusura:** email job 08:05 (SMTP + destinatari `notifications_config`); push custom da audit reale Camellini; feedback utenti su drawer/flusso.
+
+**Ripresa:** [PROMPT_RIPRESA_NC.md](agent-tasks/PROMPT_RIPRESA_NC.md) — solo bug feedback o P2 (AI CAPA, LIBRERIA_UI completa, export PDF).
+
+---
+
+### Sessione 24/05/2026 — Smoke E2E login Playwright (cloud agent)
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Documentazione Fase 6 test E2E autenticato | Template Playwright + errori comuni in `sgq-bug-fix-methodology.mdc` (commit `9ae2265`) |
+| 2 | Smoke login su `systemgest.netlify.app` | **Primo tentativo fallito** — errore UI «Inserire email» |
+| 3 | Diagnosi + fix template doc | Input React controllati: `page.fill()` non basta → `pressSequentially` su `#email` / `#password` |
+| 4 | Smoke login (secondo tentativo) | **OK** — `POST /auth/login` 200, dashboard visibile (`admin@sgq.local`, org Al.project) |
+| 5 | PR doc corretta | [#63](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/63) — **MERGED** su `main` (commit `d4c9a04`) |
+
+#### Lezione appresa (24/05/2026)
+
+**Ipotesi iniziale sbagliata:** credenziali errate o API backend non raggiungibile.
+
+**Causa reale:** `Login.jsx` usa input **controllati React** (`value={formData.email}` + `onChange`). Playwright `page.fill()` scrive nel DOM ma **non** aggiorna lo stato React; al submit la validazione locale legge `formData` vuoto → «Inserire email», **senza** chiamare l'API (o con body vuoto).
+
+**Pattern risolutivo (E2E su form React controllati):**
+
+1. **Prima** verificare l'API con `curl` — se 200, il problema è UI/test, non backend.
+2. Leggere il messaggio di errore **in pagina** (`.login-error`), non solo «form ancora visibile».
+3. Compilare con `pressSequentially` (o helper `fillReactInput`) su `#email` / `#password`, non solo `page.fill()`.
+4. **Non** usare Playwright MCP per login — non legge `SGQ_APP_PASSWORD`; usare script Node in `/tmp/test-login.mjs`.
+
+**Regola ripetibile:** su qualsiasi form React controllato in test E2E, se il DOM mostra il valore ma la validazione fallisce → simulare digitazione reale (`pressSequentially`) o dispatch esplicito di eventi `input`/`change`.
+
+**Riferimenti:** `sgq-bug-fix-methodology.mdc` Fase 6 (template aggiornato); `app/src/components/Login.jsx`.
+
+---
+
+### Sessione 26/05/2026 — Refactor UI slice A/B/D (vigenti, nav)
+
+#### Attività completate
+
+| Slice | Contenuto | Commit |
+|---|---|---|
+| A | Fix link HomePage `/nc`; contatore header vigenti (`rilasciato`+`vigente`, esclude `folder`); badge stato nascosto su cartelle via `shouldShowDocumentStatusBadge()` | `2640100` |
+| B | `.btn-primary` centralizzato in `index.css`; rimosso duplicato da `DocumentRegistry.css` (override per-pagina mantenuti) | `2640100` |
+| D | `@deprecated` su `NonConformitiesManager` e `AuditTabsLayout` (non in routing) | `2640100` |
+| D2 | Rimossi file morti `NonConformitiesManager` / `AuditTabsLayout` (grep zero import in `app/src`) | 31/05/2026 |
+| Backend | `backend/src/constants/documentStatus.js` + stats API allineate; deploy VPS `document.controller.js` + constants | deploy 26/05 |
+
+#### Test L1
+
+| Suite | Esito |
+|---|---|
+| `documentValidity.test.js` + `documentTree.test.jsx` | 22/22 OK |
+| `documentStatus.test.js` (Jest) | 3/3 OK |
+
+#### Lezioni apprese
+
+- **Due significati di "vigente"**: stato ciclo di vita (`document_registry.status`) vs vigore norma (`type_specific_data.validity_status` su `doc_type=norma`) — contatore header e badge albero usano solo il primo; non confonderli in query SQL o UI.
+- **Bug "0 vigenti" con badge verdi**: causa doppia — stats API ignorava status `vigente` (legacy migration 067) **e** cartelle mostravano badge per errore. Fix minimo: `RELEASED_STATUS_SQL_IN` condiviso FE/BE + `shouldShowDocumentStatusBadge()`.
+- **Deploy constants nuova cartella VPS**: il manifest `backend/scripts/deploy-manifest.json` include `document.controller.js`, `src/constants/documentStatus.js` e tutti i servizi norme/NC; usare `deploy-controllers-to-vps.ps1` o `deploy-to-vps.sh` (non copia manuale). Preflight verifica file locali prima di SCP; post-deploy health check automatico.
+
+#### Prossimo step (backlog, non in scope sessione)
+
+- ~~Slice C: estrarre `SgqDataGrid` + pilota (`CompaniesPage` o `NCPage`)~~ ✅ 26/05 sera — vedi sotto
+- ~~Slice B2: rimuovere `.btn-primary` duplicati identici a `index.css`~~ ✅ parziale — scoped override per-pagina
+- Slice D2: eliminare file `@deprecated` dopo grep zero import
+- Proposte estetiche sidebar/colori: richiedono OK committente (vedi `DEPUTYTASK.md`)
+
+#### Pattern riusabile — SgqDataGrid (26/05/2026)
+
+Componente condiviso `app/src/components/SgqDataGrid.jsx` per tabelle con sort, empty/loading, selezione riga opzionale.
+
+| Prop | Uso |
+|---|---|
+| `theme="catalog"` | Stile Registro Documenti (`datagrid-*`, header scuro) — usato da `DocumentDataGrid` |
+| `theme="plain"` | Intestazioni chiare — pilota `CompaniesPage` |
+| `columns` | `{ id, label, sortable?, width?, cellClassName? }` |
+| `renderCell(row, col)` | Contenuto cella |
+| `selectable` + `selectedRowKey` | Toolbar contestuale (pattern DocumentDataGrid) |
+| `getSortValue(row, colId)` | Sort custom (es. label tipo documento) |
+
+CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + badge norme/scadenze).
+
+**B2 CSS:** `.btn-primary` / `.btn-secondary` in `index.css`; override colore solo con selettore scoped (`.nc-page`, `.companies-page`, …) — mai duplicare regole globali identiche.
+
+---
+
+### Sessione 03/06/2026 — Visualizzazione Excel in-app (SpreadsheetViewer)
+
+| PR | Contenuto |
+|---|---|
+| [#93](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/93) | `DocFileDialog`: `.xlsx` → `SpreadsheetViewer` (SheetJS) al posto di Office Online; download via `getDocFileBlob` |
+
+**Lezione**: Office Online (`view.officeapps.live.com`) non funziona con API su `:8443` e senza token pubblico — stesso pattern già risolto per Word con `DocumentDocxViewer`.
+
+**Smoke SAVECO scadenzario** (doc `1698`, org QS `1002`, file ~71 KB): 4 fogli (`TO_DO`, `SCADENZARIO`, `IMPIANTI TERMICI`, `PRESIDI ANTINCENDIO`) parsati con SheetJS su copia file da VPS. Verifica UI post-merge: login org Camellini → Registro documenti → SAVECO → Scadenzario → **Visualizza**.
+
+### Sessione 25/05/2026 — Registro norme SoT R1–R7 (completato) e chiusura PR
+
+#### Attività completate
+
+| PR / commit | Slice | Contenuto |
+|---|---|---|
+| [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) | R1 | Job validità norme legge `document_registry` come SoT; test L1 19/19; deploy VPS; log confermato `checked=1` |
+| [#67](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/67) | R2+R5+Sprint11 | R2: lookup norma persiste su `type_specific_data` via JSON_MODIFY; R5: knowledgeIndexer arricchisce testo con metadati norma; CommercialCase test L1 14/14 (già implementato, test aggiunti) |
+| [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) | R4 | Badge vigore (verde/rosso/ambra) nella lista Catalogo; campo `norm_validity_status` nella lista API; CI verde; badge "Superata" visibile in prod su ISO_9016_2012 |
+| `ef0d6f8` | R3+R6+R7 | Schema unificato upload bulk/form; backfill VPS idempotente; [ADR-011](adr/ADR-011-registry-norm-sot.md); deploy VPS OK |
+| [#62](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/62) | Seed legislativo | Merge `b255207`: `findSeededLegislativoAmbientale` usa `CHARINDEX` al posto di `LIKE` (marker con `[]`); deploy VPS backend 25/05 |
+| [#60](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/60) | Template Word audit | Merge `9ba45b7`: script `patch-audit-template-structure.cjs` + template ISO 9001/14001/3834/45001; CI `test-and-build` verde |
+| [#64](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/64) | — | Chiusa senza merge (draft obsoleta); tema collocamento archivio da riaprire in roadmap se serve |
+
+#### Lezioni apprese (sessione)
+
+- **Scoperta vs implementazione**: Sprint 11 (CommercialCase) era già nel codebase — verificare prima di reimplementare; test/verifica restano utili su codice preesistente.
+- **Backfill idempotente (R6)**: `mergeMissingNormTypeSpecificData` aggiorna solo campi mancanti — evita regressioni su dati già allineati post-R2/R3.
+- **Allineamento bulk upload (R3)**: un solo contratto `type_specific_data` tra `normUpload.controller` e form manuale (`documentRegistryNorm.service.js`).
+- **Chiusura PR stale**: chiudere draft obsolete (#64) senza merge riduce rumore su branch non allineati a `main`.
+
+#### Prossimo step (roadmap)
+
+- **ADR-009 Fase 2**: Sezione 11 e Close Panel per-norma + flag SGI integrato — vedi [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
+
+### Sessione 24/05/2026 (bis) — Modulo documentale UX e upload
+
+#### Attività completate
+
+| # | Cosa | Risultato |
+|---|---|---|
+| 1 | Rimozione «Apri in Word/Excel» via WebDAV da `DocFileDialog` | Eliminato popup credenziali Windows (`Microsoft-WebDAV-MiniRedir`); editing resta via viewer browser + download |
+| 2 | Tab **Catalogo**: `DocumentDataGrid` | Selezione riga, toolbar Allegato/Modifica/Archivia, colonne ordinabili, hint toolbar |
+| 3 | Albero cartelle | Rimossa icona lucchetto confusa sulle cartelle di sistema; tooltip su nomi troncati |
+| 3b | Albero cartelle (05/2026) | Rinomina/Elimina cartelle custom (elimina solo se vuota, 409 `FOLDER_NOT_EMPTY`); sottocartella sotto selezione; icone colore sistema vs custom; cartelle sistema non modificabili |
+| 3c | Albero cartelle (05/2026) | Sidebar albero **ridimensionabile** (drag 220–480px, chiave `sgq-doc-tree-width`); su mobile (≤768px) barra con **nome completo cartella selezionata** sopra l'albero (tooltip `title` insufficiente su touch) |
+| 4 | Upload hardening | Backend: limite **200 MB**; frontend: avviso soft **50 MB** + barra progresso; fix `getExt`; versioning in transazione SQL |
+| 5 | Test `NormUploadButton` | 12 test Vitest aggiunti |
+| 6 | Deploy su `main` | `2024747` (feat UX), `864c9e1` (integrazione DataGrid Catalogo) — **nessuna PR** |
+
+#### Lezione appresa (modulo documenti)
+
+**WebDAV rimosso dal dialog file:** il round-trip Office via WebDAV (vedi [sessione 16/05](#sessione-16-maggio-2026-sera--office-round-trip-webdav--lifecycle-documenti--viewer-docx-browser)) resta documentato lato backend, ma **non** va esposto in UI se il client Windows apre il popup credenziali nativo senza passare il token JWT. Preferire download + viewer `.docx` in browser finché non c'è un flusso Office365/SharePoint o link firmato temporaneo.
+
+**Policy upload (200 MB / 50 MB):** hard limit server (413) + soft warning client prima dell'invio — evita upload bloccati a metà e allinea aspettative utente su reti lente.
+
+**Pattern `DocumentDataGrid`:** riutilizzare per liste tabellari documenti (selezione singola, sort client-side, toolbar contestuale) invece di card sparse nel Catalogo; colonna selezione e frecce sort devono essere visibili subito (fix visibilità in `864c9e1`).
+
+**Backlog differito:** feature «Condividi via email» con link temporaneo firmato — non in scope sessione.
+
+---
+
+### Aggiornamento 22/05/2026 — JSX: sequenze literal `\u` in UI (Rischi / Progetti / Qualifiche)
+
+**Sintomo:** in pagina (es. **Rischi & Obiettivi**) titoli, tab e icone apparivano come testo `\u26A0\uFE0F`, `\uD83D\uDEA7`, `\u00e0`, `\u00a7`, ecc.
+
+**Causa:** in React, il contenuto tra tag (`<h1>\uXXXX ...</h1>`) è **HTML/JSX testuale**, non una stringa JavaScript → `\u` **non viene interpretato**.
+
+**Fix applicati:**  
+- `app/src/pages/RisksPage.jsx` — testo/icona tramite **`{"..."}`** (stringa JS con escape dove servono emoji) o UTF-8 per italiano/simbolo ×.  
+- `app/src/pages/QualificationForm.jsx` — stesso schema sull’errore form.  
+- `app/src/pages/ProjectsPage.jsx` — pulsante **Sì** (prima `S\u00EC` in JSX, mostrato letterale).
+
+**Regola ripetibile:** prima di `\u`/emoji in JSX, preferire **`{expr}`** dove `expr` è stringa/template **JavaScript**, oppure scrivere il carattere Unicode diretto in UTF-8.
+
+---
+
+### Sessione 22/05/2026 — Fix allegati ISO 45001
+
+**Problema**: pulsante "+ Aggiungi Allegati" visibile ma non funzionante sulla checklist 45001 (errore silenzioso "ID domanda non disponibile"). Su 9001 e 14001 funzionava regolarmente.
+
+**Causa root**: `ISO_45001_TEMPLATE` in `checklistTemplates.js` aveva tutte le 53 domande con `questionId: null`. `useAttachmentManager` blocca l'upload alla prima riga se `questionId == null`. Le domande esistevano già nel DB (question_id 276-328, migration maggio 2026) ma il template frontend non era stato allineato.
+
+**Fix** (solo frontend, nessun VPS):
+- `checklistTemplates.js` — template riscritto con 53 domande reali, `sectionCode` allineati al DB (`45001_c4`…`45001_c10`), `questionId` 276-328
+- `StorageContext.jsx` — `hydrateQuestionIds` estesa per `ISO_45001` (standard_id=3) con remap sezioni legacy (`clause4 → 45001_c4`)
+- `ChecklistModule.jsx` — hydratation attivata anche per ISO_45001
+
+**Regola appresa — "Template-DB parity"**: ogni volta che si inseriscono domande nel DB per un nuovo standard, aggiornare **immediatamente** il template frontend corrispondente con i questionId reali. Un template con `questionId: null` blocca allegati, sync risposte e ogni funzione che richiede l'ID numerico del DB.
+
+**Verifica rapida**: `curl -s "https://systemgest.netlify.app/assets/$(curl -s https://systemgest.netlify.app/ | grep -o 'index-[^"]*\.js')" | grep -c 'questionId:[0-9]'` deve restituire > 0 per ogni standard attivo.
 
 ---
 
@@ -167,7 +457,7 @@ Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
 - Routing pulsante "Visualizza":
   - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
   - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
-  - `.xlsx` → fallback Office Online Viewer (Microsoft)
+  - `.xlsx` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
 
 #### DocumentDetailPanel (slide-in dettaglio documento)
 Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"
@@ -219,9 +509,7 @@ quando il pannello si apre.
    nell'endpoint `release-revision` che apre il `.docx` con `docxtemplater` (già nel
    progetto), sostituisce `{{data_rilascio}}`, `{{numero_revisione}}`, `{{revisione_label}}`,
    salva la nuova versione. Da implementare.
-2. **Excel viewer**: attualmente "Visualizza" su `.xlsx` cade su Office Online Viewer
-   (inaffidabile con porta 8443). Da valutare libreria browser-side equivalente a
-   docx-preview per Excel (es. `xlsx-preview` o `sheetjs` + custom renderer).
+2. ~~**Excel viewer**~~ → risolto PR #93 (`SpreadsheetViewer` + `getDocFileBlob`).
 3. **Test L1** della suite frontend non eseguiti dopo le modifiche di oggi (Vitest).
    Da lanciare prima di considerare definitivamente chiuso il modulo Word round-trip.
 4. **Pulsante "Visualizza" su .doc legacy**: docx-preview probabilmente non supporta
@@ -299,13 +587,170 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 
 - **`getUserMedia({audio:true})` deve precedere `SpeechRecognition.start()` su Android Chrome PWA.** Senza questa chiamata, Chrome non mostra il dialog di consenso nativo e rigetta silenziosamente. Sequenza corretta: `permissions.query` → `getUserMedia` → `SpeechRecognition.start()`.
 
-- **Diagnosi autonoma con Playwright MCP**: per verificare header HTTP di produzione senza accesso fisico al device → `curl -sI https://[sito]/ | grep -i permissions-policy`. Per verificare se il bundle Netlify è aggiornato → fetch dell'index.html + search nel bundle JS per stringhe note. Credenziali login: usare `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` env vars + `browser_run_code_unsafe` con script in `/workspace/.playwright-mcp/`.
+- **Test E2E autenticato da cloud agent (pattern verificato 24/05/2026)**: NON usare il Playwright MCP per il login — non ha accesso alle env var. Usare uno script Node.js in `/tmp/test-login.mjs` che legge `process.env.SGQ_APP_PASSWORD`. Setup: `cd /tmp && npm install playwright && npx playwright install chromium`. **Attenzione**: il form login usa input React controllati — `page.fill()` da solo fallisce con errore «Inserire email»; usare `pressSequentially` su `#email` / `#password` (template in `sgq-bug-fix-methodology.mdc` Fase 6).
 
 - **Netlify può aggiornare gli header CDN (`netlify.toml`) senza ricompilare il bundle JS.** Se si cambia solo `netlify.toml` → header live in pochi minuti; bundle invariato. Se si cambia codice in `app/` → bundle nuovo hash al prossimo deploy completo.
 
 
 
 **Branch**: `cursor/adr-010-ai-agentic-architecture-7330` → mergiato su `main` (commit `49a6a6c`).
+
+### Sessione 02 giugno 2026 — API complete Riesame requisiti + UI slide
+
+**Branch**: `cursor/contract-review-api-complete-5351`  
+**Spec**: [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md)
+
+| Area | Contenuto |
+|---|---|
+| Backend | `contractReviewWorkflow.service.js` (gate ISO §8.2), estensione controller/routes, migrazione **068** |
+| Frontend | `ContractReviewPage` con **slide** Workflow / Checklist / Chiarimenti / Documenti / Analisi AI; inbox + summary |
+| Test L1 | Jest workflow + controller; Vitest `contractReviewLabels.test.js` |
+| Doc API | Sezione in [BACKEND_API.md](reference/BACKEND_API.md) |
+
+**Slide UI dettaglio** (ordine operativo): tab orizzontali — non confondere con presentazioni; guidano il commerciale/tecnico fase per fase.
+
+**Deploy VPS** (cloud agent): `scp` migration SQL + `run-migration-068-vps.js`; deploy `contractReview.controller.js`, `contractReview.routes.js`, `contractReviewWorkflow.service.js`; restart `sgq-backend` con verifica PID.
+
+**Chiusura sessione 02/06/2026** — **TEST OK**
+
+| Esito | Dettaglio |
+|---|---|
+| PR | [#79](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/79) mergiata su `main` (`2521b5b`) |
+| UI produzione | https://systemgest.netlify.app/contract-reviews — tab slide deployate |
+| Migrazione 068 | Applicata VPS; fix batch `GO` prima dell'indice `IX_attachments_commercial_case` |
+| Incidente login | SQL Server **Evaluation scaduta** (errore 17051) → `mssql-conf -n set-edition` con `MSSQL_PID=Developer`; `systemctl reset-failed` + start; restart backend |
+
+**Lezioni (02/06/2026)**
+
+- **Login impossibile + health `unhealthy`**: verificare **prima** `GET /api/v1/health` e `systemctl status mssql-server`. Sintomo tipico: `Failed to connect to localhost:11043`. Log: `/var/opt/mssql/log/errorlog` — cercare `evaluation period has expired`.
+- **Recovery SQL Evaluation scaduta**: `sudo ACCEPT_EULA=Y MSSQL_PID=Developer /opt/mssql/bin/mssql-conf -n set-edition` → `sudo systemctl reset-failed mssql-server` → `sudo systemctl start mssql-server` → restart `sgq-backend`.
+- **Migrazione 068**: indice filtered su colonna appena aggiunta richiede separatore `GO` (SQL Server valida il batch prima del commit DDL).
+
+**Prossimo passo opzionale**: smoke L3 manuale tab slide + transizione con gate; Sprint 9–10 `import-from-job`.
+
+### Slice R1 import-from-job (02/06/2026 pomeriggio)
+
+**PR**: [#80](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/80) mergiata (`5403b1c`).
+
+| Elemento | Dettaglio |
+|---|---|
+| Endpoint | `POST /api/v1/contract-reviews/import-from-job` |
+| Effetto | Caso `DRAFT` + checklist preliminare + allegati da file job (`extracted`/`reviewed`) |
+| Idempotenza parziale | **409** `ALREADY_LINKED` se `storage_path` già su `attachments.commercial_case_id` |
+| Deploy | Backend VPS aggiornato; health OK |
+| Test L1 | Jest `contractReview.controller.test.js` (+4 test) |
+
+**Prossima slice**: ~~**R2**~~ ✅ — vedi sotto. **R3** link bidirezionale (migrazione **070**).
+
+**Lezione**: piano slice in `TASK_RIESAME_ESTENSIONI_SLICES.md` va committato su `main` **prima** di delegare al deputy locale — altrimenti l'agente non trova la spec (commit `0e6160a`).
+
+### Slice R2 UI Import Jobs (02/06/2026 sera) — TEST OK
+
+**PR**: [#81](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/81) UI; hotfix DB [#82](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/82) migrazione 069.
+
+| Elemento | Dettaglio |
+|---|---|
+| UI | Pulsante «Crea caso Riesame» + modale (titolo, cliente, anteprima testo) in `ImportJobsPage.jsx` |
+| API client | `importContractCaseFromJob` → `POST /contract-reviews/import-from-job` |
+| Successo | Redirect `/contract-reviews/:id` (History API — usare `waitForFunction` su pathname in smoke Playwright) |
+| Smoke L3 | Playwright autonomo su `systemgest.netlify.app`: job PDF → estrai → conferma → allegato in tab Documenti → refresh OK |
+
+**Bug scoperto in smoke (R1 residuo):** `CHK_attachments_parent` (036) non accettava righe con solo `commercial_case_id` (068). Fix migrazione **069** su VPS.
+
+**Lezione**: dopo ogni migrazione che aggiunge un nuovo «parent» agli allegati, aggiornare subito `CHK_attachments_parent` — altrimenti endpoint che linkano file senza audit/NC/document_id falliscono in produzione.
+
+**Prossima slice**: ~~**R3**~~ ✅ — vedi sotto. **S1** UI fornitori.
+
+### Slice R3 link bidirezionale (02/06/2026) — TEST OK
+
+**PR**: [#83](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/83) link job↔caso; hotfix [#84](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/84) badge origine.
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **070** | `commercial_cases.source_import_job_id`; `import_job_files.commercial_case_id` — VPS OK |
+| UI job | Badge «Caso Riesame #N»; pulsante create nascosto se collegato |
+| UI caso | Badge «Origine: Import job #N» → `/settings/import-jobs?job=N` |
+| Idempotenza | 409 `ALREADY_LINKED` con `case_id` |
+| Smoke L3 Epic R | Playwright 14/14 su `systemgest.netlify.app` (job #10 → caso #7) |
+
+**Bug smoke R3:** `rowCase()` in `ContractReviewPage.jsx` non propagava `source_import_job_id` → badge origine assente nonostante API corretta. Fix one-liner PR #84.
+
+**Lezione smoke import PDF:** usare PDF valido per `pdf-parse` (es. sample Mozilla); PDF minimali/generati possono fallire con «bad XRef entry». Login smoke cloud: preferire API login + `localStorage` token (`sgq_auth_token`) se il form React non invia POST.
+
+**Prossima slice**: ~~**S2**~~ ✅ — vedi sotto. **N1** notifiche eventi.
+
+### Slice S2 supplier_id anagrafica (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **073** | `commercial_case_documents.supplier_id` + FK `suppliers` + indice |
+| Backend | `linkDocument` valida `supplier_id` org-scoped; `getCase`/`listCaseDocuments` espongono `supplier_name` |
+| UI | Dropdown fornitore se controparte=Fornitore; badge nome fornitore; highlight checklist P9 |
+| Test L1 | Jest `linkDocument` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 073 + controller deployato; health 200 |
+| PR | [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86) (include S1) |
+
+**Nota numerazione:** la spec citava migrazione 071 ma quella è già usata per NC — S2 usa **073**.
+
+**Prossima slice**: ~~**N1**~~ ✅ — Epic estensioni **completa** (H1).
+
+### Slice N1+N2 notifiche approvazione (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Migrazione **074** | Tabella `commercial_case_notifications` |
+| Service | `contractReviewNotification.service.js` — eventi `pending_approval` e `assigned` |
+| Email N2 | Trigger immediato via `alertMail.service.js` con link `/contract-reviews/:uuid` |
+| Test L1 | Jest service (6) + controller mock OK |
+| Deploy VPS | Migrazione 074 + deploy backend; health 200 |
+| PR | [#87](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/87) |
+
+### Slice H1 handoff stub H-A (02/06/2026) — TEST OK agente
+
+| Elemento | Dettaglio |
+|---|---|
+| Decisione H0 | Opzione **H-A** (riferimento testo, nessun modulo commesse) |
+| Migrazione **075** | `handoff_ref`, `handoff_at`, `handoff_by`, `handoff_notes` su `commercial_cases` |
+| API | `POST /contract-reviews/:id/handoff` — solo status `APPROVED` |
+| UI | Tab Workflow: sezione «Passaggio a esecuzione» + riepilogo dopo registrazione |
+| Fix | `rowCase()` propagava campi handoff (pattern R3 `source_import_job_id`) |
+| Test L1 | Jest `registerHandoff` (4 casi) + build Vite OK |
+| Deploy VPS | Migrazione 075 + deploy backend; health 200 |
+| PR | [#88](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/88) |
+
+### Personale azienda S4+S5 + VPS migration 078 (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| Migration **078** | Tabella `company_personnel` + bridge `notification_contacts`; script `backend/scripts/run-migration-078-vps.js` |
+| API | `GET/POST/PUT/DELETE /api/v1/companies/:companyId/personnel` |
+| UI | Route frontend `/companies/:id` — tab Anagrafica + Personale (`CompanyDetailPage`, `CompanyPersonnelPanel`) |
+| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://www.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
+| Test | Vitest `companyDetailPage.test.jsx` — 3/3 |
+
+### Hotfix viewer + RBAC Fase 4 company_access (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| Hotfix | Viewer studio: POST/PUT/DELETE personnel → 403; UI nasconde CRUD (`canEdit`) |
+| Migration **081** | `user_company_access` (permission read/write per user+company) |
+| API admin | `GET/POST/DELETE /admin/users/:id/company-access` |
+| Auth | `company_access[]` in login e `GET /auth/me` |
+| UI | Menu ridotto cliente azienda; `CompaniesPage` senza Nuova/Elimina; `canEdit` da permission |
+| Test | Jest personnel 14 + service 6; Vitest `companyAccess.test.js` 3 |
+| Account test | `cliente.azienda11@…` write company 11; `viewer.azienda11@…` read — password in mcp.env |
+| VPS | Migration **081** applicata 02/06/2026 (tabella + 2 righe test); deploy `companyAccess.service.js` + controller; health 200; smoke viewer POST 403 / cliente write 201 |
+
+### Slice S1 UI counterparty fornitori (02/06/2026)
+
+| Elemento | Dettaglio |
+|---|---|
+| UI tab Documenti | Select Controparte (Cliente/Fornitore/Interno) + Direzione (in/out) su collega registro e upload |
+| Badge riga | «Fornitore · in» (arancione se supplier) su documenti registro e allegati |
+| Backend | Nessuna modifica — API già accettava `counterparty`/`direction` |
+| Test L1 | `contractReviewLabels.test.js` + build Vite OK |
+
+**Prossima slice**: ~~**S2**~~ ✅ PR [#86](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/86). **N1** notifiche.
 
 #### Attività completate
 
@@ -341,10 +786,11 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Route `/contract-reviews` | ✅ HTTP 401 senza auth |
 | Route `/norm-broker/search` | ✅ HTTP 401 senza auth |
 
-#### Smoke test E2E — da completare
+#### Smoke test E2E login — completato (24/05/2026)
 
-- ⏳ Login su `https://systemgest.netlify.app` → menu SGQ → "Riesame Requisiti" → creare caso → incollare capitolato → lanciare analisi AI → verificare suggerimenti
-- Credenziali test: `admin@sgq.local` / `Sistemi@2026` (superadmin, org 1001)
+- ✅ Login su `https://systemgest.netlify.app` con script Playwright Node (`/tmp/test-login.mjs`) — dashboard post-auth verificata
+- Credenziali test: `admin@sgq.local` via env `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (superadmin, org 1001)
+- Smoke esteso moduli (Riesame Requisiti, AI, ecc.): da eseguire in sessione dedicata se serve
 
 ---
 
@@ -377,7 +823,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 #### Lezioni apprese (12/05/2026)
 
 - **CHECK constraint SQL Server — verificare prima di modificare valori**: prima di usare un valore come contenuto di colonna, verificare i CHECK constraint esistenti con `SELECT name, definition FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('tabella')`. Nel bug corrente, `pending_issues.original_status` aveva un CHECK `IN ('NC','OSS','OM')` errato che bloccava i rilievi NV.
-- **SQL reserved keywords**: alias come `open`, `closed`, `status` possono causare errori oscuri su SQL Server anche senza essere in posizione keyword esplicita. Usare sempre prefissi descrittivi: `count_open`, `count_closed`, `count_in_progress`.
+- **T-SQL — Alias con parole riservate**: keyword T-SQL (`OPEN`, `CLOSE`, `READ`, `KEY`, `STATUS`, ecc.) non possono essere usate come alias di colonna senza escape. Due soluzioni valide: (1) prefissi descrittivi (`count_open`, `count_closed`, `count_in_progress`) — preferibile per chiarezza; (2) parentesi quadre `AS [open]`, `AS [closed]`, `AS [key]` — utile quando il nome dell'alias è imposto dall'API consumer. Sintomo: `RequestError: Incorrect syntax near the keyword 'xxx'` con status 500 sull'endpoint. Fix applicato il 12/05/2026 su `nc.controller.js` (statistiche overview NC).
 - **CSS media query nasconde elementi padre**: quando un pulsante/elemento non appare su mobile, verificare se un **contenitore genitore** ha `display: none` in una media query (es. `.clause-progress { display: none }` su mobile). La soluzione è spostare l'elemento fuori da quel contenitore, non modificare la media query.
 - **Navigazione accordion — callback diretta è l'unico pattern affidabile**: per navigare a una domanda specifica da un componente esterno usare prop callback diretta (`onGoToQuestion` passata da `AuditAccordionLayout`) + `setChecklistExpandTrigger(prev => prev+1)`. I `CustomEvent` globali (`window.dispatchEvent`) hanno problemi di timing/mount e non sono affidabili.
 - **Coerenza visiva badge stati conformità**: ogni componente che mostra NC/OSS/NV deve usare esclusivamente `status-btn non-compliant/partial/not-verified active` di `ChecklistModule.css`. Mai creare classi CSS parallele per gli stessi stati — crea inconsistenza visiva e debito tecnico.
@@ -639,20 +1085,43 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 3. **Upload multiplo norme nel Registro Documentale**
    - Endpoint POST /documents/norms/upload (max 10 PDF, 50MB ciascuno)
    - Estrazione testo con pdf-parse + metadati con AI (titolo, codice, anno, ente)
-   - Salvataggio in document_registry + norm_document_sources come fonte AI
+   - Salvataggio in `document_registry` (con `type_specific_data` canonico) + `norm_document_sources` come estensione AI/testo
    - Prevenzione duplicati (verifica titolo/standard_code)
    - UI: pulsante "Carica Norme" nella cartella NORME E LEGGI (vista Albero)
 
+3b. **Import da lista codici — Fase 3 (29/05/2026)**
+   - Endpoint `POST /documents/norm-import-codes` — max 50 codici, **PDF non richiesto**
+   - Lookup catalogo online + bozza registro con `type_specific_data` (vigore, URL, ente inferito)
+   - Duplicati bloccati per `standard_code` nella stessa organizzazione
+   - UI: **Importa da catalogo (codici)** nella cartella NORME E LEGGI
+   - Compatibile job settimanale validità (slice R1)
+
 4. **Verifica validità norme**
-   - Servizio normValidityChecker interroga catalogo UNI settimanalmente
-   - Se edizione superata: flag validity_status = 'superata'
-   - Job cron ogni lunedì alle 03:00
+   - Lookup in form: cataloghi UNI/ISO/BSI + **Normattiva** (atti IT) + **EUR-Lex** (UE) — PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65)
+   - Job settimanale (lunedì 03:00): **legge `document_registry`** (`doc_type=norma`) come SoT — slice R1 (25/05/2026, PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66))
+   - Per ogni riga con `JSON_VALUE(type_specific_data, '$.standard_code') IS NOT NULL` chiama `checkNormValidity` e aggiorna `type_specific_data` via `JSON_MODIFY` (merge, non sovrascrive altri campi)
+   - Mirror retrocompatibile su `norm_document_sources` se `document_id` presente (fino a R5)
+   - Email se `ALERT_ENABLED=true` e norme superate; log `[NormValidityChecker] checked ≥ norme con codice`
+   - Stati vigenti controllati: `vigente`, `rilasciato` (null incluso)
+   - **Gate 0 (25/05/2026)**: PR [#65](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/65) mergiata (`b0a5900`), deploy VPS connettori, smoke `norm-lookup` D.Lgs. 81/2008 → `active` + URL Normattiva
+   - **R1 completata (25/05/2026)**: PR [#66](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/66) mergiata — job legge `document_registry`; test L1 19/19 verdi; deploy VPS PID 260874; log job confermato: `checked=1 >= norme registro con codice=1`, ISO_9016_2012 marcata `withdrawn` dal catalogo ISO
+   - **R2 completata (25/05/2026)**: `lookupNormStatus` accetta `document_id` opzionale; persiste `validity_status`, `last_validity_check`, `validity_check_url`, `superseded_by` in `type_specific_data` via `JSON_MODIFY` (merge); `DocumentForm.jsx` passa `doc.id` in edit + include campi vigore nel save payload
+   - **R3 completata (25/05/2026)**: upload bulk scrive `type_specific_data` con lo stesso schema del form manuale (`documentRegistryNorm.service.js` + `normUpload.controller.js`); 13 test Jest L1 verdi
+   - **R4 completata (25/05/2026)**: PR [#68](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/68) — badge vigore nella lista Registro Documenti (tab Catalogo); `listDocuments` aggiunge `norm_validity_status` + `norm_last_check` via `JSON_VALUE`; `DocumentDataGrid` mostra pill verde/rosso/ambra; CI verde; test visuale: norma ISO_9016_2012 mostra badge "Superata" (rosso)
+   - **R5 completata (25/05/2026)**: `knowledgeIndexer` arricchisce testo indicizzato per `doc_type='norma'` con `standard_code`, `issuing_body`, `edition_year`, `validity_status`, `superseded_by` da `type_specific_data`
+   - **R6 completata (25/05/2026)**: backfill VPS `norm_document_sources` → `document_registry.type_specific_data` — report produzione: 2 righe totali, **1 aggiornata** (ISO_9016_2012), 1 senza codice; script `backfill-norm-type-specific-data-vps.js` idempotente
+   - **R7 completata (25/05/2026)**: [ADR-011](adr/ADR-011-registry-norm-sot.md) — SoT metadati norma su registro; `norm_document_sources` solo mirror AI/chunking
+   - **Piano refactor SoT**: [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) — **R1–R7 completate**
+   - **Sprint 11 CommercialCase (25/05/2026)**: modulo riesame requisiti contratto GIÀ implementato — tabelle `commercial_cases/history/checklist`, controller, routes, `ContractReviewPage.jsx`, menu voce "Riesame Requisiti"; AI analisi capitolato via `useAiAssist` → `review_requirements`; test L1 Jest 14/14 verdi; smoke UI OK (crea caso, checklist 10 voci, transizione stato); PR #67
+   - **Email settimanale norme superate**: richiede `node-schedule` + `nodemailer` installati sul VPS (`npm install` in `/var/www/sgq-backend`) se i log mostrano scheduler disabilitato
 
 ### Migrazioni DB applicate
 - 055_ai_feedback.sql — tabella feedback personalizzazione
 - 060_norm_document_sources.sql — fonti normative da documenti caricati
 
 ### Lezioni apprese
+- **SoT norme (R7)**: metadati inventario solo in `document_registry.type_specific_data`; `norm_document_sources` per testo PDF/chunk AI — vedi [ADR-011](adr/ADR-011-registry-norm-sot.md)
+- **Backfill R6**: script VPS idempotente con `mergeMissingNormTypeSpecificData` — non sovrascrivere campi già popolati post-R2/R3
 - PDF scansionati (come ISO 19011): pdf-parse estrae poco/nulla, servono PDF nativi per buona qualità
 - Gemini 2.5 flash: occasional "high demand" transient errors — retry dopo 15s risolve
 - PowerShell: evitare heredoc bash, usare file .sh copiati via pscp per comandi complessi
@@ -729,7 +1198,10 @@ La pagina admin "Utenti" ha "Standard consentiti" (quali norme l'utente puo' aud
 1. **Merge PR #33** → `main` con git merge --no-ff; push su origin → Netlify auto-deploy avviato.
 2. **Deploy backend VPS**: 4 controller (audit/attachment/customChecklist/response) + `audit.routes.js` copiati via SCP. Fix bug critico: `audit.routes.js` sul VPS aveva route `POST /audits/:auditId/promote-nc → promoteAuditNcToModule` (funzione mai esistita nel controller locale) che mandava in crash il server; rimossa deployando il file locale canonico.
 3. **Migration 049 — ISO 14001 checklist completa**: 53 domande che coprono tutti i sotto-requisiti per clausola (§4→§10), suddivise in 7 sezioni `14001_c4..c10`. Soft-delete delle 46 domande legislative precedenti; sezioni legacy `14001_s4/s5` disattivate. Pattern esecuzione VPS: `DB_SERVER=localhost DB_PORT=11043 ... NODE_ENV=production node /tmp/run-migration-049-vps.js`.
-4. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
+4. **Esperienza 22/05/2026 (Camellini)**: osservazione corretta — in app compariva ancora la matrice **legislativa** (VIA, AIA, rifiuti…) perché `app/src/data/checklistTemplates.js` non era allineato al DB post-049. Fix: `ISO_14001_TEMPLATE` = audit SGA (53 domande); matrice legislativa spostata in `ISO_14001_LEGISLATIVO_TEMPLATE`. `initializeChecklist` re-inizializza audit con sezioni `14001_s4/s5` obsolete. Rigenerazione template SGA: `node app/scripts/buildIso14001Template.js` + export JSON da VPS.
+5. **Checklist custom legislativa (post-merge PR #61)**: matrice 152/06 importabile da **Admin → Checklist personalizzate** (pulsante «Importa matrice legislativa ambientale»). API idempotente `POST /api/v1/custom-checklists/seed/legislativo-ambientale`; marker description `[SGQ_TEMPLATE:LEG_AMBIENTE_152]`. **Uso Camellini**: audit norma **ISO 14001** = SGA clausole 4–10; sopralluogo/consulenza legislativa = checklist custom (assegnabile in creazione audit, anche con ISO 9001). Deploy backend VPS richiesto per il seed. Rigenerazione dati backend: `node backend/scripts/buildLegislativoAmbientaleTemplate.js`.
+   - **Smoke L3 autonomo 24/05/2026**: DB produzione — ISO 14001 = 53 domande `14001_c4..c10` (SGA), zero sezioni `14001_s*`. Netlify bundle `index-C66x6whP.js` contiene template SGA + API `seedLegislativoAmbientale`. **Seed QS Studio (org 1002)**: checklist «Conformità legislativa ambientale (D.Lgs. 152/06)» creata con 46 voci; idempotenza OK. **Bug fix seed**: `findSeededLegislativoAmbientale` usava `LIKE` con marker `[SGQ_TEMPLATE:…]` — le parentesi quadre in SQL Server sono wildcard; corretto con `CHARINDEX`. **Login UI Playwright**: bloccato — `SGQ_APP_PASSWORD` cloud non coincide con hash DB (`admin@sgq.local` → 401); aggiornare segreto Cursor Cloud con password reale (account prod: `marcocamellini@gmail.com` org QS_Studio).
+6. **Alert Engine VPS preparato**: installati `nodemailer@^8.0.7` e `node-schedule@^2.1.1` in `/var/www/sgq-backend`; aggiunto blocco SMTP placeholder nel `.env` VPS con `ALERT_ENABLED=false`. Per attivare: compilare `SMTP_HOST/PORT/USER/PASS/FROM` + impostare `ALERT_ENABLED=true` nel `.env` e riavviare il servizio.
 
 #### Nota deploy VPS: bug route promoteAuditNcToModule
 La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al file `audit.routes.js` sul VPS in una sessione precedente senza corrispondente commit git. Il controller non esportava `promoteAuditNcToModule`. Fix: deployato il `audit.routes.js` locale (canonico), che non ha quella route. La funzionalità S-A6-C ("Registra nel modulo NC") è implementata solo nel frontend (navigazione React Router) e non richiede un endpoint backend dedicato.
@@ -935,9 +1407,18 @@ Prima di implementare qualsiasi nuovo widget di domanda/item, verificare se esis
 #### Migration DB via SSH (non via cloud agent)
 Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risolve il server). Pattern consolidato:
 1. Scrivi script `run-migration-NNN-vps.js` che usa `require('/var/www/sgq-backend/src/config/database')`
-2. `scp` dello script sul VPS via `$SGQ_SSH_KEY_B64`
-3. `ssh` + `node /tmp/run-migration-NNN-vps.js`
+2. **Windows (Cursor desktop):** `.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-NNN-vps.js` (usa `.ssh-deploy.local.ps1`, **non** `SGQ_SSH_KEY_B64`). Preflight: `vps-preflight.ps1` → `VPS_ACCESS_OK`.
+3. **Cloud Agent (Linux):** `scp` via `$SGQ_SSH_KEY_B64` + `ssh` + `node /tmp/run-migration-NNN-vps.js`
+4. **PC con `database.json`:** migrazione diretta con Node/sqlcmd senza SSH.
 - **Nota SQL Server**: `ON DELETE SET NULL` in FK non è sempre supportato. Verificare con istruzione separata prima di aggiungere clausole ON DELETE/UPDATE.
+
+#### Accesso VPS da Windows — non usare SGQ_SSH_KEY_B64 (07/06/2026)
+Su Cursor desktop (Windows) `SGQ_SSH_KEY_B64` è **sempre vuota** — è un secret solo Cloud Agent. L'agente che si ferma con *"Impossibile verificare… va rieseguita dal cloud agent"* sbaglia percorso.
+- **Setup una tantum:** `backend/config/.ssh-deploy.local.ps1` (da `.example`) + `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- **Preflight obbligatorio:** `.\backend\scripts\vps-preflight.ps1` → `VPS_ACCESS_OK`.
+- **Script/query sul VPS:** `run-on-vps.ps1` (PuTTY `plink`/`pscp`, carica `.ssh-deploy.local.ps1`).
+- **Deploy:** `deploy-controllers-to-vps.ps1` (health check compatibile PowerShell 5.1: `Invoke-WebRequest -UseBasicParsing`).
+- **Lezione:** non cercare `.ppk` se non esiste — password SSH in file gitignored è il percorso documentato; chiave `.ppk` + Pageant è upgrade opzionale.
 
 #### Unificazione allegati ISO e custom (migration 047)
 `evidence_blocks` della custom già referenziava `attachment_id` dalla tabella `attachments` — erano già unificati a livello DB. Il gap era solo nel frontend: `AttachmentSection`/`AttachmentPreview` non sapevano filtrare per `custom_item_id`. Soluzione minima: aggiungere `custom_item_id` nullable a `attachments` + propagare il param nei 4 punti frontend.
@@ -959,6 +1440,8 @@ Il cloud agent Cursor non raggiunge il DB SQL Server direttamente (DNS non risol
 **Prossimo**: smoke test allegati su produzione (upload PDF/foto → verifica link + embed); ISO 14001 checklist completa; P1 smoke L3 custom checklist (DEPUTYTASK pronto).
 
 **Nota 02/05/2026 — Word checklist custom**: gli allegati nelle `evidence_blocks` ora generano **HYPERLINK** cliccabile (come checklist ISO) quando è disponibile `getViewUrl`; in modalità **Incorpora foto** sotto l’immagine compare anche il link. La mappa allegati usa `attachment_id` / `serverAttachmentId` / `id`.
+
+**Nota 28/05/2026 — Word checklist custom, allegati mancanti**: l'upload da **AttachmentSection** salva su server con `custom_item_id` ma spesso non aggiorna `evidence_blocks.attachment_id`. L'export ISO elenca allegati per `questionId`; il ramo custom leggeva solo i blocchi. Fix: `buildCustomChecklistSectionOoxml` (`attachmentsForCustomItem`). Per il menu template: copiare un `.docx` in `public/templates/` **non** registra il file — serve **POST** `/api/v1/report-templates` e assegnazione in editor checklist o Impostazioni.
 
 ---
 
@@ -990,6 +1473,8 @@ Per **non dipendere dalla lettera disco di Google Drive** e mantenere stabile il
 ### Artefatti IDE e `.gitignore`
 
 - Cartelle **machine-specific** da non versionare: `.vscode/`, `.idea/`, **`.vs/`** (cache/layout Visual Studio) — tutte in **`.gitignore`** alla radice.
+- **`.editorconfig`** (versionato, root): UTF-8, LF, indent — allineato a `.cursor/rules/sgq-encoding-quality.mdc`.
+- **MCP locale (gitignored)**: `.cursor/mcp.json`, `.cursor/mcp.env` — template `mcp.env.example` + script `sync-github-mcp-env.ps1` (vedi [Sessione 30/05/2026 — Tooling](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione)).
 - **Audit storico (2026-04)**: scansione `git log --all` sui path contenenti `.vs/`: **nessun file** risulta mai stato committato in questo repository; **non** serve `git filter-repo` / BFG per `.vs/`.
 - Se in futuro finissero per errore nell’indice: `git rm -r --cached .vs/` e commit; un **rewrite della history** (es. `git filter-repo`) vale solo se serve rimuovere blob dalla storia remota (dimensioni clone, policy compliance), non come passo obbligatorio dopo il solo `rm --cached`.
 
@@ -1044,7 +1529,7 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 | **Inizio sprint o sessione** | Leggere [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) (**Prossimo step**, **Open points e memoria trasversale**, checklist aperte) e, se il task tocca permessi o dati per studio/azienda, [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md). |
 | **Durante lo sviluppo** | Ogni vertical slice: elencare in PR/commit **file toccati** + **test aggiunti o da eseguire manualmente** (non solo “build ok”). |
 | **Prima del merge su `main`** | CI app su PR ([`.github/workflows/ci-app-pr.yml`](../.github/workflows/ci-app-pr.yml)); localmente: sezione **D** (test + build). |
-| **Dopo deploy** | [DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md) + smoke tabella sotto; se tocca licenze/auth → anche righe “Sicurezza e licenze”. |
+| **Dopo deploy** | [how-to/deploy.md](how-to/deploy.md) + [DEPLOY_CHECKLIST_RELEASE.md](how-to/DEPLOY_CHECKLIST_RELEASE.md) + smoke tabella sotto; se tocca licenze/auth → anche righe “Sicurezza e licenze”. |
 
 ### Definition of Done (slice verticale — minimo)
 
@@ -1060,9 +1545,68 @@ Se una informazione esiste già altrove: **un link + una riga di contesto**, non
 |--------|------|--------|
 | **L1 — Automatici app** | `cd app` → `NODE_ENV=test` → `npm run test:run` + `npm run build` | Ogni modifica sostanziale a React/utils (wordExport, converter, hook critici). Pattern Vitest: `src/**/*.{test,spec}.{js,jsx}` (incluso contratto `response-options` in `src/tests/integration/`, mock senza rete in CI). |
 | **L2 — Script / repro** | `node scripts/repro-custom-export.mjs`, `verify-template-repair.js` (se Word/template) | Dopo cambi a export OOXML o template. |
-| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([DEPLOY_CHECKLIST_RELEASE.md](DEPLOY_CHECKLIST_RELEASE.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
+| **L3 — Smoke post-deploy** | Health API, login, lista audit, un flusso CRUD del modulo toccato, export Word se toccato | Sempre dopo release frontend/backend ([how-to/deploy.md](how-to/deploy.md)). Checklist strutturata esempio: [agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md](agent-tasks/SMOKE_CHECKLIST_WEEKEND_2026-04-18.md). |
 | **L4 — Hardening** | Due sessioni, lock audit, licenze (`403 MODULE_NOT_LICENSED`), refresh sessione, PWA offline (cache vs server) | Dopo modifiche a `auth`, `moduleLicense`, `syncService`, `IndexedDB`, lock. |
 | **L5 — E2E / browser** (backlog prodotto) | Flussi completi su Netlify preview o staging | Pianificato in roadmap; non sostituisce L1–L4. |
+
+### Procedura chiusura autonoma
+
+> Ciclo **obbligatorio** per ogni slice verticale chiusa da agente (desktop o cloud) senza supervisione continua del committente. Complementa il DoD sopra e le regole in `.cursor/rules/sgq-operating-memory.mdc`.
+
+#### Obiettivo e chiusura slice
+
+| Fase | Cosa fare | Criterio chiusura |
+|------|-----------|-------------------|
+| **Perimetro** | Una slice = un obiettivo verificabile (bug, feature minima, doc) | Scope dichiarato in PR/commit; niente refactor paralleli |
+| **Fix minimo** | Solo codice necessario al perimetro; riuso componenti/pattern esistenti | Diff piccolo; nessun «profittare» per pulizie non richieste |
+| **Test L1** | Vitest/Jest mirati + build (`app/` o `backend/` secondo area) | Suite toccata verde; build ok |
+| **Smoke L2–L3 simulato** | Script o checklist con **input → output atteso** (tabella sotto) | Esito documentato in guida/PR; L3 reale solo se richiesto |
+| **Doc** | Aggiornare **questa guida** e/o **roadmap** se cambia procedura, vincolo o comando | Nessun nuovo `SESSION_NOTES_*` |
+| **Chiusura** | Commit/PR con messaggio «perché»; merge su `main` se CI verde | Stato slice = TEST OK o rischio residuo scritto |
+
+#### Smoke simulato L2–L3 (input → output atteso)
+
+Usare quando non c’è device reale o deploy immediato. Ogni riga è ripetibile da script (curl, Node, Playwright headless) o da checklist manuale breve.
+
+| Livello | Input | Output atteso |
+|---------|-------|---------------|
+| **L2 — API health** | `GET /api/v1/health` | `200`, body con stato servizio |
+| **L2 — Auth** | `POST /auth/login` credenziali smoke (env) | `200`, token + `organization_id` |
+| **L2 — Scope RBAC** | GET risorsa altra org con token tenant A | `403` o `404`, mai dati altrui |
+| **L3 — Flusso modulo** | CRUD minimo del modulo toccato (es. NC create → list → detail) | Persistenza coerente; UI o API allineate |
+| **L3 — Export** (se toccato Word) | Export audit con checklist custom | File OOXML scaricabile; placeholder critici presenti |
+| **L3 — Sync** (se toccato) | Modifica su device A, refresh device B (o script reconcile) | Server-wins o merge documentato in ADR-008 |
+
+**Nota:** smoke **L3 su dispositivi mobili reali** (PWA, lock, offline) resta **umana**: data, esecutore, device, note in guida o checklist dedicata — non marcare OK senza evidenza.
+
+#### Limiti (non autonomi)
+
+| Area | Regola |
+|------|--------|
+| **Schema DB produzione** | Nessun breaking change senza migrazione idempotente + piano rollback documentato |
+| **Decisioni prodotto** | Prezzi, priorità cliente, scope contrattuale → fermarsi e chiedere |
+| **Segreti** | Mai in repo/chat; usare `database.json`, `.cursor/mcp.env`, env cloud |
+| **Smoke L3 campo** | Agenti simulano L2–L3; prove su tablet/telefono reali = committente o utente pilota |
+| **Deploy VPS** | Autonomo se credenziali SGQ_* presenti; altrimenti documentare passi manuali |
+
+#### Multitasking (worker paralleli)
+
+| Consentito | Vietato |
+|------------|---------|
+| Task su **file/perimetri disgiunti** (es. TASK 0-A adapter vs 0-B migrazione SQL) | Due agenti sul **stesso file** o stesso endpoint |
+| Brief separati (`DEPUTYTASK.md` + task file) con branch distinti | Slice che condividono migrazione DB o refactor sync |
+| Merge sequenziale dopo CI verde per ogni branch | Parallelo su auth, licenze o `syncService` senza coordinamento |
+
+Mappa dipendenze: vedere overview task in `docs/archive/agent-tasks/` (es. Fase 0 AI: 0-D dopo 0-A).
+
+#### Slice documentazione — chiusura (31/05/2026)
+
+| Slice | Esito |
+|-------|-------|
+| **3a — ADR** | [adr/README.md](adr/README.md): ADR-011 in indice; numerazione duplicata 002/003 citata per **nome file** |
+| **3b — Archivio agent-tasks** | `TASK_AI_*` Fase 0 (implementati) → [archive/agent-tasks/](archive/agent-tasks/); stub redirect in `agent-tasks/` |
+
+Prossime slice doc (backlog): 3c–3f in [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md).
 
 ---
 
@@ -1102,7 +1646,7 @@ Prima di avviare T1, l'amministratore di sistema deve completare e documentare q
 
 | Prerequisito | Chi fa | Dove documentare | Fatto? |
 |---|---|---|---|
-| DB staging creato (copia schema, dati anonimi) | Admin sistema | [DATABASE.md](DATABASE.md) sezione "Ambienti" | ☐ |
+| DB staging creato (copia schema, dati anonimi) | Admin sistema | [DATABASE.md](reference/DATABASE.md) sezione "Ambienti" | ☐ |
 | Connection string staging in `backend/config/database.json` con env `staging` | Admin sistema | File locale gitignored | ☐ |
 | Script di anonimizzazione dati (per GDPR) | Dev | `database/scripts/anonymize-staging.sql` | ☐ |
 | Policy retention event_store documentata | Product owner | ADR-008 sezione Compaction | ☐ |
@@ -1133,7 +1677,27 @@ Spuntare dopo deploy o prima di demo cliente. Adattare profondità al rischio de
 |------|-----------------|----------------|
 | **Auth / sessione** | Login, `/auth/me`, operazione autenticata, logout | Token refresh senza aggiornare `licensed_modules` in UI se non previsto fix. |
 | **Licenze moduli** | Org con licenza parziale: menu + `LicensedRoute` + chiamata API modulo disabilitato → **403** codice `MODULE_NOT_LICENSED` | Allineamento route backend vs voci menu ([roadmap — checklist licenze](PROJECT_ROADMAP.md)). |
-| **RBAC / studio** | Due utenti stesso tenant, `auditor_org` diversi: A non apre audit/B con id noto (GET/PUT/sync/allegati) | Vedi [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7. |
+| **RBAC / studio** | Due utenti stesso tenant, `auditor_org` diversi: A non apre audit/B con id noto (GET/PUT/sync/allegati) | Vedi [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) sez. 5–7. Script L3: `.cursor/rbac-smoke-l3-phase2.mjs` (sotto). |
+
+#### Smoke L3 RBAC Fase 2 (`.cursor/rbac-smoke-l3-phase2.mjs`)
+
+Verifica REST cross-studio su API produzione (`fr-busato.it:8443`). Login da `.cursor/mcp.env` (`SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD`) — **non** modifica hash password admin.
+
+| Flag | Default | Uso |
+|------|---------|-----|
+| `--slice=gate|audit|nc|attach|registry|admin|all` | `all` | Esegue solo la fetta indicata |
+| `--keep-data` | sì (sessione chiusura) | Non elimina record `RBAC_SMOKE_*`; stampa ID creati |
+| `--no-keep-data` | — | Cleanup automatico a fine run |
+| `--cleanup` | — | Elimina **tutti** i residui `RBAC_SMOKE_*` e termina |
+
+```powershell
+node .cursor/rbac-smoke-l3-phase2.mjs --slice=all --keep-data
+node .cursor/rbac-smoke-l3-phase2.mjs --slice=audit --keep-data
+node .cursor/rbac-smoke-l3-phase2.mjs --cleanup
+```
+
+Esito in `.cursor/rbac-smoke-l3-result.json`. **TEST OK** globale se slice `audit` + `nc` verdi; `attach`/`registry` possono essere **SKIP** (scope studio su download o GET documenti).
+
 | **Multi-tenant** | Utente org A: nessun dato org B in liste principali | Isolamento query. |
 | **Sync / audit** | Modifica audit → sync o reload → coerenza con server | `server-wins` su campi critici. |
 | **Export Word** | Un audit reale: sezioni, allegati link, pending issues se applicabile | Mojibake, VERIFICATORE, logo. |
@@ -1189,10 +1753,12 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | **Licenze moduli (Sprint 8)** | Colonna `organizations.licensed_modules` (JSON array di chiavi modulo; **NULL** = tutti i moduli attivi, retrocompatibile). API: `GET/PATCH /admin/licenses` (solo admin/superadmin org). Backend: `moduleLicense.service.js`, `requireLicensedModule` su documenti/allegati doc, NC, rischi, qualifiche, reclami+fornitori, notifiche. Login e `GET /auth/me` includono `licensed_modules`. Frontend: `LicensedRoute.jsx`, pagina **Impostazioni → Licenze moduli** (`/settings/licenses`), sidebar filtra voci senza licenza. Deploy VPS: `run-migration-037.js` + copiare service/middleware/controller/routes interessati + `server.js` (mount API su `/complaints` e `/suppliers`) + restart. **`requireLicensedModule` (2026-05-08)**: utenti con ruolo JWT **`superadmin`** o **`admin`** bypassano il controllo licenze sulle API (stesso spirito di `authorize()` per `superadmin`), così admin non riceve più `403 MODULE_NOT_LICENSED` durante collaudo o salvataggio impostazioni; gli **auditor** restano vincolati a `licensed_modules`. |
 | **Licenze: admin salva ma UI non cambia** | Dopo `PATCH /admin/licenses` la sessione locale deve aggiornare `user` con `GET /auth/me`: usare `refreshUser()` da `AuthContext` (chiamato da `LicensesSettingsPage` dopo salvataggio). **Altri utenti** della stessa org: niente push automatico; vedono i moduli aggiornati al **prossimo login** o al **refresh token** / nuova chiamata `/auth/me` — documentare messaggio in UI (vedi roadmap Sessione A). |
 | **Import PDF batch (Sprint 9)** | Tabelle `import_jobs`, `import_job_files`; API `GET/POST/PATCH/DELETE /import-jobs`, upload `POST .../files` (multipart `files`), `POST .../process` usa `pdf-parse` + `confidenceFromTextLength` (euristica). **`POST .../files/:fileId/ai-extract`**: estrazione JSON strutturata via OpenAI sul testo già estratto (richiede `OPENAI_API_KEY` sul server; rate limit dedicato). Colonne file: `ai_extraction_json`, `ai_extraction_error`, `ai_extraction_at`, `ai_model` (migrazione **039**). Licenza modulo **`ai_import`**. UI admin: **Impostazioni → Import PDF** (`/settings/import-jobs`). Deploy VPS: `run-migration-038.js` + **`run-migration-039.js`**, **`npm install`** nella cartella backend (dipendenza `pdf-parse`), copiare `importJobs.controller.js`, `importJobs.routes.js`, `importPdfText.js`, **`importAiExtraction.service.js`**, `server.js`, `moduleLicense.service.js` + restart. **Privacy**: il testo inviato all’API è lo stesso mostrato in schermata revisione; valutare accordo/DPA OpenAI per l’organizzazione. |
-| **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
+| **Confine ingest vs workflow commerciale** | Sprint 9 = **solo ingest** (testo da PDF + revisione). Il **riesame requisiti contratto** (stati, approvazioni, checklist §8.2) è modulo dedicato in roadmap (**Sprint 11**) con mini-specifica [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md). Il passaggio ingest → record documento tipizzato è **Sprint 10** (staging + commit umano), non da confondere con gli stati del caso commerciale. |
+| **Import PDF — Fase 2 commit norme** | Dialog **Commit al Registry**: se `doc_type=norma`, campi **codice / ente / anno edizione** (no revisione/responsabile/scadenza); dopo il codice (AI o nome file) → `POST /documents/norm-lookup` precompila vigore + link catalogo; backend `commit-to-registry` scrive `type_specific_data` via `documentRegistryNorm.service` (come upload bulk / `DocumentForm`). File: `ImportJobsPage.jsx`, `importNormCommit.js`, `importJobs.controller.js`. Test L1: `app/src/tests/importNormCommit.test.js`. **Smoke 30/05/2026**: PR **#72** mergiata (fix `ISO_9001` underscore in filename); alias AI **`norma_tecnica`** → form norma automatico (`isNormDocType`); credenziali smoke → `.cursor/mcp.env.example` + `sync-sgq-smoke-env.ps1` (desktop) / Secrets Cursor Cloud. |
+| **Registro norme — Fase 3 import codici (29/05/2026)** | **Senza PDF obbligatorio**: textarea «un codice per riga» nella cartella **NORME E LEGGI** → `POST /documents/norm-import-codes` → lookup `normCatalogLookup` → bozza `document_registry` (`status=bozza`, `type_specific_data` canonico con vigore + URL catalogo). Duplicati bloccati se `standard_code` già presente nella stessa org. Compatibile job settimanale `normValidityChecker` (legge `JSON_VALUE(..., '$.standard_code')`). File: `normCodesImport.service.js`, `NormCodesImportButton.jsx`, `document.controller.js`. Test L1: `backend/src/services/normCodesImport.service.test.js` (9 test). Deploy VPS: copiare service + controller + routes documenti + restart. |
 | **Numerazione report audit (formato Mason)** | Alla creazione (`POST /audits` e sync create) il backend assegna `audit_number` come **`PREFISSO-YYMMDD-NN`** (es. `MSN-260417-01`): giorno calendario **Europe/Rome**, contatore atomico per org+prefisso+giorno (`audit_daily_sequences`, migrazione **040**). Prefisso: colonna **`organizations.audit_report_prefix`** (NULL = default `MSN`). Deploy VPS: `node backend/scripts/run-migration-040.js` (o SQL **040**) + script **`backend/scripts/deploy-controllers-to-vps.ps1`** (include già `auditNumberAllocation.service.js`, `audit.controller.js`, `sync.controller.js`) + restart. **Smoke read-only DB**: da `backend` con `NODE_ENV=production` → `node scripts/smoke-mason-db.js` (dopo almeno una creazione audit post-040 deve comparire almeno un numero Mason). |
 
-**Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: `DEPLOY_CHECKLIST_RELEASE.md`. Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
+**Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: [how-to/deploy.md](how-to/deploy.md). Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
@@ -1299,10 +1865,127 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 | Più tabelle | Un solo `xmlTable` in `buildCustomChecklistSectionOoxml`. |
 | Righe `1.1.2`, `1.1.3` | Una riga per voce; `evidence_blocks` concatenati; codice `itemCode`. |
 | `rId` duplicati | Indice sequenziale `30000 + imageRegistry.length`. |
+| Foto sempre **landscape** in Word | Allegati checklist: prima `xmlImageOoxml(rId, imgId)` senza dimensioni → fallback fisso 1905000×1428750 EMU (~200×150 px). Fix (mag 2026): `embeddedImageEmuFromBase64` in `wordExportHelpers.js` legge pixel reali da PNG/JPEG e scambia w/h se EXIF orientation 5–8; logo già corretto in `wordExport.js`. Test: `wordExport.imageDimensions.test.js`. |
 | Template ISO al posto del Verbale | `generateDocxBlob`: ramo `isCustomChecklist` + fallback `TEMPLATE_MAP.custom_checklist`. |
 | Tabelle fuori margini | `w:tblInd` negativo → `normalizeNegativeTableIndentsInZip`; script `app/scripts/fix-verbale-table-margins.js`. |
 
-**Template**: fallback `app/public/templates/Verbale_di_riunione_QTAFI_VIS001.docx`. Se `getReportTemplate` restituisce URL (anche `/uploads/...`), quello ha priorità. **Repro** (`repro-custom-export.mjs`): solo file in `public/templates`, senza resolver API.
+**Template**: fallback `app/public/templates/VerbaleVisita-generic.docx` (allineato a migration 026 / `report_templates`). Il file `Verbale_di_riunione_QTAFI_VIS001.docx` resta copia cliente senza placeholder docxtemplater — **non** usarlo come fallback export. Se `getReportTemplate` restituisce URL (anche `/uploads/...`), quello ha priorità. **Repro** (`repro-custom-export.mjs`): solo file in `public/templates`, senza resolver API.
+
+**Ordine capitoli e sommario (mag 2026)**: in `wordExport.js`, `normalizeAuditReportDocumentStructure` riordina **Conclusioni dopo RILIEVI** (come ISO patchate) e rimuove righe Sommario TOC cache obsolete (`_Toc*`) così Word rigenera l’indice aprendo il file. Test: `wordExport.chapterOrder.test.js`. Script offline: `patch-audit-template-structure.cjs` (include `VerbaleVisita-generic.docx`).
+
+
+### Sessione 30/05/2026 — Tooling Cursor / MCP / Node / Vitest (chiusura sessione)
+
+#### Attività completate
+
+| # | Area | Esito |
+|---|------|--------|
+| 1 | Cursor Marketplace — estensioni | GitHub PR, Vitest, MSSQL, EditorConfig, Remote SSH; **Modern Web Guidance** opzionale |
+| 2 | GitHub MCP | URL `https://api.githubcopilot.com/mcp/`; PAT fine-grained ok; **43 tools** |
+| 3 | Playwright MCP | Test ok — **23 tools** |
+| 4 | Node LTS | Installato per Vitest extension e Playwright MCP |
+| 5 | `.editorconfig` | UTF-8, LF, indent coerente (root repo) |
+| 6 | Sync PAT GitHub | `.cursor/mcp.env.example` + `.cursor/sync-github-mcp-env.ps1` |
+| 7 | Vitest L1 | **432 pass / 2 fail** (`importNormCommit` — preesistente) |
+
+#### Lezioni apprese — Cursor Marketplace e estensioni
+
+- **Estensioni utili**: GitHub Pull Requests, Vitest, MSSQL, EditorConfig, Remote SSH.
+- **Installazione CLI**: usare `cursor.cmd --install-extension <publisher.extension> --force -Wait`, **non** lanciare ripetutamente `Cursor.exe` (evita finestre multiple).
+
+#### Lezioni apprese — GitHub MCP (server HTTP)
+
+- **URL server**: `https://api.githubcopilot.com/mcp/` — PAT fine-grained accettato.
+- In `mcp.json` usare `"Authorization": "Bearer ${env:GITHUB_PERSONAL_ACCESS_TOKEN}"` (o equivalente headers).
+- **`envFile` NON funziona** per server MCP basati su URL HTTP (solo stdio). Non affidarsi a `envFile` in `.cursor/mcp.json` per GitHub.
+- **Pattern corretto (Windows)**:
+  1. Copiare `.cursor/mcp.env.example` → `.cursor/mcp.env` e incollare il PAT (senza `Bearer`, senza virgolette).
+  2. Eseguire: `powershell -ExecutionPolicy Bypass -File .cursor/sync-github-mcp-env.ps1` — imposta variabile **utente Windows** `GITHUB_PERSONAL_ACCESS_TOKEN`.
+  3. Riavviare Cursor completamente (chiudere tutte le finestre).
+- **Profilo Windows**: la variabile va impostata sul profilo **corretto** (`AI.Project` vs account manutenzione). Se MCP non vede il token, verificare nello stesso profilo usato da Cursor: `[Environment]::GetEnvironmentVariable('GITHUB_PERSONAL_ACCESS_TOKEN','User')`.
+- Se in Impostazioni MCP GitHub mostra **Logout** (OAuth): uscire da OAuth e usare **solo** il PAT.
+
+#### Lezioni apprese — Node, Vitest extension, Playwright MCP
+
+- **Node.js LTS** (`C:\Program Files\nodejs\`) necessario per Vitest extension in IDE e Playwright MCP.
+- Cursor può avere nel PATH un **node bundled** prima del Node di sistema → in `.cursor/mcp.json` usare path assoluto per Playwright: `"command": "C:\\Program Files\\nodejs\\npx.cmd"`.
+- **`.vscode/settings.json`** (gitignored, locale): `"vitest.nodeExecutable": "C:\\Program Files\\nodejs\\node.exe"` per far usare a Vitest extension il Node LTS.
+- **Test da terminale agent** (cloud): pattern esistente con `$node` bundled Cursor — vedi sezione *npm non è nel PATH* più sotto; su desktop IDE preferire Node LTS di sistema.
+
+#### Test L1 — esito sessione
+
+| Suite | Esito | Note |
+|-------|--------|------|
+| Vitest `app/` | **8/8 pass** (`importNormCommit.test.js`, 30/05/2026) | PR #72 mergiata + alias `norma_tecnica` |
+
+#### Prossimo test consigliato (circuito Registro Norme)
+
+Ordine smoke integrato: **Vitest** (`importNormCommit`, `normCodesImport`) → **Playwright MCP** (UI Registro → NORME E LEGGI) → **SQL** (verifica `type_specific_data` / duplicati) → **GitHub MCP** (trace PR/commit).
+
+**File locali sessione (non committati)**: `.editorconfig`, `.cursor/mcp.env.example`, `.cursor/sync-github-mcp-env.ps1`, modifica `.gitignore` (ignore `mcp.json` / `mcp.env`).
+
+---
+
+**Esperienza 29/05/2026 - registro norme e albero documenti (chiusura sessione)**
+
+- **Fase 2 norme (commit import PDF)**: allineamento `type_specific_data` canonico al commit batch; form tipo `norma` senza campi revisione/responsabile/scadenza SGQ. Commit `a77b616`.
+- **Fase 3 import codici catalogo**: textarea codici in **NORME E LEGGI** → `POST /documents/norm-import-codes` → `normCodesImport.service` + lookup catalogo; duplicati su `standard_code` per org. Commit `a77b616` (service) + deploy VPS manuale service/controller/routes documenti.
+- **Smoke / fix backend**: ISO 5817 e dedup import; esclusione documenti **obsoleti** dall'albero (`526ae9f`). Pannello dettaglio: metadati norma visibili (`dde4d6e`).
+- **UI albero** (`b2c0694` + `b3e5b51`): tooltip; rinomina/elimina solo cartelle **custom**; icone sistema vs custom; `FOLDER_NOT_EMPTY` se cartella non vuota. **Sidebar ridimensionabile**: maniglia sottile a destra dell'albero, larghezza in `localStorage` chiave `sgq-doc-tree-width`; su mobile barra **Cartella selezionata** sopra il dettaglio.
+- **Norme (lessico SGQ)**: niente campo *revisione* documentale — usare **edizione** / **anno edizione**, **vigore** e lookup **catalogo-first** (`norm-lookup`, import codici); cartelle **sistema** (es. NORME E LEGGI) **non** rinomina/elimina dall'UI.
+- **UX visibilità novità (30/05)**: deploy Netlify **systemgest.netlify.app** può essere OK mentre l'utente «non vede nulla» → aprire tab **Albero** nel Registro documenti, URL produzione corretto, provare **drag** sulla maniglia; se PWA/cache vecchia: hard refresh o reinstallazione PWA.
+- **Deploy VPS**: `deploy-controllers-to-vps.ps1` (manifest unico `deploy-manifest.json`) copia tutti i file norme/NC/documenti + restart `sgq-backend`; smoke `npm run smoke:deploy`.
+- **Commit di riferimento**: `a77b616`, `526ae9f`, `dde4d6e`, `b2c0694`, `30f5fd5`, `b3e5b51`.
+
+**Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D1)**
+
+- **Regole cartelle**: ogni azienda può **aggiungere** cartelle custom (`is_system_folder = 0`); le cartelle da **provisioning** restano protette (UI + API 403 su rinomina/elimina/sposta).
+- **Tab Albero**: selettore **Ambito** (tutto lo studio / azienda X) allineato a Ricerca SGQ; `useDocumentTree(companyId)` propaga `company_id` a tree, lazy children e nuove cartelle custom.
+- **Deep link**: `/documents?tab=tree&company_id=N&select=DOC_ID`.
+- **Backend**: `GET /documents/tree/:parentId/children?company_id=` — stesso filtro di `getTree` (azienda + nodi con `company_id` NULL = condivisi studio). Deploy VPS `documentTree.controller.js` dopo merge.
+- **Backlog**: ~~D2 scope su Priorità/Catalogo~~; ~~D3 provisioning albero per `company_id` alla creazione cliente~~ (vedi slice D2/D3 sotto).
+
+**Esperienza 01/06/2026 — Registro documenti multi-azienda (slice D2/D3)**
+
+- **D2 — Ambito condiviso**: selettore **Ambito** nell'header del Registro (Priorità / Catalogo / Albero); `company_id` su API lista documenti e deep link `?company_id=` su tutte le tab; persistenza `localStorage` chiave `sgq-doc-registry-company-scope`; nuovo documento precompila azienda da ambito.
+- **D3 — Provisioning automatico**: `POST /companies` dopo INSERT chiama `documentTreeProvisioner.provisionTree(org_id, company_id, …)` se manca root per quella azienda (non bloccante, idempotente). Deploy VPS: `company.controller.js`.
+
+**Esperienza 03/06/2026 — Albero documentale per-azienda (Camellini / org 1002)**
+
+| Step | Cosa | File / comando |
+|------|------|----------------|
+| A | API albero con `?company_id=X`: filtro **stretto** (`dr.company_id = X`, niente `OR IS NULL`); `children_count` allineato | `documentTree.controller.js`, `documentTreeCompanyScope.js` |
+| B | Migrazione dati org QS: provision per ogni azienda, rimappa `parent_id` per `folder_code`, archivia albero condiviso (`company_id NULL` → `obsoleto`) | `backend/scripts/migrate-per-company-document-trees-vps.js` su VPS |
+| C | Nuove aziende: provisioning sempre su `company_id` (già in `company.controller.js`) | — |
+| Operativo | In Registro documenti → tab **Albero**, impostare **Ambito = nome cliente**; hard refresh PWA dopo deploy | — |
+
+```bash
+# VPS: anteprima poi apply (ORG_ID default 1002)
+scp -P 1122 -i $KEY backend/scripts/migrate-per-company-document-trees-vps.js user@vps:/tmp/
+ssh … "DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js"
+ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
+# Poi deploy documentTree.controller.js + utils e restart sgq-backend
+```
+
+**Esperienza 05/06/2026 — DELETE azienda falliva con FK (AAA-NN / Camellini)**
+
+- **Sintomo**: `DELETE /companies/:id` → 500 «Errore eliminazione azienda»; SQL `FK_doc_registry_company` (azienda con albero provisionato + audit + chunk AI).
+- **Fix**: `companyMaintenance.service.js` — ordine cleanup: `audit_events` + `hardDeleteAudit` → `knowledge_chunks` → `document_history` / `attachments` / relazioni → `document_registry` → altre FK (`company_personnel`, billing, …) → `companies`. Controller `deleteCompany` delega al service.
+- **Deploy**: `company.controller.js` + `companyMaintenance.service.js` su VPS + restart `sgq-backend`. Smoke: azienda test `AAA-NN` (id 8) eliminata OK in produzione.
+
+**Esperienza 28/05/2026 — export Word Verbale custom (chiusura sessione)**
+
+- **Template giusto**: checklist custom → `VerbaleVisita-generic.docx`, **non** i template ISO 9001/14001; ramo `isCustomChecklist` + fallback `TEMPLATE_MAP.custom_checklist`.
+- **Allegati custom**: l’upload salva `custom_item_id` su `attachments` ma spesso **non** popola `evidence_blocks.attachment_id`; l’export deve leggere anche `attachmentsForCustomItem` (non solo i blocchi).
+- **Foto in Word**: normalizzare **EXIF orientation** (5–8) prima dell’embed OOXML (`embeddedImageEmuFromBase64`); altrimenti foto sempre landscape.
+- **Mojibake**: `Â°` ≠ `à` — sequenza UTF-8/Latin-1 distinta; usare `fixWordXmlMojibake` su template e post-render (`fix-audit-template-mojibake.cjs`).
+- **Sommario / titoli sezione 3**: capitoli **3 / 3.1 / 3.2** in stile **Titolo 1** come 1–2 (non Titolo2); numerazione verbale **3.x** vs audit ISO **11.x**; dopo patch template aggiornare sommario in Word (**F9**).
+- **Upload template**: copiare `.docx` in `public/templates/` **non** basta — registrare con **POST** `/api/v1/report-templates` e assegnazione checklist/org. **Da UI (29/05/2026)**: **Gestione → Template report** — banner upload + griglia `SgqDataGrid` (Scarica / Duplica da sistema con modal nome / Elimina solo studio); dropdown «Scarica modello di sistema» (`/templates/...`). Upload **senza** obbligo `standard_key` ISO — adatto a 5S, sopralluogo, verbali generici; assegnazione ISO sotto griglia, checklist custom in **Checklist personalizzate** (`GET /report-templates?scope=audit` condiviso). Warning soft se mancano `CHECKLIST_MARKER` / `RILIEVI_MARKER`. API: `POST /report-templates/:id/duplicate` `{ name }`, `DELETE /report-templates/:id`, `GET /report-template-assignments/standards`.
+- **Intestazione verbale**: modifiche grafiche (logo, layout) vanno fatte su `VerbaleVisita-generic.docx` in repo + deploy Netlify; runtime OOXML non sostituisce l’header se già nel template patchato.
+
+Script aggiuntivo: `patch-verbale-visita-headings.cjs` (allinea Titolo 1 offline; mirror runtime `normalizeVerbaleVisitaSectionHeadings`).
+
+**Registrazione template custom (menu a tendina)**: il dropdown in **Admin → Checklist personalizzate → editor** legge `GET /report-templates?scope=audit` (righe in tabella `report_templates`: template di sistema `organization_id` NULL + upload org). Copiare/rinominare un file sotto `app/public/templates/` **non** crea una voce nel menu. Per usare una copia del template ISO 9001: caricare il `.docx` via API/UI upload, poi **PUT** `/report-template-assignments/custom-checklist/:id` (o dropdown nell'editor). Il file deve contenere i marker `CHECKLIST_MARKER` e `RILIEVI_MARKER` (come il Verbale di sistema) oltre ai placeholder docxtemplater (`{auditDate}`, `{clientName}`, …).
 
 **Script utili**: `fix-verbale-template-xml.js`, `verify-template-repair.js`. Marker: `CHECKLIST_MARKER`, `RILIEVI_MARKER`. Dettaglio placeholder: [ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md](ISTRUZIONI_PLACEHOLDER_TEMPLATE_WORD.md).
 
@@ -1310,7 +1993,7 @@ Workflow: `.github/workflows/ci-app-pr.yml` — su ogni PR che tocca `app/` eseg
 
 ## C. Database e repro
 
-- `development` in `database.json` = DB di lavoro (vedi `DATABASE.md`). `test` = `localhost:1433` (spesso assente).  
+- `development` in `database.json` = DB di lavoro (vedi [DATABASE.md](reference/DATABASE.md)). `test` = `localhost:1433` (spesso assente).  
 - Lo script repro normalizza `NODE_ENV=test` → `development` prima del pool.  
 - Comandi: vedi sezione **D** sotto.
 
@@ -1452,6 +2135,77 @@ ISO 3834 ha struttura diversa (specifica di processo, non di sistema) ma condivi
 - Verbale riesame di direzione (§9.3)
 - Non conformità e azioni correttive (§10.2)
 
+### Modulo NC organizzativo — Fase 1 + Hardening + UX drawer (route `/nc`, 30/05/2026)
+
+**Stato:** ✅ **completo** — in attesa feedback utenti reali (chiusura sessione 30/05/2026). Non aprire `SESSION_NOTES_*`.
+
+**Manuale utente:** [how-to/MANUALE_UTENTE_NC.md](how-to/MANUALE_UTENTE_NC.md) — scenari operativi, FAQ, canvas Glass.
+
+**Libreria UI:** [reference/LIBRERIA_UI_SGQ.md](reference/LIBRERIA_UI_SGQ.md) — consultare prima di nuovi blocchi UI nel modulo o refactor.
+
+Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved → verified →` **approvazione RQ** `→ closed`.
+
+| Area | Implementazione |
+|------|-----------------|
+| **Griglia** | `SgqDataGrid` theme `plain` — colonne nc_number, stato, severità, cliente, audit, scadenza, origine |
+| **Dettaglio** | **Drawer laterale** (shell `.doc-detail` da Documenti) → `NcDetailPanel` sezioni ISO 10.2 + workflow `.status-btn` / `.nc-workflow-btn` + `ActionsList`; deep-link `/nc?select=` |
+| **Campi testo** | `RichTextField` (dettatura, draft `nc:<id>`, storico versioni) — allineato audit |
+| **Creazione manuale** | Pulsante «Nuova NC» → `NcCreateModal` → `POST /non-conformities` (`source_type: manual`) |
+| **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
+| **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
+| **Gate verifica** | `verification_notes` obbligatorie per stati verified/closed (UI + API); migrazione **071** `verification_responsible` |
+| **Email remind NC** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**); attivare con `NC_ALERT_ENABLED=true` sul VPS (richiede anche `ALERT_ENABLED=true`, `SMTP_*`, `notifications_config.enabled=1`). Ops 30/05/2026: migrazione **071** OK, deploy backend + health OK. |
+
+Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
+
+#### Simulazione operativa Fase 1 — 30/05/2026 (TEST OK)
+
+| Step | Ruolo | Esito |
+|------|-------|-------|
+| Health API + DB migrazione **071** | Ops | OK — colonna `verification_responsible` presente |
+| Login produzione `systemgest.netlify.app` | A | OK — sessione `PS_Admin` |
+| Griglia `/nc` — stats, filtri, link audit | B | OK — 3 NC visibili; filtri stato/severità/scadenze presenti |
+| Selezione riga → dettaglio (`?select=`) | A | OK dopo fix `handleRowSelect(rowKey, row)` (commit `d80dafa`) |
+| Workflow API open→closed + gate note verifica | A | OK — NC `1043`, responsabili e note tracciati |
+| Creazione manuale modal «Nuova NC» | A | OK audit in dropdown dopo fix lista audit (commit `d80dafa`); FK sezione→standard: errore **400** esplicito se sezione HLS su audit non ISO 9001 |
+| Deploy VPS backend | Ops | OK — `deploy-controllers-to-vps.ps1` + restart `sgq-backend` |
+
+**Lezioni (delta):** (1) `SgqDataGrid.onRowSelect` passa `(rowKey, row)` — non il solo oggetto riga. (2) `NcCreateModal` con `status: active` lasciava dropdown audit vuoto (nessun audit `active` in org test). (3) Sezioni HLS `clause10` falliscono FK su audit ISO 14001/3834 — serve audit ISO 9001 o sezione compatibile col `standard_id`. (4) Test E2E griglia: righe `<tr>` non sempre in snapshot a11y — usare CDP click o deep-link `/nc?select=<id>`.
+
+**URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
+
+
+### Bonifica dati test NC (org Al.project) — 02/06/2026
+
+Dati NC di simulazione auditor bonificati su **produzione** via API admin (dmin@sgq.local): approccio **A** (riapertura RQ → campi → erified → POST approve-closure → closed). Nessuno script SQL.
+
+| NC | Prima | Dopo |
+|----|--------|------|
+| **1042** | 
+oot_cause vuoto; chiusura già con RQ | 
+oot_cause compilata; pproved_at invariato (30/05/2026) |
+| **1043** | Chiusa senza pproved_at / pproved_by | RQ approvata 02/06/2026; note verifica bonifica; 
+oot_cause allineata |
+| **1037** | Chiusa senza note verifica, senza RQ; azione verified senza erification_note | Note NC + nota azione + RQ + chiusura coerente |
+
+Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
+**Backlog P2 (solo su richiesta committente):** export PDF registro; agente AI CAPA; completamento catalogo LIBRERIA_UI (Fase B/C); smoke L3 email ricezione reale.
+
+### NC Hardening — slice H1–H6 (30/05/2026, TEST OK)
+
+| Slice | Implementazione |
+|-------|-----------------|
+| **H1 Push custom** | `pushAuditToNcRegister` legge anche `audit_custom_checklist_responses` (NC/OSS); idempotenza `(audit_id, source_custom_item_id)` migrazione **072**; summary `iso_findings` + `custom_findings` |
+| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
+| **H3 Approvazione RQ** | Colonne `approved_by`, `approved_at`; `POST /non-conformities/:id/approve-closure` (admin/superadmin); gate `closed` → `NC_APPROVAL_REQUIRED` |
+| **H4 Sezioni modal** | `NcCreateModal` carica sezioni da `GET /checklist/sections?standard_id=` dell'audit selezionato |
+| **H5 Export CSV** | Pulsante «Export CSV» in `/nc` — export client-side con filtri griglia correnti |
+| **H6 Azioni cross-NC** | Tab «Azioni in scadenza» + `GET /non-conformities/actions/due?due_within_days=30&overdue=true` |
+
+Test L1 aggiuntivi: `ncExport.test.js`, `ncWorkflowApproval.test.js`. Migrazione **072** eseguita su VPS (step-by-step `run-migration-072-vps.js`).
+
+**Escluso (backlog):** agente AI CAPA, export Word/PDF registro.
+
 **ISO 3834 (specifiche processo saldatura):**
 - Qualifiche saldatori (ISO 9606-1..5) — scadenza 2/3 anni
 - Qualifiche operatori (ISO 14732)
@@ -1548,6 +2302,10 @@ Upload PDF (batch) → rilevamento tipo → estrazione testo (pdf-parse / OCR Te
 
 **Regola golden**: solo record con `import_status = 'active'` o `'verified'` appaiono negli elenchi ufficiali e nelle esportazioni per enti certificatori.
 
+**Commit norme da Import batch (Fase 2, 29/05/2026)**: allineare sempre `document_registry.type_specific_data` allo schema canonico norma (`standard_code`, `issuing_body`, `edition_year`, `validity_status`, `validity_check_url`, …). Il form di commit per tipo `norma` non usa i campi generici revisione/responsabile/scadenza; il lookup catalogo è lo stesso di **Carica norme** / `DocumentForm`.
+
+**Import da lista codici — Fase 3 (29/05/2026)**: per popolare il registro norme **senza PDF** (allegato opzionale in seguito). Flusso: operatore incolla codici (`UNI EN ISO 12944-6:2001`, `D.Lgs. 81/2008`, …) → backend `normCodesImport.service` → `lookupNormStatus` (Normattiva / EUR-Lex / UNI / ISO / BSI) → INSERT bozza in cartella `folder_code=2.3` con `serializeNormTypeSpecificData`. **Duplicati**: query su `JSON_VALUE(type_specific_data, '$.standard_code')` case-insensitive per `organization_id`. **Job vigore**: record compatibili (stesso schema R1–R3); nessuna riga in `norm_document_sources` finché non si carica un PDF. UI: pulsante **Importa da catalogo (codici)** accanto a **Carica norme (batch)** in vista Albero. Limite: 50 codici per richiesta. Smoke L3: Registro → NORME E LEGGI → incollare 2 codici → verificare riepilogo creati/duplicati → riaprire scheda e badge vigore.
+
 ### DataGrid universale — requisiti del componente
 
 Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
@@ -1580,6 +2338,13 @@ Il componente `<DataGrid />` deve essere riutilizzabile per tutti i moduli:
 ### Chiusura sessione 28 marzo 2026
 
 - **Lista audit all’avvio (tutte le piattaforme):** il primo download dopo l’avvio non usa più `GET /audits` senza paginazione (limite backend 50). Usa la stessa funzione della riconciliazione (`fetchAllServerAudits`, pagine da 200) **solo se** online e presente JWT (`apiService.getToken()`), così il DB/server è la fonte completa del menu audit anche senza attendere login o i 45s di intervallo.
+
+### Chiusura sessione 31 maggio 2026 — menu audit server-first aggressivo
+
+- **Sintomo:** su mobile (e in generale) compaiono audit nel menu che, in eliminazione, danno `DELETE` 404 («già eliminato») — fantasma in IndexedDB non allineati al server.
+- **Policy (committente):** server-first **aggressivo** — purge automatica della cache locale (equivalente operativo a «Svuota cache»), senza pulsante manuale.
+- **Frontend (`StorageContext.jsx`):** dopo ogni reconcile/load con GET /audits OK: `purgeStaleAuditsFromDevice` + `persistFinalAuditsToIndexedDB` (clear store + rewrite). Lista server **vuota** ma fetch OK → solo bozze `metadata.isIntentionalDraft === true`. Rimosso il ripristino dell’audit corrente da cache locale (Bug 5 Fix B). Al **login**: `processQueue` → `clearAuditsStore` → reconcile. Se download fallisce da online: **non** mostrare tutta la cache; solo bozze intenzionali + retry reconcile. **Mobile:** `visibilitychange` / `pageshow` (PR #74) invariati.
+- **Verifica:** hard refresh PWA → logout/login; console log `🧹 [RECONCILE] Server lista vuota` o `Rimozione N audit stale`. Test L1: `storageContext.dedup.test.js`.
 
 ### Chiusura sessione 27 marzo 2026
 
@@ -1849,7 +2614,7 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 
 **Backlog invariato / ricorrente:**
 - [ ] ADR-006 (auto-reconcile cache) se non avviato.
-- [ ] `DATABASE.md` / `database.json`: segreti — non in chat; ruotare se esposti.
+- [ ] [DATABASE.md](reference/DATABASE.md) / `database.json`: segreti — non in chat; ruotare se esposti.
 - [ ] Opzionale: `ExecStartPre` systemd non bloccante (vedi note deploy).
 - [ ] Eliminare branch remoto `docs/case-study-01-chiusura` (già mergiato in `main`).
 
@@ -1868,3 +2633,81 @@ Radice del problema: bozze locali (IndexedDB) senza marcatore "intenzionale" ven
 **Cursor — regola utente**: se nelle impostazioni è ancora scritto “leggi `SESSION_NOTES_20260301`”, sostituiscilo con **`docs/GUIDA_CONSOLIDATA.md`**.
 
 
+
+---
+
+## Deploy contesto AI multi-livello (30/05/2026)
+
+| Step | Comando / verifica |
+|------|-------------------|
+| Migrazioni DB produzione | SCP `backend/scripts/run-migration-066-vps.js` e `067-vps.js` su VPS; `node /tmp/run-migration-066-vps.js` poi `067-vps.js` |
+| Deploy backend | `backend/scripts/deploy-controllers-to-vps.ps1` + copia file AI (`aiChat`, `aiAssist`, servizi contesto, `knowledgeIndexer`, `normChunker`) |
+| Restart | `sudo systemctl restart sgq-backend.service` — verificare MainPID cambiato |
+| Reindex | `POST /api/v1/ai/reindex` (admin) dopo mig. 067 |
+| Smoke | `GET/PATCH /api/v1/organizations/me` (`ai_context_notes`); `POST /api/v1/ai/chat` con `standardId` |
+| UI | Impostazioni studio (note contesto) + Assistente AI (chip norma) — Netlify da merge su `main` |
+
+Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e `067_knowledge_chunks_standard_id.sql`.
+
+### Slice 2 — propagazione audit (30/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| Frontend | Auto-contesto audit (azienda, norma, clausola checklist) in Assistente AI; separatore chat al cambio audit; `standardId` in suggest conclusioni e riesame contratti |
+| Backend | `POST /ai/chat` accetta `auditId`, `clauseRef`, `questionId`; `POST /ai/suggest` arricchisce con norma se `standardId`; upload norme PDF con enrich org |
+| Reindex | `inferStandardId` su documenti norma (`type_specific_data.standard_code`) e qualifiche (`standard_ref`) |
+| Deploy | Commit `ec62a54` su `main`; VPS PID `331861` → `332487`; smoke: chat con audit context, rimozione nota smoke `ai_context_notes` |
+
+### Fase A — citazioni cliccabili in chat (30/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| API | `POST /ai/chat` restituisce `citations[]` (`entityType`, `entityId`, `label`, `score`) e `sourcesCount` da chunk RAG deduplicati |
+| Frontend | Chip sotto risposta assistant + «Basato su N record del SGQ»; link NC con `?select=`; componente `AiAssistantCitations` |
+| Test L1 | Jest 8 + Vitest 5 (`aiCitations`, `AiAssistantCitations`) |
+| Deploy | `deploy-controllers-to-vps.ps1` include `aiChat.controller.js` e `utils/aiCitations.js`; commit `c3ef889` |
+| Smoke | `.cursor/ai-citations-smoke.mjs` — es. 14 citazioni su domanda NC |
+
+**Aggiornamento 31/05/2026 — deep link documenti + chat persistente**
+
+| Voce | Esito |
+|------|-------|
+| Contratto URL | `/documents?tab=tree&select=<docId>` (allineato a `/nc?select=`); helper `documentRegistryUrl.js` |
+| Citazioni / ricerca | `getCitationPath` / `getSearchResultPath`: `document` e `norm_content` → tab Albero + drawer |
+| Registro | `DocumentRegistry.jsx`: legge `tab`/`select` (mount + `popstate`); `expandToDocument` via breadcrumb API; `replace` URL su tab/dettaglio |
+| Chat Assistente | `sessionStorage` chiave `sgq:ai-assistant-messages:<org>:<user>`; cap 50 messaggi; debounce 400 ms; pulizia su logout (`sgq:userLoggedOut`); pulsante «Nuova conversazione» |
+| Coerenza albero | Regola unica in `documentTreeCoherence.js`: foglie = `parent_id` cartella + status ≠ obsoleto; catalogo/priorità = elenco piatto (orfani in Inbox, non nel ramo) — **nessun gap API**, differenza intenzionale |
+| Test L1 | Vitest 531 OK (`documentRegistryUrl`, `aiAssistantChatPersist`, `documentTreeCoherence` + aggiornamenti citazioni/ricerca) |
+| Deploy | Solo Netlify (FE); nessun restart VPS |
+| Merge main | 31/05/2026 commit 88caa9b (fast-forward); deploy Netlify automatico; PR non creata (gh non disponibile su agent) |
+
+### Fase C — ricerca unificata studio/azienda (31/05/2026)
+
+| Voce | Esito |
+|------|-------|
+| C1 API | `GET /api/v1/search` — LIKE multi-entità, filtro `company_id` rigido, RBAC studio su NC/audit |
+| C2 UI | Pagina `/search`, scope Tutto lo studio / Azienda, risultati raggruppati, deep link (`searchResultLinks.js`) |
+| C3 RAG | Tab **Significato** → `POST /ai/chat` + `AiAssistantCitations`; tab **Esatto** → GET search |
+| Test L1 | Jest 10 (backend) + Vitest 5 (`searchResultLinks`, `SearchPage`) |
+| Deploy | `deploy-controllers-to-vps.ps1` include search routes/controller/service + `server.js` |
+| Smoke | `GET /api/v1/search?q=...` con JWT; verificare assenza leak cross-company con `companyId` |
+
+### Sessione 07/06/2026 - NC notifiche + form annidati (chiusura sessione)
+
+| Voce | Esito |
+|------|-------|
+| Rubrica referenti NC | NotificationContactsPanel.jsx + tabella 
+otification_contacts (mig. 073-074): ogni azienda ha referenti email per ricezione notifiche NC con ruolo (Responsabile QS, Tecnico, ecc.) |
+| Fix responsible-options 500 | GET /nc/:id/responsible-options: studioScopeClause errato sulle companies (usava co.organization_id invece di c.organization_id). Fix: alias c corretto in 
+c.controller.js. Commit 48124e0 |
+| Fix form annidati (bug critico) | NcDetailPanel aveva <form onSubmit> esterno che avvolgeva NcActionsList (con il suo form). Click su Salva azione submittava il form esterno invece del POST /non-conformities/:id/actions. Fix: form esterno -> <div>, pulsante 	ype="button" onClick. Commit 8464ca |
+| Pattern alert scalabile | Alert scadenza NC: 
+esponsible_contact_id (personale azienda) + 
+ecipients_email (fallback). Scheduler docAlertEscalation.service.js gestisce l'escalation con priorita' personale > rubrica |
+| Migrazione schema | mig. 073 (
+otification_contacts), 074 (
+c_notification_contacts), 081 (user_company_access) deployate su VPS |
+| Punti aperti prossima sessione | (1) Email placeholder da sostituire con indirizzo reale nel seed; (2) NC-QS-260515-01-019 senza responsabile ne' scadenza da assegnare; (3) PR vecchie aperte (#15-97) da triaggiare |
+| Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options,  ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
+
+**Lezione chiave - Form HTML annidati:** HTML vieta <form> dentro <form>. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa <form onSubmit> deve essere convertito in <div> quando contiene componenti figlio con propri form di salvataggio.

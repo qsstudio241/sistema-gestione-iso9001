@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import StatusBadge from "../components/StatusBadge";
 import "./LicensesSettingsPage.css";
 
 export default function LicensesSettingsPage() {
@@ -308,9 +309,12 @@ export default function LicensesSettingsPage() {
             <li key={key} className={selected.has(key) ? "license-active" : "license-inactive"}>
               <span className="licenses-key">{key}</span>
               <span className="licenses-label">{label}</span>
-              <span className="license-status-badge">
-                {selected.has(key) ? "\u2713 Attivo" : "- Non attivo"}
-              </span>
+              <StatusBadge
+                type="license"
+                status={selected.has(key) ? "active" : "inactive"}
+                size="small"
+                className="license-status-badge"
+              />
             </li>
           ))}
         </ul>

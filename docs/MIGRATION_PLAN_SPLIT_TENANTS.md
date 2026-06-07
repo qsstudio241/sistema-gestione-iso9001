@@ -3,7 +3,7 @@
 > **Scopo**: allineare il database allo schema commerciale (**QS_Studio**, **MASON_Srl**, **ERAM** come tenant distinti con abbonamenti/licenze propri) quando oggi i dati risiedono ancora sotto **un solo** `organization_id` (es. `1` = `DEFAULT_ORG`).  
 > **Principio**: nessuno script automatico senza **mappatura business** approvata; backup obbligatorio; prove su **copia** del DB prima della produzione.
 
-**Correlati**: [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) §8.5, [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [DATABASE.md](DATABASE.md).
+**Correlati**: [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) §8.5, [DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md), [DATABASE.md](reference/DATABASE.md), [how-to/database-migrations.md](how-to/database-migrations.md).
 
 ---
 

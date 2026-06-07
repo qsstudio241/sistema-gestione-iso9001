@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics, calculateByStandardMetrics } from "../utils/metricsCalculator";
 import { getSelectedStandardEntries } from "../data/standardsRegistry";
+import { resolveAutoStandardFromAudit } from "../utils/aiAssistantContext";
 import AutoTextarea from "./AutoTextarea";
 import AiConclusionsModal from "./AiConclusionsModal";
 import "./AuditOutcomeSection.css";
@@ -148,6 +149,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
         conformities: Math.max(0, total - totalNC - totalOSS - totalOM),
       },
       standardCodes: standardEntries.map((e) => e.key),
+      standardId: resolveAutoStandardFromAudit(selectedStandards)?.standardId ?? null,
       findings,
       existingConclusions: conclusions || "",
       byStandardConclusions: conclusionsByKey,

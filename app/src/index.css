@@ -116,3 +116,26 @@ h2 {
   color: #0c5460;
   border: 1px solid #bee5eb;
 }
+
+/* Pulsante primario — fonte unica (moduli possono sovrascrivere con selettore scoped) */
+.btn-primary {
+  padding: 8px 18px;
+  background: #1e3a5f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2c5282;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -9,13 +9,36 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { documentRegistryScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const {
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
+const multer = require('multer');
+const {
+    RELEASED_STATUS_SQL_IN,
+    isReleasedDocStatus,
+    parseRegistryDocStatus,
+} = require('../constants/documentStatus');
+const {
+    buildHasAnyFileSql,
+    buildCurrentFileApplySql,
+    parseTruthyQueryFlag,
+} = require('../utils/documentRegistryFile');
+const { allocateDocCode, resolveExpiryDate } = require('../services/docCodeGenerator.service');
+
+/** Giorni finestra alert documenti (allineato a notifications_config.alert_days_1). */
+const DEFAULT_DOC_ALERT_WINDOW_DAYS = 30;
 
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
  * Lista documenti con filtri opzionali.
  * Query params:
  *   company_id, standard_id, doc_type, status, expiring_days,
+ *   expired_only (1/true: solo documenti già scaduti),
+ *   include_expired (1/true: con expiring_days include anche scaduti),
  *   search (testo libero su title/doc_code),
+ *   without_file (1/true: solo documenti senza allegato),
  *   page (default 1), limit (default 50)
  */
 async function listDocuments(req, res) {
@@ -28,14 +51,21 @@ async function listDocuments(req, res) {
             doc_type,
             status,
             expiring_days,
+            expired_only,
+            include_expired,
             search,
+            without_file,
             page  = 1,
             limit = 50,
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
         const conditions = ['dr.organization_id = @organization_id'];
-        const params = { organization_id, limit: parseInt(limit), offset };
+        const params = { organization_id, limit: parseInt(limit), offset, ...docScope.params };
+        if (docScope.clause) {
+            conditions.push(docScope.clause);
+        }
 
         if (company_id) {
             conditions.push('dr.company_id = @company_id');
@@ -61,16 +91,26 @@ async function listDocuments(req, res) {
             // (soft-deleted). Mostra rilasciato + bozza + in_revisione + in_approvazione.
             conditions.push("dr.status <> 'obsoleto'");
         }
-        if (expiring_days) {
+        if (parseTruthyQueryFlag(expired_only)) {
+            conditions.push(`dr.expiry_date IS NOT NULL
+                AND dr.expiry_date < CAST(GETDATE() AS DATE)
+                AND dr.status IN ${RELEASED_STATUS_SQL_IN}`);
+        } else if (expiring_days) {
+            const windowDays = parseInt(expiring_days, 10) || DEFAULT_DOC_ALERT_WINDOW_DAYS;
             conditions.push(`dr.expiry_date IS NOT NULL
                 AND dr.expiry_date <= DATEADD(DAY, @expiring_days, CAST(GETDATE() AS DATE))
-                AND dr.expiry_date >= CAST(GETDATE() AS DATE)
-                AND dr.status = 'rilasciato'`);
-            params.expiring_days = parseInt(expiring_days);
+                AND dr.status IN ${RELEASED_STATUS_SQL_IN}`);
+            params.expiring_days = windowDays;
+            if (!parseTruthyQueryFlag(include_expired)) {
+                conditions.push('dr.expiry_date >= CAST(GETDATE() AS DATE)');
+            }
         }
         if (search) {
             conditions.push('(dr.title LIKE @search OR dr.doc_code LIKE @search)');
             params.search = `%${search}%`;
+        }
+        if (parseTruthyQueryFlag(without_file)) {
+            conditions.push(`NOT ${buildHasAnyFileSql('dr')}`);
         }
 
         const where = conditions.join(' AND ');
@@ -98,27 +138,35 @@ async function listDocuments(req, res) {
                 s.standard_code,
                 s.standard_name,
                 u.email       AS created_by_email,
+                JSON_VALUE(dr.type_specific_data, '$.validity_status')     AS norm_validity_status,
+                JSON_VALUE(dr.type_specific_data, '$.last_validity_check') AS norm_last_check,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
-                         AND dr.status = 'rilasciato'
+                         AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
                 END AS is_expired,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date BETWEEN CAST(GETDATE() AS DATE)
-                             AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND dr.status = 'rilasciato'
+                             AND DATEADD(DAY, ISNULL(nc_cfg.alert_days_1, ${DEFAULT_DOC_ALERT_WINDOW_DAYS}), CAST(GETDATE() AS DATE))
+                         AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0
-                END AS expiring_soon
+                END AS expiring_soon,
+                CASE WHEN cur_file.file_name IS NOT NULL THEN 1 ELSE 0 END AS has_file,
+                cur_file.file_name AS current_file_name,
+                cur_file.file_uploaded_at AS current_file_uploaded_at
             FROM document_registry dr
             LEFT JOIN companies     c ON dr.company_id   = c.id
             LEFT JOIN standards     s ON dr.standard_id  = s.standard_id
             LEFT JOIN users         u ON dr.created_by   = u.user_id
+            LEFT JOIN notifications_config nc_cfg ON nc_cfg.organization_id = dr.organization_id
+            ${buildCurrentFileApplySql('dr')}
             WHERE ${where}
             ORDER BY
                 CASE dr.status
                     WHEN 'rilasciato'      THEN 1
+                    WHEN 'vigente'         THEN 1
                     WHEN 'bozza'          THEN 2
                     WHEN 'in_approvazione' THEN 3
                     WHEN 'in_revisione'   THEN 4
@@ -172,28 +220,51 @@ async function listDocuments(req, res) {
 async function getDocumentStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
+        const noFileExists = buildHasAnyFileSql('dr');
 
         const result = await query(`
             SELECT
                 COUNT(*)                                                         AS total,
-                SUM(CASE WHEN status = 'rilasciato'         THEN 1 ELSE 0 END)     AS vigenti,
+                SUM(CASE WHEN status IN ${RELEASED_STATUS_SQL_IN} THEN 1 ELSE 0 END) AS vigenti,
                 SUM(CASE WHEN status = 'in_revisione'    THEN 1 ELSE 0 END)     AS in_revisione,
                 SUM(CASE WHEN status = 'in_approvazione' THEN 1 ELSE 0 END)     AS in_approvazione,
                 SUM(CASE WHEN status = 'obsoleto'        THEN 1 ELSE 0 END)     AS obsoleti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date < CAST(GETDATE() AS DATE)
-                         AND status = 'rilasciato'
+                         AND status IN ${RELEASED_STATUS_SQL_IN}
                     THEN 1 ELSE 0 END)                                           AS scaduti,
                 SUM(CASE
                     WHEN expiry_date IS NOT NULL
                          AND expiry_date BETWEEN CAST(GETDATE() AS DATE)
                              AND DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-                         AND status = 'rilasciato'
-                    THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg
-            FROM document_registry
-            WHERE organization_id = @organization_id
-        `, { organization_id });
+                         AND status IN ${RELEASED_STATUS_SQL_IN}
+                    THEN 1 ELSE 0 END)                                           AS in_scadenza_30gg,
+                (
+                    SELECT COUNT(*)
+                    FROM document_registry dr
+                    WHERE dr.organization_id = @organization_id
+                      AND dr.doc_type <> 'folder'
+                      AND dr.status <> 'obsoleto'
+                      AND NOT ${noFileExists}
+                      ${scopeSql}
+                )                                                                AS senza_file,
+                (
+                    SELECT COUNT(*)
+                    FROM document_registry dr
+                    WHERE dr.organization_id = @organization_id
+                      AND dr.doc_type <> 'folder'
+                      AND dr.status IN ${RELEASED_STATUS_SQL_IN}
+                      AND NOT ${noFileExists}
+                      ${scopeSql}
+                )                                                                AS rilasciati_senza_file
+            FROM document_registry dr
+            WHERE dr.organization_id = @organization_id
+              AND dr.doc_type <> 'folder'
+              ${scopeSql}
+        `, { organization_id, ...docScope.params });
 
         res.json({ success: true, data: result.recordset[0] });
 
@@ -211,6 +282,8 @@ async function getDocumentById(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const result = await query(`
             SELECT
@@ -224,7 +297,8 @@ async function getDocumentById(req, res) {
             LEFT JOIN standards s ON dr.standard_id = s.standard_id
             LEFT JOIN users     u ON dr.created_by  = u.user_id
             WHERE dr.id = @id AND dr.organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (result.recordset.length === 0) {
             return res.status(404).json({
@@ -262,7 +336,7 @@ async function createDocument(req, res) {
             doc_code,
             title,
             revision,
-            status       = 'rilasciato',
+            status: statusRaw = 'rilasciato',
             issue_date,
             expiry_date,
             responsible,
@@ -282,16 +356,41 @@ async function createDocument(req, res) {
             });
         }
 
-        const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
-        if (!validStatuses.includes(status)) {
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const statusParsed = parseRegistryDocStatus(statusRaw);
+        if (!statusParsed.ok) {
             return res.status(400).json({
                 error:   'Status non valido',
                 code:    'VALIDATION_ERROR',
-                allowed: validStatuses,
+                allowed: statusParsed.allowed,
             });
         }
+        const status = statusParsed.status;
 
         const parent_id = req.body.parent_id ? parseInt(req.body.parent_id) : null;
+
+        let finalDocCode = doc_code ? String(doc_code).trim().slice(0, 100) || null : null;
+        if (!finalDocCode) {
+            try {
+                finalDocCode = await allocateDocCode(organization_id, doc_type);
+            } catch (codeErr) {
+                logger.warn('doc_code auto-allocation failed, proceeding without code', {
+                    organization_id, doc_type, error: codeErr.message,
+                });
+            }
+        }
+
+        let finalExpiryDate = expiry_date || null;
+        if (!finalExpiryDate && status === 'rilasciato') {
+            finalExpiryDate = await resolveExpiryDate({
+                organization_id,
+                doc_type,
+                issue_date: issue_date || null,
+                expiry_date: null,
+            });
+        }
 
         let path_cache = null;
         if (parent_id) {
@@ -330,14 +429,14 @@ async function createDocument(req, res) {
             standard_id:     standard_id     ? parseInt(standard_id)     : null,
             clause_ref:      clause_ref      || null,
             doc_type,
-            doc_code:        doc_code        || null,
+            doc_code:        finalDocCode,
             title,
             revision:        revision        || null,
             status,
             parent_id,
             path_cache,
             issue_date:      issue_date      || null,
-            expiry_date:     expiry_date     || null,
+            expiry_date:     finalExpiryDate,
             responsible:     responsible     || null,
             retention_years: retention_years ? parseInt(retention_years) : null,
             attachment_id:   attachment_id   ? parseInt(attachment_id)   : null,
@@ -368,7 +467,7 @@ async function createDocument(req, res) {
 
         res.status(201).json({
             success: true,
-            data:    { id: newId, doc_type, title, status, parent_id },
+            data:    { id: newId, doc_type, title, status, parent_id, doc_code: finalDocCode },
         });
 
     } catch (error) {
@@ -385,12 +484,15 @@ async function updateDocument(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
-        // Verifica esistenza e ownership
         const existing = await query(`
-            SELECT id, is_system_folder FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, is_system_folder, doc_type, issue_date, expiry_date, status, company_id
+            FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({
@@ -398,6 +500,11 @@ async function updateDocument(req, res) {
                 code:  'DOC_NOT_FOUND',
             });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         // Protezione cartelle di sistema
         const doc = existing.recordset[0];
@@ -441,16 +548,34 @@ async function updateDocument(req, res) {
             });
         }
 
-        // Validazione status se presente
-        if (params.status) {
-            const validStatuses = ['rilasciato', 'bozza', 'in_revisione', 'obsoleto', 'in_approvazione'];
-            if (!validStatuses.includes(params.status)) {
+        if (params.expiry_date === undefined && req.body.expiry_date === undefined) {
+            const becomingReleased = isReleasedDocStatus(params.status)
+                && !isReleasedDocStatus(doc.status);
+            const targetDocType = params.doc_type || doc.doc_type;
+            if (becomingReleased && !doc.expiry_date && targetDocType) {
+                const computed = await resolveExpiryDate({
+                    organization_id,
+                    doc_type: targetDocType,
+                    issue_date: params.issue_date || doc.issue_date,
+                    expiry_date: null,
+                });
+                if (computed) {
+                    updates.push('expiry_date = @expiry_date');
+                    params.expiry_date = computed;
+                }
+            }
+        }
+
+        if (params.status !== undefined && params.status !== null) {
+            const statusParsed = parseRegistryDocStatus(params.status);
+            if (!statusParsed.ok) {
                 return res.status(400).json({
                     error:   'Status non valido',
                     code:    'VALIDATION_ERROR',
-                    allowed: validStatuses,
+                    allowed: statusParsed.allowed,
                 });
             }
+            params.status = statusParsed.status;
         }
 
         updates.push('updated_at = GETDATE()');
@@ -483,11 +608,14 @@ async function deleteDocument(req, res) {
     try {
         const { id } = req.params;
         const { organization_id } = req.user;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, status, is_system_folder FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, status, is_system_folder, doc_type, company_id FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({
@@ -496,11 +624,35 @@ async function deleteDocument(req, res) {
             });
         }
 
-        if (existing.recordset[0].is_system_folder) {
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const row = existing.recordset[0];
+
+        if (row.is_system_folder) {
             return res.status(403).json({
                 error: 'Le cartelle di sistema non possono essere archiviate',
                 code:  'SYSTEM_FOLDER_PROTECTED',
             });
+        }
+
+        if (row.doc_type === 'folder') {
+            const children = await query(`
+                SELECT COUNT(*) AS cnt FROM document_registry
+                WHERE parent_id = @id AND organization_id = @organization_id
+                  AND ISNULL(status, 'rilasciato') <> 'obsoleto'
+            `, { id: parseInt(id), organization_id });
+
+            const childCount = children.recordset[0]?.cnt ?? 0;
+            if (childCount > 0) {
+                return res.status(409).json({
+                    error: 'La cartella non è vuota: rimuovi documenti e sottocartelle prima di eliminarla',
+                    code:  'FOLDER_NOT_EMPTY',
+                    children_count: childCount,
+                });
+            }
         }
 
         await query(`
@@ -538,16 +690,24 @@ async function releaseRevision(req, res) {
         const { id } = req.params;
         const { organization_id, user_id } = req.user;
         const { revision_label, expiry_date } = req.body;
+        const docScope = documentRegistryScopeClause(req.user, 'dr');
+        const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, status, revision_number, revision
-            FROM document_registry
-            WHERE id = @id AND organization_id = @organization_id
-        `, { id: parseInt(id), organization_id });
+            SELECT id, status, revision_number, revision, company_id
+            FROM document_registry dr
+            WHERE dr.id = @id AND dr.organization_id = @organization_id
+              ${scopeSql}
+        `, { id: parseInt(id), organization_id, ...docScope.params });
 
         if (!existing.recordset.length) {
             return res.status(404).json({ error: 'Documento non trovato', code: 'DOC_NOT_FOUND' });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, {
+            companyId: existing.recordset[0].company_id,
+        });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const doc = existing.recordset[0];
         if (doc.status !== 'bozza') {
@@ -561,11 +721,28 @@ async function releaseRevision(req, res) {
         const newRevNum = (doc.revision_number || 0) + 1;
         const newRevLabel = revision_label || `Rev. ${String(newRevNum).padStart(2, '0')}`;
 
+        let finalExpiry = expiry_date || null;
+        if (!finalExpiry) {
+            const fullDoc = await query(
+                `SELECT doc_type, issue_date, expiry_date FROM document_registry WHERE id = @id`,
+                { id: parseInt(id) }
+            );
+            const row = fullDoc.recordset[0];
+            if (!row?.expiry_date) {
+                finalExpiry = await resolveExpiryDate({
+                    organization_id,
+                    doc_type: row?.doc_type,
+                    issue_date: row?.issue_date,
+                    expiry_date: null,
+                });
+            }
+        }
+
         const params = {
             id: parseInt(id),
             revision_number: newRevNum,
             revision:        newRevLabel,
-            expiry_date:     expiry_date || null,
+            expiry_date:     finalExpiry,
         };
 
         await query(`
@@ -603,15 +780,18 @@ const DOC_TYPE_FOLDER_MAP = {
     manuale:              '1.1',
     norma:                '2.3',
     cert_taratura:        '2.1',
+    certificato_materiale:'2.1',
     qualifica:            '4.3',
     patentino_saldatore:  '4.3',
     qualifica_14732:      '4.3',
-    wps:                  '9',
-    wpqr:                 '9',
-    cert_ndt:             '2.1',
-    report_ndt:           '2.1',
+    wps:                  '9.1',
+    wpqr:                 '9.1',
+    cert_ndt:             '9.3',
+    report_ndt:           '9.3',
     dichiarazione_ce:     '2.1',
     piano_qualita:        '1.2',
+    sal:                  '14',
+    rdp:                  '9.1',
     altro:                null,
 };
 
@@ -717,6 +897,254 @@ async function listOrphanDocuments(req, res) {
     }
 }
 
+// ─── Multer memory storage per pre-extract (nessun file salvato su disco) ────
+const _preExtractUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 200 * 1024 * 1024, files: 1 },
+}).single('file');
+
+// ─── POST /api/v1/documents/pre-extract ───────────────────────────────────────
+/**
+ * Estrae metadati AI da un PDF caricato temporaneamente (NESSUN record DB creato).
+ * Body: multipart/form-data con campi "file" (PDF) e "doc_type" (stringa).
+ * Risposta: { metadata: { titolo, codice, ...campi tipo-specifici }, confidence: 0..1 }
+ */
+async function preExtractMetadata(req, res) {
+    // Gestione multer inline (memory storage — niente su disco)
+    await new Promise((resolve, reject) => {
+        _preExtractUpload(req, res, (err) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    }).catch((err) => {
+        return res.status(400).json({
+            error: err.message || 'Errore durante il caricamento del file',
+            code:  'UPLOAD_ERROR',
+        });
+    });
+
+    // Se la risposta è già stata inviata dal catch (errore multer)
+    if (res.headersSent) return;
+
+    const file    = req.file;
+    const docType = (req.body?.doc_type || '').trim() || null;
+
+    if (!file) {
+        return res.status(400).json({
+            error: 'Nessun file ricevuto — campo "file" obbligatorio',
+            code:  'MISSING_FILE',
+        });
+    }
+
+    // Solo PDF supportano l'estrazione testo affidabile
+    const isPdf = file.mimetype === 'application/pdf' ||
+                  file.originalname?.toLowerCase().endsWith('.pdf');
+
+    if (!isPdf) {
+        return res.status(422).json({
+            error: 'Estrazione AI disponibile solo per file PDF',
+            code:  'UNSUPPORTED_FILE_TYPE',
+        });
+    }
+
+    try {
+        const { extractPdfText, confidenceFromTextLength } = require('../utils/importPdfText');
+        const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+
+        // Estrazione testo dal buffer (nessun file su disco)
+        let pdfText;
+        try {
+            pdfText = await extractPdfText(file.buffer);
+        } catch (pdfErr) {
+            return res.status(422).json({
+                error: 'Impossibile leggere il PDF (file danneggiato o protetto da password)',
+                code:  'PDF_PARSE_ERROR',
+            });
+        }
+
+        if (!pdfText || pdfText.length < 20) {
+            return res.status(422).json({
+                error: 'PDF scansionato senza strato testo — estrazione AI non disponibile',
+                code:  'EMPTY_PDF_TEXT',
+            });
+        }
+
+        // Estrazione AI strutturata per tipo documento
+        const result = await extractStructuredByDocType({ text: pdfText, docType });
+        const aiData = result.data || {};
+
+        // Confidence: media tra quella AI (0-100→0-1) e quella euristica testo
+        const aiConfidence  = typeof aiData.extraction_confidence === 'number'
+            ? aiData.extraction_confidence / 100
+            : 0.5;
+        const textConfidence = confidenceFromTextLength(pdfText.length) / 100;
+        const confidence     = Math.round(((aiConfidence + textConfidence) / 2) * 100) / 100;
+
+        // Normalizza metadata (campi flat + type_specific_data separati)
+        const typeSpecific = aiData.type_specific_data || {};
+        const metadata = {
+            titolo:   aiData.title           || null,
+            sommario: aiData.summary         || null,
+            warnings: Array.isArray(aiData.warnings) ? aiData.warnings : [],
+            ...typeSpecific,
+        };
+
+        logger.info('pre-extract completato', {
+            docType,
+            filename:    file.originalname,
+            textLen:     pdfText.length,
+            confidence,
+            model:       result.model,
+        });
+
+        res.json({ metadata, confidence, model: result.model });
+
+    } catch (aiErr) {
+        const code = aiErr.code || 'AI_ERROR';
+        const known = ['AI_NOT_CONFIGURED', 'AI_REQUEST_FAILED', 'AI_UPSTREAM_ERROR',
+                       'AI_EMPTY_RESPONSE', 'AI_INVALID_JSON', 'AI_BAD_SHAPE'];
+        const status = code === 'AI_NOT_CONFIGURED' ? 503 : 502;
+        logger.warn('pre-extract AI fallito', { code, msg: aiErr.message });
+
+        if (known.includes(code) || status < 500) {
+            return res.status(status).json({
+                error: aiErr.message || 'Estrazione AI non riuscita',
+                code,
+            });
+        }
+
+        logger.error('pre-extract errore inatteso', { error: aiErr.message });
+        res.status(500).json({
+            error: 'Errore interno durante l\'estrazione',
+            code:  'PRE_EXTRACT_ERROR',
+        });
+    }
+}
+
+// ─── POST /api/v1/documents/norm-lookup ───────────────────────────────────────
+/**
+ * Interroga il catalogo pubblico dell'ente normativo per verificare lo stato
+ * di validità di una norma (vigente / ritirata / sostituita).
+ * Body: { standard_code, issuing_body }
+ * Risposta: { status, supersededBy, catalogUrl, checkedAt }
+ *
+ * Non blocca: in caso di errore restituisce { status: 'unknown' } con HTTP 200.
+ */
+async function lookupNormStatus(req, res) {
+    const { standard_code, issuing_body, document_id } = req.body || {};
+
+    if (!standard_code || !String(standard_code).trim()) {
+        return res.status(400).json({ error: 'standard_code obbligatorio', code: 'MISSING_CODE' });
+    }
+
+    try {
+        const normCatalog = require('../services/normCatalogLookup.service');
+        const result = await normCatalog.lookupNormStatus(
+            String(standard_code).trim(),
+            String(issuing_body || '').trim()
+        );
+
+        // R2: persisti il risultato su document_registry se document_id fornito e status noto
+        if (document_id && result.status !== 'unknown') {
+            const docId = parseInt(String(document_id), 10);
+            const orgId = req.user?.organization_id;
+            if (Number.isFinite(docId) && docId > 0 && orgId) {
+                const validityStatus = result.status === 'active' ? 'vigente' : 'superata';
+                try {
+                    await query(
+                        `UPDATE document_registry
+                         SET type_specific_data = JSON_MODIFY(
+                               JSON_MODIFY(
+                                 JSON_MODIFY(
+                                   JSON_MODIFY(
+                                     ISNULL(type_specific_data, '{}'),
+                                     '$.validity_status',    @validityStatus
+                                   ),
+                                   '$.last_validity_check', @lastCheck
+                                 ),
+                                 '$.validity_check_url',  @checkUrl
+                               ),
+                               '$.superseded_by',        @supersededBy
+                             ),
+                             updated_at = GETDATE()
+                         WHERE id = @docId AND organization_id = @orgId AND doc_type = 'norma'`,
+                        {
+                            docId,
+                            orgId,
+                            validityStatus,
+                            lastCheck:    result.checkedAt || new Date().toISOString(),
+                            checkUrl:     result.catalogUrl   || null,
+                            supersededBy: result.supersededBy || null,
+                        }
+                    );
+                    logger.info('[norm-lookup] Persistito su document_registry', { docId, validityStatus });
+                } catch (persistErr) {
+                    logger.warn('[norm-lookup] Persist to registry failed:', persistErr.message);
+                }
+            }
+        }
+
+        res.json({ success: true, data: result });
+    } catch (err) {
+        logger.error('Error in norm-lookup', { error: err.message });
+        // Graceful degradation: non bloccare il flusso
+        res.json({
+            success: true,
+            data: {
+                status:      'unknown',
+                error:       'lookup_failed',
+                supersededBy: null,
+                catalogUrl:   null,
+                checkedAt:    new Date().toISOString(),
+            },
+        });
+    }
+}
+
+// ─── POST /api/v1/documents/norm-import-codes ─────────────────────────────────
+/**
+ * Import batch da lista codici norma/legge (senza PDF).
+ * Body: { codes: string|string[], folder_id?: number }
+ */
+async function importNormCodes(req, res) {
+    const { organization_id, user_id } = req.user;
+    const { codes, folder_id } = req.body || {};
+
+    if (!codes || (Array.isArray(codes) && codes.length === 0) || (typeof codes === 'string' && !codes.trim())) {
+        return res.status(400).json({
+            error: 'Fornire almeno un codice norma (codes: stringa multiriga o array)',
+            code: 'VALIDATION_ERROR',
+        });
+    }
+
+    try {
+        const normCodesImport = require('../services/normCodesImport.service');
+        const result = await normCodesImport.importNormCodes(
+            organization_id,
+            user_id,
+            codes,
+            { folderId: folder_id ? parseInt(String(folder_id), 10) : null }
+        );
+
+        const { summary } = result;
+        const httpStatus = summary.created > 0 ? 201 : (summary.duplicates > 0 && summary.errors === 0 ? 200 : 200);
+
+        res.status(httpStatus).json({
+            success: summary.created > 0 || summary.duplicates > 0,
+            ...result,
+        });
+    } catch (err) {
+        if (err.code === 'NORM_FOLDER_NOT_FOUND') {
+            return res.status(404).json({ error: err.message, code: err.code });
+        }
+        if (err.code === 'TOO_MANY_CODES') {
+            return res.status(400).json({ error: err.message, code: err.code });
+        }
+        logger.error('Error in norm-import-codes', { error: err.message });
+        res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
+    }
+}
+
 module.exports = {
     listDocuments,
     getDocumentStats,
@@ -727,4 +1155,7 @@ module.exports = {
     releaseRevision,
     getFolderSuggestion,
     listOrphanDocuments,
+    preExtractMetadata,
+    lookupNormStatus,
+    importNormCodes,
 };

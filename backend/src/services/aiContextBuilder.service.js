@@ -331,13 +331,14 @@ Rispondi SOLO con JSON valido nel formato:
   "issuing_body": "ente emittente principale (ISO, UNI, CEN, IEC, ecc.)",
   "edition_year": 2018,
   "language": "it|en|de|fr",
-  "abstract": "descrizione sintetica del contenuto in 1-2 frasi"
+  "scope_summary": "descrizione dell'ambito di applicazione della norma in 2-4 frasi, nella lingua originale del documento"
 }
 
 Regole:
 - standard_code: usa underscore come separatore, includi l'anno se presente (es. ISO_19011_2018)
 - Se il documento è una traduzione UNI di una norma ISO, includi il prefisso UNI_EN_ (es. UNI_EN_ISO_9001_2015)
 - edition_year: anno di pubblicazione dell'edizione (intero, es. 2018)
+- scope_summary: estrai preferibilmente dal campo "Scopo" / "Scope" / "Campo di applicazione" del documento; se non disponibile, sintetizza in 2-4 frasi di cosa tratta la norma
 - Se un campo non è determinabile dal testo, usa null
 - Non inventare dati: basa tutto esclusivamente sul testo fornito`;
 

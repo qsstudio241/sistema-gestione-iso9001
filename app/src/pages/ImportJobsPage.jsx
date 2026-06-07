@@ -3,11 +3,21 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import apiService from "../services/apiService";
+import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "../contexts/RouterContext";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
+import {
+  buildCommitFormFromFile,
+  applyNormLookupToTypeData,
+  buildNormCommitPayload,
+  isNormDocType,
+  buildInitialNormTypeData,
+} from "../utils/importNormCommit";
+import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
+import "../components/DocumentForm.css";
 
 // Aggiunge l'opzione guida AI in cima alla lista tipi per il form di import
 const DOC_TYPE_OPTIONS_IMPORT = [
@@ -23,6 +33,40 @@ function parseAiJson(val) {
   } catch {
     return null;
   }
+}
+
+function buildRiesameTitle(job, file) {
+  const ai = parseAiJson(file?.ai_extraction_json);
+  if (ai?.title) return String(ai.title).trim();
+  if (job?.title) return String(job.title).trim();
+  if (file?.original_name) return String(file.original_name).replace(/\.pdf$/i, "");
+  return "Riesame da import";
+}
+
+function textPreview(extractedText, maxLen = 400) {
+  const t = String(extractedText || "").trim();
+  if (!t) return "— Nessun testo estratto —";
+  if (t.length <= maxLen) return t;
+  return `${t.slice(0, maxLen)}…`;
+}
+
+function mapImportErrorMessage(err) {
+  if (!(err instanceof ApiError)) {
+    return err?.message || "Operazione fallita";
+  }
+  if (err.code === "ALREADY_LINKED") {
+    const caseId = err.data?.case_id;
+    return caseId
+      ? `Questo file è già collegato al caso Riesame #${caseId}.`
+      : (err.message || "File già collegato a un caso Riesame.");
+  }
+  if (err.code === "NO_ELIGIBLE_FILES" || err.code === "INVALID_FILE_STATUS") {
+    return "Il file deve essere in stato estratto o revisionato prima di creare il caso.";
+  }
+  if (err.code === "VALIDATION_ERROR") {
+    return err.message || "Dati non validi. Controlla titolo e cliente.";
+  }
+  return err.message || "Creazione caso Riesame fallita";
 }
 
 /**
@@ -123,8 +167,49 @@ function AiExtractionPanel({ file, jobDocTypeHint }) {
   );
 }
 
+function CommitNormStatusBadge({ normLookup, standardCode }) {
+  if (!standardCode?.trim()) return null;
+  const { loading, result } = normLookup || {};
+
+  if (loading) {
+    return (
+      <div className="norm-status-row">
+        <span className="norm-status-badge norm-status-loading">Verifica catalogo in corso…</span>
+      </div>
+    );
+  }
+
+  if (!result || result.status === "unknown") {
+    if (!result?.catalogUrl) return null;
+    return (
+      <div className="norm-status-row">
+        <StatusBadge type="norm_catalog" status="unknown" size="small" />
+        <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+          Vedi catalogo →
+        </a>
+      </div>
+    );
+  }
+
+  const supersededLabel = result.supersededBy
+    ? `Sostituita da ${result.supersededBy}`
+    : undefined;
+
+  return (
+    <div className="norm-status-row">
+      <StatusBadge type="norm_catalog" status={result.status} label={supersededLabel} size="small" />
+      {result.catalogUrl && (
+        <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
+          Vedi catalogo →
+        </a>
+      )}
+    </div>
+  );
+}
+
 export default function ImportJobsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -134,8 +219,10 @@ export default function ImportJobsPage() {
   const [newTitle, setNewTitle] = useState("");
   const [docTypeHint, setDocTypeHint] = useState("");
   const [busy, setBusy] = useState(false);
-  const [commitDialog, setCommitDialog] = useState(null); // { file, form }
+  const [commitDialog, setCommitDialog] = useState(null); // { file, isNorm, form, normLookup }
   const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
+  const [riesameDialog, setRiesameDialog] = useState(null); // { file, form }
+  const [companies, setCompanies] = useState([]);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -163,13 +250,68 @@ export default function ImportJobsPage() {
     }
   }, []);
 
+  const loadCompanies = useCallback(async () => {
+    try {
+      const params = user?.auditor_org_id ? { auditor_org_id: user.auditor_org_id } : {};
+      const res = await apiService.getCompanies(params);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setCompanies(list);
+    } catch {
+      setCompanies([]);
+    }
+  }, [user?.auditor_org_id]);
+
   useEffect(() => {
     loadList();
   }, [loadList]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const jobParam = params.get('job');
+    if (jobParam) {
+      const id = parseInt(jobParam, 10);
+      if (Number.isFinite(id) && id > 0) {
+        setSelectedId(id);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     loadDetail(selectedId);
   }, [selectedId, loadDetail]);
+
+  // Dopo codice norma (AI o filename): norm-lookup → prefill vigore e link catalogo
+  useEffect(() => {
+    if (!commitDialog?.isNorm) return undefined;
+    const code = (commitDialog.form?.typeData?.standard_code || "").trim();
+    const issuingBody = commitDialog.form?.typeData?.issuing_body || "";
+    if (!code) {
+      setCommitDialog((d) => (d ? { ...d, normLookup: { loading: false, result: null } } : d));
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      setCommitDialog((d) => (d ? { ...d, normLookup: { loading: true, result: null } } : d));
+      const result = await apiService.lookupNormStatus(code, issuingBody);
+      setCommitDialog((d) => {
+        if (!d) return d;
+        return {
+          ...d,
+          normLookup: { loading: false, result },
+          form: {
+            ...d.form,
+            typeData: applyNormLookupToTypeData(d.form.typeData, result),
+          },
+        };
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [
+    commitDialog?.isNorm,
+    commitDialog?.form?.typeData?.standard_code,
+    commitDialog?.form?.typeData?.issuing_body,
+  ]);
 
   async function handleCreate() {
     setBusy(true);
@@ -269,31 +411,155 @@ export default function ImportJobsPage() {
 
   function handleOpenCommit(file) {
     const ai = parseAiJson(file.ai_extraction_json) || {};
-    setCommitDialog({
+    const jobHint = detail?.job?.document_type_hint || "";
+    const built = buildCommitFormFromFile(ai, file, jobHint);
+    setCommitDialog({ file, ...built });
+    setCommitResult(null);
+  }
+
+  async function handleOpenRiesame(file) {
+    if (file?.commercial_case_id) {
+      navigate(`/contract-reviews/${file.commercial_case_id}`);
+      return;
+    }
+    const el = document.getElementById(`txt-${file.id}`);
+    const extractedText = el ? el.value : (file.extracted_text || "");
+    const job = detail?.job;
+    const defaultCompanyId =
+      job?.company_id != null ? String(job.company_id) : "";
+    setRiesameDialog({
       file,
       form: {
-        title: ai.title || file.original_name || "",
-        doc_type: ai.document_type || "",
-        responsible: ai.person_name || ai.responsible || "",
-        issue_date: ai.issue_date || "",
-        expiry_date: ai.expiry_date || "",
-        doc_code: ai.doc_code || ai.code || "",
-        revision: ai.revision || "",
-        notes: "",
+        title: buildRiesameTitle(job, file),
+        company_id: defaultCompanyId,
+        external_ref: "",
+        textPreview: textPreview(extractedText),
       },
     });
-    setCommitResult(null);
+    if (!companies.length) {
+      await loadCompanies();
+    }
+  }
+
+  async function handleRiesameConfirm() {
+    if (!riesameDialog || !selectedId) return;
+    if (!riesameDialog.form.title?.trim()) {
+      setError("Il titolo del caso è obbligatorio.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const payload = {
+        job_id: selectedId,
+        file_ids: [riesameDialog.file.id],
+        title: riesameDialog.form.title.trim(),
+      };
+      if (riesameDialog.form.company_id) {
+        payload.company_id = parseInt(riesameDialog.form.company_id, 10);
+      }
+      const extRef = (riesameDialog.form.external_ref || "").trim();
+      if (extRef) payload.external_ref = extRef;
+
+      const res = await apiService.importContractCaseFromJob(payload);
+      const caseId = res?.case_id ?? res?.data?.case_id;
+      setRiesameDialog(null);
+      if (caseId) {
+        navigate(`/contract-reviews/${caseId}`);
+      } else {
+        setError("Caso creato ma ID non restituito dall'API.");
+      }
+    } catch (e) {
+      const msg = mapImportErrorMessage(e);
+      setError(msg);
+      if (e instanceof ApiError && e.code === "ALREADY_LINKED" && e.data?.case_id) {
+        const open = window.confirm(
+          `${msg}\n\nAprire il caso Riesame esistente (#${e.data.case_id})?`,
+        );
+        if (open) {
+          setRiesameDialog(null);
+          navigate(`/contract-reviews/${e.data.case_id}`);
+        }
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleCommitDocTypeChange(nextType) {
+    if (!commitDialog) return;
+    const ai = parseAiJson(commitDialog.file.ai_extraction_json) || {};
+    if (isNormDocType(nextType)) {
+      const typeData = buildInitialNormTypeData(ai, commitDialog.file);
+      setCommitDialog((d) => ({
+        ...d,
+        isNorm: true,
+        normLookup: { loading: false, result: null },
+        form: {
+          title: ai.title || typeData.norm_title || commitDialog.file.original_name || "",
+          doc_type: "norma",
+          notes: d.form.notes || "",
+          typeData,
+        },
+      }));
+    } else {
+      setCommitDialog((d) => ({
+        ...d,
+        isNorm: false,
+        normLookup: { loading: false, result: null },
+        form: {
+          title: ai.title || commitDialog.file.original_name || "",
+          doc_type: nextType,
+          responsible: ai.person_name || ai.responsible || "",
+          issue_date: ai.issue_date || "",
+          expiry_date: ai.expiry_date || "",
+          doc_code: ai.doc_code || ai.code || "",
+          revision: ai.revision || "",
+          notes: d.form.notes || "",
+        },
+      }));
+    }
+  }
+
+  function patchCommitTypeData(patch) {
+    setCommitDialog((d) => {
+      if (!d) return d;
+      return {
+        ...d,
+        form: {
+          ...d.form,
+          typeData: { ...d.form.typeData, ...patch },
+        },
+      };
+    });
   }
 
   async function handleCommitConfirm() {
     if (!commitDialog || !selectedId) return;
+    if (commitDialog.isNorm) {
+      const code = (commitDialog.form.typeData?.standard_code || "").trim();
+      if (!code) {
+        setError("Il codice norma è obbligatorio.");
+        return;
+      }
+      if (!commitDialog.form.title?.trim()) {
+        setError("Il titolo è obbligatorio.");
+        return;
+      }
+    } else if (!commitDialog.form.title?.trim()) {
+      setError("Il titolo è obbligatorio.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      const payload = commitDialog.isNorm
+        ? buildNormCommitPayload(commitDialog.form)
+        : commitDialog.form;
       const res = await apiService.commitImportJobFileToRegistry(
         selectedId,
         commitDialog.file.id,
-        commitDialog.form
+        payload
       );
       const regId = res.data?.registry_document_id;
       setCommitResult({ fileId: commitDialog.file.id, registryId: regId });
@@ -478,6 +744,26 @@ export default function ImportJobsPage() {
                           Analisi AI strutturata
                         </button>
                       )}
+                      {(f.status === "extracted" || f.status === "reviewed") && !f.commercial_case_id && (
+                        <button
+                          type="button"
+                          className="btn-small btn-riesame"
+                          disabled={busy}
+                          title="Crea un caso Riesame requisiti contratto da questo PDF"
+                          onClick={() => handleOpenRiesame(f)}
+                        >
+                          Crea caso Riesame
+                        </button>
+                      )}
+                      {f.commercial_case_id && (
+                        <button
+                          type="button"
+                          className="file-riesame-badge"
+                          onClick={() => navigate(`/contract-reviews/${f.commercial_case_id}`)}
+                        >
+                          Caso Riesame #{f.commercial_case_id}
+                        </button>
+                      )}
                       {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
                         <button
                           type="button"
@@ -513,14 +799,14 @@ export default function ImportJobsPage() {
         </section>
       </div>
 
-      {/* Sprint 10 - Dialog commit al registry */}
+      {/* Sprint 10 — Dialog commit al registry (Fase 2: norme con type_specific_data) */}
       {commitDialog && (
         <div className="commit-dialog-overlay" onClick={() => setCommitDialog(null)}>
           <div className="commit-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>Commit al Registry documenti</h3>
             <p className="commit-dialog-file">File: <strong>{commitDialog.file.original_name}</strong></p>
             <div className="commit-form">
-              <label>Titolo *
+              <label>Titolo documento *
                 <input
                   type="text"
                   value={commitDialog.form.title}
@@ -530,52 +816,109 @@ export default function ImportJobsPage() {
               <label>Tipo documento
                 <select
                   value={commitDialog.form.doc_type}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_type: e.target.value } }))}
+                  onChange={(e) => handleCommitDocTypeChange(e.target.value)}
                 >
                   {DOC_TYPE_OPTIONS_IMPORT.map((o) => (
                     <option key={o.value || "none"} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </label>
-              <label>Codice doc.
-                <input
-                  type="text"
-                  value={commitDialog.form.doc_code}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_code: e.target.value } }))}
-                />
-              </label>
-              <label>Revisione
-                <input
-                  type="text"
-                  value={commitDialog.form.revision}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, revision: e.target.value } }))}
-                />
-              </label>
-              <label>Responsabile
-                <input
-                  type="text"
-                  value={commitDialog.form.responsible}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, responsible: e.target.value } }))}
-                />
-              </label>
-              <label>Data emissione
-                <input
-                  type="date"
-                  value={commitDialog.form.issue_date}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, issue_date: e.target.value } }))}
-                />
-              </label>
-              <label>Scadenza
-                <input
-                  type="date"
-                  value={commitDialog.form.expiry_date}
-                  onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, expiry_date: e.target.value } }))}
-                />
-              </label>
+
+              {commitDialog.isNorm ? (
+                <>
+                  <p className="commit-dialog-norm-hint">
+                    Campi come in <strong>Carica norme</strong>. Dopo il codice norma parte la verifica sul catalogo dell&apos;ente.
+                  </p>
+                  <label>Codice norma *
+                    <input
+                      type="text"
+                      required
+                      placeholder="es. BS EN ISO 9606-1:2017"
+                      value={commitDialog.form.typeData?.standard_code || ""}
+                      onChange={(e) => patchCommitTypeData({ standard_code: e.target.value })}
+                    />
+                  </label>
+                  <CommitNormStatusBadge
+                    normLookup={commitDialog.normLookup}
+                    standardCode={commitDialog.form.typeData?.standard_code}
+                  />
+                  <label>Ente emittente
+                    <select
+                      value={commitDialog.form.typeData?.issuing_body || ""}
+                      onChange={(e) => patchCommitTypeData({ issuing_body: e.target.value })}
+                    >
+                      <option value="">— Seleziona —</option>
+                      {(getSchemaForDocType("norma")?.fields?.find((f) => f.key === "issuing_body")?.options || []).map(
+                        (o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        )
+                      )}
+                    </select>
+                  </label>
+                  <label>Anno edizione
+                    <input
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={commitDialog.form.typeData?.edition_year ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        patchCommitTypeData({ edition_year: v === "" ? "" : parseInt(v, 10) || "" });
+                      }}
+                    />
+                  </label>
+                  <label>Titolo ufficiale norma
+                    <input
+                      type="text"
+                      value={commitDialog.form.typeData?.norm_title || ""}
+                      onChange={(e) => patchCommitTypeData({ norm_title: e.target.value })}
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label>Codice doc.
+                    <input
+                      type="text"
+                      value={commitDialog.form.doc_code || ""}
+                      onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, doc_code: e.target.value } }))}
+                    />
+                  </label>
+                  <label>Revisione
+                    <input
+                      type="text"
+                      value={commitDialog.form.revision || ""}
+                      onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, revision: e.target.value } }))}
+                    />
+                  </label>
+                  <label>Responsabile
+                    <input
+                      type="text"
+                      value={commitDialog.form.responsible || ""}
+                      onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, responsible: e.target.value } }))}
+                    />
+                  </label>
+                  <label>Data emissione
+                    <input
+                      type="date"
+                      value={commitDialog.form.issue_date || ""}
+                      onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, issue_date: e.target.value } }))}
+                    />
+                  </label>
+                  <label>Scadenza
+                    <input
+                      type="date"
+                      value={commitDialog.form.expiry_date || ""}
+                      onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, expiry_date: e.target.value } }))}
+                    />
+                  </label>
+                </>
+              )}
+
               <label>Note
                 <textarea
                   rows={3}
-                  value={commitDialog.form.notes}
+                  value={commitDialog.form.notes || ""}
                   onChange={(e) => setCommitDialog((d) => ({ ...d, form: { ...d.form, notes: e.target.value } }))}
                 />
               </label>
@@ -592,9 +935,94 @@ export default function ImportJobsPage() {
                 type="button"
                 className="btn-primary"
                 onClick={handleCommitConfirm}
-                disabled={busy || !commitDialog.form.title.trim()}
+                disabled={
+                  busy
+                  || !commitDialog.form.title?.trim()
+                  || (commitDialog.isNorm && !(commitDialog.form.typeData?.standard_code || "").trim())
+                }
               >
                 {busy ? "Salvataggio…" : "Conferma e salva nel Registry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {riesameDialog && (
+        <div className="commit-dialog-overlay" onClick={() => setRiesameDialog(null)}>
+          <div className="commit-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Crea caso Riesame requisiti</h3>
+            <p className="commit-dialog-file">
+              File: <strong>{riesameDialog.file.original_name}</strong>
+            </p>
+            <div className="commit-form">
+              <label>Titolo caso *
+                <input
+                  type="text"
+                  value={riesameDialog.form.title}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, title: e.target.value },
+                    }))
+                  }
+                />
+              </label>
+              <label>Cliente (opzionale)
+                <select
+                  value={riesameDialog.form.company_id}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, company_id: e.target.value },
+                    }))
+                  }
+                >
+                  <option value="">— Nessun cliente —</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name || `ID ${c.id}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>Riferimento esterno (opzionale)
+                <input
+                  type="text"
+                  placeholder="es. RFQ-2026-042"
+                  value={riesameDialog.form.external_ref}
+                  onChange={(e) =>
+                    setRiesameDialog((d) => ({
+                      ...d,
+                      form: { ...d.form, external_ref: e.target.value },
+                    }))
+                  }
+                />
+              </label>
+              <label>Anteprima testo estratto
+                <textarea
+                  className="riesame-text-preview"
+                  rows={5}
+                  readOnly
+                  value={riesameDialog.form.textPreview}
+                />
+              </label>
+            </div>
+            <p className="commit-dialog-hint">
+              Verrà creato un caso in bozza (<em>DRAFT</em>) con checklist preliminare
+              e allegato PDF collegato. Potrai completare il riesame dalla pagina Riesame requisiti.
+            </p>
+            <div className="commit-dialog-actions">
+              <button type="button" className="btn-secondary" onClick={() => setRiesameDialog(null)} disabled={busy}>
+                Annulla
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleRiesameConfirm}
+                disabled={busy || !riesameDialog.form.title?.trim()}
+              >
+                {busy ? "Creazione…" : "Conferma e crea caso"}
               </button>
             </div>
           </div>

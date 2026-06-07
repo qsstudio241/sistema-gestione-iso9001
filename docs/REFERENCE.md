@@ -25,7 +25,7 @@ Backend Path: /var/www/sgq-backend/
 
 **Autenticazione:** chiave SSH, **Pageant**, oppure sessione **PuTTY** salvata (variabile `SGQ_PUTTY_SESSION` nello script `backend/scripts/deploy-controllers-to-vps.ps1`). File locale opzionale **`backend/config/.ssh-deploy.local.ps1`** (gitignored, da copiare da `.ssh-deploy.local.ps1.example`) per variabili `SGQ_*` senza incollarle in chat. Non versionare password SSH.
 
-Deploy / API / SSH in un solo punto per gli agenti: [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md).
+Deploy / API / SSH in un solo punto per gli agenti: [how-to/deploy.md](how-to/deploy.md) → [ACCESSO_DEPLOY_AGENTS.md](how-to/ACCESSO_DEPLOY_AGENTS.md).
 
 **Quick Connect:**
 ```bash
@@ -57,8 +57,8 @@ Server=www.fr-busato.it,11043;Database=SGQ_ISO9001;Integrated Security=False;Use
 
 - **Due canali distinti:** **SSH** (porta **1122**, utente Linux tipicamente `spascarella`) e **SQL Server** (porta **11043**, login in `database.json` / `DB_*`). Non sono intercambiabili.
 - **Cursor nell’IDE** non ha una «sessione SSH integrata» né riceve password dal cloud: può eseguire comandi (es. `node scripts/run-migration-041.js`) **solo sulla macchina del workspace**, usando i file `.env` / `database.json` presenti lì. Se il login SQL fallisce, la causa è sul server o nelle credenziali locali, non nella «modalità agente».
-- **Deploy non interattivo sul VPS:** chiave SSH, **Pageant**, sessione **PuTTY** (`SGQ_PUTTY_SESSION`), file **`backend/config/.ssh-deploy.local.ps1`** (vedi [ACCESSO_DEPLOY_AGENTS.md](ACCESSO_DEPLOY_AGENTS.md)). Prompt password / host key: vedi [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md).
-- Fonte operativa DB: [DATABASE.md](DATABASE.md).
+- **Deploy non interattivo sul VPS:** chiave SSH, **Pageant**, sessione **PuTTY** (`SGQ_PUTTY_SESSION`), file **`backend/config/.ssh-deploy.local.ps1`** (vedi [ACCESSO_DEPLOY_AGENTS.md](how-to/ACCESSO_DEPLOY_AGENTS.md)). Prompt password / host key: vedi [DEPLOY_TROUBLESHOOTING.md](how-to/DEPLOY_TROUBLESHOOTING.md).
+- Fonte operativa DB: [DATABASE.md](reference/DATABASE.md).
 
 ### Netlify Deployment
 ```

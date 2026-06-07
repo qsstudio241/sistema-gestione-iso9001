@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { normalizeDocType, normalizeDocTypeConfigRows } = require('../utils/docTypeConfigHelpers');
 
 const LOGO_DIR_ORG = path.join(process.env.UPLOAD_DIR || './uploads', 'org-logos');
 if (!fsSync.existsSync(LOGO_DIR_ORG)) fsSync.mkdirSync(LOGO_DIR_ORG, { recursive: true });
@@ -28,7 +29,8 @@ async function getMyOrganization(req, res) {
         const result = await query(
             `
             SELECT organization_id, organization_code, organization_name,
-                   vat_number, logo_url, is_active, audit_report_prefix
+                   vat_number, logo_url, is_active, audit_report_prefix,
+                   ai_context_notes
             FROM dbo.organizations
             WHERE organization_id = @organization_id
             `,
@@ -48,6 +50,7 @@ async function getMyOrganization(req, res) {
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
                 audit_report_prefix: row.audit_report_prefix || null,
+                ai_context_notes: row.ai_context_notes || '',
             },
         });
     } catch (error) {
@@ -58,7 +61,7 @@ async function getMyOrganization(req, res) {
 
 /**
  * PATCH /api/v1/organizations/me
- * Body: { vat_number?: string, audit_report_prefix?: string|null }
+ * Body: { vat_number?: string, audit_report_prefix?: string|null, ai_context_notes?: string|null }
  */
 async function patchMyOrganization(req, res) {
     try {
@@ -66,8 +69,12 @@ async function patchMyOrganization(req, res) {
             return res.status(403).json({ success: false, error: 'Accesso non autorizzato', code: 'FORBIDDEN' });
         }
         const orgId = req.user.organization_id;
-        const { vat_number, audit_report_prefix } = req.body || {};
-        if (vat_number === undefined && audit_report_prefix === undefined) {
+        const { vat_number, audit_report_prefix, ai_context_notes } = req.body || {};
+        if (
+            vat_number === undefined
+            && audit_report_prefix === undefined
+            && ai_context_notes === undefined
+        ) {
             return res.status(400).json({ success: false, error: 'Nessun campo da aggiornare', code: 'NO_FIELDS' });
         }
 
@@ -82,6 +89,12 @@ async function patchMyOrganization(req, res) {
             setClauses.push('audit_report_prefix = @audit_report_prefix');
             params.audit_report_prefix = audit_report_prefix == null ? null : String(audit_report_prefix).trim().slice(0, 16) || null;
         }
+        if (ai_context_notes !== undefined && isOrgAdmin(req.user.role)) {
+            setClauses.push('ai_context_notes = @ai_context_notes');
+            params.ai_context_notes = ai_context_notes == null
+                ? null
+                : String(ai_context_notes).trim().slice(0, 2000) || null;
+        }
 
         if (setClauses.length === 0) {
             return res.status(400).json({ success: false, error: 'Nessun campo aggiornabile', code: 'NO_FIELDS' });
@@ -94,7 +107,8 @@ async function patchMyOrganization(req, res) {
         const refreshed = await query(
             `
             SELECT organization_id, organization_code, organization_name,
-                   vat_number, logo_url, is_active, audit_report_prefix
+                   vat_number, logo_url, is_active, audit_report_prefix,
+                   ai_context_notes
             FROM dbo.organizations WHERE organization_id = @organization_id
             `,
             { organization_id: orgId }
@@ -110,6 +124,7 @@ async function patchMyOrganization(req, res) {
                 logo_url: row.logo_url || null,
                 is_active: !!row.is_active,
                 audit_report_prefix: row.audit_report_prefix || null,
+                ai_context_notes: row.ai_context_notes || '',
             },
         });
     } catch (error) {
@@ -235,18 +250,53 @@ async function getDocTypeConfig(req, res) {
     try {
         const orgId = req.user.organization_id;
         const result = await query(
-            `SELECT doc_type, prefix, auto_number
+            `SELECT doc_type, prefix, auto_number, next_number, default_expiry_months
              FROM dbo.doc_type_config
              WHERE organization_id = @organization_id
              ORDER BY doc_type`,
             { organization_id: orgId }
         );
+        const rawRows = result.recordset.map(r => ({
+            doc_type: r.doc_type,
+            prefix: r.prefix || null,
+            auto_number: !!r.auto_number,
+            next_number: r.next_number != null ? parseInt(r.next_number, 10) : 1,
+            default_expiry_months: r.default_expiry_months != null ? parseInt(r.default_expiry_months, 10) : null,
+        }));
+
+        const { rows, migrated } = normalizeDocTypeConfigRows(rawRows);
+
+        if (migrated) {
+            await query(
+                `DELETE FROM dbo.doc_type_config WHERE organization_id = @organization_id`,
+                { organization_id: orgId }
+            );
+            for (const item of rows) {
+                await query(
+                    `INSERT INTO dbo.doc_type_config
+                        (organization_id, doc_type, prefix, auto_number, next_number, default_expiry_months)
+                     VALUES (@organization_id, @doc_type, @prefix, @auto_number, @next_number, @default_expiry_months)`,
+                    {
+                        organization_id: orgId,
+                        doc_type: item.doc_type,
+                        prefix: item.prefix,
+                        auto_number: item.auto_number ? 1 : 0,
+                        next_number: item.next_number || 1,
+                        default_expiry_months: item.default_expiry_months,
+                    }
+                );
+            }
+            logger.info('[ORG] doc_type_config migrato da etichette legacy', { organization_id: orgId });
+        }
+
         res.json({
             success: true,
-            data: result.recordset.map(r => ({
+            data: rows.map(r => ({
                 doc_type: r.doc_type,
                 prefix: r.prefix || null,
                 auto_number: !!r.auto_number,
+                next_number: r.next_number || 1,
+                default_expiry_months: r.default_expiry_months ?? null,
             })),
         });
     } catch (error) {
@@ -277,20 +327,42 @@ async function saveDocTypeConfig(req, res) {
             { organization_id: orgId }
         );
 
-        for (const item of items) {
+        const normalizedItems = normalizeDocTypeConfigRows(
+            items.filter(i => i && i.doc_type).map(i => ({
+                doc_type: normalizeDocType(i.doc_type) || String(i.doc_type).trim(),
+                prefix: i.prefix,
+                auto_number: i.auto_number,
+                next_number: i.next_number,
+                default_expiry_months: i.default_expiry_months,
+            }))
+        ).rows;
+
+        for (const item of normalizedItems) {
             if (!item.doc_type) continue;
             const docType = String(item.doc_type).trim().slice(0, 50);
             const prefix = item.prefix == null ? null : String(item.prefix).trim().slice(0, 20) || null;
             const autoNumber = item.auto_number == null ? true : !!item.auto_number;
+            const nextNumber = item.next_number != null ? Math.max(1, parseInt(item.next_number, 10) || 1) : 1;
+            const expiryMonths = item.default_expiry_months == null || item.default_expiry_months === ''
+                ? null
+                : Math.max(1, parseInt(item.default_expiry_months, 10) || 0) || null;
             await query(
-                `INSERT INTO dbo.doc_type_config (organization_id, doc_type, prefix, auto_number)
-                 VALUES (@organization_id, @doc_type, @prefix, @auto_number)`,
-                { organization_id: orgId, doc_type: docType, prefix, auto_number: autoNumber ? 1 : 0 }
+                `INSERT INTO dbo.doc_type_config
+                    (organization_id, doc_type, prefix, auto_number, next_number, default_expiry_months)
+                 VALUES (@organization_id, @doc_type, @prefix, @auto_number, @next_number, @default_expiry_months)`,
+                {
+                    organization_id: orgId,
+                    doc_type: docType,
+                    prefix,
+                    auto_number: autoNumber ? 1 : 0,
+                    next_number: nextNumber,
+                    default_expiry_months: expiryMonths,
+                }
             );
         }
 
         const refreshed = await query(
-            `SELECT doc_type, prefix, auto_number
+            `SELECT doc_type, prefix, auto_number, next_number, default_expiry_months
              FROM dbo.doc_type_config
              WHERE organization_id = @organization_id
              ORDER BY doc_type`,
@@ -302,6 +374,8 @@ async function saveDocTypeConfig(req, res) {
                 doc_type: r.doc_type,
                 prefix: r.prefix || null,
                 auto_number: !!r.auto_number,
+                next_number: r.next_number != null ? parseInt(r.next_number, 10) : 1,
+                default_expiry_months: r.default_expiry_months != null ? parseInt(r.default_expiry_months, 10) : null,
             })),
         });
     } catch (error) {

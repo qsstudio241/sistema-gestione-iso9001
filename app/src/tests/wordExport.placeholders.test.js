@@ -142,6 +142,46 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         expect(xml).toContain("https://api.example.test/attachments/88001/view?token=TOK");
     });
 
+    it("checklist custom OOXML: allegato solo da custom_item_id (senza evidence_blocks)", () => {
+        const xml = buildCustomChecklistSectionOoxml(
+            {
+                has_outcome_buttons: false,
+                sections: [
+                    {
+                        code: "S1",
+                        title: "Sezione",
+                        display_order: 0,
+                        items: [
+                            {
+                                id: 42,
+                                code: "1.1",
+                                title: "Voce con foto",
+                                display_order: 0,
+                            },
+                        ],
+                    },
+                ],
+            },
+            {},
+            [
+                {
+                    custom_item_id: 42,
+                    attachment_id: 77042,
+                    fileName: "foto_sito.jpg",
+                    mimeType: "image/jpeg",
+                },
+            ],
+            (id) => `https://api.example.test/attachments/${id}/view?token=TOK`,
+            {},
+            null,
+            {}
+        );
+        expect(xml).not.toContain("Nessuna evidenza compilata");
+        expect(xml).toContain("HYPERLINK");
+        expect(xml).toContain("https://api.example.test/attachments/77042/view?token=TOK");
+        expect(xml).toContain("foto_sito.jpg");
+    });
+
     it("checklist custom OOXML: embed foto + link sotto in modalità preview", () => {
         const imageRegistry = [];
         const xml = buildCustomChecklistSectionOoxml(

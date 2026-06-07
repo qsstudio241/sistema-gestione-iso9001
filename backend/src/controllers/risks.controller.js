@@ -5,6 +5,12 @@
 
 const { getPool } = require('../config/database');
 const logger      = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // score (priorità) = probability × impact  →  1-9
 function riskScore(p, i) { return (p || 1) * (i || 1); }
@@ -15,11 +21,15 @@ async function listRisks(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
         const { status, context, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let where = ['r.organization_id = @orgId', 'r.is_deleted = 0'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
         const req2 = pool.request().input('orgId', orgId).input('limit', parseInt(limit)).input('offset', offset);
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
         if (status)  { where.push('r.status = @status');   req2.input('status', status); }
         if (context) { where.push('r.context = @context'); req2.input('context', context); }
@@ -35,8 +45,17 @@ async function listRisks(req, res) {
                 ORDER BY (r.probability * r.impact) DESC, r.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
             `),
-            pool.request().input('orgId2', orgId)
-                .query(`SELECT COUNT(*) AS total FROM risks r WHERE r.organization_id = @orgId2 AND r.is_deleted = 0`)
+            (() => {
+                const cntReq = pool.request().input('orgId2', orgId);
+                Object.entries(companyFilter.params).forEach(([k, v]) => cntReq.input(k, v));
+                if (status)  cntReq.input('cntStatus', status);
+                if (context) cntReq.input('cntContext', context);
+                const cntWhere = ['r.organization_id = @orgId2', 'r.is_deleted = 0'];
+                if (companyFilter.clause) cntWhere.push(companyFilter.clause);
+                if (status)  cntWhere.push('r.status = @cntStatus');
+                if (context) cntWhere.push('r.context = @cntContext');
+                return cntReq.query(`SELECT COUNT(*) AS total FROM risks r WHERE ${cntWhere.join(' AND ')}`);
+            })(),
         ]);
 
         const data = dataRes.recordset.map(r => ({ ...r, score: riskScore(r.probability, r.impact) }));
@@ -49,16 +68,21 @@ async function listRisks(req, res) {
 
 async function getRiskStats(req, res) {
     try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
-        const r = await pool.request().input('orgId', orgId).query(`
+        const pool       = await getPool();
+        const orgId      = req.user.organization_id;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
+        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const req2 = pool.request().input('orgId', orgId);
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
+        const r = await req2.query(`
             SELECT
                 COUNT(*) AS total,
                 SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS [open],
                 SUM(CASE WHEN status = 'in_treatment' THEN 1 ELSE 0 END) AS in_treatment,
                 SUM(CASE WHEN status = 'mitigated' THEN 1 ELSE 0 END) AS mitigated,
                 SUM(CASE WHEN (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority
-            FROM risks WHERE organization_id = @orgId AND is_deleted = 0
+            FROM risks r WHERE r.organization_id = @orgId AND r.is_deleted = 0${whereExtra}
         `);
         res.json({ success: true, data: r.recordset[0] });
     } catch (err) {
@@ -89,6 +113,9 @@ async function createRisk(req, res) {
         const { title, description, context = 'internal', category, probability = 2, impact = 2, treatment = 'mitigate', treatment_desc, responsible, review_date, company_id } = req.body;
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const r = await pool.request()
             .input('orgId', orgId).input('userId', userId)
@@ -122,8 +149,11 @@ async function updateRisk(req, res) {
         const { title, description, context, category, probability, impact, treatment, treatment_desc, responsible, review_date, status } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT risk_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+            .query('SELECT risk_id, company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
         if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const sets = ['updated_at = GETDATE()'];
         // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
@@ -152,6 +182,14 @@ async function deleteRisk(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query('SELECT company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+        if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         await pool.request().input('id', id).input('orgId', orgId)
             .query('UPDATE risks SET is_deleted = 1, updated_at = GETDATE() WHERE risk_id = @id AND organization_id = @orgId');
         res.json({ success: true });

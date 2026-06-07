@@ -1,5 +1,5 @@
 /**
- * SpreadsheetViewer — visualizzatore Excel in-app (privacy-friendly)
+ * SpreadsheetViewer ï¿½ visualizzatore Excel in-app (privacy-friendly)
  *
  * Scarica il file .xlsx via fetch autenticato, lo parsa con SheetJS
  * e lo renderizza come tabella HTML scrollabile con supporto fogli multipli.
@@ -33,17 +33,8 @@ export default function SpreadsheetViewer({ docId, attachmentId, fileName, onClo
       setLoading(true);
       setError(null);
       try {
-        const url = apiService.getDocFileDownloadUrl(docId, attachmentId || null, true);
-        const token = apiService.getToken();
-        const response = await fetch(url, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-
-        if (!response.ok) {
-          throw new Error(`Errore download: HTTP ${response.status}`);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
+        const blob = await apiService.getDocFileBlob(docId, attachmentId || null);
+        const arrayBuffer = await blob.arrayBuffer();
         const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: "array", cellStyles: true });
 
         if (cancelled) return;
@@ -164,7 +155,7 @@ export default function SpreadsheetViewer({ docId, attachmentId, fileName, onClo
             <>
               {rows.length === 0 && headers.length === 0 ? (
                 <div className="spreadsheet-viewer-empty">
-                  Il foglio selezionato è vuoto.
+                  Il foglio selezionato ï¿½ vuoto.
                 </div>
               ) : (
                 <div className="spreadsheet-viewer-table-wrapper">

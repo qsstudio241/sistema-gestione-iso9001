@@ -1,5 +1,5 @@
 /**
- * Test L1 — DocumentTree component
+ * Test L1  DocumentTree component
  *
  * Copre: rendering nodi, espansione/collasso, icone (folder/system/document),
  * badge conteggio figli, creazione cartella inline.
@@ -36,7 +36,7 @@ const sampleNodes = [
 
 // ??? Rendering base ?????????????????????????????????????????????????????????
 
-describe('DocumentTree — Rendering', () => {
+describe('DocumentTree  Rendering', () => {
   it('renderizza tutti i nodi radice', () => {
     render(
       <DocumentTree
@@ -53,7 +53,7 @@ describe('DocumentTree — Rendering', () => {
     expect(screen.getByText('Documento solitario')).toBeInTheDocument();
   });
 
-  it('mostra "Nessun documento" se nodes è vuoto', () => {
+  it('mostra "Nessun documento" se nodes  vuoto', () => {
     render(
       <DocumentTree
         nodes={[]}
@@ -82,7 +82,48 @@ describe('DocumentTree — Rendering', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('mostra pulsante "Nuova cartella"', () => {
+  it('NON mostra badge stato Vigente sulle cartelle (solo conteggio figli)', () => {
+    const nodesWithFolderStatus = [
+      {
+        id: 10,
+        title: 'Cartella vigente',
+        doc_type: 'folder',
+        status: 'vigente',
+        children_count: 1,
+      },
+    ];
+    render(
+      <DocumentTree
+        nodes={nodesWithFolderStatus}
+        expandedIds={new Set()}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Cartella vigente')).toBeInTheDocument();
+    expect(screen.queryByText('Vigente')).toBeNull();
+    expect(screen.queryByText('Rilasciato')).toBeNull();
+  });
+
+  it('mostra pulsante nuova cartella (root)', () => {
+    render(
+      <DocumentTree
+        nodes={sampleNodes}
+        expandedIds={new Set()}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('+ Nuova cartella')).toBeInTheDocument();
+  });
+
+  it('label cartella ha attributo title (tooltip nome completo)', () => {
     render(
       <DocumentTree
         nodes={sampleNodes}
@@ -93,14 +134,99 @@ describe('DocumentTree — Rendering', () => {
         onCreateFolder={vi.fn()}
       />
     );
-    expect(screen.getByText('+ Nuova cartella')).toBeInTheDocument();
+    const label = screen.getByText('Procedure');
+    expect(label).toHaveAttribute('title', 'Procedure');
+  });
+
+  it('mostra nome completo cartella selezionata nella barra mobile', () => {
+    const folder = {
+      id: 10,
+      title: 'Cartella con nome molto lungo per mobile',
+      doc_type: 'folder',
+      children_count: 0,
+    };
+    render(
+      <DocumentTree
+        nodes={[folder]}
+        expandedIds={new Set()}
+        selectedNodeId={10}
+        selectedNode={folder}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Cartella selezionata')).toBeInTheDocument();
+    const mobileTitle = document.querySelector('.doc-tree__mobile-selection-title');
+    expect(mobileTitle).toHaveTextContent('Cartella con nome molto lungo per mobile');
+  });
+
+  it('non mostra barra mobile se selezionato un documento', () => {
+    const doc = sampleNodes[2];
+    render(
+      <DocumentTree
+        nodes={sampleNodes}
+        expandedIds={new Set()}
+        selectedNodeId={5}
+        selectedNode={doc}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+      />
+    );
+    expect(screen.queryByText('Cartella selezionata')).toBeNull();
+  });
+});
+
+describe('DocumentTree  Azioni cartella', () => {
+  const customFolder = {
+    id: 99,
+    title: 'Mia cartella',
+    doc_type: 'folder',
+    is_system_folder: false,
+    children_count: 0,
+  };
+
+  it('disabilita Elimina su cartella di sistema', () => {
+    render(
+      <DocumentTree
+        nodes={[customFolder, sampleNodes[1]]}
+        expandedIds={new Set()}
+        selectedNodeId={4}
+        selectedNode={sampleNodes[1]}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Elimina' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rinomina' })).toBeDisabled();
+  });
+
+  it('offre Sottocartella quando  selezionata una cartella custom', () => {
+    render(
+      <DocumentTree
+        nodes={[customFolder]}
+        expandedIds={new Set()}
+        selectedNodeId={99}
+        selectedNode={customFolder}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        onRenameFolder={vi.fn()}
+        onDeleteFolder={vi.fn()}
+      />
+    );
+    expect(screen.getByText('+ Sottocartella')).toBeInTheDocument();
   });
 });
 
 // ??? Espansione / collasso ??????????????????????????????????????????????????
 
-describe('DocumentTree — Espansione', () => {
-  it('mostra figli se nodo è espanso', () => {
+describe('DocumentTree  Espansione', () => {
+  it('mostra figli se nodo  espanso', () => {
     render(
       <DocumentTree
         nodes={sampleNodes}
@@ -115,7 +241,7 @@ describe('DocumentTree — Espansione', () => {
     expect(screen.getByText('PG-002')).toBeInTheDocument();
   });
 
-  it('NON mostra figli se nodo NON è espanso', () => {
+  it('NON mostra figli se nodo NON  espanso', () => {
     render(
       <DocumentTree
         nodes={sampleNodes}
@@ -132,7 +258,7 @@ describe('DocumentTree — Espansione', () => {
 
 // ??? Selezione ??????????????????????????????????????????????????????????????
 
-describe('DocumentTree — Selezione', () => {
+describe('DocumentTree  Selezione', () => {
   it('chiama onSelect al click su un nodo', () => {
     const onSelect = vi.fn();
     render(
@@ -152,7 +278,7 @@ describe('DocumentTree — Selezione', () => {
 
 // ??? Creazione cartella ?????????????????????????????????????????????????????
 
-describe('DocumentTree — Creazione cartella', () => {
+describe('DocumentTree  Creazione cartella', () => {
   it('mostra input dopo click "Nuova cartella"', () => {
     render(
       <DocumentTree
@@ -171,7 +297,7 @@ describe('DocumentTree — Creazione cartella', () => {
 
 // ??? Loading / Error ????????????????????????????????????????????????????????
 
-describe('DocumentTree — Loading / Error', () => {
+describe('DocumentTree  Loading / Error', () => {
   it('mostra spinner durante caricamento', () => {
     render(
       <DocumentTree
