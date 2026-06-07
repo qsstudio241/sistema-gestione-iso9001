@@ -160,7 +160,7 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                 <div className="pj-checkbox-list">
                   {qualifications.map((q) => (
                     <label key={q.id} className="pj-checkbox-item">
-                      <input type="checkbox" disabled title="Funzionalit\u00E0 in sviluppo" />
+                      <input type="checkbox" disabled title="Funzionalità in sviluppo" />
                       <span>{q.person_name}</span>
                       <span className="pj-checkbox-sub">{q.qualification_type} - {q.certificate_number || "N/A"}</span>
                     </label>
