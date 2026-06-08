@@ -14,9 +14,22 @@ Quando un utente carica un file (tipicamente Excel/CSV) nel sistema, **il backen
 
 Se rilevato:
 1. Estrarre i record (righe del foglio) con la loro data di scadenza
-2. Mostrarli nella **griglia Priorita'** con deep-link al file sorgente
+2. Mostrarli nella **griglia Priorita'** con deep-link al file sorgente — **solo** le righe con scadenza entro 30 giorni (o gia' scadute)
 3. Permettere di **assegnare** ogni scadenza a un utente con alert email
 4. Calcolare lo stato (scaduto / in scadenza / ok) rispetto alla data corrente
+
+---
+
+## 1.1 Regole Operative Confermate dal Committente
+
+| Regola | Dettaglio |
+|--------|-----------|
+| **Multi-scadenzario per azienda** | Una stessa azienda cliente puo' avere piu' file-scadenzario (es. "Tarature", "Qualifiche", "Polizze") |
+| **Destinatario alert default** | L'**admin dello studio** (auditor/consulente che gestisce l'azienda) — non il soggetto nella riga |
+| **Finestra visibilita'** | Solo righe con scadenza **entro 30 giorni** (o gia' scadute) appaiono nella griglia. Le righe oltre 30 gg restano in DB ma non si mostrano |
+| **Finestra configurabile (futuro)** | Da valutare: soglia 30 gg potrebbe variare per tipologia di scadenzario (es. patentini 60 gg, polizze 30 gg) |
+| **Frequenza alert** | Identica a quella dei documenti: stesse soglie escalation (`alert_days_1`, `alert_days_2`, curva `doc_escalation_profile`) |
+| **Scaduti** | Restano visibili finche' non vengono marcati "completato" o "preso in carico" dall'admin |
 
 ---
 
@@ -117,7 +130,7 @@ Click → apre file sorgente (SpreadsheetViewer)
 CREATE TABLE deadline_items (
   id                INT IDENTITY(1,1) PRIMARY KEY,
   organization_id   INT NOT NULL,
-  company_id        INT NULL,
+  company_id        INT NULL,          -- FK companies.id — l'azienda cliente
 
   -- Origine file
   source_document_id INT NOT NULL,   -- FK document_registry.id (il file Excel caricato)
@@ -131,9 +144,11 @@ CREATE TABLE deadline_items (
   reference_code    NVARCHAR(100) NULL,      -- eventuale colonna "codice/rif."
   extra_data        NVARCHAR(MAX) NULL,      -- JSON con tutte le altre colonne della riga
 
-  -- Assegnazione (opzionale)
-  assigned_to       INT NULL,          -- FK users.id
-  assigned_email    NVARCHAR(255) NULL, -- email diretta (se utente esterno)
+  -- Assegnazione
+  -- DEFAULT: admin dello studio (chi gestisce l'azienda cliente)
+  -- L'utente puo' riassegnare a un contatto specifico se necessario
+  assigned_to       INT NULL,          -- FK users.id (default = admin studio)
+  assigned_email    NVARCHAR(255) NULL, -- email diretta override (se utente esterno)
 
   -- Stato operativo
   status            NVARCHAR(20) NOT NULL DEFAULT 'active',
@@ -142,7 +157,7 @@ CREATE TABLE deadline_items (
   completed_by      INT NULL,
   notes             NVARCHAR(MAX) NULL,
 
-  -- Alert
+  -- Alert (stessa logica documenti — riusa escalation org)
   alert_enabled     BIT NOT NULL DEFAULT 1,
 
   -- Metadati
@@ -157,8 +172,13 @@ CREATE TABLE deadline_items (
     FOREIGN KEY (source_document_id) REFERENCES document_registry(id)
 );
 
+-- Indice per query griglia: solo righe attive entro finestra 30 gg
 CREATE INDEX IX_deadline_items_org_due
   ON deadline_items (organization_id, due_date)
+  WHERE status = 'active';
+
+CREATE INDEX IX_deadline_items_company
+  ON deadline_items (company_id, due_date)
   WHERE status = 'active';
 
 CREATE INDEX IX_deadline_items_source
@@ -171,16 +191,21 @@ CREATE INDEX IX_deadline_items_assigned
 
 ### 4.2 Tabella `deadline_import_config` — mapping colonne per file
 
+Un'azienda puo' avere **piu' scadenziari** (file diversi). Ogni file ha il suo mapping salvato.
+
 ```sql
 CREATE TABLE deadline_import_config (
   id                INT IDENTITY(1,1) PRIMARY KEY,
-  document_id       INT NOT NULL UNIQUE,  -- FK document_registry.id
+  document_id       INT NOT NULL UNIQUE,  -- FK document_registry.id (il file Excel)
   organization_id   INT NOT NULL,
+  company_id        INT NULL,             -- FK companies.id
+  label             NVARCHAR(200) NULL,   -- etichetta scadenzario (es. "Tarature", "Polizze")
   sheet_name        NVARCHAR(100) NULL,
   date_column       NVARCHAR(100) NOT NULL,   -- nome colonna data scadenza
   title_column      NVARCHAR(100) NOT NULL,   -- nome colonna descrizione
   category_column   NVARCHAR(100) NULL,
   reference_column  NVARCHAR(100) NULL,
+  visibility_days   INT NOT NULL DEFAULT 30,  -- finestra visibilita' (default 30 gg, futuro: per tipo)
   auto_refresh      BIT NOT NULL DEFAULT 0,   -- se 1: ri-importa a ogni upload nuova versione
   last_import_at    DATETIME NULL,
   last_import_rows  INT NULL,
@@ -190,7 +215,10 @@ CREATE TABLE deadline_import_config (
 );
 ```
 
-Questa tabella **memorizza il mapping** tra colonne Excel e campi scadenzario, cosi' al prossimo upload della stessa tipologia il sistema sa gia' come interpretarlo.
+**Note sulla tabella config:**
+- `visibility_days` = 30 (default). In futuro potra' essere diverso per tipologia (es. patentini 60 gg)
+- `label` = nome descrittivo dello scadenzario (per distinguerli nella UI quando l'azienda ne ha piu' di uno)
+- Un'azienda puo' avere N righe qui (N file-scadenzario diversi)
 
 ---
 
@@ -264,34 +292,48 @@ Se `deadline_import_config.auto_refresh = 1`, quando l'utente carica una **nuova
 
 ## 6. Frontend — Integrazione nella Griglia Priorita'
 
-### 6.1 Estensione Tab Priorita' in DocumentRegistry
+### 6.1 Regola di visibilita': solo entro 30 giorni
 
-La tab Priorita' gia' mostra documenti scaduti/in scadenza. Si aggiunge una sezione:
+La query filtra: `WHERE due_date <= DATEADD(day, 30, GETDATE()) AND status = 'active'`
+
+Le righe con scadenza oltre 30 giorni **non appaiono** nella griglia (restano in DB, pronte per quando entreranno in finestra). Le righe gia' scadute restano visibili finche' non vengono marcate dall'admin.
+
+### 6.2 Estensione Tab Priorita' in DocumentRegistry
+
+La tab Priorita' gia' mostra documenti scaduti/in scadenza. Si aggiunge una sezione raggruppata per azienda e scadenzario:
 
 ```
 +------------------------------------------------------------------+
-| SCADENZE DA FILE IMPORTATI                           [icona xlsx] |
+| SCADENZE DA FILE — Azienda Rossi Srl              [icona xlsx]   |
+|  Scadenzario: Tarature strumenti                                  |
 +------------------------------------------------------------------+
 | SCADUTI (2)                                              rosso    |
-|  ⚠ Taratura torsiometro XYZ | Scad. 15/05/2026 | 📎 Scadenzario.xlsx |
-|  ⚠ Polizza RC n. 12345     | Scad. 01/06/2026 | 📎 Polizze.xlsx    |
+|  ⚠ Calibro C-015           | Scad. 05/03/2026 | 📎 Tarature.xlsx |
+|  ⚠ Manometro M-002         | Scad. 01/06/2026 | 📎 Tarature.xlsx |
 +------------------------------------------------------------------+
-| IN SCADENZA 30 GG (3)                                 arancione   |
-|  ● Qualifica Rossi ISO 9606 | Scad. 08/07/2026 | 📎 Qualifiche.xlsx |
-|  ...                                                               |
+| IN SCADENZA 30 GG (1)                                 arancione   |
+|  ● Torsiometro T-001       | Scad. 05/07/2026 | 📎 Tarature.xlsx |
++------------------------------------------------------------------+
+
++------------------------------------------------------------------+
+| SCADENZE DA FILE — Azienda Rossi Srl                              |
+|  Scadenzario: Polizze e certificazioni                            |
++------------------------------------------------------------------+
+| IN SCADENZA 30 GG (1)                                 arancione   |
+|  ● Polizza RC n.123        | Scad. 02/07/2026 | 📎 Polizze.xlsx  |
 +------------------------------------------------------------------+
 ```
 
 Ogni riga ha:
 - **Icona file** (click → apre `SpreadsheetViewer` gia' esistente puntando alla riga)
-- **Semaforo** (rosso/arancione/giallo/verde) calcolato da `due_date` vs oggi
-- **Assegnato a** (avatar o nome, click per modificare)
+- **Semaforo** (rosso = scaduto, arancione = entro 7 gg, giallo = entro 30 gg)
+- Raggruppamento per **azienda** → **scadenzario** (label da `deadline_import_config`)
 
-### 6.2 Widget Home
+### 6.3 Widget Home
 
-`HomePage.jsx` gia' ha le `AlertCard`. Si aggiunge una card "Scadenze da file" con count + top 3.
+`HomePage.jsx` gia' ha le `AlertCard`. Si aggiunge una card "Scadenze da file" con count totale scaduti + in scadenza 30 gg, top 3 urgenti.
 
-### 6.3 Dialog di Import
+### 6.4 Dialog di Import
 
 Quando il detector rileva uno scadenzario al momento dell'upload:
 
@@ -299,14 +341,16 @@ Quando il detector rileva uno scadenzario al momento dell'upload:
 +------------------------------------------+
 | 📊 File scadenzario rilevato             |
 +------------------------------------------+
-| "Scadenzario_2026.xlsx" contiene date    |
+| "Tarature_2026.xlsx" contiene date       |
 | di scadenza. Vuoi importarle?            |
 |                                          |
 | Colonna scadenza: [Data Scadenza ▼]     |
 | Colonna oggetto:  [Descrizione ▼]       |
 | Colonna codice:   [Rif. (opz.) ▼]      |
+| Etichetta:        [Tarature strumenti]   |
 |                                          |
-| Anteprima: 45 righe, 3 scadute          |
+| Anteprima: 45 righe totali              |
+|   di cui 3 scadute, 2 entro 30 gg       |
 |                                          |
 | [Annulla]              [Importa]         |
 +------------------------------------------+
@@ -316,16 +360,32 @@ Quando il detector rileva uno scadenzario al momento dell'upload:
 
 ## 7. Alert Email per Scadenze Importate
 
-Riuso completo del pattern `docAlertEscalation.service.js`:
+**Stessa logica dei documenti** — riuso completo delle soglie e della curva escalation gia' configurata per l'organizzazione.
 
-1. Il job cron `alertScheduler.js` aggiunge un ciclo sui `deadline_items` attivi
-2. Per ogni item con `alert_enabled = 1` e `assigned_email` (o email dell'`assigned_to`):
-   - Calcola giorni alla scadenza
-   - Applica soglie org (`alert_days_1`, `alert_days_2`) o custom
-   - Invia email se la soglia e' raggiunta e non gia' inviata (log anti-duplicati)
-3. Email contiene: titolo, data scadenza, link diretto al file sorgente, link allo scadenzario
+### Destinatario default
 
-**Destinatario**: l'utente assegnato (`assigned_to` → lookup email) oppure `assigned_email` diretto (per contatti esterni non registrati nel sistema).
+L'alert va all'**admin dello studio** (l'auditor/consulente che gestisce l'azienda cliente), non al soggetto indicato nella riga dello scadenzario. Motivazione: e' lo studio che deve attivarsi per ricordare al cliente la scadenza.
+
+Il destinatario si determina cosi':
+1. Se `deadline_items.assigned_to` e' valorizzato → email di quell'utente
+2. Se `assigned_email` e' valorizzato → usa quella
+3. Altrimenti (default) → `notifications_config.recipients_email` della org (= admin studio)
+
+### Frequenza e soglie
+
+Identiche a `docAlertEscalation.service.js`:
+- Usa `alert_days_1` e `alert_days_2` dalla `notifications_config` dell'org
+- Usa `doc_escalation_profile` (se configurato) per le soglie specifiche
+- Log anti-duplicati: riusa lo stesso pattern di `doc_notification_log`
+- Post-scadenza: promemoria giornaliero finche' l'item non viene marcato completato
+
+### Integrazione nel cron
+
+Il job cron `alertScheduler.js` aggiunge un ciclo:
+1. Query `deadline_items` dove `status = 'active'` e `due_date` entro finestra `alert_days_1`
+2. Per ogni item: calcola giorni alla scadenza, applica soglie org
+3. Invia email se soglia raggiunta e non gia' inviata
+4. Email contiene: titolo, data scadenza, nome azienda, link diretto al file sorgente
 
 ---
 
@@ -422,37 +482,64 @@ Per supportare un **nuovo tipo di file-scadenzario** (es. CSV export da altro ge
 
 ---
 
-## 11. Decisioni Richieste al Committente
+## 11. Decisioni Confermate e Punti Aperti
 
-| # | Domanda | Opzioni | Raccomandazione |
-|---|---------|---------|-----------------|
-| 1 | Il detector propone l'import automaticamente al caricamento? | A) Si', se confidence alta B) Sempre chiede conferma | **B** — l'utente vede l'anteprima e conferma il mapping |
-| 2 | Dove si vede lo scadenzario? | A) Nuova pagina dedicata `/deadlines` B) Sezione nella Tab Priorita' C) Entrambi | **C** — pagina dedicata + widget in Priorita'/Home |
-| 3 | Alert email all'assegnatario? | A) Si' con soglie configurabili B) Solo notifica in-app | **A** — email come i documenti |
-| 4 | Auto-refresh quando il file viene sostituito? | A) Si' automatico B) Chiede conferma C) Mai | **B** — conferma per evitare sorprese |
-| 5 | Priorita' rispetto ad altri task in roadmap? | Decidere committente | Dopo ADR-009 Fase 2 (consigliato) |
+### Confermate (08/06/2026)
+
+| # | Decisione | Valore |
+|---|-----------|--------|
+| 1 | Multi-scadenzario per azienda | Si' — N file diversi per la stessa azienda |
+| 2 | Destinatario alert default | Admin dello studio (consulente/auditor che gestisce il cliente) |
+| 3 | Finestra visibilita' griglia | 30 giorni (scadenze oltre 30 gg non visibili in griglia) |
+| 4 | Frequenza alert email | Stessa dei documenti (escalation org) |
+| 5 | Scaduti | Restano visibili finche' non completati/archiviati |
+
+### Punti aperti (da decidere in seguito)
+
+| # | Punto | Note |
+|---|-------|------|
+| 1 | Finestra configurabile per tipo scadenzario? | Es. patentini 60 gg, polizze 30 gg — campo `visibility_days` gia' predisposto |
+| 2 | Priorita' rispetto ad altri task in roadmap? | Dopo ADR-009 Fase 2? |
+
+### Possibili dimenticanze — checklist da validare
+
+| # | Aspetto | Domanda | Suggerimento |
+|---|---------|---------|--------------|
+| 1 | **Scaduti da molto tempo** | Se una riga e' scaduta da 6 mesi e nessuno la segna "completata", continua a ricevere email giornaliere? | Propongo: dopo 90 gg di ritardo senza azione → ridurre a 1 email/settimana (evita "alert fatigue") |
+| 2 | **Chi puo' importare** | Solo admin studio o anche l'azienda cliente (se ha accesso WRITE)? | Propongo: admin studio + ruoli con permesso `manage_documents` |
+| 3 | **Eliminazione file sorgente** | Se il file Excel viene eliminato dal registro, che succede alle scadenze importate? | Propongo: le scadenze restano (con nota "file sorgente rimosso") — non si perdono |
+| 4 | **Duplicati tra scadenzari e registro documenti** | Un documento gia' nel registro con `expiry_date` che appare ANCHE nello scadenzario Excel → doppia notifica? | Propongo: warning in fase di import ("Questa riga sembra duplicata con documento X nel registro") |
+| 5 | **Notifica all'azienda cliente** | L'admin studio riceve l'alert. Puo' poi inoltrare/delegare all'azienda? | Propongo: pulsante "Notifica cliente" che invia email con testo personalizzabile |
+| 6 | **Storicizzazione** | Quando una scadenza viene rinnovata (nuovo file con data aggiornata), si tiene traccia della vecchia data? | Propongo: si' — campo `previous_due_date` o log nel refresh automatico |
+| 7 | **Export/stampa** | Serve un export Excel/PDF dello scadenzario filtrato per l'azienda? | Propongo: si' — utile come report per il cliente (riesame direzione, audit) |
+| 8 | **Badge sidebar** | Aggiungere conteggio scadenze da file nel badge gia' esistente su "Documenti"? | Propongo: si' — sommato al conteggio documenti, oppure badge separato su voce "Scadenzari" |
 
 ---
 
 ## 12. Esempio Pratico End-to-End
 
-1. L'utente carica `Scadenzario_Strumenti_2026.xlsx` nel registro documenti (tipo: `registro_interno`)
-2. Il file contiene:
+1. Lo studio "Camellini" gestisce l'azienda "Rossi Srl"
+2. Camellini carica `Scadenzario_Strumenti_2026.xlsx` nel registro documenti di Rossi Srl (tipo: `registro_interno`)
+3. Il file contiene:
 
 | N. | Strumento | S/N | Data Taratura | **Data Scadenza** | Responsabile |
 |----|-----------|-----|---------------|-------------------|--------------|
 | 1 | Torsiometro | T-001 | 10/01/2026 | **10/01/2027** | Rossi |
 | 2 | Calibro | C-015 | 05/03/2025 | **05/03/2026** | Bianchi |
-| 3 | Amperometro | A-008 | 20/06/2026 | **20/06/2027** | Rossi |
+| 3 | Amperometro | A-008 | 20/05/2026 | **20/06/2026** | Rossi |
+| 4 | Micrometro | M-003 | 01/01/2026 | **01/01/2027** | Verdi |
 
-3. Il detector rileva: colonna "Data Scadenza" → match pattern, confidence 0.95
-4. Dialog: "File scadenzario rilevato — 3 righe con scadenze. Importare?"
-5. L'utente conferma. Il sistema crea 3 `deadline_items`:
-   - Calibro C-015 → **SCADUTO** (05/03/2026 < oggi 08/06/2026) → rosso in griglia
-   - Torsiometro T-001 → in scadenza tra 7 mesi → verde
-   - Amperometro A-008 → in scadenza tra 12 mesi → verde
-6. L'utente assegna "Calibro C-015" a Bianchi con alert → Bianchi riceve email
-7. Click su icona file → si apre `SpreadsheetViewer` con il foglio originale
+4. Il detector rileva: colonna "Data Scadenza" → match pattern, confidence 0.95
+5. Dialog: "File scadenzario rilevato — 4 righe. Vuoi importarle? Etichetta: [Tarature strumenti]"
+6. Camellini conferma. Il sistema crea 4 `deadline_items` per Rossi Srl
+7. **Nella griglia priorita' appaiono SOLO** (oggi = 08/06/2026, finestra 30 gg = fino a 08/07/2026):
+   - Calibro C-015 → **SCADUTO** (05/03/2026 < oggi) → rosso
+   - Amperometro A-008 → **in scadenza** (20/06/2026, tra 12 gg) → arancione
+   - ~~Torsiometro T-001~~ → 10/01/2027 (oltre 30 gg) → **NON mostrato**
+   - ~~Micrometro M-003~~ → 01/01/2027 (oltre 30 gg) → **NON mostrato**
+8. **Camellini** (admin studio) riceve alert email per Calibro e Amperometro secondo le soglie configurate
+9. Click su icona file → si apre `SpreadsheetViewer` con il foglio originale
+10. Quando Camellini rinnova la taratura del calibro, segna "Completato" → sparisce dalla griglia
 
 ---
 
