@@ -3,8 +3,8 @@
  * Analizza le intestazioni di ogni foglio e restituisce, per ciascuno,
  * la colonna-scadenza rilevata, la colonna-descrizione e un confidence score.
  *
- * Non richiede API esterne ó solo SheetJS (xlsx) gi‡ nel progetto.
- * ADR-013 ß2.1 ó S1
+ * Non richiede API esterne ù solo SheetJS (xlsx) giù nel progetto.
+ * ADR-013 ù2.1 ù S1
  */
 'use strict';
 
@@ -29,10 +29,25 @@ const DEADLINE_COLUMN_PATTERNS = [
   /renewal/i,
   /data.*verifica/i,
   /prossim.*controllo/i,
+  /prossim.*(verifica|manutenzione|revisione|ispezione|controllo)/i,
+  /ultima.*(verifica|manutenzione|revisione|del|scadenza)/i,
   /scad/i,
+  // "data" semplice in italiano (ambiguo ma frequente negli scadenzari)
+  /^data$/i,
+  /^date$/i,
+  // Colonne frequenti negli scadenzari italiani
+  /^prossima$/i,       // prossima manutenzione/verifica (colonna standalone)
+  /^ultima$/i,         // ultima verifica (data precedente ù usata come riferimento)
+  /\bvalidit/i,        // validitù (senza "fine" o "fino")
+  /verifica\s*periodica/i,
+  /certificazione/i,
+  /revisione/i,
+  /manutenzione/i,
+  /ispezione/i,
+  /collaudo/i,
 ];
 
-// ?? Pattern colonne-descrizione ???????????????????????????????????????????????
+// ?? Pattern colonne-descrizione ??????????????????????????????????????????????
 const LABEL_COLUMN_PATTERNS = [
   /descrizione/i,
   /oggetto/i,
@@ -40,6 +55,8 @@ const LABEL_COLUMN_PATTERNS = [
   /nome/i,
   /documento/i,
   /attivit/i,
+  /argomento/i,
+  /elemento/i,
   /item/i,
   /subject/i,
   /cosa/i,
@@ -47,12 +64,15 @@ const LABEL_COLUMN_PATTERNS = [
   /rif/i,
   /strumento/i,
   /attrezzatura/i,
+  /apparecchiatura/i,
+  /impianto/i,
+  /denominazione/i,
 ];
 
 // ?? Helpers ???????????????????????????????????????????????????????????????????
 
 /**
- * Verifica se un valore Ë interpretabile come data.
+ * Verifica se un valore ù interpretabile come data.
  * Accetta: oggetti Date, serial Excel (numero), stringhe data.
  * @param {*} v
  * @returns {boolean}
@@ -73,7 +93,7 @@ function isDateLike(v) {
 }
 
 /**
- * Restituisce true se la maggioranza dei valori nel campione Ë date-like.
+ * Restituisce true se la maggioranza dei valori nel campione ù date-like.
  * @param {Array} sample  valori della colonna (fino a 5 righe)
  * @returns {boolean}
  */
@@ -85,20 +105,26 @@ function columnHasDates(sample) {
 }
 
 /**
- * Cerca la prima colonna il cui header matcha i pattern e i cui valori sono date.
+ * Cerca la colonna il cui header matcha i pattern e i cui valori sono date.
+ * Scansione per pattern (ordine prioritù) ù restituisce la prima colonna che
+ * soddisfa il pattern più prioritario. Questo evita che "ultima" (passato)
+ * venga preferita a "prossima" (futuro) solo perchù ha indice di colonna inferiore.
  * @param {string[]} headers
  * @param {Array[]} dataRows  prime righe dati (max 5)
  * @param {RegExp[]} patterns
+ * @param {boolean} checkDates ù se true verifica che la colonna contenga date
  * @returns {number} indice colonna, -1 se non trovato
  */
-function findColumnByPattern(headers, dataRows, patterns) {
-  for (let i = 0; i < headers.length; i++) {
-    const h = headers[i];
-    if (!patterns.some(p => p.test(h))) continue;
-    // Per le colonne-data verifica anche i valori; per le label basta il nome
-    const colValues = dataRows.map(row => (row ? row[i] : undefined));
-    if (patterns === DEADLINE_COLUMN_PATTERNS && !columnHasDates(colValues)) continue;
-    return i;
+function findColumnByPattern(headers, dataRows, patterns, checkDates) {
+  for (const pattern of patterns) {
+    for (let i = 0; i < headers.length; i++) {
+      if (!pattern.test(headers[i])) continue;
+      if (checkDates) {
+        const colValues = dataRows.map(row => (row ? row[i] : undefined));
+        if (!columnHasDates(colValues)) continue;
+      }
+      return i;
+    }
   }
   return -1;
 }
@@ -107,23 +133,20 @@ function findColumnByPattern(headers, dataRows, patterns) {
  * Cerca la colonna-scadenza verificando sia nome che contenuto.
  */
 function findDateColumn(headers, dataRows) {
-  return findColumnByPattern(headers, dataRows, DEADLINE_COLUMN_PATTERNS);
+  return findColumnByPattern(headers, dataRows, DEADLINE_COLUMN_PATTERNS, true);
 }
 
 /**
  * Cerca la colonna-descrizione (basta il nome).
  */
 function findTitleColumn(headers) {
-  for (let i = 0; i < headers.length; i++) {
-    if (LABEL_COLUMN_PATTERNS.some(p => p.test(headers[i]))) return i;
-  }
-  return -1;
+  return findColumnByPattern(headers, [], LABEL_COLUMN_PATTERNS, false);
 }
 
 /**
- * Calcola il confidence score (0ñ1) per il foglio rilevato.
+ * Calcola il confidence score (0ù1) per il foglio rilevato.
  * Alta (>0.8): header esplicito + date valide in >80% dei valori
- * Media (0.5ñ0.8): header parziale o date poche
+ * Media (0.5ù0.8): header parziale o date poche
  * Bassa (<0.5): nessuna corrispondenza forte
  *
  * @param {string[]} headers
@@ -142,11 +165,12 @@ function calculateConfidence(headers, dataRows, dateColIdx) {
 
   // Bonus per header molto esplicito
   const isExplicitHeader = /scadenza|due\s*date|expiry|expiration|data\s*scadenza|validit/i.test(header);
-  const isAmbiguousHeader = /^data$/i.test(header.trim()) || /^date$/i.test(header.trim());
+  const isAmbiguousHeader = /^(data|date|prossima|ultima|revisione|manutenzione|ispezione|collaudo)$/i.test(header.trim()) || /\bvalidit/i.test(header);
 
   let score = dateRatio * 0.6;
   if (isExplicitHeader) score += 0.35;
   else if (!isAmbiguousHeader) score += 0.15;
+  else score += 0.1; // ambiguous ("data", "prossima", ecc.) ma con date: piccolo bonus
 
   return Math.min(1, Math.max(0, parseFloat(score.toFixed(2))));
 }
@@ -169,6 +193,24 @@ function calculateConfidence(headers, dataRows, dateColIdx) {
  *   totalRows: number
  * }>}
  */
+/**
+ * Determina quale riga del foglio contiene gli header reali.
+ * Molti Excel italiani hanno una riga-titolo in row 0 e gli header in row 1.
+ * @param {Array[]} rows  tutte le righe del foglio
+ * @returns {number}  indice della riga header (0 o 1)
+ */
+function detectHeaderRow(rows) {
+  if (rows.length < 2) return 0;
+  const row0 = (rows[0] || []).filter(c => c !== null && c !== undefined && c !== '');
+  const row1 = (rows[1] || []).filter(c => c !== null && c !== undefined && c !== '');
+  // Se row 0 ha meno di 3 celle non vuote e row 1 ne ha di più, usa row 1
+  if (row0.length < 3 && row1.length >= 3) return 1;
+  // Se row 0 ha celle molto lunghe (> 50 char) ù probabilmente un titolo
+  const avgLen0 = row0.reduce((s, c) => s + String(c).length, 0) / (row0.length || 1);
+  if (avgLen0 > 50 && row1.length >= row0.length) return 1;
+  return 0;
+}
+
 function detectDeadlineSheets(buffer) {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const results = [];
@@ -178,8 +220,11 @@ function detectDeadlineSheets(buffer) {
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
     if (json.length < 2) continue;
 
-    const headers = (json[0] || []).map(h => String(h == null ? '' : h).trim());
-    const dataRows = json.slice(1, 6); // prime 5 righe per analisi
+    const headerRowIdx = detectHeaderRow(json);
+    const headers = (json[headerRowIdx] || []).map(h => String(h == null ? '' : h).trim());
+    const dataRows = json.slice(headerRowIdx + 1, headerRowIdx + 6); // prime 5 righe dati
+    if (dataRows.length === 0) continue;
+
     const dateColIdx = findDateColumn(headers, dataRows);
     const titleColIdx = findTitleColumn(headers);
 
@@ -195,10 +240,11 @@ function detectDeadlineSheets(buffer) {
       dateColumnIndex: dateColIdx,
       titleColumn: headers[titleColIdx],
       titleColumnIndex: titleColIdx,
+      headerRowIndex: headerRowIdx,
       confidence,
       confidenceLevel,
-      sampleRows: json.slice(1, 4),
-      totalRows: json.length - 1,
+      sampleRows: json.slice(headerRowIdx + 1, headerRowIdx + 4),
+      totalRows: json.length - headerRowIdx - 1,
     });
   }
 
@@ -206,7 +252,7 @@ function detectDeadlineSheets(buffer) {
 }
 
 /**
- * Wrapper di convenienza: restituisce il risultato in formato ADR ß5.3.
+ * Wrapper di convenienza: restituisce il risultato in formato ADR ù5.3.
  * @param {Buffer} buffer
  * @returns {{
  *   isDeadlineFile: boolean,
@@ -243,4 +289,5 @@ module.exports = {
   _isDateLike: isDateLike,
   _columnHasDates: columnHasDates,
   _calculateConfidence: calculateConfidence,
+  _detectHeaderRow: detectHeaderRow,
 };
