@@ -54,6 +54,7 @@ function buildNavItems(user, alerts = {}) {
       group: "SGQ",
       items: filterByLicense([
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
+        { to: "/deadlines",   icon: "\uD83D\uDCC5", label: "Scadenzari", licenseKey: "documents" },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
         { to: "/nc",          icon: "🚨", label: "Non Conformità", licenseKey: "nc" },
         { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", licenseKey: "rischi" },
