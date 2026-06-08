@@ -9,6 +9,7 @@ import apiService from "../services/apiService";
 import DocumentPdfViewer from "./DocumentPdfViewer";
 import DocumentDocxViewer from "./DocumentDocxViewer";
 import SpreadsheetViewer from "./SpreadsheetViewer";
+import DeadlineImportDialog from "./DeadlineImportDialog";
 import "./DocFileDialog.css";
 
 /** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
@@ -77,6 +78,11 @@ function DocFileDialog({ doc, onClose }) {
   const [officeError, setOfficeError] = useState(null);
   const [webdavData, setWebdavData] = useState(null);
   const [showEditAlert, setShowEditAlert] = useState(false);
+
+  // ADR-013: detect scadenzario dopo upload Excel/CSV
+  const [deadlineDetection,  setDeadlineDetection]  = useState(null);
+  const [showImportDialog,   setShowImportDialog]    = useState(false);
+  const [importingDeadlines, setImportingDeadlines]  = useState(false);
 
   const fileInputRef = useRef(null);
   const officeDesktop = canUseOfficeDesktop();
@@ -158,6 +164,18 @@ function DocFileDialog({ doc, onClose }) {
       setFileObj(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadFiles();
+
+      // ADR-013: se il file e' un foglio di calcolo, tenta rilevamento scadenzario
+      const uploadedExt = getExt(res.file_name || fileObj?.name || '');
+      if (['.xlsx', '.xls', '.csv', '.ods'].includes(uploadedExt)) {
+        try {
+          const detection = await apiService.detectDeadlines(doc.id);
+          if (detection?.isDeadlineFile) {
+            setDeadlineDetection(detection);
+            setShowImportDialog(true);
+          }
+        } catch { /* non bloccante */ }
+      }
     } catch (err) {
       setUploadErr(err.message);
     } finally {
@@ -554,6 +572,28 @@ function DocFileDialog({ doc, onClose }) {
             attachmentId={xlsxViewerAttId}
             fileName={xlsxViewerName}
             onClose={() => setXlsxViewerOpen(false)}
+          />
+        )}
+        {/* ADR-013: dialog import scadenzario */}
+        {showImportDialog && deadlineDetection && (
+          <DeadlineImportDialog
+            detection={deadlineDetection}
+            documentId={doc.id}
+            loading={importingDeadlines}
+            onClose={() => { setShowImportDialog(false); setDeadlineDetection(null); }}
+            onConfirm={async (mapping) => {
+              setImportingDeadlines(true);
+              try {
+                const result = await apiService.importDeadlines(doc.id, mapping);
+                setShowImportDialog(false);
+                setDeadlineDetection(null);
+                setUploadOk(prev => (prev || '') + ` ${result.inserted} scadenze importate.`);
+              } catch (err) {
+                alert('Errore import scadenze: ' + err.message);
+              } finally {
+                setImportingDeadlines(false);
+              }
+            }}
           />
         )}
       </div>

@@ -1,0 +1,108 @@
+/* DeadlinesPage */
+
+.dl-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dl-page-header { display: flex; flex-direction: column; gap: 4px; }
+.dl-page-title  { margin: 0; font-size: 1.5rem; font-weight: 700; color: #111827; }
+.dl-page-subtitle { margin: 0; font-size: 0.9rem; color: #6b7280; }
+
+/* Stats bar */
+.dl-stats-bar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dl-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.dl-stat-num { font-size: 1.6rem; font-weight: 700; color: #1f2937; line-height: 1; }
+.dl-stat-lbl { font-size: 0.72rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.dl-stat--red    .dl-stat-num { color: #dc2626; }
+.dl-stat--orange .dl-stat-num { color: #d97706; }
+.dl-stat--gray   .dl-stat-num { color: #9ca3af; }
+
+/* Semaforo */
+.dl-semaforo { font-size: 1rem; display: inline-block; }
+
+/* Date e giorni */
+.dl-date.dl-red, .dl-days.dl-red     { color: #dc2626; font-weight: 600; }
+.dl-date.dl-orange, .dl-days.dl-orange { color: #d97706; font-weight: 600; }
+.dl-date.dl-green,  .dl-days.dl-green  { color: #059669; }
+
+/* Status badge */
+.dl-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.dl-status--active             { background: #dbeafe; color: #1e40af; }
+.dl-status--completed          { background: #d1fae5; color: #065f46; }
+.dl-status--dismissed          { background: #f3f4f6; color: #6b7280; }
+.dl-status--expired_acknowledged { background: #fef9c3; color: #854d0e; }
+
+/* Bottone completamento */
+.dl-complete-btn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.dl-complete-btn:hover:not(:disabled) { background: #f0fdf4; border-color: #86efac; color: #166534; }
+.dl-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Riga urgente */
+.sgq-datagrid-row.dl-row--urgent { background: #fff5f5; }
+.sgq-datagrid-row.dl-row--urgent:hover { background: #fee2e2; }
+
+/* Errore */
+.dl-error {
+  padding: 10px 14px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dl-error button {
+  padding: 3px 10px;
+  border: 1px solid #f87171;
+  border-radius: 5px;
+  background: #fff;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .dl-page { padding: 14px; }
+  .dl-page-title { font-size: 1.2rem; }
+}
