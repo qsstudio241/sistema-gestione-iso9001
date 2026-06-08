@@ -1,5 +1,5 @@
 /**
- * deadlines.controller.js ó Scadenzario da file (ADR-013)
+ * deadlines.controller.js ù Scadenzario da file (ADR-013)
  *
  * S3: POST /documents/:id/detect-deadlines  ? analisi euristica del file
  * S4: POST /documents/:id/import-deadlines  ? import righe in deadline_items
@@ -183,7 +183,11 @@ async function importDeadlines(req, res) {
         const rows    = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
         if (rows.length < 2) return res.status(400).json({ error: 'Il foglio non contiene dati sufficienti.' });
 
-        const headers    = (rows[0] || []).map(h => String(h ?? '').trim());
+        // Rileva la riga header (row 0 o row 1 se row 0 e' titolo)
+        const { _detectHeaderRow } = require('../utils/excelDeadlineDetector');
+        const headerRowIdx = typeof _detectHeaderRow === 'function' ? _detectHeaderRow(rows) : 0;
+
+        const headers    = (rows[headerRowIdx] || []).map(h => String(h ?? '').trim());
         const dateIdx    = headers.indexOf(dateColumn);
         const titleIdx   = headers.indexOf(titleColumn);
         const catIdx     = categoryColumn ? headers.indexOf(categoryColumn) : -1;
@@ -231,7 +235,7 @@ async function importDeadlines(req, res) {
         let inserted = 0, skipped = 0;
         const today = new Date(); today.setHours(0, 0, 0, 0);
 
-        for (let rowNum = 1; rowNum < rows.length; rowNum++) {
+        for (let rowNum = headerRowIdx + 1; rowNum < rows.length; rowNum++) {
             const row = rows[rowNum];
             if (!row || row.every(c => c == null || c === '')) continue;
 
