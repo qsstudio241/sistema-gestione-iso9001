@@ -298,63 +298,75 @@ La query filtra: `WHERE due_date <= DATEADD(day, 30, GETDATE()) AND status = 'ac
 
 Le righe con scadenza oltre 30 giorni **non appaiono** nella griglia (restano in DB, pronte per quando entreranno in finestra). Le righe gia' scadute restano visibili finche' non vengono marcate dall'admin.
 
-### 6.2 Estensione Tab Priorita' in DocumentRegistry
+### 6.2 Tab Priorita' come DataGrid (non cards)
 
-La tab Priorita' gia' mostra documenti scaduti/in scadenza. Si aggiunge una sezione raggruppata per azienda e scadenzario:
+**Decisione**: la tab Priorita' deve essere una **griglia tabellare** (DataGrid), non un layout a cards. Motivazione:
+- Piu' compatta (molte righe visibili insieme)
+- Esportabile nativamente (Excel/CSV)
+- Filtrabile e ordinabile per colonna
+- Pattern riusabile e scalabile per altre griglie future
 
-```
-+------------------------------------------------------------------+
-| SCADENZE DA FILE — Azienda Rossi Srl              [icona xlsx]   |
-|  Scadenzario: Tarature strumenti                                  |
-+------------------------------------------------------------------+
-| SCADUTI (2)                                              rosso    |
-|  ⚠ Calibro C-015           | Scad. 05/03/2026 | 📎 Tarature.xlsx |
-|  ⚠ Manometro M-002         | Scad. 01/06/2026 | 📎 Tarature.xlsx |
-+------------------------------------------------------------------+
-| IN SCADENZA 30 GG (1)                                 arancione   |
-|  ● Torsiometro T-001       | Scad. 05/07/2026 | 📎 Tarature.xlsx |
-+------------------------------------------------------------------+
+**Questo e' il primo banco prova per un componente `<DataGridExportable />` standardizzato** da riutilizzare ovunque serva una griglia esportabile (qualifiche, NC, azioni, ecc.).
 
-+------------------------------------------------------------------+
-| SCADENZE DA FILE — Azienda Rossi Srl                              |
-|  Scadenzario: Polizze e certificazioni                            |
-+------------------------------------------------------------------+
-| IN SCADENZA 30 GG (1)                                 arancione   |
-|  ● Polizza RC n.123        | Scad. 02/07/2026 | 📎 Polizze.xlsx  |
-+------------------------------------------------------------------+
-```
+Colonne della griglia:
 
-Ogni riga ha:
-- **Icona file** (click → apre `SpreadsheetViewer` gia' esistente puntando alla riga)
-- **Semaforo** (rosso = scaduto, arancione = entro 7 gg, giallo = entro 30 gg)
-- Raggruppamento per **azienda** → **scadenzario** (label da `deadline_import_config`)
+| Colonna | Contenuto | Ordinabile | Filtrabile |
+|---------|-----------|:----------:|:----------:|
+| Semaforo | Icona rosso/arancione/giallo | Si' (per urgenza) | - |
+| Oggetto | Titolo della scadenza | Si' | Si' (ricerca) |
+| Scadenza | Data formattata | Si' | Si' (range) |
+| Giorni | +N o -N dalla scadenza | Si' | - |
+| Tipo | Documento / Riga scadenzario | - | **Si'** (filtro chiave) |
+| File origine | Nome file sorgente (link) | - | **Si'** (filtro per file) |
+| Azienda | Nome azienda cliente | Si' | Si' |
+| Stato | active / completed | - | Si' |
 
-### 6.3 Widget Home
+**Filtri chiave** (toolbar sopra la griglia):
+- **Tipo**: `[Tutti] [Documenti] [Righe scadenzario]` — distingue documenti con `expiry_date` da righe importate da file
+- **File origine**: dropdown con lista scadenziari importati — filtra per sorgente specifica
+- **Azienda**: dropdown aziende
 
-`HomePage.jsx` gia' ha le `AlertCard`. Si aggiunge una card "Scadenze da file" con count totale scaduti + in scadenza 30 gg, top 3 urgenti.
+### 6.3 Badge sidebar
 
-### 6.4 Dialog di Import
+Le scadenze da file vengono **sommate** al badge "Documenti" (unico contatore per tutte le urgenze documentali). La distinzione avviene tramite i filtri nella griglia, non con badge separati.
+
+### 6.4 Widget Home
+
+`HomePage.jsx`: card "Scadenze urgenti" con count totale (documenti + righe scadenzario), top 3.
+
+### 6.5 Dialog di Import
 
 Quando il detector rileva uno scadenzario al momento dell'upload:
 
 ```
 +------------------------------------------+
-| 📊 File scadenzario rilevato             |
+| File scadenzario rilevato                |
 +------------------------------------------+
 | "Tarature_2026.xlsx" contiene date       |
 | di scadenza. Vuoi importarle?            |
 |                                          |
-| Colonna scadenza: [Data Scadenza ▼]     |
-| Colonna oggetto:  [Descrizione ▼]       |
-| Colonna codice:   [Rif. (opz.) ▼]      |
+| Colonna scadenza: [Data Scadenza v]     |
+| Colonna oggetto:  [Descrizione v]       |
+| Colonna codice:   [Rif. (opz.) v]      |
 | Etichetta:        [Tarature strumenti]   |
 |                                          |
 | Anteprima: 45 righe totali              |
 |   di cui 3 scadute, 2 entro 30 gg       |
+|   1 riga ignorata (documento gia' in DB)|
 |                                          |
 | [Annulla]              [Importa]         |
 +------------------------------------------+
 ```
+
+### 6.6 Export griglia
+
+Pulsante "Esporta" nella toolbar della griglia:
+- **Excel** (.xlsx) con tutte le righe visibili (filtrate)
+- **CSV** come alternativa
+- Header colonne in italiano
+- Filtri applicati riflessi nell'export (non tutto il DB)
+
+**Questo pattern di export diventa lo standard** per tutte le griglie future dell'app.
 
 ---
 
@@ -378,14 +390,17 @@ Identiche a `docAlertEscalation.service.js`:
 - Usa `doc_escalation_profile` (se configurato) per le soglie specifiche
 - Log anti-duplicati: riusa lo stesso pattern di `doc_notification_log`
 - Post-scadenza: promemoria giornaliero finche' l'item non viene marcato completato
+- **Anti-fatigue**: dopo 90 giorni di ritardo senza azione → ridurre a **1 email/settimana** (evita bombardamento)
 
 ### Integrazione nel cron
 
 Il job cron `alertScheduler.js` aggiunge un ciclo:
 1. Query `deadline_items` dove `status = 'active'` e `due_date` entro finestra `alert_days_1`
 2. Per ogni item: calcola giorni alla scadenza, applica soglie org
-3. Invia email se soglia raggiunta e non gia' inviata
-4. Email contiene: titolo, data scadenza, nome azienda, link diretto al file sorgente
+3. Se ritardo > 90 gg: invia solo 1/settimana (lunedi')
+4. Invia email se soglia raggiunta e non gia' inviata
+5. Email contiene: titolo, data scadenza, nome azienda, link diretto al file sorgente
+6. L'admin **inoltra manualmente** l'email al cliente — nessun pulsante dedicato nell'app
 
 ---
 
@@ -428,9 +443,11 @@ Il job cron `alertScheduler.js` aggiunge un ciclo:
 ### Best practice per la conservazione (ISO 9001 §7.5.3)
 
 - **Tracciabilita' fonte**: ogni record nello scadenzario mantiene link al file originale (auditabile)
-- **Versioning**: quando il file viene aggiornato, le scadenze si aggiornano di conseguenza
+- **Versioning**: quando il file viene aggiornato, le scadenze si aggiornano di conseguenza (auto-refresh o manuale)
 - **Audit trail**: chi ha importato, quando, quale mapping ha usato
-- **Non-repudiabilita'**: il file sorgente resta nel registro documenti (non cancellabile se ha scadenze attive)
+- **Cascade coerente**: eliminando il file sorgente si eliminano le scadenze importate (warning preventivo)
+- **Dedup**: nessuna doppia notifica tra scadenze di registro e righe importate da file
+- **Editing tracciato**: il file Excel vive nel registro documenti con revisioning standard
 
 ---
 
@@ -472,47 +489,112 @@ Per supportare un **nuovo tipo di file-scadenzario** (es. CSV export da altro ge
 | **S1** | `xlsx` nel backend + servizio detector (`excelDeadlineDetector.js`) | Dato un buffer Excel, restituisce `{ isDeadline, columns, confidence }` con test L1 | Nessuna |
 | **S2** | Migrazione DB `deadline_items` + `deadline_import_config` | Tabelle create, idempotente | Nessuna |
 | **S3** | API `POST /documents/:id/detect-deadlines` | Endpoint che ritorna il risultato di S1 | S1 |
-| **S4** | API `POST /documents/:id/import-deadlines` + `GET /deadline-items` | Import righe + lista filtrata | S1, S2 |
-| **S5** | Frontend: dialog import al caricamento + pagina `/deadlines` | UI funzionale con griglia | S3, S4 |
-| **S6** | Integrazione in Tab Priorita' + Home widget | Scadenze da file visibili dove gia' si guardano le urgenze | S4 |
-| **S7** | Assegnazione utente + alert email (job cron) | L'assegnatario riceve email a soglie | S4 + alertScheduler |
-| **S8** | Auto-refresh al replace documento | Ri-import automatico quando il file viene aggiornato | S4 |
+| **S4** | API `POST /documents/:id/import-deadlines` + `GET /deadline-items` con logica dedup | Import righe (ignora se documento gia' in DB) + lista filtrata 30 gg | S1, S2 |
+| **S5** | Componente `<DataGridExportable />` + export Excel | Griglia standardizzata con filtri + pulsante export `.xlsx` — **primo banco prova scalabile** | Nessuna |
+| **S6** | Frontend: dialog import al caricamento + pagina `/deadlines` con DataGrid | UI funzionale con griglia, filtri tipo/file/azienda | S3, S4, S5 |
+| **S7** | Integrazione Tab Priorita' (DataGrid) + badge sidebar + Home widget | Tab Priorita' diventa griglia; scadenze sommate al badge | S4, S5 |
+| **S8** | Assegnazione utente + alert email (job cron) con regola 90 gg | Alert a admin studio, anti-fatigue dopo 90 gg | S4 + alertScheduler |
+| **S9** | Cascade delete + warning UI alla cancellazione file | Elimina righe importate; dialog conferma | S4 |
+| **S10** | Auto-refresh al replace/edit documento | Ri-import automatico quando il file viene aggiornato con tracking revisione | S4 |
 
-**Ordine consigliato**: S1 → S2 → S3 → S4 → S5 → S6 → S7 → S8
+**Ordine consigliato**: S1 → S2 → S5 → S3 → S4 → S6 → S7 → S8 → S9 → S10
+
+**Nota**: S5 (DataGridExportable) puo' partire in parallelo con S1/S2 perche' non ha dipendenze. E' il componente "fondazione" che poi viene usato ovunque.
 
 ---
 
-## 11. Decisioni Confermate e Punti Aperti
+## 11. Decisioni Confermate
 
-### Confermate (08/06/2026)
+### Tutte confermate (08/06/2026)
 
 | # | Decisione | Valore |
 |---|-----------|--------|
 | 1 | Multi-scadenzario per azienda | Si' — N file diversi per la stessa azienda |
-| 2 | Destinatario alert default | Admin dello studio (consulente/auditor che gestisce il cliente) |
-| 3 | Finestra visibilita' griglia | 30 giorni (scadenze oltre 30 gg non visibili in griglia) |
+| 2 | Destinatario alert default | Admin dello studio che gestisce il cliente |
+| 3 | Finestra visibilita' griglia | 30 giorni (oltre non si mostra; futuro: configurabile per tipo) |
 | 4 | Frequenza alert email | Stessa dei documenti (escalation org) |
-| 5 | Scaduti | Restano visibili finche' non completati/archiviati |
+| 5 | Anti-fatigue | Dopo 90 gg di ritardo senza azione → 1 email/settimana |
+| 6 | Chi puo' importare | Admin studio + azienda cliente (se ha accesso WRITE) |
+| 7 | Eliminazione file sorgente | **Cascade delete** delle righe importate + **warning** all'utente prima della cancellazione ("Attenzione: questo file ha N scadenze importate che verranno eliminate") |
+| 8 | Dedup con registro documenti | Se una riga dello scadenzario corrisponde a un documento **gia' presente nel DB con `expiry_date`**, la riga viene **ignorata** (la scadenza e' gia' gestita dal registro). I due sistemi sono scollegati — niente doppia notifica |
+| 9 | Notifica al cliente | L'admin riceve l'email e la **inoltra manualmente** al cliente. Nessun pulsante dedicato |
+| 10 | Editing/versioning file | Il documento scadenzario viene aperto e modificato **tramite l'app** (Office round-trip / SpreadsheetViewer). Le modifiche sono tracciate come per tutti i documenti editabili (revisione, storico) |
+| 11 | Export griglia | Primo **banco prova** per un componente griglia esportabile **standardizzato e scalabile** — da riusare per qualifiche, NC, azioni, ecc. |
+| 12 | Badge sidebar | Scadenze da file **sommate** al badge "Documenti" |
+| 13 | Filtri nella griglia | Filtro per distinguere documenti da righe scadenzario + filtro per file di origine |
+| 14 | Tab Priorita' = DataGrid | Griglia tabellare (non cards) — compatta, ordinabile, esportabile |
 
-### Punti aperti (da decidere in seguito)
+### Unico punto aperto
 
 | # | Punto | Note |
 |---|-------|------|
-| 1 | Finestra configurabile per tipo scadenzario? | Es. patentini 60 gg, polizze 30 gg — campo `visibility_days` gia' predisposto |
-| 2 | Priorita' rispetto ad altri task in roadmap? | Dopo ADR-009 Fase 2? |
+| 1 | Priorita' rispetto ad altri task in roadmap? | Da decidere — dopo ADR-009 Fase 2? |
 
-### Possibili dimenticanze — checklist da validare
+---
 
-| # | Aspetto | Domanda | Suggerimento |
-|---|---------|---------|--------------|
-| 1 | **Scaduti da molto tempo** | Se una riga e' scaduta da 6 mesi e nessuno la segna "completata", continua a ricevere email giornaliere? | Propongo: dopo 90 gg di ritardo senza azione → ridurre a 1 email/settimana (evita "alert fatigue") |
-| 2 | **Chi puo' importare** | Solo admin studio o anche l'azienda cliente (se ha accesso WRITE)? | Propongo: admin studio + ruoli con permesso `manage_documents` |
-| 3 | **Eliminazione file sorgente** | Se il file Excel viene eliminato dal registro, che succede alle scadenze importate? | Propongo: le scadenze restano (con nota "file sorgente rimosso") — non si perdono |
-| 4 | **Duplicati tra scadenzari e registro documenti** | Un documento gia' nel registro con `expiry_date` che appare ANCHE nello scadenzario Excel → doppia notifica? | Propongo: warning in fase di import ("Questa riga sembra duplicata con documento X nel registro") |
-| 5 | **Notifica all'azienda cliente** | L'admin studio riceve l'alert. Puo' poi inoltrare/delegare all'azienda? | Propongo: pulsante "Notifica cliente" che invia email con testo personalizzabile |
-| 6 | **Storicizzazione** | Quando una scadenza viene rinnovata (nuovo file con data aggiornata), si tiene traccia della vecchia data? | Propongo: si' — campo `previous_due_date` o log nel refresh automatico |
-| 7 | **Export/stampa** | Serve un export Excel/PDF dello scadenzario filtrato per l'azienda? | Propongo: si' — utile come report per il cliente (riesame direzione, audit) |
-| 8 | **Badge sidebar** | Aggiungere conteggio scadenze da file nel badge gia' esistente su "Documenti"? | Propongo: si' — sommato al conteggio documenti, oppure badge separato su voce "Scadenzari" |
+## 11.1 Regola Dedup: scadenzario vs registro documenti
+
+Quando si importano le righe da un file Excel, per ciascuna riga il sistema verifica:
+
+1. Prende il campo `title` (o `reference_code`) della riga
+2. Cerca in `document_registry` un documento con titolo/codice simile **e** `expiry_date` valorizzata nella stessa azienda
+3. Se trova corrispondenza → **ignora la riga** (gia' gestita)
+4. Nel dialog di import: mostra "N righe ignorate (documento gia' nel DB)"
+
+**Motivazione**: i due sistemi (scadenze documento + righe scadenzario) devono restare **scollegati**. Un documento nel registro ha il suo ciclo di vita e i suoi alert. Non serve duplicare l'informazione.
+
+---
+
+## 11.2 Regola Eliminazione File: Cascade + Warning
+
+Quando un utente tenta di eliminare un documento dal registro che ha `deadline_import_config` associato:
+
+```
++------------------------------------------+
+| Attenzione                               |
++------------------------------------------+
+| Il file "Tarature_2026.xlsx" ha          |
+| 12 scadenze importate che verranno       |
+| eliminate insieme al file.               |
+|                                          |
+| Confermi l'eliminazione?                 |
+|                                          |
+| [Annulla]      [Elimina tutto]           |
++------------------------------------------+
+```
+
+Backend: `DELETE FROM deadline_items WHERE source_document_id = @id` + `DELETE FROM deadline_import_config WHERE document_id = @id` **prima** di eliminare il documento.
+
+---
+
+## 11.3 Regola Editing e Tracking Modifiche
+
+Il file scadenzario (Excel) viene gestito come **qualsiasi altro documento editabile** nel registro:
+- Apertura tramite app (SpreadsheetViewer o Office round-trip se disponibile)
+- Ogni salvataggio crea una nuova **revisione** (`revision_number` + 1)
+- Se `auto_refresh = 1` nella config → al salvataggio si ri-esegue l'import con lo stesso mapping
+- Se `auto_refresh = 0` → l'utente deve confermare il ri-import manuale
+
+Il tracking (chi ha modificato, quando) e' gia' gestito dal registro documenti (`updated_by`, `updated_at`, revisioning).
+
+---
+
+## 11.4 Export Griglia — Pattern Scalabile
+
+La griglia scadenzario e' il **primo caso d'uso** di un componente `<DataGridExportable />` che diventa standard per tutta l'app.
+
+Specifiche del componente:
+- Props: `columns`, `data`, `exportFileName`, `filters`
+- Export: button nella toolbar → genera `.xlsx` con SheetJS (gia' in dipendenze frontend)
+- Rispetta i filtri attivi (esporta solo il visibile)
+- Header in italiano
+- Formattazione date come DD/MM/YYYY
+
+Riuso previsto (dopo scadenzario):
+- Griglia qualifiche (pagina `/qualifications`)
+- Griglia NC/azioni (modulo NC)
+- Griglia rischi/obiettivi (quando implementato)
+- Griglia documenti (tab lista nel registro)
 
 ---
 
