@@ -6,9 +6,8 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const {
-    KNOWN_MODULE_KEYS,
-    LABELS_IT,
     getLicensedModuleKeysForOrg,
+    getOrgLicensesPayload,
     setLicensedModulesForOrg,
     clearLicensedModulesOverride,
 } = require('../services/moduleLicense.service');
@@ -602,28 +601,64 @@ async function updateUserStandards(req, res) {
 }
 
 /**
+ * GET /api/v1/admin/organizations — elenco tenant (solo superadmin)
+ */
+async function listOrganizations(req, res) {
+    try {
+        const result = await query(`
+            SELECT
+                organization_id,
+                organization_name,
+                organization_code,
+                is_active,
+                CASE
+                    WHEN licensed_modules IS NULL OR LTRIM(RTRIM(licensed_modules)) = '' THEN 1
+                    ELSE 0
+                END AS uses_defaults
+            FROM organizations
+            ORDER BY organization_name, organization_id
+        `, {});
+        res.json({ success: true, data: result.recordset || [] });
+    } catch (error) {
+        logger.error('Admin listOrganizations error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore elenco organizzazioni' });
+    }
+}
+
+/**
  * GET /api/v1/admin/licenses — moduli licenziati per l'organizzazione corrente (solo admin)
  */
 async function getOrgLicenses(req, res) {
     try {
         const { organization_id } = req.user;
-        const modules = await getLicensedModuleKeysForOrg(organization_id);
-        const r = await query(
-            `SELECT licensed_modules FROM organizations WHERE organization_id = @organization_id`,
-            { organization_id }
-        );
-        const raw = r.recordset[0]?.licensed_modules ?? null;
-        res.json({
-            success: true,
-            data: {
-                modules,
-                raw_override: raw,
-                available: KNOWN_MODULE_KEYS.map((key) => ({ key, label: LABELS_IT[key] || key })),
-            },
-        });
+        const payload = await getOrgLicensesPayload(organization_id);
+        if (!payload) {
+            return res.status(404).json({ success: false, error: 'Organizzazione non trovata' });
+        }
+        res.json({ success: true, data: payload });
     } catch (error) {
         logger.error('Admin getOrgLicenses error', { error: error.message });
         res.status(500).json({ success: false, error: 'Errore lettura licenze' });
+    }
+}
+
+/**
+ * GET /api/v1/admin/organizations/:organizationId/licenses — superadmin legge licenze tenant
+ */
+async function getAnyOrgLicenses(req, res) {
+    try {
+        const targetOrgId = parseInt(req.params.organizationId, 10);
+        if (!Number.isFinite(targetOrgId)) {
+            return res.status(400).json({ success: false, error: 'organizationId non valido' });
+        }
+        const payload = await getOrgLicensesPayload(targetOrgId);
+        if (!payload) {
+            return res.status(404).json({ success: false, error: 'Organizzazione non trovata' });
+        }
+        res.json({ success: true, data: payload });
+    } catch (error) {
+        logger.error('Admin getAnyOrgLicenses error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore lettura licenze organizzazione' });
     }
 }
 
@@ -860,7 +895,9 @@ module.exports = {
     updateUser,
     deactivateUser,
     updateUserStandards,
+    listOrganizations,
     getOrgLicenses,
+    getAnyOrgLicenses,
     updateOrgLicenses,
     updateAnyOrgLicenses,
     listUserCompanyAccess,
