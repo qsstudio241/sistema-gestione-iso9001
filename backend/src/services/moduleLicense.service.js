@@ -55,6 +55,22 @@ function parseLicensedModulesColumn(raw) {
     return null;
 }
 
+/** Unisce elenchi mantenendo l'ordine canonico KNOWN_MODULE_KEYS e garantendo audit. */
+function mergeModuleKeys(existingKeys, keysToAdd) {
+    const allowed = new Set(KNOWN_MODULE_KEYS);
+    const wanted = new Set(
+        [...(existingKeys || []), ...(keysToAdd || [])]
+            .map((k) => String(k))
+            .filter((k) => allowed.has(k))
+    );
+    if (!wanted.has('audit')) wanted.add('audit');
+    return KNOWN_MODULE_KEYS.filter((k) => wanted.has(k));
+}
+
+function buildAvailableCatalog() {
+    return KNOWN_MODULE_KEYS.map((key) => ({ key, label: LABELS_IT[key] || key }));
+}
+
 /**
  * Elenco moduli abilitati per l'organizzazione (sempre array non vuoto).
  * NULL / JSON non valido → tutti i moduli noti (retrocompatibilità).
@@ -93,12 +109,61 @@ async function clearLicensedModulesOverride(organizationId) {
     );
 }
 
+/**
+ * Payload licenze per API admin (org corrente o tenant specifico).
+ */
+async function getOrgLicensesPayload(organizationId) {
+    const r = await query(
+        `SELECT organization_id, organization_name, licensed_modules
+         FROM organizations WHERE organization_id = @organization_id`,
+        { organization_id: organizationId }
+    );
+    if (!r.recordset.length) return null;
+    const row = r.recordset[0];
+    const raw = row.licensed_modules ?? null;
+    const modules = await getLicensedModuleKeysForOrg(organizationId);
+    return {
+        organization_id: row.organization_id,
+        organization_name: row.organization_name,
+        modules,
+        raw_override: raw,
+        available: buildAvailableCatalog(),
+    };
+}
+
+/**
+ * Aggiunge moduli a una lista esplicita (idempotente).
+ * licensed_modules NULL = tutti i moduli → nessuna modifica.
+ */
+async function appendLicensedModulesForOrg(organizationId, moduleKeys) {
+    const r = await query(
+        `SELECT licensed_modules FROM organizations WHERE organization_id = @organization_id`,
+        { organization_id: organizationId }
+    );
+    if (!r.recordset.length) {
+        throw new Error(`Organizzazione ${organizationId} non trovata`);
+    }
+    const raw = r.recordset[0].licensed_modules;
+    if (raw == null || String(raw).trim() === '') {
+        return getLicensedModuleKeysForOrg(organizationId);
+    }
+    const current = parseLicensedModulesColumn(raw) || [];
+    const merged = mergeModuleKeys(current, moduleKeys);
+    const unchanged = merged.length === current.length && merged.every((k, i) => k === current[i]);
+    if (unchanged) return merged;
+    return setLicensedModulesForOrg(organizationId, merged);
+}
+
 module.exports = {
     KNOWN_MODULE_KEYS,
     ALL_MODULES_DEFAULT,
     LABELS_IT,
     parseLicensedModulesColumn,
+    mergeModuleKeys,
+    buildAvailableCatalog,
     getLicensedModuleKeysForOrg,
+    getOrgLicensesPayload,
     setLicensedModulesForOrg,
     clearLicensedModulesOverride,
+    appendLicensedModulesForOrg,
 };
