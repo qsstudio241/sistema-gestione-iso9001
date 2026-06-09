@@ -1165,9 +1165,11 @@ Mauro Franciosi (admin ERAM, org **1004**) non vedeva **Assistente AI** in sideb
 - Dopo aggiornamento licenze: gli utenti del tenant devono **logout/login** (o refresh token) per vedere la sidebar aggiornata.
 
 ### Passi post-merge (desktop)
-1. Deploy backend VPS: `backend/scripts/deploy-controllers-to-vps.ps1` (admin controller + routes + moduleLicense.service).
+1. Deploy backend VPS: `backend/scripts/deploy-controllers-to-vps.ps1` (admin controller + routes + **moduleLicense.service** + middleware — vedi `deploy-manifest.json` gruppi `services-core` e `middleware-entry`).
 2. Netlify: merge PR → build automatico.
 3. Comunicare a Mauro Franciosi: logout/login → voce **Assistente AI** visibile (hotfix DB già applicato 08/06/2026).
+
+**Chiusura 09/06/2026:** PR #101 mergiata, deploy VPS OK, Franciosi vede Assistente AI; manifest deploy allineato con `moduleLicense.service.js` + `moduleLicense.middleware.js`.
 
 ---
 

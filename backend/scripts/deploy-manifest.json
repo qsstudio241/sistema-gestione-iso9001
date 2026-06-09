@@ -1,5 +1,5 @@
 {
-  "description": "Manifest unico per deploy backend VPS � ordine dependency-aware (services/utils prima di controller/routes)",
+  "description": "Manifest unico per deploy backend VPS - ordine dependency-aware (services/utils prima di controller/routes)",
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors"
@@ -35,7 +35,8 @@
         "src/services/billing.service.js",
         "src/services/unifiedSearch.service.js",
         "src/services/docCodeGenerator.service.js",
-        "src/services/documentHistoryTracker.service.js"
+        "src/services/documentHistoryTracker.service.js",
+        "src/services/moduleLicense.service.js"
       ]
     },
     {
@@ -119,6 +120,7 @@
       "name": "middleware-entry",
       "files": [
         "src/middleware/auth.middleware.js",
+        "src/middleware/moduleLicense.middleware.js",
         "src/server.js"
       ]
     }
