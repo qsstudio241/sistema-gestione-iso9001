@@ -1,6 +1,6 @@
 # DEPUTYTASK — ADR-013 Scadenzario Unificato
 
-**Stato:** SMOKE OK — branch `feature/adr-013-slices-s1-s2-s5` pronto per PR/merge
+**Stato:** CHIUSO — PR #100 mergiata su `main` il 09/06/2026 (commit merge `f320075`)
 
 ---
 
@@ -38,5 +38,8 @@ File: `Scadenzario Sicurezza-Ambiente_2026-04-24_greta (1).xlsx` (org 1002, doc 
 - S9: cascade delete deadline_items quando documento/azienda eliminati
 - S10: auto-refresh items all'aggiornamento del file sorgente
 
-## Prossimo passo
-Merge PR su `main` oppure aprire PR se non ancora aperta.
+## Chiusura sessione (09/06/2026)
+- PR #100 mergiata con `--merge` su `main` (commit `f320075`)
+- `git pull origin main` eseguito — workspace allineato
+- `docs/GUIDA_CONSOLIDATA.md` aggiornato con lezioni ADR-013
+- Prossime slices (S8/S9/S10) tracciate in `PROJECT_ROADMAP.md`

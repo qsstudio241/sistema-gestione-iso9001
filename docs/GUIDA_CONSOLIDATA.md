@@ -82,6 +82,15 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | **Migrazioni DB — sequenza condivisa** | Numerazione **unica** (stato ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (check esistenza prima di `ALTER`/`CREATE`). FK SQL Server: statement separati. | [how-to/database-migrations.md](how-to/database-migrations.md) |
 | **Encoding UTF-8 senza BOM** | Lo strumento di salvataggio può produrre **ANSI/BOM** o interpretare `\n`/`\t` come newline/tab. Dopo ogni scrittura: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`**. Script: `backend/scripts/check-utf8-encoding.js`. | [Playbook caratteri non riconoscibili](#playbook-riutilizzabile--caratteri-non-riconoscibili-ufffd--tofu-in-ui) · [`sgq-encoding-quality.mdc`](../.cursor/rules/sgq-encoding-quality.mdc) |
 
+### Import Excel / Scadenzario (ADR-013)
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|--------------------|-----------|
+| **`findColumnByPattern` — priorità pattern, non colonna** | Il detector `excelDeadlineDetector.js` scansiona gli header per pattern (lista ordinata per priorità), non posizione colonna. La lista deve mettere le varianti "future" (`prossima`, `next`) **prima** di quelle "passate" (`ultima`, `last`): altrimenti la colonna sbagliata vince quando entrambe sono presenti nello sheet. | [fix commit `92952ec`](https://github.com/qsstudio241/sistema-gestione-iso9001/commit/92952ec) |
+| **VPS restart senza `sudo systemctl`** | Se `systemctl restart` non è disponibile, usare: `lsof -ti:3000 \| head -1` → `kill -15 $PID`; systemd con `Restart=on-failure` riavvia automaticamente (~5 s). Verificare cambio PID per confermare riavvio effettivo. | Sessione 08-09/06/2026 ADR-013 smoke |
+| **Reset password temporanea per smoke** | (1) `bcrypt.hash('pw_temp', 10)` da script locale con `database.json`; (2) `UPDATE users SET password_hash=... WHERE id=...`; (3) smoke; (4) **ripristinare subito l'hash originale**. Mai lasciare password temporanee in produzione. | Sessione 08-09/06/2026 ADR-013 smoke |
+| **ADR-013 slices completate (09/06/2026)** | S1 detector, S2 migrazione 083, S3 API detect, S4 API import/CRUD, S5 DataGridExportable, S6 dialog+pagina `/deadlines`, S7 PriorityView. **S8** (notifiche email), **S9** (cascade delete), **S10** (auto-refresh) in roadmap. | [PR #100](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/100) |
+
 ### Sync (vincolante)
 
 | Lezione | Regola da applicare | Dettaglio |
