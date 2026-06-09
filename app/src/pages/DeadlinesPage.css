@@ -30,6 +30,40 @@
   align-items: center;
   gap: 2px;
   min-width: 80px;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.dl-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border-color: #a0aec0;
+}
+
+.dl-stat-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.dl-stat--red.dl-stat-active {
+  border-color: #dc2626;
+  background: #fef2f2;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
+}
+
+.dl-stat--orange.dl-stat-active {
+  border-color: #d97706;
+  background: #fffbeb;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.18);
+}
+
+.dl-stat--gray.dl-stat-active {
+  border-color: #6b7280;
+  background: #f9fafb;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.18);
 }
 
 .dl-stat-num { font-size: 1.6rem; font-weight: 700; color: #1f2937; line-height: 1; }
@@ -59,6 +93,20 @@
 .dl-status--completed          { background: #d1fae5; color: #065f46; }
 .dl-status--dismissed          { background: #f3f4f6; color: #6b7280; }
 .dl-status--expired_acknowledged { background: #fef9c3; color: #854d0e; }
+
+/* Link al file origine */
+.dl-source-link {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dl-source-link:hover { color: #1d4ed8; }
 
 /* Bottone completamento */
 .dl-complete-btn {
