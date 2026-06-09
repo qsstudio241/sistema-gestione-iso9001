@@ -728,33 +728,48 @@ async function releaseRevision(req, res) {
                 { id: parseInt(id) }
             );
             const row = fullDoc.recordset[0];
-            if (!row?.expiry_date) {
-                finalExpiry = await resolveExpiryDate({
-                    organization_id,
-                    doc_type: row?.doc_type,
-                    issue_date: row?.issue_date,
-                    expiry_date: null,
-                });
-            }
+            // Usa l'expiry_date esistente se presente, altrimenti calcolala.
+            // Bug fix: prima mancava l'assegnazione da row.expiry_date (finalExpiry restava null),
+            // causando un errore di conversione SQL quando mssql inferiva NVarChar per il parametro null.
+            finalExpiry = row?.expiry_date || await resolveExpiryDate({
+                organization_id,
+                doc_type: row?.doc_type,
+                issue_date: row?.issue_date,
+                expiry_date: null,
+            }) || null;
         }
 
-        const params = {
-            id: parseInt(id),
+        const baseParams = {
+            id:              parseInt(id),
             revision_number: newRevNum,
             revision:        newRevLabel,
-            expiry_date:     finalExpiry,
         };
 
-        await query(`
-            UPDATE document_registry
-            SET status          = 'rilasciato',
-                revision_number = @revision_number,
-                revision        = @revision,
-                released_at     = GETDATE(),
-                expiry_date     = ISNULL(@expiry_date, expiry_date),
-                updated_at      = GETDATE()
-            WHERE id = @id
-        `, params);
+        // Non passare expiry_date come NULL al wrapper query(): mssql lo inferisce come
+        // NVarChar e ISNULL(@expiry_date, date_column) fallisce con "Conversion failed".
+        // Includiamo expiry_date nel SET solo se abbiamo un valore reale da scrivere.
+        const updateSql = finalExpiry
+            ? `UPDATE document_registry
+               SET status          = 'rilasciato',
+                   revision_number = @revision_number,
+                   revision        = @revision,
+                   released_at     = GETDATE(),
+                   expiry_date     = @expiry_date,
+                   updated_at      = GETDATE()
+               WHERE id = @id`
+            : `UPDATE document_registry
+               SET status          = 'rilasciato',
+                   revision_number = @revision_number,
+                   revision        = @revision,
+                   released_at     = GETDATE(),
+                   updated_at      = GETDATE()
+               WHERE id = @id`;
+
+        const updateParams = finalExpiry
+            ? { ...baseParams, expiry_date: finalExpiry }
+            : baseParams;
+
+        await query(updateSql, updateParams);
 
         logger.info('Document released', { id, organization_id, user_id, revision: newRevLabel });
 
