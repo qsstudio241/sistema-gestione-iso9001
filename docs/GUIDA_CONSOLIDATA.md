@@ -217,6 +217,10 @@ Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizi
 5. **Verifica:** `vite build` in `app/`; se toccato export Word, `vitest` su `wordExport.placeholders.test.js` e `wordExport.imageDimensions.test.js` (nota: i placeholder possono stare in `word/header2.xml`, non solo `header1.xml`).
 6. **Rilasciare:** commit + push; dopo deploy Netlify **hard refresh** (Ctrl+Shift+R) o aggiornamento PWA.
 
+#### Canvas agente — encoding
+
+Nei file `.canvas.tsx` (Glass / agente): su Windows il salvataggio diretto di accenti o em dash puo' produrre **U+FFFD** — usare escape `\uXXXX` **dentro stringhe JS** (`"Passo 1 \u2014 Apri"`, `"Priorit\u00E0"`) oppure espressioni `{"..."}`; mai `\u` come testo JSX grezzo dopo `>`. Prima del commit: grep su `EF BF BD` / `\uFFFD` e `node backend/scripts/check-utf8-encoding.js docs/canvas/`. Allineare `canvases/` (runtime Glass) e `docs/canvas/` (repo).
+
 #### Riferimenti vincolanti
 
 - Regola Cursor: `.cursor/rules/sgq-encoding-quality.mdc`
@@ -2881,3 +2885,32 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 | Commit principali | 8464ca fix form annidati, 48124e0 fix responsible-options, ffcf37 feat rubrica NC, 47fbd14 fix scope company_access |
 
 **Lezione chiave — Form HTML annidati:** HTML vieta `<form>` dentro `<form>`. Il browser ignora silenziosamente il form interno e il submit va a quello esterno. Sintomo: nessun POST nei log VPS, drawer chiuso senza errore. **Regola:** qualsiasi componente contenitore che usa `<form onSubmit>` deve essere convertito in `<div>` quando contiene componenti figlio con propri form di salvataggio. Consolidata nella sezione [Lezioni apprese consolidate](#lezioni-apprese-consolidate-fonte-unica).
+
+---
+
+## G. Modulo Qualifiche v2 — Architettura consolidata (09/06/2026)
+
+### Cosa è stato fatto
+
+| Slice | File chiave | Note |
+|-------|-------------|------|
+| Migration 084 | `database/migrations/084_qualifications_v2.sql` + `run-migration-084-vps.js` | 24 colonne nuove: `approval_status`, `previous_qualification_id`, campi specializzati per saldatori/NDT/coordinatori/PES-PAV/generico. Idempotente. |
+| Migration 085 | `database/migrations/085_projects_version.sql` + `run-migration-085-vps.js` | `projects.commercial_case_id` FK + `qualifications.previous_qualification_id` FK. |
+| Backend qualifiche v2 | `qualifications.controller.js`, `qualifications.routes.js` | Nuovi endpoint: `POST /approve`, `POST /reject`, `POST /renew`, `GET /coverage?project_id=X`. Filtro `approval_status`. QUAL_TYPE_MAP esteso con tutti i tipi NDT. |
+| Backend project_welders | `projects.controller.js`, `projects.routes.js` | `POST /projects/:id/welders` (con validazione qualifica approvata/non scaduta), `DELETE /projects/:id/welders/:qualificationId`. |
+| Import batch AI | `importJobs.controller.js`, `importJobs.routes.js`, `documentTypeSchemas.js` | Tipo `qualification`: endpoint `commit-to-qualification`, schemi AI per `qualifica_14731` e `pes_pav`. |
+| Frontend QualificationsPage v2 | `QualificationsPage.jsx`, `QualificationsPage.css` | Tab per tipo (Tutti/Saldatori/NDT/Coordinatori/Operatori/Abilitazioni/Generiche), colonne dinamiche, badge `approval_status`, pulsanti Approva/Rifiuta/Rinnova (solo coordinatori/admin), modal rifiuto. |
+| Vista Copertura Commessa | `ProjectsPage.jsx`, `ContractReviewPage.jsx` | `CoverageModal` in ProjectsPage (pulsante per ogni riga), `CoveragePanel` in ContractReviewPage (sezione APPROVED). Saldatori assegnati ora con checkbox funzionali. |
+
+### Architettura del flusso approvazione qualifiche
+```
+PDF certificato → Import Job → AI estrae campi → commit-to-qualification → approval_status=bozza
+→ Coordinatore approva (POST /approve) → approval_status=approvata
+→ Scadenzario / rinnovo (POST /renew → nuovo record con previous_qualification_id)
+```
+
+### Pattern VPS per migrazioni Node.js da Windows
+Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner VPS — l'IP pubblico è bloccato da hairpin NAT. Il servizio systemd usa invece il nome host perché ha route diverse.
+
+### File non nel deploy manifest (fix aggiunto)
+`projects.controller.js`, `qualifications.routes.js`, `projects.routes.js`, `documentTypeSchemas.js` — aggiunti al `deploy-manifest.json` nella stessa sessione.

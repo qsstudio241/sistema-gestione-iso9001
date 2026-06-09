@@ -1,6 +1,6 @@
 # DEPUTYTASK — Modulo Qualifiche v2 (architettura consolidata) — 09/06/2026
 
-**Stato:** IN ESECUZIONE
+**Stato:** TEST OK — Completato 09/06/2026
 
 ---
 
@@ -35,14 +35,14 @@
 
 | # | Slice | Stato |
 |---|-------|-------|
-| 1 | Migration 084 — Estensione `qualifications` | ☐ |
-| 2 | Migration 085 — `projects` versionata + FK handoff | ☐ |
-| 3 | Backend qualifiche: approve/reject/renew/coverage + NDT types | ☐ |
-| 4 | Backend project_welders: POST/DELETE endpoints | ☐ |
-| 5 | Import batch AI — tipo `qualification` | ☐ |
-| 6 | Frontend QualificationsPage schede specializzate | ☐ |
-| 7 | Vista Copertura Commessa | ☐ |
-| 8 | Deploy VPS + smoke test | ☐ |
+| 1 | Migration 084 — Estensione `qualifications` | ✅ |
+| 2 | Migration 085 — `projects` versionata + FK handoff | ✅ |
+| 3 | Backend qualifiche: approve/reject/renew/coverage + NDT types | ✅ |
+| 4 | Backend project_welders: POST/DELETE endpoints | ✅ |
+| 5 | Import batch AI — tipo `qualification` | ✅ |
+| 6 | Frontend QualificationsPage schede specializzate | ✅ |
+| 7 | Vista Copertura Commessa | ✅ |
+| 8 | Deploy VPS + smoke test | ✅ |
 
 ---
 
