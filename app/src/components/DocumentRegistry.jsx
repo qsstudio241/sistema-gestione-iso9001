@@ -438,6 +438,7 @@ function PriorityView({
   expiringDocs,
   revisionDocs,
   releasedWithoutFileDocs,
+  deadlineItems = [],
   loading,
   alertWindowDays,
   onEdit,
@@ -453,7 +454,8 @@ function PriorityView({
     expiredDocs.length +
     expiringDocs.length +
     revisionDocs.length +
-    releasedWithoutFileDocs.length;
+    releasedWithoutFileDocs.length +
+    deadlineItems.length;
 
   if (loading) {
     return (
@@ -561,6 +563,40 @@ function PriorityView({
               onCancelArchive={onCancelArchive}
             />
           ))}
+        </section>
+      )}
+
+      {/* Scadenze da file (ADR-013) */}
+      {deadlineItems.length > 0 && (
+        <section className="priority-section">
+          <div className="priority-section-header priority-section-red">
+            <span>{"\uD83D\uDCC5"} Scadenze da file - {deadlineItems.length}</span>
+            <span className="ps-hint">Importate da scadenzari Excel</span>
+          </div>
+          {deadlineItems.map((item) => {
+            const days = item.days_until_due;
+            const isExpired = days < 0;
+            return (
+              <div key={`di-${item.id}`} className={`priority-card ${isExpired ? 'priority-card-red' : 'priority-card-orange'}`}>
+                <div className="pcard-left">
+                  <span className={`pcard-dot ${isExpired ? 'dot-red' : 'dot-orange'}`} />
+                  <div className="pcard-info">
+                    <span className="pcard-title" title={item.title}>{item.title}</span>
+                    <span className="pcard-meta">
+                      {item.source_document_title && `${item.source_document_title}`}
+                      {item.company_name && ` \u00B7 ${item.company_name}`}
+                      {item.reference_code && ` \u00B7 ${item.reference_code}`}
+                    </span>
+                    <span className={`pcard-expiry ${isExpired ? 'text-red' : 'text-orange'}`}>
+                      {isExpired
+                        ? `Scaduto il ${formatDate(item.due_date)} (${Math.abs(days)} gg fa)`
+                        : `Scade tra ${days} giorni \u2014 ${formatDate(item.due_date)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </section>
       )}
     </div>
@@ -945,6 +981,7 @@ function DocumentRegistry() {
   // Documenti priorità (scaduti + in scadenza + in revisione)
   const [priorityDocs, setPriorityDocs] = useState([]);
   const [releasedWithoutFileDocs, setReleasedWithoutFileDocs] = useState([]);
+  const [deadlineItems, setDeadlineItems] = useState([]);
   const [loadingPriority, setLoadingPriority] = useState(true);
   const [alertWindowDays, setAlertWindowDays] = useState(30);
 
@@ -1099,6 +1136,13 @@ function DocumentRegistry() {
       }
       setPriorityDocs([...merged.values()]);
       setReleasedWithoutFileDocs(noFileRes.data || []);
+
+      // ADR-013: carica scadenze da file (graceful — tabella potrebbe non esistere ancora)
+      try {
+        const dlParams = { priority_only: '1', days: windowDays, ...(registryCompanyScope ? { company_id: registryCompanyScope } : {}) };
+        const dlRes = await apiService.getPriorityDeadlines(dlParams);
+        setDeadlineItems(dlRes.data || []);
+      } catch { setDeadlineItems([]); }
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
   }, [registryCompanyScope]);
@@ -1550,6 +1594,7 @@ function DocumentRegistry() {
           expiringDocs={expiringDocs}
           revisionDocs={revisionDocs}
           releasedWithoutFileDocs={releasedWithoutFileDocs}
+          deadlineItems={deadlineItems}
           loading={loadingPriority}
           alertWindowDays={alertWindowDays}
           onEdit={handleEdit}

@@ -45,6 +45,7 @@ const SearchPage = React.lazy(() => import("./pages/SearchPage"));
 const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProceduresPage"));
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
+const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
@@ -133,6 +134,7 @@ function AppContent() {
         />
 
         {/* Moduli SGQ — gating licenza Sprint 8 */}
+        <Route path="/deadlines"  element={<LicensedRoute moduleKey="documents"><DeadlinesPage /></LicensedRoute>} />
         <Route path="/qualifiche" element={<LicensedRoute moduleKey="qualifiche"><QualificationsPage /></LicensedRoute>} />
         <Route path="/nc"         element={<LicensedRoute moduleKey="nc"><NCPage /></LicensedRoute>} />
         <Route path="/rischi"     element={<LicensedRoute moduleKey="rischi"><RisksPage /></LicensedRoute>} />
