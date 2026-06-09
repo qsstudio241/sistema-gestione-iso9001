@@ -84,6 +84,8 @@ router.post('/import-jobs/:id/process', ctrl.processJob);
 router.post('/import-jobs/:id/files/:fileId/ai-extract', aiExtractLimiter, ctrl.suggestAiExtraction);
 router.patch('/import-jobs/:id/files/:fileId', ctrl.patchFile);
 // Sprint 10: commit file processato al document_registry
-router.post('/import-jobs/:id/files/:fileId/commit-to-registry', ctrl.commitToRegistry);
+router.post('/import-jobs/:id/files/:fileId/commit-to-registry',     ctrl.commitToRegistry);
+// Commit file processato come qualifica personale (approval_status=bozza)
+router.post('/import-jobs/:id/files/:fileId/commit-to-qualification', ctrl.commitToQualification);
 
 module.exports = router;

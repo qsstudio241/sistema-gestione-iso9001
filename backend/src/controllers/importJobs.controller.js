@@ -644,6 +644,151 @@ async function commitToRegistry(req, res) {
     }
 }
 
+/**
+ * POST /import-jobs/:id/files/:fileId/commit-to-qualification
+ * Crea un record qualifications da un file AI-estratto con approval_status = 'bozza'.
+ * Il corpo può sovrascrivere i campi estratti dall'AI.
+ */
+async function commitToQualification(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const user_id = req.user.user_id || req.user.id || null;
+        const jobId   = parseInt(req.params.id, 10);
+        const fileId  = parseInt(req.params.fileId, 10);
+
+        const jCheck = await query(
+            `SELECT id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
+            { id: jobId, organization_id }
+        );
+        if (!jCheck.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+
+        const fRows = await query(
+            `SELECT id, status, ai_extraction_json, original_name, confidence_score
+             FROM import_job_files WHERE id=@fid AND job_id=@jid`,
+            { fid: fileId, jid: jobId }
+        );
+        if (!fRows.recordset.length) return res.status(404).json({ error: 'File non trovato' });
+        const file = fRows.recordset[0];
+        if (file.status === 'committed') {
+            return res.status(409).json({ error: 'File già committato', code: 'ALREADY_COMMITTED' });
+        }
+
+        // Estrae dati AI
+        let aiData = {};
+        let aiTypeSpecific = {};
+        if (file.ai_extraction_json) {
+            try {
+                const parsed = JSON.parse(file.ai_extraction_json);
+                aiData = parsed || {};
+                aiTypeSpecific = aiData.type_specific_data || {};
+            } catch (_) { /* ignora */ }
+        }
+
+        const body = req.body || {};
+
+        // Merge body su aiTypeSpecific (body vince)
+        const tsd = { ...aiTypeSpecific, ...body };
+
+        // Determina tipo qualifica
+        const docTypeHint = body.qualification_type || aiData.document_type_guess || 'generico';
+        const QUAL_TYPES = {
+            patentino_saldatore: 'Saldatore ISO 9606-1',
+            qualifica_14732:     'Operatore ISO 14732',
+            cert_ndt:            'Operatore NDT ISO 9712',
+            qualifica_14731:     'Coordinatore ISO 14731',
+            pes_pav:             'Abilitazione PES/PAV',
+        };
+        const qualificationType = body.qualification_type_label || QUAL_TYPES[docTypeHint] || docTypeHint || 'Generica';
+
+        // Costruisce record qualifications
+        const qData = {
+            organization_id,
+            company_id:           body.company_id ? parseInt(body.company_id) : null,
+            person_name:          body.person_name || tsd.person_name || tsd.welder_name || tsd.operator_name || null,
+            person_code:          body.person_code || null,
+            department:           body.department || null,
+            qualification_type:   qualificationType,
+            standard_ref:         body.standard_ref || tsd.standard_reference || null,
+            scope_detail:         body.scope_detail || null,
+            certificate_number:   body.certificate_number || tsd.certificate_number || null,
+            issuing_body:         body.issuing_body || tsd.issuing_body || null,
+            issue_date:           body.issue_date || tsd.issue_date || tsd.exam_date || null,
+            expiry_date:          body.expiry_date || tsd.expiry_date || null,
+            last_renewal_date:    body.last_renewal_date || null,
+            status:               'valida',
+            notes:                body.notes || null,
+            approval_status:      'bozza',
+            created_by:           user_id,
+            // Saldatori
+            welding_process:      body.welding_process || tsd.welding_process || null,
+            material_group:       body.material_group || tsd.material_group || null,
+            position_range:       body.position_range || (Array.isArray(tsd.welding_positions) ? tsd.welding_positions.join(',') : null) || null,
+            ndt_method:           body.ndt_method || tsd.ndt_method || null,
+            ndt_level:            body.ndt_level || tsd.certification_level ? parseInt(body.ndt_level || tsd.certification_level) : null,
+            joint_type:           body.joint_type || tsd.joint_type || null,
+            thickness_range:      body.thickness_range || (tsd.thickness_min_mm || tsd.thickness_max_mm ? `${tsd.thickness_min_mm||'?'}-${tsd.thickness_max_mm||'?'}mm` : null),
+            pipe_diameter:        body.pipe_diameter || (tsd.pipe_diameter_mm ? `${tsd.pipe_diameter_mm}mm` : null),
+            filler_material:      body.filler_material || tsd.filler_material_group || null,
+            shielding_gas:        body.shielding_gas || tsd.shielding_gas || null,
+            equipment_type:       body.equipment_type || tsd.equipment_type || null,
+            // NDT
+            ndt_sector:           body.ndt_sector || tsd.ndt_sector || null,
+            certification_scheme: body.certification_scheme || tsd.certification_scheme || null,
+            // Coordinatori
+            coordinator_title:    body.coordinator_title || tsd.coordinator_title || null,
+            diploma_number:       body.diploma_number || tsd.diploma_number || null,
+            cpd_valid_until:      body.cpd_valid_until || tsd.cpd_valid_until || null,
+            // PES/PAV
+            patent_type:          body.patent_type || tsd.patent_type || null,
+            training_body:        body.training_body || tsd.training_body || null,
+            // Generico
+            course_name:          body.course_name || null,
+            training_hours:       body.training_hours ? parseInt(body.training_hours) : null,
+            examiner_body:        body.examiner_body || null,
+        };
+
+        if (!qData.person_name) {
+            return res.status(400).json({ error: 'person_name obbligatorio (non estratto dall\'AI).', code: 'MISSING_PERSON_NAME' });
+        }
+
+        const ins = await query(
+            `INSERT INTO qualifications
+             (organization_id, company_id, person_name, person_code, department,
+              qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
+              issue_date, expiry_date, last_renewal_date, status, notes, created_by,
+              approval_status,
+              welding_process, material_group, position_range, ndt_method, ndt_level,
+              joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
+              ndt_sector, certification_scheme, coordinator_title, diploma_number, cpd_valid_until,
+              patent_type, training_body, course_name, training_hours, examiner_body)
+             OUTPUT INSERTED.id
+             VALUES
+             (@organization_id, @company_id, @person_name, @person_code, @department,
+              @qualification_type, @standard_ref, @scope_detail, @certificate_number, @issuing_body,
+              @issue_date, @expiry_date, @last_renewal_date, @status, @notes, @created_by,
+              @approval_status,
+              @welding_process, @material_group, @position_range, @ndt_method, @ndt_level,
+              @joint_type, @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
+              @ndt_sector, @certification_scheme, @coordinator_title, @diploma_number, @cpd_valid_until,
+              @patent_type, @training_body, @course_name, @training_hours, @examiner_body)`,
+            qData
+        );
+        const qualId = ins.recordset[0].id;
+
+        // Aggiorna file: committed
+        await query(
+            `UPDATE import_job_files SET status='committed', updated_at=GETDATE() WHERE id=@fid AND job_id=@jid`,
+            { fid: fileId, jid: jobId }
+        );
+
+        logger.info(`commitToQualification: file ${fileId} → qualification #${qualId} (org ${organization_id})`);
+        res.status(201).json({ success: true, data: { qualification_id: qualId, approval_status: 'bozza' } });
+    } catch (err) {
+        logger.error('commitToQualification', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     listJobs,
     createJob,
@@ -654,4 +799,5 @@ module.exports = {
     patchFile,
     suggestAiExtraction,
     commitToRegistry,
+    commitToQualification,
 };

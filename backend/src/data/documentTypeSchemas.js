@@ -145,6 +145,37 @@ welding_process, equipment_type, exam_date, expiry_date (YYYY-MM-DD).`,
     },
   },
 
+  qualifica_14731: {
+    label: 'Coordinatore saldatura (ISO 14731)',
+    aiPrompt: `Diploma/certificato coordinatore di saldatura ISO 14731 (IWE, IWT, IWS, IWP).
+Estrai in type_specific_data: person_name, certificate_number, coordinator_title (IWE|IWT|IWS|IWP),
+diploma_number, issuing_body, issue_date, cpd_valid_until (YYYY-MM-DD). Usa null se assente.`,
+    aiExpectedSchema: {
+      person_name: 'string|null',
+      certificate_number: 'string|null',
+      coordinator_title: 'IWE|IWT|IWS|IWP|null',
+      diploma_number: 'string|null',
+      issuing_body: 'string|null',
+      issue_date: 'YYYY-MM-DD|null',
+      cpd_valid_until: 'YYYY-MM-DD|null',
+    },
+  },
+
+  pes_pav: {
+    label: 'Abilitazione PES/PAV (CEI 11-27)',
+    aiPrompt: `Attestato PES/PAV addetti ai lavori elettrici CEI 11-27.
+Estrai in type_specific_data: person_name, patent_type (PES|PAV|PES+PAV),
+training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+    aiExpectedSchema: {
+      person_name: 'string|null',
+      patent_type: 'PES|PAV|PES+PAV|null',
+      training_body: 'string|null',
+      certificate_number: 'string|null',
+      issue_date: 'YYYY-MM-DD|null',
+      expiry_date: 'YYYY-MM-DD|null',
+    },
+  },
+
   sal: {
     label: 'SAL � Stato avanzamento lavori',
     aiPrompt: `Documento SAL consulenza SGQ. Estrai: client_name, standards_tracked, period_label.`,
