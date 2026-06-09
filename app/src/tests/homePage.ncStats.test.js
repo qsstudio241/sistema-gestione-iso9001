@@ -24,7 +24,10 @@ vi.mock('../services/apiService', () => ({
 }));
 
 vi.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { full_name: 'Mario Rossi' } }),
+  useAuth: () => ({
+    user: { full_name: 'Mario Rossi' },
+    canWriteModule: () => true,
+  }),
 }));
 
 vi.mock('../contexts/RouterContext', () => ({

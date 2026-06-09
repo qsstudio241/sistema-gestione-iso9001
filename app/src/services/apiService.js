@@ -1538,6 +1538,14 @@ class ApiService {
         return this.get('/admin/licenses');
     }
 
+    async getAdminOrganizations() {
+        return this.get('/admin/organizations');
+    }
+
+    async getOrgLicenses(organizationId) {
+        return this.get(`/admin/organizations/${organizationId}/licenses`);
+    }
+
     async patchAdminLicenses(body) {
         return this.patch('/admin/licenses', body);
     }
