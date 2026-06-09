@@ -1,5 +1,5 @@
 /**
- * DeadlinesPage — Griglia scadenzari importati da file (ADR-013 §6)
+ * DeadlinesPage â€” Griglia scadenzari importati da file (ADR-013 Â§6)
  * Route: /deadlines
  *
  * Mostra tutti i deadline_items dell'org con filtri tipo/file/azienda/stato.
@@ -9,10 +9,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DataGridExportable from '../components/DataGridExportable';
 import apiService from '../services/apiService';
+import { useRouter } from '../contexts/RouterContext';
 import { formatDate } from '../utils/dateHelpers';
+import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
 import './DeadlinesPage.css';
 
-// ?? Semaforo ????????????????????????????????????????????????????????????????
+// Semaforo
 
 function getSemaforoClass(daysUntilDue) {
   if (daysUntilDue < 0)  return 'dl-red';
@@ -37,7 +39,7 @@ function Semaforo({ daysUntilDue }) {
   );
 }
 
-// ?? Definizione colonne DataGrid ?????????????????????????????????????????????
+// Definizione colonne DataGrid
 
 const COLUMNS = [
   { id: 'semaforo',             label: '',            width: '44px',  sortable: false, exportSkip: true },
@@ -58,9 +60,10 @@ const STATUS_LABEL = {
   expired_acknowledged: 'Preso in carico',
 };
 
-// ?? Componente principale ????????????????????????????????????????????????????
+// Componente principale
 
 function DeadlinesPage() {
+  const { navigate } = useRouter();
   const [items,     setItems]     = useState([]);
   const [companies, setCompanies] = useState([]);
   const [sources,   setSources]   = useState([]);
@@ -70,6 +73,7 @@ function DeadlinesPage() {
   // Filtri locali
   const [filterCompany, setFilterCompany] = useState('');
   const [filterStatus,  setFilterStatus]  = useState('active');
+  const [filterDue,     setFilterDue]     = useState('');
   const [filterSource,  setFilterSource]  = useState('');
 
   // Stato azioni inline
@@ -105,14 +109,61 @@ function DeadlinesPage() {
   useEffect(() => { load(); }, [load]);
 
   // Filtri applicati lato client
+  const matchesBaseFilters = useCallback((item) => {
+    if (filterCompany && String(item.company_id) !== filterCompany) return false;
+    if (filterSource && String(item.source_document_id) !== filterSource) return false;
+    return true;
+  }, [filterCompany, filterSource]);
+
   const filtered = useMemo(() => {
     return items.filter(i => {
-      if (filterCompany && String(i.company_id) !== filterCompany) return false;
-      if (filterStatus  && i.status !== filterStatus)              return false;
-      if (filterSource  && String(i.source_document_id) !== filterSource) return false;
+      if (!matchesBaseFilters(i)) return false;
+      if (filterStatus && i.status !== filterStatus) return false;
+      if (filterDue === 'expired' && i.days_until_due >= 0) return false;
+      if (filterDue === 'soon' && (i.days_until_due < 0 || i.days_until_due > 30)) return false;
       return true;
     });
-  }, [items, filterCompany, filterStatus, filterSource]);
+  }, [items, matchesBaseFilters, filterStatus, filterDue]);
+
+  const openSourceDocument = useCallback((item) => {
+    const sourceId = Number(item?.source_document_id);
+    if (!sourceId || Number.isNaN(sourceId)) return;
+    navigate(buildDocumentRegistryPath({ selectId: sourceId, companyId: item?.company_id || null }));
+  }, [navigate]);
+
+  const handleStatusFilter = useCallback((value) => {
+    setFilterStatus(value);
+    if (value !== 'active') setFilterDue('');
+  }, []);
+
+  const getActiveCard = useCallback(() => {
+    if (filterStatus === 'active' && filterDue === 'expired') return 'expired';
+    if (filterStatus === 'active' && filterDue === 'soon') return 'soon';
+    if (filterStatus === 'active' && !filterDue) return 'active';
+    if (filterStatus === 'completed' && !filterDue) return 'completed';
+    return null;
+  }, [filterStatus, filterDue]);
+
+  const handleCardFilter = useCallback((card) => {
+    if (getActiveCard() === card) {
+      setFilterStatus('');
+      setFilterDue('');
+      return;
+    }
+    if (card === 'active') {
+      setFilterStatus('active');
+      setFilterDue('');
+    } else if (card === 'expired') {
+      setFilterStatus('active');
+      setFilterDue('expired');
+    } else if (card === 'soon') {
+      setFilterStatus('active');
+      setFilterDue('soon');
+    } else if (card === 'completed') {
+      setFilterStatus('completed');
+      setFilterDue('');
+    }
+  }, [getActiveCard]);
 
   const handleComplete = useCallback(async (item) => {
     setCompleting(item.id);
@@ -145,12 +196,32 @@ function DeadlinesPage() {
             {STATUS_LABEL[row.status] || row.status}
           </span>
         );
+      case 'source_document_title': {
+        if (!row.source_document_id) return row.source_document_title || '-';
+        return (
+          <button
+            type="button"
+            className="dl-source-link"
+            onClick={(event) => {
+              event.stopPropagation();
+              openSourceDocument(row);
+            }}
+            title="Apri il file origine nel Registro Documenti"
+          >
+            {row.source_document_title || `Documento #${row.source_document_id}`}
+          </button>
+        );
+      }
       case 'azioni':
         if (row.status !== 'active') return null;
         return (
           <button
+            type="button"
             className="dl-complete-btn"
-            onClick={() => handleComplete(row)}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleComplete(row);
+            }}
             disabled={completing === row.id}
             title="Segna completato"
           >
@@ -160,7 +231,7 @@ function DeadlinesPage() {
       default:
         return row[col.id] ?? '-';
     }
-  }, [handleComplete, completing]);
+  }, [handleComplete, completing, openSourceDocument]);
 
   // Export: valore grezzo per colonne speciali
   const getExportValue = useCallback((row, col) => {
@@ -176,7 +247,7 @@ function DeadlinesPage() {
       id: 'status',
       label: 'Stato',
       value: filterStatus,
-      onChange: setFilterStatus,
+      onChange: handleStatusFilter,
       options: [
         { value: '',               label: 'Tutti gli stati' },
         { value: 'active',         label: 'Attivi' },
@@ -207,10 +278,13 @@ function DeadlinesPage() {
     }] : []),
   ];
 
-  // Stats rapide
-  const statsActive   = items.filter(i => i.status === 'active').length;
-  const statsExpired  = items.filter(i => i.status === 'active' && i.days_until_due < 0).length;
-  const statsSoon     = items.filter(i => i.status === 'active' && i.days_until_due >= 0 && i.days_until_due <= 30).length;
+  // Stats rapide, calcolate sull'ambito corrente (azienda/file) come nel modulo NC.
+  const statsBase      = items.filter(matchesBaseFilters);
+  const statsActive    = statsBase.filter(i => i.status === 'active').length;
+  const statsExpired   = statsBase.filter(i => i.status === 'active' && i.days_until_due < 0).length;
+  const statsSoon      = statsBase.filter(i => i.status === 'active' && i.days_until_due >= 0 && i.days_until_due <= 30).length;
+  const statsCompleted = statsBase.filter(i => i.status === 'completed').length;
+  const activeCard     = getActiveCard();
 
   return (
     <div className="dl-page">
@@ -222,23 +296,43 @@ function DeadlinesPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="dl-stats-bar">
-        <div className="dl-stat">
+      <div className="dl-stats-bar" aria-label="Filtri rapidi scadenzario">
+        <button
+          type="button"
+          className={`dl-stat${activeCard === 'active' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('active')}
+          title="Filtra: scadenze attive"
+        >
           <span className="dl-stat-num">{statsActive}</span>
           <span className="dl-stat-lbl">Attive</span>
-        </div>
-        <div className="dl-stat dl-stat--red">
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--red${activeCard === 'expired' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('expired')}
+          title="Filtra: scadenze scadute"
+        >
           <span className="dl-stat-num">{statsExpired}</span>
           <span className="dl-stat-lbl">Scadute</span>
-        </div>
-        <div className="dl-stat dl-stat--orange">
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--orange${activeCard === 'soon' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('soon')}
+          title="Filtra: scadenze entro 30 giorni"
+        >
           <span className="dl-stat-num">{statsSoon}</span>
           <span className="dl-stat-lbl">In scadenza 30gg</span>
-        </div>
-        <div className="dl-stat dl-stat--gray">
-          <span className="dl-stat-num">{items.filter(i => i.status === 'completed').length}</span>
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--gray${activeCard === 'completed' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('completed')}
+          title="Filtra: scadenze completate"
+        >
+          <span className="dl-stat-num">{statsCompleted}</span>
           <span className="dl-stat-lbl">Completate</span>
-        </div>
+        </button>
       </div>
 
       {error && (
@@ -255,6 +349,7 @@ function DeadlinesPage() {
         renderCell={renderCell}
         getExportValue={getExportValue}
         rowClassName={row => getSemaforoClass(row.days_until_due) === 'dl-red' ? 'dl-row--urgent' : ''}
+        onRowDoubleClick={openSourceDocument}
       />
     </div>
   );
