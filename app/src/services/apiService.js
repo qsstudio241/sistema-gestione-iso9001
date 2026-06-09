@@ -1490,6 +1490,22 @@ class ApiService {
         return this.delete(`/qualifications/${id}`);
     }
 
+    async approveQualification(id) {
+        return this.post(`/qualifications/${id}/approve`, {});
+    }
+
+    async rejectQualification(id, rejection_reason) {
+        return this.post(`/qualifications/${id}/reject`, { rejection_reason });
+    }
+
+    async renewQualification(id, data = {}) {
+        return this.post(`/qualifications/${id}/renew`, data);
+    }
+
+    async getQualificationsCoverage(project_id) {
+        return this.get(`/qualifications/coverage?project_id=${project_id}`);
+    }
+
     // ─── Risks (Sprint 6) ────────────────────────────────────────────────────
     async getRisksStats()           { return this.get('/risks/stats'); }
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }
