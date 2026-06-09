@@ -6,6 +6,12 @@
   ],
   "groups": [
     {
+      "name": "package",
+      "files": [
+        "package.json"
+      ]
+    },
+    {
       "name": "constants",
       "files": [
         "src/constants/documentStatus.js"

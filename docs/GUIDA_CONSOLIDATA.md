@@ -2906,8 +2906,24 @@ Script VPS 066/067 allineati alle SQL `066_organization_ai_context_notes.sql` e 
 ```
 PDF certificato → Import Job → AI estrae campi → commit-to-qualification → approval_status=bozza
 → Coordinatore approva (POST /approve) → approval_status=approvata
+  └─ [se certificate_file_url presente] timbro visivo SGQ applicato con pdf-lib
+     → certificate_file_url aggiornato al file timbrato (*_approved.pdf)
+     → certificate_original_url conserva il path originale (migration 086)
 → Scadenzario / rinnovo (POST /renew → nuovo record con previous_qualification_id)
 ```
+
+### Timbro visivo PDF su approvazione (09/06/2026)
+
+**Funzionalità**: quando il coordinatore approva una qualifica con PDF allegato, `pdf-lib` aggiunge su ogni pagina in basso a destra un box con:
+- `✓ Verificato da: [nome] ([titolo IWT/IWE/IWS])` — titolo preso dalla qualifica ISO 14731 più recente approvata del coordinatore
+- `Studio: [organization name]`
+- `Data: [dd/mm/yyyy]`
+- `Approvazione SGQ — [certificate_number]`
+
+**Comportamento best-effort**: se il PDF non è trovato, non è un `.pdf`, o `pdf-lib` fallisce, l'approvazione procede comunque senza timbro (nessun blocco UI).
+**Idempotenza**: se `certificate_original_url` è già valorizzato, il timbro non viene riapplicato.
+**Dipendenze**: `pdf-lib ^1.17.1` — installato in `backend/package.json`; sul VPS con `npm install --no-save --ignore-scripts pdf-lib` dopo aver fixato permessi nodemon con `sudo chown -R spascarella:spascarella /var/www/sgq-backend/node_modules/nodemon`.
+**Migration**: `086_qualifications_original_url.sql` — aggiunge colonna `certificate_original_url NVARCHAR(500) NULL`. Eseguita dal PC locale con `run-migration-086-local.cjs` (usa `database.json` gitignored).
 
 ### Pattern VPS per migrazioni Node.js da Windows
 Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner VPS — l'IP pubblico è bloccato da hairpin NAT. Il servizio systemd usa invece il nome host perché ha route diverse.
