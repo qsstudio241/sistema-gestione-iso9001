@@ -1345,6 +1345,22 @@ class ApiService {
     /** Documenti orfani (senza parent_id, non in cartella) */
     async getOrphanDocuments()                  { return this.get('/documents/orphans'); }
 
+    // ── Scadenzario da file (ADR-013) ────────────────────────────────────────
+    async detectDeadlines(docId)                { return this.post(`/documents/${docId}/detect-deadlines`, {}); }
+    async importDeadlines(docId, mapping)       { return this.post(`/documents/${docId}/import-deadlines`, mapping); }
+    async getDeadlineConfig(docId)              { return this.get(`/documents/${docId}/deadline-config`); }
+    async getDeadlineItems(params = {})         {
+        const q = new URLSearchParams(Object.entries(params).filter(([,v]) => v != null && v !== '')).toString();
+        return this.get(`/deadline-items${q ? '?' + q : ''}`);
+    }
+    async getPriorityDeadlines(params = {})     {
+        const q = new URLSearchParams(Object.entries(params).filter(([,v]) => v != null && v !== '')).toString();
+        return this.get(`/deadline-items/priority${q ? '?' + q : ''}`);
+    }
+    async updateDeadlineItem(itemId, data)      { return this.patch(`/deadline-items/${itemId}`, data); }
+    async completeDeadlineItem(itemId)          { return this.post(`/deadline-items/${itemId}/complete`, {}); }
+    async deleteDeadlineItem(itemId)            { return this.delete(`/deadline-items/${itemId}`); }
+
     /**
      * Pre-estrazione metadati AI da un PDF (nessun record DB creato).
      * @param {File} file — oggetto File/Blob del PDF
