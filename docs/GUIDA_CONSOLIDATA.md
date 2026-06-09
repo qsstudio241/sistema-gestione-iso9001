@@ -90,6 +90,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | **VPS restart senza `sudo systemctl`** | Se `systemctl restart` non è disponibile, usare: `lsof -ti:3000 \| head -1` → `kill -15 $PID`; systemd con `Restart=on-failure` riavvia automaticamente (~5 s). Verificare cambio PID per confermare riavvio effettivo. | Sessione 08-09/06/2026 ADR-013 smoke |
 | **Reset password temporanea per smoke** | (1) `bcrypt.hash('pw_temp', 10)` da script locale con `database.json`; (2) `UPDATE users SET password_hash=... WHERE id=...`; (3) smoke; (4) **ripristinare subito l'hash originale**. Mai lasciare password temporanee in produzione. | Sessione 08-09/06/2026 ADR-013 smoke |
 | **ADR-013 slices completate (09/06/2026)** | S1 detector, S2 migrazione 083, S3 API detect, S4 API import/CRUD, S5 DataGridExportable, S6 dialog+pagina `/deadlines`, S7 PriorityView. **S8** (notifiche email), **S9** (cascade delete), **S10** (auto-refresh) in roadmap. | [PR #100](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/100) |
+| **Scadenzario — card e file origine** | Le card riepilogo della pagina `/deadlines` devono essere **filtri rapidi** come nel modulo NC (click/toggle + stato attivo), non semplici contatori. La colonna **File origine** deve aprire il documento sorgente con `buildDocumentRegistryPath({ selectId })`, riusando il Registro Documenti. | [PR #102](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/102) |
 
 ### Sync (vincolante)
 
