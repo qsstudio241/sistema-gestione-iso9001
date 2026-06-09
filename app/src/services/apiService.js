@@ -1847,9 +1847,11 @@ class ApiService {
     async updateProject(id, data)    { return this.put(`/projects/${id}`, data); }
     async deleteProject(id)          { return this.delete(`/projects/${id}`); }
     async getProjectStats()          { return this.get('/projects/stats'); }
+    async addProjectWelder(projectId, data) { return this.post(`/projects/${projectId}/welders`, data); }
+    async removeProjectWelder(projectId, qualificationId) { return this.delete(`/projects/${projectId}/welders/${qualificationId}`); }
 
     /**
-     * Verifica stato validità norma su catalogo pubblico ente (BSI / ISO / UNI).
+     * Verifica stato validit\u00e0 norma su catalogo pubblico ente (BSI / ISO / UNI).
      * Non bloccante: in caso di errore restituisce { status: 'unknown' }.
      *
      * @param {string} standardCode - Es. "BS EN ISO 9606-1:2017"

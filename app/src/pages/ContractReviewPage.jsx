@@ -22,6 +22,114 @@ import {
 } from '../utils/contractReviewLabels';
 import './ContractReviewPage.css';
 
+/**
+ * CoveragePanel — verifica copertura saldatori per una commessa collegata al riesame.
+ * Mostra un selettore di progetto + tabella di copertura WPS/qualifiche.
+ */
+function CoveragePanel({ caseId }) {
+  const [expanded,   setExpanded]   = useState(false);
+  const [projects,   setProjects]   = useState(null);
+  const [projectId,  setProjectId]  = useState('');
+  const [coverage,   setCoverage]   = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
+
+  function handleToggle() {
+    if (!expanded && !projects) {
+      apiService.getProjects({ limit: 200 })
+        .then(r => setProjects(r?.data || []))
+        .catch(() => setProjects([]));
+    }
+    setExpanded(e => !e);
+  }
+
+  async function handleCheck() {
+    if (!projectId) return;
+    setLoading(true); setError(null); setCoverage(null);
+    try {
+      const data = await apiService.getQualificationsCoverage(projectId);
+      setCoverage(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 16, borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
+      <button
+        type="button"
+        onClick={handleToggle}
+        style={{ background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: '#3730a3' }}
+      >
+        {expanded ? "\u25B2" : "\u25BC"} {"\uD83D\uDD0D"} Verifica Copertura Saldatori
+      </button>
+      {expanded && (
+        <div style={{ marginTop: 12 }}>
+          {projects === null
+            ? <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento commesse...</span>
+            : (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                <select
+                  value={projectId}
+                  onChange={e => { setProjectId(e.target.value); setCoverage(null); }}
+                  style={{ padding: '7px 10px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
+                >
+                  <option value="">Seleziona commessa...</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.project_code}{p.client_name ? ` \u2014 ${p.client_name}` : ''}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  disabled={!projectId || loading}
+                  style={{ padding: '7px 16px', background: '#1e3a5f', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: (!projectId || loading) ? 0.5 : 1 }}
+                >
+                  {loading ? 'Calcolo...' : 'Verifica'}
+                </button>
+              </div>
+            )
+          }
+          {error && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {coverage && !coverage.has_wps && (
+            <div style={{ fontSize: 13, color: '#9ca3af' }}>Nessuna WPS associata alla commessa selezionata.</div>
+          )}
+          {coverage && coverage.has_wps && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>WPS</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Processo</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Saldatori</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Esito</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coverage.coverage.map(row => (
+                  <tr key={row.wps_id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '8px 10px', fontWeight: 600 }}>{row.wps_code}</td>
+                    <td style={{ padding: '8px 10px' }}>{row.welding_process || '\u2014'}</td>
+                    <td style={{ padding: '8px 10px' }}>
+                      {row.qualifiers.length === 0
+                        ? <span style={{ color: '#dc2626' }}>Nessuno</span>
+                        : row.qualifiers.map(q => <div key={q.id}>{q.person_name}</div>)}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      {row.esito === 'verde' ? "\u2705" : "\u274C"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function parseCaseIdFromPath(pathname) {
   const m = pathname.match(/^\/contract-reviews\/(\d+)$/);
   return m ? parseInt(m[1], 10) : null;
@@ -937,6 +1045,7 @@ export default function ContractReviewPage() {
               {detail.case.status === 'APPROVED' && (
                 <div className="cr-panel">
                   <h2>Passaggio a esecuzione</h2>
+                  <CoveragePanel caseId={detail.case.id} />
                   {detail.case.handoff_ref ? (
                     <div className="cr-handoff-summary">
                       <p>
