@@ -1145,6 +1145,32 @@ I due useEffect di auto-init (in `ChecklistModule` e in `AuditAccordionLayout`) 
 
 ---
 
+## Sessione 08/06/2026 — Licenze moduli multi-tenant (ERAM + UI superadmin)
+
+### Problema
+Mauro Franciosi (admin ERAM, org **1004**) non vedeva **Assistente AI** in sidebar. Non era un bug RBAC: la sidebar filtra su `organizations.licensed_modules`. ERAM aveva lista esplicita **senza** `ai_assist` (copiata allo split multi-tenant prima dell'introduzione moduli AI). Il superadmin in **Impostazioni → Licenze** vedeva solo l'org propria (Al.project), non ERAM.
+
+### Slice applicate
+| Slice | Esito |
+|---|---|
+| Hotfix DB ERAM (org 1004) | Eseguito su VPS con `backend/scripts/run-patch-eram-ai-licenses-vps.js` — aggiunti `ai_assist`, `ai_norms`, `ai_review`, `ai_chat` |
+| Backend API | `GET /admin/organizations`, `GET /admin/organizations/:id/licenses`; helper `appendLicensedModulesForOrg`, `getOrgLicensesPayload` |
+| Frontend | Selettore tenant in `LicensesSettingsPage.jsx` (solo superadmin); banner quando si modifica un altro studio |
+| Test L1 | Jest `moduleLicense.service.test.js` (6 test); build Vite OK |
+
+### Regola operativa (lezione)
+- **`licensed_modules = NULL`** → tutti i moduli (retrocompatibile).
+- **Lista esplicita** → non eredita automaticamente nuove chiavi modulo: serve hotfix idempotente o intervento superadmin.
+- **Catalogo licenze ≠ licenza tenant**: la pagina licenze del superadmin deve permettere di scegliere **quale organizzazione** modificare (non solo la propria).
+- Dopo aggiornamento licenze: gli utenti del tenant devono **logout/login** (o refresh token) per vedere la sidebar aggiornata.
+
+### Passi post-merge (desktop)
+1. Deploy backend VPS: `backend/scripts/deploy-controllers-to-vps.ps1` (admin controller + routes + moduleLicense.service).
+2. Netlify: merge PR → build automatico.
+3. Comunicare a Mauro Franciosi: logout/login → voce **Assistente AI** visibile (hotfix DB già applicato 08/06/2026).
+
+---
+
 ## Sessione 17/05/2026 — Modulo Saldatura ISO 3834 operativo
 
 ### Cosa e' stato fatto
