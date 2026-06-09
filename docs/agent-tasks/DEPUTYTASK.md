@@ -1,6 +1,6 @@
 # DEPUTYTASK — ADR-013 Scadenzario Unificato
 
-**Stato:** CHIUSO — PR #100 mergiata su `main` il 09/06/2026 (commit merge `f320075`)
+**Stato:** CHIUSO — ADR-013 S1-S7 + fix UX scadenzario filtri/link su `main`
 
 ---
 
@@ -43,3 +43,10 @@ File: `Scadenzario Sicurezza-Ambiente_2026-04-24_greta (1).xlsx` (org 1002, doc 
 - `git pull origin main` eseguito — workspace allineato
 - `docs/GUIDA_CONSOLIDATA.md` aggiornato con lezioni ADR-013
 - Prossime slices (S8/S9/S10) tracciate in `PROJECT_ROADMAP.md`
+
+## Chiusura sessione filtri/link scadenzario (09/06/2026)
+- Fix UX ripristinato direttamente su `main`: commit `a1c4cc1` (`feat: standardizza filtri scadenzario`) e `fecf114` (`docs: documenta pattern scadenzario`).
+- Comportamento atteso: le card riepilogo `/deadlines` filtrano come nel modulo NC; la colonna "File origine" apre il documento con deep link Registro Documenti.
+- Smoke UI eseguito con mock API locale: filtri Scadute/In scadenza/Completate/Attive OK; link file origine OK.
+- Regola operativa: ripristini UI/scadenzario non devono toccare password o hash utenti. Le credenziali sono ambito separato e vanno modificate solo su richiesta esplicita.
+- TEST OK.
