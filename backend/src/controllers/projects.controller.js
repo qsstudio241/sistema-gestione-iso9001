@@ -349,6 +349,116 @@ async function deleteProject(req, res) {
     }
 }
 
+// POST /projects/:id/welders
+async function addProjectWelder(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id } = req.user;
+        const { qualification_id, wps_id, notes } = req.body || {};
+
+        if (!qualification_id) {
+            return res.status(400).json({ error: 'qualification_id obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+
+        // Verifica progetto
+        const proj = await query(
+            `SELECT id FROM projects WHERE id=@id AND organization_id=@organization_id`,
+            { id: parseInt(id), organization_id }
+        );
+        if (!proj.recordset.length) {
+            return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
+        }
+
+        // Verifica qualifica: stessa org, approvata, non scaduta (warning se in_scadenza)
+        const qualCheck = await query(
+            `SELECT id, approval_status, status, expiry_date, person_name
+             FROM qualifications
+             WHERE id=@qid AND organization_id=@organization_id`,
+            { qid: parseInt(qualification_id), organization_id }
+        );
+        if (!qualCheck.recordset.length) {
+            return res.status(404).json({ error: 'Qualifica non trovata', code: 'QUAL_NOT_FOUND' });
+        }
+        const q = qualCheck.recordset[0];
+        if (q.approval_status !== 'approvata') {
+            return res.status(422).json({ error: `Qualifica non approvata (stato: ${q.approval_status})`, code: 'QUAL_NOT_APPROVED' });
+        }
+        if (q.status === 'revocata' || q.status === 'sospesa') {
+            return res.status(422).json({ error: `Qualifica non attiva (stato: ${q.status})`, code: 'QUAL_INACTIVE' });
+        }
+
+        let warning = null;
+        if (q.expiry_date) {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const exp = new Date(q.expiry_date);
+            const days = Math.floor((exp - today) / 86400000);
+            if (days < 0) {
+                return res.status(422).json({ error: 'Qualifica scaduta', code: 'QUAL_EXPIRED' });
+            }
+            if (days <= 60) {
+                warning = `Qualifica di ${q.person_name} in scadenza tra ${days} giorni`;
+            }
+        }
+
+        // Evita duplicati
+        const dup = await query(
+            `SELECT id FROM project_welders WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id`,
+            { pid: parseInt(id), qid: parseInt(qualification_id), organization_id }
+        );
+        if (dup.recordset.length) {
+            return res.status(409).json({ error: 'Saldatore gi\u00e0 assegnato a questa commessa', code: 'DUPLICATE' });
+        }
+
+        const result = await query(
+            `INSERT INTO project_welders (project_id, qualification_id, wps_id, notes, organization_id, created_at)
+             OUTPUT INSERTED.id
+             VALUES (@pid, @qid, @wid, @notes, @organization_id, GETDATE())`,
+            {
+                pid: parseInt(id),
+                qid: parseInt(qualification_id),
+                wid: wps_id ? parseInt(wps_id) : null,
+                notes: notes || null,
+                organization_id,
+            }
+        );
+
+        logger.info('ProjectWelder added', { project_id: id, qualification_id, organization_id });
+        res.status(201).json({ success: true, data: { id: result.recordset[0].id, warning } });
+    } catch (error) {
+        logger.error('Error adding project welder', { error: error.message });
+        res.status(500).json({ error: 'Errore assegnazione saldatore', code: 'WELDER_ADD_ERROR' });
+    }
+}
+
+// DELETE /projects/:id/welders/:qualificationId
+async function removeProjectWelder(req, res) {
+    try {
+        const { id, qualificationId } = req.params;
+        const { organization_id } = req.user;
+
+        const check = await query(
+            `SELECT pw.id FROM project_welders pw
+             WHERE pw.project_id=@pid AND pw.qualification_id=@qid AND pw.organization_id=@organization_id`,
+            { pid: parseInt(id), qid: parseInt(qualificationId), organization_id }
+        );
+        if (!check.recordset.length) {
+            return res.status(404).json({ error: 'Assegnazione non trovata', code: 'NOT_FOUND' });
+        }
+
+        await query(
+            `DELETE FROM project_welders
+             WHERE project_id=@pid AND qualification_id=@qid AND organization_id=@organization_id`,
+            { pid: parseInt(id), qid: parseInt(qualificationId), organization_id }
+        );
+
+        logger.info('ProjectWelder removed', { project_id: id, qualification_id: qualificationId, organization_id });
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Error removing project welder', { error: error.message });
+        res.status(500).json({ error: 'Errore rimozione saldatore', code: 'WELDER_REMOVE_ERROR' });
+    }
+}
+
 module.exports = {
     listProjects,
     getProjectStats,
@@ -356,4 +466,6 @@ module.exports = {
     createProject,
     updateProject,
     deleteProject,
+    addProjectWelder,
+    removeProjectWelder,
 };

@@ -10,11 +10,15 @@ const ctrl = require('../controllers/projects.controller');
 router.use(authenticate);
 router.use(requireLicensedModule('saldatura'));
 
-router.get   ('/projects/stats', ctrl.getProjectStats);
-router.get   ('/projects',       ctrl.listProjects);
-router.get   ('/projects/:id',   ctrl.getProject);
-router.post  ('/projects',       ctrl.createProject);
-router.put   ('/projects/:id',   ctrl.updateProject);
-router.delete('/projects/:id',   ctrl.deleteProject);
+router.get   ('/projects/stats',                       ctrl.getProjectStats);
+router.get   ('/projects',                             ctrl.listProjects);
+router.get   ('/projects/:id',                         ctrl.getProject);
+router.post  ('/projects',                             ctrl.createProject);
+router.put   ('/projects/:id',                         ctrl.updateProject);
+router.delete('/projects/:id',                         ctrl.deleteProject);
+
+// Welders
+router.post  ('/projects/:id/welders',                 ctrl.addProjectWelder);
+router.delete('/projects/:id/welders/:qualificationId',ctrl.removeProjectWelder);
 
 module.exports = router;
