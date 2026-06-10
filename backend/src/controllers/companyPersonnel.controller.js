@@ -14,6 +14,11 @@ const {
   sendAccessDenied,
   WRITE_STUDIO_ROLES,
 } = require('../services/companyAccess.service');
+const {
+  importPersonnelFromQualifications,
+  linkQualificationsToPersonnel,
+  listQualificationsForPersonnel,
+} = require('../services/personnelQualificationLink.service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -200,7 +205,7 @@ async function listPersonnel(req, res) {
     }
 
     const result = await query(`
-      SELECT id, organization_id, company_id, name, job_title, email,
+      SELECT id, organization_id, company_id, name, person_code, job_title, email,
              active, can_actuation, can_verify, notification_contact_id,
              created_at, updated_at
       FROM company_personnel
@@ -405,12 +410,96 @@ async function deletePersonnel(req, res) {
   }
 }
 
+/**
+ * POST /companies/:companyId/personnel/import-from-qualifications
+ */
+async function importFromQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const result = await importPersonnelFromQualifications({
+      organizationId: scope.organization_id,
+      companyId,
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] importFromQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore import da qualifiche', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * POST /companies/:companyId/personnel/link-qualifications
+ */
+async function linkQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const result = await linkQualificationsToPersonnel({
+      organizationId: scope.organization_id,
+      companyId,
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] linkQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore collegamento qualifiche', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * GET /companies/:companyId/personnel/:id/qualifications
+ */
+async function getPersonnelQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const personnelId = parseInt(req.params.id, 10);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'read');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const check = await query(`
+      SELECT id FROM company_personnel
+      WHERE id = @id AND company_id = @company_id AND organization_id = @organization_id
+    `, { id: personnelId, company_id: companyId, organization_id: scope.organization_id });
+
+    if (check.recordset.length === 0) {
+      return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
+    }
+
+    const data = await listQualificationsForPersonnel({
+      organizationId: scope.organization_id,
+      companyId,
+      personnelId,
+    });
+
+    res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] getPersonnelQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore recupero qualifiche collegate', code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   listPersonnelStudio,
   listPersonnel,
   createPersonnel,
   updatePersonnel,
   deletePersonnel,
+  importFromQualifications,
+  linkQualifications,
+  getPersonnelQualifications,
   resolvePersonnelScope,
   resolveCompanyScope,
   resolveAuditorOrgId,
