@@ -65,6 +65,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 |---------|--------------------|-----------|
 | **Isolamento dati AI multi-tenant** | Utente **STUDIO**: vista d'insieme, può selezionare solo tra le **proprie aziende clienti** (`auditor_org_id`). Utente **AZIENDA cliente**: il backend **forza** `company_id` sull'anagrafica primaria (mai fidarsi del `companyId` dal client), niente 403. **RAG**: filtro `company_id = @compId`, **niente** `OR IS NULL` / chunk globali. | [PR #91 — regola scope azienda AI](#pr-91--regola-di-prodotto-ambito-azienda-dellassistente-ai-07062026) |
 | **Qualifiche — una azienda per certificato** | Ogni qualifica ha `company_id` **obbligatorio** (UI ambito + form, API `qualificationCompany.service`, mig. 087). Import AI eredita `company_id` dal job. Dopo approvazione **non** si cambia azienda; stesso numero certificato/PDF non può esistere su un'altra azienda del tenant. Pattern UI: `qualificationsCompanyScope.js` (come registro documenti). | [Aggiornamento 10/06/2026 — qualifiche company scope](#aggiornamento-10062026--qualifiche-ambito-azienda-obbligatorio) |
+| **Anagrafica personale ↔ qualifiche** | `company_personnel` = master (nome, mansione, email); `qualifications` = fascicolo certificati con `personnel_id` FK opzionale. Import guidato + backfill link; tab **Salute mansione** (4 tipi: acuità visiva, Ishihara, idoneità medica, sorveglianza sanitaria). Mig. **088**. | [Aggiornamento 10/06/2026 — collegamento personale-qualifiche](#aggiornamento-10062026--collegamento-anagrafica-personale-qualifiche) |
 | **API 500 da `studioScopeClause` errato sulle `companies`** | Nelle clausole di scope su `companies` usare l'alias colonna corretto (`c.organization_id`, **non** `co.organization_id`) e la logica `isOrgWideAdmin` / `auditor_org_id` (mai `isSuperadmin` indiscriminato). | [Sessione 07/06/2026 — fix responsible-options](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
 | **Menu audit vs RBAC** | Lista e dettaglio audit filtrano con `studioScopeClause` (`auditListRbac.service`); `organization_id` sempre da `req.user`. | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
 
@@ -482,6 +483,46 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 **Pitfall migrazione 087:** prima di `ALTER COLUMN … NOT NULL` su `company_id` va droppato `IX_qualif_company`; nei filtered index SQL Server **non** ammette `LTRIM/RTRIM` nel predicato `WHERE`.
 
 **Smoke:** creare qualifica con ambito selezionato; tentare stesso `certificate_number` su altra azienda → 409; dopo approvazione cambio azienda → 400.
+
+---
+
+### Aggiornamento 10/06/2026 — Collegamento anagrafica personale ↔ qualifiche
+
+**Obiettivo:** collegare `company_personnel` (anagrafica NC/audit) al modulo qualifiche senza fondere i due moduli. Ogni certificato resta in `qualifications`; il collegamento è `personnel_id` + sync `person_name` da anagrafica.
+
+**Documenti salute mansione (ISO 3834 — saldatori/ispettori VT):** oltre all'acuità visiva, prevedere come tipi qualifica con scadenza e PDF:
+
+| Tipo qualifica | Note |
+|----------------|------|
+| Certificato acuità visiva | VT / ispettori |
+| Certificato visione cromatica (Ishihara) | VT livello 2+ |
+| Idoneità medica alla mansione | Sorveglianza ingresso |
+| Sorveglianza sanitaria periodica | Rinnovo periodico |
+
+**Slice implementate:**
+
+| Slice | Contenuto |
+|-------|-----------|
+| A | `POST .../personnel/import-from-qualifications` — deduplica `normalizePersonKey` (codice > nome) |
+| B | `qualifications.personnel_id` FK + picker form + validazione API |
+| C | Tab **Salute mansione** su `QualificationsPage`; tipi in `occupationalQualificationTypes.js` |
+| D | Pannello personale: Import / Collega / modal qualifiche per riga |
+
+**Deploy produzione (ordine post-merge PR):**
+
+1. Merge PR su `main` + deploy backend (`personnelQualificationLink.service.js`, controller, routes)
+2. VPS: `scp backend/scripts/run-migration-088-vps.js` → `node /tmp/run-migration-088-vps.js`
+3. Netlify build frontend (tab, form picker, pannello personale)
+
+**API:**
+
+| Metodo | Endpoint |
+|--------|----------|
+| POST | `/companies/:companyId/personnel/import-from-qualifications` |
+| POST | `/companies/:companyId/personnel/link-qualifications` |
+| GET | `/companies/:companyId/personnel/:id/qualifications` |
+
+**Smoke:** da scheda azienda → Import da qualifiche → Collega qualifiche → icona certificati su riga personale; nuova qualifica salute mansione con picker anagrafica; tab Salute mansione filtra i 4 tipi.
 
 ---
 

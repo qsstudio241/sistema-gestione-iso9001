@@ -586,6 +586,21 @@ class ApiService {
         return this.delete(`/companies/${companyId}/personnel/${personnelId}${query ? '?' + query : ''}`);
     }
 
+    async importPersonnelFromQualifications(companyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/personnel/import-from-qualifications${query ? '?' + query : ''}`, {});
+    }
+
+    async linkPersonnelQualifications(companyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/personnel/link-qualifications${query ? '?' + query : ''}`, {});
+    }
+
+    async getPersonnelQualifications(companyId, personnelId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/personnel/${personnelId}/qualifications${query ? '?' + query : ''}`);
+    }
+
     // ==========================================
     // ORGANIZATION (tenant — P.IVA, logo)
     // ==========================================
