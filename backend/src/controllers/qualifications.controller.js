@@ -234,10 +234,10 @@ async function listQualifications(req, res) {
         const result = await r.query(`
             SELECT q.*,
                    c.name AS company_name,
-                   u.name AS approved_by_name
+                   u.full_name AS approved_by_name
             FROM qualifications q
             LEFT JOIN companies c ON c.id = q.company_id
-            LEFT JOIN users u ON u.id = q.approved_by
+            LEFT JOIN users u ON u.user_id = q.approved_by
             WHERE ${whereClause}
             ORDER BY
                 CASE WHEN q.expiry_date IS NULL THEN 1 ELSE 0 END,
@@ -423,10 +423,10 @@ async function getOne(req, res) {
             .input('id', parseInt(req.params.id))
             .input('orgId', orgId)
             .query(`
-                SELECT q.*, c.name AS company_name, u.name AS approved_by_name
+                SELECT q.*, c.name AS company_name, u.full_name AS approved_by_name
                 FROM qualifications q
                 LEFT JOIN companies c ON c.id = q.company_id
-                LEFT JOIN users u ON u.id = q.approved_by
+                LEFT JOIN users u ON u.user_id = q.approved_by
                 WHERE q.id=@id AND q.organization_id=@orgId
             `);
         if (!r.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
@@ -478,7 +478,7 @@ async function createQualification(req, res) {
 
         const pool  = await getPool();
         const orgId = req.user.organization_id;
-        const userId = req.user.id;
+        const userId = req.user.user_id;
 
         const r = await pool.request()
             .input('orgId',     orgId)
@@ -682,7 +682,7 @@ async function approveQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const userId = req.user.id;
+        const userId = req.user.user_id;
         const role  = req.user.role || '';
 
         if (!['admin', 'superadmin', 'coordinatore'].includes(role)) {
@@ -696,17 +696,17 @@ async function approveQualification(req, res) {
             .query(`
                 SELECT q.id, q.approval_status, q.certificate_file_url,
                        q.certificate_number, q.certificate_original_url,
-                       u.name AS approver_name,
+                       u.full_name AS approver_name,
                        (SELECT TOP 1 qc.coordinator_title
                         FROM qualifications qc
                         WHERE qc.created_by = @userId
                           AND qc.coordinator_title IS NOT NULL
                           AND qc.approval_status = 'approvata'
                         ORDER BY qc.approved_at DESC) AS approver_title,
-                       o.name AS org_name
+                       o.organization_name AS org_name
                 FROM qualifications q
-                LEFT JOIN users u ON u.id = @userId
-                LEFT JOIN organizations o ON o.id = q.organization_id
+                LEFT JOIN users u ON u.user_id = @userId
+                LEFT JOIN organizations o ON o.organization_id = q.organization_id
                 WHERE q.id = @id AND q.organization_id = @orgId
             `);
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
@@ -775,7 +775,7 @@ async function rejectQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const userId = req.user.id;
+        const userId = req.user.user_id;
         const role  = req.user.role || '';
         const { rejection_reason } = req.body || {};
 
@@ -817,7 +817,7 @@ async function renewQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const userId = req.user.id;
+        const userId = req.user.user_id;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query('SELECT * FROM qualifications WHERE id=@id AND organization_id=@orgId');
