@@ -263,7 +263,7 @@ function QualificationsPage() {
     const LIMIT = 30;
 
     const [filters, setFiltersState] = useState({
-        search: "", status: "", expiring_days: "", approval_status: "", company_id: "",
+        search: "", stato: "", expiring_days: "", approval_status: "", company_id: "",
     });
 
     const [formOpen,    setFormOpen]    = useState(false);
@@ -292,11 +292,20 @@ function QualificationsPage() {
         try {
             const params = { page, limit: LIMIT };
             if (currentTab.qualification_type) params.qualification_type = currentTab.qualification_type;
-            if (filters.search)        params.search        = filters.search;
-            if (filters.status)        params.status        = filters.status;
+            if (filters.search)          params.search          = filters.search;
             if (filters.approval_status) params.approval_status = filters.approval_status;
-            if (filters.expiring_days) params.expiring_days = filters.expiring_days;
-            if (filters.company_id)    params.company_id    = filters.company_id;
+            if (filters.company_id)      params.company_id      = filters.company_id;
+
+            // Filtro "stato": mappa su status DB oppure expiring_days
+            if (filters.stato === "valida")          params.status = "valida";
+            else if (filters.stato === "sospesa")    params.status = "sospesa";
+            else if (filters.stato === "revocata")   params.status = "revocata";
+            else if (filters.stato === "in_scadenza_90") params.expiring_days = 90;
+            else if (filters.stato === "scaduta")    params.expiring_days = -1;
+
+            // Filtro scadenze granulare: attivo solo se stato non copre già l'expiry
+            const statoUsesExpiry = filters.stato === "in_scadenza_90" || filters.stato === "scaduta";
+            if (!statoUsesExpiry && filters.expiring_days) params.expiring_days = filters.expiring_days;
 
             const [res, statsRes] = await Promise.all([
                 apiService.getQualifications(params),
@@ -387,6 +396,12 @@ function QualificationsPage() {
 
             {/* Filtri */}
             <div className="sq-toolbar">
+                {companies.length > 0 && (
+                    <select className="sq-select" value={filters.company_id} onChange={e => setFilter("company_id", e.target.value)}>
+                        <option value="">Tutte le aziende</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                )}
                 <input
                     className="sq-search"
                     type="text"
@@ -394,9 +409,11 @@ function QualificationsPage() {
                     value={filters.search}
                     onChange={e => setFilter("search", e.target.value)}
                 />
-                <select className="sq-select" value={filters.status} onChange={e => setFilter("status", e.target.value)}>
+                <select className="sq-select" value={filters.stato} onChange={e => setFilter("stato", e.target.value)}>
                     <option value="">Tutti gli stati</option>
                     <option value="valida">Valida</option>
+                    <option value="in_scadenza_90">In scadenza (&le;90gg)</option>
+                    <option value="scaduta">Scaduta</option>
                     <option value="sospesa">Sospesa</option>
                     <option value="revocata">Revocata</option>
                 </select>
@@ -407,17 +424,27 @@ function QualificationsPage() {
                     <option value="approvata">Approvata</option>
                     <option value="rifiutata">Rifiutata</option>
                 </select>
-                <select className="sq-select" value={filters.expiring_days} onChange={e => setFilter("expiring_days", e.target.value)}>
+                <select
+                    className="sq-select"
+                    value={filters.expiring_days}
+                    onChange={e => setFilter("expiring_days", e.target.value)}
+                    disabled={filters.stato === "in_scadenza_90" || filters.stato === "scaduta"}
+                    title={filters.stato === "in_scadenza_90" || filters.stato === "scaduta" ? "Disabilitato: lo stato selezionato include già il filtro scadenza" : ""}
+                >
                     <option value="">Tutte le scadenze</option>
-                    <option value="30">In scadenza entro 30 gg</option>
-                    <option value="60">In scadenza entro 60 gg</option>
-                    <option value="90">In scadenza entro 90 gg</option>
+                    <option value="30">Scadono entro 30 gg</option>
+                    <option value="60">Scadono entro 60 gg</option>
+                    <option value="90">Scadono entro 90 gg</option>
+                    <option value="-1">Già scadute</option>
                 </select>
-                {companies.length > 0 && (
-                    <select className="sq-select" value={filters.company_id} onChange={e => setFilter("company_id", e.target.value)}>
-                        <option value="">Tutte le aziende</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                {(filters.search || filters.stato || filters.expiring_days || filters.approval_status || filters.company_id) && (
+                    <button
+                        className="sq-btn-secondary"
+                        onClick={() => { setFiltersState({ search: "", stato: "", expiring_days: "", approval_status: "", company_id: "" }); setPage(1); }}
+                        title="Azzera filtri"
+                    >
+                        Azzera filtri
+                    </button>
                 )}
                 <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">{"\u21BB"}</button>
             </div>

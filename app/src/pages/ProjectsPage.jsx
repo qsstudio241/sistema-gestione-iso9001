@@ -39,7 +39,6 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
     applicable_wps_ids: [],
     welder_ids: existingWelderIds,
     ...(project || {}),
-    welder_ids: existingWelderIds,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
