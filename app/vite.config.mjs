@@ -60,7 +60,7 @@ return {
             // docx-preview può mancare in ambienti senza npm install completo:
             // externalize per evitare errori build; il dynamic import fallisce
             // gracefully con messaggio "Anteprima non disponibile".
-            external: (id) => id === 'docx-preview',
+                            external: (id) => id === 'docx-preview' || id === 'react-easy-crop',
             output: {
                 manualChunks(id) {
                     if (!id.includes('node_modules')) return;

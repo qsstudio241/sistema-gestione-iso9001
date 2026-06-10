@@ -204,7 +204,13 @@ async function listQualifications(req, res) {
         }
 
         if (expiring_days) {
-            where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
+            const expDaysInt = parseInt(expiring_days);
+            if (expDaysInt < 0) {
+                // Già scadute: expiry_date nel passato
+                where.push("q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
+            } else {
+                where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
+            }
         }
         const whereClause = where.join(' AND ');
 
