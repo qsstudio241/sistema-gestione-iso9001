@@ -34,12 +34,13 @@ vi.mock("../components/CompanyPersonnelPanel", () => ({
 }));
 
 const mockGetCompany = vi.fn();
+const mockUpdateCompany = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
     getCompany: (...args) => mockGetCompany(...args),
     getCompanyLogoUrl: (id) => `https://api.test/companies/${id}/logo`,
-    updateCompany: vi.fn(),
+    updateCompany: (...args) => mockUpdateCompany(...args),
     uploadCompanyLogo: vi.fn(),
   },
 }));
@@ -55,6 +56,8 @@ describe("parseCompanyId", () => {
 describe("CompanyDetailPage", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
+    mockUpdateCompany.mockReset();
+    mockUpdateCompany.mockResolvedValue({ data: { id: 42 } });
     mockGetCompany.mockResolvedValue({
       data: {
         id: 42,
@@ -99,5 +102,23 @@ describe("CompanyDetailPage", () => {
 
     await userEvent.click(backLink);
     expect(mockNavigate).toHaveBeenCalledWith("/companies");
+  });
+
+  it("dopo Salva anagrafica torna all'elenco aziende", async () => {
+    render(<CompanyDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Acme Srl")).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByDisplayValue("Acme Srl");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Acme Aggiornata");
+    await userEvent.click(screen.getByRole("button", { name: "Salva anagrafica" }));
+
+    await waitFor(() => {
+      expect(mockUpdateCompany).toHaveBeenCalledWith(42, expect.objectContaining({ name: "Acme Aggiornata" }));
+      expect(mockNavigate).toHaveBeenCalledWith("/companies");
+    });
   });
 });
