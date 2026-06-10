@@ -64,6 +64,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Isolamento dati AI multi-tenant** | Utente **STUDIO**: vista d'insieme, può selezionare solo tra le **proprie aziende clienti** (`auditor_org_id`). Utente **AZIENDA cliente**: il backend **forza** `company_id` sull'anagrafica primaria (mai fidarsi del `companyId` dal client), niente 403. **RAG**: filtro `company_id = @compId`, **niente** `OR IS NULL` / chunk globali. | [PR #91 — regola scope azienda AI](#pr-91--regola-di-prodotto-ambito-azienda-dellassistente-ai-07062026) |
+| **Qualifiche — una azienda per certificato** | Ogni qualifica ha `company_id` **obbligatorio** (UI ambito + form, API `qualificationCompany.service`, mig. 087). Import AI eredita `company_id` dal job. Dopo approvazione **non** si cambia azienda; stesso numero certificato/PDF non può esistere su un'altra azienda del tenant. Pattern UI: `qualificationsCompanyScope.js` (come registro documenti). | [Aggiornamento 10/06/2026 — qualifiche company scope](#aggiornamento-10062026--qualifiche-ambito-azienda-obbligatorio) |
 | **API 500 da `studioScopeClause` errato sulle `companies`** | Nelle clausole di scope su `companies` usare l'alias colonna corretto (`c.organization_id`, **non** `co.organization_id`) e la logica `isOrgWideAdmin` / `auditor_org_id` (mai `isSuperadmin` indiscriminato). | [Sessione 07/06/2026 — fix responsible-options](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
 | **Menu audit vs RBAC** | Lista e dettaglio audit filtrano con `studioScopeClause` (`auditListRbac.service`); `organization_id` sempre da `req.user`. | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
 
@@ -457,6 +458,28 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 **Pattern `DocumentDataGrid`:** riutilizzare per liste tabellari documenti (selezione singola, sort client-side, toolbar contestuale) invece di card sparse nel Catalogo; colonna selezione e frecce sort devono essere visibili subito (fix visibilità in `864c9e1`).
 
 **Backlog differito:** feature «Condividi via email» con link temporaneo firmato — non in scope sessione.
+
+---
+
+### Aggiornamento 10/06/2026 — Qualifiche: ambito azienda obbligatorio
+
+**Problema:** `qualifications.company_id` era nullable; UI con opzione «nessuna»; stesso certificato poteva finire su clienti diversi; import AI non ereditava l'azienda del job.
+
+**Soluzione (pattern registro documenti):**
+
+| Livello | Intervento |
+|---------|------------|
+| UI | Selettore **Ambito** su `QualificationsPage` (`qualificationsCompanyScope.js` + localStorage); creazione bloccata senza ambito; form con azienda obbligatoria; lock azienda se `approval_status = approvata` |
+| API | `qualificationCompany.service.js` su POST/PUT e `commit-to-qualification` |
+| DB | Migrazione **087**: backfill orfani → `NOT NULL` → indice unico filtrato `(org, company, cert#, person_name)` |
+
+**Deploy produzione (ordine):**
+
+1. Merge PR + deploy backend (controller + service)
+2. Cloud Agent / VPS: `scp backend/scripts/run-migration-087-vps.js` → `node /tmp/run-migration-087-vps.js`
+3. Netlify build frontend (ambito + form)
+
+**Smoke:** creare qualifica con ambito selezionato; tentare stesso `certificate_number` su altra azienda → 409; dopo approvazione cambio azienda → 400.
 
 ---
 

@@ -26,6 +26,10 @@ const {
     hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const {
+    validateQualificationCompany,
+    assertNoCrossCompanyDuplicate,
+} = require('../services/qualificationCompany.service');
 
 /**
  * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
@@ -473,16 +477,34 @@ async function createQualification(req, res) {
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica \u00e8 obbligatorio.' });
 
-        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
-        if (writeDenied) return sendAccessDenied(res, writeDenied);
-
         const pool  = await getPool();
         const orgId = req.user.organization_id;
+
+        const companyCheck = await validateQualificationCompany({
+            organizationId: orgId,
+            companyId: company_id,
+        });
+        if (!companyCheck.ok) {
+            return res.status(companyCheck.status).json({ error: companyCheck.error, code: companyCheck.code });
+        }
+
+        const dupCheck = await assertNoCrossCompanyDuplicate({
+            organizationId: orgId,
+            companyId: companyCheck.companyId,
+            certificateNumber: certificate_number,
+            certificateFileUrl: certificate_file_url,
+        });
+        if (!dupCheck.ok) {
+            return res.status(dupCheck.status).json({ error: dupCheck.error, code: dupCheck.code });
+        }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyCheck.companyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
         const userId = req.user.user_id;
 
         const r = await pool.request()
             .input('orgId',     orgId)
-            .input('compId',    company_id   || null)
+            .input('compId',    companyCheck.companyId)
             .input('personName',person_name.trim())
             .input('personCode',person_code  || null)
             .input('dept',      department   || null)
@@ -565,13 +587,12 @@ async function updateQualification(req, res) {
         const body  = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query(`SELECT id, company_id, approval_status, certificate_number,
+                           certificate_file_url, certificate_original_url
+                    FROM qualifications WHERE id=@id AND organization_id=@orgId`);
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
-        const targetCompanyId = body.company_id !== undefined ? body.company_id : check.recordset[0].company_id;
-        const writeDenied = await assertMutatingAllowed(req.user, { companyId: targetCompanyId });
-        if (writeDenied) return sendAccessDenied(res, writeDenied);
-
+        const existing = check.recordset[0];
         const {
             company_id, person_name, person_code, department,
             qualification_type, standard_ref, scope_detail,
@@ -587,10 +608,35 @@ async function updateQualification(req, res) {
             certificate_file_url,
         } = body;
 
+        const resolvedCompanyId = company_id !== undefined ? company_id : existing.company_id;
+        const companyCheck = await validateQualificationCompany({
+            organizationId: orgId,
+            companyId: resolvedCompanyId,
+            existing,
+        });
+        if (!companyCheck.ok) {
+            return res.status(companyCheck.status).json({ error: companyCheck.error, code: companyCheck.code });
+        }
+
+        const dupCheck = await assertNoCrossCompanyDuplicate({
+            organizationId: orgId,
+            companyId: companyCheck.companyId,
+            certificateNumber: certificate_number !== undefined ? certificate_number : existing.certificate_number,
+            certificateFileUrl: certificate_file_url !== undefined ? certificate_file_url : existing.certificate_file_url,
+            certificateOriginalUrl: existing.certificate_original_url,
+            excludeId: id,
+        });
+        if (!dupCheck.ok) {
+            return res.status(dupCheck.status).json({ error: dupCheck.error, code: dupCheck.code });
+        }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyCheck.companyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
-            .input('compId',    company_id   || null)
+            .input('compId',    companyCheck.companyId)
             .input('personName',person_name?.trim())
             .input('personCode',person_code  || null)
             .input('dept',      department   || null)
