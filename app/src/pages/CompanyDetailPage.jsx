@@ -32,7 +32,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
@@ -70,7 +69,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
     if (!form.name?.trim() || !company?.id) return;
     setSaving(true);
     setError(null);
-    setSaved(false);
     try {
       await apiService.updateCompany(company.id, form);
       if (logoFile) {
@@ -78,8 +76,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
         setLogoTimestamp(Date.now());
         setLogoFile(null);
       }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
       onSaved?.();
     } catch (err) {
       setError(err.message || "Errore salvataggio");
@@ -152,7 +148,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
         )}
         {canEdit && (
           <div className="studio-actions">
-            {saved && <span className="studio-saved">&#10003; Salvato</span>}
             <button type="submit" className="btn-studio-primary" disabled={saving}>
               {saving ? "Salvataggio..." : "Salva anagrafica"}
             </button>
@@ -262,7 +257,7 @@ function CompanyDetailPage() {
         {activeTab === "anagrafica" && (
           <TabAnagrafica
             company={company}
-            onSaved={loadCompany}
+            onSaved={() => navigate("/companies")}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}
           />
