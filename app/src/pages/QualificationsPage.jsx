@@ -3,11 +3,15 @@
  * Tab: Tutti | Saldatori | NDT | Coordinatori | Operatori | Abilitazioni | Generiche
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
 import { formatDate } from "../utils/dateHelpers";
+import {
+  resolveInitialQualificationsCompanyScope,
+  persistQualificationsCompanyScope,
+} from "../utils/qualificationsCompanyScope";
 import "./QualificationsPage.css";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -262,8 +266,10 @@ function QualificationsPage() {
     const [companies,  setCompanies]  = useState([]);
     const LIMIT = 30;
 
+    const [companyScope, setCompanyScope] = useState(() => resolveInitialQualificationsCompanyScope());
+
     const [filters, setFiltersState] = useState({
-        search: "", stato: "", expiring_days: "", approval_status: "", company_id: "",
+        search: "", stato: "", expiring_days: "", approval_status: "",
     });
 
     const [formOpen,    setFormOpen]    = useState(false);
@@ -284,6 +290,27 @@ function QualificationsPage() {
         }).catch(() => {});
     }, []);
 
+    useEffect(() => {
+        const access = user?.company_access;
+        if (Array.isArray(access) && access.length === 1 && !companyScope) {
+            const onlyId = String(access[0].company_id);
+            setCompanyScope(onlyId);
+            persistQualificationsCompanyScope(onlyId);
+        }
+    }, [user, companyScope]);
+
+    const scopeCompanyName = useMemo(() => {
+        if (!companyScope) return "Tutto lo studio";
+        const match = companies.find((c) => String(c.id) === String(companyScope));
+        return match?.name || `Azienda #${companyScope}`;
+    }, [companyScope, companies]);
+
+    const handleCompanyScopeChange = useCallback((value) => {
+        setCompanyScope(value);
+        persistQualificationsCompanyScope(value);
+        setPage(1);
+    }, []);
+
     const currentTab = TABS.find(t => t.key === activeTab) || TABS[0];
 
     const loadData = useCallback(async () => {
@@ -294,7 +321,7 @@ function QualificationsPage() {
             if (currentTab.qualification_type) params.qualification_type = currentTab.qualification_type;
             if (filters.search)          params.search          = filters.search;
             if (filters.approval_status) params.approval_status = filters.approval_status;
-            if (filters.company_id)      params.company_id      = filters.company_id;
+            if (companyScope)            params.company_id      = companyScope;
 
             // Filtro "stato": mappa su status DB oppure expiring_days
             if (filters.stato === "valida")          params.status = "valida";
@@ -322,11 +349,18 @@ function QualificationsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, filters, currentTab]);
+    }, [page, filters, currentTab, companyScope]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
-    function handleNew()   { setEditingQual(null); setFormOpen(true); }
+    function handleNew() {
+        if (!companyScope) {
+            setError("Seleziona l'ambito azienda prima di creare una nuova qualifica.");
+            return;
+        }
+        setEditingQual(null);
+        setFormOpen(true);
+    }
     function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
     function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
 
@@ -375,8 +409,36 @@ function QualificationsPage() {
                     <h2 className="sq-title">{"\uD83C\uDF93"} Qualifiche Personale</h2>
                     <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
                 </div>
-                <button className="sq-btn-new" onClick={handleNew}>+ Nuova qualifica</button>
+                <div className="sq-header-actions">
+                    {companies.length > 0 && (
+                        <label className="sq-scope-label">
+                            {"Ambito:"}
+                            <select
+                                className="sq-select sq-scope-select"
+                                value={companyScope}
+                                onChange={(e) => handleCompanyScopeChange(e.target.value)}
+                                aria-label="Ambito qualifiche per azienda"
+                            >
+                                <option value="">{"Tutto lo studio"}</option>
+                                {companies.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+                    <button
+                        className="sq-btn-new"
+                        onClick={handleNew}
+                        disabled={!companyScope}
+                        title={!companyScope ? "Seleziona un'azienda nell'ambito" : ""}
+                    >
+                        + Nuova qualifica
+                    </button>
+                </div>
             </div>
+            {companyScope && (
+                <p className="sq-scope-hint">{"Ambito attivo: "}{scopeCompanyName}</p>
+            )}
 
             {/* Stats */}
             <StatsBar stats={stats} />
@@ -396,12 +458,6 @@ function QualificationsPage() {
 
             {/* Filtri */}
             <div className="sq-toolbar">
-                {companies.length > 0 && (
-                    <select className="sq-select" value={filters.company_id} onChange={e => setFilter("company_id", e.target.value)}>
-                        <option value="">Tutte le aziende</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                )}
                 <input
                     className="sq-search"
                     type="text"
@@ -437,10 +493,10 @@ function QualificationsPage() {
                     <option value="90">Scadono entro 90 gg</option>
                     <option value="-1">Già scadute</option>
                 </select>
-                {(filters.search || filters.stato || filters.expiring_days || filters.approval_status || filters.company_id) && (
+                {(filters.search || filters.stato || filters.expiring_days || filters.approval_status) && (
                     <button
                         className="sq-btn-secondary"
-                        onClick={() => { setFiltersState({ search: "", stato: "", expiring_days: "", approval_status: "", company_id: "" }); setPage(1); }}
+                        onClick={() => { setFiltersState({ search: "", stato: "", expiring_days: "", approval_status: "" }); setPage(1); }}
                         title="Azzera filtri"
                     >
                         Azzera filtri
@@ -505,6 +561,7 @@ function QualificationsPage() {
             {formOpen && (
                 <QualificationForm
                     qualification={editingQual}
+                    defaultCompanyId={!editingQual && companyScope ? companyScope : undefined}
                     onSave={handleSaved}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />

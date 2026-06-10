@@ -41,7 +41,7 @@ const EMPTY = {
   ndt_method: "", ndt_level: "",
 };
 
-function QualificationForm({ qualification, onSave, onClose }) {
+function QualificationForm({ qualification, onSave, onClose, defaultCompanyId }) {
   const isEdit = !!qualification;
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
@@ -70,8 +70,12 @@ function QualificationForm({ qualification, onSave, onClose }) {
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
       }
+    } else if (defaultCompanyId) {
+      setForm((f) => ({ ...f, company_id: String(defaultCompanyId) }));
     }
-  }, [qualification]);
+  }, [qualification, defaultCompanyId]);
+
+  const companyLocked = isEdit && qualification?.approval_status === "approvata";
 
   function handle(field) {
     return e => setForm(f => ({ ...f, [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
@@ -80,10 +84,11 @@ function QualificationForm({ qualification, onSave, onClose }) {
   async function handleSave() {
     if (!form.person_name.trim()) { setError("Il nome della persona \u00e8 obbligatorio."); return; }
     if (!form.qualification_type.trim()) { setError("Il tipo di qualifica \u00e8 obbligatorio."); return; }
+    if (!form.company_id) { setError("L'azienda cliente \u00e8 obbligatoria."); return; }
     setSaving(true);
     setError(null);
     try {
-      const data = { ...form, company_id: form.company_id || null };
+      const data = { ...form, company_id: parseInt(form.company_id, 10) };
       if (isEdit) {
         await apiService.updateQualification(qualification.id, data);
       } else {
@@ -128,9 +133,14 @@ function QualificationForm({ qualification, onSave, onClose }) {
               <input type="text" value={form.department} onChange={handle("department")} placeholder="Produzione" />
             </div>
             <div className="qf-field">
-              <label>Azienda</label>
-              <select value={form.company_id} onChange={handle("company_id")}>
-                <option value="">-- nessuna --</option>
+              <label>Azienda <span className="req">*</span></label>
+              <select
+                value={form.company_id}
+                onChange={handle("company_id")}
+                disabled={companyLocked}
+                title={companyLocked ? "Azienda bloccata su qualifica approvata" : ""}
+              >
+                <option value="">-- seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
