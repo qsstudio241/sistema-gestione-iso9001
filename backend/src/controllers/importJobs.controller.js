@@ -15,6 +15,10 @@ const {
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const {
+    validateQualificationCompany,
+    assertNoCrossCompanyDuplicate,
+} = require('../services/qualificationCompany.service');
 
 async function listJobs(req, res) {
     try {
@@ -657,10 +661,11 @@ async function commitToQualification(req, res) {
         const fileId  = parseInt(req.params.fileId, 10);
 
         const jCheck = await query(
-            `SELECT id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
             { id: jobId, organization_id }
         );
         if (!jCheck.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+        const jobRow = jCheck.recordset[0];
 
         const fRows = await query(
             `SELECT id, status, ai_extraction_json, original_name, confidence_score
@@ -700,10 +705,22 @@ async function commitToQualification(req, res) {
         };
         const qualificationType = body.qualification_type_label || QUAL_TYPES[docTypeHint] || docTypeHint || 'Generica';
 
+        const resolvedCompanyId = body.company_id != null && body.company_id !== ''
+            ? body.company_id
+            : jobRow.company_id;
+
+        const companyCheck = await validateQualificationCompany({
+            organizationId: organization_id,
+            companyId: resolvedCompanyId,
+        });
+        if (!companyCheck.ok) {
+            return res.status(companyCheck.status).json({ error: companyCheck.error, code: companyCheck.code });
+        }
+
         // Costruisce record qualifications
         const qData = {
             organization_id,
-            company_id:           body.company_id ? parseInt(body.company_id) : null,
+            company_id:           companyCheck.companyId,
             person_name:          body.person_name || tsd.person_name || tsd.welder_name || tsd.operator_name || null,
             person_code:          body.person_code || null,
             department:           body.department || null,
@@ -749,6 +766,15 @@ async function commitToQualification(req, res) {
 
         if (!qData.person_name) {
             return res.status(400).json({ error: 'person_name obbligatorio (non estratto dall\'AI).', code: 'MISSING_PERSON_NAME' });
+        }
+
+        const dupCheck = await assertNoCrossCompanyDuplicate({
+            organizationId: organization_id,
+            companyId: companyCheck.companyId,
+            certificateNumber: qData.certificate_number,
+        });
+        if (!dupCheck.ok) {
+            return res.status(dupCheck.status).json({ error: dupCheck.error, code: dupCheck.code });
         }
 
         const ins = await query(
