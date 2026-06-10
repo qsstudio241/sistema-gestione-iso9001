@@ -3,15 +3,21 @@
  * Tab: Tutti | Saldatori | NDT | Coordinatori | Operatori | Abilitazioni | Generiche
  */
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
 import { formatDate } from "../utils/dateHelpers";
 import {
-  resolveInitialQualificationsCompanyScope,
-  persistQualificationsCompanyScope,
+    resolveInitialQualificationsCompanyScope,
+    persistQualificationsCompanyScope,
 } from "../utils/qualificationsCompanyScope";
+import {
+    QUALIFICATION_SITUAZIONI,
+    STATS_TO_SITUAZIONE,
+    toggleSituazione,
+    situazioneLabel,
+} from "../utils/qualificationsSituazione";
 import "./QualificationsPage.css";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -70,17 +76,47 @@ function ApprovalBadge({ value }) {
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
 
-function StatsBar({ stats }) {
+function StatsBar({ stats, activeSituazione, onStatClick }) {
     if (!stats) return null;
+
+    const items = [
+        { key: "total", cls: "", lbl: "Totale" },
+        { key: "valide", cls: "sq-stat-verde", lbl: "Valide" },
+        { key: "in_scadenza_60", cls: "sq-stat-giallo", lbl: "In scad. 60gg" },
+        { key: "in_scadenza_30", cls: "sq-stat-arancione", lbl: "Urgenti 30gg" },
+        { key: "scadute", cls: "sq-stat-rosso", lbl: "Scadute" },
+    ];
+
     return (
-        <div className="sq-stats-bar">
-            <div className="sq-stat"><span className="sq-stat-num">{stats.total}</span><span className="sq-stat-lbl">Totale</span></div>
-            <div className="sq-stat sq-stat-verde"><span className="sq-stat-num">{stats.valide}</span><span className="sq-stat-lbl">Valide</span></div>
-            <div className="sq-stat sq-stat-giallo"><span className="sq-stat-num">{stats.in_scadenza_60}</span><span className="sq-stat-lbl">In scad. 60gg</span></div>
-            <div className="sq-stat sq-stat-arancione"><span className="sq-stat-num">{stats.in_scadenza_30}</span><span className="sq-stat-lbl">Urgenti 30gg</span></div>
-            <div className="sq-stat sq-stat-rosso"><span className="sq-stat-num">{stats.scadute}</span><span className="sq-stat-lbl">Scadute</span></div>
+        <div className="sq-stats-bar" role="group" aria-label="Filtri rapidi per situazione">
+            {items.map(({ key, cls, lbl }) => {
+                const mapped = STATS_TO_SITUAZIONE[key] ?? "";
+                const isActive = mapped ? activeSituazione === mapped : !activeSituazione;
+                return (
+                    <button
+                        key={key}
+                        type="button"
+                        className={`sq-stat sq-stat-clickable ${cls}${isActive ? " sq-stat-active" : ""}`}
+                        onClick={() => onStatClick(key)}
+                        title={mapped ? `Filtra: ${lbl}` : "Mostra tutte le situazioni"}
+                        aria-pressed={isActive}
+                    >
+                        <span className="sq-stat-num">{stats[key]}</span>
+                        <span className="sq-stat-lbl">{lbl}</span>
+                    </button>
+                );
+            })}
             {stats.da_approvare > 0 && (
-                <div className="sq-stat sq-stat-warning"><span className="sq-stat-num">{stats.da_approvare}</span><span className="sq-stat-lbl">Da approvare</span></div>
+                <button
+                    type="button"
+                    className={`sq-stat sq-stat-clickable sq-stat-warning${activeSituazione === "da_approvare" ? " sq-stat-active" : ""}`}
+                    onClick={() => onStatClick("da_approvare")}
+                    title="Filtra: Da approvare"
+                    aria-pressed={activeSituazione === "da_approvare"}
+                >
+                    <span className="sq-stat-num">{stats.da_approvare}</span>
+                    <span className="sq-stat-lbl">Da approvare</span>
+                </button>
             )}
         </div>
     );
@@ -271,7 +307,7 @@ function QualificationsPage() {
     const [companyScope, setCompanyScope] = useState(() => resolveInitialQualificationsCompanyScope());
 
     const [filters, setFiltersState] = useState({
-        search: "", stato: "", expiring_days: "", approval_status: "",
+        search: "", situazione: "",
     });
 
     const [formOpen,    setFormOpen]    = useState(false);
@@ -313,6 +349,12 @@ function QualificationsPage() {
         setPage(1);
     }, []);
 
+    const handleStatClick = useCallback((statKey) => {
+        const next = STATS_TO_SITUAZIONE[statKey] ?? "";
+        setFiltersState((f) => ({ ...f, situazione: toggleSituazione(f.situazione, next) }));
+        setPage(1);
+    }, []);
+
     const currentTab = TABS.find(t => t.key === activeTab) || TABS[0];
 
     const loadData = useCallback(async () => {
@@ -321,24 +363,15 @@ function QualificationsPage() {
         try {
             const params = { page, limit: LIMIT };
             if (currentTab.qualification_type) params.qualification_type = currentTab.qualification_type;
-            if (filters.search)          params.search          = filters.search;
-            if (filters.approval_status) params.approval_status = filters.approval_status;
-            if (companyScope)            params.company_id      = companyScope;
+            if (filters.search) params.search = filters.search;
+            if (filters.situazione) params.situazione = filters.situazione;
+            if (companyScope) params.company_id = companyScope;
 
-            // Filtro "stato": mappa su status DB oppure expiring_days
-            if (filters.stato === "valida")          params.status = "valida";
-            else if (filters.stato === "sospesa")    params.status = "sospesa";
-            else if (filters.stato === "revocata")   params.status = "revocata";
-            else if (filters.stato === "in_scadenza_90") params.expiring_days = 90;
-            else if (filters.stato === "scaduta")    params.expiring_days = -1;
-
-            // Filtro scadenze granulare: attivo solo se stato non copre già l'expiry
-            const statoUsesExpiry = filters.stato === "in_scadenza_90" || filters.stato === "scaduta";
-            if (!statoUsesExpiry && filters.expiring_days) params.expiring_days = filters.expiring_days;
+            const statsParams = companyScope ? { company_id: companyScope } : {};
 
             const [res, statsRes] = await Promise.all([
                 apiService.getQualifications(params),
-                apiService.getQualificationsStats(),
+                apiService.getQualificationsStats(statsParams),
             ]);
             const list = Array.isArray(res?.qualifications)
                 ? res.qualifications
@@ -443,7 +476,11 @@ function QualificationsPage() {
             )}
 
             {/* Stats */}
-            <StatsBar stats={stats} />
+            <StatsBar
+                stats={stats}
+                activeSituazione={filters.situazione}
+                onStatClick={handleStatClick}
+            />
 
             {/* Tab di tipo */}
             <div className="sq-tabs">
@@ -467,38 +504,21 @@ function QualificationsPage() {
                     value={filters.search}
                     onChange={e => setFilter("search", e.target.value)}
                 />
-                <select className="sq-select" value={filters.stato} onChange={e => setFilter("stato", e.target.value)}>
-                    <option value="">Tutti gli stati</option>
-                    <option value="valida">Valida</option>
-                    <option value="in_scadenza_90">In scadenza (&le;90gg)</option>
-                    <option value="scaduta">Scaduta</option>
-                    <option value="sospesa">Sospesa</option>
-                    <option value="revocata">Revocata</option>
-                </select>
-                <select className="sq-select" value={filters.approval_status} onChange={e => setFilter("approval_status", e.target.value)}>
-                    <option value="">Qualsiasi approvazione</option>
-                    <option value="bozza">Bozza</option>
-                    <option value="in_revisione">In revisione</option>
-                    <option value="approvata">Approvata</option>
-                    <option value="rifiutata">Rifiutata</option>
-                </select>
                 <select
-                    className="sq-select"
-                    value={filters.expiring_days}
-                    onChange={e => setFilter("expiring_days", e.target.value)}
-                    disabled={filters.stato === "in_scadenza_90" || filters.stato === "scaduta"}
-                    title={filters.stato === "in_scadenza_90" || filters.stato === "scaduta" ? "Disabilitato: lo stato selezionato include già il filtro scadenza" : ""}
+                    className="sq-select sq-situazione-select"
+                    value={filters.situazione}
+                    onChange={e => setFilter("situazione", e.target.value)}
+                    aria-label="Filtra per situazione"
                 >
-                    <option value="">Tutte le scadenze</option>
-                    <option value="30">Scadono entro 30 gg</option>
-                    <option value="60">Scadono entro 60 gg</option>
-                    <option value="90">Scadono entro 90 gg</option>
-                    <option value="-1">Già scadute</option>
+                    <option value="">Tutte le situazioni</option>
+                    {QUALIFICATION_SITUAZIONI.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
                 </select>
-                {(filters.search || filters.stato || filters.expiring_days || filters.approval_status) && (
+                {(filters.search || filters.situazione) && (
                     <button
                         className="sq-btn-secondary"
-                        onClick={() => { setFiltersState({ search: "", stato: "", expiring_days: "", approval_status: "" }); setPage(1); }}
+                        onClick={() => { setFiltersState({ search: "", situazione: "" }); setPage(1); }}
                         title="Azzera filtri"
                     >
                         Azzera filtri
@@ -506,6 +526,14 @@ function QualificationsPage() {
                 )}
                 <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">{"\u21BB"}</button>
             </div>
+
+            {filters.situazione && (
+                <p className="sq-filter-hint">
+                    {"Filtro attivo: "}
+                    <strong>{situazioneLabel(filters.situazione)}</strong>
+                    {" \u2014 clicca di nuovo la statistica o usa Azzera filtri."}
+                </p>
+            )}
 
             {error && (
                 <div className="sq-error">
