@@ -24,6 +24,7 @@ const TABS = [
     { key: "ndt",           label: "NDT",              qualification_type: "ndt" },
     { key: "iso14731",      label: "Coordinatori",     qualification_type: "iso14731" },
     { key: "pes_pav",       label: "PES/PAV",          qualification_type: "pes_pav" },
+    { key: "salute_mansione", label: "Salute mansione", qualification_type: "salute_mansione" },
     { key: "generico",      label: "Generiche",        qualification_type: "generico" },
 ];
 
@@ -35,6 +36,7 @@ const TAB_COLUMNS = {
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Approvazione", "Azioni"],
     iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Approvazione", "Azioni"],
     pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
+    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
     generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Approvazione", "Azioni"],
     tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Approvazione", "Azioni"],
 };
@@ -216,14 +218,14 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
         );
     }
 
-    if (tabKey === "generico") {
+    if (tabKey === "salute_mansione" || tabKey === "generico") {
         return (
             <tr className={`sq-row sq-row-${q.semaforo}`}>
                 {personCell}
                 {certCell}
                 <td>{q.qualification_type || "\u2014"}</td>
-                <td>{q.training_hours != null ? `${q.training_hours}h` : "\u2014"}</td>
-                <td>{q.examiner_body || "\u2014"}</td>
+                <td>{tabKey === "generico" && q.training_hours != null ? `${q.training_hours}h` : (q.issuing_body || "\u2014")}</td>
+                <td>{tabKey === "generico" ? (q.examiner_body || "\u2014") : (q.standard_ref || "\u2014")}</td>
                 {expiryCell}
                 {apprCell}
                 {actionBtns}

@@ -30,6 +30,8 @@ const {
     validateQualificationCompany,
     assertNoCrossCompanyDuplicate,
 } = require('../services/qualificationCompany.service');
+const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
 
 /**
  * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
@@ -199,12 +201,14 @@ async function listQualifications(req, res) {
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
         let qualTypeLike = null;
-        if (qualification_type && qualification_type !== 'generico') {
+        if (qualification_type === 'salute_mansione') {
+            where.push(`q.qualification_type IN (${occupationalQualificationSqlInList()})`);
+        } else if (qualification_type && qualification_type !== 'generico') {
             qualTypeLike = QUAL_TYPE_MAP[qualification_type] || `%${qualification_type}%`;
             where.push('q.qualification_type LIKE @qualType');
         } else if (qualification_type === 'generico') {
-            // generico = non rientra negli altri tipi noti
-            where.push("q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%'");
+            // generico = non rientra negli altri tipi noti (inclusi salute mansione)
+            where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
         }
 
         if (expiring_days) {
@@ -457,7 +461,7 @@ async function createQualification(req, res) {
     try {
         const body = req.body;
         const {
-            company_id, person_name, person_code, department,
+            company_id, personnel_id, person_name, person_code, department,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -474,7 +478,6 @@ async function createQualification(req, res) {
             certificate_file_url,
         } = body;
 
-        if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica \u00e8 obbligatorio.' });
 
         const pool  = await getPool();
@@ -486,6 +489,17 @@ async function createQualification(req, res) {
         });
         if (!companyCheck.ok) {
             return res.status(companyCheck.status).json({ error: companyCheck.error, code: companyCheck.code });
+        }
+
+        const personnelResolved = await resolvePersonnelForQualification({
+            organizationId: orgId,
+            companyId: companyCheck.companyId,
+            personnelId: personnel_id,
+            personName: person_name,
+            personCode: person_code,
+        });
+        if (!personnelResolved.ok) {
+            return res.status(personnelResolved.status).json({ error: personnelResolved.error, code: personnelResolved.code });
         }
 
         const dupCheck = await assertNoCrossCompanyDuplicate({
@@ -505,8 +519,9 @@ async function createQualification(req, res) {
         const r = await pool.request()
             .input('orgId',     orgId)
             .input('compId',    companyCheck.companyId)
-            .input('personName',person_name.trim())
-            .input('personCode',person_code  || null)
+            .input('personnelId', personnelResolved.personnelId)
+            .input('personName', personnelResolved.personName)
+            .input('personCode', personnelResolved.personCode)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type.trim())
             .input('stdRef',    standard_ref || null)
@@ -546,7 +561,7 @@ async function createQualification(req, res) {
             .input('certFileUrl', certificate_file_url || null)
             .query(`
                 INSERT INTO qualifications
-                    (organization_id, company_id, person_name, person_code, department,
+                    (organization_id, company_id, personnel_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
                      issue_date, expiry_date, last_renewal_date, status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
@@ -558,7 +573,7 @@ async function createQualification(req, res) {
                      course_name, training_hours, examiner_body, certificate_file_url)
                 OUTPUT INSERTED.id
                 VALUES
-                    (@orgId, @compId, @personName, @personCode, @dept,
+                    (@orgId, @compId, @personnelId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
                      @issueDate, @expiryDate, @renewalDate, @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
@@ -587,14 +602,14 @@ async function updateQualification(req, res) {
         const body  = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query(`SELECT id, company_id, approval_status, certificate_number,
-                           certificate_file_url, certificate_original_url
+            .query(`SELECT id, company_id, personnel_id, person_name, person_code, approval_status,
+                           certificate_number, certificate_file_url, certificate_original_url
                     FROM qualifications WHERE id=@id AND organization_id=@orgId`);
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const existing = check.recordset[0];
         const {
-            company_id, person_name, person_code, department,
+            company_id, personnel_id, person_name, person_code, department,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -633,12 +648,25 @@ async function updateQualification(req, res) {
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyCheck.companyId });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
+        const resolvedPersonnelId = personnel_id !== undefined ? personnel_id : existing.personnel_id;
+        const personnelResolved = await resolvePersonnelForQualification({
+            organizationId: orgId,
+            companyId: companyCheck.companyId,
+            personnelId: resolvedPersonnelId,
+            personName: person_name !== undefined ? person_name : existing.person_name,
+            personCode: person_code !== undefined ? person_code : existing.person_code,
+        });
+        if (!personnelResolved.ok) {
+            return res.status(personnelResolved.status).json({ error: personnelResolved.error, code: personnelResolved.code });
+        }
+
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
             .input('compId',    companyCheck.companyId)
-            .input('personName',person_name?.trim())
-            .input('personCode',person_code  || null)
+            .input('personnelId', personnelResolved.personnelId)
+            .input('personName', personnelResolved.personName)
+            .input('personCode', personnelResolved.personCode)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type?.trim())
             .input('stdRef',    standard_ref || null)
@@ -674,7 +702,8 @@ async function updateQualification(req, res) {
             .input('certFileUrl', certificate_file_url || null)
             .query(`
                 UPDATE qualifications SET
-                    company_id=@compId, person_name=@personName, person_code=@personCode,
+                    company_id=@compId, personnel_id=@personnelId,
+                    person_name=@personName, person_code=@personCode,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
                     issue_date=@issueDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,

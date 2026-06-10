@@ -44,7 +44,14 @@
         "src/services/docCodeGenerator.service.js",
         "src/services/documentHistoryTracker.service.js",
         "src/services/moduleLicense.service.js",
-        "src/services/qualificationCompany.service.js"
+        "src/services/qualificationCompany.service.js",
+        "src/services/personnelQualificationLink.service.js"
+      ]
+    },
+    {
+      "name": "constants-occupational",
+      "files": [
+        "src/constants/occupationalQualificationTypes.js"
       ]
     },
     {
