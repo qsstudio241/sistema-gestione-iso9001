@@ -17,7 +17,11 @@ BEGIN
 END
 GO
 
--- 2) NOT NULL (solo se colonna ancora nullable)
+-- 2) NOT NULL (solo se colonna ancora nullable) — drop/ricrea indice su company_id
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_qualif_company' AND object_id = OBJECT_ID('qualifications'))
+    DROP INDEX IX_qualif_company ON qualifications;
+GO
+
 IF EXISTS (
     SELECT 1 FROM sys.columns
     WHERE object_id = OBJECT_ID('qualifications')
@@ -34,6 +38,10 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_qualif_company' AND object_id = OBJECT_ID('qualifications'))
+    CREATE INDEX IX_qualif_company ON qualifications(company_id);
+GO
+
 -- 3) Indice unico filtrato: stesso certificato+persona per azienda (escluse revocate / senza numero)
 IF NOT EXISTS (
     SELECT 1 FROM sys.indexes
@@ -45,7 +53,7 @@ BEGIN
         ON qualifications (organization_id, company_id, certificate_number, person_name)
         WHERE status <> 'revocata'
           AND certificate_number IS NOT NULL
-          AND LTRIM(RTRIM(certificate_number)) <> '';
+          AND certificate_number <> '';
     PRINT 'Indice UX_qualif_org_company_cert_person_active creato.';
 END
 ELSE
