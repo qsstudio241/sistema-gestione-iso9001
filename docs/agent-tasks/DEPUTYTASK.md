@@ -1,6 +1,6 @@
 # DEPUTYTASK — Collegamento anagrafica personale ↔ qualifiche — 10/06/2026
 
-**Stato:** IN CORSO — PR draft su branch `cursor/personnel-qualifications-link-9647`
+**Stato:** TEST OK — Completato e operativo (PR #107 → `main`, deploy 10/06/2026)
 
 ---
 
@@ -20,13 +20,12 @@ Collegare `company_personnel` e `qualifications` via `personnel_id`, con tipi sa
 | UI personale | `CompanyPersonnelPanel.jsx` (import, link, modal certificati) |
 | Test L1 | `personnelQualificationLink.test.js` |
 
-## Post-merge (da eseguire sul VPS)
+## Deploy eseguito (cloud agent 10/06/2026)
 
-```bash
-scp -P 1122 -i $KEY backend/scripts/run-migration-088-vps.js spascarella@www.fr-busato.it:/tmp/
-ssh -p 1122 -i $KEY spascarella@www.fr-busato.it "node /tmp/run-migration-088-vps.js"
-backend/scripts/deploy-to-vps.sh
-```
+- PR [#107](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/107) mergiata su `main`
+- Migration 088 su VPS: OK (5 batch)
+- Backend deploy + restart PID 568473, health API 200
+- Netlify produzione: tab Salute mansione + API import/link attive nel bundle
 
 ---
 
