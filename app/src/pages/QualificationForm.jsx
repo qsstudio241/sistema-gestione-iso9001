@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
+import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import "./QualificationForm.css";
 
 const QUAL_TYPES = [
@@ -28,11 +29,12 @@ const QUAL_TYPES = [
   "Abilitazione piattaforma aerea",
   "Corso primo soccorso",
   "Corso antincendio",
+  ...OCCUPATIONAL_QUALIFICATION_TYPES,
   "Altra qualifica",
 ];
 
 const EMPTY = {
-  person_name: "", person_code: "", department: "",
+  personnel_id: "", person_name: "", person_code: "", department: "",
   company_id: "", qualification_type: "", standard_ref: "",
   scope_detail: "", certificate_number: "", issuing_body: "",
   issue_date: "", expiry_date: "", last_renewal_date: "",
@@ -47,6 +49,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
   const [companies, setCompanies] = useState([]);
+  const [personnelList, setPersonnelList] = useState([]);
   // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
   const openTimeRef = useRef(Date.now());
   const [customType, setCustomType] = useState(false);
@@ -66,6 +69,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
       d.company_id = d.company_id || "";
+      d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -75,10 +79,28 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
     }
   }, [qualification, defaultCompanyId]);
 
+  useEffect(() => {
+    const companyId = form.company_id ? parseInt(form.company_id, 10) : null;
+    if (!companyId) {
+      setPersonnelList([]);
+      return;
+    }
+    apiService.getCompanyPersonnel(companyId, { active: "true" })
+      .then((res) => setPersonnelList(res?.data || []))
+      .catch(() => setPersonnelList([]));
+  }, [form.company_id]);
+
   const companyLocked = isEdit && qualification?.approval_status === "approvata";
 
   function handle(field) {
-    return e => setForm(f => ({ ...f, [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+    return (e) => {
+      const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+      if (field === "company_id") {
+        setForm((f) => ({ ...f, company_id: value, personnel_id: "" }));
+        return;
+      }
+      setForm((f) => ({ ...f, [field]: value }));
+    };
   }
 
   async function handleSave() {
@@ -88,7 +110,11 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
     setSaving(true);
     setError(null);
     try {
-      const data = { ...form, company_id: parseInt(form.company_id, 10) };
+      const data = {
+        ...form,
+        company_id: parseInt(form.company_id, 10),
+        personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
+      };
       if (isEdit) {
         await apiService.updateQualification(qualification.id, data);
       } else {
@@ -119,8 +145,58 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
           <div className="qf-section-title">Persona</div>
           <div className="qf-row">
             <div className="qf-field qf-flex2">
+              <label>Da anagrafica azienda</label>
+              <select
+                value={form.personnel_id}
+                onChange={(e) => {
+                  const pid = e.target.value;
+                  if (!pid) {
+                    setForm((f) => ({ ...f, personnel_id: "" }));
+                    return;
+                  }
+                  const person = personnelList.find((p) => String(p.id) === pid);
+                  if (!person) return;
+                  setForm((f) => ({
+                    ...f,
+                    personnel_id: pid,
+                    person_name: person.name || "",
+                    person_code: person.person_code || f.person_code || "",
+                    department: person.job_title || f.department || "",
+                  }));
+                }}
+                disabled={!form.company_id}
+              >
+                <option value="">-- testo libero / nuovo --</option>
+                {personnelList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.person_code ? ` (${p.person_code})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="qf-row">
+            <div className="qf-field qf-flex2">
               <label>Nome e cognome <span className="req">*</span></label>
-              <input type="text" value={form.person_name} onChange={handle("person_name")} placeholder="Mario Rossi" />
+              <input
+                type="text"
+                value={form.person_name}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setForm((f) => {
+                    const linked = f.personnel_id
+                      ? personnelList.find((p) => String(p.id) === String(f.personnel_id))
+                      : null;
+                    const keepLink = linked && linked.name === newName.trim();
+                    return {
+                      ...f,
+                      person_name: newName,
+                      personnel_id: keepLink ? f.personnel_id : "",
+                    };
+                  });
+                }}
+                placeholder="Mario Rossi"
+              />
             </div>
             <div className="qf-field">
               <label>Matricola / codice</label>
