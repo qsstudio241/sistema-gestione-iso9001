@@ -475,9 +475,11 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 **Deploy produzione (ordine):**
 
-1. Merge PR + deploy backend (controller + service)
-2. Cloud Agent / VPS: `scp backend/scripts/run-migration-087-vps.js` → `node /tmp/run-migration-087-vps.js`
-3. Netlify build frontend (ambito + form)
+1. Merge PR [#106](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/106) + deploy backend (controller + service) — **OK 10/06/2026**
+2. Cloud Agent / VPS: `scp backend/scripts/run-migration-087-vps.js` → `node /tmp/run-migration-087-vps.js` — **OK 10/06/2026**
+3. Netlify build frontend (ambito + form) — automatica su push `main`
+
+**Pitfall migrazione 087:** prima di `ALTER COLUMN … NOT NULL` su `company_id` va droppato `IX_qualif_company`; nei filtered index SQL Server **non** ammette `LTRIM/RTRIM` nel predicato `WHERE`.
 
 **Smoke:** creare qualifica con ambito selezionato; tentare stesso `certificate_number` su altra azienda → 409; dopo approvazione cambio azienda → 400.
 
