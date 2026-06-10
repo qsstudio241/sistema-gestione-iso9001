@@ -32,6 +32,7 @@ const {
 } = require('../services/qualificationCompany.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
+const { applySituazioneFilter } = require('../services/qualificationSituazione.service');
 
 /**
  * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
@@ -189,6 +190,7 @@ async function listQualifications(req, res) {
             approval_status = '',
             person_name = '', expiring_days = '',
             qualification_type = '',
+            situazione = '',
             page = 1, limit = 50,
         } = req.query;
 
@@ -211,7 +213,9 @@ async function listQualifications(req, res) {
             where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
         }
 
-        if (expiring_days) {
+        if (situazione) {
+            applySituazioneFilter(where, situazione);
+        } else if (expiring_days) {
             const expDaysInt = parseInt(expiring_days);
             if (expDaysInt < 0) {
                 // Già scadute: expiry_date nel passato
@@ -276,12 +280,17 @@ async function getStats(req, res) {
     try {
         const pool       = await getPool();
         const orgId      = req.user.organization_id;
+        const { company_id = '' } = req.query;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'q');
 
-        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        let whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
         const r = pool.request().input('orgId', orgId);
         Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
+        if (company_id) {
+            whereExtra += ' AND q.company_id = @companyId';
+            r.input('companyId', parseInt(company_id));
+        }
 
         const statsResult = await r.query(`
             SELECT

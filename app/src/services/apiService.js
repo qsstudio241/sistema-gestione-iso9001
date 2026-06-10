@@ -1480,8 +1480,9 @@ class ApiService {
 
     // ─── Qualifiche (Sprint 4) ────────────────────────────────────────────────
 
-    async getQualificationsStats() {
-        return this.get('/qualifications/stats');
+    async getQualificationsStats(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/qualifications/stats${qs ? '?' + qs : ''}`);
     }
 
     async getQualifications(params = {}) {
