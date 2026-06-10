@@ -45,6 +45,7 @@
         "src/services/documentHistoryTracker.service.js",
         "src/services/moduleLicense.service.js",
         "src/services/qualificationCompany.service.js",
+        "src/services/qualificationSituazione.service.js",
         "src/services/personnelQualificationLink.service.js"
       ]
     },
