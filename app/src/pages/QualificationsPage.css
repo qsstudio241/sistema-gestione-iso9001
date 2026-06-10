@@ -6,8 +6,13 @@
 .sq-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
 .sq-title  { font-size:22px; font-weight:700; color:#1e3a5f; margin:0 0 4px; }
 .sq-subtitle { font-size:14px; color:#6b7280; margin:0; }
+.sq-header-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.sq-scope-label { display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; font-weight:600; }
+.sq-scope-select { min-width:180px; }
+.sq-scope-hint { font-size:13px; color:#6b7280; margin:-8px 0 12px; }
 .sq-btn-new { padding:9px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
 .sq-btn-new:hover { background:#16304e; }
+.sq-btn-new:disabled { opacity:0.55; cursor:not-allowed; }
 .sq-btn-new-sm { margin-top:12px; padding:8px 18px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:13px; cursor:pointer; }
 
 /* ── Stats bar ────────────── */
