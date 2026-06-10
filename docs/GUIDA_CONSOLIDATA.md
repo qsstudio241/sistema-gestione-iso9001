@@ -510,9 +510,9 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 **Deploy produzione (ordine post-merge PR):**
 
-1. Merge PR su `main` + deploy backend (`personnelQualificationLink.service.js`, controller, routes)
-2. VPS: `scp backend/scripts/run-migration-088-vps.js` → `node /tmp/run-migration-088-vps.js`
-3. Netlify build frontend (tab, form picker, pannello personale)
+1. Merge PR [#107](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/107) + deploy backend — **OK 10/06/2026** (PID 568473, health 200)
+2. VPS: `node /tmp/run-migration-088-vps.js` — **OK 10/06/2026** (personnel_id, person_code, FK, indici)
+3. Netlify produzione — **OK 10/06/2026** (tab Salute mansione, picker form, pannello personale)
 
 **API:**
 
