@@ -483,11 +483,16 @@ function QualificationsPage() {
                             </select>
                         </label>
                     )}
-                    {companyScope && (
+                    {companyScope ? (
                         <QualificationUploadButton
                             companyId={companyScope}
+                            companyName={scopeCompanyName}
                             onUploadComplete={loadData}
                         />
+                    ) : companies.length > 0 && (
+                        <span className="sq-upload-no-scope">
+                            Seleziona un&apos;azienda specifica per caricare i patentini
+                        </span>
                     )}
                     <button
                         className="sq-btn-new"
