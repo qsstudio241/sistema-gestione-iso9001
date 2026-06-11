@@ -65,6 +65,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
   const [verifyError, setVerifyError] = useState(null);
   const [dueFilter, setDueFilter] = useState("all");
+  const [editDraft, setEditDraft] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -182,6 +183,41 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
     }
     setVerifyDraft({ actionId: null, note: "" });
     setVerifyError(null);
+  }
+
+  function handleStartEdit(action) {
+    setEditDraft({
+      actionId: action.action_id,
+      responsible: action.responsible || "",
+      responsible_contact_id: action.responsible_contact_id || null,
+      useExternalResponsible: !action.responsible_contact_id && !!action.responsible,
+      due_date: action.due_date ? action.due_date.substring(0, 10) : "",
+      saving: false,
+      error: null,
+    });
+  }
+
+  function handleCancelEdit() {
+    setEditDraft(null);
+  }
+
+  async function handleSaveEdit(action) {
+    setEditDraft(d => ({ ...d, saving: true, error: null }));
+    try {
+      await apiService.updateNcAction(ncId, action.action_id, {
+        responsible: editDraft.useExternalResponsible
+          ? editDraft.responsible.trim() || null
+          : editDraft.responsible.trim() || null,
+        responsible_contact_id: editDraft.useExternalResponsible
+          ? null
+          : editDraft.responsible_contact_id,
+        due_date: editDraft.due_date || null,
+      });
+      setEditDraft(null);
+      await load();
+    } catch (err) {
+      setEditDraft(d => ({ ...d, saving: false, error: err?.message || "Errore salvataggio." }));
+    }
   }
 
   async function handleDelete(action) {
@@ -350,6 +386,56 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
                   {a.due_date && <span>Scadenza azione: {formatDate(a.due_date)}</span>}
                   {a.completed_at && <span>Completata: {formatDate(a.completed_at)}</span>}
                 </div>
+                {editDraft?.actionId === a.action_id && (
+                  <div className="nc-action-edit-form">
+                    <div className="nc-form-row nc-form-row-2col">
+                      <NcResponsibleSelect
+                        contacts={contacts}
+                        roleFilter={["attuazione", "generico"]}
+                        contactId={editDraft.responsible_contact_id}
+                        textValue={editDraft.responsible}
+                        useExternal={editDraft.useExternalResponsible}
+                        allowExternal
+                        onContactIdChange={(id) => setEditDraft(d => ({ ...d, responsible_contact_id: id }))}
+                        onTextChange={(v) => setEditDraft(d => ({ ...d, responsible: v }))}
+                        onUseExternalChange={(v) => setEditDraft(d => ({
+                          ...d,
+                          useExternalResponsible: v,
+                          responsible_contact_id: v ? null : d.responsible_contact_id,
+                        }))}
+                        label="Responsabile attuazione"
+                        placeholder="Chi esegue l'azione"
+                      />
+                      <div>
+                        <label>Scadenza</label>
+                        <input
+                          type="date"
+                          value={editDraft.due_date}
+                          onChange={e => setEditDraft(d => ({ ...d, due_date: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    {editDraft.error && <p className="nc-error">{editDraft.error}</p>}
+                    <div className="nc-form-actions">
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={editDraft.saving}
+                        onClick={() => handleSaveEdit(a)}
+                      >
+                        {editDraft.saving ? "Salvataggio..." : "Salva modifiche"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        disabled={editDraft.saving}
+                        onClick={handleCancelEdit}
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {a.verification_note && (
                   <p className="nc-action-verify-note">
                     <strong>Nota verifica:</strong> {a.verification_note}
@@ -382,6 +468,15 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
                 )}
                 {!isClosed && (
                   <div className="nc-action-btns nc-workflow-btns">
+                    {a.status !== "verified" && editDraft?.actionId !== a.action_id && (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => handleStartEdit(a)}
+                      >
+                        Modifica
+                      </button>
+                    )}
                     {(nextSteps[a.status] || []).map(ns => {
                       const step = ACTION_STEP_CFG[ns] || { label: ns, statusBtn: "partial" };
                       return (
