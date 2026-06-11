@@ -1,14 +1,20 @@
 /**
- * WeldingProceduresPage ó Gestione WPS e WPQR
- * Modulo Saldatura ISO 3834
+ * WeldingProceduresPage ù Gestione WPS e WPQR
+ * Modulo Saldatura ISO 3834 ù Mason-ready
  *
  * Due tab: WPS (Welding Procedure Specifications) e WPQR (Qualification Records).
  * Navigazione bidirezionale: da WPS vedi i WPQR collegati, da WPQR torni alla WPS.
+ * Company scope, stats semaphore, approval workflow, batch upload WPQR.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import WpqrUploadButton from "../components/WpqrUploadButton";
+import {
+  resolveInitialQualificationsCompanyScope,
+  persistQualificationsCompanyScope,
+} from "../utils/qualificationsCompanyScope";
 import "./WeldingProceduresPage.css";
 
 const WELDING_PROCESSES = [
@@ -39,6 +45,30 @@ function StatusBadge({ status }) {
   const cls = `wp-status wp-status-${status || "bozza"}`;
   const label = WPS_STATUSES.find((s) => s.value === status)?.label || status || "Bozza";
   return <span className={cls}>{label}</span>;
+}
+
+function ApprovalBadge({ approvalStatus }) {
+  const map = {
+    approvata: { cls: "wp-approval wp-approval-approvata", label: "Approvata" },
+    rifiutata: { cls: "wp-approval wp-approval-rifiutata", label: "Rifiutata" },
+    bozza:     { cls: "wp-approval wp-approval-bozza",     label: "Bozza" },
+  };
+  const { cls, label } = map[approvalStatus] || map.bozza;
+  return <span className={cls}>{label}</span>;
+}
+
+function SemaforoDot({ expiry_date, approvalStatus }) {
+  if (approvalStatus && approvalStatus !== "approvata") return <span className="wp-sem wp-sem-grigio" title="Non approvata" />;
+  if (!expiry_date) return <span className="wp-sem wp-sem-verde" title="Valida" />;
+  const now = Date.now();
+  const exp = new Date(expiry_date).getTime();
+  const diff = exp - now;
+  const d30 = 30 * 86400000;
+  const d60 = 60 * 86400000;
+  if (diff < 0)   return <span className="wp-sem wp-sem-rosso"    title="Scaduta" />;
+  if (diff < d30) return <span className="wp-sem wp-sem-rosso"    title="Scade entro 30 gg" />;
+  if (diff < d60) return <span className="wp-sem wp-sem-arancio"  title="Scade entro 60 gg" />;
+  return <span className="wp-sem wp-sem-verde" title="Valida" />;
 }
 
 function TestBadge({ value }) {
@@ -309,6 +339,17 @@ function WPQRFormModal({ wpqr, wpsList, onSave, onClose }) {
 function WeldingProceduresPage() {
   const [activeTab, setActiveTab] = useState("wps");
 
+  // Company scope (persistito in localStorage, chiave condivisa con qualifiche)
+  const [companyScopeId, setCompanyScopeId] = useState(() =>
+    resolveInitialQualificationsCompanyScope(null)
+  );
+  const [companies, setCompanies] = useState([]);
+  const companyScopeName = companies.find(c => String(c.id) === String(companyScopeId))?.name || "";
+
+  // WPQR stats
+  const [wpqrStats, setWpqrStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
   // WPS state
   const [wpsList, setWpsList] = useState([]);
   const [wpsLoading, setWpsLoading] = useState(true);
@@ -329,6 +370,7 @@ function WeldingProceduresPage() {
 
   // Filters
   const [wpsFilters, setWpsFilters] = useState({ welding_process: "", status: "", search: "" });
+  const [wpqrFilters, setWpqrFilters] = useState({ approval_status: "", search: "", wps_id: "" });
   const [wpqrFilterWpsId, setWpqrFilterWpsId] = useState("");
 
   // Modals
@@ -341,6 +383,45 @@ function WeldingProceduresPage() {
   const [deleteWpsId, setDeleteWpsId] = useState(null);
   const [deleteWpqrId, setDeleteWpqrId] = useState(null);
 
+  // Approval
+  const [approvingId, setApprovingId] = useState(null);
+  const [rejectModal, setRejectModal] = useState(null); // { id }
+  const [rejectReason, setRejectReason] = useState("");
+
+  // ?? Load companies ????????????????????????????????????????????????????????
+
+  const loadCompanies = useCallback(async () => {
+    try {
+      const res = await apiService.getCompanies({ limit: 500 });
+      setCompanies(res.companies || res.data || []);
+    } catch {
+      // non bloccante
+    }
+  }, []);
+
+  const handleCompanyScopeChange = useCallback((newId) => {
+    setCompanyScopeId(newId);
+    persistQualificationsCompanyScope(newId);
+    setWpsPage(1);
+    setWpqrPage(1);
+  }, []);
+
+  // ?? Load WPQR stats ??????????????????????????????????????????????????????
+
+  const loadWPQRStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const params = {};
+      if (companyScopeId) params.company_id = companyScopeId;
+      const res = await apiService.getWPQRStats(params);
+      setWpqrStats(res.data || null);
+    } catch {
+      // non bloccante
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [companyScopeId]);
+
   // ?? Load WPS ??????????????????????????????????????????????????????????????
 
   const loadWPS = useCallback(async () => {
@@ -351,6 +432,7 @@ function WeldingProceduresPage() {
       if (wpsFilters.welding_process) params.welding_process = wpsFilters.welding_process;
       if (wpsFilters.status) params.status = wpsFilters.status;
       if (wpsFilters.search) params.search = wpsFilters.search;
+      if (companyScopeId) params.company_id = companyScopeId;
 
       const res = await apiService.getWPSList(params);
       setWpsList(res.data || []);
@@ -360,16 +442,18 @@ function WeldingProceduresPage() {
     } finally {
       setWpsLoading(false);
     }
-  }, [wpsPage, wpsFilters]);
+  }, [wpsPage, wpsFilters, companyScopeId]);
 
   const loadAllWps = useCallback(async () => {
     try {
-      const res = await apiService.getWPSList({ limit: 500 });
+      const params = { limit: 500 };
+      if (companyScopeId) params.company_id = companyScopeId;
+      const res = await apiService.getWPSList(params);
       setAllWps(res.data || []);
     } catch {
       // non bloccante
     }
-  }, []);
+  }, [companyScopeId]);
 
   // ?? Load WPQR ?????????????????????????????????????????????????????????????
 
@@ -379,6 +463,9 @@ function WeldingProceduresPage() {
     try {
       const params = { page: wpqrPage, limit: LIMIT };
       if (wpqrFilterWpsId) params.wps_id = wpqrFilterWpsId;
+      if (wpqrFilters.approval_status) params.approval_status = wpqrFilters.approval_status;
+      if (wpqrFilters.search) params.search = wpqrFilters.search;
+      if (companyScopeId) params.company_id = companyScopeId;
 
       const res = await apiService.getWPQRList(params);
       setWpqrList(res.data || []);
@@ -388,8 +475,10 @@ function WeldingProceduresPage() {
     } finally {
       setWpqrLoading(false);
     }
-  }, [wpqrPage, wpqrFilterWpsId]);
+  }, [wpqrPage, wpqrFilterWpsId, wpqrFilters, companyScopeId]);
 
+  useEffect(() => { loadCompanies(); }, [loadCompanies]);
+  useEffect(() => { loadWPQRStats(); }, [loadWPQRStats]);
   useEffect(() => { loadWPS(); }, [loadWPS]);
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
   useEffect(() => {
@@ -423,26 +512,63 @@ function WeldingProceduresPage() {
 
   function handleNewWpqr()      { setEditingWpqr(null); setWpqrFormOpen(true); }
   function handleEditWpqr(w)    { setEditingWpqr(w);    setWpqrFormOpen(true); }
-  function handleWpqrSaved()    { setWpqrFormOpen(false); setEditingWpqr(null); loadWPQR(); loadWPS(); }
+  function handleWpqrSaved()    { setWpqrFormOpen(false); setEditingWpqr(null); loadWPQR(); loadWPS(); loadWPQRStats(); }
 
   async function handleDeleteWpqr(id) {
     try {
       await apiService.deleteWPQR(id);
       setDeleteWpqrId(null);
       loadWPQR();
+      loadWPQRStats();
     } catch (err) {
       setError(err.message);
     }
   }
 
-  function handleGoToWps(wpsId) {
+  function handleGoToWps() {
     setActiveTab("wps");
+  }
+
+  async function handleApproveWpqr(id) {
+    setApprovingId(id);
+    try {
+      await apiService.approveWPQR(id);
+      loadWPQR();
+      loadWPQRStats();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function handleRejectWpqr() {
+    if (!rejectModal) return;
+    try {
+      await apiService.rejectWPQR(rejectModal.id, rejectReason);
+      setRejectModal(null);
+      setRejectReason("");
+      loadWPQR();
+      loadWPQRStats();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   // ?? Pagination ????????????????????????????????????????????????????????????
 
   const wpsTotalPages  = Math.max(1, Math.ceil(wpsTotal  / LIMIT));
   const wpqrTotalPages = Math.max(1, Math.ceil(wpqrTotal / LIMIT));
+
+  // ?? Stats semaphore helpers ???????????????????????????????????????????????
+  const stats = wpqrStats || {};
+  const statsItems = [
+    { label: "Valide",         value: stats.valide        || 0, color: "#16a34a" },
+    { label: "Scad. 60 gg",    value: stats.in_scadenza_60 || 0, color: "#d97706" },
+    { label: "Scad. 30 gg",    value: stats.in_scadenza_30 || 0, color: "#ea580c" },
+    { label: "Scadute",        value: stats.scadute        || 0, color: "#dc2626" },
+    { label: "Da approvare",   value: stats.da_approvare   || 0, color: "#6b7280" },
+  ];
 
   // ?? Render ????????????????????????????????????????????????????????????????
 
@@ -452,12 +578,55 @@ function WeldingProceduresPage() {
       <div className="wp-header">
         <div>
           <h2 className="wp-title">Procedure di Saldatura</h2>
-          <p className="wp-subtitle">Gestione WPS e WPQR ó ISO 3834 / EN ISO 15614</p>
+          <p className="wp-subtitle">Gestione WPS e WPQR {"\u2014"} ISO 3834 / EN ISO 15614</p>
         </div>
-        <button className="wp-btn-new" onClick={activeTab === "wps" ? handleNewWps : handleNewWpqr}>
-          + {activeTab === "wps" ? "Nuova WPS" : "Nuovo WPQR"}
-        </button>
+        <div className="wp-header-actions">
+          {activeTab === "wpqr" && (
+            <WpqrUploadButton
+              companyId={companyScopeId}
+              companyName={companyScopeName}
+              onUploadComplete={() => { loadWPQR(); loadWPQRStats(); }}
+            />
+          )}
+          <button className="wp-btn-new" onClick={activeTab === "wps" ? handleNewWps : handleNewWpqr}>
+            + {activeTab === "wps" ? "Nuova WPS" : "Nuovo WPQR"}
+          </button>
+        </div>
       </div>
+
+      {/* Company scope */}
+      <div className="wp-company-scope">
+        <label className="wp-company-scope-label">Azienda:</label>
+        <select
+          className="wp-select"
+          value={companyScopeId}
+          onChange={(e) => handleCompanyScopeChange(e.target.value)}
+          style={{ minWidth: 200 }}
+        >
+          <option value="">Tutte le aziende</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        {companyScopeId && (
+          <button className="wp-link" onClick={() => handleCompanyScopeChange("")}>
+            Mostra tutte
+          </button>
+        )}
+      </div>
+
+      {/* Stats semaphore WPQR */}
+      {!statsLoading && wpqrStats && (
+        <div className="wp-stats-bar">
+          {statsItems.map((s) => (
+            <div key={s.label} className="wp-stat-item">
+              <span className="wp-stat-dot" style={{ background: s.color }} />
+              <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
+              <span className="wp-stat-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="wp-tabs">
@@ -582,10 +751,17 @@ function WeldingProceduresPage() {
         </>
       )}
 
-      {/* ??? TAB WPQR ??? */}
+      {/* TAB WPQR */}
       {activeTab === "wpqr" && (
         <>
           <div className="wp-toolbar">
+            <input
+              className="wp-search"
+              type="text"
+              placeholder="Cerca codice WPQR, ente..."
+              value={wpqrFilters.search}
+              onChange={(e) => { setWpqrFilters((f) => ({ ...f, search: e.target.value })); setWpqrPage(1); }}
+            />
             <select
               className="wp-select"
               value={wpqrFilterWpsId}
@@ -596,12 +772,22 @@ function WeldingProceduresPage() {
                 <option key={w.id} value={w.id}>{w.wps_code}{w.revision ? ` (Rev. ${w.revision})` : ""}</option>
               ))}
             </select>
-            {wpqrFilterWpsId && (
-              <button className="wp-link" onClick={() => { setWpqrFilterWpsId(""); setWpqrPage(1); }}>
-                Mostra tutti
+            <select
+              className="wp-select"
+              value={wpqrFilters.approval_status}
+              onChange={(e) => { setWpqrFilters((f) => ({ ...f, approval_status: e.target.value })); setWpqrPage(1); }}
+            >
+              <option value="">Tutti gli stati</option>
+              <option value="bozza">Bozza</option>
+              <option value="approvata">Approvata</option>
+              <option value="rifiutata">Rifiutata</option>
+            </select>
+            {(wpqrFilterWpsId || wpqrFilters.approval_status || wpqrFilters.search) && (
+              <button className="wp-link" onClick={() => { setWpqrFilterWpsId(""); setWpqrFilters({ approval_status: "", search: "", wps_id: "" }); setWpqrPage(1); }}>
+                Azzera filtri
               </button>
             )}
-            <button className="wp-btn-reload" onClick={loadWPQR} title="Aggiorna">&#x21bb;</button>
+            <button className="wp-btn-reload" onClick={() => { loadWPQR(); loadWPQRStats(); }} title="Aggiorna">&#x21bb;</button>
           </div>
 
           <div className="wp-table-wrap">
@@ -617,56 +803,67 @@ function WeldingProceduresPage() {
               <table className="wp-table">
                 <thead>
                   <tr>
-                    <th>Codice WPQR</th>
+                    <th></th>
+                    <th>Rif. WPQR</th>
                     <th>WPS rif.</th>
+                    <th>Processo</th>
+                    <th>Spessore range</th>
                     <th>Data prova</th>
                     <th>Ente</th>
-                    <th>VT</th>
-                    <th>RT</th>
-                    <th>UT</th>
-                    <th>MT</th>
-                    <th>PT</th>
-                    <th>Traz.</th>
-                    <th>Piega</th>
-                    <th>Resil.</th>
-                    <th>Dur.</th>
                     <th>Scadenza</th>
+                    <th>Approvazione</th>
                     <th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
                   {wpqrList.map((wq) => (
                     <tr key={wq.id}>
-                      <td><strong>{wq.wpqr_code || "-"}</strong></td>
+                      <td><SemaforoDot expiry_date={wq.expiry_date} approvalStatus={wq.approval_status} /></td>
+                      <td><strong>{wq.reference_number || wq.wpqr_code || "-"}</strong></td>
                       <td>
-                        <span className="wp-link" onClick={() => handleGoToWps(wq.wps_id)}>
-                          {wq.wps_code || `WPS #${wq.wps_id}`}
-                        </span>
+                        {wq.wps_code ? (
+                          <span className="wp-link" onClick={() => handleGoToWps()}>
+                            {wq.wps_code}
+                          </span>
+                        ) : "-"}
+                      </td>
+                      <td>{wq.welding_process || wq.wps_welding_process || "-"}</td>
+                      <td>
+                        {wq.thickness_min != null && wq.thickness_max != null
+                          ? `${wq.thickness_min} ù ${wq.thickness_max} mm`
+                          : "-"}
                       </td>
                       <td>{wq.test_date ? formatDate(wq.test_date) : "-"}</td>
-                      <td>{wq.testing_body || "-"}</td>
-                      <td><TestBadge value={wq.vt_result} /></td>
-                      <td><TestBadge value={wq.rt_result} /></td>
-                      <td><TestBadge value={wq.ut_result} /></td>
-                      <td><TestBadge value={wq.mt_result} /></td>
-                      <td><TestBadge value={wq.pt_result} /></td>
-                      <td><TestBadge value={wq.tensile_result} /></td>
-                      <td><TestBadge value={wq.bend_result} /></td>
-                      <td><TestBadge value={wq.impact_result} /></td>
-                      <td><TestBadge value={wq.hardness_result} /></td>
+                      <td>{wq.examiner_body || wq.testing_body || "-"}</td>
                       <td>{wq.expiry_date ? formatDate(wq.expiry_date) : "-"}</td>
+                      <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td>
                         {deleteWpqrId === wq.id ? (
                           <div className="wp-confirm">
                             <span>Eliminare?</span>
-                            <button className="wp-confirm-yes" onClick={() => handleDeleteWpqr(wq.id)}>Si</button>
+                            <button className="wp-confirm-yes" onClick={() => handleDeleteWpqr(wq.id)}>S{"\u00ec"}</button>
                             <button className="wp-confirm-no" onClick={() => setDeleteWpqrId(null)}>No</button>
                           </div>
                         ) : (
-                          <>
+                          <div className="wp-actions-cell">
+                            {(!wq.approval_status || wq.approval_status === "bozza" || wq.approval_status === "rifiutata") && (
+                              <button
+                                className="wp-btn-approve"
+                                title="Approva"
+                                disabled={approvingId === wq.id}
+                                onClick={() => handleApproveWpqr(wq.id)}
+                              >{approvingId === wq.id ? "..." : "\u2714"}</button>
+                            )}
+                            {(!wq.approval_status || wq.approval_status === "bozza" || wq.approval_status === "approvata") && (
+                              <button
+                                className="wp-btn-reject"
+                                title="Rifiuta"
+                                onClick={() => { setRejectModal({ id: wq.id }); setRejectReason(""); }}
+                              >{"\u2716"}</button>
+                            )}
                             <button className="wp-btn-icon" title="Modifica" onClick={() => handleEditWpqr(wq)}>&#x270F;&#xFE0F;</button>
                             <button className="wp-btn-icon" title="Elimina" onClick={() => setDeleteWpqrId(wq.id)}>&#x1F5D1;&#xFE0F;</button>
-                          </>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -701,6 +898,32 @@ function WeldingProceduresPage() {
           onSave={handleWpqrSaved}
           onClose={() => { setWpqrFormOpen(false); setEditingWpqr(null); }}
         />
+      )}
+
+      {/* Reject modal */}
+      {rejectModal && (
+        <div className="wp-modal-overlay" onClick={() => setRejectModal(null)}>
+          <div className="wp-modal wp-modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="wp-modal-header">
+              <h3>Rifiuta WPQR</h3>
+              <button className="wp-modal-close" onClick={() => setRejectModal(null)}>&times;</button>
+            </div>
+            <div className="wp-modal-body">
+              <label className="wp-form-label">Motivazione rifiuto</label>
+              <textarea
+                className="wp-form-textarea"
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Descrivere il motivo del rifiuto..."
+              />
+            </div>
+            <div className="wp-modal-footer">
+              <button type="button" className="wp-btn-cancel" onClick={() => setRejectModal(null)}>Annulla</button>
+              <button type="button" className="wp-btn-save wp-btn-danger" onClick={handleRejectWpqr}>Rifiuta</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

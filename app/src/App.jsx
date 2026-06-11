@@ -147,6 +147,7 @@ function AppContent() {
         <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
+        <Route path="/wps" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
 
