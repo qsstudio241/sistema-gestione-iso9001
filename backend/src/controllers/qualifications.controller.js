@@ -26,6 +26,7 @@ const {
     hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 
 /**
  * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
@@ -315,14 +316,15 @@ async function getCoverage(req, res) {
         const { project_id } = req.query;
         if (!project_id) return res.status(400).json({ error: 'project_id richiesto.' });
 
-        // Carica progetto
+        // Carica progetto (con company_id per filtrare saldatori)
         const projResult = await pool.request()
             .input('projId', parseInt(project_id))
             .input('orgId', orgId)
-            .query(`SELECT id, project_code, applicable_wps_ids FROM projects WHERE id=@projId AND organization_id=@orgId`);
+            .query(`SELECT id, project_code, applicable_wps_ids, company_id FROM projects WHERE id=@projId AND organization_id=@orgId`);
         if (!projResult.recordset.length) return res.status(404).json({ error: 'Commessa non trovata.' });
 
         const project = projResult.recordset[0];
+        const projectCompanyId = project.company_id || null;
         let wpsIds = [];
         try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
 
@@ -340,24 +342,30 @@ async function getCoverage(req, res) {
             wpsRows = wRes.recordset;
         }
 
-        // Carica qualifiche attive e approvate per l'organizzazione
-        const qRes = await pool.request()
-            .input('orgId', orgId)
-            .query(`
-                SELECT q.id, q.person_name, q.person_code, q.qualification_type,
-                       q.welding_process, q.material_group, q.position_range,
-                       q.thickness_range, q.joint_type,
-                       q.expiry_date, q.status, q.approval_status,
-                       c.name AS company_name
-                FROM qualifications q
-                LEFT JOIN companies c ON c.id = q.company_id
-                WHERE q.organization_id = @orgId
-                  AND q.approval_status = 'approvata'
-                  AND q.status NOT IN ('revocata','sospesa')
-                  AND (q.expiry_date IS NULL OR q.expiry_date >= CAST(GETDATE() AS DATE))
-                  AND q.qualification_type LIKE '%9606%'
-                ORDER BY q.person_name
-            `);
+        // Carica qualifiche attive e approvate — filtrate per company_id commessa se disponibile
+        const qReq = pool.request().input('orgId', orgId);
+        let qWhere = `
+            q.organization_id = @orgId
+            AND q.approval_status = 'approvata'
+            AND q.status NOT IN ('revocata','sospesa')
+            AND (q.expiry_date IS NULL OR q.expiry_date >= CAST(GETDATE() AS DATE))
+            AND q.qualification_type LIKE '%9606%'
+        `;
+        if (projectCompanyId) {
+            qReq.input('projCompId', parseInt(projectCompanyId));
+            qWhere += ' AND q.company_id = @projCompId';
+        }
+        const qRes = await qReq.query(`
+            SELECT q.id, q.person_name, q.person_code, q.qualification_type,
+                   q.welding_process, q.material_group, q.position_range,
+                   q.thickness_range, q.joint_type,
+                   q.expiry_date, q.status, q.approval_status,
+                   c.name AS company_name
+            FROM qualifications q
+            LEFT JOIN companies c ON c.id = q.company_id
+            WHERE ${qWhere}
+            ORDER BY q.person_name
+        `);
         const qualRows = qRes.recordset;
 
         // Costruisce righe di copertura: per ogni WPS, cerca saldatori qualificati
@@ -479,6 +487,29 @@ async function createQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
+
+        // Anti-duplicato: stesso certificate_number + company_id + qualification_type (non revocate)
+        if (certificate_number?.trim() && company_id) {
+            const dupCheck = await pool.request()
+                .input('orgId',    orgId)
+                .input('certNum',  certificate_number.trim())
+                .input('compId',   parseInt(company_id))
+                .input('qualType', qualification_type.trim())
+                .query(`
+                    SELECT COUNT(*) AS cnt FROM qualifications
+                    WHERE organization_id=@orgId
+                      AND certificate_number=@certNum
+                      AND company_id=@compId
+                      AND qualification_type=@qualType
+                      AND status != 'revocata'
+                `);
+            if (dupCheck.recordset[0].cnt > 0) {
+                return res.status(400).json({
+                    error: 'Qualifica duplicata: esiste gi\u00e0 una qualifica attiva con lo stesso numero certificato, azienda e tipo.',
+                    code: 'DUPLICATE_QUALIFICATION',
+                });
+            }
+        }
 
         const r = await pool.request()
             .input('orgId',     orgId)
@@ -835,49 +866,50 @@ async function renewQualification(req, res) {
         } = req.body || {};
 
         const r = await pool.request()
-            .input('orgId',     orgId)
-            .input('prevId',    id)
-            .input('compId',    q.company_id)
-            .input('personName',q.person_name)
-            .input('personCode',q.person_code)
-            .input('dept',      q.department)
-            .input('qualType',  q.qualification_type)
-            .input('stdRef',    q.standard_ref)
-            .input('scope',     q.scope_detail)
-            .input('certNum',   certificate_number || q.certificate_number)
-            .input('issuer',    q.issuing_body)
-            .input('issueDate', issue_date || null)
-            .input('expiryDate',expiry_date || null)
-            .input('renewalDate',last_renewal_date || null)
-            .input('notes',     notes || q.notes)
-            .input('userId',    userId)
-            .input('weldProc',  q.welding_process)
-            .input('matGroup',  q.material_group)
-            .input('posRange',  q.position_range)
-            .input('ndtMethod', q.ndt_method)
-            .input('ndtLevel',  q.ndt_level)
-            .input('jointType', q.joint_type)
-            .input('thickRange',q.thickness_range)
-            .input('pipeDiam',  q.pipe_diameter)
-            .input('filler',    q.filler_material)
-            .input('shieldGas', q.shielding_gas)
-            .input('equipType', q.equipment_type)
-            .input('ndtSector', q.ndt_sector)
-            .input('certScheme',q.certification_scheme)
-            .input('coordTitle',q.coordinator_title)
-            .input('diplomaNum',q.diploma_number)
-            .input('patentType',q.patent_type)
-            .input('trainBody', q.training_body)
-            .input('courseName',q.course_name)
-            .input('trainHours',q.training_hours)
-            .input('examBody',  q.examiner_body)
-            .input('certFileUrl',certificate_file_url || null)
+            .input('orgId',       orgId)
+            .input('prevId',      id)
+            .input('compId',      q.company_id)
+            .input('personName',  q.person_name)
+            .input('personCode',  q.person_code)
+            .input('dept',        q.department)
+            .input('qualType',    q.qualification_type)
+            .input('stdRef',      q.standard_ref)
+            .input('scope',       q.scope_detail)
+            .input('certNum',     certificate_number || q.certificate_number)
+            .input('issuer',      q.issuing_body)
+            .input('issueDate',   issue_date || null)
+            .input('expiryDate',  expiry_date || null)
+            .input('renewalDate', last_renewal_date || null)
+            .input('notes',       notes || q.notes)
+            .input('userId',      userId)
+            .input('personnelId', q.personnel_id || null)
+            .input('weldProc',    q.welding_process)
+            .input('matGroup',    q.material_group)
+            .input('posRange',    q.position_range)
+            .input('ndtMethod',   q.ndt_method)
+            .input('ndtLevel',    q.ndt_level)
+            .input('jointType',   q.joint_type)
+            .input('thickRange',  q.thickness_range)
+            .input('pipeDiam',    q.pipe_diameter)
+            .input('filler',      q.filler_material)
+            .input('shieldGas',   q.shielding_gas)
+            .input('equipType',   q.equipment_type)
+            .input('ndtSector',   q.ndt_sector)
+            .input('certScheme',  q.certification_scheme)
+            .input('coordTitle',  q.coordinator_title)
+            .input('diplomaNum',  q.diploma_number)
+            .input('patentType',  q.patent_type)
+            .input('trainBody',   q.training_body)
+            .input('courseName',  q.course_name)
+            .input('trainHours',  q.training_hours)
+            .input('examBody',    q.examiner_body)
+            .input('certFileUrl', certificate_file_url || null)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
                      issue_date, expiry_date, last_renewal_date, status, notes, created_by,
-                     previous_qualification_id, approval_status,
+                     previous_qualification_id, approval_status, personnel_id,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
                      joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
                      ndt_sector, certification_scheme, coordinator_title, diploma_number,
@@ -888,7 +920,7 @@ async function renewQualification(req, res) {
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
                      @issueDate, @expiryDate, @renewalDate, 'valida', @notes, @userId,
-                     @prevId, 'bozza',
+                     @prevId, 'bozza', @personnelId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @jointType, @thickRange, @pipeDiam, @filler, @shieldGas, @equipType,
                      @ndtSector, @certScheme, @coordTitle, @diplomaNum,
@@ -905,6 +937,134 @@ async function renewQualification(req, res) {
     }
 }
 
+/** POST /qualifications/upload-batch — Batch upload patentini (AI extraction) */
+async function uploadBatch(req, res) {
+    try {
+        const orgId    = req.user.organization_id;
+        const userId   = req.user.user_id;
+        const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'Nessun file caricato.' });
+        }
+
+        const { ingestQualificationFromPdf } = require('../services/qualificationIngest.service');
+
+        const results = [];
+        for (const file of req.files) {
+            let entry = { fileName: file.originalname, status: 'error', qualification_id: null, person_name: null, qualification_type: null, warnings: [] };
+            try {
+                const buffer = fs.readFileSync(file.path);
+                const result = await ingestQualificationFromPdf(buffer, file.originalname, orgId, company_id, {
+                    userId,
+                    filePath: file.path,
+                });
+                if (result.duplicate) {
+                    entry.status = 'duplicate';
+                    entry.warnings = result.warnings || [];
+                } else {
+                    entry.status = 'ok';
+                    entry.qualification_id = result.qualification_id;
+                    entry.person_name = result.person_name;
+                    entry.qualification_type = result.qualification_type;
+                    entry.warnings = result.warnings || [];
+                }
+            } catch (fileErr) {
+                entry.error = fileErr.message;
+                entry.warnings = [fileErr.message];
+                // Pulizia file in errore
+                try { fs.unlinkSync(file.path); } catch (_) {}
+            }
+            results.push(entry);
+        }
+
+        const ok = results.filter(r => r.status === 'ok').length;
+        logger.info(`[Qualif/batch] ${ok}/${req.files.length} file ingested per org ${orgId}`);
+        res.json({ results, uploaded: ok, total: req.files.length });
+    } catch (err) {
+        logger.error('uploadBatch qualifiche:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/** POST /qualifications/:id/certificate — Upload certificato PDF/immagine */
+async function uploadCertificate(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const id    = parseInt(req.params.id);
+
+        if (!req.file) return res.status(400).json({ error: 'Nessun file caricato.' });
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query('SELECT id, company_id, certificate_file_url FROM qualifications WHERE id=@id AND organization_id=@orgId');
+        if (!check.recordset.length) {
+            fs.unlinkSync(req.file.path);
+            return res.status(404).json({ error: 'Qualifica non trovata.' });
+        }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        if (writeDenied) {
+            fs.unlinkSync(req.file.path);
+            return sendAccessDenied(res, writeDenied);
+        }
+
+        const uploadBase = process.env.UPLOAD_DIR
+            ? path.resolve(process.env.UPLOAD_DIR)
+            : path.resolve(__dirname, '../../uploads');
+        const relUrl = '/uploads/' + path.relative(uploadBase, req.file.path).replace(/\\/g, '/');
+
+        await pool.request()
+            .input('id', id).input('orgId', orgId).input('url', relUrl)
+            .query(`UPDATE qualifications SET certificate_file_url=@url, updated_at=GETDATE() WHERE id=@id AND organization_id=@orgId`);
+
+        logger.info(`[Qualif] Certificato caricato id=${id}: ${relUrl}`);
+        res.json({ success: true, certificate_file_url: relUrl });
+    } catch (err) {
+        logger.error('uploadCertificate:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/** GET /qualifications/:id/history — Catena rinnovi via previous_qualification_id */
+async function getHistory(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const id    = parseInt(req.params.id);
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        // Risali la catena (max 20 rinnovi)
+        const chain = [];
+        let currentId = id;
+        for (let i = 0; i < 20; i++) {
+            const r = await pool.request()
+                .input('id', currentId).input('orgId', orgId)
+                .query(`
+                    SELECT q.id, q.issue_date, q.expiry_date, q.certificate_number,
+                           q.approval_status, q.status, q.previous_qualification_id,
+                           c.name AS company_name
+                    FROM qualifications q
+                    LEFT JOIN companies c ON c.id = q.company_id
+                    WHERE q.id=@id AND q.organization_id=@orgId
+                `);
+            if (!r.recordset.length) break;
+            const row = r.recordset[0];
+            chain.push({ ...row, semaforo: semaforo(row.expiry_date, row.status) });
+            if (!row.previous_qualification_id) break;
+            currentId = row.previous_qualification_id;
+        }
+
+        res.json({ history: chain, current_id: id });
+    } catch (err) {
+        logger.error('getQualifHistory:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     listQualifications,
     getStats,
@@ -916,4 +1076,7 @@ module.exports = {
     approveQualification,
     rejectQualification,
     renewQualification,
+    uploadBatch,
+    uploadCertificate,
+    getHistory,
 };
