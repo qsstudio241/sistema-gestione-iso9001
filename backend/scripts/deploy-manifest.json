@@ -43,7 +43,16 @@
         "src/services/unifiedSearch.service.js",
         "src/services/docCodeGenerator.service.js",
         "src/services/documentHistoryTracker.service.js",
-        "src/services/moduleLicense.service.js"
+        "src/services/moduleLicense.service.js",
+        "src/services/qualificationCompany.service.js",
+        "src/services/qualificationSituazione.service.js",
+        "src/services/personnelQualificationLink.service.js"
+      ]
+    },
+    {
+      "name": "constants-occupational",
+      "files": [
+        "src/constants/occupationalQualificationTypes.js"
       ]
     },
     {

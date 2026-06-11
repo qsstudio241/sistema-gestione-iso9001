@@ -43,7 +43,12 @@ return {
     plugins: [react(), stampServiceWorker()],
     resolve: {
         // Mantiene i path del workspace (C:\ProgettoISO) senza risolvere sul drive reale.
-        preserveSymlinks: true
+        preserveSymlinks: true,
+        // Alias esplicito per react-easy-crop: evita fallimenti di risoluzione Rollup
+        // su percorsi con spazi (Google Drive junction su Windows).
+        alias: {
+            'react-easy-crop': path.resolve(process.cwd(), 'node_modules/react-easy-crop/index.module.mjs')
+        }
     },
     // Strip debugger statements in produzione.
     // console.log/debug/info marcati come "pure" → rimossi da tree-shaking (no side effects).
@@ -57,10 +62,10 @@ return {
         rollupOptions: {
             // Evita che Rollup emetta un fileName assoluto su Windows+symlink.
             input: 'index.html',
-            // docx-preview può mancare in ambienti senza npm install completo:
-            // externalize per evitare errori build; il dynamic import fallisce
-            // gracefully con messaggio "Anteprima non disponibile".
-                            external: (id) => id === 'docx-preview' || id === 'react-easy-crop',
+            // docx-preview: importato dinamicamente con try-catch — fallisce
+            // gracefully con messaggio "Anteprima non disponibile" se assente.
+            // react-easy-crop: importato staticamente → DEVE essere bundlato (non external).
+                            external: (id) => id === 'docx-preview',
             output: {
                 manualChunks(id) {
                     if (!id.includes('node_modules')) return;
