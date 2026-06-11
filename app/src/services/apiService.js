@@ -1903,6 +1903,36 @@ class ApiService {
     async assignWpsWelder(wpsId, data)      { return this.post(`/welding/wps/${wpsId}/welders`, data); }
     async removeWpsWelder(wpsId, welderId)  { return this.delete(`/welding/wps/${wpsId}/welders/${welderId}`); }
 
+    // WPQR — stats, approval, batch upload, coverage (Mason-ready)
+    async getWPQRStats(params = {})    { const qs = new URLSearchParams(params).toString(); return this.get(`/welding/wpqr/stats${qs ? '?' + qs : ''}`); }
+    async approveWPQR(id)              { return this.post(`/welding/wpqr/${id}/approve`, {}); }
+    async rejectWPQR(id, reason)       { return this.post(`/welding/wpqr/${id}/reject`, { reason }); }
+    async uploadWpqrBatch(files, companyId) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('files', f));
+        if (companyId) fd.append('company_id', String(companyId));
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(`${this.baseUrl}/welding/wpqr/upload-batch`, {
+                method: 'POST', headers, body: fd, signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `Batch upload WPQR fallito (${response.status})`);
+            }
+            return response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('Timeout upload WPQR (180s)');
+            throw err;
+        }
+    }
+    async getWpsCoverage(projectId)    { return this.get(`/welding/wps/coverage?project_id=${projectId}`); }
+
     // ─── Projects / Commesse (Modulo Saldatura) ─────────────────────────────
     async getProjects(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/projects${qs ? '?' + qs : ''}`); }
     async getProject(id)             { return this.get(`/projects/${id}`); }
