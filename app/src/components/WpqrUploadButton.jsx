@@ -1,5 +1,5 @@
 /**
- * WpqrUploadButton ó Upload batch WPQR da PDF con AI extraction
+ * WpqrUploadButton ù Upload batch WPQR da PDF con AI extraction
  * Pattern identico a QualificationUploadButton.jsx, adattato per WPQR.
  */
 import React, { useState, useRef, useCallback } from "react";
@@ -137,10 +137,11 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
               </div>
               <ul className="wpqr-upload__results">
                 {results.map((r, i) => {
-                  const isOk  = r.status === "ok";
-                  const isDup = r.status === "duplicate";
+                  const isOk       = r.status === "ok";
+                  const isDup      = r.status === "duplicate";
+                  const isWrong    = r.status === "wrong_module";
                   return (
-                    <li key={i} className={`wpqr-upload__result-item wpqr-upload__result-item--${isOk ? "success" : isDup ? "duplicate" : "error"}`}>
+                    <li key={i} className={`wpqr-upload__result-item wpqr-upload__result-item--${isOk ? "success" : isDup ? "duplicate" : isWrong ? "wrong-module" : "error"}`}>
                       {isOk ? (
                         <div className="wpqr-upload__result-success">
                           <span className="wpqr-upload__result-icon">{"\u2705"}</span>
@@ -149,7 +150,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
                             <div className="wpqr-upload__result-meta">
                               {r.welding_process && <span>Processo: {r.welding_process}</span>}
                               {r.thickness_min != null && r.thickness_max != null && (
-                                <span>Spessore: {r.thickness_min}ñ{r.thickness_max} mm</span>
+                                <span>Spessore: {r.thickness_min}ù{r.thickness_max} mm</span>
                               )}
                               {r.wpqr_id && <span>ID: {r.wpqr_id}</span>}
                             </div>
@@ -166,6 +167,19 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
                           <div>
                             <strong>{r.fileName}</strong>
                             <p>Duplicato: WPQR gi\u00e0 presente nel registro.</p>
+                          </div>
+                        </div>
+                      ) : isWrong ? (
+                        <div className="wpqr-upload__result-wrong-module">
+                          <span className="wpqr-upload__result-icon">{"\u26A0\uFE0F"}</span>
+                          <div>
+                            <strong>{r.fileName}</strong>
+                            <p className="wpqr-upload__wrong-module-msg">{r.message}</p>
+                            {r.suggested_module && (
+                              <a className="wpqr-upload__wrong-module-link" href={r.suggested_module}>
+                                Vai al modulo corretto {"\u2192"}
+                              </a>
+                            )}
                           </div>
                         </div>
                       ) : (

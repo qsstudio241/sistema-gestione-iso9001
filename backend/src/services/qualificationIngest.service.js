@@ -11,6 +11,12 @@ const fs     = require('fs');
 const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
+const {
+    classifyDocument,
+    WRONG_MODULE_FOR_QUALIFICATIONS,
+    WRONG_MODULE_MESSAGES,
+    SUGGESTED_MODULE,
+} = require('../utils/documentClassifier');
 
 // AI opzionale: best-effort, non blocca l'ingestion se non disponibile
 let chat = null;
@@ -109,6 +115,20 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         warnings.push('pdf-parse non disponibile: estrazione testo saltata.');
     }
 
+    // 1b. Cross-check: blocca WPQR/WPS caricati per errore nel modulo qualifiche
+    if (extractedText.length > 30) {
+        const docClass = classifyDocument(extractedText);
+        logger.info('Qualification doc classification', { fileName, detected_type: docClass.detected_type, confidence: docClass.confidence });
+        if (WRONG_MODULE_FOR_QUALIFICATIONS.has(docClass.detected_type) && docClass.confidence === 'high') {
+            return {
+                status:           'wrong_module',
+                detected_type:    docClass.detected_type,
+                message:          WRONG_MODULE_MESSAGES[docClass.detected_type],
+                suggested_module: SUGGESTED_MODULE[docClass.detected_type],
+            };
+        }
+    }
+
     // 2. Classifica tipo
     const qualificationType = classifyQualificationType(extractedText || fileName);
 
@@ -179,7 +199,7 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
                   AND status != 'revocata'
             `);
         if (dupCheck.recordset[0].cnt > 0) {
-            warnings.push(`Duplicato: certificato ${certificate_number} gi‡ presente.`);
+            warnings.push(`Duplicato: certificato ${certificate_number} giù presente.`);
             return { duplicate: true, person_name, qualification_type: qualificationType, warnings };
         }
     }

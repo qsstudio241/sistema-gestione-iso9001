@@ -8,6 +8,12 @@
 
 const logger   = require('../utils/logger');
 const { query } = require('../config/database');
+const {
+    classifyDocument,
+    WRONG_MODULE_FOR_WPQR,
+    WRONG_MODULE_MESSAGES,
+    SUGGESTED_MODULE,
+} = require('../utils/documentClassifier');
 
 // AI opzionale: best-effort, non blocca l'ingestion se non disponibile
 let chat = null;
@@ -101,7 +107,7 @@ async function checkDuplicate(referenceNumber, organizationId, companyId) {
  * @param {string} fileName
  * @param {number} organizationId
  * @param {number|null} companyId
- * @param {object} options ó { userId, filePath }
+ * @param {object} options ù { userId, filePath }
  * @returns {Promise<{wpqr_id, reference_number, welding_process, confidence, warnings[]}>}
  */
 async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
@@ -119,7 +125,28 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
             warnings.push(`Estrazione testo fallita: ${e.message}`);
         }
     } else {
-        warnings.push('pdf-parse non disponibile ó metadati estratti manualmente');
+        warnings.push('pdf-parse non disponibile ù metadati estratti manualmente');
+    }
+
+    // 1b. Classificazione tipo documento ó blocca moduli sbagliati
+    if (extractedText.length > 30) {
+        const docClass = classifyDocument(extractedText);
+        logger.info('WPQR doc classification', { fileName, detected_type: docClass.detected_type, confidence: docClass.confidence, score: docClass.score });
+
+        if (WRONG_MODULE_FOR_WPQR.has(docClass.detected_type) && docClass.confidence !== 'low') {
+            return {
+                status:           'wrong_module',
+                detected_type:    docClass.detected_type,
+                message:          WRONG_MODULE_MESSAGES[docClass.detected_type],
+                suggested_module: SUGGESTED_MODULE[docClass.detected_type],
+            };
+        }
+
+        if (docClass.detected_type === 'unknown') {
+            warnings.push('Tipo documento non riconosciuto \u2014 verificare i dati estratti');
+        } else if ((docClass.detected_type === 'wpqr' || docClass.detected_type === 'wps') && docClass.confidence === 'low') {
+            warnings.push('Tipo documento incerto \u2014 verificare che sia una WPQR');
+        }
     }
 
     // 2. AI extraction
@@ -145,9 +172,9 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
             confidence = 'bassa';
         }
     } else if (!chat) {
-        warnings.push('AI provider non configurato ó inserimento con dati minimi');
+        warnings.push('AI provider non configurato ù inserimento con dati minimi');
     } else {
-        warnings.push('Testo PDF troppo breve (< 50 caratteri) ó PDF potrebbe essere scansionato');
+        warnings.push('Testo PDF troppo breve (< 50 caratteri) ù PDF potrebbe essere scansionato');
     }
 
     // 3. Normalizzazione
@@ -167,7 +194,7 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     // 4. Calcola range spessori
     const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
     if (thickness_tested && !thickness_min) {
-        warnings.push('Spessore testato non riconoscibile ó range non calcolato');
+        warnings.push('Spessore testato non riconoscibile ù range non calcolato');
     }
 
     // 5. Validazione
