@@ -2,7 +2,8 @@
   "description": "Manifest unico per deploy backend VPS - ordine dependency-aware (services/utils prima di controller/routes)",
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
-    "src/services/normConnectors"
+    "src/services/normConnectors",
+    "src/utils"
   ],
   "groups": [
     {
@@ -25,7 +26,8 @@
         "src/utils/importPdfText.js",
         "src/utils/documentTreeCompanyScope.js",
         "src/utils/documentRegistryFile.js",
-        "src/utils/excelDeadlineDetector.js"
+        "src/utils/excelDeadlineDetector.js",
+        "src/utils/documentClassifier.js"
       ]
     },
     {
@@ -46,7 +48,9 @@
         "src/services/moduleLicense.service.js",
         "src/services/qualificationCompany.service.js",
         "src/services/qualificationSituazione.service.js",
-        "src/services/personnelQualificationLink.service.js"
+        "src/services/personnelQualificationLink.service.js",
+        "src/services/wpqrIngest.service.js",
+        "src/services/qualificationIngest.service.js"
       ]
     },
     {
@@ -114,7 +118,8 @@
         "src/controllers/aiChat.controller.js",
         "src/controllers/search.controller.js",
         "src/controllers/webdav.controller.js",
-        "src/controllers/deadlines.controller.js"
+        "src/controllers/deadlines.controller.js",
+        "src/controllers/welding.controller.js"
       ]
     },
     {
