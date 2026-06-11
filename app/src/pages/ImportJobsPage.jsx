@@ -221,6 +221,7 @@ export default function ImportJobsPage() {
   const [busy, setBusy] = useState(false);
   const [commitDialog, setCommitDialog] = useState(null); // { file, isNorm, form, normLookup }
   const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
+  const [qualifCommitResult, setQualifCommitResult] = useState({}); // { [fileId]: { qualification_id, error } }
   const [riesameDialog, setRiesameDialog] = useState(null); // { file, form }
   const [companies, setCompanies] = useState([]);
 
@@ -415,6 +416,20 @@ export default function ImportJobsPage() {
     const built = buildCommitFormFromFile(ai, file, jobHint);
     setCommitDialog({ file, ...built });
     setCommitResult(null);
+  }
+
+  async function handleCommitToQualification(file) {
+    if (!selectedId) return;
+    setBusy(true);
+    try {
+      const res = await apiService.commitImportJobFileToQualification(selectedId, file.id, {});
+      const qualId = res?.data?.qualification_id ?? res?.qualification_id;
+      setQualifCommitResult(prev => ({ ...prev, [file.id]: { qualification_id: qualId } }));
+    } catch (e) {
+      setQualifCommitResult(prev => ({ ...prev, [file.id]: { error: e.message } }));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleOpenRiesame(file) {
@@ -765,19 +780,35 @@ export default function ImportJobsPage() {
                         </button>
                       )}
                       {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
-                        <button
-                          type="button"
-                          className="btn-small btn-commit"
-                          disabled={busy}
-                          title="Crea un record nel registro documenti da questo file"
-                          onClick={() => handleOpenCommit(f)}
-                        >
-                          Commit al Registry
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="btn-small btn-commit"
+                            disabled={busy}
+                            title="Crea un record nel registro documenti da questo file"
+                            onClick={() => handleOpenCommit(f)}
+                          >
+                            Commit al Registry
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-small btn-commit-qualif"
+                            disabled={busy || !!qualifCommitResult[f.id]?.qualification_id}
+                            title="Crea una qualifica personale da questo file (approval_status=bozza)"
+                            onClick={() => handleCommitToQualification(f)}
+                          >
+                            {qualifCommitResult[f.id]?.qualification_id
+                              ? `\u2713 Qualifica #${qualifCommitResult[f.id].qualification_id}`
+                              : "Commit a Qualifica"}
+                          </button>
+                          {qualifCommitResult[f.id]?.error && (
+                            <span className="file-commit-err" title={qualifCommitResult[f.id].error}>{"\u26A0\uFE0F"} Errore qualifica</span>
+                          )}
+                        </>
                       )}
                       {f.status === "committed" && (
                         <span className="file-committed-badge">
-                          ✓ In Registry{commitResult?.fileId === f.id && commitResult.registryId
+                          {"\u2713"} In Registry{commitResult?.fileId === f.id && commitResult.registryId
                             ? ` #${commitResult.registryId}` : ""}
                         </span>
                       )}
