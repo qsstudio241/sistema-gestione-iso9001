@@ -17,7 +17,10 @@ async function listContacts(req, res) {
     const { organization_id } = req.user;
     const { active, role_type } = req.query;
 
-    const where = ['organization_id = @org'];
+    // La rubrica studio mostra solo i contatti diretti dello studio (company_id IS NULL).
+    // I contatti bridge creati da ensurePersonnelNotificationContact (company_id != NULL)
+    // appartengono alle aziende clienti e non devono comparire in questa rubrica.
+    const where = ['organization_id = @org', 'company_id IS NULL'];
     const params = { org: organization_id };
 
     if (active !== undefined) {
