@@ -1,0 +1,29 @@
+{
+  "runAt": "2026-05-31T19:37:46.481Z",
+  "sliceRequested": "attach,registry,admin",
+  "keepData": true,
+  "slices": {},
+  "steps": [],
+  "idsCreated": {
+    "ts": 1780256266472,
+    "studioA": null,
+    "studioB": null,
+    "companyA": null,
+    "companyB": null,
+    "auditA": null,
+    "auditB": null,
+    "ncB": null,
+    "attachmentB": null,
+    "attachmentUploadMode": null,
+    "docB": null,
+    "userEmails": {},
+    "tempPassword": "Rb4cSm0ke_1780256266472!"
+  },
+  "setup": [],
+  "errors": [],
+  "cleanup": [],
+  "adminPasswordModified": false,
+  "residue": [],
+  "cleanupCommand": "node .cursor/rbac-smoke-l3-phase2.mjs --cleanup",
+  "outcome": "FAIL"
+}

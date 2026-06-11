@@ -53,6 +53,9 @@ router.delete('/companies/:id/logo', companyController.deleteLogo);
 
 // Personale azienda (ADR-012)
 router.get('/companies/:companyId/personnel', companyPersonnelController.listPersonnel);
+router.post('/companies/:companyId/personnel/import-from-qualifications', companyPersonnelController.importFromQualifications);
+router.post('/companies/:companyId/personnel/link-qualifications', companyPersonnelController.linkQualifications);
+router.get('/companies/:companyId/personnel/:id/qualifications', companyPersonnelController.getPersonnelQualifications);
 router.post('/companies/:companyId/personnel', companyPersonnelController.createPersonnel);
 router.put('/companies/:companyId/personnel/:id', companyPersonnelController.updatePersonnel);
 router.delete('/companies/:companyId/personnel/:id', companyPersonnelController.deletePersonnel);

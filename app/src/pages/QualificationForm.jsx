@@ -1,9 +1,10 @@
 /**
- * QualificationForm — Form creazione/modifica/rinnovo qualifica
+ * QualificationForm — Form creazione/modifica qualifica
  */
 
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
+import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import "./QualificationForm.css";
 
 const QUAL_TYPES = [
@@ -31,11 +32,12 @@ const QUAL_TYPES = [
   "Abilitazione piattaforma aerea",
   "Corso primo soccorso",
   "Corso antincendio",
+  ...OCCUPATIONAL_QUALIFICATION_TYPES,
   "Altra qualifica",
 ];
 
 const EMPTY = {
-  person_name: "", person_code: "", department: "",
+  personnel_id: "", person_name: "", person_code: "", department: "",
   company_id: "", qualification_type: "", standard_ref: "",
   scope_detail: "", certificate_number: "", issuing_body: "",
   issue_date: "", expiry_date: "", last_renewal_date: "",
@@ -47,18 +49,20 @@ const EMPTY = {
   certificate_file_url: "",
 };
 
-function QualificationForm({ qualification, onSave, onClose }) {
-  const isEdit   = !!qualification;
-  const isRenew  = !!qualification?._renew;
+function QualificationForm({ qualification, onSave, onClose, defaultCompanyId }) {
+  const isEdit  = !!qualification;
+  const isRenew = !!qualification?._renew;
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
   const [companies, setCompanies] = useState([]);
+  const [personnelList, setPersonnelList] = useState([]);
   const [certFile, setCertFile] = useState(null);
   const [uploadMsg, setUploadMsg] = useState(null);
+  const certInputRef = useRef(null);
+  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
   const openTimeRef = useRef(Date.now());
   const [customType, setCustomType] = useState(false);
-  const certInputRef = useRef(null);
 
   useEffect(() => {
     apiService.getCompanies?.().then((res) => {
@@ -70,30 +74,58 @@ function QualificationForm({ qualification, onSave, onClose }) {
   useEffect(() => {
     if (qualification) {
       const d = { ...EMPTY, ...qualification };
+      // Normalizza date a YYYY-MM-DD
       ["issue_date","expiry_date","last_renewal_date","cpd_valid_until"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
       d.company_id = d.company_id || "";
+      d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
       }
+    } else if (defaultCompanyId) {
+      setForm((f) => ({ ...f, company_id: String(defaultCompanyId) }));
     }
-  }, [qualification]);
+  }, [qualification, defaultCompanyId]);
+
+  useEffect(() => {
+    const companyId = form.company_id ? parseInt(form.company_id, 10) : null;
+    if (!companyId) {
+      setPersonnelList([]);
+      return;
+    }
+    apiService.getCompanyPersonnel(companyId, { active: "true" })
+      .then((res) => setPersonnelList(res?.data || []))
+      .catch(() => setPersonnelList([]));
+  }, [form.company_id]);
+
+  const companyLocked = isEdit && qualification?.approval_status === "approvata";
 
   function handle(field) {
-    return e => setForm(f => ({ ...f, [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+    return (e) => {
+      const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+      if (field === "company_id") {
+        setForm((f) => ({ ...f, company_id: value, personnel_id: "" }));
+        return;
+      }
+      setForm((f) => ({ ...f, [field]: value }));
+    };
   }
 
   async function handleSave() {
     if (!form.person_name.trim()) { setError("Il nome della persona \u00e8 obbligatorio."); return; }
     if (!form.qualification_type.trim()) { setError("Il tipo di qualifica \u00e8 obbligatorio."); return; }
+    if (!form.company_id) { setError("L'azienda cliente \u00e8 obbligatoria."); return; }
     setSaving(true);
     setError(null);
     setUploadMsg(null);
     try {
-      const data = { ...form, company_id: form.company_id || null };
-
+      const data = {
+        ...form,
+        company_id: parseInt(form.company_id, 10),
+        personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
+      };
       let savedId = qualification?.id;
       if (isRenew) {
         const res = await apiService.renewQualification(qualification.id, data);
@@ -105,7 +137,6 @@ function QualificationForm({ qualification, onSave, onClose }) {
         const res = await apiService.createQualification(data);
         savedId = res?.id || res?.data?.id || null;
       }
-
       // Upload certificato PDF se selezionato
       if (certFile && savedId) {
         try {
@@ -115,7 +146,6 @@ function QualificationForm({ qualification, onSave, onClose }) {
           setUploadMsg("\u26A0\uFE0F Qualifica salvata, ma upload certificato fallito: " + uploadErr.message);
         }
       }
-
       onSave();
     } catch (err) {
       setError(err.message);
@@ -123,24 +153,6 @@ function QualificationForm({ qualification, onSave, onClose }) {
       setSaving(false);
     }
   }
-
-  const isWelding = form.qualification_type.includes("9606") ||
-                    form.qualification_type.includes("14732") ||
-                    form.qualification_type.includes("15614");
-  const isNdt     = form.qualification_type.includes("NDT") ||
-                    form.qualification_type.includes("VT") && form.qualification_type.includes("Livello") ||
-                    form.qualification_type.includes("PT") && form.qualification_type.includes("Livello") ||
-                    form.qualification_type.includes("MT") && form.qualification_type.includes("Livello") ||
-                    form.qualification_type.includes("UT") && form.qualification_type.includes("Livello") ||
-                    form.qualification_type.includes("RT") && form.qualification_type.includes("Livello");
-  const isCoord   = form.qualification_type.includes("14731");
-  const isPesPav  = form.qualification_type.includes("PES") || form.qualification_type.includes("PAV");
-
-  let formTitle = isRenew
-    ? "\u267B\uFE0F Rinnova qualifica"
-    : isEdit
-    ? "\u270F\uFE0F Modifica qualifica"
-    : "+ Nuova qualifica";
 
   return (
     <div className="qf-overlay" onClick={e => {
@@ -150,7 +162,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
     }}>
       <div className="qf-modal">
         <div className="qf-header">
-          <h3 className="qf-title">{formTitle}</h3>
+          <h3 className="qf-title">{isRenew ? "\u267B\uFE0F Rinnova qualifica" : isEdit ? "\u270F\uFE0F Modifica qualifica" : "+ Nuova qualifica"}</h3>
           <button className="qf-close" onClick={onClose}>&#x2715;</button>
         </div>
 
@@ -159,8 +171,58 @@ function QualificationForm({ qualification, onSave, onClose }) {
           <div className="qf-section-title">Persona</div>
           <div className="qf-row">
             <div className="qf-field qf-flex2">
+              <label>Da anagrafica azienda</label>
+              <select
+                value={form.personnel_id}
+                onChange={(e) => {
+                  const pid = e.target.value;
+                  if (!pid) {
+                    setForm((f) => ({ ...f, personnel_id: "" }));
+                    return;
+                  }
+                  const person = personnelList.find((p) => String(p.id) === pid);
+                  if (!person) return;
+                  setForm((f) => ({
+                    ...f,
+                    personnel_id: pid,
+                    person_name: person.name || "",
+                    person_code: person.person_code || f.person_code || "",
+                    department: person.job_title || f.department || "",
+                  }));
+                }}
+                disabled={!form.company_id}
+              >
+                <option value="">-- testo libero / nuovo --</option>
+                {personnelList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.person_code ? ` (${p.person_code})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="qf-row">
+            <div className="qf-field qf-flex2">
               <label>Nome e cognome <span className="req">*</span></label>
-              <input type="text" value={form.person_name} onChange={handle("person_name")} placeholder="Mario Rossi" />
+              <input
+                type="text"
+                value={form.person_name}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setForm((f) => {
+                    const linked = f.personnel_id
+                      ? personnelList.find((p) => String(p.id) === String(f.personnel_id))
+                      : null;
+                    const keepLink = linked && linked.name === newName.trim();
+                    return {
+                      ...f,
+                      person_name: newName,
+                      personnel_id: keepLink ? f.personnel_id : "",
+                    };
+                  });
+                }}
+                placeholder="Mario Rossi"
+              />
             </div>
             <div className="qf-field">
               <label>Matricola / codice</label>
@@ -173,9 +235,14 @@ function QualificationForm({ qualification, onSave, onClose }) {
               <input type="text" value={form.department} onChange={handle("department")} placeholder="Produzione" />
             </div>
             <div className="qf-field">
-              <label>Azienda</label>
-              <select value={form.company_id} onChange={handle("company_id")}>
-                <option value="">-- nessuna --</option>
+              <label>Azienda <span className="req">*</span></label>
+              <select
+                value={form.company_id}
+                onChange={handle("company_id")}
+                disabled={companyLocked}
+                title={companyLocked ? "Azienda bloccata su qualifica approvata" : ""}
+              >
+                <option value="">-- seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
@@ -222,8 +289,8 @@ function QualificationForm({ qualification, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Dettagli saldatura */}
-          {isWelding && (
+          {/* Dettagli saldatura ISO 3834 (visibili solo per tipi pertinenti) */}
+          {(form.qualification_type.includes("9606") || form.qualification_type.includes("14732") || form.qualification_type.includes("15614")) && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli saldatura</div>
               <div className="qf-row">
@@ -254,7 +321,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
           )}
 
           {/* Dettagli NDT ISO 9712 */}
-          {isNdt && (
+          {form.qualification_type.includes("NDT") && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli NDT</div>
               <div className="qf-row">
@@ -287,7 +354,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
           )}
 
           {/* Dettagli Coordinatore ISO 14731 */}
-          {isCoord && (
+          {form.qualification_type.includes("14731") && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli Coordinatore Saldatura</div>
               <div className="qf-row">
@@ -313,7 +380,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
           )}
 
           {/* Dettagli PES/PAV */}
-          {isPesPav && (
+          {(form.qualification_type.includes("PES") || form.qualification_type.includes("PAV")) && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli PES/PAV</div>
               <div className="qf-row">
@@ -372,12 +439,8 @@ function QualificationForm({ qualification, onSave, onClose }) {
               )}
               <div className="qf-field">
                 <label>Allega / sostituisci certificato</label>
-                <input
-                  ref={certInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={e => setCertFile(e.target.files?.[0] || null)}
-                />
+                <input ref={certInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={e => setCertFile(e.target.files?.[0] || null)} />
                 {certFile && <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>}
               </div>
             </div>
