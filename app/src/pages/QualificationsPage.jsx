@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
+import QualificationUploadButton from "../components/QualificationUploadButton";
 import { formatDate } from "../utils/dateHelpers";
 import "./QualificationsPage.css";
 
@@ -82,7 +83,7 @@ function StatsBar({ stats }) {
 
 // ── Riga tabella (rendering dinamico per tab) ─────────────────────────────────
 
-function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, deleteId, setDeleteId, canApprove }) {
+function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, onHistory, deleteId, setDeleteId, canApprove }) {
     const sem = SEMAFORO[q.semaforo] || SEMAFORO.grigio;
 
     const actionBtns = (
@@ -97,6 +98,7 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
                 <div className="sq-action-group">
                     <button className="sq-btn-icon" title="Modifica" onClick={() => onEdit(q)}>{"\u270F\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-renew" title="Rinnova" onClick={() => onRenew(q)}>{"\u267B\uFE0F"}</button>
+                    <button className="sq-btn-icon sq-btn-history" title="Storico rinnovi" onClick={() => onHistory(q)}>{"\uD83D\uDCC5"}</button>
                     {canApprove && q.approval_status !== "approvata" && (
                         <button className="sq-btn-icon sq-btn-approve" title="Approva" onClick={() => onApprove(q.id)}>{"\u2705"}</button>
                     )}
@@ -121,7 +123,11 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
 
     const certCell = (
         <td className="sq-col-cert">
-            {q.certificate_number || "\u2014"}
+            {q.certificate_file_url
+                ? <a href={q.certificate_file_url} target="_blank" rel="noopener noreferrer" className="sq-cert-link" title="Apri certificato">
+                    {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
+                  </a>
+                : (q.certificate_number || "\u2014")}
             {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
         </td>
     );
@@ -271,6 +277,8 @@ function QualificationsPage() {
     const [deleteId,    setDeleteId]    = useState(null);
     const [rejectModal, setRejectModal] = useState(null); // { id, person_name }
     const [rejectReason, setRejectReason] = useState("");
+    const [historyModal, setHistoryModal] = useState(null); // { id, person_name, history: [] }
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     const setFilter = useCallback((key, val) => {
         setFiltersState(f => ({ ...f, [key]: val }));
@@ -364,6 +372,19 @@ function QualificationsPage() {
         setFormOpen(true);
     }
 
+    async function handleOpenHistory(q) {
+        setHistoryModal({ id: q.id, person_name: q.person_name, history: [] });
+        setHistoryLoading(true);
+        try {
+            const res = await apiService.getQualificationHistory(q.id);
+            setHistoryModal({ id: q.id, person_name: q.person_name, history: res?.history || [] });
+        } catch (err) {
+            setHistoryModal({ id: q.id, person_name: q.person_name, history: [], error: err.message });
+        } finally {
+            setHistoryLoading(false);
+        }
+    }
+
     const columns = TAB_COLUMNS[activeTab] || TAB_COLUMNS.tutti;
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
@@ -375,7 +396,15 @@ function QualificationsPage() {
                     <h2 className="sq-title">{"\uD83C\uDF93"} Qualifiche Personale</h2>
                     <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
                 </div>
-                <button className="sq-btn-new" onClick={handleNew}>+ Nuova qualifica</button>
+                <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+                    {filters.company_id && (
+                        <QualificationUploadButton
+                            companyId={filters.company_id}
+                            onUploadComplete={loadData}
+                        />
+                    )}
+                    <button className="sq-btn-new" onClick={handleNew}>+ Nuova qualifica</button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -477,11 +506,12 @@ function QualificationsPage() {
                                     key={q.id}
                                     q={q}
                                     tabKey={activeTab}
-                                    onEdit={handleEdit}
-                                    onDelete={handleConfirmDelete}
-                                    onApprove={handleApprove}
-                                    onReject={handleRejectOpen}
-                                    onRenew={handleRenew}
+                                onEdit={handleEdit}
+                                onDelete={handleConfirmDelete}
+                                onApprove={handleApprove}
+                                onReject={handleRejectOpen}
+                                onRenew={handleRenew}
+                                onHistory={handleOpenHistory}
                                     deleteId={deleteId}
                                     setDeleteId={setDeleteId}
                                     canApprove={canApprove}
@@ -508,6 +538,48 @@ function QualificationsPage() {
                     onSave={handleSaved}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />
+            )}
+
+            {/* Modal storico rinnovi */}
+            {historyModal && (
+                <div className="sq-modal-overlay">
+                    <div className="sq-modal">
+                        <h3>Storico rinnovi — {historyModal.person_name}</h3>
+                        {historyLoading ? (
+                            <div className="sq-loading"><div className="sq-spinner" /><span>Caricamento...</span></div>
+                        ) : historyModal.error ? (
+                            <p style={{color:"#b91c1c"}}>{"\u26A0\uFE0F"} {historyModal.error}</p>
+                        ) : historyModal.history.length === 0 ? (
+                            <p>Nessun rinnovo precedente trovato.</p>
+                        ) : (
+                            <table style={{width:"100%", borderCollapse:"collapse", fontSize:13, marginTop:8}}>
+                                <thead>
+                                    <tr style={{borderBottom:"2px solid #e5e7eb"}}>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>ID</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Emissione</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Scadenza</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Certificato</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Stato</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {historyModal.history.map((h, i) => (
+                                        <tr key={h.id} style={{background: i === 0 ? "#f0fdf4" : "transparent", borderBottom:"1px solid #f3f4f6"}}>
+                                            <td style={{padding:"4px 8px"}}>#{h.id}{i === 0 ? " (attuale)" : ""}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.issue_date ? formatDate(h.issue_date) : "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.expiry_date ? formatDate(h.expiry_date) : "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.certificate_number || "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}><ApprovalBadge value={h.approval_status || "bozza"} /></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                        <div className="sq-modal-actions">
+                            <button className="sq-btn-secondary" onClick={() => setHistoryModal(null)}>Chiudi</button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Modal rifiuto */}

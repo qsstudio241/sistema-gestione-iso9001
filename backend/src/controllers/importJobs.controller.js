@@ -15,6 +15,7 @@ const {
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 
 async function listJobs(req, res) {
     try {
@@ -751,12 +752,20 @@ async function commitToQualification(req, res) {
             return res.status(400).json({ error: 'person_name obbligatorio (non estratto dall\'AI).', code: 'MISSING_PERSON_NAME' });
         }
 
+        // Risolve personnel_id da company_personnel
+        const personnel_id = await resolvePersonnelForQualification({
+            person_name:     qData.person_name,
+            company_id:      qData.company_id,
+            organization_id: qData.organization_id,
+        });
+        qData.personnel_id = personnel_id || null;
+
         const ins = await query(
             `INSERT INTO qualifications
              (organization_id, company_id, person_name, person_code, department,
               qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
               issue_date, expiry_date, last_renewal_date, status, notes, created_by,
-              approval_status,
+              approval_status, personnel_id,
               welding_process, material_group, position_range, ndt_method, ndt_level,
               joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
               ndt_sector, certification_scheme, coordinator_title, diploma_number, cpd_valid_until,
@@ -766,7 +775,7 @@ async function commitToQualification(req, res) {
              (@organization_id, @company_id, @person_name, @person_code, @department,
               @qualification_type, @standard_ref, @scope_detail, @certificate_number, @issuing_body,
               @issue_date, @expiry_date, @last_renewal_date, @status, @notes, @created_by,
-              @approval_status,
+              @approval_status, @personnel_id,
               @welding_process, @material_group, @position_range, @ndt_method, @ndt_level,
               @joint_type, @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
               @ndt_sector, @certification_scheme, @coordinator_title, @diploma_number, @cpd_valid_until,

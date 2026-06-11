@@ -1,5 +1,5 @@
 /**
- * QualificationForm — Form creazione/modifica qualifica
+ * QualificationForm — Form creazione/modifica/rinnovo qualifica
  */
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,6 +10,8 @@ const QUAL_TYPES = [
   "Saldatore ISO 9606-1",
   "Saldatore ISO 9606-2",
   "Saldatore EN 15614",
+  "Operatore ISO 14732",
+  "Coordinatore ISO 14731",
   "Operatore NDT VT Livello 1",
   "Operatore NDT VT Livello 2",
   "Operatore NDT VT Livello 3",
@@ -21,6 +23,7 @@ const QUAL_TYPES = [
   "Operatore NDT UT Livello 2",
   "Operatore NDT RT Livello 1",
   "Operatore NDT RT Livello 2",
+  "Abilitazione PES/PAV (CEI 11-27)",
   "Patentino PES/PAV (CEI 11-27)",
   "Patentino PES (CEI 11-27)",
   "Patentino PAV (CEI 11-27)",
@@ -39,17 +42,23 @@ const EMPTY = {
   status: "valida", notes: "",
   welding_process: "", material_group: "", position_range: "",
   ndt_method: "", ndt_level: "",
+  coordinator_title: "", cpd_valid_until: "",
+  patent_type: "", certification_scheme: "",
+  certificate_file_url: "",
 };
 
 function QualificationForm({ qualification, onSave, onClose }) {
-  const isEdit = !!qualification;
+  const isEdit   = !!qualification;
+  const isRenew  = !!qualification?._renew;
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
   const [companies, setCompanies] = useState([]);
-  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
+  const [certFile, setCertFile] = useState(null);
+  const [uploadMsg, setUploadMsg] = useState(null);
   const openTimeRef = useRef(Date.now());
   const [customType, setCustomType] = useState(false);
+  const certInputRef = useRef(null);
 
   useEffect(() => {
     apiService.getCompanies?.().then((res) => {
@@ -61,8 +70,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
   useEffect(() => {
     if (qualification) {
       const d = { ...EMPTY, ...qualification };
-      // Normalizza date a YYYY-MM-DD
-      ["issue_date","expiry_date","last_renewal_date"].forEach(k => {
+      ["issue_date","expiry_date","last_renewal_date","cpd_valid_until"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
       d.company_id = d.company_id || "";
@@ -82,13 +90,32 @@ function QualificationForm({ qualification, onSave, onClose }) {
     if (!form.qualification_type.trim()) { setError("Il tipo di qualifica \u00e8 obbligatorio."); return; }
     setSaving(true);
     setError(null);
+    setUploadMsg(null);
     try {
       const data = { ...form, company_id: form.company_id || null };
-      if (isEdit) {
+
+      let savedId = qualification?.id;
+      if (isRenew) {
+        const res = await apiService.renewQualification(qualification.id, data);
+        savedId = res?.id || res?.data?.id || null;
+      } else if (isEdit) {
         await apiService.updateQualification(qualification.id, data);
+        savedId = qualification.id;
       } else {
-        await apiService.createQualification(data);
+        const res = await apiService.createQualification(data);
+        savedId = res?.id || res?.data?.id || null;
       }
+
+      // Upload certificato PDF se selezionato
+      if (certFile && savedId) {
+        try {
+          await apiService.uploadQualificationCertificate(savedId, certFile);
+          setUploadMsg("Certificato allegato con successo.");
+        } catch (uploadErr) {
+          setUploadMsg("\u26A0\uFE0F Qualifica salvata, ma upload certificato fallito: " + uploadErr.message);
+        }
+      }
+
       onSave();
     } catch (err) {
       setError(err.message);
@@ -96,6 +123,24 @@ function QualificationForm({ qualification, onSave, onClose }) {
       setSaving(false);
     }
   }
+
+  const isWelding = form.qualification_type.includes("9606") ||
+                    form.qualification_type.includes("14732") ||
+                    form.qualification_type.includes("15614");
+  const isNdt     = form.qualification_type.includes("NDT") ||
+                    form.qualification_type.includes("VT") && form.qualification_type.includes("Livello") ||
+                    form.qualification_type.includes("PT") && form.qualification_type.includes("Livello") ||
+                    form.qualification_type.includes("MT") && form.qualification_type.includes("Livello") ||
+                    form.qualification_type.includes("UT") && form.qualification_type.includes("Livello") ||
+                    form.qualification_type.includes("RT") && form.qualification_type.includes("Livello");
+  const isCoord   = form.qualification_type.includes("14731");
+  const isPesPav  = form.qualification_type.includes("PES") || form.qualification_type.includes("PAV");
+
+  let formTitle = isRenew
+    ? "\u267B\uFE0F Rinnova qualifica"
+    : isEdit
+    ? "\u270F\uFE0F Modifica qualifica"
+    : "+ Nuova qualifica";
 
   return (
     <div className="qf-overlay" onClick={e => {
@@ -105,7 +150,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
     }}>
       <div className="qf-modal">
         <div className="qf-header">
-          <h3 className="qf-title">{isEdit ? "\u270F\uFE0F Modifica qualifica" : "+ Nuova qualifica"}</h3>
+          <h3 className="qf-title">{formTitle}</h3>
           <button className="qf-close" onClick={onClose}>&#x2715;</button>
         </div>
 
@@ -177,8 +222,8 @@ function QualificationForm({ qualification, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Dettagli saldatura ISO 3834 (visibili solo per tipi pertinenti) */}
-          {(form.qualification_type.includes("9606") || form.qualification_type.includes("14732") || form.qualification_type.includes("15614")) && (
+          {/* Dettagli saldatura */}
+          {isWelding && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli saldatura</div>
               <div className="qf-row">
@@ -209,7 +254,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
           )}
 
           {/* Dettagli NDT ISO 9712 */}
-          {form.qualification_type.includes("NDT") && (
+          {isNdt && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli NDT</div>
               <div className="qf-row">
@@ -232,6 +277,49 @@ function QualificationForm({ qualification, onSave, onClose }) {
                     <option value="2">Livello 2</option>
                     <option value="3">Livello 3</option>
                   </select>
+                </div>
+                <div className="qf-field">
+                  <label>Schema certificazione</label>
+                  <input type="text" value={form.certification_scheme} onChange={handle("certification_scheme")} placeholder="CICPND, PCN, SNT-TC-1A..." />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Dettagli Coordinatore ISO 14731 */}
+          {isCoord && (
+            <>
+              <div className="qf-section-title" style={{marginTop: 16}}>Dettagli Coordinatore Saldatura</div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Titolo</label>
+                  <select value={form.coordinator_title} onChange={handle("coordinator_title")}>
+                    <option value="">-- seleziona --</option>
+                    <option value="IWE">IWE — International Welding Engineer</option>
+                    <option value="IWT">IWT — International Welding Technologist</option>
+                    <option value="IWS">IWS — International Welding Specialist</option>
+                    <option value="IWIP">IWIP — International Welding Inspection Personnel</option>
+                    <option value="EWE">EWE — European Welding Engineer</option>
+                    <option value="EWT">EWT — European Welding Technologist</option>
+                    <option value="EWS">EWS — European Welding Specialist</option>
+                  </select>
+                </div>
+                <div className="qf-field">
+                  <label>CPD valida fino a</label>
+                  <input type="date" value={form.cpd_valid_until} onChange={handle("cpd_valid_until")} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Dettagli PES/PAV */}
+          {isPesPav && (
+            <>
+              <div className="qf-section-title" style={{marginTop: 16}}>Dettagli PES/PAV</div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Tipo abilitazione</label>
+                  <input type="text" value={form.patent_type} onChange={handle("patent_type")} placeholder="es. PES, PAV, PES+PAV" />
                 </div>
               </div>
             </>
@@ -270,6 +358,31 @@ function QualificationForm({ qualification, onSave, onClose }) {
               <input type="text" value={form.notes} onChange={handle("notes")} placeholder="Note aggiuntive..." />
             </div>
           </div>
+
+          {/* Upload certificato (visibile in modifica/rinnovo) */}
+          {(isEdit || isRenew) && (
+            <div style={{marginTop: 16}}>
+              <div className="qf-section-title">Certificato PDF</div>
+              {form.certificate_file_url && (
+                <div style={{marginBottom: 6, fontSize: 13}}>
+                  <a href={form.certificate_file_url} target="_blank" rel="noopener noreferrer">
+                    {"\uD83D\uDCC4"} Visualizza certificato allegato
+                  </a>
+                </div>
+              )}
+              <div className="qf-field">
+                <label>Allega / sostituisci certificato</label>
+                <input
+                  ref={certInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={e => setCertFile(e.target.files?.[0] || null)}
+                />
+                {certFile && <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>}
+              </div>
+            </div>
+          )}
+          {uploadMsg && <div className="qf-info" style={{marginTop:8, fontSize:13}}>{uploadMsg}</div>}
         </div>
 
         {error && <div className="qf-error">{"\u26A0\uFE0F "}{error}</div>}
@@ -277,7 +390,7 @@ function QualificationForm({ qualification, onSave, onClose }) {
         <div className="qf-footer">
           <button className="qf-btn-cancel" onClick={onClose}>Annulla</button>
           <button className="qf-btn-save" onClick={handleSave} disabled={saving}>
-            {saving ? "Salvataggio..." : isEdit ? "Salva modifiche" : "Crea qualifica"}
+            {saving ? "Salvataggio..." : isRenew ? "Crea rinnovo" : isEdit ? "Salva modifiche" : "Crea qualifica"}
           </button>
         </div>
       </div>

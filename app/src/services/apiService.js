@@ -1506,6 +1506,53 @@ class ApiService {
         return this.get(`/qualifications/coverage?project_id=${project_id}`);
     }
 
+    async uploadQualificationCertificate(id, file) {
+        const fd = new FormData();
+        fd.append('certificate', file);
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(`${this.baseUrl}/qualifications/${id}/certificate`, {
+            method: 'POST', headers, body: fd,
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || `Upload certificato fallito (${response.status})`);
+        }
+        return response.json();
+    }
+
+    async uploadQualificationsBatch(files, companyId) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('files', f));
+        if (companyId) fd.append('company_id', String(companyId));
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(`${this.baseUrl}/qualifications/upload-batch`, {
+                method: 'POST', headers, body: fd, signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `Batch upload qualifiche fallito (${response.status})`);
+            }
+            return response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            throw err;
+        }
+    }
+
+    async commitImportJobFileToQualification(jobId, fileId, data = {}) {
+        return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-qualification`, data);
+    }
+
+    async getQualificationHistory(id) {
+        return this.get(`/qualifications/${id}/history`);
+    }
+
     // ─── Risks (Sprint 6) ────────────────────────────────────────────────────
     async getRisksStats()           { return this.get('/risks/stats'); }
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }

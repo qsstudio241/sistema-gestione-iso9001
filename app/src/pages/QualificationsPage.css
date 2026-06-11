@@ -132,3 +132,8 @@
 .sq-btn-danger:disabled { opacity:.4; cursor:not-allowed; }
 .sq-btn-secondary { padding:8px 18px; background:#e5e7eb; color:#374151; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
 
+
+.sq-cert-link { color:#1e3a5f; text-decoration:underline; font-size:13px; }
+.sq-cert-link:hover { color:#16304e; }
+
+.sq-btn-history { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
