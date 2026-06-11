@@ -1,4 +1,4 @@
-/**
+Ôªø/**
  * qualificationIngest.service.js
  * Ingestion automatica di qualifiche da PDF (patentini, certificati).
  * Usato da uploadBatch in qualifications.controller.js.
@@ -29,6 +29,9 @@ try {
 
 let pdfParse = null;
 try { pdfParse = require('pdf-parse'); } catch (_) {}
+
+let extractTextWithOCR = null;
+try { extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR; } catch (_) {}
 
 // ?? Classificazione tipo qualifica ????????????????????????????????????????????
 
@@ -102,8 +105,10 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
     const { userId = null, filePath = null } = options;
     const warnings = [];
 
-    // 1. Estrae testo
+    // 1. Estrae testo (pdf-parse per PDF digitali, OCR fallback per scansioni)
     let extractedText = '';
+    let ocrUsed = false;
+
     if (pdfParse) {
         try {
             const parsed = await pdfParse(pdfBuffer);
@@ -112,7 +117,20 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
             warnings.push(`pdf-parse: ${parseErr.message}`);
         }
     } else {
-        warnings.push('pdf-parse non disponibile: estrazione testo saltata.');
+        warnings.push('pdf-parse non disponibile \u2014 estrazione testo saltata.');
+    }
+
+    // 1a. Fallback OCR se il testo e' troppo breve (PDF scansionato)
+    if (extractedText.trim().length < 50 && extractTextWithOCR) {
+        logger.info('[Qualif ingest] Testo breve, tentativo OCR...', { fileName, textLen: extractedText.length });
+        try {
+            extractedText = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
+            ocrUsed = true;
+            logger.info('[Qualif ingest] OCR completato', { fileName, chars: extractedText.length });
+        } catch (ocrErr) {
+            logger.warn('[Qualif ingest] OCR fallito', { fileName, error: ocrErr.message });
+            warnings.push('PDF scansionato non leggibile via OCR \u2014 compilare manualmente');
+        }
     }
 
     // 1b. Cross-check: blocca WPQR/WPS caricati per errore nel modulo qualifiche
@@ -149,7 +167,9 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
             warnings.push(`AI extraction: ${aiErr.message}`);
         }
     } else if (!hasAi) {
-        warnings.push('AI non configurata: metadati estratti solo da testo.');
+        warnings.push('AI non configurata \u2014 metadati estratti solo da testo.');
+    } else if (ocrUsed) {
+        warnings.push('Estrazione via OCR \u2014 verificare accuratezza dati estratti');
     }
 
     // 4. Assembla dati qualifica
@@ -199,7 +219,7 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
                   AND status != 'revocata'
             `);
         if (dupCheck.recordset[0].cnt > 0) {
-            warnings.push(`Duplicato: certificato ${certificate_number} giù presente.`);
+            warnings.push(`Duplicato: certificato ${certificate_number} giÔøΩ presente.`);
             return { duplicate: true, person_name, qualification_type: qualificationType, warnings };
         }
     }

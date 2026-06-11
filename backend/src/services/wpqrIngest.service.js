@@ -1,4 +1,4 @@
-/**
+Ôªø/**
  * wpqrIngest.service.js
  * Ingestion automatica di record WPQR da PDF.
  * Usato da uploadWPQRBatch in welding.controller.js.
@@ -24,6 +24,9 @@ try {
 
 let pdfParse = null;
 try { pdfParse = require('pdf-parse'); } catch (_) {}
+
+let extractTextWithOCR = null;
+try { extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR; } catch (_) {}
 
 // ?? Prompt AI per estrazione WPQR ????????????????????????????????????????????
 
@@ -107,7 +110,7 @@ async function checkDuplicate(referenceNumber, organizationId, companyId) {
  * @param {string} fileName
  * @param {number} organizationId
  * @param {number|null} companyId
- * @param {object} options ù { userId, filePath }
+ * @param {object} options ÔøΩ { userId, filePath }
  * @returns {Promise<{wpqr_id, reference_number, welding_process, confidence, warnings[]}>}
  */
 async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
@@ -115,8 +118,10 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     const warnings = [];
     let confidence = 'bassa';
 
-    // 1. Estrae testo
+    // 1. Estrae testo (pdf-parse per PDF digitali, OCR fallback per scansioni)
     let extractedText = '';
+    let ocrUsed = false;
+
     if (pdfParse) {
         try {
             const parsed = await pdfParse(pdfBuffer);
@@ -125,10 +130,23 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
             warnings.push(`Estrazione testo fallita: ${e.message}`);
         }
     } else {
-        warnings.push('pdf-parse non disponibile ù metadati estratti manualmente');
+        warnings.push('pdf-parse non disponibile \u2014 metadati estratti manualmente');
     }
 
-    // 1b. Classificazione tipo documento ó blocca moduli sbagliati
+    // 1a. Fallback OCR se il testo e' troppo breve (PDF scansionato)
+    if (extractedText.trim().length < 50 && extractTextWithOCR) {
+        logger.info('[WPQR ingest] Testo breve, tentativo OCR...', { fileName, textLen: extractedText.length });
+        try {
+            extractedText = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
+            ocrUsed = true;
+            logger.info('[WPQR ingest] OCR completato', { fileName, chars: extractedText.length });
+        } catch (ocrErr) {
+            logger.warn('[WPQR ingest] OCR fallito', { fileName, error: ocrErr.message });
+            warnings.push('PDF scansionato non leggibile via OCR \u2014 compilare manualmente');
+        }
+    }
+
+    // 1b. Classificazione tipo documento ÔøΩ blocca moduli sbagliati
     if (extractedText.length > 30) {
         const docClass = classifyDocument(extractedText);
         logger.info('WPQR doc classification', { fileName, detected_type: docClass.detected_type, confidence: docClass.confidence, score: docClass.score });
@@ -172,9 +190,13 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
             confidence = 'bassa';
         }
     } else if (!chat) {
-        warnings.push('AI provider non configurato ù inserimento con dati minimi');
+        warnings.push('AI provider non configurato \u2014 inserimento con dati minimi');
     } else {
-        warnings.push('Testo PDF troppo breve (< 50 caratteri) ù PDF potrebbe essere scansionato');
+        if (ocrUsed) {
+            warnings.push('Estrazione via OCR \u2014 verificare accuratezza dati estratti');
+        } else {
+            warnings.push('Testo PDF insufficiente e OCR non disponibile \u2014 compilare manualmente');
+        }
     }
 
     // 3. Normalizzazione
@@ -194,7 +216,7 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     // 4. Calcola range spessori
     const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
     if (thickness_tested && !thickness_min) {
-        warnings.push('Spessore testato non riconoscibile ù range non calcolato');
+        warnings.push('Spessore testato non riconoscibile ÔøΩ range non calcolato');
     }
 
     // 5. Validazione
