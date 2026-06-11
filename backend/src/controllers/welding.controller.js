@@ -1,5 +1,5 @@
 /**
- * Welding Controller — CRUD per WPS e WPQR
+ * Welding Controller  CRUD per WPS e WPQR
  * Modulo Saldatura ISO 3834
  *
  * Tenant-isolated: ogni query filtra per organization_id dal JWT.
@@ -9,7 +9,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
 // ???????????????????????????????????????????????????????????????????????????????
-// WPS — Welding Procedure Specifications
+// WPS  Welding Procedure Specifications
 // ???????????????????????????????????????????????????????????????????????????????
 
 // ??? GET /api/v1/welding/wps ??????????????????????????????????????????????????
@@ -283,14 +283,17 @@ async function deleteWPS(req, res) {
 }
 
 // ???????????????????????????????????????????????????????????????????????????????
-// WPQR — Welding Procedure Qualification Records
+// WPQR  Welding Procedure Qualification Records
 // ???????????????????????????????????????????????????????????????????????????????
 
 // ??? GET /api/v1/welding/wpqr ?????????????????????????????????????????????????
 async function listWPQR(req, res) {
     try {
         const { organization_id } = req.user;
-        const { wps_id, page = 1, limit = 50 } = req.query;
+        const {
+            wps_id, company_id, approval_status, expiring_days, search,
+            page = 1, limit = 50,
+        } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const conditions = ['wq.organization_id = @organization_id'];
@@ -300,6 +303,22 @@ async function listWPQR(req, res) {
             conditions.push('wq.wps_id = @wps_id');
             params.wps_id = parseInt(wps_id);
         }
+        if (company_id) {
+            conditions.push('(wq.company_id = @company_id OR (wq.company_id IS NULL AND w.company_id = @company_id))');
+            params.company_id = parseInt(company_id);
+        }
+        if (approval_status) {
+            conditions.push('wq.approval_status = @approval_status');
+            params.approval_status = approval_status;
+        }
+        if (expiring_days) {
+            conditions.push(`wq.expiry_date IS NOT NULL AND wq.expiry_date >= CAST(GETDATE() AS DATE) AND wq.expiry_date < DATEADD(day, @expiring_days, CAST(GETDATE() AS DATE))`);
+            params.expiring_days = parseInt(expiring_days);
+        }
+        if (search) {
+            conditions.push('(wq.wpqr_code LIKE @search OR wq.reference_number LIKE @search OR wq.testing_body LIKE @search OR wq.examiner_body LIKE @search OR wq.welder_name LIKE @search)');
+            params.search = `%${search}%`;
+        }
 
         const where = conditions.join(' AND ');
 
@@ -307,9 +326,11 @@ async function listWPQR(req, res) {
             SELECT
                 wq.*,
                 w.wps_code AS wps_code,
-                w.welding_process AS wps_welding_process
+                w.welding_process AS wps_welding_process,
+                c.name AS company_name
             FROM wpqr_records wq
             LEFT JOIN welding_procedures w ON wq.wps_id = w.id
+            LEFT JOIN companies c ON c.id = COALESCE(wq.company_id, w.company_id)
             WHERE ${where}
             ORDER BY wq.updated_at DESC
             OFFSET @offset ROWS
@@ -319,6 +340,7 @@ async function listWPQR(req, res) {
         const countResult = await query(`
             SELECT COUNT(*) AS total
             FROM wpqr_records wq
+            LEFT JOIN welding_procedures w ON wq.wps_id = w.id
             WHERE ${where}
         `, params);
 
@@ -522,7 +544,7 @@ async function deleteWPQR(req, res) {
 }
 
 // ===============================================================================
-// WPS Welders — Assegnazione saldatori a WPS
+// WPS Welders  Assegnazione saldatori a WPS
 // ===============================================================================
 
 // GET /api/v1/welding/wps/:id/welders
@@ -597,7 +619,7 @@ async function assignWpsWelder(req, res) {
         `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
 
         if (dupCheck.recordset.length > 0) {
-            return res.status(409).json({ error: 'Saldatore già assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
+            return res.status(409).json({ error: 'Saldatore gi assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
         }
 
         const result = await query(`
@@ -650,6 +672,315 @@ async function removeWpsWelder(req, res) {
     }
 }
 
+// ===============================================================================
+// WPQR  Stats semaforo scadenze
+// ===============================================================================
+
+// GET /api/v1/welding/wpqr/stats
+async function getWPQRStats(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const { company_id } = req.query;
+
+        const params = { organization_id };
+        let companyClause = '';
+        if (company_id) {
+            companyClause = ' AND (wq.company_id = @company_id OR (wq.company_id IS NULL AND w.company_id = @company_id))';
+            params.company_id = parseInt(company_id);
+        }
+
+        const result = await query(`
+            SELECT
+                COUNT(*) AS totale,
+                SUM(CASE WHEN wq.approval_status = 'bozza'      THEN 1 ELSE 0 END) AS da_approvare,
+                SUM(CASE WHEN wq.approval_status = 'approvata'
+                         AND (wq.expiry_date IS NULL OR wq.expiry_date >= DATEADD(day, 60, CAST(GETDATE() AS DATE)))
+                         THEN 1 ELSE 0 END) AS valide,
+                SUM(CASE WHEN wq.approval_status = 'approvata'
+                         AND wq.expiry_date IS NOT NULL
+                         AND wq.expiry_date >= CAST(GETDATE() AS DATE)
+                         AND wq.expiry_date < DATEADD(day, 30, CAST(GETDATE() AS DATE))
+                         THEN 1 ELSE 0 END) AS in_scadenza_30,
+                SUM(CASE WHEN wq.approval_status = 'approvata'
+                         AND wq.expiry_date IS NOT NULL
+                         AND wq.expiry_date >= CAST(GETDATE() AS DATE)
+                         AND wq.expiry_date >= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+                         AND wq.expiry_date < DATEADD(day, 60, CAST(GETDATE() AS DATE))
+                         THEN 1 ELSE 0 END) AS in_scadenza_60,
+                SUM(CASE WHEN wq.expiry_date IS NOT NULL
+                         AND wq.expiry_date < CAST(GETDATE() AS DATE)
+                         THEN 1 ELSE 0 END) AS scadute
+            FROM wpqr_records wq
+            LEFT JOIN welding_procedures w ON wq.wps_id = w.id
+            WHERE wq.organization_id = @organization_id
+              AND (wq.status IS NULL OR wq.status != 'revocata')
+              ${companyClause}
+        `, params);
+
+        res.json({ success: true, data: result.recordset[0] });
+    } catch (error) {
+        logger.error('Error getting WPQR stats', { error: error.message });
+        res.status(500).json({ error: 'Errore stats WPQR', code: 'WPQR_STATS_ERROR' });
+    }
+}
+
+// ===============================================================================
+// WPQR  Approval workflow
+// ===============================================================================
+
+// POST /api/v1/welding/wpqr/:id/approve
+async function approveWPQR(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id, role } = req.user;
+
+        const allowed = ['admin', 'superadmin', 'coordinatore'];
+        if (!allowed.includes(role)) {
+            return res.status(403).json({ error: 'Permesso insufficiente', code: 'FORBIDDEN' });
+        }
+
+        const existing = await query(`
+            SELECT id FROM wpqr_records
+            WHERE id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
+        }
+
+        await query(`
+            UPDATE wpqr_records
+            SET approval_status = 'approvata', rejection_reason = NULL, updated_at = GETDATE()
+            WHERE id = @id
+        `, { id: parseInt(id) });
+
+        logger.info('WPQR approved', { id, organization_id });
+        res.json({ success: true, message: 'WPQR approvato' });
+    } catch (error) {
+        logger.error('Error approving WPQR', { error: error.message });
+        res.status(500).json({ error: 'Errore approvazione WPQR', code: 'WPQR_APPROVE_ERROR' });
+    }
+}
+
+// POST /api/v1/welding/wpqr/:id/reject
+async function rejectWPQR(req, res) {
+    try {
+        const { id } = req.params;
+        const { organization_id, role } = req.user;
+
+        const allowed = ['admin', 'superadmin', 'coordinatore'];
+        if (!allowed.includes(role)) {
+            return res.status(403).json({ error: 'Permesso insufficiente', code: 'FORBIDDEN' });
+        }
+
+        const { reason } = req.body;
+
+        const existing = await query(`
+            SELECT id FROM wpqr_records
+            WHERE id = @id AND organization_id = @organization_id
+        `, { id: parseInt(id), organization_id });
+
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
+        }
+
+        await query(`
+            UPDATE wpqr_records
+            SET approval_status = 'rifiutata', rejection_reason = @reason, updated_at = GETDATE()
+            WHERE id = @id
+        `, { id: parseInt(id), reason: reason || null });
+
+        logger.info('WPQR rejected', { id, organization_id });
+        res.json({ success: true, message: 'WPQR rifiutato' });
+    } catch (error) {
+        logger.error('Error rejecting WPQR', { error: error.message });
+        res.status(500).json({ error: 'Errore rifiuto WPQR', code: 'WPQR_REJECT_ERROR' });
+    }
+}
+
+// ===============================================================================
+// WPQR  Batch PDF upload con AI extraction
+// ===============================================================================
+
+// POST /api/v1/welding/wpqr/upload-batch
+async function uploadWPQRBatch(req, res) {
+    try {
+        const { organization_id, user_id } = req.user;
+        const { company_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'Nessun file caricato', code: 'NO_FILES' });
+        }
+
+        let ingestFn = null;
+        try {
+            const svc = require('../services/wpqrIngest.service');
+            ingestFn = svc.ingestWPQRFromPdf;
+        } catch (_) {}
+
+        const results = [];
+        for (const file of req.files) {
+            if (!ingestFn) {
+                results.push({ fileName: file.originalname, status: 'error', warnings: ['Servizio AI non disponibile'] });
+                continue;
+            }
+            try {
+                const result = await ingestFn(
+                    file.buffer,
+                    file.originalname,
+                    organization_id,
+                    parseInt(company_id),
+                    { userId: user_id, filePath: file.path || null },
+                );
+                results.push({ fileName: file.originalname, status: 'ok', ...result });
+            } catch (err) {
+                results.push({ fileName: file.originalname, status: 'error', warnings: [err.message] });
+            }
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        logger.error('Error uploading WPQR batch', { error: error.message });
+        res.status(500).json({ error: 'Errore upload batch WPQR', code: 'WPQR_UPLOAD_ERROR' });
+    }
+}
+
+// ===============================================================================
+// WPS  Coverage check range-aware
+// ===============================================================================
+
+// GET /api/v1/welding/wps/coverage?project_id=X
+async function getWpsCoverage(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const { project_id } = req.query;
+
+        if (!project_id) {
+            return res.status(400).json({ error: 'project_id richiesto', code: 'VALIDATION_ERROR' });
+        }
+
+        // Carica il progetto per ricavare company_id e WPS assegnate
+        const projResult = await query(`
+            SELECT id, project_code, company_id, applicable_wps_ids
+            FROM projects
+            WHERE id = @project_id AND organization_id = @organization_id
+        `, { project_id: parseInt(project_id), organization_id });
+
+        if (projResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Commessa non trovata', code: 'PROJECT_NOT_FOUND' });
+        }
+
+        const project = projResult.recordset[0];
+        const companyId = project.company_id;
+
+        let wpsIds = [];
+        try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
+
+        // WPS attive+approvate per l'azienda della commessa
+        const baseConditions = [
+            'w.organization_id = @organization_id',
+            "(w.approval_status = 'approvata' OR w.approval_status IS NULL)",
+            "(w.status = 'attiva' OR w.status = 'bozza')",
+        ];
+        const params = { organization_id };
+
+        if (companyId) {
+            baseConditions.push('w.company_id = @company_id');
+            params.company_id = parseInt(companyId);
+        }
+
+        // Se ci sono WPS specifiche assegnate, usa quelle; altrimenti tutte dell'azienda
+        let wpsWhere = baseConditions.join(' AND ');
+        if (wpsIds.length > 0) {
+            const ids = wpsIds.map(Number).filter(Boolean).join(',');
+            wpsWhere += ` AND w.id IN (${ids})`;
+        }
+
+        const wpsResult = await query(`
+            SELECT
+                w.id, w.wps_code, w.revision, w.welding_process,
+                w.material_group, w.base_material_group,
+                w.thickness_range_min, w.thickness_range_max,
+                w.pipe_diameter_min,
+                w.position, w.welding_positions,
+                w.approval_status, w.status,
+                w.expiry_date, w.issue_date,
+                c.name AS company_name,
+                (SELECT COUNT(*) FROM wpqr_records wq
+                 WHERE wq.wps_id = w.id AND wq.organization_id = @organization_id
+                ) AS wpqr_count
+            FROM welding_procedures w
+            LEFT JOIN companies c ON c.id = w.company_id
+            WHERE ${wpsWhere}
+            ORDER BY w.wps_code
+        `, params);
+
+        const wpsRows = wpsResult.recordset;
+
+        // Calcola semaforo per ogni WPS
+        const now = new Date();
+        const days30 = 30 * 24 * 60 * 60 * 1000;
+        const days60 = 60 * 24 * 60 * 60 * 1000;
+
+        const coverage = wpsRows.map(w => {
+            let semaforo = 'verde';
+            if (w.expiry_date) {
+                const exp = new Date(w.expiry_date).getTime();
+                const diff = exp - now.getTime();
+                if (diff < 0) semaforo = 'rosso';
+                else if (diff < days30) semaforo = 'rosso';
+                else if (diff < days60) semaforo = 'arancione';
+                else semaforo = 'verde';
+            }
+            const isApproved = !w.approval_status || w.approval_status === 'approvata';
+            if (!isApproved) semaforo = 'grigio';
+
+            return {
+                wps_id:             w.id,
+                wps_code:           w.wps_code,
+                revision:           w.revision,
+                welding_process:    w.welding_process,
+                material_group:     w.base_material_group || w.material_group,
+                thickness_min:      w.thickness_range_min,
+                thickness_max:      w.thickness_range_max,
+                pipe_diameter_min:  w.pipe_diameter_min,
+                positions:          w.welding_positions || w.position,
+                approval_status:    w.approval_status || 'attiva',
+                status:             w.status,
+                expiry_date:        w.expiry_date,
+                company_name:       w.company_name,
+                wpqr_count:         w.wpqr_count,
+                semaforo,
+            };
+        });
+
+        const covered   = coverage.filter(c => c.semaforo === 'verde' || c.semaforo === 'arancione').length;
+        const uncovered = coverage.filter(c => c.semaforo === 'rosso').length;
+
+        res.json({
+            success:      true,
+            project_id:   parseInt(project_id),
+            project_code: project.project_code,
+            company_id:   companyId,
+            has_wps:      coverage.length > 0,
+            coverage,
+            summary: {
+                total:     coverage.length,
+                covered,
+                uncovered,
+                expiring:  coverage.filter(c => c.semaforo === 'arancione').length,
+                expired:   coverage.filter(c => c.semaforo === 'rosso').length,
+            },
+        });
+    } catch (error) {
+        logger.error('Error getting WPS coverage', { error: error.message });
+        res.status(500).json({ error: 'Errore coverage WPS', code: 'WPS_COVERAGE_ERROR' });
+    }
+}
+
 module.exports = {
     listWPS,
     getWPS,
@@ -664,4 +995,10 @@ module.exports = {
     listWpsWelders,
     assignWpsWelder,
     removeWpsWelder,
+    // New
+    getWPQRStats,
+    approveWPQR,
+    rejectWPQR,
+    uploadWPQRBatch,
+    getWpsCoverage,
 };
