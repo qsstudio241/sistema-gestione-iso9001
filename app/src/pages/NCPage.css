@@ -598,6 +598,13 @@ body.sgq-nc-drawer-resizing * {
 .nc-action-desc { font-size: 0.875rem; color: #2d3748; margin: 0 0 6px; }
 .nc-action-meta { display: flex; gap: 14px; font-size: 0.8rem; color: #718096; flex-wrap: wrap; margin-bottom: 8px; }
 .nc-action-verify-note { font-size: 0.8rem; color: #4a5568; margin: 0 0 8px; }
+.nc-action-edit-form {
+  margin: 8px 0 10px;
+  padding: 10px;
+  background: #fffbeb;
+  border: 1px solid #f6d860;
+  border-radius: 6px;
+}
 .nc-action-verify-form {
   margin: 8px 0 10px;
   padding: 10px;
