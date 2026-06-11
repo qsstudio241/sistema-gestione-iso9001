@@ -1,5 +1,5 @@
 /**
- * Welding Controller ù CRUD per WPS e WPQR
+ * Welding Controller ? CRUD per WPS e WPQR
  * Modulo Saldatura ISO 3834
  *
  * Tenant-isolated: ogni query filtra per organization_id dal JWT.
@@ -9,7 +9,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
 // ???????????????????????????????????????????????????????????????????????????????
-// WPS ù Welding Procedure Specifications
+// WPS ? Welding Procedure Specifications
 // ???????????????????????????????????????????????????????????????????????????????
 
 // ??? GET /api/v1/welding/wps ??????????????????????????????????????????????????
@@ -283,7 +283,7 @@ async function deleteWPS(req, res) {
 }
 
 // ???????????????????????????????????????????????????????????????????????????????
-// WPQR ù Welding Procedure Qualification Records
+// WPQR ? Welding Procedure Qualification Records
 // ???????????????????????????????????????????????????????????????????????????????
 
 // ??? GET /api/v1/welding/wpqr ?????????????????????????????????????????????????
@@ -475,20 +475,24 @@ async function updateWPQR(req, res) {
         }
 
         const allowed = [
-            'wps_id', 'wpqr_code', 'test_date', 'testing_body', 'welder_name',
+            'wps_id', 'wpqr_code', 'test_date', 'testing_body', 'examiner_body', 'welder_name',
+            'welding_process', 'base_material_group', 'welding_positions',
+            'thickness_tested', 'thickness_min', 'thickness_max',
             'vt_result', 'rt_result', 'ut_result', 'mt_result', 'pt_result',
             'tensile_result', 'bend_result', 'impact_result', 'hardness_result',
-            'macro_result', 'expiry_date', 'certificate_number', 'notes',
+            'macro_result', 'issue_date', 'expiry_date', 'certificate_number', 'notes',
         ];
 
         const updates = [];
         const params  = { id: parseInt(id) };
 
+        const numericFields = new Set(['wps_id', 'thickness_tested', 'thickness_min', 'thickness_max']);
         for (const field of allowed) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
-                if (field === 'wps_id') {
-                    params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
+                if (numericFields.has(field)) {
+                    const v = req.body[field];
+                    params[field] = (v !== null && v !== '') ? parseFloat(v) : null;
                 } else {
                     params[field] = req.body[field] || null;
                 }
@@ -544,7 +548,7 @@ async function deleteWPQR(req, res) {
 }
 
 // ===============================================================================
-// WPS Welders ù Assegnazione saldatori a WPS
+// WPS Welders ? Assegnazione saldatori a WPS
 // ===============================================================================
 
 // GET /api/v1/welding/wps/:id/welders
@@ -619,7 +623,7 @@ async function assignWpsWelder(req, res) {
         `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
 
         if (dupCheck.recordset.length > 0) {
-            return res.status(409).json({ error: 'Saldatore giù assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
+            return res.status(409).json({ error: 'Saldatore gi? assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
         }
 
         const result = await query(`
@@ -673,7 +677,7 @@ async function removeWpsWelder(req, res) {
 }
 
 // ===============================================================================
-// WPQR ù Stats semaforo scadenze
+// WPQR ? Stats semaforo scadenze
 // ===============================================================================
 
 // GET /api/v1/welding/wpqr/stats
@@ -725,7 +729,7 @@ async function getWPQRStats(req, res) {
 }
 
 // ===============================================================================
-// WPQR ù Approval workflow
+// WPQR ? Approval workflow
 // ===============================================================================
 
 // POST /api/v1/welding/wpqr/:id/approve
@@ -799,7 +803,7 @@ async function rejectWPQR(req, res) {
 }
 
 // ===============================================================================
-// WPQR ù Batch PDF upload con AI extraction
+// WPQR ? Batch PDF upload con AI extraction
 // ===============================================================================
 
 // POST /api/v1/welding/wpqr/upload-batch
@@ -849,7 +853,7 @@ async function uploadWPQRBatch(req, res) {
 }
 
 // ===============================================================================
-// WPS ù Coverage check range-aware
+// WPS ? Coverage check range-aware
 // ===============================================================================
 
 // GET /api/v1/welding/wps/coverage?project_id=X

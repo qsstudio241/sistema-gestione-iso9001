@@ -217,18 +217,50 @@ function WPSFormModal({ wps, onSave, onClose }) {
 // WPQR Form Modal
 // ???????????????????????????????????????????????????????????????????????????????
 
+function calcThicknessRangeUI(t) {
+  const tNum = parseFloat(t);
+  if (!tNum || tNum <= 0) return { thickness_min: "", thickness_max: "" };
+  let minT, maxT;
+  if (tNum <= 3) {
+    minT = tNum;
+    maxT = 2 * tNum;
+  } else if (tNum <= 12) {
+    minT = 3;
+    maxT = 2 * tNum;
+  } else {
+    minT = Math.max(0.5 * tNum, 5);
+    maxT = Math.min(2 * tNum, 200);
+  }
+  return {
+    thickness_min: parseFloat(minT.toFixed(2)),
+    thickness_max: parseFloat(maxT.toFixed(2)),
+  };
+}
+
 function WPQRFormModal({ wpqr, wpsList, onSave, onClose }) {
   const [form, setForm] = useState({
-    wps_id: "", wpqr_code: "", test_date: "", testing_body: "", welder_name: "",
+    wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
+    welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
+    thickness_tested: "", thickness_min: "", thickness_max: "",
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
-    macro_result: "NA", expiry_date: "", certificate_number: "", notes: "",
+    macro_result: "NA", expiry_date: "", issue_date: "", certificate_number: "", notes: "",
     ...(wpqr || {}),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  function handleThicknessTested(val) {
+    const range = calcThicknessRangeUI(val);
+    setForm((f) => ({
+      ...f,
+      thickness_tested: val,
+      thickness_min: range.thickness_min !== "" ? range.thickness_min : f.thickness_min,
+      thickness_max: range.thickness_max !== "" ? range.thickness_max : f.thickness_max,
+    }));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -300,13 +332,48 @@ function WPQRFormModal({ wpqr, wpsList, onSave, onClose }) {
                 <input className="wp-form-input" value={form.certificate_number || ""} onChange={(e) => set("certificate_number", e.target.value)} />
               </div>
               <div className="wp-form-group">
+                <label className="wp-form-label">Data emissione</label>
+                <input className="wp-form-input" type="date" value={form.issue_date ? form.issue_date.substring(0, 10) : ""} onChange={(e) => set("issue_date", e.target.value)} />
+              </div>
+              <div className="wp-form-group">
                 <label className="wp-form-label">Scadenza</label>
                 <input className="wp-form-input" type="date" value={form.expiry_date ? form.expiry_date.substring(0, 10) : ""} onChange={(e) => set("expiry_date", e.target.value)} />
               </div>
-              <div className="wp-form-group">
-                <label className="wp-form-label">&nbsp;</label>
-              </div>
+            </div>
 
+            <div className="wp-form-section-title">Parametri tecnici</div>
+            <div className="wp-form-grid">
+              <div className="wp-form-group">
+                <label className="wp-form-label">Processo saldatura (ISO 4063)</label>
+                <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  {WELDING_PROCESSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Gruppo materiale base (ISO/TR 15608)</label>
+                <input className="wp-form-input" value={form.base_material_group || ""} onChange={(e) => set("base_material_group", e.target.value)} placeholder="es. 1.1, 2, 8" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Posizioni saldatura (ISO 6947)</label>
+                <input className="wp-form-input" value={form.welding_positions || ""} onChange={(e) => set("welding_positions", e.target.value)} placeholder="es. PA, PB, PC, PF" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Spessore testato (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_tested || ""} onChange={(e) => handleThicknessTested(e.target.value)} placeholder="es. 10" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Range min (mm) ó ISO 15614</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_min || ""} onChange={(e) => set("thickness_min", e.target.value)} placeholder="calcolato automaticamente" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Range max (mm) ó ISO 15614</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_max || ""} onChange={(e) => set("thickness_max", e.target.value)} placeholder="calcolato automaticamente" />
+              </div>
+            </div>
+
+            <div className="wp-form-section-title">Prove e controlli</div>
+            <div className="wp-form-grid">
               {testFields.map((tf) => (
                 <div className="wp-form-group" key={tf.key}>
                   <label className="wp-form-label">{tf.label}</label>
@@ -812,6 +879,7 @@ function WeldingProceduresPage() {
                     <th>Ente</th>
                     <th>Scadenza</th>
                     <th>Approvazione</th>
+                    <th>Cert.</th>
                     <th>Azioni</th>
                   </tr>
                 </thead>
@@ -830,13 +898,18 @@ function WeldingProceduresPage() {
                       <td>{wq.welding_process || wq.wps_welding_process || "-"}</td>
                       <td>
                         {wq.thickness_min != null && wq.thickness_max != null
-                          ? `${wq.thickness_min} ù ${wq.thickness_max} mm`
+                          ? `${wq.thickness_min} \u2013 ${wq.thickness_max} mm`
                           : "-"}
                       </td>
                       <td>{wq.test_date ? formatDate(wq.test_date) : "-"}</td>
                       <td>{wq.examiner_body || wq.testing_body || "-"}</td>
                       <td>{wq.expiry_date ? formatDate(wq.expiry_date) : "-"}</td>
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
+                      <td>
+                        {wq.certificate_file_url
+                          ? <a href={wq.certificate_file_url} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
+                          : <span style={{ color: "#9ca3af" }}>-</span>}
+                      </td>
                       <td>
                         {deleteWpqrId === wq.id ? (
                           <div className="wp-confirm">
