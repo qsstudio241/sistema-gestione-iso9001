@@ -127,16 +127,27 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     if (chat && extractedText.length > 50) {
         try {
             const { systemPrompt, userPrompt } = buildWPQRExtractionPrompt(extractedText, fileName);
-            const aiResponse = await chat(userPrompt, { systemPrompt, max_tokens: 800 });
-            const raw = (aiResponse || '').replace(/```json\n?|```/g, '').trim();
+            const aiResult = await chat(
+                [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt },
+                ],
+                { temperature: 0.1, responseFormat: 'json', maxTokens: 800 }
+            );
+            const raw = (aiResult && aiResult.content ? aiResult.content : '')
+                .replace(/```json\n?|```/g, '').trim();
             aiData = JSON.parse(raw);
             confidence = 'alta';
+            logger.info('WPQR AI extraction OK', { fileName, confidence, fields: Object.keys(aiData).length });
         } catch (e) {
             warnings.push(`AI extraction fallita: ${e.message}`);
+            logger.warn('WPQR AI extraction failed', { fileName, error: e.message, code: e.code });
             confidence = 'bassa';
         }
     } else if (!chat) {
         warnings.push('AI provider non configurato — inserimento con dati minimi');
+    } else {
+        warnings.push('Testo PDF troppo breve (< 50 caratteri) — PDF potrebbe essere scansionato');
     }
 
     // 3. Normalizzazione
