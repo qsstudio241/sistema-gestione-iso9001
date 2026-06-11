@@ -292,25 +292,32 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <p className="doc-detail__placeholder">Nessuna relazione</p>
           </section>
 
-          {/* File / Versioni */}
+          {/* File / Versioni — mostra solo la versione corrente (la più recente) */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">File</h3>
             {filesLoading ? (
               <p className="doc-detail__placeholder">Caricamento...</p>
-            ) : files.length > 0 ? (
-              <ul className="doc-detail__file-list">
-                {files.map((f) => (
-                  <li key={f.id ?? f.file_name} className="doc-detail__file-item">
-                    <span className="doc-detail__file-name">{f.file_name}</span>
+            ) : files.length > 0 ? (() => {
+              const current = files[0];
+              const prevCount = files.length - 1;
+              return (
+                <ul className="doc-detail__file-list">
+                  <li className="doc-detail__file-item">
+                    <span className="doc-detail__file-name">{current.file_name}</span>
                     <span className="doc-detail__file-meta">
-                      {f.version && `v${f.version}`}
-                      {(f.uploaded_at || f.created_at) && ` - ${formatDate(f.uploaded_at || f.created_at)}`}
-                      {f.file_size_label && ` - ${f.file_size_label}`}
+                      {current.version && `v${current.version}`}
+                      {(current.uploaded_at || current.created_at) && ` — ${formatDate(current.uploaded_at || current.created_at)}`}
+                      {current.file_size_label && ` — ${current.file_size_label}`}
                     </span>
+                    {prevCount > 0 && (
+                      <span className="doc-detail__file-history-hint">
+                        {`+ ${prevCount} versione${prevCount > 1 ? " precedenti" : " precedente"} — apri la gestione file per vederle`}
+                      </span>
+                    )}
                   </li>
-                ))}
-              </ul>
-            ) : (
+                </ul>
+              );
+            })() : (
               <p className="doc-detail__placeholder">Nessun file allegato</p>
             )}
           </section>

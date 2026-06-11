@@ -219,9 +219,10 @@
 
 .doc-detail__file-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
   padding: 6px 8px;
   border-radius: 6px;
   transition: background 0.15s ease;
@@ -245,6 +246,15 @@
   color: #adb5bd;
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.doc-detail__file-history-hint {
+  display: block;
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 4px;
+  width: 100%;
 }
 
 /* ---- timeline ---- */
