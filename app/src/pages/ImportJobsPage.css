@@ -449,3 +449,8 @@ button:disabled {
 .ai-raw-toggle:hover {
   color: #374151;
 }
+
+/* Commit a Qualifica */
+.btn-small.btn-commit-qualif { background:#1a6b3c; color:#fff; border-color:#1a6b3c; }
+.btn-small.btn-commit-qualif:disabled { opacity:0.6; }
+.file-commit-err { font-size:11px; color:#b91c1c; margin-left:4px; }

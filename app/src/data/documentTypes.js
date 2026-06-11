@@ -18,6 +18,8 @@ export const DOC_TYPE_OPTIONS = [
   { value: "qualifica",          label: "Qualifica personale" },
   { value: "patentino_saldatore",label: "Patentino saldatore (ISO 9606-1)" },
   { value: "qualifica_14732",    label: "Qualifica operatore (ISO 14732)" },
+  { value: "qualifica_14731",    label: "Coordinatore saldatura (ISO 14731)" },
+  { value: "pes_pav",            label: "Abilitazione PES/PAV (CEI 11-27)" },
   { value: "wps",                label: "WPS (Procedura saldatura)" },
   { value: "wpqr",               label: "WPQR (Qualifica procedura)" },
   { value: "cert_ndt",           label: "Certificato NDT (ISO 9712)" },
