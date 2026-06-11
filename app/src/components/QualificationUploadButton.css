@@ -2,6 +2,21 @@
 
 .qual-upload { position: relative; display: inline-block; }
 
+/* Guard: nessuna azienda selezionata */
+.qual-upload__no-company {
+  font-size: 13px; color: #92400e; background: #fef3c7;
+  border: 1px solid #fde68a; border-radius: 6px; padding: 7px 12px;
+}
+
+/* Contesto azienda nel pannello upload */
+.qual-upload__company-context {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: #eff6ff; border-bottom: 1px solid #bfdbfe;
+  font-size: 13px; border-radius: 8px 8px 0 0;
+}
+.qual-upload__company-label { color: #4b5563; font-weight: 500; }
+.qual-upload__company-name  { color: #1e3a5f; font-weight: 700; }
+
 .qual-upload__btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 9px 16px; background: #1e3a5f; color: #fff;

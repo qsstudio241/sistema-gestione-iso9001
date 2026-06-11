@@ -944,6 +944,10 @@ async function uploadBatch(req, res) {
         const userId   = req.user.user_id;
         const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
 
+        if (!company_id || isNaN(company_id)) {
+            return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
+        }
+
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Nessun file caricato.' });
         }

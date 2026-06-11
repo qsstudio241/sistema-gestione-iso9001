@@ -1,5 +1,5 @@
 /**
- * QualificationUploadButton — Upload batch patentini con AI extraction
+ * QualificationUploadButton  Upload batch patentini con AI extraction
  * Struttura analoga a NormUploadButton.jsx
  */
 import React, { useState, useRef, useCallback } from "react";
@@ -8,7 +8,20 @@ import "./QualificationUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
-export default function QualificationUploadButton({ companyId, onUploadComplete }) {
+export default function QualificationUploadButton({ companyId, companyName, onUploadComplete }) {
+  const companyIdInt = companyId != null ? parseInt(String(companyId), 10) : NaN;
+  const isValidCompany = !isNaN(companyIdInt) && companyIdInt > 0;
+
+  // Guard: nessuna azienda valida ? banner informativo, nessun pulsante upload
+  if (!isValidCompany) {
+    return (
+      <div className="qual-upload__no-company">
+        {"\u26A0\uFE0F"} Seleziona un&apos;azienda specifica per caricare i patentini
+      </div>
+    );
+  }
+
+  const displayName = companyName || `Azienda #${companyIdInt}`;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState(null);
@@ -36,7 +49,7 @@ export default function QualificationUploadButton({ companyId, onUploadComplete 
     setUploading(true);
     setResults(null);
     try {
-      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyId);
+      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt);
       setResults(res.results || []);
       const successes = (res.results || []).filter(r => r.status === "ok").length;
       if (onUploadComplete && successes > 0) onUploadComplete();
@@ -45,7 +58,7 @@ export default function QualificationUploadButton({ companyId, onUploadComplete 
     } finally {
       setUploading(false);
     }
-  }, [selectedFiles, companyId, onUploadComplete]);
+  }, [selectedFiles, companyIdInt, onUploadComplete]);
 
   const handleDismiss = useCallback(() => {
     setSelectedFiles([]);
@@ -75,6 +88,11 @@ export default function QualificationUploadButton({ companyId, onUploadComplete 
 
       {showPanel && (
         <div className="qual-upload__panel">
+          {/* Contesto azienda — sempre visibile nel pannello */}
+          <div className="qual-upload__company-context">
+            <span className="qual-upload__company-label">Azienda:</span>
+            <strong className="qual-upload__company-name">{displayName}</strong>
+          </div>
           {/* Lista file selezionati (pre-upload) */}
           {!hasResults && (
             <>
