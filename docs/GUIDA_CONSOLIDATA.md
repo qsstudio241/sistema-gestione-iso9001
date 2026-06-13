@@ -2450,7 +2450,20 @@ Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
 
 Test L1 aggiuntivi: `ncExport.test.js`, `ncWorkflowApproval.test.js`. Migrazione **072** eseguita su VPS (step-by-step `run-migration-072-vps.js`).
 
-**Escluso (backlog):** agente AI CAPA, export Word/PDF registro.
+**Esperienza 13/06/2026 — Export Word scheda NC + Template report (commit `91f9d05`, TEST OK)**
+
+| Area | Implementazione / lezione |
+|------|---------------------------|
+| **Export Word singola NC** | `ncWordExport.js` + template `app/public/templates/NC-scheda.docx`; pulsante **Scarica Word** nell'header fisso del drawer `/nc` (non in toolbar pagina — confondibile con Export CSV registro) |
+| **Template admin tab NC** | `GET/PUT /report-template-assignments/nc`, `GET /report-templates?scope=nc`; migrazione **090** (`assignment_type`, seed «Scheda NC (default)») |
+| **HTTP 404 pagina Template report** | Frontend deployato su Netlify **prima** del backend VPS: route `/report-template-assignments/nc` assente perché `reportTemplate.controller.js` / `reportTemplate.routes.js` **non erano nel `deploy-manifest.json`**. Fix: aggiunti al manifest + `deploy-controllers-to-vps.ps1` + migration 090 |
+| **Caricamento pagina** | `Promise.all` su 5 API → un solo 404 blocca tutto; sostituito con `allSettled` (errore NC non blocca tab audit) |
+| **Encoding JSX** | Testo `conformit\u00E0` tra tag JSX mostra `\u00E0` letterale — usare UTF-8 reale (`conformità`) o `{"\u00E0"}` in espressione JS |
+| **Deploy pattern** | Dopo feature backend: verificare file in `backend/scripts/deploy-manifest.json`, non solo `git push` (Netlify ≠ VPS) |
+
+Smoke 13/06/2026: health API OK; endpoint template 401 (route presenti); Netlify bundle `index-ClEknwz1.js` con `nc-detail-header-actions` + tab «Non conformità»; L1 `ncWordExport` / `reportTemplateUpload` / `ncPage.drawer` 23 test OK.
+
+**Escluso (backlog):** agente AI CAPA, export PDF registro NC.
 
 **ISO 3834 (specifiche processo saldatura):**
 - Qualifiche saldatori (ISO 9606-1..5) — scadenza 2/3 anni
