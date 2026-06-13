@@ -7,7 +7,7 @@ jest.mock('../services/personnelQualificationLink.service', () => ({
 }));
 
 const { query } = require('../config/database');
-const { createJob, commitToRegistry, commitToQualification } = require('./importJobs.controller');
+const { createJob, commitToRegistry, commitToQualification, listJobs, getJob } = require('./importJobs.controller');
 
 function makeRes() {
     return {
@@ -31,6 +31,40 @@ const AI_QUALIFICATION = JSON.stringify({
         certificate_number: 'CERT-001',
         standard_reference: 'ISO 9606-1',
     },
+});
+
+describe('importJobs.controller listJobs / getJob (regressione SQL company_name)', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('listJobs joina companies senza referenziare colonne inesistenti (no organization_id su companies)', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 1, company_name: 'ACME' }] });
+        const res = makeRes();
+
+        await listJobs(makeReq(), res);
+
+        expect(query).toHaveBeenCalledTimes(1);
+        const sql = query.mock.calls[0][0];
+        // La tabella companies usa auditor_org_id, NON organization_id: il join non deve referenziare c.organization_id.
+        expect(sql).not.toMatch(/c\.organization_id/);
+        expect(sql).toMatch(/LEFT JOIN companies c ON c\.id = j\.company_id/);
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: [{ id: 1, company_name: 'ACME' }] });
+    });
+
+    it('getJob joina companies senza referenziare colonne inesistenti (no organization_id su companies)', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44, company_name: 'ACME' }] })
+            .mockResolvedValueOnce({ recordset: [] });
+        const res = makeRes();
+
+        await getJob(makeReq(), res);
+
+        const sql = query.mock.calls[0][0];
+        expect(sql).not.toMatch(/c\.organization_id/);
+        expect(sql).toMatch(/LEFT JOIN companies c ON c\.id = j\.company_id/);
+        expect(res.status).not.toHaveBeenCalledWith(500);
+    });
 });
 
 describe('importJobs.controller createJob', () => {
