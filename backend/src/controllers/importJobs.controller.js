@@ -57,7 +57,7 @@ async function listJobs(req, res) {
                     j.created_at, j.updated_at,
                     (SELECT COUNT(*) FROM import_job_files f WHERE f.job_id = j.id) AS file_count
              FROM import_jobs j
-             LEFT JOIN companies c ON c.id = j.company_id AND c.organization_id = j.organization_id
+             LEFT JOIN companies c ON c.id = j.company_id
              WHERE j.organization_id = @organization_id
              ORDER BY j.created_at DESC`,
             { organization_id }
@@ -113,7 +113,7 @@ async function getJob(req, res) {
         const j = await query(
             `SELECT j.*, c.name AS company_name
              FROM import_jobs j
-             LEFT JOIN companies c ON c.id = j.company_id AND c.organization_id = j.organization_id
+             LEFT JOIN companies c ON c.id = j.company_id
              WHERE j.id = @id AND j.organization_id = @organization_id`,
             { id, organization_id }
         );
