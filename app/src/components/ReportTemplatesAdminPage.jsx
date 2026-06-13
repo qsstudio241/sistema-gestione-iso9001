@@ -65,13 +65,30 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     try {
       setLoading(true);
       setLoadError(null);
-      const [tplRes, ncTplRes, stdRes, assignRes, ncAssignRes] = await Promise.all([
+      const settled = await Promise.allSettled([
         apiService.getReportTemplates("audit"),
         apiService.getReportTemplates("nc"),
         apiService.getStandards(),
         apiService.getReportTemplateStandardAssignments(),
         apiService.getNcReportTemplateAssignment(),
       ]);
+
+      const pick = (result) => (result.status === "fulfilled" ? result.value : null);
+      const rejectMsg = (result) =>
+        result.status === "rejected" ? (result.reason?.message || "Errore di rete") : null;
+
+      const tplRes = pick(settled[0]);
+      const ncTplRes = pick(settled[1]);
+      const stdRes = pick(settled[2]);
+      const assignRes = pick(settled[3]);
+      const ncAssignRes = pick(settled[4]);
+
+      const criticalError =
+        rejectMsg(settled[0]) || rejectMsg(settled[2]) || rejectMsg(settled[3]);
+      if (criticalError) {
+        setLoadError(criticalError);
+      }
+
       const tplList = tplRes?.data ?? [];
       const ncTplList = ncTplRes?.data ?? [];
       const stdList = (stdRes?.data ?? []).filter((s) =>
@@ -367,7 +384,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         </button>
         <h2>Template report Word</h2>
         <p className="rt-desc">
-          Catalogo template per export Word: report audit ISO, checklist custom e scheda non conformit\u00E0.
+          Catalogo template per export Word: report audit ISO, checklist custom e scheda non conformità.
           Carica o duplica un modello di sistema, poi assegnalo allo standard ISO, alla checklist custom o all&apos;export NC.
         </p>
       </div>
@@ -389,7 +406,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
           className={`rt-tab${pageTab === "nc" ? " rt-tab--active" : ""}`}
           onClick={() => switchTab("nc")}
         >
-          Non conformit\u00E0
+          Non conformità
         </button>
       </div>
 
@@ -560,7 +577,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
             Template export dal registro NC
           </h3>
           <p className="rt-assign-hint">
-            Modello usato dal pulsante <strong>Scarica Word</strong> nel dettaglio di ogni non conformit\u00E0.
+            Modello usato dal pulsante <strong>Scarica Word</strong> nel dettaglio di ogni non conformità.
           </p>
           <div className="rt-list">
             <div className="rt-row">

@@ -27,7 +27,6 @@ import {
   NC_SCOPE_ATTUAZIONE,
   NC_SCOPE_VERIFICA,
 } from "../utils/ncResponsibleContacts";
-import { exportNcToWord } from "../utils/ncWordExport";
 import "../components/ChecklistModule.css";
 
 const SEVERITY_OPTIONS = [
@@ -119,8 +118,6 @@ export default function NcDetailPanel({
 
   const [form, setForm] = useState(() => initForm(nc, organizationId));
   const [saving, setSaving] = useState(false);
-  const [exportingWord, setExportingWord] = useState(false);
-  const [exportError, setExportError] = useState(null);
   const [error, setError] = useState(null);
   const [descError, setDescError] = useState(null);
   const [verifExpanded, setVerifExpanded] = useState(!earlyPhase);
@@ -153,7 +150,6 @@ export default function NcDetailPanel({
   useEffect(() => {
     setForm(initForm(nc, organizationId));
     setError(null);
-    setExportError(null);
     setDescError(null);
     setVerifExpanded(!isEarlyPhaseStatus(nc?.status));
   }, [nc?.nc_id, nc?.status, organizationId]);
@@ -212,18 +208,6 @@ export default function NcDetailPanel({
     }
   }
 
-  async function handleExportWord() {
-    setExportingWord(true);
-    setExportError(null);
-    try {
-      await exportNcToWord(nc.nc_id, apiService);
-    } catch {
-      setExportError("Impossibile generare il documento Word. Riprovare.");
-    } finally {
-      setExportingWord(false);
-    }
-  }
-
   if (!nc) return null;
 
   const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
@@ -232,19 +216,6 @@ export default function NcDetailPanel({
     <div
       className="nc-detail-form nc-action-form"
     >
-      <div className="nc-detail-export-bar">
-        <button
-          type="button"
-          className="btn-secondary nc-export-word-btn"
-          onClick={handleExportWord}
-          disabled={exportingWord}
-          title="Scarica scheda NC in formato Word per archiviazione"
-        >
-          {exportingWord ? "Generazione Word..." : "Scarica Word"}
-        </button>
-        {exportError && <p className="nc-error nc-export-error">{exportError}</p>}
-      </div>
-
       {/* 1. Scheda NC */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-scheda-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-scheda-${nc.nc_id}`}>
