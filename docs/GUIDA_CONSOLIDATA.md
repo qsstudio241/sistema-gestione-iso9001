@@ -2490,6 +2490,17 @@ Test L1 aggiuntivi: `ncExport.test.js`, `ncWorkflowApproval.test.js`. Migrazione
 
 Smoke 13/06/2026: health API OK; endpoint template 401 (route presenti); Netlify bundle `index-ClEknwz1.js` con `nc-detail-header-actions` + tab «Non conformità»; L1 `ncWordExport` / `reportTemplateUpload` / `ncPage.drawer` 23 test OK.
 
+**Bug fix 13/06/2026 — commit-to-qualification HTTP 500 (Camellini segnala errore caricamento qualifica)**
+
+| Area | Causa / Fix |
+|------|-------------|
+| **Sintomo** | `POST /import-jobs/:id/files/:fileId/commit-to-qualification` → 500; log VPS: `commitToQualification Validation failed for parameter 'personnel_id'. Invalid string.` |
+| **Causa radice** | `commitToQualification` chiamava `resolvePersonnelForQualification` con chiavi **snake_case** (`person_name`, `company_id`, `organization_id`) invece dei **camelCase** attesi dalla funzione (`personName`, `companyId`, `organizationId`). Risultato: `personName=undefined` → funzione ritornava oggetto errore `{ ok: false, ... }` (truthy) → `personnel_id` veniva impostato all'oggetto → mssql: «Invalid string» |
+| **Fix** | `importJobs.controller.js` riga 832: parametri rinominati in camelCase; risultato decomposto con `.ok` + `.personnelId` invece di usarlo come scalare |
+| **Test** | Mock aggiornato a `{ ok: true, personnelId: 77, ... }` (forma corretta). 8/8 test passano. |
+| **Deploy** | SCP controller + `systemctl restart sgq-backend` (PID 659715, uptime OK) |
+| **Lezione** | Quando un service restituisce `{ ok, ... }` va sempre decomposto; mai usare `result \|\| null` se `result` può essere un oggetto truthy con errore. Verificare che i nomi dei parametri passati a una funzione corrispondano esattamente alla sua firma. |
+
 **Escluso (backlog):** agente AI CAPA, export PDF registro NC.
 
 **ISO 3834 (specifiche processo saldatura):**
