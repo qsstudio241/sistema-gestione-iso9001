@@ -16,14 +16,48 @@ const {
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
+
+const QUALIFICATION_DOC_TYPES = new Set([
+    'qualifica',
+    'patentino_saldatore',
+    'qualifica_14732',
+    'qualifica_14731',
+    'pes_pav',
+    'cert_ndt',
+]);
+
+function isQualificationDocType(docType) {
+    return QUALIFICATION_DOC_TYPES.has(String(docType || '').trim());
+}
+
+async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
+    if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
+    const companyId = parseCompanyId(rawCompanyId);
+    if (!companyId) {
+        return { ok: false, status: 400, error: 'company_id non valido', code: 'INVALID_COMPANY_ID' };
+    }
+    const belongsToOrg = await companyBelongsToOrg(companyId, organizationId);
+    if (!belongsToOrg) {
+        return {
+            ok: false,
+            status: 400,
+            error: "L'azienda selezionata non appartiene all'organizzazione.",
+            code: 'COMPANY_NOT_IN_ORG',
+        };
+    }
+    return { ok: true, companyId };
+}
 
 async function listJobs(req, res) {
     try {
         const { organization_id } = req.user;
         const r = await query(
-            `SELECT j.id, j.title, j.status, j.document_type_hint, j.created_at, j.updated_at,
+            `SELECT j.id, j.title, j.status, j.document_type_hint, j.company_id, c.name AS company_name,
+                    j.created_at, j.updated_at,
                     (SELECT COUNT(*) FROM import_job_files f WHERE f.job_id = j.id) AS file_count
              FROM import_jobs j
+             LEFT JOIN companies c ON c.id = j.company_id AND c.organization_id = j.organization_id
              WHERE j.organization_id = @organization_id
              ORDER BY j.created_at DESC`,
             { organization_id }
@@ -40,6 +74,16 @@ async function createJob(req, res) {
         const { organization_id } = req.user;
         const created_by = req.user.user_id != null ? req.user.user_id : null;
         const { title, document_type_hint, notes, company_id } = req.body || {};
+        const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
+        if (!companyScope.ok) {
+            return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
+        }
+        if (isQualificationDocType(document_type_hint) && !companyScope.companyId) {
+            return res.status(400).json({
+                error: "company_id obbligatorio per i job di qualifica.",
+                code: 'COMPANY_REQUIRED_FOR_QUALIFICATION_IMPORT',
+            });
+        }
         const t = (title && String(title).trim()) || 'Import documenti';
         const r = await query(
             `INSERT INTO import_jobs (organization_id, company_id, created_by, title, status, document_type_hint, notes)
@@ -47,7 +91,7 @@ async function createJob(req, res) {
              VALUES (@organization_id, @company_id, @created_by, @title, 'draft', @document_type_hint, @notes)`,
             {
                 organization_id,
-                company_id: company_id || null,
+                company_id: companyScope.companyId,
                 created_by,
                 title: t.substring(0, 255),
                 document_type_hint: document_type_hint || null,
@@ -67,7 +111,10 @@ async function getJob(req, res) {
         const { organization_id } = req.user;
         const id = parseInt(req.params.id, 10);
         const j = await query(
-            `SELECT * FROM import_jobs WHERE id = @id AND organization_id = @organization_id`,
+            `SELECT j.*, c.name AS company_name
+             FROM import_jobs j
+             LEFT JOIN companies c ON c.id = j.company_id AND c.organization_id = j.organization_id
+             WHERE j.id = @id AND j.organization_id = @organization_id`,
             { id, organization_id }
         );
         if (!j.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
@@ -516,6 +563,12 @@ async function commitToRegistry(req, res) {
             company_id = resolvedNormFolderCompanyId;
         }
 
+        const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
+        if (!companyScope.ok) {
+            return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
+        }
+        company_id = companyScope.companyId;
+
         // Crea record document_registry
         const ins = await query(
             `INSERT INTO document_registry
@@ -658,10 +711,11 @@ async function commitToQualification(req, res) {
         const fileId  = parseInt(req.params.fileId, 10);
 
         const jCheck = await query(
-            `SELECT id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
             { id: jobId, organization_id }
         );
         if (!jCheck.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+        const jobCompanyId = jCheck.recordset[0].company_id || null;
 
         const fRows = await query(
             `SELECT id, status, ai_extraction_json, original_name, confidence_score
@@ -701,10 +755,33 @@ async function commitToQualification(req, res) {
         };
         const qualificationType = body.qualification_type_label || QUAL_TYPES[docTypeHint] || docTypeHint || 'Generica';
 
-        // Costruisce record qualifications
+        // Costruisce record qualifications: l'azienda autorevole è quella del job.
+        if (!jobCompanyId) {
+            return res.status(400).json({
+                error: 'company_id obbligatorio: seleziona l\'azienda del job prima di creare la bozza qualifica.',
+                code: 'MISSING_COMPANY_ID',
+            });
+        }
+        const jobCompanyScope = await resolveOptionalCompanyId(jobCompanyId, organization_id);
+        if (!jobCompanyScope.ok) {
+            return res.status(jobCompanyScope.status).json({ error: jobCompanyScope.error, code: jobCompanyScope.code });
+        }
+        if (body.company_id != null && body.company_id !== '') {
+            const requestedCompanyId = parseCompanyId(body.company_id);
+            if (!requestedCompanyId) {
+                return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
+            }
+            if (requestedCompanyId !== jobCompanyScope.companyId) {
+                return res.status(409).json({
+                    error: "company_id non coerente con l'azienda del job.",
+                    code: 'COMPANY_ID_MISMATCH',
+                });
+            }
+        }
+
         const qData = {
             organization_id,
-            company_id:           body.company_id ? parseInt(body.company_id) : null,
+            company_id:           jobCompanyScope.companyId,
             person_name:          body.person_name || tsd.person_name || tsd.welder_name || tsd.operator_name || null,
             person_code:          body.person_code || null,
             department:           body.department || null,

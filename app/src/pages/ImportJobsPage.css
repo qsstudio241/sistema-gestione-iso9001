@@ -15,6 +15,22 @@
   margin-bottom: 0.75rem;
 }
 
+.import-jobs-warning {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.import-jobs-field-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: #92400e;
+  font-size: 0.82rem;
+}
+
 .import-jobs-denied {
   color: #666;
 }

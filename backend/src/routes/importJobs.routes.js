@@ -8,7 +8,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/importJobs.controller');
 
@@ -73,6 +73,7 @@ const uploadImportMiddleware = (req, res, next) => {
 };
 
 router.use(authenticate);
+router.use(authorize('admin'));
 router.use(requireLicensedModule('ai_import'));
 
 router.get('/import-jobs', ctrl.listJobs);
