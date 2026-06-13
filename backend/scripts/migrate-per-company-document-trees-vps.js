@@ -1,14 +1,19 @@
 /**
- * Migrazione albero documentale per-azienda (studio QS / org 1002).
+ * Migrazione albero documentale per-azienda (per tenant / organization_id).
  *
  * 1. Per ogni azienda attiva: provisionTree se manca albero proprio
- * 2. Rimappa parent_id di cartelle/documenti con company_id = azienda
- *    da albero condiviso (company_id NULL) alle cartelle equivalenti per folder_code
- * 3. Archivia (status obsoleto) l'albero condiviso studio
+ * 2. Riassegna documenti/norme con company_id NULL nell'albero condiviso
+ *    alla prima azienda (id minimo) — le altre aziende restano vuote
+ * 3. Rimappa parent_id da cartelle condivise a cartelle per-azienda (folder_code)
+ * 4. Archivia (status obsoleto) l'albero condiviso studio
  *
- * Uso VPS:
- *   DRY_RUN=1 node /tmp/migrate-per-company-document-trees-vps.js
- *   DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js
+ * Uso locale o VPS:
+ *   DRY_RUN=1 ORG_ID=1004 node scripts/migrate-per-company-document-trees-vps.js
+ *   DRY_RUN=0 ORG_ID=1004 node scripts/migrate-per-company-document-trees-vps.js
+ *
+ * Batch (tutti i tenant che ne hanno bisogno):
+ *   node scripts/migrate-shared-trees-batch.js
+ *   DRY_RUN=0 node scripts/migrate-shared-trees-batch.js
  *
  * Env: ORG_ID (default 1002), DRY_RUN (default 1)
  */
@@ -130,6 +135,81 @@ async function remapParents(orgId, companyId, folderMap) {
     return remapped;
 }
 
+/** Documenti/norme nell'albero condiviso senza company_id → prima azienda dello studio. */
+async function rehomeSharedOrphans(orgId, companies) {
+    if (!companies.length) return { reassigned: 0, targetCompanyId: null, targetName: null };
+
+    const sorted = [...companies].sort((a, b) => a.id - b.id);
+    const target = sorted[0];
+
+    const preview = await query(
+        `
+        WITH roots AS (
+            SELECT id FROM document_registry
+            WHERE organization_id = @org_id AND parent_id IS NULL
+              AND company_id IS NULL AND doc_type = 'folder'
+              AND ISNULL(status, 'rilasciato') <> 'obsoleto'
+        ),
+        subtree AS (
+            SELECT id FROM roots
+            UNION ALL
+            SELECT dr.id FROM document_registry dr
+            INNER JOIN subtree s ON dr.parent_id = s.id
+            WHERE dr.organization_id = @org_id
+        )
+        SELECT COUNT(*) AS n FROM document_registry dr
+        WHERE dr.id IN (SELECT id FROM subtree)
+          AND dr.doc_type <> 'folder'
+          AND dr.company_id IS NULL
+          AND ISNULL(dr.status, 'rilasciato') <> 'obsoleto'
+        `,
+        { org_id: orgId }
+    );
+    const count = preview.recordset[0].n;
+
+    console.log(
+        `  Orfani condivisi (company_id NULL): ${count} → azienda ${target.name} (id=${target.id})`
+    );
+
+    if (DRY_RUN || count === 0) {
+        return { reassigned: count, targetCompanyId: target.id, targetName: target.name };
+    }
+
+    const result = await query(
+        `
+        WITH roots AS (
+            SELECT id FROM document_registry
+            WHERE organization_id = @org_id AND parent_id IS NULL
+              AND company_id IS NULL AND doc_type = 'folder'
+              AND ISNULL(status, 'rilasciato') <> 'obsoleto'
+        ),
+        subtree AS (
+            SELECT id FROM roots
+            UNION ALL
+            SELECT dr.id FROM document_registry dr
+            INNER JOIN subtree s ON dr.parent_id = s.id
+            WHERE dr.organization_id = @org_id
+        )
+        UPDATE document_registry
+        SET company_id = @company_id, updated_at = GETDATE()
+        WHERE id IN (
+            SELECT dr.id FROM document_registry dr
+            WHERE dr.id IN (SELECT id FROM subtree)
+              AND dr.doc_type <> 'folder'
+              AND dr.company_id IS NULL
+              AND ISNULL(dr.status, 'rilasciato') <> 'obsoleto'
+        )
+        `,
+        { org_id: orgId, company_id: target.id }
+    );
+
+    return {
+        reassigned: result.rowsAffected?.[0] ?? result.rowsAffected ?? 0,
+        targetCompanyId: target.id,
+        targetName: target.name,
+    };
+}
+
 async function obsoleteSharedTree(orgId) {
     if (DRY_RUN) {
         const preview = await query(
@@ -213,7 +293,7 @@ async function main() {
     console.log(`Radici albero condiviso (company_id NULL): ${sharedRootsBefore}`);
 
     for (const company of companies) {
-        console.log(`\n--- ${company.name} (id=${company.id}) ---`);
+        console.log(`\n--- Provision ${company.name} (id=${company.id}) ---`);
         const roots = await countActiveRoots(ORG_ID, company.id);
 
         if (roots === 0) {
@@ -240,7 +320,13 @@ async function main() {
         } else {
             console.log(`  Albero già presente (${roots} radici)`);
         }
+    }
 
+    console.log('\n--- Riassegna documenti condivisi senza company_id ---');
+    await rehomeSharedOrphans(ORG_ID, companies);
+
+    for (const company of companies) {
+        console.log(`\n--- Rimappa ${company.name} (id=${company.id}) ---`);
         const folderMap = await loadFolderMap(ORG_ID, company.id);
         console.log(`  Mappa cartelle condiviso→azienda: ${folderMap.size} codici`);
 

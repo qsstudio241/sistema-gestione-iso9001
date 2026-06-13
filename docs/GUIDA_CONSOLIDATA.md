@@ -2213,6 +2213,31 @@ ssh … "DRY_RUN=0 node /tmp/migrate-per-company-document-trees-vps.js"
 # Poi deploy documentTree.controller.js + utils e restart sgq-backend
 ```
 
+**Esperienza 13/06/2026 — Migrazione batch alberi per-azienda (MASON + ERAM)**
+
+- **Sintomo**: nuova azienda **LM&CO Sas** (ERAM org **1004**) mostrava in tab Albero le **15 norme** già caricate per **DNV** — albero studio ancora **condiviso** (`company_id` NULL).
+- **Diagnosi**: `node backend/scripts/scan-shared-document-trees.js` — tenant da migrare: **1003** (MASON, 1 azienda) e **1004** (ERAM, 2 aziende). QS (**1002**) già OK.
+- **Slice eseguiti**: (1) script scan; (2) estensione migrazione con `rehomeSharedOrphans` (norme NULL → prima azienda per `id`); (3) `DRY_RUN` batch; (4) apply `DRY_RUN=0`.
+- **Esito ERAM**: 15 norme assegnate a **DNV** (`company_id=16`), spostate sotto cartella 2.3 per-azienda; **LM&CO** albero vuoto (corretto). Albero condiviso archiviato.
+- **Esito MASON**: albero provisionato per **MANITOU ITALIA SRL**; condiviso archiviato.
+- **Verifica post**: scan → `Tenant da migrare: 0`; ogni azienda 15 radici, 0 duplicati.
+
+```bash
+# Diagnosi tutti i tenant
+node backend/scripts/scan-shared-document-trees.js
+
+# Anteprima batch
+node backend/scripts/migrate-shared-trees-batch.js
+
+# Apply (solo tenant con radici NULL attive)
+DRY_RUN=0 node backend/scripts/migrate-shared-trees-batch.js
+
+# Singolo tenant
+DRY_RUN=0 ORG_ID=1004 node backend/scripts/migrate-per-company-document-trees-vps.js
+```
+
+- **Operativo utente**: Registro documenti → **Ambito = nome azienda** → hard refresh PWA. Nuove aziende ricevono albero dedicato automaticamente (non esiste più albero condiviso nello studio).
+
 **Esperienza 05/06/2026 — DELETE azienda falliva con FK (AAA-NN / Camellini)**
 
 - **Sintomo**: `DELETE /companies/:id` → 500 «Errore eliminazione azienda»; SQL `FK_doc_registry_company` (azienda con albero provisionato + audit + chunk AI).
