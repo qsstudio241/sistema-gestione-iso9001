@@ -829,13 +829,15 @@ async function commitToQualification(req, res) {
             return res.status(400).json({ error: 'person_name obbligatorio (non estratto dall\'AI).', code: 'MISSING_PERSON_NAME' });
         }
 
-        // Risolve personnel_id da company_personnel
-        const personnel_id = await resolvePersonnelForQualification({
-            person_name:     qData.person_name,
-            company_id:      qData.company_id,
-            organization_id: qData.organization_id,
+        // Risolve personnel_id da company_personnel (parametri camelCase come richiesto dal service)
+        const personnelResult = await resolvePersonnelForQualification({
+            personName:     qData.person_name,
+            companyId:      qData.company_id,
+            organizationId: qData.organization_id,
         });
-        qData.personnel_id = personnel_id || null;
+        qData.personnel_id = (personnelResult?.ok && personnelResult.personnelId != null)
+            ? personnelResult.personnelId
+            : null;
 
         const ins = await query(
             `INSERT INTO qualifications

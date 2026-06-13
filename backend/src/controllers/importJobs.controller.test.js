@@ -3,7 +3,7 @@ jest.mock('../config/database', () => ({
 }));
 
 jest.mock('../services/personnelQualificationLink.service', () => ({
-    resolvePersonnelForQualification: jest.fn().mockResolvedValue(77),
+    resolvePersonnelForQualification: jest.fn().mockResolvedValue({ ok: true, personnelId: 77, personName: 'Mario Rossi', personCode: null }),
 }));
 
 const { query } = require('../config/database');
