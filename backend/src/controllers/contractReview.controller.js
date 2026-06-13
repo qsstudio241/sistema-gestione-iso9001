@@ -11,6 +11,7 @@ const crNotify = require('../services/contractReviewNotification.service');
 const contextBuilder = require('../services/aiContextBuilder.service');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
+const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -56,6 +57,24 @@ function parseItemId(raw) {
 function normalizeReason(reason) {
     if (reason === undefined || reason === null) return '';
     return String(reason).trim();
+}
+
+async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
+    if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
+    const companyId = parseCompanyId(rawCompanyId);
+    if (!companyId) {
+        return { ok: false, status: 400, error: 'company_id non valido', code: 'VALIDATION_ERROR' };
+    }
+    const belongsToOrg = await companyBelongsToOrg(companyId, organizationId);
+    if (!belongsToOrg) {
+        return {
+            ok: false,
+            status: 400,
+            error: "L'azienda selezionata non appartiene all'organizzazione.",
+            code: 'VALIDATION_ERROR',
+        };
+    }
+    return { ok: true, companyId };
 }
 
 async function fetchCaseRow(caseId, organizationId) {
@@ -208,14 +227,11 @@ async function createCase(req, res) {
             return sendErr(res, 400, 'Il titolo è obbligatorio', 'VALIDATION_ERROR');
         }
 
-        let companyIdVal = null;
-        if (companyId != null && companyId !== '') {
-            const co = parseInt(companyId, 10);
-            if (!Number.isFinite(co) || co <= 0) {
-                return sendErr(res, 400, 'company_id non valido', 'VALIDATION_ERROR');
-            }
-            companyIdVal = co;
+        const companyScope = await resolveOptionalCompanyId(companyId, organizationId);
+        if (!companyScope.ok) {
+            return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
         }
+        const companyIdVal = companyScope.companyId;
 
         await transaction.begin();
 
@@ -1144,12 +1160,13 @@ async function importFromJob(req, res) {
 
         let companyIdVal = job.company_id;
         if (body.company_id != null && body.company_id !== '') {
-            const co = parseInt(body.company_id, 10);
-            if (!Number.isFinite(co) || co <= 0) {
-                return sendErr(res, 400, 'company_id non valido', 'VALIDATION_ERROR');
-            }
-            companyIdVal = co;
+            companyIdVal = body.company_id;
         }
+        const companyScope = await resolveOptionalCompanyId(companyIdVal, organizationId);
+        if (!companyScope.ok) {
+            return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
+        }
+        companyIdVal = companyScope.companyId;
 
         const titleRaw =
             body.title !== undefined && body.title !== null && String(body.title).trim() !== ''

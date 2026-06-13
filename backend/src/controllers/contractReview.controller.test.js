@@ -151,6 +151,18 @@ describe('createCase', () => {
     await ctrl.createCase(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
+
+  it('rifiuta company_id fuori organizzazione (400)', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({ body: { title: 'Test', company_id: 999 } });
+    const res = mockRes();
+    await ctrl.createCase(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/non appartiene/);
+    expect(query).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ─── transitionStatus ────────────────────────────────────────────────────────
@@ -524,7 +536,8 @@ describe('importFromJob', () => {
     query
       .mockResolvedValueOnce({ recordset: [jobRow] })
       .mockResolvedValueOnce({ recordset: [fileRow] })
-      .mockResolvedValueOnce({ recordset: [] });
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ id: 12 }] });
 
     const req = mockReq({ body: { job_id: JOB_ID } });
     const res = mockRes();
@@ -535,6 +548,22 @@ describe('importFromJob', () => {
     expect(body.case_id).toBe(20);
     expect(body.uuid).toBe('case-uuid-20');
     expect(body.job_id).toBe(JOB_ID);
+  });
+
+  it('rifiuta override company_id fuori organizzazione', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [jobRow] })
+      .mockResolvedValueOnce({ recordset: [fileRow] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({ body: { job_id: JOB_ID, company_id: 999 } });
+    const res = mockRes();
+    await ctrl.importFromJob(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/non appartiene/);
+    expect(query).toHaveBeenCalledTimes(4);
   });
 
   it('job altra org → 404', async () => {

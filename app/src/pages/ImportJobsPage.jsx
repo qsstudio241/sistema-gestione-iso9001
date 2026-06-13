@@ -25,6 +25,23 @@ const DOC_TYPE_OPTIONS_IMPORT = [
   ...DOC_TYPE_OPTIONS,
 ];
 
+const QUALIFICATION_DOC_TYPES = new Set([
+  "qualifica",
+  "patentino_saldatore",
+  "qualifica_14732",
+  "qualifica_14731",
+  "pes_pav",
+  "cert_ndt",
+]);
+
+function isQualificationDocType(docType) {
+  return QUALIFICATION_DOC_TYPES.has(String(docType || ""));
+}
+
+function getCompanyId(company) {
+  return company?.id ?? company?.company_id;
+}
+
 function parseAiJson(val) {
   if (val == null) return null;
   if (typeof val === "object") return val;
@@ -218,6 +235,7 @@ export default function ImportJobsPage() {
   const [error, setError] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [docTypeHint, setDocTypeHint] = useState("");
+  const [newCompanyId, setNewCompanyId] = useState("");
   const [busy, setBusy] = useState(false);
   const [commitDialog, setCommitDialog] = useState(null); // { file, isNorm, form, normLookup }
   const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
@@ -265,6 +283,10 @@ export default function ImportJobsPage() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -315,16 +337,22 @@ export default function ImportJobsPage() {
   ]);
 
   async function handleCreate() {
+    if (isQualificationDocType(docTypeHint) && !newCompanyId) {
+      setError("Per importare qualifiche devi selezionare prima l'azienda cliente.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const res = await apiService.createImportJob({
         title: newTitle || undefined,
         document_type_hint: docTypeHint || undefined,
+        company_id: newCompanyId ? parseInt(newCompanyId, 10) : undefined,
       });
       const id = res.data?.id;
       setNewTitle("");
       setDocTypeHint("");
+      setNewCompanyId("");
       await loadList();
       if (id) setSelectedId(id);
     } catch (e) {
@@ -420,9 +448,16 @@ export default function ImportJobsPage() {
 
   async function handleCommitToQualification(file) {
     if (!selectedId) return;
+    const jobCompanyId = detail?.job?.company_id;
+    if (!jobCompanyId) {
+      setError("Commit a Qualifica bloccato: il job non ha un'azienda associata.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await apiService.commitImportJobFileToQualification(selectedId, file.id, {});
+      const res = await apiService.commitImportJobFileToQualification(selectedId, file.id, {
+        company_id: jobCompanyId,
+      });
       const qualId = res?.data?.qualification_id ?? res?.qualification_id;
       setQualifCommitResult(prev => ({ ...prev, [file.id]: { qualification_id: qualId } }));
     } catch (e) {
@@ -613,9 +648,9 @@ export default function ImportJobsPage() {
     <div className="import-jobs-page">
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
-        Crea un job (opzionale: tipo documento per guidare l&apos;AI), carica PDF, estrai testo in locale, poi opzionalmente
-        l&apos;<strong>analisi strutturata AI</strong> (OpenAI, richiede chiave sul server) per sintesi e campi chiave in JSON.
-        Nessun dato sensibile inviato oltre il testo già visibile in revisione. OCR e agenti multi-step in roadmap.
+        Flusso operativo: <strong>Azienda → tipo documento → PDF → estrazione → revisione → AI → bozza qualifica</strong>.
+        Per i documenti di qualifica l&apos;azienda è obbligatoria prima del caricamento, così la bozza nasce già nel fascicolo corretto.
+        Norme e altri documenti possono restare senza azienda quando sono condivisi a livello studio.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
 
@@ -631,6 +666,21 @@ export default function ImportJobsPage() {
             />
             <select
               className="import-jobs-select"
+              value={newCompanyId}
+              onChange={(e) => setNewCompanyId(e.target.value)}
+            >
+              <option value="">Azienda cliente (obbligatoria per qualifiche)</option>
+              {companies.map((c) => {
+                const companyId = getCompanyId(c);
+                return (
+                  <option key={companyId} value={String(companyId)}>
+                    {c.name || `ID ${companyId}`}
+                  </option>
+                );
+              })}
+            </select>
+            <select
+              className="import-jobs-select"
               value={docTypeHint}
               onChange={(e) => setDocTypeHint(e.target.value)}
             >
@@ -643,6 +693,11 @@ export default function ImportJobsPage() {
             <button type="button" className="btn-primary" onClick={handleCreate} disabled={busy}>
               + Nuovo job
             </button>
+            {isQualificationDocType(docTypeHint) && !newCompanyId && (
+              <p className="import-jobs-field-hint">
+                Seleziona l&apos;azienda prima di creare un job per qualifiche.
+              </p>
+            )}
           </div>
           {loading ? (
             <p>Caricamento…</p>
@@ -658,6 +713,7 @@ export default function ImportJobsPage() {
                     <span className="job-title">{j.title}</span>
                     <span className="job-meta">
                       #{j.id} - {j.status} - {j.file_count ?? 0} file
+                      {j.company_name ? ` - ${j.company_name}` : ""}
                     </span>
                   </button>
                   <button
@@ -688,11 +744,25 @@ export default function ImportJobsPage() {
                 {detail.job.document_type_hint && (
                   <> - tipo suggerito: {detail.job.document_type_hint}</>
                 )}
+                {detail.job.company_id && (
+                  <> - azienda: {detail.job.company_name || `#${detail.job.company_id}`}</>
+                )}
               </p>
+              {isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id && (
+                <p className="import-jobs-warning">
+                  Questo job è di qualifica ma non ha azienda associata: crea un nuovo job selezionando l&apos;azienda prima del caricamento.
+                </p>
+              )}
               <div className="import-jobs-actions">
                 <label className="btn-file">
                   Carica PDF
-                  <input type="file" accept="application/pdf,.pdf" multiple onChange={handleFiles} disabled={busy} />
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    multiple
+                    onChange={handleFiles}
+                    disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
+                  />
                 </label>
                 <button type="button" className="btn-secondary" onClick={handleProcess} disabled={busy}>
                   Estrai testo da PDF
@@ -793,8 +863,12 @@ export default function ImportJobsPage() {
                           <button
                             type="button"
                             className="btn-small btn-commit-qualif"
-                            disabled={busy || !!qualifCommitResult[f.id]?.qualification_id}
-                            title="Crea una qualifica personale da questo file (approval_status=bozza)"
+                            disabled={busy || !!qualifCommitResult[f.id]?.qualification_id || !detail.job.company_id}
+                            title={
+                              detail.job.company_id
+                                ? "Crea una qualifica personale da questo file (approval_status=bozza)"
+                                : "Seleziona l'azienda creando un nuovo job prima del commit qualifica"
+                            }
                             onClick={() => handleCommitToQualification(f)}
                           >
                             {qualifCommitResult[f.id]?.qualification_id
