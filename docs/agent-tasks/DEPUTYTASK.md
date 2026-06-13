@@ -1,4 +1,4 @@
-# DEPUTYTASK — Export Word NC + Template report — 13/06/2026
+# DEPUTYTASK — Migrazione alberi per-azienda batch — 13/06/2026
 
 **Stato:** TEST OK — Sessione chiusa
 
@@ -6,24 +6,28 @@
 
 ## Obiettivo
 
-Verificare export NC (CSV + Word), risolvere pulsante Word non visibile, errore HTTP 404 e caratteri illeggibili su pagina Template report.
+Isolare gli ambienti documentali per azienda negli studi che usavano ancora l'albero condiviso (`company_id` NULL). Slice: diagnosi → DRY_RUN → apply per tenant.
 
 ## Esito
 
 | Verifica | Risultato |
 |----------|-----------|
-| Export CSV registro `/nc` | OK (già presente) |
-| Export Word scheda singola | OK — pulsante in header drawer NC |
-| Template report tab NC | OK — backend VPS deploy + migration 090 |
-| Encoding «Non conformità» | OK — fix UTF-8 in JSX |
-| L1 Vitest (23 test NC/template) | OK |
-| Smoke produzione 13/06/2026 | OK — health API, route template 401, Netlify `91f9d05` live |
+| Scan tutti i tenant | 2 da migrare: org **1003** MASON, org **1004** ERAM |
+| DRY_RUN batch | OK |
+| Apply batch | OK — MASON + ERAM migrati |
+| Post-scan | `Tenant da migrare: 0` |
+| ERAM DNV | 15 norme, `company_id=16` |
+| ERAM LM&CO | 0 norme (albero vuoto, corretto) |
 
-## Commit / deploy
+## Script
 
-- **`91f9d05`** — `fix(nc): export Word visibile, template admin e deploy VPS` (push `main`)
-- Backend VPS: deploy manifest aggiornato + migration **090** (13/06/2026)
-- Netlify: build automatica post-push OK
+- `backend/scripts/scan-shared-document-trees.js`
+- `backend/scripts/migrate-shared-trees-batch.js`
+- `backend/scripts/migrate-per-company-document-trees-vps.js` (+ `rehomeSharedOrphans`)
+
+## Operativo utente
+
+Registro documenti → tab **Albero** → **Ambito = nome azienda** → hard refresh PWA.
 
 ---
 
