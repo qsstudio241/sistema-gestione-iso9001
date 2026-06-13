@@ -349,6 +349,24 @@
 .nc-page .btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
 .nc-error { color: #c53030; font-size: 0.85rem; margin: 6px 0; }
 
+.nc-detail-export-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.nc-export-word-btn {
+  white-space: nowrap;
+}
+
+.nc-export-error {
+  margin: 0;
+}
+
 /* Griglia registro */
 .nc-grid-section { margin-bottom: 20px; }
 .nc-grid-section .sgq-datagrid-row-selected { background: #ebf8ff !important; }

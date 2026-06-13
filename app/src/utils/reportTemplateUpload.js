@@ -1,4 +1,4 @@
-/** Validazione client upload template Word (.docx) ó allineata a multer backend (5 MB) */
+/** Validazione client upload template Word (.docx) ù allineata a multer backend (5 MB) */
 
 import PizZip from "pizzip";
 
@@ -12,7 +12,11 @@ export const SYSTEM_TEMPLATE_DOWNLOADS = [
   { label: "ISO 3834-2", path: "/templates/ISO3834-audit-report.docx", filename: "ISO3834-audit-report.docx" },
   { label: "Verbale visita (generico)", path: "/templates/VerbaleVisita-generic.docx", filename: "VerbaleVisita-generic.docx" },
   { label: "Verbale visita QTAFI", path: "/templates/Verbale_di_riunione_QTAFI_VIS001.docx", filename: "Verbale_di_riunione_QTAFI_VIS001.docx" },
+  { label: "Scheda NC (default)", path: "/templates/NC-scheda.docx", filename: "NC-scheda.docx" },
 ];
+
+/** Segnaposto minimi attesi nel template scheda NC (docxtemplater) */
+export const NC_TEMPLATE_MARKERS = ["{ncNumber}", "{description}", "{#actions}"];
 
 export function stripDocxExtension(filename) {
   if (!filename) return "";
@@ -34,7 +38,7 @@ export function validateDocxFile(file) {
 export function validateDuplicateTemplateName(name) {
   const trimmed = name != null ? String(name).trim() : "";
   if (!trimmed) return "Inserisci un nome per il template duplicato.";
-  if (trimmed.length > 255) return "Il nome non puÚ superare 255 caratteri.";
+  if (trimmed.length > 255) return "Il nome non puù superare 255 caratteri.";
   return null;
 }
 
@@ -61,6 +65,29 @@ export function formatMarkerWarning(missing) {
   if (!missing?.length) return null;
   const list = missing.join(" e ");
   return `Attenzione: nel file mancano i marker ${list}. L'export Word potrebbe non iniettare checklist e rilievi automaticamente.`;
+}
+
+/**
+ * Verifica segnaposto scheda NC nel document.xml (warning soft)
+ * @returns {Promise<string[]|null>}
+ */
+export async function checkNcDocxMarkers(file) {
+  if (!file) return null;
+  try {
+    const buffer = await file.arrayBuffer();
+    const zip = new PizZip(buffer);
+    const docXml = zip.file("word/document.xml")?.asText() || "";
+    const missing = NC_TEMPLATE_MARKERS.filter((marker) => !docXml.includes(marker));
+    return missing.length ? missing : null;
+  } catch {
+    return null;
+  }
+}
+
+export function formatNcMarkerWarning(missing) {
+  if (!missing?.length) return null;
+  const list = missing.join(", ");
+  return `Attenzione: nel file mancano i segnaposto NC ${list}. L'export scheda potrebbe risultare incompleto.`;
 }
 
 /** URL download per riga griglia (sistema = path app, org = backend uploads) */
