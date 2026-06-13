@@ -41,6 +41,10 @@ vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { organization_id: 1001, role: 'admin' } }),
 }));
 
+vi.mock('../utils/ncWordExport', () => ({
+  exportNcToWord: vi.fn().mockResolvedValue('NC-2026-001_Cliente.docx'),
+}));
+
 import NcDetailPanel from '../components/NcDetailPanel';
 
 const baseNc = {
@@ -67,6 +71,7 @@ describe('NcDetailPanel', () => {
   it('renderizza i campi popolati dalla NC', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
+    expect(screen.getByRole('button', { name: /Scarica Word/i })).toBeInTheDocument();
     expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
     expect(screen.getByText('3. Cause')).toBeInTheDocument();
     expect(screen.getByText('4. Azioni correttive')).toBeInTheDocument();

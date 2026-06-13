@@ -1,5 +1,5 @@
 /**
- * Test L1 — validazione upload/duplica template Word (ReportTemplatesAdminPage)
+ * Test L1  validazione upload/duplica template Word (ReportTemplatesAdminPage)
  */
 import { describe, it, expect } from "vitest";
 import {
@@ -8,6 +8,7 @@ import {
   stripDocxExtension,
   validateDuplicateTemplateName,
   formatMarkerWarning,
+  formatNcMarkerWarning,
   isSystemReportTemplate,
   formatTemplateOrigin,
 } from "../utils/reportTemplateUpload";
@@ -17,7 +18,7 @@ function createFile(name, size, type = "application/vnd.openxmlformats-officedoc
   return new File([buffer], name, { type });
 }
 
-describe("validateDocxFile — template report", () => {
+describe("validateDocxFile  template report", () => {
   it("accetta .docx entro 5 MB", () => {
     const file = createFile("verbale.docx", 1024);
     expect(validateDocxFile(file)).toBeNull();
@@ -69,6 +70,19 @@ describe("formatMarkerWarning", () => {
   it("restituisce null se nessun marker mancante", () => {
     expect(formatMarkerWarning(null)).toBeNull();
     expect(formatMarkerWarning([])).toBeNull();
+  });
+});
+
+describe("formatNcMarkerWarning", () => {
+  it("restituisce messaggio se mancano segnaposto NC", () => {
+    const msg = formatNcMarkerWarning(["{ncNumber}", "{#actions}"]);
+    expect(msg).toMatch(/ncNumber/);
+    expect(msg).toMatch(/Attenzione/);
+  });
+
+  it("restituisce null se nessun segnaposto mancante", () => {
+    expect(formatNcMarkerWarning(null)).toBeNull();
+    expect(formatNcMarkerWarning([])).toBeNull();
   });
 });
 

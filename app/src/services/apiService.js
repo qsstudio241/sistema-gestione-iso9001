@@ -770,7 +770,7 @@ class ApiService {
     }
 
     async getNonConformity(id) {
-        return this.get(`/nc/${id}`);
+        return this.get(`/non-conformities/${id}`);
     }
 
     async createNonConformity(data) {
@@ -1122,6 +1122,48 @@ class ApiService {
      */
     async getReportTemplateStandardAssignments() {
         return this.get('/report-template-assignments/standards');
+    }
+
+    /**
+     * Assegnazione template export scheda NC (org corrente)
+     */
+    async getNcReportTemplateAssignment() {
+        return this.get('/report-template-assignments/nc');
+    }
+
+    /**
+     * Assegna template export NC dello studio (null = modello di sistema)
+     */
+    async assignReportTemplateToNc(reportTemplateId) {
+        return this.put('/report-template-assignments/nc', {
+            report_template_id: reportTemplateId ?? null,
+        });
+    }
+
+    /**
+     * Risolve template Word per export scheda NC
+     * @returns {Promise<{url: string, file_path: string, name: string, id: number}|null>}
+     */
+    async resolveNcReportTemplate() {
+        try {
+            const res = await this.get('/report-templates/resolve?scope=nc');
+            if (!res?.success || !res?.data?.file_path) return null;
+            const fp = res.data.file_path;
+            const name = res.data.name;
+            const id = res.data.id;
+            if (fp.startsWith('/templates/')) {
+                return { id, url: fp, file_path: fp, name };
+            }
+            const backendBase = this.baseUrl.replace(/\/api\/v1\/?$/, '');
+            return {
+                id,
+                url: backendBase + (fp.startsWith('/') ? fp : '/' + fp),
+                file_path: fp,
+                name,
+            };
+        } catch {
+            return null;
+        }
     }
 
     /**
