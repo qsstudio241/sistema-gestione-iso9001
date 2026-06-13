@@ -14,6 +14,7 @@ import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
 import { downloadNcCsv } from "../utils/ncExportHelpers";
+import { exportNcToWord } from "../utils/ncWordExport";
 import {
   canTransitionNcStatus,
   canApproveNcClosure,
@@ -72,6 +73,8 @@ export default function NCPage() {
   const [dueActions, setDueActions] = useState([]);
   const [dueActionsLoading, setDueActionsLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
+  const [exportingWord, setExportingWord] = useState(false);
+  const [exportWordError, setExportWordError] = useState(null);
   const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -149,6 +152,19 @@ export default function NCPage() {
     downloadNcCsv(`registro-nc-${stamp}.csv`, filteredList);
   }
 
+  async function handleExportWord(nc) {
+    if (!nc?.nc_id) return;
+    setExportingWord(true);
+    setExportWordError(null);
+    try {
+      await exportNcToWord(nc.nc_id, apiService);
+    } catch {
+      setExportWordError("Impossibile generare il documento Word. Riprovare.");
+    } finally {
+      setExportingWord(false);
+    }
+  }
+
   async function handleApproveClosure(nc) {
     if (!isRq) {
       alert("Solo admin o responsabile qualità possono approvare la chiusura.");
@@ -208,6 +224,7 @@ export default function NCPage() {
 
   function handleCloseDetail() {
     setSelectedNcId(null);
+    setExportWordError(null);
     replace("/nc");
   }
 
@@ -330,7 +347,13 @@ export default function NCPage() {
           >
             {viewMode === "actions_due" ? "Registro NC" : "Azioni in scadenza"}
           </button>
-          <button type="button" className="btn-secondary" onClick={handleExportCsv} disabled={!filteredList.length}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleExportCsv}
+            disabled={!filteredList.length}
+            title="Esporta il registro NC filtrato in CSV (Excel)"
+          >
             Export CSV
           </button>
           <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
@@ -532,15 +555,29 @@ export default function NCPage() {
                     </span>
                   )}
                 </h2>
-                <button
-                  type="button"
-                  className="doc-detail__close"
-                  onClick={handleCloseDetail}
-                  aria-label="Chiudi dettaglio NC"
-                >
-                  {"\u2715"}
-                </button>
+                <div className="nc-detail-header-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary nc-export-word-btn"
+                    onClick={() => handleExportWord(selectedNc)}
+                    disabled={exportingWord}
+                    title="Scarica scheda NC in formato Word per archiviazione"
+                  >
+                    {exportingWord ? "Generazione..." : "Scarica Word"}
+                  </button>
+                  <button
+                    type="button"
+                    className="doc-detail__close"
+                    onClick={handleCloseDetail}
+                    aria-label="Chiudi dettaglio NC"
+                  >
+                    {"\u2715"}
+                  </button>
+                </div>
               </div>
+              {exportWordError && (
+                <p className="nc-error nc-export-error nc-detail-header-export-error">{exportWordError}</p>
+              )}
             </div>
 
             <div className="doc-detail__body nc-detail-drawer-body">
