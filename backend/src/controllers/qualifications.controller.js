@@ -335,7 +335,7 @@ async function getCoverage(req, res) {
             const wReq = pool.request().input('orgId', orgId);
             wpsIds.forEach((id, i) => wReq.input(`wid${i}`, parseInt(id)));
             const wRes = await wReq.query(`
-                SELECT id, wps_code, welding_process, base_material_group, thickness_range, position_range
+                SELECT id, wps_code, welding_process, base_material_group, thickness_range, welding_positions
                 FROM welding_procedures
                 WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata'
             `);
