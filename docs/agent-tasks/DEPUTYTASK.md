@@ -1,36 +1,37 @@
-# DEPUTYTASK — Riesame requisiti slice 2 (RAG + committente anagrafica) — 14/06/2026
+# DEPUTYTASK — Chiusura sessione Import qualifiche ERAM — 14/06/2026
 
-**Stato:** DA ESEGUIRE
-
-**Prerequisito:** slice 1 committata e migrazione **095** applicata su VPS/DB (`commercial_customer_name`, `commercial_customer_ref`).
+**Stato:** **CHIUSO — TEST OK**
 
 ---
 
-## Obiettivo
+## Sessione chiusa
 
-Completare il gap LM&CO / PT.MAIDO oltre la distinzione testuale: arricchire l'analisi AI con documenti e qualifiche dell'azienda SGQ, e valutare modellazione anagrafica del committente commerciale.
+Import PDF qualifiche ERAM + workflow branch → Deploy Preview → merge.
 
-## Slice 2 — task
+| Voce | Esito |
+|------|-------|
+| Qualifiche company scope + fix SQL `companies` | ✅ Live (VPS + `main`) |
+| Campi 9606-1 mig. 092 | ✅ Live |
+| PDF al commit qualifica mig. 093 | ✅ Live |
+| Alert/scadenzario qualifiche mig. 093 | ✅ Live |
+| Conferme semestrali mig. 094 | ✅ Live |
+| UX Import PDF | ✅ [PR #109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109) mergiata 14/06/2026 — preview **TEST OK** |
+| CORS Netlify preview + netlify-preflight + gh auth | ✅ Operativi |
 
-| # | Task | DoD |
-|---|------|-----|
-| R2.1 | **RAG riesame** — in `buildReviewRequirementsContext`, oltre a norm chunks, cercare in `knowledge_chunks` / registro documenti filtrati per `company_id` del caso (qualifiche saldatori, WPS, certificati) | Prompt AI include estratti pertinenti; test unitario con mock DB |
-| R2.2 | **Endpoint o flag** — opzione `includeCompanyKnowledge: true` su `POST /ai/suggest` e `POST /contract-reviews/:id/analyze` | Retrocompatibile (default true solo se company_id presente) |
-| R2.3 | **Valutazione committente anagrafica** — ADR breve: `commercial_customer_company_id` FK opzionale vs testo libero attuale; impatto audit secondo livello su committenti | Doc in `docs/adr/` o sezione roadmap; nessun breaking change senza migrazione |
-| R2.4 | **UI** — badge/link committente se collegato ad anagrafica; hint copertura qualifiche collegata al committente | Smoke L3 scenario ERAM/LM&CO/PT.MAIDO |
-
-## Verifica
-
-1. Migrazione 095 già OK in produzione
-2. Caso test: company_id = LM&CO, commercial_customer_name = PT.MAIDO
-3. Analisi AI elenca gap con riferimento a qualifica/WPS trovata in RAG (se indicizzata)
-4. Test L1 backend + build Vite verdi
-
-## Deploy
-
-- Migrazione solo se R2.3 introduce FK (096+)
-- Deploy controller + frontend via flusso standard VPS/Netlify
+**Doc:** sezione [Sessione 14/06/2026](GUIDA_CONSOLIDATA.md#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura) in `GUIDA_CONSOLIDATA.md`.
 
 ---
 
-Leggi questo file ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+## Prossimo task (WIP locale — non committato)
+
+**Controparti PR2** — select committente in UI riesame contratto (`ContractReviewPage`), collegata ad anagrafica `company_counterparties` (mig. 096–097).
+
+Prerequisito PR1 (tab Controparti, backend FK) in working tree locale; migrazioni 096–097 **da eseguire su DB** prima del deploy.
+
+Per avviare il deputy su PR2: sovrascrivere questo file con brief PR2 e lanciare:
+
+`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+---
+
+*Nessun task attivo in coda finché non si apre una nuova sessione.*
