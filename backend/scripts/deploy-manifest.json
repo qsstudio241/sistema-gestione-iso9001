@@ -3,7 +3,8 @@
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors",
-    "src/utils"
+    "src/utils",
+    "src/data"
   ],
   "groups": [
     {
@@ -19,6 +20,12 @@
       ]
     },
     {
+      "name": "data",
+      "files": [
+        "src/data/documentTypeSchemas.js"
+      ]
+    },
+    {
       "name": "utils",
       "files": [
         "src/utils/aiCitations.js",
@@ -27,7 +34,8 @@
         "src/utils/documentTreeCompanyScope.js",
         "src/utils/documentRegistryFile.js",
         "src/utils/excelDeadlineDetector.js",
-        "src/utils/documentClassifier.js"
+        "src/utils/documentClassifier.js",
+        "src/utils/weldingDesignation.js"
       ]
     },
     {
