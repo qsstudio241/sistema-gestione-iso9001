@@ -49,6 +49,21 @@ function isQualificationDocType(docType) {
     return QUALIFICATION_DOC_TYPES.has(String(docType || '').trim());
 }
 
+/** URL pubblico /uploads/... da path filesystem (stesso pattern qualificationIngest). */
+function buildCertificateFileUrl(storagePath) {
+    if (!storagePath) return null;
+    const uploadBase = process.env.UPLOAD_DIR
+        ? path.resolve(process.env.UPLOAD_DIR)
+        : path.resolve(__dirname, '../../uploads');
+    try {
+        const resolved = path.resolve(storagePath);
+        if (!fs.existsSync(resolved)) return null;
+        return '/uploads/' + path.relative(uploadBase, resolved).replace(/\\/g, '/');
+    } catch {
+        return null;
+    }
+}
+
 async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
     if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
     const companyId = parseCompanyId(rawCompanyId);
@@ -736,7 +751,7 @@ async function commitToQualification(req, res) {
         const jobCompanyId = jCheck.recordset[0].company_id || null;
 
         const fRows = await query(
-            `SELECT id, status, ai_extraction_json, original_name, confidence_score
+            `SELECT id, status, ai_extraction_json, original_name, confidence_score, storage_path
              FROM import_job_files WHERE id=@fid AND job_id=@jid`,
             { fid: fileId, jid: jobId }
         );
@@ -948,16 +963,42 @@ async function commitToQualification(req, res) {
         );
         const qualId = ins.recordset[0].id;
 
-        // Aggiorna file: committed
+        // Collega PDF import al certificato qualifica (certificate_file_url)
+        let certificate_file_url = null;
+        if (file.storage_path) {
+            certificate_file_url = buildCertificateFileUrl(file.storage_path);
+            if (certificate_file_url) {
+                await query(
+                    `UPDATE qualifications
+                     SET certificate_file_url = @url, updated_at = GETDATE()
+                     WHERE id = @qualId AND organization_id = @orgId`,
+                    { url: certificate_file_url, qualId, orgId: organization_id }
+                );
+                logger.info(`commitToQualification: PDF ${file.original_name} collegato a qualification #${qualId}`);
+            } else {
+                logger.warn(`commitToQualification: PDF non trovato o path non valido per file ${fileId}`, {
+                    storage_path: file.storage_path,
+                });
+            }
+        }
+
+        // Aggiorna file: committed + tracciabilità bidirezionale
         await query(
-            `UPDATE import_job_files SET status='committed', updated_at=GETDATE() WHERE id=@fid AND job_id=@jid`,
-            { fid: fileId, jid: jobId }
+            `UPDATE import_job_files
+             SET status = 'committed', qualification_id = @qualId, updated_at = GETDATE()
+             WHERE id = @fid AND job_id = @jid`,
+            { qualId, fid: fileId, jid: jobId }
         );
 
         logger.info(`commitToQualification: file ${fileId} → qualification #${qualId} (org ${organization_id})`);
         res.status(201).json({
             success: true,
-            data: { qualification_id: qualId, approval_status: 'bozza', warnings },
+            data: {
+                qualification_id: qualId,
+                approval_status: 'bozza',
+                certificate_file_url,
+                warnings,
+            },
         });
     } catch (err) {
         logger.error('commitToQualification', err);

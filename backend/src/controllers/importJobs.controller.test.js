@@ -6,6 +6,9 @@ jest.mock('../services/personnelQualificationLink.service', () => ({
     resolvePersonnelForQualification: jest.fn().mockResolvedValue({ ok: true, personnelId: 77, personName: 'Mario Rossi', personCode: null }),
 }));
 
+const fs = require('fs');
+const path = require('path');
+
 const { query } = require('../config/database');
 const { createJob, commitToRegistry, commitToQualification, listJobs, getJob } = require('./importJobs.controller');
 
@@ -109,8 +112,20 @@ describe('importJobs.controller createJob', () => {
 });
 
 describe('importJobs.controller commitToQualification', () => {
+    let tempPdfPath;
+
     beforeEach(() => {
         jest.clearAllMocks();
+        const uploadDir = path.join(__dirname, '../../uploads/test-commit');
+        fs.mkdirSync(uploadDir, { recursive: true });
+        tempPdfPath = path.join(uploadDir, 'patentino-test.pdf');
+        fs.writeFileSync(tempPdfPath, '%PDF-1.4 test');
+    });
+
+    afterEach(() => {
+        try {
+            if (tempPdfPath && fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath);
+        } catch { /* ignore */ }
     });
 
     it('usa company_id del job quando il body non lo passa', async () => {
@@ -247,6 +262,47 @@ describe('importJobs.controller commitToQualification', () => {
         expect(payload.data.warnings.length).toBeGreaterThan(0);
         expect(payload.data.warnings.join(' ')).toMatch(/processo di saldatura/);
         expect(payload.data.warnings.join(' ')).toMatch(/data scadenza/);
+    });
+
+    it('collega certificate_file_url e qualification_id sul file import', async () => {
+        let updateCertSql = null;
+        let updateFileSql = null;
+        let updateFileParams = null;
+
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44 }] })
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 9,
+                    status: 'reviewed',
+                    ai_extraction_json: AI_QUALIFICATION,
+                    original_name: 'patentino.pdf',
+                    confidence_score: 91,
+                    storage_path: tempPdfPath,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ id: 44 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 123 }] })
+            .mockImplementationOnce(async (sql, params) => {
+                updateCertSql = sql;
+                expect(params.url).toMatch(/^\/uploads\//);
+                return { recordset: [] };
+            })
+            .mockImplementationOnce(async (sql, params) => {
+                updateFileSql = sql;
+                updateFileParams = params;
+                return { recordset: [] };
+            });
+
+        const res = makeRes();
+        await commitToQualification(makeReq(), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data.certificate_file_url).toMatch(/^\/uploads\//);
+        expect(updateCertSql).toMatch(/certificate_file_url/);
+        expect(updateFileSql).toMatch(/qualification_id/);
+        expect(updateFileParams.qualId).toBe(123);
     });
 
     it('blocca la bozza qualifica se manca company_id anche sul job', async () => {

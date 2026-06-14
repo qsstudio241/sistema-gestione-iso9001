@@ -90,7 +90,8 @@
         "src/services/aiOrganizationContext.service.js",
         "src/services/knowledgeIndexer.service.js",
         "src/services/alertMail.service.js",
-        "src/services/alertScheduler.js"
+        "src/services/alertScheduler.js",
+        "src/services/qualificationAlert.service.js"
       ]
     },
     {
@@ -128,7 +129,8 @@
         "src/controllers/webdav.controller.js",
         "src/controllers/deadlines.controller.js",
         "src/controllers/welding.controller.js",
-        "src/controllers/reportTemplate.controller.js"
+        "src/controllers/reportTemplate.controller.js",
+        "src/controllers/alert.controller.js"
       ]
     },
     {
@@ -149,7 +151,8 @@
         "src/routes/documentTree.routes.js",
         "src/routes/normUpload.routes.js",
         "src/routes/deadlines.routes.js",
-        "src/routes/reportTemplate.routes.js"
+        "src/routes/reportTemplate.routes.js",
+        "src/routes/alert.routes.js"
       ]
     },
     {

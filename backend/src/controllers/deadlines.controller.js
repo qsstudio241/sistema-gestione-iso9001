@@ -18,6 +18,10 @@ const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
 const { detectDeadlineFile } = require('../utils/excelDeadlineDetector');
 const XLSX = require('xlsx');
+const {
+  fetchQualificationsForDeadline,
+  mapQualificationDeadlineRows,
+} = require('../services/qualificationAlert.service');
 
 // ?? helpers ???????????????????????????????????????????????????????????????????
 
@@ -324,7 +328,8 @@ async function listDeadlineItems(req, res) {
                    c.name AS company_name,
                    dr.title AS source_document_title,
                    u.full_name AS assigned_to_name,
-                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due
+                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due,
+                   'deadline_item' AS item_type
             FROM deadline_items di
             LEFT JOIN companies c           ON c.id = di.company_id
             LEFT JOIN document_registry dr  ON dr.id = di.source_document_id
@@ -334,9 +339,34 @@ async function listDeadlineItems(req, res) {
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
         `);
 
+        let qualRows = [];
+        try {
+            const qualData = await fetchQualificationsForDeadline(pool, orgId);
+            const daysWindow = priority_only === '1' ? parseInt(days) : 365;
+            qualRows = mapQualificationDeadlineRows(qualData, daysWindow);
+            if (company_id) {
+                qualRows = qualRows.filter((row) => row.company_id === parseInt(company_id));
+            }
+            if (status && status !== 'active') {
+                qualRows = [];
+            } else if (priority_only === '1') {
+                qualRows = qualRows.filter((row) => row.days_until_due <= parseInt(days));
+            }
+        } catch (qualErr) {
+            logger.warn('listDeadlineItems: qualifiche virtuali non disponibili', { error: qualErr.message });
+        }
+
+        const merged = [...(r.recordset || []), ...qualRows]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
         res.json({
-            data: r.recordset,
-            pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) },
+            data: merged,
+            pagination: {
+                total: total + qualRows.length,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil((total + qualRows.length) / parseInt(limit)),
+            },
         });
     } catch (err) {
         logger.error('listDeadlineItems:', err.message);
@@ -367,7 +397,8 @@ async function getPriorityDeadlines(req, res) {
                    c.name AS company_name,
                    dr.title AS source_document_title,
                    u.full_name AS assigned_to_name,
-                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due
+                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due,
+                   'deadline_item' AS item_type
             FROM deadline_items di
             LEFT JOIN companies c           ON c.id = di.company_id
             LEFT JOIN document_registry dr  ON dr.id = di.source_document_id
@@ -379,7 +410,21 @@ async function getPriorityDeadlines(req, res) {
             ORDER BY di.due_date ASC
         `);
 
-        res.json({ data: r.recordset });
+        let qualRows = [];
+        try {
+            const qualData = await fetchQualificationsForDeadline(pool, orgId);
+            qualRows = mapQualificationDeadlineRows(qualData, parseInt(days));
+            if (company_id) {
+                qualRows = qualRows.filter((row) => row.company_id === parseInt(company_id));
+            }
+        } catch (qualErr) {
+            logger.warn('getPriorityDeadlines: qualifiche virtuali non disponibili', { error: qualErr.message });
+        }
+
+        const merged = [...(r.recordset || []), ...qualRows]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
+        res.json({ data: merged });
     } catch (err) {
         logger.error('getPriorityDeadlines:', err.message);
         res.status(500).json({ error: err.message });
