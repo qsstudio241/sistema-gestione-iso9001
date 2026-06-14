@@ -80,7 +80,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
         ref={inputRef}
         type="file"
         multiple
-        accept=".pdf,.jpg,.jpeg,.png"
+        accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
         className="wpqr-upload__input-hidden"
         onChange={handleFileChange}
       />

@@ -504,6 +504,7 @@ function DocFileDialog({ doc, onClose }) {
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     className="docfile-file-input"
+                    accept="*/*"
                   />
                 </div>
                 <div className="docfile-upload-row">

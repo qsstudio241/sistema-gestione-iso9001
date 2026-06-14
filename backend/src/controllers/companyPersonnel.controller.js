@@ -174,7 +174,8 @@ async function listPersonnelStudio(req, res) {
     const result = await query(`
       SELECT cp.id, cp.organization_id, cp.company_id, c.name AS company_name,
              cp.name, cp.job_title, cp.email, cp.active,
-             cp.can_actuation, cp.can_verify, cp.notification_contact_id,
+             cp.can_actuation, cp.can_verify, cp.is_primary_welding_coordinator,
+             cp.notification_contact_id,
              cp.created_at, cp.updated_at
       FROM company_personnel cp
       INNER JOIN companies c ON c.id = cp.company_id
@@ -206,7 +207,8 @@ async function listPersonnel(req, res) {
 
     const result = await query(`
       SELECT id, organization_id, company_id, name, person_code, job_title, email,
-             active, can_actuation, can_verify, notification_contact_id,
+             active, can_actuation, can_verify, is_primary_welding_coordinator,
+             notification_contact_id,
              created_at, updated_at
       FROM company_personnel
       WHERE ${where.join(' AND ')}
@@ -236,6 +238,7 @@ async function createPersonnel(req, res) {
       active = true,
       can_actuation = false,
       can_verify = false,
+      is_primary_welding_coordinator = false,
     } = req.body;
 
     if (!name || !String(name).trim()) {
@@ -245,15 +248,23 @@ async function createPersonnel(req, res) {
       return res.status(400).json({ error: 'Email non valida', code: 'INVALID_EMAIL' });
     }
 
+    if (is_primary_welding_coordinator) {
+      await query(`
+        UPDATE company_personnel
+        SET is_primary_welding_coordinator = 0, updated_at = GETDATE()
+        WHERE company_id = @company_id AND organization_id = @organization_id
+      `, { company_id: companyId, organization_id: scope.organization_id });
+    }
+
     const result = await query(`
       INSERT INTO company_personnel (
         organization_id, company_id, name, job_title, email,
-        active, can_actuation, can_verify, updated_at
+        active, can_actuation, can_verify, is_primary_welding_coordinator, updated_at
       )
       OUTPUT INSERTED.*
       VALUES (
         @organization_id, @company_id, @name, @job_title, @email,
-        @active, @can_actuation, @can_verify, GETDATE()
+        @active, @can_actuation, @can_verify, @is_primary_welding_coordinator, GETDATE()
       )
     `, {
       organization_id: scope.organization_id,
@@ -264,6 +275,7 @@ async function createPersonnel(req, res) {
       active: active ? 1 : 0,
       can_actuation: can_actuation ? 1 : 0,
       can_verify: can_verify ? 1 : 0,
+      is_primary_welding_coordinator: is_primary_welding_coordinator ? 1 : 0,
     });
 
     res.status(201).json({ success: true, data: result.recordset[0] });
@@ -293,7 +305,7 @@ async function updatePersonnel(req, res) {
       return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
     }
 
-    const { name, job_title, email, active, can_actuation, can_verify } = req.body;
+    const { name, job_title, email, active, can_actuation, can_verify, is_primary_welding_coordinator } = req.body;
     const updates = [];
     const params = { id: personnelId };
 
@@ -326,6 +338,21 @@ async function updatePersonnel(req, res) {
     if (can_verify !== undefined) {
       updates.push('can_verify = @can_verify');
       params.can_verify = can_verify ? 1 : 0;
+    }
+    if (is_primary_welding_coordinator !== undefined) {
+      updates.push('is_primary_welding_coordinator = @is_primary_welding_coordinator');
+      params.is_primary_welding_coordinator = is_primary_welding_coordinator ? 1 : 0;
+      if (is_primary_welding_coordinator) {
+        await query(`
+          UPDATE company_personnel
+          SET is_primary_welding_coordinator = 0, updated_at = GETDATE()
+          WHERE company_id = @company_id AND organization_id = @organization_id AND id <> @id
+        `, {
+          company_id: companyId,
+          organization_id: scope.organization_id,
+          id: personnelId,
+        });
+      }
     }
 
     if (updates.length === 0) {

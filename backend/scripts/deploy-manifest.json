@@ -3,7 +3,8 @@
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors",
-    "src/utils"
+    "src/utils",
+    "src/data"
   ],
   "groups": [
     {
@@ -19,6 +20,12 @@
       ]
     },
     {
+      "name": "data",
+      "files": [
+        "src/data/documentTypeSchemas.js"
+      ]
+    },
+    {
       "name": "utils",
       "files": [
         "src/utils/aiCitations.js",
@@ -27,7 +34,8 @@
         "src/utils/documentTreeCompanyScope.js",
         "src/utils/documentRegistryFile.js",
         "src/utils/excelDeadlineDetector.js",
-        "src/utils/documentClassifier.js"
+        "src/utils/documentClassifier.js",
+        "src/utils/weldingDesignation.js"
       ]
     },
     {
@@ -79,10 +87,13 @@
         "src/services/importAiExtraction.service.js",
         "src/services/aiProviderAdapter.js",
         "src/services/aiContextBuilder.service.js",
+        "src/services/commercialCustomerCounterparty.service.js",
         "src/services/aiOrganizationContext.service.js",
         "src/services/knowledgeIndexer.service.js",
         "src/services/alertMail.service.js",
-        "src/services/alertScheduler.js"
+        "src/services/alertScheduler.js",
+        "src/services/qualificationAlert.service.js",
+        "src/services/weldingCoordinatorAuth.service.js"
       ]
     },
     {
@@ -108,6 +119,8 @@
         "src/controllers/admin.controller.js",
         "src/controllers/auditorOrg.controller.js",
         "src/controllers/companyPersonnel.controller.js",
+        "src/controllers/companyCounterparties.controller.js",
+        "src/controllers/contractReview.controller.js",
         "src/controllers/company.controller.js",
         "src/controllers/qualifications.controller.js",
         "src/controllers/projects.controller.js",
@@ -120,7 +133,8 @@
         "src/controllers/webdav.controller.js",
         "src/controllers/deadlines.controller.js",
         "src/controllers/welding.controller.js",
-        "src/controllers/reportTemplate.controller.js"
+        "src/controllers/reportTemplate.controller.js",
+        "src/controllers/alert.controller.js"
       ]
     },
     {
@@ -141,7 +155,8 @@
         "src/routes/documentTree.routes.js",
         "src/routes/normUpload.routes.js",
         "src/routes/deadlines.routes.js",
-        "src/routes/reportTemplate.routes.js"
+        "src/routes/reportTemplate.routes.js",
+        "src/routes/alert.routes.js"
       ]
     },
     {
@@ -149,6 +164,7 @@
       "files": [
         "src/middleware/auth.middleware.js",
         "src/middleware/moduleLicense.middleware.js",
+        "src/config/corsOrigins.js",
         "src/server.js"
       ]
     }

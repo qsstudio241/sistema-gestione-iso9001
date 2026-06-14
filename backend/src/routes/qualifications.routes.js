@@ -81,6 +81,7 @@ router.use(requireLicensedModule('qualifiche'));
 // Stats, batch e coverage prima di /:id per evitare conflitti di routing
 router.get ('/qualifications/stats',               ctrl.getStats);
 router.get ('/qualifications/coverage',            ctrl.getCoverage);
+router.get ('/qualifications/confirmations/export', ctrl.exportConfirmations);
 router.post('/qualifications/upload-batch',        batchUploadMiddleware, ctrl.uploadBatch);
 router.get ('/qualifications',                     ctrl.listQualifications);
 router.get ('/qualifications/:id',                 ctrl.getOne);
@@ -96,5 +97,7 @@ router.post('/qualifications/:id/renew',           ctrl.renewQualification);
 // Upload certificato e storico
 router.post('/qualifications/:id/certificate',     certUploadMiddleware, ctrl.uploadCertificate);
 router.get ('/qualifications/:id/history',         ctrl.getHistory);
+router.get ('/qualifications/:id/confirmations', ctrl.getConfirmations);
+router.post('/qualifications/:id/confirm-semiannual', ctrl.confirmSemiannual);
 
 module.exports = router;

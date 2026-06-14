@@ -13,6 +13,9 @@ alwaysApply: true
 - **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** per azioni **fuori** dall'agente (password, login terzi, scelte di business).
 - **Dialogo**: privilegiare obiettivi e requisiti; evita di usare il turno utente per operazioni ripetitive che puoi completare da solo.
 
+## Workflow default (feat branch + preview)
+- **UI/feature**: branch `feat/...` → PR → Deploy Preview Netlify → TEST OK committente → merge `main`. Dettaglio: `GUIDA_CONSOLIDATA.md` sezione *Workflow sviluppo: branch → preview → merge*.
+
 ## Convenzione DEPUTYTASK (workflow delegato)
 - Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
 - Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:

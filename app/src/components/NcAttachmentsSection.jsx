@@ -133,6 +133,7 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
             ref={fileInputRef}
             type="file"
             multiple
+            accept="*/*"
             className="nc-file-input-hidden"
             onChange={handleFilesSelected}
           />
