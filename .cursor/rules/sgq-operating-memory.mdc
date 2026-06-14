@@ -13,9 +13,6 @@ alwaysApply: true
 - **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** per azioni **fuori** dall'agente (password, login terzi, scelte di business).
 - **Dialogo**: privilegiare obiettivi e requisiti; evita di usare il turno utente per operazioni ripetitive che puoi completare da solo.
 
-## Workflow default (feat branch + preview)
-- **UI/feature**: branch `feat/...` → PR → Deploy Preview Netlify → TEST OK committente → merge `main`. Dettaglio: `GUIDA_CONSOLIDATA.md` sezione *Workflow sviluppo: branch → preview → merge*.
-
 ## Convenzione DEPUTYTASK (workflow delegato)
 - Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
 - Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:
@@ -45,7 +42,23 @@ Sollevare al committente SOLO: decisioni di prodotto, breaking change senza roll
 ## Principi trasversali (sempre attivi)
 - **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore ne' duplicati inutili tra file `.md`. **Chiarezza da best practice**: seguire la sezione *Principi di documentazione* in `docs/GUIDA_CONSOLIDATA.md` (gerarchia titoli, tabelle per checklist, fonte unica per tipo di informazione, link invece di copia, commit/PR con messaggi chiari anche per `.md`).
 - **Robustezza**: multi-tenant, sync/offline, idempotenza migrazioni, smoke dopo deploy, test mirati quando esistono.
-- **Sicurezza**: segreti **mai** in repository ne' incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git puo' ancora contenere segreti vecchi, **ruotare** se esposti.
+- **Sicurezza**: segreti **mai** in repository ne' incollati in chat; preferire `database.json` locale (gitignored), **`backend/config/.ssh-deploy.local.ps1`** (gitignored, vedi `.ssh-deploy.local.ps1.example`), **`backend/config/.netlify.local.ps1`** (gitignored, vedi `.netlify.local.ps1.example`), variabili `DB_*`, sessione PuTTY `SGQ_PUTTY_SESSION` o chiave SSH. Storia Git puo' ancora contenere segreti vecchi, **ruotare** se esposti.
+
+## Accesso Netlify CLI (pattern autonomo — usare PRIMA di netlify deploy/status)
+
+### Windows locale (Cursor desktop)
+
+**Vietato** dichiarare *"Not logged in"* o *"netlify non configurato"* senza aver prima:
+
+1. Verificato `backend/config/.netlify.local.ps1` (gitignored, da `.netlify.local.ps1.example`)
+2. Eseguito `backend/scripts/netlify-preflight.ps1` (deve stampare `NETLIFY_ACCESS_OK`)
+
+```powershell
+# Preflight (obbligatorio prima di netlify status/deploy da agente)
+.\backend\scripts\netlify-preflight.ps1
+```
+
+Credenziali: `backend/config/.netlify.local.ps1` con `$env:NETLIFY_AUTH_TOKEN` (token personale Netlify, **mai** in chat). Deploy frontend su `main` resta automatico via Git; la CLI serve per status, deploy manuali e troubleshooting.
 
 ## Accesso SSH al VPS (pattern autonomo — usare SEMPRE senza chiedere)
 

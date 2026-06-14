@@ -20,6 +20,9 @@ backend/config/.putty-session.local
 # Deploy SSH non interattivo (copiare da .ssh-deploy.local.ps1.example — mai committare)
 backend/config/.ssh-deploy.local.ps1
 
+# Netlify CLI token (copiare da .netlify.local.ps1.example — mai committare)
+backend/config/.netlify.local.ps1
+
 # IDE
 .vscode/
 .idea/
