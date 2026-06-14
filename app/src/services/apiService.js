@@ -1611,6 +1611,49 @@ class ApiService {
         return this.get(`/qualifications/${id}/history`);
     }
 
+    async getQualificationConfirmations(id) {
+        return this.get(`/qualifications/${id}/confirmations`);
+    }
+
+    async confirmQualificationSemiannual(id, data = {}) {
+        return this.post(`/qualifications/${id}/confirm-semiannual`, data);
+    }
+
+    async downloadQualificationConfirmationsExport(params = {}) {
+        const qs = new URLSearchParams(
+            Object.entries(params).filter(([, v]) => v != null && v !== '')
+        ).toString();
+        const token = this.getToken();
+        const response = await fetch(
+            `${this.baseUrl}/qualifications/confirmations/export${qs ? '?' + qs : ''}`,
+            {
+                method: 'GET',
+                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+        );
+        if (!response.ok) {
+            let msg = 'Errore export Excel';
+            try {
+                const err = await response.json();
+                msg = err.error || msg;
+            } catch (_) { /* ignore */ }
+            throw new Error(msg);
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^"]+)"?/i);
+        const filename = match?.[1] || `conferme_semestrali_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
     // ─── Risks (Sprint 6) ────────────────────────────────────────────────────
     async getRisksStats()           { return this.get('/risks/stats'); }
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }

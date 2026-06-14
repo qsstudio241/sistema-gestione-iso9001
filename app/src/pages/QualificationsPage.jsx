@@ -346,6 +346,7 @@ function QualificationsPage() {
 
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
+    const [openSection, setOpenSection] = useState(null);
     const [deleteId,    setDeleteId]    = useState(null);
     const [rejectModal, setRejectModal] = useState(null); // { id, person_name }
     const [rejectReason, setRejectReason] = useState("");
@@ -422,6 +423,34 @@ function QualificationsPage() {
 
     useEffect(() => { loadData(); }, [loadData]);
 
+    // Deep link da scadenzario: /qualifiche?company_id=X&highlight=Y&section=conferma
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const highlightId = params.get("highlight");
+        const section = params.get("section");
+        const urlCompanyId = params.get("company_id");
+        if (urlCompanyId) {
+            setCompanyScope(urlCompanyId);
+            persistQualificationsCompanyScope(urlCompanyId);
+        }
+        if (!highlightId) return;
+        const qualId = parseInt(highlightId, 10);
+        if (!Number.isFinite(qualId)) return;
+        (async () => {
+            try {
+                const res = await apiService.getQualification(qualId);
+                const qual = res?.qualification || res?.data || res;
+                if (qual?.id) {
+                    setEditingQual(qual);
+                    setOpenSection(section || null);
+                    setFormOpen(true);
+                }
+            } catch (err) {
+                setError(err.message || "Impossibile aprire la qualifica richiesta.");
+            }
+        })();
+    }, []);
+
     function handleNew() {
         if (!companyScope) {
             setError("Seleziona l'ambito azienda prima di creare una nuova qualifica.");
@@ -430,8 +459,8 @@ function QualificationsPage() {
         setEditingQual(null);
         setFormOpen(true);
     }
-    function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
-    function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
+    function handleEdit(q) { setEditingQual(q); setOpenSection(null); setFormOpen(true); }
+    function handleSaved() { setFormOpen(false); setEditingQual(null); setOpenSection(null); loadData(); }
 
     async function handleConfirmDelete(id) {
         try {
@@ -654,8 +683,9 @@ function QualificationsPage() {
                 <QualificationForm
                     qualification={editingQual}
                     defaultCompanyId={!editingQual && companyScope ? companyScope : undefined}
+                    openSection={openSection}
                     onSave={handleSaved}
-                    onClose={() => { setFormOpen(false); setEditingQual(null); }}
+                    onClose={() => { setFormOpen(false); setEditingQual(null); setOpenSection(null); }}
                 />
             )}
 
