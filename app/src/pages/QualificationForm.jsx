@@ -439,7 +439,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
               )}
               <div className="qf-field">
                 <label>Allega / sostituisci certificato</label>
-                <input ref={certInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png"
+                <input ref={certInputRef} type="file" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
                   onChange={e => setCertFile(e.target.files?.[0] || null)} />
                 {certFile && <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>}
               </div>

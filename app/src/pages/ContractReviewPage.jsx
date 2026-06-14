@@ -1261,7 +1261,7 @@ export default function ContractReviewPage() {
                           suppliers={suppliers}
                           suppliersLoadFailed={suppliersLoadFailed}
                         />
-                        <input type="file" onChange={handleUploadAttachment} />
+                        <input type="file" accept="*/*" onChange={handleUploadAttachment} />
                       </div>
                     </div>
                   </>
