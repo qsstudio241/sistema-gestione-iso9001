@@ -87,10 +87,15 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3>{item ? "Modifica controparte" : "Nuova controparte"}</h3>
-        {error && <div className="form-error">{error}</div>}
-        <form onSubmit={handleSubmit}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{item ? "Modifica controparte" : "Nuova controparte"}</h2>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">
+            {"\u2715"}
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          {error && <div className="form-error">{error}</div>}
           <div className="form-group">
             <label>Nome *</label>
             <input
@@ -177,7 +182,7 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
               Attiva
             </label>
           )}
-          <div className="modal-actions">
+          <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>
               Annulla
             </button>
