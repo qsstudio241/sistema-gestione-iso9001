@@ -3,28 +3,71 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Link } from "../contexts/RouterContext";
 import apiService from "../services/apiService";
 import PencilIcon from "./icons/PencilIcon";
 import TrashIcon from "./icons/TrashIcon";
 import "../pages/AnagrafichePage.css";
 
-const ROLE_OPTIONS = [
+const ROLES = {
+  customer: {
+    value: "customer",
+    shortLabel: "Cliente diretto",
+    label: "Cliente diretto (contratto con l'azienda)",
+    filterLabel: "Cliente diretto",
+    badgeClass: "role-customer",
+  },
+  end_customer: {
+    value: "end_customer",
+    shortLabel: "Committente finale",
+    label: "Committente finale (proprietario del lavoro / capitolato)",
+    filterLabel: "Committente finale",
+    badgeClass: "role-end-customer",
+  },
+  supplier: {
+    value: "supplier",
+    shortLabel: "Subfornitore comm.",
+    label: "Subfornitore commerciale (riesame)",
+    filterLabel: "Subfornitore commerciale",
+    badgeClass: "role-supplier",
+  },
+};
+
+const FILTER_ROLE_OPTIONS = [
   { value: "", label: "Tutti i ruoli" },
-  { value: "customer", label: "Cliente" },
-  { value: "end_customer", label: "Committente finale" },
-  { value: "supplier", label: "Fornitore" },
+  ...Object.values(ROLES).map((r) => ({ value: r.value, label: r.filterLabel })),
 ];
 
-function roleLabel(role) {
-  const found = ROLE_OPTIONS.find((o) => o.value === role);
-  return found?.label || role || "\u2014";
+function roleMeta(role) {
+  return ROLES[role] || null;
+}
+
+function formRoleOptions(isEdit, currentRole) {
+  const options = [ROLES.end_customer, ROLES.customer];
+  if (isEdit && currentRole === "supplier") {
+    return [ROLES.supplier, ...options];
+  }
+  return options;
+}
+
+function RoleBadge({ role }) {
+  const meta = roleMeta(role);
+  if (!meta) return role || "\u2014";
+  return (
+    <span
+      className={`type-badge role-badge ${meta.badgeClass}`}
+      title={meta.label}
+    >
+      {meta.shortLabel}
+    </span>
+  );
 }
 
 const EMPTY_FORM = {
   name: "",
   vat_number: "",
   external_ref: "",
-  role: "customer",
+  role: "end_customer",
   contact_person: "",
   email: "",
   phone: "",
@@ -40,7 +83,7 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
           name: item.name || "",
           vat_number: item.vat_number || "",
           external_ref: item.external_ref || "",
-          role: item.role || "customer",
+          role: item.role || "end_customer",
           contact_person: item.contact_person || "",
           email: item.email || "",
           phone: item.phone || "",
@@ -110,10 +153,20 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
               >
-                {ROLE_OPTIONS.filter((o) => o.value).map((o) => (
+                {formRoleOptions(Boolean(item), form.role).map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
+              <p className="form-hint block-hint counterparties-role-hint">
+                Il committente finale possiede capitolato e lavoro (es. PT.MAIDO); il cliente
+                diretto ha il contratto con l&apos;azienda auditata (es. LM&amp;CO).
+              </p>
+              {form.role === "supplier" && (
+                <p className="form-hint counterparties-supplier-link">
+                  Per fornitori ISO {"\u00A7"}8.4 usa{" "}
+                  <Link to="/anagrafiche">Anagrafiche</Link>.
+                </p>
+              )}
             </div>
             <div className="form-group">
               <label>Ref. esterno</label>
@@ -201,7 +254,7 @@ function CounterpartyDetail({ item }) {
     <div className="supplier-detail">
       <div className="detail-header">
         <h3>{item.name}</h3>
-        <span className="type-badge type-ext">{roleLabel(item.role)}</span>
+        <RoleBadge role={item.role} />
       </div>
       {item.external_ref && (
         <p className="detail-line">
@@ -303,6 +356,10 @@ export default function CompanyCounterpartiesPanel({
   return (
     <div className="company-counterparties-panel">
       {error && <div className="studio-warning-banner">{error}</div>}
+      <p className="panel-hint counterparties-panel-hint">
+        Controparti del riesame contrattuale: distingui chi firma con l&apos;azienda (cliente diretto)
+        da chi commissiona il lavoro (committente finale).
+      </p>
       <div className="split-layout">
         <div className="split-main">
           <div className="toolbar">
@@ -312,7 +369,7 @@ export default function CompanyCounterpartiesPanel({
                 onChange={(e) => setFilterRole(e.target.value)}
                 aria-label="Filtra per ruolo"
               >
-                {ROLE_OPTIONS.map((o) => (
+                {FILTER_ROLE_OPTIONS.map((o) => (
                   <option key={o.value || "all"} value={o.value}>{o.label}</option>
                 ))}
               </select>
@@ -360,7 +417,7 @@ export default function CompanyCounterpartiesPanel({
                       className={selected?.id === row.id ? "row-selected" : ""}
                       onClick={() => setSelected(row)}
                     >
-                      <td>{roleLabel(row.role)}</td>
+                      <td><RoleBadge role={row.role} /></td>
                       <td><strong>{row.name}</strong></td>
                       <td><code>{row.external_ref || "\u2014"}</code></td>
                       <td>{row.vat_number || "\u2014"}</td>
