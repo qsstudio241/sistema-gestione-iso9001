@@ -11,30 +11,53 @@ const AI_SCHEMAS = {
     label: 'Patentino saldatore (ISO 9606-1)',
     aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON di risposta.
-Se un campo non � presente nel documento, usa null.
+Se un campo non e' presente nel documento, usa null.
 
 Campi da estrarre:
-- welder_name, certificate_number, issuing_body, welding_process, joint_type (BW|FW),
-- material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
-- pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
-- next_confirmation_due, standard_reference (YYYY-MM-DD per le date)`,
+- welder_name: nome e cognome del saldatore
+- certificate_number: numero univoco del certificato
+- issuing_body: ente che emette/certifica il patentino (TUV, Bureau Veritas, DNV, RINA, IIS, IMQ, ...)
+- examiner_body: organismo o esaminatore che ha condotto la prova, se diverso dall'ente emittente (altrimenti null)
+- welding_process: codice processo ISO 4063 (111, 121, 131, 135, 136, 138, 141, 145, 15, 311, ...)
+- joint_type: tipo giunto "BW" (testa a testa) o "FW" (angolare)
+- product_type: "P" se la prova e' su lamiera/piastra, "T" se su tubo
+- weld_details: dettagli del giunto/condizioni (es. "ss nb" = single side no backing, "bs" = both sides, "ml" = multi layer, "sl" = single layer)
+- material_group: gruppo materiale base ISO/TR 15608 (es. "1.1", "6", "8")
+- filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
+- welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
+- thickness_min_mm: numero - spessore minimo qualificato in mm
+- thickness_max_mm: numero - spessore massimo qualificato in mm
+- pipe_diameter_min_mm: numero - diametro esterno tubi minimo qualificato in mm (null se solo lamiera)
+- pipe_diameter_max_mm: numero - diametro esterno tubi massimo qualificato in mm (null se solo lamiera)
+- shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
+- exam_date: data esame/prova (YYYY-MM-DD) o null
+- expiry_date: data scadenza (YYYY-MM-DD) o null
+- last_confirmation_date: data ultima conferma del datore di lavoro (YYYY-MM-DD) o null
+- next_confirmation_due: data prossima conferma (YYYY-MM-DD) o null
+- revalidation_date: data di revalidazione (validita' estesa, di norma 3 anni) (YYYY-MM-DD) o null
+- standard_reference: norma (es. "ISO 9606-1:2012") o null`,
     aiExpectedSchema: {
       welder_name: 'string|null',
       certificate_number: 'string|null',
       issuing_body: 'string|null',
+      examiner_body: 'string|null',
       welding_process: 'string|null',
       joint_type: 'BW|FW|null',
+      product_type: 'P|T|null',
+      weld_details: 'string|null',
       material_group: 'string|null',
       filler_material_group: 'string|null',
       welding_positions: 'string[]|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
-      pipe_diameter_mm: 'number|null',
+      pipe_diameter_min_mm: 'number|null',
+      pipe_diameter_max_mm: 'number|null',
       shielding_gas: 'string|null',
       exam_date: 'YYYY-MM-DD|null',
       expiry_date: 'YYYY-MM-DD|null',
       last_confirmation_date: 'YYYY-MM-DD|null',
       next_confirmation_due: 'YYYY-MM-DD|null',
+      revalidation_date: 'YYYY-MM-DD|null',
       standard_reference: 'string|null',
     },
   },
@@ -198,8 +221,18 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
   },
 };
 
-function getSchemaForDocType(docType) {
-  return AI_SCHEMAS[docType] || null;
+// Alias tipo documento -> chiave schema canonica (coerenza document_type_guess).
+const DOC_TYPE_ALIASES = {
+  qualifica_operatore: 'qualifica_14732',
+};
+
+function resolveDocTypeKey(docType) {
+  const key = String(docType || '').trim();
+  return DOC_TYPE_ALIASES[key] || key;
 }
 
-module.exports = { DOCUMENT_TYPE_SCHEMAS: AI_SCHEMAS, getSchemaForDocType };
+function getSchemaForDocType(docType) {
+  return AI_SCHEMAS[resolveDocTypeKey(docType)] || null;
+}
+
+module.exports = { DOCUMENT_TYPE_SCHEMAS: AI_SCHEMAS, getSchemaForDocType, resolveDocTypeKey };

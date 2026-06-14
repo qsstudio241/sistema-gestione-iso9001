@@ -14,6 +14,7 @@
 .qf-field input, .qf-field select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:14px; background:#f9fafb; }
 .qf-field input:focus, .qf-field select:focus { outline:none; border-color:#1e3a5f; background:#fff; }
 .req { color:#ef4444; }
+.qf-field-err { font-size:11px; color:#dc2626; margin-top:2px; }
 .qf-btn-link { background:none; border:none; color:#1e3a5f; font-size:12px; cursor:pointer; text-decoration:underline; white-space:nowrap; }
 .qf-error  { margin:0 24px 12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; }
 .qf-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
@@ -21,4 +22,15 @@
 .qf-btn-save   { padding:9px 22px; border:none; border-radius:8px; background:#1e3a5f; color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
 .qf-btn-save:hover:not(:disabled) { background:#16304e; }
 .qf-btn-save:disabled { opacity:.6; cursor:not-allowed; }
+.qf-semiannual-section { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; background: #f9fafb; }
+.qf-section-toggle { display: flex; justify-content: space-between; align-items: center; width: 100%; background: none; border: none; cursor: pointer; padding: 0; text-align: left; }
+.qf-section-chevron { color: #6b7280; font-size: 12px; }
+.qf-semiannual-body { margin-top: 12px; }
+.qf-semiannual-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.qf-confirm-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+.qf-confirm-table th, .qf-confirm-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+.qf-confirm-table th { font-size: 11px; text-transform: uppercase; color: #6b7280; }
+.qf-confirm-dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 1100; }
+.qf-confirm-dialog { background: #fff; border-radius: 12px; padding: 20px 22px; width: 100%; max-width: 420px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+.qf-confirm-dialog h4 { margin: 0 0 8px; color: #1e3a5f; font-size: 16px; }
 @media (max-width:500px) { .qf-row { flex-direction:column; } }

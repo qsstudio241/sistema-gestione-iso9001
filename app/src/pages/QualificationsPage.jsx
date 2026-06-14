@@ -37,7 +37,7 @@ const TABS = [
 
 // Colonne dinamiche per tab
 const TAB_COLUMNS = {
-    iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Approvazione", "Azioni"],
+    iso9606_1: ["Persona", "Certificato", "Designazione", "Spessore", "Prossima conferma", "Scadenza", "Approvazione", "Azioni"],
     iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Approvazione", "Azioni"],
     iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Approvazione", "Azioni"],
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Approvazione", "Azioni"],
@@ -188,14 +188,42 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, on
         </td>
     );
 
-    if (tabKey === "iso9606_1" || tabKey === "iso9606_2") {
+    if (tabKey === "iso9606_1") {
+        // La conferma periodica è "governante" se scade prima del certificato.
+        const nextConf = q.next_confirmation_due || null;
+        const confGoverns = nextConf && (!q.expiry_date || new Date(nextConf) <= new Date(q.expiry_date));
+        const designation = q.qualification_designation
+            || [q.welding_process, q.product_type, q.joint_type, q.position_range].filter(Boolean).join(" ")
+            || "\u2014";
+        const thickness = q.thickness_range
+            || ((q.thickness_min_mm != null || q.thickness_max_mm != null)
+                ? `${q.thickness_min_mm ?? "?"}-${q.thickness_max_mm ?? "?"}mm`
+                : "\u2014");
+        return (
+            <tr className={`sq-row sq-row-${q.semaforo}`}>
+                {personCell}
+                {certCell}
+                <td title={designation} style={{fontFamily:"monospace", fontSize:12}}>{designation}</td>
+                <td>{thickness}</td>
+                <td>
+                    {nextConf
+                        ? <span className={confGoverns ? `sq-expiry-date sq-expiry-${q.semaforo}` : "sq-expiry-date"}>{formatDate(nextConf)}</span>
+                        : <span className="sq-expiry-none">{"\u2014"}</span>}
+                </td>
+                {expiryCell}
+                {apprCell}
+                {actionBtns}
+            </tr>
+        );
+    }
+
+    if (tabKey === "iso9606_2") {
         return (
             <tr className={`sq-row sq-row-${q.semaforo}`}>
                 {personCell}
                 {certCell}
                 <td>{q.welding_process || "\u2014"}</td>
-                {tabKey === "iso9606_1" && <td>{q.thickness_range || "\u2014"}</td>}
-                {tabKey === "iso9606_2" && <td>{q.material_group || "\u2014"}</td>}
+                <td>{q.material_group || "\u2014"}</td>
                 <td>{q.position_range || "\u2014"}</td>
                 {expiryCell}
                 {apprCell}
@@ -318,6 +346,7 @@ function QualificationsPage() {
 
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
+    const [openSection, setOpenSection] = useState(null);
     const [deleteId,    setDeleteId]    = useState(null);
     const [rejectModal, setRejectModal] = useState(null); // { id, person_name }
     const [rejectReason, setRejectReason] = useState("");
@@ -394,6 +423,34 @@ function QualificationsPage() {
 
     useEffect(() => { loadData(); }, [loadData]);
 
+    // Deep link da scadenzario: /qualifiche?company_id=X&highlight=Y&section=conferma
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const highlightId = params.get("highlight");
+        const section = params.get("section");
+        const urlCompanyId = params.get("company_id");
+        if (urlCompanyId) {
+            setCompanyScope(urlCompanyId);
+            persistQualificationsCompanyScope(urlCompanyId);
+        }
+        if (!highlightId) return;
+        const qualId = parseInt(highlightId, 10);
+        if (!Number.isFinite(qualId)) return;
+        (async () => {
+            try {
+                const res = await apiService.getQualification(qualId);
+                const qual = res?.qualification || res?.data || res;
+                if (qual?.id) {
+                    setEditingQual(qual);
+                    setOpenSection(section || null);
+                    setFormOpen(true);
+                }
+            } catch (err) {
+                setError(err.message || "Impossibile aprire la qualifica richiesta.");
+            }
+        })();
+    }, []);
+
     function handleNew() {
         if (!companyScope) {
             setError("Seleziona l'ambito azienda prima di creare una nuova qualifica.");
@@ -402,8 +459,8 @@ function QualificationsPage() {
         setEditingQual(null);
         setFormOpen(true);
     }
-    function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
-    function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
+    function handleEdit(q) { setEditingQual(q); setOpenSection(null); setFormOpen(true); }
+    function handleSaved() { setFormOpen(false); setEditingQual(null); setOpenSection(null); loadData(); }
 
     async function handleConfirmDelete(id) {
         try {
@@ -626,8 +683,9 @@ function QualificationsPage() {
                 <QualificationForm
                     qualification={editingQual}
                     defaultCompanyId={!editingQual && companyScope ? companyScope : undefined}
+                    openSection={openSection}
                     onSave={handleSaved}
-                    onClose={() => { setFormOpen(false); setEditingQual(null); }}
+                    onClose={() => { setFormOpen(false); setEditingQual(null); setOpenSection(null); }}
                 />
             )}
 

@@ -4,8 +4,10 @@ const logger = require('../utils/logger');
  * Build context for contract review requirements analysis.
  * @param {object} params
  * @param {string} params.capitolatoText - Extracted text from the uploaded RFQ/spec document
- * @param {number} params.companyId - Company being reviewed
+ * @param {number} params.companyId - Azienda SGQ le cui capacità si valutano (es. LM&CO)
  * @param {number} params.organizationId - Tenant scope
+ * @param {string} [params.commercialCustomerName] - Committente commerciale del lavoro (es. PT.MAIDO)
+ * @param {string} [params.commercialCustomerRef] - Riferimento esterno del committente commerciale
  * @param {string[]} [params.standardCodes] - Specific standards to check against
  * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
  */
@@ -13,6 +15,8 @@ async function buildReviewRequirementsContext({
   capitolatoText,
   companyId,
   organizationId,
+  commercialCustomerName,
+  commercialCustomerRef,
   standardCodes,
 }) {
   // 1. Load norm clauses for specified standards (or auto-detect from text)
@@ -54,20 +58,43 @@ async function buildReviewRequirementsContext({
     logger.debug('[AI_CONTEXT] Semantic search for review not available:', err.message);
   }
 
-  // 2. Load company profile (basic info from companies table)
-  let companyContext = '';
+  // 2. Profilo azienda SGQ (capacità da valutare — NON confondere con il committente commerciale)
+  let capabilityContext = '';
+  let capabilityLabel = companyId ? `azienda id ${companyId}` : 'N/D';
   try {
     const { query } = require('../config/database');
-    const result = await query(
-      'SELECT name, vat_number, sector, address FROM companies WHERE id = @id AND organization_id = @orgId',
-      { id: companyId, orgId: organizationId }
-    );
-    if (result.recordset.length > 0) {
-      const c = result.recordset[0];
-      companyContext = `\nAzienda: ${c.name} (P.IVA: ${c.vat_number || 'N/D'}, Settore: ${c.sector || 'N/D'}, Sede: ${c.address || 'N/D'})`;
+    if (companyId) {
+      const result = await query(
+        'SELECT name, vat_number, sector, address FROM companies WHERE id = @id AND organization_id = @orgId',
+        { id: companyId, orgId: organizationId }
+      );
+      if (result.recordset.length > 0) {
+        const c = result.recordset[0];
+        capabilityLabel = c.name || capabilityLabel;
+        capabilityContext =
+          `\nEnte che riesamina le capacità (azienda SGQ): ${c.name}` +
+          ` (P.IVA: ${c.vat_number || 'N/D'}, Settore: ${c.sector || 'N/D'}, Sede: ${c.address || 'N/D'})` +
+          '\nValuta se QUESTA azienda ha capacità, qualifiche, attrezzature e documentazione per eseguire il lavoro.';
+      }
     }
   } catch (err) {
     logger.warn('[AI_CONTEXT] Company lookup failed:', err.message);
+  }
+
+  const commercialName =
+    commercialCustomerName != null && String(commercialCustomerName).trim() !== ''
+      ? String(commercialCustomerName).trim()
+      : null;
+  const commercialRef =
+    commercialCustomerRef != null && String(commercialCustomerRef).trim() !== ''
+      ? String(commercialCustomerRef).trim()
+      : null;
+  let commercialCustomerContext = '';
+  if (commercialName) {
+    commercialCustomerContext =
+      `\nCommittente commerciale del lavoro (cliente del capitolato): ${commercialName}` +
+      (commercialRef ? ` (rif. ${commercialRef})` : '') +
+      '\nI requisiti nel capitolato provengono da questo committente; NON confonderlo con l\'ente che riesamina le capacità.';
   }
 
   // 3. Build prompts
@@ -75,13 +102,14 @@ async function buildReviewRequirementsContext({
 Il tuo compito è analizzare un capitolato/richiesta d'offerta e:
 1. Identificare tutti i requisiti tecnici espliciti
 2. Identificare le norme e standard citati o applicabili
-3. Per ogni requisito, valutare se l'azienda ha le capacità/documentazione necessaria
+3. Per ogni requisito, valutare se l'ente che riesamina le capacità ha le competenze/documentazione necessarie per soddisfare il committente commerciale
 4. Segnalare i GAP (requisiti non soddisfatti o da verificare)
 5. Suggerire azioni per colmare i gap
 
 Rispondi SEMPRE in italiano. Rispondi SOLO con JSON valido nel formato specificato.
 ${normContext ? '\nHai accesso ai seguenti requisiti normativi come riferimento:' + normContext : ''}
-${companyContext ? '\nProfilo azienda:' + companyContext : ''}`;
+${capabilityContext ? '\nContesto capacità:' + capabilityContext : ''}
+${commercialCustomerContext ? '\nContesto committente:' + commercialCustomerContext : ''}`;
 
   const userPrompt = `Analizza il seguente capitolato/richiesta d'offerta e produci un JSON con questa struttura:
 {
@@ -106,10 +134,14 @@ CAPITOLATO:
 ${capitolatoText}
 ---`;
 
+  const summaryParts = [`capacità: ${capabilityLabel}`];
+  if (commercialName) summaryParts.push(`committente: ${commercialName}`);
+  summaryParts.push(`standards: ${(standardCodes || ['auto']).join(',')}`);
+
   return {
     systemPrompt,
     userPrompt,
-    contextSummary: `Review requirements for company ${companyId}, standards: ${(standardCodes || ['auto']).join(',')}`,
+    contextSummary: `Review requirements — ${summaryParts.join('; ')}`,
   };
 }
 

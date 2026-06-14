@@ -66,8 +66,14 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | **Isolamento dati AI multi-tenant** | Utente **STUDIO**: vista d'insieme, può selezionare solo tra le **proprie aziende clienti** (`auditor_org_id`). Utente **AZIENDA cliente**: il backend **forza** `company_id` sull'anagrafica primaria (mai fidarsi del `companyId` dal client), niente 403. **RAG**: filtro `company_id = @compId`, **niente** `OR IS NULL` / chunk globali. | [PR #91 — regola scope azienda AI](#pr-91--regola-di-prodotto-ambito-azienda-dellassistente-ai-07062026) |
 | **Qualifiche — una azienda per certificato** | Ogni qualifica ha `company_id` **obbligatorio** (UI ambito + form, API `qualificationCompany.service`, mig. 087). Import AI eredita `company_id` dal job. Dopo approvazione **non** si cambia azienda; stesso numero certificato/PDF non può esistere su un'altra azienda del tenant. Pattern UI: `qualificationsCompanyScope.js` (come registro documenti). | [Aggiornamento 10/06/2026 — qualifiche company scope](#aggiornamento-10062026--qualifiche-ambito-azienda-obbligatorio) |
 | **Anagrafica personale ↔ qualifiche** | `company_personnel` = master (nome, mansione, email); `qualifications` = fascicolo certificati con `personnel_id` FK opzionale. Import guidato + backfill link; tab **Salute mansione** (4 tipi: acuità visiva, Ishihara, idoneità medica, sorveglianza sanitaria). Mig. **088**. | [Aggiornamento 10/06/2026 — collegamento personale-qualifiche](#aggiornamento-10062026--collegamento-anagrafica-personale-qualifiche) |
+| **Controparti azienda ↔ riesame commerciale** | `company_counterparties` sotto `companies` (ruoli `customer` / `end_customer` / `supplier`). Mig. **096** tabella + `commercial_cases.commercial_customer_id`; mig. **097** backfill idempotente da `commercial_customer_name`/`ref` (095) e `projects.client_name` → `end_customer_id`. **Snapshot 095 non rimosso** (deprecato, non DROP). Write: se FK impostata, `contractReview` sincronizza name/ref dalla controparte (`commercialCustomerCounterparty.service`). Verifica: `node backend/scripts/verify-counterparties-migration.js`. Pilota: LM&CO = azienda SGQ, PT.MAIDO = `end_customer`. | sessione 14/06/2026 |
+| **Saldatore ISO 9606-1 — campi end-to-end** | Catena AI→schema(FE/BE)→commit→DB→scheda allineata sulle **stesse chiavi**: ogni nuovo campo va in `aiPrompt`/`aiExpectedSchema`, `fields[].key` FE, e mappatura `commitToQualification`/`qualificationIngest`, altrimenti l'AI estrae ma il commit lo scarta. Mig. **092**: spessore/diametro **numerici min/max** (deriva legacy `thickness_range`/`pipe_diameter`), date `exam_date`/`last_confirmation_date`/`next_confirmation_due`/`revalidation_date` (stop overwrite `issue_date`), `product_type`/`weld_details`/`qualification_designation` (calcolata). Semaforo 9606 = **min(next_confirmation_due, expiry_date)** difensivo. Obbligatori scheda su blur/submit; in import-commit solo **warning**, mai blocco. | commit `0034399`/`f7936c1`/`8d427d8` |
+| **Import PDF → qualifica: PDF collegato** | `commitToQualification` imposta `certificate_file_url` da `import_job_files.storage_path` (pattern `/uploads/...` come ingest) e `import_job_files.qualification_id` (mig. **093**). Link visibile subito in `QualificationsPage` / `QualificationForm`. | sessione 14/06/2026 |
+| **Alert + scadenzario qualifiche** | Toggle `alert_qualif_expiry` cablato in `alertScheduler` (+10 min dopo doc). Servizio `qualificationAlert.service.js`: data guida = min(expiry, next_confirmation per 9606); email al coordinatore per azienda (rubrica `notification_contacts` company → `company_personnel` job coordinatore → `user_company_access` ruolo coordinatore → fallback org). Dedup `qual_notification_log` (mig. 093). Scadenzario `/deadlines`: righe virtuali `item_type=qualification` senza toccare `deadline_items` Excel. Badge `/alerts` include qualifiche approvate. | sessione 14/06/2026 |
+| **Registro conferme semestrali 9606** | Mig. **094**: tabella `qualification_confirmations` + flag `company_personnel.is_primary_welding_coordinator`. API: `POST /qualifications/:id/confirm-semiannual`, `GET …/confirmations`, `GET /qualifications/confirmations/export` (xlsx). Solo qualifiche **approvate** tipo 9606; auth = email utente = coordinatore primario azienda (fallback admin/superadmin). UI: sezione collassabile in `QualificationForm`; deep link scadenzario `?highlight=&section=conferma`. **No timbro PDF** sulla conferma. | sessione 14/06/2026 |
 | **API 500 da `studioScopeClause` errato sulle `companies`** | Nelle clausole di scope su `companies` usare l'alias colonna corretto (`c.organization_id`, **non** `co.organization_id`) e la logica `isOrgWideAdmin` / `auditor_org_id` (mai `isSuperadmin` indiscriminato). | [Sessione 07/06/2026 — fix responsible-options](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
 | **Menu audit vs RBAC** | Lista e dettaglio audit filtrano con `studioScopeClause` (`auditListRbac.service`); `organization_id` sempre da `req.user`. | [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
+| **`companies` NON ha `organization_id`** | La tabella `companies` è scopata via `auditor_org_id`; l'org si ottiene con join `auditor_orgs ao ON ao.id = c.auditor_org_id` (`companyBelongsToOrg`). Nei JOIN basta `LEFT JOIN companies c ON c.id = x.company_id`, mai `c.organization_id`. Regressione 13/06/2026: il fix `9fda958` aveva aggiunto `... AND c.organization_id = j.organization_id` in `importJobs.listJobs/getJob` → errore SQL `Invalid column name 'organization_id'` (lista + dettaglio Import PDF bloccati). Fix `98bc36f` rimuove la condizione errata + test mirati su `listJobs/getJob`. | commit `98bc36f` |
 
 ### Notifiche NC e alert
 
@@ -2007,6 +2013,38 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 
 **Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: [how-to/deploy.md](how-to/deploy.md). Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
 
+### Workflow sviluppo: branch → preview → merge
+
+**Regola default**: modifiche UI o feature → branch `feat/nome-descrittivo` → Pull Request verso `main` → **Deploy Preview Netlify** → **TEST OK committente** → merge su `main` (production Netlify).
+
+| Fase | Chi | Azione |
+|------|-----|--------|
+| 1. Branch | Agente / dev | `git checkout -b feat/nome` da `main` aggiornato |
+| 2. PR | Agente | Push branch + `gh pr create` con test plan |
+| 3. Preview | Netlify (auto) | Build su URL `deploy-preview-N--systemgest.netlify.app` |
+| 4. Test | **Committente** | Login, flusso modificato, API produzione (CORS preview attivo sul VPS) |
+| 5. Merge | Committente o agente post-OK | `gh pr merge` → deploy production da `main` |
+
+**Eccezioni** (merge diretto su `main` senza preview obbligatoria):
+
+- **Hotfix produzione** critico (rollback o fix immediato beta tester).
+- **Solo backend** già deployato sul VPS (migrazioni, CORS, API) senza cambi UI da verificare in preview.
+- **Solo documentazione** senza effetto runtime.
+
+**Checklist committente** (prima del merge):
+
+| # | Verifica | Dove |
+|---|----------|------|
+| 1 | Deploy Preview Netlify **Success** (verde) | Tab Checks sulla PR GitHub |
+| 2 | App preview carica (login / home) | URL preview nel commento Netlify |
+| 3 | Flusso modificato funziona end-to-end | Preview + API `https://www.fr-busato.it:8443` |
+| 4 | CI app verde (se tocca `app/`) | Check **CI app (Pull Request)** |
+| 5 | Dichiarare **TEST OK** in chat o commento PR | — |
+
+**Abilitazione preview** (una tantum): vedi sezione [Netlify — Deploy Preview (guida passo-passo)](#netlify--deploy-preview-guida-passo-passo) — Passo 2 *Deploy Previews → Any pull request*.
+
+**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
+
 ### Netlify — Deploy Preview (guida passo-passo)
 
 **Cosa ottieni**: per ogni **Pull Request** su GitHub, Netlify costruisce un sito di anteprima con URL dedicato (es. `deploy-preview-12--nome-sito.netlify.app`). **Non** serve un secondo progetto Netlify né configurazioni diverse per branch: è la stessa app collegata al repo.
@@ -2488,6 +2526,17 @@ Test L1 aggiuntivi: `ncExport.test.js`, `ncWorkflowApproval.test.js`. Migrazione
 | **Deploy pattern** | Dopo feature backend: verificare file in `backend/scripts/deploy-manifest.json`, non solo `git push` (Netlify ≠ VPS) |
 
 Smoke 13/06/2026: health API OK; endpoint template 401 (route presenti); Netlify bundle `index-ClEknwz1.js` con `nc-detail-header-actions` + tab «Non conformità»; L1 `ncWordExport` / `reportTemplateUpload` / `ncPage.drawer` 23 test OK.
+
+**Bug fix 13/06/2026 — commit-to-qualification HTTP 500 (Camellini segnala errore caricamento qualifica)**
+
+| Area | Causa / Fix |
+|------|-------------|
+| **Sintomo** | `POST /import-jobs/:id/files/:fileId/commit-to-qualification` → 500; log VPS: `commitToQualification Validation failed for parameter 'personnel_id'. Invalid string.` |
+| **Causa radice** | `commitToQualification` chiamava `resolvePersonnelForQualification` con chiavi **snake_case** (`person_name`, `company_id`, `organization_id`) invece dei **camelCase** attesi dalla funzione (`personName`, `companyId`, `organizationId`). Risultato: `personName=undefined` → funzione ritornava oggetto errore `{ ok: false, ... }` (truthy) → `personnel_id` veniva impostato all'oggetto → mssql: «Invalid string» |
+| **Fix** | `importJobs.controller.js` riga 832: parametri rinominati in camelCase; risultato decomposto con `.ok` + `.personnelId` invece di usarlo come scalare |
+| **Test** | Mock aggiornato a `{ ok: true, personnelId: 77, ... }` (forma corretta). 8/8 test passano. |
+| **Deploy** | SCP controller + `systemctl restart sgq-backend` (PID 659715, uptime OK) |
+| **Lezione** | Quando un service restituisce `{ ok, ... }` va sempre decomposto; mai usare `result \|\| null` se `result` può essere un oggetto truthy con errore. Verificare che i nomi dei parametri passati a una funzione corrispondano esattamente alla sua firma. |
 
 **Escluso (backlog):** agente AI CAPA, export PDF registro NC.
 
