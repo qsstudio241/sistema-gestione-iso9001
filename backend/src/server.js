@@ -35,6 +35,10 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 const { closePool } = require('./config/database');
+const {
+    parseStaticCorsOrigins,
+    corsOriginCallback,
+} = require('./config/corsOrigins');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -108,7 +112,7 @@ app.use(helmet({
             // frame-ancestors: permette embedding solo dal frontend Netlify
             // (necessario per DocumentPdfViewer che mostra PDF in iframe).
             // "'none'" bloccherebbe qualsiasi iframe, inclusi i nostri.
-            frameAncestors:  ["'self'", ...(process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean)],
+            frameAncestors:  ["'self'", ...parseStaticCorsOrigins(process.env.CORS_ORIGIN)],
             formAction:      ["'none'"],
             objectSrc:       ["'none'"],
             scriptSrc:       ["'none'"],
@@ -125,9 +129,10 @@ app.use(helmet({
 // Compression
 app.use(compression());
 
-// CORS
+// CORS — statici da env + pattern Netlify Deploy Preview / branch (systemgest)
+const staticCorsOrigins = parseStaticCorsOrigins(process.env.CORS_ORIGIN);
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN.split(','),
+    origin: (origin, callback) => corsOriginCallback(origin, staticCorsOrigins, callback),
     credentials: process.env.CORS_CREDENTIALS === 'true',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Audit-Lock-Token'],
