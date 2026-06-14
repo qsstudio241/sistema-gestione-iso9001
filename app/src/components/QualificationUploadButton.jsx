@@ -81,7 +81,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
         ref={inputRef}
         type="file"
         multiple
-        accept=".pdf,.jpg,.jpeg,.png"
+        accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
         className="qual-upload__input-hidden"
         onChange={handleFileChange}
       />
