@@ -22,12 +22,14 @@ const patentino_saldatore = {
   rangeFields: [
     "welding_process",
     "joint_type",
+    "product_type",
     "material_group",
     "filler_material_group",
     "welding_positions",
     "thickness_min_mm",
     "thickness_max_mm",
-    "pipe_diameter_mm",
+    "pipe_diameter_min_mm",
+    "pipe_diameter_max_mm",
   ],
 
   fields: [
@@ -63,6 +65,13 @@ const patentino_saldatore = {
       hint: "Organismo terzo che ha rilasciato il certificato",
     },
     {
+      key: "examiner_body",
+      label: "Organismo esaminatore",
+      type: "text",
+      required: false,
+      hint: "Esaminatore/organismo che ha condotto la prova, se diverso dall'ente emittente",
+    },
+    {
       key: "welding_process",
       label: "Processo di saldatura",
       type: "select",
@@ -76,8 +85,9 @@ const patentino_saldatore = {
         { value: "138",  label: "138 � MAG filo animato metallo (MCAW)" },
         { value: "141",  label: "141 � TIG (GTAW) elettrodo tungsteno" },
         { value: "145",  label: "145 � TIG + filo freddo (GTAW-CW)" },
+        { value: "15",   label: "15 � Plasma (PAW)" },
         { value: "311",  label: "311 � Ossiacetilenica (OAW)" },
-        { value: "outro", label: "Altro" },
+        { value: "altro", label: "Altro" },
       ],
       hint: "Codice processo secondo ISO 4063",
     },
@@ -91,6 +101,24 @@ const patentino_saldatore = {
         { value: "FW", label: "FW � Giunto a T / angolare (Fillet Weld)" },
       ],
       hint: "BW = full penetration, FW = angolare",
+    },
+    {
+      key: "product_type",
+      label: "Tipo prodotto",
+      type: "select",
+      required: false,
+      options: [
+        { value: "P", label: "P � Lamiera / piastra" },
+        { value: "T", label: "T � Tubo" },
+      ],
+      hint: "P se la prova \u00e8 su lamiera, T se su tubo (ISO 9606-1)",
+    },
+    {
+      key: "weld_details",
+      label: "Dettagli giunto",
+      type: "text",
+      required: false,
+      hint: "Es. ss nb (single side, no backing), bs (both sides), sl/ml (single/multi layer)",
     },
     {
       key: "material_group",
@@ -163,11 +191,18 @@ const patentino_saldatore = {
       hint: "Spessore massimo del range qualificato (es. 2t per piastre)",
     },
     {
-      key: "pipe_diameter_mm",
-      label: "Diametro tubi qualificato (mm)",
+      key: "pipe_diameter_min_mm",
+      label: "Diametro tubi qualificato � minimo (mm)",
       type: "number",
       required: false,
-      hint: "Diametro esterno del tubo di prova; lasciare vuoto se solo piastre",
+      hint: "Diametro esterno minimo qualificato; lasciare vuoto se solo lamiera",
+    },
+    {
+      key: "pipe_diameter_max_mm",
+      label: "Diametro tubi qualificato � massimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Diametro esterno massimo qualificato; lasciare vuoto se solo lamiera",
     },
     {
       key: "shielding_gas",
@@ -205,6 +240,13 @@ const patentino_saldatore = {
       hint: "Calcolata: ultima conferma + 6 mesi. Aggiornare dopo ogni conferma del DL.",
     },
     {
+      key: "revalidation_date",
+      label: "Data revalidazione",
+      type: "date",
+      required: false,
+      hint: "Revalidazione della qualifica (validit\u00e0 estesa, di norma 3 anni).",
+    },
+    {
       key: "standard_reference",
       label: "Norma di riferimento",
       type: "select",
@@ -233,39 +275,49 @@ Se un campo non � presente nel documento, usa null.
 Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
-- issuing_body: ente certificatore (T�V, Bureau Veritas, DNV, RINA, IMQ, ecc.)
-- welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
+- issuing_body: ente che emette/certifica il patentino (T�V, Bureau Veritas, DNV, RINA, IIS, IMQ, ecc.)
+- examiner_body: organismo/esaminatore che ha condotto la prova, se diverso dall'ente emittente (altrimenti null)
+- welding_process: codice processo ISO 4063 (111, 121, 131, 135, 136, 138, 141, 145, 15, 311, ecc.)
 - joint_type: tipo giunto � "BW" (testa a testa) o "FW" (angolare)
+- product_type: "P" se la prova � su lamiera/piastra, "T" se su tubo
+- weld_details: dettagli giunto/condizioni (es. "ss nb", "bs", "sl", "ml")
 - material_group: gruppo materiale base ISO/TR 15608 (es. "1.1", "6", "8")
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
 - thickness_min_mm: numero � spessore minimo qualificato in mm
 - thickness_max_mm: numero � spessore massimo qualificato in mm
-- pipe_diameter_mm: numero � diametro esterno tubi qualificato in mm (null se solo piastre)
+- pipe_diameter_min_mm: numero � diametro esterno tubi minimo in mm (null se solo lamiera)
+- pipe_diameter_max_mm: numero � diametro esterno tubi massimo in mm (null se solo lamiera)
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
 - last_confirmation_date: data ultima conferma datore di lavoro in formato ISO 8601 o null
 - next_confirmation_due: data prossima conferma in formato ISO 8601 o null
+- revalidation_date: data revalidazione (validit� estesa, di norma 3 anni) in formato ISO 8601 o null
 - standard_reference: norma (es. "ISO 9606-1:2012") o null`,
 
   aiExpectedSchema: {
     welder_name: "string|null",
     certificate_number: "string|null",
     issuing_body: "string|null",
+    examiner_body: "string|null",
     welding_process: "string|null",
     joint_type: "BW|FW|null",
+    product_type: "P|T|null",
+    weld_details: "string|null",
     material_group: "string|null",
     filler_material_group: "string|null",
     welding_positions: "string[]|null",
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
-    pipe_diameter_mm: "number|null",
+    pipe_diameter_min_mm: "number|null",
+    pipe_diameter_max_mm: "number|null",
     shielding_gas: "string|null",
     exam_date: "YYYY-MM-DD|null",
     expiry_date: "YYYY-MM-DD|null",
     last_confirmation_date: "YYYY-MM-DD|null",
     next_confirmation_due: "YYYY-MM-DD|null",
+    revalidation_date: "YYYY-MM-DD|null",
     standard_reference: "string|null",
   },
 };
@@ -604,6 +656,75 @@ exam_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
   },
 };
 
+// --- qualifica_14731 (Coordinatore saldatura ISO 14731) ---
+
+const qualifica_14731 = {
+  id: "qualifica_14731",
+  label: "Coordinatore saldatura (ISO 14731)",
+  expiryField: "cpd_valid_until",
+  rangeFields: ["coordinator_title"],
+  fields: [
+    { key: "person_name", label: "Nome e cognome", type: "text", required: true },
+    { key: "certificate_number", label: "Numero certificato", type: "text", required: false },
+    { key: "coordinator_title", label: "Titolo", type: "select", required: false,
+      options: [
+        { value: "IWE", label: "IWE \u2014 International Welding Engineer" },
+        { value: "IWT", label: "IWT \u2014 International Welding Technologist" },
+        { value: "IWS", label: "IWS \u2014 International Welding Specialist" },
+        { value: "IWP", label: "IWP \u2014 International Welding Practitioner" },
+      ] },
+    { key: "diploma_number", label: "Numero diploma", type: "text", required: false },
+    { key: "issuing_body", label: "Ente certificatore", type: "text", required: false },
+    { key: "issue_date", label: "Data emissione", type: "date", required: false },
+    { key: "cpd_valid_until", label: "CPD valida fino a", type: "date", required: false },
+  ],
+  aiPrompt: `Diploma/certificato coordinatore di saldatura ISO 14731 (IWE, IWT, IWS, IWP).
+Estrai in type_specific_data: person_name, certificate_number, coordinator_title (IWE|IWT|IWS|IWP),
+diploma_number, issuing_body, issue_date, cpd_valid_until (YYYY-MM-DD). Usa null se assente.`,
+  aiExpectedSchema: {
+    person_name: "string|null",
+    certificate_number: "string|null",
+    coordinator_title: "IWE|IWT|IWS|IWP|null",
+    diploma_number: "string|null",
+    issuing_body: "string|null",
+    issue_date: "YYYY-MM-DD|null",
+    cpd_valid_until: "YYYY-MM-DD|null",
+  },
+};
+
+// --- pes_pav (Abilitazione PES/PAV CEI 11-27) ---
+
+const pes_pav = {
+  id: "pes_pav",
+  label: "Abilitazione PES/PAV (CEI 11-27)",
+  expiryField: "expiry_date",
+  rangeFields: ["patent_type"],
+  fields: [
+    { key: "person_name", label: "Nome e cognome", type: "text", required: true },
+    { key: "patent_type", label: "Tipo abilitazione", type: "select", required: false,
+      options: [
+        { value: "PES", label: "PES" },
+        { value: "PAV", label: "PAV" },
+        { value: "PES+PAV", label: "PES+PAV" },
+      ] },
+    { key: "training_body", label: "Ente formatore", type: "text", required: false },
+    { key: "certificate_number", label: "Numero attestato", type: "text", required: false },
+    { key: "issue_date", label: "Data emissione", type: "date", required: false },
+    { key: "expiry_date", label: "Data scadenza", type: "date", required: false },
+  ],
+  aiPrompt: `Attestato PES/PAV addetti ai lavori elettrici CEI 11-27.
+Estrai in type_specific_data: person_name, patent_type (PES|PAV|PES+PAV), training_body,
+certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+  aiExpectedSchema: {
+    person_name: "string|null",
+    patent_type: "PES|PAV|PES+PAV|null",
+    training_body: "string|null",
+    certificate_number: "string|null",
+    issue_date: "YYYY-MM-DD|null",
+    expiry_date: "YYYY-MM-DD|null",
+  },
+};
+
 // --- wpqr ---
 
 const wpqr = {
@@ -690,8 +811,15 @@ const DOCUMENT_TYPE_SCHEMAS = {
   cert_ndt,
   cert_taratura,
   qualifica_14732,
+  qualifica_14731,
+  pes_pav,
   sal,
   rdp,
+};
+
+// Alias tipo documento -> chiave schema canonica (coerenza document_type_guess FE/BE).
+const DOC_TYPE_ALIASES = {
+  qualifica_operatore: "qualifica_14732",
 };
 
 /**
@@ -700,7 +828,8 @@ const DOCUMENT_TYPE_SCHEMAS = {
  * @returns {object|null}
  */
 export function getSchemaForDocType(docType) {
-  return DOCUMENT_TYPE_SCHEMAS[docType] || null;
+  const key = String(docType || "").trim();
+  return DOCUMENT_TYPE_SCHEMAS[DOC_TYPE_ALIASES[key] || key] || null;
 }
 
 export default DOCUMENT_TYPE_SCHEMAS;

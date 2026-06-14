@@ -37,7 +37,7 @@ const TABS = [
 
 // Colonne dinamiche per tab
 const TAB_COLUMNS = {
-    iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Approvazione", "Azioni"],
+    iso9606_1: ["Persona", "Certificato", "Designazione", "Spessore", "Prossima conferma", "Scadenza", "Approvazione", "Azioni"],
     iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Approvazione", "Azioni"],
     iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Approvazione", "Azioni"],
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Approvazione", "Azioni"],
@@ -188,14 +188,42 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, on
         </td>
     );
 
-    if (tabKey === "iso9606_1" || tabKey === "iso9606_2") {
+    if (tabKey === "iso9606_1") {
+        // La conferma periodica è "governante" se scade prima del certificato.
+        const nextConf = q.next_confirmation_due || null;
+        const confGoverns = nextConf && (!q.expiry_date || new Date(nextConf) <= new Date(q.expiry_date));
+        const designation = q.qualification_designation
+            || [q.welding_process, q.product_type, q.joint_type, q.position_range].filter(Boolean).join(" ")
+            || "\u2014";
+        const thickness = q.thickness_range
+            || ((q.thickness_min_mm != null || q.thickness_max_mm != null)
+                ? `${q.thickness_min_mm ?? "?"}-${q.thickness_max_mm ?? "?"}mm`
+                : "\u2014");
+        return (
+            <tr className={`sq-row sq-row-${q.semaforo}`}>
+                {personCell}
+                {certCell}
+                <td title={designation} style={{fontFamily:"monospace", fontSize:12}}>{designation}</td>
+                <td>{thickness}</td>
+                <td>
+                    {nextConf
+                        ? <span className={confGoverns ? `sq-expiry-date sq-expiry-${q.semaforo}` : "sq-expiry-date"}>{formatDate(nextConf)}</span>
+                        : <span className="sq-expiry-none">{"\u2014"}</span>}
+                </td>
+                {expiryCell}
+                {apprCell}
+                {actionBtns}
+            </tr>
+        );
+    }
+
+    if (tabKey === "iso9606_2") {
         return (
             <tr className={`sq-row sq-row-${q.semaforo}`}>
                 {personCell}
                 {certCell}
                 <td>{q.welding_process || "\u2014"}</td>
-                {tabKey === "iso9606_1" && <td>{q.thickness_range || "\u2014"}</td>}
-                {tabKey === "iso9606_2" && <td>{q.material_group || "\u2014"}</td>}
+                <td>{q.material_group || "\u2014"}</td>
                 <td>{q.position_range || "\u2014"}</td>
                 {expiryCell}
                 {apprCell}
