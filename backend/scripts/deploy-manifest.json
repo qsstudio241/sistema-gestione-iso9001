@@ -87,6 +87,7 @@
         "src/services/importAiExtraction.service.js",
         "src/services/aiProviderAdapter.js",
         "src/services/aiContextBuilder.service.js",
+        "src/services/commercialCustomerCounterparty.service.js",
         "src/services/aiOrganizationContext.service.js",
         "src/services/knowledgeIndexer.service.js",
         "src/services/alertMail.service.js",
@@ -118,6 +119,8 @@
         "src/controllers/admin.controller.js",
         "src/controllers/auditorOrg.controller.js",
         "src/controllers/companyPersonnel.controller.js",
+        "src/controllers/companyCounterparties.controller.js",
+        "src/controllers/contractReview.controller.js",
         "src/controllers/company.controller.js",
         "src/controllers/qualifications.controller.js",
         "src/controllers/projects.controller.js",
@@ -161,6 +164,7 @@
       "files": [
         "src/middleware/auth.middleware.js",
         "src/middleware/moduleLicense.middleware.js",
+        "src/config/corsOrigins.js",
         "src/server.js"
       ]
     }

@@ -66,6 +66,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | **Isolamento dati AI multi-tenant** | Utente **STUDIO**: vista d'insieme, può selezionare solo tra le **proprie aziende clienti** (`auditor_org_id`). Utente **AZIENDA cliente**: il backend **forza** `company_id` sull'anagrafica primaria (mai fidarsi del `companyId` dal client), niente 403. **RAG**: filtro `company_id = @compId`, **niente** `OR IS NULL` / chunk globali. | [PR #91 — regola scope azienda AI](#pr-91--regola-di-prodotto-ambito-azienda-dellassistente-ai-07062026) |
 | **Qualifiche — una azienda per certificato** | Ogni qualifica ha `company_id` **obbligatorio** (UI ambito + form, API `qualificationCompany.service`, mig. 087). Import AI eredita `company_id` dal job. Dopo approvazione **non** si cambia azienda; stesso numero certificato/PDF non può esistere su un'altra azienda del tenant. Pattern UI: `qualificationsCompanyScope.js` (come registro documenti). | [Aggiornamento 10/06/2026 — qualifiche company scope](#aggiornamento-10062026--qualifiche-ambito-azienda-obbligatorio) |
 | **Anagrafica personale ↔ qualifiche** | `company_personnel` = master (nome, mansione, email); `qualifications` = fascicolo certificati con `personnel_id` FK opzionale. Import guidato + backfill link; tab **Salute mansione** (4 tipi: acuità visiva, Ishihara, idoneità medica, sorveglianza sanitaria). Mig. **088**. | [Aggiornamento 10/06/2026 — collegamento personale-qualifiche](#aggiornamento-10062026--collegamento-anagrafica-personale-qualifiche) |
+| **Controparti azienda ↔ riesame commerciale** | `company_counterparties` sotto `companies` (ruoli `customer` / `end_customer` / `supplier`). Mig. **096** tabella + `commercial_cases.commercial_customer_id`; mig. **097** backfill idempotente da `commercial_customer_name`/`ref` (095) e `projects.client_name` → `end_customer_id`. **Snapshot 095 non rimosso** (deprecato, non DROP). Write: se FK impostata, `contractReview` sincronizza name/ref dalla controparte (`commercialCustomerCounterparty.service`). Verifica: `node backend/scripts/verify-counterparties-migration.js`. Pilota: LM&CO = azienda SGQ, PT.MAIDO = `end_customer`. | sessione 14/06/2026 |
 | **Saldatore ISO 9606-1 — campi end-to-end** | Catena AI→schema(FE/BE)→commit→DB→scheda allineata sulle **stesse chiavi**: ogni nuovo campo va in `aiPrompt`/`aiExpectedSchema`, `fields[].key` FE, e mappatura `commitToQualification`/`qualificationIngest`, altrimenti l'AI estrae ma il commit lo scarta. Mig. **092**: spessore/diametro **numerici min/max** (deriva legacy `thickness_range`/`pipe_diameter`), date `exam_date`/`last_confirmation_date`/`next_confirmation_due`/`revalidation_date` (stop overwrite `issue_date`), `product_type`/`weld_details`/`qualification_designation` (calcolata). Semaforo 9606 = **min(next_confirmation_due, expiry_date)** difensivo. Obbligatori scheda su blur/submit; in import-commit solo **warning**, mai blocco. | commit `0034399`/`f7936c1`/`8d427d8` |
 | **Import PDF → qualifica: PDF collegato** | `commitToQualification` imposta `certificate_file_url` da `import_job_files.storage_path` (pattern `/uploads/...` come ingest) e `import_job_files.qualification_id` (mig. **093**). Link visibile subito in `QualificationsPage` / `QualificationForm`. | sessione 14/06/2026 |
 | **Alert + scadenzario qualifiche** | Toggle `alert_qualif_expiry` cablato in `alertScheduler` (+10 min dopo doc). Servizio `qualificationAlert.service.js`: data guida = min(expiry, next_confirmation per 9606); email al coordinatore per azienda (rubrica `notification_contacts` company → `company_personnel` job coordinatore → `user_company_access` ruolo coordinatore → fallback org). Dedup `qual_notification_log` (mig. 093). Scadenzario `/deadlines`: righe virtuali `item_type=qualification` senza toccare `deadline_items` Excel. Badge `/alerts` include qualifiche approvate. | sessione 14/06/2026 |
@@ -2011,6 +2012,38 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | **Numerazione report audit (formato Mason)** | Alla creazione (`POST /audits` e sync create) il backend assegna `audit_number` come **`PREFISSO-YYMMDD-NN`** (es. `MSN-260417-01`): giorno calendario **Europe/Rome**, contatore atomico per org+prefisso+giorno (`audit_daily_sequences`, migrazione **040**). Prefisso: colonna **`organizations.audit_report_prefix`** (NULL = default `MSN`). Deploy VPS: `node backend/scripts/run-migration-040.js` (o SQL **040**) + script **`backend/scripts/deploy-controllers-to-vps.ps1`** (include già `auditNumberAllocation.service.js`, `audit.controller.js`, `sync.controller.js`) + restart. **Smoke read-only DB**: da `backend` con `NODE_ENV=production` → `node scripts/smoke-mason-db.js` (dopo almeno una creazione audit post-040 deve comparire almeno un numero Mason). |
 
 **Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: [how-to/deploy.md](how-to/deploy.md). Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
+
+### Workflow sviluppo: branch → preview → merge
+
+**Regola default**: modifiche UI o feature → branch `feat/nome-descrittivo` → Pull Request verso `main` → **Deploy Preview Netlify** → **TEST OK committente** → merge su `main` (production Netlify).
+
+| Fase | Chi | Azione |
+|------|-----|--------|
+| 1. Branch | Agente / dev | `git checkout -b feat/nome` da `main` aggiornato |
+| 2. PR | Agente | Push branch + `gh pr create` con test plan |
+| 3. Preview | Netlify (auto) | Build su URL `deploy-preview-N--systemgest.netlify.app` |
+| 4. Test | **Committente** | Login, flusso modificato, API produzione (CORS preview attivo sul VPS) |
+| 5. Merge | Committente o agente post-OK | `gh pr merge` → deploy production da `main` |
+
+**Eccezioni** (merge diretto su `main` senza preview obbligatoria):
+
+- **Hotfix produzione** critico (rollback o fix immediato beta tester).
+- **Solo backend** già deployato sul VPS (migrazioni, CORS, API) senza cambi UI da verificare in preview.
+- **Solo documentazione** senza effetto runtime.
+
+**Checklist committente** (prima del merge):
+
+| # | Verifica | Dove |
+|---|----------|------|
+| 1 | Deploy Preview Netlify **Success** (verde) | Tab Checks sulla PR GitHub |
+| 2 | App preview carica (login / home) | URL preview nel commento Netlify |
+| 3 | Flusso modificato funziona end-to-end | Preview + API `https://www.fr-busato.it:8443` |
+| 4 | CI app verde (se tocca `app/`) | Check **CI app (Pull Request)** |
+| 5 | Dichiarare **TEST OK** in chat o commento PR | — |
+
+**Abilitazione preview** (una tantum): vedi sezione [Netlify — Deploy Preview (guida passo-passo)](#netlify--deploy-preview-guida-passo-passo) — Passo 2 *Deploy Previews → Any pull request*.
+
+**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
