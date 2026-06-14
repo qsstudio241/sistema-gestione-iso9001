@@ -197,6 +197,21 @@ function DeadlinesPage() {
           </span>
         );
       case 'source_document_title': {
+        if (row.item_type === 'qualification' && row.qualification_id) {
+          return (
+            <button
+              type="button"
+              className="dl-source-link"
+              onClick={(event) => {
+                event.stopPropagation();
+                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}`);
+              }}
+              title="Apri nel registro qualifiche"
+            >
+              {row.source_document_title || 'Registro qualifiche'}
+            </button>
+          );
+        }
         if (!row.source_document_id) return row.source_document_title || '-';
         return (
           <button
@@ -213,6 +228,21 @@ function DeadlinesPage() {
         );
       }
       case 'azioni':
+        if (row.item_type === 'qualification') {
+          return (
+            <button
+              type="button"
+              className="dl-complete-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}`);
+              }}
+              title="Apri qualifica"
+            >
+              {'\u2192'}
+            </button>
+          );
+        }
         if (row.status !== 'active') return null;
         return (
           <button
@@ -231,7 +261,7 @@ function DeadlinesPage() {
       default:
         return row[col.id] ?? '-';
     }
-  }, [handleComplete, completing, openSourceDocument]);
+  }, [handleComplete, completing, openSourceDocument, navigate]);
 
   // Export: valore grezzo per colonne speciali
   const getExportValue = useCallback((row, col) => {

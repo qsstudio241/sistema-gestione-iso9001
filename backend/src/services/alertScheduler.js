@@ -27,6 +27,7 @@ const {
 } = require('./alertSchedulerHelpers');
 const { runNcEscalationForOrg } = require('./ncAlertEscalation.service');
 const { runDocEscalationForOrg } = require('./docAlertEscalation.service');
+const { runQualifEscalationForOrg } = require('./qualificationAlert.service');
 
 // Caricamento lazy delle dipendenze opzionali
 let schedule;
@@ -168,6 +169,46 @@ function buildNormValidityEmailHtml(orgName, supersededNorms) {
 }
 
 // ─── Job principale ───────────────────────────────────────────────────────────
+
+async function runQualifAlertJobForSendTime(sendTimeFilter) {
+  if (!process.env.ALERT_ENABLED || process.env.ALERT_ENABLED !== 'true') {
+    logger.info('[AlertScheduler] Qualif alert skip (ALERT_ENABLED != true)');
+    return;
+  }
+
+  logger.info(`[AlertScheduler] Avvio alert qualifiche (send_time=${sendTimeFilter || 'all'})...`);
+  const pool = await getPool();
+
+  try {
+    const orgsResult = await pool.request()
+      .input('sendTime', sendTimeFilter || null)
+      .query(`
+      SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1, nc.alert_days_2,
+             nc.send_time, nc.alert_qualif_expiry,
+             o.organization_name
+      FROM notifications_config nc
+      JOIN organizations o ON nc.organization_id = o.organization_id
+      WHERE nc.enabled = 1
+        AND nc.alert_qualif_expiry = 1
+        AND (@sendTime IS NULL OR nc.send_time = @sendTime)
+    `);
+
+    const orgs = orgsResult.recordset || [];
+    logger.info(`[AlertScheduler] Org con alert qualifiche attivi: ${orgs.length}`);
+
+    for (const org of orgs) {
+      const result = await runQualifEscalationForOrg(pool, org);
+      logger.info(`[AlertScheduler] Qualif escalation org ${org.organization_id}: email=${result.sent}`);
+    }
+  } catch (err) {
+    logger.error('[AlertScheduler] Errore job qualifiche:', err.message);
+  }
+}
+
+/** @deprecated alias retrocompatibilita test */
+async function runQualifAlertJob() {
+  return runQualifAlertJobForSendTime(null);
+}
 
 async function runAlertJobForSendTime(sendTimeFilter) {
   if (!process.env.ALERT_ENABLED || process.env.ALERT_ENABLED !== 'true') {
@@ -437,7 +478,13 @@ async function scheduleDynamicAlertJobs() {
     });
     if (ncJob) scheduledJobs.push(ncJob);
 
-    logger.info(`[AlertScheduler] Job programmati send_time=${sendTime} (doc ${docCron}, NC ${ncSlot.cron})`);
+    const qualSlot = addMinutesToSendTime(sendTime, 10);
+    const qualJob = schedule.scheduleJob(qualSlot.cron, () => {
+      runQualifAlertJobForSendTime(sendTime).catch((err) => logger.error('[AlertScheduler] Errore qualif alert:', err.message));
+    });
+    if (qualJob) scheduledJobs.push(qualJob);
+
+    logger.info(`[AlertScheduler] Job programmati send_time=${sendTime} (doc ${docCron}, NC ${ncSlot.cron}, qual ${qualSlot.cron})`);
   }
 }
 
@@ -490,5 +537,7 @@ module.exports = {
   runKnowledgeL2Job,
   runNcDueAlertJob,
   runNcDueAlertJobForSendTime,
+  runQualifAlertJob,
+  runQualifAlertJobForSendTime,
   scheduleDynamicAlertJobs,
 };
