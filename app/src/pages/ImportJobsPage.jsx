@@ -2,7 +2,7 @@
  * ImportJobsPage - Sprint 9: job import PDF batch + revisione testo
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "../contexts/RouterContext";
@@ -219,6 +219,70 @@ function CommitNormStatusBadge({ normLookup, standardCode }) {
         <a href={result.catalogUrl} target="_blank" rel="noopener noreferrer" className="norm-catalog-link">
           Vedi catalogo →
         </a>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Menu "Altre azioni" per le azioni secondarie di un file.
+ * Raggruppa in un overflow apribile/chiudibile (chiusura a click fuori)
+ * le azioni meno frequenti, lasciando in evidenza solo le azioni primarie.
+ */
+function FileActionsMenu({ actions }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    const handleKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  if (!actions.length) return null;
+
+  return (
+    <div className="file-actions-menu" ref={menuRef}>
+      <button
+        type="button"
+        className="btn-small file-actions-more"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        Altre azioni {open ? "\u25B4" : "\u25BE"}
+      </button>
+      {open && (
+        <div className="file-actions-dropdown" role="menu">
+          {actions.map((a) => (
+            <button
+              key={a.key}
+              type="button"
+              role="menuitem"
+              className="file-actions-item"
+              title={a.title}
+              disabled={a.disabled}
+              onClick={() => {
+                setOpen(false);
+                a.onClick();
+              }}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -770,7 +834,103 @@ export default function ImportJobsPage() {
               </div>
               <h3>File ({(detail.files || []).length})</h3>
               <ul className="import-files-list">
-                {(detail.files || []).map((f) => (
+                {(detail.files || []).map((f) => {
+                  const aiData = parseAiJson(f.ai_extraction_json);
+                  const canSaveText =
+                    (f.status === "extracted" || f.status === "uploaded") && f.status !== "reviewed";
+                  const canMarkReviewed = f.status === "extracted";
+                  const canAi = f.status === "extracted" || f.status === "reviewed";
+                  const canRiesame =
+                    (f.status === "extracted" || f.status === "reviewed") && !f.commercial_case_id;
+                  const canCommit =
+                    f.status === "reviewed" || (f.status === "extracted" && !!aiData);
+                  const isQualif =
+                    isQualificationDocType(detail.job.document_type_hint) ||
+                    isQualificationDocType(aiData?.document_type_guess);
+                  const qualifResult = qualifCommitResult[f.id];
+
+                  const aiAction = canAi
+                    ? {
+                        key: "ai",
+                        label: "Analisi AI strutturata",
+                        className: "btn-small btn-ai",
+                        title: "Richiede OPENAI_API_KEY sul backend",
+                        disabled: busy,
+                        onClick: () => handleAiExtract(f.id),
+                      }
+                    : null;
+                  const registryAction = canCommit
+                    ? {
+                        key: "commit-registry",
+                        label: "Commit al Registry",
+                        className: "btn-small btn-commit",
+                        title: "Crea un record nel registro documenti da questo file",
+                        disabled: busy,
+                        onClick: () => handleOpenCommit(f),
+                      }
+                    : null;
+                  const qualifAction = canCommit
+                    ? {
+                        key: "commit-qualif",
+                        label: qualifResult?.qualification_id
+                          ? `\u2713 Qualifica #${qualifResult.qualification_id}`
+                          : "Commit a Qualifica",
+                        className: "btn-small btn-commit-qualif",
+                        title: detail.job.company_id
+                          ? "Crea una qualifica personale da questo file (approval_status=bozza)"
+                          : "Seleziona l'azienda creando un nuovo job prima del commit qualifica",
+                        disabled: busy || !!qualifResult?.qualification_id || !detail.job.company_id,
+                        onClick: () => handleCommitToQualification(f),
+                      }
+                    : null;
+                  const saveTextAction = canSaveText
+                    ? {
+                        key: "save-text",
+                        label: "Salva testo",
+                        className: "btn-small",
+                        title: "Salva il testo estratto modificato",
+                        disabled: busy,
+                        onClick: () => {
+                          const el = document.getElementById(`txt-${f.id}`);
+                          const val = el ? el.value : f.extracted_text;
+                          handleSaveText(f.id, val);
+                        },
+                      }
+                    : null;
+                  const markReviewedAction = canMarkReviewed
+                    ? {
+                        key: "mark-reviewed",
+                        label: "Segna revisionato",
+                        className: "btn-small primary",
+                        title: "Marca il file come revisionato",
+                        disabled: busy,
+                        onClick: () => handleMarkReviewed(f.id),
+                      }
+                    : null;
+                  const riesameAction = canRiesame
+                    ? {
+                        key: "riesame",
+                        label: "Crea caso Riesame",
+                        className: "btn-small btn-riesame",
+                        title: "Crea un caso Riesame requisiti contratto da questo PDF",
+                        disabled: busy,
+                        onClick: () => handleOpenRiesame(f),
+                      }
+                    : null;
+
+                  // Azioni in evidenza: AI + commit pertinente allo stato/tipo file.
+                  const pertinentCommit = isQualif ? qualifAction : registryAction;
+                  const otherCommit = isQualif ? registryAction : qualifAction;
+                  const primaryActions = [aiAction, pertinentCommit].filter(Boolean);
+                  // Azioni secondarie raggruppate sotto "Altre azioni" (overflow).
+                  const secondaryActions = [
+                    saveTextAction,
+                    markReviewedAction,
+                    riesameAction,
+                    otherCommit,
+                  ].filter(Boolean);
+
+                  return (
                   <li key={f.id} className="import-file-card">
                     <div className="file-head">
                       <strong>{f.original_name}</strong>
@@ -792,53 +952,21 @@ export default function ImportJobsPage() {
                       />
                     )}
                     <div className="file-actions">
-                      {(f.status === "extracted" || f.status === "uploaded") && f.status !== "reviewed" && (
-                        <>
-                          <button
-                            type="button"
-                            className="btn-small"
-                            disabled={busy}
-                            onClick={() => {
-                              const el = document.getElementById(`txt-${f.id}`);
-                              const val = el ? el.value : f.extracted_text;
-                              handleSaveText(f.id, val);
-                            }}
-                          >
-                            Salva testo
-                          </button>
-                          {f.status === "extracted" && (
-                            <button
-                              type="button"
-                              className="btn-small primary"
-                              disabled={busy}
-                              onClick={() => handleMarkReviewed(f.id)}
-                            >
-                              Segna revisionato
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {(f.status === "extracted" || f.status === "reviewed") && (
+                      {primaryActions.map((a) => (
                         <button
+                          key={a.key}
                           type="button"
-                          className="btn-small btn-ai"
-                          disabled={busy}
-                          title="Richiede OPENAI_API_KEY sul backend"
-                          onClick={() => handleAiExtract(f.id)}
+                          className={a.className}
+                          disabled={a.disabled}
+                          title={a.title}
+                          onClick={a.onClick}
                         >
-                          Analisi AI strutturata
+                          {a.label}
                         </button>
-                      )}
-                      {(f.status === "extracted" || f.status === "reviewed") && !f.commercial_case_id && (
-                        <button
-                          type="button"
-                          className="btn-small btn-riesame"
-                          disabled={busy}
-                          title="Crea un caso Riesame requisiti contratto da questo PDF"
-                          onClick={() => handleOpenRiesame(f)}
-                        >
-                          Crea caso Riesame
-                        </button>
+                      ))}
+                      <FileActionsMenu actions={secondaryActions} />
+                      {qualifResult?.error && (
+                        <span className="file-commit-err" title={qualifResult.error}>{"\u26A0\uFE0F"} Errore qualifica</span>
                       )}
                       {f.commercial_case_id && (
                         <button
@@ -848,37 +976,6 @@ export default function ImportJobsPage() {
                         >
                           Caso Riesame #{f.commercial_case_id}
                         </button>
-                      )}
-                      {(f.status === "reviewed" || (f.status === "extracted" && parseAiJson(f.ai_extraction_json))) && (
-                        <>
-                          <button
-                            type="button"
-                            className="btn-small btn-commit"
-                            disabled={busy}
-                            title="Crea un record nel registro documenti da questo file"
-                            onClick={() => handleOpenCommit(f)}
-                          >
-                            Commit al Registry
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-small btn-commit-qualif"
-                            disabled={busy || !!qualifCommitResult[f.id]?.qualification_id || !detail.job.company_id}
-                            title={
-                              detail.job.company_id
-                                ? "Crea una qualifica personale da questo file (approval_status=bozza)"
-                                : "Seleziona l'azienda creando un nuovo job prima del commit qualifica"
-                            }
-                            onClick={() => handleCommitToQualification(f)}
-                          >
-                            {qualifCommitResult[f.id]?.qualification_id
-                              ? `\u2713 Qualifica #${qualifCommitResult[f.id].qualification_id}`
-                              : "Commit a Qualifica"}
-                          </button>
-                          {qualifCommitResult[f.id]?.error && (
-                            <span className="file-commit-err" title={qualifCommitResult[f.id].error}>{"\u26A0\uFE0F"} Errore qualifica</span>
-                          )}
-                        </>
                       )}
                       {f.status === "committed" && (
                         <span className="file-committed-badge">
@@ -897,7 +994,8 @@ export default function ImportJobsPage() {
                       />
                     )}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </>
           )}
