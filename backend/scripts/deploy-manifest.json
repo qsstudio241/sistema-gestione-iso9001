@@ -91,7 +91,8 @@
         "src/services/knowledgeIndexer.service.js",
         "src/services/alertMail.service.js",
         "src/services/alertScheduler.js",
-        "src/services/qualificationAlert.service.js"
+        "src/services/qualificationAlert.service.js",
+        "src/services/weldingCoordinatorAuth.service.js"
       ]
     },
     {

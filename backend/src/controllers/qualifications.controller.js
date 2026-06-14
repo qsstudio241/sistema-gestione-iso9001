@@ -28,6 +28,12 @@ const {
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const {
+    isWelder9606Type,
+    addMonthsIso,
+    canUserConfirmSemiannual,
+} = require('../services/weldingCoordinatorAuth.service');
+const XLSX = require('xlsx');
 
 /** Converte un valore in numero finito o null (per colonne DECIMAL). */
 function toNum(v) {
@@ -1188,6 +1194,279 @@ async function getHistory(req, res) {
     }
 }
 
+/** GET /qualifications/:id/confirmations — storico conferme semestrali */
+async function getConfirmations(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const id    = parseInt(req.params.id, 10);
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query(`
+                SELECT id, company_id, qualification_type, approval_status,
+                       last_confirmation_date, next_confirmation_due
+                FROM qualifications
+                WHERE id=@id AND organization_id=@orgId
+            `);
+        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const qual = check.recordset[0];
+        const readDenied = await assertCompanyRead(req.user, qual.company_id);
+        if (readDenied) return sendAccessDenied(res, readDenied);
+
+        const auth = await canUserConfirmSemiannual(req.user, qual.company_id);
+
+        const rows = await pool.request()
+            .input('qualId', id)
+            .input('orgId', orgId)
+            .query(`
+                SELECT id, qualification_id, confirmed_at, confirmed_by,
+                       confirmer_name, confirmer_title, notes, created_at
+                FROM qualification_confirmations
+                WHERE qualification_id = @qualId AND organization_id = @orgId
+                ORDER BY confirmed_at DESC, id DESC
+            `);
+
+        res.json({
+            confirmations: rows.recordset || [],
+            can_confirm: auth.allowed
+                && qual.approval_status === 'approvata'
+                && isWelder9606Type(qual.qualification_type),
+            last_confirmation_date: qual.last_confirmation_date,
+            next_confirmation_due: qual.next_confirmation_due,
+            is_welder_9606: isWelder9606Type(qual.qualification_type),
+            approval_status: qual.approval_status,
+        });
+    } catch (err) {
+        logger.error('getConfirmations:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/** POST /qualifications/:id/confirm-semiannual — registra conferma semestrale */
+async function confirmSemiannual(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const id    = parseInt(req.params.id, 10);
+        const userId = req.user.user_id;
+        const { confirmed_at, notes } = req.body || {};
+
+        const check = await pool.request()
+            .input('id', id)
+            .input('orgId', orgId)
+            .input('userId', userId)
+            .query(`
+                SELECT q.id, q.company_id, q.qualification_type, q.approval_status,
+                       q.last_confirmation_date, q.next_confirmation_due,
+                       u.full_name AS user_name
+                FROM qualifications q
+                LEFT JOIN users u ON u.user_id = @userId
+                WHERE q.id=@id AND q.organization_id=@orgId
+            `);
+        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const qual = check.recordset[0];
+
+        if (qual.approval_status !== 'approvata') {
+            return res.status(400).json({
+                error: 'Conferma semestrale consentita solo su qualifiche approvate.',
+                code: 'NOT_APPROVED',
+            });
+        }
+        if (!isWelder9606Type(qual.qualification_type)) {
+            return res.status(400).json({
+                error: 'Tipo qualifica non ammesso per conferma semestrale ISO 9606.',
+                code: 'NOT_WELDER_9606',
+            });
+        }
+
+        const auth = await canUserConfirmSemiannual(req.user, qual.company_id);
+        if (!auth.allowed) {
+            return res.status(403).json({
+                error: 'Solo il coordinatore responsabile primario o admin/superadmin possono registrare la conferma.',
+                code: 'FORBIDDEN_NOT_PRIMARY',
+                reason: auth.reason,
+            });
+        }
+
+        const confirmedDate = confirmed_at
+            ? String(confirmed_at).slice(0, 10)
+            : new Date().toISOString().slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(confirmedDate)) {
+            return res.status(400).json({ error: 'Data conferma non valida.', code: 'INVALID_DATE' });
+        }
+
+        const nextDue = addMonthsIso(confirmedDate, 6);
+        const notesTrim = notes?.trim() ? notes.trim().substring(0, 500) : null;
+
+        let confirmerName = qual.user_name || req.user.name || req.user.full_name || 'Coordinatore';
+        let confirmerTitle = null;
+
+        if (auth.primary) {
+            confirmerName = auth.primary.name || confirmerName;
+            confirmerTitle = auth.primary.job_title || null;
+        } else {
+            const titleRow = await pool.request()
+                .input('userId', userId)
+                .query(`
+                    SELECT TOP 1 coordinator_title
+                    FROM qualifications
+                    WHERE created_by = @userId
+                      AND coordinator_title IS NOT NULL
+                      AND approval_status = 'approvata'
+                    ORDER BY approved_at DESC
+                `);
+            confirmerTitle = titleRow.recordset[0]?.coordinator_title || null;
+        }
+
+        const tx = pool.transaction();
+        await tx.begin();
+        try {
+            const reqTx = tx.request();
+            await reqTx
+                .input('qualId', id)
+                .input('orgId', orgId)
+                .input('compId', qual.company_id)
+                .input('confirmedAt', confirmedDate)
+                .input('userId', userId)
+                .input('confName', confirmerName)
+                .input('confTitle', confirmerTitle)
+                .input('notes', notesTrim)
+                .query(`
+                    INSERT INTO qualification_confirmations (
+                        qualification_id, organization_id, company_id,
+                        confirmed_at, confirmed_by, confirmer_name, confirmer_title, notes
+                    )
+                    VALUES (
+                        @qualId, @orgId, @compId,
+                        @confirmedAt, @userId, @confName, @confTitle, @notes
+                    )
+                `);
+
+            await reqTx
+                .input('qualId', id)
+                .input('orgId', orgId)
+                .input('lastConf', confirmedDate)
+                .input('nextDue', nextDue)
+                .query(`
+                    UPDATE qualifications
+                    SET last_confirmation_date = @lastConf,
+                        next_confirmation_due = @nextDue,
+                        updated_at = GETDATE()
+                    WHERE id = @qualId AND organization_id = @orgId
+                `);
+
+            await tx.commit();
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
+        }
+
+        logger.info(`[Qualif] Conferma semestrale id=${id} da user ${userId} data=${confirmedDate}`);
+        res.status(201).json({
+            success: true,
+            last_confirmation_date: confirmedDate,
+            next_confirmation_due: nextDue,
+        });
+    } catch (err) {
+        logger.error('confirmSemiannual:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/** GET /qualifications/confirmations/export — export Excel registro conferme */
+async function exportConfirmations(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const companyId = req.query.company_id ? parseInt(req.query.company_id, 10) : null;
+        const qualId = req.query.qualification_id ? parseInt(req.query.qualification_id, 10) : null;
+        const dateFrom = req.query.date_from ? String(req.query.date_from).slice(0, 10) : null;
+        const dateTo = req.query.date_to ? String(req.query.date_to).slice(0, 10) : null;
+
+        if (companyId != null && Number.isFinite(companyId)) {
+            const readDenied = await assertCompanyRead(req.user, companyId);
+            if (readDenied) return sendAccessDenied(res, readDenied);
+        }
+
+        const conditions = ['qc.organization_id = @orgId'];
+        const params = { orgId };
+
+        if (companyId != null && Number.isFinite(companyId)) {
+            conditions.push('qc.company_id = @compId');
+            params.compId = companyId;
+        }
+        if (qualId != null && Number.isFinite(qualId)) {
+            conditions.push('qc.qualification_id = @qualId');
+            params.qualId = qualId;
+        }
+        if (dateFrom) {
+            conditions.push('qc.confirmed_at >= @dateFrom');
+            params.dateFrom = dateFrom;
+        }
+        if (dateTo) {
+            conditions.push('qc.confirmed_at <= @dateTo');
+            params.dateTo = dateTo;
+        }
+
+        const reqDb = pool.request().input('orgId', orgId);
+        Object.entries(params).forEach(([k, v]) => {
+            if (k !== 'orgId') reqDb.input(k, v);
+        });
+
+        const result = await reqDb.query(`
+            SELECT
+                qc.confirmed_at,
+                q.person_name,
+                q.qualification_type,
+                q.certificate_number,
+                c.name AS company_name,
+                qc.confirmer_name,
+                qc.confirmer_title,
+                qc.notes,
+                q.last_confirmation_date,
+                q.next_confirmation_due
+            FROM qualification_confirmations qc
+            INNER JOIN qualifications q ON q.id = qc.qualification_id
+            LEFT JOIN companies c ON c.id = qc.company_id
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY qc.confirmed_at DESC, qc.id DESC
+        `);
+
+        const rows = (result.recordset || []).map((r) => ({
+            'Data conferma': r.confirmed_at ? String(r.confirmed_at).slice(0, 10) : '',
+            'Persona': r.person_name || '',
+            'Tipo qualifica': r.qualification_type || '',
+            'N. certificato': r.certificate_number || '',
+            'Azienda': r.company_name || '',
+            'Confermato da': r.confirmer_name || '',
+            'Titolo': r.confirmer_title || '',
+            'Note': r.notes || '',
+            'Ultima conferma (qualifica)': r.last_confirmation_date ? String(r.last_confirmation_date).slice(0, 10) : '',
+            'Prossima conferma': r.next_confirmation_due ? String(r.next_confirmation_due).slice(0, 10) : '',
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
+            'Data conferma': '', 'Persona': '', 'Tipo qualifica': '', 'N. certificato': '',
+            'Azienda': '', 'Confermato da': '', 'Titolo': '', 'Note': '',
+            'Ultima conferma (qualifica)': '', 'Prossima conferma': '',
+        }]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Conferme semestrali');
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        const suffix = qualId ? `_qual${qualId}` : (companyId ? `_az${companyId}` : '');
+        const filename = `conferme_semestrali${suffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(buffer);
+    } catch (err) {
+        logger.error('exportConfirmations:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     listQualifications,
     getStats,
@@ -1202,4 +1481,7 @@ module.exports = {
     uploadBatch,
     uploadCertificate,
     getHistory,
+    getConfirmations,
+    confirmSemiannual,
+    exportConfirmations,
 };

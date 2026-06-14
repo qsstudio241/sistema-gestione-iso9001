@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation } from "../utils/weldingDesignation";
+import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import "./QualificationForm.css";
 
 const QUAL_TYPES = [
@@ -65,7 +66,7 @@ const WELDER_REQUIRED = {
   expiry_date: "La data di scadenza \u00e8 obbligatoria.",
 };
 
-function QualificationForm({ qualification, onSave, onClose, defaultCompanyId }) {
+function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, openSection }) {
   const isEdit  = !!qualification;
   const isRenew = !!qualification?._renew;
   const [form,    setForm]    = useState(EMPTY);
@@ -82,6 +83,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
   const [fieldErrors, setFieldErrors] = useState({});
 
   const isWelder9606 = (form.qualification_type || "").includes("9606");
+  const isApproved = form.approval_status === "approvata" || qualification?.approval_status === "approvata";
 
   function validateWelderField(field, value) {
     if (!isWelder9606 || !WELDER_REQUIRED[field]) return null;
@@ -443,7 +445,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
                     placeholder="Compila processo, giunto, spessore, posizioni..." />
                 </div>
               )}
-              {isWelder9606 && (
+              {isWelder9606 && !isApproved && (
                 <div className="qf-row">
                   <div className="qf-field">
                     <label>Data esame</label>
@@ -456,6 +458,18 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
                   <div className="qf-field">
                     <label>Prossima conferma entro</label>
                     <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
+                  </div>
+                  <div className="qf-field">
+                    <label>Revalidazione (3 anni)</label>
+                    <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
+                  </div>
+                </div>
+              )}
+              {isWelder9606 && isApproved && (
+                <div className="qf-row">
+                  <div className="qf-field">
+                    <label>Data esame</label>
+                    <input type="date" value={form.exam_date} onChange={handle("exam_date")} />
                   </div>
                   <div className="qf-field">
                     <label>Revalidazione (3 anni)</label>
@@ -593,6 +607,19 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId })
             </div>
           )}
           {uploadMsg && <div className="qf-info" style={{marginTop:8, fontSize:13}}>{uploadMsg}</div>}
+
+          {(isEdit || isRenew) && isWelder9606 && isApproved && qualification?.id && (
+            <SemiannualConfirmationSection
+              qualificationId={qualification.id}
+              qualificationType={form.qualification_type}
+              approvalStatus={qualification.approval_status}
+              lastConfirmationDate={form.last_confirmation_date}
+              nextConfirmationDue={form.next_confirmation_due}
+              companyId={form.company_id ? parseInt(form.company_id, 10) : null}
+              openByDefault={openSection === "conferma"}
+              onDatesUpdated={(dates) => setForm((f) => ({ ...f, ...dates }))}
+            />
+          )}
         </div>
 
         {error && <div className="qf-error">{"\u26A0\uFE0F "}{error}</div>}

@@ -33,6 +33,7 @@ const EMPTY_FORM = {
   active: true,
   can_actuation: false,
   can_verify: false,
+  is_primary_welding_coordinator: false,
 };
 
 function formatQualStatus(status) {
@@ -56,6 +57,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
           active: item.active !== false && item.active !== 0,
           can_actuation: !!item.can_actuation,
           can_verify: !!item.can_verify,
+          is_primary_welding_coordinator: !!item.is_primary_welding_coordinator,
         }
       : { ...EMPTY_FORM }
   );
@@ -83,6 +85,7 @@ function PersonnelFormModal({ item, onSave, onClose }) {
         active: form.active,
         can_actuation: form.can_actuation,
         can_verify: form.can_verify,
+        is_primary_welding_coordinator: form.is_primary_welding_coordinator,
       });
     } catch (err) {
       setError(err.message || "Errore salvataggio.");
@@ -144,6 +147,20 @@ function PersonnelFormModal({ item, onSave, onClose }) {
             <span className="toggle-track" />
             <span className="toggle-title">{"Pu\u00f2 verifica NC"}</span>
           </label>
+          <label className="notif-toggle">
+            <input
+              type="checkbox"
+              checked={form.is_primary_welding_coordinator}
+              onChange={(e) => setForm((f) => ({ ...f, is_primary_welding_coordinator: e.target.checked }))}
+            />
+            <span className="toggle-track" />
+            <span className="toggle-title">Coordinatore saldatura responsabile (primario)</span>
+          </label>
+          {form.is_primary_welding_coordinator && !form.email.trim() && (
+            <p className="notif-error" style={{ fontSize: 12 }}>
+              Inserisci l&apos;email del coordinatore: deve coincidere con l&apos;utente che registra le conferme.
+            </p>
+          )}
           {error && <p className="notif-error">{error}</p>}
           <div className="notif-actions">
             <button type="button" className="btn-test" onClick={onClose}>
@@ -322,6 +339,7 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId, canEdit
         );
       case "flags": {
         const parts = [];
+        if (row.is_primary_welding_coordinator) parts.push("Coord.");
         if (row.can_actuation) parts.push("Att.");
         if (row.can_verify) parts.push("Ver.");
         return parts.length ? parts.join(" / ") : "\u2014";

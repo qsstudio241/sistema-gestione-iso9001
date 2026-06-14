@@ -204,7 +204,7 @@ function DeadlinesPage() {
               className="dl-source-link"
               onClick={(event) => {
                 event.stopPropagation();
-                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}`);
+                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}&section=conferma`);
               }}
               title="Apri nel registro qualifiche"
             >
@@ -235,7 +235,7 @@ function DeadlinesPage() {
               className="dl-complete-btn"
               onClick={(event) => {
                 event.stopPropagation();
-                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}`);
+                navigate(`/qualifiche?company_id=${row.company_id || ''}&highlight=${row.qualification_id}&section=conferma`);
               }}
               title="Apri qualifica"
             >
