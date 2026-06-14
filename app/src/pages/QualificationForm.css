@@ -14,6 +14,7 @@
 .qf-field input, .qf-field select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:14px; background:#f9fafb; }
 .qf-field input:focus, .qf-field select:focus { outline:none; border-color:#1e3a5f; background:#fff; }
 .req { color:#ef4444; }
+.qf-field-err { font-size:11px; color:#dc2626; margin-top:2px; }
 .qf-btn-link { background:none; border:none; color:#1e3a5f; font-size:12px; cursor:pointer; text-decoration:underline; white-space:nowrap; }
 .qf-error  { margin:0 24px 12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; }
 .qf-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
