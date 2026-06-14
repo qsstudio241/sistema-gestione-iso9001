@@ -11,6 +11,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const companyController = require('../controllers/company.controller');
 const companyPersonnelController = require('../controllers/companyPersonnel.controller');
+const companyCounterpartiesController = require('../controllers/companyCounterparties.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
 // Multer per upload logo (solo immagini, max 2MB, storage temporaneo)
@@ -59,5 +60,12 @@ router.get('/companies/:companyId/personnel/:id/qualifications', companyPersonne
 router.post('/companies/:companyId/personnel', companyPersonnelController.createPersonnel);
 router.put('/companies/:companyId/personnel/:id', companyPersonnelController.updatePersonnel);
 router.delete('/companies/:companyId/personnel/:id', companyPersonnelController.deletePersonnel);
+
+// Controparti azienda (PR1 — anagrafica customer/end_customer/supplier)
+router.get('/companies/:companyId/counterparties', companyCounterpartiesController.listCounterparties);
+router.get('/companies/:companyId/counterparties/:id', companyCounterpartiesController.getCounterpartyById);
+router.post('/companies/:companyId/counterparties', companyCounterpartiesController.createCounterparty);
+router.put('/companies/:companyId/counterparties/:id', companyCounterpartiesController.updateCounterparty);
+router.patch('/companies/:companyId/counterparties/:id/deactivate', companyCounterpartiesController.deactivateCounterparty);
 
 module.exports = router;

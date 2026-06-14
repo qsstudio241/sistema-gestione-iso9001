@@ -12,6 +12,11 @@ const contextBuilder = require('../services/aiContextBuilder.service');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
+const {
+    resolveCommercialCustomerFields,
+    CASE_SELECT_SQL,
+    CASE_FROM_SQL,
+} = require('../services/commercialCustomerCounterparty.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -86,7 +91,11 @@ async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
 
 async function fetchCaseRow(caseId, organizationId) {
     const r = await query(
-        `SELECT * FROM commercial_cases WHERE id = @caseId AND organization_id = @organizationId`,
+        `
+        SELECT ${CASE_SELECT_SQL}
+        ${CASE_FROM_SQL}
+        WHERE cc.id = @caseId AND cc.organization_id = @organizationId
+        `,
         { caseId, organizationId },
     );
     return r.recordset[0] || null;
@@ -125,11 +134,11 @@ async function listCases(req, res) {
 
         const r = await query(
             `
-            SELECT *
-            FROM commercial_cases
-            WHERE organization_id = @organizationId
-              AND (@filterStatus IS NULL OR status = @filterStatus)
-            ORDER BY updated_at DESC
+            SELECT ${CASE_SELECT_SQL}
+            ${CASE_FROM_SQL}
+            WHERE cc.organization_id = @organizationId
+              AND (@filterStatus IS NULL OR cc.status = @filterStatus)
+            ORDER BY cc.updated_at DESC
             `,
             { organizationId, filterStatus },
         );
@@ -233,6 +242,7 @@ async function createCase(req, res) {
             company_id: companyId,
             external_ref: externalRef,
             notes,
+            commercial_customer_id: commercialCustomerId,
             commercial_customer_name: commercialCustomerName,
             commercial_customer_ref: commercialCustomerRef,
         } = req.body || {};
@@ -247,6 +257,17 @@ async function createCase(req, res) {
         }
         const companyIdVal = companyScope.companyId;
 
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdVal,
+            commercialCustomerIdRaw: commercialCustomerId,
+            commercialCustomerNameRaw: commercialCustomerName,
+            commercialCustomerRefRaw: commercialCustomerRef,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
+        }
+
         await transaction.begin();
 
         const insertReq = new sql.Request(transaction);
@@ -255,19 +276,20 @@ async function createCase(req, res) {
         insertReq.input('title', String(title).trim());
         insertReq.input('externalRef', externalRef != null ? String(externalRef).trim() : null);
         insertReq.input('notes', notes != null ? String(notes) : null);
-        insertReq.input('commercialCustomerName', normalizeOptionalText(commercialCustomerName, 255));
-        insertReq.input('commercialCustomerRef', normalizeOptionalText(commercialCustomerRef, 100));
+        insertReq.input('commercialCustomerId', customerFields.commercialCustomerId);
+        insertReq.input('commercialCustomerName', customerFields.commercialCustomerName);
+        insertReq.input('commercialCustomerRef', customerFields.commercialCustomerRef);
         insertReq.input('userId', userId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes,
-                commercial_customer_name, commercial_customer_ref, created_by
+                commercial_customer_id, commercial_customer_name, commercial_customer_ref, created_by
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes,
-                @commercialCustomerName, @commercialCustomerRef, @userId
+                @commercialCustomerId, @commercialCustomerName, @commercialCustomerRef, @userId
             )
         `);
 
@@ -323,6 +345,7 @@ async function updateCase(req, res) {
             external_ref: externalRef,
             current_assignee_id: assigneeRaw,
             company_id: companyIdRaw,
+            commercial_customer_id: commercialCustomerId,
             commercial_customer_name: commercialCustomerName,
             commercial_customer_ref: commercialCustomerRef,
         } = req.body || {};
@@ -364,14 +387,17 @@ async function updateCase(req, res) {
             companyIdNext = companyScope.companyId;
         }
 
-        const commercialNameNext =
-            commercialCustomerName !== undefined
-                ? normalizeOptionalText(commercialCustomerName, 255)
-                : existing.commercial_customer_name;
-        const commercialRefNext =
-            commercialCustomerRef !== undefined
-                ? normalizeOptionalText(commercialCustomerRef, 100)
-                : existing.commercial_customer_ref;
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdNext,
+            commercialCustomerIdRaw: commercialCustomerId,
+            commercialCustomerNameRaw: commercialCustomerName,
+            commercialCustomerRefRaw: commercialCustomerRef,
+            existing,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
+        }
 
         const upd = await query(
             `
@@ -380,6 +406,7 @@ async function updateCase(req, res) {
                 notes = @notes,
                 external_ref = @externalRef,
                 company_id = @companyId,
+                commercial_customer_id = @commercialCustomerId,
                 commercial_customer_name = @commercialCustomerName,
                 commercial_customer_ref = @commercialCustomerRef,
                 current_assignee_id = @assigneeId,
@@ -392,8 +419,9 @@ async function updateCase(req, res) {
                 notes: notesNext,
                 externalRef: extNext,
                 companyId: companyIdNext,
-                commercialCustomerName: commercialNameNext,
-                commercialCustomerRef: commercialRefNext,
+                commercialCustomerId: customerFields.commercialCustomerId,
+                commercialCustomerName: customerFields.commercialCustomerName,
+                commercialCustomerRef: customerFields.commercialCustomerRef,
                 assigneeId,
                 caseId,
                 organizationId,
@@ -1229,8 +1257,16 @@ async function importFromJob(req, res) {
             body.external_ref != null && String(body.external_ref).trim() !== ''
                 ? String(body.external_ref).trim()
                 : null;
-        const commercialCustomerName = normalizeOptionalText(body.commercial_customer_name, 255);
-        const commercialCustomerRef = normalizeOptionalText(body.commercial_customer_ref, 100);
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdVal,
+            commercialCustomerIdRaw: body.commercial_customer_id,
+            commercialCustomerNameRaw: body.commercial_customer_name,
+            commercialCustomerRefRaw: body.commercial_customer_ref,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
+        }
         const notesVal = buildNotesPrefill(body.notes, job.notes, files);
 
         await transaction.begin();
@@ -1241,20 +1277,23 @@ async function importFromJob(req, res) {
         insertReq.input('title', titleRaw.substring(0, 255));
         insertReq.input('externalRef', externalRef);
         insertReq.input('notes', notesVal);
-        insertReq.input('commercialCustomerName', commercialCustomerName);
-        insertReq.input('commercialCustomerRef', commercialCustomerRef);
+        insertReq.input('commercialCustomerId', customerFields.commercialCustomerId);
+        insertReq.input('commercialCustomerName', customerFields.commercialCustomerName);
+        insertReq.input('commercialCustomerRef', customerFields.commercialCustomerRef);
         insertReq.input('userId', userId);
         insertReq.input('sourceImportJobId', jobId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes, created_by,
-                source_import_job_id, commercial_customer_name, commercial_customer_ref
+                source_import_job_id, commercial_customer_id,
+                commercial_customer_name, commercial_customer_ref
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId,
-                @sourceImportJobId, @commercialCustomerName, @commercialCustomerRef
+                @sourceImportJobId, @commercialCustomerId,
+                @commercialCustomerName, @commercialCustomerRef
             )
         `);
         const created = ins.recordset[0];
