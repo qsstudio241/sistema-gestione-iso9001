@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -86,7 +86,7 @@ Sessioni recenti (consultazione): [Sessione 30/05/2026 — Modulo NC (chiusura)]
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Worktree su disco locale `C:`** | Il repo vive su **Google Drive** (`G:\…`) dietro junction `C:\ProgettoISO`: l'I/O è lento e la **suite Vitest completa si impalla**. Per task corposi/paralleli usare un **worktree su `C:`** da `origin/main`; come L1 affidarsi a **build Vite + Vitest mirato** (o CI Netlify), non alla suite intera. | [`sgq-workflow-method.mdc` § Worktree](../.cursor/rules/sgq-workflow-method.mdc) · [Workspace consigliato](#workspace-consigliato--ponte-cprogettoiso-cursor--terminale) |
-| **`gh` non autenticato → MCP GitHub** | Su questo PC `gh` di norma non è autenticato. Per chiudere/commentare PR, aprire PR, leggere stato, usare il **MCP GitHub** (`project-0-ProgettoISO-github`): leggere lo schema del tool prima di chiamarlo; commenti con `add_issue_comment`, chiusura con `update_pull_request`. | [`sgq-workflow-method.mdc` § Triage PR](../.cursor/rules/sgq-workflow-method.mdc) |
+| **`gh` CLI + MCP GitHub** | Su Windows: `gh auth login` con account **qsstudio241** (verificare con `gh auth status`). Preflight PR: `gh pr list`, `gh pr merge`. Fallback se `gh` non autenticato: **MCP GitHub** — leggere schema tool prima di chiamarlo. | [`sgq-workflow-method.mdc` § Triage PR](../.cursor/rules/sgq-workflow-method.mdc) · sessione 14/06/2026 |
 | **Migrazioni DB — sequenza condivisa** | Numerazione **unica** (stato ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (check esistenza prima di `ALTER`/`CREATE`). FK SQL Server: statement separati. | [how-to/database-migrations.md](how-to/database-migrations.md) |
 | **Encoding UTF-8 senza BOM** | Lo strumento di salvataggio può produrre **ANSI/BOM** o interpretare `\n`/`\t` come newline/tab. Dopo ogni scrittura: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`**. Script: `backend/scripts/check-utf8-encoding.js`. | [Playbook caratteri non riconoscibili](#playbook-riutilizzabile--caratteri-non-riconoscibili-ufffd--tofu-in-ui) · [`sgq-encoding-quality.mdc`](../.cursor/rules/sgq-encoding-quality.mdc) |
 | **`contractReview.controller.js` NON è nel deploy-manifest** | `backend/scripts/deploy-manifest.json` non include `contractReview.controller.js`/`.routes.js`: quando un commit li modifica vanno copiati a mano con `pscp` **prima** del restart, poi lanciare `deploy-controllers-to-vps.ps1` per il resto. Deploy fix segregazione `company_id` Import PDF 13/06/2026 (commit `9fda958`): push `main`, copia manuale `contractReview.controller.js`, deploy manifest, MainPID 646321→652768, health `healthy`, `/import-jobs` → 401 coerente. | Sessione 13/06/2026 — commit `9fda958` |
@@ -532,6 +532,40 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 | GET | `/companies/:companyId/personnel/:id/qualifications` |
 
 **Smoke:** da scheda azienda → Import da qualifiche → Collega qualifiche → icona certificati su riga personale; nuova qualifica salute mansione con picker anagrafica; tab Salute mansione filtra i 4 tipi.
+
+---
+
+### Sessione 14/06/2026 — Import qualifiche ERAM + workflow preview (chiusura)
+
+**Stato:** **CHIUSO — TEST OK** (preview committente su PR [#109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109), merge `20db3ff` / doc `b258837`).
+
+| Obiettivo | Esito |
+|-----------|-------|
+| Import PDF qualifiche — azienda obbligatoria + segregazione `company_id` | ✅ UI ambito + API `qualificationCompany.service`; fix regressione JOIN `companies` (`98bc36f`) |
+| Campi saldatore ISO 9606-1 end-to-end | ✅ Mig. **092**; catena AI → schema FE/BE → `commitToQualification` / ingest |
+| PDF collegato al commit qualifica | ✅ Mig. **093**; `certificate_file_url` + `import_job_files.qualification_id` (`4152e81`) |
+| Alert email + scadenzario qualifiche | ✅ Mig. **093**; `qualificationAlert.service`; righe virtuali `/deadlines` |
+| Registro conferme semestrali 9606 | ✅ Mig. **094** (`101c7af`); API confirm/export; sezione in `QualificationForm` |
+| UX Import PDF (menu **Altre azioni** + contrasto **Analisi AI**) | ✅ PR **#109** mergiata 14/06/2026 |
+| Workflow branch → Deploy Preview → merge | ✅ Operativizzato; CORS preview su VPS + Express (`2034b63`); `netlify-preflight.ps1` + `.netlify.local.ps1` |
+
+#### Delta iniziale vs finale (introspezione)
+
+| Ipotesi iniziale | Esito reale |
+|------------------|-------------|
+| Scope tenant su `companies` via colonna `organization_id` nei JOIN | **Errato:** `companies` è scopata con `auditor_org_id` → join `auditor_orgs`; condizione `c.organization_id` in `importJobs.listJobs/getJob` bloccava lista Import PDF (`Invalid column name`) |
+| Commit qualifica = solo record DB | Serve anche **`certificate_file_url`** da `storage_path` del file import (mig. 093) per link immediato in scheda |
+| Merge UI senza preview | Preview Netlify + **TEST OK committente** obbligatori per feature UI; CORS preview va deployato sul VPS prima del test |
+| `gh` / Netlify non usabili da agente Windows | **`netlify-preflight.ps1`** → `NETLIFY_ACCESS_OK`; **`gh auth login`** qsstudio241 — niente token in chat |
+
+#### Regole ripetibili
+
+1. JOIN `companies`: `LEFT JOIN companies c ON c.id = x.company_id` + scope org via `companyBelongsToOrg` / `auditor_org_id` — **mai** `c.organization_id`.
+2. Nuovo campo qualifica: aggiornare **prompt AI, schema Zod, `documentTypeSchemas` FE+BE, commit/ingest** nella stessa slice.
+3. Feature UI: branch → PR → preview → TEST OK → merge; eccezione solo hotfix o solo-backend già live.
+4. Preflight tooling: `.\backend\scripts\netlify-preflight.ps1` e `gh auth status` **prima** di dichiarare CLI non configurata.
+
+**WIP non incluso in questa chiusura (locale, non committato):** controparti azienda mig. 096–097 + tab Controparti + PR2 select riesame — vedi task futuro in roadmap.
 
 ---
 
