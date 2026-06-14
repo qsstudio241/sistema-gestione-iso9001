@@ -802,6 +802,16 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 > **Sprint 9 (implementato / ingest v1 + AI strutturata opzionale)**: come sopra; analisi campi con **OpenAI** solo se `OPENAI_API_KEY` configurata (altrimenti 503). Deploy: migrazioni `038` + `039`, `npm install` backend (`pdf-parse`).  
 > **Sprint 10 (implementato — 03/05/2026)**: collegare ingest v1 al **document registry** tramite staging tipizzato e commit esplicito (non confusione con workflow contratti).  
 > **Sprint 11 (completato — 25/05/2026)**: riesame requisiti contratto / ciclo commerciale — `ContractReviewPage.jsx`, test L1 14/14; vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md).
+> **Sprint 11b (in corso — 14/06/2026)**: gap LM&CO/PT.MAIDO — distinzione committente commerciale vs azienda SGQ (capacità); migrazione **095** `commercial_customer_*`; contesto AI `buildReviewRequirementsContext` allineato. Slice 2 (RAG doc/qualifiche + FK committente opzionale): vedi [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md).
+
+#### Backlog riesame requisiti (priorità post-analisi ERAM/LM&CO/PT.MAIDO)
+
+| Priorità | Voce | Stato | Note |
+|----------|------|-------|------|
+| **P0** | Committente commerciale su `commercial_cases` + UI + contesto AI | 🔄 Slice 1 locale | Migrazione 095; `company_id` = capacità SGQ |
+| **P1** | RAG documenti/qualifiche per `company_id` in analisi capitolato | ⏳ Slice 2 | DEPUTYTASK R2.1–R2.2 |
+| **P2** | Committente come record `companies` (FK opzionale) + audit 2° livello | ⏳ Slice 2–3 | ADR prima di schema |
+| **P3** | Modellazione PT.MAIDO (cliente del cliente) multi-livello | ⏳ Backlog | Oltre pilota ordine diretto |
 > **Sprint 12 (nuovo backlog tecnico)**: Office Round-trip editing desktop (Windows + Office) con infrastruttura nostra WebDAV/Helper — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md).
 
 

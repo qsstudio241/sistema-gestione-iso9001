@@ -59,6 +59,13 @@ function normalizeReason(reason) {
     return String(reason).trim();
 }
 
+function normalizeOptionalText(raw, maxLen) {
+    if (raw === undefined || raw === null) return null;
+    const s = String(raw).trim();
+    if (!s) return null;
+    return maxLen ? s.substring(0, maxLen) : s;
+}
+
 async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
     if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
     const companyId = parseCompanyId(rawCompanyId);
@@ -221,7 +228,14 @@ async function createCase(req, res) {
     try {
         const organizationId = req.user.organization_id;
         const userId = req.user.user_id;
-        const { title, company_id: companyId, external_ref: externalRef, notes } = req.body || {};
+        const {
+            title,
+            company_id: companyId,
+            external_ref: externalRef,
+            notes,
+            commercial_customer_name: commercialCustomerName,
+            commercial_customer_ref: commercialCustomerRef,
+        } = req.body || {};
 
         if (!title || String(title).trim() === '') {
             return sendErr(res, 400, 'Il titolo è obbligatorio', 'VALIDATION_ERROR');
@@ -241,15 +255,19 @@ async function createCase(req, res) {
         insertReq.input('title', String(title).trim());
         insertReq.input('externalRef', externalRef != null ? String(externalRef).trim() : null);
         insertReq.input('notes', notes != null ? String(notes) : null);
+        insertReq.input('commercialCustomerName', normalizeOptionalText(commercialCustomerName, 255));
+        insertReq.input('commercialCustomerRef', normalizeOptionalText(commercialCustomerRef, 100));
         insertReq.input('userId', userId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
-                organization_id, company_id, title, external_ref, status, notes, created_by
+                organization_id, company_id, title, external_ref, status, notes,
+                commercial_customer_name, commercial_customer_ref, created_by
             )
             OUTPUT INSERTED.*
             VALUES (
-                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId
+                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes,
+                @commercialCustomerName, @commercialCustomerRef, @userId
             )
         `);
 
@@ -299,8 +317,15 @@ async function updateCase(req, res) {
             );
         }
 
-        const { title, notes, external_ref: externalRef, current_assignee_id: assigneeRaw } =
-            req.body || {};
+        const {
+            title,
+            notes,
+            external_ref: externalRef,
+            current_assignee_id: assigneeRaw,
+            company_id: companyIdRaw,
+            commercial_customer_name: commercialCustomerName,
+            commercial_customer_ref: commercialCustomerRef,
+        } = req.body || {};
 
         const titleNext =
             title !== undefined ? String(title).trim() : String(existing.title || '').trim();
@@ -330,12 +355,33 @@ async function updateCase(req, res) {
                     : null
                 : existing.external_ref;
 
+        let companyIdNext = existing.company_id;
+        if (companyIdRaw !== undefined) {
+            const companyScope = await resolveOptionalCompanyId(companyIdRaw, organizationId);
+            if (!companyScope.ok) {
+                return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
+            }
+            companyIdNext = companyScope.companyId;
+        }
+
+        const commercialNameNext =
+            commercialCustomerName !== undefined
+                ? normalizeOptionalText(commercialCustomerName, 255)
+                : existing.commercial_customer_name;
+        const commercialRefNext =
+            commercialCustomerRef !== undefined
+                ? normalizeOptionalText(commercialCustomerRef, 100)
+                : existing.commercial_customer_ref;
+
         const upd = await query(
             `
             UPDATE commercial_cases
             SET title = @title,
                 notes = @notes,
                 external_ref = @externalRef,
+                company_id = @companyId,
+                commercial_customer_name = @commercialCustomerName,
+                commercial_customer_ref = @commercialCustomerRef,
                 current_assignee_id = @assigneeId,
                 updated_at = SYSUTCDATETIME()
             OUTPUT INSERTED.*
@@ -345,6 +391,9 @@ async function updateCase(req, res) {
                 title: titleNext,
                 notes: notesNext,
                 externalRef: extNext,
+                companyId: companyIdNext,
+                commercialCustomerName: commercialNameNext,
+                commercialCustomerRef: commercialRefNext,
                 assigneeId,
                 caseId,
                 organizationId,
@@ -1180,6 +1229,8 @@ async function importFromJob(req, res) {
             body.external_ref != null && String(body.external_ref).trim() !== ''
                 ? String(body.external_ref).trim()
                 : null;
+        const commercialCustomerName = normalizeOptionalText(body.commercial_customer_name, 255);
+        const commercialCustomerRef = normalizeOptionalText(body.commercial_customer_ref, 100);
         const notesVal = buildNotesPrefill(body.notes, job.notes, files);
 
         await transaction.begin();
@@ -1190,18 +1241,20 @@ async function importFromJob(req, res) {
         insertReq.input('title', titleRaw.substring(0, 255));
         insertReq.input('externalRef', externalRef);
         insertReq.input('notes', notesVal);
+        insertReq.input('commercialCustomerName', commercialCustomerName);
+        insertReq.input('commercialCustomerRef', commercialCustomerRef);
         insertReq.input('userId', userId);
         insertReq.input('sourceImportJobId', jobId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes, created_by,
-                source_import_job_id
+                source_import_job_id, commercial_customer_name, commercial_customer_ref
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId,
-                @sourceImportJobId
+                @sourceImportJobId, @commercialCustomerName, @commercialCustomerRef
             )
         `);
         const created = ins.recordset[0];
@@ -1322,6 +1375,8 @@ async function analyzeRequirements(req, res) {
             capitolatoText,
             companyId: caseRow.company_id,
             organizationId,
+            commercialCustomerName: caseRow.commercial_customer_name,
+            commercialCustomerRef: caseRow.commercial_customer_ref,
         });
         const systemPrompt = await enrichSystemPromptWithOrganization(built.systemPrompt, organizationId);
         const result = await chat(

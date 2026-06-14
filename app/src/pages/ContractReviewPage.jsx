@@ -147,6 +147,10 @@ function rowCase(row) {
     title: row.title,
     status: row.status,
     company_id: row.company_id ?? row.companyId,
+    commercial_customer_name:
+      row.commercial_customer_name ?? row.commercialCustomerName ?? null,
+    commercial_customer_ref:
+      row.commercial_customer_ref ?? row.commercialCustomerRef ?? null,
     external_ref: row.external_ref ?? row.externalRef,
     notes: row.notes,
     updated_at: row.updated_at ?? row.updatedAt,
@@ -155,6 +159,11 @@ function rowCase(row) {
     handoff_at: row.handoff_at ?? row.handoffAt ?? null,
     handoff_notes: row.handoff_notes ?? row.handoffNotes ?? null,
   };
+}
+
+function companyLabel(companyId, companiesById) {
+  if (companyId == null) return null;
+  return companiesById.get(companyId) || `#${companyId}`;
 }
 
 function rowCheck(row) {
@@ -267,11 +276,16 @@ export default function ContractReviewPage() {
   const [createForm, setCreateForm] = useState({
     title: '',
     company_id: '',
+    commercial_customer_name: '',
+    commercial_customer_ref: '',
     external_ref: '',
   });
 
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editCompanyId, setEditCompanyId] = useState('');
+  const [editCommercialCustomerName, setEditCommercialCustomerName] = useState('');
+  const [editCommercialCustomerRef, setEditCommercialCustomerRef] = useState('');
   const [savingCase, setSavingCase] = useState(false);
 
   const [transitionModal, setTransitionModal] = useState(null);
@@ -357,6 +371,9 @@ export default function ContractReviewPage() {
       });
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
+      setEditCompanyId(c.company_id != null ? String(c.company_id) : '');
+      setEditCommercialCustomerName(c.commercial_customer_name || '');
+      setEditCommercialCustomerRef(c.commercial_customer_ref || '');
       setHandoffRef(c.handoff_ref || '');
       setHandoffNotes(c.handoff_notes || '');
       const cid = c.company_id != null ? String(c.company_id) : '';
@@ -430,6 +447,9 @@ export default function ContractReviewPage() {
       await apiService.updateContractReview(caseId, {
         title: editTitle.trim(),
         notes: editNotes,
+        company_id: editCompanyId ? parseInt(editCompanyId, 10) : null,
+        commercial_customer_name: editCommercialCustomerName.trim() || null,
+        commercial_customer_ref: editCommercialCustomerRef.trim() || null,
       });
       await loadDetail(caseId);
       await loadList();
@@ -451,10 +471,22 @@ export default function ContractReviewPage() {
       if (createForm.company_id) {
         body.company_id = parseInt(createForm.company_id, 10);
       }
+      if (createForm.commercial_customer_name.trim()) {
+        body.commercial_customer_name = createForm.commercial_customer_name.trim();
+      }
+      if (createForm.commercial_customer_ref.trim()) {
+        body.commercial_customer_ref = createForm.commercial_customer_ref.trim();
+      }
       const created = await apiService.createContractReview(body);
       const id = created?.id;
       setCreateOpen(false);
-      setCreateForm({ title: '', company_id: '', external_ref: '' });
+      setCreateForm({
+        title: '',
+        company_id: '',
+        commercial_customer_name: '',
+        commercial_customer_ref: '',
+        external_ref: '',
+      });
       await loadList();
       if (id) navigate(`/contract-reviews/${id}`);
     } catch (err) {
@@ -642,10 +674,14 @@ export default function ContractReviewPage() {
       setError('Incolla o carica il testo del capitolato prima di avviare l’analisi.');
       return;
     }
-    const companyIdRaw = aiCompanyContextId || (detail?.case?.company_id != null ? String(detail.case.company_id) : '');
+    const caseCompanyId = detail?.case?.company_id;
+    const companyIdRaw =
+      caseCompanyId != null
+        ? String(caseCompanyId)
+        : aiCompanyContextId || '';
     const companyId = parseInt(companyIdRaw, 10);
     if (!Number.isFinite(companyId) || companyId <= 0) {
-      setError('Seleziona un’azienda per il contesto AI (o associa un’azienda al caso).');
+      setError('Associa un\'azienda SGQ (capacità) al caso prima di avviare l\'analisi.');
       return;
     }
     setError(null);
@@ -659,6 +695,8 @@ export default function ContractReviewPage() {
     await suggest('review_requirements', {
       capitolatoText: text,
       companyId,
+      commercialCustomerName: detail?.case?.commercial_customer_name || undefined,
+      commercialCustomerRef: detail?.case?.commercial_customer_ref || undefined,
       standardCodes,
       standardId: autoStd?.standardId ?? null,
     });
@@ -808,7 +846,14 @@ export default function ContractReviewPage() {
                         {STATUS_LABELS[item.status] || item.status}
                       </span>
                       <small>
-                        {item.company_name || (item.company_id ? `#${item.company_id}` : '-')}
+                        {[
+                          item.company_name || companyLabel(item.company_id, companiesById),
+                          item.commercial_customer_name
+                            ? `comm. ${item.commercial_customer_name}`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || '-'}
                       </small>
                     </button>
                   </li>
@@ -844,14 +889,15 @@ export default function ContractReviewPage() {
                   <tr>
                     <th>Titolo</th>
                     <th>Stato</th>
-                    <th>Azienda</th>
+                    <th>Capacità (SGQ)</th>
+                    <th>Committente</th>
                     <th>Aggiornamento</th>
                   </tr>
                 </thead>
                 <tbody>
                   {cases.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>Nessun caso. Crea un nuovo riesame.</td>
+                      <td colSpan={5}>Nessun caso. Crea un nuovo riesame.</td>
                     </tr>
                   ) : (
                     cases.map((c) => (
@@ -867,8 +913,9 @@ export default function ContractReviewPage() {
                           </span>
                         </td>
                         <td>
-                          {c.company_id != null ? companiesById.get(c.company_id) || `#${c.company_id}` : '-'}
+                          {companyLabel(c.company_id, companiesById) || '-'}
                         </td>
+                        <td>{c.commercial_customer_name || '-'}</td>
                         <td>
                           {c.updated_at
                             ? new Date(c.updated_at).toLocaleString('it-IT')
@@ -906,10 +953,13 @@ export default function ContractReviewPage() {
                     {' · '}
                     Rif. esterno: {detail.case.external_ref || '-'}
                     {' · '}
-                    Azienda:{' '}
-                    {detail.case.company_id != null
-                      ? companiesById.get(detail.case.company_id) || `#${detail.case.company_id}`
-                      : '-'}
+                    Capacità:{' '}
+                    {companyLabel(detail.case.company_id, companiesById) || '-'}
+                    {' · '}
+                    Committente: {detail.case.commercial_customer_name || '-'}
+                    {detail.case.commercial_customer_ref ? (
+                      <> (rif. {detail.case.commercial_customer_ref})</>
+                    ) : null}
                     {detail.case.source_import_job_id != null && (
                       <>
                         {' · '}
@@ -953,6 +1003,42 @@ export default function ContractReviewPage() {
                     id="cr-edit-title"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
+                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  />
+                </div>
+                <div className="cr-form-row">
+                  <label htmlFor="cr-edit-company">Azienda SGQ (capacità)</label>
+                  <select
+                    id="cr-edit-company"
+                    value={editCompanyId}
+                    onChange={(e) => setEditCompanyId(e.target.value)}
+                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  >
+                    <option value="">- Non indicata -</option>
+                    {companies.map((co) => (
+                      <option key={co.id} value={String(co.id)}>
+                        {co.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="cr-form-row">
+                  <label htmlFor="cr-edit-comm-name">Committente commerciale</label>
+                  <input
+                    id="cr-edit-comm-name"
+                    value={editCommercialCustomerName}
+                    onChange={(e) => setEditCommercialCustomerName(e.target.value)}
+                    placeholder="es. PT.MAIDO"
+                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  />
+                </div>
+                <div className="cr-form-row">
+                  <label htmlFor="cr-edit-comm-ref">Rif. committente</label>
+                  <input
+                    id="cr-edit-comm-ref"
+                    value={editCommercialCustomerRef}
+                    onChange={(e) => setEditCommercialCustomerRef(e.target.value)}
+                    placeholder="Codice cliente / ordine"
                     disabled={TERMINAL_STATUSES.has(detail.case.status)}
                   />
                 </div>
@@ -1308,24 +1394,44 @@ export default function ContractReviewPage() {
               <div className="cr-panel">
                 <h2>Analisi AI del capitolato</h2>
                 <p className="contract-review-intro" style={{ marginTop: 0 }}>
-                  Incolla il testo del capitolato o carica un file .txt. L’analisi usa il profilo
-                  azienda selezionato come contesto normativo.
+                  Incolla il testo del capitolato o carica un file .txt. L&apos;analisi valuta le
+                  capacità dell&apos;azienda SGQ del caso rispetto ai requisiti del committente
+                  commerciale indicato.
                 </p>
-                <div className="cr-form-row">
-                  <label htmlFor="cr-ai-company">Azienda per contesto AI</label>
-                  <select
-                    id="cr-ai-company"
-                    value={aiCompanyContextId}
-                    onChange={(e) => setAiCompanyContextId(e.target.value)}
-                  >
-                    <option value="">- Seleziona -</option>
-                    {companies.map((co) => (
-                      <option key={co.id} value={String(co.id)}>
-                        {co.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="cr-ai-context-summary" style={{ marginBottom: '1rem', fontSize: '0.92rem' }}>
+                  <div>
+                    <strong>Capacità di:</strong>{' '}
+                    {companyLabel(detail.case.company_id, companiesById) || (
+                      <span style={{ color: '#b45309' }}>non indicata — seleziona sotto o in Dati caso</span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>Committente:</strong>{' '}
+                    {detail.case.commercial_customer_name || (
+                      <span style={{ color: '#6b7280' }}>non indicato (opzionale)</span>
+                    )}
+                    {detail.case.commercial_customer_ref
+                      ? ` (rif. ${detail.case.commercial_customer_ref})`
+                      : ''}
+                  </div>
                 </div>
+                {detail.case.company_id == null && (
+                  <div className="cr-form-row">
+                    <label htmlFor="cr-ai-company">Azienda SGQ per contesto AI</label>
+                    <select
+                      id="cr-ai-company"
+                      value={aiCompanyContextId}
+                      onChange={(e) => setAiCompanyContextId(e.target.value)}
+                    >
+                      <option value="">- Seleziona -</option>
+                      {companies.map((co) => (
+                        <option key={co.id} value={String(co.id)}>
+                          {co.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <textarea
                   className="cr-ai-textarea"
                   placeholder="Testo capitolato / richiesta d’offerta…"
@@ -1489,7 +1595,7 @@ export default function ContractReviewPage() {
                 />
               </div>
               <div className="cr-form-row">
-                <label htmlFor="cr-new-co">Azienda</label>
+                <label htmlFor="cr-new-co">Azienda SGQ (capacità)</label>
                 <select
                   id="cr-new-co"
                   value={createForm.company_id}
@@ -1502,6 +1608,28 @@ export default function ContractReviewPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="cr-form-row">
+                <label htmlFor="cr-new-comm">Committente commerciale</label>
+                <input
+                  id="cr-new-comm"
+                  value={createForm.commercial_customer_name}
+                  onChange={(e) =>
+                    setCreateForm((f) => ({ ...f, commercial_customer_name: e.target.value }))
+                  }
+                  placeholder="es. PT.MAIDO"
+                />
+              </div>
+              <div className="cr-form-row">
+                <label htmlFor="cr-new-comm-ref">Rif. committente</label>
+                <input
+                  id="cr-new-comm-ref"
+                  value={createForm.commercial_customer_ref}
+                  onChange={(e) =>
+                    setCreateForm((f) => ({ ...f, commercial_customer_ref: e.target.value }))
+                  }
+                  placeholder="Codice cliente / ordine"
+                />
               </div>
               <div className="cr-form-row">
                 <label htmlFor="cr-new-ext">Riferimento esterno</label>
