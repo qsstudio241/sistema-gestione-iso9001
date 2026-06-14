@@ -115,15 +115,17 @@
   cursor: pointer;
 }
 
-/* Azione primaria "Analisi AI": riempita per metterla in evidenza */
-.btn-ai {
+/* Azione primaria "Analisi AI": riempita per metterla in evidenza.
+   Doppia classe per battere la specificita' di .btn-small (sfondo bianco). */
+.btn-small.btn-ai {
   background: #6b4fd6;
   border-color: #6b4fd6;
   color: #fff;
 }
 
-.btn-ai:hover:not(:disabled) {
+.btn-small.btn-ai:hover:not(:disabled) {
   background: #5a3fc4;
+  border-color: #5a3fc4;
 }
 
 .ai-extraction-panel {
