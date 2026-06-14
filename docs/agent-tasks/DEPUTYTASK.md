@@ -17,6 +17,7 @@ Import PDF qualifiche ERAM + workflow branch → Deploy Preview → merge.
 | Conferme semestrali mig. 094 | ✅ Live |
 | UX Import PDF | ✅ [PR #109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109) mergiata 14/06/2026 — preview **TEST OK** |
 | CORS Netlify preview + netlify-preflight + gh auth | ✅ Operativi |
+| Setup preview doc (`BACKUP_DATABASE_E_USO_BRANCH.md`) | ✅ Allineato — puntatore Deploy Preview |
 
 **Doc:** sezione [Sessione 14/06/2026](GUIDA_CONSOLIDATA.md#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura) in `GUIDA_CONSOLIDATA.md`.
 
