@@ -11,12 +11,30 @@ const fs     = require('fs');
 const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
+const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
 const {
     classifyDocument,
     WRONG_MODULE_FOR_QUALIFICATIONS,
     WRONG_MODULE_MESSAGES,
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
+
+/** Converte un valore in numero finito o null (per colonne DECIMAL). */
+function toNum(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
+/** Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max. */
+function deriveRangeString(min, max, suffix = 'mm') {
+    const a = toNum(min);
+    const b = toNum(max);
+    if (a == null && b == null) return null;
+    if (a != null && b != null && a !== b) return `${a}-${b}${suffix}`;
+    const single = b != null ? b : a;
+    return `${single}${suffix}`;
+}
 
 // AI opzionale: best-effort, non blocca l'ingestion se non disponibile
 let chat = null;
@@ -75,11 +93,25 @@ Rispondi con questo schema JSON (usa null per campi non trovati):
   "person_name": "Nome Cognome del titolare",
   "certificate_number": "numero certificato/patentino",
   "issue_date": "YYYY-MM-DD oppure null",
+  "exam_date": "YYYY-MM-DD data esame/prova oppure null",
   "expiry_date": "YYYY-MM-DD oppure null",
+  "last_confirmation_date": "YYYY-MM-DD ultima conferma datore di lavoro oppure null",
+  "next_confirmation_due": "YYYY-MM-DD prossima conferma oppure null",
+  "revalidation_date": "YYYY-MM-DD data revalidazione (3 anni) oppure null",
   "issuing_body": "ente certificatore (IIS, Bureau Veritas, DNV, CICPND...)",
+  "examiner_body": "organismo/esaminatore della prova se diverso dall'ente, oppure null",
   "welding_process": "codice processo ISO 4063 (111, 135, 141...)",
-  "base_material": "gruppo materiale",
-  "thickness": "spessore qualificato",
+  "joint_type": "BW oppure FW",
+  "product_type": "P (lamiera) oppure T (tubo)",
+  "weld_details": "dettagli giunto (ss nb, bs, sl, ml...)",
+  "base_material": "gruppo materiale (ISO/TR 15608)",
+  "filler_material_group": "gruppo materiale apporto (FM1-FM6) oppure null",
+  "thickness": "spessore qualificato (testo)",
+  "thickness_min_mm": "numero spessore minimo mm oppure null",
+  "thickness_max_mm": "numero spessore massimo mm oppure null",
+  "pipe_diameter_min_mm": "numero diametro tubo minimo mm oppure null",
+  "pipe_diameter_max_mm": "numero diametro tubo massimo mm oppure null",
+  "shielding_gas": "gas di protezione ISO 14175 (M21, I1...) oppure null",
   "welding_position": "posizioni qualificate (PA, PB, PF...)",
   "ndt_method": "metodo NDT (VT, MT, PT, UT, RT)",
   "ndt_level": "livello NDT (1, 2, 3)",
@@ -179,19 +211,42 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
     }
 
     const certificate_number = aiData.certificate_number || null;
-    const issue_date   = normalizeDate(aiData.issue_date);
+    const exam_date    = normalizeDate(aiData.exam_date);
+    // issue_date dedicata; in transizione ripiega su exam_date per compatibilita'.
+    const issue_date   = normalizeDate(aiData.issue_date) || exam_date;
     const expiry_date  = normalizeDate(aiData.expiry_date);
+    const last_confirmation_date = normalizeDate(aiData.last_confirmation_date);
+    const next_confirmation_due  = normalizeDate(aiData.next_confirmation_due);
+    const revalidation_date      = normalizeDate(aiData.revalidation_date);
     const issuing_body = aiData.issuing_body || null;
+    const examiner_body = aiData.examiner_body || null;
     const standard_ref = aiData.standard_ref || null;
     const welding_process = aiData.welding_process || null;
+    const joint_type      = aiData.joint_type || null;
+    const product_type    = aiData.product_type || null;
+    const weld_details    = aiData.weld_details || null;
     const material_group  = aiData.base_material || null;
+    const filler_material = aiData.filler_material_group || null;
     const position_range  = aiData.welding_position || null;
-    const thickness_range = aiData.thickness || null;
+    const shielding_gas   = aiData.shielding_gas || null;
+    const thickness_min_mm = toNum(aiData.thickness_min_mm);
+    const thickness_max_mm = toNum(aiData.thickness_max_mm);
+    const pipe_diameter_min_mm = toNum(aiData.pipe_diameter_min_mm);
+    const pipe_diameter_max_mm = toNum(aiData.pipe_diameter_max_mm);
+    const thickness_range = aiData.thickness || deriveRangeString(thickness_min_mm, thickness_max_mm);
+    const pipe_diameter   = deriveRangeString(pipe_diameter_min_mm, pipe_diameter_max_mm);
     const ndt_method      = aiData.ndt_method || null;
     const ndt_level       = aiData.ndt_level ? parseInt(aiData.ndt_level) : null;
     const coordinator_title = aiData.coordinator_title || null;
     const cpd_valid_until   = normalizeDate(aiData.cpd_valid_until);
     const patent_type       = aiData.patent_type || null;
+    const qualification_designation = buildWelderQualificationDesignation({
+        welding_process, product_type, joint_type,
+        filler_material_group: filler_material,
+        thickness_min_mm, thickness_max_mm,
+        pipe_diameter_min_mm, pipe_diameter_max_mm,
+        welding_positions: position_range, weld_details,
+    });
 
     // URL file
     const uploadBase = process.env.UPLOAD_DIR
@@ -240,13 +295,29 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         .input('certNum',       certificate_number || null)
         .input('issuer',        issuing_body || null)
         .input('issueDate',     issue_date || null)
+        .input('examDate',      exam_date || null)
         .input('expiryDate',    expiry_date || null)
+        .input('lastConfDate',  last_confirmation_date || null)
+        .input('nextConfDue',   next_confirmation_due || null)
+        .input('revalDate',     revalidation_date || null)
         .input('status',        'valida')
         .input('userId',        userId || null)
+        .input('examiner',      examiner_body || null)
         .input('weldProc',      welding_process || null)
+        .input('jointType',     joint_type || null)
+        .input('productType',   product_type || null)
+        .input('weldDetails',   weld_details || null)
+        .input('designation',   qualification_designation || null)
         .input('matGroup',      material_group || null)
+        .input('filler',        filler_material || null)
         .input('posRange',      position_range || null)
+        .input('shieldGas',     shielding_gas || null)
         .input('thickRange',    thickness_range || null)
+        .input('pipeDiam',      pipe_diameter || null)
+        .input('thickMin',      thickness_min_mm)
+        .input('thickMax',      thickness_max_mm)
+        .input('pipeMin',       pipe_diameter_min_mm)
+        .input('pipeMax',       pipe_diameter_max_mm)
         .input('ndtMethod',     ndt_method || null)
         .input('ndtLevel',      ndt_level || null)
         .input('coordTitle',    coordinator_title || null)
@@ -256,17 +327,27 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         .query(`
             INSERT INTO qualifications
                 (organization_id, company_id, person_name, personnel_id,
-                 qualification_type, standard_ref, certificate_number, issuing_body,
-                 issue_date, expiry_date, status, notes, created_by, approval_status,
-                 welding_process, material_group, position_range, thickness_range,
+                 qualification_type, standard_ref, certificate_number, issuing_body, examiner_body,
+                 issue_date, exam_date, expiry_date,
+                 last_confirmation_date, next_confirmation_due, revalidation_date,
+                 status, notes, created_by, approval_status,
+                 welding_process, joint_type, product_type, weld_details, qualification_designation,
+                 material_group, filler_material, position_range, shielding_gas,
+                 thickness_range, pipe_diameter,
+                 thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
                  patent_type, certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
                 (@orgId, @compId, @personName, @personnelId,
-                 @qualType, @stdRef, @certNum, @issuer,
-                 @issueDate, @expiryDate, @status, NULL, @userId, 'bozza',
-                 @weldProc, @matGroup, @posRange, @thickRange,
+                 @qualType, @stdRef, @certNum, @issuer, @examiner,
+                 @issueDate, @examDate, @expiryDate,
+                 @lastConfDate, @nextConfDue, @revalDate,
+                 @status, NULL, @userId, 'bozza',
+                 @weldProc, @jointType, @productType, @weldDetails, @designation,
+                 @matGroup, @filler, @posRange, @shieldGas,
+                 @thickRange, @pipeDiam,
+                 @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
                  @patentType, @certFileUrl)
         `);

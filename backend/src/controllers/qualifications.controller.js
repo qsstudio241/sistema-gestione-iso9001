@@ -27,6 +27,24 @@ const {
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+
+/** Converte un valore in numero finito o null (per colonne DECIMAL). */
+function toNum(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
+/** Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max. */
+function deriveRangeString(min, max, suffix = 'mm') {
+    const a = toNum(min);
+    const b = toNum(max);
+    if (a == null && b == null) return null;
+    if (a != null && b != null && a !== b) return `${a}-${b}${suffix}`;
+    const single = b != null ? b : a;
+    return `${single}${suffix}`;
+}
 
 /**
  * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
@@ -150,6 +168,27 @@ function semaforo(expiryDate, status) {
     return 'verde';
 }
 
+/**
+ * Data di scadenza "effettiva" per il semaforo.
+ * Per le qualifiche saldatore ISO 9606 la conferma periodica (next_confirmation_due)
+ * puo' scadere prima del certificato: si usa la data PIU' IMMINENTE tra le due.
+ * Difensivo: se una manca usa l'altra; per gli altri tipi resta solo expiry_date.
+ */
+function effectiveExpiryDate(q) {
+    const expiry = q.expiry_date || null;
+    const isWelder9606 = /9606/.test(String(q.qualification_type || ''));
+    if (!isWelder9606) return expiry;
+    const nextConf = q.next_confirmation_due || null;
+    if (!expiry) return nextConf;
+    if (!nextConf) return expiry;
+    return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
+}
+
+/** Calcola il semaforo usando la data effettiva (conferma periodica per i 9606). */
+function semaforoForRow(q) {
+    return semaforo(effectiveExpiryDate(q), q.status);
+}
+
 // Mappa tipo tab → LIKE su qualification_type
 const QUAL_TYPE_MAP = {
     iso9606_1:      '%9606-1%',
@@ -249,7 +288,8 @@ async function listQualifications(req, res) {
 
         const qualifications = result.recordset.map(q => ({
             ...q,
-            semaforo: semaforo(q.expiry_date, q.status),
+            effective_expiry_date: effectiveExpiryDate(q),
+            semaforo: semaforoForRow(q),
         }));
 
         res.json({
@@ -449,7 +489,7 @@ async function getOne(req, res) {
             if (denied) return sendAccessDenied(res, denied);
         }
 
-        res.json({ ...row, semaforo: semaforo(row.expiry_date, row.status) });
+        res.json({ ...row, effective_expiry_date: effectiveExpiryDate(row), semaforo: semaforoForRow(row) });
     } catch (err) {
         logger.error('getOneQualif:', err.message);
         res.status(500).json({ error: err.message });
@@ -476,10 +516,30 @@ async function createQualification(req, res) {
             patent_type, training_body,
             course_name, training_hours, examiner_body,
             certificate_file_url,
+            // saldatore 9606-1 enrichment
+            exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
+            product_type, weld_details,
+            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
         } = body;
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica \u00e8 obbligatorio.' });
+
+        // Range numerici (fonte primaria) + stringhe legacy derivate.
+        const thickMin = toNum(thickness_min_mm);
+        const thickMax = toNum(thickness_max_mm);
+        const pipeMin  = toNum(pipe_diameter_min_mm);
+        const pipeMax  = toNum(pipe_diameter_max_mm);
+        const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
+        const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
+        // Designazione ricalcolata server-side dai campi correnti.
+        const designation = buildWelderQualificationDesignation({
+            welding_process, product_type, joint_type,
+            filler_material_group: filler_material,
+            thickness_min_mm: thickMin, thickness_max_mm: thickMax,
+            pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
+            welding_positions: position_range, weld_details,
+        });
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
@@ -553,13 +613,31 @@ async function createQualification(req, res) {
             .input('trainHours',  training_hours != null ? parseInt(training_hours) : null)
             .input('examBody',    examiner_body     || null)
             .input('certFileUrl', certificate_file_url || null)
+            // saldatore 9606-1 enrichment
+            .input('examDate',    exam_date         || null)
+            .input('lastConfDate',last_confirmation_date || null)
+            .input('nextConfDue', next_confirmation_due  || null)
+            .input('revalDate',   revalidation_date || null)
+            .input('productType', product_type      || null)
+            .input('weldDetails', weld_details      || null)
+            .input('designation', designation       || null)
+            .input('thickMin',    thickMin)
+            .input('thickMax',    thickMax)
+            .input('pipeMin',     pipeMin)
+            .input('pipeMax',     pipeMax)
+            .input('thickRangeFinal', thicknessRangeFinal || null)
+            .input('pipeDiamFinal',   pipeDiameterFinal   || null)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-                     issue_date, expiry_date, last_renewal_date, status, notes, created_by,
+                     issue_date, exam_date, expiry_date, last_renewal_date,
+                     last_confirmation_date, next_confirmation_due, revalidation_date,
+                     status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
-                     approval_status, joint_type, thickness_range, pipe_diameter,
+                     approval_status, joint_type, product_type, weld_details, qualification_designation,
+                     thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+                     thickness_range, pipe_diameter,
                      filler_material, shielding_gas, equipment_type,
                      ndt_sector, certification_scheme,
                      coordinator_title, diploma_number, cpd_valid_until,
@@ -569,9 +647,13 @@ async function createQualification(req, res) {
                 VALUES
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
-                     @issueDate, @expiryDate, @renewalDate, @status, @notes, @userId,
+                     @issueDate, @examDate, @expiryDate, @renewalDate,
+                     @lastConfDate, @nextConfDue, @revalDate,
+                     @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
-                     @approvalStatus, @jointType, @thickRange, @pipeDiam,
+                     @approvalStatus, @jointType, @productType, @weldDetails, @designation,
+                     @thickMin, @thickMax, @pipeMin, @pipeMax,
+                     @thickRangeFinal, @pipeDiamFinal,
                      @filler, @shieldGas, @equipType,
                      @ndtSector, @certScheme,
                      @coordTitle, @diplomaNum, @cpdUntil,
@@ -616,7 +698,25 @@ async function updateQualification(req, res) {
             patent_type, training_body,
             course_name, training_hours, examiner_body,
             certificate_file_url,
+            // saldatore 9606-1 enrichment
+            exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
+            product_type, weld_details,
+            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
         } = body;
+
+        const thickMin = toNum(thickness_min_mm);
+        const thickMax = toNum(thickness_max_mm);
+        const pipeMin  = toNum(pipe_diameter_min_mm);
+        const pipeMax  = toNum(pipe_diameter_max_mm);
+        const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
+        const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
+        const designation = buildWelderQualificationDesignation({
+            welding_process, product_type, joint_type,
+            filler_material_group: filler_material,
+            thickness_min_mm: thickMin, thickness_max_mm: thickMax,
+            pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
+            welding_positions: position_range, weld_details,
+        });
 
         await pool.request()
             .input('id',        id)
@@ -657,16 +757,35 @@ async function updateQualification(req, res) {
             .input('trainHours',  training_hours != null ? parseInt(training_hours) : null)
             .input('examBody',    examiner_body     || null)
             .input('certFileUrl', certificate_file_url || null)
+            // saldatore 9606-1 enrichment
+            .input('examDate',    exam_date         || null)
+            .input('lastConfDate',last_confirmation_date || null)
+            .input('nextConfDue', next_confirmation_due  || null)
+            .input('revalDate',   revalidation_date || null)
+            .input('productType', product_type      || null)
+            .input('weldDetails', weld_details      || null)
+            .input('designation', designation       || null)
+            .input('thickMin',    thickMin)
+            .input('thickMax',    thickMax)
+            .input('pipeMin',     pipeMin)
+            .input('pipeMax',     pipeMax)
+            .input('thickRangeFinal', thicknessRangeFinal || null)
+            .input('pipeDiamFinal',   pipeDiameterFinal   || null)
             .query(`
                 UPDATE qualifications SET
                     company_id=@compId, person_name=@personName, person_code=@personCode,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
-                    issue_date=@issueDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
+                    issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
+                    last_confirmation_date=@lastConfDate, next_confirmation_due=@nextConfDue, revalidation_date=@revalDate,
                     status=@status, notes=@notes, updated_at=GETDATE(),
                     welding_process=@weldProc, material_group=@matGroup, position_range=@posRange,
                     ndt_method=@ndtMethod, ndt_level=@ndtLevel,
-                    joint_type=@jointType, thickness_range=@thickRange, pipe_diameter=@pipeDiam,
+                    joint_type=@jointType, product_type=@productType, weld_details=@weldDetails,
+                    qualification_designation=@designation,
+                    thickness_min_mm=@thickMin, thickness_max_mm=@thickMax,
+                    pipe_diameter_min_mm=@pipeMin, pipe_diameter_max_mm=@pipeMax,
+                    thickness_range=@thickRangeFinal, pipe_diameter=@pipeDiamFinal,
                     filler_material=@filler, shielding_gas=@shieldGas, equipment_type=@equipType,
                     ndt_sector=@ndtSector, certification_scheme=@certScheme,
                     coordinator_title=@coordTitle, diploma_number=@diplomaNum, cpd_valid_until=@cpdUntil,
