@@ -80,6 +80,8 @@ export function backendToFrontend(backendAudit) {
             companyId: backendAudit.company_id ?? null,
             auditPartyType: backendAudit.audit_party_type || extraData.auditPartyType || 'first_party',
             fornitoreName: backendAudit.fornitore_name || extraData.fornitoreName || '',
+            fornitoreSupplierId: extraData.fornitoreSupplierId ?? null,
+            fornitoreCompanyId: extraData.fornitoreCompanyId ?? null,
             projectYear: backendAudit.project_year || new Date().getFullYear().toString(),
             auditDate: backendAudit.audit_date || new Date().toISOString().split('T')[0],
             auditDateEnd: backendAudit.audit_date_end
