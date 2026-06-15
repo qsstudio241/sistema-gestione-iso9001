@@ -97,6 +97,8 @@ export const EXPORT_TYPE = {
  * @property {string} clientName - Nome azienda committente (chi commissiona l'audit)
  * @property {string} [auditPartyType] - 'first_party' | 'second_party' (prima parte interno / seconda parte fornitore)
  * @property {string} [fornitoreName] - Nome fornitore auditato (solo se auditPartyType === 'second_party')
+ * @property {number|null} [fornitoreSupplierId] - ID fornitore da anagrafica suppliers (seconda parte)
+ * @property {number|null} [fornitoreCompanyId] - Legacy: ID company (deprecato, solo lettura audit vecchi)
  * @property {number} projectYear - Anno audit (es. 2025)
  * @property {string} auditNumber - Numero progressivo annuale (es. "2025-01")
  * @property {string} status - Status audit (vedi AUDIT_STATUS)
@@ -250,6 +252,7 @@ export function createNewAudit(metadata) {
             companyId: metadata.companyId ?? null,
             auditPartyType: metadata.auditPartyType || 'first_party',
             fornitoreName: metadata.fornitoreName || '',
+            fornitoreSupplierId: metadata.fornitoreSupplierId ?? null,
             fornitoreCompanyId: metadata.fornitoreCompanyId ?? null,
             projectYear: metadata.projectYear || new Date().getFullYear(),
             auditNumber: metadata.auditNumber || '',

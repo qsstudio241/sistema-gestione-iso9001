@@ -387,8 +387,8 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const initialFornitore = isReaudit && currentAudit?.metadata?.fornitoreName 
     ? currentAudit.metadata.fornitoreName 
     : "";
-  const initialFornitoreCompanyId = isReaudit && currentAudit?.metadata?.fornitoreCompanyId
-    ? currentAudit.metadata.fornitoreCompanyId
+  const initialFornitoreSupplierId = isReaudit && currentAudit?.metadata?.fornitoreSupplierId
+    ? currentAudit.metadata.fornitoreSupplierId
     : null;
 
   const [formData, setFormData] = useState({
@@ -397,7 +397,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     companyId: initialCompanyId,
     auditPartyType: initialPartyType,
     fornitoreName: initialFornitore,
-    fornitoreCompanyId: initialFornitoreCompanyId,
+    fornitoreSupplierId: initialFornitoreSupplierId,
     auditDate: new Date().toISOString().split("T")[0],
     auditDateEnd: "",
     auditorName: "",
@@ -434,6 +434,42 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   useEffect(() => {
     loadCompanies();
   }, [loadCompanies]);
+
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+
+  const loadSuppliers = useCallback(async (companyId) => {
+    if (!companyId) {
+      setSuppliers([]);
+      return;
+    }
+    setSuppliersLoading(true);
+    try {
+      const res = await apiService.getSuppliers({ company_id: companyId, is_active: 'true' });
+      setSuppliers(res?.data || []);
+    } catch (err) {
+      console.warn("Caricamento fornitori:", err.message);
+      setSuppliers([]);
+    } finally {
+      setSuppliersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.auditPartyType === 'second_party' && formData.companyId) {
+      loadSuppliers(formData.companyId);
+    } else {
+      setSuppliers([]);
+    }
+  }, [formData.auditPartyType, formData.companyId, loadSuppliers]);
+
+  const prevCompanyIdRef = React.useRef(formData.companyId);
+  useEffect(() => {
+    if (prevCompanyIdRef.current !== formData.companyId) {
+      prevCompanyIdRef.current = formData.companyId;
+      setFormData(p => ({ ...p, fornitoreSupplierId: null, fornitoreName: "" }));
+    }
+  }, [formData.companyId]);
 
   const [errors, setErrors] = useState({});
   const [pendingInfo, setPendingInfo] = useState(null); // { count, lastAuditId, issues }
@@ -577,7 +613,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     // Mappa norms → selectedStandards (atteso da createNewAudit in auditDataModel.js)
     submitData.selectedStandards = formData.norms;
     submitData.companyId = formData.companyId || null;
-    submitData.fornitoreCompanyId = formData.fornitoreCompanyId || null;
+    submitData.fornitoreSupplierId = formData.fornitoreSupplierId || null;
     submitData.customChecklistId = formData.customChecklistId || null;
     if (pendingInfo?.issues?.length > 0) {
       submitData.pendingIssues = pendingInfo.issues
@@ -757,42 +793,57 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
           {formData.auditPartyType === "second_party" && (
             <div className="form-group">
               <label htmlFor="fornitoreSelect">Azienda auditata</label>
-              {companies.length > 0 ? (
+              {!formData.companyId ? (
+                <>
+                  <p className="form-hint" style={{ marginBottom: '0.5rem' }}>
+                    Seleziona prima l&apos;azienda committente per elencare i fornitori collegati.
+                  </p>
+                  <input
+                    type="text"
+                    id="fornitoreName"
+                    name="fornitoreName"
+                    value={formData.fornitoreName || ""}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="es. Fornitore XYZ Srl (inserimento manuale)"
+                  />
+                </>
+              ) : suppliers.length > 0 || formData.fornitoreName ? (
                 <>
                   <select
                     id="fornitoreSelect"
                     value={
-                      formData.fornitoreCompanyId
-                        ? String(formData.fornitoreCompanyId)
-                        : (formData.fornitoreName && !formData.fornitoreCompanyId ? MANUAL_COMPANY_VALUE : "")
+                      formData.fornitoreSupplierId
+                        ? String(formData.fornitoreSupplierId)
+                        : (formData.fornitoreName && !formData.fornitoreSupplierId ? MANUAL_COMPANY_VALUE : "")
                     }
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === MANUAL_COMPANY_VALUE) {
-                        setFormData(p => ({ ...p, fornitoreCompanyId: null }));
+                        setFormData(p => ({ ...p, fornitoreSupplierId: null }));
                       } else if (val === "") {
-                        setFormData(p => ({ ...p, fornitoreCompanyId: null, fornitoreName: "" }));
+                        setFormData(p => ({ ...p, fornitoreSupplierId: null, fornitoreName: "" }));
                       } else {
-                        const found = companies.find(c => String(c.id) === val);
+                        const found = suppliers.find(s => String(s.id) === val);
                         setFormData(p => ({
                           ...p,
-                          fornitoreCompanyId: found ? found.id : null,
+                          fornitoreSupplierId: found ? found.id : null,
                           fornitoreName: found ? found.name : p.fornitoreName,
                         }));
                       }
                     }}
                     className="form-control"
-                    disabled={companiesLoading}
+                    disabled={suppliersLoading}
                   >
                     <option value="">- Seleziona fornitore -</option>
                     <option value={MANUAL_COMPANY_VALUE}>- Inserimento manuale -</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}{s.vat_number ? ` (P.IVA ${s.vat_number})` : ""}
                       </option>
                     ))}
                   </select>
-                  {(!formData.fornitoreCompanyId) && (
+                  {(!formData.fornitoreSupplierId) && (
                     <input
                       type="text"
                       id="fornitoreName"
@@ -804,7 +855,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                       style={{ marginTop: "0.5rem" }}
                     />
                   )}
-                  <small className="form-hint">Scegli dall&apos;anagrafica o inserisci manualmente.</small>
+                  <small className="form-hint">Fornitori dell&apos;anagrafica collegati al committente, oppure inserimento manuale.</small>
                 </>
               ) : (
                 <>
@@ -817,7 +868,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                     className="form-control"
                     placeholder="es. Fornitore XYZ Srl"
                   />
-                  <small className="form-hint">Azienda fornitore oggetto dell&apos;audit (seconda parte).</small>
+                  <small className="form-hint">Nessun fornitore in anagrafica per questo committente: inserimento manuale.</small>
                 </>
               )}
             </div>

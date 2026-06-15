@@ -251,6 +251,7 @@ async function createAudit(req, res) {
             notes,
             audit_party_type,
             fornitore_name,
+            fornitore_supplier_id,
             company_id
         } = req.body;
 
@@ -375,7 +376,8 @@ async function createAudit(req, res) {
         // Persistenza tipologia audit, fornitore e company_id in audit_extra_data / colonne
         const extraData = {
             auditPartyType: audit_party_type || 'first_party',
-            fornitoreName: fornitore_name || ''
+            fornitoreName: fornitore_name || '',
+            fornitoreSupplierId: fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null,
         };
         await query(`
             UPDATE audits SET audit_extra_data = @audit_extra_data, company_id = @company_id, updated_at = GETDATE()
@@ -448,7 +450,8 @@ async function updateAudit(req, res) {
             standard_ids,
             custom_checklist_id,
             audit_party_type,
-            fornitore_name
+            fornitore_name,
+            fornitore_supplier_id
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -603,7 +606,8 @@ async function updateAudit(req, res) {
             params.custom_checklist_id = custom_checklist_id ? parseInt(custom_checklist_id) : null;
         }
         // Merge tipologia audit e fornitore in audit_extra_data
-        if (audit_party_type !== undefined || fornitore_name !== undefined) {
+        if (audit_party_type !== undefined || fornitore_name !== undefined
+            || fornitore_supplier_id !== undefined || req.body.fornitoreSupplierId !== undefined) {
             let extra = existingAudit.recordset[0].audit_extra_data;
             if (extra && typeof extra === 'string') {
                 try { extra = JSON.parse(extra); } catch (_) { extra = {}; }
@@ -611,6 +615,9 @@ async function updateAudit(req, res) {
             if (!extra || typeof extra !== 'object') extra = {};
             if (audit_party_type !== undefined) extra.auditPartyType = audit_party_type;
             if (fornitore_name !== undefined) extra.fornitoreName = fornitore_name;
+            if (fornitore_supplier_id !== undefined || req.body.fornitoreSupplierId !== undefined) {
+                extra.fornitoreSupplierId = fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null;
+            }
             updates.push('audit_extra_data = @audit_extra_data');
             params.audit_extra_data = JSON.stringify(extra);
         }
@@ -842,6 +849,9 @@ async function upsertAudit(req, res) {
             const base = bodyExtra && typeof bodyExtra === 'object' ? { ...bodyExtra } : (typeof bodyExtra === 'string' ? (() => { try { return JSON.parse(bodyExtra); } catch (_) { return {}; } })() : {});
             base.auditPartyType = audit_party_type ?? base.auditPartyType ?? 'first_party';
             base.fornitoreName = fornitore_name ?? base.fornitoreName ?? '';
+            if (base.fornitoreSupplierId === undefined) {
+                base.fornitoreSupplierId = req.body.fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null;
+            }
             return base;
         })();
 

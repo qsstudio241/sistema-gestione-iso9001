@@ -758,7 +758,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **🔴 T5** | **Lock opzionale** — rimuove lock come prerequisito scrittura; lock solo UX informativo | Full-stack | ✅ Completato (01/05/2026) — assertWriteAllowed rimosso da audit/response/customChecklist/attachment controller |
 | **🔴 T6** | **Recovery UI + history API** + compaction job notturno — compliance ISO 9001 §7.5 | Full-stack | ⏳ Dopo T5 |
 | P4 | ISO 14001 checklist completa da norma PDF | Deputy | Backlog — dopo SYNC-3 |
-| P5 | Deputy Mason: dropdown seconda parte + foto Word OOXML fix | Deputy | In corso (DEPUTYTASK.md) |
+| P5 | **Deputy Mason — audit 2ª parte + fornitori anagrafica** (`fornitoreSupplierId`, `GET /suppliers?company_id=`, UI Anagrafiche `company_id`; parallelo PR #110) + foto Word OOXML fix (slice separata) | Deputy | 🔄 In corso — [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) |
 | P6 | **Sprint 10** - Ingest PDF → staging → document registry (commit umano) | Agente | ✅ Completato (03/05/2026) - commit `939af59` |
 | P7 | Sprint 11 — Riesame contratto / commesse | ✅ Completato (25/05/2026) | PR #67, smoke UI OK — vedi [GUIDA](GUIDA_CONSOLIDATA.md#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr) |
 | P8 | Sprint 12 — Office Round-trip WebDAV (PoC) | Backlog parallelo | [`agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md`](agent-tasks/TASK_SPRINT12_WEBDAV_PARALLEL.md) |

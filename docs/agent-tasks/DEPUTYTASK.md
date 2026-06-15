@@ -1,38 +1,44 @@
-# DEPUTYTASK — Chiusura sessione Import qualifiche ERAM — 14/06/2026
+# DEPUTYTASK — Flusso Mason: audit 2ª parte + anagrafica fornitori
 
-**Stato:** **CHIUSO — TEST OK**
+**Stato:** **CHIUSO — TEST OK** (L1 backend + frontend verdi; smoke L3 da eseguire su preview)
 
----
-
-## Sessione chiusa
-
-Import PDF qualifiche ERAM + workflow branch → Deploy Preview → merge.
-
-| Voce | Esito |
-|------|-------|
-| Qualifiche company scope + fix SQL `companies` | ✅ Live (VPS + `main`) |
-| Campi 9606-1 mig. 092 | ✅ Live |
-| PDF al commit qualifica mig. 093 | ✅ Live |
-| Alert/scadenzario qualifiche mig. 093 | ✅ Live |
-| Conferme semestrali mig. 094 | ✅ Live |
-| UX Import PDF | ✅ [PR #109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109) mergiata 14/06/2026 — preview **TEST OK** |
-| CORS Netlify preview + netlify-preflight + gh auth | ✅ Operativi |
-| Setup preview doc (`BACKUP_DATABASE_E_USO_BRANCH.md`) | ✅ Allineato — puntatore Deploy Preview |
-
-**Doc:** sezione [Sessione 14/06/2026](GUIDA_CONSOLIDATA.md#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura) in `GUIDA_CONSOLIDATA.md`.
+**Branch:** `feat/mason-audit-seconda-parte-suppliers`
 
 ---
 
-## Prossimo task (WIP locale — non committato)
+## Esito implementazione
 
-**Controparti PR2** — select committente in UI riesame contratto (`ContractReviewPage`), collegata ad anagrafica `company_counterparties` (mig. 096–097).
+| Slice | Stato | Note |
+|-------|--------|------|
+| 1 — `GET /suppliers?company_id=` | ✅ | Filtro + 400 su id invalido; Jest 3/3 pass |
+| 2 — Anagrafiche `company_id` | ✅ | Dropdown committente in SupplierForm + colonna tabella |
+| 3 — Audit UI suppliers | ✅ | AuditSelector + AuditAccordionLayout usano fornitori filtrati |
+| 4 — `fornitoreSupplierId` sync | ✅ | audit_extra_data + StorageContext + syncService + controller |
+| 5 — Test L1 | ✅ | `suppliers.controller.test.js` + `auditDataModel.createNewAudit.test.js` |
 
-Prerequisito PR1 (tab Controparti, backend FK) in working tree locale; migrazioni 096–097 **da eseguire su DB** prima del deploy.
+## Test L1 eseguiti
 
-Per avviare il deputy su PR2: sovrascrivere questo file con brief PR2 e lanciare:
+```text
+Backend:  suppliers.controller.test.js — 3 passed
+Frontend: auditDataModel.createNewAudit.test.js — 5 passed
+```
 
-`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+## Smoke L3 (da committente su preview post-merge)
+
+Passi 1–6 in DEPUTYTASK originale — annotare esito prima del deploy VPS backend.
+
+## Deploy post-merge
+
+```powershell
+.\backend\scripts\vps-preflight.ps1
+.\backend\scripts\deploy-controllers-to-vps.ps1
+curl -sk https://www.fr-busato.it:8443/api/v1/health
+```
 
 ---
 
-*Nessun task attivo in coda finché non si apre una nuova sessione.*
+## Comando deputy (archivio)
+
+```
+Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+```
