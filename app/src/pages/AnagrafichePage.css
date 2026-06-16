@@ -58,6 +58,16 @@
 .type-badge { border-radius: 4px; padding: .1rem .45rem; font-size: .75rem; font-weight: 500; white-space: nowrap; }
 .type-ext { background: #e3f2fd; color: #1565c0; }
 .type-int { background: #f3e5f5; color: #6a1b9a; }
+.role-badge.role-customer { background: #e8f5e9; color: #2e7d32; }
+.role-badge.role-end-customer { background: #e3f2fd; color: #1565c0; }
+.role-badge.role-supplier { background: #fff3e0; color: #e65100; }
+
+/* ── Controparti (CompanyCounterpartiesPanel) ── */
+.counterparties-panel-hint { margin-bottom: .75rem; }
+.form-hint { display: block; margin-top: .35rem; font-size: .78rem; color: #666; line-height: 1.4; }
+.form-hint.block-hint { margin-top: .45rem; padding: .45rem .6rem; background: #f0f7ff; border-radius: 4px; border-left: 3px solid #1976d2; }
+.counterparties-role-hint { margin-bottom: 0; }
+.counterparties-supplier-link a { color: var(--primary, #1976d2); }
 
 /* ── Active badge ── */
 .active-badge { border-radius: 4px; padding: .1rem .45rem; font-size: .75rem; }

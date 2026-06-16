@@ -165,6 +165,80 @@ describe('createCase', () => {
   });
 });
 
+// ─── updateCase — commercial_customer_id ─────────────────────────────────────
+describe('updateCase — commercial_customer_id', () => {
+  const existingCase = {
+    id: 12,
+    status: 'DRAFT',
+    title: 'Caso LM&CO',
+    organization_id: ORG_ID,
+    company_id: 55,
+    commercial_customer_id: null,
+    commercial_customer_name: 'PT.MAIDO',
+    commercial_customer_ref: null,
+    notes: null,
+    external_ref: null,
+    current_assignee_id: null,
+  };
+
+  it('collega controparte e sincronizza snapshot name/ref', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [existingCase] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 9,
+          name: 'PT.MAIDO',
+          external_ref: 'PT001',
+          role: 'end_customer',
+          company_id: 55,
+          organization_id: ORG_ID,
+          is_active: 1,
+        }],
+      })
+      .mockResolvedValueOnce({
+        recordset: [{
+          ...existingCase,
+          commercial_customer_id: 9,
+          commercial_customer_name: 'PT.MAIDO',
+          commercial_customer_ref: 'PT001',
+        }],
+      });
+
+    const req = mockReq({
+      params: { id: '12' },
+      body: { commercial_customer_id: 9 },
+    });
+    const res = mockRes();
+    await ctrl.updateCase(req, res);
+
+    expect(query.mock.calls[2][0]).toContain('commercial_customer_id = @commercialCustomerId');
+    expect(query.mock.calls[2][1]).toMatchObject({
+      commercialCustomerId: 9,
+      commercialCustomerName: 'PT.MAIDO',
+      commercialCustomerRef: 'PT001',
+    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ commercial_customer_id: 9 }),
+    );
+  });
+
+  it('rifiuta controparte non dell\'azienda (400)', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [existingCase] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const req = mockReq({
+      params: { id: '12' },
+      body: { commercial_customer_id: 999 },
+    });
+    const res = mockRes();
+    await ctrl.updateCase(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('VALIDATION_ERROR');
+  });
+});
+
 // ─── transitionStatus ────────────────────────────────────────────────────────
 describe('transitionStatus', () => {
   function setupTransitionMocks(currentStatus) {
