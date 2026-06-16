@@ -565,7 +565,7 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 3. Feature UI: branch → PR → preview → TEST OK → merge; eccezione solo hotfix o solo-backend già live.
 4. Preflight tooling: `.\backend\scripts\netlify-preflight.ps1` e `gh auth status` **prima** di dichiarare CLI non configurata.
 
-**WIP non incluso in questa chiusura (locale, non committato):** controparti azienda mig. 096–097 + tab Controparti + PR2 select riesame — vedi task futuro in roadmap.
+**Esperienza 16/06/2026 — Controparti PR1 live:** [PR #110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110) mergiata su `main` (merge `8b53608`); tab Controparti + mig. **096–097** + API nested; TEST OK committente (LM&CO, PT.MAIDO committente finale, riesame + analisi AI client senza errori console). **Prossimo:** PR2 select committente in `ContractReviewPage` ([DEPUTYTASK](agent-tasks/DEPUTYTASK.md)).
 
 ---
 

@@ -1,38 +1,31 @@
-# DEPUTYTASK — Chiusura sessione Import qualifiche ERAM — 14/06/2026
+# DEPUTYTASK — Nessun task deputy attivo — 16/06/2026
 
-**Stato:** **CHIUSO — TEST OK**
+**Stato:** **CHIUSO — TEST OK** (nessun brief in esecuzione)
 
 ---
 
-## Sessione chiusa
-
-Import PDF qualifiche ERAM + workflow branch → Deploy Preview → merge.
+## Sessione chiusa — Mason P5 (audit 2ª parte fornitori)
 
 | Voce | Esito |
 |------|-------|
-| Qualifiche company scope + fix SQL `companies` | ✅ Live (VPS + `main`) |
-| Campi 9606-1 mig. 092 | ✅ Live |
-| PDF al commit qualifica mig. 093 | ✅ Live |
-| Alert/scadenzario qualifiche mig. 093 | ✅ Live |
-| Conferme semestrali mig. 094 | ✅ Live |
-| UX Import PDF | ✅ [PR #109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109) mergiata 14/06/2026 — preview **TEST OK** |
-| CORS Netlify preview + netlify-preflight + gh auth | ✅ Operativi |
-| Setup preview doc (`BACKUP_DATABASE_E_USO_BRANCH.md`) | ✅ Allineato — puntatore Deploy Preview |
+| Dropdown fornitori filtrati + `fornitoreSupplierId` | ✅ Preview **TEST OK** committente |
+| PR | [PR #111](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/111) **aperta** — CI `test-and-build` SUCCESS, Netlify deploy-preview SUCCESS |
+| Merge | ⏸ In attesa committente (non merge automatico) |
 
-**Doc:** sezione [Sessione 14/06/2026](GUIDA_CONSOLIDATA.md#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura) in `GUIDA_CONSOLIDATA.md`.
+**Doc:** aggiornare `GUIDA_CONSOLIDATA.md` solo dopo merge PR #111.
 
 ---
 
-## Prossimo task (WIP locale — non committato)
+## Coda prossimi task
 
-**Controparti PR2** — select committente in UI riesame contratto (`ContractReviewPage`), collegata ad anagrafica `company_counterparties` (mig. 096–097).
+| # | Task | Note |
+|---|------|------|
+| **1** | **Controparti PR2** — select committente in `ContractReviewPage` | PR1 live: [PR #110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110) (mig. **096–097**, tab Controparti, API nested). UI: select su `company_counterparties` dell'azienda del case → `commercial_customer_id` (+ snapshot coerente, backend già in PR1). Pilota: LM&CO / PT.MAIDO; smoke riesame + analisi AI client. Traccia: [PROJECT_ROADMAP — Controparti](PROJECT_ROADMAP.md#open-points-e-memoria-trasversale-non-perdere-il-filo). |
 
-Prerequisito PR1 (tab Controparti, backend FK) in working tree locale; migrazioni 096–097 **da eseguire su DB** prima del deploy.
-
-Per avviare il deputy su PR2: sovrascrivere questo file con brief PR2 e lanciare:
+**Per avviare PR2:** espandere brief in sezione Obiettivo/DoD (file `ContractReviewPage.jsx`, Vitest, branch `feat/company-counterparties-pr2`) e lanciare:
 
 `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ---
 
-*Nessun task attivo in coda finché non si apre una nuova sessione.*
+*Nessun altro task in coda oltre PR2 finché non si chiude o si parcheggia.*
