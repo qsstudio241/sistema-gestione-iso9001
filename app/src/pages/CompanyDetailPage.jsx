@@ -10,12 +10,14 @@ import { canEditCompany } from "../utils/companyAccess";
 import apiService from "../services/apiService";
 import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
+import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
 
 const TABS = [
   { id: "anagrafica", label: "Anagrafica" },
   { id: "personale", label: "Personale" },
+  { id: "controparti", label: "Controparti" },
 ];
 
 function parseCompanyId(path) {
@@ -239,7 +241,7 @@ function CompanyDetailPage() {
         </Link>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda ? anagrafica e personale collegato alle NC.
+          Scheda azienda — anagrafica, personale e controparti commerciali.
         </p>
       </div>
 
@@ -269,6 +271,13 @@ function CompanyDetailPage() {
         )}
         {activeTab === "personale" && (
           <CompanyPersonnelPanel
+            companyId={company.id}
+            auditorOrgId={auditorOrgId}
+            canEdit={canEdit}
+          />
+        )}
+        {activeTab === "controparti" && (
+          <CompanyCounterpartiesPanel
             companyId={company.id}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}

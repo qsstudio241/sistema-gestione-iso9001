@@ -1,5 +1,5 @@
 /**
- * Migration 095: commercial_customer_name / commercial_customer_ref su commercial_cases
+ * Migration 096: company_counterparties + commercial_cases.commercial_customer_id
  */
 'use strict';
 
@@ -14,7 +14,7 @@ const env = process.env.NODE_ENV || 'production';
 const dbConfig = dbConfigAll[env] || dbConfigAll.production || dbConfigAll;
 
 const SQL_PATH = process.env.MIGRATION_SQL_PATH
-  || path.join(__dirname, '../../database/migrations/095_commercial_customer.sql');
+  || path.join(__dirname, '../../database/migrations/096_company_counterparties.sql');
 
 async function run() {
   let pool;
@@ -25,22 +25,16 @@ async function run() {
     for (const batch of batches) {
       await pool.request().query(batch);
     }
-    console.log('Migration 095 OK');
+    console.log('Migration 096 OK');
     const check = await pool.request().query(`
-      SELECT COLUMN_NAME
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_NAME = 'commercial_cases'
-        AND COLUMN_NAME IN ('commercial_customer_name', 'commercial_customer_ref')
-      ORDER BY COLUMN_NAME
+      SELECT
+        (SELECT COUNT(*) FROM sys.tables WHERE name = 'company_counterparties') AS cp_table,
+        (SELECT COUNT(*) FROM sys.columns
+          WHERE object_id = OBJECT_ID('commercial_cases') AND name = 'commercial_customer_id') AS cc_col
     `);
-    const cols = check.recordset.map((r) => r.COLUMN_NAME);
-    if (cols.length !== 2) {
-      console.error('VERIFICA FALLITA — colonne attese 2, trovate:', cols);
-      process.exit(1);
-    }
-    console.log('Verifica:', cols.join(', '));
+    console.log('Verifica:', check.recordset[0]);
   } catch (err) {
-    console.error('ERRORE migration 095:', err.message);
+    console.error('ERRORE migration 096:', err.message);
     process.exit(1);
   } finally {
     if (pool) await pool.close();

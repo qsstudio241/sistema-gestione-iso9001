@@ -601,6 +601,31 @@ class ApiService {
         return this.get(`/companies/${companyId}/personnel/${personnelId}/qualifications${query ? '?' + query : ''}`);
     }
 
+    async getCompanyCounterparties(companyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/counterparties${query ? '?' + query : ''}`);
+    }
+
+    async getCompanyCounterparty(companyId, counterpartyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/counterparties/${counterpartyId}${query ? '?' + query : ''}`);
+    }
+
+    async createCompanyCounterparty(companyId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/counterparties${query ? '?' + query : ''}`, data);
+    }
+
+    async updateCompanyCounterparty(companyId, counterpartyId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.put(`/companies/${companyId}/counterparties/${counterpartyId}${query ? '?' + query : ''}`, data);
+    }
+
+    async deactivateCompanyCounterparty(companyId, counterpartyId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.patch(`/companies/${companyId}/counterparties/${counterpartyId}/deactivate${query ? '?' + query : ''}`, {});
+    }
+
     // ==========================================
     // ORGANIZATION (tenant — P.IVA, logo)
     // ==========================================
