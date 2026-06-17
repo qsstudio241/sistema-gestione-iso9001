@@ -260,7 +260,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 **Esperienza 30/05/2026 — pulsanti workflow NC nel drawer (`.status-btn` 40×40)**
 
-`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
+`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe; lo stesso problema colpiva i **filtri scadenza azioni** («Tutte», «In scadenza 7 gg») con testo sovrapposto. Fix: override in `NCPage.css` su `.nc-workflow-btns .status-btn` e `.nc-action-due-filters .status-btn` (`width: auto`, padding, `white-space: nowrap`). Colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md). PR [#112](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/112) merge `main` 17/06/2026 — verifica committente mobile **TEST OK**.
 
 **Esperienza 31/05/2026 — RBAC Fase 2 (chiusura sessione — TEST OK)**
 
