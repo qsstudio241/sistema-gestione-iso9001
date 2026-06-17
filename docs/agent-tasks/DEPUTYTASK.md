@@ -1,28 +1,22 @@
-# DEPUTYTASK — Nessun task deputy attivo — 17/06/2026
+# DEPUTYTASK — Chiuso 17/06/2026
 
-**Stato:** **CHIUSO — TEST OK** (nessun brief in esecuzione)
+## Task completato: Trigger manuale promemoria NC
 
----
-
-## Sessione chiusa — Fix filtri scadenza azioni drawer NC
-
-| Voce | Esito |
+| Item | Stato |
 |------|-------|
-| Anomalia grafica filtri «Tutte» / «In scadenza 7 gg» sovrapposti | ✅ Corretto — `status-btn` 40×40 senza override testuale |
-| Verifica committente | ✅ **TEST OK** da mobile |
-| PR | [#112](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/112) **mergiata** su `main` (`267d627`) |
-| Deploy | Netlify auto-deploy da `main` (~2 min) |
+| PR #113 merge su main | ✅ commit `000571e` |
+| Fix SQL `nc.title` → `nc.description` | ✅ commit `441e85f` |
+| Deploy VPS (`notifications.controller`, `notifications.routes`, `ncAlertEscalation.service`) | ✅ VPS health OK, PID 9396 |
+| Smoke test dry-run `/run-nc-alerts` | ✅ 200 OK, 1 NC trovata |
+| Frontend Netlify (pulsanti UI) | ✅ deploy `000571e` ready |
+| `GUIDA_CONSOLIDATA.md` aggiornata | ✅ sessione 17/06/2026 |
+| `deploy-manifest.json` aggiornato | ✅ commit `441e85f` |
 
-**Doc:** lezione aggiornata in `GUIDA_CONSOLIDATA.md` (sezione pulsanti workflow NC / `.nc-action-due-filters`).
+## Prossimo task
+
+Nessuno — in attesa di feedback utente.
 
 ---
-
-## Coda prossimi task
-
-| # | Task | Note |
-|---|------|------|
-| **1** | **Mason P5** — dropdown fornitori audit 2ª parte | PR [#111](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/111) aperta — preview TEST OK committente, merge in attesa |
-| **2** | **Controparti PR2** — select committente in `ContractReviewPage` | PR1 live [#110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110). Traccia: [PROJECT_ROADMAP](PROJECT_ROADMAP.md) |
 
 **Per avviare un task:** sovrascrivere questo file con brief Obiettivo/DoD e lanciare:
 

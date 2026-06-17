@@ -3120,3 +3120,22 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ### File non nel deploy manifest (fix aggiunto)
 `projects.controller.js`, `qualifications.routes.js`, `projects.routes.js`, `documentTypeSchemas.js` — aggiunti al `deploy-manifest.json` nella stessa sessione.
+
+---
+
+### Sessione 17/06/2026 — Trigger manuale promemoria NC
+
+| Voce | Esito |
+|------|-------|
+| Endpoint | `POST /notifications-config/run-nc-alerts` — trigger manuale con `dryRun` flag, cooldown 15 min, risposta `{ success, dryRun, message, count }` |
+| Fix SQL | `nc.title` → `nc.description` in `fetchOrgNcRows` (`ncAlertEscalation.service.js`): la tabella `non_conformities` non ha colonna `title` |
+| UI | Pulsante «Invia promemoria NC ora» in Impostazioni → Notifiche con badge dry-run e cooldown visivo |
+| Deploy manifest | Aggiunti `ncAlertEscalation.service.js`, `notifications.controller.js`, `notificationContacts.controller.js`, `notifications.routes.js` |
+| Smoke | Dry-run `200 { success: true, dryRun: true, message: "Anteprima: 1 email..." }` — OK |
+| PR | #113 mergiata su `main` (commit `000571e`); fix SQL `441e85f`; manifest `bf09f37` |
+
+**Lezione chiave — schema NC:** `non_conformities` non ha colonna `title` — solo `description` e `nc_number`. Qualsiasi query che referenzia `nc.title` fallisce con *"Invalid column name 'title'"*. Usare `nc.description` come titolo descrittivo.
+
+**Pattern dry-run:** passare `{ dryRun: true }` a `runNcEscalationForOrg` per smoke test senza inviare email e senza scrivere su `nc_notification_log`.
+
+**Netlify + commit backend-only:** se un commit tocca solo file backend (non in `app/`), Netlify può annullare il build con *"Canceled build due to no content change"* — comportamento corretto, non un errore.
