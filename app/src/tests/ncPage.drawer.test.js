@@ -33,6 +33,8 @@ describe('NCPage drawer', () => {
     expect(css).toContain('.nc-detail-drawer');
     expect(css).toContain('.nc-detail-drawer-resizer');
     expect(css).toContain('.nc-drawer-section');
+    expect(css).toContain('.nc-action-due-filters .status-btn');
+    expect(css).toMatch(/\.nc-action-due-filters \.status-btn[\s\S]*width:\s*auto/);
     expect(css).not.toContain('.nc-detail-section');
   });
 

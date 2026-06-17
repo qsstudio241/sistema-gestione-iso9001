@@ -260,7 +260,7 @@ Componente unico `RichTextField.jsx` compone `AutoTextarea` (dettatura it-IT) + 
 
 **Esperienza 30/05/2026 — pulsanti workflow NC nel drawer (`.status-btn` 40×40)**
 
-`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe. Fix: classe dedicata `.nc-workflow-btn` (o equivalente in `NCPage.css`) con `min-width`, `white-space: nowrap`, layout flex nel drawer; colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md).
+`.status-btn` in `ChecklistModule.css` è pensato per **codici brevi** (C, NC, OSS…), box fisso 40×40 px. Nel drawer NC le etichette lunghe («Avvia lavorazione», «Segna come risolta») senza override spezzavano il testo su due righe; lo stesso problema colpiva i **filtri scadenza azioni** («Tutte», «In scadenza 7 gg») con testo sovrapposto. Fix: override in `NCPage.css` su `.nc-workflow-btns .status-btn` e `.nc-action-due-filters .status-btn` (`width: auto`, padding, `white-space: nowrap`). Colore giallo su «in corso» = variante `.partial` attesa, non bug. **Lezione libreria UI:** riusare la classe canonica ma adattare il **sizing al contesto** — vedi [`LIBRERIA_UI_SGQ.md`](reference/LIBRERIA_UI_SGQ.md). PR [#112](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/112) merge `main` 17/06/2026 — verifica committente mobile **TEST OK**.
 
 **Esperienza 31/05/2026 — RBAC Fase 2 (chiusura sessione — TEST OK)**
 
@@ -565,7 +565,7 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 3. Feature UI: branch → PR → preview → TEST OK → merge; eccezione solo hotfix o solo-backend già live.
 4. Preflight tooling: `.\backend\scripts\netlify-preflight.ps1` e `gh auth status` **prima** di dichiarare CLI non configurata.
 
-**WIP non incluso in questa chiusura (locale, non committato):** controparti azienda mig. 096–097 + tab Controparti + PR2 select riesame — vedi task futuro in roadmap.
+**Esperienza 16/06/2026 — Controparti PR1 live:** [PR #110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110) mergiata su `main` (merge `8b53608`); tab Controparti + mig. **096–097** + API nested; TEST OK committente (LM&CO, PT.MAIDO committente finale, riesame + analisi AI client senza errori console). **Prossimo:** PR2 select committente in `ContractReviewPage` ([DEPUTYTASK](agent-tasks/DEPUTYTASK.md)).
 
 ---
 
@@ -2500,7 +2500,7 @@ Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved 
 | **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
 | **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
 | **Gate verifica** | `verification_notes` obbligatorie per stati verified/closed (UI + API); migrazione **071** `verification_responsible` |
-| **Email remind NC** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**); attivare con `NC_ALERT_ENABLED=true` sul VPS (richiede anche `ALERT_ENABLED=true`, `SMTP_*`, `notifications_config.enabled=1`). Ops 30/05/2026: migrazione **071** OK, deploy backend + health OK. |
+| **Email remind NC / trigger manuale** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**) + `POST /api/v1/notifications-config/run-nc-alerts` (admin, dry-run disponibile via `?dryRun=true`); UI in Impostazioni → Notifiche (sezione "Smoke test promemoria NC", pulsanti "Anteprima" e "Esegui ora"). Fix SQL 17/06/2026: rimossa colonna inesistente `nc.title` (sostituita con `nc.description`). Deploy PR #113 + fix `441e85f` su main. |
 
 Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
 
@@ -2542,7 +2542,7 @@ Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
 | Slice | Implementazione |
 |-------|-----------------|
 | **H1 Push custom** | `pushAuditToNcRegister` legge anche `audit_custom_checklist_responses` (NC/OSS); idempotenza `(audit_id, source_custom_item_id)` migrazione **072**; summary `iso_findings` + `custom_findings` |
-| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
+| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05 + trigger manuale `POST /notifications-config/run-nc-alerts`; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
 | **H3 Approvazione RQ** | Colonne `approved_by`, `approved_at`; `POST /non-conformities/:id/approve-closure` (admin/superadmin); gate `closed` → `NC_APPROVAL_REQUIRED` |
 | **H4 Sezioni modal** | `NcCreateModal` carica sezioni da `GET /checklist/sections?standard_id=` dell'audit selezionato |
 | **H5 Export CSV** | Pulsante «Export CSV» in `/nc` — export client-side con filtri griglia correnti |
@@ -3120,3 +3120,22 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ### File non nel deploy manifest (fix aggiunto)
 `projects.controller.js`, `qualifications.routes.js`, `projects.routes.js`, `documentTypeSchemas.js` — aggiunti al `deploy-manifest.json` nella stessa sessione.
+
+---
+
+### Sessione 17/06/2026 — Trigger manuale promemoria NC
+
+| Voce | Esito |
+|------|-------|
+| Endpoint | `POST /notifications-config/run-nc-alerts` — trigger manuale con `dryRun` flag, cooldown 15 min, risposta `{ success, dryRun, message, count }` |
+| Fix SQL | `nc.title` → `nc.description` in `fetchOrgNcRows` (`ncAlertEscalation.service.js`): la tabella `non_conformities` non ha colonna `title` |
+| UI | Pulsante «Invia promemoria NC ora» in Impostazioni → Notifiche con badge dry-run e cooldown visivo |
+| Deploy manifest | Aggiunti `ncAlertEscalation.service.js`, `notifications.controller.js`, `notificationContacts.controller.js`, `notifications.routes.js` |
+| Smoke | Dry-run `200 { success: true, dryRun: true, message: "Anteprima: 1 email..." }` — OK |
+| PR | #113 mergiata su `main` (commit `000571e`); fix SQL `441e85f`; manifest `bf09f37` |
+
+**Lezione chiave — schema NC:** `non_conformities` non ha colonna `title` — solo `description` e `nc_number`. Qualsiasi query che referenzia `nc.title` fallisce con *"Invalid column name 'title'"*. Usare `nc.description` come titolo descrittivo.
+
+**Pattern dry-run:** passare `{ dryRun: true }` a `runNcEscalationForOrg` per smoke test senza inviare email e senza scrivere su `nc_notification_log`.
+
+**Netlify + commit backend-only:** se un commit tocca solo file backend (non in `app/`), Netlify può annullare il build con *"Canceled build due to no content change"* — comportamento corretto, non un errore.

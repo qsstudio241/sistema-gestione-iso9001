@@ -4,7 +4,7 @@
 
 const express  = require('express');
 const router   = express.Router();
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const notifCtrl = require('../controllers/notifications.controller');
 const contactsCtrl = require('../controllers/notificationContacts.controller');
@@ -15,6 +15,11 @@ router.use(requireLicensedModule('notifications'));
 router.get ('/notifications-config',       notifCtrl.getConfig);
 router.put ('/notifications-config',       notifCtrl.saveConfig);
 router.post('/notifications-config/test',  notifCtrl.sendTestEmail);
+router.post(
+  '/notifications-config/run-nc-alerts',
+  authorize('admin'),
+  notifCtrl.runNcAlertsNow,
+);
 
 router.get   ('/notification-contacts',           contactsCtrl.listContacts);
 router.post  ('/notification-contacts',           contactsCtrl.createContact);

@@ -1,44 +1,26 @@
-# DEPUTYTASK — Flusso Mason: audit 2ª parte + anagrafica fornitori
+# DEPUTYTASK — Chiuso merge PR #111 (17/06/2026)
 
-**Stato:** **CHIUSO — TEST OK** (L1 backend + frontend verdi; smoke L3 da eseguire su preview)
+## Mason: audit 2ª parte + fornitori / counterparties
 
-**Branch:** `feat/mason-audit-seconda-parte-suppliers`
+| Item | Stato |
+|------|-------|
+| PR #111 merge su main | ✅ (post-push) |
+| Migrazioni 096-097 DB | Eseguire su VPS se non già applicate |
+| Deploy VPS backend | Controllers audit/suppliers/counterparties |
+| Netlify frontend | Auto deploy ~2 min su push main |
 
----
+## Smoke L3 prod (committente)
 
-## Esito implementazione
+1. Nuovo audit Mason → seconda parte: dropdown fornitori filtrati per committente
+2. Anagrafiche → fornitori: colonna/filtro committente
+3. Sync `fornitoreSupplierId` multi-device
 
-| Slice | Stato | Note |
-|-------|--------|------|
-| 1 — `GET /suppliers?company_id=` | ✅ | Filtro + 400 su id invalido; Jest 3/3 pass |
-| 2 — Anagrafiche `company_id` | ✅ | Dropdown committente in SupplierForm + colonna tabella |
-| 3 — Audit UI suppliers | ✅ | AuditSelector + AuditAccordionLayout usano fornitori filtrati |
-| 4 — `fornitoreSupplierId` sync | ✅ | audit_extra_data + StorageContext + syncService + controller |
-| 5 — Test L1 | ✅ | `suppliers.controller.test.js` + `auditDataModel.createNewAudit.test.js` |
+## Prossimo task
 
-## Test L1 eseguiti
-
-```text
-Backend:  suppliers.controller.test.js — 3 passed
-Frontend: auditDataModel.createNewAudit.test.js — 5 passed
-```
-
-## Smoke L3 (da committente su preview post-merge)
-
-Passi 1–6 in DEPUTYTASK originale — annotare esito prima del deploy VPS backend.
-
-## Deploy post-merge
-
-```powershell
-.\backend\scripts\vps-preflight.ps1
-.\backend\scripts\deploy-controllers-to-vps.ps1
-curl -sk https://www.fr-busato.it:8443/api/v1/health
-```
+In attesa di brief committente.
 
 ---
 
-## Comando deputy (archivio)
+**Per avviare un task:** sovrascrivere questo file con brief Obiettivo/DoD e lanciare:
 
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
