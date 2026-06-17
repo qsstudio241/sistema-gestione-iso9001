@@ -7,6 +7,10 @@
 
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { runNcEscalationForOrg } = require('../services/ncAlertEscalation.service');
+
+const MANUAL_NC_COOLDOWN_MS = 15 * 60 * 1000;
+const lastManualNcAlertByOrg = new Map();
 
 /** GET /notifications-config */
 async function getConfig(req, res) {
@@ -195,4 +199,110 @@ async function sendTestEmail(req, res) {
   }
 }
 
-module.exports = { getConfig, saveConfig, sendTestEmail };
+async function loadOrgNotificationsConfig(pool, orgId) {
+  const result = await pool.request()
+    .input('orgId', orgId)
+    .query(`
+      SELECT nc.organization_id, nc.recipients_email, nc.alert_days_1, nc.alert_days_2,
+             nc.send_time, nc.alert_nc_open, nc.enabled,
+             o.organization_name
+      FROM notifications_config nc
+      JOIN organizations o ON nc.organization_id = o.organization_id
+      WHERE nc.organization_id = @orgId
+    `);
+  return result.recordset[0] || null;
+}
+
+/** POST /notifications-config/run-nc-alerts — esecuzione manuale promemoria NC (admin) */
+async function runNcAlertsNow(req, res) {
+  try {
+    const orgId = req.user.organization_id;
+    const userId = req.user.user_id;
+    const dryRun = req.query.dryRun === 'true' || req.body?.dryRun === true;
+
+    if (!dryRun) {
+      const lastRun = lastManualNcAlertByOrg.get(orgId);
+      if (lastRun && Date.now() - lastRun < MANUAL_NC_COOLDOWN_MS) {
+        const waitMin = Math.ceil((MANUAL_NC_COOLDOWN_MS - (Date.now() - lastRun)) / 60000);
+        return res.status(429).json({
+          error: `Attendi ${waitMin} minuti prima di un nuovo invio manuale.`,
+          code: 'NC_ALERT_COOLDOWN',
+        });
+      }
+
+      if (process.env.ALERT_ENABLED !== 'true') {
+        return res.status(503).json({
+          error: 'Alert disabilitati sul server (ALERT_ENABLED).',
+          code: 'ALERT_DISABLED',
+        });
+      }
+      if (process.env.NC_ALERT_ENABLED !== 'true') {
+        return res.status(503).json({
+          error: 'Alert NC disabilitati sul server (NC_ALERT_ENABLED).',
+          code: 'NC_ALERT_DISABLED',
+        });
+      }
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+        return res.status(503).json({
+          error: 'SMTP non configurato sul server.',
+          code: 'SMTP_NOT_CONFIGURED',
+        });
+      }
+    }
+
+    const pool = await getPool();
+    const cfg = await loadOrgNotificationsConfig(pool, orgId);
+
+    if (!cfg) {
+      return res.status(400).json({
+        error: 'Configurazione notifiche assente. Salva prima le impostazioni.',
+        code: 'NOTIFICATIONS_CONFIG_MISSING',
+      });
+    }
+    if (!cfg.enabled) {
+      return res.status(400).json({
+        error: 'Notifiche disabilitate per questa organizzazione.',
+        code: 'NOTIFICATIONS_DISABLED',
+      });
+    }
+    if (!cfg.alert_nc_open) {
+      return res.status(400).json({
+        error: 'Alert NC disabilitato nelle impostazioni.',
+        code: 'NC_ALERT_OFF',
+      });
+    }
+
+    const result = await runNcEscalationForOrg(pool, cfg, { dryRun });
+
+    if (!dryRun) {
+      lastManualNcAlertByOrg.set(orgId, Date.now());
+      logger.info(
+        `[NC_ALERT_MANUAL] user=${userId} org=${orgId} sent=${result.sent} skipped=${result.skippedDuplicate}`,
+      );
+    } else {
+      logger.info(
+        `[NC_ALERT_PREVIEW] user=${userId} org=${orgId} wouldSend=${result.wouldSend} skipped=${result.skippedDuplicate}`,
+      );
+    }
+
+    const message = dryRun
+      ? (result.wouldSend > 0
+        ? `Anteprima: ${result.wouldSend} email da inviare a ${result.recipients.length} destinatari.`
+        : 'Anteprima: nessuna email da inviare (nessuna NC/azione in soglia o già notificate oggi).')
+      : (result.sent > 0
+        ? `Inviate ${result.sent} email di promemoria NC.`
+        : 'Nessuna email inviata (nessuna NC/azione in soglia o già notificate oggi).');
+
+    res.json({
+      success: true,
+      dryRun,
+      message,
+      ...result,
+    });
+  } catch (err) {
+    logger.error('runNcAlertsNow:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { getConfig, saveConfig, sendTestEmail, runNcAlertsNow };
