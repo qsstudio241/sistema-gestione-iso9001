@@ -1,18 +1,19 @@
-# DEPUTYTASK — Nessun task deputy attivo — 16/06/2026
+# DEPUTYTASK — Nessun task deputy attivo — 17/06/2026
 
 **Stato:** **CHIUSO — TEST OK** (nessun brief in esecuzione)
 
 ---
 
-## Sessione chiusa — Mason P5 (audit 2ª parte fornitori)
+## Sessione chiusa — Fix filtri scadenza azioni drawer NC
 
 | Voce | Esito |
 |------|-------|
-| Dropdown fornitori filtrati + `fornitoreSupplierId` | ✅ Preview **TEST OK** committente |
-| PR | [PR #111](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/111) **aperta** — CI `test-and-build` SUCCESS, Netlify deploy-preview SUCCESS |
-| Merge | ⏸ In attesa committente (non merge automatico) |
+| Anomalia grafica filtri «Tutte» / «In scadenza 7 gg» sovrapposti | ✅ Corretto — `status-btn` 40×40 senza override testuale |
+| Verifica committente | ✅ **TEST OK** da mobile |
+| PR | [#112](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/112) **mergiata** su `main` (`267d627`) |
+| Deploy | Netlify auto-deploy da `main` (~2 min) |
 
-**Doc:** aggiornare `GUIDA_CONSOLIDATA.md` solo dopo merge PR #111.
+**Doc:** lezione aggiornata in `GUIDA_CONSOLIDATA.md` (sezione pulsanti workflow NC / `.nc-action-due-filters`).
 
 ---
 
@@ -20,12 +21,9 @@
 
 | # | Task | Note |
 |---|------|------|
-| **1** | **Controparti PR2** — select committente in `ContractReviewPage` | PR1 live: [PR #110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110) (mig. **096–097**, tab Controparti, API nested). UI: select su `company_counterparties` dell'azienda del case → `commercial_customer_id` (+ snapshot coerente, backend già in PR1). Pilota: LM&CO / PT.MAIDO; smoke riesame + analisi AI client. Traccia: [PROJECT_ROADMAP — Controparti](PROJECT_ROADMAP.md#open-points-e-memoria-trasversale-non-perdere-il-filo). |
+| **1** | **Mason P5** — dropdown fornitori audit 2ª parte | PR [#111](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/111) aperta — preview TEST OK committente, merge in attesa |
+| **2** | **Controparti PR2** — select committente in `ContractReviewPage` | PR1 live [#110](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/110). Traccia: [PROJECT_ROADMAP](PROJECT_ROADMAP.md) |
 
-**Per avviare PR2:** espandere brief in sezione Obiettivo/DoD (file `ContractReviewPage.jsx`, Vitest, branch `feat/company-counterparties-pr2`) e lanciare:
+**Per avviare un task:** sovrascrivere questo file con brief Obiettivo/DoD e lanciare:
 
 `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
-
----
-
-*Nessun altro task in coda oltre PR2 finché non si chiude o si parcheggia.*
