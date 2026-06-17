@@ -611,6 +611,7 @@ export class SyncService {
             // Tipologia audit (prima/seconda parte) e fornitore — sempre inviati per coerenza backend
             auditExtraData.auditPartyType = auditData.audit_party_type ?? auditData.metadata?.auditPartyType ?? 'first_party';
             auditExtraData.fornitoreName = auditData.fornitore_name ?? auditData.metadata?.fornitoreName ?? '';
+            auditExtraData.fornitoreSupplierId = auditData.fornitore_supplier_id ?? auditData.metadata?.fornitoreSupplierId ?? null;
 
             const mappedAudit = {
                 ...auditData,

@@ -1,20 +1,23 @@
-# DEPUTYTASK — Chiuso 17/06/2026
+# DEPUTYTASK — Chiuso merge PR #111 (17/06/2026)
 
-## Task completato: Trigger manuale promemoria NC
+## Mason: audit 2ª parte + fornitori / counterparties
 
 | Item | Stato |
 |------|-------|
-| PR #113 merge su main | ✅ commit `000571e` |
-| Fix SQL `nc.title` → `nc.description` | ✅ commit `441e85f` |
-| Deploy VPS (`notifications.controller`, `notifications.routes`, `ncAlertEscalation.service`) | ✅ VPS health OK, PID 9396 |
-| Smoke test dry-run `/run-nc-alerts` | ✅ 200 OK, 1 NC trovata |
-| Frontend Netlify (pulsanti UI) | ✅ deploy `000571e` ready |
-| `GUIDA_CONSOLIDATA.md` aggiornata | ✅ sessione 17/06/2026 |
-| `deploy-manifest.json` aggiornato | ✅ commit `441e85f` |
+| PR #111 merge su main | ✅ (post-push) |
+| Migrazioni 096-097 DB | Eseguire su VPS se non già applicate |
+| Deploy VPS backend | Controllers audit/suppliers/counterparties |
+| Netlify frontend | Auto deploy ~2 min su push main |
+
+## Smoke L3 prod (committente)
+
+1. Nuovo audit Mason → seconda parte: dropdown fornitori filtrati per committente
+2. Anagrafiche → fornitori: colonna/filtro committente
+3. Sync `fornitoreSupplierId` multi-device
 
 ## Prossimo task
 
-Nessuno — in attesa di feedback utente.
+In attesa di brief committente.
 
 ---
 
