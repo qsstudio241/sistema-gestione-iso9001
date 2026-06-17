@@ -1365,6 +1365,11 @@ class ApiService {
         return this.post('/notifications-config/test', {});
     }
 
+    async runNcAlertsNow({ dryRun = false } = {}) {
+        const qs = dryRun ? '?dryRun=true' : '';
+        return this.post(`/notifications-config/run-nc-alerts${qs}`, { dryRun });
+    }
+
     async getNotificationContacts(params = {}) {
         const qs = new URLSearchParams(params).toString();
         return this.get(`/notification-contacts${qs ? '?' + qs : ''}`);
