@@ -124,7 +124,7 @@ async function fetchOrgNcRows(pool, orgId) {
     .input('orgId', orgId)
     .query(`
       SELECT
-        nc.nc_id, nc.nc_number, nc.title, nc.description, nc.status, nc.due_date, nc.created_at,
+        nc.nc_id, nc.nc_number, nc.description, nc.status, nc.due_date, nc.created_at,
         nc.responsible_person, nc.verification_responsible,
         nc.responsible_contact_id, nc.verification_contact_id,
         rc.name AS responsible_contact_name, rc.email AS responsible_contact_email,
@@ -188,13 +188,37 @@ function resolveActionRecipients(row, ccFallback) {
   return { primary, cc: ccFallback.filter((e) => !seen.has(e)) };
 }
 
+function summarizeRecipient(email, bucket) {
+  return {
+    email,
+    name: bucket.name,
+    ncCount: bucket.nc.length,
+    actionCount: bucket.actions.length,
+    nc: bucket.nc.map((item) => ({
+      nc_number: item.nc_number,
+      description: item.description ? String(item.description).substring(0, 80) : null,
+      ruleLabel: item.ruleLabel,
+      due_date: item.due_date,
+    })),
+    actions: bucket.actions.map((item) => ({
+      nc_number: item.nc_number,
+      description: item.description ? String(item.description).substring(0, 80) : null,
+      ruleLabel: item.ruleLabel,
+      due_date: item.due_date,
+    })),
+  };
+}
+
 /**
  * @param {object} orgConfig row notifications_config + organization_name
+ * @param {{ dryRun?: boolean }} [options]
  */
-async function runNcEscalationForOrg(pool, orgConfig) {
+async function runNcEscalationForOrg(pool, orgConfig, options = {}) {
+  const { dryRun = false } = options;
+
   if (!orgConfig.alert_nc_open) {
     logger.info(`[NcEscalation] Org ${orgConfig.organization_id}: alert_nc_open disabilitato`);
-    return { sent: 0 };
+    return { sent: 0, wouldSend: 0, skippedDuplicate: 0, dryRun, recipients: [] };
   }
 
   const thresholds = buildEscalationThresholds(orgConfig.alert_days_1, orgConfig.alert_days_2);
@@ -208,6 +232,7 @@ async function runNcEscalationForOrg(pool, orgConfig) {
 
   /** @type {Map<string, { name: string, nc: object[], actions: object[] }>} */
   const digestByEmail = new Map();
+  let skippedDuplicate = 0;
 
   for (const row of ncs) {
     const rule = matchNcAlertRule({
@@ -219,7 +244,7 @@ async function runNcEscalationForOrg(pool, orgConfig) {
     });
     if (!rule) continue;
 
-    const { primary, cc } = resolveNcRecipients(row, ccFallback);
+    const { primary } = resolveNcRecipients(row, ccFallback);
     const targets = primary.length > 0
       ? primary
       : ccFallback.map((email) => ({ email, name: null }));
@@ -230,7 +255,10 @@ async function runNcEscalationForOrg(pool, orgConfig) {
       const already = await wasAlreadySent(
         pool, 'nc', row.nc_id, email, alertDateStr, rule.thresholdDays,
       );
-      if (already) continue;
+      if (already) {
+        skippedDuplicate += 1;
+        continue;
+      }
 
       if (!digestByEmail.has(email)) {
         digestByEmail.set(email, { name: target.name, nc: [], actions: [] });
@@ -258,7 +286,10 @@ async function runNcEscalationForOrg(pool, orgConfig) {
       const already = await wasAlreadySent(
         pool, 'action', row.action_id, email, alertDateStr, rule.thresholdDays,
       );
-      if (already) continue;
+      if (already) {
+        skippedDuplicate += 1;
+        continue;
+      }
 
       if (!digestByEmail.has(email)) {
         digestByEmail.set(email, { name: target.name, nc: [], actions: [] });
@@ -273,9 +304,18 @@ async function runNcEscalationForOrg(pool, orgConfig) {
     }
   }
 
+  const recipients = [];
   let sentCount = 0;
+
   for (const [email, bucket] of digestByEmail.entries()) {
     if (bucket.nc.length === 0 && bucket.actions.length === 0) continue;
+
+    recipients.push(summarizeRecipient(email, bucket));
+
+    if (dryRun) {
+      sentCount += 1;
+      continue;
+    }
 
     const cc = ccFallback.filter((e) => e !== email);
     const html = buildDigestHtml(orgConfig.organization_name, bucket.name, bucket.nc, bucket.actions);
@@ -316,7 +356,13 @@ async function runNcEscalationForOrg(pool, orgConfig) {
     }
   }
 
-  return { sent: sentCount };
+  return {
+    sent: dryRun ? 0 : sentCount,
+    wouldSend: dryRun ? sentCount : sentCount,
+    skippedDuplicate,
+    dryRun,
+    recipients,
+  };
 }
 
 module.exports = {
