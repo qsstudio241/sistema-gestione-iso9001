@@ -124,7 +124,7 @@ async function fetchOrgNcRows(pool, orgId) {
     .input('orgId', orgId)
     .query(`
       SELECT
-        nc.nc_id, nc.nc_number, nc.title, nc.description, nc.status, nc.due_date, nc.created_at,
+        nc.nc_id, nc.nc_number, nc.description, nc.status, nc.due_date, nc.created_at,
         nc.responsible_person, nc.verification_responsible,
         nc.responsible_contact_id, nc.verification_contact_id,
         rc.name AS responsible_contact_name, rc.email AS responsible_contact_email,
@@ -196,7 +196,7 @@ function summarizeRecipient(email, bucket) {
     actionCount: bucket.actions.length,
     nc: bucket.nc.map((item) => ({
       nc_number: item.nc_number,
-      title: item.title || (item.description ? String(item.description).substring(0, 80) : null),
+      description: item.description ? String(item.description).substring(0, 80) : null,
       ruleLabel: item.ruleLabel,
       due_date: item.due_date,
     })),
