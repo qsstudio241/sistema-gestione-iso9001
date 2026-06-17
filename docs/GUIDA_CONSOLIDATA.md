@@ -2500,7 +2500,7 @@ Registro cross-audit ISO §10.2 con workflow `open → in_progress → resolved 
 | **Tracciabilità** | Badge origine + link reclamo (`source_complaint_id`) + link audit; `PendingIssuesCascade` link `/nc?select=` |
 | **Scadenze** | API `overdue=true`, `due_within_days=7`; stats `due_soon`; filtro UI «In scadenza (7 gg)» |
 | **Gate verifica** | `verification_notes` obbligatorie per stati verified/closed (UI + API); migrazione **071** `verification_responsible` |
-| **Email remind NC** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**); attivare con `NC_ALERT_ENABLED=true` sul VPS (richiede anche `ALERT_ENABLED=true`, `SMTP_*`, `notifications_config.enabled=1`). Ops 30/05/2026: migrazione **071** OK, deploy backend + health OK. |
+| **Email remind NC / trigger manuale** | Job `runNcDueAlertJob` in `alertScheduler.js` (cron **08:05**) + `POST /api/v1/notifications-config/run-nc-alerts` (admin, dry-run disponibile via `?dryRun=true`); UI in Impostazioni → Notifiche (sezione "Smoke test promemoria NC", pulsanti "Anteprima" e "Esegui ora"). Fix SQL 17/06/2026: rimossa colonna inesistente `nc.title` (sostituita con `nc.description`). Deploy PR #113 + fix `441e85f` su main. |
 
 Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test.js`, `nc.controller.test.js`.
 
@@ -2542,7 +2542,7 @@ Verifica: GET /non-conformities/1042|1043|1037 su API produzione.
 | Slice | Implementazione |
 |-------|-----------------|
 | **H1 Push custom** | `pushAuditToNcRegister` legge anche `audit_custom_checklist_responses` (NC/OSS); idempotenza `(audit_id, source_custom_item_id)` migrazione **072**; summary `iso_findings` + `custom_findings` |
-| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
+| **H2 Email NC** | Job `runNcDueAlertJob` cron 08:05 + trigger manuale `POST /notifications-config/run-nc-alerts`; VPS: `ALERT_ENABLED=true`, `NC_ALERT_ENABLED=true`, `SMTP_*` configurati |
 | **H3 Approvazione RQ** | Colonne `approved_by`, `approved_at`; `POST /non-conformities/:id/approve-closure` (admin/superadmin); gate `closed` → `NC_APPROVAL_REQUIRED` |
 | **H4 Sezioni modal** | `NcCreateModal` carica sezioni da `GET /checklist/sections?standard_id=` dell'audit selezionato |
 | **H5 Export CSV** | Pulsante «Export CSV» in `/nc` — export client-side con filtri griglia correnti |
