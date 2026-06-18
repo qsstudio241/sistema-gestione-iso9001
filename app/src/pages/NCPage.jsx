@@ -12,7 +12,7 @@ import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
-import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import { NC_SOURCE_TYPE_LABELS, NC_SOURCE_CATEGORIES } from "../utils/ncCreateHelpers";
 import { downloadNcCsv } from "../utils/ncExportHelpers";
 import { exportNcToWord } from "../utils/ncWordExport";
 import {
@@ -69,13 +69,14 @@ export default function NCPage() {
   const [loading, setLoading]       = useState(true);
   const [selectedNcId, setSelectedNcId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createDefaultCategory, setCreateDefaultCategory] = useState("audit");
   const [viewMode, setViewMode] = useState("nc");
   const [dueActions, setDueActions] = useState([]);
   const [dueActionsLoading, setDueActionsLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [exportWordError, setExportWordError] = useState(null);
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
+  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchNc, setSearchNc] = useState("");
@@ -111,6 +112,7 @@ export default function NCPage() {
       if (filters.overdue)          params.overdue          = filters.overdue;
       if (filters.due_within_days)  params.due_within_days  = filters.due_within_days;
       if (filters.company_id)       params.company_id       = filters.company_id;
+      if (filters.source_category)  params.source_category  = filters.source_category;
 
       const [listRes, statsRes] = await Promise.all([
         apiService.getAllNonConformities(params),
@@ -209,7 +211,7 @@ export default function NCPage() {
   }
 
   function resetFilters() {
-    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
+    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
     setSearchNc("");
     setPage(1);
     setSelectedNcId(null);
@@ -254,6 +256,11 @@ export default function NCPage() {
     }
   }
 
+  function openCreateWith(category) {
+    setCreateDefaultCategory(category);
+    setShowCreateModal(true);
+  }
+
   function handleCreated() {
     setShowCreateModal(false);
     loadNc();
@@ -292,7 +299,7 @@ export default function NCPage() {
   const activeCard = getActiveCard();
   const hasActiveFilter = !!(
     filters.status || filters.severity || filters.overdue
-    || filters.due_within_days || filters.company_id || searchNc
+    || filters.due_within_days || filters.company_id || filters.source_category || searchNc
   );
 
   function renderGridCell(row, col) {
@@ -318,8 +325,17 @@ export default function NCPage() {
         );
       case "due_date":
         return row.due_date ? formatDate(row.due_date) : "\u2014";
-      case "source_type":
+      case "source_type": {
+        const catCfg = NC_SOURCE_CATEGORIES[row.source_category];
+        if (catCfg) {
+          return (
+            <span className={`nc-cat-badge nc-cat-${row.source_category}`}>
+              {catCfg.icon} {catCfg.label}
+            </span>
+          );
+        }
         return NC_SOURCE_TYPE_LABELS[row.source_type] || row.source_type || "\u2014";
+      }
       default:
         return row[col.id] ?? "\u2014";
     }
@@ -336,8 +352,8 @@ export default function NCPage() {
     <div className="nc-page">
       <div className="nc-page-header">
         <div>
-          <h1>{"\uD83D\uDEA8 Non Conformit\u00E0 & Azioni Correttive"}</h1>
-          <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
+          <h1>{"\uD83D\uDEA8 Piano Azioni & Non Conformit\u00E0"}</h1>
+          <p className="nc-page-sub">ISO 9001:2015 \u00A76.1 + \u00A79.3 + \u00A710.2 + \u00A710.3 \u2014 Registro cross-fonte</p>
         </div>
         <div className="nc-page-header-actions">
           <button
@@ -356,10 +372,39 @@ export default function NCPage() {
           >
             Export CSV
           </button>
-          <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
-            + Nuova NC
+          <button type="button" className="btn-primary" onClick={() => openCreateWith("audit")}>
+            + Nuova azione / NC
           </button>
         </div>
+      </div>
+
+      {/* ── Shortcuts azione rapida (Slice 3) ─────────────────────── */}
+      <div className="nc-shortcuts-bar" role="group" aria-label="Crea azione rapida">
+        <span style={{ fontSize: "0.75rem", color: "#718096", alignSelf: "center", marginRight: 4 }}>
+          Crea azione da:
+        </span>
+        {[
+          { cat: "audit",            label: "Audit interno" },
+          { cat: "management_review",label: "Riesame Direzione" },
+          { cat: "risk_action",      label: "Analisi rischi" },
+          { cat: "improvement",      label: "Miglioramento" },
+          { cat: "complaint",        label: "Reclamo" },
+          { cat: "operational",      label: "Rilievo operativo" },
+          { cat: "external_audit",   label: "Audit esterno" },
+        ].map(({ cat, label }) => {
+          const cfg = NC_SOURCE_CATEGORIES[cat];
+          return (
+            <button
+              key={cat}
+              type="button"
+              className="nc-shortcut-btn"
+              onClick={() => openCreateWith(cat)}
+              title={`Nuova azione — ${cfg.label} (${cfg.iso})`}
+            >
+              {cfg.icon} {label}
+            </button>
+          );
+        })}
       </div>
 
       {stats && (
@@ -446,10 +491,21 @@ export default function NCPage() {
         </select>
 
         <select value={filters.severity} onChange={e => handleFilter("severity", e.target.value)}>
-          <option value="">Tutte le severità</option>
+          <option value="">Tutte le severit{"\u00E0"}</option>
           <option value="major">Grave</option>
           <option value="minor">Lieve</option>
           <option value="observation">Osservazione</option>
+        </select>
+
+        <select
+          value={filters.source_category}
+          onChange={e => handleFilter("source_category", e.target.value)}
+          title="Filtra per categoria origine"
+        >
+          <option value="">Tutte le origini</option>
+          {Object.entries(NC_SOURCE_CATEGORIES).map(([val, cfg]) => (
+            <option key={val} value={val}>{cfg.icon} {cfg.label}</option>
+          ))}
         </select>
 
         <select
@@ -607,6 +663,7 @@ export default function NCPage() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreated={handleCreated}
+        defaultCategory={createDefaultCategory}
       />
     </div>
   );
