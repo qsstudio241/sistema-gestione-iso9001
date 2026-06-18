@@ -75,3 +75,5 @@ database/backups/
 .cursor/mcp.json
 .cursor/mcp.env
 .cursorrrules
+
+backend/scripts/patch-test-db-config-vps.js
