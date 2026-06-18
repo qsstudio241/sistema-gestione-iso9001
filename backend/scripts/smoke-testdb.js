@@ -1,5 +1,6 @@
 /**
  * Smoke: verifica struttura e integrità del DB di test.
+ * v1.1 — test workflow PR con smoke automatico su GitHub Actions
  * Controlla che le tabelle chiave esistano, abbiano dati e che lo schema
  * sia allineato con il DB di produzione.
  *
