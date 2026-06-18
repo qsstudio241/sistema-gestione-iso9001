@@ -1,0 +1,48 @@
+# Smoke test remoto sul DB di test via backend VPS.
+# NON richiede accesso diretto a SQL Server: chiama l'endpoint HTTPS del backend
+# che esegue le verifiche internamente con una connessione isolata al profilo "test".
+#
+# Segreti GitHub richiesti (Settings → Secrets and variables → Actions):
+#   SMOKE_ENDPOINT  — es. "www.fr-busato.it:8443"
+#   SMOKE_TOKEN     — token segreto da impostare anche nel .env del VPS
+
+name: Smoke test DB test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/src/**'
+      - 'backend/scripts/smoke-remote.js'
+      - '.github/workflows/smoke-test.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/src/**'
+      - 'backend/scripts/smoke-remote.js'
+      - '.github/workflows/smoke-test.yml'
+  # Esecuzione manuale (utile per debug)
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Smoke test DB test (via backend VPS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Esegui smoke-remote
+        run: node backend/scripts/smoke-remote.js
+        env:
+          SMOKE_ENDPOINT: ${{ secrets.SMOKE_ENDPOINT }}
+          SMOKE_TOKEN: ${{ secrets.SMOKE_TOKEN }}
+        timeout-minutes: 2
