@@ -6,6 +6,9 @@
  *   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-099-vps.js
  */
 
+// Carica le variabili d'ambiente dal .env del backend sul VPS
+require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
+
 const { getPool } = require('/var/www/sgq-backend/src/config/database');
 
 async function main() {
@@ -63,6 +66,10 @@ async function main() {
         CREATE UNIQUE INDEX IX_mgmt_reviews_uuid ON management_reviews(uuid)
     `);
 
+    const chk = await pool.request().query(
+        `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='management_reviews'`
+    );
+    console.log(`  Verifica tabella: ${chk.recordset[0].cnt === 1 ? 'OK' : 'FAIL'}`);
     console.log('  OK: migration 099 applicata con successo in produzione.');
     process.exit(0);
 }
