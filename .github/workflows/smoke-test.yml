@@ -13,15 +13,14 @@ on:
     branches:
       - main
     paths:
-      - 'backend/src/**'
-      - 'backend/scripts/smoke-remote.js'
+      - 'backend/**'
       - '.github/workflows/smoke-test.yml'
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
       - main
     paths:
-      - 'backend/src/**'
-      - 'backend/scripts/smoke-remote.js'
+      - 'backend/**'
       - '.github/workflows/smoke-test.yml'
   # Esecuzione manuale (utile per debug)
   workflow_dispatch:
@@ -35,10 +34,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node.js 20
+      - name: Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Esegui smoke-remote
         run: node backend/scripts/smoke-remote.js
