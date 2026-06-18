@@ -2049,6 +2049,51 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 
 **Deploy**: non copiare solo i controller; verificare `systemctl status sgq-backend.service`. **`/var/www/sgq-backend` sul VPS non è Git** — dopo `git push` va sempre aggiornata la copia file (script `deploy-controllers-to-vps.ps1` include anche `organization` + `auth` + `server.js` dove previsto) + restart `sgq-backend`. Dettaglio: [how-to/deploy.md](how-to/deploy.md). Dopo release lock: copiare anche `services/auditLock.service.js` e `controllers/auditLock.controller.js`.
 
+### Workflow PR sicuro — regole branch main
+
+**Stato attivo dal 18/06/2026** — branch `main` protetto via GitHub Branch Protection.
+
+#### Protezioni attive
+
+| Regola | Valore |
+|--------|--------|
+| Push diretto su `main` | Bloccato (admin può bypassare con avviso) |
+| PR obbligatoria | Sì — almeno 1 PR aperta prima del merge |
+| Review umana | Non richiesta (`required_approving_review_count: 0`) |
+| Status check obbligatorio | **Smoke test DB test (via backend VPS)** deve essere `pass` |
+| Dismiss stale reviews | Sì |
+| Force push | Disabilitato |
+| Eliminazione branch | Disabilitata |
+| Enforce admin | No — il proprietario `qsstudio241` può bypassare in emergenza |
+
+#### Flusso autonomo agente AI
+
+```
+feature branch → push → PR (gh pr create --fill) → smoke auto → check verde → merge (gh pr merge N --merge)
+```
+
+| Fase | Chi | Comando |
+|------|-----|---------|
+| 1. Branch | Agente | `git checkout -b feat/nome` |
+| 2. Modifica + push | Agente | `git push origin feat/nome` |
+| 3. Apri PR | Agente | `gh pr create --fill` |
+| 4. Attendi check | Automatico | `gh pr checks N` (smoke passa in ~30s) |
+| 5. Merge | Agente (dopo check verde) | `gh pr merge N --merge --delete-branch` |
+
+**Comando rapido** per aprire PR da agente (usa title/body dal commit):
+```bash
+gh pr create --fill
+```
+
+**Verifica protezioni attive**:
+```bash
+gh api repos/qsstudio241/sistema-gestione-iso9001/branches/main/protection
+```
+
+**Emergenza (bypass admin)**: il proprietario `qsstudio241` può ancora fare push diretto su `main` — GitHub mostra avviso `Bypassed rule violations` ma accetta il push. Usare solo per hotfix critici.
+
+---
+
 ### Workflow sviluppo: branch → preview → merge
 
 **Regola default**: modifiche UI o feature → branch `feat/nome-descrittivo` → Pull Request verso `main` → **Deploy Preview Netlify** → **TEST OK committente** → merge su `main` (production Netlify).
