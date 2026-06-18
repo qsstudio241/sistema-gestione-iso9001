@@ -728,6 +728,61 @@ body.sgq-nc-drawer-resizing * {
 .nc-attachments-actions { margin-top: 6px; }
 .nc-file-input-hidden { display: none; }
 
+/* ── Badge categoria origine (Action Plan) ─────────────────────── */
+.nc-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.nc-cat-audit            { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+.nc-cat-complaint        { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+.nc-cat-risk_action      { background: #fffbeb; color: #b7791f; border-color: #fefcbf; }
+.nc-cat-management_review{ background: #faf5ff; color: #6b46c1; border-color: #e9d8fd; }
+.nc-cat-improvement      { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
+.nc-cat-operational      { background: #f7fafc; color: #4a5568; border-color: #e2e8f0; }
+.nc-cat-external_audit   { background: #e6fffa; color: #276749; border-color: #b2f5ea; }
+
+/* Ref clausola ISO nella modal */
+.nc-cat-iso-ref {
+  font-weight: 600;
+  color: #553c9a;
+}
+
+/* Shortcuts Slice 3 */
+.nc-shortcuts-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.nc-shortcut-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 16px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.nc-shortcut-btn:hover {
+  background: #ebf8ff;
+  border-color: #90cdf4;
+}
+
 @media (max-width: 768px) {
   .nc-detail-drawer {
     width: 100% !important;
