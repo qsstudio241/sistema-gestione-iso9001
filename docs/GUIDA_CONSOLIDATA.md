@@ -3270,6 +3270,29 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 18/06/2026 — Riesame di Direzione ISO 9001 §9.3 (migration 099 + CRUD + frontend)
+
+| Voce | Esito |
+|------|-------|
+| DB test | Migration 099: tabella `management_reviews` (90 colonne, numerazione `RD-YYYY-NNN`); smoke-testdb OK |
+| DB prod | Migration 099 applicata via `run-on-vps.ps1` con dotenv da `/var/www/sgq-backend/.env` |
+| Backend | Controller + routes: 5 endpoint REST `/api/v1/management-reviews`; multi-tenant; `companyAccess.service` |
+| Frontend | `ManagementReviewsPage`: lista tabellare + form collassabile (§9.3.2 ×8, §9.3.3 ×3); nav "Riesame Direzione" |
+| Deploy | `deploy-manifest.json` aggiornato; controller+routes copiati sul VPS; restart OK; health OK |
+| PR | #117 mergiata su `main` (tutti i check pass: smoke DB, test-and-build, Netlify) |
+
+**Lezione appresa — script migration VPS:**
+- Pattern corretto per script che girano su VPS in contesto standalone:
+  ```js
+  require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
+  const { getPool } = require('/var/www/sgq-backend/src/config/database');
+  ```
+- **Non usare** `require('dotenv')` diretto (non nel PATH da `/tmp/`) né `require('./routes/...')` (percorso relativo sbagliato)
+- **Non includere FK constraints inline** nel CREATE TABLE: questo progetto usa colonne `organization_id/company_id INT` senza REFERENCES (pattern da migration 034 `risks`)
+- `deploy-manifest.json` va aggiornato contestualmente ad ogni nuovo controller/route, altrimenti il deploy successivo lascia il server in crash per modulo mancante
+
+---
+
 ### Sessione 18/06/2026 — Piano Azioni multi-fonte (Action Plan)
 
 | Voce | Esito |
