@@ -79,8 +79,9 @@ const aiChatRoutes           = require('./routes/aiChat.routes');
 const weldingRoutes          = require('./routes/welding.routes');
 const projectsRoutes         = require('./routes/projects.routes');
 const searchRoutes           = require('./routes/search.routes');
-const deadlinesRoutes        = require('./routes/deadlines.routes');
-const smokeRoutes            = require('./routes/smoke.routes');
+const deadlinesRoutes            = require('./routes/deadlines.routes');
+const managementReviewsRoutes    = require('./routes/managementReviews.routes');
+const smokeRoutes                = require('./routes/smoke.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -301,6 +302,7 @@ app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
 app.use(API_BASE, searchRoutes);
 app.use(API_BASE, deadlinesRoutes);
+app.use(API_BASE, managementReviewsRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 // Sprint 12-A: WebDAV — endpoint REST (genera link) + endpoint WebDAV (Office R/W)
 app.use(API_BASE, webdavApiRoutes);

@@ -27,6 +27,7 @@ const REQUIRED_TABLES = [
   'nc_actions',
   'attachments',
   'audit_standards',
+  'management_reviews',
 ];
 
 async function main() {
