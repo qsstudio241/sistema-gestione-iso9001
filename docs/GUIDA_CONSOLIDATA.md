@@ -3139,3 +3139,26 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 **Pattern dry-run:** passare `{ dryRun: true }` a `runNcEscalationForOrg` per smoke test senza inviare email e senza scrivere su `nc_notification_log`.
 
 **Netlify + commit backend-only:** se un commit tocca solo file backend (non in `app/`), Netlify può annullare il build con *"Canceled build due to no content change"* — comportamento corretto, non un errore.
+
+---
+
+### Sessione 18/06/2026 — Piano Azioni multi-fonte (Action Plan)
+
+| Voce | Esito |
+|------|-------|
+| DB | Migration 098: `audit_id` nullable, `source_category` (7 valori), `source_origin_text`, `organization_id` su `non_conformities`; backfill 22 NC esistenti → `source_category='audit'` |
+| Backend | `nc.controller.js`: tutte le query INNER JOIN → LEFT JOIN; `createNonConformity` condizionale su `audit_id`; filtro `source_category` in lista; RBAC per NC senza audit (admin-only) |
+| Frontend | `NcCreateModal`: selector categoria come prima voce; audit picker contestuale; campo origine libero; `NCPage`: filtro categoria, badge colorati, shortcuts bar 7 pulsanti, titolo aggiornato |
+| Deploy | Migration 098 eseguita su VPS (localhost:11043); backend deployato e riavviato (PID 36616); frontend su `main` → Netlify |
+| PR | #114 mergiata su `main` |
+| Test | 28/28 Vitest OK; build Vite OK; health API OK |
+
+**Architettura Action Plan — pattern consolidato:**
+- `source_category` è il campo di business (7 valori): `audit`, `complaint`, `risk_action`, `management_review`, `improvement`, `operational`, `external_audit`
+- `source_type` resta il campo tecnico (come è stata creata la NC: `manual`, `audit_nc`, `audit_oss`, ecc.) — i due campi sono ortogonali
+- NC senza `audit_id`: `organization_id` diretto sulla tabella garantisce RBAC; solo admin/superadmin possono creare/modificare
+- Studio scope nelle query: `(nc.audit_id IS NULL OR (studio_scope_on_a))` — pattern riusabile per ogni query futura
+
+**Lezione chiave — SQL Server + VPS SSH:** il server SQL non è raggiungibile via hostname pubblico (`www.fr-busato.it:11043`) dal VPS stesso — usare sempre `localhost:11043` negli script di migrazione eseguiti via SSH sul nodo.
+
+**Backlog Action Plan (prossima sessione):** vedi `docs/PROJECT_ROADMAP.md` sezione *Action Plan — Evoluzione futura*.

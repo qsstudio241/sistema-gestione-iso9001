@@ -815,4 +815,26 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **P3** | Modellazione PT.MAIDO (cliente del cliente) multi-livello | ⏳ Backlog | Oltre pilota ordine diretto |
 > **Sprint 12 (nuovo backlog tecnico)**: Office Round-trip editing desktop (Windows + Office) con infrastruttura nostra WebDAV/Helper — vedi [MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md).
 
+---
+
+## Action Plan — Evoluzione futura (backlog 18/06/2026)
+
+**Stato attuale (Slice 1-3 completate, in produzione):**
+La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origine (audit, reclamo, rischi, riesame, miglioramento, operativo, esterno). Migration 098 deployata. PR #114.
+
+### Backlog ordinato per priorit\u00e0
+
+| Priorit\u00e0 | Voce | ISO ref | Note |
+|----------|------|---------|------|
+| **P1** | **Collegamento Reclami**: picker complaint nel form quando `source_category='complaint'`; mostra `source_complaint_number` nel dettaglio NC | \u00a78.2.1 | FK `source_complaint_id` gi\u00e0 esiste nel DB (migration 055); solo UI da collegare |
+| **P1** | **Statistiche per categoria**: breakdown `source_category` nei contatori stats bar (badge separati per NC da audit vs azioni da riesame, ecc.) | \u00a79.1 | Estendere `getNonConformitiesStatistics` + card UI |
+| **P2** | **Modulo Riesame di Direzione**: pagina dedicata `RiesameDirectionPage` con campi strutturati (partecipanti, punti ordine del giorno, output) che genera automaticamente azioni nel Piano Azioni | \u00a79.3 | Nuova tabella `management_reviews` + FK verso `action_plan_items` o NC |
+| **P2** | **Registro Rischi**: tabella `risks` (contesto, probabilit\u00e0, impatto, trattamento) con generazione automatica azioni `risk_action` nel Piano Azioni | \u00a76.1 | Il modulo `RisksPage` gi\u00e0 esiste nel frontend ma \u00e8 stub — verificare stato |
+| **P3** | **Dashboard Action Plan**: vista aggregata cross-categoria con KPI (% azioni chiuse per categoria, trend mese, scadute per responsabile) | \u00a79.1 | Nuova sezione in Dashboard o tab dedicata in NCPage |
+| **P3** | **Notifiche azioni non-audit**: il servizio `ncAlertEscalation` usa gi\u00e0 la tabella NC — verificare che le azioni da riesame/rischi ricevano promemoria scadenza | \u00a710.2 | Potrebbe funzionare gi\u00e0 — smoke test da fare |
+| **P4** | **Export Word Action Plan**: template `.docx` separato per le azioni non legate ad audit (senza sezione checklist, con campo origine) | \u00a77.5 | Estendere `ncWordExport.js` |
+
+### Analisi architetturale conservata
+Vedi sezione *Sessione 18/06/2026* in `docs/GUIDA_CONSOLIDATA.md` per pattern SQL, RBAC e considerazioni su source_type vs source_category.
+
 
