@@ -2345,6 +2345,89 @@ Script aggiuntivo: `patch-verbale-visita-headings.cjs` (allinea Titolo 1 offline
 
 ---
 
+## Smoke test remoti (DB di test via backend VPS)
+
+> Obiettivo: poter eseguire verifiche del DB di test **da qualsiasi macchina** (GitHub Actions, Netlify CI, PC remoto) senza esporre SQL Server su internet. Il backend VPS funziona da proxy sicuro.
+
+### Architettura
+
+```
+GitHub Actions / PC remoto
+        │  HTTPS GET + X-Smoke-Token
+        ▼
+backend VPS :8443  →  GET /api/v1/smoke/testdb
+        │  connessione isolata (pool separato)
+        ▼
+SQL Server test :11043  (DB 2026-06-18_SGQ_ISO9001)
+```
+
+- **Nessuna porta SQL Server esposta a internet** — tutto passa via HTTPS al backend.
+- Il token `X-Smoke-Token` è l'unica autenticazione richiesta (nessun JWT utente).
+- Il controller usa una `ConnectionPool` separata → non interferisce con il pool di produzione.
+
+### File coinvolti
+
+| File | Ruolo |
+|------|-------|
+| `backend/src/controllers/smoke.controller.js` | Logica smoke: tabelle, conteggi, guardia anti-prod |
+| `backend/src/routes/smoke.routes.js` | Route `GET /api/v1/smoke/testdb` |
+| `backend/src/server.js` | Monta `smokeRoutes` prima dei router autenticati |
+| `backend/scripts/smoke-remote.js` | Client standalone: chiama l'endpoint e fa exit 0/1 |
+| `.github/workflows/smoke-test.yml` | Job CI automatico su push/PR su `main` |
+
+### Configurazione VPS (una tantum)
+
+Aggiungere nel file `.env` del backend sul VPS (`/var/www/sgq-backend/.env`):
+
+```bash
+SMOKE_TOKEN=<valore-casuale-segreto>
+```
+
+Poi riavviare il servizio:
+
+```bash
+sudo systemctl restart sgq-backend.service
+```
+
+> Il valore di default `dev-smoke-token-change-in-prod` è accettato solo in sviluppo locale. In produzione il server logga un avviso se viene usato il default.
+
+### Configurazione GitHub Secrets (una tantum)
+
+In **Settings → Secrets and variables → Actions** del repository, aggiungere:
+
+| Secret | Valore |
+|--------|--------|
+| `SMOKE_ENDPOINT` | `www.fr-busato.it:8443` |
+| `SMOKE_TOKEN` | stesso valore impostato nel `.env` del VPS |
+
+### Esecuzione manuale con curl
+
+```bash
+# Verifica rapida da terminale (Linux/macOS/WSL)
+curl -sk -H "X-Smoke-Token: XXX" https://www.fr-busato.it:8443/api/v1/smoke/testdb | python3 -m json.tool
+
+# Atteso se OK:
+# { "ok": true, "db": "2026-06-18_SGQ_ISO9001", "checks": { ... }, "errors": [] }
+```
+
+### Esecuzione manuale dello script Node
+
+```powershell
+# Windows PowerShell (dal root del progetto)
+$env:SMOKE_ENDPOINT = "www.fr-busato.it:8443"
+$env:SMOKE_TOKEN    = "XXX"
+node backend/scripts/smoke-remote.js
+```
+
+### Verifica che il workflow CI sia attivo
+
+Il workflow `.github/workflows/smoke-test.yml` si attiva su:
+- Push su `main` che toccano `backend/src/**` o `backend/scripts/smoke-remote.js`
+- Pull Request verso `main` con le stesse path
+- Esecuzione manuale (`workflow_dispatch`) da GitHub Actions UI
+
+---
+
 ## D. Comandi di verifica rapida
 
 ### Delega Cursor desktop / web (senza aumentare il carico operativo)

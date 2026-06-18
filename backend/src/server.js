@@ -80,6 +80,7 @@ const weldingRoutes          = require('./routes/welding.routes');
 const projectsRoutes         = require('./routes/projects.routes');
 const searchRoutes           = require('./routes/search.routes');
 const deadlinesRoutes        = require('./routes/deadlines.routes');
+const smokeRoutes            = require('./routes/smoke.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -252,6 +253,11 @@ app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
 // che intercetterebbe qualsiasi richiesta /api/v1/* senza Bearer token, compresa questa.
 const companyController = require('./controllers/company.controller');
 app.get(`${API_BASE}/companies/:id/logo`, companyController.getLogo);
+
+// Smoke test remoto — protetto da X-Smoke-Token, NON da JWT.
+// DEVE stare qui (prima di apiLimiter e dei router autenticati) altrimenti
+// router.use(authenticate) nei router successivi blocca la richiesta senza Bearer.
+app.use(API_BASE, smokeRoutes);
 
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
