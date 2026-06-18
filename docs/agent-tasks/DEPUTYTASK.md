@@ -1,26 +1,16 @@
-# DEPUTYTASK — Chiuso merge PR #111 (17/06/2026)
+# DEPUTYTASK — CHIUSO (18/06/2026)
 
-## Mason: audit 2ª parte + fornitori / counterparties
+## Sessione 18/06/2026 — Piano Azioni & NC multi-fonte
 
 | Item | Stato |
 |------|-------|
-| PR #111 merge su main | ✅ (post-push) |
-| Migrazioni 096-097 DB | Eseguire su VPS se non già applicate |
-| Deploy VPS backend | Controllers audit/suppliers/counterparties |
-| Netlify frontend | Auto deploy ~2 min su push main |
+| Migration 098 DB (VPS) | ✅ Eseguita — 22 NC migrated |
+| Backend nc.controller.js (VPS) | ✅ Deployato, restart OK (PID 36616) |
+| Frontend NCPage + NcCreateModal | ✅ Merge su main, Netlify deploy |
+| PR #114 | ✅ Mergiata su main |
+| GUIDA_CONSOLIDATA.md | ✅ Aggiornata |
+| PROJECT_ROADMAP.md | ✅ Backlog Action Plan aggiunto |
 
-## Smoke L3 prod (committente)
-
-1. Nuovo audit Mason → seconda parte: dropdown fornitori filtrati per committente
-2. Anagrafiche → fornitori: colonna/filtro committente
-3. Sync `fornitoreSupplierId` multi-device
-
-## Prossimo task
-
-In attesa di brief committente.
-
----
-
-**Per avviare un task:** sovrascrivere questo file con brief Obiettivo/DoD e lanciare:
-
-`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+## Prossimo task suggerito
+Collegamento picker Reclami nella modal NC (P1) oppure statistiche per categoria nella stats bar.
+Leggere `docs/PROJECT_ROADMAP.md` sezione *Action Plan — Evoluzione futura* prima di iniziare.
