@@ -59,66 +59,63 @@ async function main() {
         },
     });
 
-    // Creazione tabella (idempotente)
+    // Verifica se la tabella esiste già
     const tableExists = await pool.request().query(`
         SELECT COUNT(*) AS cnt
         FROM INFORMATION_SCHEMA.TABLES
         WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'norm_requirements'
     `);
 
-    if (tableExists.recordset[0].cnt === 0) {
-        console.log('  Creazione tabella norm_requirements...');
-        await pool.request().query(`
-            CREATE TABLE norm_requirements (
-                id               INT IDENTITY(1,1) PRIMARY KEY,
-                standard_code    NVARCHAR(20)  NOT NULL,
-                clause_number    NVARCHAR(20)  NOT NULL,
-                clause_title     NVARCHAR(200) NOT NULL,
-                is_active        BIT           NOT NULL DEFAULT 1,
-                organization_id  INT           NULL,
-                created_at       DATETIME      DEFAULT GETDATE()
-            )
+    if (tableExists.recordset[0].cnt > 0) {
+        const colCheck = await pool.request().query(`
+            SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME='norm_requirements' AND COLUMN_NAME='clause_ref'
         `);
-        await pool.request().query(`
-            CREATE INDEX IX_norm_req_standard ON norm_requirements(standard_code, is_active)
-        `);
-        console.log('  Tabella norm_requirements creata.');
-    } else {
-        console.log('  Tabella norm_requirements già presente — salto CREATE.');
+        if (colCheck.recordset[0].cnt > 0) {
+            const rows = await pool.request().query(
+                `SELECT COUNT(*) AS cnt FROM norm_requirements WHERE standard_code='ISO_9001_2015'`
+            );
+            console.log(`  SKIP: tabella già presente con schema clause_ref (${rows.recordset[0].cnt} righe ISO 9001).`);
+            console.log('  OK: migration 100 completata (nessuna modifica necessaria).');
+            await pool.close();
+            return;
+        }
+        console.log('  WARN: tabella norm_requirements presente con schema legacy — nessuna modifica.');
+        await pool.close();
+        return;
     }
 
-    // Seed clausole ISO 9001:2015 (idempotente)
-    console.log('  Inserimento seed clausole ISO 9001:2015...');
+    // Creazione da zero
+    console.log('  Creazione tabella norm_requirements...');
+    await pool.request().query(`
+        CREATE TABLE norm_requirements (
+            id               INT IDENTITY(1,1) PRIMARY KEY,
+            standard_code    NVARCHAR(30)  NOT NULL,
+            clause_ref       NVARCHAR(20)  NOT NULL,
+            clause_title     NVARCHAR(500) NOT NULL,
+            is_current       BIT           NOT NULL DEFAULT 1,
+            norm_version     NVARCHAR(20)  NULL,
+            created_at       DATETIME      DEFAULT GETDATE()
+        )
+    `);
+    await pool.request().query(
+        `CREATE INDEX IX_norm_req_standard ON norm_requirements(standard_code, is_current)`
+    );
+
+    console.log('  Inserimento seed clausole ISO_9001_2015...');
     let inserted = 0;
-    let skipped  = 0;
     for (const row of SEED_CLAUSES) {
-        const chk = await pool.request()
-            .input('clause_number', sql.NVarChar(20), row.clause_number)
-            .input('standard_code', sql.NVarChar(20), 'ISO9001:2015')
-            .query(`
-                SELECT COUNT(*) AS cnt FROM norm_requirements
-                WHERE clause_number = @clause_number AND standard_code = @standard_code
-            `);
-        if (chk.recordset[0].cnt > 0) {
-            skipped++;
-            continue;
-        }
         await pool.request()
-            .input('standard_code', sql.NVarChar(20),  'ISO9001:2015')
-            .input('clause_number', sql.NVarChar(20),  row.clause_number)
-            .input('clause_title',  sql.NVarChar(200), row.clause_title)
+            .input('standard_code', sql.NVarChar(30),  'ISO_9001_2015')
+            .input('clause_ref',    sql.NVarChar(20),  row.clause_number)
+            .input('clause_title',  sql.NVarChar(500), row.clause_title)
             .query(`
-                INSERT INTO norm_requirements (standard_code, clause_number, clause_title, is_active, organization_id)
-                VALUES (@standard_code, @clause_number, @clause_title, 1, NULL)
+                INSERT INTO norm_requirements (standard_code, clause_ref, clause_title, is_current, norm_version)
+                VALUES (@standard_code, @clause_ref, @clause_title, 1, '2015')
             `);
         inserted++;
     }
-    console.log(`  Seed: ${inserted} inserite, ${skipped} già presenti.`);
-
-    const total = await pool.request().query(
-        `SELECT COUNT(*) AS cnt FROM norm_requirements WHERE standard_code = 'ISO9001:2015'`
-    );
-    console.log(`  Totale clausole ISO9001:2015 in tabella: ${total.recordset[0].cnt}`);
+    console.log(`  Seed: ${inserted} righe inserite.`);
     console.log('  OK: migration 100 applicata con successo.');
     await pool.close();
 }
