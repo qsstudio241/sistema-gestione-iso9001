@@ -257,4 +257,187 @@ async function deleteReview(req, res) {
     }
 }
 
-module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview };
+// ─── INPUT SUMMARY §9.3 ───────────────────────────────────────────────────────
+
+/**
+ * GET /management-reviews/input-summary
+ * Aggrega dati dai moduli collegati (NC, obiettivi, audit, fornitori, reclami)
+ * per pre-compilare gli input §9.3.2 del riesame di direzione.
+ *
+ * Query params:
+ *   company_id  (opzionale) — filtra per azienda
+ *   date_from   (opzionale) — default: 1° gennaio anno corrente
+ *   date_to     (opzionale) — default: oggi
+ */
+async function getInputSummary(req, res) {
+    const pool  = await getPool();
+    const orgId = req.user.organization_id;
+
+    const today = new Date();
+    const defaultFrom = `${today.getFullYear()}-01-01`;
+    const defaultTo   = today.toISOString().slice(0, 10);
+
+    const dateFrom   = req.query.date_from || defaultFrom;
+    const dateTo     = req.query.date_to   || defaultTo;
+    const companyId  = req.query.company_id ? parseInt(req.query.company_id, 10) : null;
+
+    const result = {
+        period: { from: dateFrom, to: dateTo },
+        nc:         { open: 0, overdue: 0, total_closed_period: 0 },
+        objectives: { total: 0, achieved: 0, percentage: 0 },
+        audits:     { conducted: 0, planned: 0 },
+        suppliers:  { evaluated: 0, avg_score: null },
+        complaints: { total: 0 },
+        norm_coverage: [],
+    };
+
+    // ── NC ──────────────────────────────────────────────────────────────────────
+    try {
+        const ncReq = pool.request()
+            .input('orgId', orgId)
+            .input('dateFrom', dateFrom)
+            .input('dateTo',   dateTo);
+
+        let companyCond = '';
+        if (companyId) {
+            ncReq.input('companyId', companyId);
+            companyCond = 'AND a.company_id = @companyId';
+        }
+
+        const ncRes = await ncReq.query(`
+            SELECT
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified') THEN 1 ELSE 0 END)
+                    AS open_count,
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified')
+                             AND nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END)
+                    AS overdue_count,
+                SUM(CASE WHEN nc.status IN ('closed','verified')
+                             AND nc.updated_at >= @dateFrom
+                             AND nc.updated_at <= DATEADD(day,1,CAST(@dateTo AS DATE)) THEN 1 ELSE 0 END)
+                    AS closed_period
+            FROM non_conformities nc
+            LEFT JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId
+              ${companyCond}
+        `);
+        const nc = ncRes.recordset[0];
+        result.nc.open               = nc.open_count    || 0;
+        result.nc.overdue            = nc.overdue_count || 0;
+        result.nc.total_closed_period = nc.closed_period || 0;
+    } catch (err) {
+        logger.error('getInputSummary NC:', err.message);
+        result.nc.note = 'Dato non disponibile';
+    }
+
+    // ── OBIETTIVI ───────────────────────────────────────────────────────────────
+    try {
+        const objRes = await pool.request()
+            .input('orgId', orgId)
+            .query(`
+                SELECT
+                    COUNT(*)                                              AS total,
+                    SUM(CASE WHEN status = 'achieved' THEN 1 ELSE 0 END) AS achieved
+                FROM objectives
+                WHERE organization_id = @orgId AND is_deleted = 0
+            `);
+        const obj = objRes.recordset[0];
+        const total    = obj.total    || 0;
+        const achieved = obj.achieved || 0;
+        result.objectives.total      = total;
+        result.objectives.achieved   = achieved;
+        result.objectives.percentage = total > 0 ? Math.round((achieved / total) * 100) : 0;
+    } catch (err) {
+        logger.error('getInputSummary Obiettivi:', err.message);
+        result.objectives.note = 'Dato non disponibile';
+    }
+
+    // ── AUDIT ───────────────────────────────────────────────────────────────────
+    try {
+        const audReq = pool.request()
+            .input('orgId',    orgId)
+            .input('dateFrom', dateFrom)
+            .input('dateTo',   dateTo);
+
+        let audCompanyCond = '';
+        if (companyId) {
+            audReq.input('companyId', companyId);
+            audCompanyCond = 'AND a.company_id = @companyId';
+        }
+
+        const audRes = await audReq.query(`
+            SELECT
+                SUM(CASE WHEN a.status IN ('completed','approved') THEN 1 ELSE 0 END) AS conducted,
+                SUM(CASE WHEN a.status IN ('draft','in_progress')  THEN 1 ELSE 0 END) AS planned
+            FROM audits a
+            WHERE a.organization_id = @orgId
+              AND a.is_deleted = 0
+              AND a.audit_date >= @dateFrom
+              AND a.audit_date <= @dateTo
+              ${audCompanyCond}
+        `);
+        const aud = audRes.recordset[0];
+        result.audits.conducted = aud.conducted || 0;
+        result.audits.planned   = aud.planned   || 0;
+    } catch (err) {
+        logger.error('getInputSummary Audit:', err.message);
+        result.audits.note = 'Dato non disponibile';
+    }
+
+    // ── FORNITORI ───────────────────────────────────────────────────────────────
+    try {
+        const supReq = pool.request()
+            .input('orgId',    orgId)
+            .input('dateFrom', dateFrom)
+            .input('dateTo',   dateTo);
+
+        let supCompanyCond = '';
+        if (companyId) {
+            supReq.input('companyId', companyId);
+            supCompanyCond = 'AND s.company_id = @companyId';
+        }
+
+        const supRes = await supReq.query(`
+            SELECT
+                COUNT(DISTINCT se.supplier_id) AS evaluated,
+                AVG(CAST(se.score AS FLOAT))   AS avg_score
+            FROM supplier_evaluations se
+            INNER JOIN suppliers s ON s.id = se.supplier_id
+            WHERE s.organization_id = @orgId
+              AND se.evaluation_date >= @dateFrom
+              AND se.evaluation_date <= @dateTo
+              ${supCompanyCond}
+        `);
+        const sup = supRes.recordset[0];
+        result.suppliers.evaluated = sup.evaluated || 0;
+        result.suppliers.avg_score = sup.avg_score != null
+            ? Math.round(sup.avg_score * 10) / 10
+            : null;
+    } catch (err) {
+        logger.error('getInputSummary Fornitori:', err.message);
+        result.suppliers.note = 'Dato non disponibile';
+    }
+
+    // ── RECLAMI ─────────────────────────────────────────────────────────────────
+    try {
+        const cmpRes = await pool.request()
+            .input('orgId',    orgId)
+            .input('dateFrom', dateFrom)
+            .input('dateTo',   dateTo)
+            .query(`
+                SELECT COUNT(*) AS total
+                FROM complaints
+                WHERE organization_id = @orgId
+                  AND created_at >= @dateFrom
+                  AND created_at <= DATEADD(day,1,CAST(@dateTo AS DATE))
+            `);
+        result.complaints.total = cmpRes.recordset[0].total || 0;
+    } catch (err) {
+        logger.error('getInputSummary Reclami:', err.message);
+        result.complaints.total = 0;
+        result.complaints.note  = 'Dato non disponibile';
+    }
+
+    res.json({ success: true, data: result });
+}
+
+module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview, getInputSummary };
