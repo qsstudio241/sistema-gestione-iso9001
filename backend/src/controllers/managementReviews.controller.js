@@ -8,6 +8,7 @@ const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
 const {
     ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
     companyAccessSqlFilter,
     assertMutatingAllowed,
     sendAccessDenied,
@@ -39,7 +40,7 @@ async function listReviews(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'mr');
 
-        const { status, page = 1, limit = 50 } = req.query;
+        const { status, company_id: qCompanyId, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let where = ['mr.organization_id = @orgId', 'mr.is_deleted = 0'];
@@ -52,6 +53,7 @@ async function listReviews(req, res) {
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
         if (status) { where.push('mr.status = @status'); req2.input('status', status); }
+        if (qCompanyId) { where.push('mr.company_id = @filterCompanyId'); req2.input('filterCompanyId', parseInt(qCompanyId, 10)); }
 
         const whereClause = where.join(' AND ');
 
@@ -74,6 +76,7 @@ async function listReviews(req, res) {
                 const cntWhere = ['mr.organization_id = @orgId2', 'mr.is_deleted = 0'];
                 if (companyFilter.clause) cntWhere.push(companyFilter.clause);
                 if (status) { cntWhere.push('mr.status = @cntStatus'); cntReq.input('cntStatus', status); }
+                if (qCompanyId) { cntWhere.push('mr.company_id = @cntFilterCompanyId'); cntReq.input('cntFilterCompanyId', parseInt(qCompanyId, 10)); }
                 return cntReq.query(`SELECT COUNT(*) AS total FROM management_reviews mr WHERE ${cntWhere.join(' AND ')}`);
             })(),
         ]);
@@ -126,10 +129,23 @@ async function createReview(req, res) {
             input_objectives, input_complaints, input_suppliers,
             input_resources, input_improvements,
             output_improvements, output_sgq_changes, output_resources,
-            notes, company_id, status = 'draft',
+            notes, status = 'draft',
         } = req.body;
 
         if (!review_date) return res.status(400).json({ error: 'Data riesame obbligatoria' });
+
+        // Determina company_id: per utenti Azienda (company_access) usa il loro accesso,
+        // ignorando il body; per utenti Studio è obbligatorio nel body.
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        let company_id;
+        if (hasCompanyAccessRows(accessList)) {
+            company_id = accessList[0].company_id;
+        } else {
+            company_id = req.body.company_id ? parseInt(req.body.company_id, 10) : null;
+            if (!company_id) {
+                return res.status(400).json({ error: 'Azienda obbligatoria per utenti Studio' });
+            }
+        }
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);

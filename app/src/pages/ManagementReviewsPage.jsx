@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useAuth } from "../contexts/AuthContext";
+import { isCompanyClient, getPrimaryCompanyId } from "../utils/companyAccess";
 import { formatDate } from "../utils/dateHelpers";
 import "./ManagementReviewsPage.css";
 
@@ -20,6 +22,7 @@ const STATUS_CFG = {
 // ─── Form vuoto ───────────────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
+  company_id: "",
   review_date: "",
   chairperson: "",
   participants: "",
@@ -60,11 +63,12 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
   const [draftGenerated, setDraftGenerated] = useState(false);
 
   async function loadData() {
+    if (!companyId) return;
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
-      if (companyId) params.set("company_id", companyId);
+      params.set("company_id", companyId);
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
       setData(res.data.data);
     } catch (err) {
@@ -138,6 +142,16 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
     } finally {
       setDrafting(false);
     }
+  }
+
+  if (!companyId) {
+    return (
+      <div className="isw-card">
+        <p className="isw-no-company">
+          {"Seleziona prima un\u2019azienda (campo \u00ABazienda\u00BB in cima al form) per caricare i dati \u00A79.3.2."}
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -361,8 +375,16 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 
 // ─── Form completo ────────────────────────────────────────────────────────────
 
-function ReviewForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
+function ReviewForm({ initial, onSave, onClose, companies, user }) {
+  const isClientUser = isCompanyClient(user);
+  const clientCompanyId = isClientUser ? String(getPrimaryCompanyId(user) || "") : "";
+
+  const [form, setForm] = useState(() => {
+    const base = { ...EMPTY_FORM, ...initial };
+    if (isClientUser && !base.company_id) base.company_id = clientCompanyId;
+    if (base.company_id) base.company_id = String(base.company_id);
+    return base;
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -375,6 +397,10 @@ function ReviewForm({ initial, onSave, onClose }) {
   async function submit(e) {
     e.preventDefault();
     if (!form.review_date) return;
+    if (!isClientUser && !form.company_id) {
+      setError("Seleziona l\u2019azienda prima di salvare.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -387,12 +413,14 @@ function ReviewForm({ initial, onSave, onClose }) {
     }
   }
 
+  const isEditing = Boolean(initial?.id);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box mr-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>
-            {initial?.id
+            {isEditing
               ? `Modifica riesame ${initial.review_number}`
               : "Nuovo riesame di direzione"}
           </h3>
@@ -403,9 +431,32 @@ function ReviewForm({ initial, onSave, onClose }) {
 
         <form className="mr-form" onSubmit={submit}>
           {/* 1. Intestazione */}
-          <CollapsibleSection title="1 — Intestazione" defaultOpen>
+          <CollapsibleSection title="1 \u2014 Intestazione" defaultOpen>
+            {/* Azienda — primo campo */}
             <div className="form-row">
-              <label>Data riesame *</label>
+              <label>{"Azienda"}{!isClientUser && " *"}</label>
+              {isClientUser ? (
+                <input
+                  value={companies.find((c) => String(c.id) === form.company_id)?.name || form.company_id}
+                  readOnly
+                  disabled
+                  className="mr-field-readonly"
+                />
+              ) : (
+                <select
+                  required
+                  value={form.company_id}
+                  onChange={(e) => upd("company_id", e.target.value)}
+                >
+                  <option value="">{"— Seleziona azienda —"}</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="form-row">
+              <label>{"Data riesame *"}</label>
               <input
                 type="date"
                 required
@@ -414,19 +465,19 @@ function ReviewForm({ initial, onSave, onClose }) {
               />
             </div>
             <div className="form-row">
-              <label>Presidente / Responsabile</label>
+              <label>{"Presidente / Responsabile"}</label>
               <input
                 value={form.chairperson}
                 onChange={(e) => upd("chairperson", e.target.value)}
-                placeholder="es. Direttore Qualità"
+                placeholder="es. Direttore Qualit\u00E0"
               />
             </div>
             <div className="form-row">
-              <label>Stato</label>
+              <label>{"Stato"}</label>
               <select value={form.status} onChange={(e) => upd("status", e.target.value)}>
-                <option value="draft">Bozza</option>
-                <option value="finalized">Finalizzato</option>
-                <option value="approved">Approvato</option>
+                <option value="draft">{"Bozza"}</option>
+                <option value="finalized">{"Finalizzato"}</option>
+                <option value="approved">{"Approvato"}</option>
               </select>
             </div>
           </CollapsibleSection>
@@ -510,10 +561,14 @@ function ReviewForm({ initial, onSave, onClose }) {
 
           <div className="mr-form-actions">
             <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
-              Annulla
+              {"Annulla"}
             </button>
-            <button type="submit" className="btn-primary" disabled={saving || !form.review_date}>
-              {saving ? "Salvataggio…" : initial?.id ? "Aggiorna" : "Crea riesame"}
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={saving || !form.review_date || (!isClientUser && !form.company_id)}
+            >
+              {saving ? "Salvataggio\u2026" : isEditing ? "Aggiorna" : "Crea riesame"}
             </button>
           </div>
         </form>
@@ -525,21 +580,32 @@ function ReviewForm({ initial, onSave, onClose }) {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ManagementReviewsPage() {
-  const [reviews, setReviews]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
-  const [showForm, setShowForm]     = useState(false);
-  const [editItem, setEditItem]     = useState(null);
-  const [filterStatus, setFilter]   = useState("");
-  const [delConfirm, setDelConfirm] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+  const { user } = useAuth();
+  const [reviews, setReviews]           = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const [showForm, setShowForm]         = useState(false);
+  const [editItem, setEditItem]         = useState(null);
+  const [filterStatus, setFilter]       = useState("");
+  const [filterCompany, setFilterCo]    = useState("");
+  const [companies, setCompanies]       = useState([]);
+  const [delConfirm, setDelConfirm]     = useState(null);
+  const [pagination, setPagination]     = useState({ page: 1, limit: 50, total: 0 });
+
+  useEffect(() => {
+    apiService.getCompanies?.().then((res) => {
+      const list = res?.data || res?.companies || res || [];
+      setCompanies(Array.isArray(list) ? list : []);
+    }).catch(() => {});
+  }, []);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ page: pagination.page, limit: pagination.limit });
-      if (filterStatus) params.set("status", filterStatus);
+      if (filterStatus)  params.set("status",     filterStatus);
+      if (filterCompany) params.set("company_id", filterCompany);
       const res = await apiService.get(`/management-reviews?${params}`);
       setReviews(res.data.data || []);
       if (res.data.pagination) setPagination((p) => ({ ...p, ...res.data.pagination }));
@@ -548,7 +614,7 @@ export default function ManagementReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, pagination.page, pagination.limit]);
+  }, [filterStatus, filterCompany, pagination.page, pagination.limit]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
@@ -586,17 +652,29 @@ export default function ManagementReviewsPage() {
 
       {/* Toolbar filtri */}
       <div className="tab-toolbar">
+        {companies.length > 0 && (
+          <select
+            value={filterCompany}
+            onChange={(e) => { setFilterCo(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+            aria-label="Filtra per azienda"
+          >
+            <option value="">{"Tutte le aziende"}</option>
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
         <select
           value={filterStatus}
           onChange={(e) => { setFilter(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
         >
-          <option value="">Tutti gli stati</option>
-          <option value="draft">Bozza</option>
-          <option value="finalized">Finalizzato</option>
-          <option value="approved">Approvato</option>
+          <option value="">{"Tutti gli stati"}</option>
+          <option value="draft">{"Bozza"}</option>
+          <option value="finalized">{"Finalizzato"}</option>
+          <option value="approved">{"Approvato"}</option>
         </select>
         <span className="mr-total">
-          {pagination.total} riesame{pagination.total !== 1 ? "i" : ""}
+          {pagination.total}{" riesame"}{pagination.total !== 1 ? "i" : ""}
         </span>
       </div>
 
@@ -687,6 +765,8 @@ export default function ManagementReviewsPage() {
           initial={editItem || {}}
           onSave={handleSave}
           onClose={() => setShowForm(false)}
+          companies={companies}
+          user={user}
         />
       )}
 

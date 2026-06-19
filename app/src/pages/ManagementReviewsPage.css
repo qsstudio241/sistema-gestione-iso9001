@@ -388,6 +388,23 @@
   padding: 6px 10px;
 }
 
+.isw-no-company {
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.mr-field-readonly {
+  background: #f9fafb;
+  color: #374151;
+  cursor: default;
+  opacity: 0.8;
+}
+
 .isw-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
