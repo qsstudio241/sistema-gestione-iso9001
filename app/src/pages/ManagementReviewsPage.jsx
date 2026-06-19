@@ -1,6 +1,7 @@
 /**
  * ManagementReviewsPage — Riesame di Direzione ISO 9001 §9.3
  * Lista riesami + form completo con sezioni collassabili ISO.
+ * Include widget "Dati disponibili §9.3.2" per pre-compilazione AI-assisted.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -37,6 +38,264 @@ const EMPTY_FORM = {
   notes: "",
 };
 
+// ─── Utility data ─────────────────────────────────────────────────────────────
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+function jan1Iso() {
+  return `${new Date().getFullYear()}-01-01`;
+}
+
+// ─── Widget Dati disponibili §9.3.2 ──────────────────────────────────────────
+
+function InputSummaryWidget({ companyId, onPrefill }) {
+  const [dateFrom, setDateFrom] = useState(jan1Iso);
+  const [dateTo,   setDateTo]   = useState(todayIso);
+  const [data,     setData]     = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(null);
+
+  async function loadData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+      if (companyId) params.set("company_id", companyId);
+      const res = await apiService.get(`/management-reviews/input-summary?${params}`);
+      setData(res.data.data);
+    } catch (err) {
+      setError(err?.response?.data?.error || "Errore durante il caricamento dei dati.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function buildNcText(nc) {
+    const lines = [
+      `NC aperte: ${nc.open}`,
+      `NC scadute: ${nc.overdue}`,
+      `NC chiuse nel periodo: ${nc.total_closed_period}`,
+    ];
+    if (nc.note) lines.push(`Nota: ${nc.note}`);
+    return lines.join("\n");
+  }
+
+  function buildObjText(obj) {
+    const lines = [
+      `Obiettivi totali: ${obj.total}`,
+      `Raggiunti: ${obj.achieved} (${obj.percentage}%)`,
+    ];
+    if (obj.note) lines.push(`Nota: ${obj.note}`);
+    return lines.join("\n");
+  }
+
+  function buildAuditText(aud) {
+    const lines = [
+      `Audit condotti nel periodo: ${aud.conducted}`,
+      `Audit pianificati/in corso: ${aud.planned}`,
+    ];
+    if (aud.note) lines.push(`Nota: ${aud.note}`);
+    return lines.join("\n");
+  }
+
+  function buildSuppText(sup) {
+    const lines = [
+      `Fornitori valutati nel periodo: ${sup.evaluated}`,
+      sup.avg_score != null ? `Score medio: ${sup.avg_score}` : "Score medio: n.d.",
+    ];
+    if (sup.note) lines.push(`Nota: ${sup.note}`);
+    return lines.join("\n");
+  }
+
+  function buildCmpText(cmp) {
+    const lines = [`Reclami ricevuti nel periodo: ${cmp.total}`];
+    if (cmp.note) lines.push(`Nota: ${cmp.note}`);
+    return lines.join("\n");
+  }
+
+  return (
+    <div className="isw-card">
+      <div className="isw-header">
+        <h4>{"Dati disponibili \u00A79.3.2"}</h4>
+        <div className="isw-controls">
+          <label>{"Dal"}</label>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <label>{"al"}</label>
+          <input type="date" value={dateTo}   onChange={(e) => setDateTo(e.target.value)}   />
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={loadData}
+            disabled={loading}
+          >
+            {loading ? "Caricamento dati\u2026" : "Carica dati"}
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="isw-body"><p className="isw-error">{error}</p></div>}
+
+      {data && (
+        <div className="isw-body">
+          <div className="isw-grid">
+            {/* NC */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"c) Non Conformit\u00E0"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className={`isw-metric-val${data.nc.open > 0 ? " isw-red" : ""}`}>
+                    {data.nc.open}
+                  </span>
+                  <span className="isw-metric-lbl">{"Aperte"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className={`isw-metric-val${data.nc.overdue > 0 ? " isw-red" : ""}`}>
+                    {data.nc.overdue}
+                  </span>
+                  <span className="isw-metric-lbl">{"Scadute"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.nc.total_closed_period}</span>
+                  <span className="isw-metric-lbl">{"Chiuse"}</span>
+                </div>
+              </div>
+              {data.nc.note && <p className="isw-tile-note">{data.nc.note}</p>}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_nc_corrective", buildNcText(data.nc))}
+              >
+                {"Pre-compila campo c)"}
+              </button>
+            </div>
+
+            {/* Obiettivi */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"d) Obiettivi"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.objectives.achieved}</span>
+                  <span className="isw-metric-lbl">{"Raggiunti"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.objectives.total}</span>
+                  <span className="isw-metric-lbl">{"Totali"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.objectives.percentage}{"%" }</span>
+                  <span className="isw-metric-lbl">{"% raggiunto"}</span>
+                </div>
+              </div>
+              {data.objectives.note && <p className="isw-tile-note">{data.objectives.note}</p>}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_objectives", buildObjText(data.objectives))}
+              >
+                {"Pre-compila campo d)"}
+              </button>
+            </div>
+
+            {/* Audit */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"b) Audit"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.audits.conducted}</span>
+                  <span className="isw-metric-lbl">{"Condotti"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.audits.planned}</span>
+                  <span className="isw-metric-lbl">{"Pianificati"}</span>
+                </div>
+              </div>
+              {data.audits.note && <p className="isw-tile-note">{data.audits.note}</p>}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_audits", buildAuditText(data.audits))}
+              >
+                {"Pre-compila campo b)"}
+              </button>
+            </div>
+
+            {/* Fornitori */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"f) Fornitori"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.suppliers.evaluated}</span>
+                  <span className="isw-metric-lbl">{"Valutati"}</span>
+                </div>
+                {data.suppliers.avg_score != null && (
+                  <div className="isw-metric">
+                    <span className="isw-metric-val">{data.suppliers.avg_score}</span>
+                    <span className="isw-metric-lbl">{"Score medio"}</span>
+                  </div>
+                )}
+              </div>
+              {data.suppliers.note && <p className="isw-tile-note">{data.suppliers.note}</p>}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_suppliers", buildSuppText(data.suppliers))}
+              >
+                {"Pre-compila campo f)"}
+              </button>
+            </div>
+
+            {/* Reclami */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"e) Reclami"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className={`isw-metric-val${data.complaints.total > 0 ? " isw-red" : ""}`}>
+                    {data.complaints.total}
+                  </span>
+                  <span className="isw-metric-lbl">{"Ricevuti"}</span>
+                </div>
+              </div>
+              {data.complaints.note && <p className="isw-tile-note">{data.complaints.note}</p>}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_complaints", buildCmpText(data.complaints))}
+              >
+                {"Pre-compila campo e)"}
+              </button>
+            </div>
+          </div>
+
+          {/* Copertura normativa */}
+          {data.norm_coverage && data.norm_coverage.length > 0 && (
+            <div>
+              <div className="isw-tile-title" style={{ marginBottom: 6 }}>
+                {"Copertura clausole normative"}
+              </div>
+              <ul className="isw-norm-list">
+                {data.norm_coverage.map((item) => (
+                  <li
+                    key={item.clause}
+                    className={`isw-norm-item${item.status === "gap" ? " isw-gap" : ""}`}
+                  >
+                    <span className="isw-norm-clause">{item.clause}</span>
+                    <span>{item.title}</span>
+                    {item.last_verified
+                      ? <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "#718096" }}>{item.last_verified}</span>
+                      : <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "#c53030" }}>{"Mai verificato"}</span>
+                    }
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sezione collassabile ─────────────────────────────────────────────────────
 
 function CollapsibleSection({ title, children, defaultOpen = false }) {
@@ -65,6 +324,10 @@ function ReviewForm({ initial, onSave, onClose }) {
   const [error, setError] = useState(null);
 
   function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+
+  function handlePrefill(field, text) {
+    setForm((f) => ({ ...f, [field]: f[field] ? `${f[field]}\n\n${text}` : text }));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -141,6 +404,10 @@ function ReviewForm({ initial, onSave, onClose }) {
 
           {/* 3. §9.3.2 Input (8 campi) */}
           <CollapsibleSection title="3 — §9.3.2 Input del riesame">
+            <InputSummaryWidget
+              companyId={form.company_id || initial?.company_id || null}
+              onPrefill={handlePrefill}
+            />
             {[
               { key: "input_previous_actions", label: "a) Azioni da precedenti riesami" },
               { key: "input_audits",           label: "b) Risultati degli audit" },
