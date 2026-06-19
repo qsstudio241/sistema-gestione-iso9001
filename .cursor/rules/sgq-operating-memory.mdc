@@ -170,6 +170,19 @@ Set-Location "C:\ProgettoISO\app"; & $node "node_modules\vite\bin\vite.js" build
 - Aggiorna test per riprodurre bug reali (non test solo nominali).
 - Se utile, crea test di simulazione DOCX con template minimo in memoria.
 
+## Regola "pattern già risolto" — obbligatoria prima di ogni nuova funzionalità
+
+Prima di iniziare l'implementazione di qualsiasi nuova funzionalità, l'agente **deve** rispondere esplicitamente a queste domande:
+
+1. **Questo problema è già stato risolto altrove nel progetto?** (es. selettore azienda, RBAC multi-tenant, selettore periodo, upload allegati, export Word…)
+2. **Qual è il componente/pattern/endpoint esistente da riutilizzare?** Citare il file concreto.
+3. **Perché eventualmente NON riutilizzarlo** (se c'è una ragione valida — rara).
+
+Se la risposta alla domanda 1 è "sì" e si procede comunque con un'implementazione parallela, è un **difetto da segnalare**, non una scelta accettabile.
+
+**Esempio vincolante — ambito azienda:**
+Ogni nuovo modulo che gestisce dati per-azienda (riesami, NC, qualifiche, audit…) deve usare il pattern `companyScope` già implementato negli altri moduli. Non reinventare il selettore azienda: cercarlo prima in `QualificationsPage`, `ContractReviewsPage`, `companyAccess.service.js`.
+
 ## Riuso UI — regola "blocco unico" (best practice consolidata)
 Prima di implementare qualsiasi nuovo elemento UI (pulsante, textarea, sezione conteggio, allegati, menu esito) **verificare** se esiste gia' un componente o classe CSS nel codebase che svolge la stessa funzione. **Usare sempre quello esistente**, mai creare implementazioni parallele.
 
