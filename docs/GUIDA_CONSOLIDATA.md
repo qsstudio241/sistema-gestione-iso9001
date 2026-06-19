@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -3381,3 +3381,28 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - Route specifica (`/management-reviews/input-summary`) va registrata **prima** della route parametrica (`/management-reviews/:id`) in Express per evitare il match errato su `:id = "input-summary"`.
 - Widget pre-compilazione: pattern `onPrefill(field, text)` — se il campo ha già contenuto, il testo viene appendato con doppio newline preservando le note manuali; altrimenti sostituisce direttamente.
 - `norm_coverage: []` è il fallback corretto se `norm_requirements` non esiste nel DB — il widget gestisce l'array vuoto senza mostrare sezione vuota.
+
+---
+
+### Sessione 19/06/2026 (serale) — Migration 100 norm_requirements + AI Draft §9.3.2
+
+| Voce | Esito |
+|------|-------|
+| Migration 100 (VPS) | SKIP confermato: tabella `norm_requirements` preesistente con 91 righe `ISO_9001_2015` e schema `clause_ref` |
+| Backend | `getInputSummary`: `norm_coverage` ora popolato con clausole reali; `generateDraft` nuovo endpoint bozze §9.3.2 |
+| Frontend | Pulsante "✨ Genera bozza testo" in `InputSummaryWidget`; popola campi §9.3.2 in un click |
+| Deploy | PR #120 → CI verde → merge → `deploy-controllers-to-vps.ps1` × 2; fix push diretto su `main` |
+| Smoke | Backend health OK; migrazione 100 SKIP OK (schema già corretto) |
+
+**Nota critica — schema norm_requirements reale (da verificare a inizio sessione):**
+- Colonna: `clause_ref` (non `clause_number`) — scoperto solo in fase di run VPS
+- Standard code: `ISO_9001_2015` con underscore (non `ISO9001:2015` con colon) 
+- Filtro clausole sezione: `LEN(clause_ref) - LEN(REPLACE(clause_ref, '.', '')) = 1` → livello N.N
+- Prima di qualsiasi migrazione che tocca `norm_requirements`: eseguire `_check-schema-test.js` per verificare lo schema reale
+
+**Pattern generate-draft (deterministico + AI opzionale):**
+- `POST /management-reviews/:id/generate-draft` — richiede `period_from`, `period_to`; opzionale `company_id`
+- Se AI non configurata (`aiAdapter` lancia `AI_NOT_CONFIGURED`): testo deterministico da dati aggregati
+- Se AI configurata (Gemini/Azure/OpenAI via `aiProviderAdapter`): testo GPT-style da prompt strutturato
+- Risposta: `{ success, drafts: { nc_summary, objectives_summary, audits_summary, suppliers_summary, norm_gaps }, meta: { ai_used } }`
+- Frontend: pulsante visibile solo se `reviewId` (initial?.id) è disponibile — non su nuovo riesame non ancora salvato
