@@ -3382,6 +3382,11 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - Widget pre-compilazione: pattern `onPrefill(field, text)` — se il campo ha già contenuto, il testo viene appendato con doppio newline preservando le note manuali; altrimenti sostituisce direttamente.
 - `norm_coverage: []` è il fallback corretto se `norm_requirements` non esiste nel DB — il widget gestisce l'array vuoto senza mostrare sezione vuota.
 
+**Bug trovati con smoke test MCP (2026-06-19 — PR #122, #123):**
+- `KNOWN_MODULE_KEYS` in `moduleLicense.service.js` è l'unica fonte di verità per i moduli: se la chiave manca lì, il token non la include e il frontend blocca menu + pagina anche se il codice React è corretto. Aggiungere sempre la chiave contestualmente al nuovo modulo.
+- JOIN `companies`: usare sempre `c.id`, mai `c.company_id` — la tabella `companies` usa `id` come PK. Pattern corretto: `LEFT JOIN companies c ON c.id = mr.company_id`.
+- **`sgq-backend-test` non viene riavviato da `deploy-controllers-to-vps.ps1`** (che gestisce solo `sgq-backend`): dopo ogni deploy che tocca il backend, riavviare manualmente con: `. .\backend\config\.ssh-deploy.local.ps1; $b64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD)); .\backend\scripts\run-on-vps.ps1 -Command "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"`
+
 ---
 
 ### Sessione 19/06/2026 (serale) — Migration 100 norm_requirements + AI Draft §9.3.2
