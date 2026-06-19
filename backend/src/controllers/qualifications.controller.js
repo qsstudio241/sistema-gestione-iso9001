@@ -353,7 +353,8 @@ async function getStats(req, res) {
 }
 
 /** GET /qualifications/coverage?project_id=X
- *  Query incrociata: qualifiche attive + WPS disponibili vs requisiti commessa
+ *  Query incrociata: qualifiche attive + WPS disponibili vs requisiti commessa.
+ *  Il match è range-aware: processo + spessore + gruppo materiale + posizione.
  */
 async function getCoverage(req, res) {
     try {
@@ -374,18 +375,32 @@ async function getCoverage(req, res) {
         let wpsIds = [];
         try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
 
-        // Carica WPS della commessa
+        // Carica WPS della commessa — include campi numerici per il match range-aware
         let wpsRows = [];
         if (wpsIds.length) {
             const ph = wpsIds.map((_, i) => `@wid${i}`).join(',');
             const wReq = pool.request().input('orgId', orgId);
             wpsIds.forEach((id, i) => wReq.input(`wid${i}`, parseInt(id)));
             const wRes = await wReq.query(`
-                SELECT id, wps_code, welding_process, base_material_group, thickness_range, welding_positions
+                SELECT id, wps_code, welding_process,
+                       base_material_group, material_group,
+                       thickness_range_min, thickness_range_max, thickness_range,
+                       welding_positions, position
                 FROM welding_procedures
                 WHERE id IN (${ph}) AND organization_id = @orgId AND status != 'annullata'
             `);
             wpsRows = wRes.recordset;
+        }
+
+        // Se nessun WPS, risponde subito
+        if (!wpsRows.length) {
+            return res.json({
+                project_id:   parseInt(project_id),
+                project_code: project.project_code,
+                has_wps:      false,
+                coverage:     [],
+                summary:      { total: 0, covered: 0, partial: 0, uncovered: 0 },
+            });
         }
 
         // Carica qualifiche attive e approvate — filtrate per company_id commessa se disponibile
@@ -404,7 +419,7 @@ async function getCoverage(req, res) {
         const qRes = await qReq.query(`
             SELECT q.id, q.person_name, q.person_code, q.qualification_type,
                    q.welding_process, q.material_group, q.position_range,
-                   q.thickness_range, q.joint_type,
+                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
                    q.expiry_date, q.status, q.approval_status,
                    c.name AS company_name
             FROM qualifications q
@@ -414,45 +429,55 @@ async function getCoverage(req, res) {
         `);
         const qualRows = qRes.recordset;
 
-        // Costruisce righe di copertura: per ogni WPS, cerca saldatori qualificati
-        const rows = wpsRows.map(wps => {
-            const qualified = qualRows.filter(q => {
-                if (!q.welding_process) return false;
-                const proc = (q.welding_process || '').toUpperCase();
-                const wpsProc = (wps.welding_process || '').toUpperCase();
-                return proc === wpsProc || proc.includes(wpsProc) || wpsProc.includes(proc);
-            });
-            const semVal = qualified.length > 0 ? 'verde' : 'rosso';
+        const {
+            computeQualificationCoverage,
+            computeWpsCoverageEsito,
+        } = require('../utils/qualificationCoverage');
+
+        // Normalizza WPS: usa base_material_group se presente, altrimenti material_group
+        // Usa welding_positions se presente, altrimenti position (campo legacy)
+        const normalizeWps = (wps) => ({
+            ...wps,
+            base_material_group: wps.base_material_group || wps.material_group || null,
+            welding_positions:   wps.welding_positions   || wps.position        || null,
+        });
+
+        // Costruisce righe di copertura range-aware per ogni WPS
+        const rows = wpsRows.map(rawWps => {
+            const wps = normalizeWps(rawWps);
+
+            const qualifiersWithDetail = qualRows.map(q => {
+                const detail = computeQualificationCoverage(q, wps);
+                return { q, detail };
+            }).filter(({ detail }) => detail.overall !== 'excluded');
+
+            const coverageDetails = qualifiersWithDetail.map(({ detail }) => detail);
+            const esito = computeWpsCoverageEsito(coverageDetails);
+
             return {
-                wps_id:           wps.id,
-                wps_code:         wps.wps_code,
-                welding_process:  wps.welding_process,
-                material_group:   wps.base_material_group,
-                qualified_count:  qualified.length,
-                esito:            semVal,
-                qualifiers:       qualified.map(q => ({
-                    id:               q.id,
-                    person_name:      q.person_name,
-                    person_code:      q.person_code,
-                    company_name:     q.company_name,
-                    expiry_date:      q.expiry_date,
-                    semaforo:         semaforo(q.expiry_date, q.status),
+                wps_id:               wps.id,
+                wps_code:             wps.wps_code,
+                welding_process:      wps.welding_process,
+                material_group:       wps.base_material_group,
+                thickness_range_min:  wps.thickness_range_min,
+                thickness_range_max:  wps.thickness_range_max,
+                welding_positions:    wps.welding_positions,
+                qualified_count:      qualifiersWithDetail.length,
+                esito,
+                qualifiers: qualifiersWithDetail.map(({ q, detail }) => ({
+                    id:              q.id,
+                    person_name:     q.person_name,
+                    person_code:     q.person_code,
+                    company_name:    q.company_name,
+                    expiry_date:     q.expiry_date,
+                    semaforo:        semaforo(q.expiry_date, q.status),
+                    coverage_detail: detail,
                 })),
             };
         });
 
-        // Se nessun WPS, segnala
-        if (!wpsRows.length) {
-            return res.json({
-                project_id: parseInt(project_id),
-                project_code: project.project_code,
-                has_wps: false,
-                coverage: [],
-                summary: { total: 0, covered: 0, uncovered: 0 },
-            });
-        }
-
         const covered   = rows.filter(r => r.esito === 'verde').length;
+        const partial   = rows.filter(r => r.esito === 'giallo').length;
         const uncovered = rows.filter(r => r.esito === 'rosso').length;
 
         res.json({
@@ -460,7 +485,7 @@ async function getCoverage(req, res) {
             project_code: project.project_code,
             has_wps:      true,
             coverage:     rows,
-            summary: { total: rows.length, covered, uncovered },
+            summary:      { total: rows.length, covered, partial, uncovered },
         });
     } catch (err) {
         logger.error('getCoverage:', err.message);
