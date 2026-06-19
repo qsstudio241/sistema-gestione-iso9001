@@ -762,7 +762,7 @@ export default function ManagementReviewsPage() {
       {/* Modal form */}
       {showForm && (
         <ReviewForm
-          initial={editItem || {}}
+          initial={editItem || { company_id: filterCompany }}
           onSave={handleSave}
           onClose={() => setShowForm(false)}
           companies={companies}
