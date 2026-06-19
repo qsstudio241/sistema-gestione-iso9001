@@ -7,6 +7,14 @@
   NODE_VERSION = "20"
   NPM_VERSION = "10"
 
+# Produzione (branch main): backend produzione
+[context.production.environment]
+  VITE_API_URL = "https://www.fr-busato.it:8443/api/v1"
+
+# Deploy Preview (ogni PR): backend di test isolato
+[context.deploy-preview.environment]
+  VITE_API_URL = "https://www.fr-busato.it:8443/test-api/api/v1"
+
 # SPA redirect (React Router)
 [[redirects]]
   from = "/*"
