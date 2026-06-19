@@ -497,6 +497,31 @@
   min-width: 36px;
 }
 
+/* Pulsante Genera bozza testo AI */
+.isw-draft-btn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #6b46c1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.isw-draft-btn:hover:not(:disabled) { background: #553c9a; }
+.isw-draft-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.isw-draft-ok {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #276749;
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 6px;
+}
+
 @media (max-width: 600px) {
   .mr-page { padding: 14px; }
   .mr-modal-box { max-width: 100%; max-height: 100%; border-radius: 0; }

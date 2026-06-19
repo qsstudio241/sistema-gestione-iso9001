@@ -437,7 +437,218 @@ async function getInputSummary(req, res) {
         result.complaints.note  = 'Dato non disponibile';
     }
 
+    // ── COPERTURA NORMATIVA ──────────────────────────────────────────────────────
+    try {
+        const normReq = pool.request()
+            .input('orgId', orgId)
+            .input('cutoff', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+
+        if (companyId) {
+            normReq.input('companyId', companyId);
+        }
+
+        const normRes = await normReq.query(`
+            SELECT
+                nr.clause_number,
+                nr.clause_title,
+                MAX(a.audit_date) AS last_verified
+            FROM norm_requirements nr
+            LEFT JOIN audits a ON (
+                a.organization_id = @orgId
+                AND a.is_deleted = 0
+                AND a.status IN ('completed', 'approved')
+                AND CAST(a.audit_date AS DATE) >= CAST(@cutoff AS DATE)
+                ${companyId ? 'AND a.company_id = @companyId' : ''}
+            )
+            WHERE nr.is_active = 1
+              AND (nr.organization_id IS NULL OR nr.organization_id = @orgId)
+              AND nr.standard_code = 'ISO9001:2015'
+            GROUP BY nr.clause_number, nr.clause_title
+            ORDER BY nr.clause_number
+        `);
+
+        result.norm_coverage = normRes.recordset.map((row) => ({
+            clause:        row.clause_number,
+            title:         row.clause_title,
+            status:        row.last_verified ? 'ok' : 'gap',
+            last_verified: row.last_verified
+                ? new Date(row.last_verified).toISOString().slice(0, 10)
+                : null,
+        }));
+    } catch (err) {
+        logger.error('getInputSummary NormCoverage:', err.message);
+        result.norm_coverage = [];
+        result.norm_coverage_note = 'Dato non disponibile';
+    }
+
     res.json({ success: true, data: result });
 }
 
-module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview, getInputSummary };
+// ─── GENERA BOZZA TESTI §9.3.2 ────────────────────────────────────────────────
+
+/**
+ * POST /management-reviews/:id/generate-draft
+ * Genera testi pronti per copia-incolla nei campi §9.3.2.
+ * Usa AI se configurata (GEMINI_API_KEY / AZURE_OPENAI_* / OPENAI_API_KEY),
+ * altrimenti produce testo deterministico dai dati aggregati.
+ *
+ * Body: { company_id?, period_from?, period_to?, sections? }
+ */
+async function generateDraft(req, res) {
+    const pool  = await getPool();
+    const orgId = req.user.organization_id;
+    const reviewId = parseInt(req.params.id, 10);
+
+    const today = new Date();
+    const periodFrom = req.body.period_from || `${today.getFullYear()}-01-01`;
+    const periodTo   = req.body.period_to   || today.toISOString().slice(0, 10);
+    const companyId  = req.body.company_id  ? parseInt(req.body.company_id, 10) : null;
+
+    // Verifica che il riesame appartenga all'org
+    try {
+        const chk = await pool.request()
+            .input('id',    reviewId)
+            .input('orgId', orgId)
+            .query(`SELECT id FROM management_reviews WHERE id=@id AND organization_id=@orgId AND is_deleted=0`);
+        if (!chk.recordset.length) {
+            return res.status(404).json({ success: false, error: 'Riesame non trovato.' });
+        }
+    } catch (err) {
+        logger.error('generateDraft check review:', err.message);
+        return res.status(500).json({ success: false, error: 'Errore interno.' });
+    }
+
+    // Raccoglie dati aggregati dal periodo
+    let nc         = { open: 0, overdue: 0, total_closed_period: 0 };
+    let objectives = { total: 0, achieved: 0, percentage: 0 };
+    let audits     = { conducted: 0 };
+    let suppliers  = { evaluated: 0, avg_score: null };
+    let normGaps   = [];
+
+    try {
+        const companyCond = companyId ? 'AND a.company_id = @companyId' : '';
+        const ncReq = pool.request().input('orgId', orgId).input('dateFrom', periodFrom).input('dateTo', periodTo);
+        if (companyId) ncReq.input('companyId', companyId);
+        const ncRes = await ncReq.query(`
+            SELECT
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified') THEN 1 ELSE 0 END) AS open_count,
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified') AND nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) AS overdue_count,
+                SUM(CASE WHEN nc.status IN ('closed','verified') AND nc.updated_at >= @dateFrom AND nc.updated_at <= DATEADD(day,1,CAST(@dateTo AS DATE)) THEN 1 ELSE 0 END) AS closed_period
+            FROM non_conformities nc
+            LEFT JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId ${companyCond}
+        `);
+        const r = ncRes.recordset[0];
+        nc = { open: r.open_count || 0, overdue: r.overdue_count || 0, total_closed_period: r.closed_period || 0 };
+    } catch (_) { /* dati non disponibili — il draft userà 0 */ }
+
+    try {
+        const objRes = await pool.request().input('orgId', orgId).query(`
+            SELECT COUNT(*) AS total, SUM(CASE WHEN status='achieved' THEN 1 ELSE 0 END) AS achieved
+            FROM objectives WHERE organization_id=@orgId AND is_deleted=0
+        `);
+        const r = objRes.recordset[0];
+        const total = r.total || 0; const achieved = r.achieved || 0;
+        objectives = { total, achieved, percentage: total > 0 ? Math.round((achieved / total) * 100) : 0 };
+    } catch (_) { /* fallback a 0 */ }
+
+    try {
+        const audReq = pool.request().input('orgId', orgId).input('dateFrom', periodFrom).input('dateTo', periodTo);
+        if (companyId) audReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND a.company_id = @companyId' : '';
+        const audRes = await audReq.query(`
+            SELECT SUM(CASE WHEN a.status IN ('completed','approved') THEN 1 ELSE 0 END) AS conducted
+            FROM audits a
+            WHERE a.organization_id=@orgId AND a.is_deleted=0 AND a.audit_date>=@dateFrom AND a.audit_date<=@dateTo ${companyCond}
+        `);
+        audits = { conducted: audRes.recordset[0].conducted || 0 };
+    } catch (_) { /* fallback a 0 */ }
+
+    try {
+        const supReq = pool.request().input('orgId', orgId).input('dateFrom', periodFrom).input('dateTo', periodTo);
+        if (companyId) supReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND s.company_id = @companyId' : '';
+        const supRes = await supReq.query(`
+            SELECT COUNT(DISTINCT se.supplier_id) AS evaluated, AVG(CAST(se.score AS FLOAT)) AS avg_score
+            FROM supplier_evaluations se
+            INNER JOIN suppliers s ON s.id=se.supplier_id
+            WHERE s.organization_id=@orgId AND se.evaluation_date>=@dateFrom AND se.evaluation_date<=@dateTo ${companyCond}
+        `);
+        const r = supRes.recordset[0];
+        suppliers = { evaluated: r.evaluated || 0, avg_score: r.avg_score != null ? Math.round(r.avg_score * 10) / 10 : null };
+    } catch (_) { /* fallback */ }
+
+    try {
+        const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const normReq = pool.request().input('orgId', orgId).input('cutoff', cutoff);
+        if (companyId) normReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND a.company_id = @companyId' : '';
+        const normRes = await normReq.query(`
+            SELECT nr.clause_number, MAX(a.audit_date) AS last_verified
+            FROM norm_requirements nr
+            LEFT JOIN audits a ON (a.organization_id=@orgId AND a.is_deleted=0 AND a.status IN ('completed','approved') AND CAST(a.audit_date AS DATE)>=CAST(@cutoff AS DATE) ${companyCond})
+            WHERE nr.is_active=1 AND (nr.organization_id IS NULL OR nr.organization_id=@orgId) AND nr.standard_code='ISO9001:2015'
+            GROUP BY nr.clause_number
+            ORDER BY nr.clause_number
+        `);
+        normGaps = normRes.recordset.filter((r) => !r.last_verified).map((r) => r.clause_number);
+    } catch (_) { /* fallback */ }
+
+    // Tenta AI se configurata
+    let aiText = null;
+    try {
+        const aiAdapter = require('../services/aiProviderAdapter');
+        const prompt = `Sei un consulente ISO 9001. Dati del periodo ${periodFrom} - ${periodTo}:
+- NC aperte: ${nc.open}, scadute: ${nc.overdue}, chiuse nel periodo: ${nc.total_closed_period}
+- Obiettivi raggiunti: ${objectives.percentage}% (${objectives.achieved}/${objectives.total})
+- Audit condotti: ${audits.conducted}
+- Fornitori valutati: ${suppliers.evaluated}${suppliers.avg_score != null ? `, score medio: ${suppliers.avg_score}` : ''}
+- Clausole senza evidenza di verifica nell'ultimo anno: ${normGaps.length > 0 ? normGaps.join(', ') : 'nessuna'}
+
+Genera testi concisi per la sezione §9.3.2 del riesame di direzione ISO 9001, in italiano, stile tecnico-formale, max 120 parole per sezione.
+Rispondi SOLO con JSON con questa struttura:
+{"nc_summary":"...","objectives_summary":"...","audits_summary":"...","suppliers_summary":"...","norm_gaps":"..."}`;
+
+        const result = await aiAdapter.chat(
+            [{ role: 'user', content: prompt }],
+            { responseFormat: 'json', maxTokens: 800, temperature: 0.3 }
+        );
+        aiText = typeof result.content === 'string' ? JSON.parse(result.content) : result.content;
+    } catch (aiErr) {
+        if (aiErr.code !== 'AI_NOT_CONFIGURED') {
+            logger.warn('generateDraft AI error (usando fallback deterministico):', aiErr.message);
+        }
+    }
+
+    // Draft deterministico (usato se AI non disponibile o fallisce)
+    const gapsText = normGaps.length > 0
+        ? `Le seguenti clausole non presentano evidenze di verifica nell'ultimo anno: ${normGaps.join(', ')}.`
+        : 'Tutte le clausole principali risultano coperte da audit nell\'ultimo anno.';
+
+    const drafts = aiText || {
+        nc_summary: `Nel periodo ${periodFrom} – ${periodTo} sono state rilevate ${nc.open} non conformità ancora aperte` +
+            (nc.overdue > 0 ? `, di cui ${nc.overdue} scadute` : '') +
+            `. Nel periodo sono state chiuse ${nc.total_closed_period} NC. ` +
+            (nc.open === 0 ? 'Non risultano NC aperte al momento del riesame.' : 'Le NC aperte sono in fase di gestione secondo le procedure vigenti.'),
+
+        objectives_summary: `Degli ${objectives.total} obiettivi per la qualità monitorati, ${objectives.achieved} risultano raggiunti (${objectives.percentage}%). ` +
+            (objectives.percentage >= 80
+                ? 'Il livello di raggiungimento degli obiettivi è soddisfacente.'
+                : 'Sono previste azioni di miglioramento per gli obiettivi non ancora raggiunti.'),
+
+        audits_summary: `Nel periodo sono stati condotti ${audits.conducted} audit intern${audits.conducted === 1 ? 'o' : 'i'}. ` +
+            'I risultati degli audit sono stati analizzati e le eventuali NC rilevate sono state gestite attraverso le procedure di azione correttiva.',
+
+        suppliers_summary: suppliers.evaluated > 0
+            ? `Sono stati valutati ${suppliers.evaluated} fornitori nel periodo` +
+              (suppliers.avg_score != null ? ` con uno score medio di ${suppliers.avg_score}/100` : '') +
+              '. Le valutazioni confermano il livello di qualificazione dei fornitori critici.'
+            : 'Non sono state effettuate valutazioni formali di fornitori nel periodo in esame.',
+
+        norm_gaps: gapsText,
+    };
+
+    res.json({ success: true, drafts, meta: { period_from: periodFrom, period_to: periodTo, ai_used: !!aiText } });
+}
+
+module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview, getInputSummary, generateDraft };
