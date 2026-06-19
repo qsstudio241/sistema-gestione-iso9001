@@ -119,7 +119,39 @@ async function main() {
   process.exit(0);
 }
 
+async function checkVpsTestHealth() {
+  const https = require('https');
+  const url = 'https://www.fr-busato.it:8443/test-api/api/v1/health';
+  return new Promise((resolve) => {
+    const req = https.get(url, { timeout: 8000 }, (res) => {
+      let body = '';
+      res.on('data', (d) => (body += d));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body);
+          resolve({ ok: res.statusCode === 200 && json.status === 'healthy', body });
+        } catch {
+          resolve({ ok: false, body });
+        }
+      });
+    });
+    req.on('error', (e) => resolve({ ok: false, error: e.message }));
+    req.on('timeout', () => { req.destroy(); resolve({ ok: false, error: 'timeout' }); });
+  });
+}
+
 main().catch((e) => {
   console.error('SMOKE TESTDB: ERRORE CONNESSIONE —', e.message);
   process.exit(1);
 });
+
+// Check opzionale VPS test (non bloccante — utile per verifica manuale)
+if (process.argv.includes('--check-vps')) {
+  checkVpsTestHealth().then((r) => {
+    if (r.ok) {
+      console.log('\nVPS TEST HEALTH: OK —', r.body);
+    } else {
+      console.warn('\nVPS TEST HEALTH: WARN —', r.error || r.body);
+    }
+  });
+}
