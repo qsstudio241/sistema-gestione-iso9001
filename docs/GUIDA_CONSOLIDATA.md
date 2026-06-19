@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -3406,3 +3406,29 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - Se AI configurata (Gemini/Azure/OpenAI via `aiProviderAdapter`): testo GPT-style da prompt strutturato
 - Risposta: `{ success, drafts: { nc_summary, objectives_summary, audits_summary, suppliers_summary, norm_gaps }, meta: { ai_used } }`
 - Frontend: pulsante visibile solo se `reviewId` (initial?.id) è disponibile — non su nuovo riesame non ancora salvato
+
+---
+
+### Sessione 19/06/2026 (notte) — Slice 1 coverage range-aware qualifiche saldatori
+
+| Voce | Esito |
+|------|-------|
+| Funzione trovata | `getCoverage` in `backend/src/controllers/qualifications.controller.js` (match solo per codice processo) |
+| Schema DB verificato | `welding_procedures`: `thickness_range_min/max` (decimal), `base_material_group`, `welding_positions`; `qualifications`: `thickness_min_mm/max_mm` (decimal), `material_group`, `position_range` |
+| Utility creata | `backend/src/utils/qualificationCoverage.js` — funzioni pure: `checkThickness`, `checkMaterialGroup`, `checkPositions`, `checkProcess`, `computeQualificationCoverage`, `computeWpsCoverageEsito` |
+| Test | `qualificationCoverage.test.js` — 36 test, tutti verdi (Jest) |
+| Controller aggiornato | `getCoverage` usa logica range-aware; risposta granulare con `coverage_detail` per saldatore e `partial`/`giallo` per campi NULL |
+| Deploy | File copiati su VPS; restart manuale PID (systemctl sudo non disponibile) — backend health OK |
+| Commit | Incluso in PR #120 (merge automatico su main) + manifest update `ec8de58` |
+
+**Gestione NULL difensiva:**
+- Campo NULL nella WPS → non vincolante (non fa fallire il match)
+- Campo NULL nella qualifica → `unverifiable` → esito `partial`/`giallo` (segnala verifica manuale, non esclude il saldatore)
+- Motivazione: evitare falsi negativi su archivi storici incompleti
+
+**Pattern `computeQualificationCoverage` (riusabile):**
+- Input: `qual` (riga DB qualifiche) + `wps` (riga DB welding_procedures normalizzata)
+- Output: `{ process, thickness, material_group, position, overall: 'ok'|'partial'|'excluded' }`
+- `computeWpsCoverageEsito(details[]) → 'verde'|'giallo'|'rosso'`
+
+**Nota deploy-manifest:** aggiungere sempre file utils nuovi a `backend/scripts/deploy-manifest.json` gruppo `utils` prima del prossimo deploy — altrimenti il file non viene copiato sul VPS.
