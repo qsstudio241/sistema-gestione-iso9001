@@ -3375,3 +3375,9 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 **Lezione chiave — SQL Server + VPS SSH:** il server SQL non è raggiungibile via hostname pubblico (`www.fr-busato.it:11043`) dal VPS stesso — usare sempre `localhost:11043` negli script di migrazione eseguiti via SSH sul nodo.
 
 **Backlog Action Plan (prossima sessione):** vedi `docs/PROJECT_ROADMAP.md` sezione *Action Plan — Evoluzione futura*.
+
+**Pattern aggregazione dati §9.3 — AI-assisted pre-compilazione (2026-06-19 — PR #119):**
+- Endpoint di aggregazione multi-tabella: ogni sezione (NC, Obiettivi, Audit, Fornitori, Reclami) ha il proprio `try/catch` per graceful degradation — se una query fallisce, l'endpoint restituisce il dato parziale con `note: "Dato non disponibile"` senza bloccare l'intera risposta.
+- Route specifica (`/management-reviews/input-summary`) va registrata **prima** della route parametrica (`/management-reviews/:id`) in Express per evitare il match errato su `:id = "input-summary"`.
+- Widget pre-compilazione: pattern `onPrefill(field, text)` — se il campo ha già contenuto, il testo viene appendato con doppio newline preservando le note manuali; altrimenti sostituisce direttamente.
+- `norm_coverage: []` è il fallback corretto se `norm_requirements` non esiste nel DB — il widget gestisce l'array vuoto senza mostrare sezione vuota.
