@@ -35,7 +35,8 @@
         "src/utils/documentRegistryFile.js",
         "src/utils/excelDeadlineDetector.js",
         "src/utils/documentClassifier.js",
-        "src/utils/weldingDesignation.js"
+        "src/utils/weldingDesignation.js",
+        "src/utils/qualificationCoverage.js"
       ]
     },
     {
