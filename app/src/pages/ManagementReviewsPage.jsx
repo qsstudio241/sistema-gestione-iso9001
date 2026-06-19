@@ -49,12 +49,15 @@ function jan1Iso() {
 
 // ─── Widget Dati disponibili §9.3.2 ──────────────────────────────────────────
 
-function InputSummaryWidget({ companyId, onPrefill }) {
-  const [dateFrom, setDateFrom] = useState(jan1Iso);
-  const [dateTo,   setDateTo]   = useState(todayIso);
-  const [data,     setData]     = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState(null);
+function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
+  const [dateFrom,       setDateFrom]       = useState(jan1Iso);
+  const [dateTo,         setDateTo]         = useState(todayIso);
+  const [data,           setData]           = useState(null);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState(null);
+  const [drafting,       setDrafting]       = useState(false);
+  const [draftError,     setDraftError]     = useState(null);
+  const [draftGenerated, setDraftGenerated] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -114,6 +117,29 @@ function InputSummaryWidget({ companyId, onPrefill }) {
     return lines.join("\n");
   }
 
+  async function generateDraft() {
+    if (!reviewId) return;
+    setDrafting(true);
+    setDraftError(null);
+    setDraftGenerated(false);
+    try {
+      const body = { period_from: dateFrom, period_to: dateTo };
+      if (companyId) body.company_id = companyId;
+      const res = await apiService.post(`/management-reviews/${reviewId}/generate-draft`, body);
+      const { drafts } = res.data;
+      if (drafts.nc_summary)         onPrefill("input_nc_corrective", drafts.nc_summary);
+      if (drafts.objectives_summary) onPrefill("input_objectives",    drafts.objectives_summary);
+      if (drafts.audits_summary)     onPrefill("input_audits",        drafts.audits_summary);
+      if (drafts.suppliers_summary)  onPrefill("input_suppliers",     drafts.suppliers_summary);
+      if (drafts.norm_gaps)          onPrefill("input_improvements",  drafts.norm_gaps);
+      setDraftGenerated(true);
+    } catch (err) {
+      setDraftError(err?.response?.data?.error || "Errore durante la generazione della bozza.");
+    } finally {
+      setDrafting(false);
+    }
+  }
+
   return (
     <div className="isw-card">
       <div className="isw-header">
@@ -131,9 +157,26 @@ function InputSummaryWidget({ companyId, onPrefill }) {
           >
             {loading ? "Caricamento dati\u2026" : "Carica dati"}
           </button>
+          {reviewId && (
+            <button
+              type="button"
+              className="btn-primary isw-draft-btn"
+              onClick={generateDraft}
+              disabled={drafting}
+              title={"Genera testi bozza per i campi \u00A79.3.2 dal riesame corrente"}
+            >
+              {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
+            </button>
+          )}
         </div>
       </div>
 
+      {draftGenerated && (
+        <div className="isw-body">
+          <p className="isw-draft-ok">{"Bozza generata e inserita nei campi \u00A79.3.2."}</p>
+        </div>
+      )}
+      {draftError && <div className="isw-body"><p className="isw-error">{draftError}</p></div>}
       {error && <div className="isw-body"><p className="isw-error">{error}</p></div>}
 
       {data && (
@@ -406,6 +449,7 @@ function ReviewForm({ initial, onSave, onClose }) {
           <CollapsibleSection title="3 — §9.3.2 Input del riesame">
             <InputSummaryWidget
               companyId={form.company_id || initial?.company_id || null}
+              reviewId={initial?.id || null}
               onPrefill={handlePrefill}
             />
             {[
