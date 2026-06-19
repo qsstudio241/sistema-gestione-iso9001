@@ -449,7 +449,7 @@ async function getInputSummary(req, res) {
 
         const normRes = await normReq.query(`
             SELECT
-                nr.clause_number,
+                nr.clause_ref,
                 nr.clause_title,
                 MAX(a.audit_date) AS last_verified
             FROM norm_requirements nr
@@ -460,15 +460,15 @@ async function getInputSummary(req, res) {
                 AND CAST(a.audit_date AS DATE) >= CAST(@cutoff AS DATE)
                 ${companyId ? 'AND a.company_id = @companyId' : ''}
             )
-            WHERE nr.is_active = 1
-              AND (nr.organization_id IS NULL OR nr.organization_id = @orgId)
-              AND nr.standard_code = 'ISO9001:2015'
-            GROUP BY nr.clause_number, nr.clause_title
-            ORDER BY nr.clause_number
+            WHERE nr.is_current = 1
+              AND nr.standard_code = 'ISO_9001_2015'
+              AND LEN(nr.clause_ref) - LEN(REPLACE(nr.clause_ref, '.', '')) = 1
+            GROUP BY nr.clause_ref, nr.clause_title
+            ORDER BY nr.clause_ref
         `);
 
         result.norm_coverage = normRes.recordset.map((row) => ({
-            clause:        row.clause_number,
+            clause:        row.clause_ref,
             title:         row.clause_title,
             status:        row.last_verified ? 'ok' : 'gap',
             last_verified: row.last_verified
@@ -584,14 +584,15 @@ async function generateDraft(req, res) {
         if (companyId) normReq.input('companyId', companyId);
         const companyCond = companyId ? 'AND a.company_id = @companyId' : '';
         const normRes = await normReq.query(`
-            SELECT nr.clause_number, MAX(a.audit_date) AS last_verified
+            SELECT nr.clause_ref, MAX(a.audit_date) AS last_verified
             FROM norm_requirements nr
             LEFT JOIN audits a ON (a.organization_id=@orgId AND a.is_deleted=0 AND a.status IN ('completed','approved') AND CAST(a.audit_date AS DATE)>=CAST(@cutoff AS DATE) ${companyCond})
-            WHERE nr.is_active=1 AND (nr.organization_id IS NULL OR nr.organization_id=@orgId) AND nr.standard_code='ISO9001:2015'
-            GROUP BY nr.clause_number
-            ORDER BY nr.clause_number
+            WHERE nr.is_current=1 AND nr.standard_code='ISO_9001_2015'
+              AND LEN(nr.clause_ref) - LEN(REPLACE(nr.clause_ref, '.', '')) = 1
+            GROUP BY nr.clause_ref
+            ORDER BY nr.clause_ref
         `);
-        normGaps = normRes.recordset.filter((r) => !r.last_verified).map((r) => r.clause_number);
+        normGaps = normRes.recordset.filter((r) => !r.last_verified).map((r) => r.clause_ref);
     } catch (_) { /* fallback */ }
 
     // Tenta AI se configurata
