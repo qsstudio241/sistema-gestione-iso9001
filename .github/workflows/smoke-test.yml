@@ -45,3 +45,10 @@ jobs:
           SMOKE_ENDPOINT: ${{ secrets.SMOKE_ENDPOINT }}
           SMOKE_TOKEN: ${{ secrets.SMOKE_TOKEN }}
         timeout-minutes: 2
+
+      - name: Health check backend test (test-api)
+        run: |
+          curl -sf --insecure \
+            https://www.fr-busato.it:8443/test-api/api/v1/health \
+            || (echo "HEALTH CHECK FAIL: backend test non raggiungibile" && exit 1)
+        timeout-minutes: 1

@@ -1,4 +1,4 @@
-# Guida consolidata — SGQ ISO 9001
+﻿# Guida consolidata — SGQ ISO 9001
 
 > **Unico documento di esperienza operativa** da aggiornare quando cambia il comportamento del sistema (deploy, Word, DB, sync) **o** le regole di verifica/release (smoke, licenze, DoD).  
 > **Non creare** nuovi `SESSION_NOTES_YYYYMMDD.md`: si aggiorna questo file + `PROJECT_ROADMAP.md`.
@@ -2118,7 +2118,7 @@ gh api repos/qsstudio241/sistema-gestione-iso9001/branches/main/protection
 |---|----------|------|
 | 1 | Deploy Preview Netlify **Success** (verde) | Tab Checks sulla PR GitHub |
 | 2 | App preview carica (login / home) | URL preview nel commento Netlify |
-| 3 | Flusso modificato funziona end-to-end | Preview + API `https://www.fr-busato.it:8443` |
+| 3 | Flusso modificato funziona end-to-end | Preview + API **test** `https://www.fr-busato.it:8443/test-api/api/v1` (automatico da `netlify.toml`) |
 | 4 | CI app verde (se tocca `app/`) | Check **CI app (Pull Request)** |
 | 5 | Dichiarare **TEST OK** in chat o commento PR | — |
 
@@ -2145,10 +2145,20 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 
 > **Nota porta 8444**: nginx è configurato anche su `:8444` (TLS) → `:3001`, ma il provider non espone quella porta all'esterno. Si accede via path-prefix `/test-api/` sulla porta `8443` già aperta. Se in futuro si vuole aprire `8444`: pannello di controllo del provider VPS → firewall → aggiungi regola TCP 8444.
 
+
+#### Tabella ambienti (produzione vs test)
+
+| Ambiente | URL frontend | URL backend | DB |
+|---|---|---|---|
+| **Produzione** (`main`) | `https://systemgest.netlify.app` | `https://www.fr-busato.it:8443/api/v1` | `SGQ_ISO9001` |
+| **Test** (Deploy Preview PR) | `https://deploy-preview-NNN--systemgest.netlify.app` | `https://www.fr-busato.it:8443/test-api/api/v1` | `2026-06-18_SGQ_ISO9001` |
+
+La variabile `VITE_API_URL` viene iniettata automaticamente da `netlify.toml` (`[context.deploy-preview.environment]`) — nessuna azione manuale necessaria.
+
 #### Flusso completo test su branch
 
 ```
-feat/branch → push → PR → deploy backend test (run-on-vps.ps1) → smoke su /test-api/ → TEST OK → merge → deploy produzione (deploy-controllers-to-vps.ps1)
+feat/branch → push → gh pr create → [GitHub Actions: smoke DB test] → [Netlify: Deploy Preview → VITE_API_URL=test-api automatico] → test funzionale su URL preview → TEST OK → gh pr merge → deploy produzione (deploy-controllers-to-vps.ps1)
 ```
 
 #### Comandi rapidi ambiente test
