@@ -1,6 +1,6 @@
 # DEPUTYTASK — 2026-06-19 — selettore azienda Riesame Direzione
 
-## Stato: IN PROGRESS — attesa verifica utente (NON mergire)
+## Stato: IN PROGRESS — fix UX pre-compilazione applicato — attesa verifica utente (NON mergire)
 
 ---
 
@@ -38,10 +38,17 @@
 ### CSS
 - `ManagementReviewsPage.css`: aggiunte classi `.isw-no-company` e `.mr-field-readonly`
 
+### Fix 5 — UX: pre-compilazione azienda dal filtro lista (2026-06-19)
+- `app/src/pages/ManagementReviewsPage.jsx` riga 765: cambiato `initial={editItem || {}}` → `initial={editItem || { company_id: filterCompany }}`
+- Quando si apre "Nuovo riesame" con un filtro azienda attivo, il campo Azienda del form viene pre-compilato automaticamente
+- Se nessun filtro è attivo (`filterCompany === ""`), il comportamento resta invariato (dropdown vuoto)
+
 ---
 
 ## Checklist pre-merge (da eseguire manualmente)
 
+- [ ] Utente Studio: filtrare lista per "SAVECO" → aprire "Nuovo riesame" → campo Azienda pre-compilato con "SAVECO"
+- [ ] Utente Studio: senza filtro attivo → campo Azienda vuoto (comportamento invariato)
 - [ ] Utente Studio: aprire "Nuovo riesame" → campo Azienda appare come primo campo obbligatorio
 - [ ] Utente Studio: senza azienda → pulsante Crea disabilitato
 - [ ] Utente Studio: crea riesame → verificare che `company_id` sia salvato in DB
