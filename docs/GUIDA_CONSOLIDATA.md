@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -2124,7 +2124,59 @@ gh api repos/qsstudio241/sistema-gestione-iso9001/branches/main/protection
 
 **Abilitazione preview** (una tantum): vedi sezione [Netlify — Deploy Preview (guida passo-passo)](#netlify--deploy-preview-guida-passo-passo) — Passo 2 *Deploy Previews → Any pull request*.
 
-**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
+**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app`, `sistema-gestione-iso9001.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
+
+---
+
+### Ambiente TEST backend (istanza parallela VPS — configurato 19/06/2026)
+
+Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione, destinato al collaudo funzionale di branch prima del merge.
+
+| Parametro | Valore |
+|-----------|--------|
+| **URL pubblico** | `https://www.fr-busato.it:8443/test-api/` |
+| **Health check** | `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health` |
+| **Porta interna Node.js** | `3001` (produzione usa `3000`) |
+| **DB** | `2026-06-18_SGQ_ISO9001` (non tocca produzione `SGQ_ISO9001`) |
+| **Servizio systemd** | `sgq-backend-test` |
+| **File env VPS** | `/var/www/sgq-backend/.env.test` |
+| **Config nginx** | `/etc/nginx/sites-available/sgq-backend-test` (blocco `listen 8444 ssl` — porta non esposta provider) |
+| `NODE_ENV` | `test`, `LOG_LEVEL=debug` |
+
+> **Nota porta 8444**: nginx è configurato anche su `:8444` (TLS) → `:3001`, ma il provider non espone quella porta all'esterno. Si accede via path-prefix `/test-api/` sulla porta `8443` già aperta. Se in futuro si vuole aprire `8444`: pannello di controllo del provider VPS → firewall → aggiungi regola TCP 8444.
+
+#### Flusso completo test su branch
+
+```
+feat/branch → push → PR → deploy backend test (run-on-vps.ps1) → smoke su /test-api/ → TEST OK → merge → deploy produzione (deploy-controllers-to-vps.ps1)
+```
+
+#### Comandi rapidi ambiente test
+
+```powershell
+# Restart istanza test (dopo deploy file backend)
+.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"
+
+# Health check test
+curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health
+
+# Log istanza test (ultimi 50)
+.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S journalctl -u sgq-backend-test -n 50 --no-pager"
+
+# Stato servizio test
+.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl status sgq-backend-test --no-pager"
+
+# Smoke DB + VPS test opzionale
+cd backend && node scripts/smoke-testdb.js --check-vps
+```
+
+#### Come fare deploy di un branch sull'istanza test
+
+1. Copia i controller/file modificati con `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
+2. Restart: `.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"`
+3. Verifica: `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health`
+4. Esegui test funzionali puntando il frontend a `https://www.fr-busato.it:8443/test-api` (cambia `VITE_API_BASE_URL` nel `.env.local`)
+5. Se OK → merge → `deploy-controllers-to-vps.ps1` per produzione
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
