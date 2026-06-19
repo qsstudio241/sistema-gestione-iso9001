@@ -63,7 +63,7 @@ async function listReviews(req, res) {
                        c.name AS company_name
                 FROM management_reviews mr
                 LEFT JOIN users u    ON u.user_id     = mr.created_by
-                LEFT JOIN companies c ON c.company_id = mr.company_id
+                LEFT JOIN companies c ON c.id = mr.company_id
                 WHERE ${whereClause}
                 ORDER BY mr.review_date DESC, mr.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -101,7 +101,7 @@ async function getOneReview(req, res) {
             .query(`
                 SELECT mr.*, c.name AS company_name, u.full_name AS created_by_name
                 FROM management_reviews mr
-                LEFT JOIN companies c ON c.company_id = mr.company_id
+                LEFT JOIN companies c ON c.id = mr.company_id
                 LEFT JOIN users u     ON u.user_id    = mr.created_by
                 WHERE mr.id = @id AND mr.organization_id = @orgId AND mr.is_deleted = 0
             `);
