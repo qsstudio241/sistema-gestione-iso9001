@@ -1,6 +1,35 @@
-# DEPUTYTASK — Stato sessione 2026-06-19 (aggiornamento serale)
+# DEPUTYTASK — Stato sessione 2026-06-19 (fix licenza management-review)
 
 ## Stato: CHIUSO — TEST OK
+
+---
+
+## Fix 2026-06-19 sera — Bug modulo Riesame Direzione non accessibile
+
+### Causa radice
+`riesame_direzione` assente da `KNOWN_MODULE_KEYS` in `moduleLicense.service.js`.
+Al login, il token utente riceveva la lista default senza quella chiave → menu filtrato, pagina bloccata.
+
+### Fix applicato
+| File | Modifica |
+|---|---|
+| `backend/src/services/moduleLicense.service.js` | Aggiunta chiave `riesame_direzione` in `KNOWN_MODULE_KEYS` + label in `LABELS_IT`; etichetta `sal` corretta |
+
+### Deliverable
+| # | Deliverable | Stato |
+|---|---|---|
+| 1 | Branch `fix/management-review-license-menu` + commit | ✅ |
+| 2 | PR #122 — CI verde (smoke + Netlify) | ✅ |
+| 3 | Merge su `main` | ✅ |
+| 4 | Deploy VPS (`deploy-controllers-to-vps.ps1`) | ✅ |
+| 5 | Verifica VPS: `INDEX: 5 LABEL: Riesame di Direzione (§9.3)` | ✅ |
+
+### Note
+- Menu e guard pagina erano già corretti nel frontend (AppLayout.jsx:61, App.jsx:139)
+- Org con `licensed_modules = NULL`: il modulo è automaticamente incluso dopo re-login
+- Org con lista esplicita: il modulo appare nella pagina Licenze moduli come disponibile
+
+---
 
 ---
 
