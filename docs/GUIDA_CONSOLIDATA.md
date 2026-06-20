@@ -3414,6 +3414,33 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 20/06/2026 — Modulo CND (6 slice complete — PR #127-#132)
+
+| Slice | PR | Contenuto | Stato |
+|---|---|---|---|
+| 1 | #127 | Migrazione DB 101-103: `equipment_assets`, `equipment_calibrations`, `ndt_reports`/`items`/`instruments` | ✅ |
+| 2 | #128 | Backend CRUD: `equipment.controller.js`, `ndtReports.controller.js`, route, modulo `cnd` in `moduleLicense.service.js` | ✅ |
+| 3 | #129 | Frontend: `EquipmentPage.jsx` (lista+form strumenti, stats taratura) | ✅ |
+| 4 | #130 | Frontend: `NdtReportsPage.jsx` (lista+form VT a 5 sezioni, Elenco Marche dinamico, giudizio A/R/S con `.status-btn`) | ✅ |
+| 5 | #131 | Export Word: `vtWordExport.js` + template `VT-verbale.docx` (36 placeholder, loop `{#items}`) | ✅ |
+| 6 | #132 | Offline: `useNdtAutoSave.js` (localStorage debounce) + sync queue `create/update/delete_ndt_report` in `syncService.js` | ✅ |
+
+**Architettura chiave:**
+- `equipment_assets`: tabella trasversale a tutti i sistemi (9001/14001/45001/3834/CND); `company_id NULL` = studio, valorizzato = azienda cliente
+- `ndt_reports`: `report_type='VT'|'MT'|'PT'|'UT'`; `method_params JSON` per parametri specifici per metodo → scalabile senza nuove tabelle
+- Numerazione automatica: `VT-YYYY-NNN` (pattern `RD-YYYY-NNN` da managementReviews)
+- Modulo licenza: chiave `cnd` aggiunta a `KNOWN_MODULE_KEYS` e `LABELS_IT`
+- Menu sidebar: gruppo "CND" con voci Strumenti e Verbali
+- Smoke test API sul backend-test: 7/7 OK
+- Build Vite: OK su ogni slice
+
+**Lezioni:**
+- `equipment_assets.company_id IS NULL` = asset dello studio (condiviso); filtro `for-report` mostra studio + azienda
+- Template `.docx` generato con `node scripts/generateVtTemplate.js` (pattern `generateNcTemplate.js`) — rilanciare se si vuole modificare il layout
+- Verbali CND = online-first (come NC/Riesame Direzione), non offline-first come gli audit ISO; `useNdtAutoSave` aggiunge resilienza locale senza complessità IndexedDB
+
+---
+
 ### Sessione 19/06/2026 (notte) — Slice 1 coverage range-aware qualifiche saldatori
 
 | Voce | Esito |
