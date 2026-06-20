@@ -433,9 +433,10 @@ function ReviewForm({ initial, onSave, onClose, companies, user }) {
           {/* 1. Intestazione */}
           <CollapsibleSection title="1 \u2014 Intestazione" defaultOpen>
             {/* Azienda — primo campo */}
+            {/* readonly se: client user OPPURE creazione nuova con filtro azienda attivo */}
             <div className="form-row">
-              <label>{"Azienda"}{!isClientUser && " *"}</label>
-              {isClientUser ? (
+              <label>{"Azienda"}{!isClientUser && (isEditing || !initial?.company_id) && " *"}</label>
+              {isClientUser || (!isEditing && initial?.company_id) ? (
                 <input
                   value={companies.find((c) => String(c.id) === form.company_id)?.name || form.company_id}
                   readOnly
