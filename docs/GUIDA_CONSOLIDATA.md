@@ -2142,8 +2142,11 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 | **File env VPS** | `/var/www/sgq-backend/.env.test` |
 | **Config nginx** | `/etc/nginx/sites-available/sgq-backend-test` (blocco `listen 8444 ssl` — porta non esposta provider) |
 | `NODE_ENV` | `test`, `LOG_LEVEL=debug` |
+| `GEMINI_API_KEY` | ✅ presente in `.env.test`, allineata a produzione (`.env`) — abilita estrazione requisiti da disegni (adapter Gemini) anche su test/demo |
 
 > **Nota porta 8444**: nginx è configurato anche su `:8444` (TLS) → `:3001`, ma il provider non espone quella porta all'esterno. Si accede via path-prefix `/test-api/` sulla porta `8443` già aperta. Se in futuro si vuole aprire `8444`: pannello di controllo del provider VPS → firewall → aggiungi regola TCP 8444.
+
+> **Nota chiavi AI (20/06/2026)**: `GEMINI_API_KEY` è stata copiata da `.env` a `.env.test` lato server (valore mai esposto in chat/log) e il servizio `sgq-backend-test` è stato riavviato. L'estrazione requisiti da disegni (`POST /test-api/api/v1/import-jobs/:id/files/:fileId/ai-extract`, adapter `geminiAdapter.js`) funziona ora anche sull'ambiente test/demo. Verifica: health `healthy` + endpoint che risponde `401` senza auth (registrato).
 
 
 #### Tabella ambienti (produzione vs test)
