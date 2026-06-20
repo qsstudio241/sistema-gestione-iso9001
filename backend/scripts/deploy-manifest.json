@@ -3,6 +3,7 @@
   "remoteBase": "/var/www/sgq-backend",
   "ensureRemoteDirs": [
     "src/services/normConnectors",
+    "src/services/adapters",
     "src/utils",
     "src/data"
   ],
@@ -86,9 +87,11 @@
         "src/services/normCatalogLookup.service.js",
         "src/services/normValidityChecker.service.js",
         "src/services/importAiExtraction.service.js",
+        "src/services/adapters/geminiAdapter.js",
         "src/services/aiProviderAdapter.js",
         "src/services/aiContextBuilder.service.js",
         "src/services/commercialCustomerCounterparty.service.js",
+        "src/services/drawingExtraction.service.js",
         "src/services/aiOrganizationContext.service.js",
         "src/services/knowledgeIndexer.service.js",
         "src/services/alertMail.service.js",
@@ -124,6 +127,7 @@
         "src/controllers/companyPersonnel.controller.js",
         "src/controllers/companyCounterparties.controller.js",
         "src/controllers/contractReview.controller.js",
+        "src/controllers/drawingExtraction.controller.js",
         "src/controllers/company.controller.js",
         "src/controllers/qualifications.controller.js",
         "src/controllers/projects.controller.js",
@@ -164,7 +168,9 @@
         "src/routes/reportTemplate.routes.js",
         "src/routes/alert.routes.js",
         "src/routes/notifications.routes.js",
-        "src/routes/managementReviews.routes.js"
+        "src/routes/managementReviews.routes.js",
+        "src/routes/contractReview.routes.js",
+        "src/routes/drawingExtraction.routes.js"
       ]
     },
     {
