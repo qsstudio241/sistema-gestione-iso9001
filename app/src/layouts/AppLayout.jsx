@@ -76,6 +76,14 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
       ]),
     },
+    // Modulo CND (Controlli Non Distruttivi)
+    {
+      group: "CND",
+      items: filterByLicense([
+        { to: "/cnd/strumenti", icon: "\uD83D\uDD2C", label: "Strumenti e Attrezzature", licenseKey: "cnd" },
+        { to: "/cnd/verbali",   icon: "\uD83D\uDCCB", label: "Verbali CND (VT/MT/PT/UT)", licenseKey: "cnd" },
+      ]),
+    },
     // Gestione (studio admin/auditor o cliente azienda con menu ridotto)
     ...(canManage || isCompanyClient ? [{
       group: "Gestione",

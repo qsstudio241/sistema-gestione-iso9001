@@ -2048,6 +2048,28 @@ class ApiService {
     }
     async getWpsCoverage(projectId)    { return this.get(`/welding/wps/coverage?project_id=${projectId}`); }
 
+    // ─── CND — Strumenti e Attrezzature ─────────────────────────────────────
+    async getEquipmentList(params = {})  { const qs = new URLSearchParams(params).toString(); return this.get(`/equipment${qs ? '?' + qs : ''}`); }
+    async getEquipment(id)               { return this.get(`/equipment/${id}`); }
+    async createEquipment(data)          { return this.post('/equipment', data); }
+    async updateEquipment(id, data)      { return this.put(`/equipment/${id}`, data); }
+    async deleteEquipment(id)            { return this.delete(`/equipment/${id}`); }
+    async getEquipmentStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/equipment/stats${qs ? '?' + qs : ''}`); }
+    async getEquipmentForReport(method, company_id) {
+        const qs = new URLSearchParams({ ...(method ? { method } : {}), ...(company_id ? { company_id } : {}) }).toString();
+        return this.get(`/equipment/for-report${qs ? '?' + qs : ''}`);
+    }
+    async addCalibration(assetId, data)  { return this.post(`/equipment/${assetId}/calibrations`, data); }
+    async getCalibrations(assetId)       { return this.get(`/equipment/${assetId}/calibrations`); }
+
+    // ─── CND — Verbali (VT/MT/PT/UT) ────────────────────────────────────────
+    async getNdtReportList(params = {})  { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports${qs ? '?' + qs : ''}`); }
+    async getNdtReport(id)               { return this.get(`/ndt-reports/${id}`); }
+    async createNdtReport(data)          { return this.post('/ndt-reports', data); }
+    async updateNdtReport(id, data)      { return this.put(`/ndt-reports/${id}`, data); }
+    async deleteNdtReport(id)            { return this.delete(`/ndt-reports/${id}`); }
+    async getNdtReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports/stats${qs ? '?' + qs : ''}`); }
+
     // ─── Projects / Commesse (Modulo Saldatura) ─────────────────────────────
     async getProjects(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/projects${qs ? '?' + qs : ''}`); }
     async getProject(id)             { return this.get(`/projects/${id}`); }
