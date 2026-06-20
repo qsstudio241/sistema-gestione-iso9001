@@ -22,6 +22,7 @@ export const DETAIL_SLIDES = [
   { id: 'checklist', label: 'Checklist' },
   { id: 'clarifications', label: 'Chiarimenti' },
   { id: 'documents', label: 'Documenti' },
+  { id: 'drawing', label: 'Requisiti da disegno' },
   { id: 'ai', label: 'Analisi AI' },
 ];
 

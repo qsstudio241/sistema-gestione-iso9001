@@ -1311,6 +1311,7 @@ export default function ContractReviewPage() {
                           <option value="order">Ordine</option>
                           <option value="rfq">RFQ</option>
                           <option value="quote">Offerta</option>
+                          <option value="drawing">Disegno</option>
                           <option value="other">Altro</option>
                         </select>
                         <CommercialDocMetaFields
@@ -1388,6 +1389,14 @@ export default function ContractReviewPage() {
                   </ul>
                 )}
               </div>
+              )}
+
+              {activeSlide === 'drawing' && (
+                <DrawingRequirementsPanel
+                  caseId={detail.case.id}
+                  attachments={detail.attachments}
+                  disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                />
               )}
 
               {activeSlide === 'ai' && (
@@ -1834,5 +1843,258 @@ function ChecklistItemRow({ item, disabled, onSave, highlightSubforniture }) {
         }}
       />
     </div>
+  );
+}
+
+const REQ_TYPE_LABELS = {
+  dimension: 'Quota',
+  tolerance: 'Tolleranza',
+  gdt: 'GD&T',
+  material: 'Materiale',
+  weld_symbol: 'Saldatura',
+  surface: 'Superficie',
+  note: 'Nota',
+  title_block: 'Cartiglio',
+};
+
+const REVIEW_STATUS_LABELS = {
+  extracted: 'Da rivedere',
+  confirmed: 'Confermato',
+  rejected: 'Rifiutato',
+  edited: 'Modificato',
+};
+
+function reviewBadgeClass(status) {
+  if (status === 'confirmed') return 'cr-badge cr-badge-final';
+  if (status === 'rejected') return 'cr-badge cr-badge-negative';
+  if (status === 'edited') return 'cr-badge cr-badge-progress';
+  return 'cr-badge cr-badge-draft';
+}
+
+function confidenceColor(c) {
+  if (c == null) return '#9ca3af';
+  if (c >= 0.75) return '#16a34a';
+  if (c >= 0.4) return '#d97706';
+  return '#dc2626';
+}
+
+/**
+ * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
+ * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
+ */
+function DrawingRequirementsPanel({ caseId, attachments, disabled }) {
+  const drawings = useMemo(
+    () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
+    [attachments],
+  );
+  const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState(null);
+  const [extraction, setExtraction] = useState(null);
+  const [reqs, setReqs] = useState([]);
+
+  async function handleExtract(docId) {
+    setBusyId(docId);
+    setError(null);
+    try {
+      const res = await apiService.extractDrawingRequirements(caseId, docId);
+      setExtraction(res);
+      setReqs(res.requirements || []);
+      if (res.status === 'error') {
+        setError(res.error_message || 'Estrazione non riuscita.');
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e.message || 'Estrazione fallita');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReview(reqId, patch) {
+    setError(null);
+    try {
+      const updated = await apiService.reviewExtractedRequirement(reqId, patch);
+      setReqs((rs) => rs.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e.message || 'Aggiornamento fallito');
+    }
+  }
+
+  return (
+    <div className="cr-panel">
+      <h2>Requisiti da disegno</h2>
+      <p className="contract-review-intro" style={{ marginTop: 0 }}>
+        Estrazione automatica dei requisiti tecnici (materiale, quote, tolleranze, saldature,
+        cartiglio) dai disegni caricati sulla commessa. Carica un allegato con ruolo{' '}
+        <strong>Disegno</strong> nella sezione Documenti, poi avvia l&apos;estrazione AI e rivedi i
+        risultati.
+      </p>
+
+      {error && <div className="contract-review-error">{error}</div>}
+
+      {drawings.length === 0 ? (
+        <p className="contract-review-intro">
+          Nessun disegno collegato. Carica un allegato con ruolo &quot;Disegno&quot; dalla sezione
+          Documenti.
+        </p>
+      ) : (
+        <ul className="cr-doc-list">
+          {drawings.map((d) => (
+            <li
+              key={d.attachment_id}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+            >
+              <span style={{ fontWeight: 600 }}>{d.file_name}</span>
+              <button
+                type="button"
+                className="cr-btn cr-btn-primary"
+                disabled={disabled || busyId === d.attachment_id}
+                onClick={() => handleExtract(d.attachment_id)}
+              >
+                {busyId === d.attachment_id ? 'Estrazione…' : 'Estrai requisiti'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {extraction && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+            Provider: <strong>{extraction.provider || '-'}</strong>
+            {' · '}Stato: <strong>{extraction.status || '-'}</strong>
+            {' · '}Requisiti: <strong>{reqs.length}</strong>
+          </div>
+
+          {reqs.length === 0 ? (
+            <p className="contract-review-intro">
+              Nessun requisito estratto da questo disegno.
+            </p>
+          ) : (
+            <div className="cr-table-wrap">
+              <table className="cr-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Requisito</th>
+                    <th>Conf.</th>
+                    <th>Stato</th>
+                    <th>Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reqs.map((r) => (
+                    <ExtractedRequirementRow
+                      key={r.id}
+                      req={r}
+                      disabled={disabled}
+                      onReview={handleReview}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExtractedRequirementRow({ req, disabled, onReview }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(req.value_text || '');
+
+  useEffect(() => {
+    setValue(req.value_text || '');
+  }, [req.id, req.value_text]);
+
+  const confPct = req.confidence != null ? Math.round(req.confidence * 100) : null;
+
+  return (
+    <tr>
+      <td>{REQ_TYPE_LABELS[req.req_type] || req.req_type}</td>
+      <td>
+        {editing ? (
+          <textarea
+            className="notes-textarea"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={2}
+          />
+        ) : (
+          <>
+            {req.value_text || '-'}
+            {req.field_key ? (
+              <>
+                <br />
+                <small style={{ color: '#78909c' }}>{req.field_key}</small>
+              </>
+            ) : null}
+            {req.unit ? <small style={{ color: '#78909c' }}> · {req.unit}</small> : null}
+          </>
+        )}
+      </td>
+      <td style={{ color: confidenceColor(req.confidence), fontWeight: 600 }}>
+        {confPct != null ? `${confPct}%` : '-'}
+      </td>
+      <td>
+        <span className={reviewBadgeClass(req.review_status)}>
+          {REVIEW_STATUS_LABELS[req.review_status] || req.review_status}
+        </span>
+      </td>
+      <td>
+        {editing ? (
+          <div className="cr-transition-row">
+            <button
+              type="button"
+              className="cr-btn cr-btn-primary"
+              onClick={() => {
+                onReview(req.id, { review_status: 'edited', value_text: value });
+                setEditing(false);
+              }}
+            >
+              Salva
+            </button>
+            <button
+              type="button"
+              className="cr-btn"
+              onClick={() => {
+                setValue(req.value_text || '');
+                setEditing(false);
+              }}
+            >
+              Annulla
+            </button>
+          </div>
+        ) : (
+          <div className="cr-transition-row">
+            <button
+              type="button"
+              className="cr-btn cr-btn-primary"
+              disabled={disabled}
+              onClick={() => onReview(req.id, { review_status: 'confirmed' })}
+            >
+              Conferma
+            </button>
+            <button
+              type="button"
+              className="cr-btn"
+              disabled={disabled}
+              onClick={() => setEditing(true)}
+            >
+              Modifica
+            </button>
+            <button
+              type="button"
+              className="cr-btn cr-btn-danger"
+              disabled={disabled}
+              onClick={() => onReview(req.id, { review_status: 'rejected' })}
+            >
+              Rifiuta
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
   );
 }
