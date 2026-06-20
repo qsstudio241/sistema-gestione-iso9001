@@ -1,0 +1,615 @@
+/**
+ * NdtReportsPage — Verbali CND (VT/MT/PT/UT)
+ * Lista + form inline a sezioni collassabili.
+ * Pattern: NCPage (lista) + ManagementReviewsPage (form sezioni).
+ */
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import apiService from "../services/apiService";
+import { formatDate } from "../utils/dateHelpers";
+import "./NdtReportsPage.css";
+
+const REPORT_TYPES = [
+    { value: "VT", label: "VT \u2014 Esame Visivo" },
+    { value: "MT", label: "MT \u2014 Particelle Magnetiche" },
+    { value: "PT", label: "PT \u2014 Liquidi Penetranti" },
+    { value: "UT", label: "UT \u2014 Ultrasuoni" },
+    { value: "RT", label: "RT \u2014 Radiografico" },
+];
+
+const REPORT_STATUSES = [
+    { value: "draft",     label: "Bozza",     cls: "ndt-status-draft" },
+    { value: "completed", label: "Completato", cls: "ndt-status-completed" },
+    { value: "approved",  label: "Approvato",  cls: "ndt-status-approved" },
+];
+
+const SURFACE_CONDITIONS = [
+    { value: "S",   label: "S \u2014 come saldato" },
+    { value: "U",   label: "U \u2014 lavorato macchina" },
+    { value: "G",   label: "G \u2014 superficie grezza" },
+    { value: "M",   label: "M \u2014 molato" },
+    { value: "M/S", label: "M/S" },
+    { value: "L",   label: "L \u2014 laminato" },
+];
+
+const DEFECT_CODES = ["NESSUNO", "1 cricche", "2 ripiegature", "3 sfogliature", "4 ricalcature", "5 porosit\u00e0", "6 soffiature", "7 incisioni", "9 sfondamento", "10 altro"];
+
+const EVALUATION_OPTIONS = [
+    { value: "A", label: "A \u2014 Accettabile",  cls: "compliant" },
+    { value: "R", label: "R \u2014 Da riparare",  cls: "partial" },
+    { value: "S", label: "S \u2014 Scarto",       cls: "non-compliant" },
+];
+
+// Nota certificazione fissa
+const CERTIFICATION_TEXT = "Si certifica che la prova \u00e8 stata eseguita secondo le norme di riferimento indicate e che i risultati sono quelli trascritti.";
+
+// ── Riga Elenco Marche ────────────────────────────────────────────────────────
+function MarkRow({ item, index, onChange, onRemove }) {
+    const set = (k, v) => onChange(index, { ...item, [k]: v });
+    return (
+        <tr className="ndt-mark-row">
+            <td>{index + 1}</td>
+            <td><input type="text" value={item.position_code || ""} onChange={e => set("position_code", e.target.value)} placeholder="es. P01" className="ndt-mark-input ndt-input-sm" /></td>
+            <td><input type="text" value={item.quantity || ""} onChange={e => set("quantity", e.target.value)} placeholder="1" className="ndt-mark-input ndt-input-xs" /></td>
+            <td><input type="text" value={item.description || ""} onChange={e => set("description", e.target.value)} placeholder="Descrizione componente" className="ndt-mark-input ndt-input-lg" /></td>
+            <td><input type="text" value={item.examined_part || "SALDATURA"} onChange={e => set("examined_part", e.target.value)} className="ndt-mark-input ndt-input-sm" /></td>
+            <td>
+                <select value={item.surface_condition || "M/S"} onChange={e => set("surface_condition", e.target.value)} className="ndt-mark-select">
+                    {SURFACE_CONDITIONS.map(s => <option key={s.value} value={s.value}>{s.value}</option>)}
+                </select>
+            </td>
+            <td><input type="number" min="0" max="100" value={item.inspection_percentage ?? 100} onChange={e => set("inspection_percentage", e.target.value)} className="ndt-mark-input ndt-input-xs" /></td>
+            <td><input type="text" value={item.defects || "NESSUNO"} onChange={e => set("defects", e.target.value)} placeholder="NESSUNO" className="ndt-mark-input ndt-input-sm" /></td>
+            <td>
+                <div className="ndt-eval-btns">
+                    {EVALUATION_OPTIONS.map(ev => (
+                        <button key={ev.value} type="button"
+                            className={`status-btn ${ev.cls}${item.evaluation === ev.value ? " active" : ""}`}
+                            onClick={() => set("evaluation", ev.value)}>
+                            {ev.value}
+                        </button>
+                    ))}
+                </div>
+            </td>
+            <td>
+                <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
+            </td>
+        </tr>
+    );
+}
+
+// ── Form verbale ─────────────────────────────────────────────────────────────
+function NdtReportForm({ report, companies, availableInstruments, onSave, onCancel }) {
+    const isEdit = !!report;
+
+    const emptyForm = {
+        company_id: "",
+        report_type: "VT",
+        client: "",
+        job_order: "",
+        wps_number: "",
+        base_material: "",
+        material_standard: "UNI EN ISO 10025-2",
+        joint_type: "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
+        quality_level: "UNI EN ISO 5817 Lev.C",
+        method_params: { illuminance_min: 350, illuminance_max: 500, illuminance_measured: "", power_w: "", wavelength: "" },
+        notes: "NULLA DA SEGNALARE, L\u2019ESITO \u00C8 DA RITENERSI SODDISFACENTE.",
+        inspection_date: "",
+        certificate_date: "",
+        responsible: "",
+        inspector: "",
+        client_representative: "",
+        status: "draft",
+    };
+
+    const [form, setForm] = useState(() => {
+        if (!isEdit) return emptyForm;
+        return {
+            company_id:           report.company_id || "",
+            report_type:          report.report_type || "VT",
+            client:               report.client || "",
+            job_order:            report.job_order || "",
+            wps_number:           report.wps_number || "",
+            base_material:        report.base_material || "",
+            material_standard:    report.material_standard || "UNI EN ISO 10025-2",
+            joint_type:           report.joint_type || "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
+            quality_level:        report.quality_level || "UNI EN ISO 5817 Lev.C",
+            method_params:        report.method_params ? (typeof report.method_params === "string" ? JSON.parse(report.method_params) : report.method_params) : emptyForm.method_params,
+            notes:                report.notes || emptyForm.notes,
+            inspection_date:      report.inspection_date ? report.inspection_date.substring(0, 10) : "",
+            certificate_date:     report.certificate_date ? report.certificate_date.substring(0, 10) : "",
+            responsible:          report.responsible || "",
+            inspector:            report.inspector || "",
+            client_representative: report.client_representative || "",
+            status:               report.status || "draft",
+        };
+    });
+
+    const [items, setItems] = useState(() =>
+        isEdit && report.items ? report.items : [
+            { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A" },
+        ]
+    );
+
+    const [selectedInstruments, setSelectedInstruments] = useState(() =>
+        isEdit && report.instruments ? report.instruments.map(i => i.asset_id) : []
+    );
+
+    const [sections, setSections] = useState({ general: true, instruments: true, marks: true, notes: true, signatures: true });
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [savedAt, setSavedAt] = useState(null);
+
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
+    const toggleSection = (k) => setSections(s => ({ ...s, [k]: !s[k] }));
+
+    const addMarkRow = () => setItems(prev => [...prev, { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A" }]);
+    const updateMarkRow = (idx, data) => setItems(prev => prev.map((it, i) => i === idx ? data : it));
+    const removeMarkRow = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
+
+    const toggleInstrument = (id) => setSelectedInstruments(prev =>
+        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+
+    const handleSubmit = async (e, targetStatus) => {
+        if (e) e.preventDefault();
+        setSaving(true);
+        setError(null);
+        try {
+            const payload = {
+                ...form,
+                company_id: form.company_id ? parseInt(form.company_id) : null,
+                status: targetStatus || form.status,
+                items,
+                instrument_ids: selectedInstruments.map(id => ({ asset_id: id })),
+            };
+            if (isEdit) {
+                await apiService.updateNdtReport(report.id, payload);
+            } else {
+                await apiService.createNdtReport(payload);
+            }
+            setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+            onSave();
+        } catch (err) {
+            setError(err?.response?.data?.error || "Errore salvataggio verbale");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const reportTypeLabel = REPORT_TYPES.find(t => t.value === form.report_type)?.label || form.report_type;
+    const isVT = form.report_type === "VT";
+
+    return (
+        <div className="ndt-form-page">
+            {/* Header */}
+            <div className="ndt-form-header">
+                <div>
+                    <h2 className="ndt-form-title">
+                        {isEdit ? `Verbale ${report.report_number || "—"}` : "Nuovo verbale CND"}
+                    </h2>
+                    <span className="ndt-form-subtitle">{reportTypeLabel}</span>
+                </div>
+                <div className="ndt-form-header-actions">
+                    <button type="button" className="btn" onClick={onCancel}>Chiudi</button>
+                    <button type="button" className="btn btn-primary" onClick={e => handleSubmit(e, "draft")} disabled={saving}>
+                        {saving ? "Salvataggio..." : "Salva bozza"}
+                    </button>
+                    {form.status !== "approved" && (
+                        <button type="button" className="btn btn-primary" onClick={e => handleSubmit(e, "completed")} disabled={saving}>
+                            Completa verbale
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {savedAt && <div className="ndt-saved-at">{"Salvato alle " + savedAt}</div>}
+            {error && <div className="ndt-form-error">{error}</div>}
+
+            <div className="ndt-form-body">
+
+                {/* ── Sezione 1: Dati Generali ──────────────────────────────── */}
+                <div className="ndt-section">
+                    <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("general")}>
+                        <span className="ndt-section-num">1</span>
+                        <span className="ndt-section-title">Dati Generali</span>
+                        <span className="ndt-section-chevron">{sections.general ? "\u25B2" : "\u25BC"}</span>
+                    </button>
+                    {sections.general && (
+                        <div className="ndt-section-body">
+                            <div className="ndt-form-row">
+                                <div className="ndt-form-group">
+                                    <label>Tipo metodo</label>
+                                    <select value={form.report_type} onChange={e => set("report_type", e.target.value)}>
+                                        {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Azienda committente</label>
+                                    <select value={form.company_id} onChange={e => set("company_id", e.target.value)}>
+                                        <option value="">Studio (nessuna azienda)</option>
+                                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group ndt-grow">
+                                    <label>Cliente / Customer</label>
+                                    <input type="text" value={form.client} onChange={e => set("client", e.target.value)} placeholder="Ragione sociale cliente" />
+                                </div>
+                            </div>
+                            <div className="ndt-form-row">
+                                <div className="ndt-form-group">
+                                    <label>Commessa / Ordine</label>
+                                    <input type="text" value={form.job_order} onChange={e => set("job_order", e.target.value)} placeholder="es. ORD-2026-001" />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Specifica N. / WPS Nr</label>
+                                    <input type="text" value={form.wps_number} onChange={e => set("wps_number", e.target.value)} placeholder="es. WPS-001" />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Materiale Base</label>
+                                    <input type="text" value={form.base_material} onChange={e => set("base_material", e.target.value)} placeholder="es. S355" />
+                                </div>
+                            </div>
+                            <div className="ndt-form-row">
+                                <div className="ndt-form-group">
+                                    <label>Standard materiale</label>
+                                    <select value={form.material_standard} onChange={e => set("material_standard", e.target.value)}>
+                                        <option value="UNI EN ISO 10025-2">UNI EN ISO 10025-2</option>
+                                        <option value="UNI EN ISO 10210 / EN 10219-1">UNI EN ISO 10210 / EN 10219-1</option>
+                                        <option value="">Altro</option>
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group ndt-grow">
+                                    <label>Tipo di giunto</label>
+                                    <input type="text" value={form.joint_type} onChange={e => set("joint_type", e.target.value)} />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Livello qualit\u00e0</label>
+                                    <input type="text" value={form.quality_level} onChange={e => set("quality_level", e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Sezione 2: Strumentazione ─────────────────────────────── */}
+                <div className="ndt-section">
+                    <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("instruments")}>
+                        <span className="ndt-section-num">2</span>
+                        <span className="ndt-section-title">Strumentazione utilizzata</span>
+                        <span className="ndt-section-chevron">{sections.instruments ? "\u25B2" : "\u25BC"}</span>
+                    </button>
+                    {sections.instruments && (
+                        <div className="ndt-section-body">
+                            {/* Selezione strumenti dall'anagrafica */}
+                            {availableInstruments.length > 0 && (
+                                <div className="ndt-instruments-list">
+                                    <label className="ndt-instruments-label">Strumenti dal registro (filtr. per metodo {form.report_type})</label>
+                                    <div className="ndt-instruments-grid">
+                                        {availableInstruments.map(inst => {
+                                            const isExpired = inst.calibration_status === "expired";
+                                            const isExpiring = inst.calibration_status === "expiring";
+                                            return (
+                                                <label key={inst.id} className={`ndt-instrument-card${isExpired ? " ndt-inst-expired" : isExpiring ? " ndt-inst-expiring" : ""}`}>
+                                                    <input type="checkbox" checked={selectedInstruments.includes(inst.id)} onChange={() => toggleInstrument(inst.id)} disabled={inst.status === "calibrating"} />
+                                                    <div className="ndt-inst-info">
+                                                        <span className="ndt-inst-name">{inst.name}</span>
+                                                        <span className="ndt-inst-detail">{inst.model} {inst.serial_number ? "\u2014 S/N: " + inst.serial_number : ""}</span>
+                                                        {isExpired && <span className="ndt-cal-badge ndt-cal-expired">Taratura scaduta</span>}
+                                                        {isExpiring && <span className="ndt-cal-badge ndt-cal-warn">Scade in {inst.days_to_expiry} gg</span>}
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Parametri specifici VT */}
+                            {isVT && (
+                                <div className="ndt-params-grid">
+                                    <div className="ndt-form-group">
+                                        <label>Illuminamento min (lux)</label>
+                                        <input type="number" value={form.method_params.illuminance_min || 350} onChange={e => setParam("illuminance_min", e.target.value)} />
+                                    </div>
+                                    <div className="ndt-form-group">
+                                        <label>Illuminamento max (lux)</label>
+                                        <input type="number" value={form.method_params.illuminance_max || 500} onChange={e => setParam("illuminance_max", e.target.value)} />
+                                    </div>
+                                    <div className="ndt-form-group">
+                                        <label>Illuminamento misurato (lux)</label>
+                                        <input type="number" value={form.method_params.illuminance_measured || ""} onChange={e => setParam("illuminance_measured", e.target.value)} placeholder="valore reale" />
+                                    </div>
+                                    <div className="ndt-form-group">
+                                        <label>Potenza (W)</label>
+                                        <input type="text" value={form.method_params.power_w || ""} onChange={e => setParam("power_w", e.target.value)} />
+                                    </div>
+                                    <div className="ndt-form-group">
+                                        <label>Lunghezza d\u2019onda (\u00B0A)</label>
+                                        <input type="text" value={form.method_params.wavelength || ""} onChange={e => setParam("wavelength", e.target.value)} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Sezione 3: Elenco Marche ──────────────────────────────── */}
+                <div className="ndt-section">
+                    <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("marks")}>
+                        <span className="ndt-section-num">3</span>
+                        <span className="ndt-section-title">Elenco Marche ({items.length} righe)</span>
+                        <span className="ndt-section-chevron">{sections.marks ? "\u25B2" : "\u25BC"}</span>
+                    </button>
+                    {sections.marks && (
+                        <div className="ndt-section-body">
+                            <div className="ndt-marks-table-wrap">
+                                <table className="ndt-marks-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Pos. / Codice</th>
+                                            <th>Q.t\u00e0</th>
+                                            <th>Descrizione</th>
+                                            <th>Parte esaminata</th>
+                                            <th>Superficie</th>
+                                            <th>% Ctrl</th>
+                                            <th>Difetti</th>
+                                            <th>Giudizio</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {items.map((item, idx) => (
+                                            <MarkRow key={idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" className="btn ndt-add-row-btn" onClick={addMarkRow}>+ Aggiungi riga</button>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Sezione 4: Note e Certificazione ─────────────────────── */}
+                <div className="ndt-section">
+                    <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("notes")}>
+                        <span className="ndt-section-num">4</span>
+                        <span className="ndt-section-title">Note e Certificazione</span>
+                        <span className="ndt-section-chevron">{sections.notes ? "\u25B2" : "\u25BC"}</span>
+                    </button>
+                    {sections.notes && (
+                        <div className="ndt-section-body">
+                            <div className="ndt-form-group">
+                                <label>Note</label>
+                                <textarea className="notes-textarea" value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} />
+                            </div>
+                            <div className="ndt-certification-text">{CERTIFICATION_TEXT}</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Sezione 5: Ufficializzazione ─────────────────────────── */}
+                <div className="ndt-section">
+                    <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("signatures")}>
+                        <span className="ndt-section-num">5</span>
+                        <span className="ndt-section-title">Ufficializzazione e Firme</span>
+                        <span className="ndt-section-chevron">{sections.signatures ? "\u25B2" : "\u25BC"}</span>
+                    </button>
+                    {sections.signatures && (
+                        <div className="ndt-section-body">
+                            <div className="ndt-form-row">
+                                <div className="ndt-form-group">
+                                    <label>Data controllo</label>
+                                    <input type="date" value={form.inspection_date} onChange={e => set("inspection_date", e.target.value)} />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Data emissione certificato</label>
+                                    <input type="date" value={form.certificate_date} onChange={e => set("certificate_date", e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="ndt-form-row">
+                                <div className="ndt-form-group">
+                                    <label>Il Responsabile</label>
+                                    <input type="text" value={form.responsible} onChange={e => set("responsible", e.target.value)} placeholder="Nome responsabile" />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>L\u2019Ispettore</label>
+                                    <input type="text" value={form.inspector} onChange={e => set("inspector", e.target.value)} placeholder="Nome ispettore" />
+                                </div>
+                                <div className="ndt-form-group">
+                                    <label>Il Cliente (rappresentante)</label>
+                                    <input type="text" value={form.client_representative} onChange={e => set("client_representative", e.target.value)} placeholder="Nome rappresentante cliente" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+            </div>{/* end ndt-form-body */}
+        </div>
+    );
+}
+
+// ── Componente principale ─────────────────────────────────────────────────────
+export default function NdtReportsPage() {
+    const [reports, setReports] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [companies, setCompanies] = useState([]);
+    const [availableInstruments, setAvailableInstruments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const [filterType, setFilterType] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
+    const [filterCompany, setFilterCompany] = useState("");
+    const [searchText, setSearchText] = useState("");
+
+    const [view, setView] = useState("list"); // "list" | "form"
+    const [editingReport, setEditingReport] = useState(null);
+
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const params = {};
+            if (filterType)    params.report_type = filterType;
+            if (filterStatus)  params.status = filterStatus;
+            if (filterCompany) params.company_id = filterCompany;
+            if (searchText)    params.search = searchText;
+
+            const [listResp, statsResp, companiesResp] = await Promise.all([
+                apiService.getNdtReportList(params),
+                apiService.getNdtReportStats(),
+                apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
+            ]);
+
+            setReports(listResp.data || []);
+            setStats(statsResp.data || null);
+            setCompanies(companiesResp.data || []);
+        } catch (err) {
+            setError("Errore caricamento verbali CND");
+        } finally {
+            setLoading(false);
+        }
+    }, [filterType, filterStatus, filterCompany, searchText]);
+
+    useEffect(() => { loadData(); }, [loadData]);
+
+    const openNew = async () => {
+        // Carica strumenti VT per default
+        try {
+            const instResp = await apiService.getEquipmentForReport("VT");
+            setAvailableInstruments(instResp.data || []);
+        } catch { setAvailableInstruments([]); }
+        setEditingReport(null);
+        setView("form");
+    };
+
+    const openEdit = async (report) => {
+        try {
+            const [reportResp, instResp] = await Promise.all([
+                apiService.getNdtReport(report.id),
+                apiService.getEquipmentForReport(report.report_type),
+            ]);
+            setEditingReport(reportResp.data);
+            setAvailableInstruments(instResp.data || []);
+        } catch {
+            setEditingReport(report);
+            setAvailableInstruments([]);
+        }
+        setView("form");
+    };
+
+    const handleSaved = () => { setView("list"); setEditingReport(null); loadData(); };
+    const handleCancel = () => { setView("list"); setEditingReport(null); };
+
+    const handleDelete = async (report) => {
+        if (!window.confirm(`Eliminare il verbale "${report.report_number || "bozza"}"?`)) return;
+        try {
+            await apiService.deleteNdtReport(report.id);
+            loadData();
+        } catch { alert("Errore eliminazione verbale"); }
+    };
+
+    if (view === "form") {
+        return (
+            <NdtReportForm
+                report={editingReport}
+                companies={companies}
+                availableInstruments={availableInstruments}
+                onSave={handleSaved}
+                onCancel={handleCancel}
+            />
+        );
+    }
+
+    return (
+        <div className="ndt-page">
+            <div className="ndt-header">
+                <div>
+                    <h1 className="ndt-title">Verbali CND</h1>
+                    <p className="ndt-subtitle">Esame Visivo (VT), Particelle Magnetiche (MT), Liquidi Penetranti (PT), Ultrasuoni (UT)</p>
+                </div>
+                <button className="btn btn-primary" onClick={openNew}>+ Nuovo verbale</button>
+            </div>
+
+            {/* Stats */}
+            {stats && (
+                <div className="ndt-stats-bar">
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.total}</span><span>Totali</span></div>
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.draft}</span><span>Bozze</span></div>
+                    <div className="ndt-stat ndt-stat-ok"><span className="ndt-stat-n">{stats.approved}</span><span>Approvati</span></div>
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.vt_count}</span><span>VT</span></div>
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.mt_count}</span><span>MT</span></div>
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.pt_count}</span><span>PT</span></div>
+                    <div className="ndt-stat"><span className="ndt-stat-n">{stats.ut_count}</span><span>UT</span></div>
+                </div>
+            )}
+
+            {/* Filtri */}
+            <div className="ndt-filters">
+                <input type="text" className="ndt-search" placeholder="Cerca cliente, commessa, n. verbale..." value={searchText} onChange={e => setSearchText(e.target.value)} />
+                <select value={filterType} onChange={e => setFilterType(e.target.value)}>
+                    <option value="">Tutti i metodi</option>
+                    {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <option value="">Tutti gli stati</option>
+                    {REPORT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+                <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
+                    <option value="">Tutte le aziende</option>
+                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+            </div>
+
+            {loading && <div className="ndt-loading">Caricamento...</div>}
+            {error && <div className="ndt-error">{error}</div>}
+            {!loading && !error && (
+                <div className="ndt-table-wrap">
+                    <table className="ndt-table">
+                        <thead>
+                            <tr>
+                                <th>N. Verbale</th>
+                                <th>Tipo</th>
+                                <th>Cliente</th>
+                                <th>Commessa</th>
+                                <th>Ispettore</th>
+                                <th>Data controllo</th>
+                                <th>Marche</th>
+                                <th>Stato</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reports.length === 0 && (
+                                <tr><td colSpan={9} className="ndt-empty">Nessun verbale trovato</td></tr>
+                            )}
+                            {reports.map(r => {
+                                const st = REPORT_STATUSES.find(s => s.value === r.status) || REPORT_STATUSES[0];
+                                return (
+                                    <tr key={r.id} className="ndt-row" onClick={() => openEdit(r)}>
+                                        <td className="ndt-mono">{r.report_number || <em>bozza</em>}</td>
+                                        <td><span className="ndt-type-tag">{r.report_type}</span></td>
+                                        <td>{r.client || "—"}</td>
+                                        <td>{r.job_order || "—"}</td>
+                                        <td>{r.inspector || "—"}</td>
+                                        <td>{r.inspection_date ? formatDate(r.inspection_date) : "—"}</td>
+                                        <td className="ndt-center">{r.items_count}</td>
+                                        <td><span className={`ndt-status ${st.cls}`}>{st.label}</span></td>
+                                        <td onClick={e => e.stopPropagation()}>
+                                            <button className="eq-btn-icon" onClick={() => openEdit(r)} title="Modifica">&#x270E;</button>
+                                            <button className="eq-btn-icon eq-btn-danger" onClick={() => handleDelete(r)} title="Elimina">&#x2715;</button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
