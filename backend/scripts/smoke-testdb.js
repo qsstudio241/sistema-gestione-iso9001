@@ -28,6 +28,8 @@ const REQUIRED_TABLES = [
   'attachments',
   'audit_standards',
   'management_reviews',
+  'commercial_case_drawing_extractions',
+  'commercial_case_extracted_requirements',
 ];
 
 async function main() {

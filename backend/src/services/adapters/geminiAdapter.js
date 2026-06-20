@@ -180,21 +180,7 @@ async function chatOnce(model, apiKey, body, timeout) {
  * @param {number} [options.maxTokens]
  * @param {number} [options.timeout]
  */
-async function chat(messages, options = {}) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw createNormalizedError(
-      'AI_NOT_CONFIGURED',
-      'GEMINI_API_KEY is not set'
-    );
-  }
-
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const timeout =
-    typeof options.timeout === 'number' && options.timeout > 0
-      ? options.timeout
-      : 90000;
-
+function resolveMaxAttempts() {
   // Numero di tentativi configurabile: default 3 (1 chiamata + 2 retry) per
   // assorbire i tipici "model overloaded" intermittenti di Gemini senza
   // mostrare errori all'utente. Cap totale di attesa ~5s prima di rinunciare.
@@ -202,28 +188,32 @@ async function chat(messages, options = {}) {
     String(process.env.GEMINI_MAX_ATTEMPTS || ''),
     10
   );
-  const maxAttempts =
-    Number.isFinite(rawMaxAttempts) && rawMaxAttempts >= 1 && rawMaxAttempts <= 5
-      ? rawMaxAttempts
-      : 3;
+  return Number.isFinite(rawMaxAttempts) && rawMaxAttempts >= 1 && rawMaxAttempts <= 5
+    ? rawMaxAttempts
+    : 3;
+}
 
-  const { systemInstruction, contents } = mapMessagesToGemini(messages);
+/**
+ * Esegue una chiamata generateContent con retry/backoff su status transienti.
+ * Centralizza la logica di rete così chat() e generateVision() condividono
+ * la stessa integrazione (stessa chiave env, stesso retry, stesso parsing).
+ *
+ * @param {object} body  - corpo già pronto per la API generateContent
+ * @param {object} [options]
+ * @param {number} [options.timeout]
+ */
+async function generateContent(body, options = {}) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw createNormalizedError('AI_NOT_CONFIGURED', 'GEMINI_API_KEY is not set');
+  }
 
-  const body = {
-    contents,
-    ...(systemInstruction ? { systemInstruction } : {}),
-    generationConfig: {
-      ...(typeof options.temperature === 'number'
-        ? { temperature: options.temperature }
-        : {}),
-      ...(typeof options.maxTokens === 'number'
-        ? { maxOutputTokens: options.maxTokens }
-        : {}),
-      ...(options.responseFormat === 'json'
-        ? { responseMimeType: 'application/json' }
-        : {}),
-    },
-  };
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const timeout =
+    typeof options.timeout === 'number' && options.timeout > 0
+      ? options.timeout
+      : 90000;
+  const maxAttempts = resolveMaxAttempts();
 
   let lastErr;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -244,6 +234,64 @@ async function chat(messages, options = {}) {
     }
   }
   throw lastErr;
+}
+
+function buildGenerationConfig(options = {}) {
+  return {
+    ...(typeof options.temperature === 'number'
+      ? { temperature: options.temperature }
+      : {}),
+    ...(typeof options.maxTokens === 'number'
+      ? { maxOutputTokens: options.maxTokens }
+      : {}),
+    ...(options.responseFormat === 'json'
+      ? { responseMimeType: 'application/json' }
+      : {}),
+  };
+}
+
+async function chat(messages, options = {}) {
+  const { systemInstruction, contents } = mapMessagesToGemini(messages);
+
+  const body = {
+    contents,
+    ...(systemInstruction ? { systemInstruction } : {}),
+    generationConfig: buildGenerationConfig(options),
+  };
+
+  return generateContent(body, options);
+}
+
+/**
+ * Chiamata multimodale (vision): invia uno o più file (immagine/PDF) come
+ * inlineData insieme a un prompt testuale. Riusa generateContent (retry,
+ * chiave env, parsing) per non duplicare l'integrazione Gemini.
+ *
+ * @param {object} params
+ * @param {string} [params.systemText]  - istruzione di sistema
+ * @param {string} params.userText      - prompt utente
+ * @param {Array<{mimeType:string, data:string}>} params.files - file base64
+ * @param {object} [options]            - temperature/maxTokens/responseFormat/timeout
+ */
+async function generateVision({ systemText, userText, files } = {}, options = {}) {
+  const parts = [];
+  if (userText) parts.push({ text: String(userText) });
+  for (const f of files || []) {
+    if (f && f.data && f.mimeType) {
+      parts.push({ inlineData: { mimeType: f.mimeType, data: f.data } });
+    }
+  }
+  if (parts.length === 0) {
+    throw createNormalizedError('AI_REQUEST_FAILED', 'generateVision: nessun contenuto da inviare');
+  }
+
+  const body = {
+    contents: [{ role: 'user', parts }],
+    ...(systemText ? { systemInstruction: { parts: [{ text: String(systemText) }] } } : {}),
+    generationConfig: buildGenerationConfig(options),
+  };
+
+  return generateContent(body, options);
 }
 
 /**
@@ -319,6 +367,8 @@ async function embed(texts) {
 module.exports = {
   chat,
   embed,
+  generateVision,
+  generateContent,
   mapMessagesToGemini,
   // Esportati per i test (retry/backoff logic)
   _internals: { computeBackoffMs, getRetryAfterMs, RETRYABLE_STATUSES },

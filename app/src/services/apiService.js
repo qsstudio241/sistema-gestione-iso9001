@@ -1959,6 +1959,22 @@ class ApiService {
         });
     }
 
+    // ── Estrazione requisiti tecnici dai disegni (AI vision, provider-agnostic) ──
+    async extractDrawingRequirements(caseId, docId) {
+        // Estrazione sincrona lato server: tempo AI vision potenzialmente lungo.
+        return this.post(`/cases/${caseId}/documents/${docId}/extract`, {}, {
+            timeout: 120000,
+        });
+    }
+
+    async getDrawingExtraction(caseId, extractionId) {
+        return this.get(`/cases/${caseId}/extractions/${extractionId}`);
+    }
+
+    async reviewExtractedRequirement(reqId, patch) {
+        return this.patch(`/extracted-requirements/${reqId}`, patch);
+    }
+
     async aiSuggest(feature, context) {
         return this.post('/ai/suggest', { feature, context }, { timeout: 90000 });
     }

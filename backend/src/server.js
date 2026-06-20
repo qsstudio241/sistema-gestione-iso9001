@@ -70,6 +70,7 @@ const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.ro
 const auditEventsRoutes = require('./routes/auditEvents.routes');
 const normBrokerRoutes = require('./routes/normBroker.routes');
 const contractReviewRoutes = require('./routes/contractReview.routes');
+const drawingExtractionRoutes = require('./routes/drawingExtraction.routes');
 const aiAssistRoutes = require('./routes/aiAssist.routes');
 const documentTagsRoutes     = require('./routes/documentTags.routes');
 const documentRelationsRoutes = require('./routes/documentRelations.routes');
@@ -296,6 +297,7 @@ app.use(`${API_BASE}/departments`,  departmentsRoutes);
 app.use(API_BASE, importJobsRoutes);
 app.use(API_BASE, normBrokerRoutes);
 app.use(API_BASE, contractReviewRoutes);
+app.use(API_BASE, drawingExtractionRoutes);
 app.use(API_BASE, aiAssistRoutes);
 app.use(API_BASE, aiChatRoutes);
 app.use(API_BASE, weldingRoutes);
