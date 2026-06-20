@@ -4,8 +4,9 @@
  * Pattern: NCPage (lista) + ManagementReviewsPage (form sezioni).
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
 import "./NdtReportsPage.css";
 
@@ -137,6 +138,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     const [sections, setSections] = useState({ general: true, instruments: true, marks: true, notes: true, signatures: true });
     const [saving, setSaving] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
 
@@ -178,6 +180,29 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         }
     };
 
+    const handleExportWord = async () => {
+        setExporting(true);
+        setError(null);
+        try {
+            // Costruisce oggetto report completo con items e instruments correnti
+            const reportForExport = {
+                ...form,
+                report_number: report?.report_number || null,
+                report_year:   report?.report_year   || new Date().getFullYear(),
+                items,
+                instruments: selectedInstruments.map(id => {
+                    const inst = availableInstruments.find(i => i.id === id);
+                    return inst ? { asset_id: id, asset_name: inst.name, model: inst.model, serial_number: inst.serial_number } : { asset_id: id };
+                }),
+            };
+            await exportVtToWord(reportForExport);
+        } catch (err) {
+            setError("Errore export Word: " + (err.message || err));
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const reportTypeLabel = REPORT_TYPES.find(t => t.value === form.report_type)?.label || form.report_type;
     const isVT = form.report_type === "VT";
 
@@ -193,6 +218,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 </div>
                 <div className="ndt-form-header-actions">
                     <button type="button" className="btn" onClick={onCancel}>Chiudi</button>
+                    <button type="button" className="btn" onClick={handleExportWord} disabled={exporting || saving}>
+                        {exporting ? "Generazione..." : "\uD83D\uDCC4 Genera Word"}
+                    </button>
                     <button type="button" className="btn btn-primary" onClick={e => handleSubmit(e, "draft")} disabled={saving}>
                         {saving ? "Salvataggio..." : "Salva bozza"}
                     </button>
