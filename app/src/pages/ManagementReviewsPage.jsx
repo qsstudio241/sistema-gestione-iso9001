@@ -62,6 +62,11 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
   const [draftError,     setDraftError]     = useState(null);
   const [draftGenerated, setDraftGenerated] = useState(false);
 
+  useEffect(() => {
+    setData(null);
+    setError(null);
+  }, [companyId]);
+
   async function loadData() {
     if (!companyId) return;
     setLoading(true);
