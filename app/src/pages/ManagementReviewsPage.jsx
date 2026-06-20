@@ -70,7 +70,7 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
       const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
       params.set("company_id", companyId);
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
-      setData(res.data.data);
+      setData(res.data);
     } catch (err) {
       setError(err?.response?.data?.error || "Errore durante il caricamento dei dati.");
     } finally {
@@ -431,7 +431,7 @@ function ReviewForm({ initial, onSave, onClose, companies, user }) {
 
         <form className="mr-form" onSubmit={submit}>
           {/* 1. Intestazione */}
-          <CollapsibleSection title="1 \u2014 Intestazione" defaultOpen>
+          <CollapsibleSection title={"1 \u2014 Intestazione"} defaultOpen>
             {/* Azienda — primo campo */}
             {/* readonly se: client user OPPURE creazione nuova con filtro azienda attivo */}
             <div className="form-row">
@@ -470,7 +470,7 @@ function ReviewForm({ initial, onSave, onClose, companies, user }) {
               <input
                 value={form.chairperson}
                 onChange={(e) => upd("chairperson", e.target.value)}
-                placeholder="es. Direttore Qualit\u00E0"
+                placeholder={"es. Direttore Qualit\u00E0"}
               />
             </div>
             <div className="form-row">
