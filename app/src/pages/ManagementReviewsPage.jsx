@@ -390,8 +390,18 @@ function ReviewForm({ initial, onSave, onClose, companies, user }) {
     if (base.company_id) base.company_id = String(base.company_id);
     return base;
   });
+  const isEditing = Boolean(initial?.id);
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Quando il filtro azienda cambia mentre il form è aperto per un NUOVO riesame,
+  // aggiorna company_id nel form per rispecchiare la selezione corrente.
+  useEffect(() => {
+    if (!isEditing && initial?.company_id) {
+      setForm((f) => ({ ...f, company_id: String(initial.company_id) }));
+    }
+  }, [initial?.company_id, isEditing]);
 
   function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -417,8 +427,6 @@ function ReviewForm({ initial, onSave, onClose, companies, user }) {
       setSaving(false);
     }
   }
-
-  const isEditing = Boolean(initial?.id);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
