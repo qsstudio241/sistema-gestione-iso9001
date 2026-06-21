@@ -6,7 +6,7 @@
  */
 'use strict';
 const { Document, Paragraph, TextRun, Table, TableRow, TableCell,
-    Footer, AlignmentType, WidthType, BorderStyle, ShadingType,
+    Footer, Header, AlignmentType, WidthType, BorderStyle, ShadingType,
     Packer, PageNumber, convertInchesToTwip } = require('docx');
 const fs = require('fs');
 const path = require('path');
@@ -93,8 +93,25 @@ function buildDoc() {
         new TableRow({children:[cell(''),cell('{responsible}'),cell('{inspector}'),cell('{clientRepresentative}')]}),
     ]});
 
+    // Header identico a ISO9001-audit-report (tabella 2r x 3c)
+    // [LOGO] | {client} | [LOGO_ORG]
+    // VERBALE VT {reportNumber} {reportType} | {inspectionDate}
+    var hdrTable = new Table({ width:{size:100,type:WidthType.PERCENTAGE}, borders:noBorder(), rows:[
+        new TableRow({children:[
+            cell([para([run('[LOGO]',{size:20})])],{noBorder:true,pct:20}),
+            cell([para([run('{client}',{bold:true,size:20,color:C.primary})],{align:AlignmentType.CENTER})],{noBorder:true,pct:60}),
+            cell([para([run('[LOGO_ORG]',{size:20})],{align:AlignmentType.RIGHT})],{noBorder:true,pct:20}),
+        ]}),
+        new TableRow({children:[
+            cell([para([run('',{size:16})])],{noBorder:true,pct:20}),
+            cell([para([run('VERBALE VT {reportNumber} {reportType}',{bold:true,size:16,color:C.primary})],{align:AlignmentType.CENTER})],{noBorder:true,pct:60}),
+            cell([para([run('{inspectionDate}',{size:16})],{align:AlignmentType.RIGHT})],{noBorder:true,pct:20}),
+        ]}),
+    ]});
+
     return new Document({ sections:[{
-        properties:{ page:{ margin:{ top:convertInchesToTwip(0.6),bottom:convertInchesToTwip(0.6),left:convertInchesToTwip(0.8),right:convertInchesToTwip(0.8) } } },
+        properties:{ page:{ margin:{ top:convertInchesToTwip(1.0),bottom:convertInchesToTwip(0.6),left:convertInchesToTwip(0.8),right:convertInchesToTwip(0.8),header:convertInchesToTwip(0.4) } } },
+        headers:{ default: new Header({ children:[hdrTable] }) },
         footers:{ default: new Footer({ children:[
             new Table({ width:{size:100,type:WidthType.PERCENTAGE}, borders:noBorder(), rows:[new TableRow({children:[
                 cell([para([run('{reportType}-{reportNumber}-{reportYear}',{size:16})])],{noBorder:true}),
@@ -103,7 +120,6 @@ function buildDoc() {
             ]})]}),
         ]}) },
         children:[
-            para([run('VERBALE DI CONTROLLO NON DISTRUTTIVO',{bold:true,size:28,color:C.primary})],{after:200}),
             tblHeader, para('',{after:160}),
             tblStrumenti, para('',{after:160}),
             tblMarche, para('',{after:160}),
