@@ -367,48 +367,45 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </select>
                                 </div>
-                                <div className="ndt-form-group">
-                                    <label>Azienda committente</label>
+                                <div className="ndt-form-group ndt-grow">
+                                    <label>{"Azienda committente (Cliente sul certificato)"}</label>
                                     <select value={form.company_id} onChange={e => {
                                         const cid = e.target.value;
-                                        // Auto-fill cliente con il nome azienda selezionata
                                         const company = companies.find(c => String(c.id) === String(cid));
                                         set("company_id", cid);
-                                        if (company && (!form.client || form.client === companies.find(c => String(c.id) === String(form.company_id))?.name)) {
-                                            set("client", company.name);
-                                        }
+                                        // Aggiorna anche il campo client per il Word
+                                        set("client", company ? company.name : "");
                                     }}>
-                                        <option value="">Studio (nessuna azienda)</option>
+                                        <option value="">{"— seleziona azienda —"}</option>
                                         {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
-                                </div>
-                                <div className="ndt-form-group ndt-grow">
-                                    <label>
-                                        {"Cliente / Customer"}
-                                        <span className="eq-computed-label"> (da anagrafica o testo libero)</span>
-                                    </label>
-                                    {/* Select aziende + campo testo per clienti non censiti */}
-                                    <div className="ndt-client-combo">
-                                        <select
-                                            className="ndt-client-select"
-                                            value={companies.find(c => c.name === form.client)?.id || "__custom__"}
-                                            onChange={e => {
-                                                if (e.target.value === "__custom__") return;
-                                                const c = companies.find(co => String(co.id) === e.target.value);
-                                                if (c) set("client", c.name);
-                                            }}
-                                        >
-                                            <option value="__custom__">{"— digita nome —"}</option>
-                                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
-                                        <input
-                                            type="text"
-                                            className="ndt-client-input"
-                                            value={form.client}
-                                            onChange={e => set("client", e.target.value)}
-                                            placeholder="Nome cliente (es. Manitou Italia)"
-                                        />
-                                    </div>
+                                    {/* Override nome sul certificato — solo se serve un nome diverso */}
+                                    {form.company_id && (
+                                        <div className="ndt-client-override">
+                                            <label className="ndt-override-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!form.client && form.client !== companies.find(c => String(c.id) === String(form.company_id))?.name}
+                                                    onChange={e => {
+                                                        if (!e.target.checked) {
+                                                            const company = companies.find(c => String(c.id) === String(form.company_id));
+                                                            set("client", company ? company.name : "");
+                                                        }
+                                                    }}
+                                                />
+                                                {"Nome diverso sul certificato Word"}
+                                            </label>
+                                            {form.client !== companies.find(c => String(c.id) === String(form.company_id))?.name && (
+                                                <input
+                                                    type="text"
+                                                    className="ndt-client-input"
+                                                    value={form.client}
+                                                    onChange={e => set("client", e.target.value)}
+                                                    placeholder="Nome da stampare sul verbale..."
+                                                />
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {/* Nota scenario multi-soggetto */}
