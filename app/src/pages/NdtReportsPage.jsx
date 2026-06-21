@@ -66,6 +66,7 @@ const DEFECT_CODES_SELECT = [
 function MarkRow({ item, index, onChange, onRemove, reportId }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
+    const [showPhotos, setShowPhotos] = useState(false);
     return (
         <>
         <tr className={`ndt-mark-row${hasDefect ? " ndt-mark-defect" : ""}`}>
@@ -96,22 +97,34 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
                     ))}
                 </div>
             </td>
-            <td>
+            <td className="ndt-actions-cell">
+                {/* Pulsante foto — sempre visibile nella riga, senza scroll orizzontale */}
+                {item.id
+                    ? <button
+                        type="button"
+                        className={`ndt-photo-row-btn${showPhotos ? " active" : ""}`}
+                        onClick={() => setShowPhotos(p => !p)}
+                        title="Foto saldatura"
+                      >{"\uD83D\uDCF7"}</button>
+                    : <button
+                        type="button"
+                        className="ndt-photo-row-btn ndt-photo-row-btn-disabled"
+                        title={"Salva prima il verbale per aggiungere foto"}
+                        onClick={() => alert("Salva il verbale con 'Salva bozza' per abilitare le foto su questa riga.")}
+                      >{"\uD83D\uDCF7"}</button>
+                }
                 <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
             </td>
         </tr>
-        {/* Riga foto — sempre visibile; se non ancora salvato mostra istruzione */}
-        <tr className="ndt-mark-photos-row">
-            <td></td>
-            <td colSpan={9}>
-                {item.id
-                    ? <NdtItemAttachments itemId={item.id} reportId={reportId} />
-                    : <span className="ndt-photo-hint">
-                        {"\uD83D\uDCF7 Salva il verbale (\u201CSalva bozza\u201D) per abilitare le foto su questa riga"}
-                      </span>
-                }
-            </td>
-        </tr>
+        {/* Pannello foto — si espande sotto la riga quando si preme il bottone 📷 */}
+        {item.id && showPhotos && (
+            <tr className="ndt-mark-photos-row">
+                <td></td>
+                <td colSpan={9}>
+                    <NdtItemAttachments itemId={item.id} reportId={reportId} />
+                </td>
+            </tr>
+        )}
 
         {/* Riga note difetto — visibile solo se R o S */}
         {hasDefect && (
@@ -213,7 +226,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             : []
     );
 
-    const [sections, setSections] = useState({ general: true, instruments: true, marks: true, notes: true, signatures: true });
+    // Su mobile le sezioni partono chiuse (apre una alla volta) per non sopraffare lo schermo
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const [sections, setSections] = useState({
+        general:     true,          // sempre aperta: dati essenziali
+        instruments: !isMobile,     // chiusa su mobile
+        marks:       !isMobile,     // chiusa su mobile
+        notes:       !isMobile,
+        signatures:  !isMobile,
+    });
     const [saving, setSaving] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [error, setError] = useState(null);
