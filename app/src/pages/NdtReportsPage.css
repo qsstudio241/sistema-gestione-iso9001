@@ -373,3 +373,26 @@
     .ndt-photo-row-btn { padding: 6px 9px; font-size: 1.15rem; min-height: 36px; }
     .ndt-actions-cell { gap: 6px; }
 }
+
+/* Combo cliente: select aziende + input testo libero */
+.ndt-client-combo {
+    display: flex; gap: 6px; align-items: stretch;
+}
+.ndt-client-select {
+    flex: 0 0 auto; min-width: 140px; max-width: 180px;
+    padding: 7px 8px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.875rem; background: #f9fafb; color: #374151; cursor: pointer;
+}
+.ndt-client-input {
+    flex: 1; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.875rem;
+}
+.ndt-client-input:focus, .ndt-client-select:focus {
+    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+@media (max-width: 768px) {
+    .ndt-client-combo { flex-direction: column; gap: 6px; }
+    .ndt-client-select { max-width: 100%; min-width: unset; min-height: 44px; font-size: 16px; }
+    .ndt-client-input  { min-height: 44px; font-size: 16px; }
+}
