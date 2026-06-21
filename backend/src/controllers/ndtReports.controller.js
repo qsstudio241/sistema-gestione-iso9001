@@ -126,7 +126,7 @@ async function getNdtReport(req, res) {
                 WHERE r.id = @id AND r.organization_id = @organization_id AND r.is_deleted = 0
             `, { id, organization_id }),
             query(`
-                SELECT * FROM ndt_report_items WHERE report_id = @id ORDER BY sort_order ASC
+                SELECT id, report_id, sort_order, position_code, quantity, description, examined_part, surface_condition, inspection_percentage, defects, evaluation, notes, created_at, updated_at FROM ndt_report_items WHERE report_id = @id ORDER BY sort_order ASC
             `, { id }),
             query(`
                 SELECT ri.*, ea.name AS asset_name, ea.model, ea.serial_number,
@@ -231,10 +231,10 @@ async function createNdtReport(req, res) {
                 await query(`
                     INSERT INTO ndt_report_items
                         (report_id, sort_order, position_code, quantity, description,
-                         examined_part, surface_condition, inspection_percentage, defects, evaluation)
+                         examined_part, surface_condition, inspection_percentage, defects, evaluation, notes)
                     VALUES
                         (@report_id, @sort_order, @position_code, @quantity, @description,
-                         @examined_part, @surface_condition, @inspection_percentage, @defects, @evaluation)
+                         @examined_part, @surface_condition, @inspection_percentage, @defects, @evaluation, @notes)
                 `, {
                     report_id,
                     sort_order: i,
@@ -246,6 +246,7 @@ async function createNdtReport(req, res) {
                     inspection_percentage: item.inspection_percentage !== undefined ? parseInt(item.inspection_percentage) : 100,
                     defects: item.defects || 'NESSUNO',
                     evaluation: item.evaluation || 'A',
+                    notes: item.notes || null,
                 });
             }
         }
@@ -337,10 +338,10 @@ async function updateNdtReport(req, res) {
                 await query(`
                     INSERT INTO ndt_report_items
                         (report_id, sort_order, position_code, quantity, description,
-                         examined_part, surface_condition, inspection_percentage, defects, evaluation)
+                         examined_part, surface_condition, inspection_percentage, defects, evaluation, notes)
                     VALUES
                         (@report_id, @sort_order, @position_code, @quantity, @description,
-                         @examined_part, @surface_condition, @inspection_percentage, @defects, @evaluation)
+                         @examined_part, @surface_condition, @inspection_percentage, @defects, @evaluation, @notes)
                 `, {
                     report_id: id,
                     sort_order: i,
@@ -352,6 +353,7 @@ async function updateNdtReport(req, res) {
                     inspection_percentage: item.inspection_percentage !== undefined ? parseInt(item.inspection_percentage) : 100,
                     defects: item.defects || 'NESSUNO',
                     evaluation: item.evaluation || 'A',
+                    notes: item.notes || null,
                 });
             }
         }

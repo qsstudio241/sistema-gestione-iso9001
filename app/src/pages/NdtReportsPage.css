@@ -298,3 +298,46 @@
 .ndt-no-instruments-link {
     color: #1d4ed8; text-decoration: underline; font-weight: 600;
 }
+
+/* ── Difetti: riga con sfondo rosso/arancio ───────────────────────────────── */
+.ndt-mark-defect td { background: #fff8f8; }
+.ndt-mark-notes-row td { background: #fff8f8; padding: 0 8px 8px; border-bottom: 1px solid #fca5a5; }
+.ndt-defect-notes-wrap { display: flex; align-items: center; gap: 8px; }
+.ndt-defect-notes-label { font-size: 0.75rem; color: #b91c1c; font-weight: 600; white-space: nowrap; }
+.ndt-input-defect-note { flex: 1; min-width: 200px; padding: 4px 8px; border: 1px solid #fca5a5; border-radius: 4px; font-size: 0.8rem; }
+.ndt-defect-select { min-width: 110px; }
+
+/* Badge difetti nel titolo sezione */
+.ndt-defect-badge {
+    display: inline-block; margin-left: 8px; padding: 1px 8px;
+    background: #fef2f2; color: #dc2626; border-radius: 10px;
+    font-size: 0.7rem; font-weight: 700; border: 1px solid #fca5a5;
+}
+
+/* Riepilogo difetti in sezione 4 */
+.ndt-defect-summary {
+    background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.ndt-defect-summary-title { font-weight: 700; color: #b91c1c; font-size: 0.9rem; }
+.ndt-defect-group { font-size: 0.85rem; }
+.ndt-defect-group ul { margin: 4px 0 0 16px; padding: 0; list-style: disc; }
+.ndt-defect-group li { margin-bottom: 2px; }
+.ndt-defect-repair { color: #92400e; }
+.ndt-defect-repair strong { color: #d97706; }
+.ndt-defect-scrap  { color: #7f1d1d; }
+.ndt-defect-scrap  strong { color: #dc2626; }
+.ndt-defect-nc-hint { display: flex; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px dashed #fca5a5; font-size: 0.85rem; color: #92400e; }
+.ndt-defect-nc-link { color: #1d4ed8; font-weight: 600; text-decoration: underline; }
+
+/* Warning note errate + pulsante auto-fix */
+.ndt-notes-warning {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #fef9c3; border: 1px solid #fcd34d; border-radius: 6px;
+    padding: 8px 12px; font-size: 0.8rem; color: #92400e; margin-top: 6px;
+}
+.ndt-notes-fix-btn {
+    background: #f59e0b; color: #fff; border: none; border-radius: 4px;
+    padding: 4px 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ndt-notes-fix-btn:hover { background: #d97706; }

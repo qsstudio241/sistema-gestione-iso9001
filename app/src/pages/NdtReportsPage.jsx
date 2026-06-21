@@ -46,10 +46,25 @@ const EVALUATION_OPTIONS = [
 const CERTIFICATION_TEXT = "Si certifica che la prova \u00e8 stata eseguita secondo le norme di riferimento indicate e che i risultati sono quelli trascritti.";
 
 // ── Riga Elenco Marche ────────────────────────────────────────────────────────
+const DEFECT_CODES_SELECT = [
+    { value: "NESSUNO",     label: "NESSUNO" },
+    { value: "1 cricche",   label: "1 \u2014 Cricche affioranti" },
+    { value: "2 ripiegature", label: "2 \u2014 Ripiegature" },
+    { value: "3 sfogliature", label: "3 \u2014 Sfogliature" },
+    { value: "4 ricalcature", label: "4 \u2014 Ricalcature/sigillature" },
+    { value: "5 porosit\u00e0", label: "5 \u2014 Porosit\u00e0/risucchi" },
+    { value: "6 soffiature", label: "6 \u2014 Soffiature (gas)" },
+    { value: "7 incisioni",  label: "7 \u2014 Incisioni marginali" },
+    { value: "9 sfondamento", label: "9 \u2014 Sfondamento" },
+    { value: "10 altro",     label: "10 \u2014 Altro" },
+];
+
 function MarkRow({ item, index, onChange, onRemove }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
+    const hasDefect = item.evaluation === "R" || item.evaluation === "S";
     return (
-        <tr className="ndt-mark-row">
+        <>
+        <tr className={`ndt-mark-row${hasDefect ? " ndt-mark-defect" : ""}`}>
             <td>{index + 1}</td>
             <td><input type="text" value={item.position_code || ""} onChange={e => set("position_code", e.target.value)} placeholder="es. P01" className="ndt-mark-input ndt-input-sm" /></td>
             <td><input type="text" value={item.quantity || ""} onChange={e => set("quantity", e.target.value)} placeholder="1" className="ndt-mark-input ndt-input-xs" /></td>
@@ -61,7 +76,11 @@ function MarkRow({ item, index, onChange, onRemove }) {
                 </select>
             </td>
             <td><input type="number" min="0" max="100" value={item.inspection_percentage ?? 100} onChange={e => set("inspection_percentage", e.target.value)} className="ndt-mark-input ndt-input-xs" /></td>
-            <td><input type="text" value={item.defects || "NESSUNO"} onChange={e => set("defects", e.target.value)} placeholder="NESSUNO" className="ndt-mark-input ndt-input-sm" /></td>
+            <td>
+                <select value={item.defects || "NESSUNO"} onChange={e => set("defects", e.target.value)} className="ndt-mark-select ndt-defect-select">
+                    {DEFECT_CODES_SELECT.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </select>
+            </td>
             <td>
                 <div className="ndt-eval-btns">
                     {EVALUATION_OPTIONS.map(ev => (
@@ -77,6 +96,28 @@ function MarkRow({ item, index, onChange, onRemove }) {
                 <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
             </td>
         </tr>
+        {/* Riga note difetto — visibile solo se R o S */}
+        {hasDefect && (
+            <tr className="ndt-mark-notes-row">
+                <td></td>
+                <td colSpan={9}>
+                    <div className="ndt-defect-notes-wrap">
+                        <span className="ndt-defect-notes-label">
+                            {item.evaluation === "R" ? "\u26A0\uFE0F Riparazione richiesta" : "\u274C Scarto"}
+                            {" — Descrizione difetto / localizzazione:"}
+                        </span>
+                        <input
+                            type="text"
+                            className="ndt-mark-input ndt-input-defect-note"
+                            value={item.notes || ""}
+                            onChange={e => set("notes", e.target.value)}
+                            placeholder="es. cricca all'attacco del cordone, lato A, 15mm dal bordo..."
+                        />
+                    </div>
+                </td>
+            </tr>
+        )}
+        </>
     );
 }
 
@@ -133,11 +174,18 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         };
     });
 
+    const EMPTY_ITEM = { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A", notes: "" };
+
     const [items, setItems] = useState(() =>
-        isEdit && report.items ? report.items : [
-            { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A" },
-        ]
+        isEdit && report.items ? report.items : [{ ...EMPTY_ITEM }]
     );
+
+    // Riepilogo difetti calcolato dagli items correnti
+    const defectSummary = useMemo(() => {
+        const repairs = items.filter(i => i.evaluation === "R");
+        const rejects = items.filter(i => i.evaluation === "S");
+        return { repairs, rejects, hasDefects: repairs.length > 0 || rejects.length > 0 };
+    }, [items]);
 
     // Ogni elemento: { asset_id, role: 'gauge'|'luxmeter'|'lamp'|'other' }
     const [selectedInstruments, setSelectedInstruments] = useState(() =>
@@ -156,7 +204,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
     const toggleSection = (k) => setSections(s => ({ ...s, [k]: !s[k] }));
 
-    const addMarkRow = () => setItems(prev => [...prev, { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A" }]);
+    const addMarkRow = () => setItems(prev => [...prev, { ...EMPTY_ITEM }]);
     const updateMarkRow = (idx, data) => setItems(prev => prev.map((it, i) => i === idx ? data : it));
     const removeMarkRow = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
 
@@ -412,7 +460,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 <div className="ndt-section">
                     <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("marks")}>
                         <span className="ndt-section-num">3</span>
-                        <span className="ndt-section-title">Elenco Marche ({items.length} righe)</span>
+                        <span className="ndt-section-title">
+                            {"Elenco Marche (" + items.length + " righe)"}
+                            {defectSummary.hasDefects && (
+                                <span className="ndt-defect-badge">
+                                    {defectSummary.repairs.length > 0 && (" R:" + defectSummary.repairs.length)}
+                                    {defectSummary.rejects.length > 0 && (" S:" + defectSummary.rejects.length)}
+                                </span>
+                            )}
+                        </span>
                         <span className="ndt-section-chevron">{sections.marks ? "\u25B2" : "\u25BC"}</span>
                     </button>
                     {sections.marks && (
@@ -457,9 +513,83 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                     </button>
                     {sections.notes && (
                         <div className="ndt-section-body">
+
+                            {/* Riepilogo difetti — visibile solo se R o S presenti */}
+                            {defectSummary.hasDefects && (
+                                <div className="ndt-defect-summary">
+                                    <div className="ndt-defect-summary-title">
+                                        {"\u26A0\uFE0F Difetti riscontrati nell'ispezione"}
+                                    </div>
+                                    {defectSummary.repairs.length > 0 && (
+                                        <div className="ndt-defect-group ndt-defect-repair">
+                                            <strong>{"Da riparare (R) — " + defectSummary.repairs.length + " componenti:"}</strong>
+                                            <ul>
+                                                {defectSummary.repairs.map((it, idx) => (
+                                                    <li key={idx}>
+                                                        {it.position_code || ("Riga " + (items.indexOf(it) + 1))}
+                                                        {it.description ? " \u2014 " + it.description : ""}
+                                                        {it.defects && it.defects !== "NESSUNO" ? " (" + it.defects + ")" : ""}
+                                                        {it.notes ? ": " + it.notes : ""}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {defectSummary.rejects.length > 0 && (
+                                        <div className="ndt-defect-group ndt-defect-scrap">
+                                            <strong>{"Scarto (S) — " + defectSummary.rejects.length + " componenti:"}</strong>
+                                            <ul>
+                                                {defectSummary.rejects.map((it, idx) => (
+                                                    <li key={idx}>
+                                                        {it.position_code || ("Riga " + (items.indexOf(it) + 1))}
+                                                        {it.description ? " \u2014 " + it.description : ""}
+                                                        {it.defects && it.defects !== "NESSUNO" ? " (" + it.defects + ")" : ""}
+                                                        {it.notes ? ": " + it.notes : ""}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <div className="ndt-defect-nc-hint">
+                                        <span>{"Registrare i difetti come Non Conformit\u00e0?"}</span>
+                                        <a
+                                            href="/non-conformities/new"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ndt-defect-nc-link"
+                                        >
+                                            {"\u2192 Apri modulo NC"}
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="ndt-form-group">
-                                <label>Note</label>
-                                <textarea className="notes-textarea" value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} />
+                                <label>Note del verbale</label>
+                                <textarea
+                                    className="notes-textarea"
+                                    value={form.notes}
+                                    onChange={e => set("notes", e.target.value)}
+                                    rows={3}
+                                    placeholder={defectSummary.hasDefects
+                                        ? "Descrivi i difetti riscontrati e le azioni raccomandate..."
+                                        : "Nulla da segnalare, l'esito \u00e8 da ritenersi soddisfacente."}
+                                />
+                                {defectSummary.hasDefects && form.notes.toLowerCase().includes("nulla da segnalare") && (
+                                    <div className="ndt-notes-warning">
+                                        {"\u26A0\uFE0F Sono presenti difetti ma le note dicono 'nulla da segnalare' \u2014 aggiorna il testo."}
+                                        <button type="button" className="ndt-notes-fix-btn" onClick={() => {
+                                            const repairList = defectSummary.repairs.map(i => (i.position_code || "?") + (i.defects !== "NESSUNO" ? " (" + i.defects + ")" : "")).join(", ");
+                                            const scrapList  = defectSummary.rejects.map(i => (i.position_code || "?") + (i.defects !== "NESSUNO" ? " (" + i.defects + ")" : "")).join(", ");
+                                            const parts = [];
+                                            if (repairList) parts.push("Da riparare: " + repairList);
+                                            if (scrapList)  parts.push("Scarto: " + scrapList);
+                                            set("notes", "DIFETTI RISCONTRATI — " + parts.join(" | ") + ". Vedere Elenco Marche allegato.");
+                                        }}>
+                                            {"Aggiorna automaticamente"}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="ndt-certification-text">{CERTIFICATION_TEXT}</div>
                         </div>
