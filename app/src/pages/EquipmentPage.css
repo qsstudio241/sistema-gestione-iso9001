@@ -115,3 +115,47 @@
 .eq-methods-checkboxes { display: flex; gap: 12px; flex-wrap: wrap; }
 .eq-method-check { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: #374151; }
 .eq-method-check input { cursor: pointer; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — Strumenti e Attrezzature
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .eq-page { padding: 12px; }
+    .eq-header { flex-direction: column; gap: 10px; }
+    .eq-header .btn { width: 100%; text-align: center; min-height: 44px; }
+
+    .eq-stats-bar { gap: 6px; }
+    .eq-stat { min-width: 52px; padding: 8px 8px; }
+    .eq-stat-n { font-size: 1.1rem; }
+
+    .eq-filters { flex-direction: column; gap: 8px; }
+    .eq-search, .eq-filters select, .eq-filters input[type="text"] {
+        width: 100%; min-width: unset; box-sizing: border-box; min-height: 44px; font-size: 16px;
+    }
+    .eq-filter-check { font-size: 0.9rem; }
+
+    .eq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .eq-table { min-width: 600px; font-size: 0.8rem; }
+    .eq-table th, .eq-table td { padding: 8px 8px; }
+
+    /* Modale form */
+    .eq-modal-overlay { padding: 0; align-items: flex-end; }
+    .eq-modal {
+        border-radius: 16px 16px 0 0; max-width: 100%;
+        max-height: 92vh; overflow-y: auto;
+    }
+    .eq-form-row { flex-direction: column; gap: 10px; }
+    .eq-form-group { min-width: unset; width: 100%; }
+    .eq-form-group input, .eq-form-group select {
+        min-height: 44px; font-size: 16px; padding: 10px 12px;
+    }
+    .eq-modal-actions .btn { min-height: 44px; flex: 1; }
+    .eq-methods-checkboxes { gap: 16px; flex-wrap: wrap; }
+    .eq-method-check { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+    .eq-stat { min-width: 44px; padding: 6px 6px; }
+    .eq-stat-n { font-size: 0.95rem; }
+}

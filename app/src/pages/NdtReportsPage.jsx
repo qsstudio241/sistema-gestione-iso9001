@@ -373,6 +373,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                     </button>
                     {sections.marks && (
                         <div className="ndt-section-body">
+                            <div className="ndt-mobile-scroll-hint">
+                                {"\u21C4"} Scorri per vedere tutte le colonne
+                            </div>
                             <div className="ndt-marks-table-wrap">
                                 <table className="ndt-marks-table">
                                     <thead>
