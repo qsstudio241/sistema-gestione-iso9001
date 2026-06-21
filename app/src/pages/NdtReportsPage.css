@@ -274,3 +274,27 @@
 @media (max-width: 768px) {
     .ndt-mobile-scroll-hint { display: block; }
 }
+
+/* ── Strumenti: selezione con ruolo ────────────────────────────────────────── */
+.ndt-inst-check-label {
+    display: flex; align-items: flex-start; gap: 8px; cursor: pointer; width: 100%;
+}
+.ndt-inst-selected {
+    border-color: #3b82f6 !important; background: #eff6ff !important;
+}
+.ndt-inst-role-select {
+    width: 100%; margin-top: 8px; padding: 6px 8px;
+    border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.8rem;
+    background: #fff; color: #1e40af; font-weight: 600; cursor: pointer;
+}
+.ndt-inst-role-select:focus { outline: none; border-color: #3b82f6; }
+
+/* Messaggio nessuno strumento */
+.ndt-no-instruments {
+    display: flex; flex-direction: column; gap: 8px;
+    background: #fef9c3; border: 1px solid #fcd34d; border-radius: 8px;
+    padding: 12px 16px; font-size: 0.875rem; color: #92400e;
+}
+.ndt-no-instruments-link {
+    color: #1d4ed8; text-decoration: underline; font-weight: 600;
+}

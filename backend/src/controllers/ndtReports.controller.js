@@ -215,7 +215,8 @@ async function createNdtReport(req, res) {
             inspection_date: inspection_date || null,
             certificate_date: certificate_date || null,
             responsible: responsible || null,
-            inspector: inspector || null,
+            // Auto-fill ispettore: usa nome utente loggato se non fornito
+            inspector: inspector || req.user.full_name || null,
             client_representative: client_representative || null,
             status,
             created_by: req.user.user_id,

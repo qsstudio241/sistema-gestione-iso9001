@@ -4,7 +4,7 @@
  * Pattern: NCPage (lista) + ManagementReviewsPage (form sezioni).
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
@@ -84,6 +84,12 @@ function MarkRow({ item, index, onChange, onRemove }) {
 function NdtReportForm({ report, companies, availableInstruments, onSave, onCancel }) {
     const isEdit = !!report;
 
+    // Nome utente loggato per auto-fill ispettore
+    const currentUserName = useMemo(() => {
+        const u = apiService.getStoredUser();
+        return u ? (u.full_name || u.email || "") : "";
+    }, []);
+
     const emptyForm = {
         company_id: "",
         report_type: "VT",
@@ -99,7 +105,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         inspection_date: "",
         certificate_date: "",
         responsible: "",
-        inspector: "",
+        inspector: currentUserName,   // auto-fill nome utente loggato
         client_representative: "",
         status: "draft",
     };
@@ -133,8 +139,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         ]
     );
 
+    // Ogni elemento: { asset_id, role: 'gauge'|'luxmeter'|'lamp'|'other' }
     const [selectedInstruments, setSelectedInstruments] = useState(() =>
-        isEdit && report.instruments ? report.instruments.map(i => i.asset_id) : []
+        isEdit && report.instruments
+            ? report.instruments.map(i => ({ asset_id: i.asset_id, role: i.instrument_role || 'other' }))
+            : []
     );
 
     const [sections, setSections] = useState({ general: true, instruments: true, marks: true, notes: true, signatures: true });
@@ -151,8 +160,14 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const updateMarkRow = (idx, data) => setItems(prev => prev.map((it, i) => i === idx ? data : it));
     const removeMarkRow = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
 
-    const toggleInstrument = (id) => setSelectedInstruments(prev =>
-        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    const toggleInstrument = (id) => setSelectedInstruments(prev => {
+        const exists = prev.find(x => x.asset_id === id);
+        if (exists) return prev.filter(x => x.asset_id !== id);
+        return [...prev, { asset_id: id, role: 'other' }];
+    });
+
+    const setInstrumentRole = (id, role) => setSelectedInstruments(prev =>
+        prev.map(x => x.asset_id === id ? { ...x, role } : x)
     );
 
     const handleSubmit = async (e, targetStatus) => {
@@ -165,7 +180,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 company_id: form.company_id ? parseInt(form.company_id) : null,
                 status: targetStatus || form.status,
                 items,
-                instrument_ids: selectedInstruments.map(id => ({ asset_id: id })),
+                instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
             };
             if (isEdit) {
                 await apiService.updateNdtReport(report.id, payload);
@@ -191,9 +206,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 report_number: report?.report_number || null,
                 report_year:   report?.report_year   || new Date().getFullYear(),
                 items,
-                instruments: selectedInstruments.map(id => {
-                    const inst = availableInstruments.find(i => i.id === id);
-                    return inst ? { asset_id: id, asset_name: inst.name, model: inst.model, serial_number: inst.serial_number } : { asset_id: id };
+                instruments: selectedInstruments.map(sel => {
+                    const inst = availableInstruments.find(i => i.id === sel.asset_id);
+                    return inst
+                        ? { asset_id: sel.asset_id, instrument_role: sel.role, asset_name: inst.name, model: inst.model, serial_number: inst.serial_number }
+                        : { asset_id: sel.asset_id, instrument_role: sel.role };
                 }),
             };
             await exportVtToWord(reportForExport);
@@ -312,23 +329,50 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                     {sections.instruments && (
                         <div className="ndt-section-body">
                             {/* Selezione strumenti dall'anagrafica */}
-                            {availableInstruments.length > 0 && (
+                            {availableInstruments.length === 0 ? (
+                                <div className="ndt-no-instruments">
+                                    <span>{"Nessuno strumento con metodo " + form.report_type + " nell'anagrafica."}</span>
+                                    <a href="/cnd/strumenti" target="_blank" rel="noopener noreferrer" className="ndt-no-instruments-link">
+                                        {"\u2192 Aggiungi strumenti all'anagrafica"}
+                                    </a>
+                                </div>
+                            ) : (
                                 <div className="ndt-instruments-list">
-                                    <label className="ndt-instruments-label">Strumenti dal registro (filtr. per metodo {form.report_type})</label>
+                                    <label className="ndt-instruments-label">
+                                        {"Strumenti disponibili per " + form.report_type + " — seleziona e assegna il ruolo (Calibro / Luxmetro / Lampada)"}
+                                    </label>
                                     <div className="ndt-instruments-grid">
                                         {availableInstruments.map(inst => {
-                                            const isExpired = inst.calibration_status === "expired";
+                                            const isExpired  = inst.calibration_status === "expired";
                                             const isExpiring = inst.calibration_status === "expiring";
+                                            const selEntry   = selectedInstruments.find(x => x.asset_id === inst.id);
+                                            const isSelected = !!selEntry;
                                             return (
-                                                <label key={inst.id} className={`ndt-instrument-card${isExpired ? " ndt-inst-expired" : isExpiring ? " ndt-inst-expiring" : ""}`}>
-                                                    <input type="checkbox" checked={selectedInstruments.includes(inst.id)} onChange={() => toggleInstrument(inst.id)} disabled={inst.status === "calibrating"} />
-                                                    <div className="ndt-inst-info">
-                                                        <span className="ndt-inst-name">{inst.name}</span>
-                                                        <span className="ndt-inst-detail">{inst.model} {inst.serial_number ? "\u2014 S/N: " + inst.serial_number : ""}</span>
-                                                        {isExpired && <span className="ndt-cal-badge ndt-cal-expired">Taratura scaduta</span>}
-                                                        {isExpiring && <span className="ndt-cal-badge ndt-cal-warn">Scade in {inst.days_to_expiry} gg</span>}
-                                                    </div>
-                                                </label>
+                                                <div key={inst.id} className={`ndt-instrument-card${isSelected ? " ndt-inst-selected" : ""}${isExpired ? " ndt-inst-expired" : isExpiring ? " ndt-inst-expiring" : ""}`}>
+                                                    <label className="ndt-inst-check-label">
+                                                        <input type="checkbox" checked={isSelected} onChange={() => toggleInstrument(inst.id)} disabled={inst.status === "calibrating"} />
+                                                        <div className="ndt-inst-info">
+                                                            <span className="ndt-inst-name">{inst.name}</span>
+                                                            <span className="ndt-inst-detail">{inst.model}{inst.serial_number ? " \u2014 S/N: " + inst.serial_number : ""}</span>
+                                                            {isExpired  && <span className="ndt-cal-badge ndt-cal-expired">Taratura scaduta</span>}
+                                                            {isExpiring && <span className="ndt-cal-badge ndt-cal-warn">{"Scade in " + inst.days_to_expiry + " gg"}</span>}
+                                                            {inst.status === "calibrating" && <span className="ndt-cal-badge ndt-cal-warn">In taratura</span>}
+                                                        </div>
+                                                    </label>
+                                                    {isSelected && (
+                                                        <select
+                                                            className="ndt-inst-role-select"
+                                                            value={selEntry.role}
+                                                            onChange={e => setInstrumentRole(inst.id, e.target.value)}
+                                                            title="Ruolo di questo strumento nel verbale"
+                                                        >
+                                                            <option value="gauge">{"Calibro per saldature (Calibro)"}</option>
+                                                            <option value="luxmeter">{"Luxmetro"}</option>
+                                                            <option value="lamp">{"Lampada"}</option>
+                                                            <option value="other">{"Altro strumento"}</option>
+                                                        </select>
+                                                    )}
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -447,7 +491,12 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.responsible} onChange={e => set("responsible", e.target.value)} placeholder="Nome responsabile" />
                                 </div>
                                 <div className="ndt-form-group">
-                                    <label>{"L\u2019Ispettore"}</label>
+                                    <label>
+                                        {"L\u2019Ispettore"}
+                                        {form.inspector === currentUserName && currentUserName && (
+                                            <span className="eq-computed-label"> (utente corrente)</span>
+                                        )}
+                                    </label>
                                     <input type="text" value={form.inspector} onChange={e => set("inspector", e.target.value)} placeholder="Nome ispettore" />
                                 </div>
                                 <div className="ndt-form-group">
