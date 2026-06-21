@@ -170,6 +170,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         supplier_name: "",
         job_order: "",
         wps_number: "",
+        wps_id: "",
         base_material: "",
         material_standard: "UNI EN ISO 10025-2",
         joint_type: "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
@@ -193,6 +194,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             supplier_name:        report.supplier_name || "",
             job_order:            report.job_order || "",
             wps_number:           report.wps_number || "",
+            wps_id:               report.wps_id || "",
             base_material:        report.base_material || "",
             material_standard:    report.material_standard || "UNI EN ISO 10025-2",
             joint_type:           report.joint_type || "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
@@ -247,6 +249,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         apiService.getSuppliers({ company_id: form.company_id, limit: 200 })
             .then(res => setSuppliers(res?.data || []))
             .catch(() => setSuppliers([]));
+    }, [form.company_id]);
+
+    // WPS filtrate per il cliente selezionato (si ricaricano al cambio company_id)
+    const [wpsList, setWpsList] = useState([]);
+    useEffect(() => {
+        if (!form.company_id) { setWpsList([]); return; }
+        apiService.getWPSList({ company_id: form.company_id, limit: 200 })
+            .then(res => setWpsList(res?.data || []))
+            .catch(() => setWpsList([]));
     }, [form.company_id]);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
@@ -459,8 +470,39 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                             </div>
                             <div className="ndt-form-row">
                                 <div className="ndt-form-group">
-                                    <label>Specifica N. / WPS Nr</label>
-                                    <input type="text" value={form.wps_number} onChange={e => set("wps_number", e.target.value)} placeholder="es. WPS-001" />
+                                    <label>{"Specifica N. / WPS Nr"}</label>
+                                    <select
+                                        value={form.wps_id || "__custom__"}
+                                        onChange={e => {
+                                            if (e.target.value === "__custom__") {
+                                                set("wps_id", ""); return;
+                                            }
+                                            const w = wpsList.find(wp => String(wp.id) === e.target.value);
+                                            if (w) {
+                                                set("wps_id", w.id);
+                                                set("wps_number", w.wps_code);
+                                            }
+                                        }}
+                                    >
+                                        <option value="__custom__">
+                                            {form.company_id
+                                                ? (wpsList.length === 0 ? "— nessuna WPS per questo cliente —" : "— WPS non in anagrafica —")
+                                                : "— seleziona prima il cliente —"}
+                                        </option>
+                                        {wpsList.map(w => (
+                                            <option key={w.id} value={w.id}>
+                                                {w.wps_code}{w.welding_process ? " (" + w.welding_process + ")" : ""}
+                                                {w.base_material_group ? " — " + w.base_material_group : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="text"
+                                        value={form.wps_number}
+                                        onChange={e => { set("wps_number", e.target.value); set("wps_id", ""); }}
+                                        placeholder="es. WPS-FOR1-001 o digita manualmente"
+                                        style={{ marginTop: "4px" }}
+                                    />
                                 </div>
                                 <div className="ndt-form-group">
                                     <label>Materiale Base</label>
