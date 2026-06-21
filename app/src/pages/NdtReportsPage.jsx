@@ -10,6 +10,7 @@ import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
 import AutoTextarea from "../components/AutoTextarea.jsx";
 import NcCreateModal from "../components/NcCreateModal.jsx";
+import NdtItemAttachments from "../components/NdtItemAttachments.jsx";
 import { useNdtAutoSave } from "../hooks/useNdtAutoSave.js";
 import "./NdtReportsPage.css";
 import "../components/ChecklistModule.css";
@@ -62,7 +63,7 @@ const DEFECT_CODES_SELECT = [
     { value: "10 altro",     label: "10 \u2014 Altro" },
 ];
 
-function MarkRow({ item, index, onChange, onRemove }) {
+function MarkRow({ item, index, onChange, onRemove, reportId }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
     return (
@@ -99,6 +100,16 @@ function MarkRow({ item, index, onChange, onRemove }) {
                 <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
             </td>
         </tr>
+        {/* Riga foto — sempre visibile se il componente è salvato (ha un ID) */}
+        {item.id && (
+            <tr className="ndt-mark-photos-row">
+                <td></td>
+                <td colSpan={9}>
+                    <NdtItemAttachments itemId={item.id} reportId={reportId} />
+                </td>
+            </tr>
+        )}
+
         {/* Riga note difetto — visibile solo se R o S */}
         {hasDefect && (
             <tr className="ndt-mark-notes-row">
@@ -505,7 +516,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     </thead>
                                     <tbody>
                                         {items.map((item, idx) => (
-                                            <MarkRow key={idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} />
+                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} />
                                         ))}
                                     </tbody>
                                 </table>
