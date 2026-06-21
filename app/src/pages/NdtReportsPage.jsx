@@ -154,7 +154,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
 }
 
 // ── Form verbale ─────────────────────────────────────────────────────────────
-function NdtReportForm({ report, companies, availableInstruments, onSave, onCancel }) {
+function NdtReportForm({ report, companies, suppliers, availableInstruments, onSave, onCancel }) {
     const isEdit = !!report;
 
     // Nome utente loggato per auto-fill ispettore
@@ -422,8 +422,26 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.job_order} onChange={e => set("job_order", e.target.value)} placeholder="es. ORD-2026-001" />
                                 </div>
                                 <div className="ndt-form-group ndt-grow">
-                                    <label>{"Fornitore ispezionato"}<span className="eq-computed-label"> (stabilimento dove si va)</span></label>
-                                    <input type="text" value={form.supplier_name} onChange={e => set("supplier_name", e.target.value)} placeholder="es. Fornitore1 S.r.l. — Via Roma 1, Milano" />
+                                    <label>{"Fornitore ispezionato"}<span className="eq-computed-label"> (stabilimento dove si va fisicamente)</span></label>
+                                    {/* Select dall'anagrafica fornitori + testo libero per fornitori non censiti */}
+                                    <select
+                                        value={suppliers.find(s => s.name === form.supplier_name)?.id || "__custom__"}
+                                        onChange={e => {
+                                            if (e.target.value === "__custom__") { set("supplier_name", ""); return; }
+                                            const s = suppliers.find(su => String(su.id) === e.target.value);
+                                            if (s) set("supplier_name", s.name);
+                                        }}
+                                    >
+                                        <option value="__custom__">{"— fornitore non in anagrafica —"}</option>
+                                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.category ? " (" + s.category + ")" : ""}</option>)}
+                                    </select>
+                                    <input
+                                        type="text"
+                                        value={form.supplier_name}
+                                        onChange={e => set("supplier_name", e.target.value)}
+                                        placeholder="es. Fornitore1 S.r.l. — Via Industria 5, Brescia"
+                                        style={{ marginTop: "4px" }}
+                                    />
                                 </div>
                             </div>
                             <div className="ndt-form-row">
@@ -760,6 +778,7 @@ export default function NdtReportsPage() {
     const [reports, setReports] = useState([]);
     const [stats, setStats] = useState(null);
     const [companies, setCompanies] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [availableInstruments, setAvailableInstruments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -782,15 +801,17 @@ export default function NdtReportsPage() {
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
-            const [listResp, statsResp, companiesResp] = await Promise.all([
+            const [listResp, statsResp, companiesResp, suppliersResp] = await Promise.all([
                 apiService.getNdtReportList(params),
                 apiService.getNdtReportStats(),
                 apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
+                apiService.getSuppliers ? apiService.getSuppliers({ limit: 200 }) : Promise.resolve({ data: [] }),
             ]);
 
             setReports(listResp.data || []);
             setStats(statsResp.data || null);
             setCompanies(companiesResp.data || []);
+            setSuppliers(suppliersResp.data || []);
         } catch (err) {
             setError("Errore caricamento verbali CND");
         } finally {
@@ -841,6 +862,7 @@ export default function NdtReportsPage() {
             <NdtReportForm
                 report={editingReport}
                 companies={companies}
+                suppliers={suppliers}
                 availableInstruments={availableInstruments}
                 onSave={handleSaved}
                 onCancel={handleCancel}
