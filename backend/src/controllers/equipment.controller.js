@@ -151,6 +151,11 @@ async function createEquipment(req, res) {
 
         if (!name) return res.status(400).json({ error: 'Il nome è obbligatorio', code: 'EQUIPMENT_NAME_REQUIRED' });
 
+        // Auto-calcola next_calibration_date se non fornita
+        const freqMonths = calibration_frequency_months ? parseInt(calibration_frequency_months) : null;
+        const computedNext = next_calibration_date ||
+            computeNextCalibrationDate(last_calibration_date, freqMonths);
+
         const result = await query(`
             INSERT INTO equipment_assets (
                 organization_id, company_id, asset_category, asset_subcategory,
@@ -184,9 +189,9 @@ async function createEquipment(req, res) {
             location: location || null,
             status: status || 'active',
             requires_calibration: requires_calibration !== false ? 1 : 0,
-            calibration_frequency_months: calibration_frequency_months ? parseInt(calibration_frequency_months) : null,
+            calibration_frequency_months: freqMonths,
             last_calibration_date: last_calibration_date || null,
-            next_calibration_date: next_calibration_date || null,
+            next_calibration_date: computedNext || null,
             purchase_date: purchase_date || null,
             purchase_price: purchase_price ? parseFloat(purchase_price) : null,
             notes: notes || null,
@@ -222,6 +227,11 @@ async function updateEquipment(req, res) {
             last_calibration_date, next_calibration_date,
             purchase_date, purchase_price, notes,
         } = req.body;
+
+        // Auto-calcola next_calibration_date se non fornita esplicitamente
+        const freqMonthsUpd = calibration_frequency_months ? parseInt(calibration_frequency_months) : null;
+        const computedNextUpd = next_calibration_date ||
+            computeNextCalibrationDate(last_calibration_date, freqMonthsUpd);
 
         const result = await query(`
             UPDATE equipment_assets
@@ -262,9 +272,9 @@ async function updateEquipment(req, res) {
             location: location || null,
             status: status || 'active',
             requires_calibration: requires_calibration !== false ? 1 : 0,
-            calibration_frequency_months: calibration_frequency_months ? parseInt(calibration_frequency_months) : null,
+            calibration_frequency_months: freqMonthsUpd,
             last_calibration_date: last_calibration_date || null,
-            next_calibration_date: next_calibration_date || null,
+            next_calibration_date: computedNextUpd || null,
             purchase_date: purchase_date || null,
             purchase_price: purchase_price ? parseFloat(purchase_price) : null,
             notes: notes || null,
@@ -299,23 +309,45 @@ async function deleteEquipment(req, res) {
     }
 }
 
+// ── Helper: calcola next_calibration_date da data + mesi ─────────────────────
+function computeNextCalibrationDate(calibrationDateStr, frequencyMonths) {
+    if (!calibrationDateStr || !frequencyMonths) return null;
+    const d = new Date(calibrationDateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setMonth(d.getMonth() + parseInt(frequencyMonths));
+    return d.toISOString().substring(0, 10); // YYYY-MM-DD
+}
+
 // ── POST /equipment/:id/calibrations ─────────────────────────────────────────
 async function addCalibration(req, res) {
     try {
         const scope = buildScopeCondition(req.user);
         const asset_id = parseInt(req.params.id);
 
+        // Legge anche calibration_frequency_months dall'asset per auto-calcolo
         const existing = await query(
-            `SELECT id FROM equipment_assets ea WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0`,
+            `SELECT id, calibration_frequency_months FROM equipment_assets ea WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0`,
             { id: asset_id, ...scope.params }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
         }
+        const assetFreqMonths = existing.recordset[0].calibration_frequency_months;
 
-        const { calibration_date, next_calibration_date, calibrated_by, certificate_number, result: calResult, attachment_id, notes } = req.body;
-        if (!calibration_date || !next_calibration_date) {
-            return res.status(400).json({ error: 'Date taratura obbligatorie', code: 'CALIBRATION_DATES_REQUIRED' });
+        const { calibration_date, next_calibration_date: reqNextDate, calibrated_by, certificate_number, result: calResult, attachment_id, notes } = req.body;
+        if (!calibration_date) {
+            return res.status(400).json({ error: 'Data taratura obbligatoria', code: 'CALIBRATION_DATE_REQUIRED' });
+        }
+
+        // Auto-calcola next_calibration_date se non fornita esplicitamente
+        const next_calibration_date = reqNextDate ||
+            computeNextCalibrationDate(calibration_date, assetFreqMonths);
+
+        if (!next_calibration_date) {
+            return res.status(400).json({
+                error: 'Data prossima taratura obbligatoria (o imposta la frequenza in mesi sullo strumento)',
+                code: 'CALIBRATION_NEXT_DATE_REQUIRED',
+            });
         }
 
         // Inserisce la taratura (event log)
