@@ -85,6 +85,10 @@ async function listAttachments(req, res) {
             whereConditions.push('att.custom_item_id = @custom_item_id');
             params.custom_item_id = parseInt(req.query.custom_item_id);
         }
+        if (req.query.ndt_report_item_id) {
+            whereConditions.push('att.ndt_report_item_id = @ndt_report_item_id');
+            params.ndt_report_item_id = parseInt(req.query.ndt_report_item_id);
+        }
 
         if (category) {
             whereConditions.push('att.category = @category');
@@ -210,7 +214,7 @@ async function getAttachmentById(req, res) {
 async function uploadAttachment(req, res) {
     try {
         const { user_id, organization_id } = req.user;
-        const { audit_id, nc_id, question_id, custom_item_id, category = 'evidence', description } = req.body;
+        const { audit_id, nc_id, question_id, custom_item_id, ndt_report_item_id, category = 'evidence', description } = req.body;
 
         // Validazione: deve avere file
         if (!req.file) {
@@ -221,9 +225,20 @@ async function uploadAttachment(req, res) {
             });
         }
 
-        // Validazione: deve avere audit_id o nc_id (ma non entrambi)
-        if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
-            // Cleanup file uploaded
+        // Allegato CND (ndt_report_item_id): non richiede audit_id
+        if (ndt_report_item_id) {
+            // Verifica che l'item esista e appartenga all'org tramite il report padre
+            const itemCheck = await query(`
+                SELECT i.id FROM ndt_report_items i
+                JOIN ndt_reports r ON r.id = i.report_id
+                WHERE i.id = @item_id AND r.organization_id = @organization_id AND r.is_deleted = 0
+            `, { item_id: parseInt(ndt_report_item_id), organization_id });
+            if (itemCheck.recordset.length === 0) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return res.status(404).json({ error: 'Componente verbale CND non trovato', code: 'NDT_ITEM_NOT_FOUND' });
+            }
+        } else if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
+            // Validazione standard: deve avere audit_id o nc_id (ma non entrambi)
             await fs.unlink(req.file.path).catch(() => { });
             logger.warn('Upload: audit_id/nc_id mancante o duplicato', { audit_id, nc_id, user_id, organization_id });
             return res.status(400).json({
@@ -349,6 +364,7 @@ async function uploadAttachment(req, res) {
         nc_id,
         question_id,
         custom_item_id,
+        ndt_report_item_id,
         file_name,
         file_type,
         file_size,
@@ -365,6 +381,7 @@ async function uploadAttachment(req, res) {
         @nc_id,
         @question_id,
         @custom_item_id,
+        @ndt_report_item_id,
         @file_name,
         @file_type,
         @file_size,
@@ -380,6 +397,7 @@ async function uploadAttachment(req, res) {
             nc_id: nc_id ? parseInt(nc_id) : null,
             question_id: question_id ? parseInt(question_id) : null,
             custom_item_id: custom_item_id ? parseInt(custom_item_id) : null,
+            ndt_report_item_id: ndt_report_item_id ? parseInt(ndt_report_item_id) : null,
             file_name: req.file.originalname,
             file_type: path.extname(req.file.originalname).toLowerCase(),
             file_size: req.file.size,
