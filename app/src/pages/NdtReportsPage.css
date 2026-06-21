@@ -396,3 +396,12 @@
     .ndt-client-select { max-width: 100%; min-width: unset; min-height: 44px; font-size: 16px; }
     .ndt-client-input  { min-height: 44px; font-size: 16px; }
 }
+
+/* Nota scenario multi-soggetto */
+.ndt-scenario-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+    padding: 8px 12px; font-size: 0.8rem; color: #1e40af; line-height: 1.4;
+    margin-bottom: 4px;
+}
+.ndt-scenario-icon { flex-shrink: 0; font-size: 1rem; }
