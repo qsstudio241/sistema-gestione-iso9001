@@ -1,5 +1,5 @@
 /**
- * deadlines.controller.js � Scadenzario da file (ADR-013)
+ * deadlines.controller.js � Scadenzario da file (ADR-013)
  *
  * S3: POST /documents/:id/detect-deadlines  ? analisi euristica del file
  * S4: POST /documents/:id/import-deadlines  ? import righe in deadline_items
@@ -22,6 +22,71 @@ const {
   fetchQualificationsForDeadline,
   mapQualificationDeadlineRows,
 } = require('../services/qualificationAlert.service');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarature strumenti — righe virtuali per lo scadenziario
+// Stesso pattern delle qualifiche: fetch + map + merge in listDeadlineItems
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Recupera gli asset attivi con taratura in scadenza/scaduta.
+ * @param {object} pool  - SQL Server pool
+ * @param {number} orgId - organization_id
+ * @returns {Array}
+ */
+async function fetchEquipmentForDeadline(pool, orgId) {
+    const r = await pool.request()
+        .input('orgId', orgId)
+        .query(`
+            SELECT ea.id, ea.name, ea.asset_subcategory, ea.serial_number,
+                   ea.company_id, ea.next_calibration_date, ea.last_calibration_date,
+                   ea.calibration_frequency_months, ea.status,
+                   c.name AS company_name
+            FROM equipment_assets ea
+            LEFT JOIN companies c ON c.id = ea.company_id
+            WHERE ea.organization_id = @orgId
+              AND ea.requires_calibration = 1
+              AND ea.is_deleted = 0
+              AND ea.status = 'active'
+              AND ea.next_calibration_date IS NOT NULL
+        `);
+    return r.recordset || [];
+}
+
+/**
+ * Mappa gli asset in formato compatibile con le righe deadline_items.
+ * @param {Array}  assets     - risultato di fetchEquipmentForDeadline
+ * @param {number} daysWindow - includi solo scadenze entro N giorni (0 = tutte)
+ * @returns {Array}
+ */
+function mapEquipmentDeadlineRows(assets, daysWindow) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return assets
+        .map((a) => {
+            const due = new Date(a.next_calibration_date);
+            due.setHours(0, 0, 0, 0);
+            const daysUntilDue = Math.round((due - today) / 86400000);
+            return {
+                id:                  `equipment_${a.id}`,
+                item_type:           'equipment',
+                source_label:        a.asset_subcategory
+                                       ? `${a.name} (${a.asset_subcategory})`
+                                       : a.name,
+                description:         a.serial_number ? `S/N: ${a.serial_number}` : null,
+                due_date:            a.next_calibration_date,
+                days_until_due:      daysUntilDue,
+                status:              daysUntilDue < 0 ? 'expired' : 'active',
+                company_id:          a.company_id,
+                company_name:        a.company_name || 'Studio',
+                assigned_to_name:    null,
+                source_document_title: null,
+            };
+        })
+        .filter((row) => daysWindow <= 0 || row.days_until_due <= daysWindow);
+}
+
+
 
 // ?? helpers ???????????????????????????????????????????????????????????????????
 
@@ -356,13 +421,25 @@ async function listDeadlineItems(req, res) {
             logger.warn('listDeadlineItems: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows]
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
             .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
+        let equipRows = [];
+        try {
+            const equipData = await fetchEquipmentForDeadline(pool, orgId);
+            const daysWindowEquip = priority_only === '1' ? parseInt(days) : 365;
+            equipRows = mapEquipmentDeadlineRows(equipData, daysWindowEquip);
+            if (company_id) { equipRows = equipRows.filter((r) => r.company_id === parseInt(company_id)); }
+            if (status && status !== 'active') { equipRows = equipRows.filter((r) => r.status === status); }
+            else if (priority_only === '1') { equipRows = equipRows.filter((r) => r.days_until_due <= parseInt(days)); }
+        } catch (equipErr) {
+            logger.warn('listDeadlineItems: tarature non disponibili', { error: equipErr.message });
+        }
 
         res.json({
             data: merged,
             pagination: {
-                total: total + qualRows.length,
+                total: total + qualRows.length + equipRows.length,
                 page: parseInt(page),
                 limit: parseInt(limit),
                 totalPages: Math.ceil((total + qualRows.length) / parseInt(limit)),
@@ -421,8 +498,15 @@ async function getPriorityDeadlines(req, res) {
             logger.warn('getPriorityDeadlines: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows]
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
             .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
+        let equipRowsPrio = [];
+        try {
+            const equipDataPrio = await fetchEquipmentForDeadline(pool, orgId);
+            equipRowsPrio = mapEquipmentDeadlineRows(equipDataPrio, parseInt(days));
+            if (company_id) { equipRowsPrio = equipRowsPrio.filter((r) => r.company_id === parseInt(company_id)); }
+        } catch (e) { logger.warn('getPriorityDeadlines: tarature non disponibili', { error: e.message }); }
 
         res.json({ data: merged });
     } catch (err) {

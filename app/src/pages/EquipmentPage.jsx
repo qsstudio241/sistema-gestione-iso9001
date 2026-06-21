@@ -73,7 +73,26 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    // Auto-calcola next_calibration_date quando cambiano data o frequenza
+    const computeNextDate = (lastDate, freqMonths) => {
+        if (!lastDate || !freqMonths) return "";
+        const d = new Date(lastDate);
+        if (isNaN(d.getTime())) return "";
+        d.setMonth(d.getMonth() + parseInt(freqMonths));
+        return d.toISOString().substring(0, 10);
+    };
+
+    const set = (k, v) => setForm(f => {
+        const updated = { ...f, [k]: v };
+        // Ricalcola automaticamente la prossima taratura
+        if (k === "last_calibration_date" || k === "calibration_frequency_months") {
+            const dateVal  = k === "last_calibration_date"       ? v : f.last_calibration_date;
+            const freqVal  = k === "calibration_frequency_months" ? v : f.calibration_frequency_months;
+            const computed = computeNextDate(dateVal, freqVal);
+            if (computed) updated.next_calibration_date = computed;
+        }
+        return updated;
+    });
 
     const toggleMethod = (m) => {
         setForm(f => ({
@@ -220,7 +239,12 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
                                     <input type="date" value={form.last_calibration_date} onChange={e => set("last_calibration_date", e.target.value)} />
                                 </div>
                                 <div className="eq-form-group">
-                                    <label>Prossima taratura</label>
+                                    <label>
+                                        Prossima taratura
+                                        {form.calibration_frequency_months && form.last_calibration_date && (
+                                            <span className="eq-computed-label"> (calcolata)</span>
+                                        )}
+                                    </label>
                                     <input type="date" value={form.next_calibration_date} onChange={e => set("next_calibration_date", e.target.value)} />
                                 </div>
                             </div>
