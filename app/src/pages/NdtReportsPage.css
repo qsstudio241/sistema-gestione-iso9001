@@ -353,3 +353,23 @@
     display: inline-block; font-size: 0.75rem; color: #9ca3af;
     font-style: italic; padding: 4px 0;
 }
+
+/* Pulsante foto nella riga — sempre visibile nell'ultima colonna */
+.ndt-actions-cell { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ndt-photo-row-btn {
+    background: none; border: 1.5px solid #d1d5db; border-radius: 4px;
+    padding: 4px 6px; cursor: pointer; font-size: 1rem; line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+}
+.ndt-photo-row-btn:hover,
+.ndt-photo-row-btn.active { background: #dbeafe; border-color: #3b82f6; }
+.ndt-photo-row-btn-disabled {
+    opacity: 0.4; cursor: help;
+}
+.ndt-photo-row-btn-disabled:hover { background: #fef3c7; border-color: #f59e0b; opacity: 0.7; }
+
+/* Mobile: pulsante più grande */
+@media (max-width: 768px) {
+    .ndt-photo-row-btn { padding: 6px 9px; font-size: 1.15rem; min-height: 36px; }
+    .ndt-actions-cell { gap: 6px; }
+}
