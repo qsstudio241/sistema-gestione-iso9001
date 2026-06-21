@@ -44,6 +44,8 @@ const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage
 const SearchPage = React.lazy(() => import("./pages/SearchPage"));
 const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProceduresPage"));
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
+const EquipmentPage  = React.lazy(() => import("./pages/EquipmentPage"));
+const NdtReportsPage = React.lazy(() => import("./pages/NdtReportsPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
 const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviewsPage"));
@@ -152,6 +154,8 @@ function AppContent() {
         <Route path="/wps" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
+        <Route path="/cnd/strumenti" element={<LicensedRoute moduleKey="cnd"><EquipmentPage /></LicensedRoute>} />
+        <Route path="/cnd/verbali"   element={<LicensedRoute moduleKey="cnd"><NdtReportsPage /></LicensedRoute>} />
 
         {/* Gestione aziende — dettaglio prima della lista (prefix match router) */}
         <Route

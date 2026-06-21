@@ -6,6 +6,7 @@
 #
 # Esegui da PowerShell nella root del repo:
 #   .\backend\scripts\deploy-controllers-to-vps.ps1
+#   .\backend\scripts\deploy-controllers-to-vps.ps1 -AlsoRestartTest   # riavvia anche sgq-backend-test
 #
 # Manifest file list: backend/scripts/deploy-manifest.json (ordine dependency-aware)
 #
@@ -14,6 +15,10 @@
 # 2) SGQ_PUTTY_SESSION o .putty-session.local
 # 3) Chiave SSH + Pageant
 # 4) SGQ_SSH_PASSWORD (sconsigliata)
+
+param(
+    [switch]$AlsoRestartTest   # Se presente, riavvia anche sgq-backend-test dopo il deploy prod
+)
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -222,3 +227,41 @@ try {
 
 Write-Host "`nDEPLOY COMPLETATO." -ForegroundColor Green
 Write-Host "Smoke opzionale: npm run smoke:deploy (da backend/)" -ForegroundColor DarkGray
+
+# ── Riavvio istanza TEST (opzionale, attivabile con -AlsoRestartTest) ─────────
+if ($AlsoRestartTest) {
+    Write-Host "`nRiavvio istanza TEST (sgq-backend-test)..." -ForegroundColor Cyan
+
+    $testHealthUrl = "https://www.fr-busato.it:8443/test-api/api/v1/health"
+
+    if ($env:SGQ_SUDO_PASSWORD) {
+        $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD))
+        $restartTest = "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"
+        try {
+            Invoke-Plink "bash -lc `"$restartTest && sleep 4 && sudo systemctl status sgq-backend-test --no-pager | tail -5`""
+            Write-Host "  sgq-backend-test riavviato." -ForegroundColor Green
+        } catch {
+            Write-Host "  ATTENZIONE: restart test fallito con SGQ_SUDO_PASSWORD." -ForegroundColor Red
+            Write-Host "  Prova manuale: .\backend\scripts\run-on-vps.ps1 -Command `"echo \$b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service`"" -ForegroundColor Yellow
+        }
+    } else {
+        # Fallback senza password sudo: usa sudo -n (no-password)
+        try {
+            Invoke-Plink "bash -lc 'sudo -n systemctl restart sgq-backend-test.service && sleep 3 && sudo systemctl status sgq-backend-test --no-pager | tail -5'"
+            Write-Host "  sgq-backend-test riavviato (sudo -n)." -ForegroundColor Green
+        } catch {
+            Write-Host "  ATTENZIONE: restart test fallito (sudo richiede password)." -ForegroundColor Red
+            Write-Host "  Imposta SGQ_SUDO_PASSWORD in backend/config/.ssh-deploy.local.ps1" -ForegroundColor Yellow
+        }
+    }
+
+    # Health check istanza test
+    Start-Sleep -Seconds 3
+    try {
+        $testHealth = Invoke-WebRequest -Uri $testHealthUrl -UseBasicParsing -TimeoutSec 10
+        $th = $testHealth.Content | ConvertFrom-Json
+        Write-Host "  TEST health: $($th.status) (uptime: $($th.uptime))" -ForegroundColor Green
+    } catch {
+        Write-Host "  Health test non raggiungibile su $testHealthUrl (normale se porta 8443/test-api non esposta)." -ForegroundColor DarkYellow
+    }
+}
