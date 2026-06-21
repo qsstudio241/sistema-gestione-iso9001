@@ -167,6 +167,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         company_id: "",
         report_type: "VT",
         client: "",
+        supplier_name: "",
         job_order: "",
         wps_number: "",
         base_material: "",
@@ -189,6 +190,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             company_id:           report.company_id || "",
             report_type:          report.report_type || "VT",
             client:               report.client || "",
+            supplier_name:        report.supplier_name || "",
             job_order:            report.job_order || "",
             wps_number:           report.wps_number || "",
             base_material:        report.base_material || "",
@@ -409,11 +411,25 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     </div>
                                 </div>
                             </div>
+                            {/* Nota scenario multi-soggetto */}
+                            <div className="ndt-scenario-hint">
+                                <span className="ndt-scenario-icon">{"ℹ\uFE0F"}</span>
+                                <span>
+                                    {"Cliente = chi commissiona l'ispezione (appare nel Word). "}
+                                    {"Fornitore ispezionato = chi produce i pezzi (dove si va fisicamente)."}
+                                </span>
+                            </div>
                             <div className="ndt-form-row">
                                 <div className="ndt-form-group">
                                     <label>Commessa / Ordine</label>
                                     <input type="text" value={form.job_order} onChange={e => set("job_order", e.target.value)} placeholder="es. ORD-2026-001" />
                                 </div>
+                                <div className="ndt-form-group ndt-grow">
+                                    <label>{"Fornitore ispezionato"}<span className="eq-computed-label"> (stabilimento dove si va)</span></label>
+                                    <input type="text" value={form.supplier_name} onChange={e => set("supplier_name", e.target.value)} placeholder="es. Fornitore1 S.r.l. — Via Roma 1, Milano" />
+                                </div>
+                            </div>
+                            <div className="ndt-form-row">
                                 <div className="ndt-form-group">
                                     <label>Specifica N. / WPS Nr</label>
                                     <input type="text" value={form.wps_number} onChange={e => set("wps_number", e.target.value)} placeholder="es. WPS-001" />

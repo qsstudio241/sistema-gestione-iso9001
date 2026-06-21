@@ -162,7 +162,7 @@ async function createNdtReport(req, res) {
         const { organization_id } = req.user;
         const {
             company_id, report_type = 'VT',
-            client, job_order, wps_number, wps_id,
+            client, supplier_name, job_order, wps_number, wps_id,
             base_material, material_standard, joint_type, quality_level,
             method_params, notes,
             inspection_date, certificate_date,
@@ -179,7 +179,7 @@ async function createNdtReport(req, res) {
         const reportResult = await query(`
             INSERT INTO ndt_reports (
                 organization_id, company_id, report_type, report_number, report_year,
-                client, job_order, wps_number, wps_id,
+                client, supplier_name, job_order, wps_number, wps_id,
                 base_material, material_standard, joint_type, quality_level,
                 method_params, notes,
                 inspection_date, certificate_date,
@@ -189,7 +189,7 @@ async function createNdtReport(req, res) {
             OUTPUT INSERTED.*
             VALUES (
                 @organization_id, @company_id, @report_type, @report_number, @report_year,
-                @client, @job_order, @wps_number, @wps_id,
+                @client, @supplier_name, @job_order, @wps_number, @wps_id,
                 @base_material, @material_standard, @joint_type, @quality_level,
                 @method_params, @notes,
                 @inspection_date, @certificate_date,
@@ -203,6 +203,7 @@ async function createNdtReport(req, res) {
             report_number,
             report_year: year,
             client: client || null,
+            supplier_name: supplier_name || null,
             job_order: job_order || null,
             wps_number: wps_number || null,
             wps_id: wps_id ? parseInt(wps_id) : null,
@@ -288,7 +289,7 @@ async function updateNdtReport(req, res) {
         }
 
         const {
-            company_id, client, job_order, wps_number, wps_id,
+            company_id, client, supplier_name, job_order, wps_number, wps_id,
             base_material, material_standard, joint_type, quality_level,
             method_params, notes,
             inspection_date, certificate_date,
@@ -298,7 +299,7 @@ async function updateNdtReport(req, res) {
 
         await query(`
             UPDATE ndt_reports SET
-                company_id = @company_id, client = @client, job_order = @job_order,
+                company_id = @company_id, client = @client, supplier_name = @supplier_name, job_order = @job_order,
                 wps_number = @wps_number, wps_id = @wps_id,
                 base_material = @base_material, material_standard = @material_standard,
                 joint_type = @joint_type, quality_level = @quality_level,
@@ -313,6 +314,7 @@ async function updateNdtReport(req, res) {
             id,
             company_id: company_id ? parseInt(company_id) : null,
             client: client || null,
+            supplier_name: supplier_name || null,
             job_order: job_order || null,
             wps_number: wps_number || null,
             wps_id: wps_id ? parseInt(wps_id) : null,
