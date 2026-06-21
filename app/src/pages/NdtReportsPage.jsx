@@ -154,7 +154,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
 }
 
 // ── Form verbale ─────────────────────────────────────────────────────────────
-function NdtReportForm({ report, companies, suppliers, availableInstruments, onSave, onCancel }) {
+function NdtReportForm({ report, companies, availableInstruments, onSave, onCancel }) {
     const isEdit = !!report;
 
     // Nome utente loggato per auto-fill ispettore
@@ -239,6 +239,15 @@ function NdtReportForm({ report, companies, suppliers, availableInstruments, onS
     });
     const [saving, setSaving] = useState(false);
     const [exporting, setExporting] = useState(false);
+
+    // Fornitori filtrati per il cliente selezionato (si ricaricano al cambio company_id)
+    const [suppliers, setSuppliers] = useState([]);
+    useEffect(() => {
+        if (!form.company_id) { setSuppliers([]); return; }
+        apiService.getSuppliers({ company_id: form.company_id, limit: 200 })
+            .then(res => setSuppliers(res?.data || []))
+            .catch(() => setSuppliers([]));
+    }, [form.company_id]);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
@@ -432,7 +441,11 @@ function NdtReportForm({ report, companies, suppliers, availableInstruments, onS
                                             if (s) set("supplier_name", s.name);
                                         }}
                                     >
-                                        <option value="__custom__">{"— fornitore non in anagrafica —"}</option>
+                                        <option value="__custom__">
+                                            {form.company_id
+                                                ? (suppliers.length === 0 ? "— nessun fornitore per questo cliente —" : "— fornitore non in anagrafica —")
+                                                : "— seleziona prima il cliente —"}
+                                        </option>
                                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.category ? " (" + s.category + ")" : ""}</option>)}
                                     </select>
                                     <input
@@ -778,7 +791,6 @@ export default function NdtReportsPage() {
     const [reports, setReports] = useState([]);
     const [stats, setStats] = useState(null);
     const [companies, setCompanies] = useState([]);
-    const [suppliers, setSuppliers] = useState([]);
     const [availableInstruments, setAvailableInstruments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -801,17 +813,16 @@ export default function NdtReportsPage() {
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
-            const [listResp, statsResp, companiesResp, suppliersResp] = await Promise.all([
+            const [listResp, statsResp, companiesResp] = await Promise.all([
                 apiService.getNdtReportList(params),
                 apiService.getNdtReportStats(),
                 apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
-                apiService.getSuppliers ? apiService.getSuppliers({ limit: 200 }) : Promise.resolve({ data: [] }),
             ]);
 
             setReports(listResp.data || []);
             setStats(statsResp.data || null);
             setCompanies(companiesResp.data || []);
-            setSuppliers(suppliersResp.data || []);
+            // Fornitori non caricati globalmente — si caricano nel form quando si seleziona il cliente
         } catch (err) {
             setError("Errore caricamento verbali CND");
         } finally {
@@ -862,7 +873,6 @@ export default function NdtReportsPage() {
             <NdtReportForm
                 report={editingReport}
                 companies={companies}
-                suppliers={suppliers}
                 availableInstruments={availableInstruments}
                 onSave={handleSaved}
                 onCancel={handleCancel}
