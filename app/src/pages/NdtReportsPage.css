@@ -152,3 +152,125 @@
     font-size: 0.8rem; color: #6b7280; font-style: italic;
     border-top: 1px dashed #e5e7eb; padding-top: 12px; line-height: 1.5;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — ottimizzazione per uso in campo (tablet/smartphone)
+   breakpoint: 768px tablet, 480px smartphone
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet e smartphone (< 768px) ────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+    /* Lista verbali */
+    .ndt-page { padding: 12px; }
+    .ndt-header { flex-direction: column; gap: 12px; }
+    .ndt-header .btn { width: 100%; text-align: center; }
+
+    .ndt-stats-bar { gap: 8px; }
+    .ndt-stat { min-width: 56px; padding: 8px 10px; }
+    .ndt-stat-n { font-size: 1.1rem; }
+
+    .ndt-filters { flex-direction: column; gap: 8px; }
+    .ndt-search, .ndt-filters select { width: 100%; min-width: unset; box-sizing: border-box; }
+
+    /* Tabella lista: scroll orizzontale */
+    .ndt-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ndt-table { min-width: 560px; font-size: 0.8rem; }
+    .ndt-table th, .ndt-table td { padding: 8px 8px; }
+
+    /* Form verbale */
+    .ndt-form-page { padding: 12px; }
+
+    .ndt-form-header { flex-direction: column; gap: 10px; padding-bottom: 12px; }
+    .ndt-form-header-actions {
+        display: flex; flex-wrap: wrap; gap: 8px; width: 100%;
+    }
+    .ndt-form-header-actions .btn {
+        flex: 1 1 auto; min-width: 110px;
+        padding: 10px 12px; font-size: 0.875rem;
+        min-height: 44px;          /* target touch minimo iOS HIG */
+    }
+
+    /* Sezioni: toggle più alto per il tocco */
+    .ndt-section-toggle { padding: 16px; }
+    .ndt-section-num { width: 28px; height: 28px; font-size: 0.8rem; }
+
+    /* Form rows: colonna singola */
+    .ndt-form-row { flex-direction: column; gap: 10px; }
+    .ndt-form-group { min-width: unset; width: 100%; }
+    .ndt-grow { flex: 1 1 auto; }
+
+    /* Input: target touch 44px */
+    .ndt-form-group input[type="text"],
+    .ndt-form-group input[type="number"],
+    .ndt-form-group input[type="date"],
+    .ndt-form-group select {
+        min-height: 44px; font-size: 16px; /* 16px impedisce zoom su iOS */
+        padding: 10px 12px;
+    }
+    .ndt-form-group textarea { font-size: 16px; }
+
+    /* Instrument cards: larghezza piena su mobile */
+    .ndt-instruments-grid { flex-direction: column; }
+    .ndt-instrument-card { width: 100%; max-width: 100%; }
+
+    /* Parametri VT: colonna singola */
+    .ndt-params-grid { flex-direction: column; gap: 10px; }
+    .ndt-params-grid .ndt-form-group { min-width: unset; }
+
+    /* ── Elenco Marche — scroll orizzontale su mobile ── */
+    .ndt-marks-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+        /* hint visivo: ombra destra indica che c'è altro da scorrere */
+        background:
+            linear-gradient(to right, #fff 30%, rgba(255,255,255,0)),
+            linear-gradient(to left,  #fff 30%, rgba(255,255,255,0)) 100% 0,
+            radial-gradient(farthest-side at 0   50%, rgba(0,0,0,.12), transparent),
+            radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.12), transparent) 100% 0;
+        background-repeat: no-repeat;
+        background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+        background-attachment: local, local, scroll, scroll;
+    }
+    .ndt-marks-table { min-width: 720px; font-size: 0.78rem; }
+    .ndt-marks-table th { padding: 7px 8px; font-size: 0.75rem; }
+    .ndt-marks-table td { padding: 5px 6px; }
+
+    /* Input nelle celle della tabella: più compatti ma touch-safe */
+    .ndt-mark-input { padding: 6px 8px; font-size: 0.8rem; min-height: 36px; }
+    .ndt-mark-select { padding: 6px 8px; font-size: 0.8rem; min-height: 36px; }
+    .ndt-input-lg { width: 160px; }
+
+    /* Pulsanti A/R/S: più grandi sul touch screen */
+    .ndt-eval-btns .status-btn {
+        width: 38px; height: 38px; font-size: 0.85rem;
+    }
+    .ndt-eval-btns { gap: 4px; }
+
+    /* Pulsante aggiungi riga: full width */
+    .ndt-add-row-btn { width: 100%; margin-top: 10px; min-height: 44px; }
+
+    /* Saved-at: visibile e spazioso */
+    .ndt-saved-at { font-size: 0.875rem; padding: 6px 0; }
+}
+
+/* ── Solo smartphone (< 480px) ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .ndt-form-header-actions .btn { min-width: 100%; flex: 1 1 100%; }
+    .ndt-stat { min-width: 48px; padding: 6px 8px; }
+    .ndt-stat-n { font-size: 1rem; }
+    .ndt-stat > span:last-child { font-size: 0.7rem; }
+    .ndt-section-title { font-size: 0.85rem; }
+    .ndt-marks-table { min-width: 640px; }
+}
+
+/* Hint scroll mobile — nascosto su desktop */
+.ndt-mobile-scroll-hint {
+    display: none;
+    font-size: 0.75rem; color: #6b7280; text-align: center;
+    padding: 4px 0 8px; letter-spacing: 0.03em;
+}
+@media (max-width: 768px) {
+    .ndt-mobile-scroll-hint { display: block; }
+}
