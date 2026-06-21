@@ -109,6 +109,9 @@
 .eq-checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; }
 .eq-form-error { color: #dc2626; background: #fee2e2; padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; }
 
+/* Label "calcolata" accanto a Prossima taratura */
+.eq-computed-label { font-size: 0.75rem; color: #16a34a; font-weight: 400; font-style: italic; }
+
 /* Metodi CND checkboxes */
 .eq-methods-group { display: flex; flex-direction: column; gap: 8px; }
 .eq-methods-group > label { font-size: 0.8rem; font-weight: 600; color: #374151; }
