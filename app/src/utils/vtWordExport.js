@@ -89,6 +89,7 @@ export function buildVtTemplateData(report) {
         reportType:           nd(report.report_type),
         client:               nd(report.client),
         jobOrder:             nd(report.job_order),
+        supplierName:         nd(report.supplier_name),
         wpsNumber:            nd(report.wps_number),
         baseMaterial:         nd(report.base_material),
         materialStandard:     nd(report.material_standard),
