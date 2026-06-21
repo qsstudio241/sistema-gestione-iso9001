@@ -91,8 +91,10 @@
 .ndt-instrument-card {
     display: flex; align-items: flex-start; gap: 8px;
     border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
-    cursor: pointer; background: #fff; min-width: 200px; flex: 1;
+    cursor: pointer; background: #fff;
+    flex: 0 0 auto; width: calc(50% - 4px); max-width: 320px;
     transition: border-color 0.15s, background 0.15s;
+    box-sizing: border-box;
 }
 .ndt-instrument-card:hover { border-color: #93c5fd; background: #eff6ff; }
 .ndt-instrument-card input { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
@@ -108,6 +110,24 @@
 /* Parametri VT */
 .ndt-params-grid { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed #e5e7eb; margin-top: 8px; }
 .ndt-params-grid .ndt-form-group { flex: 1; min-width: 120px; }
+
+/* Pulsanti giudizio A/R/S — stili autonomi (non dipendono da ChecklistModule.css) */
+.ndt-eval-btns .status-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 4px;
+    border: 2px solid #d1d5db; background: #f9fafb;
+    font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; color: #374151;
+}
+.ndt-eval-btns .status-btn:hover { border-color: #6b7280; background: #f3f4f6; }
+
+/* Attivo */
+.ndt-eval-btns .status-btn.compliant.active,
+.ndt-eval-btns .status-btn.compliant:hover { background: #16a34a; border-color: #15803d; color: #fff; }
+.ndt-eval-btns .status-btn.partial.active,
+.ndt-eval-btns .status-btn.partial:hover   { background: #d97706; border-color: #b45309; color: #fff; }
+.ndt-eval-btns .status-btn.non-compliant.active,
+.ndt-eval-btns .status-btn.non-compliant:hover { background: #dc2626; border-color: #b91c1c; color: #fff; }
 
 /* Elenco Marche */
 .ndt-marks-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }

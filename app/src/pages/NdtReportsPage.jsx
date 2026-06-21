@@ -9,6 +9,7 @@ import apiService from "../services/apiService";
 import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
 import "./NdtReportsPage.css";
+import "../components/ChecklistModule.css";
 
 const REPORT_TYPES = [
     { value: "VT", label: "VT \u2014 Esame Visivo" },
@@ -293,7 +294,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.joint_type} onChange={e => set("joint_type", e.target.value)} />
                                 </div>
                                 <div className="ndt-form-group">
-                                    <label>Livello qualit\u00e0</label>
+                                    <label>{"Livello qualit\u00e0"}</label>
                                     <input type="text" value={form.quality_level} onChange={e => set("quality_level", e.target.value)} />
                                 </div>
                             </div>
@@ -354,7 +355,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         <input type="text" value={form.method_params.power_w || ""} onChange={e => setParam("power_w", e.target.value)} />
                                     </div>
                                     <div className="ndt-form-group">
-                                        <label>Lunghezza d\u2019onda (\u00B0A)</label>
+                                        <label>{"Lunghezza d\u2019onda (\u00B0A)"}</label>
                                         <input type="text" value={form.method_params.wavelength || ""} onChange={e => setParam("wavelength", e.target.value)} />
                                     </div>
                                 </div>
@@ -378,7 +379,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         <tr>
                                             <th>#</th>
                                             <th>Pos. / Codice</th>
-                                            <th>Q.t\u00e0</th>
+                                            <th>{"Q.t\u00e0"}</th>
                                             <th>Descrizione</th>
                                             <th>Parte esaminata</th>
                                             <th>Superficie</th>
@@ -443,7 +444,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <input type="text" value={form.responsible} onChange={e => set("responsible", e.target.value)} placeholder="Nome responsabile" />
                                 </div>
                                 <div className="ndt-form-group">
-                                    <label>L\u2019Ispettore</label>
+                                    <label>{"L\u2019Ispettore"}</label>
                                     <input type="text" value={form.inspector} onChange={e => set("inspector", e.target.value)} placeholder="Nome ispettore" />
                                 </div>
                                 <div className="ndt-form-group">
