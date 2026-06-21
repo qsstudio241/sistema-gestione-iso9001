@@ -45,7 +45,7 @@ const EMPTY_FORM = {
   due_date:           "",
 };
 
-export default function NcCreateModal({ open, onClose, onCreated, defaultCategory }) {
+export default function NcCreateModal({ open, onClose, onCreated, defaultCategory, initialDescription }) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
 
@@ -84,7 +84,7 @@ export default function NcCreateModal({ open, onClose, onCreated, defaultCategor
       ...EMPTY_FORM,
       source_category: initCategory,
       section_code: catCfg.defaultSection || "",
-      description: resolveNcFieldInitial("", organizationId, CREATE_SCOPE, "description"),
+      description: resolveNcFieldInitial(initialDescription || "", organizationId, CREATE_SCOPE, "description"),
     });
     setSectionOptions(NC_MANUAL_SECTIONS);
     setError(null);

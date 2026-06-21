@@ -8,6 +8,9 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
+import AutoTextarea from "../components/AutoTextarea.jsx";
+import NcCreateModal from "../components/NcCreateModal.jsx";
+import { useNdtAutoSave } from "../hooks/useNdtAutoSave.js";
 import "./NdtReportsPage.css";
 import "../components/ChecklistModule.css";
 
@@ -102,18 +105,20 @@ function MarkRow({ item, index, onChange, onRemove }) {
                 <td></td>
                 <td colSpan={9}>
                     <div className="ndt-defect-notes-wrap">
-                        <span className="ndt-defect-notes-label">
-                            {item.evaluation === "R" ? "\u26A0\uFE0F Riparazione richiesta" : "\u274C Scarto"}
-                            {" — Descrizione difetto / localizzazione:"}
-                        </span>
-                        <input
-                            type="text"
-                            className="ndt-mark-input ndt-input-defect-note"
-                            value={item.notes || ""}
-                            onChange={e => set("notes", e.target.value)}
-                            placeholder="es. cricca all'attacco del cordone, lato A, 15mm dal bordo..."
-                        />
-                    </div>
+                                        <span className="ndt-defect-notes-label">
+                                            {item.evaluation === "R" ? "\u26A0\uFE0F Riparazione richiesta" : "\u274C Scarto"}
+                                            {" \u2014 Descrizione difetto / localizzazione:"}
+                                        </span>
+                                        <AutoTextarea
+                                            className="ndt-input-defect-note notes-textarea"
+                                            value={item.notes || ""}
+                                            onChange={v => set("notes", v)}
+                                            rows={1}
+                                            placeholder={"es. cricca all'attacco del cordone, lato A, 15mm dal bordo..."}
+                                            draftScopeId={`ndt-item-${index}`}
+                                            draftFieldId="defect-notes"
+                                        />
+                                    </div>
                 </td>
             </tr>
         )}
@@ -199,6 +204,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [exporting, setExporting] = useState(false);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
+    const [ncModalOpen, setNcModalOpen]   = useState(false);
+    const [ncInitialDesc, setNcInitialDesc] = useState("");
+
+    // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
+    const { clearDraft } = useNdtAutoSave(report?.id || null, form, items);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
@@ -236,6 +246,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 await apiService.createNdtReport(payload);
             }
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+            clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
             onSave();
         } catch (err) {
             setError(err?.response?.data?.error || "Errore salvataggio verbale");
@@ -552,14 +563,26 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     )}
                                     <div className="ndt-defect-nc-hint">
                                         <span>{"Registrare i difetti come Non Conformit\u00e0?"}</span>
-                                        <a
-                                            href="/non-conformities/new"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            type="button"
                                             className="ndt-defect-nc-link"
+                                            onClick={() => {
+                                                // Costruisce descrizione pre-compilata dai difetti R e S
+                                                const lines = [
+                                                    ...defectSummary.repairs.map(i =>
+                                                        `[R] ${i.position_code || "?"} ${i.description ? "\u2014 " + i.description : ""}${i.defects && i.defects !== "NESSUNO" ? " (" + i.defects + ")" : ""}${i.notes ? ": " + i.notes : ""}`
+                                                    ),
+                                                    ...defectSummary.rejects.map(i =>
+                                                        `[S] ${i.position_code || "?"} ${i.description ? "\u2014 " + i.description : ""}${i.defects && i.defects !== "NESSUNO" ? " (" + i.defects + ")" : ""}${i.notes ? ": " + i.notes : ""}`
+                                                    ),
+                                                ];
+                                                const desc = `Verbale VT${report?.report_number ? " " + report.report_number : ""} \u2014 ${form.client || "cliente"}\nDifetti riscontrati:\n` + lines.join("\n");
+                                                setNcInitialDesc(desc);
+                                                setNcModalOpen(true);
+                                            }}
                                         >
-                                            {"\u2192 Apri modulo NC"}
-                                        </a>
+                                            {"\u2192 Crea Non Conformit\u00e0"}
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -639,6 +662,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 </div>
 
             </div>{/* end ndt-form-body */}
+
+            {/* Fix 2 — Modal NC con dati difetti pre-compilati */}
+            <NcCreateModal
+                open={ncModalOpen}
+                onClose={() => setNcModalOpen(false)}
+                onCreated={() => { setNcModalOpen(false); }}
+                defaultCategory="operational"
+                initialDescription={ncInitialDesc}
+            />
         </div>
     );
 }
