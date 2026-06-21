@@ -1,0 +1,154 @@
+/* NdtReportsPage.css — Verbali CND */
+
+/* ── Lista ─────────────────────────────────────────────────────────────────── */
+.ndt-page { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.ndt-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.ndt-title    { font-size: 1.5rem; font-weight: 700; color: var(--color-text-primary, #1a1a2e); margin: 0 0 4px; }
+.ndt-subtitle { font-size: 0.85rem; color: var(--color-text-secondary, #6b7280); margin: 0; }
+
+.ndt-stats-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.ndt-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 70px; }
+.ndt-stat span { display: block; }
+.ndt-stat-n { font-size: 1.4rem; font-weight: 700; color: #374151; }
+.ndt-stat > span:last-child { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+.ndt-stat-ok .ndt-stat-n { color: #16a34a; }
+
+.ndt-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.ndt-filters select { padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: #fff; min-width: 150px; }
+.ndt-search { flex: 1; min-width: 200px; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; }
+
+.ndt-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+.ndt-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.ndt-table thead { background: #f9fafb; }
+.ndt-table th { padding: 10px 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.ndt-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+.ndt-row { cursor: pointer; }
+.ndt-row:hover { background: #f9fafb; }
+.ndt-row:last-child td { border-bottom: none; }
+.ndt-empty { text-align: center; color: #9ca3af; padding: 32px; font-style: italic; }
+.ndt-mono  { font-family: monospace; font-size: 0.8rem; }
+.ndt-center { text-align: center; }
+
+.ndt-type-tag { background: #e0f2fe; color: #0369a1; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; }
+.ndt-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.ndt-status-draft     { background: #f3f4f6; color: #6b7280; }
+.ndt-status-completed { background: #fef3c7; color: #d97706; }
+.ndt-status-approved  { background: #dcfce7; color: #15803d; }
+
+.ndt-loading { text-align: center; padding: 40px; color: #6b7280; }
+.ndt-error   { text-align: center; padding: 20px; color: #dc2626; background: #fee2e2; border-radius: 8px; margin: 16px 0; }
+
+/* ── Form Page ─────────────────────────────────────────────────────────────── */
+.ndt-form-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+.ndt-form-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+    padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;
+}
+.ndt-form-title    { font-size: 1.3rem; font-weight: 700; color: #1f2937; margin: 0 0 4px; }
+.ndt-form-subtitle { font-size: 0.85rem; color: #6b7280; }
+.ndt-form-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.ndt-saved-at { font-size: 0.8rem; color: #16a34a; margin-bottom: 12px; }
+.ndt-form-error { color: #dc2626; background: #fee2e2; padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; margin-bottom: 12px; }
+
+.ndt-form-body { display: flex; flex-direction: column; gap: 12px; }
+
+/* Sezioni collassabili */
+.ndt-section { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.ndt-section-toggle {
+    width: 100%; display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: #f9fafb; border: none; cursor: pointer;
+    text-align: left; transition: background 0.1s;
+}
+.ndt-section-toggle:hover { background: #f3f4f6; }
+.ndt-section-num { width: 24px; height: 24px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.ndt-section-title { font-weight: 600; color: #1f2937; flex: 1; font-size: 0.9rem; }
+.ndt-section-chevron { color: #6b7280; font-size: 0.75rem; }
+.ndt-section-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Form groups */
+.ndt-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.ndt-form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.ndt-grow { flex: 2; }
+.ndt-form-group label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.ndt-form-group input[type="text"],
+.ndt-form-group input[type="number"],
+.ndt-form-group input[type="date"],
+.ndt-form-group textarea,
+.ndt-form-group select {
+    padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.875rem; background: #fff; width: 100%;
+}
+.ndt-form-group input:focus, .ndt-form-group select:focus, .ndt-form-group textarea:focus {
+    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+/* Strumenti */
+.ndt-instruments-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+.ndt-instruments-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.ndt-instrument-card {
+    display: flex; align-items: flex-start; gap: 8px;
+    border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; background: #fff;
+    flex: 0 0 auto; width: calc(50% - 4px); max-width: 320px;
+    transition: border-color 0.15s, background 0.15s;
+    box-sizing: border-box;
+}
+.ndt-instrument-card:hover { border-color: #93c5fd; background: #eff6ff; }
+.ndt-instrument-card input { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.ndt-inst-info { display: flex; flex-direction: column; gap: 2px; }
+.ndt-inst-name { font-weight: 600; font-size: 0.875rem; color: #1f2937; }
+.ndt-inst-detail { font-size: 0.75rem; color: #6b7280; }
+.ndt-inst-expired { border-color: #fca5a5; background: #fff5f5; }
+.ndt-inst-expiring { border-color: #fcd34d; background: #fffbeb; }
+.ndt-cal-badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-top: 3px; }
+.ndt-cal-expired { background: #fee2e2; color: #dc2626; }
+.ndt-cal-warn    { background: #fef3c7; color: #d97706; }
+
+/* Parametri VT */
+.ndt-params-grid { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed #e5e7eb; margin-top: 8px; }
+.ndt-params-grid .ndt-form-group { flex: 1; min-width: 120px; }
+
+/* Pulsanti giudizio A/R/S — stili autonomi (non dipendono da ChecklistModule.css) */
+.ndt-eval-btns .status-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 4px;
+    border: 2px solid #d1d5db; background: #f9fafb;
+    font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; color: #374151;
+}
+.ndt-eval-btns .status-btn:hover { border-color: #6b7280; background: #f3f4f6; }
+
+/* Attivo */
+.ndt-eval-btns .status-btn.compliant.active,
+.ndt-eval-btns .status-btn.compliant:hover { background: #16a34a; border-color: #15803d; color: #fff; }
+.ndt-eval-btns .status-btn.partial.active,
+.ndt-eval-btns .status-btn.partial:hover   { background: #d97706; border-color: #b45309; color: #fff; }
+.ndt-eval-btns .status-btn.non-compliant.active,
+.ndt-eval-btns .status-btn.non-compliant:hover { background: #dc2626; border-color: #b91c1c; color: #fff; }
+
+/* Elenco Marche */
+.ndt-marks-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+.ndt-marks-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.ndt-marks-table th { padding: 8px 10px; background: #f9fafb; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.ndt-marks-table td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+.ndt-mark-row:last-child td { border-bottom: none; }
+.ndt-mark-input { padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.8rem; background: #fff; }
+.ndt-mark-input:focus { outline: none; border-color: #3b82f6; }
+.ndt-input-xs { width: 50px; }
+.ndt-input-sm { width: 90px; }
+.ndt-input-lg { width: 200px; }
+.ndt-mark-select { padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.8rem; width: 70px; }
+.ndt-eval-btns { display: flex; gap: 2px; }
+/* Riusa status-btn di ChecklistModule.css */
+.ndt-row-remove { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+.ndt-row-remove:hover { background: #fee2e2; color: #dc2626; }
+.ndt-add-row-btn { margin-top: 12px; }
+
+/* Certificazione */
+.ndt-certification-text {
+    font-size: 0.8rem; color: #6b7280; font-style: italic;
+    border-top: 1px dashed #e5e7eb; padding-top: 12px; line-height: 1.5;
+}
