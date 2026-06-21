@@ -129,7 +129,7 @@ function buildMobileNavItems(user, alerts) {
   // CND — priorità sul 4° posto quando il modulo è attivo (ispettori in campo)
   const cnd = find("/cnd/verbali");
   if (cnd) {
-    items.push({ to: cnd.to, icon: "\uD83D\uDD2C", label: "VT/CND" });
+    items.push({ to: cnd.to, icon: "\uD83D\uDD2C", label: "CND" });
   } else {
     // Se CND non attivo, usa Documenti al 4° posto
     const docs = find("/documents");
