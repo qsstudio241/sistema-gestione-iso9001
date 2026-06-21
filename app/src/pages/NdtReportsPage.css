@@ -341,3 +341,9 @@
     padding: 4px 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .ndt-notes-fix-btn:hover { background: #d97706; }
+
+/* Riga foto allegati nella tabella marche */
+.ndt-mark-photos-row td {
+    background: #f8fafc; padding: 6px 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
