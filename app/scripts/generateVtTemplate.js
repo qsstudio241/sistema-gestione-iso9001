@@ -60,6 +60,7 @@ function buildDoc() {
         ], columnSpan:4, shading:{fill:C.primary,type:ShadingType.CLEAR}, margins:{top:120,bottom:120,left:80,right:80}})]}),
         new TableRow({children:[lbl('CLIENTE / Customer',15),val('{client}',35),lbl('N. VERBALE / Report Nr.',20),val('{reportNumber}',30)]}),
         new TableRow({children:[lbl('COMMESSA / Job Order',15),val('{jobOrder}',35),lbl('DATA CONTROLLO / Test date',20),val('{inspectionDate}',30)]}),
+        new TableRow({children:[lbl('FORNITORE ISPEZIONATO / Supplier',15),new TableCell({children:[para([run('{supplierName}')])],columnSpan:3,margins:{top:60,bottom:60,left:80,right:80}})]}),
         new TableRow({children:[lbl('SPECIFICA N. / WPS Nr',15),val('{wpsNumber}',35),lbl('TIPO GIUNTO / Joint type',20),val('{jointType}',30)]}),
         new TableRow({children:[lbl('MATERIALE BASE / Base material',15),val('{baseMaterial}',35),lbl('LIVELLO QUALITA\' / Quality level',20),val('{qualityLevel}',30)]}),
         new TableRow({children:[lbl('STANDARD MATERIALE',15),new TableCell({children:[para([run('{materialStandard}')])],columnSpan:3,margins:{top:60,bottom:60,left:80,right:80}})]}),
