@@ -347,3 +347,9 @@
     background: #f8fafc; padding: 6px 8px;
     border-bottom: 1px solid #e5e7eb;
 }
+
+/* Hint foto su righe non salvate */
+.ndt-photo-hint {
+    display: inline-block; font-size: 0.75rem; color: #9ca3af;
+    font-style: italic; padding: 4px 0;
+}

@@ -100,15 +100,18 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
                 <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
             </td>
         </tr>
-        {/* Riga foto — sempre visibile se il componente è salvato (ha un ID) */}
-        {item.id && (
-            <tr className="ndt-mark-photos-row">
-                <td></td>
-                <td colSpan={9}>
-                    <NdtItemAttachments itemId={item.id} reportId={reportId} />
-                </td>
-            </tr>
-        )}
+        {/* Riga foto — sempre visibile; se non ancora salvato mostra istruzione */}
+        <tr className="ndt-mark-photos-row">
+            <td></td>
+            <td colSpan={9}>
+                {item.id
+                    ? <NdtItemAttachments itemId={item.id} reportId={reportId} />
+                    : <span className="ndt-photo-hint">
+                        {"\uD83D\uDCF7 Salva il verbale (\u201CSalva bozza\u201D) per abilitare le foto su questa riga"}
+                      </span>
+                }
+            </td>
+        </tr>
 
         {/* Riga note difetto — visibile solo se R o S */}
         {hasDefect && (
