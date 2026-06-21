@@ -3424,6 +3424,33 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 21/06/2026 (pomeriggio) — CND: UX mobile, form VT, WPS/WPQR
+
+| PR | Contenuto |
+|----|-----------|
+| #143 | foto: pulsante 📷 nella riga + foto difetti nel Word export |
+| #144 | mobile UX: accordion chiuse di default + 📷 nella riga (non sotto) |
+| #145 | cliente: select anagrafica + testo libero (no duplicazione) |
+| #146 | nav mobile: etichetta `CND` (era `VT/CND`) |
+| #147 | fornitore ispezionato: campo + scenario Mason→Manitou→Fornitore1 |
+| #148 | elimina duplicazione Azienda committente / Cliente |
+| #149 | fornitore: select dall'anagrafica fornitori |
+| #150 | fornitori filtrati per cliente selezionato (company_id) |
+| #151 | WPS: select dal modulo Saldatura, filtrata per cliente |
+| #152 | WPS/WPQR form: company_id ereditato dal selettore azienda |
+
+**Lezioni:**
+
+| Lezione | Regola |
+|---|---|
+| **📷 non visibile su mobile con scroll orizzontale** | Elementi aggiuntivi in righe `<tr>` sotto una tabella wide non sono mai visibili su mobile senza scroll. Mettere sempre le azioni IN-ROW nell'ultima colonna. |
+| **`useEffect` su stato form** | Per caricare dati dipendenti da un campo form (es. fornitori filtrati per company_id), usare `useEffect([form.company_id])` dentro il form — non caricare tutto al mount del componente padre. |
+| **Accordion su mobile** | `useState` di apertura sezioni deve essere `!isMobile` per le sezioni non primarie — altrimenti su mobile tutto è aperto e lo schermo è occupato prima di compilare. |
+| **WPS form company_id** | Passare `defaultCompanyId={companyScopeId}` come prop al form modale — il form non legge lo scope dal contesto ma dipende dal parent per il default. |
+| **Griglia standard** | `SgqDataGrid` NON è lo standard universale — usato solo in 3 pagine (NC, Deadlines, Studio). Welding/CND/Equipment usano tabelle HTML custom. Non è debito tecnico urgente. |
+
+---
+
 ### Sessione 21/06/2026 — Modulo CND: completamento, fix operativi e go-live mobile
 
 | Voce | Esito |
