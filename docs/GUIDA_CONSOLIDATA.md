@@ -2185,11 +2185,18 @@ cd backend && node scripts/smoke-testdb.js --check-vps
 
 #### Come fare deploy di un branch sull'istanza test
 
-1. Copia i controller/file modificati con `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
-2. Restart: `.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"`
+**Metodo A — Deploy completo (raccomandato dal 21/06/2026):**
+```powershell
+.\\backend\\scripts\\deploy-controllers-to-vps.ps1 -AlsoRestartTest
+```
+Copia tutti i file del manifest, riavvia `sgq-backend` (prod) + `sgq-backend-test` in sequenza, health check su entrambi.
+
+**Metodo B — Deploy singolo file (hotfix rapido):**
+1. Copia file: `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
+2. Restart test: `.\.\backend\scripts\run-on-vps.ps1 -Command "echo '[REDACTED]' | sudo -S systemctl restart sgq-backend-test"`
 3. Verifica: `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health`
-4. Esegui test funzionali puntando il frontend a `https://www.fr-busato.it:8443/test-api` (cambia `VITE_API_BASE_URL` nel `.env.local`)
-5. Se OK → merge → `deploy-controllers-to-vps.ps1` per produzione
+4. Test funzionali su Deploy Preview Netlify (VITE_API_URL automatico da `netlify.toml`)
+5. Se OK → merge → `.\\backend\\scripts\\deploy-controllers-to-vps.ps1` per produzione
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
@@ -3388,7 +3395,7 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 **Bug trovati con smoke test MCP (2026-06-19 — PR #122, #123):**
 - `KNOWN_MODULE_KEYS` in `moduleLicense.service.js` è l'unica fonte di verità per i moduli: se la chiave manca lì, il token non la include e il frontend blocca menu + pagina anche se il codice React è corretto. Aggiungere sempre la chiave contestualmente al nuovo modulo.
 - JOIN `companies`: usare sempre `c.id`, mai `c.company_id` — la tabella `companies` usa `id` come PK. Pattern corretto: `LEFT JOIN companies c ON c.id = mr.company_id`.
-- **`sgq-backend-test` non viene riavviato da `deploy-controllers-to-vps.ps1`** (che gestisce solo `sgq-backend`): dopo ogni deploy che tocca il backend, riavviare manualmente con: `. .\backend\config\.ssh-deploy.local.ps1; $b64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD)); .\backend\scripts\run-on-vps.ps1 -Command "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"`
+- **`sgq-backend-test` riavvio dopo deploy** — **RISOLTO 21/06/2026** (commit su `cursor/fix-deploy-test-restart-d4ed`): `deploy-controllers-to-vps.ps1` accetta ora il parametro `-AlsoRestartTest`. Usare `.\backend\scripts\deploy-controllers-to-vps.ps1 -AlsoRestartTest` per riavviare in sequenza prod + test. Senza il flag: comportamento invariato (solo prod). Fallback manuale se SGQ_SUDO_PASSWORD non disponibile: `.\backend\scripts\run-on-vps.ps1 -Command "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"`
 
 ---
 
@@ -3414,6 +3421,33 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - Se AI configurata (Gemini/Azure/OpenAI via `aiProviderAdapter`): testo GPT-style da prompt strutturato
 - Risposta: `{ success, drafts: { nc_summary, objectives_summary, audits_summary, suppliers_summary, norm_gaps }, meta: { ai_used } }`
 - Frontend: pulsante visibile solo se `reviewId` (initial?.id) è disponibile — non su nuovo riesame non ancora salvato
+
+---
+
+### Sessione 20/06/2026 — Modulo CND (6 slice complete — PR #127-#132)
+
+| Slice | PR | Contenuto | Stato |
+|---|---|---|---|
+| 1 | #127 | Migrazione DB 101-103: `equipment_assets`, `equipment_calibrations`, `ndt_reports`/`items`/`instruments` | ✅ |
+| 2 | #128 | Backend CRUD: `equipment.controller.js`, `ndtReports.controller.js`, route, modulo `cnd` in `moduleLicense.service.js` | ✅ |
+| 3 | #129 | Frontend: `EquipmentPage.jsx` (lista+form strumenti, stats taratura) | ✅ |
+| 4 | #130 | Frontend: `NdtReportsPage.jsx` (lista+form VT a 5 sezioni, Elenco Marche dinamico, giudizio A/R/S con `.status-btn`) | ✅ |
+| 5 | #131 | Export Word: `vtWordExport.js` + template `VT-verbale.docx` (36 placeholder, loop `{#items}`) | ✅ |
+| 6 | #132 | Offline: `useNdtAutoSave.js` (localStorage debounce) + sync queue `create/update/delete_ndt_report` in `syncService.js` | ✅ |
+
+**Architettura chiave:**
+- `equipment_assets`: tabella trasversale a tutti i sistemi (9001/14001/45001/3834/CND); `company_id NULL` = studio, valorizzato = azienda cliente
+- `ndt_reports`: `report_type='VT'|'MT'|'PT'|'UT'`; `method_params JSON` per parametri specifici per metodo → scalabile senza nuove tabelle
+- Numerazione automatica: `VT-YYYY-NNN` (pattern `RD-YYYY-NNN` da managementReviews)
+- Modulo licenza: chiave `cnd` aggiunta a `KNOWN_MODULE_KEYS` e `LABELS_IT`
+- Menu sidebar: gruppo "CND" con voci Strumenti e Verbali
+- Smoke test API sul backend-test: 7/7 OK
+- Build Vite: OK su ogni slice
+
+**Lezioni:**
+- `equipment_assets.company_id IS NULL` = asset dello studio (condiviso); filtro `for-report` mostra studio + azienda
+- Template `.docx` generato con `node scripts/generateVtTemplate.js` (pattern `generateNcTemplate.js`) — rilanciare se si vuole modificare il layout
+- Verbali CND = online-first (come NC/Riesame Direzione), non offline-first come gli audit ISO; `useNdtAutoSave` aggiunge resilienza locale senza complessità IndexedDB
 
 ---
 

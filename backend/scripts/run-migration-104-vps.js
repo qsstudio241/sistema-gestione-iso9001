@@ -1,5 +1,5 @@
 /**
- * Migration 101 — equipment_assets
+ * Migration 104 — equipment_assets
  * Eseguire su VPS (DB test o produzione):
  *   node /tmp/run-migration-101-vps.js
  *
@@ -57,9 +57,9 @@ async function run() {
     const pool = await getPool();
     try {
         await pool.request().query(SQL);
-        console.log('[101] Migration equipment_assets completata.');
+        console.log('[104] Migration equipment_assets completata.');
     } catch (e) {
-        console.error('[101] ERRORE:', e.message);
+        console.error('[104] ERRORE:', e.message);
         process.exit(1);
     } finally {
         await pool.close().catch(() => {});
