@@ -117,27 +117,35 @@ function buildMobileNavItems(user, alerts) {
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   const items = [
-    { to: "/", icon: "🏠", label: "Home", exact: true },
+    { to: "/", icon: "\uD83C\uDFE0", label: "Home", exact: true },
   ];
 
   const audit = find("/audit");
-  if (audit) items.push({ to: audit.to, icon: audit.icon, label: audit.label });
-
-  const docs = find("/documents");
-  if (docs) items.push({ to: docs.to, icon: docs.icon, label: docs.label });
+  if (audit) items.push({ to: audit.to, icon: audit.icon, label: "Audit" });
 
   const nc = find("/nc");
   if (nc) items.push({ to: nc.to, icon: nc.icon, label: "NC" });
 
-  const settings = find("/settings/users");
-  const companies = find("/companies");
-  if (isAdmin && settings) {
-    items.push({ to: settings.to, icon: "⚙️", label: "Impostazioni" });
-  } else if (companies) {
-    items.push({ to: companies.to, icon: companies.icon, label: companies.label });
+  // CND — priorità sul 4° posto quando il modulo è attivo (ispettori in campo)
+  const cnd = find("/cnd/verbali");
+  if (cnd) {
+    items.push({ to: cnd.to, icon: "\uD83D\uDD2C", label: "VT/CND" });
   } else {
-    const reclami = find("/reclami");
-    if (reclami) items.push({ to: reclami.to, icon: reclami.icon, label: reclami.label });
+    // Se CND non attivo, usa Documenti al 4° posto
+    const docs = find("/documents");
+    if (docs) items.push({ to: docs.to, icon: docs.icon, label: "Documenti" });
+  }
+
+  // 5° posto: Documenti (se CND attivo) oppure Impostazioni/Aziende
+  if (cnd) {
+    const docs = find("/documents");
+    if (docs) items.push({ to: docs.to, icon: docs.icon, label: "Documenti" });
+  } else if (isAdmin) {
+    const settings = find("/settings/users");
+    if (settings) items.push({ to: settings.to, icon: "\u2699\uFE0F", label: "Impostaz" });
+  } else {
+    const companies = find("/companies");
+    if (companies) items.push({ to: companies.to, icon: companies.icon, label: "Aziende" });
   }
 
   return items.slice(0, 5);
