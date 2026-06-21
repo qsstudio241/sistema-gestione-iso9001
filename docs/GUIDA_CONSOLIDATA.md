@@ -3424,6 +3424,32 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 21/06/2026 — Modulo CND: completamento, fix operativi e go-live mobile
+
+| Voce | Esito |
+|---|---|
+| Modulo CND su main | PR #134 mergiata — DB prod migrato (104-108), backend deployato |
+| Mobile responsive | PR #135 — form VT ottimizzato per tablet/smartphone |
+| Auto-calcolo taratura | PR #136 — `next_calibration_date = ultima_verifica + mesi_freq` |
+| Gap template VT | PR #137 — ruolo strumenti (calibro/luxmetro/lampada), inspector auto-fill, messaggio strumenti vuoti |
+| Gestione difetti | PR #138 — note per riga, riepilogo R/S, warning note errate, link NC |
+| Fix UX | PR #139 — AutoTextarea note difetto, NcCreateModal pre-compilata, useNdtAutoSave wiring |
+| Foto saldature | PR #140 — `attachments.ndt_report_item_id`, NdtItemAttachments, fotocamera Android |
+| Menu mobile | PR #141 — VT/CND nel bottom navigation (4° voce) |
+| Modulo licenza | SQL diretto — aggiunto `cnd` a org 1003 MASON_Srl e 1004 ERAM |
+
+**Lezioni critiche di questa sessione:**
+
+| Lezione | Regola |
+|---|---|
+| **Modulo licenza non si auto-attiva** | Quando si aggiunge un nuovo `module_key` a `KNOWN_MODULE_KEYS`, le org con `licensed_modules IS NOT NULL` **non** lo ricevono automaticamente. Bisogna aggiornare via SQL: `UPDATE organizations SET licensed_modules=JSON_MODIFY(licensed_modules,'append $','nuova_chiave') WHERE ...` oppure con script Node. **Sempre verificare** dopo deploy. |
+| **Bottom navigation mobile** | Il menu mobile ha 5 voci hardcoded in `buildMobileNavItems`. Ogni nuovo modulo primario **deve essere aggiunto esplicitamente** alla lista e la priorità decidere quale voce scalzare (CND sostituisce Documenti al 4° posto). |
+| **Filtered index SQL Server** | `CREATE INDEX ... WHERE col IS NOT NULL` su una colonna appena aggiunta con `ALTER TABLE` **fallisce** se eseguito nello stesso batch. Soluzione: statement separati (ALTER TABLE in un `query()`, CREATE INDEX in un secondo `query()`). |
+| **Template VT vs modulo** | Il verbale VT è strutturalmente simile a un audit (riga+esito+nota) ma non va modellato sopra il sistema audit — il dominio normativo CND è specifico (codici UNI EN ISO 6520, strumenti, parametri VT/MT/PT/UT). La scalabilità per altri metodi si ottiene con `report_type` discriminator + `method_params JSON`. |
+| **Ruolo strumenti nel template Word** | Il template VT ha celle fisse per Calibro / Luxmetro / Lampada. Il Word export usa `instrument_role` (`gauge`/`luxmeter`/`lamp`). Se il ruolo non è assegnato dalla UI, le celle mostrano N/D. La UI **deve** esporre un dropdown ruolo per ogni strumento selezionato. |
+
+---
+
 ### Sessione 20/06/2026 — Modulo CND (6 slice complete — PR #127-#132)
 
 | Slice | PR | Contenuto | Stato |
