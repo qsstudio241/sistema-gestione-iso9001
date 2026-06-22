@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import ParticipantsList from "../components/ParticipantsList";
 import { formatDate } from "../utils/dateHelpers";
 import {
   resolveInitialMgmtReviewCompanyScope,
@@ -27,7 +28,7 @@ const STATUS_CFG = {
 const EMPTY_FORM = {
   review_date: "",
   chairperson: "",
-  participants: "",
+  participants: [],
   status: "draft",
   company_id: "",
   input_previous_actions: "",
@@ -163,17 +164,19 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
           >
             {loading ? "Caricamento dati\u2026" : "Carica dati"}
           </button>
-          {reviewId && (
-            <button
-              type="button"
-              className="btn-primary isw-draft-btn"
-              onClick={generateDraft}
-              disabled={drafting}
-              title={"Genera testi bozza per i campi \u00A79.3.2 dal riesame corrente"}
-            >
-              {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn-primary isw-draft-btn"
+            onClick={reviewId ? generateDraft : undefined}
+            disabled={drafting || !reviewId}
+            title={
+              reviewId
+                ? "Genera testi bozza per i campi \u00A79.3.2 dal riesame corrente"
+                : "Salva prima il riesame per generare la bozza"
+            }
+          >
+            {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
+          </button>
         </div>
       </div>
 
@@ -314,6 +317,46 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
                 {"Pre-compila campo e)"}
               </button>
             </div>
+
+            {/* Azioni precedenti */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"a) Azioni da precedenti riesami"}</div>
+              <p className="isw-tile-note">
+                {"Inserire manualmente lo stato delle azioni definite nel riesame precedente."}
+              </p>
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() =>
+                  onPrefill(
+                    "input_previous_actions",
+                    "Azioni definite nel precedente riesame:\n- [Azione 1]: [stato avanzamento]\n- [Azione 2]: [stato avanzamento]"
+                  )
+                }
+              >
+                {"Pre-compila campo a)"}
+              </button>
+            </div>
+
+            {/* Risorse */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"g) Adeguatezza delle risorse"}</div>
+              <p className="isw-tile-note">
+                {"Valutare l\u2019adeguatezza di risorse umane, infrastrutture e ambiente di lavoro."}
+              </p>
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() =>
+                  onPrefill(
+                    "input_resources",
+                    "Valutazione risorse:\nRisorse umane: [adeguate / da integrare]\nInfrastrutture: [adeguate / interventi previsti]\nAmbiente di lavoro: [adeguato / miglioramenti previsti]"
+                  )
+                }
+              >
+                {"Pre-compila campo g)"}
+              </button>
+            </div>
           </div>
 
           {/* Copertura normativa */}
@@ -367,8 +410,34 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 
 // ─── Form completo ────────────────────────────────────────────────────────────
 
+/** Deserializza participants da stringa JSON (dati legacy o server) → array [{name,role}] */
+function parseParticipants(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    // Fallback: testo libero "Nome, Ruolo — uno per riga"
+    return raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const comma = line.indexOf(",");
+        return comma > -1
+          ? { name: line.slice(0, comma).trim(), role: line.slice(comma + 1).trim() }
+          : { name: line, role: "" };
+      });
+  }
+  return [];
+}
+
 function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "", scopeCompanyName = "" }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
+  const [form, setForm] = useState(() => {
+    const base = { ...EMPTY_FORM, ...initial };
+    return { ...base, participants: parseParticipants(base.participants) };
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -384,7 +453,13 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
     setSaving(true);
     setError(null);
     try {
-      await onSave(form);
+      const payload = {
+        ...form,
+        participants: Array.isArray(form.participants)
+          ? JSON.stringify(form.participants)
+          : (form.participants || ""),
+      };
+      await onSave(payload);
       onClose();
     } catch (err) {
       setError(err?.response?.data?.error || "Errore durante il salvataggio.");
@@ -462,16 +537,11 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
 
           {/* 2. Partecipanti */}
           <CollapsibleSection title="2 — Partecipanti">
-            <div className="form-row">
-              <label>Elenco partecipanti</label>
-              <textarea
-                className="notes-textarea"
-                rows={3}
-                value={form.participants}
-                onChange={(e) => upd("participants", e.target.value)}
-                placeholder="Nome, Ruolo — uno per riga"
-              />
-            </div>
+            <ParticipantsList
+              participants={form.participants}
+              onChange={(list) => upd("participants", list)}
+              companyId={form.company_id || initial?.company_id || null}
+            />
           </CollapsibleSection>
 
           {/* 3. §9.3.2 Input (8 campi) */}
