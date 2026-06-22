@@ -20,6 +20,7 @@ const STATUS_CFG = {
 // ─── Form vuoto ───────────────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
+  company_id: "",
   review_date: "",
   chairperson: "",
   participants: "",
@@ -361,7 +362,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 
 // ─── Form completo ────────────────────────────────────────────────────────────
 
-function ReviewForm({ initial, onSave, onClose }) {
+function ReviewForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -429,6 +430,17 @@ function ReviewForm({ initial, onSave, onClose }) {
                 <option value="approved">Approvato</option>
               </select>
             </div>
+            {companies.length > 0 && (
+              <div className="form-row">
+                <label>Azienda</label>
+                <select value={form.company_id || ""} onChange={(e) => upd("company_id", e.target.value || "")}>
+                  <option value="">— nessuna —</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </CollapsibleSection>
 
           {/* 2. Partecipanti */}
@@ -525,21 +537,30 @@ function ReviewForm({ initial, onSave, onClose }) {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ManagementReviewsPage() {
-  const [reviews, setReviews]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
-  const [showForm, setShowForm]     = useState(false);
-  const [editItem, setEditItem]     = useState(null);
-  const [filterStatus, setFilter]   = useState("");
-  const [delConfirm, setDelConfirm] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+  const [reviews, setReviews]           = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const [showForm, setShowForm]         = useState(false);
+  const [editItem, setEditItem]         = useState(null);
+  const [filterStatus, setFilter]       = useState("");
+  const [filterCompany, setFilterCo]    = useState("");
+  const [companies, setCompanies]       = useState([]);
+  const [delConfirm, setDelConfirm]     = useState(null);
+  const [pagination, setPagination]     = useState({ page: 1, limit: 50, total: 0 });
+
+  useEffect(() => {
+    apiService.getCompanies({ limit: 200 })
+      .then((res) => setCompanies(res.data?.data || res.data || []))
+      .catch(() => {});
+  }, []);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ page: pagination.page, limit: pagination.limit });
-      if (filterStatus) params.set("status", filterStatus);
+      if (filterStatus)  params.set("status",     filterStatus);
+      if (filterCompany) params.set("company_id", filterCompany);
       const res = await apiService.get(`/management-reviews?${params}`);
       setReviews(res.data.data || []);
       if (res.data.pagination) setPagination((p) => ({ ...p, ...res.data.pagination }));
@@ -548,7 +569,7 @@ export default function ManagementReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, pagination.page, pagination.limit]);
+  }, [filterStatus, filterCompany, pagination.page, pagination.limit]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
@@ -567,7 +588,10 @@ export default function ManagementReviewsPage() {
     await fetchReviews();
   }
 
-  function openCreate() { setEditItem(null); setShowForm(true); }
+  function openCreate() {
+    setEditItem({ company_id: filterCompany || "" });
+    setShowForm(true);
+  }
   function openEdit(item) { setEditItem(item); setShowForm(true); }
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
@@ -586,6 +610,17 @@ export default function ManagementReviewsPage() {
 
       {/* Toolbar filtri */}
       <div className="tab-toolbar">
+        {companies.length > 0 && (
+          <select
+            value={filterCompany}
+            onChange={(e) => { setFilterCo(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+          >
+            <option value="">Tutte le aziende</option>
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
         <select
           value={filterStatus}
           onChange={(e) => { setFilter(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
@@ -687,6 +722,7 @@ export default function ManagementReviewsPage() {
           initial={editItem || {}}
           onSave={handleSave}
           onClose={() => setShowForm(false)}
+          companies={companies}
         />
       )}
 
