@@ -2,11 +2,16 @@
  * ManagementReviewsPage — Riesame di Direzione ISO 9001 §9.3
  * Lista riesami + form completo con sezioni collassabili ISO.
  * Include widget "Dati disponibili §9.3.2" per pre-compilazione AI-assisted.
+ * Pattern "Ambito" (company scope) identico a QualificationsPage e DocumentRegistry.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import {
+  resolveInitialMgmtReviewCompanyScope,
+  persistMgmtReviewCompanyScope,
+} from "../utils/managementReviewsCompanyScope";
 import "./ManagementReviewsPage.css";
 
 // ─── Configurazione stato ─────────────────────────────────────────────────────
@@ -362,7 +367,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 
 // ─── Form completo ────────────────────────────────────────────────────────────
 
-function ReviewForm({ initial, onSave, onClose, companies = [] }) {
+function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "", scopeCompanyName = "" }) {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -424,16 +429,25 @@ function ReviewForm({ initial, onSave, onClose, companies = [] }) {
             </div>
             {companies.length > 0 && (
               <div className="form-row">
-                <label>Azienda</label>
-                <select
-                  value={form.company_id || ""}
-                  onChange={(e) => upd("company_id", e.target.value || null)}
-                >
-                  <option value="">— Nessuna azienda —</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={String(c.id)}>{c.name}</option>
-                  ))}
-                </select>
+                <label>{"Azienda"}</label>
+                {companyScope ? (
+                  /* Ambito attivo → mostra come testo fisso (non modificabile dal form) */
+                  <span className="mr-scope-fixed">
+                    {scopeCompanyName}
+                    <span className="mr-scope-fixed-hint">{" (da ambito)"}</span>
+                  </span>
+                ) : (
+                  /* Nessun ambito → selezione libera */
+                  <select
+                    value={form.company_id || ""}
+                    onChange={(e) => upd("company_id", e.target.value || null)}
+                  >
+                    <option value="">{"— Nessuna azienda —"}</option>
+                    {companies.map((c) => (
+                      <option key={c.id} value={String(c.id)}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
             <div className="form-row">
@@ -549,23 +563,48 @@ function buildYearOptions() {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ManagementReviewsPage() {
-  const [reviews, setReviews]         = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
-  const [showForm, setShowForm]       = useState(false);
-  const [editItem, setEditItem]       = useState(null);
-  const [filterStatus, setFilter]     = useState("");
-  const [filterYear, setFilterYear]   = useState("");
-  const [filterCompany, setFilterCompany] = useState("");
-  const [companies, setCompanies]     = useState([]);
-  const [delConfirm, setDelConfirm]   = useState(null);
-  const [pagination, setPagination]   = useState({ page: 1, limit: 50, total: 0 });
+  const [reviews, setReviews]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [showForm, setShowForm]     = useState(false);
+  const [editItem, setEditItem]     = useState(null);
+  const [filterStatus, setFilter]   = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [companies, setCompanies]   = useState([]);
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+
+  // ── Ambito azienda (pattern condiviso con Qualifiche, Registro documenti) ──
+  const [companyScope, setCompanyScope] = useState(
+    () => resolveInitialMgmtReviewCompanyScope()
+  );
+
+  const handleCompanyScopeChange = useCallback((value) => {
+    setCompanyScope(value);
+    persistMgmtReviewCompanyScope(value);
+    setPagination((p) => ({ ...p, page: 1 }));
+  }, []);
+
+  const scopeCompanyName = useMemo(() => {
+    if (!companyScope) return "Tutto lo studio";
+    const match = companies.find((c) => String(c.id) === String(companyScope));
+    return match?.name || `Azienda #${companyScope}`;
+  }, [companyScope, companies]);
 
   useEffect(() => {
     apiService.getCompanies()
-      .then((res) => setCompanies(res?.data || []))
+      .then((res) => {
+        const list = res?.data || [];
+        setCompanies(list);
+        // Auto-selezione se l'utente ha accesso ad una sola azienda
+        if (list.length === 1 && !companyScope) {
+          const onlyId = String(list[0].id);
+          setCompanyScope(onlyId);
+          persistMgmtReviewCompanyScope(onlyId);
+        }
+      })
       .catch(() => setCompanies([]));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -574,7 +613,7 @@ export default function ManagementReviewsPage() {
       const params = new URLSearchParams({ page: pagination.page, limit: pagination.limit });
       if (filterStatus)  params.set("status",     filterStatus);
       if (filterYear)    params.set("year",        filterYear);
-      if (filterCompany) params.set("company_id",  filterCompany);
+      if (companyScope)  params.set("company_id",  companyScope);
       const res = await apiService.get(`/management-reviews?${params}`);
       setReviews(res.data.data || []);
       if (res.data.pagination) setPagination((p) => ({ ...p, ...res.data.pagination }));
@@ -583,7 +622,7 @@ export default function ManagementReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterYear, filterCompany, pagination.page, pagination.limit]);
+  }, [filterStatus, filterYear, companyScope, pagination.page, pagination.limit]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
@@ -609,63 +648,75 @@ export default function ManagementReviewsPage() {
 
   return (
     <div className="mr-page">
+      {/* ── Header con selettore Ambito ── */}
       <div className="mr-page-header">
         <div>
           <h1>Riesame di Direzione</h1>
-          <p className="mr-page-sub">ISO 9001:2015 §9.3 — Verbali e output del riesame annuale</p>
+          <p className="mr-page-sub">{"ISO 9001:2015 \u00A79.3 \u2014 Verbali e output del riesame annuale"}</p>
         </div>
-        <button className="btn-primary" onClick={openCreate}>
-          + Nuovo riesame
-        </button>
+        <div className="mr-header-actions">
+          {companies.length > 0 && (
+            <label className="mr-scope-label">
+              {"Ambito:"}
+              <select
+                className="mr-scope-select"
+                value={companyScope}
+                onChange={(e) => handleCompanyScopeChange(e.target.value)}
+                aria-label="Ambito riesame per azienda"
+              >
+                <option value="">{"Tutto lo studio"}</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={String(c.id)}>{c.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button className="btn-primary" onClick={openCreate}>
+            {"+ Nuovo riesame"}
+          </button>
+        </div>
       </div>
 
-      {/* Toolbar filtri */}
+      {/* Hint ambito attivo */}
+      {companyScope && (
+        <p className="mr-scope-hint">{"Ambito attivo: "}{scopeCompanyName}</p>
+      )}
+
+      {/* ── Toolbar filtri secondari ── */}
       <div className="tab-toolbar">
         <select
           value={filterStatus}
           onChange={(e) => { setFilter(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
         >
-          <option value="">Tutti gli stati</option>
-          <option value="draft">Bozza</option>
-          <option value="finalized">Finalizzato</option>
-          <option value="approved">Approvato</option>
+          <option value="">{"Tutti gli stati"}</option>
+          <option value="draft">{"Bozza"}</option>
+          <option value="finalized">{"Finalizzato"}</option>
+          <option value="approved">{"Approvato"}</option>
         </select>
 
         <select
           value={filterYear}
           onChange={(e) => { setFilterYear(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
         >
-          <option value="">Tutti gli anni</option>
+          <option value="">{"Tutti gli anni"}</option>
           {buildYearOptions().map((y) => (
             <option key={y} value={String(y)}>{y}</option>
           ))}
         </select>
 
-        {companies.length > 0 && (
-          <select
-            value={filterCompany}
-            onChange={(e) => { setFilterCompany(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
-          >
-            <option value="">Tutte le aziende</option>
-            {companies.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
-            ))}
-          </select>
-        )}
-
         <span className="mr-total">
-          {pagination.total} riesame{pagination.total !== 1 ? "i" : ""}
+          {pagination.total}{" riesame"}{pagination.total !== 1 ? "i" : ""}
         </span>
       </div>
 
-      {/* Contenuto */}
-      {loading && <p className="mr-loading">Caricamento…</p>}
+      {/* ── Contenuto ── */}
+      {loading && <p className="mr-loading">{"Caricamento\u2026"}</p>}
       {error && <p className="mr-error">{error}</p>}
 
       {!loading && !error && reviews.length === 0 && (
         <div className="mr-empty">
-          <p>Nessun riesame trovato.</p>
-          <button className="btn-primary" onClick={openCreate}>Crea il primo riesame</button>
+          <p>{"Nessun riesame trovato."}</p>
+          <button className="btn-primary" onClick={openCreate}>{"Crea il primo riesame"}</button>
         </div>
       )}
 
@@ -674,12 +725,12 @@ export default function ManagementReviewsPage() {
           <table className="mr-table">
             <thead>
               <tr>
-                <th>Numero</th>
-                <th>Data</th>
-                <th>Presidente</th>
-                <th>Azienda</th>
-                <th>Stato</th>
-                <th>Azioni</th>
+                <th>{"Numero"}</th>
+                <th>{"Data"}</th>
+                <th>{"Presidente"}</th>
+                {!companyScope && <th>{"Azienda"}</th>}
+                <th>{"Stato"}</th>
+                <th>{"Azioni"}</th>
               </tr>
             </thead>
             <tbody>
@@ -688,9 +739,9 @@ export default function ManagementReviewsPage() {
                 return (
                   <tr key={r.id}>
                     <td className="mr-number">{r.review_number}</td>
-                    <td>{r.review_date ? formatDate(r.review_date) : "—"}</td>
-                    <td>{r.chairperson || "—"}</td>
-                    <td>{r.company_name || "—"}</td>
+                    <td>{r.review_date ? formatDate(r.review_date) : "\u2014"}</td>
+                    <td>{r.chairperson || "\u2014"}</td>
+                    {!companyScope && <td>{r.company_name || "\u2014"}</td>}
                     <td>
                       <span className={`mr-badge ${sc.cls}`}>{sc.label}</span>
                     </td>
@@ -723,38 +774,41 @@ export default function ManagementReviewsPage() {
                 disabled={pagination.page <= 1}
                 onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
               >
-                {"\u2190"} Precedente
+                {"\u2190 Precedente"}
               </button>
-              <span>
-                Pagina {pagination.page} / {totalPages}
-              </span>
+              <span>{"Pagina "}{pagination.page}{" / "}{totalPages}</span>
               <button
                 disabled={pagination.page >= totalPages}
                 onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
               >
-                Successiva {"\u2192"}
+                {"Successiva \u2192"}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Modal form */}
+      {/* ── Modal form ── */}
       {showForm && (
         <ReviewForm
-          initial={editItem || {}}
+          initial={editItem
+            ? { ...editItem }
+            : { company_id: companyScope || "" }
+          }
           onSave={handleSave}
           onClose={() => setShowForm(false)}
           companies={companies}
+          companyScope={companyScope}
+          scopeCompanyName={scopeCompanyName}
         />
       )}
 
-      {/* Confirm delete */}
+      {/* ── Confirm delete ── */}
       {delConfirm && (
         <div className="modal-overlay" onClick={() => setDelConfirm(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Elimina riesame</h3>
+              <h3>{"Elimina riesame"}</h3>
               <button
                 type="button"
                 className="modal-close"
@@ -765,17 +819,17 @@ export default function ManagementReviewsPage() {
               </button>
             </div>
             <p>
-              Eliminare definitivamente <strong>{delConfirm.review_number}</strong>?
+              {"Eliminare definitivamente "}<strong>{delConfirm.review_number}</strong>{"?"}
             </p>
             <div className="mr-form-actions">
               <button className="btn-secondary" onClick={() => setDelConfirm(null)}>
-                Annulla
+                {"Annulla"}
               </button>
               <button
                 className="btn-danger"
                 onClick={() => handleDelete(delConfirm.id)}
               >
-                Elimina
+                {"Elimina"}
               </button>
             </div>
           </div>
