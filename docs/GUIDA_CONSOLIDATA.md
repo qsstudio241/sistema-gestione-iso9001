@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 22/06/2026 — Riesame pattern Ambito azienda](#sessione-22062026--riesame-di-direzione-pattern-ambito-azienda), [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -56,6 +56,7 @@ Sessioni recenti (consultazione): [Sessione 19/06/2026 — Coverage range-aware 
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Form HTML annidati** — «Salva azione» nel drawer NC non persisteva (nessun POST nei log VPS, drawer si chiudeva senza errore). HTML vieta `<form>` dentro `<form>`: il browser ignora il form interno e il submit va a quello esterno. | **Mai annidare `<form>`.** Un componente contenitore che usa `<form onSubmit>` va convertito in `<div>` se contiene figli con propri form di salvataggio; i pulsanti interni devono essere `type="button"` con `onClick`. | [Sessione 07/06/2026 — NC notifiche + form annidati](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
+| **Pattern "Ambito" azienda — standard per tutti i moduli multi-azienda** | Quando un modulo mostra dati filtrabili per azienda, usare **sempre** il pattern Ambito: (1) utility `xxxCompanyScope.js` con `resolveInitial…`, `readStored…`, `persist…` su localStorage; (2) selettore `"Ambito:"` nell'**header** della pagina (non nella toolbar); (3) il `companyScope` alimenta lista, form e widget; (4) nel form il campo azienda è testo fisso "(da ambito)" se scope attivo, select libero altrimenti; (5) auto-selezione se l'org ha una sola azienda. **Non** usare dropdown azienda in toolbar né nel form come campo indipendente. Moduli già conformi: Qualifiche (`qualificationsCompanyScope.js`), WPS/Saldatura, Registro documenti (`documentRegistryCompanyScope.js`), Riesame di Direzione (`managementReviewsCompanyScope.js`). Moduli con `filterCompany` in toolbar ancora da aggiornare: NC, NDT Reports, Attrezzature, Scadenzari. | PR #154 · sessione 22/06/2026 |
 | **Riuso UI «blocco unico»** | Prima di creare un elemento UI, verificare se esiste già un componente/classe nel repo (tabella in `sgq-operating-memory.mdc`). Usare sempre l'esistente. | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) |
 | **JSX: sequenze `\u` literal** | Gli escape `\uXXXX` tra tag JSX finiscono a schermo come testo. Metterli **dentro una stringa JS** (`{"\u26A0\uFE0F …"}`). | [Aggiornamento 22/05/2026 — JSX `\u`](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche) |
 
@@ -3501,6 +3502,22 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - `equipment_assets.company_id IS NULL` = asset dello studio (condiviso); filtro `for-report` mostra studio + azienda
 - Template `.docx` generato con `node scripts/generateVtTemplate.js` (pattern `generateNcTemplate.js`) — rilanciare se si vuole modificare il layout
 - Verbali CND = online-first (come NC/Riesame Direzione), non offline-first come gli audit ISO; `useNdtAutoSave` aggiunge resilienza locale senza complessità IndexedDB
+
+---
+
+### Sessione 22/06/2026 — Riesame di Direzione: pattern Ambito azienda
+
+| Voce | Esito |
+|------|-------|
+| Problema rilevato | Toolbar Riesame di Direzione aveva solo filtro Stato; mancavano filtri Anno e Azienda; l'azienda non era selezionabile nel form di creazione |
+| Fix toolbar | Aggiunto filtro Anno (dropdown `YEAR(review_date)`) e filtro Azienda al backend `listReviews` + frontend toolbar |
+| Refactoring pattern Ambito | Selettore "Ambito:" spostato nell'header della pagina (standard app); rimosso dropdown azienda dalla toolbar e dal form come campo indipendente |
+| Nuovo file | `app/src/utils/managementReviewsCompanyScope.js` — utility localStorage identica a `qualificationsCompanyScope.js` e `documentRegistryCompanyScope.js` |
+| Comportamento form | Se ambito attivo → campo azienda = testo fisso "(da ambito)"; senza ambito → select libero; auto-selezione se org ha una sola azienda |
+| Deploy | PR #154 mergiata su `main`; backend `managementReviews.controller.js` copiato su VPS; restart servizio (PID 37543); health ✅ |
+| CI | Smoke test DB e CI app PR: entrambi `success` |
+
+**Lezione chiave (aggiunta alle regole UI):** Il pattern "Ambito" è lo standard per tutti i moduli multi-azienda dell'app. Non usare dropdown azienda in toolbar o form come elementi indipendenti. Moduli con `filterCompany` ancora da aggiornare (backlog): NC, NDT Reports, Attrezzature, Scadenzari.
 
 ---
 
