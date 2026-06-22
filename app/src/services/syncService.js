@@ -535,6 +535,16 @@ export class SyncService {
             case 'send_audit_event':
                 return await this.syncSendAuditEvent(payload);
 
+            // ── CND: Verbali VT/MT/PT/UT ────────────────────────────────────
+            case 'create_ndt_report':
+                return await this.syncCreateNdtReport(payload);
+
+            case 'update_ndt_report':
+                return await this.syncUpdateNdtReport(payload);
+
+            case 'delete_ndt_report':
+                return await this.syncDeleteNdtReport(payload);
+
             default:
                 throw new Error(`Tipo sync non supportato: ${type}`);
         }
@@ -910,6 +920,47 @@ export class SyncService {
         } catch (error) {
             if (error.status === 404) {
                 // Già eliminato sul server, va bene
+                return { deleted: true };
+            }
+            throw error;
+        }
+    }
+
+    // ── CND: Verbali — metodi sync ────────────────────────────────────────────
+
+    async syncCreateNdtReport(payload) {
+        try {
+            const result = await apiService.createNdtReport(payload);
+            return { created: true, id: result?.data?.id, report_number: result?.data?.report_number };
+        } catch (error) {
+            if (error.status === 409) {
+                // Già creato — UUID duplicato, ok
+                return { created: true, duplicate: true };
+            }
+            throw error;
+        }
+    }
+
+    async syncUpdateNdtReport(payload) {
+        try {
+            const { id, ...data } = payload;
+            if (!id) throw new Error('syncUpdateNdtReport: id mancante nel payload');
+            await apiService.updateNdtReport(id, data);
+            return { updated: true };
+        } catch (error) {
+            if (error.status === 404) {
+                return { updated: false, notFound: true };
+            }
+            throw error;
+        }
+    }
+
+    async syncDeleteNdtReport(payload) {
+        try {
+            await apiService.deleteNdtReport(payload.id);
+            return { deleted: true };
+        } catch (error) {
+            if (error.status === 404) {
                 return { deleted: true };
             }
             throw error;

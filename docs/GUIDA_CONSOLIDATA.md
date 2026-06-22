@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 22/06/2026 — Riesame pattern Ambito azienda](#sessione-22062026--riesame-di-direzione-pattern-ambito-azienda), [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -56,6 +56,7 @@ Sessioni recenti (consultazione): [Sessione 19/06/2026 — Coverage range-aware 
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Form HTML annidati** — «Salva azione» nel drawer NC non persisteva (nessun POST nei log VPS, drawer si chiudeva senza errore). HTML vieta `<form>` dentro `<form>`: il browser ignora il form interno e il submit va a quello esterno. | **Mai annidare `<form>`.** Un componente contenitore che usa `<form onSubmit>` va convertito in `<div>` se contiene figli con propri form di salvataggio; i pulsanti interni devono essere `type="button"` con `onClick`. | [Sessione 07/06/2026 — NC notifiche + form annidati](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
+| **Pattern "Ambito" azienda — standard per tutti i moduli multi-azienda** | Quando un modulo mostra dati filtrabili per azienda, usare **sempre** il pattern Ambito: (1) utility `xxxCompanyScope.js` con `resolveInitial…`, `readStored…`, `persist…` su localStorage; (2) selettore `"Ambito:"` nell'**header** della pagina (non nella toolbar); (3) il `companyScope` alimenta lista, form e widget; (4) nel form il campo azienda è testo fisso "(da ambito)" se scope attivo, select libero altrimenti; (5) auto-selezione se l'org ha una sola azienda. **Non** usare dropdown azienda in toolbar né nel form come campo indipendente. Moduli già conformi: Qualifiche (`qualificationsCompanyScope.js`), WPS/Saldatura, Registro documenti (`documentRegistryCompanyScope.js`), Riesame di Direzione (`managementReviewsCompanyScope.js`). Moduli con `filterCompany` in toolbar ancora da aggiornare: NC, NDT Reports, Attrezzature, Scadenzari. | PR #154 · sessione 22/06/2026 |
 | **Riuso UI «blocco unico»** | Prima di creare un elemento UI, verificare se esiste già un componente/classe nel repo (tabella in `sgq-operating-memory.mdc`). Usare sempre l'esistente. | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) |
 | **JSX: sequenze `\u` literal** | Gli escape `\uXXXX` tra tag JSX finiscono a schermo come testo. Metterli **dentro una stringa JS** (`{"\u26A0\uFE0F …"}`). | [Aggiornamento 22/05/2026 — JSX `\u`](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche) |
 
@@ -2142,8 +2143,11 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 | **File env VPS** | `/var/www/sgq-backend/.env.test` |
 | **Config nginx** | `/etc/nginx/sites-available/sgq-backend-test` (blocco `listen 8444 ssl` — porta non esposta provider) |
 | `NODE_ENV` | `test`, `LOG_LEVEL=debug` |
+| `GEMINI_API_KEY` | ✅ presente in `.env.test`, allineata a produzione (`.env`) — abilita estrazione requisiti da disegni (adapter Gemini) anche su test/demo |
 
 > **Nota porta 8444**: nginx è configurato anche su `:8444` (TLS) → `:3001`, ma il provider non espone quella porta all'esterno. Si accede via path-prefix `/test-api/` sulla porta `8443` già aperta. Se in futuro si vuole aprire `8444`: pannello di controllo del provider VPS → firewall → aggiungi regola TCP 8444.
+
+> **Nota chiavi AI (20/06/2026)**: `GEMINI_API_KEY` è stata copiata da `.env` a `.env.test` lato server (valore mai esposto in chat/log) e il servizio `sgq-backend-test` è stato riavviato. L'estrazione requisiti da disegni (`POST /test-api/api/v1/import-jobs/:id/files/:fileId/ai-extract`, adapter `geminiAdapter.js`) funziona ora anche sull'ambiente test/demo. Verifica: health `healthy` + endpoint che risponde `401` senza auth (registrato).
 
 
 #### Tabella ambienti (produzione vs test)
@@ -2182,11 +2186,18 @@ cd backend && node scripts/smoke-testdb.js --check-vps
 
 #### Come fare deploy di un branch sull'istanza test
 
-1. Copia i controller/file modificati con `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
-2. Restart: `.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"`
+**Metodo A — Deploy completo (raccomandato dal 21/06/2026):**
+```powershell
+.\\backend\\scripts\\deploy-controllers-to-vps.ps1 -AlsoRestartTest
+```
+Copia tutti i file del manifest, riavvia `sgq-backend` (prod) + `sgq-backend-test` in sequenza, health check su entrambi.
+
+**Metodo B — Deploy singolo file (hotfix rapido):**
+1. Copia file: `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
+2. Restart test: `.\.\backend\scripts\run-on-vps.ps1 -Command "echo '[REDACTED]' | sudo -S systemctl restart sgq-backend-test"`
 3. Verifica: `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health`
-4. Esegui test funzionali puntando il frontend a `https://www.fr-busato.it:8443/test-api` (cambia `VITE_API_BASE_URL` nel `.env.local`)
-5. Se OK → merge → `deploy-controllers-to-vps.ps1` per produzione
+4. Test funzionali su Deploy Preview Netlify (VITE_API_URL automatico da `netlify.toml`)
+5. Se OK → merge → `.\\backend\\scripts\\deploy-controllers-to-vps.ps1` per produzione
 
 ### Netlify — Deploy Preview (guida passo-passo)
 
@@ -3385,7 +3396,7 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 **Bug trovati con smoke test MCP (2026-06-19 — PR #122, #123):**
 - `KNOWN_MODULE_KEYS` in `moduleLicense.service.js` è l'unica fonte di verità per i moduli: se la chiave manca lì, il token non la include e il frontend blocca menu + pagina anche se il codice React è corretto. Aggiungere sempre la chiave contestualmente al nuovo modulo.
 - JOIN `companies`: usare sempre `c.id`, mai `c.company_id` — la tabella `companies` usa `id` come PK. Pattern corretto: `LEFT JOIN companies c ON c.id = mr.company_id`.
-- **`sgq-backend-test` non viene riavviato da `deploy-controllers-to-vps.ps1`** (che gestisce solo `sgq-backend`): dopo ogni deploy che tocca il backend, riavviare manualmente con: `. .\backend\config\.ssh-deploy.local.ps1; $b64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD)); .\backend\scripts\run-on-vps.ps1 -Command "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"`
+- **`sgq-backend-test` riavvio dopo deploy** — **RISOLTO 21/06/2026** (commit su `cursor/fix-deploy-test-restart-d4ed`): `deploy-controllers-to-vps.ps1` accetta ora il parametro `-AlsoRestartTest`. Usare `.\backend\scripts\deploy-controllers-to-vps.ps1 -AlsoRestartTest` per riavviare in sequenza prod + test. Senza il flag: comportamento invariato (solo prod). Fallback manuale se SGQ_SUDO_PASSWORD non disponibile: `.\backend\scripts\run-on-vps.ps1 -Command "echo $b64 | base64 -d | sudo -S systemctl restart sgq-backend-test.service"`
 
 ---
 
@@ -3411,6 +3422,102 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - Se AI configurata (Gemini/Azure/OpenAI via `aiProviderAdapter`): testo GPT-style da prompt strutturato
 - Risposta: `{ success, drafts: { nc_summary, objectives_summary, audits_summary, suppliers_summary, norm_gaps }, meta: { ai_used } }`
 - Frontend: pulsante visibile solo se `reviewId` (initial?.id) è disponibile — non su nuovo riesame non ancora salvato
+
+---
+
+### Sessione 21/06/2026 (pomeriggio) — CND: UX mobile, form VT, WPS/WPQR
+
+| PR | Contenuto |
+|----|-----------|
+| #143 | foto: pulsante 📷 nella riga + foto difetti nel Word export |
+| #144 | mobile UX: accordion chiuse di default + 📷 nella riga (non sotto) |
+| #145 | cliente: select anagrafica + testo libero (no duplicazione) |
+| #146 | nav mobile: etichetta `CND` (era `VT/CND`) |
+| #147 | fornitore ispezionato: campo + scenario Mason→Manitou→Fornitore1 |
+| #148 | elimina duplicazione Azienda committente / Cliente |
+| #149 | fornitore: select dall'anagrafica fornitori |
+| #150 | fornitori filtrati per cliente selezionato (company_id) |
+| #151 | WPS: select dal modulo Saldatura, filtrata per cliente |
+| #152 | WPS/WPQR form: company_id ereditato dal selettore azienda |
+
+**Lezioni:**
+
+| Lezione | Regola |
+|---|---|
+| **📷 non visibile su mobile con scroll orizzontale** | Elementi aggiuntivi in righe `<tr>` sotto una tabella wide non sono mai visibili su mobile senza scroll. Mettere sempre le azioni IN-ROW nell'ultima colonna. |
+| **`useEffect` su stato form** | Per caricare dati dipendenti da un campo form (es. fornitori filtrati per company_id), usare `useEffect([form.company_id])` dentro il form — non caricare tutto al mount del componente padre. |
+| **Accordion su mobile** | `useState` di apertura sezioni deve essere `!isMobile` per le sezioni non primarie — altrimenti su mobile tutto è aperto e lo schermo è occupato prima di compilare. |
+| **WPS form company_id** | Passare `defaultCompanyId={companyScopeId}` come prop al form modale — il form non legge lo scope dal contesto ma dipende dal parent per il default. |
+| **Griglia standard** | `SgqDataGrid` NON è lo standard universale — usato solo in 3 pagine (NC, Deadlines, Studio). Welding/CND/Equipment usano tabelle HTML custom. Non è debito tecnico urgente. |
+
+---
+
+### Sessione 21/06/2026 — Modulo CND: completamento, fix operativi e go-live mobile
+
+| Voce | Esito |
+|---|---|
+| Modulo CND su main | PR #134 mergiata — DB prod migrato (104-108), backend deployato |
+| Mobile responsive | PR #135 — form VT ottimizzato per tablet/smartphone |
+| Auto-calcolo taratura | PR #136 — `next_calibration_date = ultima_verifica + mesi_freq` |
+| Gap template VT | PR #137 — ruolo strumenti (calibro/luxmetro/lampada), inspector auto-fill, messaggio strumenti vuoti |
+| Gestione difetti | PR #138 — note per riga, riepilogo R/S, warning note errate, link NC |
+| Fix UX | PR #139 — AutoTextarea note difetto, NcCreateModal pre-compilata, useNdtAutoSave wiring |
+| Foto saldature | PR #140 — `attachments.ndt_report_item_id`, NdtItemAttachments, fotocamera Android |
+| Menu mobile | PR #141 — VT/CND nel bottom navigation (4° voce) |
+| Modulo licenza | SQL diretto — aggiunto `cnd` a org 1003 MASON_Srl e 1004 ERAM |
+
+**Lezioni critiche di questa sessione:**
+
+| Lezione | Regola |
+|---|---|
+| **Modulo licenza non si auto-attiva** | Quando si aggiunge un nuovo `module_key` a `KNOWN_MODULE_KEYS`, le org con `licensed_modules IS NOT NULL` **non** lo ricevono automaticamente. Bisogna aggiornare via SQL: `UPDATE organizations SET licensed_modules=JSON_MODIFY(licensed_modules,'append $','nuova_chiave') WHERE ...` oppure con script Node. **Sempre verificare** dopo deploy. |
+| **Bottom navigation mobile** | Il menu mobile ha 5 voci hardcoded in `buildMobileNavItems`. Ogni nuovo modulo primario **deve essere aggiunto esplicitamente** alla lista e la priorità decidere quale voce scalzare (CND sostituisce Documenti al 4° posto). |
+| **Filtered index SQL Server** | `CREATE INDEX ... WHERE col IS NOT NULL` su una colonna appena aggiunta con `ALTER TABLE` **fallisce** se eseguito nello stesso batch. Soluzione: statement separati (ALTER TABLE in un `query()`, CREATE INDEX in un secondo `query()`). |
+| **Template VT vs modulo** | Il verbale VT è strutturalmente simile a un audit (riga+esito+nota) ma non va modellato sopra il sistema audit — il dominio normativo CND è specifico (codici UNI EN ISO 6520, strumenti, parametri VT/MT/PT/UT). La scalabilità per altri metodi si ottiene con `report_type` discriminator + `method_params JSON`. |
+| **Ruolo strumenti nel template Word** | Il template VT ha celle fisse per Calibro / Luxmetro / Lampada. Il Word export usa `instrument_role` (`gauge`/`luxmeter`/`lamp`). Se il ruolo non è assegnato dalla UI, le celle mostrano N/D. La UI **deve** esporre un dropdown ruolo per ogni strumento selezionato. |
+
+---
+
+### Sessione 20/06/2026 — Modulo CND (6 slice complete — PR #127-#132)
+
+| Slice | PR | Contenuto | Stato |
+|---|---|---|---|
+| 1 | #127 | Migrazione DB 101-103: `equipment_assets`, `equipment_calibrations`, `ndt_reports`/`items`/`instruments` | ✅ |
+| 2 | #128 | Backend CRUD: `equipment.controller.js`, `ndtReports.controller.js`, route, modulo `cnd` in `moduleLicense.service.js` | ✅ |
+| 3 | #129 | Frontend: `EquipmentPage.jsx` (lista+form strumenti, stats taratura) | ✅ |
+| 4 | #130 | Frontend: `NdtReportsPage.jsx` (lista+form VT a 5 sezioni, Elenco Marche dinamico, giudizio A/R/S con `.status-btn`) | ✅ |
+| 5 | #131 | Export Word: `vtWordExport.js` + template `VT-verbale.docx` (36 placeholder, loop `{#items}`) | ✅ |
+| 6 | #132 | Offline: `useNdtAutoSave.js` (localStorage debounce) + sync queue `create/update/delete_ndt_report` in `syncService.js` | ✅ |
+
+**Architettura chiave:**
+- `equipment_assets`: tabella trasversale a tutti i sistemi (9001/14001/45001/3834/CND); `company_id NULL` = studio, valorizzato = azienda cliente
+- `ndt_reports`: `report_type='VT'|'MT'|'PT'|'UT'`; `method_params JSON` per parametri specifici per metodo → scalabile senza nuove tabelle
+- Numerazione automatica: `VT-YYYY-NNN` (pattern `RD-YYYY-NNN` da managementReviews)
+- Modulo licenza: chiave `cnd` aggiunta a `KNOWN_MODULE_KEYS` e `LABELS_IT`
+- Menu sidebar: gruppo "CND" con voci Strumenti e Verbali
+- Smoke test API sul backend-test: 7/7 OK
+- Build Vite: OK su ogni slice
+
+**Lezioni:**
+- `equipment_assets.company_id IS NULL` = asset dello studio (condiviso); filtro `for-report` mostra studio + azienda
+- Template `.docx` generato con `node scripts/generateVtTemplate.js` (pattern `generateNcTemplate.js`) — rilanciare se si vuole modificare il layout
+- Verbali CND = online-first (come NC/Riesame Direzione), non offline-first come gli audit ISO; `useNdtAutoSave` aggiunge resilienza locale senza complessità IndexedDB
+
+---
+
+### Sessione 22/06/2026 — Riesame di Direzione: pattern Ambito azienda
+
+| Voce | Esito |
+|------|-------|
+| Problema rilevato | Toolbar Riesame di Direzione aveva solo filtro Stato; mancavano filtri Anno e Azienda; l'azienda non era selezionabile nel form di creazione |
+| Fix toolbar | Aggiunto filtro Anno (dropdown `YEAR(review_date)`) e filtro Azienda al backend `listReviews` + frontend toolbar |
+| Refactoring pattern Ambito | Selettore "Ambito:" spostato nell'header della pagina (standard app); rimosso dropdown azienda dalla toolbar e dal form come campo indipendente |
+| Nuovo file | `app/src/utils/managementReviewsCompanyScope.js` — utility localStorage identica a `qualificationsCompanyScope.js` e `documentRegistryCompanyScope.js` |
+| Comportamento form | Se ambito attivo → campo azienda = testo fisso "(da ambito)"; senza ambito → select libero; auto-selezione se org ha una sola azienda |
+| Deploy | PR #154 mergiata su `main`; backend `managementReviews.controller.js` copiato su VPS; restart servizio (PID 37543); health ✅ |
+| CI | Smoke test DB e CI app PR: entrambi `success` |
+
+**Lezione chiave (aggiunta alle regole UI):** Il pattern "Ambito" è lo standard per tutti i moduli multi-azienda dell'app. Non usare dropdown azienda in toolbar o form come elementi indipendenti. Moduli con `filterCompany` ancora da aggiornare (backlog): NC, NDT Reports, Attrezzature, Scadenzari.
 
 ---
 

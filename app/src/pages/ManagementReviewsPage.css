@@ -27,6 +27,69 @@
   font-size: 0.875rem;
 }
 
+/* Header actions + Ambito */
+.mr-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mr-scope-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.mr-scope-select {
+  padding: 7px 12px;
+  border: 1px solid #4299e1;
+  border-radius: 6px;
+  background: #ebf8ff;
+  font-size: 0.875rem;
+  color: #2b6cb0;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mr-scope-select:focus {
+  outline: 2px solid #4299e1;
+  outline-offset: 1px;
+}
+
+.mr-scope-hint {
+  font-size: 0.8rem;
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border-left: 3px solid #4299e1;
+  padding: 4px 10px;
+  border-radius: 0 4px 4px 0;
+  margin: -12px 0 14px;
+}
+
+/* Campo azienda fisso (quando ambito attivo) */
+.mr-scope-fixed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #ebf8ff;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #2b6cb0;
+  font-weight: 500;
+}
+
+.mr-scope-fixed-hint {
+  font-size: 0.75rem;
+  color: #90cdf4;
+  font-weight: 400;
+}
+
 /* Toolbar */
 .tab-toolbar {
   display: flex;
