@@ -39,7 +39,7 @@ async function listReviews(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'mr');
 
-        const { status, company_id, page = 1, limit = 50 } = req.query;
+        const { status, year, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const companyIdFilter = company_id ? parseInt(company_id, 10) : null;
 
@@ -52,8 +52,9 @@ async function listReviews(req, res) {
             .input('offset', offset);
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
-        if (status) { where.push('mr.status = @status'); req2.input('status', status); }
-        if (companyIdFilter) { where.push('mr.company_id = @companyIdFilter'); req2.input('companyIdFilter', companyIdFilter); }
+        if (status)     { where.push('mr.status = @status');                 req2.input('status', status); }
+        if (year)       { where.push('YEAR(mr.review_date) = @year');        req2.input('year', parseInt(year, 10)); }
+        if (company_id) { where.push('mr.company_id = @company_id');         req2.input('company_id', parseInt(company_id, 10)); }
 
         const whereClause = where.join(' AND ');
 
@@ -75,8 +76,9 @@ async function listReviews(req, res) {
                 Object.entries(companyFilter.params).forEach(([k, v]) => cntReq.input(k, v));
                 const cntWhere = ['mr.organization_id = @orgId2', 'mr.is_deleted = 0'];
                 if (companyFilter.clause) cntWhere.push(companyFilter.clause);
-                if (status) { cntWhere.push('mr.status = @cntStatus'); cntReq.input('cntStatus', status); }
-                if (companyIdFilter) { cntWhere.push('mr.company_id = @cntCompanyId'); cntReq.input('cntCompanyId', companyIdFilter); }
+                if (status)     { cntWhere.push('mr.status = @cntStatus');    cntReq.input('cntStatus', status); }
+                if (year)       { cntWhere.push('YEAR(mr.review_date) = @cntYear'); cntReq.input('cntYear', parseInt(year, 10)); }
+                if (company_id) { cntWhere.push('mr.company_id = @cntCompanyId');   cntReq.input('cntCompanyId', parseInt(company_id, 10)); }
                 return cntReq.query(`SELECT COUNT(*) AS total FROM management_reviews mr WHERE ${cntWhere.join(' AND ')}`);
             })(),
         ]);
@@ -335,14 +337,22 @@ async function getInputSummary(req, res) {
 
     // ── OBIETTIVI ───────────────────────────────────────────────────────────────
     try {
-        const objRes = await pool.request()
-            .input('orgId', orgId)
-            .query(`
+        const objReq = pool.request()
+            .input('orgId', orgId);
+
+        let objCompanyCond = '';
+        if (companyId) {
+            objReq.input('companyId', companyId);
+            objCompanyCond = 'AND company_id = @companyId';
+        }
+
+        const objRes = await objReq.query(`
                 SELECT
                     COUNT(*)                                              AS total,
                     SUM(CASE WHEN status = 'achieved' THEN 1 ELSE 0 END) AS achieved
                 FROM objectives
                 WHERE organization_id = @orgId AND is_deleted = 0
+                  ${objCompanyCond}
             `);
         const obj = objRes.recordset[0];
         const total    = obj.total    || 0;
@@ -423,16 +433,24 @@ async function getInputSummary(req, res) {
 
     // ── RECLAMI ─────────────────────────────────────────────────────────────────
     try {
-        const cmpRes = await pool.request()
+        const cmpReq = pool.request()
             .input('orgId',    orgId)
             .input('dateFrom', dateFrom)
-            .input('dateTo',   dateTo)
-            .query(`
+            .input('dateTo',   dateTo);
+
+        let cmpCompanyCond = '';
+        if (companyId) {
+            cmpReq.input('companyId', companyId);
+            cmpCompanyCond = 'AND company_id = @companyId';
+        }
+
+        const cmpRes = await cmpReq.query(`
                 SELECT COUNT(*) AS total
                 FROM complaints
                 WHERE organization_id = @orgId
                   AND created_at >= @dateFrom
                   AND created_at <= DATEADD(day,1,CAST(@dateTo AS DATE))
+                  ${cmpCompanyCond}
             `);
         result.complaints.total = cmpRes.recordset[0].total || 0;
     } catch (err) {

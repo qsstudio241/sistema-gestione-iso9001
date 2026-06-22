@@ -166,3 +166,4 @@
     .wp-table th:nth-child(n+6), .wp-table td:nth-child(n+6) { display:none; }
     .wp-stats-bar { gap:12px; }
 }
+.wp-warn-no-company { margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; color:#92400e; font-size:13px; }

@@ -1,0 +1,164 @@
+/* EquipmentPage.css — Strumenti e Attrezzature CND/SGQ */
+
+.eq-page { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+.eq-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.eq-title  { font-size: 1.5rem; font-weight: 700; color: var(--color-text-primary, #1a1a2e); margin: 0 0 4px; }
+.eq-subtitle { font-size: 0.85rem; color: var(--color-text-secondary, #6b7280); margin: 0; }
+
+/* Stats bar */
+.eq-stats-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.eq-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 80px; }
+.eq-stat span { display: block; }
+.eq-stat-n { font-size: 1.4rem; font-weight: 700; color: #374151; }
+.eq-stat > span:last-child { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+.eq-stat-active .eq-stat-n { color: #16a34a; }
+.eq-stat-warn   .eq-stat-n { color: #d97706; }
+.eq-stat-danger .eq-stat-n { color: #dc2626; }
+
+/* Filtri */
+.eq-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.eq-filters select, .eq-filters input[type="text"] {
+    padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.875rem; background: #fff; min-width: 140px;
+}
+.eq-search { flex: 1; min-width: 200px !important; }
+.eq-filter-check { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; color: #374151; cursor: pointer; white-space: nowrap; }
+
+/* Tabella */
+.eq-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+.eq-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.eq-table thead { background: #f9fafb; }
+.eq-table th { padding: 10px 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.eq-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+.eq-row { cursor: pointer; transition: background 0.1s; }
+.eq-row:hover { background: #f9fafb; }
+.eq-row:last-child td { border-bottom: none; }
+
+.eq-name  { font-weight: 600; color: #1f2937; }
+.eq-model { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+.eq-mono  { font-family: monospace; font-size: 0.8rem; color: #374151; }
+.eq-empty { text-align: center; color: #9ca3af; padding: 32px; font-style: italic; }
+
+/* Metodi CND */
+.eq-methods { display: flex; gap: 4px; flex-wrap: wrap; }
+.eq-method-tag { background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 600; }
+
+/* Status badge */
+.eq-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.eq-status-active      { background: #dcfce7; color: #15803d; }
+.eq-status-calibrating { background: #fef9c3; color: #a16207; }
+.eq-status-retired     { background: #f3f4f6; color: #6b7280; }
+.eq-status-lost        { background: #fee2e2; color: #dc2626; }
+
+/* Calibration badge */
+.eq-cal-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-top: 3px; }
+.eq-cal-ok      { background: #dcfce7; color: #15803d; }
+.eq-cal-warning { background: #fef3c7; color: #d97706; }
+.eq-cal-expired { background: #fee2e2; color: #dc2626; }
+.eq-cal-unknown { background: #f3f4f6; color: #6b7280; }
+
+/* Pulsanti riga */
+.eq-btn-icon { background: none; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; cursor: pointer; color: #374151; margin-left: 4px; font-size: 0.8rem; }
+.eq-btn-icon:hover { background: #f3f4f6; }
+.eq-btn-danger:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+/* Loading / error */
+.eq-loading { text-align: center; padding: 40px; color: #6b7280; }
+.eq-error   { text-align: center; padding: 20px; color: #dc2626; background: #fee2e2; border-radius: 8px; margin: 16px 0; }
+
+/* ── Modale form ────────────────────────────────────────────────────────────── */
+.eq-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: flex-start; justify-content: center;
+    z-index: 1000; padding: 24px; overflow-y: auto;
+}
+.eq-modal {
+    background: #fff; border-radius: 12px; width: 100%; max-width: 720px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2); margin: auto;
+}
+.eq-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid #e5e7eb;
+}
+.eq-modal-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #1f2937; }
+.eq-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #6b7280; line-height: 1; padding: 0; }
+.eq-modal-close:hover { color: #374151; }
+.eq-modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.eq-modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; }
+
+/* Fieldset */
+.eq-fieldset { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin: 0; }
+.eq-fieldset legend { font-size: 0.8rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 6px; }
+
+/* Form groups */
+.eq-form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.eq-form-row:last-child { margin-bottom: 0; }
+.eq-form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.eq-grow { flex: 2; }
+.eq-form-group label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.eq-form-group input[type="text"],
+.eq-form-group input[type="number"],
+.eq-form-group input[type="date"],
+.eq-form-group select {
+    padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: #fff; width: 100%;
+}
+.eq-form-group input:focus, .eq-form-group select:focus {
+    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+.eq-checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; }
+.eq-form-error { color: #dc2626; background: #fee2e2; padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; }
+
+/* Label "calcolata" accanto a Prossima taratura */
+.eq-computed-label { font-size: 0.75rem; color: #16a34a; font-weight: 400; font-style: italic; }
+
+/* Metodi CND checkboxes */
+.eq-methods-group { display: flex; flex-direction: column; gap: 8px; }
+.eq-methods-group > label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.eq-methods-checkboxes { display: flex; gap: 12px; flex-wrap: wrap; }
+.eq-method-check { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: #374151; }
+.eq-method-check input { cursor: pointer; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — Strumenti e Attrezzature
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .eq-page { padding: 12px; }
+    .eq-header { flex-direction: column; gap: 10px; }
+    .eq-header .btn { width: 100%; text-align: center; min-height: 44px; }
+
+    .eq-stats-bar { gap: 6px; }
+    .eq-stat { min-width: 52px; padding: 8px 8px; }
+    .eq-stat-n { font-size: 1.1rem; }
+
+    .eq-filters { flex-direction: column; gap: 8px; }
+    .eq-search, .eq-filters select, .eq-filters input[type="text"] {
+        width: 100%; min-width: unset; box-sizing: border-box; min-height: 44px; font-size: 16px;
+    }
+    .eq-filter-check { font-size: 0.9rem; }
+
+    .eq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .eq-table { min-width: 600px; font-size: 0.8rem; }
+    .eq-table th, .eq-table td { padding: 8px 8px; }
+
+    /* Modale form */
+    .eq-modal-overlay { padding: 0; align-items: flex-end; }
+    .eq-modal {
+        border-radius: 16px 16px 0 0; max-width: 100%;
+        max-height: 92vh; overflow-y: auto;
+    }
+    .eq-form-row { flex-direction: column; gap: 10px; }
+    .eq-form-group { min-width: unset; width: 100%; }
+    .eq-form-group input, .eq-form-group select {
+        min-height: 44px; font-size: 16px; padding: 10px 12px;
+    }
+    .eq-modal-actions .btn { min-height: 44px; flex: 1; }
+    .eq-methods-checkboxes { gap: 16px; flex-wrap: wrap; }
+    .eq-method-check { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+    .eq-stat { min-width: 44px; padding: 6px 6px; }
+    .eq-stat-n { font-size: 0.95rem; }
+}

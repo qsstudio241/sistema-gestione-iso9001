@@ -81,13 +81,15 @@ function TestBadge({ value }) {
 // WPS Form Modal
 // ???????????????????????????????????????????????????????????????????????????????
 
-function WPSFormModal({ wps, onSave, onClose }) {
+function WPSFormModal({ wps, defaultCompanyId, onSave, onClose }) {
   const [form, setForm] = useState({
     wps_code: "", revision: "", welding_process: "", material_group: "",
     filler_material: "", shielding_gas: "", joint_type: "", position: "",
     thickness_range_min: "", thickness_range_max: "", pipe_diameter_min: "",
     preheat_temp: "", interpass_temp: "", pwht: "",
     qualification_standard: "", status: "bozza", notes: "",
+    // company_id: ereditato dall'azienda selezionata nel selettore scope
+    company_id: defaultCompanyId || null,
     ...(wps || {}),
   });
   const [saving, setSaving] = useState(false);
@@ -123,6 +125,11 @@ function WPSFormModal({ wps, onSave, onClose }) {
         <form onSubmit={handleSubmit}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
+            {!form.company_id && !wps?.id && (
+              <div className="wp-warn-no-company">
+                {"\u26A0\uFE0F Seleziona un\u2019azienda nel filtro in cima alla pagina prima di creare una WPS."}
+              </div>
+            )}
             <div className="wp-form-grid">
               <div className="wp-form-group">
                 <label className="wp-form-label">Codice WPS *</label>
@@ -237,7 +244,7 @@ function calcThicknessRangeUI(t) {
   };
 }
 
-function WPQRFormModal({ wpqr, wpsList, onSave, onClose }) {
+function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
   const [form, setForm] = useState({
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
@@ -245,6 +252,7 @@ function WPQRFormModal({ wpqr, wpsList, onSave, onClose }) {
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
     macro_result: "NA", expiry_date: "", issue_date: "", certificate_number: "", notes: "",
+    company_id: defaultCompanyId || null,
     ...(wpqr || {}),
   });
   const [saving, setSaving] = useState(false);
@@ -960,6 +968,7 @@ function WeldingProceduresPage() {
       {wpsFormOpen && (
         <WPSFormModal
           wps={editingWps}
+          defaultCompanyId={companyScopeId || null}
           onSave={handleWpsSaved}
           onClose={() => { setWpsFormOpen(false); setEditingWps(null); }}
         />
@@ -968,6 +977,7 @@ function WeldingProceduresPage() {
         <WPQRFormModal
           wpqr={editingWpqr}
           wpsList={allWps}
+          defaultCompanyId={companyScopeId || null}
           onSave={handleWpqrSaved}
           onClose={() => { setWpqrFormOpen(false); setEditingWpqr(null); }}
         />
