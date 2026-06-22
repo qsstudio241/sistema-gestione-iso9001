@@ -522,24 +522,44 @@ function ReviewForm({ initial, onSave, onClose }) {
   );
 }
 
+// ─── Anni disponibili per il filtro (anno corrente ± 4) ─────────────────────
+
+function buildYearOptions() {
+  const cur = new Date().getFullYear();
+  const opts = [];
+  for (let y = cur + 1; y >= cur - 4; y--) opts.push(y);
+  return opts;
+}
+
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ManagementReviewsPage() {
-  const [reviews, setReviews]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
-  const [showForm, setShowForm]     = useState(false);
-  const [editItem, setEditItem]     = useState(null);
-  const [filterStatus, setFilter]   = useState("");
-  const [delConfirm, setDelConfirm] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+  const [reviews, setReviews]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [showForm, setShowForm]       = useState(false);
+  const [editItem, setEditItem]       = useState(null);
+  const [filterStatus, setFilter]     = useState("");
+  const [filterYear, setFilterYear]   = useState("");
+  const [filterCompany, setFilterCompany] = useState("");
+  const [companies, setCompanies]     = useState([]);
+  const [delConfirm, setDelConfirm]   = useState(null);
+  const [pagination, setPagination]   = useState({ page: 1, limit: 50, total: 0 });
+
+  useEffect(() => {
+    apiService.getCompanies()
+      .then((res) => setCompanies(res?.data || []))
+      .catch(() => setCompanies([]));
+  }, []);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ page: pagination.page, limit: pagination.limit });
-      if (filterStatus) params.set("status", filterStatus);
+      if (filterStatus)  params.set("status",     filterStatus);
+      if (filterYear)    params.set("year",        filterYear);
+      if (filterCompany) params.set("company_id",  filterCompany);
       const res = await apiService.get(`/management-reviews?${params}`);
       setReviews(res.data.data || []);
       if (res.data.pagination) setPagination((p) => ({ ...p, ...res.data.pagination }));
@@ -548,7 +568,7 @@ export default function ManagementReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, pagination.page, pagination.limit]);
+  }, [filterStatus, filterYear, filterCompany, pagination.page, pagination.limit]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
@@ -595,6 +615,29 @@ export default function ManagementReviewsPage() {
           <option value="finalized">Finalizzato</option>
           <option value="approved">Approvato</option>
         </select>
+
+        <select
+          value={filterYear}
+          onChange={(e) => { setFilterYear(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+        >
+          <option value="">Tutti gli anni</option>
+          {buildYearOptions().map((y) => (
+            <option key={y} value={String(y)}>{y}</option>
+          ))}
+        </select>
+
+        {companies.length > 0 && (
+          <select
+            value={filterCompany}
+            onChange={(e) => { setFilterCompany(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+          >
+            <option value="">Tutte le aziende</option>
+            {companies.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
+          </select>
+        )}
+
         <span className="mr-total">
           {pagination.total} riesame{pagination.total !== 1 ? "i" : ""}
         </span>
