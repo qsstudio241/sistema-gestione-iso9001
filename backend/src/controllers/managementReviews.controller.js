@@ -39,8 +39,9 @@ async function listReviews(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'mr');
 
-        const { status, page = 1, limit = 50 } = req.query;
+        const { status, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
+        const companyIdFilter = company_id ? parseInt(company_id, 10) : null;
 
         let where = ['mr.organization_id = @orgId', 'mr.is_deleted = 0'];
         if (companyFilter.clause) where.push(companyFilter.clause);
@@ -52,6 +53,7 @@ async function listReviews(req, res) {
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
         if (status) { where.push('mr.status = @status'); req2.input('status', status); }
+        if (companyIdFilter) { where.push('mr.company_id = @companyIdFilter'); req2.input('companyIdFilter', companyIdFilter); }
 
         const whereClause = where.join(' AND ');
 
@@ -74,6 +76,7 @@ async function listReviews(req, res) {
                 const cntWhere = ['mr.organization_id = @orgId2', 'mr.is_deleted = 0'];
                 if (companyFilter.clause) cntWhere.push(companyFilter.clause);
                 if (status) { cntWhere.push('mr.status = @cntStatus'); cntReq.input('cntStatus', status); }
+                if (companyIdFilter) { cntWhere.push('mr.company_id = @cntCompanyId'); cntReq.input('cntCompanyId', companyIdFilter); }
                 return cntReq.query(`SELECT COUNT(*) AS total FROM management_reviews mr WHERE ${cntWhere.join(' AND ')}`);
             })(),
         ]);
@@ -205,6 +208,7 @@ async function updateReview(req, res) {
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const fields = [
+            'company_id',
             'review_date', 'status', 'chairperson', 'participants',
             'input_previous_actions', 'input_audits', 'input_nc_corrective',
             'input_objectives', 'input_complaints', 'input_suppliers',
