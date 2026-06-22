@@ -5,7 +5,7 @@
 # Segreti GitHub richiesti (Settings → Secrets and variables → Actions):
 #   SMOKE_ENDPOINT  — es. "www.fr-busato.it:8443"
 #   SMOKE_TOKEN     — token segreto da impostare anche nel .env del VPS
-# Aggiornato: 21/06/2026 (filter-150) — trigger per PR solo-CSS (mobile responsive CND)
+# Aggiornato: 22/06/2026 — trigger manuale per PR docs-only (sessione chiusura)
 
 name: Smoke test DB test
 
