@@ -24,6 +24,7 @@ const EMPTY_FORM = {
   chairperson: "",
   participants: "",
   status: "draft",
+  company_id: "",
   input_previous_actions: "",
   input_audits: "",
   input_nc_corrective: "",
@@ -361,7 +362,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }) {
 
 // ─── Form completo ────────────────────────────────────────────────────────────
 
-function ReviewForm({ initial, onSave, onClose }) {
+function ReviewForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -421,6 +422,20 @@ function ReviewForm({ initial, onSave, onClose }) {
                 placeholder="es. Direttore Qualità"
               />
             </div>
+            {companies.length > 0 && (
+              <div className="form-row">
+                <label>Azienda</label>
+                <select
+                  value={form.company_id || ""}
+                  onChange={(e) => upd("company_id", e.target.value || null)}
+                >
+                  <option value="">— Nessuna azienda —</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="form-row">
               <label>Stato</label>
               <select value={form.status} onChange={(e) => upd("status", e.target.value)}>
@@ -730,6 +745,7 @@ export default function ManagementReviewsPage() {
           initial={editItem || {}}
           onSave={handleSave}
           onClose={() => setShowForm(false)}
+          companies={companies}
         />
       )}
 
