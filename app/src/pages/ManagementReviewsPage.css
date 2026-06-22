@@ -592,3 +592,127 @@
   .mr-table td:nth-child(3) { display: none; }
   .isw-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── ParticipantsList ─────────────────────────────────────────────────────── */
+
+.pl-container {
+  width: 100%;
+}
+
+.pl-grid {
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pl-grid-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 32px;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pl-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 32px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pl-grid-row:last-child {
+  border-bottom: none;
+}
+
+.pl-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  font-size: 0.875rem;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.pl-input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.15);
+}
+
+.pl-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #e53e3e;
+  border-radius: 4px;
+  background: transparent;
+  color: #e53e3e;
+  cursor: pointer;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pl-remove-btn:hover {
+  background: #e53e3e;
+  color: #fff;
+}
+
+.pl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.pl-add-btn,
+.pl-import-btn {
+  font-size: 0.8125rem;
+  padding: 6px 12px;
+}
+
+.pl-import-btn {
+  border-color: #3182ce;
+  color: #3182ce;
+}
+
+.pl-import-btn:hover:not(:disabled) {
+  background: #ebf8ff;
+}
+
+.pl-error {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: #c53030;
+}
+
+.pl-empty {
+  margin: 6px 0 0;
+  font-size: 0.8125rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .pl-grid-header,
+  .pl-grid-row {
+    grid-template-columns: 1fr 32px;
+  }
+  .pl-grid-header span:nth-child(2),
+  .pl-grid-row .pl-input:nth-child(2) {
+    display: none;
+  }
+}
