@@ -3505,6 +3505,25 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 23/06/2026 — Riesame di Direzione: robustezza multi-azienda + copertura normativa §9.3.2 completa
+
+| Voce | Esito |
+|------|-------|
+| Bug fix UX | Widget "Dati disponibili §9.3.2" ora auto-carica al mount (section 3 aperta); "Genera bozza" funziona client-side senza `reviewId` (PR #156) |
+| Copertura normativa | 4 campi aggiunti: `input_context_changes` (§9.3.2 b), `input_customer_satisfaction` (c.1), `input_process_performance` (c.3), `input_risk_effectiveness` (e) — migrazione 110 eseguita su VPS |
+| Export Word §7.5 | `wordExportReview.js` + template `management-review-verbale.docx`; pulsante 📋 su ogni riesame → scarica verbale `.docx` |
+| Fix robustezza multi-azienda | **key={companyId}** su `InputSummaryWidget` forza re-mount al cambio azienda → nessun dato stale in scenario ERAM→MASON; `onFillAll` (replace) vs `onPrefill` (append) separati |
+| RBAC hardening | `assertCompanyRead` su `getInputSummary` e `getOneReview`; `assertCompanyRead` importato nel controller |
+| Deploy | PR #156 mergiata; backend controller + migrazione 110 VPS; Netlify live (chunk `ManagementReviewsPage-DVT4Sh6S.js`) |
+
+**Gap residui noti (backlog, non bloccanti):**
+- **NC standalone** (senza `audit_id`): in `getInputSummary` con `companyId` le NC non legate ad audit sono escluse dal conteggio per azienda (filtro `a.company_id = @companyId` ritorna NULL su LEFT JOIN). Undercount minore in scenari con NC dirette non da audit.
+- **`createReview` company_id** (P10): nessuna verifica che `company_id` passato nel body appartenga all'organizzazione (solo RBAC write). Fix: aggiungere `assertCompanyRead` prima dell'INSERT.
+- **`updateReview` cambio company_id** (P9): `assertMutatingAllowed` verifica il `company_id` esistente ma non il nuovo. Fix: leggere il nuovo `company_id` dal body e aggiungere check.
+- **`norm_coverage` aggregazione** (P6): con `companyId` presente, la join tra clausole e audit può includere clausole "ok" per audit di altre aziende. Fix: filtrare `a.company_id` anche nella subquery `norm_coverage`.
+
+---
+
 ### Sessione 22/06/2026 — Riesame di Direzione: pattern Ambito azienda
 
 | Voce | Esito |
