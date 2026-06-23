@@ -35,6 +35,27 @@ const CODE_TO_STANDARD_ID = {
 };
 
 /**
+ * Deriva il company_id del chunk dall'etichetta esplicita content_scope.
+ * (Decisione di prodotto: non dedurre piu' lo scope dal solo company_id NULL.)
+ *
+ *  - content_scope='client'              -> chunk legato all'azienda (company_id valorizzato)
+ *  - content_scope='studio' | 'reference'-> chunk org-level (company_id NULL, know-how studio)
+ *  - content_scope assente (dati legacy pre-migrazione 111) -> fallback al company_id
+ *
+ * In ogni caso organization_id = @orgId resta il vincolo di isolamento tenant.
+ *
+ * @param {{ content_scope?: string|null, company_id?: number|null }} row
+ * @returns {number|null}
+ */
+function companyIdForContentScope(row) {
+  const scope = row && row.content_scope;
+  if (scope === 'studio' || scope === 'reference') return null;
+  if (scope === 'client') return row.company_id || null;
+  // Legacy / non classificato: comportamento storico (company_id se presente).
+  return (row && row.company_id) || null;
+}
+
+/**
  * Risolve standard_id quando la colonna DB è null (documenti norma, qualifiche).
  */
 function inferStandardId(row, entityType) {
@@ -179,12 +200,13 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'document',
-    sql: `SELECT dr.id, dr.company_id, dr.standard_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
+    sql: `SELECT dr.id, dr.company_id, dr.content_scope, dr.standard_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
             dr.status, dr.clause_ref, dr.responsible, dr.type_specific_data,
             c.name AS company_name
           FROM document_registry dr
           LEFT JOIN companies c ON dr.company_id = c.id
           WHERE dr.organization_id = @orgId AND dr.status != 'obsoleto'`,
+    resolveCompanyId: companyIdForContentScope,
     buildText: (r) => {
       const parts = [`Documento ${r.doc_code || ''} "${r.title}" rev.${r.revision || '0'} (${r.doc_type || '?'})`];
       if (r.clause_ref) parts.push(`Clausola: ${r.clause_ref}`);
@@ -269,7 +291,9 @@ async function indexAllEntities(organizationId) {
         const text = entity.buildText(row);
         if (!text || text.trim().length < 10) continue;
 
-        const compId = row.company_id || null;
+        const compId = entity.resolveCompanyId
+          ? entity.resolveCompanyId(row)
+          : (row.company_id || null);
         const stdId = inferStandardId(row, entity.entity_type);
         const words = text.split(/\s+/);
         if (words.length > 500) {
@@ -338,12 +362,14 @@ async function indexAllEntities(organizationId) {
 /**
  * Indicizza il contenuto testuale dei file allegati ai documenti del registro.
  *
- * Scope studio-vs-cliente (vincolo di prodotto):
- *  - document_registry.company_id valorizzato → chunk con company_id (visibile
- *    solo nel contesto di quell'azienda cliente).
- *  - document_registry.company_id NULL → chunk org-level (know-how trasversale
- *    dello studio), company_id NULL.
- * In entrambi i casi organization_id = @orgId garantisce l'isolamento tenant:
+ * Scope studio-vs-cliente (vincolo di prodotto, etichetta ESPLICITA content_scope):
+ *  - content_scope='client'               → chunk con company_id (visibile solo
+ *    nel contesto di quell'azienda cliente).
+ *  - content_scope='studio' | 'reference' → chunk org-level (know-how trasversale
+ *    dello studio / norme condivise), company_id NULL.
+ *  - content_scope assente (dati legacy)  → fallback al company_id (vedi
+ *    companyIdForContentScope).
+ * In ogni caso organization_id = @orgId garantisce l'isolamento tenant:
  * un chunk non è MAI accessibile da un'altra organizzazione.
  *
  * Idempotenza: i chunk 'document_content' della org vengono eliminati prima di
@@ -371,7 +397,7 @@ async function indexDocumentContents(organizationId) {
   let rows;
   try {
     const result = await query(
-      `SELECT dr.id AS document_id, dr.company_id, dr.standard_id, dr.title,
+      `SELECT dr.id AS document_id, dr.company_id, dr.content_scope, dr.standard_id, dr.title,
               dr.doc_code, dr.revision, dr.type_specific_data,
               a.attachment_id, a.storage_path, a.mime_type, a.file_name
        FROM document_registry dr
@@ -410,7 +436,7 @@ async function indexDocumentContents(organizationId) {
       continue;
     }
 
-    const compId = row.company_id || null;
+    const compId = companyIdForContentScope(row);
     const stdId = inferStandardId(row, 'document');
     const parts = chunkText(text, 400, 50);
     for (const part of parts) {
@@ -588,6 +614,7 @@ module.exports = {
   indexAllEntities,
   indexDocumentContents,
   searchKnowledge,
+  companyIdForContentScope,
   INDEXABLE_ENTITIES,
   DOCUMENT_CONTENT_ENTITY,
 };
