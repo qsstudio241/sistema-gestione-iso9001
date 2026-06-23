@@ -85,7 +85,7 @@ function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
       const params = new URLSearchParams({ date_from: from, date_to: to });
       if (cid) params.set("company_id", cid);
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
-      setData(res.data.data);
+      setData(res.data);
     } catch (err) {
       setError(err?.response?.data?.error || "Errore durante il caricamento dei dati.");
     } finally {
@@ -717,8 +717,8 @@ export default function ManagementReviewsPage() {
       if (filterYear)    params.set("year",        filterYear);
       if (companyScope)  params.set("company_id",  companyScope);
       const res = await apiService.get(`/management-reviews?${params}`);
-      setReviews(res.data.data || []);
-      if (res.data.pagination) setPagination((p) => ({ ...p, ...res.data.pagination }));
+      setReviews(res.data || []);
+      if (res.pagination) setPagination((p) => ({ ...p, ...res.pagination }));
     } catch (err) {
       setError(err?.response?.data?.error || "Errore caricamento riesami.");
     } finally {
@@ -751,7 +751,7 @@ export default function ManagementReviewsPage() {
     try {
       // Carica i dati completi del riesame (la lista ha campi parziali)
       const res = await apiService.get(`/management-reviews/${r.id}`);
-      const full = res.data.data;
+      const full = res.data;
       await exportManagementReviewDocx(full);
     } catch (err) {
       alert(`Errore export Word: ${err.message}`);
