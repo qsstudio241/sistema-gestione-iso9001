@@ -13,6 +13,7 @@ import {
   resolveInitialMgmtReviewCompanyScope,
   persistMgmtReviewCompanyScope,
 } from "../utils/managementReviewsCompanyScope";
+import { exportManagementReviewDocx } from "../utils/wordExportReview";
 import "./ManagementReviewsPage.css";
 
 // ─── Configurazione stato ─────────────────────────────────────────────────────
@@ -32,13 +33,17 @@ const EMPTY_FORM = {
   status: "draft",
   company_id: "",
   input_previous_actions: "",
+  input_context_changes: "",
   input_audits: "",
   input_nc_corrective: "",
   input_objectives: "",
   input_complaints: "",
+  input_customer_satisfaction: "",
   input_suppliers: "",
   input_resources: "",
   input_improvements: "",
+  input_process_performance: "",
+  input_risk_effectiveness: "",
   output_improvements: "",
   output_sgq_changes: "",
   output_resources: "",
@@ -56,22 +61,27 @@ function jan1Iso() {
 
 // ─── Widget Dati disponibili §9.3.2 ──────────────────────────────────────────
 
-function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
-  const [dateFrom,       setDateFrom]       = useState(jan1Iso);
-  const [dateTo,         setDateTo]         = useState(todayIso);
-  const [data,           setData]           = useState(null);
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState(null);
-  const [drafting,       setDrafting]       = useState(false);
-  const [draftError,     setDraftError]     = useState(null);
-  const [draftGenerated, setDraftGenerated] = useState(false);
+function InputSummaryWidget({ companyId, onPrefill }) {
+  const [dateFrom,  setDateFrom]  = useState(jan1Iso);
+  const [dateTo,    setDateTo]    = useState(todayIso);
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState(null);
+  const [filled,    setFilled]    = useState(false);
 
-  async function loadData() {
+  // Auto-carica i dati §9.3.2 all'apertura della sezione
+  useEffect(() => {
+    doLoad(jan1Iso(), todayIso(), companyId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function doLoad(from, to, cid) {
     setLoading(true);
     setError(null);
+    setFilled(false);
     try {
-      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
-      if (companyId) params.set("company_id", companyId);
+      const params = new URLSearchParams({ date_from: from, date_to: to });
+      if (cid) params.set("company_id", cid);
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
       setData(res.data.data);
     } catch (err) {
@@ -79,6 +89,10 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function loadData() {
+    doLoad(dateFrom, dateTo, companyId);
   }
 
   function buildNcText(nc) {
@@ -124,27 +138,25 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
     return lines.join("\n");
   }
 
-  async function generateDraft() {
-    if (!reviewId) return;
-    setDrafting(true);
-    setDraftError(null);
-    setDraftGenerated(false);
-    try {
-      const body = { period_from: dateFrom, period_to: dateTo };
-      if (companyId) body.company_id = companyId;
-      const res = await apiService.post(`/management-reviews/${reviewId}/generate-draft`, body);
-      const { drafts } = res.data;
-      if (drafts.nc_summary)         onPrefill("input_nc_corrective", drafts.nc_summary);
-      if (drafts.objectives_summary) onPrefill("input_objectives",    drafts.objectives_summary);
-      if (drafts.audits_summary)     onPrefill("input_audits",        drafts.audits_summary);
-      if (drafts.suppliers_summary)  onPrefill("input_suppliers",     drafts.suppliers_summary);
-      if (drafts.norm_gaps)          onPrefill("input_improvements",  drafts.norm_gaps);
-      setDraftGenerated(true);
-    } catch (err) {
-      setDraftError(err?.response?.data?.error || "Errore durante la generazione della bozza.");
-    } finally {
-      setDrafting(false);
-    }
+  function buildSatisfText(cmp) {
+    const lines = [
+      `Reclami formali ricevuti nel periodo: ${cmp.total}`,
+      "Livello soddisfazione cliente: [da rilevare — es. sondaggio, feedback diretto, tasso riacquisto]",
+    ];
+    if (cmp.note) lines.push(`Nota reclami: ${cmp.note}`);
+    return lines.join("\n");
+  }
+
+  // Compila tutti i campi §9.3.2 dai dati già caricati (client-side, non richiede reviewId)
+  function generateAllFields() {
+    if (!data) return;
+    if (data.nc)         onPrefill("input_nc_corrective",         buildNcText(data.nc));
+    if (data.objectives) onPrefill("input_objectives",            buildObjText(data.objectives));
+    if (data.audits)     onPrefill("input_audits",                buildAuditText(data.audits));
+    if (data.suppliers)  onPrefill("input_suppliers",             buildSuppText(data.suppliers));
+    if (data.complaints) onPrefill("input_complaints",            buildCmpText(data.complaints));
+    if (data.complaints) onPrefill("input_customer_satisfaction", buildSatisfText(data.complaints));
+    setFilled(true);
   }
 
   return (
@@ -162,30 +174,34 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
             onClick={loadData}
             disabled={loading}
           >
-            {loading ? "Caricamento dati\u2026" : "Carica dati"}
+            {loading ? "Caricamento\u2026" : "Aggiorna dati"}
           </button>
           <button
             type="button"
             className="btn-primary isw-draft-btn"
-            onClick={reviewId ? generateDraft : undefined}
-            disabled={drafting || !reviewId}
+            onClick={generateAllFields}
+            disabled={!data || loading}
             title={
-              reviewId
-                ? "Genera testi bozza per i campi \u00A79.3.2 dal riesame corrente"
-                : "Salva prima il riesame per generare la bozza"
+              data
+                ? "Compila automaticamente tutti i campi \u00A79.3.2 con i dati del periodo"
+                : "Attendere il caricamento dei dati\u2026"
             }
           >
-            {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
+            {"\u2728 Genera bozza testo"}
           </button>
         </div>
       </div>
 
-      {draftGenerated && (
+      {filled && (
         <div className="isw-body">
-          <p className="isw-draft-ok">{"Bozza generata e inserita nei campi \u00A79.3.2."}</p>
+          <p className="isw-draft-ok">{"Campi \u00A79.3.2 compilati con i dati del periodo."}</p>
         </div>
       )}
-      {draftError && <div className="isw-body"><p className="isw-error">{draftError}</p></div>}
+      {loading && !data && (
+        <div className="isw-body">
+          <p className="isw-loading">{"Caricamento dati in corso\u2026"}</p>
+        </div>
+      )}
       {error && <div className="isw-body"><p className="isw-error">{error}</p></div>}
 
       {data && (
@@ -548,18 +564,21 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
           <CollapsibleSection title="3 — §9.3.2 Input del riesame">
             <InputSummaryWidget
               companyId={form.company_id || initial?.company_id || null}
-              reviewId={initial?.id || null}
               onPrefill={handlePrefill}
             />
             {[
-              { key: "input_previous_actions", label: "a) Azioni da precedenti riesami" },
-              { key: "input_audits",           label: "b) Risultati degli audit" },
-              { key: "input_nc_corrective",    label: "c) Non conformità e azioni correttive" },
-              { key: "input_objectives",       label: "d) Monitoraggio e misurazione processi / obiettivi" },
-              { key: "input_complaints",       label: "e) Reclami dei clienti" },
-              { key: "input_suppliers",        label: "f) Prestazioni dei fornitori" },
-              { key: "input_resources",        label: "g) Adeguatezza delle risorse" },
-              { key: "input_improvements",     label: "h) Opportunità di miglioramento" },
+              { key: "input_previous_actions",      label: "a) Azioni da precedenti riesami" },
+              { key: "input_context_changes",       label: "b) Cambiamenti nel contesto dell\u2019organizzazione rilevanti per il SGQ" },
+              { key: "input_audits",                label: "c.6) Risultati degli audit interni" },
+              { key: "input_nc_corrective",         label: "c.4) Non conformit\u00E0 e azioni correttive" },
+              { key: "input_objectives",            label: "c.2) Stato degli obiettivi per la qualit\u00E0" },
+              { key: "input_process_performance",   label: "c.3) Prestazioni dei processi e conformit\u00E0 di prodotti/servizi" },
+              { key: "input_customer_satisfaction", label: "c.1) Soddisfazione del cliente e feedback delle parti interessate" },
+              { key: "input_complaints",            label: "e.reclami) Reclami dei clienti (dettaglio)" },
+              { key: "input_suppliers",             label: "c.7) Prestazioni dei fornitori esterni" },
+              { key: "input_resources",             label: "d) Adeguatezza delle risorse" },
+              { key: "input_risk_effectiveness",    label: "e) Efficacia delle azioni intraprese per affrontare rischi e opportunit\u00E0" },
+              { key: "input_improvements",          label: "f) Opportunit\u00E0 di miglioramento" },
             ].map(({ key, label }) => (
               <div className="form-row" key={key}>
                 <label>{label}</label>
@@ -643,6 +662,7 @@ export default function ManagementReviewsPage() {
   const [companies, setCompanies]   = useState([]);
   const [delConfirm, setDelConfirm] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+  const [exportingId, setExportingId] = useState(null);
 
   // ── Ambito azienda (pattern condiviso con Qualifiche, Registro documenti) ──
   const [companyScope, setCompanyScope] = useState(
@@ -713,6 +733,20 @@ export default function ManagementReviewsPage() {
 
   function openCreate() { setEditItem(null); setShowForm(true); }
   function openEdit(item) { setEditItem(item); setShowForm(true); }
+
+  async function handleExport(r) {
+    setExportingId(r.id);
+    try {
+      // Carica i dati completi del riesame (la lista ha campi parziali)
+      const res = await apiService.get(`/management-reviews/${r.id}`);
+      const full = res.data.data;
+      await exportManagementReviewDocx(full);
+    } catch (err) {
+      alert(`Errore export Word: ${err.message}`);
+    } finally {
+      setExportingId(null);
+    }
+  }
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
@@ -822,6 +856,14 @@ export default function ManagementReviewsPage() {
                         onClick={() => openEdit(r)}
                       >
                         {"\u270F\uFE0F"}
+                      </button>
+                      <button
+                        className="btn-icon-sm btn-icon-export"
+                        title="Esporta verbale Word (\u00A77.5)"
+                        onClick={() => handleExport(r)}
+                        disabled={exportingId === r.id}
+                      >
+                        {exportingId === r.id ? "\u23F3" : "\uD83D\uDCCB"}
                       </button>
                       <button
                         className="btn-icon-sm btn-icon-danger"
