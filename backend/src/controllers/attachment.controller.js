@@ -15,13 +15,21 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 
-/** Join audit effettivo (diretto o via NC) + predicato scope studio. */
+/**
+ * Join audit effettivo (diretto o via NC) + join opzionale NDT + predicato scope studio.
+ *
+ * Usa LEFT JOIN su audits per non escludere gli allegati collegati solo a
+ * ndt_report_item_id (senza audit_id). Questi allegati vengono verificati
+ * tramite ndt_reports.organization_id nel predicato WHERE.
+ */
 function attachmentAuditScope(reqUser) {
     const scope = studioScopeClause(reqUser, 'a');
     return {
         joinSql: `
       LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
-      INNER JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
+      LEFT JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
+      LEFT JOIN ndt_report_items nri ON nri.id = att.ndt_report_item_id
+      LEFT JOIN ndt_reports nr ON nr.id = nri.report_id
     `,
         scopeSql: appendScopeSql(scope),
         scopeParams: scope.params,
@@ -56,10 +64,12 @@ async function listAttachments(req, res) {
         const { joinSql, scopeSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
 
-        let whereConditions = ['a.organization_id = @organization_id'];
+        // COALESCE: allegati audit usano a.organization_id; allegati NDT-only (senza audit) usano nr.organization_id
+        let whereConditions = ['COALESCE(a.organization_id, nr.organization_id) = @organization_id'];
         let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
         if (scope.clause) {
-            whereConditions.push(scope.clause);
+            // scope.clause usa alias 'a' (audits); per allegati NDT-only (a IS NULL) si salta il vincolo studio
+            whereConditions.push(`(a.organization_id IS NULL OR (${scope.clause}))`);
         }
 
         if (audit_id) {
@@ -158,7 +168,10 @@ async function getAttachmentById(req, res) {
 
         const { joinSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // Per allegati NDT-only (a IS NULL), salta il vincolo studio ma verifica org via nr
+        const scopeCond = scope.clause
+            ? ` AND (a.organization_id IS NULL OR (${scope.clause}))`
+            : '';
 
         const result = await query(`
       SELECT 
@@ -171,7 +184,7 @@ async function getAttachmentById(req, res) {
       ${joinSql}
       LEFT JOIN users u ON att.uploaded_by = u.user_id
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
+        AND COALESCE(a.organization_id, nr.organization_id) = @organization_id
         ${scopeCond}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
@@ -456,14 +469,17 @@ async function downloadAttachment(req, res) {
         // Recupera metadati con verifica ownership
         const { joinSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // Per allegati NDT-only (a IS NULL), salta il vincolo studio ma verifica org via nr
+        const scopeCond = scope.clause
+            ? ` AND (a.organization_id IS NULL OR (${scope.clause}))`
+            : '';
 
         const result = await query(`
       SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
+        AND COALESCE(a.organization_id, nr.organization_id) = @organization_id
         ${scopeCond}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
@@ -520,14 +536,17 @@ async function deleteAttachment(req, res) {
         // Recupera metadati con verifica ownership
         const { joinSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // Per allegati NDT-only (a IS NULL), salta il vincolo studio ma verifica org via nr
+        const scopeCond = scope.clause
+            ? ` AND (a.organization_id IS NULL OR (${scope.clause}))`
+            : '';
 
         const result = await query(`
       SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
+        AND COALESCE(a.organization_id, nr.organization_id) = @organization_id
         ${scopeCond}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
@@ -590,14 +609,17 @@ async function viewAttachment(req, res) {
 
         const { joinSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // Per allegati NDT-only (a IS NULL), salta il vincolo studio ma verifica org via nr
+        const scopeCond = scope.clause
+            ? ` AND (a.organization_id IS NULL OR (${scope.clause}))`
+            : '';
 
         const result = await query(`
       SELECT att.*, a.organization_id AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
+        AND COALESCE(a.organization_id, nr.organization_id) = @organization_id
         ${scopeCond}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
@@ -673,17 +695,20 @@ async function replaceAttachment(req, res) {
     }
 
     try {
-        // 1. Verifica ownership: allegato appartiene a un audit di questa org
+        // 1. Verifica ownership: allegato appartiene a un audit o NDT report di questa org
         const { joinSql, scopeParams } = attachmentAuditScope(req.user);
         const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // Per allegati NDT-only (a IS NULL), salta il vincolo studio ma verifica org via nr
+        const scopeCond = scope.clause
+            ? ` AND (a.organization_id IS NULL OR (${scope.clause}))`
+            : '';
 
         const existing = await query(`
             SELECT att.attachment_id, att.storage_path, att.file_name
             FROM attachments att
             ${joinSql}
             WHERE att.attachment_id = @attachment_id
-              AND a.organization_id = @organization_id
+              AND COALESCE(a.organization_id, nr.organization_id) = @organization_id
               ${scopeCond}
         `, { attachment_id: parseInt(attachment_id), organization_id, ...scopeParams });
 
