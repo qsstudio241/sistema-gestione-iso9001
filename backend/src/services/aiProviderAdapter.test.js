@@ -4,7 +4,7 @@
 
 /* eslint-env jest */
 
-const { mapMessagesToGemini } = require('./adapters/geminiAdapter');
+const { mapMessagesToGemini, embed: geminiEmbed } = require('./adapters/geminiAdapter');
 const openaiAdapter = require('./adapters/openaiAdapter');
 const aiProviderAdapter = require('./aiProviderAdapter');
 
@@ -399,4 +399,87 @@ describe('aiProviderAdapter.chat error handling', () => {
     const [, init] = fetchSpy.mock.calls[0];
     expect(init.signal).toBeDefined();
   });
+});
+
+describe('geminiAdapter.embed difensivo (timeout + rate-limit)', () => {
+  beforeEach(() => {
+    clearAiEnv();
+    delete process.env.GEMINI_EMBED_TIMEOUT_MS;
+    delete process.env.GEMINI_EMBED_MODEL;
+    jest.restoreAllMocks();
+  });
+
+  test('passa un AbortSignal e aborta in modo pulito se il provider non risponde', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_EMBED_TIMEOUT_MS = '50';
+
+    // Provider "lento": la fetch si risolve solo quando viene abortita dal timeout.
+    const fetchSpy = jest.spyOn(global, 'fetch').mockImplementation((_url, init) => {
+      return new Promise((_resolve, reject) => {
+        const onAbort = () =>
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        if (init && init.signal) {
+          if (init.signal.aborted) return onAbort();
+          init.signal.addEventListener('abort', onAbort);
+        }
+        // altrimenti non si risolve mai (simula hang)
+      });
+    });
+
+    await expect(geminiEmbed(['testo da indicizzare'])).rejects.toMatchObject({
+      code: 'AI_REQUEST_FAILED',
+    });
+    const [, init] = fetchSpy.mock.calls[0];
+    expect(init.signal).toBeDefined();
+  }, 10000);
+
+  test('skip pulito nel job: chi chiama (try/catch indexer) prosegue dopo il timeout', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_EMBED_TIMEOUT_MS = '50';
+
+    jest.spyOn(global, 'fetch').mockImplementation((_url, init) => {
+      return new Promise((_resolve, reject) => {
+        const onAbort = () =>
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        if (init && init.signal) {
+          if (init.signal.aborted) return onAbort();
+          init.signal.addEventListener('abort', onAbort);
+        }
+      });
+    });
+
+    // Replica la gestione errori dell'indexer: in caso di errore embed,
+    // vettori = null e il job prosegue senza bloccarsi.
+    const batch = ['c1', 'c2'];
+    let vectors;
+    let jobContinued = false;
+    try {
+      vectors = await geminiEmbed(batch);
+    } catch {
+      vectors = batch.map(() => null);
+    }
+    jobContinued = true;
+
+    expect(vectors).toEqual([null, null]);
+    expect(jobContinued).toBe(true);
+  }, 10000);
+
+  test('cap ai retry su 429: fallisce pulito invece di ciclare all\u2019infinito', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+
+    const rateLimited = {
+      ok: false,
+      status: 429,
+      headers: { get: () => '0' }, // retry-after 0 => nessuna attesa reale
+      json: async () => ({ error: { message: 'rate limit exceeded' } }),
+    };
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(rateLimited);
+
+    await expect(geminiEmbed(['x'])).rejects.toMatchObject({
+      code: 'AI_UPSTREAM_ERROR',
+      status: 429,
+    });
+    // 1 tentativo iniziale + 2 retry massimi = 3 chiamate, poi stop.
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  }, 10000);
 });
