@@ -313,11 +313,13 @@ async function getInputSummary(req, res) {
 
     const result = {
         period: { from: dateFrom, to: dateTo },
-        nc:         { open: 0, overdue: 0, total_closed_period: 0 },
+        nc:         { open: 0, overdue: 0, total_closed_period: 0, details: [] },
         objectives: { total: 0, achieved: 0, percentage: 0 },
         audits:     { conducted: 0, planned: 0 },
         suppliers:  { evaluated: 0, avg_score: null },
         complaints: { total: 0 },
+        risks:      { open: 0, mitigated_closed_period: 0, high_priority: 0 },
+        previous_review: null,
         norm_coverage: [],
     };
 
@@ -357,6 +359,43 @@ async function getInputSummary(req, res) {
     } catch (err) {
         logger.error('getInputSummary NC:', err.message);
         result.nc.note = 'Dato non disponibile';
+    }
+
+    // ── DETTAGLIO NC (§9.3.2-c.4) — top NC aperte per gravità ─────────────────────
+    try {
+        const ncDetReq = pool.request().input('orgId', orgId);
+        let ncDetCompanyCond = '';
+        if (companyId) {
+            ncDetReq.input('companyId', companyId);
+            ncDetCompanyCond = 'AND a.company_id = @companyId';
+        }
+        const ncDetRes = await ncDetReq.query(`
+            SELECT TOP (10)
+                nc.nc_id, nc.nc_number, nc.description, nc.severity, nc.status, nc.due_date
+            FROM non_conformities nc
+            LEFT JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId
+              AND nc.status NOT IN ('closed','verified')
+              ${ncDetCompanyCond}
+            ORDER BY
+                CASE nc.severity WHEN 'major' THEN 1 WHEN 'minor' THEN 2 ELSE 3 END,
+                nc.due_date ASC,
+                nc.created_at DESC
+        `);
+        result.nc.details = ncDetRes.recordset.map((row) => ({
+            id:       row.nc_id,
+            number:   row.nc_number,
+            title:    row.description
+                ? String(row.description).slice(0, 140)
+                : (row.nc_number || `NC ${row.nc_id}`),
+            severity: row.severity || null,
+            status:   row.status   || null,
+            due_date: row.due_date ? new Date(row.due_date).toISOString().slice(0, 10) : null,
+        }));
+    } catch (err) {
+        logger.error('getInputSummary NC dettaglio:', err.message);
+        result.nc.details = [];
+        result.nc.details_note = 'Dato non disponibile';
     }
 
     // ── OBIETTIVI ───────────────────────────────────────────────────────────────
@@ -483,6 +522,81 @@ async function getInputSummary(req, res) {
         result.complaints.note  = 'Dato non disponibile';
     }
 
+    // ── RISCHI E OPPORTUNITÀ (§9.3.2-e) ───────────────────────────────────────────
+    // status risks: 'open','in_treatment','mitigated','closed'; priorità = probability*impact (1-9)
+    try {
+        const riskReq = pool.request()
+            .input('orgId', orgId)
+            .input('dateFrom', dateFrom)
+            .input('dateTo',   dateTo);
+
+        let riskCompanyCond = '';
+        if (companyId) {
+            riskReq.input('companyId', companyId);
+            riskCompanyCond = 'AND company_id = @companyId';
+        }
+
+        const riskRes = await riskReq.query(`
+            SELECT
+                SUM(CASE WHEN status IN ('open','in_treatment') THEN 1 ELSE 0 END)
+                    AS open_count,
+                SUM(CASE WHEN status IN ('mitigated','closed')
+                             AND updated_at >= @dateFrom
+                             AND updated_at <= DATEADD(day,1,CAST(@dateTo AS DATE)) THEN 1 ELSE 0 END)
+                    AS mitigated_closed_period,
+                SUM(CASE WHEN status IN ('open','in_treatment')
+                             AND (probability * impact) >= 6 THEN 1 ELSE 0 END)
+                    AS high_priority
+            FROM risks
+            WHERE organization_id = @orgId AND is_deleted = 0
+              ${riskCompanyCond}
+        `);
+        const rk = riskRes.recordset[0];
+        result.risks.open                    = rk.open_count              || 0;
+        result.risks.mitigated_closed_period = rk.mitigated_closed_period || 0;
+        result.risks.high_priority           = rk.high_priority           || 0;
+    } catch (err) {
+        logger.error('getInputSummary Rischi:', err.message);
+        result.risks.note = 'Dato non disponibile';
+    }
+
+    // ── RIESAME PRECEDENTE (§9.3.2-a) — output del riesame più recente prima del periodo ─
+    try {
+        const prevReq = pool.request()
+            .input('orgId', orgId)
+            .input('dateFrom', dateFrom);
+
+        let prevCompanyCond = '';
+        if (companyId) {
+            prevReq.input('companyId', companyId);
+            prevCompanyCond = 'AND company_id = @companyId';
+        }
+
+        const prevRes = await prevReq.query(`
+            SELECT TOP (1)
+                review_number, review_date,
+                output_improvements, output_sgq_changes, output_resources
+            FROM management_reviews
+            WHERE organization_id = @orgId AND is_deleted = 0
+              AND review_date < @dateFrom
+              ${prevCompanyCond}
+            ORDER BY review_date DESC, created_at DESC
+        `);
+        if (prevRes.recordset.length) {
+            const pr = prevRes.recordset[0];
+            result.previous_review = {
+                review_number:       pr.review_number || null,
+                review_date:         pr.review_date ? new Date(pr.review_date).toISOString().slice(0, 10) : null,
+                output_improvements: pr.output_improvements || null,
+                output_sgq_changes:  pr.output_sgq_changes  || null,
+                output_resources:    pr.output_resources    || null,
+            };
+        }
+    } catch (err) {
+        logger.error('getInputSummary RiesamePrecedente:', err.message);
+        result.previous_review_note = 'Dato non disponibile';
+    }
+
     // ── COPERTURA NORMATIVA ──────────────────────────────────────────────────────
     try {
         const normReq = pool.request()
@@ -571,6 +685,8 @@ async function generateDraft(req, res) {
     let objectives = { total: 0, achieved: 0, percentage: 0 };
     let audits     = { conducted: 0 };
     let suppliers  = { evaluated: 0, avg_score: null };
+    let risks      = { open: 0, mitigated_closed_period: 0, high_priority: 0 };
+    let prevReview = null;
     let normGaps   = [];
 
     try {
@@ -643,20 +759,73 @@ async function generateDraft(req, res) {
         normGaps = normRes.recordset.filter((r) => !r.last_verified).map((r) => r.clause_ref);
     } catch (_) { /* fallback */ }
 
+    try {
+        const riskReq = pool.request().input('orgId', orgId).input('dateFrom', periodFrom).input('dateTo', periodTo);
+        if (companyId) riskReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND company_id = @companyId' : '';
+        const riskRes = await riskReq.query(`
+            SELECT
+                SUM(CASE WHEN status IN ('open','in_treatment') THEN 1 ELSE 0 END) AS open_count,
+                SUM(CASE WHEN status IN ('mitigated','closed') AND updated_at >= @dateFrom AND updated_at <= DATEADD(day,1,CAST(@dateTo AS DATE)) THEN 1 ELSE 0 END) AS mitigated_closed_period,
+                SUM(CASE WHEN status IN ('open','in_treatment') AND (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority
+            FROM risks
+            WHERE organization_id = @orgId AND is_deleted = 0 ${companyCond}
+        `);
+        const r = riskRes.recordset[0];
+        risks = {
+            open: r.open_count || 0,
+            mitigated_closed_period: r.mitigated_closed_period || 0,
+            high_priority: r.high_priority || 0,
+        };
+    } catch (_) { /* fallback a 0 */ }
+
+    try {
+        const prevReq = pool.request().input('orgId', orgId).input('reviewId', reviewId).input('dateFrom', periodFrom);
+        if (companyId) prevReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND company_id = @companyId' : '';
+        const prevRes = await prevReq.query(`
+            SELECT TOP (1) review_number, review_date, output_improvements, output_sgq_changes, output_resources
+            FROM management_reviews
+            WHERE organization_id = @orgId AND is_deleted = 0 AND id <> @reviewId
+              AND review_date < @dateFrom ${companyCond}
+            ORDER BY review_date DESC, created_at DESC
+        `);
+        if (prevRes.recordset.length) {
+            const pr = prevRes.recordset[0];
+            prevReview = {
+                review_number: pr.review_number || null,
+                review_date: pr.review_date ? new Date(pr.review_date).toISOString().slice(0, 10) : null,
+                output_improvements: pr.output_improvements || null,
+                output_sgq_changes: pr.output_sgq_changes || null,
+                output_resources: pr.output_resources || null,
+            };
+        }
+    } catch (_) { /* fallback null */ }
+
     // Tenta AI se configurata
     let aiText = null;
     try {
         const aiAdapter = require('../services/aiProviderAdapter');
+        const prevReviewLine = prevReview
+            ? `Riesame precedente (${prevReview.review_number || 's.n.'} del ${prevReview.review_date || 'n.d.'}): ` +
+              `miglioramenti="${(prevReview.output_improvements || 'n.d.').slice(0, 300)}"; ` +
+              `modifiche SGQ="${(prevReview.output_sgq_changes || 'n.d.').slice(0, 300)}"; ` +
+              `risorse="${(prevReview.output_resources || 'n.d.').slice(0, 300)}"`
+            : 'Nessun riesame precedente registrato.';
         const prompt = `Sei un consulente ISO 9001. Dati del periodo ${periodFrom} - ${periodTo}:
 - NC aperte: ${nc.open}, scadute: ${nc.overdue}, chiuse nel periodo: ${nc.total_closed_period}
 - Obiettivi raggiunti: ${objectives.percentage}% (${objectives.achieved}/${objectives.total})
 - Audit condotti: ${audits.conducted}
 - Fornitori valutati: ${suppliers.evaluated}${suppliers.avg_score != null ? `, score medio: ${suppliers.avg_score}` : ''}
+- Rischi aperti: ${risks.open}, di cui ad alta priorità: ${risks.high_priority}; rischi mitigati/chiusi nel periodo: ${risks.mitigated_closed_period}
+- Azioni da precedenti riesami: ${prevReviewLine}
 - Clausole senza evidenza di verifica nell'ultimo anno: ${normGaps.length > 0 ? normGaps.join(', ') : 'nessuna'}
 
 Genera testi concisi per la sezione §9.3.2 del riesame di direzione ISO 9001, in italiano, stile tecnico-formale, max 120 parole per sezione.
+Per "previous_actions_summary" sintetizza lo stato di avanzamento delle azioni definite nel riesame precedente; se non c'è un riesame precedente, indicalo esplicitamente.
+Per "risks_summary" valuta l'efficacia delle azioni intraprese per affrontare rischi e opportunità.
 Rispondi SOLO con JSON con questa struttura:
-{"nc_summary":"...","objectives_summary":"...","audits_summary":"...","suppliers_summary":"...","norm_gaps":"..."}`;
+{"nc_summary":"...","objectives_summary":"...","audits_summary":"...","suppliers_summary":"...","risks_summary":"...","previous_actions_summary":"...","norm_gaps":"..."}`;
 
         const result = await aiAdapter.chat(
             [{ role: 'user', content: prompt }],
@@ -673,6 +842,23 @@ Rispondi SOLO con JSON con questa struttura:
     const gapsText = normGaps.length > 0
         ? `Le seguenti clausole non presentano evidenze di verifica nell'ultimo anno: ${normGaps.join(', ')}.`
         : 'Tutte le clausole principali risultano coperte da audit nell\'ultimo anno.';
+
+    const risksText = `Nel periodo risultano ${risks.open} rischi aperti` +
+        (risks.high_priority > 0 ? `, di cui ${risks.high_priority} ad alta priorità` : '') +
+        `. Sono stati mitigati o chiusi ${risks.mitigated_closed_period} rischi. ` +
+        (risks.open === 0
+            ? 'Non risultano rischi aperti al momento del riesame.'
+            : (risks.high_priority > 0
+                ? 'Le azioni di trattamento dei rischi ad alta priorità sono monitorate per verificarne l\'efficacia.'
+                : 'I rischi aperti sono presidiati secondo le azioni di trattamento definite.'));
+
+    const previousActionsText = prevReview
+        ? `Stato delle azioni dal precedente riesame ${prevReview.review_number || ''}`.trim() +
+            (prevReview.review_date ? ` (del ${prevReview.review_date})` : '') + ':\n' +
+            `- Miglioramenti: ${prevReview.output_improvements || 'da aggiornare'}\n` +
+            `- Modifiche al SGQ: ${prevReview.output_sgq_changes || 'da aggiornare'}\n` +
+            `- Risorse: ${prevReview.output_resources || 'da aggiornare'}`
+        : 'Non risulta un riesame di direzione precedente nel periodo considerato: non vi sono azioni pregresse da verificare.';
 
     const drafts = aiText || {
         nc_summary: `Nel periodo ${periodFrom} – ${periodTo} sono state rilevate ${nc.open} non conformità ancora aperte` +
@@ -693,6 +879,10 @@ Rispondi SOLO con JSON con questa struttura:
               (suppliers.avg_score != null ? ` con uno score medio di ${suppliers.avg_score}/100` : '') +
               '. Le valutazioni confermano il livello di qualificazione dei fornitori critici.'
             : 'Non sono state effettuate valutazioni formali di fornitori nel periodo in esame.',
+
+        risks_summary: risksText,
+
+        previous_actions_summary: previousActionsText,
 
         norm_gaps: gapsText,
     };
