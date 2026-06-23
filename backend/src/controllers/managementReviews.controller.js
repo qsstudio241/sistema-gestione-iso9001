@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
+    assertCompanyRead,
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
@@ -111,7 +112,12 @@ async function getOneReview(req, res) {
                 WHERE mr.id = @id AND mr.organization_id = @orgId AND mr.is_deleted = 0
             `);
         if (!r.recordset.length) return res.status(404).json({ error: 'Riesame non trovato' });
-        res.json({ success: true, data: r.recordset[0] });
+        const review = r.recordset[0];
+        if (review.company_id) {
+            const readDenied = await assertCompanyRead(req.user, review.company_id);
+            if (readDenied) return sendAccessDenied(res, readDenied);
+        }
+        res.json({ success: true, data: review });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -298,6 +304,12 @@ async function getInputSummary(req, res) {
     const dateFrom   = req.query.date_from || defaultFrom;
     const dateTo     = req.query.date_to   || defaultTo;
     const companyId  = req.query.company_id ? parseInt(req.query.company_id, 10) : null;
+
+    // Guard accesso azienda (P5 — RBAC)
+    if (companyId) {
+        const readDenied = await assertCompanyRead(req.user, companyId);
+        if (readDenied) return sendAccessDenied(res, readDenied);
+    }
 
     const result = {
         period: { from: dateFrom, to: dateTo },

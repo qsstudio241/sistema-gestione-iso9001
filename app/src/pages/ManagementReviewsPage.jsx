@@ -61,7 +61,9 @@ function jan1Iso() {
 
 // ─── Widget Dati disponibili §9.3.2 ──────────────────────────────────────────
 
-function InputSummaryWidget({ companyId, onPrefill }) {
+// onPrefill  → ACCODA al testo esistente (pulsanti singoli "Pre-compila campo X")
+// onFillAll  → SOSTITUISCE tutti i campi auto-popolati (pulsante "Genera bozza")
+function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
   const [dateFrom,  setDateFrom]  = useState(jan1Iso);
   const [dateTo,    setDateTo]    = useState(todayIso);
   const [data,      setData]      = useState(null);
@@ -147,15 +149,16 @@ function InputSummaryWidget({ companyId, onPrefill }) {
     return lines.join("\n");
   }
 
-  // Compila tutti i campi §9.3.2 dai dati già caricati (client-side, non richiede reviewId)
+  // Compila (SOSTITUISCE) tutti i campi §9.3.2 dai dati già caricati
   function generateAllFields() {
     if (!data) return;
-    if (data.nc)         onPrefill("input_nc_corrective",         buildNcText(data.nc));
-    if (data.objectives) onPrefill("input_objectives",            buildObjText(data.objectives));
-    if (data.audits)     onPrefill("input_audits",                buildAuditText(data.audits));
-    if (data.suppliers)  onPrefill("input_suppliers",             buildSuppText(data.suppliers));
-    if (data.complaints) onPrefill("input_complaints",            buildCmpText(data.complaints));
-    if (data.complaints) onPrefill("input_customer_satisfaction", buildSatisfText(data.complaints));
+    const fill = onFillAll || onPrefill; // onFillAll sostituisce, onPrefill accoda
+    if (data.nc)         fill("input_nc_corrective",         buildNcText(data.nc));
+    if (data.objectives) fill("input_objectives",            buildObjText(data.objectives));
+    if (data.audits)     fill("input_audits",                buildAuditText(data.audits));
+    if (data.suppliers)  fill("input_suppliers",             buildSuppText(data.suppliers));
+    if (data.complaints) fill("input_complaints",            buildCmpText(data.complaints));
+    if (data.complaints) fill("input_customer_satisfaction", buildSatisfText(data.complaints));
     setFilled(true);
   }
 
@@ -459,8 +462,14 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
 
   function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
 
+  // Accoda al testo esistente (pulsanti singoli "Pre-compila campo X")
   function handlePrefill(field, text) {
     setForm((f) => ({ ...f, [field]: f[field] ? `${f[field]}\n\n${text}` : text }));
+  }
+
+  // Sostituisce il campo (usato da "Genera bozza" per non duplicare al secondo click)
+  function handleFillReplace(field, text) {
+    setForm((f) => ({ ...f, [field]: text }));
   }
 
   async function submit(e) {
@@ -562,9 +571,12 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
 
           {/* 3. §9.3.2 Input (8 campi) */}
           <CollapsibleSection title="3 — §9.3.2 Input del riesame">
+            {/* key forza re-mount (e nuovo auto-load) se l'utente cambia azienda */}
             <InputSummaryWidget
+              key={form.company_id || initial?.company_id || "nessuna-azienda"}
               companyId={form.company_id || initial?.company_id || null}
               onPrefill={handlePrefill}
+              onFillAll={handleFillReplace}
             />
             {[
               { key: "input_previous_actions",      label: "a) Azioni da precedenti riesami" },
