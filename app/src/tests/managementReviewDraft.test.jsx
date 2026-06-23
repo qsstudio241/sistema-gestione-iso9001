@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { InputSummaryWidget } from '../pages/ManagementReviewsPage';
+import { InputSummaryWidget, OutputsDraftSection } from '../pages/ManagementReviewsPage';
 
 vi.mock('../services/apiService', () => ({
   default: {
@@ -169,5 +169,119 @@ describe('InputSummaryWidget — generazione bozza §9.3.2', () => {
     expect(apiService.post).not.toHaveBeenCalled();
     expect(onFillAll).toHaveBeenCalledWith('input_nc_corrective', expect.stringContaining('NC aperte'));
     await waitFor(() => expect(screen.getByText('Bozza automatica')).toBeTruthy());
+  });
+});
+
+// ─── Output §9.3.3 ────────────────────────────────────────────────────────────
+
+const FORM_INPUTS = {
+  input_previous_actions: 'Azioni precedenti chiuse.',
+  input_context_changes: 'Nuovo regolamento di settore.',
+  input_audits: 'Due audit interni condotti.',
+  input_nc_corrective: '2 NC aperte.',
+  input_objectives: '3 su 4 obiettivi raggiunti.',
+  input_complaints: '1 reclamo.',
+  input_customer_satisfaction: 'Soddisfazione in crescita.',
+  input_suppliers: '3 fornitori valutati.',
+  input_resources: 'Organico adeguato, formazione da potenziare.',
+  input_improvements: 'Digitalizzare i registri di taratura.',
+  input_process_performance: 'Processi in linea con i target.',
+  input_risk_effectiveness: 'Azioni di mitigazione efficaci.',
+};
+
+describe('OutputsDraftSection — generazione output §9.3.3', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('riesame salvato + AI: usa gli output backend e mostra badge "AI attiva"', async () => {
+    const onFill = vi.fn();
+    apiService.post.mockResolvedValue({
+      success: true,
+      outputs: {
+        output_improvements: 'Miglioramenti AI.',
+        output_sgq_changes: 'Modifiche SGQ AI.',
+        output_resources: 'Risorse AI.',
+      },
+      meta: { ai_used: true },
+    });
+
+    render(<OutputsDraftSection reviewId={42} companyId={7} form={FORM_INPUTS} onFill={onFill} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Genera output dal riesame/));
+    });
+
+    expect(apiService.post).toHaveBeenCalledTimes(1);
+    const [path, body] = apiService.post.mock.calls[0];
+    expect(path).toBe('/management-reviews/42/generate-outputs');
+    expect(body.company_id).toBe(7);
+    expect(body.inputs.input_improvements).toBe('Digitalizzare i registri di taratura.');
+
+    expect(onFill).toHaveBeenCalledWith('output_improvements', 'Miglioramenti AI.');
+    expect(onFill).toHaveBeenCalledWith('output_sgq_changes', 'Modifiche SGQ AI.');
+    expect(onFill).toHaveBeenCalledWith('output_resources', 'Risorse AI.');
+
+    await waitFor(() => expect(screen.getByText('AI attiva')).toBeTruthy());
+  });
+
+  it('riesame salvato + fallback server: badge "Bozza automatica"', async () => {
+    const onFill = vi.fn();
+    apiService.post.mockResolvedValue({
+      success: true,
+      outputs: {
+        output_improvements: 'Output deterministico server.',
+        output_sgq_changes: 'Modifiche server.',
+        output_resources: 'Risorse server.',
+      },
+      meta: { ai_used: false },
+    });
+
+    render(<OutputsDraftSection reviewId={42} companyId={null} form={FORM_INPUTS} onFill={onFill} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Genera output dal riesame/));
+    });
+
+    expect(onFill).toHaveBeenCalledWith('output_improvements', 'Output deterministico server.');
+    await waitFor(() => expect(screen.getByText('Bozza automatica')).toBeTruthy());
+  });
+
+  it('chiamata backend fallita: degrada al template locale (nessun blocco)', async () => {
+    const onFill = vi.fn();
+    apiService.post.mockRejectedValue(new Error('Network Error'));
+
+    render(<OutputsDraftSection reviewId={42} companyId={null} form={FORM_INPUTS} onFill={onFill} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Genera output dal riesame/));
+    });
+
+    const filledFields = onFill.mock.calls.map((c) => c[0]);
+    expect(filledFields).toContain('output_improvements');
+    expect(filledFields).toContain('output_sgq_changes');
+    expect(filledFields).toContain('output_resources');
+    // Il template locale incorpora gli input compilati
+    expect(onFill).toHaveBeenCalledWith(
+      'output_improvements',
+      expect.stringContaining('Digitalizzare i registri di taratura.')
+    );
+    await waitFor(() => expect(screen.getByText('Bozza automatica')).toBeTruthy());
+  });
+
+  it('riesame non salvato (nessun reviewId): nessuna chiamata backend, template locale', async () => {
+    const onFill = vi.fn();
+
+    render(<OutputsDraftSection reviewId={null} companyId={null} form={FORM_INPUTS} onFill={onFill} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Genera output dal riesame/));
+    });
+
+    expect(apiService.post).not.toHaveBeenCalled();
+    const filledFields = onFill.mock.calls.map((c) => c[0]);
+    expect(filledFields).toContain('output_improvements');
+    expect(filledFields).toContain('output_resources');
+    await waitFor(() => expect(screen.getByText(/Salva il riesame/)).toBeTruthy());
   });
 });
