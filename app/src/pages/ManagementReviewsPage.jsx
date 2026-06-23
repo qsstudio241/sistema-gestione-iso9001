@@ -63,13 +63,18 @@ function jan1Iso() {
 
 // onPrefill  → ACCODA al testo esistente (pulsanti singoli "Pre-compila campo X")
 // onFillAll  → SOSTITUISCE tutti i campi auto-popolati (pulsante "Genera bozza")
-function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
+// reviewId   → se presente (riesame gia salvato) usa l'endpoint backend (AI o fallback
+//              deterministico server); altrimenti ricade sui template locali.
+export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }) {
   const [dateFrom,  setDateFrom]  = useState(jan1Iso);
   const [dateTo,    setDateTo]    = useState(todayIso);
   const [data,      setData]      = useState(null);
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);
   const [filled,    setFilled]    = useState(false);
+  const [drafting,  setDrafting]  = useState(false);
+  // null = non ancora generato; 'ai' = testo da provider LLM; 'auto' = bozza deterministica
+  const [draftMode, setDraftMode] = useState(null);
 
   // Auto-carica i dati §9.3.2 all'apertura della sezione
   useEffect(() => {
@@ -149,8 +154,8 @@ function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
     return lines.join("\n");
   }
 
-  // Compila (SOSTITUISCE) tutti i campi §9.3.2 dai dati già caricati
-  function generateAllFields() {
+  // Template locali deterministici (comportamento storico, usato come fallback)
+  function applyLocalDrafts() {
     if (!data) return;
     const fill = onFillAll || onPrefill; // onFillAll sostituisce, onPrefill accoda
     if (data.nc)         fill("input_nc_corrective",         buildNcText(data.nc));
@@ -159,6 +164,48 @@ function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
     if (data.suppliers)  fill("input_suppliers",             buildSuppText(data.suppliers));
     if (data.complaints) fill("input_complaints",            buildCmpText(data.complaints));
     if (data.complaints) fill("input_customer_satisfaction", buildSatisfText(data.complaints));
+  }
+
+  // Compila (SOSTITUISCE) i campi §9.3.2.
+  // Se il riesame è già salvato → usa l'endpoint backend (AI se configurata, altrimenti
+  // testo deterministico server-side). In assenza di id o in caso di errore → template locali.
+  async function generateAllFields() {
+    if (!data) return;
+    const fill = onFillAll || onPrefill; // onFillAll sostituisce, onPrefill accoda
+
+    if (reviewId) {
+      setDrafting(true);
+      try {
+        const res = await apiService.post(`/management-reviews/${reviewId}/generate-draft`, {
+          company_id:  companyId || undefined,
+          period_from: dateFrom,
+          period_to:   dateTo,
+        });
+        const drafts = res?.drafts;
+        if (drafts) {
+          // I 5 summary generati dal backend (NC, obiettivi, audit, fornitori, gap normativi)
+          if (drafts.nc_summary)         fill("input_nc_corrective", drafts.nc_summary);
+          if (drafts.objectives_summary) fill("input_objectives",    drafts.objectives_summary);
+          if (drafts.audits_summary)     fill("input_audits",        drafts.audits_summary);
+          if (drafts.suppliers_summary)  fill("input_suppliers",     drafts.suppliers_summary);
+          if (drafts.norm_gaps)          fill("input_improvements",  drafts.norm_gaps);
+          // Campi non coperti dall'endpoint: template locali sui dati già caricati
+          if (data.complaints) fill("input_complaints",            buildCmpText(data.complaints));
+          if (data.complaints) fill("input_customer_satisfaction", buildSatisfText(data.complaints));
+          setDraftMode(res?.meta?.ai_used === true ? "ai" : "auto");
+          setFilled(true);
+          return;
+        }
+      } catch (_) {
+        // Graceful degradation: nessun blocco UI, si ricade sui template locali.
+      } finally {
+        setDrafting(false);
+      }
+    }
+
+    // Fallback: riesame non salvato o chiamata fallita → comportamento storico locale
+    applyLocalDrafts();
+    setDraftMode("auto");
     setFilled(true);
   }
 
@@ -183,21 +230,29 @@ function InputSummaryWidget({ companyId, onPrefill, onFillAll }) {
             type="button"
             className="btn-primary isw-draft-btn"
             onClick={generateAllFields}
-            disabled={!data || loading}
+            disabled={!data || loading || drafting}
             title={
               data
                 ? "Compila automaticamente tutti i campi \u00A79.3.2 con i dati del periodo"
                 : "Attendere il caricamento dei dati\u2026"
             }
           >
-            {"\u2728 Genera bozza testo"}
+            {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
           </button>
         </div>
       </div>
 
       {filled && (
         <div className="isw-body">
-          <p className="isw-draft-ok">{"Campi \u00A79.3.2 compilati con i dati del periodo."}</p>
+          <p className="isw-draft-ok">
+            {"Campi \u00A79.3.2 compilati con i dati del periodo."}
+            {draftMode === "ai" && (
+              <span className="mr-badge mr-approved" style={{ marginLeft: 8 }}>{"AI attiva"}</span>
+            )}
+            {draftMode === "auto" && (
+              <span className="mr-badge mr-draft" style={{ marginLeft: 8 }}>{"Bozza automatica"}</span>
+            )}
+          </p>
         </div>
       )}
       {loading && !data && (
@@ -575,6 +630,7 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
             <InputSummaryWidget
               key={form.company_id || initial?.company_id || "nessuna-azienda"}
               companyId={form.company_id || initial?.company_id || null}
+              reviewId={initial?.id || null}
               onPrefill={handlePrefill}
               onFillAll={handleFillReplace}
             />
