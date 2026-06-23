@@ -25,7 +25,7 @@
 | [**F** — Architettura piattaforma](#f-architettura-unificata-della-piattaforma-sessione-05042026) | Visione moduli unificati |
 | [File Word spesso toccati](#file-spesso-toccati-word--export) | Path sorgenti export |
 
-Sessioni recenti (consultazione): [Sessione 22/06/2026 — Riesame pattern Ambito azienda](#sessione-22062026--riesame-di-direzione-pattern-ambito-azienda), [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
+Sessioni recenti (consultazione): [Sessione 23/06/2026 — Riesame §9.3 stato modulo](#sessione-23062026--riesame-di-direzione-93-stato-modulo-3-slice-ai-in-produzione), [Sessione 23/06/2026 — incident deploy WIP](#sessione-23062026-incident--deploy-sicuro-con-working-tree-sporco), [Sessione 22/06/2026 — Riesame pattern Ambito azienda](#sessione-22062026--riesame-di-direzione-pattern-ambito-azienda), [Sessione 19/06/2026 — Coverage range-aware qualifiche](#sessione-19062026-notte--slice-1-coverage-range-aware-qualifiche-saldatori), [Sessione 19/06/2026 — Integrazione AI Riesame §9.3](#sessione-19062026--integrazione-ai-riesame-di-direzione-93), [Sessione 19/06/2026 — Ambiente TEST VPS backend](#ambiente-test-backend-istanza-parallela-vps--configurato-19062026), [Sessione 14/06/2026 — Import qualifiche ERAM (chiusura)](#sessione-14062026--import-qualifiche-eram--workflow-preview-chiusura), [Sessione 30/05/2026 — Modulo NC (chiusura)](#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti), [Sessione 30/05/2026 — Tooling Cursor/MCP](#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione), [Sessione 26/05/2026](#sessione-26052026--refactor-ui-slice-abd-vigenti-nav), [Sessione 25/05/2026](#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr), [Sessione 24/05/2026 (bis)](#sessione-24052026-bis--modulo-documentale-ux-e-upload), [Sessione 24/05/2026](#sessione-24052026--smoke-e2e-login-playwright-cloud-agent), [Sessione 22/05/2026 (bis)](#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche), [Sessione 22/05/2026](#sessione-22052026--fix-allegati-iso-45001), [Sessione 17/05/2026](#sessione-17052026--modulo-saldatura-iso-3834-operativo).
 
 ---
 
@@ -91,6 +91,7 @@ Sessioni recenti (consultazione): [Sessione 22/06/2026 — Riesame pattern Ambit
 | **Migrazioni DB — sequenza condivisa** | Numerazione **unica** (stato ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (check esistenza prima di `ALTER`/`CREATE`). FK SQL Server: statement separati. | [how-to/database-migrations.md](how-to/database-migrations.md) |
 | **Encoding UTF-8 senza BOM** | Lo strumento di salvataggio può produrre **ANSI/BOM** o interpretare `\n`/`\t` come newline/tab. Dopo ogni scrittura: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`**. Script: `backend/scripts/check-utf8-encoding.js`. | [Playbook caratteri non riconoscibili](#playbook-riutilizzabile--caratteri-non-riconoscibili-ufffd--tofu-in-ui) · [`sgq-encoding-quality.mdc`](../.cursor/rules/sgq-encoding-quality.mdc) |
 | **`contractReview.controller.js` NON è nel deploy-manifest** | `backend/scripts/deploy-manifest.json` non include `contractReview.controller.js`/`.routes.js`: quando un commit li modifica vanno copiati a mano con `pscp` **prima** del restart, poi lanciare `deploy-controllers-to-vps.ps1` per il resto. Deploy fix segregazione `company_id` Import PDF 13/06/2026 (commit `9fda958`): push `main`, copia manuale `contractReview.controller.js`, deploy manifest, MainPID 646321→652768, health `healthy`, `/import-jobs` → 401 coerente. | Sessione 13/06/2026 — commit `9fda958` |
+| **Deploy sicuro con working tree "sporco"** | `deploy-controllers-to-vps.ps1` copia il **working tree dal disco** (manifest di ~118 file), **non** lo stato committato: se il tree contiene WIP non pertinente al rilascio, il WIP finisce in produzione (incidente 23/06/2026: una versione WIP di `knowledgeIndexer.service.js` importava un file nuovo non tracciato → crash `MODULE_NOT_FOUND`, API offline 503). **Regola**: (1) prima di ogni deploy backend verificare `git status --short`; se il tree NON è pulito e il WIP non riguarda il rilascio, **non** usare lo script completo; (2) fare un **deploy mirato dei soli file committati** (`pscp` del singolo file, oppure `git show HEAD:percorso` per forzare la versione di `HEAD`) + restart con verifica `MainPID`; (3) se il rilascio introduce un **nuovo pacchetto npm** (es. `mammoth`), eseguire `npm install`/`npm ci` sul VPS, altrimenti `MODULE_NOT_FOUND`. Funzioni riutilizzabili in `backend/scripts/lib/vps-ssh.ps1` (`Initialize-SgqVpsSsh`, `Test-SgqVpsSession`, `Copy-SgqVpsFile`, `Invoke-SgqVps`, `Get-SgqVpsHealth`); password sudo a `plink` **solo via stdin**, mai nella stringa del comando. | [Sessione 23/06/2026 — incident deploy WIP](#sessione-23062026-incident--deploy-sicuro-con-working-tree-sporco) |
 | **Token Netlify CLI (Windows)** | Credenziali locali: `backend/config/.netlify.local.ps1` (copia da `.netlify.local.ps1.example`, gitignored). Preflight: `.\backend\scripts\netlify-preflight.ps1` → deve stampare `NETLIFY_ACCESS_OK`. **Mai** token Netlify in chat o su Git. | [NETLIFY_DEPLOYMENT.md](how-to/NETLIFY_DEPLOYMENT.md) |
 
 ### Import Excel / Scadenzario (ADR-013)
@@ -3521,6 +3522,42 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - **`createReview` company_id** (P10): nessuna verifica che `company_id` passato nel body appartenga all'organizzazione (solo RBAC write). Fix: aggiungere `assertCompanyRead` prima dell'INSERT.
 - **`updateReview` cambio company_id** (P9): `assertMutatingAllowed` verifica il `company_id` esistente ma non il nuovo. Fix: leggere il nuovo `company_id` dal body e aggiungere check.
 - **`norm_coverage` aggregazione** (P6): con `companyId` presente, la join tra clausole e audit può includere clausole "ok" per audit di altre aziende. Fix: filtrare `a.company_id` anche nella subquery `norm_coverage`.
+
+---
+
+### Sessione 23/06/2026 (incident) — Deploy sicuro con working tree "sporco"
+
+**Problema**: `backend/scripts/deploy-controllers-to-vps.ps1` copia sul VPS **tutto il working tree** (manifest di ~118 file letti dal disco), **incluso il WIP non committato**. Durante una sessione con lavoro in corso di un altro workstream, il deploy ha portato in produzione una versione modificata di `knowledgeIndexer.service.js` che importava un file nuovo non ancora tracciato da git (`documentTextExtractor.service.js`), non incluso nel deploy → backend in crash `MODULE_NOT_FOUND`, API offline (HTTP 503).
+
+**Causa radice**: lo script deploya dal **working tree**, non dallo stato committato/`HEAD`. Se il tree è "sporco" con WIP, il WIP finisce in produzione.
+
+**Ripristino effettuato**: riportate sul VPS le versioni **committate** dei file impattati (`knowledgeIndexer.service.js`, `package.json`) via `pscp` mirato + restart `sgq-backend` (verifica `MainPID` cambiato) + health check 200.
+
+**Pratica sicura (regola operativa):**
+
+| # | Regola |
+|---|--------|
+| 1 | Prima di qualsiasi deploy backend, verificare `git status --short`. Se il tree NON è pulito e il WIP non è pertinente al rilascio, **non** usare lo script di deploy completo. |
+| 2 | Usare invece un **deploy mirato dei soli file committati**: `pscp` del singolo file, oppure `git show HEAD:percorso` quando si vuole forzare la versione committata, verso il percorso remoto; poi restart con verifica `MainPID`. |
+| 3 | Le funzioni riutilizzabili sono in `backend/scripts/lib/vps-ssh.ps1` (`Initialize-SgqVpsSsh`, `Test-SgqVpsSession`, `Copy-SgqVpsFile`, `Invoke-SgqVps`, `Get-SgqVpsHealth`). Passare la password sudo a `plink` via **stdin**, mai nella stringa del comando (che potrebbe finire nei log). |
+| 4 | **Nuove dipendenze runtime**: se un rilascio introduce un nuovo pacchetto npm (es. `mammoth`), il deploy backend DEVE eseguire `npm install`/`npm ci` sul VPS, altrimenti `MODULE_NOT_FOUND`. |
+
+---
+
+### Sessione 23/06/2026 — Riesame di Direzione §9.3: stato modulo (3 slice AI in produzione)
+
+Stato consolidato del modulo Riesame di Direzione: le 3 slice sono tutte in `main` e in produzione.
+
+| Slice | Contenuto | Endpoint/File chiave | Stato |
+|------|-----------|----------------------|-------|
+| Fix iniziale | Corretto doppio dereference `res.data.data`→`res.data` (e `res.data.pagination`) che bloccava caricamento dati/lista/export | `app/src/pages/ManagementReviewsPage.jsx` | In main (commit `2aa4f4f`) |
+| Slice 1 | Pulsante "Genera bozza" collegato a `POST /management-reviews/:id/generate-draft` con badge "AI attiva/Bozza automatica" e fallback ai template locali | `ManagementReviewsPage.jsx` (widget `InputSummaryWidget`) | In main (`60121ba`), frontend live |
+| Slice 2 | Aggregazione §9.3.2 ampliata: rischi/opportunità, output del riesame precedente, dettaglio NC; prompt+fallback estesi (`risks_summary`, `previous_actions_summary`) | `backend/src/controllers/managementReviews.controller.js` (`getInputSummary`, `generate-draft`) | In main (`2d4e64a`), backend deployato |
+| Slice 3 | Generazione assistita output §9.3.3 (miglioramenti, modifiche SGQ, risorse) via nuovo endpoint `POST /management-reviews/:id/generate-outputs`, sezione UI `OutputsDraftSection` con fallback | controller + `managementReviews.routes.js` + `ManagementReviewsPage.jsx` | In main (`ec71b8a`), backend deployato e verificato (health 200, endpoint 401 senza auth) |
+
+**Stato AI**: l'infrastruttura LLM (`aiProviderAdapter`, provider Gemini/Azure/OpenAI) è presente. Per attivare l'AI reale serve una **chiave provider come variabile d'ambiente sul VPS**; in assenza opera il **fallback deterministico** (badge "Bozza automatica").
+
+**Backlog (cosa resta):** **Slice 4 rimandata** — integrazione KPI/monitoraggio §9.1 (bloccata: il modulo §9.1 non è ancora strutturato) e pannello assistente conversazionale.
 
 ---
 
