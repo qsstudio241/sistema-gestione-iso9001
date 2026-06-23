@@ -1,6 +1,27 @@
-# DEPUTYTASK — stato al 21/06/2026 (sera)
+# DEPUTYTASK — stato al 23/06/2026
 
 ## Sessione completata — TEST OK
+
+### PR mergiata oggi (23/06/2026)
+| PR | Contenuto |
+|----|-----------|
+| #156 | Riesame Direzione: UX auto-load + copertura normativa §9.3.2 completa + export Word §7.5 |
+
+**Dettaglio PR #156:**
+- Bug fix: widget "Dati disponibili §9.3.2" ora auto-carica i dati all'apertura della sezione
+- Bug fix: "Genera bozza testo" funziona senza reviewId (client-side da dati caricati)
+- Migrazione 110: 4 colonne §9.3.2 aggiunte a `management_reviews` (eseguita su VPS)
+- Form §9.3.2: 12 campi nell'ordine normativo corretto (a→b→c.1-7→d→e→f)
+- Export Word §7.5: pulsante 📋 su ogni riesame → scarica verbale `.docx`
+
+### Stato produzione (23/06/2026)
+- DB: migrazione 110 eseguita (4 colonne §9.3.2)
+- Backend: aggiornato (PID 57593), health OK
+- Frontend: Netlify live (chunk `ManagementReviewsPage-DVT4Sh6S.js`)
+
+---
+
+## Sessione precedente — TEST OK (21/06/2026)
 
 ### PR mergiate oggi (21/06/2026)
 | PR | Contenuto |
