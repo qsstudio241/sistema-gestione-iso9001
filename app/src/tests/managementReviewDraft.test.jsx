@@ -26,11 +26,25 @@ import apiService from '../services/apiService';
 
 const SUMMARY = {
   period: { from: '2026-01-01', to: '2026-06-23' },
-  nc:         { open: 2, overdue: 1, total_closed_period: 5 },
+  nc:         {
+    open: 2, overdue: 1, total_closed_period: 5,
+    details: [
+      { id: 11, number: 'NC-2026-001', title: 'Mancata registrazione taratura', severity: 'major', status: 'open', due_date: '2026-07-01' },
+      { id: 12, number: 'NC-2026-002', title: 'Documento obsoleto in uso', severity: 'minor', status: 'in_progress', due_date: null },
+    ],
+  },
   objectives: { total: 4, achieved: 3, percentage: 75 },
   audits:     { conducted: 2, planned: 1 },
   suppliers:  { evaluated: 3, avg_score: 82 },
   complaints: { total: 1 },
+  risks:      { open: 3, mitigated_closed_period: 2, high_priority: 1 },
+  previous_review: {
+    review_number: 'RD-2025-001',
+    review_date: '2025-03-15',
+    output_improvements: 'Avviata digitalizzazione registri.',
+    output_sgq_changes: 'Aggiornata procedura PG-07.',
+    output_resources: 'Assunto un tecnico qualità.',
+  },
   norm_coverage: [],
 };
 
@@ -63,6 +77,8 @@ describe('InputSummaryWidget — generazione bozza §9.3.2', () => {
         objectives_summary: 'Sintesi obiettivi AI.',
         audits_summary: 'Sintesi audit AI.',
         suppliers_summary: 'Sintesi fornitori AI.',
+        risks_summary: 'Sintesi rischi AI.',
+        previous_actions_summary: 'Sintesi azioni precedenti AI.',
         norm_gaps: 'Gap normativi AI.',
       },
       meta: { ai_used: true },
@@ -83,9 +99,30 @@ describe('InputSummaryWidget — generazione bozza §9.3.2', () => {
     expect(onFillAll).toHaveBeenCalledWith('input_objectives', 'Sintesi obiettivi AI.');
     expect(onFillAll).toHaveBeenCalledWith('input_audits', 'Sintesi audit AI.');
     expect(onFillAll).toHaveBeenCalledWith('input_suppliers', 'Sintesi fornitori AI.');
+    expect(onFillAll).toHaveBeenCalledWith('input_risk_effectiveness', 'Sintesi rischi AI.');
+    expect(onFillAll).toHaveBeenCalledWith('input_previous_actions', 'Sintesi azioni precedenti AI.');
     expect(onFillAll).toHaveBeenCalledWith('input_improvements', 'Gap normativi AI.');
 
     await waitFor(() => expect(screen.getByText('AI attiva')).toBeTruthy());
+  });
+
+  it('summary backend parziali: fallback locale per rischi e azioni precedenti', async () => {
+    const { onFillAll } = await renderAndWait({ reviewId: 42, companyId: null });
+
+    // Il backend restituisce solo alcuni summary (es. AI che omette le chiavi nuove)
+    apiService.post.mockResolvedValue({
+      success: true,
+      drafts: { nc_summary: 'Solo NC.' },
+      meta: { ai_used: true },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText(/Genera bozza testo/));
+    });
+
+    // I campi nuovi non coperti dal backend ricadono sui template locali sui dati caricati
+    expect(onFillAll).toHaveBeenCalledWith('input_risk_effectiveness', expect.stringContaining('Rischi aperti: 3'));
+    expect(onFillAll).toHaveBeenCalledWith('input_previous_actions', expect.stringContaining('RD-2025-001'));
   });
 
   it('riesame salvato + fallback server: badge "Bozza automatica"', async () => {

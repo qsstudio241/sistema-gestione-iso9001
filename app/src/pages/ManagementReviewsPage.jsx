@@ -154,6 +154,30 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
     return lines.join("\n");
   }
 
+  function buildRisksText(rk) {
+    const lines = [
+      `Rischi aperti: ${rk.open}`,
+      `Rischi ad alta priorità: ${rk.high_priority}`,
+      `Rischi mitigati/chiusi nel periodo: ${rk.mitigated_closed_period}`,
+    ];
+    if (rk.note) lines.push(`Nota: ${rk.note}`);
+    return lines.join("\n");
+  }
+
+  function buildPrevActionsText(prev) {
+    if (!prev) {
+      return "Non risulta un riesame di direzione precedente: non vi sono azioni pregresse da verificare.";
+    }
+    const head = `Stato azioni dal precedente riesame${prev.review_number ? ` ${prev.review_number}` : ""}` +
+      `${prev.review_date ? ` (del ${prev.review_date})` : ""}:`;
+    return [
+      head,
+      `- Miglioramenti: ${prev.output_improvements || "[da aggiornare]"}`,
+      `- Modifiche al SGQ: ${prev.output_sgq_changes || "[da aggiornare]"}`,
+      `- Risorse: ${prev.output_resources || "[da aggiornare]"}`,
+    ].join("\n");
+  }
+
   // Template locali deterministici (comportamento storico, usato come fallback)
   function applyLocalDrafts() {
     if (!data) return;
@@ -164,6 +188,8 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
     if (data.suppliers)  fill("input_suppliers",             buildSuppText(data.suppliers));
     if (data.complaints) fill("input_complaints",            buildCmpText(data.complaints));
     if (data.complaints) fill("input_customer_satisfaction", buildSatisfText(data.complaints));
+    if (data.risks)      fill("input_risk_effectiveness",    buildRisksText(data.risks));
+    fill("input_previous_actions", buildPrevActionsText(data.previous_review));
   }
 
   // Compila (SOSTITUISCE) i campi §9.3.2.
@@ -188,10 +214,19 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
           if (drafts.objectives_summary) fill("input_objectives",    drafts.objectives_summary);
           if (drafts.audits_summary)     fill("input_audits",        drafts.audits_summary);
           if (drafts.suppliers_summary)  fill("input_suppliers",     drafts.suppliers_summary);
+          if (drafts.risks_summary)            fill("input_risk_effectiveness", drafts.risks_summary);
+          if (drafts.previous_actions_summary) fill("input_previous_actions",   drafts.previous_actions_summary);
           if (drafts.norm_gaps)          fill("input_improvements",  drafts.norm_gaps);
-          // Campi non coperti dall'endpoint: template locali sui dati già caricati
+          // Campi non coperti dai summary backend: template locali sui dati già caricati
           if (data.complaints) fill("input_complaints",            buildCmpText(data.complaints));
           if (data.complaints) fill("input_customer_satisfaction", buildSatisfText(data.complaints));
+          // Fallback per summary backend non disponibili (es. AI che non restituisce la chiave)
+          if (!drafts.risks_summary && data.risks) {
+            fill("input_risk_effectiveness", buildRisksText(data.risks));
+          }
+          if (!drafts.previous_actions_summary) {
+            fill("input_previous_actions", buildPrevActionsText(data.previous_review));
+          }
           setDraftMode(res?.meta?.ai_used === true ? "ai" : "auto");
           setFilled(true);
           return;
@@ -392,21 +427,55 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
               </button>
             </div>
 
-            {/* Azioni precedenti */}
+            {/* Rischi e opportunità */}
             <div className="isw-tile">
-              <div className="isw-tile-title">{"a) Azioni da precedenti riesami"}</div>
-              <p className="isw-tile-note">
-                {"Inserire manualmente lo stato delle azioni definite nel riesame precedente."}
-              </p>
+              <div className="isw-tile-title">{"e) Rischi e opportunit\u00E0"}</div>
+              <div className="isw-tile-metrics">
+                <div className="isw-metric">
+                  <span className={`isw-metric-val${data.risks.open > 0 ? " isw-red" : ""}`}>
+                    {data.risks.open}
+                  </span>
+                  <span className="isw-metric-lbl">{"Aperti"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className={`isw-metric-val${data.risks.high_priority > 0 ? " isw-red" : ""}`}>
+                    {data.risks.high_priority}
+                  </span>
+                  <span className="isw-metric-lbl">{"Alta priorit\u00E0"}</span>
+                </div>
+                <div className="isw-metric">
+                  <span className="isw-metric-val">{data.risks.mitigated_closed_period}</span>
+                  <span className="isw-metric-lbl">{"Mitigati/chiusi"}</span>
+                </div>
+              </div>
+              {data.risks.note && <p className="isw-tile-note">{data.risks.note}</p>}
               <button
                 type="button"
                 className="isw-prefill-btn"
-                onClick={() =>
-                  onPrefill(
-                    "input_previous_actions",
-                    "Azioni definite nel precedente riesame:\n- [Azione 1]: [stato avanzamento]\n- [Azione 2]: [stato avanzamento]"
-                  )
-                }
+                onClick={() => onPrefill("input_risk_effectiveness", buildRisksText(data.risks))}
+              >
+                {"Pre-compila campo e)"}
+              </button>
+            </div>
+
+            {/* Azioni precedenti */}
+            <div className="isw-tile">
+              <div className="isw-tile-title">{"a) Azioni da precedenti riesami"}</div>
+              {data.previous_review ? (
+                <p className="isw-tile-note">
+                  {"Riesame precedente: "}
+                  <strong>{data.previous_review.review_number || "s.n."}</strong>
+                  {data.previous_review.review_date ? ` (${data.previous_review.review_date})` : ""}
+                </p>
+              ) : (
+                <p className="isw-tile-note">
+                  {"Nessun riesame precedente registrato per questo ambito/periodo."}
+                </p>
+              )}
+              <button
+                type="button"
+                className="isw-prefill-btn"
+                onClick={() => onPrefill("input_previous_actions", buildPrevActionsText(data.previous_review))}
               >
                 {"Pre-compila campo a)"}
               </button>
@@ -432,6 +501,27 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
               </button>
             </div>
           </div>
+
+          {/* Dettaglio NC più rilevanti */}
+          {data.nc?.details && data.nc.details.length > 0 && (
+            <div>
+              <div className="isw-tile-title" style={{ marginBottom: 6 }}>
+                {"NC rilevanti del periodo"}
+              </div>
+              <ul className="isw-norm-list">
+                {data.nc.details.map((item) => (
+                  <li key={item.id} className={`isw-norm-item${item.severity === "major" ? " isw-gap" : ""}`}>
+                    <span className="isw-norm-clause">{item.number || `#${item.id}`}</span>
+                    <span>{item.title}</span>
+                    <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "#718096" }}>
+                      {[item.severity, item.status].filter(Boolean).join(" \u00B7 ")}
+                      {item.due_date ? ` \u00B7 scad. ${item.due_date}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Copertura normativa */}
           {data.norm_coverage && data.norm_coverage.length > 0 && (
