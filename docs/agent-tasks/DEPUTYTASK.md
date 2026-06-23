@@ -1,5 +1,15 @@
 # DEPUTYTASK — stato al 23/06/2026
 
+## Task documentale (23/06/2026 sera) — COMPLETATO
+
+Aggiornata `docs/GUIDA_CONSOLIDATA.md` (solo doc, nessuna modifica codice):
+- **Lezione deploy sicuro con working tree "sporco"** (incident 23/06): riga in *Lezioni apprese → Ambiente di lavoro e tooling* + sessione cronologica con regola operativa (verifica `git status --short`, deploy mirato dei soli file committati, `npm install` per nuove dipendenze).
+- **Stato modulo Riesame di Direzione §9.3**: sessione con tabella delle 3 slice AI in produzione (`2aa4f4f`, `60121ba`, `2d4e64a`, `ec71b8a`), nota stato AI (fallback deterministico) e backlog (Slice 4 KPI §9.1 rimandata).
+
+Verifica encoding UTF-8 senza BOM superata; commit doc dedicato (WIP altrui non toccato).
+
+---
+
 ## Sessione completata — TEST OK
 
 ### PR mergiata oggi (23/06/2026)
