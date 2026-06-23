@@ -84,6 +84,14 @@ function computeBackoffMs(attempt) {
   return Math.max(200, Math.min(5000, base + jitter));
 }
 
+// Timeout difensivo (ms) per ogni chiamata di rete di embedding: evita che un
+// provider lento o a rate-limit lasci l'indicizzazione AI appesa all'infinito.
+function embedTimeoutMs() {
+  const raw = process.env.GEMINI_EMBED_TIMEOUT_MS;
+  const n = raw != null ? parseInt(String(raw), 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 30000;
+}
+
 /**
  * Singolo tentativo di chiamata Gemini. Restituisce il risultato normalizzato
  * oppure lancia un errore con `err.status` valorizzato per gli HTTP non-OK,
@@ -308,7 +316,13 @@ async function embed(texts) {
 
   const embedModel = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
   const BATCH_LIMIT = 100;
+  const timeoutMs = embedTimeoutMs();
+  // Cap ai retry su 429 per singolo batch: oltre questa soglia si fallisce in
+  // modo pulito (il chiamante, knowledgeIndexer, degrada saltando i chunk)
+  // invece di restare in un retry-loop potenzialmente infinito.
+  const MAX_RATE_LIMIT_RETRIES = 2;
   const allEmbeddings = [];
+  let rateLimitRetries = 0;
 
   for (let i = 0; i < texts.length; i += BATCH_LIMIT) {
     const batch = texts.slice(i, i + BATCH_LIMIT);
@@ -320,18 +334,30 @@ async function embed(texts) {
       })),
     };
 
+    // Timeout difensivo: aborta la richiesta se il provider non risponde entro timeoutMs.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     let response;
     try {
       response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
     } catch (e) {
+      if (e && e.name === 'AbortError') {
+        throw createNormalizedError(
+          'AI_REQUEST_FAILED',
+          `Gemini embedding timed out after ${timeoutMs}ms`
+        );
+      }
       throw createNormalizedError(
         'AI_REQUEST_FAILED',
         `Gemini embedding network error: ${e.message || 'unknown'}`
       );
+    } finally {
+      clearTimeout(timer);
     }
 
     let data;
@@ -342,15 +368,20 @@ async function embed(texts) {
     }
 
     if (!response.ok) {
-      if (response.status === 429) {
-        const retryAfter = parseInt(response.headers.get('retry-after') || '5', 10);
-        await new Promise(r => setTimeout(r, retryAfter * 1000));
+      if (response.status === 429 && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
+        rateLimitRetries += 1;
+        const headerVal = response.headers && typeof response.headers.get === 'function'
+          ? response.headers.get('retry-after')
+          : null;
+        const retryAfter = parseInt(headerVal || '5', 10);
+        await sleep(Math.min(Number.isFinite(retryAfter) ? retryAfter : 5, 30) * 1000);
         i -= BATCH_LIMIT; // retry this batch
         continue;
       }
       const msg = (data && data.error && data.error.message) || `Gemini embedding HTTP ${response.status}`;
       throw createNormalizedError('AI_UPSTREAM_ERROR', msg, response.status);
     }
+    rateLimitRetries = 0; // batch riuscito: azzera il contatore retry
 
     if (!data.embeddings || !Array.isArray(data.embeddings)) {
       throw createNormalizedError('AI_UPSTREAM_ERROR', 'Gemini embedding response missing embeddings array');
