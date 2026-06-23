@@ -13,6 +13,7 @@ router.use(requireLicensedModule('riesame_direzione'));
 
 router.get('/management-reviews/input-summary',         ctrl.getInputSummary);
 router.post('/management-reviews/:id/generate-draft',   ctrl.generateDraft);
+router.post('/management-reviews/:id/generate-outputs', ctrl.generateOutputs);
 router.get('/management-reviews',                       ctrl.listReviews);
 router.get('/management-reviews/:id',                   ctrl.getOneReview);
 router.post('/management-reviews',                      ctrl.createReview);

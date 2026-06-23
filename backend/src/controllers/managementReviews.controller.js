@@ -890,4 +890,194 @@ Rispondi SOLO con JSON con questa struttura:
     res.json({ success: true, drafts, meta: { period_from: periodFrom, period_to: periodTo, ai_used: !!aiText } });
 }
 
-module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview, getInputSummary, generateDraft };
+// ─── GENERA OUTPUT §9.3.3 ─────────────────────────────────────────────────────
+
+/**
+ * POST /management-reviews/:id/generate-outputs
+ * Genera una proposta di OUTPUT del riesame (§9.3.3): decisioni e azioni su
+ *   a) opportunità di miglioramento     → output_improvements
+ *   b) modifiche al sistema di gestione  → output_sgq_changes
+ *   c) fabbisogno di risorse             → output_resources
+ *
+ * A differenza di generate-draft (che sintetizza i dati aggregati per gli INPUT
+ * §9.3.2), questo endpoint parte dagli INPUT compilati del riesame: usa i valori
+ * correnti del form passati in `body.inputs` (così include anche modifiche non
+ * ancora salvate) e, in mancanza, i campi salvati nel record. Usa AI se
+ * configurata, altrimenti un fallback deterministico sempre presente.
+ *
+ * Body: { company_id?, period_from?, period_to?, inputs?: { input_*: string } }
+ */
+async function generateOutputs(req, res) {
+    const pool  = await getPool();
+    const orgId = req.user.organization_id;
+    const reviewId = parseInt(req.params.id, 10);
+
+    const today = new Date();
+    const periodFrom = req.body.period_from || `${today.getFullYear()}-01-01`;
+    const periodTo   = req.body.period_to   || today.toISOString().slice(0, 10);
+    const companyId  = req.body.company_id  ? parseInt(req.body.company_id, 10) : null;
+
+    // Verifica appartenenza all'org e carica gli input §9.3.2 salvati
+    let saved = null;
+    try {
+        const chk = await pool.request()
+            .input('id',    reviewId)
+            .input('orgId', orgId)
+            .query(`
+                SELECT input_previous_actions, input_context_changes, input_audits,
+                       input_nc_corrective, input_objectives, input_complaints,
+                       input_customer_satisfaction, input_suppliers, input_resources,
+                       input_improvements, input_process_performance, input_risk_effectiveness
+                FROM management_reviews
+                WHERE id=@id AND organization_id=@orgId AND is_deleted=0
+            `);
+        if (!chk.recordset.length) {
+            return res.status(404).json({ success: false, error: 'Riesame non trovato.' });
+        }
+        saved = chk.recordset[0];
+    } catch (err) {
+        logger.error('generateOutputs check review:', err.message);
+        return res.status(500).json({ success: false, error: 'Errore interno.' });
+    }
+
+    // Merge: i valori correnti del form (body.inputs) prevalgono sui salvati
+    const bodyInputs = (req.body.inputs && typeof req.body.inputs === 'object') ? req.body.inputs : {};
+    const inputFields = [
+        'input_previous_actions', 'input_context_changes', 'input_audits', 'input_nc_corrective',
+        'input_objectives', 'input_complaints', 'input_customer_satisfaction', 'input_suppliers',
+        'input_resources', 'input_improvements', 'input_process_performance', 'input_risk_effectiveness',
+    ];
+    const inputs = {};
+    inputFields.forEach((f) => {
+        const fromBody = bodyInputs[f];
+        inputs[f] = (typeof fromBody === 'string' && fromBody.trim())
+            ? fromBody.trim()
+            : (saved[f] || '');
+    });
+
+    // Metriche aggregate leggere per arricchire il fallback deterministico
+    let nc         = { open: 0, overdue: 0 };
+    let objectives = { total: 0, achieved: 0, percentage: 0 };
+    let risks      = { open: 0, high_priority: 0 };
+
+    try {
+        const companyCond = companyId ? 'AND a.company_id = @companyId' : '';
+        const ncReq = pool.request().input('orgId', orgId);
+        if (companyId) ncReq.input('companyId', companyId);
+        const ncRes = await ncReq.query(`
+            SELECT
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified') THEN 1 ELSE 0 END) AS open_count,
+                SUM(CASE WHEN nc.status NOT IN ('closed','verified') AND nc.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END) AS overdue_count
+            FROM non_conformities nc
+            LEFT JOIN audits a ON nc.audit_id = a.audit_id
+            WHERE COALESCE(a.organization_id, nc.organization_id) = @orgId ${companyCond}
+        `);
+        const r = ncRes.recordset[0];
+        nc = { open: r.open_count || 0, overdue: r.overdue_count || 0 };
+    } catch (_) { /* fallback a 0 */ }
+
+    try {
+        const objRes = await pool.request().input('orgId', orgId).query(`
+            SELECT COUNT(*) AS total, SUM(CASE WHEN status='achieved' THEN 1 ELSE 0 END) AS achieved
+            FROM objectives WHERE organization_id=@orgId AND is_deleted=0
+        `);
+        const r = objRes.recordset[0];
+        const total = r.total || 0; const achieved = r.achieved || 0;
+        objectives = { total, achieved, percentage: total > 0 ? Math.round((achieved / total) * 100) : 0 };
+    } catch (_) { /* fallback a 0 */ }
+
+    try {
+        const riskReq = pool.request().input('orgId', orgId);
+        if (companyId) riskReq.input('companyId', companyId);
+        const companyCond = companyId ? 'AND company_id = @companyId' : '';
+        const riskRes = await riskReq.query(`
+            SELECT
+                SUM(CASE WHEN status IN ('open','in_treatment') THEN 1 ELSE 0 END) AS open_count,
+                SUM(CASE WHEN status IN ('open','in_treatment') AND (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority
+            FROM risks
+            WHERE organization_id = @orgId AND is_deleted = 0 ${companyCond}
+        `);
+        const r = riskRes.recordset[0];
+        risks = { open: r.open_count || 0, high_priority: r.high_priority || 0 };
+    } catch (_) { /* fallback a 0 */ }
+
+    // Tenta AI se configurata
+    let aiOutputs = null;
+    try {
+        const aiAdapter = require('../services/aiProviderAdapter');
+        const digest = [
+            `a) Azioni da precedenti riesami: ${(inputs.input_previous_actions || 'n.d.').slice(0, 400)}`,
+            `b) Cambiamenti del contesto: ${(inputs.input_context_changes || 'n.d.').slice(0, 400)}`,
+            `Risultati audit interni: ${(inputs.input_audits || 'n.d.').slice(0, 300)}`,
+            `Non conformità e azioni correttive: ${(inputs.input_nc_corrective || 'n.d.').slice(0, 300)}`,
+            `Stato obiettivi qualità: ${(inputs.input_objectives || 'n.d.').slice(0, 300)}`,
+            `Prestazioni dei processi: ${(inputs.input_process_performance || 'n.d.').slice(0, 300)}`,
+            `Soddisfazione cliente/feedback: ${(inputs.input_customer_satisfaction || 'n.d.').slice(0, 300)}`,
+            `Prestazioni fornitori esterni: ${(inputs.input_suppliers || 'n.d.').slice(0, 300)}`,
+            `Adeguatezza delle risorse: ${(inputs.input_resources || 'n.d.').slice(0, 300)}`,
+            `Efficacia azioni su rischi e opportunità: ${(inputs.input_risk_effectiveness || 'n.d.').slice(0, 300)}`,
+            `Opportunità di miglioramento: ${(inputs.input_improvements || 'n.d.').slice(0, 300)}`,
+        ].join('\n');
+        const prompt = `Sei un consulente ISO 9001. Sulla base degli INPUT del riesame di direzione (§9.3.2) riportati sotto, redigi gli OUTPUT del riesame (§9.3.3): decisioni e azioni concrete e azionabili.
+Dati sintetici del periodo ${periodFrom} - ${periodTo}: NC aperte ${nc.open} (di cui scadute ${nc.overdue}); obiettivi raggiunti ${objectives.percentage}% (${objectives.achieved}/${objectives.total}); rischi aperti ${risks.open}, di cui ad alta priorità ${risks.high_priority}.
+
+INPUT §9.3.2:
+${digest}
+
+Genera, in italiano, stile tecnico-formale, max 120 parole per voce:
+- output_improvements: decisioni e azioni relative alle opportunità di miglioramento (§9.3.3-a)
+- output_sgq_changes: ogni esigenza di modifica al sistema di gestione per la qualità (§9.3.3-b)
+- output_resources: il fabbisogno di risorse deliberato (§9.3.3-c)
+Rispondi SOLO con JSON con questa struttura:
+{"output_improvements":"...","output_sgq_changes":"...","output_resources":"..."}`;
+
+        const result = await aiAdapter.chat(
+            [{ role: 'user', content: prompt }],
+            { responseFormat: 'json', maxTokens: 700, temperature: 0.3 }
+        );
+        aiOutputs = typeof result.content === 'string' ? JSON.parse(result.content) : result.content;
+    } catch (aiErr) {
+        if (aiErr.code !== 'AI_NOT_CONFIGURED') {
+            logger.warn('generateOutputs AI error (usando fallback deterministico):', aiErr.message);
+        }
+    }
+
+    // Output deterministici (usati se AI non disponibile o fallisce)
+    const objShortfall = objectives.total > 0 && objectives.percentage < 100;
+
+    const improvementsText =
+        `Sulla base di ${nc.open} non conformità aperte` +
+        (nc.overdue > 0 ? ` (di cui ${nc.overdue} scadute)` : '') +
+        ` e di un grado di raggiungimento degli obiettivi pari al ${objectives.percentage}%, ` +
+        'si decide di dare seguito alle opportunità di miglioramento individuate' +
+        (inputs.input_improvements ? `: ${inputs.input_improvements.slice(0, 300)}.` : ' nel corso del riesame.') +
+        ' Le relative azioni saranno pianificate con responsabilità e tempistiche definite e verificate al prossimo riesame.';
+
+    const sgqChangesText =
+        (inputs.input_context_changes
+            ? `In relazione ai cambiamenti del contesto rilevati (${inputs.input_context_changes.slice(0, 200)}), `
+            : 'Non emergono cambiamenti del contesto tali da imporre modifiche sostanziali al SGQ; ') +
+        (risks.open > 0
+            ? `si valuta l'aggiornamento di procedure e documenti coerente con i ${risks.open} rischi aperti` +
+              (risks.high_priority > 0 ? ` (di cui ${risks.high_priority} ad alta priorità).` : '.')
+            : 'si conferma l\'adeguatezza dell\'attuale assetto documentale del SGQ.') +
+        ' Le modifiche approvate saranno recepite nella documentazione di sistema.';
+
+    const resourcesText =
+        (inputs.input_resources
+            ? `Dall'analisi dell'adeguatezza delle risorse (${inputs.input_resources.slice(0, 200)}), `
+            : 'Dall\'analisi delle risorse disponibili, ') +
+        (objShortfall || nc.open > 0
+            ? 'si delibera di destinare risorse aggiuntive (umane, formative e/o infrastrutturali) a supporto degli obiettivi non ancora raggiunti e della gestione delle non conformità aperte.'
+            : 'le risorse attuali risultano adeguate al mantenimento del SGQ; si conferma il piano di formazione e manutenzione in essere.');
+
+    const outputs = aiOutputs || {
+        output_improvements: improvementsText,
+        output_sgq_changes:  sgqChangesText,
+        output_resources:    resourcesText,
+    };
+
+    res.json({ success: true, outputs, meta: { period_from: periodFrom, period_to: periodTo, ai_used: !!aiOutputs } });
+}
+
+module.exports = { listReviews, getOneReview, createReview, updateReview, deleteReview, getInputSummary, generateDraft, generateOutputs };

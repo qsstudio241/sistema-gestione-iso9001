@@ -552,6 +552,124 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
   );
 }
 
+// ─── Generazione assistita Output §9.3.3 ─────────────────────────────────────
+
+// Genera una proposta per i 3 campi output (§9.3.3) a partire dagli INPUT
+// compilati del riesame. Se il riesame è salvato (reviewId) usa l'endpoint
+// backend (AI o fallback deterministico server-side), passando i valori correnti
+// del form così da includere anche modifiche non ancora salvate. In assenza di id
+// o in caso di errore → fallback locale deterministico, senza bloccare la UI.
+export function OutputsDraftSection({ reviewId, companyId, form, onFill }) {
+  const [drafting, setDrafting] = useState(false);
+  // null = non generato; 'ai' = provider LLM; 'auto' = bozza deterministica
+  const [mode, setMode] = useState(null);
+  const [message, setMessage] = useState(null);
+
+  // Template locale deterministico (fallback: non salvato o errore di rete)
+  function buildLocalOutputs() {
+    const impr = (form?.input_improvements || "").trim();
+    const ctx  = (form?.input_context_changes || "").trim();
+    const resTxt = (form?.input_resources || "").trim();
+    return {
+      output_improvements:
+        "Si decide di dare seguito alle opportunità di miglioramento individuate nel riesame" +
+        (impr ? `: ${impr}` : "") +
+        ". Le relative azioni saranno pianificate con responsabilità e tempistiche definite e verificate al prossimo riesame.",
+      output_sgq_changes:
+        (ctx
+          ? `In relazione ai cambiamenti del contesto rilevati (${ctx}), si valuta l'aggiornamento di procedure e documenti del SGQ.`
+          : "Non emergono cambiamenti del contesto tali da imporre modifiche sostanziali al SGQ; si conferma l'adeguatezza dell'attuale assetto documentale.") +
+        " Le modifiche approvate saranno recepite nella documentazione di sistema.",
+      output_resources:
+        (resTxt
+          ? `Dall'analisi dell'adeguatezza delle risorse (${resTxt}), si definisce il fabbisogno di risorse umane, formative e infrastrutturali a supporto del SGQ.`
+          : "Si conferma l'adeguatezza delle risorse attuali; resta attivo il piano di formazione e manutenzione previsto."),
+    };
+  }
+
+  function applyOutputs(out) {
+    if (!out) return;
+    if (out.output_improvements) onFill("output_improvements", out.output_improvements);
+    if (out.output_sgq_changes)  onFill("output_sgq_changes",  out.output_sgq_changes);
+    if (out.output_resources)    onFill("output_resources",    out.output_resources);
+  }
+
+  async function generate() {
+    setMessage(null);
+
+    // Riesame non salvato → fallback locale + invito a salvare (non bloccante)
+    if (!reviewId) {
+      applyOutputs(buildLocalOutputs());
+      setMode("auto");
+      setMessage("Bozza locale generata. Salva il riesame per usare la generazione assistita completa.");
+      return;
+    }
+
+    setDrafting(true);
+    try {
+      const res = await apiService.post(`/management-reviews/${reviewId}/generate-outputs`, {
+        company_id: companyId || undefined,
+        inputs: {
+          input_previous_actions:      form?.input_previous_actions || "",
+          input_context_changes:       form?.input_context_changes || "",
+          input_audits:                form?.input_audits || "",
+          input_nc_corrective:         form?.input_nc_corrective || "",
+          input_objectives:            form?.input_objectives || "",
+          input_complaints:            form?.input_complaints || "",
+          input_customer_satisfaction: form?.input_customer_satisfaction || "",
+          input_suppliers:             form?.input_suppliers || "",
+          input_resources:             form?.input_resources || "",
+          input_improvements:          form?.input_improvements || "",
+          input_process_performance:   form?.input_process_performance || "",
+          input_risk_effectiveness:    form?.input_risk_effectiveness || "",
+        },
+      });
+      const out = res?.outputs;
+      if (out) {
+        applyOutputs(out);
+        setMode(res?.meta?.ai_used === true ? "ai" : "auto");
+        setMessage("Output §9.3.3 generati dagli input del riesame.");
+        return;
+      }
+      // Risposta inattesa → fallback locale
+      applyOutputs(buildLocalOutputs());
+      setMode("auto");
+    } catch (_) {
+      // Graceful degradation: nessun blocco UI, si ricade sul template locale
+      applyOutputs(buildLocalOutputs());
+      setMode("auto");
+      setMessage("Servizio non raggiungibile: generata una bozza locale.");
+    } finally {
+      setDrafting(false);
+    }
+  }
+
+  return (
+    <div className="isw-body" style={{ marginBottom: 12 }}>
+      <button
+        type="button"
+        className="btn-primary isw-draft-btn"
+        onClick={generate}
+        disabled={drafting}
+        title="Genera una proposta di output §9.3.3 a partire dagli input compilati del riesame"
+      >
+        {drafting ? "Generazione\u2026" : "\u2728 Genera output dal riesame"}
+      </button>
+      {mode && (
+        <p className="isw-draft-ok" style={{ marginTop: 8 }}>
+          {message || "Output \u00A79.3.3 generati."}
+          {mode === "ai" && (
+            <span className="mr-badge mr-approved" style={{ marginLeft: 8 }}>{"AI attiva"}</span>
+          )}
+          {mode === "auto" && (
+            <span className="mr-badge mr-draft" style={{ marginLeft: 8 }}>{"Bozza automatica"}</span>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Sezione collassabile ─────────────────────────────────────────────────────
 
 function CollapsibleSection({ title, children, defaultOpen = false }) {
@@ -752,6 +870,12 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
 
           {/* 4. §9.3.3 Output (3 campi) */}
           <CollapsibleSection title="4 — §9.3.3 Output del riesame">
+            <OutputsDraftSection
+              reviewId={initial?.id || null}
+              companyId={form.company_id || initial?.company_id || null}
+              form={form}
+              onFill={handleFillReplace}
+            />
             {[
               { key: "output_improvements",  label: "Opportunità di miglioramento" },
               { key: "output_sgq_changes",   label: "Modifiche al SGQ" },
