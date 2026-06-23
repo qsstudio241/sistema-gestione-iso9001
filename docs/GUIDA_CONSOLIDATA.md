@@ -3555,9 +3555,19 @@ Stato consolidato del modulo Riesame di Direzione: le 3 slice sono tutte in `mai
 | Slice 2 | Aggregazione §9.3.2 ampliata: rischi/opportunità, output del riesame precedente, dettaglio NC; prompt+fallback estesi (`risks_summary`, `previous_actions_summary`) | `backend/src/controllers/managementReviews.controller.js` (`getInputSummary`, `generate-draft`) | In main (`2d4e64a`), backend deployato |
 | Slice 3 | Generazione assistita output §9.3.3 (miglioramenti, modifiche SGQ, risorse) via nuovo endpoint `POST /management-reviews/:id/generate-outputs`, sezione UI `OutputsDraftSection` con fallback | controller + `managementReviews.routes.js` + `ManagementReviewsPage.jsx` | In main (`ec71b8a`), backend deployato e verificato (health 200, endpoint 401 senza auth) |
 
-**Stato AI**: l'infrastruttura LLM (`aiProviderAdapter`, provider Gemini/Azure/OpenAI) è presente. Per attivare l'AI reale serve una **chiave provider come variabile d'ambiente sul VPS**; in assenza opera il **fallback deterministico** (badge "Bozza automatica").
+**Stato AI**: l'infrastruttura LLM (`aiProviderAdapter`, provider Gemini/Azure/OpenAI) è presente. L'adapter sceglie il provider in base alle variabili d'ambiente del servizio (`GEMINI_API_KEY` → Gemini; `AZURE_OPENAI_ENDPOINT`+`AZURE_OPENAI_API_KEY` → Azure; `OPENAI_API_KEY` → OpenAI); se nessuna è presente opera il **fallback deterministico** (badge "Bozza automatica").
 
-**Backlog (cosa resta):** **Slice 4 rimandata** — integrazione KPI/monitoraggio §9.1 (bloccata: il modulo §9.1 non è ancora strutturato) e pannello assistente conversazionale.
+**Verifica provider sul VPS (23/06/2026)** — controllata la sola presenza delle chiavi (mai i valori) in `/var/www/sgq-backend/.env` e negli override systemd:
+
+| Variabile | Stato VPS (23/06/2026) |
+|-----------|------------------------|
+| `GEMINI_API_KEY` | **CONFIGURATO** (valore presente, 39 caratteri — non mostrato) |
+| `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_ENDPOINT` | Non configurato |
+| `OPENAI_API_KEY` | Non configurato |
+
+**Esito**: **Provider LLM sul VPS = Gemini CONFIGURATO** → l'AI reale è attiva (l'adapter usa Gemini), **non** il fallback deterministico. Nessun override delle variabili nel unit systemd. (Verifica eseguita da Windows via `vps-preflight.ps1` + `lib/vps-ssh.ps1`, valore della chiave mai stampato né salvato.)
+
+**Backlog (cosa resta):** **Slice 4 rimandata** — integrazione KPI/monitoraggio §9.1 (bloccata: il modulo §9.1 non è ancora strutturato) e pannello assistente conversazionale. Il modulo §9.1 è ora tracciato come prerequisito nel [Backlog parcheggiato della roadmap](PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica).
 
 ---
 

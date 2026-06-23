@@ -39,6 +39,7 @@
 | **T6 — Recovery UI + history API + compaction notturna** | Sprint sync T (ADR-008) | Dipende da T5 stabile | Compliance ISO 9001 §7.5; vedi [GUIDA § ADR-008](GUIDA_CONSOLIDATA.md#architettura-target-sync--event-sourced-adr-008) |
 | **Sicurezza link allegati Word — token download monouso** | Discussione 08/03/2026 | Bassa priorità; core stabilizzato prima | Sostituire JWT nei link Word con token a scadenza 48h (vedi *Fase 0.B* sotto) |
 | **Riorganizzazione doc Fase 3c–3f** | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md#fase-3--piano-operativo-prossima-sessione-doc) | Priorità inferiore allo sviluppo prodotto | Cartella `explanation/` opzionale, snellimento GUIDA, README root repo |
+| **Modulo §9.1 Monitoraggio, misurazione, analisi e valutazione (KPI/indicatori)** | Backlog Riesame di Direzione 23/06/2026 ([GUIDA § Stato AI riesame](GUIDA_CONSOLIDATA.md)) | Modulo §9.1 non ancora strutturato; nessuna tabella KPI/indicatori dedicata (oggi §9.1 è solo clausola coperta e tag su sotto-funzioni statistiche) | Prerequisito per: **integrazione KPI nel Riesame di Direzione (Slice 4)** e dashboard prestazioni cross-modulo. Stato: **da pianificare** — definire entità indicatori/target/misurazioni periodiche e aggregazione multi-tenant prima di sbloccare la Slice 4 |
 
 ---
 
