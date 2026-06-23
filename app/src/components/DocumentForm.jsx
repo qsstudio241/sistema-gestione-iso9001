@@ -104,8 +104,15 @@ function StepIndicator({ step }) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId }) {
+function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId, defaultContentScope }) {
   const isEdit = !!doc;
+
+  // Etichetta esplicita di ambito ("explicit over implicit"): client | studio | reference.
+  // Niente piu' "azienda vuota = studio": l'ambito e' sempre dichiarato.
+  const initialContentScope =
+    doc?.content_scope
+    || defaultContentScope
+    || (doc?.company_id || defaultCompanyId ? 'client' : 'studio');
 
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
@@ -123,8 +130,19 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     standard_id:     doc?.standard_id     || '',
     clause_ref:      doc?.clause_ref      || '',
     company_id:      doc?.company_id      || defaultCompanyId || '',
+    content_scope:   initialContentScope,
     notes:           doc?.notes           || '',
   });
+
+  // Cambio ambito: studio/reference azzerano l'azienda (documento dello studio).
+  const handleScopeChange = (e) => {
+    const scope = e.target.value;
+    setForm((f) => ({
+      ...f,
+      content_scope: scope,
+      company_id: scope === 'client' ? f.company_id : '',
+    }));
+  };
 
   // Tipi "documento esterno": norme tecniche — nascondono azienda/codice, mostrano standard_code
   const isNormaType = form.doc_type === 'norma';
@@ -475,6 +493,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
   const handleSave = async () => {
     if (!form.title.trim()) { setError("Il titolo è obbligatorio."); return; }
+    // Ambito esplicito: un documento "Azienda cliente" deve avere un'azienda.
+    if (!isNormaType && form.content_scope === 'client' && companies.length > 0 && !form.company_id) {
+      setError("Seleziona l'azienda cliente o cambia l'ambito del documento.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -486,6 +509,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
       const payload = {
         ...form,
         status: registryStatus,
+        content_scope:   isNormaType ? 'reference' : form.content_scope,
         retention_years: form.retention_years ? parseInt(form.retention_years) : null,
         standard_id:     form.standard_id     ? parseInt(form.standard_id)     : null,
         company_id:      form.company_id      ? parseInt(form.company_id)      : null,
@@ -919,6 +943,43 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     );
   };
 
+  // ─── Ambito documento (etichetta esplicita) ──────────────────────
+  // Per le norme l'ambito e' sempre "reference" (gestito nel payload), quindi
+  // il selettore non viene mostrato.
+  const renderScopeFields = () => {
+    if (isNormaType) return null;
+    return (
+      <div className="docform-row">
+        <div className="docform-field">
+          <label>Ambito documento <span className="required">*</span></label>
+          <select value={form.content_scope} onChange={handleScopeChange}>
+            <option value="client">Azienda cliente</option>
+            <option value="studio">Patrimonio Studio</option>
+            <option value="reference">Norma / Riferimento condiviso</option>
+          </select>
+          <span className="docform-hint">
+            {form.content_scope === 'studio'
+              ? 'Know-how dello studio: non visibile nelle viste delle aziende clienti.'
+              : form.content_scope === 'reference'
+                ? 'Riferimento condiviso (norme, linee guida).'
+                : 'Documento di una specifica azienda cliente.'}
+          </span>
+        </div>
+        {form.content_scope === 'client' && companies.length > 0 && (
+          <div className="docform-field">
+            <label>Azienda <span className="required">*</span></label>
+            <select value={form.company_id} onChange={handleChange("company_id")}>
+              <option value="">— Seleziona azienda —</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ─── Step 1 render ────────────────────────────────────────────────
 
   const renderStep1 = () => (
@@ -956,32 +1017,22 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         />
       </div>
 
-      {/* Codice documento + Azienda — nascosti per tipo norma */}
+      {/* Codice documento — nascosto per tipo norma */}
       {!isNormaType && (
-        <div className="docform-row">
-          <div className="docform-field">
-            <label>Codice documento</label>
-            <input
-              type="text"
-              placeholder="es. PG-01, WPS-141-001"
-              value={form.doc_code}
-              onChange={handleChange("doc_code")}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
-            />
-          </div>
-          {companies.length > 0 && (
-            <div className="docform-field">
-              <label>Azienda</label>
-              <select value={form.company_id} onChange={handleChange("company_id")}>
-                <option value="">- Documento di studio -</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="docform-field">
+          <label>Codice documento</label>
+          <input
+            type="text"
+            placeholder="es. PG-01, WPS-141-001"
+            value={form.doc_code}
+            onChange={handleChange("doc_code")}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNext(); } }}
+          />
         </div>
       )}
+
+      {/* Ambito documento (azienda cliente / patrimonio studio / riferimento) */}
+      {renderScopeFields()}
 
       {/* Codice norma — solo per tipo norma */}
       {isNormaType && (
@@ -1058,26 +1109,15 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 {renderNormaVerifyLinks()}
               </div>
             )}
-            {/* Codice documento + Azienda — nascosti per tipo norma */}
+            {/* Codice documento — nascosto per tipo norma */}
             {!isNormaType && (
-              <div className="docform-row">
-                <div className="docform-field">
-                  <label>Codice documento</label>
-                  <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
-                </div>
-                {companies.length > 0 && (
-                  <div className="docform-field">
-                    <label>Azienda</label>
-                    <select value={form.company_id} onChange={handleChange("company_id")}>
-                      <option value="">- Documento di studio -</option>
-                      {companies.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+              <div className="docform-field">
+                <label>Codice documento</label>
+                <input type="text" value={form.doc_code} onChange={handleChange("doc_code")} />
               </div>
             )}
+            {/* Ambito documento (azienda cliente / patrimonio studio / riferimento) */}
+            {renderScopeFields()}
             <hr className="docform-divider" />
           </>
         )}

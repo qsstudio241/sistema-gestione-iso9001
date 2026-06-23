@@ -1405,10 +1405,13 @@ class ApiService {
     async deleteDocumentRelation(relationId)    { return this.delete(`/document-relations/${relationId}`); }
 
     // ─── Document Tree ──────────────────────────────────────────────────────
-    async getDocumentTree(depth = 2, companyId = null) {
+    async getDocumentTree(depth = 2, companyId = null, scope = null) {
         let url = `/documents/tree?depth=${depth}`;
         if (companyId != null && companyId !== '') {
             url += `&company_id=${encodeURIComponent(companyId)}`;
+        }
+        if (scope) {
+            url += `&scope=${encodeURIComponent(scope)}`;
         }
         return this.get(url);
     }
@@ -1424,6 +1427,7 @@ class ApiService {
     async getDocumentBreadcrumb(docId)          { return this.get(`/documents/${docId}/breadcrumb`); }
     async getDocumentHistory(docId, page = 1)   { return this.get(`/documents/${docId}/history?page=${page}`); }
     async provisionDocumentTree(data)           { return this.post('/documents/provision-tree', data); }
+    async provisionStudioPatrimony()            { return this.post('/documents/provision-studio-patrimony', {}); }
     async getDocumentTreeTemplates()            { return this.get('/document-tree-templates'); }
 
     /** Suggerimento cartella per tipo documento (AI classification helper) */
