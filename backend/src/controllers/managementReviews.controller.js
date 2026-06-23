@@ -527,6 +527,8 @@ async function getInputSummary(req, res) {
         result.norm_coverage_note = 'Dato non disponibile';
     }
 
+    // Dati aggregati sempre freschi — disabilita la cache HTTP per evitare 304/ETag stale
+    res.set('Cache-Control', 'no-store');
     res.json({ success: true, data: result });
 }
 
