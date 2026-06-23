@@ -13,6 +13,7 @@ import {
   resolveInitialMgmtReviewCompanyScope,
   persistMgmtReviewCompanyScope,
 } from "../utils/managementReviewsCompanyScope";
+import { exportManagementReviewDocx } from "../utils/wordExportReview";
 import "./ManagementReviewsPage.css";
 
 // ─── Configurazione stato ─────────────────────────────────────────────────────
@@ -32,13 +33,17 @@ const EMPTY_FORM = {
   status: "draft",
   company_id: "",
   input_previous_actions: "",
+  input_context_changes: "",
   input_audits: "",
   input_nc_corrective: "",
   input_objectives: "",
   input_complaints: "",
+  input_customer_satisfaction: "",
   input_suppliers: "",
   input_resources: "",
   input_improvements: "",
+  input_process_performance: "",
+  input_risk_effectiveness: "",
   output_improvements: "",
   output_sgq_changes: "",
   output_resources: "",
@@ -133,14 +138,24 @@ function InputSummaryWidget({ companyId, onPrefill }) {
     return lines.join("\n");
   }
 
+  function buildSatisfText(cmp) {
+    const lines = [
+      `Reclami formali ricevuti nel periodo: ${cmp.total}`,
+      "Livello soddisfazione cliente: [da rilevare — es. sondaggio, feedback diretto, tasso riacquisto]",
+    ];
+    if (cmp.note) lines.push(`Nota reclami: ${cmp.note}`);
+    return lines.join("\n");
+  }
+
   // Compila tutti i campi §9.3.2 dai dati già caricati (client-side, non richiede reviewId)
   function generateAllFields() {
     if (!data) return;
-    if (data.nc)         onPrefill("input_nc_corrective", buildNcText(data.nc));
-    if (data.objectives) onPrefill("input_objectives",    buildObjText(data.objectives));
-    if (data.audits)     onPrefill("input_audits",        buildAuditText(data.audits));
-    if (data.suppliers)  onPrefill("input_suppliers",     buildSuppText(data.suppliers));
-    if (data.complaints) onPrefill("input_complaints",    buildCmpText(data.complaints));
+    if (data.nc)         onPrefill("input_nc_corrective",         buildNcText(data.nc));
+    if (data.objectives) onPrefill("input_objectives",            buildObjText(data.objectives));
+    if (data.audits)     onPrefill("input_audits",                buildAuditText(data.audits));
+    if (data.suppliers)  onPrefill("input_suppliers",             buildSuppText(data.suppliers));
+    if (data.complaints) onPrefill("input_complaints",            buildCmpText(data.complaints));
+    if (data.complaints) onPrefill("input_customer_satisfaction", buildSatisfText(data.complaints));
     setFilled(true);
   }
 
@@ -552,14 +567,18 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
               onPrefill={handlePrefill}
             />
             {[
-              { key: "input_previous_actions", label: "a) Azioni da precedenti riesami" },
-              { key: "input_audits",           label: "b) Risultati degli audit" },
-              { key: "input_nc_corrective",    label: "c) Non conformità e azioni correttive" },
-              { key: "input_objectives",       label: "d) Monitoraggio e misurazione processi / obiettivi" },
-              { key: "input_complaints",       label: "e) Reclami dei clienti" },
-              { key: "input_suppliers",        label: "f) Prestazioni dei fornitori" },
-              { key: "input_resources",        label: "g) Adeguatezza delle risorse" },
-              { key: "input_improvements",     label: "h) Opportunità di miglioramento" },
+              { key: "input_previous_actions",      label: "a) Azioni da precedenti riesami" },
+              { key: "input_context_changes",       label: "b) Cambiamenti nel contesto dell\u2019organizzazione rilevanti per il SGQ" },
+              { key: "input_audits",                label: "c.6) Risultati degli audit interni" },
+              { key: "input_nc_corrective",         label: "c.4) Non conformit\u00E0 e azioni correttive" },
+              { key: "input_objectives",            label: "c.2) Stato degli obiettivi per la qualit\u00E0" },
+              { key: "input_process_performance",   label: "c.3) Prestazioni dei processi e conformit\u00E0 di prodotti/servizi" },
+              { key: "input_customer_satisfaction", label: "c.1) Soddisfazione del cliente e feedback delle parti interessate" },
+              { key: "input_complaints",            label: "e.reclami) Reclami dei clienti (dettaglio)" },
+              { key: "input_suppliers",             label: "c.7) Prestazioni dei fornitori esterni" },
+              { key: "input_resources",             label: "d) Adeguatezza delle risorse" },
+              { key: "input_risk_effectiveness",    label: "e) Efficacia delle azioni intraprese per affrontare rischi e opportunit\u00E0" },
+              { key: "input_improvements",          label: "f) Opportunit\u00E0 di miglioramento" },
             ].map(({ key, label }) => (
               <div className="form-row" key={key}>
                 <label>{label}</label>
@@ -643,6 +662,7 @@ export default function ManagementReviewsPage() {
   const [companies, setCompanies]   = useState([]);
   const [delConfirm, setDelConfirm] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
+  const [exportingId, setExportingId] = useState(null);
 
   // ── Ambito azienda (pattern condiviso con Qualifiche, Registro documenti) ──
   const [companyScope, setCompanyScope] = useState(
@@ -713,6 +733,20 @@ export default function ManagementReviewsPage() {
 
   function openCreate() { setEditItem(null); setShowForm(true); }
   function openEdit(item) { setEditItem(item); setShowForm(true); }
+
+  async function handleExport(r) {
+    setExportingId(r.id);
+    try {
+      // Carica i dati completi del riesame (la lista ha campi parziali)
+      const res = await apiService.get(`/management-reviews/${r.id}`);
+      const full = res.data.data;
+      await exportManagementReviewDocx(full);
+    } catch (err) {
+      alert(`Errore export Word: ${err.message}`);
+    } finally {
+      setExportingId(null);
+    }
+  }
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
@@ -822,6 +856,14 @@ export default function ManagementReviewsPage() {
                         onClick={() => openEdit(r)}
                       >
                         {"\u270F\uFE0F"}
+                      </button>
+                      <button
+                        className="btn-icon-sm btn-icon-export"
+                        title="Esporta verbale Word (\u00A77.5)"
+                        onClick={() => handleExport(r)}
+                        disabled={exportingId === r.id}
+                      >
+                        {exportingId === r.id ? "\u23F3" : "\uD83D\uDCCB"}
                       </button>
                       <button
                         className="btn-icon-sm btn-icon-danger"

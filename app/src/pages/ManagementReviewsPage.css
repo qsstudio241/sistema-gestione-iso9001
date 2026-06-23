@@ -195,6 +195,8 @@
 
 .btn-icon-sm:hover { background: #edf2f7; }
 .btn-icon-danger:hover { background: #fff5f5; border-color: #feb2b2; }
+.btn-icon-export:hover { background: #ebf8ff; border-color: #90cdf4; }
+.btn-icon-export:disabled { opacity: 0.5; cursor: default; }
 
 /* Stato vuoto */
 .mr-empty {

@@ -130,6 +130,8 @@ async function createReview(req, res) {
             input_previous_actions, input_audits, input_nc_corrective,
             input_objectives, input_complaints, input_suppliers,
             input_resources, input_improvements,
+            input_context_changes, input_customer_satisfaction,
+            input_process_performance, input_risk_effectiveness,
             output_improvements, output_sgq_changes, output_resources,
             notes, company_id, status = 'draft',
         } = req.body;
@@ -150,14 +152,18 @@ async function createReview(req, res) {
             .input('status',  status)
             .input('chairperson', chairperson || null)
             .input('participants', participants || null)
-            .input('input_previous_actions', input_previous_actions || null)
-            .input('input_audits',           input_audits           || null)
-            .input('input_nc_corrective',    input_nc_corrective    || null)
-            .input('input_objectives',       input_objectives       || null)
-            .input('input_complaints',       input_complaints       || null)
-            .input('input_suppliers',        input_suppliers        || null)
-            .input('input_resources',        input_resources        || null)
-            .input('input_improvements',     input_improvements     || null)
+            .input('input_previous_actions',      input_previous_actions      || null)
+            .input('input_audits',                input_audits                || null)
+            .input('input_nc_corrective',         input_nc_corrective         || null)
+            .input('input_objectives',            input_objectives            || null)
+            .input('input_complaints',            input_complaints            || null)
+            .input('input_suppliers',             input_suppliers             || null)
+            .input('input_resources',             input_resources             || null)
+            .input('input_improvements',          input_improvements          || null)
+            .input('input_context_changes',       input_context_changes       || null)
+            .input('input_customer_satisfaction', input_customer_satisfaction || null)
+            .input('input_process_performance',   input_process_performance   || null)
+            .input('input_risk_effectiveness',    input_risk_effectiveness    || null)
             .input('output_improvements',    output_improvements    || null)
             .input('output_sgq_changes',     output_sgq_changes     || null)
             .input('output_resources',       output_resources       || null)
@@ -170,6 +176,8 @@ async function createReview(req, res) {
                     input_previous_actions, input_audits, input_nc_corrective,
                     input_objectives, input_complaints, input_suppliers,
                     input_resources, input_improvements,
+                    input_context_changes, input_customer_satisfaction,
+                    input_process_performance, input_risk_effectiveness,
                     output_improvements, output_sgq_changes, output_resources,
                     notes, created_by
                 )
@@ -180,6 +188,8 @@ async function createReview(req, res) {
                     @input_previous_actions, @input_audits, @input_nc_corrective,
                     @input_objectives, @input_complaints, @input_suppliers,
                     @input_resources, @input_improvements,
+                    @input_context_changes, @input_customer_satisfaction,
+                    @input_process_performance, @input_risk_effectiveness,
                     @output_improvements, @output_sgq_changes, @output_resources,
                     @notes, @userId
                 )
@@ -215,6 +225,8 @@ async function updateReview(req, res) {
             'input_previous_actions', 'input_audits', 'input_nc_corrective',
             'input_objectives', 'input_complaints', 'input_suppliers',
             'input_resources', 'input_improvements',
+            'input_context_changes', 'input_customer_satisfaction',
+            'input_process_performance', 'input_risk_effectiveness',
             'output_improvements', 'output_sgq_changes', 'output_resources',
             'notes',
         ];
