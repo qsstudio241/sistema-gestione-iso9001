@@ -56,22 +56,27 @@ function jan1Iso() {
 
 // ─── Widget Dati disponibili §9.3.2 ──────────────────────────────────────────
 
-function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
-  const [dateFrom,       setDateFrom]       = useState(jan1Iso);
-  const [dateTo,         setDateTo]         = useState(todayIso);
-  const [data,           setData]           = useState(null);
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState(null);
-  const [drafting,       setDrafting]       = useState(false);
-  const [draftError,     setDraftError]     = useState(null);
-  const [draftGenerated, setDraftGenerated] = useState(false);
+function InputSummaryWidget({ companyId, onPrefill }) {
+  const [dateFrom,  setDateFrom]  = useState(jan1Iso);
+  const [dateTo,    setDateTo]    = useState(todayIso);
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState(null);
+  const [filled,    setFilled]    = useState(false);
 
-  async function loadData() {
+  // Auto-carica i dati §9.3.2 all'apertura della sezione
+  useEffect(() => {
+    doLoad(jan1Iso(), todayIso(), companyId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function doLoad(from, to, cid) {
     setLoading(true);
     setError(null);
+    setFilled(false);
     try {
-      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
-      if (companyId) params.set("company_id", companyId);
+      const params = new URLSearchParams({ date_from: from, date_to: to });
+      if (cid) params.set("company_id", cid);
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
       setData(res.data.data);
     } catch (err) {
@@ -79,6 +84,10 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function loadData() {
+    doLoad(dateFrom, dateTo, companyId);
   }
 
   function buildNcText(nc) {
@@ -124,27 +133,15 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
     return lines.join("\n");
   }
 
-  async function generateDraft() {
-    if (!reviewId) return;
-    setDrafting(true);
-    setDraftError(null);
-    setDraftGenerated(false);
-    try {
-      const body = { period_from: dateFrom, period_to: dateTo };
-      if (companyId) body.company_id = companyId;
-      const res = await apiService.post(`/management-reviews/${reviewId}/generate-draft`, body);
-      const { drafts } = res.data;
-      if (drafts.nc_summary)         onPrefill("input_nc_corrective", drafts.nc_summary);
-      if (drafts.objectives_summary) onPrefill("input_objectives",    drafts.objectives_summary);
-      if (drafts.audits_summary)     onPrefill("input_audits",        drafts.audits_summary);
-      if (drafts.suppliers_summary)  onPrefill("input_suppliers",     drafts.suppliers_summary);
-      if (drafts.norm_gaps)          onPrefill("input_improvements",  drafts.norm_gaps);
-      setDraftGenerated(true);
-    } catch (err) {
-      setDraftError(err?.response?.data?.error || "Errore durante la generazione della bozza.");
-    } finally {
-      setDrafting(false);
-    }
+  // Compila tutti i campi §9.3.2 dai dati già caricati (client-side, non richiede reviewId)
+  function generateAllFields() {
+    if (!data) return;
+    if (data.nc)         onPrefill("input_nc_corrective", buildNcText(data.nc));
+    if (data.objectives) onPrefill("input_objectives",    buildObjText(data.objectives));
+    if (data.audits)     onPrefill("input_audits",        buildAuditText(data.audits));
+    if (data.suppliers)  onPrefill("input_suppliers",     buildSuppText(data.suppliers));
+    if (data.complaints) onPrefill("input_complaints",    buildCmpText(data.complaints));
+    setFilled(true);
   }
 
   return (
@@ -162,30 +159,34 @@ function InputSummaryWidget({ companyId, reviewId, onPrefill }) {
             onClick={loadData}
             disabled={loading}
           >
-            {loading ? "Caricamento dati\u2026" : "Carica dati"}
+            {loading ? "Caricamento\u2026" : "Aggiorna dati"}
           </button>
           <button
             type="button"
             className="btn-primary isw-draft-btn"
-            onClick={reviewId ? generateDraft : undefined}
-            disabled={drafting || !reviewId}
+            onClick={generateAllFields}
+            disabled={!data || loading}
             title={
-              reviewId
-                ? "Genera testi bozza per i campi \u00A79.3.2 dal riesame corrente"
-                : "Salva prima il riesame per generare la bozza"
+              data
+                ? "Compila automaticamente tutti i campi \u00A79.3.2 con i dati del periodo"
+                : "Attendere il caricamento dei dati\u2026"
             }
           >
-            {drafting ? "Generazione\u2026" : "\u2728 Genera bozza testo"}
+            {"\u2728 Genera bozza testo"}
           </button>
         </div>
       </div>
 
-      {draftGenerated && (
+      {filled && (
         <div className="isw-body">
-          <p className="isw-draft-ok">{"Bozza generata e inserita nei campi \u00A79.3.2."}</p>
+          <p className="isw-draft-ok">{"Campi \u00A79.3.2 compilati con i dati del periodo."}</p>
         </div>
       )}
-      {draftError && <div className="isw-body"><p className="isw-error">{draftError}</p></div>}
+      {loading && !data && (
+        <div className="isw-body">
+          <p className="isw-loading">{"Caricamento dati in corso\u2026"}</p>
+        </div>
+      )}
       {error && <div className="isw-body"><p className="isw-error">{error}</p></div>}
 
       {data && (
@@ -548,7 +549,6 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
           <CollapsibleSection title="3 — §9.3.2 Input del riesame">
             <InputSummaryWidget
               companyId={form.company_id || initial?.company_id || null}
-              reviewId={initial?.id || null}
               onPrefill={handlePrefill}
             />
             {[
