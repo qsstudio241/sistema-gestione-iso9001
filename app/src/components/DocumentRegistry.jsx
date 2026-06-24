@@ -941,18 +941,30 @@ function DocumentRegistry() {
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   // Ambito azienda condiviso (Priorità / Catalogo / Albero)
+  // Valori possibili: "" (tutto lo studio), id azienda, oppure "studio" (Patrimonio Studio).
   const [registryCompanyScope, setRegistryCompanyScope] = useState(() =>
     resolveInitialRegistryCompanyScope(initialUrl.companyId)
   );
-  const canWriteDocs = canWriteModule(registryCompanyScope || undefined);
+
+  // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.
+  const isStudioScope = registryCompanyScope === "studio";
+  const companyScopeId = isStudioScope ? null : (registryCompanyScope || null);
+  const scopeDocFilter = useMemo(
+    () => (isStudioScope
+      ? { content_scope: "studio" }
+      : (companyScopeId ? { company_id: companyScopeId } : {})),
+    [isStudioScope, companyScopeId]
+  );
+
+  const canWriteDocs = canWriteModule(companyScopeId || undefined);
 
   // Dati
   const [stats, setStats]         = useState(null);
   const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
 
-  // Albero documentale (filtrato per registryCompanyScope se impostato)
-  const tree = useDocumentTree(registryCompanyScope || null);
+  // Albero documentale (filtrato per ambito: azienda, oppure vista Patrimonio Studio)
+  const tree = useDocumentTree(companyScopeId, isStudioScope ? "studio" : null);
   const { width: treeSidebarWidth, startResize: startTreeSidebarResize } = useDocTreeSidebarWidth();
 
   // Vista albero: "free" | chiave STANDARDS_REGISTRY (es. "ISO_9001")
@@ -1021,12 +1033,13 @@ function DocumentRegistry() {
   const LIMIT = 20;
 
   const scopeCompanyName = useMemo(() => {
+    if (isStudioScope) return "Patrimonio Studio";
     if (!registryCompanyScope) return "Tutto lo studio";
     const match = companies.find(
       (c) => String(c.id || c.company_id) === String(registryCompanyScope)
     );
     return match?.name || `Azienda #${registryCompanyScope}`;
-  }, [registryCompanyScope, companies]);
+  }, [registryCompanyScope, isStudioScope, companies]);
 
   const catalogFilters = useMemo(
     () => ({ ...filters, scopeCompanyName }),
@@ -1089,17 +1102,22 @@ function DocumentRegistry() {
     setProvisionError(null);
     try {
       const orgStandards = (standards || []).map(s => s.standard_code).filter(Boolean);
-      await apiService.provisionDocumentTree({
-        ...(registryCompanyScope && { company_id: parseInt(registryCompanyScope, 10) }),
-        standard_codes: orgStandards,
-      });
+      if (isStudioScope) {
+        // Vista Patrimonio Studio: provisiona la radice dedicata dello studio.
+        await apiService.provisionStudioPatrimony();
+      } else {
+        await apiService.provisionDocumentTree({
+          ...(companyScopeId && { company_id: parseInt(companyScopeId, 10) }),
+          standard_codes: orgStandards,
+        });
+      }
       await tree.loadTree();
     } catch (err) {
       setProvisionError(err.message || 'Errore durante l\'inizializzazione');
     } finally {
       setProvisioning(false);
     }
-  }, [standards, tree, registryCompanyScope]);
+  }, [standards, tree, companyScopeId, isStudioScope]);
 
   // ─── Caricamento dati ────────────────────────────────────────────────────
 
@@ -1113,9 +1131,7 @@ function DocumentRegistry() {
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
     try {
-      const companyFilter = registryCompanyScope
-        ? { company_id: registryCompanyScope }
-        : {};
+      const companyFilter = scopeDocFilter;
       let windowDays = 30;
       try {
         const cfg = await apiService.getNotificationsConfig();
@@ -1139,13 +1155,13 @@ function DocumentRegistry() {
 
       // ADR-013: carica scadenze da file (graceful — tabella potrebbe non esistere ancora)
       try {
-        const dlParams = { priority_only: '1', days: windowDays, ...(registryCompanyScope ? { company_id: registryCompanyScope } : {}) };
+        const dlParams = { priority_only: '1', days: windowDays, ...(companyScopeId ? { company_id: companyScopeId } : {}) };
         const dlRes = await apiService.getPriorityDeadlines(dlParams);
         setDeadlineItems(dlRes.data || []);
       } catch { setDeadlineItems([]); }
     } catch { /* non bloccante */ }
     finally { setLoadingPriority(false); }
-  }, [registryCompanyScope]);
+  }, [scopeDocFilter, companyScopeId]);
 
   const loadCatalog = useCallback(async () => {
     setLoadingCatalog(true);
@@ -1156,7 +1172,7 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(registryCompanyScope && { company_id: registryCompanyScope }),
+        ...scopeDocFilter,
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
@@ -1170,7 +1186,7 @@ function DocumentRegistry() {
     } finally {
       setLoadingCatalog(false);
     }
-  }, [catalogPage, filters, registryCompanyScope]);
+  }, [catalogPage, filters, scopeDocFilter]);
 
   const loadAuxiliary = useCallback(async () => {
     try {
@@ -1228,11 +1244,11 @@ function DocumentRegistry() {
     tree.selectNode(nodeId);
     setTreeListLoading(true);
     try {
-      const res = await apiService.getDocumentTreeChildren(nodeId, registryCompanyScope || null);
+      const res = await apiService.getDocumentTreeChildren(nodeId, companyScopeId);
       setTreeListDocs(res.data || []);
     } catch { setTreeListDocs([]); }
     finally { setTreeListLoading(false); }
-  }, [tree, registryCompanyScope]);
+  }, [tree, companyScopeId]);
 
   /** Dopo upload/import norme: aggiorna cache albero + lista documenti cartella. */
   const handleNormFolderRefresh = useCallback(async (folderId) => {
@@ -1355,7 +1371,7 @@ function DocumentRegistry() {
         ...(filters.search        && { search:       filters.search }),
         ...(filters.doc_type      && { doc_type:     filters.doc_type }),
         ...(filters.status        && { status:       filters.status }),
-        ...(registryCompanyScope && { company_id: registryCompanyScope }),
+        ...scopeDocFilter,
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
@@ -1511,6 +1527,7 @@ function DocumentRegistry() {
                 aria-label="Ambito registro documenti"
               >
                 <option value="">{"Tutto lo studio"}</option>
+                <option value="studio">{"Patrimonio Studio"}</option>
                 {companies.map((c) => {
                   const id = c.id || c.company_id;
                   return (
@@ -1967,7 +1984,8 @@ function DocumentRegistry() {
           companies={companies}
           standards={standards}
           defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
-          defaultCompanyId={!editingDoc && registryCompanyScope ? registryCompanyScope : undefined}
+          defaultCompanyId={!editingDoc && companyScopeId ? companyScopeId : undefined}
+          defaultContentScope={!editingDoc && isStudioScope ? "studio" : undefined}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />
