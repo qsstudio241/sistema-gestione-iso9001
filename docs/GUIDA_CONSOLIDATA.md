@@ -3544,6 +3544,25 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 ---
 
+### Sessione 24/06/2026 — Riesame di Direzione §9.3: gap G3 (input c.5), G2 (export Word), G1 (link Piano Azioni), G6
+
+Lavoro coerente su tre gap correlati che toccano gli stessi file (eseguiti in sequenza, non da agenti separati).
+
+| Gap | Contenuto | File chiave | Stato |
+|-----|-----------|-------------|-------|
+| **G3** | Aggiunto input §9.3.2 **c.5 Risultati di monitoraggio e misurazione** (`input_monitoring`). Gli altri campi normativi (b, c.1, c.3, e) erano già presenti da migration 110. | Migration **112** (vps+local), `managementReviews.controller.js`, `ManagementReviewsPage.jsx`, `wordExportReview.js`, `generateManagementReviewTemplate.js` + template `.docx` | **Migration 112 applicata su DB produzione** (colonna presente). Frontend in `main`. Backend controller **da deployare su VPS**. |
+| **G2** | Export Word verbale §9.3 — **già implementato** in PR #156 (`exportManagementReviewDocx`, pulsante 📋 nella lista). Esteso col nuovo segnaposto `{input_monitoring}`. | `wordExportReview.js`, template | **Già in produzione**; esteso. |
+| **G1** | Collegamento output §9.3.3 → **Piano Azioni**: colonna `non_conformities.management_review_id` + FK + indice (migration **113**). Pulsante "Crea azioni dagli output" nella sezione §9.3.3 (solo su riesame salvato) che apre `NcCreateModal` precompilato e collegato al riesame (categoria `management_review`). | Migration **113** (vps+local), `nc.controller.js`, `ncCreateHelpers.js`, `NcCreateModal.jsx`, `ManagementReviewsPage.jsx` | **Migration 113 applicata su DB produzione**. Frontend in `main`. Backend `nc.controller` **da deployare su VPS**. |
+| **G6** | Bug fix: la query obiettivi in `generateDraft`/`generateOutputs` non filtrava per `company_id` (a differenza di `getInputSummary`). Ora allineata. | `managementReviews.controller.js` | In `main`. |
+
+**Lezione (delta):** il task ipotizzava 4 campi G3 mancanti, ma la verifica diretta sul DB di produzione (`INFORMATION_SCHEMA.COLUMNS`) ha mostrato che 3 erano già presenti (migration 110) e l'export Word (G2) era già in produzione. Applicata la regola "VERIFICA PRIMA DI AGIRE": implementato **solo** ciò che mancava davvero (`input_monitoring` + link Piano Azioni), evitando duplicazioni.
+
+**Migrazioni DB da Windows:** nuovo pattern `run-migration-NNN-local.js` che usa `backend/config/database.json` (profilo `production` di default) via `mergeDbEnv` — esegue le ALTER idempotenti direttamente sul DB di produzione senza passare dal VPS. Le versioni `-vps.js` restano come artefatto canonico/riproducibile per deploy via `run-on-vps.ps1`.
+
+**Da completare alla ripresa:** deploy su VPS dei controller backend (`managementReviews.controller.js`, `nc.controller.js`) + restart `sgq-backend` con verifica PID + smoke (health 200). Senza il deploy backend i nuovi campi non vengono persistiti dal server (il DB ha già le colonne; nessuna rottura dei riesami esistenti).
+
+---
+
 ### Sessione 23/06/2026 — Riesame di Direzione §9.3: stato modulo (3 slice AI in produzione)
 
 Stato consolidato del modulo Riesame di Direzione: le 3 slice sono tutte in `main` e in produzione.
