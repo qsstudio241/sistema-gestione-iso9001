@@ -377,7 +377,12 @@ export default function ContractReviewPage() {
         clarifications: data.clarifications || [],
         documents: data.documents || [],
         attachments: data.attachments || [],
+        textAnalysis: data.text_analysis || null,
       });
+      // Idrata l'analisi capitolato persistita (slice #2): al riapri il risultato è ancora lì.
+      if (data.text_analysis?.suggestion) {
+        setServerAiResult(data.text_analysis.suggestion);
+      }
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
       setEditCompanyId(c.company_id != null ? String(c.company_id) : '');
