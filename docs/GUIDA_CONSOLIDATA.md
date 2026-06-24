@@ -3610,3 +3610,22 @@ Stato consolidato del modulo Riesame di Direzione: le 3 slice sono tutte in `mai
 - `computeWpsCoverageEsito(details[]) → 'verde'|'giallo'|'rosso'`
 
 **Nota deploy-manifest:** aggiungere sempre file utils nuovi a `backend/scripts/deploy-manifest.json` gruppo `utils` prima del prossimo deploy — altrimenti il file non viene copiato sul VPS.
+
+### Sessione 24/06/2026 — AI Know-how Studio: content_scope, Patrimonio Studio, indicizzazione contenuti
+
+| Voce | Esito |
+|------|-------|
+| PR | [#161](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/161) — MERGED su main (`5403322`) |
+| Migrazione 111 | Colonna `content_scope` (`client`/`studio`/`reference`) su `document_registry` + CHECK + DEFAULT + indice; backfill 770 client, 97 reference |
+| Patrimonio Studio | Template `studio_patrimonio_v1` + provisioning radici per org 1001-1004 |
+| Indicizzazione contenuto documenti | `documentTextExtractor.service.js` estrae testo da DOCX/PDF; `knowledgeIndexer.service.js` genera chunk e embedding per scope-aware search |
+| Timeout difensivo embedding | `geminiAdapter.js` `embed()`: AbortController 30s (env `GEMINI_EMBED_TIMEOUT_MS`) + cap 2 retry su 429; test L1 3/3 |
+| Deploy backend VPS | 119 file copiati; `mammoth` installato; restart PID 74632 -> 95408; health OK |
+| Reindex produzione | Avviato per tutte le org; esecuzione lunga (embedding reale) |
+| Ambiente TEST isolato | `/var/www/sgq-backend-test` (drop-in systemd, DB `2026-06-18_SGQ_ISO9001`); utile per validazione pre-prod, dismettibile a regime |
+| Deploy-manifest | Aggiunto `documentTextExtractor.service.js` al manifest (mancava) |
+
+**Lezioni apprese:**
+- Il deploy-manifest deve essere aggiornato **insieme** al codice quando si aggiunge un nuovo file di servizio — altrimenti il file non arriva sul VPS.
+- L'embedding AI senza timeout causa hang indefiniti quando il provider e' a rate-limit. Il pattern `AbortController` + cap retry e' ora standard per tutte le chiamate Gemini.
+- L'isolamento test backend (directory separata + drop-in systemd) e' un pattern valido per validare feature che toccano schema DB prima del rilascio in produzione.
