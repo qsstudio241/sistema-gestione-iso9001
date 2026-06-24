@@ -133,10 +133,14 @@ export function buildManualNcPayload(form, auditNumber) {
   }
 
   const ncNumberBase = requiresAudit ? auditNumber : source_category.toUpperCase();
+  const managementReviewId = (form.management_review_id != null && form.management_review_id !== '')
+    ? parseInt(form.management_review_id, 10)
+    : null;
   return {
     ok: true,
     payload: {
       ...(requiresAudit ? { audit_id: parseInt(form.audit_id, 10) } : {}),
+      ...(managementReviewId != null ? { management_review_id: managementReviewId } : {}),
       source_category,
       source_origin_text: (form.source_origin_text || '').trim() || null,
       nc_number: (form.nc_number || '').trim() || buildManualNcNumber(ncNumberBase),

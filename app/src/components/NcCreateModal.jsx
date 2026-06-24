@@ -45,7 +45,10 @@ const EMPTY_FORM = {
   due_date:           "",
 };
 
-export default function NcCreateModal({ open, onClose, onCreated, defaultCategory, initialDescription }) {
+export default function NcCreateModal({
+  open, onClose, onCreated, defaultCategory, initialDescription,
+  managementReviewId = null, initialOriginText = "",
+}) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
 
@@ -84,6 +87,7 @@ export default function NcCreateModal({ open, onClose, onCreated, defaultCategor
       ...EMPTY_FORM,
       source_category: initCategory,
       section_code: catCfg.defaultSection || "",
+      source_origin_text: initialOriginText || "",
       description: resolveNcFieldInitial(initialDescription || "", organizationId, CREATE_SCOPE, "description"),
     });
     setSectionOptions(NC_MANUAL_SECTIONS);
@@ -164,7 +168,10 @@ export default function NcCreateModal({ open, onClose, onCreated, defaultCategor
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const built = buildManualNcPayload(form, selectedAudit?.audit_number);
+    const built = buildManualNcPayload(
+      { ...form, management_review_id: managementReviewId },
+      selectedAudit?.audit_number,
+    );
     if (!built.ok) { setError(built.message); return; }
     setSaving(true);
     setError(null);
