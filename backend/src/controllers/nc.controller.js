@@ -494,9 +494,13 @@ async function createNonConformity(req, res) {
             corrective_action,
             source_category: rawCategory,
             source_origin_text,
+            management_review_id,
         } = req.body;
 
         const source_category = rawCategory || 'audit';
+        const managementReviewId = (management_review_id != null && management_review_id !== '')
+            ? parseInt(management_review_id, 10)
+            : null;
         const isAuditBased = source_category === 'audit';
 
         // Validazione campi obbligatori comuni
@@ -622,6 +626,7 @@ async function createNonConformity(req, res) {
         source_type,
         source_category,
         source_origin_text,
+        management_review_id,
         created_at,
         updated_at
       )
@@ -642,6 +647,7 @@ async function createNonConformity(req, res) {
         'manual',
         @source_category,
         @source_origin_text,
+        @management_review_id,
         GETDATE(),
         GETDATE()
       )
@@ -657,6 +663,7 @@ async function createNonConformity(req, res) {
             responsible_contact_id: responsibleResolved.contact_id,
             source_category,
             source_origin_text: source_origin_text || null,
+            management_review_id: managementReviewId,
             due_date: due_date || null,
             corrective_action: corrective_action || null
         });
