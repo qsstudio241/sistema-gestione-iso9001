@@ -181,6 +181,33 @@ async function aiChat(req, res) {
       standardKey: standardKey || null,
     });
 
+    // Feedback loop: inietta correzioni recenti come preferenze apprese
+    try {
+      const fbRes = await query(
+        `SELECT TOP 5 feature, action, ai_text, final_text, context_summary
+         FROM ai_feedback
+         WHERE organization_id = @orgId
+           AND action = 'rephrased'
+           AND final_text IS NOT NULL AND LEN(final_text) > 30
+         ORDER BY created_at DESC`,
+        { orgId: organizationId }
+      );
+      const fbRows = fbRes.recordset || [];
+      if (fbRows.length > 0) {
+        const prefLines = ['\n\n--- PREFERENZE APPRESE ---'];
+        prefLines.push('Correzioni recenti degli utenti di questa organizzazione. Adatta stile e contenuto:');
+        for (const fb of fbRows) {
+          prefLines.push(`- [${fb.feature}] ${fb.context_summary || ''}`);
+          if (fb.ai_text) prefLines.push(`  Prima: ${fb.ai_text.substring(0, 150)}...`);
+          prefLines.push(`  Corretto in: ${fb.final_text.substring(0, 250)}`);
+        }
+        prefLines.push('--- FINE PREFERENZE ---');
+        systemPrompt += prefLines.join('\n');
+      }
+    } catch (err) {
+      logger.debug('[AI_CHAT] Feedback enrichment skipped:', err.message);
+    }
+
     let contextChunks = [];
     try {
       const standardCodes = activeStandard

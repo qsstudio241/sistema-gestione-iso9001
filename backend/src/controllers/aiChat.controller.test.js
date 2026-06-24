@@ -33,6 +33,7 @@ jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
   info: jest.fn(),
+  debug: jest.fn(),
 }));
 
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
@@ -250,6 +251,71 @@ describe('aiChat.controller — aiChat', () => {
       99,
       expect.objectContaining({ companyId: 45 })
     );
+  });
+
+  it('injects learned preferences from rephrased feedback into system prompt', async () => {
+    const { query: dbQuery } = require('../config/database');
+    dbQuery.mockResolvedValueOnce({
+      recordset: [
+        {
+          feature: 'audit_conclusions',
+          action: 'rephrased',
+          ai_text: 'L\'audit mostra conformita\'.',
+          final_text: 'L\'audit ha evidenziato piena conformita\' ai requisiti ISO 9001:2015.',
+          context_summary: 'Audit 2024-03',
+        },
+      ],
+    });
+
+    const req = {
+      body: { message: 'Scrivi le conclusioni' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    expect(chat).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'system',
+          content: expect.stringContaining('PREFERENZE APPRESE'),
+        }),
+      ]),
+      expect.any(Object)
+    );
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('Corretto in:');
+  });
+
+  it('skips feedback enrichment gracefully when query fails', async () => {
+    const { query: dbQuery } = require('../config/database');
+    dbQuery.mockRejectedValueOnce(new Error('ai_feedback table missing'));
+
+    const req = {
+      body: { message: 'Domanda senza feedback' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ reply: 'Risposta di test' })
+    );
+  });
+
+  it('does not inject preferences block when no rephrased feedback exists', async () => {
+    const { query: dbQuery } = require('../config/database');
+    dbQuery.mockResolvedValueOnce({ recordset: [] });
+
+    const req = {
+      body: { message: 'Domanda' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).not.toContain('PREFERENZE APPRESE');
   });
 
 });
