@@ -3348,7 +3348,7 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 
 | Voce | Esito |
 |------|-------|
-| DB test | Migration 099: tabella `management_reviews` (90 colonne, numerazione `RD-YYYY-NNN`); smoke-testdb OK |
+| DB test | Migration 099: tabella `management_reviews` (25 colonne alla creazione; 30 dopo migrazioni 110/112 — verificato su `INFORMATION_SCHEMA.COLUMNS`), numerazione `RD-YYYY-NNN`; smoke-testdb OK |
 | DB prod | Migration 099 applicata via `run-on-vps.ps1` con dotenv da `/var/www/sgq-backend/.env` |
 | Backend | Controller + routes: 5 endpoint REST `/api/v1/management-reviews`; multi-tenant; `companyAccess.service` |
 | Frontend | `ManagementReviewsPage`: lista tabellare + form collassabile (§9.3.2 ×8, §9.3.3 ×3); nav "Riesame Direzione" |
@@ -3554,12 +3554,13 @@ Lavoro coerente su tre gap correlati che toccano gli stessi file (eseguiti in se
 | **G2** | Export Word verbale §9.3 — **già implementato** in PR #156 (`exportManagementReviewDocx`, pulsante 📋 nella lista). Esteso col nuovo segnaposto `{input_monitoring}`. | `wordExportReview.js`, template | **Già in produzione**; esteso. |
 | **G1** | Collegamento output §9.3.3 → **Piano Azioni**: colonna `non_conformities.management_review_id` + FK + indice (migration **113**). Pulsante "Crea azioni dagli output" nella sezione §9.3.3 (solo su riesame salvato) che apre `NcCreateModal` precompilato e collegato al riesame (categoria `management_review`). | Migration **113** (vps+local), `nc.controller.js`, `ncCreateHelpers.js`, `NcCreateModal.jsx`, `ManagementReviewsPage.jsx` | **Migration 113 applicata su DB produzione**. Frontend in `main`. Backend `nc.controller` **da deployare su VPS**. |
 | **G6** | Bug fix: la query obiettivi in `generateDraft`/`generateOutputs` non filtrava per `company_id` (a differenza di `getInputSummary`). Ora allineata. | `managementReviews.controller.js` | In `main`. |
+| **G5** | Test L1: Vitest frontend (`managementReviews.test.jsx`, `managementReviewDraft.test.jsx`, `participantsList.test.jsx`) + **test backend Jest `managementReviews.controller.test.js`** su `getInputSummary` (7 casi: aggregazione, filtro `company_id`, scope `organization_id`, errori per-blocco, guard RBAC). | `app/src/tests/*`, `backend/src/controllers/managementReviews.controller.test.js` | In `main` — 7/7 verde. |
 
 **Lezione (delta):** il task ipotizzava 4 campi G3 mancanti, ma la verifica diretta sul DB di produzione (`INFORMATION_SCHEMA.COLUMNS`) ha mostrato che 3 erano già presenti (migration 110) e l'export Word (G2) era già in produzione. Applicata la regola "VERIFICA PRIMA DI AGIRE": implementato **solo** ciò che mancava davvero (`input_monitoring` + link Piano Azioni), evitando duplicazioni.
 
 **Migrazioni DB da Windows:** nuovo pattern `run-migration-NNN-local.js` che usa `backend/config/database.json` (profilo `production` di default) via `mergeDbEnv` — esegue le ALTER idempotenti direttamente sul DB di produzione senza passare dal VPS. Le versioni `-vps.js` restano come artefatto canonico/riproducibile per deploy via `run-on-vps.ps1`.
 
-**Da completare alla ripresa:** deploy su VPS dei controller backend (`managementReviews.controller.js`, `nc.controller.js`) + restart `sgq-backend` con verifica PID + smoke (health 200). Senza il deploy backend i nuovi campi non vengono persistiti dal server (il DB ha già le colonne; nessuna rottura dei riesami esistenti).
+**Stato finale sessione:** controller backend (`managementReviews.controller.js`, `nc.controller.js`) **deployati su VPS** con restart `sgq-backend` (verifica PID) e smoke health 200; migrazioni 112/113 applicate in produzione; frontend live su `main`. Gap G1, G2, G3, G5, G6 chiusi.
 
 ---
 
