@@ -12,6 +12,7 @@
  *   {input_previous_actions}  {input_context_changes}
  *   {input_audits}            {input_nc_corrective}
  *   {input_objectives}        {input_process_performance}
+ *   {input_monitoring}
  *   {input_customer_satisfaction}  {input_complaints}
  *   {input_suppliers}         {input_resources}
  *   {input_risk_effectiveness} {input_improvements}
@@ -145,6 +146,8 @@ const INPUT_FIELDS = [
       ph: '{input_objectives}' },
     { label: 'c.3) Prestazioni dei processi e conformit\u00E0 prodotti/servizi  [\u00A79.3.2 c.3]',
       ph: '{input_process_performance}' },
+    { label: 'c.5) Risultati del monitoraggio e della misurazione  [\u00A79.3.2 c.5]',
+      ph: '{input_monitoring}' },
     { label: 'c.1) Soddisfazione del cliente e feedback parti interessate  [\u00A79.3.2 c.1]',
       ph: '{input_customer_satisfaction}' },
     { label: 'c.1) Reclami dei clienti \u2014 dettaglio  [\u00A79.3.2 c.1]',
