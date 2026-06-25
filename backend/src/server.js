@@ -187,16 +187,15 @@ const apiLimiter = rateLimit({
     legacyHeaders:   false,
     skip: () => rateLimitDisabled,
     keyGenerator: (req) => {
-        // JWT non ancora verificato qui (middleware auth viene dopo), ma se il
-        // token è presente in Authorization proviamo a leggere il sub in chiaro.
-        // In caso di token assente/malformato cade sull'IP reale.
+        // JWT non ancora verificato qui (middleware auth viene dopo). Campo SGQ: user_id.
         try {
             const auth = req.headers.authorization || '';
             if (auth.startsWith('Bearer ')) {
                 const payload = JSON.parse(
                     Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
                 );
-                if (payload.id || payload.sub) return `user:${payload.id || payload.sub}`;
+                const uid = payload.user_id || payload.id || payload.sub;
+                if (uid) return `user:${uid}`;
             }
         } catch (_) { /* token assente o malformato: fallback su IP */ }
         return req.ip;
