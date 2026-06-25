@@ -1679,6 +1679,9 @@ Sintomo: durante la digitazione nelle note checklist il testo si azzera (“refr
 - **Fix**: `draftFieldRegistry` + `AutoTextarea` (`auditUuid`, `draftFieldId` su focus/change); merge note con `checklistTextMerge.js` (`applyServerResponsesPreservingLocalNotes`, `resolveMergedChecklistForReconcile`); reconcile usa `auditsRef.current` prima di IndexedDB.
 - **Test L1**: `app/src/tests/checklistTextMerge.test.js`.
 
+#### Note checklist senza esito — sync dettatura (25/06/2026)
+**Sintomo**: audit FP Modena QS-260611-01 — allegati su punti 7.1.5.1/7.1.5.2 salvati, note dettate vuote al refresh. **Causa**: `extractChecklistResponses` e `enqueueResponseEvent` sincronizzavano solo domande con status ≠ `NOT_ANSWERED`; dettatura prima del click C/NC/OSS non arrivava al server. **Diagnosi DB**: zero righe `audit_responses` e zero eventi `response_set` per `question_id` 100/101; 5 allegati presenti. **Fix** PR **#166**: sync note anche con `conformity_status: null`; eventi T3 anche su cambio campo `notes`; `response_cleared` solo se status e note entrambi assenti. **Recupero dati**: testo già perso non recuperabile — ricompilazione manuale. **Workflow CI**: smoke DB attivato anche su PR `app/**` (prima bloccava merge frontend-only).
+
 #### Coerenza percorsi di scrittura (T3/T4/T5)
 Quando si introduce un nuovo percorso di scrittura (T3: eventi atomici), il vecchio percorso (bulk `save_responses`) non va disabilitato ma reso parallelo/additivo. Se si disabilita uno dei percorsi si crea asimmetria (status scritto, note bloccate). Analogamente il lock non deve bloccare un percorso e lasciarne un altro libero.
 - **Regola**: tutti i percorsi di scrittura devono avere lo stesso comportamento rispetto a lock, retry e error handling.

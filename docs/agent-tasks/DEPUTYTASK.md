@@ -1,23 +1,20 @@
 # DEPUTYTASK — stato al 25/06/2026
 
-## Sessione CHIUSA — Rate limit Assistente AI Conclusioni (TEST OK + RILASCIO PRODUZIONE)
+## Sessione CHIUSA — Note checklist senza esito (TEST OK, PR #166)
 
-**Sintomo**: Camellini vede "Troppe richieste. Riprova tra qualche minuto." nel modal **Assistente AI — Conclusioni** ("Migliora bozza").
+**Sintomo**: audit FP Modena **QS-260611-01** — punti 7.1.5.1/7.1.5.2 con allegati sul server ma note dettate vuote al refresh.
 
-**Causa**: rate limiter generico API (`RATE_LIMIT_API`), non limite provider AI. Il `keyGenerator` leggeva `id`/`sub` nel JWT invece di `user_id` → tutti gli utenti dietro lo stesso IP condividevano un bucket (500 req/15 min).
+**Causa**: sync checklist escludeva domande senza esito (C/NC/OSS/…); dettatura prima del click esito restava solo in locale.
 
-**Fix** (PR **#164** mergiata su `main`):
-- `backend/src/server.js`: bucket per `user_id` JWT
-- `app/src/hooks/useAiAssist.js`: messaggio 429 più chiaro
-- `backend/deploy-production.ps1`: `RATE_LIMIT_MAX_REQUESTS=1000`
-- `docs/GUIDA_CONSOLIDATA.md`: nota diagnosi
+**Fix** (PR **#166** → merge su `main`):
+- `extractChecklistResponses`: include note non vuote anche senza status
+- `enqueueResponseEvent` + `ChecklistModule`: eventi su note; `response_set` con `conformity_status: null`
+- CI: smoke DB anche su PR `app/**`
+- `docs/GUIDA_CONSOLIDATA.md`: diagnosi QS-260611-01
 
-**Stato produzione (25/06/2026)**:
-- VPS: `server.js` deployato, `.env` `RATE_LIMIT_MAX_REQUESTS=1000`, restart PID verificato, health 200
-- Frontend: Netlify da `main` (messaggio UI migliorato dopo deploy Netlify ~2 min)
-- CI PR #164: verde (Vitest + smoke DB)
+**Verifica**: Vitest mirato 24/24 OK; CI PR verde; deploy Netlify automatico da `main` (~2 min).
 
-**Verifica utente**: Camellini riapre Assistente AI Conclusioni; se 429 residuo → attendere 15 min o chiudere schede duplicate.
+**Azione utente**: Camellini ricompila manualmente note 7.1.5.1/7.1.5.2 (dati persi non recuperabili). Allegati già presenti.
 
 ---
 
