@@ -166,7 +166,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
-| Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini | 🔲 Backlog |
+| Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini — spec Sprint 4: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) (gap engine condiviso) | 🔲 Backlog (spec pronta) |
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
@@ -667,7 +667,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **1** | Document Registry UX | Redesign UX (vista Priorità, wizard form, export Excel) | Sprint 0 |
 | **2** | Qualifiche + Alert Engine | Personnel qualifications, cron email scadenze | Sprint 0 |
 | **3** | NC & Azioni Correttive | Loop audit→azione→verifica, workflow status | Sprint 0 |
-| **4** | SAL (Riesame Direzione) | Griglia requisiti×stati, report Word verbale | Sprint 3 |
+| **4** | SAL (Stato Avanzamento Lavori) | Motore gap analysis operativa clausola-per-clausola + griglia requisiti×stati + report Word. **Spec**: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) — verdetto «gap engine condiviso come ossatura», letto anche dal Riesame di Direzione | Sprint 3 |
 | **5** | Saldatura ISO 3834 | WPS/WPQR, qualifiche saldatori, commesse | Sprint 2 |
 | **6** | Rischi + Obiettivi | Risk register §6.1, obiettivi §6.2 | Sprint 3 |
 | **7** | Reclami + Fornitori | Reclami clienti, valutazione fornitori | Sprint 3 |

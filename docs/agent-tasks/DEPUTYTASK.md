@@ -1,29 +1,23 @@
-# DEPUTYTASK — stato al 24/06/2026
+# DEPUTYTASK — stato al 25/06/2026
 
-## Sessione CHIUSA — Riesame di Direzione ISO 9001 §9.3 (TEST OK + RILASCIO PRODUZIONE)
+## Sessione CHIUSA — Rate limit Assistente AI Conclusioni (TEST OK + RILASCIO PRODUZIONE)
 
-Modulo Riesame di Direzione portato a piena conformità §9.3.2/§9.3.3. Tutto su `main` e deployato sul VPS.
+**Sintomo**: Camellini vede "Troppe richieste. Riprova tra qualche minuto." nel modal **Assistente AI — Conclusioni** ("Migliora bozza").
 
-### Gap risolti
+**Causa**: rate limiter generico API (`RATE_LIMIT_API`), non limite provider AI. Il `keyGenerator` leggeva `id`/`sub` nel JWT invece di `user_id` → tutti gli utenti dietro lo stesso IP condividevano un bucket (500 req/15 min).
 
-| Gap | Contenuto | Commit / Migration |
-|-----|-----------|--------------------|
-| **G1** | Collegamento output §9.3.3 → Piano Azioni: colonna `non_conformities.management_review_id` + FK + indice; pulsante "Crea azioni dagli output" che apre `NcCreateModal` precompilato (categoria `management_review`) | Migration **113** (vps+local) `8d62ea3`; `nc.controller.js`, `ncCreateHelpers.js`, `NcCreateModal.jsx`, `ManagementReviewsPage.jsx` |
-| **G2** | Export Word verbale §9.3 — già in PR **#156**; esteso col segnaposto `{input_monitoring}` | `wordExportReview.js`, template `.docx` |
-| **G3** | Input §9.3.2 c.5 "Risultati di monitoraggio e misurazione" (`input_monitoring`); gli altri campi normativi (b, c.1, c.3, e) già presenti da migration **110** | Migration **112** (vps+local) `f7fbffe`; `managementReviews.controller.js`, `ManagementReviewsPage.jsx`, `wordExportReview.js`, `generateManagementReviewTemplate.js` |
-| **G5** | Test L1: Vitest frontend + **test backend Jest `managementReviews.controller.test.js`** su `getInputSummary` (7 casi — aggregazione NC/obiettivi/audit/fornitori/reclami, filtro `company_id`, scope `organization_id`, errori per-blocco, guard RBAC) | `07dfa0a` (frontend) + test backend (questa chiusura) |
-| **G6** | Fix filtro `company_id` mancante nelle query obiettivi di `generateDraft`/`generateOutputs` (ora allineate a `getInputSummary`) | `f7fbffe` |
+**Fix** (PR **#164** mergiata su `main`):
+- `backend/src/server.js`: bucket per `user_id` JWT
+- `app/src/hooks/useAiAssist.js`: messaggio 429 più chiaro
+- `backend/deploy-production.ps1`: `RATE_LIMIT_MAX_REQUESTS=1000`
+- `docs/GUIDA_CONSOLIDATA.md`: nota diagnosi
 
-### Stato produzione (24/06/2026)
-- DB `SGQ_ISO9001`: migrazioni **110/112/113** applicate (campi normativi §9.3.2 + FK `management_review_id`)
-- Tabella `management_reviews`: **30 colonne** (25 alla creazione migration 099 + 5 da 110/112) — verificato su `INFORMATION_SCHEMA.COLUMNS`
-- Backend: `managementReviews.controller.js` + `nc.controller.js` deployati su VPS, restart con verifica PID, health 200
-- Frontend: live su `main` (Netlify)
-- Test: Vitest frontend verde + Jest backend `getInputSummary` **7/7 verde**
+**Stato produzione (25/06/2026)**:
+- VPS: `server.js` deployato, `.env` `RATE_LIMIT_MAX_REQUESTS=1000`, restart PID verificato, health 200
+- Frontend: Netlify da `main` (messaggio UI migliorato dopo deploy Netlify ~2 min)
+- CI PR #164: verde (Vitest + smoke DB)
 
-### Note di allineamento
-- **PR #124 (selettore azienda)**: SUPERATA dal pattern "Ambito/company scope" già adottato nel modulo (filtro `company_id` opzionale in `getInputSummary`/`generateDraft`/`generateOutputs` + `companyAccess.service`). Non riaprire.
-- Errore documentale "90 colonne" in `GUIDA_CONSOLIDATA.md` (sez. 18/06/2026) corretto → valore reale verificato.
+**Verifica utente**: Camellini riapre Assistente AI Conclusioni; se 429 residuo → attendere 15 min o chiudere schede duplicate.
 
 ---
 
