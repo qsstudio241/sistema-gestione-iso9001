@@ -22,6 +22,7 @@ on:
       - main
     paths:
       - 'backend/**'
+      - 'app/**'
       - '.github/workflows/smoke-test.yml'
   # Esecuzione manuale (utile per debug)
   workflow_dispatch:
