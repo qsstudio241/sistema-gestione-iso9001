@@ -719,7 +719,7 @@ quando il pannello si apre.
 
 **Diagnosi rapida**: se un utente vede "Troppe richieste" → `sudo grep 429 /var/log/nginx/access.log | grep IP_UTENTE | tail -30` per capire quale endpoint genera il loop.
 
-**Assistente AI Conclusioni (06/2026)**: il messaggio "Troppe richieste. Riprova tra qualche minuto." nel modal AI **non** è un limite del provider Gemini/OpenAI — è il rate limiter generico API (`RATE_LIMIT_API`, 500 req/15 min in produzione). Causa frequente: il `keyGenerator` leggeva `id`/`sub` nel JWT invece di `user_id`, quindi tutti gli utenti dietro lo stesso IP (ufficio/NAT) condividevano un unico bucket. Fix: `user_id` nel keyGenerator + alzare `RATE_LIMIT_MAX_REQUESTS` a 1000 sul VPS.
+**Assistente AI Conclusioni (06/2026)**: il messaggio "Troppe richieste. Riprova tra qualche minuto." nel modal AI **non** è un limite del provider Gemini/OpenAI — è il rate limiter generico API (`RATE_LIMIT_API`, 500 req/15 min in produzione). Causa frequente: il `keyGenerator` leggeva `id`/`sub` nel JWT invece di `user_id`, quindi tutti gli utenti dietro lo stesso IP (ufficio/NAT) condividevano un unico bucket. **Fix PR #164** (25/06/2026): `user_id` nel keyGenerator + `RATE_LIMIT_MAX_REQUESTS=1000` sul VPS + messaggio UI più chiaro in `useAiAssist`.
 
 #### Lezioni apprese (16/05/2026 sera)
 1. **Microsoft-WebDAV-MiniRedir** è un client legacy di Windows che parte automaticamente
