@@ -322,25 +322,29 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     }
 
     // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
-    // Ogni cambio di status genera un evento atomico inviato a POST /audits/:uuid/events.
-    // Il bulk save_responses è disabilitato in StorageContext quando events è attivo.
+    // Status e note generano eventi atomici su POST /audits/:uuid/events.
+    // Il bulk save_responses resta attivo in parallelo (note senza esito incluse).
     if (
-      field === 'status' &&
+      (field === 'status' || field === 'notes') &&
       import.meta.env.VITE_SYNC_MODE === 'events'
     ) {
       const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
-      // questionId numerico dal dato della domanda (idratato da hydrateQuestionIds)
-      const numericQId = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-        ?.questions?.find((q) => q.id === questionId)?.questionId ?? null;
+      const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+        ?.questions?.find((q) => q.id === questionId);
+      const numericQId = questionRow?.questionId ?? null;
       if (auditUuidForEvent && numericQId != null) {
-        const currentNotes = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-          ?.questions?.find((q) => q.id === questionId)?.notes ?? null;
-        const newStatus = value === 'NOT_ANSWERED' ? null : value;
+        const currentNotes = questionRow?.notes ?? null;
+        const currentStatus = questionRow?.status ?? null;
+        const newStatus =
+          field === 'status'
+            ? (value === 'NOT_ANSWERED' ? null : value)
+            : (currentStatus === 'NOT_ANSWERED' ? null : currentStatus);
+        const newNotes = field === 'notes' ? value : currentNotes;
         syncService.enqueueResponseEvent(
           auditUuidForEvent,
           numericQId,
           newStatus,
-          currentNotes,
+          newNotes,
         ).catch(() => {});
       }
     }
