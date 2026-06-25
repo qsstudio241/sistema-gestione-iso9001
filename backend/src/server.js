@@ -196,7 +196,8 @@ const apiLimiter = rateLimit({
                 const payload = JSON.parse(
                     Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
                 );
-                if (payload.id || payload.sub) return `user:${payload.id || payload.sub}`;
+                const uid = payload.user_id || payload.id || payload.sub;
+                if (uid) return `user:${uid}`;
             }
         } catch (_) { /* token assente o malformato: fallback su IP */ }
         return req.ip;
