@@ -110,13 +110,14 @@ const MODULE_INFO = {
   },
   sal: {
     icon: "📊",
-    title: "SAL - Riesame Direzione",
-    description: "Stato Avanzamento Lavori per il riesame della direzione. Griglia requisiti × stati con codifica colori (discusso / in corso / completato). Export verbale Word.",
+    title: "SAL — Stato Avanzamento Lavori",
+    description:
+      "Tracker per monitorare l'avanzamento di implementazione del SGQ requisito per requisito (clausole §4–10). Griglia requisiti × stati con codifica colori per standard.",
     features: [
       "Griglia requisiti ISO 9001/14001/45001",
-      "Stati: Discusso / In corso / Completato / Non applicabile",
-      "Collegamento automatico a NC, obiettivi, audit recenti",
-      "Export verbale riesame direzione in Word",
+      "Stati: Discusso / In corso / Da validare / Completato",
+      "Motore gap analysis clausola-per-clausola per azienda",
+      "Export Word con legenda colori per standard",
     ],
     sprint: "Sprint 4",
     eta: "Prossimamente",
