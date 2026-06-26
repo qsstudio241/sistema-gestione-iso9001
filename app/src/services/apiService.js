@@ -1322,6 +1322,12 @@ class ApiService {
         return this.put(`/documents/${id}`, body);
     }
 
+    /** Configurazione tipi documento (prefissi, scadenza default mesi). */
+    async getDocTypeConfig() {
+        const res = await this.get('/doc-type-config');
+        return Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    }
+
     /** Alias legacy "vigente" → "rilasciato" (registro documenti, non validity_status norme). */
     _normalizeDocumentRegistryStatus(raw) {
         if (raw == null || String(raw).trim() === '') return 'rilasciato';

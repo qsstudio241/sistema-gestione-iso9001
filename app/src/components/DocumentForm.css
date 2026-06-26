@@ -168,6 +168,12 @@
   color: #14532d;
 }
 
+.docform-hint--link a {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .docform-field input:disabled {
   background: #f3f4f6;
   color: #6b7280;

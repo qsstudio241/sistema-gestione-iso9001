@@ -14,7 +14,7 @@
  * La submit ora è gestita esplicitamente tramite onClick.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
@@ -24,6 +24,7 @@ import {
   registryDocStatusForForm,
   isDocumentFolder,
 } from "../utils/documentValidity";
+import { buildDocumentUpdateFromAiMetadata, isPdfFile } from "../utils/documentMetadataExtraction";
 import "./DocumentForm.css";
 
 const DOC_TYPES = DOC_TYPE_OPTIONS;
@@ -215,6 +216,34 @@ function DocumentForm({
   const [error, setError] = useState(null);
   const [confirmClose, setConfirmClose] = useState(false);
 
+  const [docTypeConfig, setDocTypeConfig] = useState([]);
+  const [docTypeConfigLoaded, setDocTypeConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiService.getDocTypeConfig()
+      .then((rows) => { if (!cancelled) setDocTypeConfig(rows || []); })
+      .catch(() => { if (!cancelled) setDocTypeConfig([]); })
+      .finally(() => { if (!cancelled) setDocTypeConfigLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const defaultExpiryMonths = useMemo(() => {
+    const row = docTypeConfig.find((r) => r.doc_type === form.doc_type);
+    const m = row?.default_expiry_months;
+    return m != null && m !== "" ? parseInt(m, 10) : null;
+  }, [docTypeConfig, form.doc_type]);
+
+  const showExpiryConfigHint = docTypeConfigLoaded
+    && !isNormaType
+    && !form.expiry_date
+    && (defaultExpiryMonths == null || Number.isNaN(defaultExpiryMonths) || defaultExpiryMonths <= 0);
+
+  useEffect(() => {
+    if (isEdit || !defaultFolderId || userOverrodeFolder) return;
+    setSelectedFolderId(defaultFolderId);
+  }, [defaultFolderId, isEdit, userOverrodeFolder]);
+
   // Reset dati tipo-specifici quando il tipo cambia
   useEffect(() => {
     if (docTypePrevRef.current === form.doc_type) return;
@@ -313,8 +342,7 @@ function DocumentForm({
   const runAiExtraction = useCallback(async (file, docType) => {
     if (!file || !docType) return;
     // Solo PDF supportati
-    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-    if (ext !== '.pdf') return;
+    if (!isPdfFile(file)) return;
 
     // Annulla eventuale estrazione precedente (flag di abort)
     const abortFlag = { cancelled: false };
@@ -1229,6 +1257,18 @@ function DocumentForm({
             <div className="docform-field">
               <label>Data scadenza</label>
               <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
+              {showExpiryConfigHint && (
+                <span className="docform-hint docform-hint--link">
+                  {"Nessuna scadenza automatica per questo tipo. Configura i mesi in "}
+                  <a href="/settings/studio">Il mio Studio → Documenti</a>
+                  {" oppure inserisci la data manualmente al rilascio."}
+                </span>
+              )}
+              {!showExpiryConfigHint && defaultExpiryMonths > 0 && !form.expiry_date && (
+                <span className="docform-hint">
+                  {`Al rilascio, se lasci vuota, verrà calcolata +${defaultExpiryMonths} mesi dalla data emissione.`}
+                </span>
+              )}
             </div>
           )}
         </div>
