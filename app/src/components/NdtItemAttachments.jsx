@@ -57,7 +57,7 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
                 const headers = {};
                 if (token) headers["Authorization"] = `Bearer ${token}`;
 
-                const resp = await fetch(`${apiService.baseUrl}/attachments`, {
+                const resp = await fetch(`${apiService.baseUrl}/attachments/upload`, {
                     method: "POST",
                     headers,
                     credentials: "include",
