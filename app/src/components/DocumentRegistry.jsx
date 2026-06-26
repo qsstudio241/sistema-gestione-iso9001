@@ -32,7 +32,9 @@ import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import NormUploadButton from "./NormUploadButton";
 import NormCodesImportButton from "./NormCodesImportButton";
-import useDocumentTree from "../hooks/useDocumentTree";
+import useDocumentTree, {
+  resolveNewFolderParentId,
+} from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
 import { shouldShowDocumentStatusBadge, isDocumentFolder } from "../utils/documentValidity";
@@ -1057,6 +1059,13 @@ function DocumentRegistry() {
     [registryCompanyScope, isStudioScope, companies]
   );
 
+  const defaultFolderIdForNew = useMemo(() => {
+    if (tree.selectedNode) {
+      return resolveNewFolderParentId(tree.selectedNode);
+    }
+    return tree.selectedNodeId || null;
+  }, [tree.selectedNode, tree.selectedNodeId]);
+
   const syncRegistryUrl = useCallback(
     (tab, selectId = null, companyId = registryCompanyScope) => {
       replace(
@@ -2014,7 +2023,7 @@ function DocumentRegistry() {
           doc={editingDoc}
           companies={companies}
           standards={standards}
-          defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
+          defaultFolderId={!editingDoc ? defaultFolderIdForNew : undefined}
           defaultCompanyId={!editingDoc && companyScopeId ? companyScopeId : undefined}
           defaultContentScope={
             !editingDoc && isStudioScope
@@ -2035,6 +2044,10 @@ function DocumentRegistry() {
           doc={fileDialogDoc}
           onClose={async () => {
             setFileDialogDoc(null);
+            await Promise.all([loadStats(), loadPriorityDocs()]);
+            if (activeTab === "catalog") await loadCatalog();
+          }}
+          onDocumentUpdated={async () => {
             await Promise.all([loadStats(), loadPriorityDocs()]);
             if (activeTab === "catalog") await loadCatalog();
           }}
