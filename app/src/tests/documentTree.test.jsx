@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import DocumentTree from '../components/DocumentTree';
+import DocumentTree, { filterTreeSidebarNodes } from '../components/DocumentTree';
 
 const sampleNodes = [
   {
@@ -326,5 +326,46 @@ describe('DocumentTree  Loading / Error', () => {
       />
     );
     expect(screen.getByText('Errore di rete')).toBeInTheDocument();
+  });
+});
+
+describe('DocumentTree — foldersOnly (sidebar solo cartelle)', () => {
+  it('filterTreeSidebarNodes esclude i documenti', () => {
+    const filtered = filterTreeSidebarNodes(sampleNodes, true);
+    expect(filtered.map((n) => n.title)).toEqual(['Procedure', 'Sistema']);
+  });
+
+  it('con foldersOnly non mostra documenti foglia nella sidebar', () => {
+    render(
+      <DocumentTree
+        nodes={sampleNodes}
+        expandedIds={new Set()}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        foldersOnly
+      />
+    );
+    expect(screen.getByText('Procedure')).toBeInTheDocument();
+    expect(screen.getByText('Sistema')).toBeInTheDocument();
+    expect(screen.queryByText('Documento solitario')).toBeNull();
+    expect(screen.queryByText('PG-001')).toBeNull();
+  });
+
+  it('con foldersOnly espanso mostra solo sottocartelle, non i file', () => {
+    render(
+      <DocumentTree
+        nodes={sampleNodes}
+        expandedIds={new Set([1])}
+        selectedNodeId={null}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        onCreateFolder={vi.fn()}
+        foldersOnly
+      />
+    );
+    expect(screen.queryByText('PG-001')).toBeNull();
+    expect(screen.queryByText('PG-002')).toBeNull();
   });
 });
