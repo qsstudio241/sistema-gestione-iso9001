@@ -6,6 +6,7 @@
  */
 import React, { useState, useEffect, useMemo } from "react";
 import { formatDate } from "../utils/dateHelpers";
+import { isDocumentFolder } from "../utils/documentValidity";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS, DOC_STATUS_BADGE_CLASS } from "../data/documentTypes";
 import apiService from "../services/apiService";
 import useDocDetailPanelWidth, {
@@ -348,12 +349,16 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
 
         {/* Azioni */}
         <div className="doc-detail__actions">
-          <button className="doc-detail__action-btn doc-detail__action-btn--primary" onClick={onEdit}>
-            Modifica
-          </button>
-          <button className="doc-detail__action-btn doc-detail__action-btn--secondary" onClick={onArchive}>
-            Archivia
-          </button>
+          {!isDocumentFolder(doc) && (
+            <button className="doc-detail__action-btn doc-detail__action-btn--primary" onClick={() => onEdit(doc)}>
+              Modifica
+            </button>
+          )}
+          {!isDocumentFolder(doc) && (
+            <button className="doc-detail__action-btn doc-detail__action-btn--secondary" onClick={onArchive}>
+              Archivia
+            </button>
+          )}
         </div>
       </aside>
     </div>
