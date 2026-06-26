@@ -134,6 +134,22 @@
   font-size: 0.875rem;
 }
 
+.docform-info-banner {
+  padding: 10px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: #1e40af;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.docform-field input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
 /* Footer */
 .docform-footer {
   display: flex;

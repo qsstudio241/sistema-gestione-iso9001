@@ -22,6 +22,7 @@ import { getSuggestedFolderCode } from "../data/documentFolderMapping";
 import {
   normalizeRegistryDocStatusForApi,
   registryDocStatusForForm,
+  isDocumentFolder,
 } from "../utils/documentValidity";
 import "./DocumentForm.css";
 
@@ -106,6 +107,8 @@ function StepIndicator({ step }) {
 
 function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId, defaultContentScope }) {
   const isEdit = !!doc;
+  const isProtectedFolder = isEdit && isDocumentFolder(doc);
+  const isSystemFolder = isEdit && Boolean(doc?.is_system_folder);
 
   // Etichetta esplicita di ambito ("explicit over implicit"): client | studio | reference.
   // Niente piu' "azienda vuota = studio": l'ambito e' sempre dichiarato.
@@ -506,6 +509,9 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         isNormaType ? 'rilasciato' : form.status,
       );
 
+      const titleUnchanged = isEdit
+        && String(form.title ?? '').trim() === String(doc?.title ?? '').trim();
+
       const payload = {
         ...form,
         status: registryStatus,
@@ -533,6 +539,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           : null,
         parent_id:       (!isEdit && selectedFolderId) ? selectedFolderId : undefined,
       };
+
+      // Cartelle di sistema: non inviare il titolo se invariato (evita 403 spurio)
+      if (isSystemFolder && titleUnchanged) {
+        delete payload.title;
+      }
 
       let newDocId;
       if (isEdit) {
@@ -572,7 +583,15 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       onSave();
     } catch (err) {
-      setError(err.message || "Errore durante il salvataggio.");
+      const msg = err.message || "Errore durante il salvataggio.";
+      if (msg.includes("cartelle di sistema")) {
+        setError(
+          "Questa cartella di sistema è protetta: il nome non può essere modificato. " +
+          "Aggiorna gli altri campi oppure gestisci le cartelle dal pannello Albero."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
       setUploading(false);
@@ -1086,6 +1105,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 ))}
               </select>
             </div>
+            {isProtectedFolder && (
+              <div className="docform-info-banner" role="status">
+                {isSystemFolder
+                  ? "Cartella di sistema: il nome è fisso. Puoi aggiornare gli altri metadati."
+                  : "Cartella personalizzata: per rinominarla usa il pulsante Rinomina nell'albero."}
+              </div>
+            )}
             <div className="docform-field">
               <label>Titolo <span className="required">*</span></label>
               <input
@@ -1093,6 +1119,8 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 value={form.title}
                 onChange={handleChange("title")}
                 autoFocus
+                disabled={isSystemFolder}
+                title={isSystemFolder ? "Le cartelle di sistema non possono essere rinominate" : undefined}
               />
             </div>
             {/* Codice norma (solo modifica norma) */}
