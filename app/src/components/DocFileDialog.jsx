@@ -10,6 +10,10 @@ import DocumentPdfViewer from "./DocumentPdfViewer";
 import DocumentDocxViewer from "./DocumentDocxViewer";
 import SpreadsheetViewer from "./SpreadsheetViewer";
 import DeadlineImportDialog from "./DeadlineImportDialog";
+import {
+  isPdfFile,
+  buildDocumentUpdateFromAiMetadata,
+} from "../utils/documentMetadataExtraction";
 import "./DocFileDialog.css";
 
 /** React non interpreta &#nnnn; nelle stringhe JS: serve il carattere Unicode reale. */
@@ -45,7 +49,7 @@ function canUseOfficeDesktop() {
   return !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
-function DocFileDialog({ doc, onClose }) {
+function DocFileDialog({ doc, onClose, onDocumentUpdated }) {
   const [data,        setData]        = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState(null);
@@ -84,6 +88,13 @@ function DocFileDialog({ doc, onClose }) {
   const [showImportDialog,   setShowImportDialog]    = useState(false);
   const [importingDeadlines, setImportingDeadlines]  = useState(false);
 
+  // Estrazione AI metadati da PDF (prima del caricamento)
+  const [aiExtracting, setAiExtracting] = useState(false);
+  const [aiExtractError, setAiExtractError] = useState(null);
+  const [aiPreview, setAiPreview] = useState(null);
+  const [applyAiMetadata, setApplyAiMetadata] = useState(true);
+  const aiAbortRef = useRef(null);
+
   const fileInputRef = useRef(null);
   const officeDesktop = canUseOfficeDesktop();
 
@@ -108,6 +119,45 @@ function DocFileDialog({ doc, onClose }) {
     }
   }
 
+  async function runAiExtractionForFile(file) {
+    if (!isPdfFile(file) || doc.doc_type === "norma") {
+      setAiPreview(null);
+      setAiExtractError(null);
+      return;
+    }
+    if (aiAbortRef.current) aiAbortRef.current.cancelled = true;
+    const abortFlag = { cancelled: false };
+    aiAbortRef.current = abortFlag;
+
+    setAiExtracting(true);
+    setAiExtractError(null);
+    setAiPreview(null);
+
+    try {
+      const result = await apiService.preExtractDocumentMetadata(file, doc.doc_type || "procedura");
+      if (abortFlag.cancelled) return;
+
+      const built = buildDocumentUpdateFromAiMetadata({
+        metadata: result?.metadata || {},
+        existingDoc: doc,
+        onlyEmpty: true,
+      });
+
+      if (built.labels.length > 0) {
+        setAiPreview(built);
+        setApplyAiMetadata(true);
+      } else {
+        setAiPreview(null);
+      }
+    } catch (err) {
+      if (abortFlag.cancelled) return;
+      setAiExtractError("Estrazione automatica non disponibile — il file verrà caricato senza aggiornare i metadati.");
+      setAiPreview(null);
+    } finally {
+      if (!abortFlag.cancelled) setAiExtracting(false);
+    }
+  }
+
   function handleFileChange(ev) {
     const f = ev.target.files[0];
     if (!f) return;
@@ -125,6 +175,9 @@ function DocFileDialog({ doc, onClose }) {
     setFileObj(f);
     setUploadErr(null);
     setUploadOk(null);
+    setAiPreview(null);
+    setAiExtractError(null);
+    runAiExtractionForFile(f);
   }
 
   async function handleUpload() {
@@ -160,8 +213,22 @@ function DocFileDialog({ doc, onClose }) {
       });
 
       setUploadPct(100);
-      setUploadOk(`File "${res.file_name}" (${res.file_size_label}) caricato con successo.`);
+      let okMsg = `File "${res.file_name}" (${res.file_size_label}) caricato con successo.`;
+
+      if (applyAiMetadata && aiPreview?.payload && Object.keys(aiPreview.payload).length > 0) {
+        try {
+          await apiService.updateDocument(doc.id, aiPreview.payload);
+          okMsg += ` Metadati aggiornati (${aiPreview.labels.join(", ")}).`;
+          onDocumentUpdated?.();
+        } catch (metaErr) {
+          okMsg += ` Attenzione: metadati non aggiornati (${metaErr.message}).`;
+        }
+      }
+
+      setUploadOk(okMsg);
       setFileObj(null);
+      setAiPreview(null);
+      setAiExtractError(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadFiles();
 
@@ -523,6 +590,35 @@ function DocFileDialog({ doc, onClose }) {
                   <div className="docfile-selected">
                     File selezionato: <strong>{fileObj.name}</strong>
                     {" "}({(fileObj.size / 1024 / 1024).toFixed(2)} MB)
+                  </div>
+                )}
+
+                {aiExtracting && (
+                  <div className="docfile-ai-status">Analisi PDF in corso per suggerire metadati...</div>
+                )}
+
+                {aiExtractError && !aiExtracting && (
+                  <div className="docfile-ai-hint">{aiExtractError}</div>
+                )}
+
+                {aiPreview && aiPreview.labels?.length > 0 && !aiExtracting && (
+                  <div className="docfile-ai-preview">
+                    <label className="docfile-ai-preview__check">
+                      <input
+                        type="checkbox"
+                        checked={applyAiMetadata}
+                        onChange={(e) => setApplyAiMetadata(e.target.checked)}
+                      />
+                      {" "}Aggiorna metadati documento dai dati estratti dal PDF
+                    </label>
+                    <ul className="docfile-ai-preview__list">
+                      {aiPreview.labels.map((label) => (
+                        <li key={label}>{label}</li>
+                      ))}
+                    </ul>
+                    <p className="docfile-ai-preview__note">
+                      Vengono compilati solo i campi ancora vuoti nel registro.
+                    </p>
                   </div>
                 )}
 
