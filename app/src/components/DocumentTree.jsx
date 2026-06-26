@@ -10,7 +10,14 @@ import {
   resolveNewFolderParentId,
   findNodeById,
 } from "../hooks/useDocumentTree";
+import { isDocumentFolder } from "../utils/documentValidity";
 import "./DocumentTree.css";
+
+/** In vista Albero la sidebar mostra solo cartelle; i documenti restano nel pannello centrale. */
+export function filterTreeSidebarNodes(nodes, foldersOnly) {
+  if (!foldersOnly || !Array.isArray(nodes)) return nodes;
+  return nodes.filter((node) => isDocumentFolder(node));
+}
 
 function folderIconClass(isFolder, isSystem) {
   if (!isFolder) return "doc-tree__icon doc-tree__icon--file";
@@ -22,7 +29,7 @@ function folderIconClass(isFolder, isSystem) {
 /* ------------------------------------------------------------------ */
 /*  TreeNode — nodo ricorsivo                                         */
 /* ------------------------------------------------------------------ */
-function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect }) {
+function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect, foldersOnly }) {
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedNodeId === node.id;
   const hasChildren = (node.children_count ?? node.children?.length ?? 0) > 0;
@@ -79,7 +86,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
 
       {isExpanded && node.children?.length > 0 && (
         <ul className="doc-tree__children" role="group">
-          {node.children.map((child) => (
+          {filterTreeSidebarNodes(node.children, foldersOnly).map((child) => (
             <TreeNode
               key={child.id}
               node={child}
@@ -88,6 +95,7 @@ function TreeNode({ node, level, expandedIds, selectedNodeId, onToggle, onSelect
               selectedNodeId={selectedNodeId}
               onToggle={onToggle}
               onSelect={onSelect}
+              foldersOnly={foldersOnly}
             />
           ))}
         </ul>
@@ -111,6 +119,7 @@ function DocumentTree({
   onDeleteFolder,
   loading,
   error,
+  foldersOnly = false,
 }) {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -273,7 +282,7 @@ function DocumentTree({
       )}
 
       <ul className="doc-tree__list">
-        {nodes.map((node) => (
+        {filterTreeSidebarNodes(nodes, foldersOnly).map((node) => (
           <TreeNode
             key={node.id}
             node={node}
@@ -282,11 +291,14 @@ function DocumentTree({
             selectedNodeId={selectedNodeId}
             onToggle={onToggle}
             onSelect={onSelect}
+            foldersOnly={foldersOnly}
           />
         ))}
 
-        {nodes.length === 0 && (
-          <li className="doc-tree__empty">Nessun documento</li>
+        {filterTreeSidebarNodes(nodes, foldersOnly).length === 0 && (
+          <li className="doc-tree__empty">
+            {foldersOnly ? "Nessuna cartella" : "Nessun documento"}
+          </li>
         )}
       </ul>
 

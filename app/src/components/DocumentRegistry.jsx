@@ -20,6 +20,7 @@ import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
+import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
 import {
   resolveInitialRegistryCompanyScope,
   persistRegistryCompanyScope,
@@ -1046,6 +1047,16 @@ function DocumentRegistry() {
     [filters, scopeCompanyName]
   );
 
+  const formContextScope = useMemo(
+    () =>
+      resolveRegistryFormContextScope({
+        registryCompanyScope,
+        isStudioScope,
+        companies,
+      }),
+    [registryCompanyScope, isStudioScope, companies]
+  );
+
   const syncRegistryUrl = useCallback(
     (tab, selectId = null, companyId = registryCompanyScope) => {
       replace(
@@ -1737,6 +1748,7 @@ function DocumentRegistry() {
                   onCreateFolder={tree.createFolder}
                   onRenameFolder={tree.renameFolder}
                   onDeleteFolder={tree.deleteFolder}
+                  foldersOnly
                 />
               ) : (
                 <StandardTreeView
@@ -2004,7 +2016,14 @@ function DocumentRegistry() {
           standards={standards}
           defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
           defaultCompanyId={!editingDoc && companyScopeId ? companyScopeId : undefined}
-          defaultContentScope={!editingDoc && isStudioScope ? "studio" : undefined}
+          defaultContentScope={
+            !editingDoc && isStudioScope
+              ? "studio"
+              : !editingDoc && companyScopeId
+                ? "client"
+                : undefined
+          }
+          contextScope={formContextScope}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />

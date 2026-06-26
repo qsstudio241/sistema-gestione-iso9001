@@ -105,17 +105,34 @@ function StepIndicator({ step }) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId, defaultContentScope }) {
+function DocumentForm({
+  doc,
+  companies,
+  standards,
+  onSave,
+  onClose,
+  defaultFolderId,
+  defaultCompanyId,
+  defaultContentScope,
+  contextScope,
+}) {
   const isEdit = !!doc;
   const isProtectedFolder = isEdit && isDocumentFolder(doc);
   const isSystemFolder = isEdit && Boolean(doc?.is_system_folder);
+  const scopeLocked = Boolean(contextScope?.locked);
 
   // Etichetta esplicita di ambito ("explicit over implicit"): client | studio | reference.
-  // Niente piu' "azienda vuota = studio": l'ambito e' sempre dichiarato.
   const initialContentScope =
     doc?.content_scope
+    || (scopeLocked ? contextScope.content_scope : null)
     || defaultContentScope
-    || (doc?.company_id || defaultCompanyId ? 'client' : 'studio');
+    || (doc?.company_id || defaultCompanyId ? "client" : "studio");
+
+  const initialCompanyId =
+    doc?.company_id
+    || (scopeLocked && contextScope.company_id != null ? contextScope.company_id : null)
+    || defaultCompanyId
+    || "";
 
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
@@ -132,7 +149,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     retention_years: doc?.retention_years || '',
     standard_id:     doc?.standard_id     || '',
     clause_ref:      doc?.clause_ref      || '',
-    company_id:      doc?.company_id      || defaultCompanyId || '',
+    company_id:      initialCompanyId || '',
     content_scope:   initialContentScope,
     notes:           doc?.notes           || '',
   });
@@ -967,6 +984,23 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   // il selettore non viene mostrato.
   const renderScopeFields = () => {
     if (isNormaType) return null;
+
+    if (scopeLocked) {
+      const scopeText =
+        contextScope.content_scope === "client"
+          ? `Azienda cliente — ${contextScope.label}`
+          : contextScope.label;
+      return (
+        <div className="docform-context-scope" role="status">
+          <span className="docform-context-scope__label">Ambito documento</span>
+          <span className="docform-context-scope__value">{scopeText}</span>
+          <span className="docform-hint">
+            Impostato dal filtro Ambito del registro. Il documento verrà archiviato per questo contesto.
+          </span>
+        </div>
+      );
+    }
+
     return (
       <div className="docform-row">
         <div className="docform-field">
