@@ -1,20 +1,16 @@
-# DEPUTYTASK — stato al 25/06/2026
+# DEPUTYTASK — stato al 27/06/2026
 
-## Sessione CHIUSA — Note checklist senza esito (TEST OK, PR #166)
+## Sessione CHIUSA — Errori console systemgest (TEST OK, PR #172)
 
-**Sintomo**: audit FP Modena **QS-260611-01** — punti 7.1.5.1/7.1.5.2 con allegati sul server ma note dettate vuote al refresh.
+**Sintomi**: su `systemgest.netlify.app` — `ai/feedback` 500, `run-nc-alerts` 400, warn schema al logout, warn `q3834_s1_3` su click NC.
 
-**Causa**: sync checklist escludeva domande senza esito (C/NC/OSS/…); dettatura prima del click esito restava solo in locale.
+**Fix** (PR **#172** → merge su `main`):
+- `aiAssist.controller.js`: `req.user.user_id || req.user.id` (hotfix VPS già applicato)
+- `NotificationsSettingsPage`: anteprima/invio NC solo dopo salvataggio config (`config.exists`)
+- `StorageContext`: niente warn schema durante reset logout
+- `ChecklistModule`: rimosso warn prematuro NC/OSS senza note
 
-**Fix** (PR **#166** → merge su `main`):
-- `extractChecklistResponses`: include note non vuote anche senza status
-- `enqueueResponseEvent` + `ChecklistModule`: eventi su note; `response_set` con `conformity_status: null`
-- CI: smoke DB anche su PR `app/**`
-- `docs/GUIDA_CONSOLIDATA.md`: diagnosi QS-260611-01
-
-**Verifica**: Vitest mirato 24/24 OK; CI PR verde; deploy Netlify automatico da `main` (~2 min).
-
-**Azione utente**: Camellini ricompila manualmente note 7.1.5.1/7.1.5.2 (dati persi non recuperabili). Allegati già presenti.
+**Verifica**: build app OK; health API VPS OK; deploy Netlify da `main` (~2 min).
 
 ---
 
