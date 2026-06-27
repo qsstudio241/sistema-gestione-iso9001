@@ -73,6 +73,27 @@ async function seedLegislativoAmbientale(req, res) {
 }
 
 /**
+ * POST /api/v1/custom-checklists/seed/qtafi-vis001
+ * Import idempotente verbale visita QTAFI_VIS001 (cantiere OFF.MA)
+ */
+async function seedQtafiVis001(req, res) {
+  try {
+    const result = await customChecklistService.seedQtafiVis001Checklist(req.user);
+    res.status(result.created ? 201 : 200).json({
+      success: true,
+      created: result.created,
+      data: result.data,
+    });
+  } catch (err) {
+    logger.error('seedQtafiVis001 error', { error: err.message });
+    res.status(500).json({
+      error: 'Errore import checklist QTAFI_VIS001',
+      code: 'CUSTOM_CHECKLIST_SEED_QTAFI_ERROR',
+    });
+  }
+}
+
+/**
  * GET /api/v1/custom-checklists/:id
  * Dettagli checklist (con sezioni e voci)
  */
@@ -532,6 +553,7 @@ module.exports = {
   listChecklists,
   createChecklist,
   seedLegislativoAmbientale,
+  seedQtafiVis001,
   getChecklist,
   updateChecklist,
   deleteChecklist,

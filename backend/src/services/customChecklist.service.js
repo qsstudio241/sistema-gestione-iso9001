@@ -10,6 +10,11 @@ const {
   LEGISLATIVO_AMBIENTALE_TEMPLATE,
   isLegislativoAmbientaleDescription,
 } = require('../data/legislativoAmbientaleTemplate');
+const {
+  TEMPLATE_MARKER: QTAFI_VIS001_TEMPLATE_MARKER,
+  QTAFI_VIS001_TEMPLATE,
+  isQtafiVis001Description,
+} = require('../data/qtafiVis001Template');
 
 function buildChecklistScopeWhere(reqUser) {
   const isOrgWideAdmin =
@@ -447,6 +452,86 @@ async function seedLegislativoAmbientaleChecklist(reqUser) {
   return { created: true, data };
 }
 
+async function findSeededQtafiVis001(organizationId) {
+  const result = await query(
+    `SELECT id FROM custom_checklists
+     WHERE organization_id = @organization_id
+       AND CHARINDEX(@marker, description) > 0`,
+    {
+      organization_id: organizationId,
+      marker: QTAFI_VIS001_TEMPLATE_MARKER,
+    }
+  );
+  return result.recordset[0] || null;
+}
+
+async function assignQtafiReportTemplate(organizationId, checklistId) {
+  const templateId = QTAFI_VIS001_TEMPLATE.reportTemplateId;
+  if (!templateId) return;
+
+  const existing = await query(
+    `SELECT id FROM report_template_assignments
+     WHERE organization_id = @organization_id
+       AND custom_checklist_id = @custom_checklist_id
+       AND assignment_type = 'custom_checklist'`,
+    { organization_id: organizationId, custom_checklist_id: checklistId }
+  );
+  if (existing.recordset.length > 0) return;
+
+  await query(
+    `INSERT INTO report_template_assignments
+       (organization_id, standard_id, custom_checklist_id, report_template_id, assignment_type)
+     VALUES (@organization_id, NULL, @custom_checklist_id, @report_template_id, 'custom_checklist')`,
+    {
+      organization_id: organizationId,
+      custom_checklist_id: checklistId,
+      report_template_id: templateId,
+    }
+  );
+}
+
+/**
+ * Crea (idempotente) la checklist custom «Verbale di riunione QTAFI_VIS001» per l'organizzazione.
+ */
+async function seedQtafiVis001Checklist(reqUser) {
+  const existing = await findSeededQtafiVis001(reqUser.organization_id);
+  if (existing) {
+    await assignQtafiReportTemplate(reqUser.organization_id, existing.id);
+    const data = await getChecklistWithStructure(existing.id, reqUser);
+    return { created: false, data };
+  }
+
+  const tpl = QTAFI_VIS001_TEMPLATE;
+  const checklist = await createChecklist(reqUser, {
+    name: tpl.name,
+    description: tpl.description,
+    is_active: true,
+    has_outcome_buttons: tpl.hasOutcomeButtons,
+  });
+
+  for (const section of tpl.sections) {
+    const createdSection = await createSection(checklist.id, reqUser, {
+      code: section.code,
+      title: section.title,
+      display_order: section.displayOrder,
+    });
+    for (const item of section.items) {
+      await createItem(checklist.id, reqUser, {
+        section_id: createdSection.id,
+        code: item.code,
+        title: item.title,
+        response_type: item.responseType,
+        display_order: item.displayOrder,
+      });
+    }
+  }
+
+  await assignQtafiReportTemplate(reqUser.organization_id, checklist.id);
+
+  const data = await getChecklistWithStructure(checklist.id, reqUser);
+  return { created: true, data };
+}
+
 module.exports = {
   listChecklists,
   createChecklist,
@@ -466,4 +551,7 @@ module.exports = {
   LEG_AMBIENTE_TEMPLATE_MARKER,
   isLegislativoAmbientaleDescription,
   seedLegislativoAmbientaleChecklist,
+  QTAFI_VIS001_TEMPLATE_MARKER,
+  isQtafiVis001Description,
+  seedQtafiVis001Checklist,
 };
