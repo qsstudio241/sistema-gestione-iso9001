@@ -47,7 +47,7 @@ async function suggest(req, res) {
       case 'audit_conclusions':
         built = await contextBuilder.buildAuditConclusionsContext({
           ...context,
-          userId: req.user.id,
+          userId: req.user.user_id || req.user.id,
           organizationId: req.user.organization_id,
         });
         break;
@@ -131,7 +131,7 @@ async function feedback(req, res) {
        VALUES (@orgId, @userId, @feature, @auditId, @action, @aiText, @finalText, @recommendation, @contextSummary, @modelUsed)`,
       {
         orgId: req.user.organization_id,
-        userId: req.user.id,
+        userId: req.user.user_id || req.user.id,
         feature,
         auditId: auditId || null,
         action,

@@ -9,7 +9,6 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
-import { validateQuestion } from "../utils/checklistValidation";
 import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
@@ -423,13 +422,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
         question[field] = sanitizedValue;
 
-        // Valida solo al cambio di status (non ad ogni tasto nelle note)
-        if (field === "status") {
-          const validation = validateQuestion(question);
-          if (!validation.isValid) {
-            console.warn(`⚠️ Domanda ${questionId}:`, validation.errors);
-          }
-        }
+        // Note NC/OSS: la validazione completa avviene in chiusura audit, non ad ogni click esito
 
         // Aggiorna timestamp
         updatedAudit.metadata.lastModified = new Date().toISOString();
