@@ -421,9 +421,6 @@ async function listDeadlineItems(req, res) {
             logger.warn('listDeadlineItems: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
-            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
-
         let equipRows = [];
         try {
             const equipData = await fetchEquipmentForDeadline(pool, orgId);
@@ -435,6 +432,9 @@ async function listDeadlineItems(req, res) {
         } catch (equipErr) {
             logger.warn('listDeadlineItems: tarature non disponibili', { error: equipErr.message });
         }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
 
         res.json({
             data: merged,
@@ -498,15 +498,15 @@ async function getPriorityDeadlines(req, res) {
             logger.warn('getPriorityDeadlines: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
-            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
-
         let equipRowsPrio = [];
         try {
             const equipDataPrio = await fetchEquipmentForDeadline(pool, orgId);
             equipRowsPrio = mapEquipmentDeadlineRows(equipDataPrio, parseInt(days));
             if (company_id) { equipRowsPrio = equipRowsPrio.filter((r) => r.company_id === parseInt(company_id)); }
         } catch (e) { logger.warn('getPriorityDeadlines: tarature non disponibili', { error: e.message }); }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
 
         res.json({ data: merged });
     } catch (err) {
