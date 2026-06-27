@@ -191,7 +191,7 @@ Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizi
 #### Catena di fix (in ordine di scoperta)
 1. **Nginx intercettava 503**: `error_page 502 503 504 = @backend_down` mascherava il messaggio del backend con il generico Nginx. **Fix**: rimosso `503` (rimane `502 504`), perché 503 può essere un errore funzionale legittimo.
 2. **Controller AI usava 503 anche per upstream errors**: il fronte Nginx lo intercettava comunque. **Fix**: `aiAssist.controller.js` mappa errori upstream a HTTP **500** con messaggi italiani; 503 riservato solo a `AI_NOT_CONFIGURED`.
-3. **Tabelle `ai_feedback` / `ai_interactions` mancanti** + `req.user.id` invece di `req.user.user_id` → ogni "Accetta/Scarta" generava DB error. **Fix**: migrazione 071 + correzione field.
+3. **Tabelle `ai_feedback` / `ai_interactions` mancanti** + `req.user.id` invece di `req.user.user_id` → ogni "Accetta/Scarta" generava DB error. **Fix**: migrazione 055 + correzione field. **Regressione 27/06/2026** (PR **#172**): `aiAssist.controller.js` usava ancora `req.user.id` → 500 su `POST /ai/feedback`; ripristinato `req.user.user_id || req.user.id`.
 4. **Nessun retry server-side per 503/429 da Gemini**: ogni picco di carico Google arrivava direttamente all'utente. **Fix definitivo**: `geminiAdapter.js` ora ritenta automaticamente su **429/500/502/503/504** con backoff esponenziale (800ms → 1600ms → 3200ms ± jitter 250ms, cap 5s) per default 3 tentativi (configurabile via `GEMINI_MAX_ATTEMPTS`). Rispetta `Retry-After` se presente.
 
 #### Regole consolidate
@@ -1681,6 +1681,18 @@ Sintomo: durante la digitazione nelle note checklist il testo si azzera (“refr
 
 #### Note checklist senza esito — sync dettatura (25/06/2026)
 **Sintomo**: audit FP Modena QS-260611-01 — allegati su punti 7.1.5.1/7.1.5.2 salvati, note dettate vuote al refresh. **Causa**: `extractChecklistResponses` e `enqueueResponseEvent` sincronizzavano solo domande con status ≠ `NOT_ANSWERED`; dettatura prima del click C/NC/OSS non arrivava al server. **Diagnosi DB**: zero righe `audit_responses` e zero eventi `response_set` per `question_id` 100/101; 5 allegati presenti. **Fix** PR **#166**: sync note anche con `conformity_status: null`; eventi T3 anche su cambio campo `notes`; `response_cleared` solo se status e note entrambi assenti. **Recupero dati**: testo già perso non recuperabile — ricompilazione manuale. **Workflow CI**: smoke DB attivato anche su PR `app/**` (prima bloccava merge frontend-only).
+
+#### Errori console systemgest — AI feedback, NC alerts, validazione (27/06/2026)
+**Sintomi** su `systemgest.netlify.app`: `POST /ai/feedback` 500; `POST /notifications-config/run-nc-alerts` 400 (anteprima); `Schema validation errors` al logout; `Domanda q3834_s1_3` su click NC/OSS.
+
+| Errore | Causa | Fix (PR **#172**) |
+|---|---|---|
+| `ai/feedback` 500 | `req.user.id` assente nel JWT (`user_id` è il campo corretto) | `aiAssist.controller.js`: `req.user.user_id \|\| req.user.id`; hotfix VPS stesso giorno |
+| `run-nc-alerts` 400 | UI abilitava anteprima con toggle locali non salvati su `notifications_config` | `NotificationsSettingsPage`: pulsanti solo se `config.exists` + toggle attivi |
+| Schema validation al logout | `validateAuditSchema` durante reset sessione | `StorageContext`: skip warn se `sessionResetInProgressRef` |
+| `q3834_s1_3` warn | `validateQuestion` su click NC/OSS prima che l'utente compili le note | Rimosso `console.warn` prematuro in `ChecklistModule` (validazione a chiusura audit) |
+
+**Verifica**: build app OK; health API VPS OK; tabella `ai_feedback` presente.
 
 #### Coerenza percorsi di scrittura (T3/T4/T5)
 Quando si introduce un nuovo percorso di scrittura (T3: eventi atomici), il vecchio percorso (bulk `save_responses`) non va disabilitato ma reso parallelo/additivo. Se si disabilita uno dei percorsi si crea asimmetria (status scritto, note bloccate). Analogamente il lock non deve bloccare un percorso e lasciarne un altro libero.
