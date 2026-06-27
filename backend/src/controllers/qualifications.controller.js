@@ -1348,8 +1348,9 @@ async function confirmSemiannual(req, res) {
         const tx = pool.transaction();
         await tx.begin();
         try {
-            const reqTx = tx.request();
-            await reqTx
+            // Ogni query nella transazione richiede un request separato (mssql:
+            // i nomi parametro non possono essere ridichiarati sullo stesso request).
+            await tx.request()
                 .input('qualId', id)
                 .input('orgId', orgId)
                 .input('compId', qual.company_id)
@@ -1369,7 +1370,7 @@ async function confirmSemiannual(req, res) {
                     )
                 `);
 
-            await reqTx
+            await tx.request()
                 .input('qualId', id)
                 .input('orgId', orgId)
                 .input('lastConf', confirmedDate)
