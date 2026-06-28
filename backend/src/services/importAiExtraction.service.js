@@ -5,6 +5,7 @@
 
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { parseJsonWithRepair } = require('../utils/jsonRepair');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -118,8 +119,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;
@@ -226,8 +228,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;

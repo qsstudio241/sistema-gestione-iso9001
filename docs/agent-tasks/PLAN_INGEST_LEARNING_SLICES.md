@@ -1,6 +1,7 @@
 # Piano slice — Ingest documenti scalabile + auto-apprendimento
 
-> **Stato**: approvato committente 27/06/2026 — esecuzione sequenziale obbligatoria (una slice = una PR verificabile).
+> **Stato**: IG-1 completata e mergiata (#181) 28/06/2026. **Prossima: IG-2**.
+
 > **Obiettivo**: affidabilità ingest (patentini, WPQR, WPS, NDT, …) con pipeline unica, revisione umana e miglioramento progressivo dai feedback operatore.
 > **Fonti**: Sprint 9–10 roadmap, `documentTypeSchemas.js`, `importAiExtraction.service.js`, ADR-010, tabella `ai_feedback` (055).
 
@@ -77,12 +78,13 @@ Upload (batch o import job)
 - Test Jest: JSON rotto, PDF testo minimo, merge regole+AI mock
 
 **DoD**
-- [ ] Pipeline estrae testo + produce `{ fields, confidence, warnings }` per `docType=wpqr|patentino_saldatore`
-- [ ] JSON malformato AI: almeno 1 retry o fallback regole (no crash)
-- [ ] Deploy VPS + smoke health
-- [ ] Nessun cambio UX obbligatorio (backend-only)
+- [x] Pipeline estrae testo + produce `{ fields, confidence, warnings }` per `docType=wpqr|patentino_saldatore`
+- [x] JSON malformato AI: almeno 1 retry o fallback regole (no crash)
+- [x] Deploy VPS + smoke health
+- [x] Nessun cambio UX obbligatorio (backend-only)
 
-**Rischio**: basso. Non tocca DB produzione.
+**Stato**: ✅ PR #181 mergiata 28/06/2026.
+
 
 ---
 
@@ -201,7 +203,7 @@ IG-1 (motore) --> IG-2 (unifica batch) --> IG-3 (UI revisione)
 
 Al termine di ogni slice: aggiornare stato qui + `DEPUTYTASK.md` + riga in `GUIDA_CONSOLIDATA.md` (Esperienza).
 
-**Prossima slice attiva**: **IG-1**
+**Prossima slice attiva**: **IG-2**
 
 ---
 
@@ -225,4 +227,4 @@ Al termine di ogni slice: aggiornare stato qui + `DEPUTYTASK.md` + riga in `GUID
 | `importJobs.controller.js` + `commitToQualification` | Pattern commit umano |
 | `ai_feedback` (055) | Precedente per conclusioni audit — non riusare per ingest (payload diverso) |
 | `ocrExtractor.js` | OCR fallback (da attivare con npm) |
-| `wpqrIngest.service.js` / `qualificationIngest.service.js` | Da sostituire in IG-2 |
+| `wpqrIngest.service.js` / `qualificationIngest.service.js` | In refactor IG-2 |

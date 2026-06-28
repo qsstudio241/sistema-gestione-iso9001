@@ -1,45 +1,27 @@
-# DEPUTYTASK — Piano ingest + learning (27/06/2026)
+# DEPUTYTASK — Piano ingest + learning (28/06/2026)
 
-## Stato sessione precedente — CHIUSA
+## Chiuso
 
-- Fix `personnelId` upload batch patentini: PR **#175**, deploy VPS **27/06/2026**
-- Errore WPQR `AI extraction fallita: Unterminated string in JSON` — **non bloccante**; record creato in bozza
-
----
-
-## Piano approvato — esecuzione sequenziale
-
-**Documento completo**: [`PLAN_INGEST_LEARNING_SLICES.md`](PLAN_INGEST_LEARNING_SLICES.md)
-
-| Slice | Contenuto | Stato |
-|---|---|---|
-| **IG-1** | Motore `documentIngestPipeline` + OCR npm + JSON repair + regex fallback | **PROSSIMA** |
-| IG-2 | Unifica batch WPQR/patentini sulla pipeline | in attesa |
-| IG-3 | UI revisione umana pre-commit | in attesa |
-| IG-4 | Tabella `import_extraction_feedback` + cattura correzioni | in attesa |
-| IG-5 | Few-shot da feedback org (auto-apprendimento) | in attesa |
-| IG-6 | Estensione tipi (WPS, NDT, …) solo via schema | in attesa |
+- PR **#175** mergiata su `main` — fix `personnelId` upload batch patentini
+- PR **#181** — pipeline IG-1 (merge in corso)
+- Deploy VPS IG-1: 28/06/2026, health OK, OCR installato
 
 ---
 
-## Slice attiva: IG-1
+## Slice attiva: **IG-2**
 
 ### Obiettivo
-Pipeline ingest unica e difensiva (testo + regole + AI + merge), senza cambiare ancora la UI.
+Collegare upload batch WPQR e patentini a `runDocumentIngest()` — eliminare logica duplicata in `wpqrIngest` / `qualificationIngest`.
 
-### File da creare/modificare
-- `backend/src/services/documentIngestPipeline.service.js` (nuovo)
-- `backend/src/utils/jsonRepair.js` (nuovo)
-- `backend/src/utils/ruleFieldExtractors.js` (nuovo)
-- `backend/package.json` — aggiungere `tesseract.js`, `pdf2pic`
-- `backend/src/services/documentIngestPipeline.test.js` (nuovo)
-- `backend/scripts/deploy-manifest.json` — includere nuovi file
+### File
+- `backend/src/services/wpqrIngest.service.js`
+- `backend/src/services/qualificationIngest.service.js`
+- Test integrazione batch
 
-### Criteri TEST OK
-1. `npm test` in `backend/` — test pipeline verdi
-2. JSON AI rotto in test → recovery o campi regex, nessun throw
-3. Deploy VPS + health 200
-4. Aggiornare riga in `GUIDA_CONSOLIDATA.md` (Esperienza)
+### DoD
+- Upload batch usa pipeline unificata
+- Warning JSON AI ridotti (retry + regole)
+- Deploy VPS + test Jest
 
 ### Comando deputy
 ```
@@ -48,8 +30,12 @@ Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON A
 
 ---
 
-## Backlog (dopo piano ingest)
+## Piano slice
 
-1. Dismettere ambiente test `/var/www/sgq-backend-test`
-2. Hardening RBAC welding
-3. MT/PT/UT template Word
+[`PLAN_INGEST_LEARNING_SLICES.md`](PLAN_INGEST_LEARNING_SLICES.md)
+
+| Slice | Stato |
+|---|---|
+| IG-1 | ✅ mergiata (#181) |
+| IG-2 | **IN CORSO** |
+| IG-3–IG-6 | in attesa |
