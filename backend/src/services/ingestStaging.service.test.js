@@ -10,6 +10,10 @@ jest.mock('./qualificationIngest.service', () => ({
     commitQualificationFromFields: jest.fn(),
 }));
 
+jest.mock('./ingestFeedback.service', () => ({
+    recordFeedback: jest.fn().mockResolvedValue({ action: 'accepted', field_diffs: {} }),
+}));
+
 jest.mock('../config/database', () => ({
     query: jest.fn(),
 }));

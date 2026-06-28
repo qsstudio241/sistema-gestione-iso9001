@@ -65,7 +65,10 @@
         "src/services/wpqrIngest.service.js",
         "src/services/qualificationIngest.service.js",
         "src/services/documentIngestPipeline.service.js",
-        "src/services/ingestStaging.service.js"
+        "src/services/ingestStaging.service.js",
+        "src/services/ingestFeedback.service.js",
+        "src/services/ingestLearning.service.js",
+        "src/services/wpsIngest.service.js"
       ]
     },
     {

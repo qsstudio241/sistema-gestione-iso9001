@@ -169,13 +169,9 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         qualification_type: reviewFields.qualification_type,
         confidence,
         warnings,
+        ai_model: pipeline.aiModel,
     };
 }
-
-/**
- * Commit definitivo dopo revisione umana.
- */
-async function commitQualificationFromFields(fields, organizationId, companyId, options = {}) {
     const {
         userId = null,
         filePath = null,

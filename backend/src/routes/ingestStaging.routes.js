@@ -8,6 +8,7 @@ const ctrl = require('../controllers/ingestStaging.controller');
 
 router.use(authenticate);
 
+router.get('/ingest-staging/learning-stats', ctrl.getLearningStats);
 router.get('/ingest-staging/:id', ctrl.getStaging);
 router.post('/ingest-staging/:id/confirm', ctrl.confirmStaging);
 router.post('/ingest-staging/:id/reject', ctrl.rejectStaging);

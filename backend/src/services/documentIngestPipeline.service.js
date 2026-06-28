@@ -73,7 +73,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
  * @param {string} fileName
  * @returns {Promise<{ fields: object, model: string|null, warnings: string[] }>}
  */
-async function extractFieldsByAi(text, docType, fileName) {
+async function extractFieldsByAi(text, docType, fileName, organizationId = null) {
     const warnings = [];
     if (!getActiveProvider()) {
         warnings.push('AI non configurata — solo estrazione regole');
@@ -85,7 +85,7 @@ async function extractFieldsByAi(text, docType, fileName) {
     }
 
     try {
-        const result = await extractStructuredByDocType({ text, docType });
+        const result = await extractStructuredByDocType({ text, docType, organizationId });
         const specific = result.data?.type_specific_data || {};
         const flat = { ...specific };
         if (result.data?.title && !flat.title) flat.title = result.data.title;
@@ -230,7 +230,9 @@ async function runDocumentIngest({
     }
 
     const ruleFields = extractFieldsByRules(text, docType, fileName);
-    const { fields: aiFields, model, warnings: aiWarnings } = await extractFieldsByAi(text, docType, fileName);
+    const { fields: aiFields, model, warnings: aiWarnings } = await extractFieldsByAi(
+        text, docType, fileName, organizationId,
+    );
     warnings.push(...aiWarnings);
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);

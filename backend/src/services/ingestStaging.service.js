@@ -1,16 +1,18 @@
 /**
- * ingestStaging.service.js — staging revisione pre-commit (IG-3)
+ * ingestStaging.service.js — staging revisione pre-commit (IG-3) + feedback IG-4
  */
 
 const fs = require('fs');
-const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
 const { commitQualificationFromFields } = require('./qualificationIngest.service');
+const { commitWPSFromFields } = require('./wpsIngest.service');
+const { recordFeedback } = require('./ingestFeedback.service');
 
 const DOC_TYPE_MODULES = {
     wpqr: 'saldatura',
+    wps: 'saldatura',
     patentino_saldatore: 'qualifiche',
 };
 
@@ -33,9 +35,6 @@ async function getStagingById(stagingId, organizationId) {
     return result.recordset[0] || null;
 }
 
-/**
- * @param {object} params
- */
 async function createStagingRecord(params) {
     const {
         organizationId,
@@ -50,6 +49,7 @@ async function createStagingRecord(params) {
         warnings,
         qualificationType,
         userId,
+        aiModel = null,
     } = params;
 
     const insertResult = await query(`
@@ -57,14 +57,14 @@ async function createStagingRecord(params) {
             organization_id, company_id, doc_type,
             original_name, storage_path, mime_type, file_size,
             staged_fields_json, field_confidence_json, warnings_json,
-            qualification_type, review_status, created_by
+            qualification_type, review_status, created_by, ai_model
         )
         OUTPUT INSERTED.id
         VALUES (
             @organizationId, @companyId, @docType,
             @originalName, @storagePath, @mimeType, @fileSize,
             @stagedFieldsJson, @fieldConfidenceJson, @warningsJson,
-            @qualificationType, 'pending', @userId
+            @qualificationType, 'pending', @userId, @aiModel
         )
     `, {
         organizationId,
@@ -79,6 +79,7 @@ async function createStagingRecord(params) {
         warningsJson: JSON.stringify(warnings || []),
         qualificationType: qualificationType || null,
         userId: userId || null,
+        aiModel: aiModel || null,
     });
 
     return insertResult.recordset[0].id;
@@ -97,7 +98,9 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
         throw err;
     }
 
-    const fields = { ...parseJson(row.staged_fields_json, {}), ...fieldsOverride };
+    const aiPayload = parseJson(row.staged_fields_json, {});
+    const fieldConfidence = parseJson(row.field_confidence_json, {});
+    const fields = { ...aiPayload, ...fieldsOverride };
     const warnings = parseJson(row.warnings_json, []);
 
     let commitResult;
@@ -108,6 +111,13 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
                 organizationId,
                 row.company_id,
                 { userId, filePath: row.storage_path, fileName: row.original_name },
+            );
+        } else if (row.doc_type === 'wps') {
+            commitResult = await commitWPSFromFields(
+                fields,
+                organizationId,
+                row.company_id,
+                { userId, fileName: row.original_name },
             );
         } else if (row.doc_type === 'patentino_saldatore') {
             commitResult = await commitQualificationFromFields(
@@ -137,14 +147,6 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
         throw commitErr;
     }
 
-    if (commitResult.status === 'duplicate') {
-        return {
-            status: 'duplicate',
-            staging_id: stagingId,
-            warnings: commitResult.warnings || [],
-        };
-    }
-
     await query(`
         UPDATE ingest_staging
         SET review_status = 'confirmed',
@@ -152,7 +154,8 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
             reviewed_at = GETDATE(),
             staged_fields_json = @stagedFieldsJson,
             committed_wpqr_id = @wpqrId,
-            committed_qualification_id = @qualificationId
+            committed_qualification_id = @qualificationId,
+            committed_wps_id = @wpsId
         WHERE id = @id AND organization_id = @organizationId
     `, {
         id: stagingId,
@@ -161,13 +164,29 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
         stagedFieldsJson: JSON.stringify(fields),
         wpqrId: commitResult.wpqr_id || null,
         qualificationId: commitResult.qualification_id || null,
+        wpsId: commitResult.wps_id || null,
     });
 
-    logger.info('[IngestStaging] Confermato', {
-        stagingId,
-        docType: row.doc_type,
-        organizationId,
-    });
+    try {
+        await recordFeedback({
+            organizationId,
+            companyId: row.company_id,
+            docType: row.doc_type,
+            source: 'batch',
+            action: 'accepted',
+            aiPayload,
+            humanPayload: fields,
+            fieldConfidence,
+            fileName: row.original_name,
+            modelUsed: row.ai_model,
+            stagingId,
+            createdBy: userId,
+        });
+    } catch (fbErr) {
+        logger.warn('[IngestStaging] Feedback non salvato', { error: fbErr.message, stagingId });
+    }
+
+    logger.info('[IngestStaging] Confermato', { stagingId, docType: row.doc_type, organizationId });
 
     return {
         status: 'confirmed',
@@ -178,7 +197,7 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
     };
 }
 
-async function rejectStaging(stagingId, organizationId, userId, deleteFile = true) {
+async function rejectStaging(stagingId, organizationId, userId, deleteFile = true, rejectReason = null) {
     const row = await getStagingById(stagingId, organizationId);
     if (!row) {
         const err = new Error('Staging non trovato');
@@ -191,6 +210,9 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
         throw err;
     }
 
+    const aiPayload = parseJson(row.staged_fields_json, {});
+    const fieldConfidence = parseJson(row.field_confidence_json, {});
+
     await query(`
         UPDATE ingest_staging
         SET review_status = 'rejected',
@@ -198,6 +220,26 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
             reviewed_at = GETDATE()
         WHERE id = @id AND organization_id = @organizationId
     `, { id: stagingId, organizationId, userId });
+
+    try {
+        await recordFeedback({
+            organizationId,
+            companyId: row.company_id,
+            docType: row.doc_type,
+            source: 'batch',
+            action: 'rejected',
+            aiPayload,
+            humanPayload: {},
+            fieldConfidence,
+            fileName: row.original_name,
+            modelUsed: row.ai_model,
+            stagingId,
+            rejectReason,
+            createdBy: userId,
+        });
+    } catch (fbErr) {
+        logger.warn('[IngestStaging] Feedback scarto non salvato', { error: fbErr.message, stagingId });
+    }
 
     if (deleteFile && row.storage_path) {
         try {
