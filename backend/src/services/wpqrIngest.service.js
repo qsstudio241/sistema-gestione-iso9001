@@ -171,6 +171,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         field_confidence: pipeline.fieldConfidence,
         confidence,
         warnings,
+        ai_model: pipeline.aiModel,
     };
 }
 
