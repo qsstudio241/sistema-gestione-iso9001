@@ -1147,6 +1147,7 @@ async function uploadBatch(req, res) {
                     warnings: extracted.warnings,
                     qualificationType: extracted.qualification_type,
                     userId,
+                    aiModel: extracted.ai_model || null,
                 });
 
                 entry = {
