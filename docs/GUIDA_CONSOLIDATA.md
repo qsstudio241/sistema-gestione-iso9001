@@ -2187,6 +2187,16 @@ feat/branch → push → gh pr create → [GitHub Actions: smoke DB test] → [N
 
 #### Comandi rapidi ambiente test
 
+**Regola agente (28/06/2026):** ogni slice backend/DB va resa **operativa su TEST senza chiedere conferma** — migrazione su `2026-06-18_SGQ_ISO9001`, deploy `sgq-backend-test`, restart + health `test-api`. Produzione (`SGQ_ISO9001` + `sgq-backend`) solo dopo TEST OK o merge esplicito su `main`.
+
+```powershell
+# Deploy solo TEST (Cloud Agent / bash)
+bash backend/scripts/deploy-to-vps-test.sh
+
+# Migrazione solo TEST (dopo scp script + SQL)
+# node /tmp/run-migration-114-test-vps.js  (pattern: run-migration-NNN-test-vps.js)
+```
+
 ```powershell
 # Restart istanza test (dopo deploy file backend)
 .\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"
