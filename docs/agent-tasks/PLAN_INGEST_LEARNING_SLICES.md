@@ -123,7 +123,7 @@ Upload (batch o import job)
 | G-09 | Feedback correzioni umane non persistito | Nessun apprendimento | **IG-4** | No (dopo IG-3) |
 | G-10 | Few-shot da feedback org assente | AI non migliora nel tempo | **IG-5** | No |
 | G-11 | `ImportJobsPage` ha revisione; batch WPQR/qualifiche no — **due UX parallele** | Inconsistenza operatore | **IG-3** (unificare pattern) | **Sì** |
-| G-12 | Migrazione DB staging (`staged_fields_json`, `review_status`) non esiste per batch | Serve persistenza bozza revisionabile | **IG-3** (mig. 094+) | **Sì** |
+| G-12 | Migrazione DB staging (`ingest_staging` mig. 114) | Persistenza bozza revisionabile | **IG-3** ✅ | — |
 
 **Strategia consigliata**: IG-3 verticale su **wpqr + patentino_saldatore** (tipi batch attivi), chiudendo G-02, G-03, G-11, G-12 e parte di G-01/G-04. G-05…G-10 restano in coda IG-4→IG-6.
 
@@ -136,13 +136,15 @@ Upload (batch o import job)
 - Mostra campi estratti con badge confidence (da pipeline)
 - Azioni: **Conferma**, **Correggi e salva**, **Scarta**
 - Record resta `approval_status=bozza` / `import_status=ai_draft` fino a conferma
-- Migrazione DB (094+): colonne su `import_job_files` se servono — `staged_fields_json`, `field_confidence_json`, `review_status`
+- Migrazione DB **114**: tabella `ingest_staging` (`staged_fields_json`, `field_confidence_json`, `review_status`)
 
 **DoD**
-- [ ] Operatore vede preview campi prima del commit definitivo
-- [ ] Scarta non crea record registry (o marca rejected)
-- [ ] Conferma crea record come oggi ma con dati revisionati
+- [x] Operatore vede preview campi prima del commit definitivo
+- [x] Scarta non crea record registry (o marca rejected)
+- [x] Conferma crea record come oggi ma con dati revisionati
 - [ ] Smoke L3: upload → revisione → commit → record visibile in registro
+
+**Stato**: implementato 28/06/2026 — PR IG-3.
 
 **Rischio**: medio-alto (UX + DB). Prerequisito IG-1/IG-2.
 
@@ -226,7 +228,7 @@ IG-1 (motore) --> IG-2 (unifica batch) --> IG-3 (UI revisione)
 
 Al termine di ogni slice: aggiornare stato qui + `DEPUTYTASK.md` + riga in `GUIDA_CONSOLIDATA.md` (Esperienza).
 
-**Prossima slice attiva**: **IG-3**
+**Prossima slice attiva**: **IG-4**
 
 ---
 

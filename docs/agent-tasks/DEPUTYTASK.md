@@ -2,28 +2,22 @@
 
 ## Chiuso
 
-- PR **#175** mergiata su `main` — fix `personnelId` upload batch patentini
-- PR **#181** — pipeline IG-1 (merge in corso)
-- Deploy VPS IG-1: 28/06/2026, health OK, OCR installato
+- PR **#175** — fix `personnelId` upload batch patentini
+- PR **#181** — pipeline IG-1
+- PR **#182** — unifica batch su pipeline IG-2
+- PR **#183** — gap tracker 3834
+- **IG-3** — revisione pre-commit (staging + UI) — PR in corso
 
 ---
 
-## Slice attiva: **IG-3** — revisione umana pre-commit
+## Slice attiva: **IG-4** — cattura feedback operatore
 
 ### Obiettivo
-- UI revisione campi estratti (confidence verde/giallo/rosso) prima del commit su batch WPQR e patentini
-- Pattern allineato a `ImportJobsPage`
-- Gap tracker: `PLAN_INGEST_LEARNING_SLICES.md` sezione **Gap tracker ingest 3834**
+- Tabella `import_extraction_feedback` (mig. 115+)
+- Hook su conferma/scarto IG-3
 
 ### Prerequisiti (ok)
-- IG-1 ✅ #181, IG-2 ✅ #182, deploy VPS health OK
-
----
-
-## Chiuso: IG-2
-
-- `wpqrIngest.service.js` e `qualificationIngest.service.js` → `runDocumentIngest()`
-- PR **#182** mergiata, test Jest 21/21
+- IG-1/IG-2/IG-3
 
 ---
 
@@ -33,6 +27,7 @@
 
 | Slice | Stato |
 |---|---|
-| IG-1 | ✅ mergiata (#181) |
+| IG-1 | ✅ #181 |
 | IG-2 | ✅ #182 |
-| IG-3 | **ATTIVA** |
+| IG-3 | ✅ codice (PR in corso) |
+| IG-4 | **PROSSIMA** |

@@ -32,6 +32,7 @@ describe('ingestWPQRFromPdf (IG-2)', () => {
             warnings: [],
         });
         query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
         query.mockResolvedValueOnce({ recordset: [{ id: 42 }] });
 
         const out = await ingestWPQRFromPdf(
@@ -43,6 +44,7 @@ describe('ingestWPQRFromPdf (IG-2)', () => {
         );
 
         expect(runDocumentIngest).toHaveBeenCalledWith(expect.objectContaining({ docType: 'wpqr' }));
+        expect(out.status).toBe('ok');
         expect(out.wpqr_id).toBe(42);
         expect(out.reference_number).toBe('21-02906');
         expect(out.welding_process).toBe('135');
@@ -59,10 +61,12 @@ describe('ingestWPQRFromPdf (IG-2)', () => {
             warnings: ['AI retry fallito: x'],
         });
         query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
         query.mockResolvedValueOnce({ recordset: [{ id: 9 }] });
 
         const out = await ingestWPQRFromPdf(Buffer.from('%PDF'), '21-02906.pdf', 1001, 2001, {});
 
+        expect(out.status).toBe('ok');
         expect(out.wpqr_id).toBe(9);
         expect(out.warnings.some((w) => w.includes('AI'))).toBe(true);
         expect(out.confidence).toBe('bassa');
