@@ -1,6 +1,6 @@
 ﻿/**
  * qualificationIngest.service.js
- * Ingestion qualifiche da PDF (patentini) — delega estrazione a documentIngestPipeline (IG-2).
+ * Ingestion qualifiche da PDF (patentini) — pipeline IG-2 + staging IG-3.
  */
 
 const path = require('path');
@@ -53,16 +53,65 @@ function buildCertificateFileUrl(filePath) {
     return '/uploads/' + path.relative(uploadBase, filePath).replace(/\\/g, '/');
 }
 
-/**
- * @param {Buffer} pdfBuffer
- * @param {string} fileName
- * @param {number} organizationId
- * @param {number|null} companyId
- * @param {object} options — { userId, filePath }
- */
-async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
-    const { userId = null, filePath = null } = options;
+function mapPipelineFieldsToReview(f, pipelineText, fileName) {
+    const person_name = String(f.welder_name || f.person_name || '').trim();
+    const position_range = Array.isArray(f.welding_positions)
+        ? f.welding_positions.join(', ')
+        : (f.welding_positions || f.welding_position || null);
 
+    return {
+        welder_name: person_name,
+        person_name,
+        certificate_number: f.certificate_number || null,
+        issuing_body: f.issuing_body || null,
+        welding_process: f.welding_process || null,
+        material_group: f.material_group || f.filler_material_group || null,
+        filler_material_group: f.filler_material_group || f.material_group || null,
+        welding_positions: f.welding_positions || position_range,
+        welding_position: position_range,
+        thickness_min_mm: f.thickness_min_mm ?? null,
+        thickness_max_mm: f.thickness_max_mm ?? null,
+        thickness_range: f.thickness_min_mm != null && f.thickness_max_mm != null
+            ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
+            : (f.thickness_range || null),
+        exam_date: normalizeDate(f.exam_date || f.issue_date),
+        issue_date: normalizeDate(f.exam_date || f.issue_date),
+        expiry_date: normalizeDate(f.expiry_date),
+        standard_reference: f.standard_reference || f.standard_ref || null,
+        ndt_method: f.ndt_method || null,
+        ndt_level: f.ndt_level || null,
+        coordinator_title: f.coordinator_title || null,
+        cpd_valid_until: normalizeDate(f.cpd_valid_until || f.next_confirmation_due),
+        patent_type: f.patent_type || null,
+        joint_type: f.joint_type || null,
+        pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        qualification_type: classifyQualificationType(pipelineText || fileName),
+    };
+}
+
+async function checkQualificationDuplicate(certificateNumber, organizationId, companyId, qualificationType) {
+    if (!certificateNumber || !companyId) return false;
+    const pool = await getPool();
+    const dupCheck = await pool.request()
+        .input('orgId', organizationId)
+        .input('certNum', certificateNumber)
+        .input('compId', companyId)
+        .input('qualType', qualificationType)
+        .query(`
+            SELECT COUNT(*) AS cnt FROM qualifications
+            WHERE organization_id=@orgId
+              AND certificate_number=@certNum
+              AND company_id=@compId
+              AND qualification_type=@qualType
+              AND status != 'revocata'
+        `);
+    return dupCheck.recordset[0].cnt > 0;
+}
+
+/**
+ * Estrae campi senza INSERT (IG-3 staging).
+ */
+async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId) {
     const pipeline = await runDocumentIngest({
         pdfBuffer,
         docType: 'patentino_saldatore',
@@ -70,7 +119,7 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         organizationId,
     });
     const warnings = [...pipeline.warnings];
-    const f = pipeline.fields || {};
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
 
     if (pipeline.text.length > 30) {
         const docClass = classifyDocument(pipeline.text);
@@ -89,11 +138,59 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         }
     }
 
-    const qualificationType = classifyQualificationType(pipeline.text || fileName);
+    if (!reviewFields.person_name) {
+        warnings.push('Nome titolare non trovato — inserirlo manualmente in revisione');
+    }
 
+    if (reviewFields.certificate_number && companyId
+        && await checkQualificationDuplicate(
+            reviewFields.certificate_number,
+            organizationId,
+            companyId,
+            reviewFields.qualification_type,
+        )) {
+        warnings.push(`Duplicato: certificato ${reviewFields.certificate_number} già presente.`);
+        return {
+            status: 'duplicate',
+            person_name: reviewFields.person_name,
+            qualification_type: reviewFields.qualification_type,
+            warnings,
+            fields: reviewFields,
+            field_confidence: pipeline.fieldConfidence,
+        };
+    }
+
+    const confidence = pipeline.aiModel ? 'ai' : 'rule_based';
+
+    return {
+        status: 'pending_review',
+        fields: reviewFields,
+        field_confidence: pipeline.fieldConfidence,
+        qualification_type: reviewFields.qualification_type,
+        confidence,
+        warnings,
+    };
+}
+
+/**
+ * Commit definitivo dopo revisione umana.
+ */
+async function commitQualificationFromFields(fields, organizationId, companyId, options = {}) {
+    const {
+        userId = null,
+        filePath = null,
+        fileName = '',
+        qualificationType: qualTypeOverride = null,
+    } = options;
+
+    const f = fields || {};
+    const qualificationType = qualTypeOverride || f.qualification_type || classifyQualificationType(fileName);
     const person_name = String(f.welder_name || f.person_name || '').trim();
+
     if (!person_name) {
-        throw new Error(`Impossibile estrarre il nome del titolare da "${fileName}". Inserire manualmente.`);
+        const err = new Error('Nome titolare obbligatorio');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
     }
 
     const certificate_number = f.certificate_number || null;
@@ -106,36 +203,24 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
-    const thickness_range = f.thickness_min_mm != null && f.thickness_max_mm != null
-        ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
-        : (f.thickness_range || null);
+    const thickness_range = f.thickness_range
+        || (f.thickness_min_mm != null && f.thickness_max_mm != null
+            ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
+            : null);
     const ndt_method = f.ndt_method || null;
     const ndt_level = f.ndt_level ? parseInt(f.ndt_level, 10) : null;
     const coordinator_title = f.coordinator_title || null;
     const cpd_valid_until = normalizeDate(f.cpd_valid_until || f.next_confirmation_due);
     const patent_type = f.patent_type || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
+    const warnings = [];
 
-    const pool = await getPool();
-
-    if (certificate_number && companyId) {
-        const dupCheck = await pool.request()
-            .input('orgId', organizationId)
-            .input('certNum', certificate_number)
-            .input('compId', companyId)
-            .input('qualType', qualificationType)
-            .query(`
-                SELECT COUNT(*) AS cnt FROM qualifications
-                WHERE organization_id=@orgId
-                  AND certificate_number=@certNum
-                  AND company_id=@compId
-                  AND qualification_type=@qualType
-                  AND status != 'revocata'
-            `);
-        if (dupCheck.recordset[0].cnt > 0) {
-            warnings.push(`Duplicato: certificato ${certificate_number} già presente.`);
-            return { duplicate: true, person_name, qualification_type: qualificationType, warnings };
-        }
+    if (certificate_number && companyId
+        && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType)) {
+        const err = new Error(`Certificato ${certificate_number} già presente`);
+        err.code = 'DUPLICATE';
+        err.warnings = [`Duplicato: certificato ${certificate_number} già presente.`];
+        throw err;
     }
 
     const personnelResult = await resolvePersonnelForQualification({
@@ -144,10 +229,13 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         organizationId,
     });
     if (!personnelResult.ok) {
-        throw new Error(personnelResult.error || 'Collegamento personale non valido.');
+        const err = new Error(personnelResult.error || 'Collegamento personale non valido.');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
     }
     const personnel_id = personnelResult.personnelId ?? null;
 
+    const pool = await getPool();
     const ins = await pool.request()
         .input('orgId', organizationId)
         .input('compId', companyId || null)
@@ -190,18 +278,50 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         `);
 
     const qualification_id = ins.recordset[0].id;
-    const confidence = pipeline.aiModel ? 'ai' : 'rule_based';
-
-    logger.info(`[QualifIngest] Creata qualifica id=${qualification_id} (${person_name}, ${qualificationType}) per org ${organizationId}`);
+    logger.info(`[QualifIngest] Committed qualifica id=${qualification_id} (${person_name}, ${qualificationType}) per org ${organizationId}`);
 
     return {
         qualification_id,
-        person_name,
+        person_name: personnelResult.personName || person_name,
         qualification_type: qualificationType,
-        confidence,
-        field_confidence: pipeline.fieldConfidence,
         warnings,
     };
 }
 
-module.exports = { ingestQualificationFromPdf, classifyQualificationType };
+/**
+ * Flusso legacy: estrazione + commit immediato.
+ */
+async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
+    const extracted = await extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId);
+    if (extracted.status === 'wrong_module') return extracted;
+    if (extracted.status === 'duplicate') {
+        return {
+            duplicate: true,
+            person_name: extracted.person_name,
+            qualification_type: extracted.qualification_type,
+            warnings: extracted.warnings,
+        };
+    }
+
+    const committed = await commitQualificationFromFields(
+        extracted.fields,
+        organizationId,
+        companyId,
+        { ...options, fileName, qualificationType: extracted.qualification_type },
+    );
+
+    return {
+        ...committed,
+        confidence: extracted.confidence,
+        field_confidence: extracted.field_confidence,
+        warnings: [...(extracted.warnings || []), ...(committed.warnings || [])],
+    };
+}
+
+module.exports = {
+    ingestQualificationFromPdf,
+    extractQualificationFromPdf,
+    commitQualificationFromFields,
+    classifyQualificationType,
+    mapPipelineFieldsToReview,
+};

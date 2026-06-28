@@ -1,6 +1,6 @@
 ﻿/**
  * wpqrIngest.service.js
- * Ingestion automatica WPQR da PDF — delega estrazione a documentIngestPipeline (IG-2).
+ * Ingestion automatica WPQR da PDF — pipeline IG-2 + staging IG-3.
  */
 
 const path = require('path');
@@ -54,16 +54,63 @@ function buildCertificateFileUrl(filePath) {
     return '/uploads/' + path.relative(uploadBase, filePath).replace(/\\/g, '/');
 }
 
-/**
- * @param {Buffer} pdfBuffer
- * @param {string} fileName
- * @param {number} organizationId
- * @param {number|null} companyId
- * @param {object} options — { userId, filePath }
- */
-async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
-    const { userId = null, filePath = null } = options;
+function mapPipelineFieldsToReview(f, fileName) {
+    const referenceNumber = String(
+        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
+    ).trim();
 
+    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
+    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
+
+    return {
+        wpqr_number: referenceNumber,
+        reference_number: referenceNumber,
+        welding_process: f.welding_process || null,
+        material_group: f.material_group || f.base_material_group || null,
+        thickness_test_mm: thickness_tested,
+        approval_date: f.approval_date || f.issue_date || null,
+        standard_reference: f.standard_reference || null,
+        filler_material: f.filler_material || null,
+        welding_positions: f.welding_positions || null,
+        examiner_body: f.issuing_body || f.examiner_body || f.testing_body || null,
+        welder_name: f.welder_name || null,
+        expiry_date: f.expiry_date || null,
+        certificate_number: f.certificate_number || null,
+        pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
+        thickness_min,
+        thickness_max,
+    };
+}
+
+function mapReviewFieldsToDb(f, fileName) {
+    const referenceNumber = String(
+        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
+    ).trim();
+
+    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
+    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
+
+    return {
+        reference_number: referenceNumber,
+        welding_process: f.welding_process || null,
+        base_material_group: f.material_group || f.base_material_group || null,
+        filler_material: f.filler_material || null,
+        thickness_tested,
+        thickness_min: f.thickness_min ?? thickness_min,
+        thickness_max: f.thickness_max ?? thickness_max,
+        welding_positions: f.welding_positions || null,
+        examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
+        welder_name: f.welder_name || null,
+        issue_date: f.approval_date || f.issue_date || null,
+        expiry_date: f.expiry_date || null,
+        certificate_number: f.certificate_number || null,
+        pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
+    };
+}
+
+async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId) {
     const pipeline = await runDocumentIngest({
         pdfBuffer,
         docType: 'wpqr',
@@ -71,7 +118,7 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
         organizationId,
     });
     const warnings = [...pipeline.warnings];
-    const f = pipeline.fields || {};
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, fileName);
 
     if (pipeline.text.length > 30) {
         const docClass = classifyDocument(pipeline.text);
@@ -97,34 +144,52 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
         }
     }
 
-    const referenceNumber = String(
-        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
-    ).trim();
+    if (!reviewFields.reference_number) {
+        warnings.push('Numero WPQR non trovato — inserirlo manualmente in revisione');
+    }
 
-    const welding_process = f.welding_process || null;
-    const base_material_group = f.material_group || f.base_material_group || null;
-    const filler_material = f.filler_material || null;
-    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
-    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
-    const welding_positions = f.welding_positions || null;
-    const examiner_body = f.issuing_body || f.examiner_body || f.testing_body || null;
-    const welder_name = f.welder_name || null;
-    const issue_date = f.approval_date || f.issue_date || null;
-    const expiry_date = f.expiry_date || null;
-    const certificate_number = f.certificate_number || null;
-    const pwht = f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0;
-
-    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
-    if (thickness_tested && !thickness_min) {
+    if (reviewFields.thickness_test_mm && !reviewFields.thickness_min) {
         warnings.push('Spessore testato non riconoscibile — range non calcolato');
     }
 
-    if (!referenceNumber) {
-        throw new Error('reference_number obbligatorio: non trovato nel documento');
+    if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
+        return {
+            status: 'duplicate',
+            reference_number: reviewFields.reference_number,
+            warnings,
+            fields: reviewFields,
+            field_confidence: pipeline.fieldConfidence,
+        };
     }
 
-    if (await checkDuplicate(referenceNumber, organizationId, companyId)) {
-        return { status: 'duplicate', reference_number: referenceNumber, warnings };
+    const confidence = pipeline.extractionConfidence >= 70 ? 'alta'
+        : pipeline.aiModel ? 'media' : 'bassa';
+
+    return {
+        status: 'pending_review',
+        fields: reviewFields,
+        field_confidence: pipeline.fieldConfidence,
+        confidence,
+        warnings,
+    };
+}
+
+async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
+    const { userId = null, filePath = null, fileName = '' } = options;
+    const mapped = mapReviewFieldsToDb(fields, fileName);
+    const warnings = [];
+
+    if (!mapped.reference_number) {
+        const err = new Error('Numero WPQR obbligatorio');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
+    }
+
+    if (await checkDuplicate(mapped.reference_number, organizationId, companyId)) {
+        const err = new Error(`WPQR ${mapped.reference_number} già presente`);
+        err.code = 'DUPLICATE';
+        err.warnings = [`Duplicato: WPQR ${mapped.reference_number} già presente.`];
+        throw err;
     }
 
     const certificate_file_url = buildCertificateFileUrl(filePath);
@@ -156,41 +221,65 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     `, {
         organization_id: organizationId,
         company_id: companyId || null,
-        reference_number: referenceNumber,
-        welding_process,
-        base_material_group,
-        filler_material,
-        thickness_tested,
-        thickness_min,
-        thickness_max,
-        welding_positions,
-        examiner_body,
-        welder_name,
-        issue_date,
-        expiry_date,
-        certificate_number,
+        reference_number: mapped.reference_number,
+        welding_process: mapped.welding_process,
+        base_material_group: mapped.base_material_group,
+        filler_material: mapped.filler_material,
+        thickness_tested: mapped.thickness_tested,
+        thickness_min: mapped.thickness_min,
+        thickness_max: mapped.thickness_max,
+        welding_positions: mapped.welding_positions,
+        examiner_body: mapped.examiner_body,
+        welder_name: mapped.welder_name,
+        issue_date: mapped.issue_date,
+        expiry_date: mapped.expiry_date,
+        certificate_number: mapped.certificate_number,
         certificate_file_url,
-        pwht,
+        pwht: mapped.pwht,
         created_by: userId,
     });
 
     const wpqrId = insertResult.recordset[0].id;
-    const confidence = pipeline.extractionConfidence >= 70 ? 'alta'
-        : pipeline.aiModel ? 'media' : 'bassa';
-
-    logger.info('WPQR ingested from PDF', { wpqrId, reference_number: referenceNumber, organizationId });
+    logger.info('WPQR committed from staging', { wpqrId, reference_number: mapped.reference_number, organizationId });
 
     return {
         wpqr_id: wpqrId,
-        reference_number: referenceNumber,
-        welding_process,
-        thickness_tested,
-        thickness_min,
-        thickness_max,
-        confidence,
-        field_confidence: pipeline.fieldConfidence,
+        reference_number: mapped.reference_number,
+        welding_process: mapped.welding_process,
+        thickness_tested: mapped.thickness_tested,
+        thickness_min: mapped.thickness_min,
+        thickness_max: mapped.thickness_max,
         warnings,
     };
 }
 
-module.exports = { ingestWPQRFromPdf, calcThicknessRange };
+async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
+    const extracted = await extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId);
+    if (extracted.status === 'wrong_module') return extracted;
+    if (extracted.status === 'duplicate') {
+        return { status: 'duplicate', reference_number: extracted.reference_number, warnings: extracted.warnings };
+    }
+
+    const committed = await commitWPQRFromFields(
+        extracted.fields,
+        organizationId,
+        companyId,
+        { ...options, fileName },
+    );
+
+    return {
+        status: 'ok',
+        ...committed,
+        confidence: extracted.confidence,
+        field_confidence: extracted.field_confidence,
+        warnings: [...(extracted.warnings || []), ...(committed.warnings || [])],
+    };
+}
+
+module.exports = {
+    ingestWPQRFromPdf,
+    extractWPQRFromPdf,
+    commitWPQRFromFields,
+    calcThicknessRange,
+    mapPipelineFieldsToReview,
+};
