@@ -2078,6 +2078,34 @@ class ApiService {
             throw err;
         }
     }
+    async uploadWpsBatch(files, companyId) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('files', f));
+        if (companyId) fd.append('company_id', String(companyId));
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(`${this.baseUrl}/welding/wps/upload-batch`, {
+                method: 'POST', headers, body: fd, signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `Batch upload WPS fallito (${response.status})`);
+            }
+            return response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('Timeout upload WPS (180s)');
+            throw err;
+        }
+    }
+    async getIngestLearningStats(docType) {
+        const qs = docType ? `?doc_type=${encodeURIComponent(docType)}` : '';
+        return this.get(`/ingest-staging/learning-stats${qs}`);
+    }
     async getWpsCoverage(projectId)    { return this.get(`/welding/wps/coverage?project_id=${projectId}`); }
 
     // ─── CND — Strumenti e Attrezzature ─────────────────────────────────────

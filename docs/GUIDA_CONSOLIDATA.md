@@ -71,7 +71,8 @@ Sessioni recenti (consultazione): [Sessione 23/06/2026 — Riesame §9.3 stato m
 | **Saldatore ISO 9606-1 — campi end-to-end** | Catena AI→schema(FE/BE)→commit→DB→scheda allineata sulle **stesse chiavi**: ogni nuovo campo va in `aiPrompt`/`aiExpectedSchema`, `fields[].key` FE, e mappatura `commitToQualification`/`qualificationIngest`, altrimenti l'AI estrae ma il commit lo scarta. Mig. **092**: spessore/diametro **numerici min/max** (deriva legacy `thickness_range`/`pipe_diameter`), date `exam_date`/`last_confirmation_date`/`next_confirmation_due`/`revalidation_date` (stop overwrite `issue_date`), `product_type`/`weld_details`/`qualification_designation` (calcolata). Semaforo 9606 = **min(next_confirmation_due, expiry_date)** difensivo. Obbligatori scheda su blur/submit; in import-commit solo **warning**, mai blocco. | commit `0034399`/`f7936c1`/`8d427d8` |
 | **Import PDF → qualifica: PDF collegato** | `commitToQualification` imposta `certificate_file_url` da `import_job_files.storage_path` (pattern `/uploads/...` come ingest) e `import_job_files.qualification_id` (mig. **093**). Link visibile subito in `QualificationsPage` / `QualificationForm`. | sessione 14/06/2026 |
 | **Ingest documenti — pipeline unificata (IG-1)** | Motore `documentIngestPipeline.service.js`: testo (`pdf-parse` + OCR) → regex (`ruleFieldExtractors`) → AI (`importAiExtraction` + `jsonRepair` + retry) → merge con `fieldConfidence`. Tipi iniziali: `wpqr`, `patentino_saldatore`, `wps`. OCR richiede `tesseract.js` + `pdf2pic` (`npm install` VPS). **IG-2** collegherà upload batch; **IG-4/5** feedback operatore. Piano: `docs/agent-tasks/PLAN_INGEST_LEARNING_SLICES.md`. | slice IG-1 · 28/06/2026 |
-| **Ingest IG-3 — revisione pre-commit** | Upload batch WPQR/patentini → tabella `ingest_staging` (mig. **114**) senza INSERT immediato. UI `IngestReviewDialog` con badge confidence; API `POST /ingest-staging/:id/confirm|reject`. Commit solo dopo conferma operatore. | slice IG-3 · 28/06/2026 |
+| **Ingest IG-3 — revisione pre-commit** | Upload batch WPQR/patentini → `ingest_staging` (mig. **114**) + `IngestReviewDialog`. API confirm/reject. | slice IG-3 · 28/06/2026 |
+| **Ingest IG-4/5/6 — feedback + few-shot + WPS** | Tabella `import_extraction_feedback` (mig. **115**); hook su confirm/reject; few-shot in `extractStructuredByDocType`; batch WPS con staging. Deploy TEST automatico senza conferma. | slice IG-4/5/6 · 28/06/2026 |
 | **Alert + scadenzario qualifiche** | Toggle `alert_qualif_expiry` cablato in `alertScheduler` (+10 min dopo doc). Servizio `qualificationAlert.service.js`: data guida = min(expiry, next_confirmation per 9606); email al coordinatore per azienda (rubrica `notification_contacts` company → `company_personnel` job coordinatore → `user_company_access` ruolo coordinatore → fallback org). Dedup `qual_notification_log` (mig. 093). Scadenzario `/deadlines`: righe virtuali `item_type=qualification` senza toccare `deadline_items` Excel. Badge `/alerts` include qualifiche approvate. | sessione 14/06/2026 |
 | **Registro conferme semestrali 9606** | Mig. **094**: tabella `qualification_confirmations` + flag `company_personnel.is_primary_welding_coordinator`. API: `POST /qualifications/:id/confirm-semiannual`, `GET …/confirmations`, `GET /qualifications/confirmations/export` (xlsx). Solo qualifiche **approvate** tipo 9606; auth = email utente = coordinatore primario azienda (fallback admin/superadmin). UI: sezione collassabile in `QualificationForm`; deep link scadenzario `?highlight=&section=conferma`. **No timbro PDF** sulla conferma. | sessione 14/06/2026 |
 | **API 500 da `studioScopeClause` errato sulle `companies`** | Nelle clausole di scope su `companies` usare l'alias colonna corretto (`c.organization_id`, **non** `co.organization_id`) e la logica `isOrgWideAdmin` / `auditor_org_id` (mai `isSuperadmin` indiscriminato). | [Sessione 07/06/2026 — fix responsible-options](#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
@@ -2186,6 +2187,16 @@ feat/branch → push → gh pr create → [GitHub Actions: smoke DB test] → [N
 ```
 
 #### Comandi rapidi ambiente test
+
+**Regola agente (28/06/2026):** ogni slice backend/DB va resa **operativa su TEST senza chiedere conferma** — migrazione su `2026-06-18_SGQ_ISO9001`, deploy `sgq-backend-test`, restart + health `test-api`. Produzione (`SGQ_ISO9001` + `sgq-backend`) solo dopo TEST OK o merge esplicito su `main`.
+
+```powershell
+# Deploy solo TEST (Cloud Agent / bash)
+bash backend/scripts/deploy-to-vps-test.sh
+
+# Migrazione solo TEST (dopo scp script + SQL)
+# node /tmp/run-migration-114-test-vps.js  (pattern: run-migration-NNN-test-vps.js)
+```
 
 ```powershell
 # Restart istanza test (dopo deploy file backend)

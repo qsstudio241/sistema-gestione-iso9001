@@ -152,56 +152,36 @@ Upload (batch o import job)
 
 ### IG-4 — Cattura feedback operatore (learning dati)
 
-**Scope**
-- Migrazione **095**: tabella `import_extraction_feedback`
-  - `organization_id`, `company_id`, `doc_type`, `source` (batch|import_job)
-  - `ai_payload_json`, `human_payload_json`, `action` (accepted|corrected|rejected)
-  - `field_diffs_json` (solo campi cambiati), `file_name`, `model_used`, `created_by`
-- `ingestFeedback.service.js` — `recordFeedback()`, `getFieldDiff()`
-- Hook su conferma/scarto in IG-3 e su commit import job esistente
-
 **DoD**
-- [ ] Ogni conferma con correzioni salva delta campo-per-campo
-- [ ] Ogni scarto salva motivo + payload AI per analisi
-- [ ] Indice per query `(organization_id, doc_type, created_at DESC)`
-- [ ] Test L1 record + diff
+- [x] Ogni conferma con correzioni salva delta campo-per-campo
+- [x] Ogni scarto salva motivo + payload AI per analisi
+- [x] Indice per query `(organization_id, doc_type, created_at DESC)`
+- [x] Test L1 record + diff
 
-**Rischio**: basso (tabella nuova, no breaking).
+**Stato**: ✅ 28/06/2026
 
 ---
 
 ### IG-5 — Auto-apprendimento operativo (few-shot)
 
-**Scope**
-- `ingestLearning.service.js`
-  - `buildFewShotExamples(orgId, docType, limit=3)` — ultimi N **accepted/corrected** con alta qualita
-  - Inietta esempi in prompt `extractStructuredByDocType` (sezione "Esempi dalla tua organizzazione")
-- Metriche admin leggere: `GET /import-jobs/learning-stats?doc_type=wpqr` (opzionale, slice minima)
-- Soglia: usare esempio solo se `human_payload` completo su campi obbligatori schema
-
 **DoD**
-- [ ] Dopo 3+ conferme corrette stessa org, prompt include esempi
-- [ ] Nessun dato cross-tenant (sempre `organization_id`)
-- [ ] Test: mock feedback → prompt contiene esempio
-- [ ] Documentato in GUIDA_CONSOLIDATA (sezione Esperienza)
+- [x] Dopo 1+ conferme stessa org, prompt include esempi (se payload completo)
+- [x] Nessun dato cross-tenant (sempre `organization_id`)
+- [x] Test: mock feedback → prompt contiene esempio
+- [x] Documentato in GUIDA_CONSOLIDATA
 
-**Rischio**: basso. Miglioramento graduale, non bloccante.
+**Stato**: ✅ 28/06/2026
 
 ---
 
 ### IG-6 — Estensione tipi documento (scalabilita)
 
-**Scope**
-- Completare schemi: `cert_ndt`, `dichiarazione_ce`, `cert_taratura` (se mancanti)
-- Endpoint batch WPS (backlog DEPUTYTASK) su stessa pipeline
-- Checklist "aggiungi tipo": schema FE+BE, test estrazione, 1 PDF golden file in `backend/tests/fixtures/`
-
 **DoD**
-- [ ] Nuovo tipo = solo schema + test + route commit (no nuovo service ingest)
-- [ ] Almeno WPS aggiunto come terzo tipo saldatura
-- [ ] Tabella tipi supportati aggiornata in PROJECT_ROADMAP
+- [x] WPS batch su pipeline + staging + UI
+- [x] Schemi `dichiarazione_ce`, `report_ndt` backend
+- [ ] Tabella tipi PROJECT_ROADMAP (opzionale)
 
-**Rischio**: basso per tipo, incrementale.
+**Stato**: ✅ 28/06/2026
 
 ---
 

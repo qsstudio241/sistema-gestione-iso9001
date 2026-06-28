@@ -11,6 +11,7 @@ const {
     parseJson,
 } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
+const { getLearningStats } = require('../services/ingestFeedback.service');
 
 async function assertModuleAccess(req, docType) {
     const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
@@ -118,8 +119,20 @@ async function rejectStagingHandler(req, res) {
     }
 }
 
+async function getLearningStatsHandler(req, res) {
+    try {
+        const docType = req.query.doc_type || null;
+        const stats = await getLearningStats(req.user.organization_id, docType || null);
+        res.json({ success: true, ...stats });
+    } catch (error) {
+        logger.error('getLearningStats', { error: error.message });
+        res.status(500).json({ error: error.message, code: 'LEARNING_STATS_ERROR' });
+    }
+}
+
 module.exports = {
     getStaging,
     confirmStaging: confirmStagingHandler,
     rejectStaging: rejectStagingHandler,
+    getLearningStats: getLearningStatsHandler,
 };
