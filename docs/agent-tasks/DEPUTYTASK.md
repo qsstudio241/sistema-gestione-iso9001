@@ -11,6 +11,8 @@
 
 **Deploy VPS pendente** (dopo merge PR): `deploy-to-vps.sh` + `npm install` in `/var/www/sgq-backend`
 
+**Deploy VPS**: eseguito 28/06/2026 — PID 205303, health OK, `npm install` tesseract.js + pdf2pic su VPS.
+
 ---
 
 ## Slice attiva: **IG-2**
