@@ -1637,6 +1637,18 @@ class ApiService {
         }
     }
 
+    async getIngestStaging(stagingId) {
+        return this.get(`/ingest-staging/${stagingId}`);
+    }
+
+    async confirmIngestStaging(stagingId, fields = {}) {
+        return this.post(`/ingest-staging/${stagingId}/confirm`, { fields });
+    }
+
+    async rejectIngestStaging(stagingId) {
+        return this.post(`/ingest-staging/${stagingId}/reject`, {});
+    }
+
     async commitImportJobFileToQualification(jobId, fileId, data = {}) {
         return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-qualification`, data);
     }

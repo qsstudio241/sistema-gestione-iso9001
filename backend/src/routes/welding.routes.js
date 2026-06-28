@@ -4,11 +4,36 @@
 const express  = require('express');
 const router   = express.Router();
 const multer   = require('multer');
+const path     = require('path');
+const fs       = require('fs');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const ctrl = require('../controllers/welding.controller');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+
+const wpqrStorage = multer.diskStorage({
+    destination(req, file, cb) {
+        const dest = path.join(UPLOAD_DIR, 'wpqr');
+        fs.mkdirSync(dest, { recursive: true });
+        cb(null, dest);
+    },
+    filename(req, file, cb) {
+        const ext  = path.extname(file.originalname) || '.pdf';
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 80);
+        cb(null, `wpqr_${Date.now()}_${base}${ext}`);
+    },
+});
+
+const upload = multer({
+    storage: wpqrStorage,
+    limits: { fileSize: 50 * 1024 * 1024, files: 20 },
+    fileFilter(req, file, cb) {
+        const ok = /\.(pdf|jpg|jpeg|png)$/i.test(file.originalname) ||
+                   ['application/pdf', 'image/jpeg', 'image/png'].includes(file.mimetype);
+        ok ? cb(null, true) : cb(new Error('Solo PDF o immagini consentiti'));
+    },
+});
 
 router.use(authenticate);
 router.use(requireLicensedModule('saldatura'));
