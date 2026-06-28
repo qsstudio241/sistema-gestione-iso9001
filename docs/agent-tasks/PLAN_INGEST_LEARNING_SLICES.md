@@ -1,6 +1,6 @@
 # Piano slice — Ingest documenti scalabile + auto-apprendimento
 
-> **Stato**: IG-1 completata e mergiata (#181) 28/06/2026. **Prossima: IG-2**.
+> **Stato**: IG-1 ✅ (#181), IG-2 ✅ (#182) 28/06/2026. **Prossima: IG-3**.
 
 > **Obiettivo**: affidabilità ingest (patentini, WPQR, WPS, NDT, …) con pipeline unica, revisione umana e miglioramento progressivo dai feedback operatore.
 > **Fonti**: Sprint 9–10 roadmap, `documentTypeSchemas.js`, `importAiExtraction.service.js`, ADR-010, tabella `ai_feedback` (055).
@@ -102,7 +102,30 @@ Upload (batch o import job)
 - [x] Fix `personnelId` (#175) nel commit path qualifiche
 - [ ] Deploy VPS post-merge
 
-**Stato**: implementato 28/06/2026 — PR IG-2.
+**Stato**: ✅ PR #182 mergiata 28/06/2026.
+
+---
+
+## Gap tracker ingest 3834 (fonte unica — aggiornare ad ogni slice)
+
+> **Regola**: ogni gap va chiuso in una slice assegnata. Non bloccare IG-3 per gap di tipi non ancora in batch (WPS, CE, NDT).
+
+| ID | Gap | Impatto | Slice | Blocca IG-3? |
+|---|---|---|---|---|
+| G-01 | Schema AI WPQR (6 campi) vs colonne `wpqr_records` (~15 campi) — commit batch mappa sottoinsieme | Campi DB spesso vuoti dopo upload; revisione mostra solo 6 campi | **IG-3** (espandere form revisione) + **IG-6** (allineamento schema completo) | Parziale — IG-3 può partire con 6 campi, espansione in sotto-task |
+| G-02 | `fieldConfidence` dalla pipeline non esposto in API batch né in UI | Operatore non vede verde/giallo/rosso | **IG-3** | **Sì** |
+| G-03 | Batch WPQR/patentini committa subito in bozza senza step revisione | Nessun controllo pre-salvataggio | **IG-3** | **Sì** (obiettivo slice) |
+| G-04 | Patentino: schema FE ricco (ISO 9606-1) vs mapping `qualifications` parziale | Campi estratti persi al commit | **IG-3** + regola GUIDA end-to-end | Parziale |
+| G-05 | WPS: schema definito, **nessun endpoint batch** | Tipo non usabile in upload multiplo | **IG-6** | No |
+| G-06 | `dichiarazione_ce`, `report_ndt` in catalogo tipi, **senza schema AI** | Import guidato non funziona | **IG-6** | No |
+| G-07 | `cert_ndt`: schema AI base, senza batch né commit dedicato | Solo import job manuale | **IG-6** | No |
+| G-08 | OCR attivo ma non testato L3 su PDF scansionati reali | Patentini foto/scansione | Smoke post IG-3 | No |
+| G-09 | Feedback correzioni umane non persistito | Nessun apprendimento | **IG-4** | No (dopo IG-3) |
+| G-10 | Few-shot da feedback org assente | AI non migliora nel tempo | **IG-5** | No |
+| G-11 | `ImportJobsPage` ha revisione; batch WPQR/qualifiche no — **due UX parallele** | Inconsistenza operatore | **IG-3** (unificare pattern) | **Sì** |
+| G-12 | Migrazione DB staging (`ingest_staging` mig. 114) | Persistenza bozza revisionabile | **IG-3** ✅ | — |
+
+**Strategia consigliata**: IG-3 verticale su **wpqr + patentino_saldatore** (tipi batch attivi), chiudendo G-02, G-03, G-11, G-12 e parte di G-01/G-04. G-05…G-10 restano in coda IG-4→IG-6.
 
 ---
 
@@ -113,13 +136,15 @@ Upload (batch o import job)
 - Mostra campi estratti con badge confidence (da pipeline)
 - Azioni: **Conferma**, **Correggi e salva**, **Scarta**
 - Record resta `approval_status=bozza` / `import_status=ai_draft` fino a conferma
-- Migrazione DB (094+): colonne su `import_job_files` se servono — `staged_fields_json`, `field_confidence_json`, `review_status`
+- Migrazione DB **114**: tabella `ingest_staging` (`staged_fields_json`, `field_confidence_json`, `review_status`)
 
 **DoD**
-- [ ] Operatore vede preview campi prima del commit definitivo
-- [ ] Scarta non crea record registry (o marca rejected)
-- [ ] Conferma crea record come oggi ma con dati revisionati
+- [x] Operatore vede preview campi prima del commit definitivo
+- [x] Scarta non crea record registry (o marca rejected)
+- [x] Conferma crea record come oggi ma con dati revisionati
 - [ ] Smoke L3: upload → revisione → commit → record visibile in registro
+
+**Stato**: implementato 28/06/2026 — PR IG-3.
 
 **Rischio**: medio-alto (UX + DB). Prerequisito IG-1/IG-2.
 
@@ -203,7 +228,7 @@ IG-1 (motore) --> IG-2 (unifica batch) --> IG-3 (UI revisione)
 
 Al termine di ogni slice: aggiornare stato qui + `DEPUTYTASK.md` + riga in `GUIDA_CONSOLIDATA.md` (Esperienza).
 
-**Prossima slice attiva**: **IG-2**
+**Prossima slice attiva**: **IG-4**
 
 ---
 
