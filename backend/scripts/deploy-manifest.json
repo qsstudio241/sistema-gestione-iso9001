@@ -37,7 +37,10 @@
         "src/utils/excelDeadlineDetector.js",
         "src/utils/documentClassifier.js",
         "src/utils/weldingDesignation.js",
-        "src/utils/qualificationCoverage.js"
+        "src/utils/qualificationCoverage.js",
+        "src/utils/jsonRepair.js",
+        "src/utils/ruleFieldExtractors.js",
+        "src/utils/ocrExtractor.js"
       ]
     },
     {
@@ -60,7 +63,8 @@
         "src/services/qualificationSituazione.service.js",
         "src/services/personnelQualificationLink.service.js",
         "src/services/wpqrIngest.service.js",
-        "src/services/qualificationIngest.service.js"
+        "src/services/qualificationIngest.service.js",
+        "src/services/documentIngestPipeline.service.js"
       ]
     },
     {
