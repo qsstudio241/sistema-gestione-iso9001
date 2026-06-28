@@ -1,22 +1,46 @@
-# DEPUTYTASK — stato al 27/06/2026
+# DEPUTYTASK — Piano ingest + learning (28/06/2026)
 
-## Sessione CHIUSA — Errori console systemgest (TEST OK, PR #172)
+## Slice IG-1 — TEST OK (codice)
 
-**Sintomi**: su `systemgest.netlify.app` — `ai/feedback` 500, `run-nc-alerts` 400, warn schema al logout, warn `q3834_s1_3` su click NC.
+**Implementato**:
+- `documentIngestPipeline.service.js` — pipeline testo → regole → AI → merge + confidence
+- `jsonRepair.js` — parser JSON difensivo (+ integrato in `importAiExtraction`)
+- `ruleFieldExtractors.js` — regex WPQR/patentino
+- `package.json`: `tesseract.js`, `pdf2pic`
+- Test Jest: 19/19 verdi (`documentIngestPipeline` + `importAiExtraction`)
 
-**Fix** (PR **#172** → merge su `main`):
-- `aiAssist.controller.js`: `req.user.user_id || req.user.id` (hotfix VPS già applicato)
-- `NotificationsSettingsPage`: anteprima/invio NC solo dopo salvataggio config (`config.exists`)
-- `StorageContext`: niente warn schema durante reset logout
-- `ChecklistModule`: rimosso warn prematuro NC/OSS senza note
-
-**Verifica**: build app OK; health API VPS OK; deploy Netlify da `main` (~2 min).
+**Deploy VPS pendente** (dopo merge PR): `deploy-to-vps.sh` + `npm install` in `/var/www/sgq-backend`
 
 ---
 
-## Backlog (prossime sessioni)
-1. **Dismettere ambiente test isolato** `/var/www/sgq-backend-test` quando non più necessario
-2. **Batch upload WPS** (nessun endpoint, bassa priorità)
-3. **Hardening RBAC welding** (assertCompanyRead mancante, media priorità)
-4. **MT/PT/UT**: sezioni parametri specifiche + template Word
-5. **Foto offline**: upload asincrono per cantieri senza WiFi
+## Slice attiva: **IG-2**
+
+### Obiettivo
+Collegare upload batch WPQR e patentini a `runDocumentIngest()` — eliminare logica duplicata in `wpqrIngest` / `qualificationIngest`.
+
+### File
+- `backend/src/services/wpqrIngest.service.js`
+- `backend/src/services/qualificationIngest.service.js`
+- Test integrazione batch
+
+### DoD
+- Upload batch usa pipeline unificata
+- Warning JSON AI ridotti (retry + regole)
+- Smoke 1 WPQR + 1 patentino
+
+### Comando deputy
+```
+Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+```
+
+---
+
+## Piano completo
+
+[`PLAN_INGEST_LEARNING_SLICES.md`](PLAN_INGEST_LEARNING_SLICES.md)
+
+| Slice | Stato |
+|---|---|
+| IG-1 | ✅ codice + test |
+| IG-2 | **PROSSIMA** |
+| IG-3–IG-6 | in attesa |
