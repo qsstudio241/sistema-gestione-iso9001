@@ -8,16 +8,22 @@
 
 ---
 
-## Slice attiva: **IG-2** — TEST OK (codice)
+## Slice attiva: **IG-3** — revisione umana pre-commit
 
-### Completato
-- `wpqrIngest.service.js` e `qualificationIngest.service.js` delegano a `runDocumentIngest()`
-- Test Jest wpqrIngest + pipeline (21 test)
-- PR in attesa merge + deploy VPS
+### Obiettivo
+- UI revisione campi estratti (confidence verde/giallo/rosso) prima del commit su batch WPQR e patentini
+- Pattern allineato a `ImportJobsPage`
+- Gap tracker: `PLAN_INGEST_LEARNING_SLICES.md` sezione **Gap tracker ingest 3834**
+
+### Prerequisiti (ok)
+- IG-1 ✅ #181, IG-2 ✅ #182, deploy VPS health OK
 
 ---
 
-## Prossima slice: **IG-3** (revisione umana pre-commit)
+## Chiuso: IG-2
+
+- `wpqrIngest.service.js` e `qualificationIngest.service.js` → `runDocumentIngest()`
+- PR **#182** mergiata, test Jest 21/21
 
 ---
 
@@ -28,5 +34,5 @@
 | Slice | Stato |
 |---|---|
 | IG-1 | ✅ mergiata (#181) |
-| IG-2 | ✅ codice (PR in corso) |
-| IG-3 | **PROSSIMA** |
+| IG-2 | ✅ #182 |
+| IG-3 | **ATTIVA** |
