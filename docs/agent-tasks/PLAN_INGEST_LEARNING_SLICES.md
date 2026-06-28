@@ -97,12 +97,12 @@ Upload (batch o import job)
 - Allineare campi commit con `aiExpectedSchema`
 
 **DoD**
-- [ ] Upload batch patentini e WPQR usano stesso motore di Import PDF
-- [ ] Test L1 su ingest WPQR con JSON AI mock rotto → warning ma campi regex riempiti
-- [ ] Fix `personnelId` gia in main/PR #175 resta valido nel commit path
-- [ ] Deploy VPS + smoke manuale 1 PDF WPQR + 1 patentino
+- [x] Upload batch patentini e WPQR usano stesso motore di Import PDF
+- [x] Test L1 su ingest WPQR con JSON AI mock rotto → warning ma campi regex riempiti
+- [x] Fix `personnelId` (#175) nel commit path qualifiche
+- [ ] Deploy VPS post-merge
 
-**Rischio**: medio (percorsi produzione attivi). Rollback = ripristino file ingest precedenti.
+**Stato**: implementato 28/06/2026 — PR IG-2.
 
 ---
 

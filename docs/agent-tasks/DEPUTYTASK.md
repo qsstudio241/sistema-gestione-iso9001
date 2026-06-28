@@ -8,25 +8,16 @@
 
 ---
 
-## Slice attiva: **IG-2**
+## Slice attiva: **IG-2** — TEST OK (codice)
 
-### Obiettivo
-Collegare upload batch WPQR e patentini a `runDocumentIngest()` — eliminare logica duplicata in `wpqrIngest` / `qualificationIngest`.
+### Completato
+- `wpqrIngest.service.js` e `qualificationIngest.service.js` delegano a `runDocumentIngest()`
+- Test Jest wpqrIngest + pipeline (21 test)
+- PR in attesa merge + deploy VPS
 
-### File
-- `backend/src/services/wpqrIngest.service.js`
-- `backend/src/services/qualificationIngest.service.js`
-- Test integrazione batch
+---
 
-### DoD
-- Upload batch usa pipeline unificata
-- Warning JSON AI ridotti (retry + regole)
-- Deploy VPS + test Jest
-
-### Comando deputy
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+## Prossima slice: **IG-3** (revisione umana pre-commit)
 
 ---
 
@@ -37,5 +28,5 @@ Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON A
 | Slice | Stato |
 |---|---|
 | IG-1 | ✅ mergiata (#181) |
-| IG-2 | **IN CORSO** |
-| IG-3–IG-6 | in attesa |
+| IG-2 | ✅ codice (PR in corso) |
+| IG-3 | **PROSSIMA** |
