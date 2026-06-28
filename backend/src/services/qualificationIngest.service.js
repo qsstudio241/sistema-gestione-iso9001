@@ -224,17 +224,23 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         }
     }
 
-    // 6. Risolve personnel_id
-    const personnel_id = await resolvePersonnelForQualification({
-        person_name, company_id: companyId, organization_id: organizationId,
+    // 6. Risolve personnel_id (camelCase come importJobs.controller)
+    const personnelResult = await resolvePersonnelForQualification({
+        personName: person_name,
+        companyId,
+        organizationId,
     });
+    if (!personnelResult.ok) {
+        throw new Error(personnelResult.error || 'Collegamento personale non valido.');
+    }
+    const personnel_id = personnelResult.personnelId ?? null;
 
     // 7. INSERT in qualifications
     const ins = await pool.request()
         .input('orgId',         organizationId)
         .input('compId',        companyId || null)
-        .input('personName',    person_name)
-        .input('personnelId',   personnel_id || null)
+        .input('personName',    personnelResult.personName || person_name)
+        .input('personnelId',   personnel_id)
         .input('qualType',      qualificationType)
         .input('stdRef',        standard_ref || null)
         .input('certNum',       certificate_number || null)
