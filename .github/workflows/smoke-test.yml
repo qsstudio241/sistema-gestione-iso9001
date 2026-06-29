@@ -23,7 +23,9 @@ on:
     paths:
       - 'backend/**'
       - 'app/**'
+      - 'docs/**'
       - '.github/workflows/smoke-test.yml'
+      - '.cursor/**'
   # Esecuzione manuale (utile per debug)
   workflow_dispatch:
 
