@@ -2492,6 +2492,22 @@ Script aggiuntivo: `patch-verbale-visita-headings.cjs` (allinea Titolo 1 offline
 - Lo script repro normalizza `NODE_ENV=test` → `development` prima del pool.  
 - Comandi: vedi sezione **D** sotto.
 
+### Analisi orfani e integrità DB (29/06/2026)
+
+Script: `backend/scripts/db-orphan-analysis.js` — eseguire sul VPS dopo ogni ciclo di migrazioni.  
+Report completo: [docs/reference/DB_ORPHAN_REPORT_20260629.md](reference/DB_ORPHAN_REPORT_20260629.md)
+
+**Anomalie aperte:**
+
+| ID | Tabella | Anomalia | Fix |
+|----|---------|----------|-----|
+| ~~**FIX-1**~~ ✅ | `non_conformities` | `nc_id=1052` aveva `organization_id=NULL` — **CORRETTO** (org=1002, 29/06/2026) | Fix applicato con `backend/scripts/fix-nc-organization-id-vps.js` |
+| INFO-2 | `audit_custom_checklist_responses_history` | 2 righe orfane (id 8, 15) — audit/item di test eliminati | `DELETE ... WHERE id IN (8,15)` opzionale |
+| INFO-3 | File fisici su disco `uploads/YYYY/` | 32 file senza record DB — upload orfani da test | Pulizia disco opzionale |
+| INFO-4 | `audit_responses_backup_20260111` | 20 righe backup pre-2026 non più in produzione | Nessuna azione — backup storico normale |
+
+> **FIX-1 è l'unica azione obbligatoria** — risolve la visibilità della NC `NC-QS-260526-01-020` nei filtri per organizzazione.
+
 ---
 
 ## Smoke test remoti (DB di test via backend VPS)
