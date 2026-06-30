@@ -8,6 +8,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+const { getActiveProvider } = require('../services/aiProviderAdapter');
 const {
     buildNormTypeSpecificData,
     serializeNormTypeSpecificData,
@@ -368,6 +369,11 @@ async function suggestAiExtraction(req, res) {
             data: {
                 model: result.model,
                 extraction: result.data,
+            },
+            _aiMeta: {
+                provider: getActiveProvider() || 'unknown',
+                model: result.model,
+                contextSummary: `import ai-extract job=${jobId} file=${fileId} docType=${j.recordset[0].document_type_hint || 'auto'}`.substring(0, 500),
             },
         });
     } catch (err) {

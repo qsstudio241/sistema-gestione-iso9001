@@ -1087,7 +1087,7 @@ async function renewQualification(req, res) {
     }
 }
 
-/** POST /qualifications/upload-batch — Batch upload patentini (AI extraction) */
+/** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
     try {
         const orgId    = req.user.organization_id;
@@ -1102,39 +1102,79 @@ async function uploadBatch(req, res) {
             return res.status(400).json({ error: 'Nessun file caricato.' });
         }
 
-        const { ingestQualificationFromPdf } = require('../services/qualificationIngest.service');
+        const { extractQualificationFromPdf } = require('../services/qualificationIngest.service');
+        const { createStagingRecord } = require('../services/ingestStaging.service');
 
         const results = [];
         for (const file of req.files) {
-            let entry = { fileName: file.originalname, status: 'error', qualification_id: null, person_name: null, qualification_type: null, warnings: [] };
+            let entry = { fileName: file.originalname, status: 'error', warnings: [] };
             try {
                 const buffer = fs.readFileSync(file.path);
-                const result = await ingestQualificationFromPdf(buffer, file.originalname, orgId, company_id, {
-                    userId,
-                    filePath: file.path,
-                });
-                if (result.duplicate) {
-                    entry.status = 'duplicate';
-                    entry.warnings = result.warnings || [];
-                } else {
-                    entry.status = 'ok';
-                    entry.qualification_id = result.qualification_id;
-                    entry.person_name = result.person_name;
-                    entry.qualification_type = result.qualification_type;
-                    entry.warnings = result.warnings || [];
+                const extracted = await extractQualificationFromPdf(buffer, file.originalname, orgId, company_id);
+
+                if (extracted.status === 'wrong_module') {
+                    try { fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'wrong_module',
+                        ...extracted,
+                    });
+                    continue;
                 }
+
+                if (extracted.status === 'duplicate') {
+                    try { fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'duplicate',
+                        person_name: extracted.person_name,
+                        qualification_type: extracted.qualification_type,
+                        warnings: extracted.warnings || [],
+                    });
+                    continue;
+                }
+
+                const stagingId = await createStagingRecord({
+                    organizationId: orgId,
+                    companyId: company_id,
+                    docType: 'patentino_saldatore',
+                    originalName: file.originalname,
+                    storagePath: file.path,
+                    mimeType: file.mimetype,
+                    fileSize: file.size,
+                    fields: extracted.fields,
+                    fieldConfidence: extracted.field_confidence,
+                    warnings: extracted.warnings,
+                    qualificationType: extracted.qualification_type,
+                    userId,
+                    aiModel: extracted.ai_model || null,
+                });
+
+                entry = {
+                    fileName: file.originalname,
+                    status: 'pending_review',
+                    staging_id: stagingId,
+                    fields: extracted.fields,
+                    field_confidence: extracted.field_confidence,
+                    qualification_type: extracted.qualification_type,
+                    confidence: extracted.confidence,
+                    warnings: extracted.warnings || [],
+                };
             } catch (fileErr) {
-                entry.error = fileErr.message;
-                entry.warnings = [fileErr.message];
-                // Pulizia file in errore
+                entry = {
+                    fileName: file.originalname,
+                    status: 'error',
+                    error: fileErr.message,
+                    warnings: [fileErr.message],
+                };
                 try { fs.unlinkSync(file.path); } catch (_) {}
             }
             results.push(entry);
         }
 
-        const ok = results.filter(r => r.status === 'ok').length;
-        logger.info(`[Qualif/batch] ${ok}/${req.files.length} file ingested per org ${orgId}`);
-        res.json({ results, uploaded: ok, total: req.files.length });
+        const pending = results.filter(r => r.status === 'pending_review').length;
+        logger.info(`[Qualif/batch] ${pending}/${req.files.length} file in staging per org ${orgId}`);
+        res.json({ results, uploaded: pending, total: req.files.length });
     } catch (err) {
         logger.error('uploadBatch qualifiche:', err.message);
         res.status(500).json({ error: err.message });
@@ -1348,8 +1388,9 @@ async function confirmSemiannual(req, res) {
         const tx = pool.transaction();
         await tx.begin();
         try {
-            const reqTx = tx.request();
-            await reqTx
+            // Ogni query nella transazione richiede un request separato (mssql:
+            // i nomi parametro non possono essere ridichiarati sullo stesso request).
+            await tx.request()
                 .input('qualId', id)
                 .input('orgId', orgId)
                 .input('compId', qual.company_id)
@@ -1369,7 +1410,7 @@ async function confirmSemiannual(req, res) {
                     )
                 `);
 
-            await reqTx
+            await tx.request()
                 .input('qualId', id)
                 .input('orgId', orgId)
                 .input('lastConf', confirmedDate)

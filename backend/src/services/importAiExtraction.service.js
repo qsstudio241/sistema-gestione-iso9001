@@ -5,6 +5,8 @@
 
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { parseJsonWithRepair } = require('../utils/jsonRepair');
+const { buildFewShotExamples, formatFewShotPromptSection } = require('./ingestLearning.service');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -118,8 +120,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;
@@ -149,9 +152,10 @@ ${truncated}
  * @param {object} params
  * @param {string} params.text
  * @param {string|null} params.docType - chiave tipo documento (es. "patentino_saldatore")
+ * @param {number|null} [params.organizationId] - per few-shot IG-5
  * @returns {Promise<{ model: string, data: object, raw_content: string }>}
  */
-async function extractStructuredByDocType({ text, docType }) {
+async function extractStructuredByDocType({ text, docType, organizationId = null }) {
     const schema = getSchemaForDocType(docType);
 
     if (!schema) {
@@ -197,6 +201,15 @@ Regole generali:
 Istruzioni specifiche per il tipo documento "${schema.label}":
 ${schema.aiPrompt}`;
 
+    if (organizationId) {
+        try {
+            const examples = await buildFewShotExamples(organizationId, docType);
+            system += formatFewShotPromptSection(examples);
+        } catch (fewShotErr) {
+            // non bloccare estrazione
+        }
+    }
+
     const user = `Tipo documento: ${schema.label}
 
 Testo documento:
@@ -226,8 +239,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;

@@ -1,4 +1,4 @@
--- Migration 114 — Persistenza analisi AI del capitolato (riesame requisiti) sul caso commerciale.
+-- Migration 116 — Persistenza analisi AI del capitolato (riesame requisiti) sul caso commerciale.
 -- Generalizza le tabelle della migrazione 101 (estrazione disegni) per accogliere anche
 -- l'analisi testuale del capitolato/offerta, evitando tabelle parallele (vedi spec D.3).
 --   1) commercial_case_drawing_extractions  -> colonna `source` ('drawing'|'text'|'ocr'|'table')
@@ -44,7 +44,7 @@ BEGIN
         ADD CONSTRAINT CK_ccer_req_type CHECK (req_type IN (
             -- tipi da disegno (migr. 101)
             'dimension','tolerance','gdt','material','weld_symbol','surface','note','title_block',
-            -- tipi testuali (capitolato/offerta — migr. 114)
+            -- tipi testuali (capitolato/offerta — migr. 116)
             'delivery','legal','commercial','spec'
         ));
 END;

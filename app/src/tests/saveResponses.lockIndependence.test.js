@@ -21,12 +21,16 @@ function extractChecklistResponses(audit) {
     Object.entries(normData).forEach(([, clauseData]) => {
       if (!clauseData.questions || !Array.isArray(clauseData.questions)) return;
       clauseData.questions.forEach((question) => {
-        if (question.status && question.status !== 'NOT_ANSWERED') {
+        const hasStatus =
+          question.status && question.status !== 'NOT_ANSWERED';
+        const hasNotes =
+          question.notes != null && String(question.notes).trim() !== '';
+        if (hasStatus || hasNotes) {
           responses.push({
             question_id: question.questionId || null,
             clause_ref: question.clauseRef || question.id,
-            conformity_status: question.status,
-            notes: question.notes || null,
+            conformity_status: hasStatus ? question.status : null,
+            notes: hasNotes ? question.notes : null,
             evidence: question.evidenceRef || null,
             client_updated_at: new Date().toISOString(),
           });
@@ -67,9 +71,32 @@ describe('extractChecklistResponses', () => {
     expect(responses.map(r => r.conformity_status)).toEqual(['C', 'NC']);
   });
 
-  test('restituisce array vuoto se tutte NOT_ANSWERED', () => {
+  test('restituisce array vuoto se tutte NOT_ANSWERED senza note', () => {
     const audit = makeAuditWithResponses(['NOT_ANSWERED', 'NOT_ANSWERED']);
     expect(extractChecklistResponses(audit)).toHaveLength(0);
+  });
+
+  test('include domande con sole note (senza esito) per sync dettatura', () => {
+    const audit = {
+      id: 'test-uuid-notes',
+      checklist: {
+        ISO_9001: {
+          clause_7: {
+            questions: [{
+              id: 'q1',
+              questionId: 100,
+              clauseRef: '7.1.5.1',
+              status: 'NOT_ANSWERED',
+              notes: 'Testo dettato senza esito selezionato',
+            }],
+          },
+        },
+      },
+    };
+    const responses = extractChecklistResponses(audit);
+    expect(responses).toHaveLength(1);
+    expect(responses[0].conformity_status).toBeNull();
+    expect(responses[0].notes).toBe('Testo dettato senza esito selezionato');
   });
 
   test('restituisce array vuoto se checklist assente', () => {

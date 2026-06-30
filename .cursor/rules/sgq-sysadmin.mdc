@@ -11,6 +11,7 @@ alwaysApply: false
 - **Cloud Agent (Linux)**: `backend/scripts/deploy-to-vps.sh` + secrets `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`.
 - **Invariato**: Nessun segreto nei file versionati. Usa `database.json`, `.ssh-deploy.local.ps1` o variabili d'ambiente.
 - **Verifica PID Obbligatoria**: Dopo `systemctl restart`, verifica che il `MainPID` sia cambiato. Se invariato, usa: `echo $SGQ_SUDO_PASSWORD | sudo -S systemctl restart sgq-backend.service`.
+- **`deploy-manifest.json` obbligatorio**: ogni slice che aggiunge nuovi file `.js` in `backend/src/` (controller, routes, services) **deve aggiornare** `backend/scripts/deploy-manifest.json` con i nuovi path — altrimenti il backend crasha al primo deploy con `MODULE_NOT_FOUND`. Verificare prima di ogni `deploy-controllers-to-vps.ps1`.
 
 ## Migrazioni SQL Server (Ground Truth)
 - **Autonomia**: Esegui le migrazioni usando `backend/config/database.json`. Non delegare all'utente se le credenziali sono presenti.

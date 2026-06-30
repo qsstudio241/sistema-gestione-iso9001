@@ -105,7 +105,11 @@ function NotificationsSettingsPage() {
     }
   };
 
-  const ncAlertsReady = form.enabled && form.alert_nc_open && form.recipients_email.trim();
+  const ncAlertsReady =
+    config?.exists &&
+    form.enabled &&
+    form.alert_nc_open &&
+    form.recipients_email.trim();
 
   const handleNcAlertsRun = async (dryRun) => {
     if (!dryRun) {
@@ -371,7 +375,9 @@ function NotificationsSettingsPage() {
         </div>
         {!ncAlertsReady && (
           <p className="notif-hint notif-nc-run-hint">
-            Abilita notifiche, alert NC aperte e almeno un destinatario globale per usare questa funzione.
+            {!config?.exists
+              ? "Salva prima la configurazione (destinatari e toggle), poi usa anteprima o invio manuale."
+              : "Abilita notifiche, alert NC aperte e almeno un destinatario globale per usare questa funzione."}
           </p>
         )}
       </div>

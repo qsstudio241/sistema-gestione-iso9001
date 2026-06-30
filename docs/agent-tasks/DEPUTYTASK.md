@@ -1,29 +1,108 @@
-# DEPUTYTASK — stato al 25/06/2026
+# DEPUTYTASK — Hardening harness doppio (HK-1 … HK-10)
 
-## Sessione CHIUSA — Rate limit Assistente AI Conclusioni (TEST OK + RILASCIO PRODUZIONE)
-
-**Sintomo**: Camellini vede "Troppe richieste. Riprova tra qualche minuto." nel modal **Assistente AI — Conclusioni** ("Migliora bozza").
-
-**Causa**: rate limiter generico API (`RATE_LIMIT_API`), non limite provider AI. Il `keyGenerator` leggeva `id`/`sub` nel JWT invece di `user_id` → tutti gli utenti dietro lo stesso IP condividevano un bucket (500 req/15 min).
-
-**Fix** (PR **#164** mergiata su `main`):
-- `backend/src/server.js`: bucket per `user_id` JWT
-- `app/src/hooks/useAiAssist.js`: messaggio 429 più chiaro
-- `backend/deploy-production.ps1`: `RATE_LIMIT_MAX_REQUESTS=1000`
-- `docs/GUIDA_CONSOLIDATA.md`: nota diagnosi
-
-**Stato produzione (25/06/2026)**:
-- VPS: `server.js` deployato, `.env` `RATE_LIMIT_MAX_REQUESTS=1000`, restart PID verificato, health 200
-- Frontend: Netlify da `main` (messaggio UI migliorato dopo deploy Netlify ~2 min)
-- CI PR #164: verde (Vitest + smoke DB)
-
-**Verifica utente**: Camellini riapre Assistente AI Conclusioni; se 429 residuo → attendere 15 min o chiudere schede duplicate.
+> **Creato**: 29/06/2026  
+> **Chiuso**: 30/06/2026  
+> **Stato**: CHIUSO — TEST OK  
+> **PR**: #191 mergiata su `main` il 30/06/2026  
+> **Deploy VPS**: completato 30/06/2026 (deploy-manifest aggiornato + norm_access_log migrata)  
+> **Piano dettagliato**: [`PLAN_HARNESS_HARDENING_SLICES.md`](PLAN_HARNESS_HARDENING_SLICES.md)  
+> **Branch**: `cursor/harness-hardening-hk-6b60` (mergiato)  
+> **Base**: `main`
 
 ---
 
-## Backlog (prossime sessioni)
-1. **Dismettere ambiente test isolato** `/var/www/sgq-backend-test` quando non più necessario
-2. **Batch upload WPS** (nessun endpoint, bassa priorità)
-3. **Hardening RBAC welding** (assertCompanyRead mancante, media priorità)
-4. **MT/PT/UT**: sezioni parametri specifiche + template Word
-5. **Foto offline**: upload asincrono per cantieri senza WiFi
+## Obiettivo
+
+Chiudere i gap strutturali su **entrambi gli harness**:
+
+1. **Sviluppo (Cursor)** — governance, memoria operativa, igiene repo  
+2. **Prodotto (AI runtime)** — percorso riesame unico, audit trail, licenze, NormBroker v1, gap analysis MVP, disclaimer UI
+
+---
+
+## Si può fare tutto in un colpo?
+
+**No in un solo commit**, **sì in una sequenza guidata**: 10 slice verticali con DoD ciascuna. Esegui **HK-1 → HK-10** in ordine (salvo parallelismo indicato nel piano). Una PR per slice è preferibile; PR cumulativa accettabile solo se diff reviewabile e CI verde.
+
+---
+
+## Stato slice (aggiornare il deputy durante il lavoro)
+
+| Slice | Descrizione | Stato |
+|-------|-------------|-------|
+| HK-1 | Governance dev (ADR-015, legacy Copilot, encoding rules) | ✅ |
+| HK-2 | GUIDA alleggerita + link roadmap | ✅ |
+| HK-3 | `.gitignore` + archive stub + catalogo smoke | ✅ |
+| HK-4 | Percorso canonico AI riesame | ✅ |
+| HK-5 | Audit trail import + riesame + feedback | ✅ |
+| HK-6 | Licenze AI (routes + admin UI) | ✅ |
+| HK-7 | NormBroker v1 cascata + norm_access_log | ✅ |
+| HK-8 | Gap analysis MVP (API + pagina) | ✅ |
+| HK-9 | Disclaimer AI + AiSuggestionInline | ✅ |
+| HK-10 | Doc finale + test L1 + chiusura | ✅ |
+
+Legenda: ⬜ da fare · 🔄 in corso · ✅ fatto · ⏭️ FIX NON APPLICABILI (motivare)
+
+---
+
+## Vincoli (obbligatori)
+
+- **UTF-8 senza BOM**; accenti italiani corretti; verificare con `node backend/scripts/check-utf8-encoding.js` sui file toccati.
+- **Non** creare `SESSION_NOTES_*`; aggiornare solo `GUIDA_CONSOLIDATA.md` + roadmap se serve.
+- **Non** introdurre segreti in repo/chat.
+- **Fix minimo**: niente refactor fuori scope slice.
+- **Deploy produzione VPS**: non richiesto; se serve smoke backend usare **TEST** (`test-api`) come da GUIDA.
+- Riuso UI: pattern Ambito azienda, `LicensedRoute`, componenti esistenti.
+- Al termine: compilare [`MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md`](MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md).
+
+---
+
+## Istruzioni operative per slice (riassunto)
+
+Leggi il piano completo per file path e DoD. Qui solo l’ordine:
+
+1. **HK-1** — ADR-015, superare ADR-001, deprecare `.github/agents` in indice, riparare `sgq-encoding-quality.mdc`, dedupe `sgq-operating-memory.mdc`.
+2. **HK-2** — Sposta diario GUIDA in archive; correggi roadmap; paragrafo harness in `PROJECT_CONTEXT.md`.
+3. **HK-3** — `.gitignore` artefatti `.cursor/_*`; archivia stub `TASK_AI_*`; tabella smoke in GUIDA.
+4. **HK-4** — `ContractReviewPage` → `/contract-reviews/:id/ai/analyze-requirements`; unifica logica backend.
+5. **HK-5** — `logAiInteraction` su import AI, analyzeRequirements, feedback.
+6. **HK-6** — `ai_norms` su NormBroker; `ai_chat` su chat; tutte le chiavi in `UsersAdminPage`.
+7. **HK-7** — Cascata NormBroker + persistenza + `norm_access_log`.
+8. **HK-8** — `gapAnalysis.service.js` + API + `GapAnalysisPage.jsx` MVP.
+9. **HK-9** — `AiDisclaimer.jsx` sui flussi AI principali.
+10. **HK-10** — Lezione in GUIDA, nota stato in ADR-010, test L1, aggiorna tabella sopra.
+
+---
+
+## Test minimi attesi
+
+| Livello | Quando |
+|---------|--------|
+| L1 backend | HK-4, HK-5, HK-7, HK-8 — test mirati Jest |
+| L1 frontend | HK-4, HK-8, HK-9 — build Vite o Vitest mirato |
+| L1 CI | PR → `ci-app-pr.yml` verde |
+| L3 umano | Opzionale: smoke ingest se toccato import; gap page su Deploy Preview |
+
+---
+
+## Output finale (obbligatorio)
+
+Chiudere con **una sola** di queste forme:
+
+- **`TEST OK`** — tutte le slice ✅ o rischi residui documentati in GUIDA  
+- **`FIX NON APPLICABILI: …`** — elenco puntuale slice saltate + motivazione + prossimo passo
+
+Aggiornare questa tabella stato e aprire/aggiornare PR verso `main`.
+
+---
+
+## Prompt per lanciare il deputy
+
+Copia in Cursor Agents:
+
+```
+Leggi docs/agent-tasks/DEPUTYTASK.md e docs/agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md ed eseguili.
+Branch: cursor/harness-hardening-hk-6b60 da main.
+Esegui le slice HK-1 … HK-10 in ordine; commit per slice; aggiorna la tabella stato in DEPUTYTASK.md.
+Chiudi con TEST OK o FIX NON APPLICABILI.
+```

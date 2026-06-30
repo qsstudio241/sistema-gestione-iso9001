@@ -1483,12 +1483,16 @@ async function analyzeRequirements(req, res) {
             return sendErr(res, 400, 'Fornire capitolatoText nel body o note sul caso', 'VALIDATION_ERROR');
         }
 
+        const standardCodes = Array.isArray(req.body?.standardCodes) && req.body.standardCodes.length
+            ? req.body.standardCodes
+            : undefined;
         const built = await contextBuilder.buildReviewRequirementsContext({
             capitolatoText,
             companyId: caseRow.company_id,
             organizationId,
             commercialCustomerName: caseRow.commercial_customer_name,
             commercialCustomerRef: caseRow.commercial_customer_ref,
+            standardCodes,
         });
         const systemPrompt = await enrichSystemPromptWithOrganization(built.systemPrompt, organizationId);
         const result = await chat(
@@ -1521,7 +1525,11 @@ async function analyzeRequirements(req, res) {
             case_id: caseId,
             analysis_id: analysisId,
             suggestion,
-            _aiMeta: { provider, model: result.model, contextSummary: built.contextSummary },
+            _aiMeta: {
+                provider,
+                model: result.model,
+                contextSummary: (built.contextSummary || '').substring(0, 500),
+            },
         });
     } catch (err) {
         logger.error('analyzeRequirements', err.message);

@@ -806,49 +806,179 @@ async function rejectWPQR(req, res) {
 // WPQR ? Batch PDF upload con AI extraction
 // ===============================================================================
 
-// POST /api/v1/welding/wpqr/upload-batch
+// POST /api/v1/welding/wpqr/upload-batch — estrazione + staging IG-3 (revisione pre-commit)
 async function uploadWPQRBatch(req, res) {
+    const fs = require('fs');
     try {
         const { organization_id, user_id } = req.user;
-        const { company_id } = req.body;
+        const companyId = parseInt(req.body.company_id, 10);
 
-        if (!company_id) {
+        if (!companyId || Number.isNaN(companyId)) {
             return res.status(400).json({ error: 'company_id obbligatorio', code: 'VALIDATION_ERROR' });
         }
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Nessun file caricato', code: 'NO_FILES' });
         }
 
-        let ingestFn = null;
-        try {
-            const svc = require('../services/wpqrIngest.service');
-            ingestFn = svc.ingestWPQRFromPdf;
-        } catch (_) {}
+        const { extractWPQRFromPdf } = require('../services/wpqrIngest.service');
+        const { createStagingRecord } = require('../services/ingestStaging.service');
 
         const results = [];
         for (const file of req.files) {
-            if (!ingestFn) {
-                results.push({ fileName: file.originalname, status: 'error', warnings: ['Servizio AI non disponibile'] });
-                continue;
-            }
+            let entry = { fileName: file.originalname, status: 'error', warnings: [] };
             try {
-                const result = await ingestFn(
-                    file.buffer,
+                const buffer = file.buffer || fs.readFileSync(file.path);
+                const extracted = await extractWPQRFromPdf(
+                    buffer,
                     file.originalname,
                     organization_id,
-                    parseInt(company_id),
-                    { userId: user_id, filePath: file.path || null },
+                    companyId,
                 );
-                results.push({ fileName: file.originalname, status: 'ok', ...result });
+
+                if (extracted.status === 'wrong_module') {
+                    try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'wrong_module',
+                        ...extracted,
+                    });
+                    continue;
+                }
+
+                if (extracted.status === 'duplicate') {
+                    try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'duplicate',
+                        reference_number: extracted.reference_number,
+                        warnings: extracted.warnings || [],
+                    });
+                    continue;
+                }
+
+                const stagingId = await createStagingRecord({
+                    organizationId: organization_id,
+                    companyId,
+                    docType: 'wpqr',
+                    originalName: file.originalname,
+                    storagePath: file.path,
+                    mimeType: file.mimetype,
+                    fileSize: file.size,
+                    fields: extracted.fields,
+                    fieldConfidence: extracted.field_confidence,
+                    warnings: extracted.warnings,
+                    userId: user_id,
+                    aiModel: extracted.ai_model || null,
+                });
+
+                entry = {
+                    fileName: file.originalname,
+                    status: 'pending_review',
+                    staging_id: stagingId,
+                    fields: extracted.fields,
+                    field_confidence: extracted.field_confidence,
+                    confidence: extracted.confidence,
+                    warnings: extracted.warnings || [],
+                };
             } catch (err) {
-                results.push({ fileName: file.originalname, status: 'error', warnings: [err.message] });
+                entry = {
+                    fileName: file.originalname,
+                    status: 'error',
+                    warnings: [err.message],
+                };
+                try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
             }
+            results.push(entry);
         }
 
         res.json({ success: true, results });
     } catch (error) {
         logger.error('Error uploading WPQR batch', { error: error.message });
         res.status(500).json({ error: 'Errore upload batch WPQR', code: 'WPQR_UPLOAD_ERROR' });
+    }
+}
+
+// POST /api/v1/welding/wps/upload-batch — estrazione + staging IG-6
+async function uploadWPSBatch(req, res) {
+    const fs = require('fs');
+    try {
+        const { organization_id, user_id } = req.user;
+        const companyId = parseInt(req.body.company_id, 10);
+
+        if (!companyId || Number.isNaN(companyId)) {
+            return res.status(400).json({ error: 'company_id obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'Nessun file caricato', code: 'NO_FILES' });
+        }
+
+        const { extractWPSFromPdf } = require('../services/wpsIngest.service');
+        const { createStagingRecord } = require('../services/ingestStaging.service');
+
+        const results = [];
+        for (const file of req.files) {
+            let entry = { fileName: file.originalname, status: 'error', warnings: [] };
+            try {
+                const buffer = file.buffer || fs.readFileSync(file.path);
+                const extracted = await extractWPSFromPdf(
+                    buffer,
+                    file.originalname,
+                    organization_id,
+                    companyId,
+                );
+
+                if (extracted.status === 'wrong_module') {
+                    try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({ fileName: file.originalname, status: 'wrong_module', ...extracted });
+                    continue;
+                }
+
+                if (extracted.status === 'duplicate') {
+                    try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'duplicate',
+                        wps_code: extracted.wps_code,
+                        warnings: extracted.warnings || [],
+                    });
+                    continue;
+                }
+
+                const stagingId = await createStagingRecord({
+                    organizationId: organization_id,
+                    companyId,
+                    docType: 'wps',
+                    originalName: file.originalname,
+                    storagePath: file.path,
+                    mimeType: file.mimetype,
+                    fileSize: file.size,
+                    fields: extracted.fields,
+                    fieldConfidence: extracted.field_confidence,
+                    warnings: extracted.warnings,
+                    userId: user_id,
+                    aiModel: extracted.ai_model || null,
+                });
+
+                entry = {
+                    fileName: file.originalname,
+                    status: 'pending_review',
+                    staging_id: stagingId,
+                    fields: extracted.fields,
+                    field_confidence: extracted.field_confidence,
+                    confidence: extracted.confidence,
+                    warnings: extracted.warnings || [],
+                };
+            } catch (err) {
+                entry = { fileName: file.originalname, status: 'error', warnings: [err.message] };
+                try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
+            }
+            results.push(entry);
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        logger.error('Error uploading WPS batch', { error: error.message });
+        res.status(500).json({ error: 'Errore upload batch WPS', code: 'WPS_UPLOAD_ERROR' });
     }
 }
 
@@ -1004,5 +1134,6 @@ module.exports = {
     approveWPQR,
     rejectWPQR,
     uploadWPQRBatch,
+    uploadWPSBatch,
     getWpsCoverage,
 };

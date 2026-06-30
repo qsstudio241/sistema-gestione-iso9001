@@ -196,6 +196,34 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
       test_date: 'YYYY-MM-DD|null',
     },
   },
+
+  dichiarazione_ce: {
+    label: 'Dichiarazione CE',
+    aiPrompt: `Dichiarazione CE di conformita. Estrai: manufacturer, product_name, directive_ref,
+certificate_number, issue_date (YYYY-MM-DD), notified_body.`,
+    aiExpectedSchema: {
+      manufacturer: 'string|null',
+      product_name: 'string|null',
+      directive_ref: 'string|null',
+      certificate_number: 'string|null',
+      issue_date: 'YYYY-MM-DD|null',
+      notified_body: 'string|null',
+    },
+  },
+
+  report_ndt: {
+    label: 'Report NDT',
+    aiPrompt: `Rapporto prove NDT. Estrai: report_number, ndt_method (UT|RT|MT|PT|VT),
+component_ref, test_date (YYYY-MM-DD), operator_name, result_summary.`,
+    aiExpectedSchema: {
+      report_number: 'string|null',
+      ndt_method: 'UT|RT|MT|PT|VT|null',
+      component_ref: 'string|null',
+      test_date: 'YYYY-MM-DD|null',
+      operator_name: 'string|null',
+      result_summary: 'string|null',
+    },
+  },
 };
 
 function getSchemaForDocType(docType) {
