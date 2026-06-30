@@ -1,8 +1,12 @@
 # DEPUTYTASK — Hardening harness doppio (HK-1 … HK-10)
 
 > **Creato**: 29/06/2026  
+> **Chiuso**: 30/06/2026  
+> **Stato**: CHIUSO — TEST OK  
+> **PR**: #191 mergiata su `main` il 30/06/2026  
+> **Deploy VPS**: completato 30/06/2026 (deploy-manifest aggiornato + norm_access_log migrata)  
 > **Piano dettagliato**: [`PLAN_HARNESS_HARDENING_SLICES.md`](PLAN_HARNESS_HARDENING_SLICES.md)  
-> **Branch**: `cursor/harness-hardening-hk-6b60`  
+> **Branch**: `cursor/harness-hardening-hk-6b60` (mergiato)  
 > **Base**: `main`
 
 ---
