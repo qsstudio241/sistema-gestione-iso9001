@@ -1439,7 +1439,11 @@ async function analyzeRequirements(req, res) {
             feature: 'review_requirements',
             case_id: caseId,
             suggestion,
-            _aiMeta: { provider, model: result.model, contextSummary: built.contextSummary },
+            _aiMeta: {
+                provider,
+                model: result.model,
+                contextSummary: (built.contextSummary || '').substring(0, 500),
+            },
         });
     } catch (err) {
         logger.error('analyzeRequirements', err.message);
