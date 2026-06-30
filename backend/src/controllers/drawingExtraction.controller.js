@@ -288,8 +288,71 @@ async function reviewRequirement(req, res) {
     }
 }
 
+/**
+ * GET /cases/:caseId/extracted-requirements-summary
+ * Aggrega TUTTI i requisiti estratti da job 'done' sul caso (fonte disegni e testi),
+ * filtrati per review_status non rifiutato. Usato dalla tab Checklist per la
+ * pre-popolazione assistita (SLICE B — suggerimenti AI da documenti).
+ */
+async function getExtractedRequirementsSummary(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseId(req.params.caseId);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+
+        if (!(await caseBelongsToOrg(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+
+        const result = await query(
+            `
+            SELECT
+                r.id,
+                r.req_type,
+                r.field_key,
+                r.value_text,
+                r.unit,
+                r.confidence,
+                r.review_status,
+                e.source,
+                e.provider,
+                e.id AS extraction_id
+            FROM commercial_case_extracted_requirements r
+            INNER JOIN commercial_case_drawing_extractions e ON e.id = r.extraction_id
+            INNER JOIN commercial_cases c ON c.id = e.case_id
+            WHERE c.id = @caseId
+              AND c.organization_id = @organizationId
+              AND e.status = 'done'
+              AND r.review_status IN ('extracted', 'confirmed', 'edited')
+            ORDER BY r.req_type ASC, r.confidence DESC, r.id ASC
+            `,
+            { caseId, organizationId },
+        );
+
+        const requirements = result.recordset;
+
+        // Raggruppa per req_type per facilitare la visualizzazione nel pannello
+        const byType = {};
+        for (const r of requirements) {
+            if (!byType[r.req_type]) byType[r.req_type] = [];
+            byType[r.req_type].push(r);
+        }
+
+        return res.json({
+            case_id: caseId,
+            total: requirements.length,
+            requirements,
+            by_type: byType,
+        });
+    } catch (err) {
+        logger.error('getExtractedRequirementsSummary', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 module.exports = {
     startExtraction,
     getExtraction,
     reviewRequirement,
+    getExtractedRequirementsSummary,
 };
