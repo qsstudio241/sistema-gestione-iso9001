@@ -145,8 +145,8 @@ function AppContent() {
         <Route path="/reclami"          element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
         <Route path="/anagrafiche"      element={<LicensedRoute moduleKey="reclami"><AnagrafichePage /></LicensedRoute>} />
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
-        <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_assist"><AiAssistantPage /></LicensedRoute>} />
-        <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_assist"><KnowledgeHealthPage /></LicensedRoute>} />
+        <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
+        <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />
         <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
 
