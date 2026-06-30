@@ -11,6 +11,19 @@
 
 ---
 
+
+## Harness agentico (workflow Cursor)
+
+Il progetto usa **Cursor** come IDE con modello Lead/Deputy ([ADR-015](docs/adr/ADR-015-cursor-lead-deputy-workflow.md)):
+- **Lead**: pianifica, decide architettura, prepara brief in `docs/agent-tasks/DEPUTYTASK.md`
+- **Deputy**: esegue task circoscritti, commit atomici, test L1, apre PR
+
+Regole operative: [`.cursor/rules/sgq-operating-memory.mdc`](.cursor/rules/sgq-operating-memory.mdc) | Metodo slice: [`.cursor/rules/sgq-workflow-method.mdc`](.cursor/rules/sgq-workflow-method.mdc)
+
+Architettura AI runtime: [ADR-010](docs/adr/ADR-010-ai-agentic-architecture.md) (NormBroker, RAG, licenze, audit trail)
+
+---
+
 ## Cos'è il progetto
 
 **Sistema Gestione Qualità ISO 9001** — PWA offline-first per la gestione degli audit interni ISO 9001:2015.  
