@@ -276,6 +276,9 @@ export default function ContractReviewPage() {
   const [attachDirection, setAttachDirection] = useState('in');
   const [attachSupplierId, setAttachSupplierId] = useState('');
   const [attachAnalysisStarted, setAttachAnalysisStarted] = useState(false);
+  // Multi-file upload: progresso e errori parziali (SLICE C)
+  const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName } | null
+  const [uploadPartialErrors, setUploadPartialErrors] = useState([]); // [{ fileName, error }]
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
   const [companies, setCompanies] = useState([]);
@@ -622,30 +625,57 @@ export default function ContractReviewPage() {
   }
 
   async function handleUploadAttachment(e) {
-    const file = e.target.files?.[0];
-    if (!caseId || !file) return;
+    const files = Array.from(e.target.files || []);
+    if (!caseId || !files.length) return;
     setError(null);
     setAttachAnalysisStarted(false);
-    try {
-      const result = await apiService.uploadContractReviewAttachment(caseId, file, {
-        doc_role: attachDocRole || 'other',
-        direction: attachDirection,
-        counterparty: attachCounterparty,
-      });
-      if (result?.analysis_job_id != null) {
-        setAttachAnalysisStarted(true);
-        setTimeout(() => setAttachAnalysisStarted(false), 6000);
-      }
-      await loadDetail(caseId);
+    setUploadPartialErrors([]);
+
+    let anyAnalysis = false;
+    const partialErrors = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ current: i + 1, total: files.length, fileName: file.name });
       try {
-        const tr = await apiService.getContractReviewTransitionOptions(caseId);
-        setTransitionOptions(tr?.options || []);
-      } catch {
-        /* ignore */
+        const result = await apiService.uploadContractReviewAttachment(caseId, file, {
+          doc_role: attachDocRole || 'other',
+          direction: attachDirection,
+          counterparty: attachCounterparty,
+        });
+        if (result?.analysis_job_id != null) anyAnalysis = true;
+      } catch (err) {
+        partialErrors.push({
+          fileName: file.name,
+          error: err instanceof ApiError ? err.message : err.message || 'Upload fallito',
+        });
       }
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Upload fallito');
     }
+
+    setUploadProgress(null);
+
+    if (partialErrors.length) {
+      setUploadPartialErrors(partialErrors);
+      if (partialErrors.length === files.length) {
+        // Tutti falliti: mostra errore globale
+        setError(`Upload fallito per ${files.length} file. Riprova.`);
+      }
+    }
+
+    if (anyAnalysis) {
+      setAttachAnalysisStarted(true);
+      setTimeout(() => setAttachAnalysisStarted(false), 6000);
+    }
+
+    // Ricarica dettaglio e transizioni dopo tutti gli upload (anche con errori parziali)
+    await loadDetail(caseId);
+    try {
+      const tr = await apiService.getContractReviewTransitionOptions(caseId);
+      setTransitionOptions(tr?.options || []);
+    } catch {
+      /* ignore */
+    }
+
     e.target.value = '';
   }
 
@@ -1369,8 +1399,28 @@ export default function ContractReviewPage() {
                           suppliers={suppliers}
                           suppliersLoadFailed={suppliersLoadFailed}
                         />
-                        <input type="file" accept="*/*" onChange={handleUploadAttachment} />
+                        <input
+                          type="file"
+                          accept="*/*"
+                          multiple
+                          disabled={uploadProgress != null}
+                          onChange={handleUploadAttachment}
+                        />
                       </div>
+                      {uploadProgress && (
+                        <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
+                          Caricamento {uploadProgress.current}/{uploadProgress.total}&hellip; {uploadProgress.fileName}
+                        </p>
+                      )}
+                      {uploadPartialErrors.length > 0 && (
+                        <div style={{ marginTop: '0.4rem' }}>
+                          {uploadPartialErrors.map((pe) => (
+                            <p key={pe.fileName} className="contract-review-error" style={{ marginBottom: 2 }}>
+                              {pe.fileName}: {pe.error}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                       {attachAnalysisStarted && (
                         <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
                           Analisi AI avviata in background — i risultati appariranno nel pannello Disegni o Analisi AI.
