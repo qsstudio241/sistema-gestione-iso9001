@@ -25,6 +25,7 @@ import './ContractReviewPage.css';
 const DOC_ROLE_OPTIONS = [
   { value: 'order', label: 'Ordine' },
   { value: 'rfq', label: 'RFQ' },
+  { value: 'capitolato', label: 'Capitolato' },
   { value: 'quote', label: 'Offerta' },
   { value: 'drawing', label: 'Disegno' },
   { value: 'other', label: 'Altro' },
@@ -274,6 +275,7 @@ export default function ContractReviewPage() {
   const [attachCounterparty, setAttachCounterparty] = useState('customer');
   const [attachDirection, setAttachDirection] = useState('in');
   const [attachSupplierId, setAttachSupplierId] = useState('');
+  const [attachAnalysisStarted, setAttachAnalysisStarted] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
   const [companies, setCompanies] = useState([]);
@@ -623,12 +625,17 @@ export default function ContractReviewPage() {
     const file = e.target.files?.[0];
     if (!caseId || !file) return;
     setError(null);
+    setAttachAnalysisStarted(false);
     try {
-      await apiService.uploadContractReviewAttachment(caseId, file, {
+      const result = await apiService.uploadContractReviewAttachment(caseId, file, {
         doc_role: attachDocRole || 'other',
         direction: attachDirection,
         counterparty: attachCounterparty,
       });
+      if (result?.analysis_job_id != null) {
+        setAttachAnalysisStarted(true);
+        setTimeout(() => setAttachAnalysisStarted(false), 6000);
+      }
       await loadDetail(caseId);
       try {
         const tr = await apiService.getContractReviewTransitionOptions(caseId);
@@ -1364,6 +1371,11 @@ export default function ContractReviewPage() {
                         />
                         <input type="file" accept="*/*" onChange={handleUploadAttachment} />
                       </div>
+                      {attachAnalysisStarted && (
+                        <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
+                          Analisi AI avviata in background — i risultati appariranno nel pannello Disegni o Analisi AI.
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
