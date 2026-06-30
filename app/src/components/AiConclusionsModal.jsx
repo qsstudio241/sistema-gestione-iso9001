@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useAiAssist } from "../hooks/useAiAssist";
 import apiService from "../services/apiService";
+import AiDisclaimer from "./AiDisclaimer";
 import "./AiConclusionsModal.css";
 
 const RECOMMENDATION_LABELS = {
@@ -186,6 +187,7 @@ export default function AiConclusionsModal({
             Accetta
           </button>
         </div>
+        <AiDisclaimer style={{ marginTop: '0.75rem' }} />
       </div>
     </div>
   );

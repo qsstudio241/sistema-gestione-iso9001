@@ -39,6 +39,10 @@ async function suggest(req, res) {
     let built;
     switch (feature) {
       case 'review_requirements':
+        logger.warn(
+          '[DEPRECATED] POST /ai/suggest feature=review_requirements — ' +
+          'migrate to POST /contract-reviews/:id/ai/analyze-requirements',
+        );
         built = await contextBuilder.buildReviewRequirementsContext({
           ...context,
           organizationId: req.user.organization_id,

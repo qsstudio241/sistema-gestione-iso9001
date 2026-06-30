@@ -77,3 +77,11 @@ database/backups/
 .cursorrrules
 
 backend/scripts/patch-test-db-config-vps.js
+
+# Cursor agent artefatti temporanei
+.cursor/_*.cjs
+.cursor/_*.mjs
+.cursor/rbac-smoke-*.txt
+.cursor/*-result.json
+.cursor/_pr-body-*.md
+
