@@ -1,8 +1,12 @@
 # ADR-001: Multi-Agent Workflow con Tool Approval Policy
 
+> ⚠️ **Stato: Superato da [ADR-015](ADR-015-cursor-lead-deputy-workflow.md)** (2026-06-30)  
+> Il workflow Planner/Implementer/Reviewer (GitHub Copilot) è stato sostituito dal modello **Lead/Deputy su Cursor**.  
+> Questo documento è conservato come storico. Per il workflow attivo, leggere ADR-015.
+
 ---
 
-**Stato**: Accettato  
+**Stato**: Superato da ADR-015  
 **Data**: 2025-12-14  
 **Autore**: System Architect  
 **Revisore**: GitHub Copilot  

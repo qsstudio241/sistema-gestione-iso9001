@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const { upload } = require('../config/multer');
 const ctrl = require('../controllers/contractReview.controller');
 
@@ -38,7 +39,7 @@ router.delete('/contract-reviews/:id/documents/:linkId', ...guard, ctrl.unlinkDo
 router.get('/contract-reviews/:id/attachments', ...guard, ctrl.listCaseAttachments);
 router.post('/contract-reviews/:id/attachments/upload', ...guard, multerSingle, ctrl.uploadCaseAttachment);
 
-router.post('/contract-reviews/:id/ai/analyze-requirements', ...guard, ctrl.analyzeRequirements);
+router.post('/contract-reviews/:id/ai/analyze-requirements', ...guard, logAiInteraction('review'), ctrl.analyzeRequirements);
 
 router.get('/contract-reviews/:id', ...guard, ctrl.getCase);
 router.put('/contract-reviews/:id', ...guard, ctrl.updateCase);

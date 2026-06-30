@@ -417,6 +417,23 @@ graph LR
 
 ---
 
+---
+
+## Stato implementazione 2026-06 (HK harness hardening)
+
+| Componente | Stato | Note |
+|---|---|---|
+| NormBroker v1 cascata | Implementato | local_db -> publicLaw connector (graceful); 
+orm_access_log |
+| Gap analysis MVP | Implementato | gapAnalysis.service, GET /gap-analysis (ai_norms), GapAnalysisPage.jsx |
+| Licenze AI | Implementato | i_import, i_assist, i_review, i_norms, i_chat — separate per feature |
+| Audit trail AI | Implementato | logAiInteraction su suggest, review, import, chat |
+| AiDisclaimer | Implementato | Footer non invasivo su 4 flussi: ContractReview, AiAssistant, AiConclusions, GapAnalysis |
+| Percorso canonico riesame | Implementato | POST /contract-reviews/:id/ai/analyze-requirements — unico path FE+BE |
+| UNI Store scraper | Non implementato | Solo lettura pubblica (no login). Da pianificare se necessario. |
+
+> Branch: cursor/harness-hardening-hk-6b60 — piano: docs/agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md
+
 ## Riferimenti
 
 - [ADR-009](ADR-009-multi-standard-architettura-per-norma.md) — AI-readiness checklist, licenze, pattern componenti

@@ -2012,6 +2012,13 @@ class ApiService {
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
+    async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
+        const qs = new URLSearchParams();
+        if (companyId) qs.set('companyId', String(companyId));
+        qs.set('standardCode', standardCode);
+        return this.get(`/gap-analysis?${qs.toString()}`);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);

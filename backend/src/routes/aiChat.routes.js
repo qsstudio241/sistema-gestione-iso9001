@@ -5,11 +5,11 @@ const { requireLicensedModule } = require('../middleware/moduleLicense.middlewar
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/aiChat.controller');
 
-// POST /ai/chat — chat assistente globale (richiede licenza ai_assist)
+// POST /ai/chat — chat assistente globale (richiede licenza ai_chat)
 router.post(
   '/ai/chat',
   authenticate,
-  requireLicensedModule('ai_assist'),
+  requireLicensedModule('ai_chat'),
   logAiInteraction('chat'),
   ctrl.aiChat
 );
