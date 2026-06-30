@@ -26,10 +26,10 @@ Chiudere i gap strutturali su **entrambi gli harness**:
 
 | Slice | Descrizione | Stato |
 |-------|-------------|-------|
-| HK-1 | Governance dev (ADR-015, legacy Copilot, encoding rules) | ⬜ |
-| HK-2 | GUIDA alleggerita + link roadmap | ⬜ |
-| HK-3 | `.gitignore` + archive stub + catalogo smoke | ⬜ |
-| HK-4 | Percorso canonico AI riesame | ⬜ |
+| HK-1 | Governance dev (ADR-015, legacy Copilot, encoding rules) | ✅ |
+| HK-2 | GUIDA alleggerita + link roadmap | ✅ |
+| HK-3 | `.gitignore` + archive stub + catalogo smoke | ✅ |
+| HK-4 | Percorso canonico AI riesame | ✅ |
 | HK-5 | Audit trail import + riesame + feedback | ⬜ |
 | HK-6 | Licenze AI (routes + admin UI) | ⬜ |
 | HK-7 | NormBroker v1 cascata + norm_access_log | ⬜ |
