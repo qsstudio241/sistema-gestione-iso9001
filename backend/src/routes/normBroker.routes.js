@@ -59,7 +59,7 @@ router.get('/norms/:standardCode/clauses', ...normGuard, async (req, res) => {
 router.get('/norms/:standardCode/clauses/:clauseRef', ...normGuard, async (req, res) => {
   try {
     const { standardCode, clauseRef } = req.params;
-    const row = await normBroker.getClauseText(standardCode, clauseRef);
+    const row = await normBroker.getClauseText(standardCode, clauseRef, { organizationId: req.user?.organization_id });
     if (!row) {
       return res.status(404).json({
         error: 'Clausola non trovata',
