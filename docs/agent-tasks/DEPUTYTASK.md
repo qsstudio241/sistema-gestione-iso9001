@@ -31,7 +31,7 @@ Chiudere i gap strutturali su **entrambi gli harness**:
 | HK-3 | `.gitignore` + archive stub + catalogo smoke | ✅ |
 | HK-4 | Percorso canonico AI riesame | ✅ |
 | HK-5 | Audit trail import + riesame + feedback | ✅ |
-| HK-6 | Licenze AI (routes + admin UI) | ⬜ |
+| HK-6 | Licenze AI (routes + admin UI) | ✅ |
 | HK-7 | NormBroker v1 cascata + norm_access_log | ⬜ |
 | HK-8 | Gap analysis MVP (API + pagina) | ⬜ |
 | HK-9 | Disclaimer AI + AiSuggestionInline | ⬜ |
