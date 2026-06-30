@@ -39,6 +39,7 @@ const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage")
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
+const GapAnalysisPage = React.lazy(() => import("./pages/GapAnalysisPage"));
 const AiAssistantPage = React.lazy(() => import("./pages/AiAssistantPage"));
 const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage"));
 const SearchPage = React.lazy(() => import("./pages/SearchPage"));
@@ -145,6 +146,7 @@ function AppContent() {
         <Route path="/reclami"          element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
         <Route path="/anagrafiche"      element={<LicensedRoute moduleKey="reclami"><AnagrafichePage /></LicensedRoute>} />
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
+        <Route path="/gap-analysis" element={<LicensedRoute moduleKey="ai_norms"><GapAnalysisPage /></LicensedRoute>} />
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />
