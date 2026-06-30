@@ -18,10 +18,6 @@ alwaysApply: true
 - Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:
   `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
-## Approvazione esplicita dell'utente
-- **Default**: esegui task in **autonomia** se rispetti golden rules e pattern del repo.
-- **Chiedere conferma solo se**: (1) strategia che contraddice best practice; (2) breaking change senza rollback; (3) decisione commerciale/legal non scritta; (4) azioni irreversibili (purge dati).
-
 - L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
 - **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
 
@@ -34,7 +30,7 @@ Per qualsiasi scelta tecnica con una best practice consolidata, applicarla diret
 - **Fix a basso rischio** (1-2 file, nessuna logica sync/DB): commit diretto senza smoke L3 manuale.
 Sollevare al committente SOLO: decisioni di prodotto, breaking change senza rollback, costi commerciali.
 
-## Approvazione esplicita dell'utente (solo eccezioni)
+## Approvazione esplicita dell'utente
 - **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purche' non tocchino schema DB produzione, segreti o contratti API senza piano.
 - **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrita' dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** puo' essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
 - **User rules globali in Cursor**: se una regola chat chiede "sempre approvazione prima di ogni modifica", per **questo repository** prevale questa sezione (`alwaysApply: true`). Per ridurre attriti ripetuti, il committente puo' **restringere o rimuovere** quella user rule duplicata e lasciare qui la policy vincolante.
@@ -173,17 +169,17 @@ Set-Location "C:\ProgettoISO\app"; & $node "node_modules\vite\bin\vite.js" build
 ## Riuso UI — regola "blocco unico" (best practice consolidata)
 Prima di implementare qualsiasi nuovo elemento UI (pulsante, textarea, sezione conteggio, allegati, menu esito) **verificare** se esiste gia' un componente o classe CSS nel codebase che svolge la stessa funzione. **Usare sempre quello esistente**, mai creare implementazioni parallele.
 
-Riferimento rapido — blocchi gia' collaudati da riutilizzare:
+Tavola completa: **[`docs/reference/LIBRERIA_UI_SGQ.md`](../../docs/reference/LIBRERIA_UI_SGQ.md)**
 
-| Elemento | Componente/classe da usare |
+Blocchi principali:
+
+| Elemento | Componente/classe |
 |---|---|
-| Pulsanti esito C/NC/OSS/OM/NA/NV | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` + `.active` (`ChecklistModule.css`) |
+| Pulsanti esito C/NC/OSS | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` (`ChecklistModule.css`) |
 | Textarea note/evidenze | `className="notes-textarea"` (`ChecklistModule.css`) |
-| **Domanda checklist (qualsiasi tipo)** | **`QuestionCard.jsx`** — props: `question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `auditId`, `customItemId`; slot `children` per contenuto extra. Usare per ISO, custom e qualsiasi futuro tipo di domanda. |
-| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook — supporta `customItemId` (migration 047) |
-| Preview allegati server | `AttachmentPreview.jsx` — supporta `questionId` (ISO) e `customItemId` (custom) |
-| Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` |
-| Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` (`CustomChecklistAuditView.css`) |
+| Domanda checklist | **`QuestionCard.jsx`** — ISO, custom, qualsiasi tipo |
+| Allegati (upload + preview) | `AttachmentSection.jsx` + `useAttachmentManager`; `AttachmentPreview.jsx` |
+| Disclaimer AI | `AiDisclaimer.jsx` (footer non invasivo — ADR-010 §9) |
 
 **Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
 
