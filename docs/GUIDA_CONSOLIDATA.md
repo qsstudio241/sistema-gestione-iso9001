@@ -61,6 +61,13 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | **Riuso UI «blocco unico»** | Prima di creare un elemento UI, verificare se esiste già un componente/classe nel repo (tabella in `sgq-operating-memory.mdc`). Usare sempre l'esistente. | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) |
 | **JSX: sequenze `\u` literal** | Gli escape `\uXXXX` tra tag JSX finiscono a schermo come testo. Metterli **dentro una stringa JS** (`{"\u26A0\uFE0F …"}`). | [Aggiornamento 22/05/2026 — JSX `\u`](archive/sessions/GUIDA_DIARIO_2026.md#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche) |
 
+### Harness agentico e AI runtime
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|---------------------|-----------|
+| **Harness hardening HK (giugno 2026)** — 10 slice verticali per chiudere i gap strutturali su governance Cursor, alleggerire la memoria operativa, completare il collare AI runtime (audit trail, licenze, NormBroker v1 cascata, gap analysis MVP, disclaimer). | Ogni feature AI ha un **endpoint canonico univoco** con licenza specifica (`ai_import`, `ai_assist`, `ai_review`, `ai_norms`, `ai_chat`). Audit trail (`logAiInteraction`) su ogni route AI. `AiDisclaimer` nei 4 flussi principali. `norm_access_log` per accessi non-locali. Gap analysis heuristica come Fase 2 ADR-010. | [`PLAN_HARNESS_HARDENING_SLICES.md`](agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md) · branch `cursor/harness-hardening-hk-6b60` |
+| **Workflow Lead/Deputy** — il deputy esegue slice atomiche, commit per slice, aggiorna `DEPUTYTASK.md` dopo ogni slice. Il Lead prepara il brief in `DEPUTYTASK.md` e `PLAN_…_SLICES.md`. | **Non** usare `.github/agents/` (legacy). Usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo. | [ADR-015](adr/ADR-015-cursor-lead-deputy-workflow.md) |
+
 ### Multi-tenant, RBAC e dati
 
 | Lezione | Regola da applicare | Dettaglio |
