@@ -163,7 +163,7 @@ async function getCase(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        const [historyRes, checklistRes, clarRes, docRes, attRes] = await Promise.all([
+        const [historyRes, checklistRes, clarRes, docRes, attRes, textAnalysisRes] = await Promise.all([
             query(
                 `
                 SELECT id, case_id, from_status, to_status, changed_by, reason, created_at
@@ -214,7 +214,33 @@ async function getCase(req, res) {
                 `,
                 { caseId },
             ).catch(() => ({ recordset: [] })),
+            // Ultima analisi AI del capitolato persistita (source='text'). .catch difensivo:
+            // se lo schema non è ancora migrato (colonna source assente) NON rompe il dettaglio.
+            query(
+                `
+                SELECT TOP 1 id, raw_response, created_at, completed_at
+                FROM commercial_case_drawing_extractions
+                WHERE case_id = @caseId AND organization_id = @organizationId
+                  AND source = 'text' AND status = 'done'
+                ORDER BY id DESC
+                `,
+                { caseId, organizationId },
+            ).catch(() => ({ recordset: [] })),
         ]);
+
+        let textAnalysis = null;
+        const taRow = textAnalysisRes.recordset[0];
+        if (taRow) {
+            let suggestion = null;
+            try {
+                suggestion = JSON.parse(
+                    String(taRow.raw_response).replace(/^```json\s*/i, '').replace(/\s*```$/i, ''),
+                );
+            } catch {
+                suggestion = { raw: taRow.raw_response };
+            }
+            textAnalysis = { id: taRow.id, created_at: taRow.created_at, suggestion };
+        }
 
         return res.json({
             case: caseRow,
@@ -223,6 +249,7 @@ async function getCase(req, res) {
             clarifications: clarRes.recordset,
             documents: docRes.recordset,
             attachments: attRes.recordset,
+            text_analysis: textAnalysis,
         });
     } catch (err) {
         logger.error('getCase', err.message);
@@ -1390,6 +1417,51 @@ async function importFromJob(req, res) {
     }
 }
 
+/**
+ * Persiste l'analisi AI del capitolato sul caso, riusando le tabelle della migrazione 101
+ * (job in commercial_case_drawing_extractions con source='text' + requisiti normalizzati in
+ * commercial_case_extracted_requirements). Difensivo: in caso di errore (es. schema non ancora
+ * migrato) NON deve far fallire l'analisi — ritorna null e logga.
+ * @returns {Promise<number|null>} id del job di analisi persistito, oppure null.
+ */
+async function persistTextAnalysis({ caseId, organizationId, userId, provider, suggestion, rawContent }) {
+    try {
+        const rawJson = rawContent != null
+            ? String(rawContent).substring(0, 1000000)
+            : JSON.stringify(suggestion).substring(0, 1000000);
+        const ins = await query(
+            `
+            INSERT INTO commercial_case_drawing_extractions
+              (organization_id, case_id, source, provider, status, raw_response, created_by, completed_at)
+            OUTPUT INSERTED.id
+            VALUES (@organizationId, @caseId, 'text', @provider, 'done', @raw, @userId, SYSDATETIME())
+            `,
+            { organizationId, caseId, provider: String(provider || 'unknown').substring(0, 30), raw: rawJson, userId: userId ?? null },
+        );
+        const analysisId = ins.recordset[0].id;
+
+        const requirements = Array.isArray(suggestion?.identified_requirements)
+            ? suggestion.identified_requirements
+            : [];
+        for (const r of requirements) {
+            const fieldKey = r.ref != null ? String(r.ref).substring(0, 100) : null;
+            const valueText = r.description != null ? String(r.description) : null;
+            await query(
+                `
+                INSERT INTO commercial_case_extracted_requirements
+                  (extraction_id, req_type, field_key, value_text)
+                VALUES (@extractionId, 'spec', @fieldKey, @valueText)
+                `,
+                { extractionId: analysisId, fieldKey, valueText },
+            );
+        }
+        return analysisId;
+    } catch (err) {
+        logger.error('persistTextAnalysis', err.message);
+        return null;
+    }
+}
+
 async function analyzeRequirements(req, res) {
     try {
         const provider = getActiveProvider();
@@ -1397,6 +1469,7 @@ async function analyzeRequirements(req, res) {
             return res.status(503).json({ error: 'Nessun provider AI configurato.', code: 'AI_NOT_CONFIGURED' });
         }
         const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
         const caseId = parseCaseId(req.params.id);
         if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
         const caseRow = await fetchCaseRow(caseId, organizationId);
@@ -1435,9 +1508,22 @@ async function analyzeRequirements(req, res) {
         } catch {
             suggestion = { raw: result.content };
         }
+
+        // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive
+        // al riaccesso e alimenta il riesame definitivo. Difensiva: non blocca la risposta.
+        const analysisId = await persistTextAnalysis({
+            caseId,
+            organizationId,
+            userId,
+            provider,
+            suggestion,
+            rawContent: result.content,
+        });
+
         return res.json({
             feature: 'review_requirements',
             case_id: caseId,
+            analysis_id: analysisId,
             suggestion,
             _aiMeta: {
                 provider,
