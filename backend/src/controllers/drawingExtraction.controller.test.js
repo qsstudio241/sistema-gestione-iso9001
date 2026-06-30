@@ -99,6 +99,37 @@ describe('drawingExtraction.controller — startExtraction', () => {
         expect(res.body.requirements).toHaveLength(1);
     });
 
+    test('idempotenza: re-estrazione rimuove requisiti e job precedenti dello stesso allegato', async () => {
+        installQueryMock({
+            caseRows: [{ id: 5 }],
+            attRows: [{ attachment_id: 99, storage_path: '/tmp/d.png', mime_type: 'image/png', file_name: 'd.png' }],
+            headRow: { id: 10, case_id: 5, status: 'done', organization_id: 1 },
+            reqRows: [{ id: 1, req_type: 'material', value_text: 'S355JR', review_status: 'extracted' }],
+        });
+        fs.readFile.mockResolvedValue(Buffer.from('PNG'));
+        service.extractFromFile.mockResolvedValue({
+            provider: 'gemini',
+            requirements: [{ req_type: 'material', value_text: 'S355JR' }],
+            raw: '{}',
+            model: 'gemini-2.5-flash',
+        });
+
+        const res = createRes();
+        await ctrl.startExtraction(baseReq({ caseId: '5', docId: '99' }), res);
+
+        const delReq = query.mock.calls.find((c) => /DELETE r\s+FROM commercial_case_extracted_requirements r/.test(c[0]));
+        const delJob = query.mock.calls.find((c) => /DELETE FROM commercial_case_drawing_extractions/.test(c[0]));
+        expect(delReq).toBeTruthy();
+        expect(delReq[1]).toMatchObject({ caseId: 5, docId: 99 });
+        expect(delJob).toBeTruthy();
+        // le DELETE devono precedere l'INSERT del nuovo job
+        const idxDelJob = query.mock.calls.findIndex((c) => /DELETE FROM commercial_case_drawing_extractions/.test(c[0]));
+        const idxInsJob = query.mock.calls.findIndex((c) => /INSERT INTO commercial_case_drawing_extractions/.test(c[0]));
+        expect(idxDelJob).toBeGreaterThanOrEqual(0);
+        expect(idxDelJob).toBeLessThan(idxInsJob);
+        expect(res.body.status).toBe('done');
+    });
+
     test('multi-tenant scope: case of another org returns 404', async () => {
         installQueryMock({ caseRows: [], attRows: [] });
         const res = createRes();

@@ -21,6 +21,15 @@ import {
 } from '../utils/contractReviewLabels';
 import './ContractReviewPage.css';
 
+// Ruoli documento di commessa (riusati dal form "Collega da registro" e da "Carica allegato caso").
+const DOC_ROLE_OPTIONS = [
+  { value: 'order', label: 'Ordine' },
+  { value: 'rfq', label: 'RFQ' },
+  { value: 'quote', label: 'Offerta' },
+  { value: 'drawing', label: 'Disegno' },
+  { value: 'other', label: 'Altro' },
+];
+
 /**
  * CoveragePanel — verifica copertura saldatori per una commessa collegata al riesame.
  * Mostra un selettore di progetto + tabella di copertura WPS/qualifiche.
@@ -366,7 +375,12 @@ export default function ContractReviewPage() {
         clarifications: data.clarifications || [],
         documents: data.documents || [],
         attachments: data.attachments || [],
+        textAnalysis: data.text_analysis || null,
       });
+      // Idrata l'analisi capitolato persistita (slice #2): al riapri il risultato è ancora lì.
+      if (data.text_analysis?.suggestion) {
+        setServerAiResult(data.text_analysis.suggestion);
+      }
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
       setEditCompanyId(c.company_id != null ? String(c.company_id) : '');
@@ -1297,11 +1311,11 @@ export default function ContractReviewPage() {
                           onChange={(e) => setAttachDocRole(e.target.value)}
                           aria-label="Ruolo documento"
                         >
-                          <option value="order">Ordine</option>
-                          <option value="rfq">RFQ</option>
-                          <option value="quote">Offerta</option>
-                          <option value="drawing">Disegno</option>
-                          <option value="other">Altro</option>
+                          {DOC_ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </select>
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
@@ -1324,6 +1338,17 @@ export default function ContractReviewPage() {
                     <div className="cr-form-row">
                       <label>Carica allegato caso</label>
                       <div className="cr-inline-fields">
+                        <select
+                          value={attachDocRole}
+                          onChange={(e) => setAttachDocRole(e.target.value)}
+                          aria-label="Ruolo documento allegato"
+                        >
+                          {DOC_ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
                           direction={attachDirection}

@@ -121,6 +121,28 @@ async function startExtraction(req, res) {
 
     const provider = extractionService.resolveProvider();
 
+    // Idempotenza (slice #3): ri-cliccare "Estrai" su uno stesso allegato non deve
+    // accumulare job/requisiti duplicati. Semantica "ultima estrazione vince": rimuovo
+    // le estrazioni precedenti dello stesso allegato (e i loro requisiti) prima di creare
+    // quella nuova. Lo scope (case_id + attachment_id) esclude per costruzione le analisi
+    // testo del capitolato (attachment_id NULL), che restano intatte.
+    await query(
+        `
+        DELETE r
+        FROM commercial_case_extracted_requirements r
+        INNER JOIN commercial_case_drawing_extractions e ON e.id = r.extraction_id
+        WHERE e.case_id = @caseId AND e.attachment_id = @docId
+        `,
+        { caseId, docId },
+    );
+    await query(
+        `
+        DELETE FROM commercial_case_drawing_extractions
+        WHERE case_id = @caseId AND attachment_id = @docId
+        `,
+        { caseId, docId },
+    );
+
     // Crea subito il record (status 'processing') così l'esito e' sempre tracciato.
     const ins = await query(
         `
