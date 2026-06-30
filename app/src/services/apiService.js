@@ -1637,6 +1637,18 @@ class ApiService {
         }
     }
 
+    async getIngestStaging(stagingId) {
+        return this.get(`/ingest-staging/${stagingId}`);
+    }
+
+    async confirmIngestStaging(stagingId, fields = {}) {
+        return this.post(`/ingest-staging/${stagingId}/confirm`, { fields });
+    }
+
+    async rejectIngestStaging(stagingId) {
+        return this.post(`/ingest-staging/${stagingId}/reject`, {});
+    }
+
     async commitImportJobFileToQualification(jobId, fileId, data = {}) {
         return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-qualification`, data);
     }
@@ -2000,6 +2012,13 @@ class ApiService {
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
+    async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
+        const qs = new URLSearchParams();
+        if (companyId) qs.set('companyId', String(companyId));
+        qs.set('standardCode', standardCode);
+        return this.get(`/gap-analysis?${qs.toString()}`);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);
@@ -2065,6 +2084,34 @@ class ApiService {
             if (err.name === 'AbortError') throw new Error('Timeout upload WPQR (180s)');
             throw err;
         }
+    }
+    async uploadWpsBatch(files, companyId) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('files', f));
+        if (companyId) fd.append('company_id', String(companyId));
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(`${this.baseUrl}/welding/wps/upload-batch`, {
+                method: 'POST', headers, body: fd, signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `Batch upload WPS fallito (${response.status})`);
+            }
+            return response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('Timeout upload WPS (180s)');
+            throw err;
+        }
+    }
+    async getIngestLearningStats(docType) {
+        const qs = docType ? `?doc_type=${encodeURIComponent(docType)}` : '';
+        return this.get(`/ingest-staging/learning-stats${qs}`);
     }
     async getWpsCoverage(projectId)    { return this.get(`/welding/wps/coverage?project_id=${projectId}`); }
 

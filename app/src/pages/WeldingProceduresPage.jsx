@@ -11,6 +11,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
+import WpsUploadButton from "../components/WpsUploadButton";
 import {
   resolveInitialQualificationsCompanyScope,
   persistQualificationsCompanyScope,
@@ -656,6 +657,13 @@ function WeldingProceduresPage() {
           <p className="wp-subtitle">Gestione WPS e WPQR {"\u2014"} ISO 3834 / EN ISO 15614</p>
         </div>
         <div className="wp-header-actions">
+          {activeTab === "wps" && (
+            <WpsUploadButton
+              companyId={companyScopeId}
+              companyName={companyScopeName}
+              onUploadComplete={() => { loadWPS(); }}
+            />
+          )}
           {activeTab === "wpqr" && (
             <WpqrUploadButton
               companyId={companyScopeId}

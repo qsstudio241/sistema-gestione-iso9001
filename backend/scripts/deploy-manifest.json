@@ -37,7 +37,10 @@
         "src/utils/excelDeadlineDetector.js",
         "src/utils/documentClassifier.js",
         "src/utils/weldingDesignation.js",
-        "src/utils/qualificationCoverage.js"
+        "src/utils/qualificationCoverage.js",
+        "src/utils/jsonRepair.js",
+        "src/utils/ruleFieldExtractors.js",
+        "src/utils/ocrExtractor.js"
       ]
     },
     {
@@ -60,7 +63,14 @@
         "src/services/qualificationSituazione.service.js",
         "src/services/personnelQualificationLink.service.js",
         "src/services/wpqrIngest.service.js",
-        "src/services/qualificationIngest.service.js"
+        "src/services/qualificationIngest.service.js",
+        "src/services/documentIngestPipeline.service.js",
+        "src/services/ingestStaging.service.js",
+        "src/services/ingestFeedback.service.js",
+        "src/services/ingestLearning.service.js",
+        "src/services/wpsIngest.service.js",
+        "src/services/normBroker.service.js",
+        "src/services/gapAnalysis.service.js"
       ]
     },
     {
@@ -137,10 +147,13 @@
         "src/controllers/auth.controller.js",
         "src/controllers/billing.controller.js",
         "src/controllers/aiChat.controller.js",
+        "src/controllers/aiAssist.controller.js",
+        "src/controllers/gapAnalysis.controller.js",
         "src/controllers/search.controller.js",
         "src/controllers/webdav.controller.js",
         "src/controllers/deadlines.controller.js",
         "src/controllers/welding.controller.js",
+        "src/controllers/ingestStaging.controller.js",
         "src/controllers/reportTemplate.controller.js",
         "src/controllers/alert.controller.js",
         "src/controllers/notifications.controller.js",
@@ -175,7 +188,13 @@
         "src/routes/contractReview.routes.js",
         "src/routes/drawingExtraction.routes.js",
         "src/routes/equipment.routes.js",
-        "src/routes/ndtReports.routes.js"
+        "src/routes/ndtReports.routes.js",
+        "src/routes/welding.routes.js",
+        "src/routes/ingestStaging.routes.js",
+        "src/routes/normBroker.routes.js",
+        "src/routes/gapAnalysis.routes.js",
+        "src/routes/aiAssist.routes.js",
+        "src/routes/aiChat.routes.js"
       ]
     },
     {

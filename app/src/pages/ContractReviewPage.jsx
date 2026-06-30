@@ -6,11 +6,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiService, { ApiError } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useStorage } from '../contexts/StorageContext';
-import { resolveAutoStandardFromAudit } from '../utils/aiAssistantContext';
 import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
-import { useAiAssist } from '../hooks/useAiAssist';
 import AiSuggestionInline from '../components/AiSuggestionInline';
+import AiDisclaimer from '../components/AiDisclaimer';
 import {
   STATUS_LABELS,
   TERMINAL_STATUSES,
@@ -277,9 +276,6 @@ export default function ContractReviewPage() {
   const [attachSupplierId, setAttachSupplierId] = useState('');
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
-  const [serverAiResult, setServerAiResult] = useState(null);
-  const [serverAiLoading, setServerAiLoading] = useState(false);
-
   const [companies, setCompanies] = useState([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -307,13 +303,15 @@ export default function ContractReviewPage() {
   const [aiCompanyContextId, setAiCompanyContextId] = useState('');
   const [applyAiBusy, setApplyAiBusy] = useState(false);
 
-  const {
-    suggest,
-    suggestion: aiSuggestion,
-    loading: aiLoading,
-    error: aiHookError,
-    clear: clearAi,
-  } = useAiAssist();
+  // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHookError, setAiHookError] = useState(null);
+
+  function clearAi() {
+    setAiSuggestion(null);
+    setAiHookError(null);
+  }
 
   const companiesById = useMemo(() => {
     const m = new Map();
@@ -448,10 +446,10 @@ export default function ContractReviewPage() {
 
   useEffect(() => {
     if (!caseId) {
-      clearAi();
-      setServerAiResult(null);
+      setAiSuggestion(null);
+      setAiHookError(null);
     }
-  }, [caseId, clearAi]);
+  }, [caseId]);
 
   async function handleSaveCaseMeta() {
     if (!caseId || !detail?.case) return;
@@ -644,21 +642,6 @@ export default function ContractReviewPage() {
     e.target.value = '';
   }
 
-  async function handleServerAiAnalysis() {
-    if (!caseId) return;
-    setServerAiLoading(true);
-    setError(null);
-    try {
-      const res = await apiService.analyzeContractRequirements(caseId, {
-        capitolatoText: capitolatoText.trim() || undefined,
-      });
-      setServerAiResult(res?.suggestion || res);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Analisi server fallita');
-    } finally {
-      setServerAiLoading(false);
-    }
-  }
 
   async function handleGenerateChecklist(phase) {
     if (!caseId) return;
@@ -685,37 +668,43 @@ export default function ContractReviewPage() {
   async function handleRunAiAnalysis() {
     const text = capitolatoText.trim();
     if (!text) {
-      setError('Incolla o carica il testo del capitolato prima di avviare l’analisi.');
+      setError("Incolla o carica il testo del capitolato prima di avviare l’analisi.");
       return;
     }
-    const caseCompanyId = detail?.case?.company_id;
-    const companyIdRaw =
-      caseCompanyId != null
-        ? String(caseCompanyId)
-        : aiCompanyContextId || '';
-    const companyId = parseInt(companyIdRaw, 10);
-    if (!Number.isFinite(companyId) || companyId <= 0) {
-      setError('Associa un\'azienda SGQ (capacità) al caso prima di avviare l\'analisi.');
+    if (!caseId) return;
+    if (!detail?.case?.company_id) {
+      setError("Associa un’azienda SGQ (capacità) al caso prima di avviare l’analisi.");
       return;
     }
     setError(null);
-    const autoStd = resolveAutoStandardFromAudit(currentAudit?.metadata?.selectedStandards);
-    const standardEntries = getSelectedStandardEntries(
-      currentAudit?.metadata?.selectedStandards || []
-    );
-    const standardCodes = standardEntries.length
-      ? standardEntries.map((e) => e.key)
-      : undefined;
-    await suggest('review_requirements', {
-      capitolatoText: text,
-      companyId,
-      commercialCustomerName: detail?.case?.commercial_customer_name || undefined,
-      commercialCustomerRef: detail?.case?.commercial_customer_ref || undefined,
-      standardCodes,
-      standardId: autoStd?.standardId ?? null,
-    });
+    setAiLoading(true);
+    setAiHookError(null);
+    setAiSuggestion(null);
+    try {
+      const standardEntries = getSelectedStandardEntries(
+        currentAudit?.metadata?.selectedStandards || []
+      );
+      const standardCodes = standardEntries.length
+        ? standardEntries.map((e) => e.key)
+        : undefined;
+      const res = await apiService.analyzeContractRequirements(caseId, {
+        capitolatoText: text,
+        standardCodes,
+      });
+      setAiSuggestion(res?.suggestion || res);
+    } catch (err) {
+      let msg = (err instanceof ApiError && err.data?.error) || err.message || "Analisi AI fallita";
+      if (err instanceof ApiError && err.status === 429) {
+        const waitSec = err.data?.retryAfterMs ? Math.ceil(err.data.retryAfterMs / 1000) : null;
+        msg = waitSec
+          ? `Troppe richieste al server. Attendi circa ${waitSec} secondi e riprova.`
+          : "Troppe richieste al server. Attendi qualche minuto e riprova.";
+      }
+      setAiHookError(msg);
+    } finally {
+      setAiLoading(false);
+    }
   }
-
   async function handleApplyAiToPreliminary() {
     if (!caseId || !detail?.checklist?.length || !aiSuggestion) return;
     const prelim = detail.checklist.filter((c) => c.phase === 'preliminary');
@@ -1483,15 +1472,7 @@ export default function ContractReviewPage() {
                     disabled={aiLoading}
                     onClick={() => handleRunAiAnalysis()}
                   >
-                    {aiLoading ? 'Analisi…' : 'Analisi AI (client)'}
-                  </button>
-                  <button
-                    type="button"
-                    className="cr-btn"
-                    disabled={serverAiLoading}
-                    onClick={() => handleServerAiAnalysis()}
-                  >
-                    {serverAiLoading ? 'Analisi server…' : 'Analisi AI (server)'}
+                    {aiLoading ? 'Analisi…' : 'Analisi AI'}
                   </button>
                   {aiSuggestion && (
                     <button type="button" className="cr-btn" onClick={() => clearAi()}>
@@ -1590,27 +1571,11 @@ export default function ContractReviewPage() {
                   </>
                 )}
 
-                {serverAiResult && (
-                  <div className="cr-server-ai-block" style={{ marginTop: '1rem' }}>
-                    <h3 style={{ fontSize: '0.95rem' }}>Risultato analisi server</h3>
-                    <pre className="cr-server-ai-json">
-                      {typeof serverAiResult === 'string'
-                        ? serverAiResult
-                        : JSON.stringify(serverAiResult, null, 2)}
-                    </pre>
-                    <button
-                      type="button"
-                      className="cr-btn"
-                      onClick={() => setServerAiResult(null)}
-                    >
-                      Chiudi risultato server
-                    </button>
-                  </div>
-                )}
               </div>
               )}
             </>
           )}
+          <AiDisclaimer style={{ marginTop: '1rem' }} />
         </>
       )}
 

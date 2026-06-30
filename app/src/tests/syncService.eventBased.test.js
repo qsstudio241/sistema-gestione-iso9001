@@ -131,13 +131,34 @@ describe('SyncService — T3 event-based', () => {
             expect(parsed).toEqual({ conformity_status: 'NC', notes: 'evidenza NC' });
         });
 
-        it('con status null → event_type response_cleared, new_value null', async () => {
+        it('con status null e note vuote → event_type response_cleared, new_value null', async () => {
             const enqueueSpy = vi.spyOn(service, 'enqueue');
             await service.enqueueResponseEvent('audit-uuid-3', 30, null);
 
             const { event } = enqueueSpy.mock.calls[0][1];
             expect(event.event_type).toBe('response_cleared');
             expect(event.new_value).toBeNull();
+        });
+
+        it('con sole note (senza esito) → response_set con conformity_status null', async () => {
+            const enqueueSpy = vi.spyOn(service, 'enqueue');
+            await service.enqueueResponseEvent('audit-uuid-notes', 100, null, 'Nota dettata');
+
+            const { event } = enqueueSpy.mock.calls[0][1];
+            expect(event.event_type).toBe('response_set');
+            expect(JSON.parse(event.new_value)).toEqual({
+                conformity_status: null,
+                notes: 'Nota dettata',
+            });
+        });
+
+        it('con status null ma note presenti → response_set (non cleared)', async () => {
+            const enqueueSpy = vi.spyOn(service, 'enqueue');
+            await service.enqueueResponseEvent('audit-uuid-3b', 30, null, 'resta la nota');
+
+            const { event } = enqueueSpy.mock.calls[0][1];
+            expect(event.event_type).toBe('response_set');
+            expect(JSON.parse(event.new_value).notes).toBe('resta la nota');
         });
 
         it('event ha idempotency_key, client_ts, device_type', async () => {

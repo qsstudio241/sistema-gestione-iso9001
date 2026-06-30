@@ -152,8 +152,8 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 | Tag | File | Note |
 |-----|------|------|
 | attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI |
-| tooling | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot |
-| tooling | [../.github/agents/](../.github/agents/) | Planner / Implementer / Reviewer |
+| **legacy** | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot — **non usare** (superato da ADR-015) |
+| **legacy** | [../.github/agents/](../.github/agents/) | Planner / Implementer / Reviewer — **non usare** (superato da ADR-015) |
 | attivo | [../app/README.md](../app/README.md), [../backend/README.md](../backend/README.md) | Avvio moduli |
 
 ---
