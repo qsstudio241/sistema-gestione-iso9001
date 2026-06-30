@@ -9,6 +9,7 @@ import { useStorage } from '../contexts/StorageContext';
 import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
 import AiSuggestionInline from '../components/AiSuggestionInline';
+import AiDisclaimer from '../components/AiDisclaimer';
 import {
   STATUS_LABELS,
   TERMINAL_STATUSES,
@@ -1549,6 +1550,7 @@ export default function ContractReviewPage() {
               )}
             </>
           )}
+          <AiDisclaimer style={{ marginTop: '1rem' }} />
         </>
       )}
 
