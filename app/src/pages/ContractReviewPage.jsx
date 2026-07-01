@@ -2,7 +2,7 @@
  * ContractReviewPage - Riesame requisiti contratto (commercial cases) + analisi AI capitolato
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import apiService, { ApiError } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useStorage } from '../contexts/StorageContext';
@@ -279,6 +279,11 @@ export default function ContractReviewPage() {
   // Multi-file upload: progresso e errori parziali (SLICE C)
   const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName } | null
   const [uploadPartialErrors, setUploadPartialErrors] = useState([]); // [{ fileName, error }]
+  // Polling auto-estrazione: { extractionId: number, attempts: number } | null
+  const [analysisPolling, setAnalysisPolling] = useState(null);
+  // Banner completamento polling: 'done' | 'error' | null
+  const [pollingBanner, setPollingBanner] = useState(null);
+  const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
   const [companies, setCompanies] = useState([]);
@@ -307,6 +312,13 @@ export default function ContractReviewPage() {
   const [capitolatoText, setCapitolatoText] = useState('');
   const [aiCompanyContextId, setAiCompanyContextId] = useState('');
   const [applyAiBusy, setApplyAiBusy] = useState(false);
+
+  // Stato pannello "Suggerimenti AI da documenti" (SLICE B — pre-popolazione checklist)
+  const [aiDocPanelExpanded, setAiDocPanelExpanded] = useState(false);
+  const [aiDocSummary, setAiDocSummary] = useState(null);
+  const [aiDocLoading, setAiDocLoading] = useState(false);
+  const [aiDocError, setAiDocError] = useState(null);
+  const [applyExtractedBusy, setApplyExtractedBusy] = useState(false);
 
   // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
   const [aiSuggestion, setAiSuggestion] = useState(null);
@@ -454,6 +466,42 @@ export default function ContractReviewPage() {
       setAiSuggestion(null);
       setAiHookError(null);
     }
+  }, [caseId]);
+
+  // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
+  // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
+  useEffect(() => {
+    if (!analysisPolling || !caseId) return;
+    const { extractionId, attempts } = analysisPolling;
+    if (attempts >= 10) {
+      setAnalysisPolling(null);
+      return;
+    }
+    const timerId = setTimeout(async () => {
+      try {
+        const data = await apiService.getDrawingExtraction(caseId, extractionId);
+        if (data.status !== 'processing') {
+          setAnalysisPolling(null);
+          setPollingBanner(data.status === 'done' ? 'done' : 'error');
+          setTimeout(() => setPollingBanner(null), 8000);
+          await loadDetail(caseId);
+        } else {
+          setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+        }
+      } catch {
+        // In caso di errore di rete, continua a ritentare fino al limite
+        setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+      }
+    }, 3000);
+    pollingTimerRef.current = timerId;
+    return () => clearTimeout(timerId);
+  }, [analysisPolling, caseId, loadDetail]);
+
+  // Pulizia polling al cambio commessa o unmount
+  useEffect(() => {
+    return () => {
+      if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+    };
   }, [caseId]);
 
   async function handleSaveCaseMeta() {
@@ -630,10 +678,9 @@ export default function ContractReviewPage() {
     setError(null);
     setAttachAnalysisStarted(false);
     setUploadPartialErrors([]);
-
     let anyAnalysis = false;
+    let lastAnalysisJobId = null;
     const partialErrors = [];
-
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       setUploadProgress({ current: i + 1, total: files.length, fileName: file.name });
@@ -643,7 +690,10 @@ export default function ContractReviewPage() {
           direction: attachDirection,
           counterparty: attachCounterparty,
         });
-        if (result?.analysis_job_id != null) anyAnalysis = true;
+        if (result?.analysis_job_id != null) {
+          anyAnalysis = true;
+          lastAnalysisJobId = result.analysis_job_id;
+        }
       } catch (err) {
         partialErrors.push({
           fileName: file.name,
@@ -651,23 +701,21 @@ export default function ContractReviewPage() {
         });
       }
     }
-
     setUploadProgress(null);
-
     if (partialErrors.length) {
       setUploadPartialErrors(partialErrors);
       if (partialErrors.length === files.length) {
-        // Tutti falliti: mostra errore globale
         setError(`Upload fallito per ${files.length} file. Riprova.`);
       }
     }
-
     if (anyAnalysis) {
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 6000);
+      setPollingBanner(null);
+      if (lastAnalysisJobId != null) {
+        setAnalysisPolling({ extractionId: lastAnalysisJobId, attempts: 0 });
+      }
     }
-
-    // Ricarica dettaglio e transizioni dopo tutti gli upload (anche con errori parziali)
     await loadDetail(caseId);
     try {
       const tr = await apiService.getContractReviewTransitionOptions(caseId);
@@ -675,7 +723,6 @@ export default function ContractReviewPage() {
     } catch {
       /* ignore */
     }
-
     e.target.value = '';
   }
 
@@ -781,6 +828,59 @@ export default function ContractReviewPage() {
       setError(err instanceof ApiError ? err.message : err.message || 'Applicazione AI fallita');
     } finally {
       setApplyAiBusy(false);
+    }
+  }
+
+  async function handleLoadAiDocSummary() {
+    if (!caseId) return;
+    setAiDocLoading(true);
+    setAiDocError(null);
+    try {
+      const data = await apiService.getExtractedRequirementsSummary(caseId);
+      setAiDocSummary(data);
+    } catch (err) {
+      setAiDocError(err instanceof ApiError ? err.message : err.message || 'Caricamento suggerimenti fallito');
+      setAiDocSummary(null);
+    } finally {
+      setAiDocLoading(false);
+    }
+  }
+
+  async function handleApplyExtractedToChecklist() {
+    if (!caseId || !detail?.checklist?.length || !aiDocSummary?.requirements?.length) return;
+    const prelim = detail.checklist.filter((c) => c.phase === 'preliminary');
+    if (!prelim.length) {
+      setError('Genera prima la checklist preliminare.');
+      return;
+    }
+    setApplyExtractedBusy(true);
+    setError(null);
+    try {
+      for (const item of prelim) {
+        // Non sovrascrivere voci che hanno già una risposta data dall'utente
+        if (item.answer && item.answer !== 'not_evaluated') continue;
+        let best = null;
+        let bestScore = 0;
+        const haystack = `${item.item_text || ''} ${item.item_ref || ''}`;
+        for (const r of aiDocSummary.requirements) {
+          const blob = `${r.value_text || ''} ${r.field_key || ''} ${r.req_type || ''}`;
+          const sc = overlapScore(haystack, blob);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = r;
+          }
+        }
+        if (!best || bestScore < 1) continue;
+        // Pre-popola solo le note; non cambio l'answer per lasciare la decisione all'utente
+        const notes = best.value_text || '';
+        if (!notes) continue;
+        await apiService.saveChecklistAnswer(caseId, item.id, { notes });
+      }
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Applicazione suggerimenti fallita');
+    } finally {
+      setApplyExtractedBusy(false);
     }
   }
 
@@ -1248,6 +1348,22 @@ export default function ContractReviewPage() {
                   </button>
                 </div>
 
+                {/* Pannello "Suggerimenti AI da documenti" — pre-popolazione assistita SLICE B */}
+                <AiDocSuggestionsPanel
+                  expanded={aiDocPanelExpanded}
+                  loading={aiDocLoading}
+                  error={aiDocError}
+                  summary={aiDocSummary}
+                  applyBusy={applyExtractedBusy}
+                  hasChecklist={checklistPreliminary.length > 0}
+                  onToggle={() => {
+                    const next = !aiDocPanelExpanded;
+                    setAiDocPanelExpanded(next);
+                    if (next && !aiDocSummary && !aiDocLoading) handleLoadAiDocSummary();
+                  }}
+                  onApply={handleApplyExtractedToChecklist}
+                />
+
                 <div className="cr-checklist-phase">
                   <h3 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem' }}>Preliminare</h3>
                   {checklistPreliminary.length === 0 ? (
@@ -1472,6 +1588,8 @@ export default function ContractReviewPage() {
                   caseId={detail.case.id}
                   attachments={detail.attachments}
                   disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  pollingActive={analysisPolling != null}
+                  pollingBanner={pollingBanner}
                 />
               )}
 
@@ -1930,11 +2048,117 @@ function confidenceColor(c) {
   return '#dc2626';
 }
 
+const REQ_TYPE_SOURCE_LABELS = {
+  delivery: 'Consegna',
+  legal: 'Legale',
+  commercial: 'Commerciale',
+  spec: 'Specifiche',
+  note: 'Nota',
+};
+
+/**
+ * AiDocSuggestionsPanel — Pannello collassabile "Suggerimenti AI da documenti".
+ * Mostra i requisiti estratti (disegni + testi) raggruppati per tipo e offre
+ * un pulsante per pre-popolare le note della checklist preliminare (SLICE B).
+ */
+function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, hasChecklist, onToggle, onApply }) {
+  const hasReqs = summary?.total > 0;
+
+  return (
+    <div style={{ marginBottom: 16, border: '1px solid #e0e7ef', borderRadius: 10, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', background: '#f0f6ff', border: 'none', cursor: 'pointer',
+          fontWeight: 600, fontSize: 14, color: '#1e40af',
+        }}
+      >
+        <span>{expanded ? '\u25B2' : '\u25BC'} {'\uD83E\uDD16'} Suggerimenti AI da documenti</span>
+        {summary != null && (
+          <span style={{ fontWeight: 400, fontSize: 12, color: '#4b5563' }}>
+            {summary.total} requisito{summary.total !== 1 ? 'i' : ''} estratto{summary.total !== 1 ? 'i' : ''}
+          </span>
+        )}
+      </button>
+
+      {expanded && (
+        <div style={{ padding: '12px 14px', background: '#fff' }}>
+          {loading && (
+            <p style={{ fontSize: 13, color: '#6b7280' }}>Caricamento suggerimenti AI&hellip;</p>
+          )}
+          {error && (
+            <div className="contract-review-error" style={{ marginBottom: 8 }}>{error}</div>
+          )}
+          {!loading && !error && summary != null && !hasReqs && (
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+              Nessun requisito estratto disponibile. Carica un disegno, un capitolato o un ordine PDF
+              e attendi il completamento dell&apos;analisi AI.
+            </p>
+          )}
+          {!loading && hasReqs && summary.by_type && (
+            <>
+              {Object.entries(summary.by_type).map(([type, reqs]) => (
+                <div key={type} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: 4, padding: '1px 6px', fontSize: 11 }}>
+                      {REQ_TYPE_LABELS[type] || REQ_TYPE_SOURCE_LABELS[type] || type}
+                    </span>
+                    <span style={{ color: '#6b7280', fontWeight: 400, marginLeft: 6 }}>{reqs.length} voci</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, listStyle: 'disc' }}>
+                    {reqs.slice(0, 6).map((r) => (
+                      <li key={r.id} style={{ fontSize: 13, color: '#1f2937', marginBottom: 2 }}>
+                        {r.value_text || '-'}
+                        {r.unit ? <small style={{ color: '#78909c' }}> {r.unit}</small> : null}
+                        {r.confidence != null && (
+                          <small style={{ color: r.confidence >= 0.75 ? '#16a34a' : r.confidence >= 0.4 ? '#d97706' : '#dc2626', marginLeft: 4 }}>
+                            {Math.round(r.confidence * 100)}%
+                          </small>
+                        )}
+                        {r.source && r.source !== 'drawing' && (
+                          <small style={{ color: '#9ca3af', marginLeft: 4 }}>({REQ_TYPE_SOURCE_LABELS[r.source] || r.source})</small>
+                        )}
+                      </li>
+                    ))}
+                    {reqs.length > 6 && (
+                      <li style={{ fontSize: 12, color: '#6b7280' }}>+{reqs.length - 6} altri&hellip;</li>
+                    )}
+                  </ul>
+                </div>
+              ))}
+
+              {hasChecklist && (
+                <button
+                  type="button"
+                  className="cr-btn cr-btn-primary"
+                  disabled={applyBusy}
+                  onClick={onApply}
+                  style={{ marginTop: 10 }}
+                >
+                  {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist preliminare'}
+                </button>
+              )}
+              {!hasChecklist && (
+                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>
+                  Genera prima la checklist preliminare per poter applicare i suggerimenti.
+                </p>
+              )}
+            </>
+          )}
+          <AiDisclaimer style={{ marginTop: 10 }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
  * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
  */
-function DrawingRequirementsPanel({ caseId, attachments, disabled }) {
+function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner }) {
   const drawings = useMemo(
     () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
     [attachments],
@@ -1982,6 +2206,23 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled }) {
       </p>
 
       {error && <div className="contract-review-error">{error}</div>}
+
+      {pollingActive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#1d4ed8' }}>
+          <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#1d4ed8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          Analisi AI in corso&hellip; i risultati appariranno automaticamente.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'done' && (
+        <div style={{ padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#166534' }}>
+          Analisi AI completata. I requisiti estratti sono disponibili qui sotto.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'error' && (
+        <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#991b1b' }}>
+          Analisi AI non riuscita. Verifica il log o riprova manualmente con &quot;Estrai requisiti&quot;.
+        </div>
+      )}
 
       {drawings.length === 0 ? (
         <p className="contract-review-intro">
