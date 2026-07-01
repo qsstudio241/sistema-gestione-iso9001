@@ -66,6 +66,7 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | Lezione | Regola da applicare | Dettaglio |
 |---------|---------------------|-----------|
 | **Harness hardening HK (giugno 2026)** — 10 slice verticali per chiudere i gap strutturali su governance Cursor, alleggerire la memoria operativa, completare il collare AI runtime (audit trail, licenze, NormBroker v1 cascata, gap analysis MVP, disclaimer). | Ogni feature AI ha un **endpoint canonico univoco** con licenza specifica (`ai_import`, `ai_assist`, `ai_review`, `ai_norms`, `ai_chat`). Audit trail (`logAiInteraction`) su ogni route AI. `AiDisclaimer` nei 4 flussi principali. `norm_access_log` per accessi non-locali. Gap analysis heuristica come Fase 2 ADR-010. | [`PLAN_HARNESS_HARDENING_SLICES.md`](agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md) · branch `cursor/harness-hardening-hk-6b60` |
+| **SAL Fase 0 — motore dati gap operativo (luglio 2026)** | Tabella `requirement_implementation_status` + storico `requirement_implementation_history` (mig. **117**). Servizio canonico `gapAnalysis.service.js`: `getGapMatrix`, `upsertStatus`, `seedForCompany` (macro-clausole N.N da `norm_requirements`). API licenza **`sal`**: `GET/POST /companies/:id/gap-matrix`, `GET/PUT /companies/:id/gap-statuses`. Distinto da `GET /gap-analysis` (euristica documenti, licenza `ai_norms`). Decisione ADR-009: stato persistito in tabella dedicata, non overlay su registro documenti. | [`MODULO_SAL_SCOPO_E_ROADMAP.md`](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §D/H Fase 0 |
 | **Workflow Lead/Deputy** — il deputy esegue slice atomiche, commit per slice, aggiorna `DEPUTYTASK.md` dopo ogni slice. Il Lead prepara il brief in `DEPUTYTASK.md` e `PLAN_…_SLICES.md`. | **Non** usare `.github/agents/` (legacy). Usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo. | [ADR-015](adr/ADR-015-cursor-lead-deputy-workflow.md) |
 
 ### Multi-tenant, RBAC e dati
@@ -1866,6 +1867,8 @@ Questa sezione consolida le decisioni operative per supportare **due flussi** co
 
 - **Flusso 1 — Audit di sistema**: checklist, esiti (C/NC/OSS/OM/NA/NV), pending issues, report Word.
 - **Flusso 2 — SAL/Sopralluoghi**: avanzamento implementazione requisiti (es. ISO 9001/14001/45001) + evidenze documentali + stati (discusso/in corso/da validare/completato).
+
+**Fase 0 backend (01/07/2026 — completata)**: motore dati `requirement_implementation_status` (mig. 117) con seed idempotente macro-clausole N.N; API sotto `/api/v1/companies/:companyId/gap-matrix` e `/gap-statuses` (licenza `sal`). UI `/sal` e feed Riesame §9.3 restano Fasi 1–4.
 
 ### Golden rules (da rispettare sempre)
 
