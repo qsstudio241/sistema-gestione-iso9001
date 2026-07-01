@@ -310,6 +310,13 @@ export default function ContractReviewPage() {
   const [aiCompanyContextId, setAiCompanyContextId] = useState('');
   const [applyAiBusy, setApplyAiBusy] = useState(false);
 
+  // Stato pannello "Suggerimenti AI da documenti" (SLICE B — pre-popolazione checklist)
+  const [aiDocPanelExpanded, setAiDocPanelExpanded] = useState(false);
+  const [aiDocSummary, setAiDocSummary] = useState(null);
+  const [aiDocLoading, setAiDocLoading] = useState(false);
+  const [aiDocError, setAiDocError] = useState(null);
+  const [applyExtractedBusy, setApplyExtractedBusy] = useState(false);
+
   // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -798,6 +805,59 @@ export default function ContractReviewPage() {
     }
   }
 
+  async function handleLoadAiDocSummary() {
+    if (!caseId) return;
+    setAiDocLoading(true);
+    setAiDocError(null);
+    try {
+      const data = await apiService.getExtractedRequirementsSummary(caseId);
+      setAiDocSummary(data);
+    } catch (err) {
+      setAiDocError(err instanceof ApiError ? err.message : err.message || 'Caricamento suggerimenti fallito');
+      setAiDocSummary(null);
+    } finally {
+      setAiDocLoading(false);
+    }
+  }
+
+  async function handleApplyExtractedToChecklist() {
+    if (!caseId || !detail?.checklist?.length || !aiDocSummary?.requirements?.length) return;
+    const prelim = detail.checklist.filter((c) => c.phase === 'preliminary');
+    if (!prelim.length) {
+      setError('Genera prima la checklist preliminare.');
+      return;
+    }
+    setApplyExtractedBusy(true);
+    setError(null);
+    try {
+      for (const item of prelim) {
+        // Non sovrascrivere voci che hanno già una risposta data dall'utente
+        if (item.answer && item.answer !== 'not_evaluated') continue;
+        let best = null;
+        let bestScore = 0;
+        const haystack = `${item.item_text || ''} ${item.item_ref || ''}`;
+        for (const r of aiDocSummary.requirements) {
+          const blob = `${r.value_text || ''} ${r.field_key || ''} ${r.req_type || ''}`;
+          const sc = overlapScore(haystack, blob);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = r;
+          }
+        }
+        if (!best || bestScore < 1) continue;
+        // Pre-popola solo le note; non cambio l'answer per lasciare la decisione all'utente
+        const notes = best.value_text || '';
+        if (!notes) continue;
+        await apiService.saveChecklistAnswer(caseId, item.id, { notes });
+      }
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Applicazione suggerimenti fallita');
+    } finally {
+      setApplyExtractedBusy(false);
+    }
+  }
+
   function handleCapitolatoFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1261,6 +1321,22 @@ export default function ContractReviewPage() {
                     Genera finale
                   </button>
                 </div>
+
+                {/* Pannello "Suggerimenti AI da documenti" — pre-popolazione assistita SLICE B */}
+                <AiDocSuggestionsPanel
+                  expanded={aiDocPanelExpanded}
+                  loading={aiDocLoading}
+                  error={aiDocError}
+                  summary={aiDocSummary}
+                  applyBusy={applyExtractedBusy}
+                  hasChecklist={checklistPreliminary.length > 0}
+                  onToggle={() => {
+                    const next = !aiDocPanelExpanded;
+                    setAiDocPanelExpanded(next);
+                    if (next && !aiDocSummary && !aiDocLoading) handleLoadAiDocSummary();
+                  }}
+                  onApply={handleApplyExtractedToChecklist}
+                />
 
                 <div className="cr-checklist-phase">
                   <h3 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem' }}>Preliminare</h3>
@@ -1924,6 +2000,112 @@ function confidenceColor(c) {
   if (c >= 0.75) return '#16a34a';
   if (c >= 0.4) return '#d97706';
   return '#dc2626';
+}
+
+const REQ_TYPE_SOURCE_LABELS = {
+  delivery: 'Consegna',
+  legal: 'Legale',
+  commercial: 'Commerciale',
+  spec: 'Specifiche',
+  note: 'Nota',
+};
+
+/**
+ * AiDocSuggestionsPanel — Pannello collassabile "Suggerimenti AI da documenti".
+ * Mostra i requisiti estratti (disegni + testi) raggruppati per tipo e offre
+ * un pulsante per pre-popolare le note della checklist preliminare (SLICE B).
+ */
+function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, hasChecklist, onToggle, onApply }) {
+  const hasReqs = summary?.total > 0;
+
+  return (
+    <div style={{ marginBottom: 16, border: '1px solid #e0e7ef', borderRadius: 10, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', background: '#f0f6ff', border: 'none', cursor: 'pointer',
+          fontWeight: 600, fontSize: 14, color: '#1e40af',
+        }}
+      >
+        <span>{expanded ? '\u25B2' : '\u25BC'} {'\uD83E\uDD16'} Suggerimenti AI da documenti</span>
+        {summary != null && (
+          <span style={{ fontWeight: 400, fontSize: 12, color: '#4b5563' }}>
+            {summary.total} requisito{summary.total !== 1 ? 'i' : ''} estratto{summary.total !== 1 ? 'i' : ''}
+          </span>
+        )}
+      </button>
+
+      {expanded && (
+        <div style={{ padding: '12px 14px', background: '#fff' }}>
+          {loading && (
+            <p style={{ fontSize: 13, color: '#6b7280' }}>Caricamento suggerimenti AI&hellip;</p>
+          )}
+          {error && (
+            <div className="contract-review-error" style={{ marginBottom: 8 }}>{error}</div>
+          )}
+          {!loading && !error && summary != null && !hasReqs && (
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+              Nessun requisito estratto disponibile. Carica un disegno, un capitolato o un ordine PDF
+              e attendi il completamento dell&apos;analisi AI.
+            </p>
+          )}
+          {!loading && hasReqs && summary.by_type && (
+            <>
+              {Object.entries(summary.by_type).map(([type, reqs]) => (
+                <div key={type} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: 4, padding: '1px 6px', fontSize: 11 }}>
+                      {REQ_TYPE_LABELS[type] || REQ_TYPE_SOURCE_LABELS[type] || type}
+                    </span>
+                    <span style={{ color: '#6b7280', fontWeight: 400, marginLeft: 6 }}>{reqs.length} voci</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, listStyle: 'disc' }}>
+                    {reqs.slice(0, 6).map((r) => (
+                      <li key={r.id} style={{ fontSize: 13, color: '#1f2937', marginBottom: 2 }}>
+                        {r.value_text || '-'}
+                        {r.unit ? <small style={{ color: '#78909c' }}> {r.unit}</small> : null}
+                        {r.confidence != null && (
+                          <small style={{ color: r.confidence >= 0.75 ? '#16a34a' : r.confidence >= 0.4 ? '#d97706' : '#dc2626', marginLeft: 4 }}>
+                            {Math.round(r.confidence * 100)}%
+                          </small>
+                        )}
+                        {r.source && r.source !== 'drawing' && (
+                          <small style={{ color: '#9ca3af', marginLeft: 4 }}>({REQ_TYPE_SOURCE_LABELS[r.source] || r.source})</small>
+                        )}
+                      </li>
+                    ))}
+                    {reqs.length > 6 && (
+                      <li style={{ fontSize: 12, color: '#6b7280' }}>+{reqs.length - 6} altri&hellip;</li>
+                    )}
+                  </ul>
+                </div>
+              ))}
+
+              {hasChecklist && (
+                <button
+                  type="button"
+                  className="cr-btn cr-btn-primary"
+                  disabled={applyBusy}
+                  onClick={onApply}
+                  style={{ marginTop: 10 }}
+                >
+                  {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist preliminare'}
+                </button>
+              )}
+              {!hasChecklist && (
+                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>
+                  Genera prima la checklist preliminare per poter applicare i suggerimenti.
+                </p>
+              )}
+            </>
+          )}
+          <AiDisclaimer style={{ marginTop: 10 }} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
