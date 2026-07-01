@@ -50,6 +50,7 @@ const NdtReportsPage = React.lazy(() => import("./pages/NdtReportsPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
 const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviewsPage"));
+const SALModule = React.lazy(() => import("./pages/SALModule"));
 const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
@@ -150,7 +151,7 @@ function AppContent() {
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />
-        <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
+        <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><SALModule /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/wps" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />

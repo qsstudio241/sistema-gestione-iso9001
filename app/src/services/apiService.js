@@ -2027,6 +2027,28 @@ class ApiService {
         return this.get(`/gap-analysis?${qs.toString()}`);
     }
 
+    // ─── SAL — Stato Avanzamento Lavori (motore gap operativo, licenza sal) ──
+
+    async getGapMatrix(companyId, { standardCode, dateFrom } = {}) {
+        const qs = new URLSearchParams();
+        if (standardCode) qs.set('standardCode', standardCode);
+        if (dateFrom) qs.set('dateFrom', dateFrom);
+        const query = qs.toString();
+        return this.get(`/companies/${companyId}/gap-matrix${query ? `?${query}` : ''}`);
+    }
+
+    async updateGapStatus(companyId, normRequirementId, payload) {
+        return this.put(`/companies/${companyId}/gap-statuses/${normRequirementId}`, payload);
+    }
+
+    async seedGapMatrix(companyId, { standardCodes } = {}) {
+        const body = {};
+        if (Array.isArray(standardCodes) && standardCodes.length) {
+            body.standardCodes = standardCodes;
+        }
+        return this.post(`/companies/${companyId}/gap-matrix/seed`, body);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);
