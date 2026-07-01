@@ -19,6 +19,7 @@ import {
   DIRECTION_LABELS,
   formatCommercialDocMetaBadge,
 } from '../utils/contractReviewLabels';
+import { hydrateDrawingRequirements } from '../utils/drawingExtractionHydrate';
 import './ContractReviewPage.css';
 
 // Ruoli documento di commessa (riusati dal form "Collega da registro" e da "Carica allegato caso").
@@ -1590,6 +1591,7 @@ export default function ContractReviewPage() {
                   disabled={TERMINAL_STATUSES.has(detail.case.status)}
                   pollingActive={analysisPolling != null}
                   pollingBanner={pollingBanner}
+                  onStartPolling={(extractionId) => setAnalysisPolling({ extractionId, attempts: 0 })}
                 />
               )}
 
@@ -2140,12 +2142,12 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
                   {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist preliminare'}
                 </button>
               )}
-              {!hasChecklist && (
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>
-                  Genera prima la checklist preliminare per poter applicare i suggerimenti.
-                </p>
-              )}
             </>
+          )}
+          {!loading && !hasChecklist && (
+            <p style={{ fontSize: 12, color: '#9ca3af', marginTop: hasReqs ? 8 : 0, marginBottom: 0 }}>
+              Genera prima la checklist preliminare con il pulsante sopra.
+            </p>
           )}
           <AiDisclaimer style={{ marginTop: 10 }} />
         </div>
@@ -2158,17 +2160,59 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
  * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
  * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
  */
-function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner }) {
+function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner, onStartPolling }) {
   const drawings = useMemo(
     () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
     [attachments],
   );
   const [busyId, setBusyId] = useState(null);
+  const [hydrating, setHydrating] = useState(false);
   const [error, setError] = useState(null);
   const [extraction, setExtraction] = useState(null);
   const [reqs, setReqs] = useState([]);
+  const [selectedDocId, setSelectedDocId] = useState(null);
+
+  useEffect(() => {
+    if (pollingActive || !caseId || drawings.length === 0) {
+      if (!caseId || drawings.length === 0) {
+        setExtraction(null);
+        setReqs([]);
+      }
+      return undefined;
+    }
+
+    let cancelled = false;
+    setHydrating(true);
+
+    (async () => {
+      try {
+        const result = await hydrateDrawingRequirements({
+          caseId,
+          drawings,
+          selectedDocId,
+          listDrawingExtractions: (id) => apiService.listDrawingExtractions(id),
+          getDrawingExtraction: (id, extId) => apiService.getDrawingExtraction(id, extId),
+          onStartPolling: (extractionId) => onStartPolling?.(extractionId),
+        });
+        if (cancelled) return;
+        if (result.targetDocId != null && selectedDocId == null) {
+          setSelectedDocId(result.targetDocId);
+        }
+        setExtraction(result.extraction);
+        setReqs(result.reqs);
+        setError(result.error);
+      } catch {
+        /* degrado gestito */
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [caseId, drawings, selectedDocId, pollingActive, pollingBanner, onStartPolling]);
 
   async function handleExtract(docId) {
+    setSelectedDocId(docId);
     setBusyId(docId);
     setError(null);
     try {
@@ -2183,6 +2227,11 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive
     } finally {
       setBusyId(null);
     }
+  }
+
+  function handleSelectDrawing(docId) {
+    setSelectedDocId(docId);
+    setError(null);
   }
 
   async function handleReview(reqId, patch) {
@@ -2236,7 +2285,18 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive
               key={d.attachment_id}
               style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
             >
-              <span style={{ fontWeight: 600 }}>{d.file_name}</span>
+              <button
+                type="button"
+                className="cr-btn"
+                style={{
+                  fontWeight: 600,
+                  border: selectedDocId === d.attachment_id ? '2px solid #2563eb' : undefined,
+                }}
+                disabled={disabled || hydrating}
+                onClick={() => handleSelectDrawing(d.attachment_id)}
+              >
+                {d.file_name}
+              </button>
               <button
                 type="button"
                 className="cr-btn cr-btn-primary"
@@ -2248,6 +2308,12 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive
             </li>
           ))}
         </ul>
+      )}
+
+      {hydrating && !extraction && (
+        <p className="contract-review-intro" style={{ marginTop: 12 }}>
+          Caricamento estrazioni salvate&hellip;
+        </p>
       )}
 
       {extraction && (
