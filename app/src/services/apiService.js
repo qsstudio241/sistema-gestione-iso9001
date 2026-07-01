@@ -1987,6 +1987,10 @@ class ApiService {
         return this.get(`/cases/${caseId}/extractions/${extractionId}`);
     }
 
+    async listDrawingExtractions(caseId) {
+        return this.get(`/cases/${caseId}/extractions`);
+    }
+
     async getExtractedRequirementsSummary(caseId) {
         return this.get(`/cases/${caseId}/extracted-requirements-summary`);
     }
