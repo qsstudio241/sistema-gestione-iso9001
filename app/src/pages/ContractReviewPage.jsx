@@ -2,7 +2,7 @@
  * ContractReviewPage - Riesame requisiti contratto (commercial cases) + analisi AI capitolato
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import apiService, { ApiError } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useStorage } from '../contexts/StorageContext';
@@ -276,6 +276,11 @@ export default function ContractReviewPage() {
   const [attachDirection, setAttachDirection] = useState('in');
   const [attachSupplierId, setAttachSupplierId] = useState('');
   const [attachAnalysisStarted, setAttachAnalysisStarted] = useState(false);
+  // Polling auto-estrazione: { extractionId: number, attempts: number } | null
+  const [analysisPolling, setAnalysisPolling] = useState(null);
+  // Banner completamento polling: 'done' | 'error' | null
+  const [pollingBanner, setPollingBanner] = useState(null);
+  const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
   const [companies, setCompanies] = useState([]);
@@ -460,6 +465,42 @@ export default function ContractReviewPage() {
     }
   }, [caseId]);
 
+  // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
+  // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
+  useEffect(() => {
+    if (!analysisPolling || !caseId) return;
+    const { extractionId, attempts } = analysisPolling;
+    if (attempts >= 10) {
+      setAnalysisPolling(null);
+      return;
+    }
+    const timerId = setTimeout(async () => {
+      try {
+        const data = await apiService.getDrawingExtraction(caseId, extractionId);
+        if (data.status !== 'processing') {
+          setAnalysisPolling(null);
+          setPollingBanner(data.status === 'done' ? 'done' : 'error');
+          setTimeout(() => setPollingBanner(null), 8000);
+          await loadDetail(caseId);
+        } else {
+          setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+        }
+      } catch {
+        // In caso di errore di rete, continua a ritentare fino al limite
+        setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+      }
+    }, 3000);
+    pollingTimerRef.current = timerId;
+    return () => clearTimeout(timerId);
+  }, [analysisPolling, caseId, loadDetail]);
+
+  // Pulizia polling al cambio commessa o unmount
+  useEffect(() => {
+    return () => {
+      if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+    };
+  }, [caseId]);
+
   async function handleSaveCaseMeta() {
     if (!caseId || !detail?.case) return;
     setSavingCase(true);
@@ -642,6 +683,9 @@ export default function ContractReviewPage() {
       if (result?.analysis_job_id != null) {
         setAttachAnalysisStarted(true);
         setTimeout(() => setAttachAnalysisStarted(false), 6000);
+        // Avvia polling per aggiornare il pannello Disegni senza refresh manuale
+        setPollingBanner(null);
+        setAnalysisPolling({ extractionId: result.analysis_job_id, attempts: 0 });
       }
       await loadDetail(caseId);
       try {
@@ -1498,6 +1542,8 @@ export default function ContractReviewPage() {
                   caseId={detail.case.id}
                   attachments={detail.attachments}
                   disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  pollingActive={analysisPolling != null}
+                  pollingBanner={pollingBanner}
                 />
               )}
 
@@ -2066,7 +2112,7 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
  * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
  * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
  */
-function DrawingRequirementsPanel({ caseId, attachments, disabled }) {
+function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner }) {
   const drawings = useMemo(
     () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
     [attachments],
@@ -2114,6 +2160,23 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled }) {
       </p>
 
       {error && <div className="contract-review-error">{error}</div>}
+
+      {pollingActive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#1d4ed8' }}>
+          <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#1d4ed8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          Analisi AI in corso&hellip; i risultati appariranno automaticamente.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'done' && (
+        <div style={{ padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#166534' }}>
+          Analisi AI completata. I requisiti estratti sono disponibili qui sotto.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'error' && (
+        <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#991b1b' }}>
+          Analisi AI non riuscita. Verifica il log o riprova manualmente con &quot;Estrai requisiti&quot;.
+        </div>
+      )}
 
       {drawings.length === 0 ? (
         <p className="contract-review-intro">
