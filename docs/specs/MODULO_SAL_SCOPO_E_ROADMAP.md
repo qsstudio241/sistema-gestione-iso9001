@@ -268,6 +268,8 @@ Stile repo: slice verticali (diagnosi → fix minimo → test L1 → deploy → 
 2. **ISO 3834 nel SAL?**: **No** (raccomandato). La saldatura ha un **modulo dedicato** (`saldatura`, WPS/WPQR/qualifiche, Sprint 5) con logica di processo diversa dall'HLS §4–10. Il SAL resta su ISO 9001 / 14001 / 45001.
 3. **Storico**: tabella `requirement_implementation_history` dedicata **oppure** temporal tables SQL Server (come `audit_responses`)? *Raccomandazione: valutare temporal tables per coerenza con T1.*
 
+4. **ADR-009 vs tabella dedicata (risolto Fase 0, 01/07/2026)**: l'ADR-009 proponeva un overlay di stato su `document_registry`. La **Fase 0** adotta invece la tabella dedicata `requirement_implementation_status` (mig. 117), allineata a §D di questa spec: ancoraggio `norm_requirement_id`, stati implementazione distinti da conformità audit, seed idempotente macro-clausole N.N. L'overlay registro resta solo per evidenze (`evidence_document_ids` → FK logiche a `document_registry`, Fase 3).
+
 ---
 
 ## K. Il motore gap come base per l'assistente AI del Riesame
