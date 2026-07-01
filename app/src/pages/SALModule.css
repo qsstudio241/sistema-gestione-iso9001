@@ -1,0 +1,320 @@
+/* SALModule.css — Stato Avanzamento Lavori (Sprint 4 Fase 1) */
+
+.sal-page {
+  padding: 24px 28px;
+  max-width: 1280px;
+}
+
+.sal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 4px;
+}
+
+.sal-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.sal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sal-scope-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.sal-scope-select {
+  min-width: 200px;
+  padding: 8px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.sal-scope-hint {
+  font-size: 13px;
+  color: #6b7280;
+  margin: -8px 0 12px;
+}
+
+.sal-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.sal-btn-primary {
+  background: #1e3a5f;
+  color: #fff;
+}
+
+.sal-btn-primary:hover:not(:disabled) {
+  background: #16304e;
+}
+
+.sal-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sal-btn-secondary {
+  background: #fff;
+  color: #1e3a5f;
+  border: 1.5px solid #d1d5db;
+}
+
+.sal-btn-secondary:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.sal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.sal-tab {
+  padding: 8px 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.sal-tab:hover {
+  border-color: #1e3a5f;
+}
+
+.sal-tab-active {
+  background: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
+}
+
+.sal-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.sal-summary-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sal-summary-item strong {
+  display: block;
+  font-size: 18px;
+  color: #1e3a5f;
+  margin-top: 2px;
+}
+
+.sal-error {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.sal-empty-scope {
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+}
+
+.sal-empty-scope-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.sal-std-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sal-std-9001 {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.sal-std-14001 {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.sal-std-45001 {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.sal-std-default {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.sal-clause-ref {
+  font-weight: 700;
+  color: #1e3a5f;
+  white-space: nowrap;
+}
+
+.sal-clause-title {
+  font-size: 13px;
+  color: #374151;
+  max-width: 280px;
+}
+
+.sal-status-select {
+  min-width: 130px;
+  padding: 6px 8px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.sal-status-select--discussed { border-color: #93c5fd; background: #eff6ff; }
+.sal-status-select--in_progress { border-color: #fde68a; background: #fffbeb; }
+.sal-status-select--to_validate { border-color: #fdba74; background: #fff7ed; }
+.sal-status-select--completed { border-color: #86efac; background: #f0fdf4; }
+.sal-status-select--na { border-color: #d1d5db; background: #f9fafb; }
+
+.sal-notes-preview {
+  font-size: 12px;
+  color: #6b7280;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sal-btn-edit {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+}
+
+.sal-btn-edit:hover {
+  background: #f3f4f6;
+}
+
+.sal-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.sal-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  padding: 20px 24px;
+}
+
+.sal-modal h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: #1e3a5f;
+}
+
+.sal-modal-clause {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 16px;
+}
+
+.sal-form-group {
+  margin-bottom: 14px;
+}
+
+.sal-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.sal-form-group input,
+.sal-form-group select,
+.sal-form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.sal-form-group textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.sal-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.sal-saving {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 8px;
+}

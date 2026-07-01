@@ -1,15 +1,15 @@
-# DEPUTYTASK — SAL Fase 0: motore dati gap analysis operativa
+# DEPUTYTASK — SAL Fase 1: UI griglia MVP `/sal`
 
 > **Creato**: 01/07/2026  
 > **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §D, §H Fase 0  
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 1  
 > **Base**: `main`
 
 ---
 
 ## Obiettivo
 
-Implementare il **motore dati** SAL (Stato Avanzamento Lavori): tabelle persistite clausola-per-clausola, API CRUD scope-aware, seed da `norm_requirements`, test L1 backend.
+Sostituire `ModuleLocked` con pagina SAL operativa: griglia requisiti × stati, ambito azienda, API gap-matrix, test L1 frontend.
 
 **Non toccato** (branch parallelo committente): `ContractReviewPage`, `contractReview.*`, `commercial_cases*`, drawing extraction.
 
@@ -19,40 +19,18 @@ Implementare il **motore dati** SAL (Stato Avanzamento Lavori): tabelle persisti
 
 | Voce | Esito |
 |------|-------|
-| Migration **117** `requirement_implementation_status` + `requirement_implementation_history` | ✅ applicata su produzione |
-| `gapAnalysis.service.js` — `getGapMatrix`, `listStatuses`, `upsertStatus`, `seedForCompany` | ✅ |
-| `gapAnalysis.controller.js` + `gapAnalysis.routes.js` (licenza `sal`) | ✅ |
-| Test Jest `gapAnalysis.service.test.js` (10 test) | ✅ PASS |
-| Deploy VPS controller | ✅ health OK |
-| UI `/sal`, export Word, feed Riesame | ⏭️ Fasi 1–4 (fuori scope) |
+| `SALModule.jsx` + `SALModule.css` — griglia `SgqDataGrid`, tab standard, seed, modal dettagli | ✅ |
+| `salCompanyScope.js` — persistenza localStorage + auto-select singola azienda | ✅ |
+| `salConstants.js` — stati/label/badge standard | ✅ |
+| `apiService` — `getGapMatrix`, `updateGapStatus`, `seedGapMatrix` | ✅ |
+| Route `/sal` → `SALModule`; menu sidebar senza lucchetto | ✅ |
+| Test Vitest `salModule.test.jsx` + `salCompanyScope.test.js` (6 test) | ✅ PASS |
+| Build Vite | ✅ OK |
 
----
-
-## API (licenza `sal`)
-
-| Metodo | Path | Descrizione |
-|--------|------|-------------|
-| GET | `/api/v1/companies/:companyId/gap-matrix?standardCode=&dateFrom=` | Matrice clausole N.N + stato |
-| GET | `/api/v1/companies/:companyId/gap-statuses?standardCode=` | Solo righe seedate |
-| PUT | `/api/v1/companies/:companyId/gap-statuses/:normRequirementId` | Upsert stato + storico |
-| POST | `/api/v1/companies/:companyId/gap-matrix/seed` | Seed idempotente `{ standardCodes?: [] }` |
-
-Stati ammessi: `discussed`, `in_progress`, `to_validate`, `completed`, `na`.
-
-**Distinto** da `GET /api/v1/gap-analysis` (euristica documenti, licenza `ai_norms`).
-
----
-
-## Script migrazione
-
-```powershell
-node backend/scripts/run-migration-117-local.js production
-# VPS (se necessario):
-.\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-117-vps.js
-```
+**Fuori scope (Fasi 2+)**: export Word SAL, storico revisioni UI, integrazioni audit/NC, feed Riesame.
 
 ---
 
 ## Chiusura
 
-TEST OK — Fase 0 backend completata. Prossimo step: **Fase 1 UI griglia `/sal`**.
+TEST OK — Fase 1 UI completata. Prossimo step: **Fase 2 export Word + storico**.

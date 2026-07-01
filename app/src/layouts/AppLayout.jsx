@@ -65,7 +65,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/gap-analysis",      icon: "📊", label: "Gap Analysis",        licenseKey: "ai_norms" },
         { to: "/ai-assistant",     icon: "🤖", label: "Assistente AI",      licenseKey: "ai_chat" },
         ...(isAdmin ? [{ to: "/ai-knowledge-health", icon: "🩺", label: "Knowledge Health", licenseKey: "ai_chat" }] : []),
-        { to: "/sal",              icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
+        { to: "/sal",              icon: "📊", label: "SAL", licenseKey: "sal" },
       ]),
     },
     // Modulo Saldatura
