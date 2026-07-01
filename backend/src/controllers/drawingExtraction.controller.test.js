@@ -167,6 +167,55 @@ describe('drawingExtraction.controller — startExtraction', () => {
     });
 });
 
+describe('drawingExtraction.controller — getExtraction', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('returns extraction with requirements when scoped to org', async () => {
+        installQueryMock({
+            caseRows: [{ id: 5 }],
+            headRow: { id: 10, case_id: 5, status: 'done', organization_id: 1, attachment_id: 99 },
+            reqRows: [{ id: 1, req_type: 'material', value_text: 'S355JR', review_status: 'extracted' }],
+        });
+        const res = createRes();
+        await ctrl.getExtraction(baseReq({ caseId: '5', id: '10' }), res);
+        expect(res.body.status).toBe('done');
+        expect(res.body.requirements).toHaveLength(1);
+    });
+});
+
+describe('drawingExtraction.controller — listExtractions', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('returns jobs ordered for case with org scope', async () => {
+        query.mockImplementation((sqlText) => {
+            if (/FROM commercial_cases WHERE id/.test(sqlText)) return { recordset: [{ id: 5 }] };
+            if (/FROM commercial_case_drawing_extractions e/.test(sqlText) && /ORDER BY e.created_at DESC/.test(sqlText)) {
+                return {
+                    recordset: [
+                        { id: 12, attachment_id: 99, status: 'done', case_id: 5 },
+                        { id: 11, attachment_id: 99, status: 'error', case_id: 5 },
+                    ],
+                };
+            }
+            return { recordset: [] };
+        });
+        const res = createRes();
+        await ctrl.listExtractions(baseReq({ caseId: '5' }), res);
+        expect(res.body.extractions).toHaveLength(2);
+        expect(res.body.extractions[0].id).toBe(12);
+    });
+
+    test('multi-tenant scope: case of another org returns 404', async () => {
+        query.mockImplementation((sqlText) => {
+            if (/FROM commercial_cases WHERE id/.test(sqlText)) return { recordset: [] };
+            return { recordset: [] };
+        });
+        const res = createRes();
+        await ctrl.listExtractions(baseReq({ caseId: '5' }), res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+});
+
 describe('drawingExtraction.controller — reviewRequirement', () => {
     beforeEach(() => jest.clearAllMocks());
 

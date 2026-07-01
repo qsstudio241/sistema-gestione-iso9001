@@ -3,6 +3,7 @@
  *
  * Endpoint (montati su /api/v1):
  *   POST  /cases/:caseId/documents/:docId/extract   avvia estrazione (sincrona, MVP)
+ *   GET   /cases/:caseId/extractions                 lista job per commessa (ultimi per allegato)
  *   GET   /cases/:caseId/extractions/:id             stato + requisiti estratti
  *   PATCH /extracted-requirements/:id                revisione umana (conferma/modifica/rifiuta)
  *
@@ -203,6 +204,39 @@ async function startExtraction(req, res) {
     }
 }
 
+/** GET /cases/:caseId/extractions — lista job (solo disegni con attachment_id), scope org. */
+async function listExtractions(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseId(req.params.caseId);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+
+        if (!(await caseBelongsToOrg(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+
+        const result = await query(
+            `
+            SELECT e.id, e.organization_id, e.case_id, e.document_id, e.attachment_id,
+                   e.provider, e.external_job_id, e.status, e.error_message, e.page_count,
+                   e.created_by, e.created_at, e.completed_at
+            FROM commercial_case_drawing_extractions e
+            INNER JOIN commercial_cases c ON c.id = e.case_id
+            WHERE e.case_id = @caseId
+              AND c.organization_id = @organizationId
+              AND e.attachment_id IS NOT NULL
+            ORDER BY e.created_at DESC
+            `,
+            { caseId, organizationId },
+        );
+
+        return res.json({ extractions: result.recordset });
+    } catch (err) {
+        logger.error('listExtractions', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 /** GET /cases/:caseId/extractions/:id */
 async function getExtraction(req, res) {
     try {
@@ -352,6 +386,7 @@ async function getExtractedRequirementsSummary(req, res) {
 
 module.exports = {
     startExtraction,
+    listExtractions,
     getExtraction,
     reviewRequirement,
     getExtractedRequirementsSummary,

@@ -8,6 +8,7 @@ const ctrl = require('../controllers/drawingExtraction.controller');
 const guard = [authenticate, requireLicensedModule('ai_review')];
 
 router.post('/cases/:caseId/documents/:docId/extract', ...guard, ctrl.startExtraction);
+router.get('/cases/:caseId/extractions', ...guard, ctrl.listExtractions);
 router.get('/cases/:caseId/extractions/:id', ...guard, ctrl.getExtraction);
 router.get('/cases/:caseId/extracted-requirements-summary', ...guard, ctrl.getExtractedRequirementsSummary);
 router.patch('/extracted-requirements/:id', ...guard, ctrl.reviewRequirement);
