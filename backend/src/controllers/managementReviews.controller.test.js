@@ -30,8 +30,22 @@ jest.mock('../services/companyAccess.service', () => ({
     res.status(denial.status || 403).json({ error: denial.message || 'Accesso negato' })),
 }));
 
+jest.mock('../services/gapAnalysis.service', () => ({
+  getNormCoverageForReview: jest.fn(async () => ([
+    {
+      clause: '9.3',
+      title: 'Riesame di direzione',
+      status: 'ok',
+      last_verified: '2026-03-01',
+      sal_status: 'completed',
+      conformity_hint: 'C',
+    },
+  ])),
+}));
+
 const { getPool } = require('../config/database');
 const { assertCompanyRead } = require('../services/companyAccess.service');
+const { getNormCoverageForReview } = require('../services/gapAnalysis.service');
 const ctrl = require('./managementReviews.controller');
 
 const ORG_ID = 1001;
@@ -74,21 +88,25 @@ function buildPool() {
   return { queryMock, inputMock };
 }
 
-// Risultati "tutto ok" nell'ordine delle 9 query di getInputSummary
+// Risultati "tutto ok" — 8 query pool + blocco norm_coverage legacy (senza company_id)
 function okResults() {
   return [
-    { recordset: [{ open_count: 5, overdue_count: 2, closed_period: 10 }] },       // 1. NC summary
+    { recordset: [{ open_count: 5, overdue_count: 2, closed_period: 10 }] },
     { recordset: [{ nc_id: 1, nc_number: 'NC-1', description: 'Difetto saldatura',
-                    severity: 'major', status: 'open', due_date: '2026-01-10' }] }, // 2. NC dettaglio
-    { recordset: [{ total: 4, achieved: 3 }] },                                     // 3. Obiettivi
-    { recordset: [{ conducted: 2, planned: 1 }] },                                  // 4. Audit
-    { recordset: [{ evaluated: 3, avg_score: 87.3 }] },                             // 5. Fornitori
-    { recordset: [{ total: 7 }] },                                                  // 6. Reclami
-    { recordset: [{ open_count: 4, mitigated_closed_period: 2, high_priority: 1 }] }, // 7. Rischi
+                    severity: 'major', status: 'open', due_date: '2026-01-10' }] },
+    { recordset: [{ total: 4, achieved: 3 }] },
+    { recordset: [{ conducted: 2, planned: 1 }] },
+    { recordset: [{ evaluated: 3, avg_score: 87.3 }] },
+    { recordset: [{ total: 7 }] },
+    { recordset: [{ open_count: 4, mitigated_closed_period: 2, high_priority: 1 }] },
     { recordset: [{ review_number: 'RD-2025-001', review_date: '2025-12-01',
-                    output_improvements: 'x', output_sgq_changes: 'y', output_resources: 'z' }] }, // 8. Riesame prec.
-    { recordset: [{ clause_ref: '9.3', clause_title: 'Riesame di direzione', last_verified: '2026-03-01' }] }, // 9. Copertura norm.
+                    output_improvements: 'x', output_sgq_changes: 'y', output_resources: 'z' }] },
+    { recordset: [{ clause_ref: '9.3', clause_title: 'Riesame di direzione', last_verified: '2026-03-01' }] },
   ];
+}
+
+function okResultsWithoutNormQuery() {
+  return okResults().slice(0, 8);
 }
 
 afterEach(() => jest.clearAllMocks());
@@ -117,6 +135,7 @@ describe('getInputSummary — aggregazione blocchi §9.3.2', () => {
     expect(d.risks).toMatchObject({ open: 4, mitigated_closed_period: 2, high_priority: 1 });
     expect(d.previous_review).toMatchObject({ review_number: 'RD-2025-001' });
     expect(d.norm_coverage[0]).toMatchObject({ clause: '9.3', status: 'ok' });
+    expect(d.norm_coverage_source).toBe('audit_legacy');
   });
 
   it('disabilita la cache HTTP (Cache-Control: no-store)', async () => {
@@ -148,18 +167,22 @@ describe('getInputSummary — scope organization_id', () => {
 describe('getInputSummary — filtro company_id opzionale (G6)', () => {
   it('con company_id applica il filtro SQL e registra il parametro su ogni blocco', async () => {
     const { queryMock, inputMock } = buildPool();
-    okResults().forEach((r) => queryMock.mockResolvedValueOnce(r));
+    okResultsWithoutNormQuery().forEach((r) => queryMock.mockResolvedValueOnce(r));
 
-    await ctrl.getInputSummary(mockReq({ query: { company_id: '7' } }), mockRes());
+    const res = mockRes();
+    await ctrl.getInputSummary(mockReq({ query: { company_id: '7' } }), res);
 
-    // guard RBAC interrogata per l'azienda richiesta
     expect(assertCompanyRead).toHaveBeenCalledWith(expect.anything(), 7);
-    // parametro companyId iniettato come intero
     const companyCalls = inputMock.mock.calls.filter(([k]) => k === 'companyId');
     expect(companyCalls.length).toBeGreaterThan(0);
     companyCalls.forEach(([, v]) => expect(v).toBe(7));
-    // SQL del blocco NC contiene il filtro azienda
     expect(queryMock.mock.calls[0][0]).toContain('a.company_id = @companyId');
+    expect(getNormCoverageForReview).toHaveBeenCalledWith(ORG_ID, 7, {
+      standardCode: 'ISO_9001_2015',
+    });
+    const d = res.json.mock.calls[0][0].data;
+    expect(d.norm_coverage_source).toBe('sal');
+    expect(d.norm_coverage[0]).toMatchObject({ clause: '9.3', status: 'ok', sal_status: 'completed' });
   });
 
   it('senza company_id non inietta il parametro né il filtro azienda', async () => {
