@@ -1,32 +1,42 @@
-# DEPUTYTASK — Ingest AI commesse: chiusura slice #5–#7
+# DEPUTYTASK — Welding Book ISO 3834 (Fase 0 scaffold)
 
 > **Creato**: 02/07/2026  
-> **Stato**: COMPLETATO — TEST OK (L1 backend + Vitest checklist)  
-> **Spec**: [`docs/specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) §E  
-> **Branch**: `cursor/ingest-ai-residui-slice-567-0989`
+> **Stato**: IN CORSO — Fase 0 su branch `cursor/welding-book-adr-scaffold-5344`  
+> **ADR**: [`docs/adr/ADR-016-welding-book-e-modulo-strumenti.md`](../adr/ADR-016-welding-book-e-modulo-strumenti.md)
 
 ---
 
-## Obiettivo
+## Obiettivo Fase 0
 
-Chiudere in sequenza i residui roadmap Ingest AI commesse (slice verticali #5, #6, #7).
+Scaffold Welding Book (IOF) + ADR architettura. Migrazione 110, API CRUD, pagina lista/form bozza.
 
----
+## Passi manuali post-merge (desktop / VPS)
 
-## Deliverable
+1. **Migrazione DB** (prima del deploy backend):
+   ```powershell
+   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-110-vps.js
+   ```
+   Oppure da SQL locale con `database.json`.
 
-| Slice | Esito |
-|-------|-------|
-| **#5** Orchestratore `caseDocumentAnalysis.service.js` + `POST /cases/:id/analyze-documents` + pulsante UI tab Documenti | ✅ |
-| **#6** Pre-compilazione checklist §8.2 (preliminare + finale, prefisso `[AI doc]`) + test Vitest | ✅ |
-| **#7** `extractedRequirementsProfile.js` + `GET /cases/:id/extracted-coverage` + CoveragePanel arricchito | ✅ |
-| Refactor `_triggerAutoExtraction` → riuso servizio orchestratore | ✅ |
-| `deploy-manifest.json` aggiornato | ✅ |
+2. **Deploy backend**:
+   ```powershell
+   .\backend\scripts\deploy-controllers-to-vps.ps1
+   ```
 
-**Fuori scope (slice #8+)**: OCR scansioni, stepper UI a fasi, orchestratore LLM Fase 3–5.
+3. **Frontend**: merge su `main` → build Netlify automatica.
+
+4. **Licenza**: org Mason deve avere `saldatura` in `licensed_modules`. Picker attrezzature: `cnd` oppure `strumenti` (o solo `saldatura` in lettura).
+
+## Slice successive (Fase 1+)
+
+- Select WPS/WPQR da anagrafica
+- Foto cordone per riga
+- Export Word IOF
+- Modulo licenza `strumenti` + menu `/attrezzature`
+- Foto attrezzatura in anagrafica (mobile)
 
 ---
 
 ## Chiusura
 
-TEST OK — slice #5–#7 implementate. Prossimo step opzionale: **slice #8 OCR** o smoke L3 manuale su commessa PT.MAIDO con «Analizza documenti commessa» + copertura saldatori.
+_(da aggiornare a TEST OK)_
