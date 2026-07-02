@@ -16,6 +16,8 @@ const {
   getStatusHistory,
   validateEvidenceDocumentIds,
   syncAuditConformityHints,
+  getNormCoverageForReview,
+  mapSalStatusToNormCoverage,
   clauseRefToSectionCode,
   pickWorstConformityHint,
   assertCompanyInOrganization,
@@ -312,5 +314,61 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
     expect(data.matchedRows).toBe(1);
     const updateCall = mockQuery.mock.calls.find((c) => c[0].includes('conformity_hint = @hint'));
     expect(updateCall[1].hint).toBe('NC');
+  });
+
+  it('mapSalStatusToNormCoverage mappa stati implementazione SAL', () => {
+    expect(mapSalStatusToNormCoverage('completed')).toBe('ok');
+    expect(mapSalStatusToNormCoverage('to_validate')).toBe('ok');
+    expect(mapSalStatusToNormCoverage('in_progress')).toBe('gap');
+    expect(mapSalStatusToNormCoverage(null)).toBe('gap');
+  });
+
+  it('getNormCoverageForReview legge matrice SAL escludendo na', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            norm_requirement_id: 1,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '9.3',
+            clause_title: 'Riesame',
+            status_id: 2,
+            status: 'completed',
+            conformity_hint: 'C',
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: new Date('2026-03-01'),
+            updated_by: 1,
+          },
+          {
+            norm_requirement_id: 2,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '8.4',
+            clause_title: 'Fornitori',
+            status_id: 3,
+            status: 'na',
+            conformity_hint: null,
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: null,
+            updated_by: null,
+          },
+        ],
+      });
+
+    const coverage = await getNormCoverageForReview(1, 10);
+
+    expect(coverage).toHaveLength(1);
+    expect(coverage[0]).toMatchObject({
+      clause: '9.3',
+      status: 'ok',
+      sal_status: 'completed',
+      last_verified: '2026-03-01',
+    });
   });
 });
