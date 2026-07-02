@@ -1,42 +1,42 @@
-# DEPUTYTASK — Welding Book ISO 3834 (Fase 0 scaffold)
+# DEPUTYTASK — SAL Fase 3: integrazioni audit + NC sal_gap
 
 > **Creato**: 02/07/2026  
-> **Stato**: IN CORSO — Fase 0 su branch `cursor/welding-book-adr-scaffold-5344`  
-> **ADR**: [`docs/adr/ADR-016-welding-book-e-modulo-strumenti.md`](../adr/ADR-016-welding-book-e-modulo-strumenti.md)
+> **Stato**: COMPLETATO — TEST OK  
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 3  
+> **Branch**: `cursor/sal-fase3-integrations-3971` (include Fase 2 + merge main/Welding Book)
 
 ---
 
-## Obiettivo Fase 0
+## Obiettivo
 
-Scaffold Welding Book (IOF) + ADR architettura. Migrazione 110, API CRUD, pagina lista/form bozza.
+Integrare SAL con audit e Piano Azioni senza toccare Welding Book (ADR-016, mig. 110 sul VPS).
 
-## Passi manuali post-merge (desktop / VPS)
+---
 
-1. **Migrazione DB** (prima del deploy backend):
+## Deliverable
+
+| Voce | Esito |
+|------|-------|
+| Migrazione **118** — `sal_gap` in `CK_nc_source_category` | ✅ |
+| `syncAuditConformityHints` + API `POST .../sync-audit-hints` | ✅ |
+| Colonna hint audit + pulsante sync in SAL | ✅ |
+| NC `sal_gap` + modal azione da gap | ✅ |
+| Test L1 backend (16) + frontend (6) | ✅ PASS |
+
+---
+
+## Deploy VPS (ordine consigliato)
+
+1. Mig. **110** Welding Book (se non già fatta sul tuo VPS)
+2. Mig. **117** SAL Fase 0 (se non già fatta)
+3. Mig. **118** SAL Fase 3:
    ```powershell
-   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-110-vps.js
+   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-118-vps.js
    ```
-   Oppure da SQL locale con `database.json`.
-
-2. **Deploy backend**:
-   ```powershell
-   .\backend\scripts\deploy-controllers-to-vps.ps1
-   ```
-
-3. **Frontend**: merge su `main` → build Netlify automatica.
-
-4. **Licenza**: org Mason deve avere `saldatura` in `licensed_modules`. Picker attrezzature: `cnd` oppure `strumenti` (o solo `saldatura` in lettura).
-
-## Slice successive (Fase 1+)
-
-- Select WPS/WPQR da anagrafica
-- Foto cordone per riga
-- Export Word IOF
-- Modulo licenza `strumenti` + menu `/attrezzature`
-- Foto attrezzatura in anagrafica (mobile)
+4. `deploy-controllers-to-vps.ps1` + restart `sgq-backend`
 
 ---
 
 ## Chiusura
 
-_(da aggiornare a TEST OK)_
+TEST OK — Fase 3 completata. Prossimo: **Fase 4** feed Riesame §9.3.

@@ -1,14 +1,17 @@
 /**
  * SALModule — Stato Avanzamento Lavori (ISO 9001/14001/45001)
  * Griglia requisiti × stati di implementazione per azienda cliente.
- * Fase 1 MVP — motore dati gapAnalysis.service.js (Fase 0).
+ * Fase 1–3 — griglia, export/evidenze (Fase 2), hint audit + NC sal_gap (Fase 3).
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import SgqDataGrid from '../components/SgqDataGrid';
+import SalEvidenceSection from '../components/SalEvidenceSection';
+import NcCreateModal from '../components/NcCreateModal';
 import { formatDate } from '../utils/dateHelpers';
+import { exportSalTrackerDocx } from '../utils/wordExportSal';
 import {
   resolveInitialSalCompanyScope,
   persistSalCompanyScope,
@@ -18,7 +21,11 @@ import {
   SAL_STATUS_LABEL,
   SAL_STANDARD_TABS,
   SAL_STANDARD_LABEL,
+  SAL_CONFORMITY_HINT_LABEL,
   salStandardBadgeClass,
+  buildSalGapActionDescription,
+  buildSalGapOriginText,
+  clauseRefToSectionCode,
 } from '../utils/salConstants';
 import './SALModule.css';
 
@@ -27,19 +34,47 @@ const GRID_COLUMNS = [
   { id: 'clauseTitle', label: 'Titolo', sortable: true },
   { id: 'standardCode', label: 'Standard', sortable: true, width: '110px' },
   { id: 'status', label: 'Stato', sortable: true, width: '150px' },
+  { id: 'conformityHint', label: 'Hint audit', sortable: true, width: '100px' },
   { id: 'notes', label: 'Note', sortable: false },
   { id: 'responsible', label: 'Responsabile', sortable: true, width: '130px' },
   { id: 'dueDate', label: 'Scadenza', sortable: true, width: '110px' },
   { id: '_actions', label: '', sortable: false, width: '72px' },
 ];
 
-function SalEditModal({ row, saving, onClose, onSave }) {
+function SalConformityHintBadge({ hint }) {
+  if (!hint) return <span className="sal-hint-empty">—</span>;
+  const label = SAL_CONFORMITY_HINT_LABEL[hint] || hint;
+  return (
+    <span className={`sal-hint-badge sal-hint-badge--${hint}`} title={`Suggerimento da audit: ${label}`}>
+      {hint}
+    </span>
+  );
+}
+
+function SalEditModal({ row, companyId, saving, onClose, onSave, onCreateAction }) {
   const [form, setForm] = useState({
     status: row.status || 'discussed',
     notes: row.notes || '',
     responsible: row.responsible || '',
     dueDate: row.dueDate || '',
+    evidenceDocumentIds: Array.isArray(row.evidenceDocumentIds)
+      ? row.evidenceDocumentIds.map(Number)
+      : [],
   });
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!companyId || !row?.normRequirementId) return;
+    setHistoryLoading(true);
+    apiService.getGapStatusHistory(companyId, row.normRequirementId)
+      .then((res) => {
+        const data = res?.data ?? res;
+        setHistory(Array.isArray(data?.history) ? data.history : []);
+      })
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [companyId, row?.normRequirementId]);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -49,7 +84,7 @@ function SalEditModal({ row, saving, onClose, onSave }) {
   return (
     <div className="sal-modal-backdrop" role="presentation" onClick={onClose}>
       <div
-        className="sal-modal"
+        className="sal-modal sal-modal-wide"
         role="dialog"
         aria-labelledby="sal-edit-title"
         onClick={(e) => e.stopPropagation()}
@@ -58,6 +93,13 @@ function SalEditModal({ row, saving, onClose, onSave }) {
         <p className="sal-modal-clause">
           {row.clauseRef} — {row.clauseTitle}
         </p>
+        {row.conformityHint && (
+          <p className="sal-modal-hint">
+            Hint audit (sola lettura):
+            {' '}
+            <SalConformityHintBadge hint={row.conformityHint} />
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="sal-form-group">
             <label htmlFor="sal-edit-status">Stato</label>
@@ -94,11 +136,60 @@ function SalEditModal({ row, saving, onClose, onSave }) {
             <label htmlFor="sal-edit-notes">Note</label>
             <textarea
               id="sal-edit-notes"
+              className="notes-textarea"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Note sull'avanzamento"
             />
           </div>
+
+          <SalEvidenceSection
+            companyId={companyId}
+            value={form.evidenceDocumentIds}
+            onChange={(ids) => setForm((f) => ({ ...f, evidenceDocumentIds: ids }))}
+            disabled={saving}
+          />
+
+          <div className="sal-history-block">
+            <h4>Storico revisioni</h4>
+            {historyLoading && <p className="sal-history-loading">Caricamento storico…</p>}
+            {!historyLoading && history.length === 0 && (
+              <p className="sal-history-empty">Nessuna revisione registrata.</p>
+            )}
+            {!historyLoading && history.length > 0 && (
+              <ul className="sal-history-list">
+                {history.map((h) => (
+                  <li key={h.id}>
+                    <span className="sal-history-date">
+                      {h.changedAt ? formatDate(h.changedAt.slice(0, 10)) : '—'}
+                    </span>
+                    <span className="sal-history-status">
+                      {SAL_STATUS_LABEL[h.status] || h.status}
+                    </span>
+                    {h.changedByName && (
+                      <span className="sal-history-user">{h.changedByName}</span>
+                    )}
+                    {h.notes && (
+                      <span className="sal-history-notes" title={h.notes}>{h.notes}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {onCreateAction && row.status !== 'completed' && row.status !== 'na' && (
+            <div className="sal-gap-action-block">
+              <button
+                type="button"
+                className="sal-btn sal-btn-secondary sal-btn-block"
+                onClick={() => onCreateAction(row)}
+              >
+                Crea azione Piano Azioni (gap SAL)
+              </button>
+            </div>
+          )}
+
           <div className="sal-modal-actions">
             <button type="button" className="sal-btn sal-btn-secondary" onClick={onClose}>
               Annulla
@@ -126,6 +217,11 @@ export default function SALModule() {
   const [error, setError] = useState(null);
   const [editRow, setEditRow] = useState(null);
   const [savingId, setSavingId] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [syncingHints, setSyncingHints] = useState(false);
+  const [showNcModal, setShowNcModal] = useState(false);
+  const [ncActionRow, setNcActionRow] = useState(null);
+  const [ncSuccessMsg, setNcSuccessMsg] = useState(null);
 
   useEffect(() => {
     apiService.getCompanies?.().then((res) => {
@@ -204,6 +300,7 @@ export default function SALModule() {
         notes: payload.notes ?? row.notes,
         responsible: payload.responsible ?? row.responsible,
         dueDate: payload.dueDate ?? row.dueDate,
+        evidenceDocumentIds: payload.evidenceDocumentIds ?? row.evidenceDocumentIds,
       });
       setEditRow(null);
       await loadMatrix();
@@ -238,7 +335,54 @@ export default function SALModule() {
       notes: row.notes,
       responsible: row.responsible,
       dueDate: row.dueDate,
+      evidenceDocumentIds: row.evidenceDocumentIds,
     });
+  }
+
+  async function handleExportWord() {
+    if (!companyScope || !rows.length) return;
+    setExporting(true);
+    setError(null);
+    try {
+      await exportSalTrackerDocx({
+        companyName: scopeCompanyName,
+        standardFilter: standardFilter || undefined,
+        rows,
+        summary,
+      });
+    } catch (err) {
+      setError(err?.message || 'Errore export Word SAL');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleSyncAuditHints() {
+    if (!companyScope) return;
+    setSyncingHints(true);
+    setError(null);
+    setNcSuccessMsg(null);
+    try {
+      const res = await apiService.syncSalAuditHints(companyScope, { monthsBack: 12 });
+      const data = res?.data ?? res;
+      await loadMatrix();
+      const updated = data?.updated ?? 0;
+      setNcSuccessMsg(
+        updated > 0
+          ? `Hint audit aggiornati su ${updated} clausola/e (ultimi 12 mesi).`
+          : 'Nessun hint audit da applicare (verifica audit completati recenti).',
+      );
+    } catch (err) {
+      setError(err?.message || 'Errore sincronizzazione hint audit');
+    } finally {
+      setSyncingHints(false);
+    }
+  }
+
+  function openNcFromGap(row) {
+    setEditRow(null);
+    setNcActionRow(row);
+    setShowNcModal(true);
   }
 
   function renderCell(row, col) {
@@ -267,10 +411,22 @@ export default function SALModule() {
             ))}
           </select>
         );
+      case 'conformityHint':
+        return <SalConformityHintBadge hint={row.conformityHint} />;
       case 'notes':
-        return row.notes
-          ? <span className="sal-notes-preview" title={row.notes}>{row.notes}</span>
-          : '—';
+        if (row.notes) {
+          return <span className="sal-notes-preview" title={row.notes}>{row.notes}</span>;
+        }
+        if (Array.isArray(row.evidenceDocuments) && row.evidenceDocuments.length) {
+          return (
+            <span className="sal-evidence-badge" title={row.evidenceDocuments.map((d) => d.title).join(', ')}>
+              {row.evidenceDocuments.length}
+              {' '}
+              evidenza/e
+            </span>
+          );
+        }
+        return '—';
       case 'responsible':
         return row.responsible || '—';
       case 'dueDate':
@@ -327,6 +483,28 @@ export default function SALModule() {
               {seeding ? 'Seed in corso…' : 'Seed clausole'}
             </button>
           )}
+          {companyScope && rows.length > 0 && (
+            <button
+              type="button"
+              className="sal-btn sal-btn-secondary"
+              disabled={syncingHints || loading}
+              onClick={handleSyncAuditHints}
+              title="Aggiorna conformity_hint dall'ultimo audit completato per standard"
+            >
+              {syncingHints ? 'Sync audit…' : 'Sync hint audit'}
+            </button>
+          )}
+          {companyScope && rows.length > 0 && (
+            <button
+              type="button"
+              className="sal-btn sal-btn-secondary"
+              disabled={exporting || loading}
+              onClick={handleExportWord}
+              title="Esporta matrice SAL in Word (.docx)"
+            >
+              {exporting ? 'Export…' : 'Export Word'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -336,6 +514,10 @@ export default function SALModule() {
 
       {error && (
         <div className="sal-error" role="alert">{error}</div>
+      )}
+
+      {ncSuccessMsg && (
+        <div className="sal-success" role="status">{ncSuccessMsg}</div>
       )}
 
       {!companyScope ? (
@@ -403,9 +585,33 @@ export default function SALModule() {
       {editRow && (
         <SalEditModal
           row={editRow}
+          companyId={companyScope ? Number(companyScope) : null}
           saving={savingId === editRow.normRequirementId}
           onClose={() => setEditRow(null)}
           onSave={(form) => saveStatus(editRow, form)}
+          onCreateAction={openNcFromGap}
+        />
+      )}
+
+      {showNcModal && ncActionRow && (
+        <NcCreateModal
+          open={showNcModal}
+          onClose={() => {
+            setShowNcModal(false);
+            setNcActionRow(null);
+          }}
+          onCreated={(nc) => {
+            const clauseRef = ncActionRow.clauseRef;
+            setShowNcModal(false);
+            setNcActionRow(null);
+            setNcSuccessMsg(
+              `Azione creata nel Piano Azioni${nc?.nc_number ? ` (${nc.nc_number})` : ''} da gap SAL ${clauseRef}.`,
+            );
+          }}
+          defaultCategory="sal_gap"
+          initialDescription={buildSalGapActionDescription(ncActionRow)}
+          initialOriginText={buildSalGapOriginText(ncActionRow)}
+          initialSectionCode={clauseRefToSectionCode(ncActionRow.clauseRef)}
         />
       )}
     </div>
