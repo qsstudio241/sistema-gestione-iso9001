@@ -1,36 +1,32 @@
-# DEPUTYTASK — SAL Fase 1: UI griglia MVP `/sal`
+# DEPUTYTASK — Ingest AI commesse: chiusura slice #5–#7
 
-> **Creato**: 01/07/2026  
-> **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 1  
-> **Base**: `main`
+> **Creato**: 02/07/2026  
+> **Stato**: COMPLETATO — TEST OK (L1 backend + Vitest checklist)  
+> **Spec**: [`docs/specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) §E  
+> **Branch**: `cursor/ingest-ai-residui-slice-567-0989`
 
 ---
 
 ## Obiettivo
 
-Sostituire `ModuleLocked` con pagina SAL operativa: griglia requisiti × stati, ambito azienda, API gap-matrix, test L1 frontend.
-
-**Non toccato** (branch parallelo committente): `ContractReviewPage`, `contractReview.*`, `commercial_cases*`, drawing extraction.
+Chiudere in sequenza i residui roadmap Ingest AI commesse (slice verticali #5, #6, #7).
 
 ---
 
 ## Deliverable
 
-| Voce | Esito |
-|------|-------|
-| `SALModule.jsx` + `SALModule.css` — griglia `SgqDataGrid`, tab standard, seed, modal dettagli | ✅ |
-| `salCompanyScope.js` — persistenza localStorage + auto-select singola azienda | ✅ |
-| `salConstants.js` — stati/label/badge standard | ✅ |
-| `apiService` — `getGapMatrix`, `updateGapStatus`, `seedGapMatrix` | ✅ |
-| Route `/sal` → `SALModule`; menu sidebar senza lucchetto | ✅ |
-| Test Vitest `salModule.test.jsx` + `salCompanyScope.test.js` (6 test) | ✅ PASS |
-| Build Vite | ✅ OK |
+| Slice | Esito |
+|-------|-------|
+| **#5** Orchestratore `caseDocumentAnalysis.service.js` + `POST /cases/:id/analyze-documents` + pulsante UI tab Documenti | ✅ |
+| **#6** Pre-compilazione checklist §8.2 (preliminare + finale, prefisso `[AI doc]`) + test Vitest | ✅ |
+| **#7** `extractedRequirementsProfile.js` + `GET /cases/:id/extracted-coverage` + CoveragePanel arricchito | ✅ |
+| Refactor `_triggerAutoExtraction` → riuso servizio orchestratore | ✅ |
+| `deploy-manifest.json` aggiornato | ✅ |
 
-**Fuori scope (Fasi 2+)**: export Word SAL, storico revisioni UI, integrazioni audit/NC, feed Riesame.
+**Fuori scope (slice #8+)**: OCR scansioni, stepper UI a fasi, orchestratore LLM Fase 3–5.
 
 ---
 
 ## Chiusura
 
-TEST OK — Fase 1 UI completata. Prossimo step: **Fase 2 export Word + storico**.
+TEST OK — slice #5–#7 implementate. Prossimo step opzionale: **slice #8 OCR** o smoke L3 manuale su commessa PT.MAIDO con «Analizza documenti commessa» + copertura saldatori.
