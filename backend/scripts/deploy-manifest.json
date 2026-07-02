@@ -38,6 +38,7 @@
                                      "src/utils/documentClassifier.js",
                                      "src/utils/weldingDesignation.js",
                                      "src/utils/qualificationCoverage.js",
+                                     "src/utils/extractedRequirementsProfile.js",
                                      "src/utils/jsonRepair.js",
                                      "src/utils/ruleFieldExtractors.js",
                                      "src/utils/ocrExtractor.js"
@@ -111,7 +112,9 @@
                                      "src/services/ncAlertEscalation.service.js",
                                      "src/services/qualificationAlert.service.js",
                                      "src/services/weldingCoordinatorAuth.service.js",
-                                     "src/services/caseTextAnalysis.service.js"
+                                     "src/services/caseTextAnalysis.service.js",
+                                     "src/services/caseDocumentAnalysis.service.js",
+                                     "src/services/caseExtractedCoverage.service.js"
                                  ]
                    },
                    {

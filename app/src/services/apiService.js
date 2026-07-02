@@ -1995,6 +1995,14 @@ class ApiService {
         return this.get(`/cases/${caseId}/extracted-requirements-summary`);
     }
 
+    async analyzeCaseDocuments(caseId, body = {}) {
+        return this.post(`/cases/${caseId}/analyze-documents`, body, { timeout: 60000 });
+    }
+
+    async getCaseExtractedCoverage(caseId, projectId) {
+        return this.get(`/cases/${caseId}/extracted-coverage?project_id=${encodeURIComponent(projectId)}`);
+    }
+
     async reviewExtractedRequirement(reqId, patch) {
         return this.patch(`/extracted-requirements/${reqId}`, patch);
     }

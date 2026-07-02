@@ -57,7 +57,9 @@ function CoveragePanel({ caseId }) {
     if (!projectId) return;
     setLoading(true); setError(null); setCoverage(null);
     try {
-      const data = await apiService.getQualificationsCoverage(projectId);
+      const data = caseId
+        ? await apiService.getCaseExtractedCoverage(caseId, projectId)
+        : await apiService.getQualificationsCoverage(projectId);
       setCoverage(data);
     } catch (e) {
       setError(e.message);
@@ -65,6 +67,15 @@ function CoveragePanel({ caseId }) {
       setLoading(false);
     }
   }
+
+  function esitoIcon(esito) {
+    if (esito === 'verde') return '\u2705';
+    if (esito === 'giallo') return '\u26A0\uFE0F';
+    return '\u274C';
+  }
+
+  const profile = coverage?.extracted_profile;
+  const profileActive = coverage?.extracted_profile_active;
 
   return (
     <div style={{ marginBottom: 16, borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
@@ -102,6 +113,19 @@ function CoveragePanel({ caseId }) {
               </div>
             )
           }
+          {profileActive && profile && (
+            <div style={{ fontSize: 12, color: '#374151', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+              <strong>Requisiti da documenti integrati:</strong>{' '}
+              {[
+                profile.base_material_group ? `materiale ${profile.base_material_group}` : null,
+                profile.thickness_range_min != null
+                  ? `spessore ${profile.thickness_range_min}${profile.thickness_range_max != null && profile.thickness_range_max !== profile.thickness_range_min ? `\u2013${profile.thickness_range_max}` : ''} mm`
+                  : null,
+                profile.welding_process ? `processo ${profile.welding_process}` : null,
+                profile.welding_positions ? `posizioni ${profile.welding_positions}` : null,
+              ].filter(Boolean).join(' \u00B7 ') || 'profilo tecnico parziale'}
+            </div>
+          )}
           {error && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{error}</div>}
           {coverage && !coverage.has_wps && (
             <div style={{ fontSize: 13, color: '#9ca3af' }}>Nessuna WPS associata alla commessa selezionata.</div>
@@ -127,7 +151,7 @@ function CoveragePanel({ caseId }) {
                         : row.qualifiers.map(q => <div key={q.id}>{q.person_name}</div>)}
                     </td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      {row.esito === 'verde' ? "\u2705" : "\u274C"}
+                      {esitoIcon(row.esito)}
                     </td>
                   </tr>
                 ))}
@@ -320,6 +344,8 @@ export default function ContractReviewPage() {
   const [aiDocLoading, setAiDocLoading] = useState(false);
   const [aiDocError, setAiDocError] = useState(null);
   const [applyExtractedBusy, setApplyExtractedBusy] = useState(false);
+  const [analyzeDocsBusy, setAnalyzeDocsBusy] = useState(false);
+  const [analyzeDocsResult, setAnalyzeDocsResult] = useState(null);
 
   // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
   const [aiSuggestion, setAiSuggestion] = useState(null);
@@ -847,19 +873,46 @@ export default function ContractReviewPage() {
     }
   }
 
+  async function handleAnalyzeAllDocuments() {
+    if (!caseId) return;
+    setAnalyzeDocsBusy(true);
+    setError(null);
+    setAnalyzeDocsResult(null);
+    try {
+      const result = await apiService.analyzeCaseDocuments(caseId);
+      setAnalyzeDocsResult(result);
+      setAttachAnalysisStarted(true);
+      setTimeout(() => setAttachAnalysisStarted(false), 8000);
+      const firstJob = result?.jobs?.[0];
+      if (firstJob?.extraction_id != null) {
+        setPollingBanner(null);
+        setAnalysisPolling({ extractionId: firstJob.extraction_id, attempts: 0 });
+      }
+      if (aiDocPanelExpanded) {
+        await handleLoadAiDocSummary();
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Analisi documenti fallita');
+    } finally {
+      setAnalyzeDocsBusy(false);
+    }
+  }
+
   async function handleApplyExtractedToChecklist() {
     if (!caseId || !detail?.checklist?.length || !aiDocSummary?.requirements?.length) return;
-    const prelim = detail.checklist.filter((c) => c.phase === 'preliminary');
-    if (!prelim.length) {
-      setError('Genera prima la checklist preliminare.');
+    const targets = detail.checklist.filter(
+      (c) => (c.phase === 'preliminary' || c.phase === 'final')
+        && (!c.answer || c.answer === 'not_evaluated'),
+    );
+    if (!targets.length) {
+      setError('Genera prima la checklist preliminare o finale.');
       return;
     }
     setApplyExtractedBusy(true);
     setError(null);
+    const aiPrefix = '[AI doc] ';
     try {
-      for (const item of prelim) {
-        // Non sovrascrivere voci che hanno già una risposta data dall'utente
-        if (item.answer && item.answer !== 'not_evaluated') continue;
+      for (const item of targets) {
         let best = null;
         let bestScore = 0;
         const haystack = `${item.item_text || ''} ${item.item_ref || ''}`;
@@ -872,9 +925,11 @@ export default function ContractReviewPage() {
           }
         }
         if (!best || bestScore < 1) continue;
-        // Pre-popola solo le note; non cambio l'answer per lasciare la decisione all'utente
-        const notes = best.value_text || '';
-        if (!notes) continue;
+        const rawNotes = best.value_text || '';
+        if (!rawNotes) continue;
+        const notes = item.notes && String(item.notes).includes(aiPrefix)
+          ? item.notes
+          : `${aiPrefix}${rawNotes}`;
         await apiService.saveChecklistAnswer(caseId, item.id, { notes });
       }
       await loadDetail(caseId);
@@ -1356,7 +1411,7 @@ export default function ContractReviewPage() {
                   error={aiDocError}
                   summary={aiDocSummary}
                   applyBusy={applyExtractedBusy}
-                  hasChecklist={checklistPreliminary.length > 0}
+                  hasChecklist={checklistPreliminary.length > 0 || checklistFinal.length > 0}
                   onToggle={() => {
                     const next = !aiDocPanelExpanded;
                     setAiDocPanelExpanded(next);
@@ -1540,8 +1595,28 @@ export default function ContractReviewPage() {
                       )}
                       {attachAnalysisStarted && (
                         <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
-                          Analisi AI avviata in background — i risultati appariranno nel pannello Disegni o Analisi AI.
+                          Analisi AI avviata in background — i risultati appariranno nel pannello Disegni, Checklist o Analisi AI.
                         </p>
+                      )}
+                      {(detail.attachments || []).length > 0 && !TERMINAL_STATUSES.has(detail.case.status) && (
+                        <div className="cr-form-row" style={{ marginTop: '0.75rem' }}>
+                          <button
+                            type="button"
+                            className="cr-btn cr-btn-primary"
+                            disabled={analyzeDocsBusy}
+                            onClick={() => handleAnalyzeAllDocuments()}
+                          >
+                            {analyzeDocsBusy ? 'Analisi in corso\u2026' : 'Analizza documenti commessa'}
+                          </button>
+                          {analyzeDocsResult && (
+                            <p className="contract-review-intro" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                              Avviati {analyzeDocsResult.started} job
+                              {analyzeDocsResult.skipped > 0
+                                ? ` (${analyzeDocsResult.skipped} allegati saltati: ruolo/formato non analizzabile)`
+                                : ''}.
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </>
@@ -2139,14 +2214,14 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
                   onClick={onApply}
                   style={{ marginTop: 10 }}
                 >
-                  {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist preliminare'}
+                  {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist §8.2'}
                 </button>
               )}
             </>
           )}
           {!loading && !hasChecklist && (
             <p style={{ fontSize: 12, color: '#9ca3af', marginTop: hasReqs ? 8 : 0, marginBottom: 0 }}>
-              Genera prima la checklist preliminare con il pulsante sopra.
+              Genera prima la checklist preliminare o finale con i pulsanti sopra.
             </p>
           )}
           <AiDisclaimer style={{ marginTop: 10 }} />
