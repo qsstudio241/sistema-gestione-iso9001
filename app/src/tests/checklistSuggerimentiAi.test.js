@@ -31,9 +31,10 @@ function overlapScore(textA, textB) {
  * Logica estratta di pre-popolazione (replica handleApplyExtractedToChecklist).
  * Parametri espliciti per testabilità totale senza React.
  */
-async function applyExtractedToChecklist({ caseId, checklistPrelim, requirements, saveChecklistAnswer }) {
+async function applyExtractedToChecklist({ caseId, checklistItems, requirements, saveChecklistAnswer }) {
   const applied = [];
-  for (const item of checklistPrelim) {
+  const aiPrefix = '[AI doc] ';
+  for (const item of checklistItems) {
     if (item.answer && item.answer !== 'not_evaluated') continue;
     let best = null;
     let bestScore = 0;
@@ -47,8 +48,11 @@ async function applyExtractedToChecklist({ caseId, checklistPrelim, requirements
       }
     }
     if (!best || bestScore < 1) continue;
-    const notes = best.value_text || '';
-    if (!notes) continue;
+    const rawNotes = best.value_text || '';
+    if (!rawNotes) continue;
+    const notes = item.notes && String(item.notes).includes(aiPrefix)
+      ? item.notes
+      : `${aiPrefix}${rawNotes}`;
     await saveChecklistAnswer(caseId, item.id, { notes });
     applied.push({ itemId: item.id, notes });
   }
@@ -77,7 +81,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     const result = await applyExtractedToChecklist({
       caseId: 1,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements,
       saveChecklistAnswer,
     });
@@ -88,6 +92,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
     // Voce 10 deve matchare il requisito materiale
     const call10 = saveChecklistAnswer.mock.calls.find((c) => c[1] === 10);
     expect(call10).toBeDefined();
+    expect(call10[2].notes).toContain('[AI doc]');
     expect(call10[2].notes).toContain('S355');
   });
 
@@ -99,7 +104,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     const result = await applyExtractedToChecklist({
       caseId: 1,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements,
       saveChecklistAnswer,
     });
@@ -117,7 +122,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     const result = await applyExtractedToChecklist({
       caseId: 1,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements,
       saveChecklistAnswer,
     });
@@ -134,7 +139,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     const result = await applyExtractedToChecklist({
       caseId: 5,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements: [],
       saveChecklistAnswer,
     });
@@ -150,7 +155,7 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     await applyExtractedToChecklist({
       caseId: 99,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements,
       saveChecklistAnswer,
     });
@@ -168,11 +173,27 @@ describe('Pre-popolazione checklist §8.2 con suggerimenti AI (SLICE B)', () => 
 
     const result = await applyExtractedToChecklist({
       caseId: 1,
-      checklistPrelim,
+      checklistItems: checklistPrelim,
       requirements,
       saveChecklistAnswer,
     });
 
     expect(result.length).toBe(1);
+  });
+
+  it('applica anche alla checklist finale (F1-F6)', async () => {
+    const checklistFinal = [
+      { id: 70, phase: 'final', item_ref: 'F1', item_text: 'Confronto ordine e offerta con tempi consegna', answer: null, notes: '' },
+    ];
+
+    const result = await applyExtractedToChecklist({
+      caseId: 1,
+      checklistItems: checklistFinal,
+      requirements,
+      saveChecklistAnswer,
+    });
+
+    expect(result.length).toBe(1);
+    expect(saveChecklistAnswer.mock.calls[0][2].notes).toContain('60 giorni');
   });
 });
