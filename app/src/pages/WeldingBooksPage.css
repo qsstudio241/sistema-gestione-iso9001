@@ -66,6 +66,8 @@
 }
 
 .wb-grid-2 input,
+.wb-grid-2 select,
+.wb-grid-2 textarea,
 .wb-table input,
 .wb-table select {
     width: 100%;
@@ -163,6 +165,27 @@
 .wb-status-released {
     background: #dcfce7;
     color: #166534;
+}
+
+.wb-notes-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.wb-table-scroll {
+    overflow-x: auto;
+}
+
+.wb-saved-at {
+    font-size: 0.85rem;
+    color: #166534;
+}
+
+.wb-form-header h2 {
+    margin: 0;
 }
 
 @media (max-width: 768px) {
