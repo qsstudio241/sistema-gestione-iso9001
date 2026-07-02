@@ -80,18 +80,34 @@ function makeReq(params = {}, body = {}, file = null) {
 
 /**
  * Installa mock di query() che risponde in base al pattern SQL.
- * - SELECT FROM commercial_cases → restituisce caseRows
- * - INSERT INTO attachments → restituisce { attachment_id, attachment_uuid }
- * - INSERT INTO commercial_case_drawing_extractions → restituisce { id: 10 }
- * - INSERT INTO commercial_case_extracted_requirements → OK
- * - UPDATE commercial_case_drawing_extractions → OK
+ * Compatibile con caseDocumentAnalysis.service (lookup allegato + DELETE idempotenza).
  */
 function installQueryMock({ caseRows = [{ id: 5 }], attId = 99 } = {}) {
-    query.mockImplementation((sqlText) => {
+    let lastAttachmentMeta = { docRole: 'drawing', mimeType: 'image/png', storagePath: '/tmp/disegno.png' };
+
+    query.mockImplementation((sqlText, params = {}) => {
         if (/FROM commercial_cases/.test(sqlText)) return { recordset: caseRows };
         if (/INSERT INTO attachments/.test(sqlText)) {
+            lastAttachmentMeta = {
+                docRole: params.docRole || 'drawing',
+                mimeType: params.mimeType || 'image/png',
+                storagePath: params.storagePath || '/tmp/file',
+            };
             return { recordset: [{ attachment_id: attId, attachment_uuid: 'uuid-1' }] };
         }
+        if (/FROM attachments a\s+INNER JOIN commercial_cases/.test(sqlText)) {
+            if (!caseRows.length) return { recordset: [] };
+            return {
+                recordset: [{
+                    attachment_id: attId,
+                    storage_path: lastAttachmentMeta.storagePath,
+                    mime_type: lastAttachmentMeta.mimeType,
+                    file_name: 'file',
+                    commercial_doc_role: lastAttachmentMeta.docRole,
+                }],
+            };
+        }
+        if (/DELETE/.test(sqlText)) return { recordset: [] };
         if (/INSERT INTO commercial_case_drawing_extractions/.test(sqlText)) {
             return { recordset: [{ id: 10 }] };
         }

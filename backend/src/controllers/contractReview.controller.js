@@ -17,8 +17,7 @@ const {
     CASE_SELECT_SQL,
     CASE_FROM_SQL,
 } = require('../services/commercialCustomerCounterparty.service');
-const drawingExtractionService = require('../services/drawingExtraction.service');
-const caseTextAnalysisService = require('../services/caseTextAnalysis.service');
+const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -1020,123 +1019,30 @@ async function listCaseAttachments(req, res) {
 }
 
 /**
- * Inserisce i requisiti estratti nella tabella degli estratti.
- * Funzione condivisa con drawingExtraction.controller (stesso schema).
- */
-async function _insertExtractionRequirements(extractionId, requirements) {
-    for (const r of requirements) {
-        await query(
-            `
-            INSERT INTO commercial_case_extracted_requirements
-              (extraction_id, req_type, field_key, value_text, unit, confidence, source_bbox)
-            VALUES
-              (@extractionId, @reqType, @fieldKey, @valueText, @unit, @confidence, @sourceBbox)
-            `,
-            {
-                extractionId,
-                reqType: r.req_type,
-                fieldKey: r.field_key ?? null,
-                valueText: r.value_text ?? null,
-                unit: r.unit ?? null,
-                confidence: r.confidence ?? null,
-                sourceBbox: r.source_bbox ?? null,
-            },
-        );
-    }
-}
-
-/**
  * Avvia in background (fire-and-forget) l'estrazione AI appropriata per un allegato.
- *
- * - doc_role 'drawing' (o immagine) → vision via drawingExtraction.service
- * - doc_role 'capitolato' o 'order' + PDF → analisi testo via caseTextAnalysis.service
- *
- * Crea subito il record job (status='processing') e aggiorna a 'done'/'error' al termine.
- * L'upload non viene bloccato: gli errori AI sono loggati silenziosamente.
+ * Delega a caseDocumentAnalysis.service (slice #5).
  *
  * @returns {Promise<number|null>} extractionId creato, o null se nessuna estrazione applicabile
  */
-async function _triggerAutoExtraction({ caseId, attachmentId, organizationId, userId, docRole, mimeType, storagePath }) {
-    const mime = String(mimeType || '').toLowerCase();
-    const role = String(docRole || '').trim().toLowerCase();
-
-    // Estrazione scatta SOLO per ruoli espliciti: 'drawing' (vision) oppure
-    // 'capitolato'/'order' su PDF (testo). Nessun fallback su MIME per evitare
-    // analisi indesiderate di immagini caricate con ruolo generico.
-    const isDrawing = role === 'drawing';
-    const isTextDoc = (role === 'capitolato' || role === 'order') && mime === 'application/pdf';
-
-    if (!isDrawing && !isTextDoc) return null;
-
-    const source = isDrawing ? 'drawing' : 'text';
-    const provider = isDrawing ? drawingExtractionService.resolveProvider() : (getActiveProvider() || 'gemini');
-
-    // Crea il job record subito (sincrono) → il frontend lo vede come 'processing'
-    let extractionId;
-    try {
-        const ins = await query(
-            `
-            INSERT INTO commercial_case_drawing_extractions
-              (organization_id, case_id, attachment_id, provider, source, status, created_by)
-            OUTPUT INSERTED.id
-            VALUES (@organizationId, @caseId, @attachmentId, @provider, @source, 'processing', @userId)
-            `,
-            { organizationId, caseId, attachmentId, provider, source, userId },
-        );
-        extractionId = ins.recordset[0].id;
-    } catch (dbErr) {
-        logger.error('_triggerAutoExtraction: impossibile creare job record', dbErr.message);
+async function _triggerAutoExtraction({ caseId, attachmentId, organizationId, userId, docRole, mimeType }) {
+    if (!caseDocumentAnalysisService.resolveAnalysisSource(docRole, mimeType)) {
         return null;
     }
 
-    // Fire-and-forget: non si aspetta, l'upload risponde subito
-    Promise.resolve().then(async () => {
-        try {
-            let buffer;
-            try {
-                buffer = await fs.readFile(storagePath);
-            } catch {
-                throw Object.assign(new Error('File non disponibile sul server'), { code: 'FILE_NOT_FOUND' });
-            }
-
-            let out;
-            if (isDrawing) {
-                out = await drawingExtractionService.extractFromFile(buffer, mimeType, {});
-            } else {
-                out = await caseTextAnalysisService.extractTextRequirements(buffer, mimeType, {});
-            }
-
-            await _insertExtractionRequirements(extractionId, out.requirements || []);
-
-            await query(
-                `
-                UPDATE commercial_case_drawing_extractions
-                SET status = 'done', raw_response = @raw, completed_at = SYSDATETIME()
-                WHERE id = @extractionId
-                `,
-                {
-                    extractionId,
-                    raw: out.raw != null ? String(out.raw).substring(0, 1000000) : null,
-                },
-            );
-            logger.info('_triggerAutoExtraction: completata', { extractionId, source, caseId });
-        } catch (err) {
-            const msg = err.code ? `${err.code}: ${err.message}` : err.message;
-            logger.error('_triggerAutoExtraction: errore (upload non bloccato)', { extractionId, source, caseId, msg });
-            try {
-                await query(
-                    `
-                    UPDATE commercial_case_drawing_extractions
-                    SET status = 'error', error_message = @msg, completed_at = SYSDATETIME()
-                    WHERE id = @extractionId
-                    `,
-                    { extractionId, msg: String(msg).substring(0, 4000) },
-                );
-            } catch { /* best effort */ }
-        }
-    });
-
-    return extractionId;
+    try {
+        const job = await caseDocumentAnalysisService.analyzeAttachment({
+            caseId,
+            attachmentId,
+            organizationId,
+            userId,
+            mode: 'async',
+            force: true,
+        });
+        return job ? job.extraction_id : null;
+    } catch (dbErr) {
+        logger.error('_triggerAutoExtraction: impossibile avviare analisi', dbErr.message);
+        return null;
+    }
 }
 
 async function uploadCaseAttachment(req, res) {
