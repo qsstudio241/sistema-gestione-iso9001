@@ -15,6 +15,8 @@ const fs = require('fs').promises;
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const extractionService = require('../services/drawingExtraction.service');
+const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
+const caseExtractedCoverageService = require('../services/caseExtractedCoverage.service');
 
 const REVIEW_STATUSES = new Set(['extracted', 'confirmed', 'rejected', 'edited']);
 
@@ -384,10 +386,78 @@ async function getExtractedRequirementsSummary(req, res) {
     }
 }
 
+/**
+ * POST /cases/:caseId/analyze-documents
+ * Orchestrazione analisi AI su tutti gli allegati analizzabili (slice #5).
+ */
+async function analyzeCaseDocuments(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseId(req.params.caseId);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+
+        const body = req.body || {};
+        const attachmentIds = Array.isArray(body.attachment_ids) ? body.attachment_ids : null;
+        const mode = body.sync === true ? 'sync' : 'async';
+
+        const result = await caseDocumentAnalysisService.analyzeAllCaseDocuments({
+            caseId,
+            organizationId,
+            userId,
+            mode,
+            force: body.force !== false,
+            attachmentIds,
+        });
+
+        return res.status(202).json(result);
+    } catch (err) {
+        if (err.code === 'NOT_FOUND') {
+            return sendErr(res, 404, err.message, 'NOT_FOUND');
+        }
+        logger.error('analyzeCaseDocuments', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+/**
+ * GET /cases/:caseId/extracted-coverage?project_id=X
+ * Copertura qualifiche/WPS arricchita con requisiti estratti (slice #7).
+ */
+async function getCaseExtractedCoverage(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseId(req.params.caseId);
+        const projectId = parseId(req.query.project_id);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!projectId) return sendErr(res, 400, 'project_id richiesto', 'VALIDATION_ERROR');
+
+        if (!(await caseBelongsToOrg(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+
+        const result = await caseExtractedCoverageService.computeCaseProjectCoverage({
+            caseId,
+            projectId,
+            organizationId,
+        });
+
+        return res.json(result);
+    } catch (err) {
+        if (err.code === 'NOT_FOUND') {
+            return sendErr(res, 404, err.message, 'NOT_FOUND');
+        }
+        logger.error('getCaseExtractedCoverage', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 module.exports = {
     startExtraction,
     listExtractions,
     getExtraction,
     reviewRequirement,
     getExtractedRequirementsSummary,
+    analyzeCaseDocuments,
+    getCaseExtractedCoverage,
 };

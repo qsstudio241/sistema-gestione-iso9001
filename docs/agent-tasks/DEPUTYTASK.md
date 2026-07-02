@@ -1,17 +1,17 @@
-# DEPUTYTASK — SAL Fase 2: export Word + storico + evidenze registro
+# DEPUTYTASK — SAL Fase 3: integrazioni audit + NC sal_gap
 
 > **Creato**: 02/07/2026  
-> **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 2  
-> **Base**: `main`
+> **Stato**: IN CORSO  
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 3  
+> **Base**: branch `cursor/sal-fase3-integrations-3971` (include Fase 2 + merge main/Welding Book)
 
 ---
 
 ## Obiettivo
 
-Completare Fase 2 SAL: export Word tracker, storico revisioni per clausola, collegamento evidenze al Registro Documenti (`document_registry`), coordinato col modulo documenti esistente.
+Integrare il motore SAL con audit e Piano Azioni: `conformity_hint` da ultimo audit completato, azioni NC con `source_category='sal_gap'`.
 
-**Non toccato**: `ContractReviewPage`, `contractReview.*`, drawing extraction (branch parallelo committente).
+**Non toccato** (lavoro parallelo committente/VPS): Welding Book (`weldingBooks.*`, mig. 110), `ContractReviewPage`, drawing extraction.
 
 ---
 
@@ -19,17 +19,16 @@ Completare Fase 2 SAL: export Word tracker, storico revisioni per clausola, coll
 
 | Voce | Esito |
 |------|-------|
-| `wordExportSal.js` — export .docx con legenda standard + colonna evidenze registro | ✅ |
-| `SalEvidenceSection.jsx` — picker documenti rilasciati, link registro (`RouterContext`) | ✅ |
-| Modal SAL ampliato: evidenze + storico revisioni | ✅ |
-| Backend: `validateEvidenceDocumentIds`, `enrichRowsWithEvidence`, `GET .../history` | ✅ |
-| Pulsante «Export Word» in header SAL | ✅ |
-| Test L1 backend (13) + frontend (5) | ✅ PASS |
+| Migrazione **118** — `CK_nc_source_category` include `sal_gap` | ⏳ |
+| `syncAuditConformityHints` + `POST .../gap-matrix/sync-audit-hints` | ⏳ |
+| Colonna hint audit + pulsante sync in `SALModule` | ⏳ |
+| Categoria NC `sal_gap` + modal azione da gap SAL | ⏳ |
+| Test L1 backend + frontend | ⏳ |
 
-**Prossimo step**: Fase 3 integrazioni audit/NC (`sal_gap`).
+**Deploy VPS** (dopo merge): mig. 118 → `deploy-controllers-to-vps` → restart backend. **Non** interferisce con mig. 110 Welding Book.
 
 ---
 
 ## Chiusura
 
-TEST OK — Fase 2 completata. Evidenze SAL = riferimenti a `document_registry`, non duplicazione file.
+_(TEST OK da aggiornare a fine slice)_
