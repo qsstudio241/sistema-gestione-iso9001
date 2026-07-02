@@ -164,7 +164,8 @@
                                      "src/controllers/notificationContacts.controller.js",
                                      "src/controllers/managementReviews.controller.js",
                                      "src/controllers/equipment.controller.js",
-                                     "src/controllers/ndtReports.controller.js"
+                                     "src/controllers/ndtReports.controller.js",
+                                     "src/controllers/weldingBooks.controller.js"
                                  ]
                    },
                    {
@@ -193,6 +194,7 @@
                                      "src/routes/drawingExtraction.routes.js",
                                      "src/routes/equipment.routes.js",
                                      "src/routes/ndtReports.routes.js",
+                                     "src/routes/weldingBooks.routes.js",
                                      "src/routes/welding.routes.js",
                                      "src/routes/ingestStaging.routes.js",
                                      "src/routes/normBroker.routes.js",

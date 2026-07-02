@@ -2175,6 +2175,14 @@ class ApiService {
     async deleteNdtReport(id)            { return this.delete(`/ndt-reports/${id}`); }
     async getNdtReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports/stats${qs ? '?' + qs : ''}`); }
 
+    // ─── Saldatura — Welding Book (IOF ISO 3834) ─────────────────────────────
+    async getWeldingBookList(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/welding-books${qs ? '?' + qs : ''}`); }
+    async getWeldingBook(id)               { return this.get(`/welding-books/${id}`); }
+    async createWeldingBook(data)          { return this.post('/welding-books', data); }
+    async updateWeldingBook(id, data)      { return this.put(`/welding-books/${id}`, data); }
+    async deleteWeldingBook(id)            { return this.delete(`/welding-books/${id}`); }
+    async getWeldingBookStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/welding-books/stats${qs ? '?' + qs : ''}`); }
+
     // ─── Projects / Commesse (Modulo Saldatura) ─────────────────────────────
     async getProjects(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/projects${qs ? '?' + qs : ''}`); }
     async getProject(id)             { return this.get(`/projects/${id}`); }
