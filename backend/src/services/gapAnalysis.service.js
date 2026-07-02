@@ -752,6 +752,42 @@ async function syncAuditConformityHints(organizationId, companyId, userId, { mon
   };
 }
 
+/**
+ * Mappa stato SAL → status widget Riesame §9.3 (norm_coverage).
+ * completed/to_validate → ok; discussed/in_progress/non seedato → gap; na escluso dal chiamante.
+ */
+function mapSalStatusToNormCoverage(salStatus) {
+  if (salStatus === 'completed' || salStatus === 'to_validate') return 'ok';
+  return 'gap';
+}
+
+/**
+ * Copertura normativa per Riesame di Direzione — legge il motore SAL (sola lettura).
+ * Fase 4 MODULO_SAL: sostituisce il LEFT JOIN audit grossolano quando c'è company_id.
+ */
+async function getNormCoverageForReview(organizationId, companyId, {
+  standardCode = 'ISO_9001_2015',
+} = {}) {
+  const matrix = await getGapMatrix(organizationId, companyId, { standardCode });
+  if (!matrix) return null;
+
+  return (matrix.rows || [])
+    .filter((row) => row.status !== 'na')
+    .map((row) => {
+      const status = mapSalStatusToNormCoverage(row.status);
+      return {
+        clause: row.clauseRef,
+        title: row.clauseTitle,
+        status,
+        last_verified: status === 'ok' && row.updatedAt
+          ? row.updatedAt.slice(0, 10)
+          : null,
+        sal_status: row.status || null,
+        conformity_hint: row.conformityHint || null,
+      };
+    });
+}
+
 function mapStatusRow(row) {
   let evidenceDocumentIds = null;
   if (row.evidence_document_ids) {
@@ -813,6 +849,8 @@ module.exports = {
   seedForCompany,
   getStatusHistory,
   syncAuditConformityHints,
+  getNormCoverageForReview,
+  mapSalStatusToNormCoverage,
   validateEvidenceDocumentIds,
   clauseRefToSectionCode,
   pickWorstConformityHint,
