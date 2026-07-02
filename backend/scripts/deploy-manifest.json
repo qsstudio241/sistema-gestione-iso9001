@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Manifest unico per deploy backend VPS - ordine dependency-aware (services/utils prima di controller/routes)",
     "remoteBase":  "/var/www/sgq-backend",
     "ensureRemoteDirs":  [
