@@ -1,17 +1,17 @@
-# DEPUTYTASK — SAL Fase 1: UI griglia MVP `/sal`
+# DEPUTYTASK — SAL Fase 2: export Word + storico + evidenze registro
 
-> **Creato**: 01/07/2026  
+> **Creato**: 02/07/2026  
 > **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 1  
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 2  
 > **Base**: `main`
 
 ---
 
 ## Obiettivo
 
-Sostituire `ModuleLocked` con pagina SAL operativa: griglia requisiti × stati, ambito azienda, API gap-matrix, test L1 frontend.
+Completare Fase 2 SAL: export Word tracker, storico revisioni per clausola, collegamento evidenze al Registro Documenti (`document_registry`), coordinato col modulo documenti esistente.
 
-**Non toccato** (branch parallelo committente): `ContractReviewPage`, `contractReview.*`, `commercial_cases*`, drawing extraction.
+**Non toccato**: `ContractReviewPage`, `contractReview.*`, drawing extraction (branch parallelo committente).
 
 ---
 
@@ -19,18 +19,17 @@ Sostituire `ModuleLocked` con pagina SAL operativa: griglia requisiti × stati, 
 
 | Voce | Esito |
 |------|-------|
-| `SALModule.jsx` + `SALModule.css` — griglia `SgqDataGrid`, tab standard, seed, modal dettagli | ✅ |
-| `salCompanyScope.js` — persistenza localStorage + auto-select singola azienda | ✅ |
-| `salConstants.js` — stati/label/badge standard | ✅ |
-| `apiService` — `getGapMatrix`, `updateGapStatus`, `seedGapMatrix` | ✅ |
-| Route `/sal` → `SALModule`; menu sidebar senza lucchetto | ✅ |
-| Test Vitest `salModule.test.jsx` + `salCompanyScope.test.js` (6 test) | ✅ PASS |
-| Build Vite | ✅ OK |
+| `wordExportSal.js` — export .docx con legenda standard + colonna evidenze registro | ✅ |
+| `SalEvidenceSection.jsx` — picker documenti rilasciati, link registro (`RouterContext`) | ✅ |
+| Modal SAL ampliato: evidenze + storico revisioni | ✅ |
+| Backend: `validateEvidenceDocumentIds`, `enrichRowsWithEvidence`, `GET .../history` | ✅ |
+| Pulsante «Export Word» in header SAL | ✅ |
+| Test L1 backend (13) + frontend (5) | ✅ PASS |
 
-**Fuori scope (Fasi 2+)**: export Word SAL, storico revisioni UI, integrazioni audit/NC, feed Riesame.
+**Prossimo step**: Fase 3 integrazioni audit/NC (`sal_gap`).
 
 ---
 
 ## Chiusura
 
-TEST OK — Fase 1 UI completata. Prossimo step: **Fase 2 export Word + storico**.
+TEST OK — Fase 2 completata. Evidenze SAL = riferimenti a `document_registry`, non duplicazione file.

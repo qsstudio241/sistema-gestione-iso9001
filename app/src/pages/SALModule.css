@@ -318,3 +318,185 @@
   color: #6b7280;
   margin-left: 8px;
 }
+
+.sal-modal-wide {
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.sal-evidence-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.sal-evidence-section {
+  margin: 16px 0;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.sal-evidence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.sal-evidence-header label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.sal-evidence-registry-link {
+  font-size: 12px;
+  color: #1e3a5f;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sal-evidence-registry-link:hover {
+  text-decoration: underline;
+}
+
+.sal-evidence-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+.sal-evidence-hint code {
+  font-size: 11px;
+  background: #eef2ff;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.sal-evidence-loading,
+.sal-evidence-empty {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.sal-evidence-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 0;
+}
+
+.sal-evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.sal-evidence-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sal-evidence-item:last-child {
+  border-bottom: none;
+}
+
+.sal-evidence-item-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sal-evidence-item-link {
+  font-size: 12px;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.sal-evidence-item-link:hover {
+  color: #1e3a5f;
+}
+
+.sal-evidence-count {
+  font-size: 12px;
+  color: #374151;
+  margin: 8px 0 0;
+  font-weight: 600;
+}
+
+.sal-history-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sal-history-block h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #1e3a5f;
+}
+
+.sal-history-loading,
+.sal-history-empty {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.sal-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.sal-history-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 12px;
+}
+
+.sal-history-date {
+  color: #6b7280;
+  min-width: 72px;
+}
+
+.sal-history-status {
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.sal-history-user {
+  color: #374151;
+}
+
+.sal-history-notes {
+  flex: 1 1 100%;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

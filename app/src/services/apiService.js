@@ -2049,6 +2049,10 @@ class ApiService {
         return this.post(`/companies/${companyId}/gap-matrix/seed`, body);
     }
 
+    async getGapStatusHistory(companyId, normRequirementId) {
+        return this.get(`/companies/${companyId}/gap-statuses/${normRequirementId}/history`);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);

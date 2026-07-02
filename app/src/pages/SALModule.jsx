@@ -8,7 +8,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import SgqDataGrid from '../components/SgqDataGrid';
+import SalEvidenceSection from '../components/SalEvidenceSection';
 import { formatDate } from '../utils/dateHelpers';
+import { exportSalTrackerDocx } from '../utils/wordExportSal';
 import {
   resolveInitialSalCompanyScope,
   persistSalCompanyScope,
@@ -33,13 +35,30 @@ const GRID_COLUMNS = [
   { id: '_actions', label: '', sortable: false, width: '72px' },
 ];
 
-function SalEditModal({ row, saving, onClose, onSave }) {
+function SalEditModal({ row, companyId, saving, onClose, onSave }) {
   const [form, setForm] = useState({
     status: row.status || 'discussed',
     notes: row.notes || '',
     responsible: row.responsible || '',
     dueDate: row.dueDate || '',
+    evidenceDocumentIds: Array.isArray(row.evidenceDocumentIds)
+      ? row.evidenceDocumentIds.map(Number)
+      : [],
   });
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!companyId || !row?.normRequirementId) return;
+    setHistoryLoading(true);
+    apiService.getGapStatusHistory(companyId, row.normRequirementId)
+      .then((res) => {
+        const data = res?.data ?? res;
+        setHistory(Array.isArray(data?.history) ? data.history : []);
+      })
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [companyId, row?.normRequirementId]);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -49,7 +68,7 @@ function SalEditModal({ row, saving, onClose, onSave }) {
   return (
     <div className="sal-modal-backdrop" role="presentation" onClick={onClose}>
       <div
-        className="sal-modal"
+        className="sal-modal sal-modal-wide"
         role="dialog"
         aria-labelledby="sal-edit-title"
         onClick={(e) => e.stopPropagation()}
@@ -94,11 +113,48 @@ function SalEditModal({ row, saving, onClose, onSave }) {
             <label htmlFor="sal-edit-notes">Note</label>
             <textarea
               id="sal-edit-notes"
+              className="notes-textarea"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Note sull'avanzamento"
             />
           </div>
+
+          <SalEvidenceSection
+            companyId={companyId}
+            value={form.evidenceDocumentIds}
+            onChange={(ids) => setForm((f) => ({ ...f, evidenceDocumentIds: ids }))}
+            disabled={saving}
+          />
+
+          <div className="sal-history-block">
+            <h4>Storico revisioni</h4>
+            {historyLoading && <p className="sal-history-loading">Caricamento storico…</p>}
+            {!historyLoading && history.length === 0 && (
+              <p className="sal-history-empty">Nessuna revisione registrata.</p>
+            )}
+            {!historyLoading && history.length > 0 && (
+              <ul className="sal-history-list">
+                {history.map((h) => (
+                  <li key={h.id}>
+                    <span className="sal-history-date">
+                      {h.changedAt ? formatDate(h.changedAt.slice(0, 10)) : '—'}
+                    </span>
+                    <span className="sal-history-status">
+                      {SAL_STATUS_LABEL[h.status] || h.status}
+                    </span>
+                    {h.changedByName && (
+                      <span className="sal-history-user">{h.changedByName}</span>
+                    )}
+                    {h.notes && (
+                      <span className="sal-history-notes" title={h.notes}>{h.notes}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="sal-modal-actions">
             <button type="button" className="sal-btn sal-btn-secondary" onClick={onClose}>
               Annulla
@@ -126,6 +182,7 @@ export default function SALModule() {
   const [error, setError] = useState(null);
   const [editRow, setEditRow] = useState(null);
   const [savingId, setSavingId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     apiService.getCompanies?.().then((res) => {
@@ -204,6 +261,7 @@ export default function SALModule() {
         notes: payload.notes ?? row.notes,
         responsible: payload.responsible ?? row.responsible,
         dueDate: payload.dueDate ?? row.dueDate,
+        evidenceDocumentIds: payload.evidenceDocumentIds ?? row.evidenceDocumentIds,
       });
       setEditRow(null);
       await loadMatrix();
@@ -238,7 +296,26 @@ export default function SALModule() {
       notes: row.notes,
       responsible: row.responsible,
       dueDate: row.dueDate,
+      evidenceDocumentIds: row.evidenceDocumentIds,
     });
+  }
+
+  async function handleExportWord() {
+    if (!companyScope || !rows.length) return;
+    setExporting(true);
+    setError(null);
+    try {
+      await exportSalTrackerDocx({
+        companyName: scopeCompanyName,
+        standardFilter: standardFilter || undefined,
+        rows,
+        summary,
+      });
+    } catch (err) {
+      setError(err?.message || 'Errore export Word SAL');
+    } finally {
+      setExporting(false);
+    }
   }
 
   function renderCell(row, col) {
@@ -268,9 +345,19 @@ export default function SALModule() {
           </select>
         );
       case 'notes':
-        return row.notes
-          ? <span className="sal-notes-preview" title={row.notes}>{row.notes}</span>
-          : '—';
+        if (row.notes) {
+          return <span className="sal-notes-preview" title={row.notes}>{row.notes}</span>;
+        }
+        if (Array.isArray(row.evidenceDocuments) && row.evidenceDocuments.length) {
+          return (
+            <span className="sal-evidence-badge" title={row.evidenceDocuments.map((d) => d.title).join(', ')}>
+              {row.evidenceDocuments.length}
+              {' '}
+              evidenza/e
+            </span>
+          );
+        }
+        return '—';
       case 'responsible':
         return row.responsible || '—';
       case 'dueDate':
@@ -325,6 +412,17 @@ export default function SALModule() {
               onClick={handleSeed}
             >
               {seeding ? 'Seed in corso…' : 'Seed clausole'}
+            </button>
+          )}
+          {companyScope && rows.length > 0 && (
+            <button
+              type="button"
+              className="sal-btn sal-btn-secondary"
+              disabled={exporting || loading}
+              onClick={handleExportWord}
+              title="Esporta matrice SAL in Word (.docx)"
+            >
+              {exporting ? 'Export…' : 'Export Word'}
             </button>
           )}
         </div>
@@ -403,6 +501,7 @@ export default function SALModule() {
       {editRow && (
         <SalEditModal
           row={editRow}
+          companyId={companyScope ? Number(companyScope) : null}
           saving={savingId === editRow.normRequirementId}
           onClose={() => setEditRow(null)}
           onSave={(form) => saveStatus(editRow, form)}
