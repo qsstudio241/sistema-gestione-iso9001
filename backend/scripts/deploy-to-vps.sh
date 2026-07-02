@@ -21,7 +21,7 @@ if [[ ! -f "${MANIFEST}" ]]; then
     exit 1
 fi
 
-REMOTE_BASE="${SGQ_REMOTE_BASE:-$(python3 -c "import json; print(json.load(open('${MANIFEST}')).get('remoteBase','/var/www/sgq-backend'))")}"
+REMOTE_BASE="${SGQ_REMOTE_BASE:-$(python3 -c "import json; print(json.load(open('${MANIFEST}', encoding='utf-8-sig')).get('remoteBase','/var/www/sgq-backend'))")}"
 SYSTEMD_SERVICE="${SGQ_SYSTEMD_SERVICE:-sgq-backend.service}"
 
 echo "=== Deploy SGQ Backend → VPS ==="
@@ -95,7 +95,7 @@ echo ""
 echo "Preflight locale (manifest)..."
 MISSING="$(python3 <<PY
 import json, os, sys
-m = json.load(open("${MANIFEST}"))
+m = json.load(open("${MANIFEST}", encoding="utf-8-sig"))
 root = "${BACKEND_ROOT}"
 missing = []
 for g in m.get("groups", []):
@@ -121,7 +121,7 @@ ssh_run "echo OK preflight" || { echo "❌ Connessione SSH fallita."; exit 1; }
 echo "  ✓ SSH OK"
 
 # Directory remote
-DIRS="$(python3 -c "import json; print(' '.join(json.load(open('${MANIFEST}')).get('ensureRemoteDirs',[])))")"
+DIRS="$(python3 -c "import json; print(' '.join(json.load(open('${MANIFEST}', encoding='utf-8-sig')).get('ensureRemoteDirs',[])))")"
 if [[ -n "${DIRS}" ]]; then
     echo ""
     echo "Creazione directory remote..."
@@ -147,7 +147,7 @@ while IFS='|' read -r group rel; do
     scp_file "${local_path}" "${remote_path}"
 done < <(python3 <<PY
 import json
-m = json.load(open("${MANIFEST}"))
+m = json.load(open("${MANIFEST}", encoding="utf-8-sig"))
 for g in m.get("groups", []):
     for rel in g.get("files", []):
         print(f"{g['name']}|{rel}")
