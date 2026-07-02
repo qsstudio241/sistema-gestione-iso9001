@@ -1,15 +1,15 @@
-# DEPUTYTASK — SAL Fase 3: integrazioni audit + NC sal_gap
+# DEPUTYTASK — SAL Fase 4: feed Riesame §9.3
 
 > **Creato**: 02/07/2026  
 > **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 3  
-> **Branch**: `cursor/sal-fase3-integrations-3971` (include Fase 2 + merge main/Welding Book)
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 4 · §G  
+> **Branch**: `cursor/sal-fase4-riesame-feed-3971`
 
 ---
 
 ## Obiettivo
 
-Integrare SAL con audit e Piano Azioni senza toccare Welding Book (ADR-016, mig. 110 sul VPS).
+Il Riesame di Direzione legge la matrice SAL (sola lettura) per popolare `norm_coverage` quando è selezionato l'ambito azienda.
 
 ---
 
@@ -17,26 +17,13 @@ Integrare SAL con audit e Piano Azioni senza toccare Welding Book (ADR-016, mig.
 
 | Voce | Esito |
 |------|-------|
-| Migrazione **118** — `sal_gap` in `CK_nc_source_category` | ✅ |
-| `syncAuditConformityHints` + API `POST .../sync-audit-hints` | ✅ |
-| Colonna hint audit + pulsante sync in SAL | ✅ |
-| NC `sal_gap` + modal azione da gap | ✅ |
-| Test L1 backend (16) + frontend (6) | ✅ PASS |
-
----
-
-## Deploy VPS (ordine consigliato)
-
-1. Mig. **110** Welding Book (se non già fatta sul tuo VPS)
-2. Mig. **117** SAL Fase 0 (se non già fatta)
-3. Mig. **118** SAL Fase 3:
-   ```powershell
-   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-118-vps.js
-   ```
-4. `deploy-controllers-to-vps.ps1` + restart `sgq-backend`
+| `getNormCoverageForReview` in `gapAnalysis.service.js` | ✅ |
+| `getInputSummary` usa SAL con `company_id`, legacy senza | ✅ |
+| Test L1: `gapAnalysis` (18) + `managementReviews.controller` | ✅ PASS |
+| VPS: mig. 117+118 eseguite, backend SAL deployato | ✅ |
 
 ---
 
 ## Chiusura
 
-TEST OK — Fase 3 completata. Prossimo: **Fase 4** feed Riesame §9.3.
+TEST OK — Fase 4 completata. Prossimo opzionale: **Fase 5 AI**.
