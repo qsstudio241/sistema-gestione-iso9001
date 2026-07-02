@@ -21,6 +21,7 @@ salRouter.get('/gap-statuses', ctrl.listSalGapStatuses);
 salRouter.get('/gap-statuses/:normRequirementId/history', ctrl.getSalGapHistory);
 salRouter.put('/gap-statuses/:normRequirementId', ctrl.upsertSalGapStatus);
 salRouter.post('/gap-matrix/seed', ctrl.seedSalGapMatrix);
+salRouter.post('/gap-matrix/sync-audit-hints', ctrl.syncSalAuditHints);
 
 router.use('/companies/:companyId', salRouter);
 

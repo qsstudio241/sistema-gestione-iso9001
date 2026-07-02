@@ -15,6 +15,9 @@ const {
   seedForCompany,
   getStatusHistory,
   validateEvidenceDocumentIds,
+  syncAuditConformityHints,
+  clauseRefToSectionCode,
+  pickWorstConformityHint,
   assertCompanyInOrganization,
 } = require('./gapAnalysis.service');
 
@@ -269,5 +272,45 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
     expect(result.action).toBe('updated');
     const updateCall = mockQuery.mock.calls.find((c) => c[0].includes('UPDATE requirement_implementation_status'));
     expect(updateCall[1].evidenceJson).toBe('[77]');
+  });
+
+  it('clauseRefToSectionCode mappa macro-clausola a section checklist', () => {
+    expect(clauseRefToSectionCode('8.4')).toBe('clause8');
+    expect(clauseRefToSectionCode('4.1')).toBe('clause4');
+    expect(clauseRefToSectionCode('')).toBeNull();
+  });
+
+  it('pickWorstConformityHint preferisce NC su C', () => {
+    expect(pickWorstConformityHint(['C', 'NC', 'NA'])).toBe('NC');
+    expect(pickWorstConformityHint(['OSS', 'OM'])).toBe('OSS');
+  });
+
+  it('syncAuditConformityHints aggiorna conformity_hint da audit recente', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [
+          { standard_code: 'ISO_9001_2015', section_code: 'clause8', conformity_status: 'NC' },
+          { standard_code: 'ISO_9001_2015', section_code: 'clause8', conformity_status: 'C' },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            status_id: 5,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '8.4',
+            conformity_hint: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const data = await syncAuditConformityHints(1, 10, 7, { monthsBack: 12 });
+
+    expect(data.updated).toBe(1);
+    expect(data.matchedRows).toBe(1);
+    const updateCall = mockQuery.mock.calls.find((c) => c[0].includes('conformity_hint = @hint'));
+    expect(updateCall[1].hint).toBe('NC');
   });
 });

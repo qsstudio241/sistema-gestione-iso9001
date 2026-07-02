@@ -26,6 +26,40 @@ const SAL_DEFAULT_STANDARD_CODES = Object.freeze([
 
 const MACRO_CLAUSE_SQL = `LEN(nr.clause_ref) - LEN(REPLACE(nr.clause_ref, '.', '')) = 1`;
 
+/** Priorità hint audit (peggiore vince) — allineato a conformity_status checklist */
+const CONFORMITY_HINT_PRIORITY = Object.freeze({
+  NC: 5,
+  OSS: 4,
+  OM: 3,
+  C: 2,
+  NA: 1,
+});
+
+/**
+ * Mappa clausola SAL macro (es. 8.4) → section_code checklist (clause8).
+ */
+function clauseRefToSectionCode(clauseRef) {
+  if (!clauseRef || typeof clauseRef !== 'string') return null;
+  const major = clauseRef.split('.')[0];
+  if (!/^\d+$/.test(major)) return null;
+  return `clause${major}`;
+}
+
+function pickWorstConformityHint(statuses) {
+  if (!Array.isArray(statuses) || !statuses.length) return null;
+  let best = null;
+  let bestScore = 0;
+  for (const raw of statuses) {
+    const status = String(raw || '').trim().toUpperCase();
+    const score = CONFORMITY_HINT_PRIORITY[status] || 0;
+    if (score > bestScore) {
+      bestScore = score;
+      best = status;
+    }
+  }
+  return best;
+}
+
 /**
  * Tokenizza un testo in termini significativi (>= 3 caratteri, no stopwords).
  */
@@ -611,6 +645,113 @@ async function getStatusHistory(organizationId, companyId, normRequirementId) {
   };
 }
 
+/**
+ * Sincronizza conformity_hint da ultimo audit completato per standard (sola lettura audit).
+ * Non modifica status implementazione SAL — solo suggerimento audit (§I spec SAL).
+ */
+async function syncAuditConformityHints(organizationId, companyId, userId, { monthsBack = 12 } = {}) {
+  const scoped = await assertCompanyInOrganization(organizationId, companyId);
+  if (!scoped) return null;
+
+  const months = Number.isFinite(Number(monthsBack)) ? Math.max(1, Number(monthsBack)) : 12;
+
+  const hintsRes = await query(`
+    WITH ranked_audits AS (
+      SELECT
+        a.audit_id,
+        s.standard_code,
+        ast.standard_id,
+        ROW_NUMBER() OVER (
+          PARTITION BY ast.standard_id
+          ORDER BY a.audit_date DESC, a.audit_id DESC
+        ) AS rn
+      FROM audits a
+      INNER JOIN audit_standards ast ON ast.audit_id = a.audit_id
+      INNER JOIN standards s ON s.standard_id = ast.standard_id
+      WHERE a.organization_id = @orgId
+        AND a.company_id = @companyId
+        AND a.is_deleted = 0
+        AND a.status IN ('completed', 'approved')
+        AND a.audit_date >= DATEADD(month, -@monthsBack, CAST(GETDATE() AS DATE))
+    )
+    SELECT ra.standard_code, cq.section_code, ar.conformity_status
+    FROM ranked_audits ra
+    INNER JOIN audit_responses ar ON ar.audit_id = ra.audit_id
+    INNER JOIN checklist_questions cq ON cq.question_id = ar.question_id
+      AND cq.standard_id = ra.standard_id
+      AND cq.is_active = 1
+    WHERE ra.rn = 1
+      AND ar.conformity_status IS NOT NULL
+  `, {
+    orgId: organizationId,
+    companyId: scoped.companyId,
+    monthsBack: months,
+  });
+
+  const grouped = {};
+  for (const row of hintsRes.recordset || []) {
+    const key = `${row.standard_code}|${row.section_code}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(row.conformity_status);
+  }
+
+  const hintByKey = {};
+  for (const [key, statuses] of Object.entries(grouped)) {
+    const hint = pickWorstConformityHint(statuses);
+    if (hint) hintByKey[key] = hint;
+  }
+
+  const rowsRes = await query(`
+    SELECT
+      ris.id AS status_id,
+      nr.standard_code,
+      nr.clause_ref,
+      ris.conformity_hint
+    FROM requirement_implementation_status ris
+    INNER JOIN norm_requirements nr ON nr.id = ris.norm_requirement_id
+    WHERE ris.organization_id = @orgId
+      AND ris.company_id = @companyId
+  `, { orgId: organizationId, companyId: scoped.companyId });
+
+  let updated = 0;
+  let matched = 0;
+
+  for (const row of rowsRes.recordset || []) {
+    const sectionCode = clauseRefToSectionCode(row.clause_ref);
+    if (!sectionCode) continue;
+    const key = `${row.standard_code}|${sectionCode}`;
+    const hint = hintByKey[key];
+    if (!hint) continue;
+    matched += 1;
+    if (row.conformity_hint === hint) continue;
+
+    await query(`
+      UPDATE requirement_implementation_status
+      SET conformity_hint = @hint,
+          updated_at = GETDATE(),
+          updated_by = @userId
+      WHERE id = @statusId
+        AND organization_id = @orgId
+        AND company_id = @companyId
+    `, {
+      hint,
+      userId: userId || null,
+      statusId: row.status_id,
+      orgId: organizationId,
+      companyId: scoped.companyId,
+    });
+    updated += 1;
+  }
+
+  return {
+    companyId: scoped.companyId,
+    monthsBack: months,
+    auditHintKeys: Object.keys(hintByKey).length,
+    matchedRows: matched,
+    updated,
+  };
+}
+
 function mapStatusRow(row) {
   let evidenceDocumentIds = null;
   if (row.evidence_document_ids) {
@@ -671,7 +812,10 @@ module.exports = {
   upsertStatus,
   seedForCompany,
   getStatusHistory,
+  syncAuditConformityHints,
   validateEvidenceDocumentIds,
+  clauseRefToSectionCode,
+  pickWorstConformityHint,
   assertCompanyInOrganization,
   SAL_STATUS_VALUES,
   SAL_DEFAULT_STANDARD_CODES,

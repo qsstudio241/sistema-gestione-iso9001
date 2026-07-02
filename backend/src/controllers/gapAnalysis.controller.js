@@ -12,6 +12,7 @@ const {
   upsertStatus,
   seedForCompany,
   getStatusHistory,
+  syncAuditConformityHints,
   SAL_DEFAULT_STANDARD_CODES,
 } = require('../services/gapAnalysis.service');
 const {
@@ -198,6 +199,33 @@ async function getSalGapHistory(req, res) {
   }
 }
 
+async function syncSalAuditHints(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res, { write: true });
+    if (!scope) return undefined;
+
+    const monthsBack = req.body?.monthsBack != null
+      ? parseInt(req.body.monthsBack, 10)
+      : 12;
+
+    const data = await syncAuditConformityHints(
+      scope.organizationId,
+      scope.companyId,
+      req.user.user_id,
+      { monthsBack: Number.isFinite(monthsBack) ? monthsBack : 12 },
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[SalGapSyncHints] Error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   getGapAnalysis,
   getSalGapMatrix,
@@ -205,4 +233,5 @@ module.exports = {
   upsertSalGapStatus,
   seedSalGapMatrix,
   getSalGapHistory,
+  syncSalAuditHints,
 };
