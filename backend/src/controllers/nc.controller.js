@@ -466,7 +466,7 @@ async function getNonConformityById(req, res) {
  */
 const VALID_SOURCE_CATEGORIES = [
     'audit', 'complaint', 'risk_action', 'management_review',
-    'improvement', 'operational', 'external_audit',
+    'improvement', 'operational', 'external_audit', 'sal_gap',
 ];
 
 /** Sezione ISO di default per categorie non legate ad audit. */
@@ -477,6 +477,7 @@ const CATEGORY_DEFAULT_SECTION = {
     improvement:       'clause10',
     operational:       'clause8',
     external_audit:    'clause9',
+    sal_gap:           'clause10',
 };
 
 async function createNonConformity(req, res) {

@@ -31,3 +31,42 @@ export function salStandardBadgeClass(standardCode) {
   if (standardCode === 'ISO_45001_2018') return 'sal-std-45001';
   return 'sal-std-default';
 }
+
+/** Hint audit (conformity_status checklist) — sola lettura in SAL */
+export const SAL_CONFORMITY_HINT_LABEL = {
+  C: 'Conforme',
+  NC: 'Non conforme',
+  OSS: 'Osservazione',
+  OM: 'Opportunità',
+  NA: 'N/A',
+};
+
+export function clauseRefToSectionCode(clauseRef) {
+  if (!clauseRef || typeof clauseRef !== 'string') return 'clause10';
+  const major = clauseRef.split('.')[0];
+  if (!/^\d+$/.test(major)) return 'clause10';
+  return `clause${major}`;
+}
+
+export function buildSalGapActionDescription(row) {
+  const ref = row?.clauseRef || '?';
+  const title = row?.clauseTitle || '';
+  const std = SAL_STANDARD_LABEL[row?.standardCode] || row?.standardCode || '';
+  const status = SAL_STATUS_LABEL[row?.status] || row?.status || '';
+  const hint = row?.conformityHint
+    ? (SAL_CONFORMITY_HINT_LABEL[row.conformityHint] || row.conformityHint)
+    : null;
+  const lines = [
+    `Gap implementazione SAL — clausola ${ref}${title ? `: ${title}` : ''}`,
+    std ? `Standard: ${std}` : null,
+    status ? `Stato implementazione: ${status}` : null,
+    hint ? `Hint audit: ${hint}` : null,
+    row?.notes ? `Note SAL: ${row.notes}` : null,
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+
+export function buildSalGapOriginText(row) {
+  const ref = row?.clauseRef || 'SAL';
+  return `SAL ${ref}`;
+}

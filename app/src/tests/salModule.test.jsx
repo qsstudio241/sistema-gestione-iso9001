@@ -24,6 +24,7 @@ vi.mock('../services/apiService', () => ({
     seedGapMatrix: vi.fn(),
     getGapStatusHistory: vi.fn(),
     getDocuments: vi.fn(),
+    syncSalAuditHints: vi.fn(),
   },
 }));
 
@@ -74,6 +75,7 @@ async function renderSalWithCompany(companyId = '1') {
   apiService.updateGapStatus.mockResolvedValue({ success: true, data: {} });
   apiService.getGapStatusHistory.mockResolvedValue({ data: { history: [] } });
   apiService.getDocuments.mockResolvedValue({ data: { items: [] } });
+  apiService.syncSalAuditHints.mockResolvedValue({ data: { updated: 2 } });
 
   await act(async () => {
     renderSal(<SALModule />);
@@ -139,6 +141,17 @@ describe('SALModule — griglia e cambio stato', () => {
           ]),
         }),
       );
+    });
+  });
+
+  it('sync hint audit chiama syncSalAuditHints e ricarica matrice', async () => {
+    await renderSalWithCompany();
+
+    await waitFor(() => expect(screen.getByText('Sync hint audit')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Sync hint audit'));
+
+    await waitFor(() => {
+      expect(apiService.syncSalAuditHints).toHaveBeenCalledWith('1', { monthsBack: 12 });
     });
   });
 

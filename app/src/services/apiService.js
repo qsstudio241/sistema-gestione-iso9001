@@ -2061,6 +2061,12 @@ class ApiService {
         return this.get(`/companies/${companyId}/gap-statuses/${normRequirementId}/history`);
     }
 
+    async syncSalAuditHints(companyId, { monthsBack } = {}) {
+        const body = {};
+        if (monthsBack != null) body.monthsBack = monthsBack;
+        return this.post(`/companies/${companyId}/gap-matrix/sync-audit-hints`, body);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);

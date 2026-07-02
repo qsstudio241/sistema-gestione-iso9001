@@ -1,17 +1,15 @@
 # DEPUTYTASK — SAL Fase 3: integrazioni audit + NC sal_gap
 
 > **Creato**: 02/07/2026  
-> **Stato**: IN CORSO  
+> **Stato**: COMPLETATO — TEST OK  
 > **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 3  
-> **Base**: branch `cursor/sal-fase3-integrations-3971` (include Fase 2 + merge main/Welding Book)
+> **Branch**: `cursor/sal-fase3-integrations-3971` (include Fase 2 + merge main/Welding Book)
 
 ---
 
 ## Obiettivo
 
-Integrare il motore SAL con audit e Piano Azioni: `conformity_hint` da ultimo audit completato, azioni NC con `source_category='sal_gap'`.
-
-**Non toccato** (lavoro parallelo committente/VPS): Welding Book (`weldingBooks.*`, mig. 110), `ContractReviewPage`, drawing extraction.
+Integrare SAL con audit e Piano Azioni senza toccare Welding Book (ADR-016, mig. 110 sul VPS).
 
 ---
 
@@ -19,16 +17,26 @@ Integrare il motore SAL con audit e Piano Azioni: `conformity_hint` da ultimo au
 
 | Voce | Esito |
 |------|-------|
-| Migrazione **118** — `CK_nc_source_category` include `sal_gap` | ⏳ |
-| `syncAuditConformityHints` + `POST .../gap-matrix/sync-audit-hints` | ⏳ |
-| Colonna hint audit + pulsante sync in `SALModule` | ⏳ |
-| Categoria NC `sal_gap` + modal azione da gap SAL | ⏳ |
-| Test L1 backend + frontend | ⏳ |
+| Migrazione **118** — `sal_gap` in `CK_nc_source_category` | ✅ |
+| `syncAuditConformityHints` + API `POST .../sync-audit-hints` | ✅ |
+| Colonna hint audit + pulsante sync in SAL | ✅ |
+| NC `sal_gap` + modal azione da gap | ✅ |
+| Test L1 backend (16) + frontend (6) | ✅ PASS |
 
-**Deploy VPS** (dopo merge): mig. 118 → `deploy-controllers-to-vps` → restart backend. **Non** interferisce con mig. 110 Welding Book.
+---
+
+## Deploy VPS (ordine consigliato)
+
+1. Mig. **110** Welding Book (se non già fatta sul tuo VPS)
+2. Mig. **117** SAL Fase 0 (se non già fatta)
+3. Mig. **118** SAL Fase 3:
+   ```powershell
+   .\backend\scripts\run-on-vps.ps1 -Script backend\scripts\run-migration-118-vps.js
+   ```
+4. `deploy-controllers-to-vps.ps1` + restart `sgq-backend`
 
 ---
 
 ## Chiusura
 
-_(TEST OK da aggiornare a fine slice)_
+TEST OK — Fase 3 completata. Prossimo: **Fase 4** feed Riesame §9.3.
