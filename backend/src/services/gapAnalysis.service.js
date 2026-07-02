@@ -201,10 +201,16 @@ async function getGapMatrix(organizationId, companyId, { standardCode, dateFrom 
 
   const rows = (res.recordset || []).map(mapStatusRow);
   const summary = buildSalSummary(rows);
+  const rowsWithEvidence = await enrichRowsWithEvidence(
+    organizationId,
+    scoped.companyId,
+    rows,
+  );
+
   return {
     companyId: scoped.companyId,
     standardCode: standardCode || null,
-    rows,
+    rows: rowsWithEvidence,
     summary,
   };
 }
@@ -284,9 +290,19 @@ async function upsertStatus(organizationId, companyId, userId, payload) {
   }
 
   const standardCode = reqRes.recordset[0].standard_code;
-  const evidenceJson = payload.evidenceDocumentIds != null
-    ? JSON.stringify(payload.evidenceDocumentIds)
-    : (payload.evidence_document_ids != null ? JSON.stringify(payload.evidence_document_ids) : null);
+  const updateEvidence = payload.evidenceDocumentIds != null
+    || payload.evidence_document_ids != null;
+  let evidenceJson = null;
+  if (updateEvidence) {
+    const raw = payload.evidenceDocumentIds ?? payload.evidence_document_ids;
+    const parsed = Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []);
+    const evidenceIds = await validateEvidenceDocumentIds(
+      organizationId,
+      scoped.companyId,
+      parsed,
+    );
+    evidenceJson = JSON.stringify(evidenceIds);
+  }
 
   const existing = await query(`
     SELECT id, status
@@ -316,7 +332,7 @@ async function upsertStatus(organizationId, companyId, userId, payload) {
           notes = @notes,
           responsible = @responsible,
           due_date = @dueDate,
-          evidence_document_ids = @evidenceJson,
+          evidence_document_ids = COALESCE(@evidenceJson, evidence_document_ids),
           updated_at = GETDATE(),
           updated_by = @userId
       WHERE id = @id
@@ -331,7 +347,7 @@ async function upsertStatus(organizationId, companyId, userId, payload) {
       notes,
       responsible,
       dueDate,
-      evidenceJson,
+      evidenceJson: updateEvidence ? evidenceJson : null,
       userId: userId || null,
     });
 
@@ -463,6 +479,138 @@ async function seedForCompany(organizationId, companyId, standardCodes = SAL_DEF
   };
 }
 
+/**
+ * Filtra gli ID evidenza: solo documenti del registro in scope org/azienda (is_current).
+ */
+async function validateEvidenceDocumentIds(organizationId, companyId, rawIds) {
+  if (!Array.isArray(rawIds) || rawIds.length === 0) return [];
+
+  const ids = [...new Set(
+    rawIds
+      .map((id) => parseInt(id, 10))
+      .filter((id) => Number.isFinite(id) && id > 0),
+  )];
+  if (!ids.length) return [];
+
+  const placeholders = ids.map((_, i) => `@id${i}`).join(', ');
+  const params = { orgId: organizationId, companyId };
+  ids.forEach((id, i) => { params[`id${i}`] = id; });
+
+  const res = await query(`
+    SELECT id
+    FROM document_registry
+    WHERE organization_id = @orgId
+      AND company_id = @companyId
+      AND is_current = 1
+      AND id IN (${placeholders})
+  `, params);
+
+  const valid = new Set((res.recordset || []).map((r) => r.id));
+  return ids.filter((id) => valid.has(id));
+}
+
+async function enrichRowsWithEvidence(organizationId, companyId, rows) {
+  const allIds = new Set();
+  for (const row of rows) {
+    if (Array.isArray(row.evidenceDocumentIds)) {
+      row.evidenceDocumentIds.forEach((id) => allIds.add(id));
+    }
+  }
+  if (!allIds.size) return rows;
+
+  const idList = [...allIds];
+  const placeholders = idList.map((_, i) => `@id${i}`).join(', ');
+  const params = { orgId: organizationId, companyId };
+  idList.forEach((id, i) => { params[`id${i}`] = id; });
+
+  const res = await query(`
+    SELECT id, title, document_type, status
+    FROM document_registry
+    WHERE organization_id = @orgId
+      AND company_id = @companyId
+      AND is_current = 1
+      AND id IN (${placeholders})
+  `, params);
+
+  const byId = Object.fromEntries(
+    (res.recordset || []).map((d) => [d.id, {
+      id: d.id,
+      title: d.title || `Documento #${d.id}`,
+      documentType: d.document_type || null,
+      status: d.status || null,
+    }]),
+  );
+
+  return rows.map((row) => {
+    const ids = Array.isArray(row.evidenceDocumentIds) ? row.evidenceDocumentIds : [];
+    const evidenceDocuments = ids
+      .map((id) => byId[id])
+      .filter(Boolean);
+    return { ...row, evidenceDocuments };
+  });
+}
+
+/**
+ * Storico revisioni stato SAL per clausola (ISO 7.5 tracciabilità).
+ */
+async function getStatusHistory(organizationId, companyId, normRequirementId) {
+  const scoped = await assertCompanyInOrganization(organizationId, companyId);
+  if (!scoped) return null;
+
+  const reqId = parseInt(normRequirementId, 10);
+  if (!Number.isFinite(reqId) || reqId <= 0) {
+    return { error: 'VALIDATION', message: 'normRequirementId non valido' };
+  }
+
+  const statusRes = await query(`
+    SELECT ris.id AS status_id, nr.clause_ref, nr.clause_title, nr.standard_code
+    FROM requirement_implementation_status ris
+    INNER JOIN norm_requirements nr ON nr.id = ris.norm_requirement_id
+    WHERE ris.organization_id = @orgId
+      AND ris.company_id = @companyId
+      AND ris.norm_requirement_id = @reqId
+  `, {
+    orgId: organizationId,
+    companyId: scoped.companyId,
+    reqId,
+  });
+
+  if (!statusRes.recordset.length) {
+    return {
+      companyId: scoped.companyId,
+      normRequirementId: reqId,
+      clauseRef: null,
+      history: [],
+    };
+  }
+
+  const head = statusRes.recordset[0];
+  const histRes = await query(`
+    SELECT h.id, h.status, h.notes, h.changed_at, h.changed_by,
+           u.full_name AS changed_by_name
+    FROM requirement_implementation_history h
+    LEFT JOIN users u ON u.user_id = h.changed_by
+    WHERE h.status_id = @statusId
+    ORDER BY h.changed_at DESC
+  `, { statusId: head.status_id });
+
+  return {
+    companyId: scoped.companyId,
+    normRequirementId: reqId,
+    clauseRef: head.clause_ref,
+    clauseTitle: head.clause_title,
+    standardCode: head.standard_code,
+    history: (histRes.recordset || []).map((h) => ({
+      id: h.id,
+      status: h.status,
+      notes: h.notes,
+      changedAt: h.changed_at ? new Date(h.changed_at).toISOString() : null,
+      changedBy: h.changed_by,
+      changedByName: h.changed_by_name || null,
+    })),
+  };
+}
+
 function mapStatusRow(row) {
   let evidenceDocumentIds = null;
   if (row.evidence_document_ids) {
@@ -522,6 +670,8 @@ module.exports = {
   listStatuses,
   upsertStatus,
   seedForCompany,
+  getStatusHistory,
+  validateEvidenceDocumentIds,
   assertCompanyInOrganization,
   SAL_STATUS_VALUES,
   SAL_DEFAULT_STANDARD_CODES,
