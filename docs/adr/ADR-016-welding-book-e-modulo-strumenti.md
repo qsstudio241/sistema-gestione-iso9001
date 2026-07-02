@@ -118,7 +118,7 @@ N° sequenza, n° giunto/posizione, descrizione, WPS (se diversa), saldatore, pa
 | Slice | Deliverable | Stato |
 |-------|-------------|-------|
 | **0** | ADR-016, migrazione 110, API CRUD base, pagina lista/scheletro | In corso |
-| **1** | Form testata + griglia attrezzature + griglia saldature | Backlog |
+| **1** | Select WPS/WPQR/commessa, precompilazione, saldatori qualifiche, autosave bozza | ✅ Fase 1 (02/07/2026) |
 | **2** | Select WPS/WPQR precompilazione, picker saldatori qualifiche | Backlog |
 | **3** | Allegati foto per riga saldatura | Backlog |
 | **4** | Export Word IOF (`welding-book-report.docx`) | Backlog |
