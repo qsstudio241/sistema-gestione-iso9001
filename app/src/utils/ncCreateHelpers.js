@@ -80,6 +80,13 @@ export const NC_SOURCE_CATEGORIES = {
     requiresAudit: false,
     icon: '\uD83D\uDD0E',
   },
+  sal_gap: {
+    label: 'Gap SAL implementazione',
+    iso: '\u00A74\u201310',
+    defaultSection: 'clause10',
+    requiresAudit: false,
+    icon: '\uD83D\uDCCA',
+  },
 };
 
 export const NC_SOURCE_CATEGORY_OPTIONS = Object.entries(NC_SOURCE_CATEGORIES).map(

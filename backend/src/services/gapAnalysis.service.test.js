@@ -13,6 +13,11 @@ const {
   listStatuses,
   upsertStatus,
   seedForCompany,
+  getStatusHistory,
+  validateEvidenceDocumentIds,
+  syncAuditConformityHints,
+  clauseRefToSectionCode,
+  pickWorstConformityHint,
   assertCompanyInOrganization,
 } = require('./gapAnalysis.service');
 
@@ -196,5 +201,116 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
     });
 
     expect(result.error).toBe('VALIDATION');
+  });
+
+  it('validateEvidenceDocumentIds filtra solo documenti in scope org/azienda', async () => {
+    mockQuery.mockResolvedValueOnce({
+      recordset: [{ id: 10 }, { id: 99 }],
+    });
+
+    const ids = await validateEvidenceDocumentIds(1, 10, [10, 99, 100, 'bad']);
+
+    expect(ids).toEqual([10, 99]);
+    expect(mockQuery.mock.calls[0][0]).toContain('document_registry');
+    expect(mockQuery.mock.calls[0][0]).toContain('is_current = 1');
+  });
+
+  it('getStatusHistory restituisce revisioni ordinate per status_id', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          status_id: 55,
+          clause_ref: '8.4',
+          clause_title: 'Controllo fornitori',
+          standard_code: 'ISO_9001_2015',
+        }],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 2,
+            status: 'in_progress',
+            notes: 'Avviato',
+            changed_at: new Date('2026-02-01'),
+            changed_by: 3,
+            changed_by_name: 'Mario Rossi',
+          },
+          {
+            id: 1,
+            status: 'discussed',
+            notes: null,
+            changed_at: new Date('2026-01-15'),
+            changed_by: 3,
+            changed_by_name: 'Mario Rossi',
+          },
+        ],
+      });
+
+    const data = await getStatusHistory(1, 10, 5);
+
+    expect(data.clauseRef).toBe('8.4');
+    expect(data.history).toHaveLength(2);
+    expect(data.history[0].status).toBe('in_progress');
+    expect(data.history[0].changedByName).toBe('Mario Rossi');
+  });
+
+  it('upsertStatus con evidenceDocumentIds valida contro document_registry', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 5, standard_code: 'ISO_9001_2015' }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 77 }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 10, status: 'completed' }] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const result = await upsertStatus(1, 10, 7, {
+      normRequirementId: 5,
+      status: 'completed',
+      evidenceDocumentIds: [77, 999],
+    });
+
+    expect(result.action).toBe('updated');
+    const updateCall = mockQuery.mock.calls.find((c) => c[0].includes('UPDATE requirement_implementation_status'));
+    expect(updateCall[1].evidenceJson).toBe('[77]');
+  });
+
+  it('clauseRefToSectionCode mappa macro-clausola a section checklist', () => {
+    expect(clauseRefToSectionCode('8.4')).toBe('clause8');
+    expect(clauseRefToSectionCode('4.1')).toBe('clause4');
+    expect(clauseRefToSectionCode('')).toBeNull();
+  });
+
+  it('pickWorstConformityHint preferisce NC su C', () => {
+    expect(pickWorstConformityHint(['C', 'NC', 'NA'])).toBe('NC');
+    expect(pickWorstConformityHint(['OSS', 'OM'])).toBe('OSS');
+  });
+
+  it('syncAuditConformityHints aggiorna conformity_hint da audit recente', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [
+          { standard_code: 'ISO_9001_2015', section_code: 'clause8', conformity_status: 'NC' },
+          { standard_code: 'ISO_9001_2015', section_code: 'clause8', conformity_status: 'C' },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            status_id: 5,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '8.4',
+            conformity_hint: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const data = await syncAuditConformityHints(1, 10, 7, { monthsBack: 12 });
+
+    expect(data.updated).toBe(1);
+    expect(data.matchedRows).toBe(1);
+    const updateCall = mockQuery.mock.calls.find((c) => c[0].includes('conformity_hint = @hint'));
+    expect(updateCall[1].hint).toBe('NC');
   });
 });
