@@ -28,13 +28,13 @@ export default function IngestSourcePreview({
   fileName = "",
   mimeType = "application/pdf",
   previewFile = null,
+  tall = false,
 }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [blobRef, setBlobRef] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const revokeRef = useRef(null);
   const useMobileLayout = prefersMobilePdfFallback();
   const isImage = isImageMime(mimeType) || /\.(jpe?g|png)$/i.test(fileName || "");
@@ -50,7 +50,6 @@ export default function IngestSourcePreview({
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    setExpanded(false);
     cleanupUrl();
     setBlobUrl(null);
     setBlobRef(null);
@@ -84,15 +83,6 @@ export default function IngestSourcePreview({
     };
   }, [stagingId, previewFile, cleanupUrl]);
 
-  useEffect(() => {
-    if (!expanded) return undefined;
-    const onKey = (e) => {
-      if (e.key === "Escape") setExpanded(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [expanded]);
-
   const handleOpenNewTab = useCallback(async () => {
     if (!blobUrl || !blobRef) return;
     setOpening(true);
@@ -107,7 +97,7 @@ export default function IngestSourcePreview({
     }
   }, [blobUrl, blobRef, fileName, isImage, useMobileLayout]);
 
-  const renderPreviewContent = (fullscreen = false) => {
+  const renderPreviewContent = () => {
     if (loading) {
       return <p className="ingest-source-preview__status">Caricamento anteprima...</p>;
     }
@@ -125,12 +115,12 @@ export default function IngestSourcePreview({
         <img
           src={blobUrl}
           alt={fileName || "Anteprima documento"}
-          className={fullscreen ? "ingest-source-preview__image ingest-source-preview__image--fullscreen" : "ingest-source-preview__image"}
+          className="ingest-source-preview__image"
         />
       );
     }
 
-    if (useMobileLayout && !fullscreen) {
+    if (useMobileLayout && !tall) {
       return (
         <div className="ingest-source-preview__mobile">
           <p>Su mobile l&apos;anteprima inline può non funzionare.</p>
@@ -145,69 +135,31 @@ export default function IngestSourcePreview({
       <iframe
         title={fileName || "Anteprima PDF"}
         src={blobUrl}
-        className={fullscreen ? "ingest-source-preview__iframe ingest-source-preview__iframe--fullscreen" : "ingest-source-preview__iframe"}
+        className="ingest-source-preview__iframe"
       />
     );
   };
 
   return (
-    <>
-      <div className={`ingest-source-preview ${expanded ? "ingest-source-preview--hidden" : ""}`}>
-        <div className="ingest-source-preview__toolbar">
-          <span className="ingest-source-preview__label">{"\uD83D\uDCC4"} Documento sorgente</span>
-          {blobUrl && (
-            <div className="ingest-source-preview__toolbar-actions">
-              <button
-                type="button"
-                className="ingest-source-preview__open-btn"
-                onClick={() => setExpanded(true)}
-              >
-                Ingrandisci
-              </button>
-              <button
-                type="button"
-                className="ingest-source-preview__open-btn"
-                onClick={handleOpenNewTab}
-                disabled={opening}
-              >
-                {opening ? "Apertura..." : "Nuova scheda"}
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="ingest-source-preview__frame">
-          {renderPreviewContent(false)}
-        </div>
+    <div className={`ingest-source-preview ${tall ? "ingest-source-preview--tall" : ""}`}>
+      <div className="ingest-source-preview__toolbar">
+        <span className="ingest-source-preview__label">{"\uD83D\uDCC4"} Documento sorgente</span>
+        {blobUrl && (
+          <div className="ingest-source-preview__toolbar-actions">
+            <button
+              type="button"
+              className="ingest-source-preview__open-btn"
+              onClick={handleOpenNewTab}
+              disabled={opening}
+            >
+              {opening ? "Apertura..." : "Nuova scheda"}
+            </button>
+          </div>
+        )}
       </div>
-
-      {expanded && blobUrl && (
-        <div className="ingest-source-preview__fullscreen" role="dialog" aria-label="Anteprima documento ingrandita">
-          <div className="ingest-source-preview__fullscreen-header">
-            <strong className="ingest-source-preview__fullscreen-title">{fileName || "Documento"}</strong>
-            <div className="ingest-source-preview__toolbar-actions">
-              <button
-                type="button"
-                className="ingest-source-preview__open-btn"
-                onClick={handleOpenNewTab}
-                disabled={opening}
-              >
-                Nuova scheda
-              </button>
-              <button
-                type="button"
-                className="ingest-source-preview__open-btn ingest-source-preview__open-btn--primary"
-                onClick={() => setExpanded(false)}
-              >
-                Riduci
-              </button>
-            </div>
-          </div>
-          <div className="ingest-source-preview__fullscreen-body">
-            {renderPreviewContent(true)}
-          </div>
-          <p className="ingest-source-preview__fullscreen-hint">ESC o &quot;Riduci&quot; per tornare ai campi</p>
-        </div>
-      )}
-    </>
+      <div className="ingest-source-preview__frame">
+        {renderPreviewContent()}
+      </div>
+    </div>
   );
 }

@@ -73,6 +73,7 @@ export default function IngestReviewDialog({
 }) {
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -81,8 +82,18 @@ export default function IngestReviewDialog({
         cleaned[k] = typeof v === "string" ? repairTextEncoding(v) : v;
       }
       setForm(cleaned);
+      setExpanded(false);
     }
   }, [open, fields]);
+
+  useEffect(() => {
+    if (!open || !expanded) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, expanded]);
 
   if (!open) return null;
 
@@ -107,16 +118,32 @@ export default function IngestReviewDialog({
   }
 
   return (
-    <div className="ingest-review__overlay" role="dialog" aria-modal="true" aria-labelledby="ingest-review-title">
-      <div className="ingest-review__dialog">
+    <div
+      className={`ingest-review__overlay ${expanded ? "ingest-review__overlay--expanded" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ingest-review-title"
+    >
+      <div className={`ingest-review__dialog ${expanded ? "ingest-review__dialog--expanded" : ""}`}>
         <header className="ingest-review__header">
-          <h2 id="ingest-review-title">Revisione {title}</h2>
+          <div className="ingest-review__header-top">
+            <h2 id="ingest-review-title">Revisione {title}</h2>
+            <button
+              type="button"
+              className="ingest-review__expand-btn"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Riduci" : "Ingrandisci affiancato"}
+            </button>
+          </div>
           <p className="ingest-review__file">File: <strong>{fileName}</strong></p>
           {qualificationType && (
             <p className="ingest-review__meta">Tipo rilevato: {qualificationType}</p>
           )}
           <p className="ingest-review__meta ingest-review__meta--hint">
-            Confronta il documento a sinistra con i campi estratti a destra prima di confermare.
+            {expanded
+              ? "Documento e campi a schermo intero: confronta e correggi senza chiudere la modale."
+              : "Confronta il documento a sinistra con i campi estratti a destra prima di confermare."}
           </p>
         </header>
 
@@ -127,6 +154,7 @@ export default function IngestReviewDialog({
               fileName={fileName}
               mimeType={mimeType}
               previewFile={previewFile}
+              tall={expanded}
             />
           </aside>
 
