@@ -13,6 +13,7 @@ const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
+const { repairDeep, normalizeIngestSelectFields } = require('../utils/textEncodingRepair');
 
 let extractTextWithOCR = null;
 try {
@@ -236,10 +237,11 @@ async function runDocumentIngest({
     warnings.push(...aiWarnings);
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);
+    const normalizedFields = normalizeIngestSelectFields(repairDeep(fields));
 
-    const filledCount = Object.values(fields).filter((v) => v != null && v !== '').length;
+    const filledCount = Object.values(normalizedFields).filter((v) => v != null && v !== '').length;
     const schemaKeys = getSchemaKeys(docType);
-    const requiredFilled = schemaKeys.filter((k) => fields[k] != null).length;
+    const requiredFilled = schemaKeys.filter((k) => normalizedFields[k] != null).length;
     const extractionConfidence = Math.min(
         100,
         Math.round(
@@ -266,7 +268,7 @@ async function runDocumentIngest({
         text,
         textLength: text.length,
         ocrUsed,
-        fields,
+        fields: normalizedFields,
         fieldConfidence,
         fieldSources,
         ruleFields,

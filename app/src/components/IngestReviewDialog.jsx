@@ -3,7 +3,7 @@
  */
 import React, { useState, useEffect, useMemo } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
-import "./IngestReviewDialog.css";
+import { repairTextEncoding } from "../utils/textEncodingRepair";
 
 const CONFIDENCE_LABELS = {
   high: { label: "Alta", className: "ingest-review__confidence--high" },
@@ -14,8 +14,8 @@ const CONFIDENCE_LABELS = {
 function formatFieldValue(value) {
   if (value == null || value === "") return "";
   if (typeof value === "boolean") return value ? "Sì" : "No";
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value);
+  if (Array.isArray(value)) return value.map((v) => repairTextEncoding(String(v))).join(", ");
+  return repairTextEncoding(String(value));
 }
 
 function ConfidenceBadge({ level }) {
@@ -71,7 +71,11 @@ export default function IngestReviewDialog({
 
   useEffect(() => {
     if (open) {
-      setForm({ ...fields });
+      const cleaned = {};
+      for (const [k, v] of Object.entries(fields || {})) {
+        cleaned[k] = typeof v === "string" ? repairTextEncoding(v) : v;
+      }
+      setForm(cleaned);
     }
   }, [open, fields]);
 
@@ -125,7 +129,7 @@ export default function IngestReviewDialog({
                 <ConfidenceBadge level={fieldConfidence[field.key]} />
               </span>
               <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
-              {field.hint && <span className="ingest-review__hint">{field.hint}</span>}
+              {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
             </label>
           ))}
         </div>
