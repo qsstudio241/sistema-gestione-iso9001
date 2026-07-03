@@ -120,6 +120,7 @@ Upload (batch o import job)
 | G-06 | `dichiarazione_ce`, `report_ndt` in catalogo tipi, **senza schema AI** | Import guidato non funziona | **IG-6** ✅ schema base | No |
 | G-07 | `cert_ndt`: schema AI base, senza batch né commit dedicato | Solo import job manuale | **IG-6** | No |
 | G-08 | OCR attivo ma non testato L3 su PDF scansionati reali | Patentini foto/scansione | Smoke post IG-3 | No |
+| G-13 | Revisione ingest senza anteprima PDF affiancata | Operatore non può verificare campi vs documento | **IG-3b** ✅ anteprima split | No |
 | G-09 | Feedback correzioni umane non persistito | Nessun apprendimento | **IG-4** ✅ | No |
 | G-10 | Few-shot da feedback org assente | AI non migliora nel tempo | **IG-5** ✅ | No |
 | G-11 | `ImportJobsPage` ha revisione; batch WPQR/qualifiche no — **due UX parallele** | Inconsistenza operatore | **IG-3** (unificare pattern) | **Sì** |
