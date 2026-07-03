@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
+import IngestSourcePreview from "./IngestSourcePreview";
 import "./IngestReviewDialog.css";
 
 const CONFIDENCE_LABELS = {
@@ -58,6 +59,9 @@ export default function IngestReviewDialog({
   open,
   docType,
   fileName,
+  stagingId = null,
+  previewFile = null,
+  mimeType = "application/pdf",
   fields = {},
   fieldConfidence = {},
   warnings = [],
@@ -111,28 +115,44 @@ export default function IngestReviewDialog({
           {qualificationType && (
             <p className="ingest-review__meta">Tipo rilevato: {qualificationType}</p>
           )}
+          <p className="ingest-review__meta ingest-review__meta--hint">
+            Confronta il documento a sinistra con i campi estratti a destra prima di confermare.
+          </p>
         </header>
 
-        {warnings.length > 0 && (
-          <div className="ingest-review__warnings">
-            {warnings.map((w, i) => (
-              <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
-            ))}
-          </div>
-        )}
+        <div className="ingest-review__layout">
+          <aside className="ingest-review__preview-pane">
+            <IngestSourcePreview
+              stagingId={stagingId}
+              fileName={fileName}
+              mimeType={mimeType}
+              previewFile={previewFile}
+            />
+          </aside>
 
-        <div className="ingest-review__fields">
-          {schemaFields.map((field) => (
-            <label key={field.key} className="ingest-review__field" htmlFor={`ingest-field-${field.key}`}>
-              <span className="ingest-review__field-label">
-                {field.label}
-                {field.required && <span className="ingest-review__required">*</span>}
-                <ConfidenceBadge level={fieldConfidence[field.key]} />
-              </span>
-              <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
-              {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
-            </label>
-          ))}
+          <div className="ingest-review__form-pane">
+            {warnings.length > 0 && (
+              <div className="ingest-review__warnings">
+                {warnings.map((w, i) => (
+                  <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
+                ))}
+              </div>
+            )}
+
+            <div className="ingest-review__fields">
+              {schemaFields.map((field) => (
+                <label key={field.key} className="ingest-review__field" htmlFor={`ingest-field-${field.key}`}>
+                  <span className="ingest-review__field-label">
+                    {field.label}
+                    {field.required && <span className="ingest-review__required">*</span>}
+                    <ConfidenceBadge level={fieldConfidence[field.key]} />
+                  </span>
+                  <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
+                  {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
         <footer className="ingest-review__actions">
