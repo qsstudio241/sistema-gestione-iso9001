@@ -1,9 +1,10 @@
 /**
  * IngestReviewDialog — revisione campi estratti pre-commit (IG-3)
  */
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
+import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
 import IngestSourcePreview from "./IngestSourcePreview";
 import "./IngestReviewDialog.css";
 
@@ -74,6 +75,8 @@ export default function IngestReviewDialog({
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
   const [expanded, setExpanded] = useState(false);
+  const layoutRef = useRef(null);
+  const { gridTemplateColumns, startResize, ratio } = useIngestReviewSplit(layoutRef);
 
   useEffect(() => {
     if (open) {
@@ -142,12 +145,16 @@ export default function IngestReviewDialog({
           )}
           <p className="ingest-review__meta ingest-review__meta--hint">
             {expanded
-              ? "Documento e campi a schermo intero: confronta e correggi senza chiudere la modale."
-              : "Confronta il documento a sinistra con i campi estratti a destra prima di confermare."}
+              ? "Documento e campi a schermo intero: trascina il divisore centrale per dare più spazio al PDF o ai campi."
+              : "Confronta il documento a sinistra con i campi estratti a destra. Trascina il divisore per ridimensionare le aree."}
           </p>
         </header>
 
-        <div className="ingest-review__layout">
+        <div
+          ref={layoutRef}
+          className="ingest-review__layout"
+          style={{ gridTemplateColumns }}
+        >
           <aside className="ingest-review__preview-pane">
             <IngestSourcePreview
               stagingId={stagingId}
@@ -157,6 +164,17 @@ export default function IngestReviewDialog({
               tall={expanded}
             />
           </aside>
+
+          <div
+            className="ingest-review__resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Ridimensiona anteprima e campi"
+            aria-valuenow={Math.round(ratio * 100)}
+            aria-valuemin={28}
+            aria-valuemax={72}
+            onMouseDown={startResize}
+          />
 
           <div className="ingest-review__form-pane">
             {warnings.length > 0 && (
