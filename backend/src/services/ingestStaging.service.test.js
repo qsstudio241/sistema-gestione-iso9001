@@ -24,6 +24,7 @@ const {
     createStagingRecord,
     confirmStaging,
     rejectStaging,
+    resolveStagingFilePath,
 } = require('./ingestStaging.service');
 
 describe('ingestStaging.service (IG-3)', () => {
@@ -92,5 +93,9 @@ describe('ingestStaging.service (IG-3)', () => {
 
         expect(out.status).toBe('rejected');
         expect(query).toHaveBeenCalledTimes(2);
+    });
+
+    it('resolveStagingFilePath rifiuta path fuori uploads', () => {
+        expect(() => resolveStagingFilePath('/etc/passwd')).toThrow('Percorso file non valido');
     });
 });

@@ -8,6 +8,7 @@ const {
     rejectStaging,
     getStagingById,
     getModuleForDocType,
+    resolveStagingFilePath,
     parseJson,
 } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
@@ -119,6 +120,33 @@ async function rejectStagingHandler(req, res) {
     }
 }
 
+async function getStagingFile(req, res) {
+    try {
+        const stagingId = parseInt(req.params.id, 10);
+        const row = await getStagingById(stagingId, req.user.organization_id);
+        if (!row) {
+            return res.status(404).json({ error: 'Staging non trovato', code: 'NOT_FOUND' });
+        }
+
+        await assertModuleAccess(req, row.doc_type);
+
+        const filePath = resolveStagingFilePath(row.storage_path);
+        const mime = row.mime_type || 'application/octet-stream';
+        const safeName = row.original_name || 'documento';
+
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(safeName)}"`);
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        fs.createReadStream(filePath).pipe(res);
+    } catch (error) {
+        logger.error('getStagingFile', { error: error.message });
+        const status = error.code === 'FILE_NOT_FOUND' ? 404
+            : error.code === 'FILE_FORBIDDEN' ? 403
+                : 500;
+        res.status(status).json({ error: error.message, code: error.code || 'STAGING_FILE_ERROR' });
+    }
+}
+
 async function getLearningStatsHandler(req, res) {
     try {
         const docType = req.query.doc_type || null;
@@ -132,6 +160,7 @@ async function getLearningStatsHandler(req, res) {
 
 module.exports = {
     getStaging,
+    getStagingFile,
     confirmStaging: confirmStagingHandler,
     rejectStaging: rejectStagingHandler,
     getLearningStats: getLearningStatsHandler,

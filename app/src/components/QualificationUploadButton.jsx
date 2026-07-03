@@ -66,8 +66,9 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
   }, []);
 
   const handleOpenReview = useCallback((item) => {
-    setReviewItem(item);
-  }, []);
+    const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
+    setReviewItem({ ...item, previewFile: localFile });
+  }, [selectedFiles]);
 
   const handleConfirmReview = useCallback(async (fields) => {
     if (!reviewItem?.staging_id) return;
@@ -269,6 +270,9 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
         open={!!reviewItem}
         docType="patentino_saldatore"
         fileName={reviewItem?.fileName}
+        stagingId={reviewItem?.staging_id}
+        previewFile={reviewItem?.previewFile}
+        mimeType={reviewItem?.previewFile?.type || "application/pdf"}
         fields={reviewItem?.fields}
         fieldConfidence={reviewItem?.field_confidence}
         warnings={reviewItem?.warnings}

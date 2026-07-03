@@ -66,8 +66,9 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   }, []);
 
   const handleOpenReview = useCallback((item) => {
-    setReviewItem(item);
-  }, []);
+    const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
+    setReviewItem({ ...item, previewFile: localFile });
+  }, [selectedFiles]);
 
   const handleConfirmReview = useCallback(async (fields) => {
     if (!reviewItem?.staging_id) return;
@@ -277,6 +278,9 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
         open={!!reviewItem}
         docType="wpqr"
         fileName={reviewItem?.fileName}
+        stagingId={reviewItem?.staging_id}
+        previewFile={reviewItem?.previewFile}
+        mimeType={reviewItem?.previewFile?.type || "application/pdf"}
         fields={reviewItem?.fields}
         fieldConfidence={reviewItem?.field_confidence}
         warnings={reviewItem?.warnings}

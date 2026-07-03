@@ -3,6 +3,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
@@ -257,11 +258,37 @@ function getModuleForDocType(docType) {
     return DOC_TYPE_MODULES[docType] || null;
 }
 
+function resolveStagingFilePath(storagePath) {
+    if (!storagePath || typeof storagePath !== 'string') {
+        const err = new Error('File staging non disponibile');
+        err.code = 'FILE_NOT_FOUND';
+        throw err;
+    }
+
+    const uploadBase = path.resolve(
+        process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads'),
+    );
+    const resolved = path.resolve(storagePath);
+    const relative = path.relative(uploadBase, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        const err = new Error('Percorso file non valido');
+        err.code = 'FILE_FORBIDDEN';
+        throw err;
+    }
+    if (!fs.existsSync(resolved)) {
+        const err = new Error('File non trovato sul server');
+        err.code = 'FILE_NOT_FOUND';
+        throw err;
+    }
+    return resolved;
+}
+
 module.exports = {
     createStagingRecord,
     getStagingById,
     confirmStaging,
     rejectStaging,
     getModuleForDocType,
+    resolveStagingFilePath,
     parseJson,
 };
