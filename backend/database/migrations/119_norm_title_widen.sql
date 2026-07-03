@@ -8,4 +8,3 @@ IF EXISTS (
 BEGIN
   ALTER TABLE norm_document_sources ALTER COLUMN norm_title NVARCHAR(500) NULL;
 END;
-GO
