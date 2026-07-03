@@ -48,6 +48,7 @@ const EMPTY_FORM = {
 export default function NcCreateModal({
   open, onClose, onCreated, defaultCategory, initialDescription,
   managementReviewId = null, initialOriginText = "",
+  initialSectionCode = null,
 }) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
@@ -86,7 +87,7 @@ export default function NcCreateModal({
     setForm({
       ...EMPTY_FORM,
       source_category: initCategory,
-      section_code: catCfg.defaultSection || "",
+      section_code: initialSectionCode || catCfg.defaultSection || "",
       source_origin_text: initialOriginText || "",
       description: resolveNcFieldInitial(initialDescription || "", organizationId, CREATE_SCOPE, "description"),
     });
@@ -101,7 +102,7 @@ export default function NcCreateModal({
       })
       .catch(() => setAudits([]))
       .finally(() => setLoadingAudits(false));
-  }, [open, organizationId, defaultCategory]);
+  }, [open, organizationId, defaultCategory, initialDescription, initialOriginText, initialSectionCode]);
 
   /* ── Carica sezioni dall'audit selezionato ────────────────────── */
   useEffect(() => {

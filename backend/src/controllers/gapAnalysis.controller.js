@@ -11,6 +11,8 @@ const {
   listStatuses,
   upsertStatus,
   seedForCompany,
+  getStatusHistory,
+  syncAuditConformityHints,
   SAL_DEFAULT_STANDARD_CODES,
 } = require('../services/gapAnalysis.service');
 const {
@@ -167,10 +169,69 @@ async function seedSalGapMatrix(req, res) {
   }
 }
 
+async function getSalGapHistory(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res);
+    if (!scope) return undefined;
+
+    const normRequirementId = parseInt(req.params.normRequirementId, 10);
+    if (!Number.isFinite(normRequirementId) || normRequirementId <= 0) {
+      return res.status(400).json({ error: 'normRequirementId non valido', code: 'VALIDATION_ERROR' });
+    }
+
+    const data = await getStatusHistory(
+      scope.organizationId,
+      scope.companyId,
+      normRequirementId,
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+    if (data.error === 'VALIDATION') {
+      return res.status(400).json({ error: data.message, code: 'VALIDATION_ERROR' });
+    }
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[SalGapHistory] Error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
+async function syncSalAuditHints(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res, { write: true });
+    if (!scope) return undefined;
+
+    const monthsBack = req.body?.monthsBack != null
+      ? parseInt(req.body.monthsBack, 10)
+      : 12;
+
+    const data = await syncAuditConformityHints(
+      scope.organizationId,
+      scope.companyId,
+      req.user.user_id,
+      { monthsBack: Number.isFinite(monthsBack) ? monthsBack : 12 },
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[SalGapSyncHints] Error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   getGapAnalysis,
   getSalGapMatrix,
   listSalGapStatuses,
   upsertSalGapStatus,
   seedSalGapMatrix,
+  getSalGapHistory,
+  syncSalAuditHints,
 };
