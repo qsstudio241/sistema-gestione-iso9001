@@ -1,32 +1,29 @@
-# DEPUTYTASK — Ingest AI commesse: chiusura slice #5–#7
+# DEPUTYTASK — SAL Fase 4: feed Riesame §9.3
 
 > **Creato**: 02/07/2026  
-> **Stato**: COMPLETATO — TEST OK (L1 backend + Vitest checklist)  
-> **Spec**: [`docs/specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) §E  
-> **Branch**: `cursor/ingest-ai-residui-slice-567-0989`
+> **Stato**: COMPLETATO — TEST OK  
+> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 4 · §G  
+> **Branch**: `cursor/sal-fase4-riesame-feed-3971`
 
 ---
 
 ## Obiettivo
 
-Chiudere in sequenza i residui roadmap Ingest AI commesse (slice verticali #5, #6, #7).
+Il Riesame di Direzione legge la matrice SAL (sola lettura) per popolare `norm_coverage` quando è selezionato l'ambito azienda.
 
 ---
 
 ## Deliverable
 
-| Slice | Esito |
-|-------|-------|
-| **#5** Orchestratore `caseDocumentAnalysis.service.js` + `POST /cases/:id/analyze-documents` + pulsante UI tab Documenti | ✅ |
-| **#6** Pre-compilazione checklist §8.2 (preliminare + finale, prefisso `[AI doc]`) + test Vitest | ✅ |
-| **#7** `extractedRequirementsProfile.js` + `GET /cases/:id/extracted-coverage` + CoveragePanel arricchito | ✅ |
-| Refactor `_triggerAutoExtraction` → riuso servizio orchestratore | ✅ |
-| `deploy-manifest.json` aggiornato | ✅ |
-
-**Fuori scope (slice #8+)**: OCR scansioni, stepper UI a fasi, orchestratore LLM Fase 3–5.
+| Voce | Esito |
+|------|-------|
+| `getNormCoverageForReview` in `gapAnalysis.service.js` | ✅ |
+| `getInputSummary` usa SAL con `company_id`, legacy senza | ✅ |
+| Test L1: `gapAnalysis` (18) + `managementReviews.controller` | ✅ PASS |
+| VPS: mig. 117+118 eseguite, backend SAL deployato | ✅ |
 
 ---
 
 ## Chiusura
 
-TEST OK — slice #5–#7 implementate. Prossimo step opzionale: **slice #8 OCR** o smoke L3 manuale su commessa PT.MAIDO con «Analizza documenti commessa» + copertura saldatori.
+TEST OK — Fase 4 completata. Prossimo opzionale: **Fase 5 AI**.
