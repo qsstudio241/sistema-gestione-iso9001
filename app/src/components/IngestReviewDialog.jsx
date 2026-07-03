@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
+import "./IngestReviewDialog.css";
 
 const CONFIDENCE_LABELS = {
   high: { label: "Alta", className: "ingest-review__confidence--high" },
