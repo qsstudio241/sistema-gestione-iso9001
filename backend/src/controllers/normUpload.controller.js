@@ -13,8 +13,9 @@ const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 const {
-  serializeNormTypeSpecificData,
+  buildNormTypeSpecificData,
   guessStandardCodeFromFilename,
+  clampNormTitle,
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const normChunker = require('../services/normChunker.service');
@@ -157,6 +158,7 @@ async function uploadNorms(req, res) {
         if (u.startsWith('UNI')) metadata.issuing_body = 'UNI';
         else if (/\bISO\b|\bIEC\b/.test(u)) metadata.issuing_body = 'ISO';
       }
+      metadata.norm_title = clampNormTitle(metadata.norm_title);
       entry.metadata = metadata;
 
       const docTitle = formatReadableTitle(metadata)
@@ -168,10 +170,11 @@ async function uploadNorms(req, res) {
 
       // Stesso schema type_specific_data del form manuale (slice R3)
       // validity_status impostato a 'vigente' di default; il job settimanale lo aggiorna
-      const typeSpecificData = serializeNormTypeSpecificData({
+      const normTsd = buildNormTypeSpecificData({
         ...metadata,
         validity_status: metadata.validity_status || 'vigente',
       });
+      const typeSpecificData = normTsd ? JSON.stringify(normTsd) : null;
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(
@@ -260,7 +263,7 @@ async function uploadNorms(req, res) {
           docId: documentId,
           orgId: organization_id,
           stdCode: metadata.standard_code || null,
-          normTitle: metadata.norm_title || null,
+          normTitle: normTsd?.norm_title || metadata.norm_title || null,
           editionYear: metadata.edition_year || null,
           issuingBody: metadata.issuing_body || null,
           extractedText: extractedText || null,
