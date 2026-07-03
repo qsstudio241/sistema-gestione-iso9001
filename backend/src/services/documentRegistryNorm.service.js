@@ -8,6 +8,21 @@
 
 const VALID_VALIDITY_STATUSES = ['vigente', 'superata', 'annullata', 'in_revisione'];
 
+/** Allineato a migrazione 119 — norm_document_sources.norm_title */
+const NORM_TITLE_MAX_LEN = 500;
+
+/**
+ * Tronca titolo norma per INSERT SQL (titoli UNI in italiano possono superare 100+ caratteri).
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+function clampNormTitle(value) {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  return s.length > NORM_TITLE_MAX_LEN ? s.substring(0, NORM_TITLE_MAX_LEN) : s;
+}
+
 /** Chiavi canonicali scritte in document_registry.type_specific_data */
 const NORM_TSD_CANONICAL_KEYS = [
   'standard_code',
@@ -74,7 +89,7 @@ function buildNormTypeSpecificData(raw = {}) {
 
   const data = {
     standard_code: standardCode,
-    norm_title: raw.norm_title ? String(raw.norm_title).trim() : null,
+    norm_title: clampNormTitle(raw.norm_title),
     issuing_body: raw.issuing_body ? String(raw.issuing_body).trim() : null,
     edition_year: editionYear,
     supersedes: raw.supersedes ? String(raw.supersedes).trim() : null,
@@ -168,8 +183,10 @@ function mergeMissingNormTypeSpecificData(existingRaw, sourceRaw = {}) {
 
 module.exports = {
   NORM_TSD_CANONICAL_KEYS,
+  NORM_TITLE_MAX_LEN,
   VALID_VALIDITY_STATUSES,
   guessStandardCodeFromFilename,
+  clampNormTitle,
   normalizeValidityStatus,
   buildNormTypeSpecificData,
   serializeNormTypeSpecificData,

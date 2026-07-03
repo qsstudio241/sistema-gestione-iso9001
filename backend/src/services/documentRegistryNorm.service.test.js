@@ -7,10 +7,12 @@
 
 const {
   NORM_TSD_CANONICAL_KEYS,
+  NORM_TITLE_MAX_LEN,
   buildNormTypeSpecificData,
   serializeNormTypeSpecificData,
   normalizeValidityStatus,
   mergeMissingNormTypeSpecificData,
+  clampNormTitle,
 } = require('./documentRegistryNorm.service');
 
 describe('buildNormTypeSpecificData  metadati upload bulk (AI)', () => {
@@ -95,6 +97,16 @@ describe('buildNormTypeSpecificData  allineamento form manuale', () => {
       scope_summary: longText,
     });
     expect(result.scope_summary).toHaveLength(500);
+  });
+
+  it('tronca norm_title oltre il limite DB (titoli UNI lunghi)', () => {
+    const longTitle = `${'Qualificazione procedure di saldatura per materiali metallici - '.repeat(12)}fine`;
+    const result = buildNormTypeSpecificData({
+      standard_code: 'UNI_EN_ISO_15614_1_2019',
+      norm_title: longTitle,
+    });
+    expect(result.norm_title).toHaveLength(NORM_TITLE_MAX_LEN);
+    expect(clampNormTitle(longTitle)).toHaveLength(NORM_TITLE_MAX_LEN);
   });
 });
 
