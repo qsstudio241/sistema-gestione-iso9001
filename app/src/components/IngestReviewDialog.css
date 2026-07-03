@@ -32,8 +32,8 @@
 }
 
 .ingest-review__preview-pane {
-  min-height: 320px;
-  max-height: calc(92vh - 220px);
+  min-height: 440px;
+  max-height: calc(92vh - 200px);
   display: flex;
   flex-direction: column;
 }
