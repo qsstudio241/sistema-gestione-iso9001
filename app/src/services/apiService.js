@@ -1641,6 +1641,18 @@ class ApiService {
         return this.get(`/ingest-staging/${stagingId}`);
     }
 
+    async getIngestStagingFileBlob(stagingId) {
+        const url = `${this.baseUrl}/ingest-staging/${stagingId}/file`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
+    }
+
     async confirmIngestStaging(stagingId, fields = {}) {
         return this.post(`/ingest-staging/${stagingId}/confirm`, { fields });
     }
