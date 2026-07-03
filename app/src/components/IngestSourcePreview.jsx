@@ -1,6 +1,5 @@
 /**
  * IngestSourcePreview — anteprima documento sorgente nella revisione ingest (IG-3+)
- * PDF via iframe; immagini via img. Carica da File locale o da staging API autenticata.
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
@@ -9,6 +8,19 @@ import "./IngestSourcePreview.css";
 
 function isImageMime(mime) {
   return typeof mime === "string" && mime.startsWith("image/");
+}
+
+function openBlobInNewTab(blobUrl) {
+  const win = window.open(blobUrl, "_blank", "noopener,noreferrer");
+  if (!win) {
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
 
 export default function IngestSourcePreview({
@@ -22,6 +34,7 @@ export default function IngestSourcePreview({
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const revokeRef = useRef(null);
   const useMobileLayout = prefersMobilePdfFallback();
   const isImage = isImageMime(mimeType) || /\.(jpe?g|png)$/i.test(fileName || "");
@@ -37,6 +50,7 @@ export default function IngestSourcePreview({
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
+    setExpanded(false);
     cleanupUrl();
     setBlobUrl(null);
     setBlobRef(null);
@@ -70,68 +84,130 @@ export default function IngestSourcePreview({
     };
   }, [stagingId, previewFile, cleanupUrl]);
 
-  const handleOpenExternal = useCallback(async () => {
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
+
+  const handleOpenNewTab = useCallback(async () => {
     if (!blobUrl || !blobRef) return;
     setOpening(true);
     try {
-      if (isImage) {
-        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      if (isImage || !useMobileLayout) {
+        openBlobInNewTab(blobUrl);
       } else {
         await openPdfBlob(blobRef, blobUrl, fileName || "documento.pdf");
       }
     } finally {
       setOpening(false);
     }
-  }, [blobUrl, blobRef, fileName, isImage]);
+  }, [blobUrl, blobRef, fileName, isImage, useMobileLayout]);
+
+  const renderPreviewContent = (fullscreen = false) => {
+    if (loading) {
+      return <p className="ingest-source-preview__status">Caricamento anteprima...</p>;
+    }
+    if (loadError) {
+      return (
+        <p className="ingest-source-preview__status ingest-source-preview__status--error">
+          Anteprima non disponibile. Usa &quot;Apri in nuova scheda&quot; o il PDF sul PC.
+        </p>
+      );
+    }
+    if (!blobUrl) return null;
+
+    if (isImage) {
+      return (
+        <img
+          src={blobUrl}
+          alt={fileName || "Anteprima documento"}
+          className={fullscreen ? "ingest-source-preview__image ingest-source-preview__image--fullscreen" : "ingest-source-preview__image"}
+        />
+      );
+    }
+
+    if (useMobileLayout && !fullscreen) {
+      return (
+        <div className="ingest-source-preview__mobile">
+          <p>Su mobile l&apos;anteprima inline può non funzionare.</p>
+          <button type="button" className="ingest-source-preview__open-btn" onClick={handleOpenNewTab}>
+            Apri PDF
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <iframe
+        title={fileName || "Anteprima PDF"}
+        src={blobUrl}
+        className={fullscreen ? "ingest-source-preview__iframe ingest-source-preview__iframe--fullscreen" : "ingest-source-preview__iframe"}
+      />
+    );
+  };
 
   return (
-    <div className="ingest-source-preview">
-      <div className="ingest-source-preview__toolbar">
-        <span className="ingest-source-preview__label">{"\uD83D\uDCC4"} Documento sorgente</span>
-        {blobUrl && (
-          <button
-            type="button"
-            className="ingest-source-preview__open-btn"
-            onClick={handleOpenExternal}
-            disabled={opening}
-          >
-            {opening ? "Apertura..." : "Apri a schermo intero"}
-          </button>
-        )}
+    <>
+      <div className={`ingest-source-preview ${expanded ? "ingest-source-preview--hidden" : ""}`}>
+        <div className="ingest-source-preview__toolbar">
+          <span className="ingest-source-preview__label">{"\uD83D\uDCC4"} Documento sorgente</span>
+          {blobUrl && (
+            <div className="ingest-source-preview__toolbar-actions">
+              <button
+                type="button"
+                className="ingest-source-preview__open-btn"
+                onClick={() => setExpanded(true)}
+              >
+                Ingrandisci
+              </button>
+              <button
+                type="button"
+                className="ingest-source-preview__open-btn"
+                onClick={handleOpenNewTab}
+                disabled={opening}
+              >
+                {opening ? "Apertura..." : "Nuova scheda"}
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="ingest-source-preview__frame">
+          {renderPreviewContent(false)}
+        </div>
       </div>
 
-      <div className="ingest-source-preview__frame">
-        {loading && (
-          <p className="ingest-source-preview__status">Caricamento anteprima...</p>
-        )}
-        {loadError && (
-          <p className="ingest-source-preview__status ingest-source-preview__status--error">
-            Anteprima non disponibile. Usa il PDF sul tuo PC per confrontare i campi.
-          </p>
-        )}
-        {!loading && !loadError && blobUrl && isImage && (
-          <img
-            src={blobUrl}
-            alt={fileName || "Anteprima documento"}
-            className="ingest-source-preview__image"
-          />
-        )}
-        {!loading && !loadError && blobUrl && !isImage && !useMobileLayout && (
-          <iframe
-            title={fileName || "Anteprima PDF"}
-            src={blobUrl}
-            className="ingest-source-preview__iframe"
-          />
-        )}
-        {!loading && !loadError && blobUrl && !isImage && useMobileLayout && (
-          <div className="ingest-source-preview__mobile">
-            <p>Su mobile l&apos;anteprima inline può non funzionare.</p>
-            <button type="button" className="ingest-source-preview__open-btn" onClick={handleOpenExternal}>
-              Apri PDF
-            </button>
+      {expanded && blobUrl && (
+        <div className="ingest-source-preview__fullscreen" role="dialog" aria-label="Anteprima documento ingrandita">
+          <div className="ingest-source-preview__fullscreen-header">
+            <strong className="ingest-source-preview__fullscreen-title">{fileName || "Documento"}</strong>
+            <div className="ingest-source-preview__toolbar-actions">
+              <button
+                type="button"
+                className="ingest-source-preview__open-btn"
+                onClick={handleOpenNewTab}
+                disabled={opening}
+              >
+                Nuova scheda
+              </button>
+              <button
+                type="button"
+                className="ingest-source-preview__open-btn ingest-source-preview__open-btn--primary"
+                onClick={() => setExpanded(false)}
+              >
+                Riduci
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+          <div className="ingest-source-preview__fullscreen-body">
+            {renderPreviewContent(true)}
+          </div>
+          <p className="ingest-source-preview__fullscreen-hint">ESC o &quot;Riduci&quot; per tornare ai campi</p>
+        </div>
+      )}
+    </>
   );
 }
