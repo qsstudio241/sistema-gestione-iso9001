@@ -24,7 +24,8 @@
                    {
                        "name":  "data",
                        "files":  [
-                                     "src/data/documentTypeSchemas.js"
+                                     "src/data/documentTypeSchemas.js",
+                                     "src/data/materialGroups15608.js"
                                  ]
                    },
                    {
@@ -42,6 +43,7 @@
                                      "src/utils/extractedRequirementsProfile.js",
                                      "src/utils/jsonRepair.js",
                                      "src/utils/ruleFieldExtractors.js",
+                                     "src/utils/textEncodingRepair.js",
                                      "src/utils/ocrExtractor.js"
                                  ]
                    },

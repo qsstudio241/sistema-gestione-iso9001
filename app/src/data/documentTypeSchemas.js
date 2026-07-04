@@ -12,6 +12,12 @@
  * Estende documentTypes.js — i tipi devono essere già registrati lì.
  */
 
+import { getMaterialGroupSelectOptions } from './materialGroups15608.js';
+
+const MATERIAL_GROUP_OPTIONS = getMaterialGroupSelectOptions({
+  families: ['steel', 'aluminium', 'copper', 'nickel', 'titanium', 'zirconium', 'cast_iron'],
+});
+
 // --- patentino_saldatore (ISO 9606-1) 
 
 const patentino_saldatore = {
@@ -97,22 +103,8 @@ const patentino_saldatore = {
       label: "Gruppo materiale base (ISO/TR 15608)",
       type: "select",
       required: true,
-      options: [
-        { value: "1.1", label: "1.1 - Acciai con Re ≥ 275 MPa" },
-        { value: "1.2", label: "1.2 - Acciai con Re 275-360 MPa" },
-        { value: "1.3", label: "1.3 - Acciai con Re > 360 MPa" },
-        { value: "2",   label: "2 - Acciai a grani fini termotrattati" },
-        { value: "3",   label: "3 - Acciai per alte temperature" },
-        { value: "4",   label: "4 - Acciai bassolegati Cr-Mo" },
-        { value: "5",   label: "5 - Acciai inossidabili martensitici/ferritici" },
-        { value: "6",   label: "6 - Acciai inossidabili austenitici" },
-        { value: "7",   label: "7 - Acciai inossidabili duplex" },
-        { value: "8",   label: "8 - Acciai inossidabili austenitici ad alto Ni" },
-        { value: "9",   label: "9 - Nichel e leghe di nichel" },
-        { value: "10",  label: "10 - Rame e leghe di rame" },
-        { value: "altro", label: "Altro" },
-      ],
-      hint: "Gruppo materiale della piastra / tubo qualificato",
+      options: MATERIAL_GROUP_OPTIONS,
+      hint: "Gruppo materiale della piastra / tubo qualificato (catalogo ISO/TR 15608:2013)",
     },
     {
       key: "filler_material_group",
@@ -236,7 +228,7 @@ Campi da estrarre:
 - issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
-- material_group: gruppo materiale base ISO/TR 15608 (es. "1.1", "6", "8")
+- material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
 - thickness_min_mm: numero: spessore minimo qualificato in mm
