@@ -46,11 +46,20 @@ function extractWeldingProcess(text) {
     return m ? m[1] : null;
 }
 
+const {
+    normalizeMaterialGroupCode,
+    inferMaterialGroupFromText,
+} = require('../data/materialGroups15608');
+
 function extractMaterialGroup(text) {
-    const m = text.match(/\b(?:gruppo|group|materiale)\s*(?:base\s*)?[:.]?\s*(\d{1,2}\.\d{1,2})\b/i)
-        || text.match(/\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}\.\d{1,2})\b/i)
-        || text.match(/\b(\d{1,2}\.\d{1,2})\s*(?:\/|\||\-)\s*\d{1,2}\.\d{1,2}\b/);
-    return m ? m[1] : null;
+    const direct = text.match(/\b(?:gruppo|group|materiale)\s*(?:base\s*)?[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i)
+        || text.match(/\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i)
+        || text.match(/\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:\/|\||\-)\s*\d{1,2}(?:\.\d{1,2})?\b/);
+    if (direct) {
+        const normalized = normalizeMaterialGroupCode(direct[1]);
+        if (normalized) return normalized;
+    }
+    return inferMaterialGroupFromText(text) || normalizeMaterialGroupCode(text);
 }
 
 function extractReferenceFromFileName(fileName) {

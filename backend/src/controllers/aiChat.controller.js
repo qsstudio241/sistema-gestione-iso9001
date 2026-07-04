@@ -19,6 +19,7 @@ const {
 const { buildCitationsFromChunks } = require('../utils/aiCitations');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
+const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -157,6 +158,11 @@ async function aiChat(req, res) {
       if (activeStandard) {
         systemPrompt += buildStandardContextBlock(activeStandard);
       }
+    }
+
+    const weldingContextRe = /3834|9606|15608|15614|gruppo\s*materiale|material\s*group|wps|wpqr|patentino/i;
+    if ((parsedStandardId === 6) || weldingContextRe.test(String(message || ''))) {
+      systemPrompt += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 35 })}`;
     }
 
     if (parsedCompanyId) {
