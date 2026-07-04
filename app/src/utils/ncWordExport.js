@@ -1,5 +1,5 @@
 /**
- * ncWordExport.js ù Export Word scheda singola NC (ISO 9001 ù10.2)
+ * ncWordExport.js  -  Export Word scheda singola NC (ISO 9001  - 10.2)
  *
  * Template: app/public/templates/NC-scheda.docx
  * Rigenera con: node scripts/generateNcTemplate.js
@@ -199,7 +199,7 @@ export async function exportNcToWord(ncId, apiService) {
     ]);
 
     const nc = ncRes?.data;
-    if (!nc) throw new Error('Non conformitù non trovata');
+    if (!nc) throw new Error('Non conformit√†  non trovata');
 
     const actions = actionsRes?.data || [];
     const attachments = nc.attachments || [];

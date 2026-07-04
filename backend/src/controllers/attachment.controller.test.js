@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 — attachment.controller RBAC studio (Slice C)
+ * Test L1 â€” attachment.controller RBAC studio (Slice C)
  */
 
 jest.mock('../config/database', () => ({
@@ -47,7 +47,7 @@ function mockRes() {
 
 afterEach(() => jest.clearAllMocks());
 
-describe('listAttachments — RBAC studio', () => {
+describe('listAttachments â€” RBAC studio', () => {
     it('applica studioScopeClause via join audit effettivo', async () => {
         query
             .mockResolvedValueOnce({ recordset: [] })
@@ -85,7 +85,7 @@ describe('listAttachments — RBAC studio', () => {
     });
 });
 
-describe('getAttachmentById — RBAC studio', () => {
+describe('getAttachmentById â€” RBAC studio', () => {
     it('404 se allegato fuori scope studio', async () => {
         query.mockResolvedValueOnce({ recordset: [] });
 
@@ -99,7 +99,7 @@ describe('getAttachmentById — RBAC studio', () => {
     });
 });
 
-describe('uploadAttachment — NDT', () => {
+describe('uploadAttachment â€” NDT', () => {
     it('accetta upload con ndt_report_item_id senza audit_id', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ id: 42 }] })
@@ -119,7 +119,7 @@ describe('uploadAttachment — NDT', () => {
     });
 });
 
-describe('uploadAttachment — RBAC studio', () => {
+describe('uploadAttachment â€” RBAC studio', () => {
     it('rifiuta upload su audit fuori scope', async () => {
         query.mockResolvedValueOnce({ recordset: [] });
 

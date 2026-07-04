@@ -1,5 +1,5 @@
 /**
- * URL deep link Registro Documenti — contratto allineato a NCPage (?select=).
+ * URL deep link Registro Documenti â€” contratto allineato a NCPage (?select=).
  * tab: priority | catalog | tree
  * select: id documento ? tab Albero + drawer dettaglio
  * company_id: ambito azienda condiviso (assente = tutto lo studio)
@@ -31,7 +31,7 @@ export function buildDocumentTreeQuery({ depth = 2, companyId } = {}) {
 }
 
 /**
- * @param {string} [search] — query string (es. window.location.search)
+ * @param {string} [search] â€” query string (es. window.location.search)
  * @returns {{ tab: string|null, selectId: number|null, companyId: number|null }}
  */
 export function parseDocumentRegistrySearch(search) {

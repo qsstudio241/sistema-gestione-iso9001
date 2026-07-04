@@ -1,5 +1,5 @@
 /**
- * Test L1  CompaniesPage azioni di riga a icone
+ * Test L1  -  CompaniesPage azioni di riga a icone
  *
  * Verifica che ogni riga azienda esponga i due pulsanti icona
  * (matita = apri scheda, cestino = elimina), che il "Modifica" testuale
@@ -44,7 +44,7 @@ vi.mock("../services/apiService", () => ({
   },
 }));
 
-describe("CompaniesPage  azioni di riga a icone", () => {
+describe("CompaniesPage  -  azioni di riga a icone", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
     mockDeleteCompany.mockReset().mockResolvedValue({});
