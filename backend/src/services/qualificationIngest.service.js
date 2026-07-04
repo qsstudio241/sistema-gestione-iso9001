@@ -1,4 +1,4 @@
-﻿/**
+/**
  * qualificationIngest.service.js
  * Ingestion qualifiche da PDF (patentini) — pipeline IG-2 + staging IG-3.
  */
