@@ -1,4 +1,4 @@
-﻿/**
+/**
  * wpqrIngest.service.js
  * Ingestion automatica WPQR da PDF — pipeline IG-2 + staging IG-3.
  */

@@ -1,5 +1,5 @@
 /**
- * Larghezza sidebar albero Registro Documenti — persistenza localStorage + drag.
+ * Larghezza sidebar albero Registro Documenti â€” persistenza localStorage + drag.
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 

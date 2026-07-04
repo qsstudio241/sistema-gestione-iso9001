@@ -262,7 +262,7 @@ Campi da estrarre:
   },
 };
 
-// --- wps (schema minimo - da sviluppare) ?????????????????????????????????????
+// --- wps (schema minimo - da sviluppare) ?
 
 const wps = {
   id: "wps",
@@ -327,7 +327,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
   },
 };
 
-// --- norma (Norma tecnica - schema completo) ?????????????????????????????????
+// --- norma (Norma tecnica - schema completo) 
 
 const norma = {
   id: "norma",
@@ -477,7 +477,7 @@ const certificato_materiale = {
   fields: [
     { key: "certificate_type", label: "Tipo certificato EN 10204", type: "select", required: true,
       options: [
-        { value: "2.1", label: "2.1 - Dichiarazione di conformit - " },
+        { value: "2.1", label: "2.1 - Dichiarazione di conformità " },
         { value: "2.2", label: "2.2 - Dichiarazione con ispezione campione" },
         { value: "3.1", label: "3.1 - Certificato di ispezione 3.1" },
         { value: "3.2", label: "3.2 - Certificato di ispezione 3.2" },
@@ -668,7 +668,7 @@ Estrai in type_specific_data: report_number, test_type, component_ref, test_date
   },
 };
 
-// --- Registro schemi ??????????????????
+// --- Registro schemi 
 
 /**
  * Mappa doc_type ? schema.

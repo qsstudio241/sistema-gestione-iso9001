@@ -1,6 +1,6 @@
 /**
- * Periodo date audit (inizio/fine) — formato display e validazione UI.
- * La durata in giorni non è persistita; solo audit_date + audit_date_end.
+ * Periodo date audit (inizio/fine) â€” formato display e validazione UI.
+ * La durata in giorni non Ã¨ persistita; solo audit_date + audit_date_end.
  */
 
 export function toDateOnly(value) {
@@ -43,7 +43,7 @@ export function formatDateIt(dateStr) {
     }
 }
 
-/** Periodo italiano: singola data o "gg/mm/aaaa – gg/mm/aaaa" */
+/** Periodo italiano: singola data o "gg/mm/aaaa â€“ gg/mm/aaaa" */
 export function formatAuditPeriodIt(start, end) {
     const s = toDateOnly(start);
     if (!s) return '';
@@ -86,19 +86,19 @@ export function validateAuditDateRangeClient(start, end, { checkFuture = true } 
     }
     const e = toDateOnly(end);
     if (e && e < s) {
-        return { valid: false, message: 'La data fine non può essere precedente alla data inizio' };
+        return { valid: false, message: 'La data fine non puÃ² essere precedente alla data inizio' };
     }
     if (checkFuture) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const startD = new Date(`${s}T12:00:00`);
         if (startD > today) {
-            warnings.push('La data di inizio è nel futuro');
+            warnings.push('La data di inizio Ã¨ nel futuro');
         }
         if (e) {
             const endD = new Date(`${e}T12:00:00`);
             if (endD > today) {
-                warnings.push('La data di fine è nel futuro');
+                warnings.push('La data di fine Ã¨ nel futuro');
             }
         }
     }

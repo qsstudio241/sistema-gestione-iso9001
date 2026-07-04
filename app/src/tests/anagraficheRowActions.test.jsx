@@ -1,5 +1,5 @@
 /**
- * Test L1 — AnagrafichePage azioni di riga a icone
+ * Test L1 â€” AnagrafichePage azioni di riga a icone
  *
  * Verifica che le tab Fornitori e Reparti espongano i pulsanti icona SVG
  * (matita = modifica, cestino = elimina) con aria-label corretto,
@@ -52,7 +52,7 @@ const ONE_DEPARTMENT = {
   is_active: true,
 };
 
-describe("AnagrafichePage — Tab Fornitori — azioni di riga a icone", () => {
+describe("AnagrafichePage â€” Tab Fornitori â€” azioni di riga a icone", () => {
   beforeEach(() => {
     mockGetSuppliers.mockReset().mockResolvedValue({ data: [ONE_SUPPLIER] });
     mockGetDepartments.mockReset().mockResolvedValue({ data: [ONE_DEPARTMENT] });
@@ -79,13 +79,13 @@ describe("AnagrafichePage — Tab Fornitori — azioni di riga a icone", () => {
     expect(trashBtn.title).toBe("Elimina fornitore");
   });
 
-  it("non espone pulsanti emoji ?? o ??? nel tab Fornitori", async () => {
+  it("non espone pulsanti emoji ?? o  nel tab Fornitori", async () => {
     render(<AnagrafichePage />);
     await screen.findByRole("button", { name: "Modifica fornitore" });
 
     const allButtons = screen.getAllByRole("button");
-    const emojiEdit  = allButtons.find(b => b.textContent.includes("??"));
-    const emojiTrash = allButtons.find(b => b.textContent.includes("???"));
+    const emojiEdit  = allButtons.find(b => b.textContent.includes("\u270F") || b.textContent.includes("??"));
+    const emojiTrash = allButtons.find(b => /\uD83D\uDDD1/.test(b.textContent));
     expect(emojiEdit).toBeUndefined();
     expect(emojiTrash).toBeUndefined();
   });
@@ -104,7 +104,7 @@ describe("AnagrafichePage — Tab Fornitori — azioni di riga a icone", () => {
   });
 });
 
-describe("AnagrafichePage — Tab Reparti — azioni di riga a icone", () => {
+describe("AnagrafichePage â€” Tab Reparti â€” azioni di riga a icone", () => {
   beforeEach(() => {
     mockGetSuppliers.mockReset().mockResolvedValue({ data: [ONE_SUPPLIER] });
     mockGetDepartments.mockReset().mockResolvedValue({ data: [ONE_DEPARTMENT] });

@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 � nc.controller (Slice 2+3)
+ * Test L1  -  nc.controller (Slice 2+3)
  * Copre: root_cause in update, source_type manual in create, studioScopeClause su list/stats
  */
 
@@ -47,7 +47,7 @@ function mockRes() {
 
 afterEach(() => jest.clearAllMocks());
 
-describe('listNonConformities � RBAC studio', () => {
+describe('listNonConformities  -  RBAC studio', () => {
     it('applica studioScopeClause per auditor con studio', async () => {
         query
             .mockResolvedValueOnce({ recordset: [] })
@@ -85,7 +85,7 @@ describe('listNonConformities � RBAC studio', () => {
     });
 });
 
-describe('getNonConformitiesStatistics � RBAC studio', () => {
+describe('getNonConformitiesStatistics  -  RBAC studio', () => {
     it('applica studioScopeClause nelle statistiche', async () => {
         query.mockResolvedValueOnce({
             recordset: [{ total: 0, open: 0, major: 0 }],
@@ -104,7 +104,7 @@ describe('getNonConformitiesStatistics � RBAC studio', () => {
     });
 });
 
-describe('updateNonConformity � root_cause', () => {
+describe('updateNonConformity  -  root_cause', () => {
     it('persiste root_cause quando fornito', async () => {
         query
             .mockResolvedValueOnce({
@@ -158,7 +158,7 @@ describe('updateNonConformity - campi verifica NC', () => {
     });
 });
 
-describe('createNonConformity � source_type manual', () => {
+describe('createNonConformity  -  source_type manual', () => {
     it('imposta source_type manual nella INSERT', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ audit_id: 99 }] })
@@ -228,7 +228,7 @@ describe('listNcResponsibleOptionsHandler', () => {
     });
 });
 
-describe('deleteNonConformity � RBAC studio', () => {
+describe('deleteNonConformity  -  RBAC studio', () => {
     it('applica studioScopeClause nella verifica pre-delete', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ nc_id: 5, audit_id: 99 }] })
@@ -247,7 +247,7 @@ describe('deleteNonConformity � RBAC studio', () => {
     });
 });
 
-describe('updateNonConformity � gate approvazione RQ', () => {
+describe('updateNonConformity  -  gate approvazione RQ', () => {
     it('closed senza approved_at ritorna 400 NC_APPROVAL_REQUIRED', async () => {
         query.mockResolvedValueOnce({
             recordset: [{
@@ -273,8 +273,8 @@ describe('updateNonConformity � gate approvazione RQ', () => {
     });
 });
 
-describe('updateNonConformity � riapertura NC chiusa', () => {
-    it('admin pu� riaprire closed ? in_progress e revoca approvazione', async () => {
+describe('updateNonConformity  -  riapertura NC chiusa', () => {
+    it('admin può  riaprire closed ? in_progress e revoca approvazione', async () => {
         query
             .mockResolvedValueOnce({
                 recordset: [{
@@ -306,7 +306,7 @@ describe('updateNonConformity � riapertura NC chiusa', () => {
         expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Nuova evidenza/);
     });
 
-    it('auditor non pu� riaprire NC chiusa', async () => {
+    it('auditor non può  riaprire NC chiusa', async () => {
         query.mockResolvedValueOnce({
             recordset: [{
                 nc_id: 5,
@@ -332,7 +332,7 @@ describe('updateNonConformity � riapertura NC chiusa', () => {
 });
 
 describe('approveNcClosure', () => {
-    it('auditor non pu� approvare', async () => {
+    it('auditor non può  approvare', async () => {
         const req = mockReq({ params: { id: '5' }, user: { role: 'auditor', organization_id: ORG_ID, user_id: USER_ID } });
         const res = mockRes();
         await ctrl.approveNcClosure(req, res);

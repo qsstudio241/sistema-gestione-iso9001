@@ -1,8 +1,8 @@
 /**
- * Test L1 — StatusBadge (type="project")
+ * Test L1 â€” StatusBadge (type="project")
  *
  * Verifica le etichette per gli stati commessa realmente usati da
- * ProjectsPage (offerta/aperta/chiusa/sospesa) e la retrocompatibilità
+ * ProjectsPage (offerta/aperta/chiusa/sospesa) e la retrocompatibilitÃ 
  * con gli stati storici della config condivisa.
  */
 import { describe, it, expect } from 'vitest';
@@ -24,7 +24,7 @@ const LEGACY_STATES = [
   { status: 'annullato', label: 'Annullato' },
 ];
 
-describe('StatusBadge — stato commessa', () => {
+describe('StatusBadge â€” stato commessa', () => {
   it.each(PROJECT_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {
@@ -40,7 +40,7 @@ describe('StatusBadge — stato commessa', () => {
   );
 
   it.each(LEGACY_STATES)(
-    'mantiene la retrocompatibilità: "$label" per "$status"',
+    'mantiene la retrocompatibilitÃ : "$label" per "$status"',
     ({ status, label }) => {
       const { container } = render(
         <StatusBadge type="project" status={status} />

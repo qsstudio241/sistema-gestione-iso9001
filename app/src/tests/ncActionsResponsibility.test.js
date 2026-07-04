@@ -1,5 +1,5 @@
 /**
- * Test L1  ncWorkflow gate ISO 10.2
+ * Test L1  -  ncWorkflow gate ISO 10.2
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -88,7 +88,7 @@ describe('ncWorkflow', () => {
       expect(getActionDueStatus(action)).toBe('due_soon');
     });
 
-    it('non segna oggi come in scadenza se già scaduta', () => {
+    it('non segna oggi come in scadenza se giÃ  scaduta', () => {
       expect(isItemDueSoon({ due_date: pastIso, status: 'open' })).toBe(false);
     });
 

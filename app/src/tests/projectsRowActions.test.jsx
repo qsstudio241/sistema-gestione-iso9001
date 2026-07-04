@@ -1,5 +1,5 @@
 /**
- * Test L1 — ProjectsPage azioni di riga a icone
+ * Test L1 â€” ProjectsPage azioni di riga a icone
  *
  * Verifica che ogni riga commessa esponga i pulsanti icona SVG
  * (matita = modifica, cestino = elimina) con aria-label corretto,
@@ -33,7 +33,7 @@ const ONE_PROJECT = {
   applicable_wps_ids: "[]",
 };
 
-describe("ProjectsPage — azioni di riga a icone", () => {
+describe("ProjectsPage â€” azioni di riga a icone", () => {
   beforeEach(() => {
     mockGetProjects.mockReset().mockResolvedValue({ data: [ONE_PROJECT], pagination: { total: 1 } });
     mockGetWPSList.mockReset().mockResolvedValue({ data: [] });
@@ -59,14 +59,14 @@ describe("ProjectsPage — azioni di riga a icone", () => {
     expect(trashBtn.title).toBe("Elimina commessa");
   });
 
-  it("non espone pulsanti emoji ?? o ???", async () => {
+  it("non espone pulsanti emoji ?? o ", async () => {
     render(<ProjectsPage />);
 
     await screen.findByRole("button", { name: "Modifica commessa" });
 
     const allButtons = screen.getAllByRole("button");
-    const emojiEdit  = allButtons.find(b => b.textContent.includes("??"));
-    const emojiTrash = allButtons.find(b => b.textContent.includes("???"));
+    const emojiEdit  = allButtons.find(b => b.textContent.includes("\u270F") || b.textContent.includes("??"));
+    const emojiTrash = allButtons.find(b => /\uD83D\uDDD1/.test(b.textContent));
     expect(emojiEdit).toBeUndefined();
     expect(emojiTrash).toBeUndefined();
   });
