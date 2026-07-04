@@ -1,6 +1,6 @@
 /**
- * RBAC Fase 4 � accesso per singola azienda (user_company_access)
- * Fase 4.1 � guard write centralizzate + scope company
+ * RBAC Fase 4  -  accesso per singola azienda (user_company_access)
+ * Fase 4.1  -  guard write centralizzate + scope company
  * Complementa lo scope studio (auditor_org) per clienti azienda.
  */
 

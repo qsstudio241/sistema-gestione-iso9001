@@ -1,5 +1,5 @@
 /**
- * Test L1 — useDocumentTree pure helper functions
+ * Test L1 â€” useDocumentTree pure helper functions
  *
  * Copre: insertChildren (innesto ricorsivo figli), findNodeById (ricerca DFS)
  * Queste utility gestiscono la struttura ad albero lazy-loaded dei documenti SGQ.
@@ -29,9 +29,9 @@ function findNodeById(nodes, id) {
   return null;
 }
 
-// ??? insertChildren ?????????????????????????????????????????????????????????
+//  insertChildren 
 
-describe('useDocumentTree — insertChildren', () => {
+describe('useDocumentTree â€” insertChildren', () => {
   const baseTree = [
     { id: 1, title: 'A', children: [
       { id: 2, title: 'A.1', children: [] },
@@ -58,7 +58,7 @@ describe('useDocumentTree — insertChildren', () => {
     expect(result[1]._childrenLoaded).toBe(true);
   });
 
-  it('inserisce in profondità ricorsiva (nodo annidato)', () => {
+  it('inserisce in profonditÃ  ricorsiva (nodo annidato)', () => {
     const deepTree = [
       { id: 1, title: 'L0', children: [
         { id: 2, title: 'L1', children: [
@@ -74,7 +74,7 @@ describe('useDocumentTree — insertChildren', () => {
     expect(target._childrenLoaded).toBe(true);
   });
 
-  it('non muta l\'array originale (immutabilità)', () => {
+  it('non muta l\'array originale (immutabilitÃ )', () => {
     const original = [{ id: 1, title: 'Test', children: [] }];
     const frozen = JSON.parse(JSON.stringify(original));
     insertChildren(original, 1, [{ id: 2, title: 'Child' }]);
@@ -92,9 +92,9 @@ describe('useDocumentTree — insertChildren', () => {
   });
 });
 
-// ??? findNodeById ???????????????????????????????????????????????????????????
+//  findNodeById ??
 
-describe('useDocumentTree — findNodeById', () => {
+describe('useDocumentTree â€” findNodeById', () => {
   const tree = [
     { id: 1, title: 'Root 1', children: [
       { id: 2, title: 'Child 1.1', children: [

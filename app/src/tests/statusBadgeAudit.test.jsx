@@ -1,5 +1,5 @@
 /**
- * Test L1 — StatusBadge (type="audit")
+ * Test L1 â€” StatusBadge (type="audit")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
  * per ogni stato audit usato da AuditAccordionLayout e MetricsDashboard.
@@ -18,7 +18,7 @@ const AUDIT_STATES = [
   { status: 'archived', label: 'Archiviato' },
 ];
 
-describe('StatusBadge — stato audit', () => {
+describe('StatusBadge â€” stato audit', () => {
   it.each(AUDIT_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {

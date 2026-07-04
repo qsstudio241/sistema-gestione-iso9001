@@ -1,5 +1,5 @@
 /**
- * Test L1  validazione upload/duplica template Word (ReportTemplatesAdminPage)
+ * Test L1  -  validazione upload/duplica template Word (ReportTemplatesAdminPage)
  */
 import { describe, it, expect } from "vitest";
 import {
@@ -18,7 +18,7 @@ function createFile(name, size, type = "application/vnd.openxmlformats-officedoc
   return new File([buffer], name, { type });
 }
 
-describe("validateDocxFile  template report", () => {
+describe("validateDocxFile  -  template report", () => {
   it("accetta .docx entro 5 MB", () => {
     const file = createFile("verbale.docx", 1024);
     expect(validateDocxFile(file)).toBeNull();
