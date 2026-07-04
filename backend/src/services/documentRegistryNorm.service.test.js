@@ -27,13 +27,13 @@ describe('buildNormTypeSpecificData  metadati upload bulk (AI)', () => {
     });
 
     expect(result).toMatchObject({
-      standard_code: 'ISO_9606_1_2017',
+      standard_code: 'ISO 9606-1:2017',
       norm_title: 'Qualification testing of welders',
       issuing_body: 'ISO',
       edition_year: 2017,
       language: 'en',
       scope_summary: 'Requisiti per qualificazione saldatori.',
-      validity_status: 'vigente',
+      validity_status: 'da_verificare',
     });
   });
 
@@ -49,9 +49,9 @@ describe('buildNormTypeSpecificData  metadati upload bulk (AI)', () => {
       edition_year: '2015',
     });
     const parsed = JSON.parse(json);
-    expect(parsed.standard_code).toBe('UNI_EN_ISO_9001_2015');
+    expect(parsed.standard_code).toBe('UNI EN ISO 9001:2015');
     expect(parsed.edition_year).toBe(2015);
-    expect(parsed.validity_status).toBe('vigente');
+    expect(parsed.validity_status).toBe('da_verificare');
   });
 });
 
@@ -120,9 +120,13 @@ describe('normalizeValidityStatus', () => {
     expect(normalizeValidityStatus('in_revisione')).toBe('in_revisione');
   });
 
-  it('default vigente per valori sconosciuti', () => {
-    expect(normalizeValidityStatus('unknown')).toBe('vigente');
-    expect(normalizeValidityStatus(null)).toBe('vigente');
+  it('default da_verificare per valori sconosciuti', () => {
+    expect(normalizeValidityStatus('unknown')).toBe('da_verificare');
+    expect(normalizeValidityStatus(null)).toBe('da_verificare');
+  });
+
+  it('vigente se esplicitamente impostato', () => {
+    expect(normalizeValidityStatus('vigente')).toBe('vigente');
   });
 });
 
@@ -168,7 +172,7 @@ describe('mergeMissingNormTypeSpecificData — backfill R6', () => {
       edition_year: 2015,
     });
     expect(changed).toBe(true);
-    expect(merged.standard_code).toBe('UNI_EN_ISO_9001_2015');
+    expect(merged.standard_code).toBe('UNI EN ISO 9001:2015');
     expect(merged.edition_year).toBe(2015);
   });
 });

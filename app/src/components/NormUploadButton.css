@@ -354,6 +354,20 @@
   color: #b91c1c;
 }
 
+.norm-upload__catalog-warn {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: #b45309;
+}
+
+.norm-upload__catalog-ok {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #047857;
+}
+
 .norm-upload__result-item--warn {
   border-left-color: #f59e0b;
 }
