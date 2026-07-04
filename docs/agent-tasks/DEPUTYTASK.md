@@ -3,7 +3,9 @@
 > **Creato**: 04/07/2026  
 > **Chiuso**: 04/07/2026  
 > **Stato**: CHIUSO — TEST OK  
-> **Branch**: `cursor/ig-n-norm-ingest-pipeline`  
+> **PR**: #219 mergiata su `main` il 04/07/2026  
+> **Deploy VPS**: completato 04/07/2026 (`normIngest.service.js` + controller aggiornato, health OK)  
+> **Branch**: `cursor/ig-n-norm-ingest-pipeline` (mergiato)  
 > **ADR**: [`docs/adr/ADR-017-ingest-reference-network.md`](../adr/ADR-017-ingest-reference-network.md)
 
 ---
@@ -48,7 +50,9 @@ Allineare upload norme al pattern patentini: `documentIngestPipeline` → `inges
 
 **TEST OK**
 
-Rischio residuo: deploy VPS backend necessario per attivare il nuovo flusso in produzione (`deploy-controllers-to-vps.ps1` + restart).
+- Backend VPS: health `healthy`, database OK (04/07/2026)
+- Frontend: merge `main` → deploy Netlify automatico (~2 min)
+- Preview verificabile: https://deploy-preview-219--systemgest.netlify.app
 
 ---
 
