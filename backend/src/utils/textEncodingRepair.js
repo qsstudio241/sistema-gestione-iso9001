@@ -75,10 +75,13 @@ function normalizeIssuingBodyCode(val) {
     return allowed.includes(s) ? s : 'altro';
 }
 
+const {
+    normalizeMaterialGroupCode: normalizeMaterialGroupFromCatalog,
+} = require('../data/materialGroups15608');
+
 function normalizeMaterialGroupCode(val) {
     const s = repairTextEncoding(String(val || ''));
-    const m = s.match(/\b(10|11|1\.3|1\.2|1\.1|[2-9])\b/);
-    return m ? m[1] : (s || null);
+    return normalizeMaterialGroupFromCatalog(s) || (s || null);
 }
 
 function normalizeIngestSelectFields(fields) {
