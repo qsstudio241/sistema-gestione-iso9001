@@ -1,5 +1,5 @@
 /**
- * QualificationUploadButton — Upload batch patentini con revisione pre-commit (IG-3)
+ * QualificationUploadButton - Upload batch patentini con revisione pre-commit (IG-3)
  */
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
@@ -204,7 +204,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
                           <span className="qual-upload__result-icon">{"\uD83D\uDD0D"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Campi estratti — revisione obbligatoria prima del salvataggio.</p>
+                            <p>Campi estratti{"\u2014"} revisione obbligatoria prima del salvataggio.</p>
                             {r.warnings?.length > 0 && (
                               <div className="qual-upload__warnings">
                                 {r.warnings.map((w, wi) => <div key={wi} className="qual-upload__warning">{"\u26A0\uFE0F"} {w}</div>)}
@@ -235,13 +235,13 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
                           <span className="qual-upload__result-icon">{"\uD83D\uDD04"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Duplicato: qualifica già presente nel registro.</p>
+                            <p>Duplicato: qualifica gi{"\u00E0"} presente nel registro.</p>
                           </div>
                         </div>
                       ) : isRejected ? (
                         <div className="qual-upload__result-rejected">
                           <span className="qual-upload__result-icon">{"\u274C"}</span>
-                          <div><strong>{r.fileName}</strong><p>Scartato — non salvato.</p></div>
+                          <div><strong>{r.fileName}</strong><p>Scartato{"\u2014"} non salvato.</p></div>
                         </div>
                       ) : (
                         <div className="qual-upload__result-error">
