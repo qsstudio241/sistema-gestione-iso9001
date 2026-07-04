@@ -179,7 +179,7 @@ async function extractStructuredByDocType({ text, docType, organizationId = null
         ? `${bodyText.slice(0, MAX_INPUT_CHARS)}\n\n[... testo troncato per limite ${MAX_INPUT_CHARS} caratteri ...]`
         : bodyText;
 
-    const system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
+    let system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
 Analizza il testo estratto da un PDF (può contenere errori di OCR/strato testo).
 Rispondi SOLO con un oggetto JSON valido (nessun testo fuori dal JSON) con questa forma:
 {
