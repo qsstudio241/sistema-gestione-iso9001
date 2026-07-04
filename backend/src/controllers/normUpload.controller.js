@@ -1,76 +1,43 @@
 /**
  * normUpload.controller.js
- * Gestisce upload multiplo di PDF normativi, estrazione testo con pdf-parse,
- * arricchimento metadati via AI, salvataggio in document_registry + norm_document_sources.
+ * Upload batch norme → pipeline unificata → staging (IG-N) o auto-commit se match deterministico.
  */
 
-const { query } = require('../config/database');
-const logger = require('../utils/logger');
-const path = require('path');
 const fs = require('fs').promises;
-const pdfParse = require('pdf-parse');
-const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
-const { buildExtractNormMetadataContext } = require('../services/aiContextBuilder.service');
-const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
-const {
-  buildNormTypeSpecificData,
-  guessStandardCodeFromFilename,
-  clampNormTitle,
-} = require('../services/documentRegistryNorm.service');
+const logger = require('../utils/logger');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
-const normChunker = require('../services/normChunker.service');
-const normCatalog = require('../services/normCatalogLookup.service');
-const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const { extractNormFromPdf, commitNormFromFields } = require('../services/normIngest.service');
+const { createStagingRecord } = require('../services/ingestStaging.service');
 
-function stripCodeFences(raw) {
-  let s = String(raw || '').trim();
-  if (s.startsWith('```')) s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
-  return s.trim();
-}
-
-function assessTextQuality(text) {
-  if (!text) return 'ocr_poor';
-  const len = text.length;
-  if (len < 500) return 'ocr_poor';
-  if (len < 5000) return 'partial';
-  return 'good';
-}
-
-/**
- * Da standard_code grezzo (es. "ISO_9016_2012") + norm_title + issuing_body
- * produce un titolo leggibile: "ISO 9016:2012 — Destructive tests on welds."
- * Se issuing_body è "UNI" e il codice non inizia già con UNI, prefissa "UNI EN".
- */
-/** Campi piatti per UI (NormUploadButton) — oltre a metadata annidato. */
-function flattenNormUploadEntry(entry) {
-    const m = entry.metadata || {};
-    entry.fileName = entry.filename || entry.fileName || null;
-    entry.norm_title = m.norm_title || entry.norm_title || null;
-    entry.standard_code = m.standard_code || entry.standard_code || null;
-    entry.edition_year = m.edition_year ?? entry.edition_year ?? null;
-    entry.issuing_body = m.issuing_body || entry.issuing_body || null;
-    entry.text_quality = entry.textQuality || entry.text_quality || null;
-    entry.catalog_lookup_status = entry.catalogLookup?.status || entry.catalog_lookup_status || null;
-    entry.catalog_lookup_warning = entry.catalogLookup?.warning || entry.catalog_lookup_warning || null;
-    return entry;
-}
-
-function formatReadableTitle(metadata) {
-  const { standard_code, norm_title, issuing_body } = metadata;
-  if (!norm_title) return null;
-  if (!standard_code) return norm_title;
-
-  let prefix = String(standard_code).trim();
-  if (issuing_body && issuing_body.toUpperCase() === 'UNI' && !prefix.toUpperCase().startsWith('UNI')) {
-    prefix = `UNI EN ${prefix}`;
-  }
-
-  return `${prefix} — ${norm_title}`;
+/** Campi piatti per UI (NormUploadButton). */
+function flattenNormBatchEntry(entry) {
+  const fields = entry.fields || {};
+  return {
+    fileName: entry.fileName || entry.filename || null,
+    status: entry.status,
+    staging_id: entry.staging_id || null,
+    document_id: entry.document_id || null,
+    fields: entry.fields || null,
+    field_confidence: entry.field_confidence || null,
+    catalog_lookup: entry.catalog_lookup || null,
+    standard_code: fields.standard_code || entry.standard_code || null,
+    norm_title: fields.norm_title || entry.norm_title || null,
+    edition_year: fields.edition_year ?? entry.edition_year ?? null,
+    issuing_body: fields.issuing_body || entry.issuing_body || null,
+    validity_status: fields.validity_status || entry.validity_status || null,
+    text_quality: entry.text_quality || null,
+    catalog_lookup_status: entry.catalog_lookup?.status || null,
+    catalog_lookup_warning: entry.catalog_lookup?.warning || null,
+    warnings: entry.warnings || [],
+    error: entry.error || null,
+    success: entry.status === 'confirmed',
+    documentId: entry.document_id || null,
+  };
 }
 
 /**
  * POST /documents/norms/upload
- * Multer array field "files", max 10, solo PDF, 50 MB ciascuno.
+ * Multer array field "files", max 10, solo PDF.
  */
 async function uploadNorms(req, res) {
   const results = [];
@@ -80,10 +47,10 @@ async function uploadNorms(req, res) {
     return res.status(400).json({ error: 'Nessun file caricato', code: 'VALIDATION_ERROR' });
   }
 
-  // Cartella destinazione: quella selezionata in UI (parent_folder_id) o fallback 2.3
   const requestedFolderId = req.body?.parent_folder_id
     ? parseInt(req.body.parent_folder_id, 10)
     : null;
+
   let normFolder;
   try {
     normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
@@ -100,239 +67,109 @@ async function uploadNorms(req, res) {
     return res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
   }
 
-  const hasAiProvider = !!getActiveProvider();
-
   for (const file of req.files) {
-    const entry = { filename: file.originalname, success: false, metadata: null, documentId: null, textQuality: null };
+    let entry = { fileName: file.originalname, status: 'error', warnings: [] };
     try {
-      // (a) Extract text with pdf-parse
-      const fileBuffer = await fs.readFile(file.path);
-      let extractedText = '';
-      try {
-        const parsed = await pdfParse(fileBuffer);
-        extractedText = parsed.text || '';
-      } catch (parseErr) {
-        logger.warn(`[NormUpload] pdf-parse fallito per ${file.originalname}:`, parseErr.message);
-      }
-
-      const textQuality = assessTextQuality(extractedText);
-      entry.textQuality = textQuality;
-
-      // (b) AI metadata extraction (best effort)
-      let metadata = { norm_title: null, standard_code: null, issuing_body: null, edition_year: null, language: null, scope_summary: null };
-      if (hasAiProvider && extractedText.length > 50) {
-        try {
-          const ctx = buildExtractNormMetadataContext({ text: extractedText });
-          const systemPrompt = await enrichSystemPromptWithOrganization(
-            ctx.systemPrompt,
-            organization_id
-          );
-          const aiResult = await chat(
-            [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: ctx.userPrompt },
-            ],
-            { temperature: 0.1, responseFormat: 'json' }
-          );
-          const cleaned = stripCodeFences(aiResult.content);
-          const parsed = JSON.parse(cleaned);
-          metadata = { ...metadata, ...parsed };
-        } catch (aiErr) {
-          logger.warn(`[NormUpload] AI extraction fallita per ${file.originalname}:`, aiErr.message);
-        }
-      }
-      if (!metadata.standard_code) {
-        const fromName = guessStandardCodeFromFilename(file.originalname);
-        if (fromName) metadata.standard_code = fromName;
-      }
-      if (!metadata.issuing_body && metadata.standard_code) {
-        const u = String(metadata.standard_code).toUpperCase();
-        if (u.startsWith('UNI')) metadata.issuing_body = 'UNI';
-        else if (/\bISO\b|\bIEC\b/.test(u)) metadata.issuing_body = 'ISO';
-      }
-      metadata.norm_title = clampNormTitle(metadata.norm_title);
-
-      const editionYear = metadata.edition_year
-        ? parseInt(metadata.edition_year, 10) || null
-        : null;
-
-      const preliminaryTsd = buildNormTypeSpecificData({ ...metadata, edition_year: editionYear });
-      if (preliminaryTsd) {
-        metadata.standard_code = preliminaryTsd.standard_code;
-        metadata.edition_year = preliminaryTsd.edition_year ?? editionYear;
-      }
-
-      let catalogLookup = null;
-      if (preliminaryTsd?.standard_code) {
-        try {
-          catalogLookup = await normCatalog.lookupNormStatus(
-            preliminaryTsd.standard_code,
-            preliminaryTsd.issuing_body,
-            preliminaryTsd.edition_year
-          );
-        } catch (lookupErr) {
-          logger.warn(`[NormUpload] Catalog lookup fallito per ${file.originalname}:`, lookupErr.message);
-        }
-      }
-
-      const validityStatus = !catalogLookup || catalogLookup.status === 'unknown'
-        ? 'da_verificare'
-        : catalogLookup.status === 'active'
-          ? 'vigente'
-          : 'superata';
-
-      entry.catalogLookup = catalogLookup
-        ? {
-            status: catalogLookup.status,
-            matchedQuery: catalogLookup.matchedQuery || null,
-            catalogUrl: catalogLookup.catalogUrl || null,
-            warning: catalogLookup.status === 'unknown'
-              ? 'Catalogo non raggiunto o norma non trovata — verifica il codice'
-              : null,
-          }
-        : null;
-
-      const normTsd = buildNormTypeSpecificData({
-        ...metadata,
-        edition_year: editionYear,
-        validity_status: validityStatus,
-        last_validity_check: catalogLookup?.checkedAt || null,
-        validity_check_url: catalogLookup?.catalogUrl || null,
-        superseded_by: catalogLookup?.supersededBy || null,
-      });
-      entry.metadata = { ...metadata, standard_code: normTsd?.standard_code || metadata.standard_code };
-      const typeSpecificData = normTsd ? JSON.stringify(normTsd) : null;
-
-      const docTitle = formatReadableTitle(entry.metadata)
-        || path.basename(file.originalname, '.pdf');
-
-      // (c) Create document_registry row under norm folder
-      const docResult = await query(
-        `INSERT INTO document_registry (
-           organization_id, company_id, parent_id, title, doc_type, status,
-           is_system_folder, issue_date, type_specific_data,
-           created_by, created_at, updated_at
-         )
-         OUTPUT INSERTED.id
-         VALUES (
-           @orgId, @companyId, @parentId, @title, 'norma', 'rilasciato',
-           0,
-           CASE WHEN @editionYear IS NOT NULL
-                THEN DATEFROMPARTS(@editionYear, 1, 1)
-                ELSE NULL END,
-           @typeSpecificData,
-           @userId, GETDATE(), GETDATE()
-         )`,
-        {
-          orgId: organization_id,
-          companyId: normFolder.company_id,
-          parentId: normFolder.id,
-          title: docTitle.substring(0, 255),
-          editionYear,
-          typeSpecificData,
-          userId: user_id,
-        }
-      );
-      const documentId = docResult.recordset[0].id;
-      entry.documentId = documentId;
-
-      const pathCache = await calculatePathCache(documentId, organization_id);
-      await query(
-        `UPDATE document_registry SET path_cache = @path_cache WHERE id = @id`,
-        { path_cache: pathCache, id: documentId }
-      );
-
-      // (d) Create attachments row linked to this document
-      const attResult = await query(
-        `INSERT INTO attachments (
-           document_id,
-           file_name, file_type, file_size, mime_type,
-           storage_path, category, description, uploaded_by, created_at,
-           is_current_doc_version, doc_file_version
-         )
-         OUTPUT INSERTED.attachment_id
-         VALUES (
-           @documentId,
-           @fileName, @fileType, @fileSize, @mimeType,
-           @storagePath, 'document', @description, @userId, GETDATE(),
-           1, 1
-         )`,
-        {
-          documentId,
-          fileName: file.originalname,
-          fileType: path.extname(file.originalname).toLowerCase(),
-          fileSize: file.size,
-          mimeType: file.mimetype,
-          storagePath: file.path,
-          description: `Norma: ${docTitle.substring(0, 200)}`,
-          userId: user_id,
-        }
-      );
-      const attachmentId = attResult.recordset[0].attachment_id;
-
-      // (d2) Link attachment back to document_registry
-      await query(
-        `UPDATE document_registry SET attachment_id = @attId WHERE id = @docId`,
-        { attId: attachmentId, docId: documentId }
-      );
-
-      // (e) Create norm_document_sources row
-      const srcResult = await query(
-        `INSERT INTO norm_document_sources (
-           document_id, organization_id, standard_code, norm_title,
-           edition_year, issuing_body, extracted_text, text_quality,
-           validity_status, created_at, updated_at
-         )
-         OUTPUT INSERTED.id
-         VALUES (
-           @docId, @orgId, @stdCode, @normTitle,
-           @editionYear, @issuingBody, @extractedText, @textQuality,
-           @validityStatus, GETDATE(), GETDATE()
-         )`,
-        {
-          docId: documentId,
-          orgId: organization_id,
-          stdCode: normTsd?.standard_code || metadata.standard_code || null,
-          normTitle: normTsd?.norm_title || metadata.norm_title || null,
-          editionYear: normTsd?.edition_year ?? metadata.edition_year ?? null,
-          issuingBody: normTsd?.issuing_body || metadata.issuing_body || null,
-          extractedText: extractedText || null,
-          textQuality,
-          validityStatus: normTsd?.validity_status || 'da_verificare',
-        }
-      );
-
-      // (f) Semantic indexing (async, non-blocking)
-      const sourceId = srcResult.recordset && srcResult.recordset[0] && srcResult.recordset[0].id;
-      if (sourceId) {
-        setImmediate(() => {
-          normChunker.indexDocument(sourceId).catch(err => {
-            logger.warn(`[NormUpload] Async indexing failed for source ${sourceId}:`, err.message);
-          });
-        });
-      }
-
-      entry.success = true;
-      logger.info('[NormUpload] Norma caricata con successo', {
-        documentId,
-        filename: file.originalname,
-        textQuality,
-        standardCode: metadata.standard_code,
+      const buffer = await fs.readFile(file.path);
+      const extracted = await extractNormFromPdf(
+        buffer,
+        file.originalname,
         organization_id,
-      });
-    } catch (err) {
-      logger.error(`[NormUpload] Errore per ${file.originalname}:`, err.message);
-      entry.error = err.message;
-      entry.fileName = file.originalname;
-      // Don't delete the file — it's already on disk; the partial state can be cleaned up manually
+        normFolder.id,
+      );
+
+      if (extracted.status === 'duplicate') {
+        try { await fs.unlink(file.path); } catch (_) {}
+        results.push(flattenNormBatchEntry({
+          fileName: file.originalname,
+          status: 'duplicate',
+          standard_code: extracted.standard_code,
+          norm_title: extracted.norm_title,
+          warnings: extracted.warnings || [],
+        }));
+        continue;
+      }
+
+      const stagingFields = {
+        ...extracted.fields,
+        _parent_folder_id: normFolder.id,
+        _extracted_text: extracted.extracted_text || null,
+        _text_quality: extracted.text_quality || null,
+      };
+
+      if (extracted.status === 'ready_commit') {
+        const committed = await commitNormFromFields(extracted.fields, organization_id, {
+          userId: user_id,
+          filePath: file.path,
+          fileName: file.originalname,
+          parentFolderId: normFolder.id,
+          extractedText: extracted.extracted_text,
+          textQuality: extracted.text_quality,
+          mimeType: file.mimetype,
+          fileSize: file.size,
+        });
+        entry = {
+          fileName: file.originalname,
+          status: 'confirmed',
+          document_id: committed.document_id,
+          standard_code: committed.standard_code,
+          norm_title: committed.norm_title,
+          validity_status: committed.validity_status,
+          text_quality: committed.text_quality,
+          catalog_lookup: extracted.catalog_lookup,
+          warnings: extracted.warnings || [],
+        };
+        logger.info('[NormUpload] Auto-commit catalogo deterministico', {
+          documentId: committed.document_id,
+          standardCode: committed.standard_code,
+          organization_id,
+        });
+      } else {
+        const stagingId = await createStagingRecord({
+          organizationId: organization_id,
+          companyId: normFolder.company_id,
+          docType: 'norma',
+          originalName: file.originalname,
+          storagePath: file.path,
+          mimeType: file.mimetype,
+          fileSize: file.size,
+          fields: stagingFields,
+          fieldConfidence: extracted.field_confidence,
+          warnings: extracted.warnings,
+          userId: user_id,
+          aiModel: extracted.ai_model || null,
+        });
+
+        entry = {
+          fileName: file.originalname,
+          status: 'pending_review',
+          staging_id: stagingId,
+          fields: extracted.fields,
+          field_confidence: extracted.field_confidence,
+          catalog_lookup: extracted.catalog_lookup,
+          text_quality: extracted.text_quality,
+          warnings: extracted.warnings || [],
+        };
+      }
+    } catch (fileErr) {
+      entry = {
+        fileName: file.originalname,
+        status: 'error',
+        error: fileErr.message,
+        warnings: [fileErr.message],
+      };
+      try { await fs.unlink(file.path); } catch (_) {}
     }
-    results.push(flattenNormUploadEntry(entry));
+    results.push(flattenNormBatchEntry(entry));
   }
 
-  const successCount = results.filter(r => r.success).length;
+  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
+  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+
   res.status(successCount > 0 ? 201 : 500).json({
     success: successCount > 0,
     uploaded: successCount,
+    pending_review: pendingCount,
     total: results.length,
     results,
   });
