@@ -7,6 +7,7 @@ const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const { buildFewShotExamples, formatFewShotPromptSection } = require('./ingestLearning.service');
+const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -200,6 +201,16 @@ Regole generali:
 
 Istruzioni specifiche per il tipo documento "${schema.label}":
 ${schema.aiPrompt}`;
+
+    const MATERIAL_GROUP_DOC_TYPES = new Set([
+        'patentino_saldatore',
+        'qualifica_operatore',
+        'wpqr',
+        'wps',
+    ]);
+    if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
+    }
 
     if (organizationId) {
         try {
