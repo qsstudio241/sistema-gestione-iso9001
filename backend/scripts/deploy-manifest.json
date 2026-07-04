@@ -72,6 +72,7 @@
                                      "src/services/ingestStaging.service.js",
                                      "src/services/ingestFeedback.service.js",
                                      "src/services/ingestLearning.service.js",
+                                     "src/services/ingestReferencePattern.service.js",
                                      "src/services/wpsIngest.service.js",
                                      "src/services/normBroker.service.js",
                                      "src/services/gapAnalysis.service.js"
@@ -100,6 +101,7 @@
                                      "src/services/normChunker.service.js",
                                      "src/services/normCatalogLookup.service.js",
                                      "src/services/standardCodeNormalizer.service.js",
+                                     "src/services/uniStoreConnector.service.js",
                                      "src/services/normValidityChecker.service.js",
                                      "src/services/importAiExtraction.service.js",
                                      "src/services/adapters/geminiAdapter.js",
