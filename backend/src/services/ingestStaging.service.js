@@ -9,12 +9,14 @@ const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
 const { commitQualificationFromFields } = require('./qualificationIngest.service');
 const { commitWPSFromFields } = require('./wpsIngest.service');
+const { commitNormFromFields } = require('./normIngest.service');
 const { recordFeedback } = require('./ingestFeedback.service');
 
 const DOC_TYPE_MODULES = {
     wpqr: 'saldatura',
     wps: 'saldatura',
     patentino_saldatore: 'qualifiche',
+    norma: 'documents',
 };
 
 function parseJson(val, fallback = null) {
@@ -130,6 +132,22 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
                     filePath: row.storage_path,
                     fileName: row.original_name,
                     qualificationType: row.qualification_type,
+                },
+            );
+        } else if (row.doc_type === 'norma') {
+            const meta = parseJson(row.staged_fields_json, {});
+            commitResult = await commitNormFromFields(
+                fields,
+                organizationId,
+                {
+                    userId,
+                    filePath: row.storage_path,
+                    fileName: row.original_name,
+                    parentFolderId: meta._parent_folder_id ?? null,
+                    extractedText: meta._extracted_text ?? null,
+                    textQuality: meta._text_quality ?? null,
+                    mimeType: row.mime_type,
+                    fileSize: row.file_size,
                 },
             );
         } else {

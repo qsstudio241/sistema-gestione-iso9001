@@ -149,6 +149,26 @@ function extractPatentinoFields(text, fileName) {
     };
 }
 
+const { guessStandardCodeFromFilename } = require('../services/documentRegistryNorm.service');
+
+function extractNormFields(text, fileName) {
+    const fromName = guessStandardCodeFromFilename(fileName);
+    const codeFromText = firstMatch(
+        /\b((?:UNI\s*)?(?:EN\s*)?(?:ISO\/TR|ISO|IEC|EN|BS|DIN|AWS|ASME)\s*[\d]+(?:[-\s/][\d]+)*(?::\d{4})?)\b/i,
+        text,
+    );
+    const standard_code = codeFromText || fromName || null;
+    const yearMatch = text.match(/\b(19|20)\d{2}\b/);
+    const issuing_body = standard_code
+        ? (String(standard_code).toUpperCase().startsWith('UNI') ? 'UNI' : /\bISO\b/i.test(standard_code) ? 'ISO' : null)
+        : null;
+    return {
+        standard_code,
+        issuing_body,
+        edition_year: yearMatch ? parseInt(yearMatch[0], 10) : null,
+    };
+}
+
 const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
@@ -158,6 +178,7 @@ const EXTRACTORS_BY_DOC_TYPE = {
         base_material: extractMaterialGroup(text),
         wpqr_ref: firstMatch(/\bWPQR\s*[:.]?\s*(\d{2}-\d{4,6})\b/i, text),
     }),
+    norma: extractNormFields,
 };
 
 /**
