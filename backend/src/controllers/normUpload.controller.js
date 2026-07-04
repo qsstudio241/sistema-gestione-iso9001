@@ -19,6 +19,7 @@ const {
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const normChunker = require('../services/normChunker.service');
+const normCatalog = require('../services/normCatalogLookup.service');
 const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
 
 function stripCodeFences(raw) {
@@ -49,6 +50,8 @@ function flattenNormUploadEntry(entry) {
     entry.edition_year = m.edition_year ?? entry.edition_year ?? null;
     entry.issuing_body = m.issuing_body || entry.issuing_body || null;
     entry.text_quality = entry.textQuality || entry.text_quality || null;
+    entry.catalog_lookup_status = entry.catalogLookup?.status || entry.catalog_lookup_status || null;
+    entry.catalog_lookup_warning = entry.catalogLookup?.warning || entry.catalog_lookup_warning || null;
     return entry;
 }
 
@@ -57,20 +60,9 @@ function formatReadableTitle(metadata) {
   if (!norm_title) return null;
   if (!standard_code) return norm_title;
 
-  const parts = standard_code.split('_');
-  let year = '';
-  let codeParts = [...parts];
-  if (parts.length > 1 && /^\d{4}$/.test(parts[parts.length - 1])) {
-    year = parts[parts.length - 1];
-    codeParts = parts.slice(0, -1);
-  }
-
-  const codeStr = codeParts.join(' ');
-  const formattedCode = year ? `${codeStr}:${year}` : codeStr;
-
-  let prefix = formattedCode;
-  if (issuing_body && issuing_body.toUpperCase() === 'UNI' && !codeStr.toUpperCase().startsWith('UNI')) {
-    prefix = `UNI EN ${formattedCode}`;
+  let prefix = String(standard_code).trim();
+  if (issuing_body && issuing_body.toUpperCase() === 'UNI' && !prefix.toUpperCase().startsWith('UNI')) {
+    prefix = `UNI EN ${prefix}`;
   }
 
   return `${prefix} — ${norm_title}`;
@@ -159,22 +151,60 @@ async function uploadNorms(req, res) {
         else if (/\bISO\b|\bIEC\b/.test(u)) metadata.issuing_body = 'ISO';
       }
       metadata.norm_title = clampNormTitle(metadata.norm_title);
-      entry.metadata = metadata;
-
-      const docTitle = formatReadableTitle(metadata)
-        || path.basename(file.originalname, '.pdf');
 
       const editionYear = metadata.edition_year
         ? parseInt(metadata.edition_year, 10) || null
         : null;
 
-      // Stesso schema type_specific_data del form manuale (slice R3)
-      // validity_status impostato a 'vigente' di default; il job settimanale lo aggiorna
+      const preliminaryTsd = buildNormTypeSpecificData({ ...metadata, edition_year: editionYear });
+      if (preliminaryTsd) {
+        metadata.standard_code = preliminaryTsd.standard_code;
+        metadata.edition_year = preliminaryTsd.edition_year ?? editionYear;
+      }
+
+      let catalogLookup = null;
+      if (preliminaryTsd?.standard_code) {
+        try {
+          catalogLookup = await normCatalog.lookupNormStatus(
+            preliminaryTsd.standard_code,
+            preliminaryTsd.issuing_body,
+            preliminaryTsd.edition_year
+          );
+        } catch (lookupErr) {
+          logger.warn(`[NormUpload] Catalog lookup fallito per ${file.originalname}:`, lookupErr.message);
+        }
+      }
+
+      const validityStatus = !catalogLookup || catalogLookup.status === 'unknown'
+        ? 'da_verificare'
+        : catalogLookup.status === 'active'
+          ? 'vigente'
+          : 'superata';
+
+      entry.catalogLookup = catalogLookup
+        ? {
+            status: catalogLookup.status,
+            matchedQuery: catalogLookup.matchedQuery || null,
+            catalogUrl: catalogLookup.catalogUrl || null,
+            warning: catalogLookup.status === 'unknown'
+              ? 'Catalogo non raggiunto o norma non trovata — verifica il codice'
+              : null,
+          }
+        : null;
+
       const normTsd = buildNormTypeSpecificData({
         ...metadata,
-        validity_status: metadata.validity_status || 'vigente',
+        edition_year: editionYear,
+        validity_status: validityStatus,
+        last_validity_check: catalogLookup?.checkedAt || null,
+        validity_check_url: catalogLookup?.catalogUrl || null,
+        superseded_by: catalogLookup?.supersededBy || null,
       });
+      entry.metadata = { ...metadata, standard_code: normTsd?.standard_code || metadata.standard_code };
       const typeSpecificData = normTsd ? JSON.stringify(normTsd) : null;
+
+      const docTitle = formatReadableTitle(entry.metadata)
+        || path.basename(file.originalname, '.pdf');
 
       // (c) Create document_registry row under norm folder
       const docResult = await query(
@@ -257,17 +287,18 @@ async function uploadNorms(req, res) {
          VALUES (
            @docId, @orgId, @stdCode, @normTitle,
            @editionYear, @issuingBody, @extractedText, @textQuality,
-           'vigente', GETDATE(), GETDATE()
+           @validityStatus, GETDATE(), GETDATE()
          )`,
         {
           docId: documentId,
           orgId: organization_id,
-          stdCode: metadata.standard_code || null,
+          stdCode: normTsd?.standard_code || metadata.standard_code || null,
           normTitle: normTsd?.norm_title || metadata.norm_title || null,
-          editionYear: metadata.edition_year || null,
-          issuingBody: metadata.issuing_body || null,
+          editionYear: normTsd?.edition_year ?? metadata.edition_year ?? null,
+          issuingBody: normTsd?.issuing_body || metadata.issuing_body || null,
           extractedText: extractedText || null,
           textQuality,
+          validityStatus: normTsd?.validity_status || 'da_verificare',
         }
       );
 

@@ -169,7 +169,12 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                             {r.text_quality && (
                               <StatusBadge type="norm_quality" status={r.text_quality} size="small" />
                             )}
-                            {r.documentId && <span>ID archivio: {r.documentId}</span>}
+                            {r.catalog_lookup_warning && (
+                              <span className="norm-upload__catalog-warn">{"\u26A0\uFE0F"} {r.catalog_lookup_warning}</span>
+                            )}
+                            {r.catalog_lookup_status === 'active' && (
+                              <span className="norm-upload__catalog-ok">Catalogo: vigente</span>
+                            )}
                           </div>
                         </div>
                       </div>

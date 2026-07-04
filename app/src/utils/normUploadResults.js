@@ -19,6 +19,8 @@ export function normalizeNormUploadResults(raw) {
       issuing_body: entry.issuing_body || m.issuing_body || null,
       text_quality: entry.text_quality || entry.textQuality || null,
       documentId: entry.documentId ?? null,
+      catalog_lookup_status: entry.catalog_lookup_status || entry.catalogLookup?.status || null,
+      catalog_lookup_warning: entry.catalog_lookup_warning || entry.catalogLookup?.warning || null,
     };
   });
 }

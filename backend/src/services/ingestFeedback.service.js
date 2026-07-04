@@ -3,6 +3,7 @@
  */
 
 const { query } = require('../config/database');
+const { upsertPatternsFromFeedback } = require('./ingestReferencePattern.service');
 
 function parseJson(val, fallback = null) {
     if (val == null) return fallback;
@@ -98,6 +99,13 @@ async function recordFeedback(params) {
         rejectReason,
         createdBy,
     });
+
+    if (finalAction === 'accepted' || finalAction === 'corrected') {
+        upsertPatternsFromFeedback(docType, fieldDiffs).catch((err) => {
+            // Non bloccare il commit ingest se la tabella pattern non esiste ancora
+            require('../utils/logger').warn('[ingestFeedback] reference pattern upsert:', err.message);
+        });
+    }
 
     return { action: finalAction, field_diffs: fieldDiffs };
 }
