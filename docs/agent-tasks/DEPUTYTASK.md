@@ -1,7 +1,7 @@
 # DEPUTYTASK — IG-N: norme nella pipeline ingest unificata
 
 > **Creato**: 04/07/2026  
-> **Stato**: APERTO — dipende da merge PR ADR-017 + norm catalog  
+> **Stato**: APERTO — prerequisiti infra OK (ADR-017 merge + mig. 120 VPS)
 > **ADR**: [`docs/adr/ADR-017-ingest-reference-network.md`](../adr/ADR-017-ingest-reference-network.md)
 
 ---
@@ -14,8 +14,8 @@ Allineare upload norme al pattern patentini: `documentIngestPipeline` → `inges
 
 ## Prerequisiti
 
-- [ ] Merge PR con ADR-017, `uniStoreConnector`, `ingestReferencePattern`, mig. **120** su VPS
-- [ ] `npm test` backend servizi ingest + norm
+- [x] Merge PR con ADR-017, `uniStoreConnector`, `ingestReferencePattern`, mig. **120** su VPS (04/07/2026 — `[120] ingest_reference_patterns OK`)
+- [ ] `npm test` backend servizi ingest + norm (deputy)
 
 ---
 
