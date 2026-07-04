@@ -5,6 +5,10 @@
 const { query } = require('../config/database');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { parseJson } = require('./ingestFeedback.service');
+const {
+    getTopReferencePatterns,
+    formatReferencePatternsPromptSection,
+} = require('./ingestReferencePattern.service');
 
 const MIN_EXAMPLES = Number(process.env.INGEST_FEWSHOT_MIN_EXAMPLES) || 1;
 const DEFAULT_LIMIT = Number(process.env.INGEST_FEWSHOT_LIMIT) || 3;
@@ -17,6 +21,20 @@ function humanPayloadComplete(humanPayload, docType) {
         const v = humanPayload?.[k];
         return v != null && String(v).trim() !== '';
     });
+}
+
+/**
+ * Costruisce sezione prompt: pattern riferimento (Livello B) + few-shot org (Livello C).
+ * @param {number} organizationId
+ * @param {string} docType
+ * @param {number} [orgLimit]
+ */
+async function buildIngestLearningPromptSection(organizationId, docType, orgLimit = DEFAULT_LIMIT) {
+    const refPatterns = await getTopReferencePatterns(docType, 5);
+    const refSection = formatReferencePatternsPromptSection(refPatterns);
+    const orgExamples = await buildFewShotExamples(organizationId, docType, orgLimit);
+    const orgSection = formatFewShotPromptSection(orgExamples);
+    return refSection + orgSection;
 }
 
 /**
@@ -74,6 +92,7 @@ ${blocks.join('\n\n')}`;
 module.exports = {
     buildFewShotExamples,
     formatFewShotPromptSection,
+    buildIngestLearningPromptSection,
     humanPayloadComplete,
     MIN_EXAMPLES,
 };

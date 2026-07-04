@@ -6,7 +6,7 @@
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
-const { buildFewShotExamples, formatFewShotPromptSection } = require('./ingestLearning.service');
+const { buildIngestLearningPromptSection } = require('./ingestLearning.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
@@ -214,8 +214,7 @@ ${schema.aiPrompt}`;
 
     if (organizationId) {
         try {
-            const examples = await buildFewShotExamples(organizationId, docType);
-            system += formatFewShotPromptSection(examples);
+            system += await buildIngestLearningPromptSection(organizationId, docType);
         } catch (fewShotErr) {
             // non bloccare estrazione
         }

@@ -1,29 +1,45 @@
-# DEPUTYTASK — SAL Fase 4: feed Riesame §9.3
+# DEPUTYTASK — IG-N: norme nella pipeline ingest unificata
 
-> **Creato**: 02/07/2026  
-> **Stato**: COMPLETATO — TEST OK  
-> **Spec**: [`docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 4 · §G  
-> **Branch**: `cursor/sal-fase4-riesame-feed-3971`
+> **Creato**: 04/07/2026  
+> **Stato**: APERTO — dipende da merge PR ADR-017 + norm catalog  
+> **ADR**: [`docs/adr/ADR-017-ingest-reference-network.md`](../adr/ADR-017-ingest-reference-network.md)
 
 ---
 
 ## Obiettivo
 
-Il Riesame di Direzione legge la matrice SAL (sola lettura) per popolare `norm_coverage` quando è selezionato l'ambito azienda.
+Allineare upload norme al pattern patentini: `documentIngestPipeline` → `ingest_staging` → `IngestReviewDialog` (PDF affiancato) → commit `document_registry` + lookup UNI.
 
 ---
 
-## Deliverable
+## Prerequisiti
 
-| Voce | Esito |
-|------|-------|
-| `getNormCoverageForReview` in `gapAnalysis.service.js` | ✅ |
-| `getInputSummary` usa SAL con `company_id`, legacy senza | ✅ |
-| Test L1: `gapAnalysis` (18) + `managementReviews.controller` | ✅ PASS |
-| VPS: mig. 117+118 eseguite, backend SAL deployato | ✅ |
+- [ ] Merge PR con ADR-017, `uniStoreConnector`, `ingestReferencePattern`, mig. **120** su VPS
+- [ ] `npm test` backend servizi ingest + norm
 
 ---
 
-## Chiusura
+## Slice IG-N1 (backend)
 
-TEST OK — Fase 4 completata. Prossimo opzionale: **Fase 5 AI**.
+1. Aggiungere `norma` a `SUPPORTED_DOC_TYPES` in `documentIngestPipeline.service.js`
+2. Nuovo endpoint staging upload norme (o refactor `normUpload.controller` → staging only, commit separato)
+3. Lookup catalogo UNI in pipeline pre-staging; `catalog_lookup` in payload staging
+4. `buildNormTypeSpecificData` + `standardCodeNormalizer` al commit
+
+## Slice IG-N2 (frontend)
+
+1. `NormUploadButton` → flusso come `QualificationUploadButton` (review dialog)
+2. Warning catalogo / scelta candidati UNI se `ambiguous_match`
+3. Badge `da_verificare` coerente albero + pannello
+
+## DoD
+
+- Upload ISO/TR 15608: codice normalizzato, vigore da UNI, review solo se ambiguous
+- Test L1 pipeline norma + commit
+- Mig. 120 eseguita VPS: `node /tmp/run-migration-120-vps.js`
+
+---
+
+## Chiusura deputy
+
+`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`

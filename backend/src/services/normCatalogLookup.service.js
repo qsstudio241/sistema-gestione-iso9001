@@ -4,7 +4,7 @@
  * lo stato di validità di una norma tecnica (vigente / ritirata / sostituita).
  *
  * Caratteristiche:
- * - Non richiede autenticazione: usa solo pagine pubbliche
+ * - Catalogo UNI Store primario per norme tecniche (ADR-017); fallback ISO.org / BSI
  * - Timeout 5 s per non bloccare il flusso principale
  * - Cache in-memory 24 h per norma (key = code + ente)
  * - Fallback graceful: restituisce { status: 'unknown' } in caso di errore
@@ -16,6 +16,9 @@ const https = require('https');
 const http  = require('http');
 const logger = require('../utils/logger');
 const { buildCatalogSearchVariants, normalizeStandardCodeForStorage } = require('./standardCodeNormalizer.service');
+const uniStoreConnector = require('./uniStoreConnector.service');
+const normattivaConnector = require('./normConnectors/normativaConnector');
+const eurLexConnector = require('./normConnectors/eurLexConnector');
 
 // ??? Cache in-memory ??????????????????????????????????????????????????????????
 const _cache = new Map();
@@ -199,8 +202,10 @@ function parseUni(html) {
 
 // ??? Logica principale ????????????????????????????????????????????????????????
 
-const normattivaConnector = require('./normConnectors/normativaConnector');
-const eurLexConnector = require('./normConnectors/eurLexConnector');
+function isPublicLawLookup(code, body) {
+    return eurLexConnector.isEuLegislation(code, body)
+        || normattivaConnector.isItalianPublicLaw(code, body);
+}
 
 /**
  * Esegue lookup su un singolo termine di ricerca (con cache).
@@ -367,6 +372,30 @@ async function lookupNormStatus(standardCode, issuingBody, editionYear = null) {
     if (cachedAgg && (Date.now() - cachedAgg.cachedAt) < CACHE_TTL_MS) {
         logger.info('[normCatalog] aggregate cache hit', { standardCode: normalized });
         return cachedAgg.result;
+    }
+
+    if (!isPublicLawLookup(normalized, issuingBody)) {
+        try {
+            const uniResult = await uniStoreConnector.lookupNormOnUniStore(
+                standardCode,
+                editionYear,
+                null
+            );
+            if (uniResult.status !== 'unknown') {
+                const finalResult = {
+                    status: uniResult.status,
+                    supersededBy: uniResult.supersededBy ?? null,
+                    catalogUrl: uniResult.catalogUrl,
+                    checkedAt: uniResult.checkedAt,
+                    matchedQuery: uniResult.matchedQuery || uniResult.matchedCode,
+                };
+                _cache.set(aggregateKey, { result: finalResult, cachedAt: Date.now() });
+                logger.info('[normCatalog] UNI store primary OK', { standardCode: normalized, status: finalResult.status });
+                return finalResult;
+            }
+        } catch (uniErr) {
+            logger.warn('[normCatalog] UNI store lookup failed', { standardCode: normalized, error: uniErr.message });
+        }
     }
 
     const target = resolveTarget(normalized, issuingBody);
