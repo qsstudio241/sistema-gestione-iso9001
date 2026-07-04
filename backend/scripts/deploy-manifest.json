@@ -99,6 +99,7 @@
                                      "src/services/documentTreeProvisioner.service.js",
                                      "src/services/normChunker.service.js",
                                      "src/services/normCatalogLookup.service.js",
+                                     "src/services/standardCodeNormalizer.service.js",
                                      "src/services/normValidityChecker.service.js",
                                      "src/services/importAiExtraction.service.js",
                                      "src/services/adapters/geminiAdapter.js",

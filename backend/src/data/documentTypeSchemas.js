@@ -80,7 +80,7 @@ validity_status, language, scope_summary, ics_code, technical_committee, is_harm
       issuing_body: 'string|null',
       edition_year: 'number|null',
       supersedes: 'string|null',
-      validity_status: 'vigente|superata|annullata|in_revisione|null',
+      validity_status: 'vigente|superata|annullata|in_revisione|da_verificare|null',
       language: 'it|en|de|fr|es|multi|null',
       scope_summary: 'string|null',
       ics_code: 'string|null',

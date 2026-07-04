@@ -359,7 +359,7 @@ Analizza il testo estratto da un documento PDF e identifica i metadati della nor
 Rispondi SOLO con JSON valido nel formato:
 {
   "norm_title": "titolo completo della norma (senza codice)",
-  "standard_code": "codice in formato ISO_XXXX_YYYY (es. ISO_19011_2018, UNI_EN_ISO_9001_2015)",
+  "standard_code": "codice catalogo (es. ISO/TR 15608:2013, UNI EN ISO 9001:2015, ISO 9606-1:2017)",
   "issuing_body": "ente emittente principale (ISO, UNI, CEN, IEC, ecc.)",
   "edition_year": 2018,
   "language": "it|en|de|fr",
@@ -367,7 +367,7 @@ Rispondi SOLO con JSON valido nel formato:
 }
 
 Regole:
-- standard_code: usa underscore come separatore, includi l'anno se presente (es. ISO_19011_2018)
+- standard_code: formato catalogo ufficiale con spazi, slash per TR/TS e anno dopo i due punti (es. ISO/TR 15608:2013). Non usare underscore.
 - Se il documento è una traduzione UNI di una norma ISO, includi il prefisso UNI_EN_ (es. UNI_EN_ISO_9001_2015)
 - edition_year: anno di pubblicazione dell'edizione (intero, es. 2018)
 - scope_summary: estrai preferibilmente dal campo "Scopo" / "Scope" / "Campo di applicazione" del documento; se non disponibile, sintetizza in 2-4 frasi di cosa tratta la norma
