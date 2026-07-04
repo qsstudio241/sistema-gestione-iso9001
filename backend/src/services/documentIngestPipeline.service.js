@@ -20,7 +20,7 @@ try {
     extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
 } catch (_) {}
 
-const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps']);
+const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps', 'norma']);
 
 /** Alias campi AI/schema → campi piatti pipeline */
 const FIELD_ALIASES = {
@@ -203,7 +203,7 @@ function mergeExtractions(ruleFields, aiFields, docType) {
  *
  * @param {object} params
  * @param {Buffer} params.pdfBuffer
- * @param {string} params.docType — wpqr | patentino_saldatore | wps
+ * @param {string} params.docType — wpqr | patentino_saldatore | wps | norma
  * @param {string} [params.fileName]
  * @param {number} [params.organizationId] — riservato IG-5 (few-shot)
  * @returns {Promise<object>}

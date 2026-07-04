@@ -152,11 +152,39 @@ describe('runDocumentIngest', () => {
         expect(out.warnings.some((w) => w.includes('AI non configurata'))).toBe(true);
     });
 
+    it('produce fields e confidence per norma', async () => {
+        extractPdfText.mockResolvedValue(
+            'ISO/TR 15608:2013 Welding — Grouping system for materials 2013'
+        );
+        getActiveProvider.mockReturnValue('gemini');
+        extractStructuredByDocType.mockResolvedValue({
+            model: 'gemini-1.5-flash',
+            data: {
+                type_specific_data: {
+                    standard_code: 'ISO/TR 15608:2013',
+                    norm_title: 'Grouping system for materials',
+                    issuing_body: 'ISO',
+                    edition_year: 2013,
+                },
+            },
+        });
+
+        const out = await runDocumentIngest({
+            pdfBuffer: Buffer.from('%PDF'),
+            docType: 'norma',
+            fileName: 'ISO_TR_15608_2013.pdf',
+            organizationId: 1001,
+        });
+
+        expect(out.fields.standard_code).toBeTruthy();
+        expect(out.extractionConfidence).toBeGreaterThan(0);
+    });
+
     it('rifiuta docType non supportato', async () => {
         await expect(
             runDocumentIngest({
                 pdfBuffer: Buffer.from('x'),
-                docType: 'norma',
+                docType: 'certificato_materiale',
                 fileName: 'x.pdf',
             })
         ).rejects.toMatchObject({ code: 'UNSUPPORTED_DOC_TYPE' });

@@ -205,6 +205,39 @@
   border: 1px solid #fecaca;
 }
 
+.norm-upload__result-item--pending {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.norm-upload__result-item--duplicate {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.norm-upload__result-item--rejected {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.norm-upload__result-pending,
+.norm-upload__result-duplicate,
+.norm-upload__result-rejected {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.norm-upload__warnings {
+  margin-top: 6px;
+}
+
+.norm-upload__warning {
+  font-size: 0.82rem;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
 .norm-upload__result-error,
 .norm-upload__result-success {
   display: flex;
