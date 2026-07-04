@@ -1,5 +1,5 @@
 /**
- * WpqrUploadButton ? Upload batch WPQR con revisione pre-commit (IG-3)
+ * WpqrUploadButton - Upload batch WPQR con revisione pre-commit (IG-3)
  */
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
@@ -204,7 +204,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
                           <span className="wpqr-upload__result-icon">{"\uD83D\uDD0D"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Campi estratti ? revisione obbligatoria prima del salvataggio.</p>
+                            <p>Campi estratti{"\u2014"} revisione obbligatoria prima del salvataggio.</p>
                             {r.warnings?.length > 0 && (
                               <div className="wpqr-upload__warnings">
                                 {r.warnings.map((w, wi) => <div key={wi} className="wpqr-upload__warning">{"\u26A0\uFE0F"} {w}</div>)}
@@ -235,7 +235,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
                           <span className="wpqr-upload__result-icon">{"\uD83D\uDD04"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Duplicato: WPQR gi? presente nel registro.</p>
+                            <p>Duplicato: WPQR gi{"\u00E0"} presente nel registro.</p>
                           </div>
                         </div>
                       ) : isWrong ? (
@@ -249,7 +249,7 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
                       ) : isRejected ? (
                         <div className="wpqr-upload__result-rejected">
                           <span className="wpqr-upload__result-icon">{"\u274C"}</span>
-                          <div><strong>{r.fileName}</strong><p>Scartato ? non salvato.</p></div>
+                          <div><strong>{r.fileName}</strong><p>Scartato{"\u2014"} non salvato.</p></div>
                         </div>
                       ) : (
                         <div className="wpqr-upload__result-error">
