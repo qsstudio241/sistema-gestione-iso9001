@@ -40,8 +40,12 @@ const fs = require('fs');
 const EMAIL = process.env.UNI_STORE_EMAIL;
 const PASSWORD = process.env.UNI_STORE_PASSWORD;
 const TEST_NORM_CODE = process.env.UNI_STORE_TEST_NORM_CODE || 'UNI EN ISO 3834-2';
+// URL prodotto reale, gia' individuato dal connettore pubblico uniStoreConnector.service.js
+// (lookupNormOnUniStore) — evita di dipendere dalla UI di ricerca, spesso fragile.
+const TEST_NORM_URL = process.env.UNI_STORE_TEST_NORM_URL || 'https://store.uni.com/ec-1-2022-uni-en-iso-3834-2-2021';
 
 const ARTIFACTS_DIR = path.join(__dirname, 'uni-store-artifacts');
+const SESSION_FILE = path.join(ARTIFACTS_DIR, 'session-state.json');
 
 function ts() {
   return new Date().toISOString().replace(/[:.]/g, '-');
@@ -108,16 +112,23 @@ async function main() {
   console.log('=== Diagnostico UNI Store — avvio ===');
   console.log(`Norma di test: ${TEST_NORM_CODE}`);
 
-  const HEADLESS = process.env.UNI_STORE_HEADLESS !== 'false';
-  const browser = await chromium.launch({ headless: HEADLESS });
+  const HUMAN_LOGIN = process.env.UNI_STORE_HUMAN_LOGIN === 'true';
+  const HEADLESS = HUMAN_LOGIN ? false : process.env.UNI_STORE_HEADLESS !== 'false';
+  const browser = await chromium.launch({
+    headless: HEADLESS,
+    args: ['--disable-blink-features=AutomationControlled'],
+  });
+  const hasSavedSession = fs.existsSync(SESSION_FILE);
   const context = await browser.newContext({
     viewport: { width: 1366, height: 900 },
     userAgent:
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
       '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
     locale: 'it-IT',
+    storageState: hasSavedSession ? SESSION_FILE : undefined,
   });
   const page = await context.newPage();
+  if (hasSavedSession) console.log(`Sessione salvata trovata (${SESSION_FILE}) — provo a riusarla, salto il login se valida.`);
 
   const netLog = [];
   const authLog = [];
@@ -137,6 +148,17 @@ async function main() {
     await shot(page, '01_homepage');
     report.steps.push({ step: 'homepage', ok: true });
 
+    let alreadyLoggedIn = false;
+    if (hasSavedSession) {
+      const stillShowsLogin = await findLoginLink(page);
+      alreadyLoggedIn = !stillShowsLogin;
+      console.log(`  Sessione riutilizzata: ${alreadyLoggedIn ? 'ANCORA VALIDA (login saltato)' : 'scaduta, rifaccio login'}`);
+      report.steps.push({ step: 'reuse_session', ok: alreadyLoggedIn });
+    }
+
+    if (alreadyLoggedIn) {
+      report.steps.push({ step: 'login_check', ok: true, note: 'sessione riutilizzata' });
+    } else {
     console.log('[2/5] Ricerca link di login...');
     let loginLink = await findLoginLink(page);
     if (!loginLink) {
@@ -188,30 +210,46 @@ async function main() {
     // Ridondanza: chiude di nuovo il banner cookie se ricomparso dopo il fill
     await dismissCookieBanner(page);
 
-    const submitBtn = page.locator('button[type="submit"], input[type="submit"]').first();
-    await shot(page, '03_login_form_filled');
-    let submitted = false;
-    if (await submitBtn.count()) {
-      try {
-        await Promise.all([
-          page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}),
-          submitBtn.click({ timeout: 8000 }),
-        ]);
-        submitted = true;
-      } catch (err) {
-        console.warn(`  Click normale fallito (${err.message.split('\n')[0]}), provo click forzato...`);
+    if (HUMAN_LOGIN) {
+      console.log('\n  >>> MODALITA\' LOGIN ASSISTITO <<<');
+      console.log('  Il browser e\' visibile sullo schermo con email/password gia\' compilate.');
+      console.log('  Clicca tu stesso il pulsante "ACCEDI" (e completa eventuale verifica di sicurezza).');
+      console.log('  Attendo fino a 180 secondi che il login venga completato...\n');
+
+      const deadline = Date.now() + 180000;
+      let loggedIn = false;
+      while (Date.now() < deadline) {
+        const pwCount = await page.locator('input[type="password"]').count().catch(() => 1);
+        if (pwCount === 0) { loggedIn = true; break; }
+        await page.waitForTimeout(1000);
+      }
+      console.log(loggedIn ? '  Login rilevato, proseguo in autonomia...' : '  Timeout: nessun login rilevato entro 180s.');
+    } else {
+      const submitBtn = page.locator('button[type="submit"], input[type="submit"]').first();
+      await shot(page, '03_login_form_filled');
+      let submitted = false;
+      if (await submitBtn.count()) {
         try {
-          await submitBtn.click({ force: true, timeout: 5000 });
-          await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+          await Promise.all([
+            page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}),
+            submitBtn.click({ timeout: 8000 }),
+          ]);
           submitted = true;
-        } catch (err2) {
-          console.warn(`  Click forzato fallito (${err2.message.split('\n')[0]}), provo invio da tastiera...`);
+        } catch (err) {
+          console.warn(`  Click normale fallito (${err.message.split('\n')[0]}), provo click forzato...`);
+          try {
+            await submitBtn.click({ force: true, timeout: 5000 });
+            await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+            submitted = true;
+          } catch (err2) {
+            console.warn(`  Click forzato fallito (${err2.message.split('\n')[0]}), provo invio da tastiera...`);
+          }
         }
       }
-    }
-    if (!submitted) {
-      await page.locator('input[type="password"]').first().press('Enter').catch(() => {});
-      await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+      if (!submitted) {
+        await page.locator('input[type="password"]').first().press('Enter').catch(() => {});
+        await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+      }
     }
     await page.waitForTimeout(1500); // lascia comparire eventuali toast/messaggi asincroni
     await shot(page, '04_after_login_submit');
@@ -238,38 +276,54 @@ async function main() {
       throw new Error('Login non confermato — vedere screenshot 04_after_login_submit');
     }
 
-    console.log(`[5/5] Ricerca norma di test: "${TEST_NORM_CODE}"...`);
-    const searchBox = page.locator('input[type="search"], input[name*="search" i], input#search').first();
-    if (await searchBox.count().catch(() => 0)) {
-      await searchBox.click();
-      await searchBox.fill(TEST_NORM_CODE);
-      await page.keyboard.press('Enter');
-      await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
-      await shot(page, '05_search_results');
-      report.steps.push({ step: 'search_norm', ok: true });
+    // Login fresco riuscito: salva la sessione per riusarla nelle prossime esecuzioni
+    await context.storageState({ path: SESSION_FILE });
+    console.log(`  Sessione salvata in ${SESSION_FILE} (per saltare il login la prossima volta)`);
+    } // fine blocco login (skippato se alreadyLoggedIn)
 
+    console.log(`\n[5/5] Apertura diretta pagina prodotto norma di test...`);
+    await page.goto(TEST_NORM_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch((err) => {
+      console.warn(`  Navigazione a TEST_NORM_URL fallita: ${err.message}`);
+    });
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+    await shot(page, '05_norm_product_page');
+    report.steps.push({ step: 'open_norm_product_page', ok: true, url: TEST_NORM_URL });
+
+    {
       const bodyText = await page.evaluate(() => document.body.innerText).catch(() => '');
       const foundMention = bodyText.toLowerCase().includes(TEST_NORM_CODE.toLowerCase().slice(0, 10));
       console.log(`  Testo pagina contiene riferimento alla norma: ${foundMention}`);
       report.steps.push({ step: 'norm_mentioned_in_results', ok: foundMention });
 
-      // Tentativo di apertura scheda norma + estrazione testo (probabile blocco DRM)
-      const firstResultLink = page.locator('a').filter({ hasText: /3834|ISO|UNI/i }).first();
-      if (await firstResultLink.count().catch(() => 0)) {
-        await firstResultLink.click().catch(() => {});
-        await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
-        await shot(page, '06_norm_detail_page');
-        const detailText = await page.evaluate(() => document.body.innerText.slice(0, 2000)).catch(() => '');
-        const hasIframeOrCanvas = await page.evaluate(
-          () => document.querySelectorAll('iframe, canvas, embed[type*="pdf" i]').length
-        ).catch(() => 0);
-        console.log(`  Elementi iframe/canvas/embed nella pagina di dettaglio: ${hasIframeOrCanvas} (DRM/viewer protetto se >0)`);
-        console.log(`  Estratto testo (primi 300 char): ${detailText.slice(0, 300).replace(/\s+/g, ' ')}`);
-        report.steps.push({ step: 'norm_detail_extraction', ok: true, hasIframeOrCanvas, textPreview: detailText.slice(0, 300) });
+      // Cerca pulsanti tipici di accesso al contenuto (consultazione/download) per capire l'entitlement
+      const actionButtons = await page.evaluate(() => {
+        const texts = ['consulta', 'scarica', 'anteprima', 'leggi', 'aggiungi al carrello', 'acquista'];
+        const found = [];
+        document.querySelectorAll('button, a').forEach((el) => {
+          const t = (el.innerText || '').trim().toLowerCase();
+          if (t && texts.some((x) => t.includes(x))) found.push(t.slice(0, 60));
+        });
+        return [...new Set(found)];
+      }).catch(() => []);
+      console.log(`  Pulsanti azione trovati sulla scheda prodotto: ${JSON.stringify(actionButtons)}`);
+      report.steps.push({ step: 'product_action_buttons', ok: true, actionButtons });
+
+      // Prova a cliccare l'eventuale pulsante di consultazione/anteprima (se presente)
+      const consultBtn = page.locator('button, a').filter({ hasText: /consulta|anteprima|leggi online/i }).first();
+      if (await consultBtn.count().catch(() => 0)) {
+        await consultBtn.click({ timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
       }
-    } else {
-      console.warn('  Nessuna casella di ricerca individuata sulla pagina post-login.');
-      report.steps.push({ step: 'search_norm', ok: false, note: 'Search box non trovata' });
+
+      await shot(page, '06_norm_detail_after_consult');
+      const detailText = await page.evaluate(() => document.body.innerText.slice(0, 2000)).catch(() => '');
+      const hasIframeOrCanvas = await page.evaluate(
+        () => document.querySelectorAll('iframe, canvas, embed[type*="pdf" i]').length
+      ).catch(() => 0);
+      console.log(`  Elementi iframe/canvas/embed nella pagina: ${hasIframeOrCanvas} (DRM/viewer protetto se >0)`);
+      console.log(`  Estratto testo (primi 300 char): ${detailText.slice(0, 300).replace(/\s+/g, ' ')}`);
+      report.steps.push({ step: 'norm_detail_extraction', ok: true, hasIframeOrCanvas, textPreview: detailText.slice(0, 300) });
     }
 
     report.success = true;
