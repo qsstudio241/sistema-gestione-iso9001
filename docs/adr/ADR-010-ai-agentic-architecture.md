@@ -430,7 +430,7 @@ orm_access_log |
 | Audit trail AI | Implementato | logAiInteraction su suggest, review, import, chat |
 | AiDisclaimer | Implementato | Footer non invasivo su 4 flussi: ContractReview, AiAssistant, AiConclusions, GapAnalysis |
 | Percorso canonico riesame | Implementato | POST /contract-reviews/:id/ai/analyze-requirements — unico path FE+BE |
-| UNI Store scraper | Non implementato | Solo lettura pubblica (no login). Da pianificare se necessario. |
+| UNI Store scraper (Task 1-E) | **Testato e scartato** (05/07/2026) | Login automatico bloccato da protezione anti-bot lato UNI: la chiamata di autenticazione non riceve risposta HTTP (connessione respinta prima del server), riprodotto sia in headless sia headed con user-agent reale. Non è un problema di selettori CSS. Vedi `backend/scripts/uni-store-diagnostic.js` (script diagnostico, non wired in produzione) + evidenze in `backend/scripts/uni-store-artifacts/` (locale, gitignored). **Decisione**: non proseguire con bypass anti-bot (fragile, viola Termini di Servizio UNI, rischio sproporzionato per un MVP). Percorso alternativo per norme mancanti: `ManualUploadFallback` — download manuale autorizzato (utenza abbonamento) + conversione in `docs/Normative/*.md` come le 6 norme esistenti, oppure ingest via pipeline PDF già in produzione (`importAiExtraction.service.js`). |
 
 > Branch: cursor/harness-hardening-hk-6b60 — piano: docs/agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md
 
