@@ -5,6 +5,7 @@
 const {
   codeToUrlKey,
   mapUniStatusIt,
+  mapEsProduct,
   scoreCandidate,
 } = require('./uniStoreConnector.service');
 
@@ -17,6 +18,17 @@ describe('uniStoreConnector', () => {
   it('mapUniStatusIt', () => {
     expect(mapUniStatusIt('IN VIGORE')).toBe('active');
     expect(mapUniStatusIt('RITIRATA CON SOSTITUZIONE')).toBe('withdrawn');
+    expect(mapUniStatusIt('WITHDRAWN AND REPLACED BY')).toBe('superseded');
+  });
+
+  it('mapEsProduct legge des_ttblva_it dal catalogo UNI', () => {
+    const mapped = mapEsProduct({
+      name: 'ISO/TR 15608:2013',
+      url_key: 'iso-tr-15608-2013',
+      des_ttblva_it: 'RITIRATA CON SOSTITUZIONE',
+    });
+    expect(mapped.code).toBe('ISO/TR 15608:2013');
+    expect(mapped.status).toBe('withdrawn');
   });
 
   it('scoreCandidate preferisce match esatto', () => {

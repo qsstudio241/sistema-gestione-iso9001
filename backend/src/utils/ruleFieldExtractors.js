@@ -153,19 +153,32 @@ const { guessStandardCodeFromFilename } = require('../services/documentRegistryN
 
 function extractNormFields(text, fileName) {
     const fromName = guessStandardCodeFromFilename(fileName);
-    const codeFromText = firstMatch(
-        /\b((?:UNI\s*)?(?:EN\s*)?(?:ISO\/TR|ISO|IEC|EN|BS|DIN|AWS|ASME)\s*[\d]+(?:[-\s/][\d]+)*(?::\d{4})?)\b/i,
-        text,
-    );
-    const standard_code = codeFromText || fromName || null;
-    const yearMatch = text.match(/\b(19|20)\d{2}\b/);
+    const trMatch = text.match(/\bISO\/TR\s+(\d+(?:-\d+)?)\s*:?\s*((?:19|20)\d{2})?/i);
+    let codeFromText = null;
+    if (trMatch) {
+        codeFromText = `ISO/TR ${trMatch[1]}${trMatch[2] ? `:${trMatch[2]}` : ''}`;
+    } else {
+        codeFromText = firstMatch(
+            /\b((?:UNI\s*)?(?:EN\s*)?(?:ISO\/TR|ISO\s+\d|IEC|EN|BS|DIN|AWS|ASME)\s*[\d]+(?:[-\s/][\d]+)*(?::\d{4})?)\b/i,
+            text,
+        );
+    }
+    let standard_code = codeFromText || fromName || null;
+    if (fromName && codeFromText && /^ISO\s+20\d{2}$/i.test(String(codeFromText).trim())) {
+        standard_code = fromName;
+    }
+    const yearFromCode = standard_code ? String(standard_code).match(/:(\d{4})\b/) : null;
+    const yearInText = text.match(/\b((?:19|20)\d{2})\b/);
+    const edition_year = yearFromCode
+      ? parseInt(yearFromCode[1], 10)
+      : (yearInText ? parseInt(yearInText[1], 10) : null);
     const issuing_body = standard_code
         ? (String(standard_code).toUpperCase().startsWith('UNI') ? 'UNI' : /\bISO\b/i.test(standard_code) ? 'ISO' : null)
         : null;
     return {
         standard_code,
         issuing_body,
-        edition_year: yearMatch ? parseInt(yearMatch[0], 10) : null,
+        edition_year,
     };
 }
 
