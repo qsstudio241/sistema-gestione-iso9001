@@ -67,6 +67,7 @@ function mapUniStatusIt(statusIt) {
   const s = String(statusIt || '').toUpperCase();
   if (!s) return 'unknown';
   if (s.includes('IN VIGORE') || s === 'CURRENT') return 'active';
+  if (s.includes('SOSTITUIT') || s.includes('REPLACED BY')) return 'superseded';
   if (s.includes('RITIRATA') || s.includes('ANNULLATA') || s.includes('WITHDRAWN')) return 'withdrawn';
   return 'unknown';
 }
@@ -79,10 +80,12 @@ function mapEsProduct(source) {
   const code = source.name || source.descri || '';
   const urlKey = source.url_key || null;
   const catalogUrl = urlKey ? `https://store.uni.com/${urlKey}` : null;
+  const statusLabel = source.des_ttblva_it || source.des_ttblva_en
+    || source.des_tpbloc_it || source.des_tpbloc_en;
   return {
     code: String(code).trim(),
     titleIt: source.titita ? String(source.titita).trim() : null,
-    status: mapUniStatusIt(source.des_tpbloc_it || source.des_tpbloc_en),
+    status: mapUniStatusIt(statusLabel),
     catalogUrl,
     urlKey,
     origin: source.origin || null,
@@ -277,6 +280,7 @@ async function lookupNormOnUniStore(standardCode, editionYear = null, normTitle 
 module.exports = {
   codeToUrlKey,
   mapUniStatusIt,
+  mapEsProduct,
   lookupNormOnUniStore,
   fetchProductByUrlKey,
   searchUniComApi,
