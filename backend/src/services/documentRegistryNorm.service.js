@@ -56,10 +56,22 @@ const NORM_TSD_CANONICAL_KEYS = [
 function guessStandardCodeFromFilename(filename) {
   const base = String(filename || '').replace(/\.pdf$/i, '').trim();
   if (!base) return '';
-  const forHint = base.replace(/_/g, ' ');
+
+  const trFile = base.match(/\bISO[\s_-]TR[\s_-](\d+(?:-\d+)?)[\s_-]((?:19|20)\d{2})\b/i);
+  if (trFile) {
+    return normalizeStandardCodeForStorage(`ISO TR ${trFile[1]} ${trFile[2]}`);
+  }
+
+  let forHint = base
+    .replace(/_/g, ' ')
+    .replace(/\bISO[\s_-]TR[\s_-]/gi, 'ISO TR ')
+    .replace(/\bISO[\s_-]TS[\s_-]/gi, 'ISO TS ')
+    .replace(/\s+testo\s+\w+.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const normHint = /\b(ISO|IEC|EN|UNI|BS|DIN|AWS|ASME|CEN|AFNOR|ANSI)\b|D\.?\s*Lgs|decreto/i;
   if (!normHint.test(forHint)) return '';
-  return normalizeStandardCodeForStorage(forHint.replace(/\s+/g, ' ').trim());
+  return normalizeStandardCodeForStorage(forHint);
 }
 
 function normalizeValidityStatus(raw) {
