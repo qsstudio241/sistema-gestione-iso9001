@@ -13,6 +13,7 @@ const {
   normalizeValidityStatus,
   mergeMissingNormTypeSpecificData,
   clampNormTitle,
+  guessStandardCodeFromFilename,
 } = require('./documentRegistryNorm.service');
 
 describe('buildNormTypeSpecificData  -  metadati upload bulk (AI)', () => {
@@ -191,5 +192,19 @@ describe('NORM_TSD_CANONICAL_KEYS', () => {
     required.forEach((key) => {
       expect(NORM_TSD_CANONICAL_KEYS).toContain(key);
     });
+  });
+});
+
+describe('guessStandardCodeFromFilename', () => {
+  it('normalizza ISO-TR con trattini e suffisso Testo Inglese', () => {
+    expect(
+      guessStandardCodeFromFilename('ISO-TR-15608-2013-Testo Inglese.pdf'),
+    ).toBe('ISO/TR 15608:2013');
+  });
+
+  it('normalizza UNI EN ISO con underscore anno', () => {
+    expect(
+      guessStandardCodeFromFilename('UNI EN ISO 15614-1_2019.pdf'),
+    ).toBe('UNI EN ISO 15614-1:2019');
   });
 });
