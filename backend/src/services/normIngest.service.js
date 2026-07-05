@@ -163,7 +163,7 @@ async function checkNormDuplicate(standardCode, organizationId) {
     SELECT TOP 1 id FROM document_registry
     WHERE organization_id = @orgId
       AND doc_type = 'norma'
-      AND ISNULL(status, '') <> 'eliminato'
+      AND ISNULL(status, 'rilasciato') NOT IN ('eliminato', 'obsoleto')
       AND JSON_VALUE(type_specific_data, '$.standard_code') = @code
   `, { orgId: organizationId, code: standardCode });
   return result.recordset.length > 0;
