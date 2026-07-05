@@ -122,6 +122,29 @@ describe('normIngest.service (IG-N)', () => {
 
     expect(out.status).toBe('duplicate');
     expect(out.standard_code).toBe('ISO/TR 15608:2013');
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("'obsoleto'"),
+      expect.any(Object),
+    );
+  });
+
+  it('extractNormFromPdf consente re-upload se esiste solo copia obsoleta', async () => {
+    runDocumentIngest.mockResolvedValue({
+      fields: { standard_code: 'ISO/TR 15608:2013' },
+      fieldConfidence: {},
+      warnings: [],
+      extractionConfidence: 90,
+      text: 'test',
+    });
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      status: 'withdrawn',
+      checkedAt: '2026-07-05T10:00:00.000Z',
+    });
+    query.mockResolvedValue({ recordset: [] });
+
+    const out = await extractNormFromPdf(Buffer.from('%PDF'), 'iso-tr-15608.pdf', 1001, null);
+
+    expect(out.status).toBe('ready_commit');
   });
 
   it('enrichNormFields preferisce filename se AI estrae codice diverso (15614 vs 9606)', async () => {
