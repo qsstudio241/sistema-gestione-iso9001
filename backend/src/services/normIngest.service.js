@@ -18,8 +18,37 @@ const normCatalog = require('./normCatalogLookup.service');
 const normChunker = require('./normChunker.service');
 const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
+const {
+  parseStandardCode,
+  normalizeStandardCodeForStorage,
+} = require('./standardCodeNormalizer.service');
 
 const REVIEW_CONFIDENCE_THRESHOLD = Number(process.env.INGEST_NORM_REVIEW_CONFIDENCE) || 55;
+
+/**
+ * Se il filename è affidabile e il codice estratto (AI/regole) ha numero diverso, preferisce il filename.
+ */
+function reconcileStandardCodeWithFilename(fields, fileName) {
+  if (!fileName) return fields;
+  const fromName = guessStandardCodeFromFilename(fileName);
+  const parsedName = fromName ? parseStandardCode(fromName) : null;
+  const nameCanonical = parsedName?.canonical
+    || (fromName ? normalizeStandardCodeForStorage(fromName) : null);
+  if (!nameCanonical) return fields;
+
+  const next = { ...fields };
+  const current = next.standard_code;
+  const parsedCurrent = current ? parseStandardCode(current, next.edition_year) : null;
+  const falseCopyright = current && /^ISO\s+20\d{2}$/i.test(String(current).trim());
+  const numberMismatch = parsedName?.number && parsedCurrent?.number
+    && parsedName.number !== parsedCurrent.number;
+
+  if (!current || falseCopyright || numberMismatch) {
+    next.standard_code = nameCanonical;
+    if (parsedName?.year != null) next.edition_year = parsedName.year;
+  }
+  return next;
+}
 
 function assessTextQuality(text) {
   if (!text) return 'ocr_poor';
@@ -69,7 +98,10 @@ function buildCatalogLookupPayload(catalogLookup) {
  */
 async function enrichNormFields(rawFields, pipelineWarnings = []) {
   const warnings = [...pipelineWarnings];
-  const fields = { ...rawFields };
+  const fields = reconcileStandardCodeWithFilename(
+    { ...rawFields },
+    rawFields._fileName || '',
+  );
 
   if (!fields.standard_code) {
     const fromName = guessStandardCodeFromFilename(fields._fileName || '');
@@ -131,7 +163,7 @@ async function checkNormDuplicate(standardCode, organizationId) {
     SELECT TOP 1 id FROM document_registry
     WHERE organization_id = @orgId
       AND doc_type = 'norma'
-      AND ISNULL(status, '') <> 'eliminato'
+      AND ISNULL(status, 'rilasciato') NOT IN ('eliminato', 'obsoleto')
       AND JSON_VALUE(type_specific_data, '$.standard_code') = @code
   `, { orgId: organizationId, code: standardCode });
   return result.recordset.length > 0;

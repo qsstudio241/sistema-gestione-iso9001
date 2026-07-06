@@ -1,5 +1,5 @@
 /**
- * ProjectsPage � Gestione Commesse ISO 3834
+ * ProjectsPage  -  Gestione Commesse ISO 3834
  * Pattern CRUD identico a WeldingProceduresPage.
  */
 
@@ -18,7 +18,7 @@ const PROJECT_STATUSES = [
   { value: "sospesa", label: "Sospesa" },
 ];
 
-// ??? Form modale commessa ???????????????????????????????????????????????????
+//  Form modale commessa 
 
 function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose }) {
   // Prepopola welder_ids dai welders già assegnati al progetto
@@ -396,7 +396,7 @@ function ProjectsPage() {
       <div className="pj-header">
         <div>
           <h2 className="pj-title">Gestione Commesse</h2>
-          <p className="pj-subtitle">Commesse di saldatura � ISO 3834</p>
+          <p className="pj-subtitle">Commesse di saldatura  -  ISO 3834</p>
         </div>
         <button className="pj-btn-new" onClick={handleNew}>+ Nuova commessa</button>
       </div>
@@ -464,7 +464,7 @@ function ProjectsPage() {
                     {deleteId === p.id ? (
                       <div className="pj-confirm">
                         <span>Eliminare?</span>
-                        <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>S�</button>
+                        <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>S - </button>
                         <button className="pj-confirm-no" onClick={() => setDeleteId(null)}>No</button>
                       </div>
                     ) : (

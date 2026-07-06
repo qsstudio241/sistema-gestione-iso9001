@@ -1,5 +1,5 @@
 /**
- * deadlines.controller.js � Scadenzario da file (ADR-013)
+ * deadlines.controller.js  -  Scadenzario da file (ADR-013)
  *
  * S3: POST /documents/:id/detect-deadlines  ? analisi euristica del file
  * S4: POST /documents/:id/import-deadlines  ? import righe in deadline_items
@@ -88,7 +88,7 @@ function mapEquipmentDeadlineRows(assets, daysWindow) {
 
 
 
-// ?? helpers ???????????????????????????????????????????????????????????????????
+// ?? helpers ?
 
 /**
  * Legge il file fisico corrente associato a un documento.
@@ -159,7 +159,7 @@ function parseCellDate(v) {
     return null;
 }
 
-// ?? S3: POST /documents/:id/detect-deadlines ??????????????????????????????????
+// ?? S3: POST /documents/:id/detect-deadlines ?
 
 async function detectDeadlines(req, res) {
     try {
@@ -213,7 +213,7 @@ async function detectDeadlines(req, res) {
     }
 }
 
-// ?? S4a: POST /documents/:id/import-deadlines ?????????????????????????????????
+// ?? S4a: POST /documents/:id/import-deadlines 
 
 async function importDeadlines(req, res) {
     try {
@@ -359,7 +359,7 @@ async function importDeadlines(req, res) {
     }
 }
 
-// ?? S4b: GET /deadline-items ??????????????????????????????????????????????????
+// ?? S4b: GET /deadline-items ??
 
 async function listDeadlineItems(req, res) {
     try {
@@ -421,9 +421,6 @@ async function listDeadlineItems(req, res) {
             logger.warn('listDeadlineItems: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
-            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
-
         let equipRows = [];
         try {
             const equipData = await fetchEquipmentForDeadline(pool, orgId);
@@ -435,6 +432,9 @@ async function listDeadlineItems(req, res) {
         } catch (equipErr) {
             logger.warn('listDeadlineItems: tarature non disponibili', { error: equipErr.message });
         }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
 
         res.json({
             data: merged,
@@ -451,7 +451,7 @@ async function listDeadlineItems(req, res) {
     }
 }
 
-// ?? GET /deadline-items/priority ?????????????????????????????????????????????
+// ?? GET /deadline-items/priority 
 
 async function getPriorityDeadlines(req, res) {
     try {
@@ -498,15 +498,15 @@ async function getPriorityDeadlines(req, res) {
             logger.warn('getPriorityDeadlines: qualifiche virtuali non disponibili', { error: qualErr.message });
         }
 
-        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
-            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
-
         let equipRowsPrio = [];
         try {
             const equipDataPrio = await fetchEquipmentForDeadline(pool, orgId);
             equipRowsPrio = mapEquipmentDeadlineRows(equipDataPrio, parseInt(days));
             if (company_id) { equipRowsPrio = equipRowsPrio.filter((r) => r.company_id === parseInt(company_id)); }
         } catch (e) { logger.warn('getPriorityDeadlines: tarature non disponibili', { error: e.message }); }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
 
         res.json({ data: merged });
     } catch (err) {
@@ -515,7 +515,7 @@ async function getPriorityDeadlines(req, res) {
     }
 }
 
-// ?? PATCH /deadline-items/:itemId ????????????????????????????????????????????
+// ?? PATCH /deadline-items/:itemId ??
 
 async function updateDeadlineItem(req, res) {
     try {
@@ -546,7 +546,7 @@ async function updateDeadlineItem(req, res) {
     }
 }
 
-// ?? POST /deadline-items/:itemId/complete ????????????????????????????????????
+// ?? POST /deadline-items/:itemId/complete 
 
 async function completeDeadlineItem(req, res) {
     try {
@@ -574,7 +574,7 @@ async function completeDeadlineItem(req, res) {
     }
 }
 
-// ?? DELETE /deadline-items/:itemId ???????????????????????????????????????????
+// ?? DELETE /deadline-items/:itemId ?
 
 async function deleteDeadlineItem(req, res) {
     try {
@@ -595,7 +595,7 @@ async function deleteDeadlineItem(req, res) {
     }
 }
 
-// ?? GET /documents/:id/deadline-config ??????????????????????????????????????
+// ?? GET /documents/:id/deadline-config ??
 
 async function getDeadlineConfig(req, res) {
     try {

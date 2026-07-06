@@ -1,5 +1,5 @@
 /**
- * Test L1 — larghezza sidebar albero documenti
+ * Test L1 â€” larghezza sidebar albero documenti
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";

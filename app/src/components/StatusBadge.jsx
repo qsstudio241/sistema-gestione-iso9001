@@ -1,7 +1,7 @@
 /**
- * StatusBadge ù Componente badge di stato unificato
+ * StatusBadge  -  Componente badge di stato unificato
  *
- * Copre: stato documento, audit, NC, qualitù norma, progetto, utente, licenza.
+ * Copre: stato documento, audit, NC, qualit√†  norma, progetto, utente, licenza.
  * Retrocompatibile: le classi CSS esistenti continuano a funzionare.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1  documentRegistryNorm.service (slice R3)
+ * Test L1  -  documentRegistryNorm.service (slice R3)
  * Contratto type_specific_data allineato tra upload bulk e form manuale.
  */
 
@@ -13,9 +13,10 @@ const {
   normalizeValidityStatus,
   mergeMissingNormTypeSpecificData,
   clampNormTitle,
+  guessStandardCodeFromFilename,
 } = require('./documentRegistryNorm.service');
 
-describe('buildNormTypeSpecificData  metadati upload bulk (AI)', () => {
+describe('buildNormTypeSpecificData  -  metadati upload bulk (AI)', () => {
   it('mappa abstract ? scope_summary e campi canonici', () => {
     const result = buildNormTypeSpecificData({
       standard_code: 'ISO_9606_1_2017',
@@ -55,7 +56,7 @@ describe('buildNormTypeSpecificData  metadati upload bulk (AI)', () => {
   });
 });
 
-describe('buildNormTypeSpecificData  allineamento form manuale', () => {
+describe('buildNormTypeSpecificData  -  allineamento form manuale', () => {
   it('accetta tutti i campi dello schema norma', () => {
     const payload = {
       standard_code: 'BS EN ISO 9606-1:2017',
@@ -130,7 +131,7 @@ describe('normalizeValidityStatus', () => {
   });
 });
 
-describe('mergeMissingNormTypeSpecificData — backfill R6', () => {
+describe('mergeMissingNormTypeSpecificData â€” backfill R6', () => {
   it('copia campi mancanti da norm_document_sources senza sovrascrivere', () => {
     const existing = JSON.stringify({
       standard_code: 'ISO_9001_2015',
@@ -152,7 +153,7 @@ describe('mergeMissingNormTypeSpecificData — backfill R6', () => {
     expect(merged.last_validity_check).toBe('2026-05-01T00:00:00.000Z');
   });
 
-  it('non modifica se tutti i campi già presenti', () => {
+  it('non modifica se tutti i campi giÃ  presenti', () => {
     const existing = serializeNormTypeSpecificData({
       standard_code: 'D.Lgs. 81/2008',
       issuing_body: 'IT',
@@ -191,5 +192,19 @@ describe('NORM_TSD_CANONICAL_KEYS', () => {
     required.forEach((key) => {
       expect(NORM_TSD_CANONICAL_KEYS).toContain(key);
     });
+  });
+});
+
+describe('guessStandardCodeFromFilename', () => {
+  it('normalizza ISO-TR con trattini e suffisso Testo Inglese', () => {
+    expect(
+      guessStandardCodeFromFilename('ISO-TR-15608-2013-Testo Inglese.pdf'),
+    ).toBe('ISO/TR 15608:2013');
+  });
+
+  it('normalizza UNI EN ISO con underscore anno', () => {
+    expect(
+      guessStandardCodeFromFilename('UNI EN ISO 15614-1_2019.pdf'),
+    ).toBe('UNI EN ISO 15614-1:2019');
   });
 });

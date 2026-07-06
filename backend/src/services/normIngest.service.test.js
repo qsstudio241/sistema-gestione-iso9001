@@ -122,5 +122,47 @@ describe('normIngest.service (IG-N)', () => {
 
     expect(out.status).toBe('duplicate');
     expect(out.standard_code).toBe('ISO/TR 15608:2013');
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("'obsoleto'"),
+      expect.any(Object),
+    );
+  });
+
+  it('extractNormFromPdf consente re-upload se esiste solo copia obsoleta', async () => {
+    runDocumentIngest.mockResolvedValue({
+      fields: { standard_code: 'ISO/TR 15608:2013' },
+      fieldConfidence: {},
+      warnings: [],
+      extractionConfidence: 90,
+      text: 'test',
+    });
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      status: 'withdrawn',
+      checkedAt: '2026-07-05T10:00:00.000Z',
+    });
+    query.mockResolvedValue({ recordset: [] });
+
+    const out = await extractNormFromPdf(Buffer.from('%PDF'), 'iso-tr-15608.pdf', 1001, null);
+
+    expect(out.status).toBe('ready_commit');
+  });
+
+  it('enrichNormFields preferisce filename se AI estrae codice diverso (15614 vs 9606)', async () => {
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      status: 'active',
+      catalogUrl: 'https://store.uni.com/uni-en-iso-15614-1-2019',
+      checkedAt: '2026-07-05T10:00:00.000Z',
+      matchedQuery: 'UNI EN ISO 15614-1:2019',
+    });
+
+    const out = await enrichNormFields({
+      standard_code: 'EN ISO 9606-1-A2:2015:2015',
+      norm_title: 'Prove di qualificazione',
+      _fileName: 'UNI EN ISO 15614-1_2019.pdf',
+    }, []);
+
+    expect(out.fields.standard_code).toBe('UNI EN ISO 15614-1:2019');
+    expect(out.fields.validity_status).toBe('vigente');
+    expect(out.needsReview).toBe(false);
   });
 });
