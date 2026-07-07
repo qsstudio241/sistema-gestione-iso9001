@@ -468,7 +468,7 @@ export default function RisksPage() {
   return (
     <div className="risks-page">
       <div className="risks-page-header">
-        <h1>{"\u26A0\uFE0F Rischi & Opportunit\u00e0"}</h1>
+        <h1>{"\u26A0\uFE0F Rischi, Opportunit\u00e0 e Obiettivi"}</h1>
         <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 6.1 Rischi e opportunit\u00e0 - \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
       </div>
 

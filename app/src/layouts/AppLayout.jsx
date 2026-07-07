@@ -57,7 +57,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/deadlines",   icon: "\uD83D\uDCC5", label: "Scadenzari", licenseKey: "documents" },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
         { to: "/nc",                  icon: "🚨", label: "Non Conformità",      licenseKey: "nc" },
-        { to: "/rischi",              icon: "⚠️",  label: "Rischi & Opportunità",   licenseKey: "rischi" },
+        { to: "/rischi",              icon: "⚠️",  label: "Rischi, Opportunità e Obiettivi",   licenseKey: "rischi" },
         { to: "/management-reviews",  icon: "📋", label: "Riesame Direzione",     licenseKey: "riesame_direzione" },
         { to: "/reclami",          icon: "📢", label: "Reclami", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
         { to: "/anagrafiche",      icon: "🗂️",  label: "Anagrafiche",        licenseKey: "reclami" },
