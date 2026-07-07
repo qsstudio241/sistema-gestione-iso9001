@@ -33,7 +33,7 @@ const LABELS_IT = {
     documents: 'Registro documenti',
     qualifiche: 'Qualifiche personale',
     nc: 'Non conformità',
-    rischi: 'Rischi e obiettivi',
+    rischi: 'Rischi e opportunità',
     riesame_direzione: 'Riesame di Direzione (§9.3)',
     reclami: 'Reclami e fornitori',
     notifications: 'Notifiche e alert email',
