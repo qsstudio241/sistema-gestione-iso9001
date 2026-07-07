@@ -192,9 +192,33 @@ Blocchi principali:
 3) Esegui test automatici completi disponibili.
 4) Deploy produzione (se applicabile) + smoke; poi **commit e push** quando l'esito e' positivo. In alternativa, commit prima del deploy se serve tracciare lo stato prima del rilascio — l'importante e' non chiudere senza verifica e senza allineare repo e ambiente.
 
+## Merge PR automatico (deputy e lead)
+
+### Quando fare merge autonomo — senza chiedere conferma
+Dopo TEST OK + build verde, il deputy (o il lead) può eseguire `gh pr ready <n>` + `gh pr merge <n> --merge` **senza attendere istruzione esplicita** se la PR rispetta **tutti** i criteri seguenti:
+
+| Criterio | Dettaglio |
+|---|---|
+| Solo frontend | Nessuna modifica a controller backend, route, middleware o servizi Node |
+| Nessuna migrazione DB | Nessun file `*.sql` né script `run-migration-*` |
+| Nessuna logica sync/auth | Non tocca `syncService`, `StorageContext`, `auth.middleware`, JWT |
+| Test verdi | Vitest + Jest (se presenti) passano tutti |
+| Build OK | `npm run build` in `app/` senza errori |
+
+### Quando chiedere conferma prima del merge
+- La PR tocca backend, DB, sync, auth o logica multi-tenant
+- Breaking change su API o schema DB
+- PR con conflitti irrisolti o CI rossa
+
+### Comando standard
+```bash
+gh pr ready <n>      # rimuove bozza
+gh pr merge <n> --merge   # merge su main → Netlify deploy automatico (~2 min)
+```
+
 ## Chiusura sessione — merge obbligatorio
 Quando il committente chiude la sessione (o il task e' TEST OK):
-1. **Merge su `main`** di ogni PR aperta dalla sessione: `gh pr ready <n>` (se draft) → `gh pr merge <n> --merge`.
+1. **Merge su `main`** di ogni PR aperta dalla sessione (seguendo le regole sopra).
 2. **`git pull origin main`** nel workspace per allinearsi.
 3. Aggiornare **`GUIDA_CONSOLIDATA.md`** (lezione appresa + PR mergiata) e **`DEPUTYTASK.md`** (stato chiuso).
 4. **Non** lasciare PR aperte alla chiusura, salvo breaking change o review umana esplicita.
