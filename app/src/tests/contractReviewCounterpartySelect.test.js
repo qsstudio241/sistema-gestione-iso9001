@@ -145,6 +145,29 @@ describe('buildCreatePayload — controparte commerciale', () => {
   });
 });
 
+describe('filterCommittenteCounterparties — ruoli ammessi', () => {
+  const COMMITTENTE_COUNTERPARTY_ROLES = new Set(['customer', 'end_customer']);
+  function filterCommittenteCounterparties(rawList) {
+    const list = Array.isArray(rawList) ? rawList : [];
+    return list.filter((cp) => COMMITTENTE_COUNTERPARTY_ROLES.has(cp.role));
+  }
+
+  it('include customer e end_customer (PT.MAIDO)', () => {
+    const raw = [
+      { id: 1, name: 'Cliente A', role: 'customer' },
+      { id: 2, name: 'PT.MAIDO', role: 'end_customer' },
+      { id: 3, name: 'Fornitore X', role: 'supplier' },
+    ];
+    const out = filterCommittenteCounterparties(raw);
+    expect(out.map((c) => c.id)).toEqual([1, 2]);
+  });
+
+  it('esclude supplier dal select committente', () => {
+    const out = filterCommittenteCounterparties([{ id: 9, name: 'Sub', role: 'supplier' }]);
+    expect(out).toHaveLength(0);
+  });
+});
+
 describe('buildUpdatePayload — committente commerciale', () => {
   const base = {
     editTitle: 'Caso LM&CO',
