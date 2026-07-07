@@ -22,7 +22,7 @@ const ALL_MODULE_KEYS = [
   { key: "documents",   label: "Registro documenti" },
   { key: "qualifiche",  label: "Qualifiche personale" },
   { key: "nc",          label: "Non conformità" },
-  { key: "rischi",      label: "Rischi e obiettivi" },
+  { key: "rischi",      label: "Rischi, opportunità e obiettivi" },
   { key: "reclami",     label: "Reclami e fornitori" },
   { key: "notifications", label: "Notifiche" },
   { key: "sal",         label: "SAL" },
