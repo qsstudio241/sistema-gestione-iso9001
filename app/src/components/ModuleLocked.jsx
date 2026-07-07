@@ -116,7 +116,7 @@ const MODULE_INFO = {
   },
   rischi: {
     icon: "⚠️",
-    title: "Rischi & Obiettivi",
+    title: "Rischi, Opportunità e Obiettivi",
     description: "Registro rischi e opportunità secondo ISO 9001 §6.1 e obiettivi misurabili §6.2. Matrice probabilità × impatto, piani di trattamento, monitoraggio avanzamento.",
     features: [
       "Matrice rischi con valutazione P×I",
