@@ -201,6 +201,14 @@ function companyLabel(companyId, companiesById) {
   return companiesById.get(companyId) || `#${companyId}`;
 }
 
+/** Ruoli controparte ammessi come committente commerciale nel riesame §8.2 */
+const COMMITTENTE_COUNTERPARTY_ROLES = new Set(['customer', 'end_customer']);
+
+function filterCommittenteCounterparties(rawList) {
+  const list = Array.isArray(rawList) ? rawList : [];
+  return list.filter((cp) => COMMITTENTE_COUNTERPARTY_ROLES.has(cp.role));
+}
+
 function rowCheck(row) {
   return {
     id: row.id,
@@ -503,16 +511,16 @@ export default function ContractReviewPage() {
     }
   }, [caseId]);
 
-  // Carica controparti (ruolo customer) per il form di modifica caso
+  // Carica controparti (cliente diretto + committente finale) per il form di modifica caso
   useEffect(() => {
     if (!editCompanyId) {
       setEditCounterparties([]);
       return;
     }
     setEditCounterpartiesLoading(true);
-    apiService.getCompanyCounterparties(editCompanyId, { role: 'customer' })
+    apiService.getCompanyCounterparties(editCompanyId, { is_active: 'true' })
       .then((res) => {
-        const list = Array.isArray(res) ? res : res?.data || [];
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
         setEditCounterparties(list);
       })
       .catch(() => setEditCounterparties([]))
@@ -526,9 +534,9 @@ export default function ContractReviewPage() {
       return;
     }
     setCreateCounterpartiesLoading(true);
-    apiService.getCompanyCounterparties(createForm.company_id, { role: 'customer' })
+    apiService.getCompanyCounterparties(createForm.company_id, { is_active: 'true' })
       .then((res) => {
-        const list = Array.isArray(res) ? res : res?.data || [];
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
         setCreateCounterparties(list);
       })
       .catch(() => setCreateCounterparties([]))
