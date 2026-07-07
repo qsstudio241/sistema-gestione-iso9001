@@ -60,7 +60,7 @@ Se un pulsante di avanzamento stato è **grigio/disabilitato**, il motivo esatto
 | **Workflow** | Sempre, punto di partenza | Dati caso (titolo, azienda, committente, note), pulsanti avanzamento stato, cronologia stati, handoff a esecuzione (solo se Approvato) |
 | **Checklist** | Prima di "Preparazione offerta" (preliminare) e prima di "Approvato" (finale) | 10 voci preliminari (P1-P10) + 6 voci finali (F1-F6), risposta Sì/No/N.A./Parziale + note |
 | **Chiarimenti** | Quando servono info dal cliente | Elenco richieste/risposte, tracciate con data |
-| **Documenti** | Sempre — caricamento/collegamento file | Collega da registro documentale o carica file diretto (RFQ, offerta, ordine, disegno...) |
+| **Documenti** | Sempre — caricamento/collegamento file | Collega da registro documentale o carica file diretto (RFQ, offerta, ordine, disegno...) — dettaglio in [§8](#8-tab-documenti--come-caricarecollegare-file-dettaglio) |
 | **Requisiti da disegno** | Se il caso ha un disegno tecnico caricato | Estrazione AI automatica di quote, materiali, tolleranze dal disegno |
 | **Analisi AI** | In qualsiasi momento, opzionale | Incolla/carica il capitolato → l'AI confronta i requisiti con le capacità dell'azienda SGQ selezionata |
 
@@ -106,7 +106,49 @@ Dal 07/07/2026 il campo **Committente commerciale** (tab Workflow → Dati caso)
 
 ---
 
-## 8. Esempio pratico — percorso completo di un caso
+## 8. Tab Documenti — come caricare/collegare file (dettaglio)
+
+Il tab **Documenti** offre **due modalità distinte**, entrambe disponibili finché il caso non è in stato terminale:
+
+### 8.1 Collega da registro (documento già esistente)
+
+Usa questa opzione se il file è già archiviato nel **Registro Documentale** dell'app (menu Documenti):
+
+1. Inserisci l'**ID documento** (numero visibile nella pagina Documenti)
+2. Scegli il **ruolo**: Ordine · RFQ · Capitolato · Offerta · Disegno · Altro
+3. Scegli **controparte** (Cliente / Fornitore / Interno) e **direzione** (In entrata / In uscita)
+4. Se controparte = Fornitore, seleziona anche il fornitore anagrafico (opzionale)
+5. Clic **Collega** — non carica un nuovo file, crea solo il collegamento al caso
+
+### 8.2 Carica allegato caso (file nuovo)
+
+1. Scegli **ruolo** e **controparte/direzione** come sopra
+2. Clic sul campo file: puoi selezionare **più file insieme** (multi-upload)
+3. Ogni file viene caricato in sequenza con barra di progresso (`Caricamento 1/3… nomefile.pdf`)
+4. Se un file fallisce, l'errore compare sotto **senza bloccare** il caricamento degli altri file
+
+### 8.3 Analisi AI automatica dopo l'upload
+
+Alcune combinazioni **ruolo + formato** avviano da sole l'estrazione AI in background (banner blu "Analisi AI avviata"):
+
+| Ruolo caricato | Formato richiesto | Estrazione automatica |
+|---|---|---|
+| **Disegno** | qualsiasi | Requisiti tecnici (quote, materiali, tolleranze, saldature) → visibili nel tab "Requisiti da disegno" |
+| **Capitolato** | solo PDF | Testo/requisiti → visibili nel tab "Analisi AI" o nei suggerimenti checklist |
+| **Ordine** | solo PDF | Testo/requisiti → stessa pipeline del Capitolato |
+| Altri ruoli (RFQ, Offerta, Altro) | — | Nessuna estrazione automatica |
+
+Se hai caricato più allegati senza innesco automatico (es. RFQ, Offerta), in fondo alla sezione compare il pulsante **"Analizza documenti commessa"** per lanciare l'analisi su tutti gli allegati compatibili in un colpo.
+
+### 8.4 Elenco documenti e allegati
+
+In fondo al tab trovi due liste separate:
+- **Documenti registro** — quelli collegati dal Registro Documentale (badge controparte · direzione)
+- **Allegati file** — quelli caricati direttamente sul caso (badge ruolo + controparte · direzione)
+
+---
+
+## 9. Esempio pratico — percorso completo di un caso
 
 ```
 1. Crea caso (pulsante "Nuovo Riesame") → titolo, azienda SGQ, committente
@@ -138,7 +180,7 @@ Dal 07/07/2026 il campo **Committente commerciale** (tab Workflow → Dati caso)
 
 ---
 
-## 9. Analisi AI del capitolato — cosa fa davvero
+## 10. Analisi AI del capitolato — cosa fa davvero
 
 1. Incolli o carichi il testo del capitolato/RFQ nel tab **Analisi AI**
 2. L'AI confronta i requisiti del testo con le **capacità dell'azienda SGQ** collegata al caso
@@ -149,4 +191,4 @@ Dal 07/07/2026 il campo **Committente commerciale** (tab Workflow → Dati caso)
 
 ---
 
-*Aggiornato: 07/07/2026 — dopo introduzione select controparti committente (PR #230, #233).*
+*Aggiornato: 07/07/2026 — dettaglio upload/collegamento documenti (§8) + select controparti committente (PR #230, #233).*
