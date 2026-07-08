@@ -2,6 +2,7 @@
 
 > **Creato**: 07/07/2026  
 > **Stato**: APERTO — pronto per deputy  
+> **Nota**: Sessione 08/07/2026 — hotfix companies (PR #237 mergiata): delete FK + lista limit. Questo task rimane aperto per deputy.  
 > **Priorità**: P1 (dopo chiusura ingest norme #223–#224)  
 > **Contesto**: revisione stato moduli Riesame + SAL — vedi sintesi Lead in chat 07/07/2026
 
