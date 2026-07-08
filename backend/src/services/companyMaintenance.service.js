@@ -144,6 +144,7 @@ async function hardDeleteCompany(companyId, auditorOrgId) {
   await deleteCompanyDocuments(companyId, organizationId);
 
   const simpleDeletes = [
+    ['qualification_confirmations', 'DELETE FROM qualification_confirmations WHERE company_id = @company_id'],
     ['company_personnel', 'DELETE FROM company_personnel WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['user_company_access', 'DELETE FROM user_company_access WHERE company_id = @company_id'],
     ['complaints', 'DELETE FROM complaints WHERE company_id = @company_id AND organization_id = @organization_id'],
