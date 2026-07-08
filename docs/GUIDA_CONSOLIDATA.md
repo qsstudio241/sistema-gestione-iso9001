@@ -131,6 +131,13 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | **Import PDF — menu azioni + contrasto AI (14/06/2026)** | UX: azioni file PDF raggruppate in menu **Altre azioni**; pulsante **Analisi AI** con contrasto leggibile. Preview committente **TEST OK**. | [PR #109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109) mergiata su `main` |
 | **Scadenzario — card e file origine** | Le card riepilogo della pagina `/deadlines` devono essere **filtri rapidi** come nel modulo NC (click/toggle + stato attivo), non semplici contatori. La colonna **File origine** deve aprire il documento sorgente con `buildDocumentRegistryPath({ selectId })`, riusando il Registro Documenti. | [PR #102](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/102) |
 
+### Anagrafica aziende — pattern critici
+
+| Lezione | Regola da applicare | Dettaglio |
+|---------|---------------------|-----------|
+| **`hardDeleteCompany` — FK su `qualification_confirmations.company_id`** | Il DELETE finale su `companies` fallisce se `qualification_confirmations` ha ancora righe con `company_id` valorizzato. Il service deve cancellare `qualification_confirmations` **prima** di `company_personnel` e `qualifications` nella sequenza `simpleDeletes`. Aggiungere sempre questa voce all'inizio della lista se si toccano le dipendenze delete. | PR #237 · 08/07/2026 |
+| **`CompaniesPage` — limite 50 nasconde nuove aziende** | L'API `GET /companies` usa default `limit=50` con `ORDER BY name`. Il frontend **deve** passare `limit: 500` (o superiore) altrimenti le aziende oltre la 50ª posizione alfabetica risultano invisibili pur essendo create correttamente nel DB. Non usare mai il default senza gestire la paginazione esplicita. | PR #237 · 08/07/2026 |
+
 ### Sync (vincolante)
 
 | Lezione | Regola da applicare | Dettaglio |
@@ -146,6 +153,7 @@ Triage completo delle PR aperte residue (senior lead, in autonomia). Criterio: m
 ### Mergiate su `main`
 | PR | Titolo | Note |
 |----|--------|------|
+| #237 | fix: errore eliminazione azienda (FK qualification_confirmations) + lista tronca a 50 | Bug 1: `qualification_confirmations` ha FK su `company_id` non rimossa prima del DELETE → server 500. Fix: aggiunto step DELETE nella sequenza `hardDeleteCompany` **prima** di `company_personnel` e `qualifications`. Bug 2: `CompaniesPage` chiamava `getCompanies` senza `limit`; backend default 50 → nuove aziende oltre la 50ª posizione alfabetica non visibili. Fix: `limit: 500`. Backend deployato live su VPS (07/2026). |
 | #97 | fix(backend): eliminazione azienda con cleanup dipendenze FK | Fix integrità DB. Conflitti GUIDA (whole-file CRLF) risolti tenendo main + nota esperienza FK. `companyMaintenance.service` + delega controller verificati. |
 | #57 | fix(ai): retry automatico Gemini su 503/429 | Retry server-side mancante in main (solo embeddings lo aveva). Conflitti su `aiAssist.test.js` (allineato a `userId` reale) e GUIDA risolti. Syntax-check OK. |
 | #91 | feat(ai): ambito azienda su chat+RAG (con **regola scope azienda bloccata**) | Mergiata con **adattamento prodotto deciso dal committente** (vedi sotto). Mantiene il fix sicurezza RAG (filtro `company_id = X`, niente `OR IS NULL`/chunk globali). Branch `pr-91-integ` (merge origin/main + fix encoding em-dash UTF-8). Conflitto GUIDA risolto tenendo main + questa nota. Test AI/scope L1 PASS, build OK. |
