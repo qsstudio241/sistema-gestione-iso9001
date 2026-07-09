@@ -47,6 +47,28 @@ describe('parseJsonWithRepair', () => {
             expect(e.code).toBe('AI_INVALID_JSON');
         }
     });
+
+    it('scarta array a elemento singolo — unwrap primo oggetto', () => {
+        const out = parseJsonWithRepair('[{"welder_name":"Mario Rossi","certificate_number":"TUV-2024-001"}]');
+        expect(out.welder_name).toBe('Mario Rossi');
+        expect(out.certificate_number).toBe('TUV-2024-001');
+    });
+
+    it('lancia AI_BAD_SHAPE per array con più elementi', () => {
+        expect(() => parseJsonWithRepair('[{"a":1},{"b":2}]')).toThrow();
+        try {
+            parseJsonWithRepair('[{"a":1},{"b":2}]');
+        } catch (e) {
+            expect(e.code).toBe('AI_BAD_SHAPE');
+        }
+    });
+
+    it('ripara newline letterale dentro un valore stringa', () => {
+        const broken = '{"welder_name":"Mario\nRossi","certificate_number":"TUV-2024-001"}';
+        const out = parseJsonWithRepair(broken);
+        expect(out.welder_name).toBe('Mario Rossi');
+        expect(out.certificate_number).toBe('TUV-2024-001');
+    });
 });
 
 describe('extractFieldsByRules', () => {
@@ -56,6 +78,23 @@ describe('extractFieldsByRules', () => {
         expect(fields.wpqr_number || fields.reference_number).toBe('21-02906');
         expect(fields.welding_process).toBe('135');
         expect(fields.material_group).toBe('1.1');
+    });
+
+    it('non cattura "IFICATO" come numero certificato (artefatto split PDF)', () => {
+        // PDF talvolta splitta "CERTIFICATO" in "CERT   IFICATO" con spazi
+        const text = 'NUMERO DI CERT   IFICATO  : TUV-9606/2024-123 saldatore Mario Rossi processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'patentino.pdf');
+        expect(fields.certificate_number).not.toBe('IFICATO');
+        // Se non riesce a trovare il numero reale, deve restituire null (non un frammento)
+        if (fields.certificate_number) {
+            expect(fields.certificate_number.length).toBeGreaterThan(4);
+        }
+    });
+
+    it('estrae numero certificato valido in formato standard', () => {
+        const text = 'NUMERO DI CERTIFICATO: TUV-9606-2024-0123 saldatore Mario Rossi processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'patentino.pdf');
+        expect(fields.certificate_number).toBe('TUV-9606-2024-0123');
     });
 });
 
