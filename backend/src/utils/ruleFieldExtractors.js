@@ -77,8 +77,12 @@ function extractWpqrReference(text, fileName) {
 }
 
 function extractCertificateNumber(text) {
-    const m = text.match(/\b(?:cert(?:ificato)?|certificate|n[°º.]?\s*)\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
-    return m ? m[1].trim() : null;
+    const m = text.match(/\b(?:cert(?:[\s\r\n]*ificato)?|certificate|n[°º.])\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
+    if (!m) return null;
+    const val = m[1].trim();
+    // Scarta frammenti della parola "certificato" (artefatto split PDF)
+    if (/^ificato$/i.test(val)) return null;
+    return val;
 }
 
 function extractThicknessMm(text) {
