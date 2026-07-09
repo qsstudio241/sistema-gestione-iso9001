@@ -122,6 +122,17 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
             return { fields, model: retry.model || null, warnings };
         } catch (retryErr) {
             warnings.push(`AI retry fallito: ${retryErr.message}`);
+            // Log raw response per diagnosi (max 400 char per non intasare log)
+            const raw = String(err.rawContent || err.raw_content || '').slice(0, 400);
+            const retryRaw = String(retryErr.rawContent || retryErr.raw_content || '').slice(0, 400);
+            logger.warn('[IngestPipeline] AI retry fallito — dump risposte AI', {
+                docType,
+                fileName,
+                primaryError: err.message,
+                retryError: retryErr.message,
+                primaryRawSample: raw,
+                retryRawSample: retryRaw,
+            });
             return { fields: {}, model: null, warnings };
         }
     }
