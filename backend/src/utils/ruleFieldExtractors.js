@@ -92,9 +92,48 @@ function extractThicknessMm(text) {
     return parseFloat(String(m[1]).replace(',', '.'));
 }
 
+// Parole in MAIUSCOLO che NON sono nomi propri (etichette tipiche nei patentini/scansioni OCR)
+const NON_NAME_WORDS = new Set([
+    'SALDATORE', 'WELDER', 'CERTIFICATO', 'CERTIFICATE', 'CERTIFICAZIONE',
+    'PROCESSO', 'SALDATURA', 'QUALIFICA', 'QUALIFICAZIONE', 'NUMERO', 'NOME',
+    'COGNOME', 'ENTE', 'DATA', 'ISO', 'EN', 'UNI', 'TUV', 'RINA', 'DNV',
+    'MATERIALE', 'GRUPPO', 'POSIZIONE', 'GIUNTO', 'SPESSORE', 'DIAMETRO',
+    'NOMINATIVO', 'TITOLARE', 'RILASCIO', 'SCADENZA', 'VALIDITA',
+]);
+
+/**
+ * Nome persona: gestisce sia Titlecase (Mario Rossi) sia MAIUSCOLO (MARIO ROSSI),
+ * frequente nell'output OCR delle scansioni. Prova prima le etichette specifiche
+ * del nome, poi il fallback "saldatore/welder".
+ */
 function extractPersonName(text) {
-    const m = text.match(/\b(?:nome|cognome|name|saldatore|welder|titolare)\s*[:.]?\s*([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)+)\b/);
-    return m ? m[1].trim() : null;
+    // Parola-nome: iniziale maiuscola, poi lettere di qualsiasi caso (gestisce MAIUSCOLO)
+    const NAME_TOKEN = "[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-Þà-öø-ÿ'.]+";
+    const nameRe = new RegExp(`^(${NAME_TOKEN}(?:\\s+${NAME_TOKEN}){1,3})`);
+
+    const labelGroups = [
+        /(?:nome\s+e\s+cognome|cognome\s+e\s+nome|nominativo|nome|cognome|titolare|name)\s*[:.\-]*\s*/i,
+        /(?:saldatore|welder)\s*[:.\-]*\s*/i,
+    ];
+
+    for (const labelRe of labelGroups) {
+        const globalRe = new RegExp(labelRe.source, 'gi');
+        let lm;
+        while ((lm = globalRe.exec(text)) !== null) {
+            const after = text.slice(lm.index + lm[0].length);
+            const nm = after.match(nameRe);
+            if (!nm) continue;
+            let parts = nm[1].trim().split(/\s+/);
+            // Rimuovi parole-etichetta in coda (es. "MARIO ROSSI Numero")
+            while (parts.length > 2 && NON_NAME_WORDS.has(parts[parts.length - 1].toUpperCase().replace(/[.'']/g, ''))) {
+                parts.pop();
+            }
+            const candidate = parts.join(' ');
+            const allStop = parts.every((w) => NON_NAME_WORDS.has(w.toUpperCase().replace(/[.'']/g, '')));
+            if (!allStop && parts.length >= 2) return candidate;
+        }
+    }
+    return null;
 }
 
 function extractIssuingBody(text) {

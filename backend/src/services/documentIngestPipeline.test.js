@@ -96,6 +96,24 @@ describe('extractFieldsByRules', () => {
         const fields = extractFieldsByRules(text, 'patentino_saldatore', 'patentino.pdf');
         expect(fields.certificate_number).toBe('TUV-9606-2024-0123');
     });
+
+    it('estrae nome MAIUSCOLO da testo OCR (Nome e cognome: MARIO ROSSI)', () => {
+        const text = 'CERTIFICATO SALDATORE ISO 9606-1\nNome e cognome: MARIO ROSSI\nNumero certificato: X-01 processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'scan.pdf');
+        expect(fields.welder_name).toBe('MARIO ROSSI');
+    });
+
+    it('estrae nome Titlecase classico (Nome: Mario Rossi)', () => {
+        const text = 'Nome: Mario Rossi processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'p.pdf');
+        expect(fields.welder_name).toBe('Mario Rossi');
+    });
+
+    it('non confonde parole-etichetta con nomi', () => {
+        const text = 'Processo di saldatura 135 gruppo materiale 1.1';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'p.pdf');
+        expect(fields.welder_name).toBeFalsy();
+    });
 });
 
 describe('mergeExtractions', () => {
