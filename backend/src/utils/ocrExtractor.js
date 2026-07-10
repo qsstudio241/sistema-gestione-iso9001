@@ -52,6 +52,26 @@ function _detectMagickEngine() {
     return _magickEngineCache;
 }
 
+const _PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);   // \x89PNG
+const _JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
+
+/**
+ * Verifica che un buffer sia davvero un'immagine raster (PNG/JPEG).
+ * Serve perché, richiedendo una pagina oltre l'ultima, GraphicsMagick/ImageMagick
+ * NON lanciano un'eccezione ma restituiscono un breve messaggio di errore testuale
+ * (es. ~126 byte). Se questo finisse a Tesseract ? "pixReadStream: Unknown format"
+ * e l'intero OCR fallirebbe, scartando anche le pagine valide.
+ * @param {Buffer} buf
+ * @returns {boolean}
+ * @private
+ */
+function _isRasterImage(buf) {
+    if (!Buffer.isBuffer(buf) || buf.length < 8) return false;
+    if (buf.subarray(0, 4).equals(_PNG_MAGIC)) return true;
+    if (buf.subarray(0, 3).equals(_JPEG_MAGIC)) return true;
+    return false;
+}
+
 /**
  * Estrae testo da un PDF scansionato tramite OCR.
  *
@@ -79,11 +99,17 @@ async function extractTextWithOCR(pdfBuffer, options = {}) {
     });
 
     const textParts = [];
+    let lastRecErr = null;
     try {
         for (const imgBuf of imgBuffers) {
-            const { data: { text } } = await worker.recognize(imgBuf);
-            if (text && text.trim().length > 10) {
-                textParts.push(text.trim());
+            // Il fallimento di una singola pagina non deve azzerare l'intero OCR
+            try {
+                const { data: { text } } = await worker.recognize(imgBuf);
+                if (text && text.trim().length > 10) {
+                    textParts.push(text.trim());
+                }
+            } catch (recErr) {
+                lastRecErr = recErr;
             }
         }
     } finally {
@@ -91,7 +117,8 @@ async function extractTextWithOCR(pdfBuffer, options = {}) {
     }
 
     if (textParts.length === 0) {
-        throw new Error('[OCR] Tesseract non ha estratto testo utilizzabile');
+        const detail = lastRecErr && lastRecErr.message ? `: ${lastRecErr.message}` : '';
+        throw new Error(`[OCR] Tesseract non ha estratto testo utilizzabile${detail}`);
     }
 
     return textParts.join('\n\n');
@@ -134,21 +161,34 @@ async function _convertPdfToImages(pdfBuffer, maxPages) {
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
         try {
             const result = await converter(pageNum, { responseType: 'buffer' });
-            if (result && result.buffer && result.buffer.length > 0) {
-                buffers.push(result.buffer);
+
+            // Estrai il buffer immagine (da memoria o da file temporaneo)
+            let imgBuf = null;
+            if (result && Buffer.isBuffer(result.buffer) && result.buffer.length > 0) {
+                imgBuf = result.buffer;
             } else if (result && result.path && fs.existsSync(result.path) && fs.statSync(result.path).size > 0) {
-                buffers.push(fs.readFileSync(result.path));
-                // pulizia file temporaneo
+                imgBuf = fs.readFileSync(result.path);
                 try { fs.unlinkSync(result.path); } catch (_) {}
+            }
+
+            if (imgBuf && _isRasterImage(imgBuf)) {
+                buffers.push(imgBuf);
             } else if (pageNum === 1) {
-                // Buffer vuoto alla prima pagina = conversione fallita silenziosamente
-                // (tipico quando pdf2pic invoca un motore assente o senza permessi PDF).
+                // Prima pagina senza immagine valida = conversione fallita.
+                // Distinguo output vuoto (motore assente/permessi) da output non-immagine.
+                if (!imgBuf) {
+                    throw new Error(
+                        `[OCR] Conversione PDF->immagine ha prodotto un output vuoto (motore: ${engine}). `
+                        + 'Verificare che Ghostscript sia installato e che il motore immagini possa leggere i PDF.'
+                    );
+                }
                 throw new Error(
-                    `[OCR] Conversione PDF?immagine ha prodotto un output vuoto (motore: ${engine}). `
-                    + 'Verificare che Ghostscript sia installato e che il motore immagini possa leggere i PDF.'
+                    `[OCR] Conversione PDF->immagine non valida alla pagina 1 (motore: ${engine}). `
+                    + 'Il motore non ha restituito un\'immagine raster.'
                 );
             } else {
-                // Pagine oltre l'ultima: interrompi senza errore
+                // Pagina oltre l'ultima: gm/IM restituiscono un breve messaggio di
+                // errore testuale (NON un'immagine) senza lanciare eccezione. Stop.
                 break;
             }
         } catch (pageErr) {
@@ -170,4 +210,4 @@ async function _convertPdfToImages(pdfBuffer, maxPages) {
     return buffers;
 }
 
-module.exports = { extractTextWithOCR, _detectMagickEngine };
+module.exports = { extractTextWithOCR, _detectMagickEngine, _isRasterImage };
