@@ -58,7 +58,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
             text = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
             ocrUsed = true;
         } catch (ocrErr) {
-            warnings.push(`OCR non disponibile o fallito: ${ocrErr.message}`);
+            const ocrMsg = (ocrErr && ocrErr.message) ? ocrErr.message : String(ocrErr);
+            warnings.push(`OCR non disponibile o fallito: ${ocrMsg}`);
+            logger.warn('[IngestPipeline] OCR fallito', { error: ocrMsg });
         }
     } else if (text.trim().length < OCR_MIN_CHARS) {
         warnings.push('Testo PDF insufficiente; OCR non configurato sul server');
