@@ -251,15 +251,20 @@ ${truncated}
     try {
         data = parseJsonWithRepair(content);
     } catch (parseErr) {
-        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') {
+            parseErr.rawContent = content;
+            throw parseErr;
+        }
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
+        e.rawContent = content;
         throw e;
     }
 
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
         const e = new Error('Formato estrazione non valido.');
         e.code = 'AI_BAD_SHAPE';
+        e.rawContent = content;
         throw e;
     }
 
