@@ -101,7 +101,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 | 1 | **Scheda NC** | Descrizione, severità, responsabile NC, scadenza; badge origine (audit/reclamo/manuale) |
 | 2 | **Stato workflow** | Pulsanti Avvia lavorazione / Segna risolta / Verifica (sticky in scroll) |
 | 3 | **Cause** | Analisi causa radice |
-| 4 | **Azioni correttive** | Elenco azioni con attuazione e verifica per singola azione |
+| 4 | **Azioni correttive** | Elenco azioni con attuazione (Aperta → In corso → Completata) |
 | 5 | **Evidenze** | Allegati facoltativi |
 | 6 | **Verifica efficacia** | Note e responsabile verifica NC; collassata con hint se NC ancora aperta/in corso |
 | 7 | **Chiusura** | Approva chiusura (RQ), Chiudi NC (dopo approvazione), **Riapri NC** (solo RQ, se già chiusa) |
@@ -280,11 +280,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.7 Azioni correttive — attuazione, responsabile, scadenza, verifica
+### 3.7 Azioni correttive — attuazione, responsabile, scadenza
 
 **Chi:** Referente processo, auditor, RQ.
 
-**Quando:** Per ogni NC serve tracciare cosa si fa, chi lo fa, entro quando, e se ha funzionato.
+**Quando:** Per ogni NC serve tracciare cosa si fa, chi lo fa, entro quando.
 
 **Passi**
 
@@ -292,10 +292,11 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 2. Cliccare **+ Aggiungi azione**.
 3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione*** (microfono e storico come nel form NC), **Responsabile attuazione**, **Scadenza**.
 4. **Salva azione**.
-5. Per ogni azione, avanzare lo stato con i pulsanti:
-   - **Avvia** → **Completa** → **Verifica**
-6. Su **Verifica**, compilare **Nota verifica azione** (obbligatoria; stessi strumenti microfono/storico/bozza) e **Conferma verifica**.
+5. Per ogni azione, avanzare lo stato con i pulsanti: **Avvia** → **Completa**.
+6. Quando **tutte** le azioni sono Completate, la NC passa automaticamente a **Risolta**. Il giudizio sull'efficacia (l'azione ha davvero eliminato la causa?) è **complessivo**, non per singola azione: si compila una sola volta in **6. Verifica efficacia** (vedi §3.6).
 7. Se ci sono azioni scadute o in scadenza entro 7 giorni, usare i filtri **Scadute** / **In scadenza 7 gg** sopra l'elenco azioni.
+
+*Nota retrocompatibilità: azioni create prima di questa semplificazione possono ancora mostrare lo stato storico «Verificata» con relativa nota — resta visibile ma non è più un passaggio richiesto per le nuove azioni.*
 
 **Domande / Risposte**
 
