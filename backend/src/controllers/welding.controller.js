@@ -623,7 +623,7 @@ async function assignWpsWelder(req, res) {
         `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
 
         if (dupCheck.recordset.length > 0) {
-            return res.status(409).json({ error: 'Saldatore gi? assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
+            return res.status(409).json({ error: 'Saldatore già assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
         }
 
         const result = await query(`
