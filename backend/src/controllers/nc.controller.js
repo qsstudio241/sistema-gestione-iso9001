@@ -1853,7 +1853,11 @@ async function listAggregateDueNcActions(req, res) {
         const { organization_id } = req.user;
         const { overdue, due_within_days, limit = 100 } = req.query;
 
-        let whereConditions = ['a.organization_id = @organization_id', "na.status NOT IN ('completed', 'verified')"];
+        let whereConditions = [
+            'a.organization_id = @organization_id',
+            "na.status NOT IN ('completed', 'verified')",
+            "nc.status NOT IN ('resolved', 'verified', 'closed')",
+        ];
         const params = { organization_id, limit: parseInt(limit, 10) || 100 };
         const dueWithin = parseInt(due_within_days, 10);
 

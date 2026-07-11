@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
-import { Link, useRouter } from "../contexts/RouterContext";
+import { useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
@@ -544,9 +544,13 @@ export default function NCPage() {
               <ul className="nc-due-actions-list">
                 {dueActions.map(a => (
                   <li key={a.action_id} className={a.is_overdue ? "nc-due-overdue" : ""}>
-                    <Link to={`/nc?select=${a.nc_id}`} className="nc-due-link">
+                    <a
+                      href="#"
+                      className="nc-due-link"
+                      onClick={e => { e.preventDefault(); setSelectedNcId(a.nc_id); setViewMode("nc"); }}
+                    >
                       <strong>{a.nc_number}</strong> — {a.description?.slice(0, 120)}
-                    </Link>
+                    </a>
                     <span className="nc-due-meta">
                       {a.responsible || "—"} · scadenza {a.due_date ? formatDate(a.due_date) : "—"}
                       {a.is_overdue ? " · SCADUTA" : ""}
