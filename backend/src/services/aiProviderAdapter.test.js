@@ -6,6 +6,7 @@
 
 const { mapMessagesToGemini, embed: geminiEmbed } = require('./adapters/geminiAdapter');
 const keyPool = require('./adapters/geminiKeyPool');
+const anthropicKeyPool = require('./adapters/anthropicKeyPool');
 const openaiAdapter = require('./adapters/openaiAdapter');
 const aiProviderAdapter = require('./aiProviderAdapter');
 
@@ -14,6 +15,11 @@ const ENV_KEYS = [
   'GEMINI_API_KEYS',
   'GEMINI_MODEL',
   'GEMINI_MAX_ATTEMPTS',
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_API_KEYS',
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_MAX_ATTEMPTS',
+  'AI_ANTHROPIC_FALLBACK',
   'AZURE_OPENAI_ENDPOINT',
   'AZURE_OPENAI_API_KEY',
   'AZURE_OPENAI_DEPLOYMENT',
@@ -28,12 +34,24 @@ function clearAiEnv() {
     delete process.env[k];
   }
   keyPool.resetKeyPoolState();
+  anthropicKeyPool.resetKeyPoolState();
 }
 
 describe('getActiveProvider cascade', () => {
   beforeEach(() => {
     clearAiEnv();
     jest.restoreAllMocks();
+  });
+
+  test('uses Anthropic when Gemini absent and ANTHROPIC_API_KEY set', () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('anthropic');
+  });
+
+  test('prefers Gemini when both Gemini and Anthropic keys are set', () => {
+    process.env.GEMINI_API_KEY = 'g-key';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('gemini');
   });
 
   test('prefers Gemini when GEMINI_API_KEYS is set without primary key', () => {
@@ -311,6 +329,49 @@ describe('aiProviderAdapter.chat error handling', () => {
     );
     expect(out.content).toBe('full');
     expect(chunks).toEqual(['full']);
+  });
+
+  test('Gemini path: falls back to Anthropic when all Gemini keys are exhausted', async () => {
+    process.env.GEMINI_API_KEY = 'key-primary';
+    process.env.GEMINI_MAX_ATTEMPTS = '1';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-fallback';
+    process.env.ANTHROPIC_MODEL = 'claude-test';
+
+    const quotaError = {
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => ({
+        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+      }),
+    };
+    const anthropicOk = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        model: 'claude-test',
+        content: [{ type: 'text', text: 'risposta-claude' }],
+        usage: { input_tokens: 2, output_tokens: 3 },
+      }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(quotaError)
+      .mockResolvedValueOnce(anthropicOk);
+
+    const res = await aiProviderAdapter.chat(
+      [
+        { role: 'system', content: 'sys' },
+        { role: 'user', content: 'ciao' },
+      ],
+      { timeout: 5000, responseFormat: 'json' }
+    );
+
+    expect(res.content).toBe('risposta-claude');
+    expect(res.provider).toBe('anthropic');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[1][0])).toContain('/v1/messages');
   });
 
   test('Gemini path: switches API key when primary quota is exhausted', async () => {
