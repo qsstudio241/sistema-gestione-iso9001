@@ -185,11 +185,7 @@ async function main() {
                 para('Approvata il: {approvedAt}', { after: 120 }),
                 sectionTitle('8. Evidenze allegate'),
                 para('Totale allegati: {attachmentsCount}', { after: 120 }),
-                para('{#attachments}', { after: 40 }),
-                para('- {fileName} ({category})', { size: 20, after: 40 }),
-                para('{fileDescription}', { size: 20, after: 40 }),
-                para('Caricato il: {uploadedAt}', { size: 20, after: 120 }),
-                para('{/attachments}', { after: 0 }),
+                para('NC_ATTACHMENTS_MARKER', { after: 0 }),
                 para('', { before: 400, after: 0 }),
                 para('Documento generato il {generatedAt}', {
                     italic: true,

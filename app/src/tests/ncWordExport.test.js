@@ -18,6 +18,10 @@ const { DocxtemplaterMock, PizZipMock } = vi.hoisted(() => {
 
     getZip() {
       return {
+        files: {
+          'word/document.xml': { asText: () => '<w:document></w:document>' },
+        },
+        file: vi.fn(),
         generate: () => new Blob(['docx'], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         }),
@@ -54,6 +58,17 @@ vi.mock('file-saver', () => ({
 vi.mock('../utils/wordExport.js', () => ({
   fixWordXmlMojibake: (xml) => xml,
   repairDocxtemplaterFragmentedTags: (xml) => xml,
+  embedImagesInZip: vi.fn(),
+}));
+
+vi.mock('../utils/wordExportHelpers.js', () => ({
+  escXml: (v) => v,
+  xmlHyperlinkPara: () => '',
+  buildWordInlineImageRun: () => '',
+  wordEmbeddableExtFromMime: () => null,
+  getDisplayImagePixelDimensions: () => null,
+  scaleImageToMaxEmu: () => ({ cx: 100, cy: 100 }),
+  normalizeImageDataUrlForWordEmbed: async (d) => d,
 }));
 
 describe('ncWordExport', () => {
@@ -125,7 +140,6 @@ describe('ncWordExport', () => {
     expect(data.noActions).toBe(false);
     expect(data.correctiveActionNeeded).toMatch(/necessaria/i);
     expect(data.correctiveActionEvalNotes).toBe('Ripetizione probabile');
-    expect(data.attachments).toHaveLength(1);
     expect(data.attachmentsCount).toBe('1');
   });
 
@@ -155,6 +169,7 @@ describe('ncWordExport', () => {
         },
       }),
       getNcActions: vi.fn().mockResolvedValue({ data: [] }),
+      getAttachmentViewUrl: vi.fn((id) => `https://example.com/view/${id}`),
     };
 
     const fileName = await exportNcToWord(42, apiService);
