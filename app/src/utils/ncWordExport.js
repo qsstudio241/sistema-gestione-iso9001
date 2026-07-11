@@ -92,8 +92,17 @@ export function buildNcWordFileName(nc) {
     return `${number}_${client}.docx`;
 }
 
+const CA_NEEDED_LABELS = {
+    yes: 'S\u00EC, necessaria',
+    no: 'No, non necessaria',
+};
+
 export function buildNcTemplateData(nc, actions = [], attachments = []) {
-    const actionRows = (actions || []).map((action, index) => ({
+    const allActions = actions || [];
+    const corrections = allActions.filter(a => a.action_type === 'immediate');
+    const otherActions = allActions.filter(a => a.action_type !== 'immediate');
+
+    const mapAction = (action, index) => ({
         actionIndex: index + 1,
         typeLabel: NC_ACTION_TYPE_LABELS[action.action_type] || action.action_type || 'N/D',
         statusLabel: NC_ACTION_STATUS_LABELS[action.status] || action.status || 'N/D',
@@ -102,7 +111,10 @@ export function buildNcTemplateData(nc, actions = [], attachments = []) {
         dueDate: formatDate(action.due_date),
         completedAt: formatDateTime(action.completed_at),
         verificationNote: displayOrNd(action.verification_note),
-    }));
+    });
+
+    const correctionRows = corrections.map(mapAction);
+    const actionRows = otherActions.map(mapAction);
 
     const attachmentRows = (attachments || []).map((att) => ({
         fileName: displayOrNd(att.file_name),
@@ -125,12 +137,16 @@ export function buildNcTemplateData(nc, actions = [], attachments = []) {
         responsiblePerson: displayOrNd(nc?.responsible_person),
         description: displayOrNd(nc?.description),
         rootCause: displayOrNd(nc?.root_cause),
+        correctiveActionNeeded: CA_NEEDED_LABELS[nc?.corrective_action_needed] || 'Non valutato',
+        correctiveActionEvalNotes: displayOrNd(nc?.corrective_action_evaluation_notes),
         verificationNotes: displayOrNd(nc?.verification_notes),
         verificationResponsible: displayOrNd(nc?.verification_responsible),
         approvedByName: displayOrNd(nc?.approved_by_name),
         approvedAt: formatDateTime(nc?.approved_at),
         attachmentsCount: String(attachmentRows.length || nc?.attachments_count || 0),
         generatedAt: formatDateTime(new Date()),
+        noCorrections: correctionRows.length === 0,
+        corrections: correctionRows,
         noActions: actionRows.length === 0,
         actions: actionRows,
         attachments: attachmentRows,
