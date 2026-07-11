@@ -5,11 +5,13 @@
 /* eslint-env jest */
 
 const { mapMessagesToGemini, embed: geminiEmbed } = require('./adapters/geminiAdapter');
+const keyPool = require('./adapters/geminiKeyPool');
 const openaiAdapter = require('./adapters/openaiAdapter');
 const aiProviderAdapter = require('./aiProviderAdapter');
 
 const ENV_KEYS = [
   'GEMINI_API_KEY',
+  'GEMINI_API_KEYS',
   'GEMINI_MODEL',
   'GEMINI_MAX_ATTEMPTS',
   'AZURE_OPENAI_ENDPOINT',
@@ -25,12 +27,18 @@ function clearAiEnv() {
   for (const k of ENV_KEYS) {
     delete process.env[k];
   }
+  keyPool.resetKeyPoolState();
 }
 
 describe('getActiveProvider cascade', () => {
   beforeEach(() => {
     clearAiEnv();
     jest.restoreAllMocks();
+  });
+
+  test('prefers Gemini when GEMINI_API_KEYS is set without primary key', () => {
+    process.env.GEMINI_API_KEYS = 'secondary-key';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('gemini');
   });
 
   test('prefers Gemini when GEMINI_API_KEY is set', () => {
@@ -303,6 +311,44 @@ describe('aiProviderAdapter.chat error handling', () => {
     );
     expect(out.content).toBe('full');
     expect(chunks).toEqual(['full']);
+  });
+
+  test('Gemini path: switches API key when primary quota is exhausted', async () => {
+    process.env.GEMINI_API_KEY = 'key-primary';
+    process.env.GEMINI_API_KEYS = 'key-secondary';
+    process.env.GEMINI_MAX_ATTEMPTS = '1';
+
+    const quotaError = {
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => ({
+        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+      }),
+    };
+    const okResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'ok-secondary' }], role: 'model' } }],
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+      }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(quotaError)
+      .mockResolvedValueOnce(okResponse);
+
+    const res = await aiProviderAdapter.chat(
+      [{ role: 'user', content: 'go' }],
+      { timeout: 5000 }
+    );
+
+    expect(res.content).toBe('ok-secondary');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[0][0])).toContain('key=key-primary');
+    expect(String(fetchSpy.mock.calls[1][0])).toContain('key=key-secondary');
   });
 
   test('Gemini path: retries on 503 then succeeds (model overloaded)', async () => {

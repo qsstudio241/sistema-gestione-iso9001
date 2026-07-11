@@ -6,8 +6,10 @@ const geminiAdapter = require('./adapters/geminiAdapter');
 const azureOpenaiAdapter = require('./adapters/azureOpenaiAdapter');
 const openaiAdapter = require('./adapters/openaiAdapter');
 
+const { hasGeminiApiKeys } = require('./adapters/geminiKeyPool');
+
 function getActiveProvider() {
-  if (process.env.GEMINI_API_KEY) return 'gemini';
+  if (hasGeminiApiKeys()) return 'gemini';
   if (
     process.env.AZURE_OPENAI_ENDPOINT &&
     process.env.AZURE_OPENAI_API_KEY
