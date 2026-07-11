@@ -80,20 +80,33 @@ describe('ncWordExport', () => {
         responsible_person: 'Mario Rossi',
         description: 'Descrizione NC',
         root_cause: 'Causa radice',
+        corrective_action_needed: 'yes',
+        corrective_action_evaluation_notes: 'Ripetizione probabile',
         verification_notes: 'Note verifica',
         verification_responsible: 'Luigi Verdi',
         approved_by_name: 'RQ Studio',
         approved_at: '2026-06-10T10:00:00.000Z',
       },
-      [{
-        action_type: 'corrective',
-        status: 'open',
-        description: 'Azione 1',
-        responsible: 'Anna',
-        due_date: '2026-07-01',
-        completed_at: null,
-        verification_note: '',
-      }],
+      [
+        {
+          action_type: 'immediate',
+          status: 'completed',
+          description: 'Correzione immediata',
+          responsible: 'Marco',
+          due_date: '2026-06-15',
+          completed_at: '2026-06-14T12:00:00.000Z',
+          verification_note: '',
+        },
+        {
+          action_type: 'corrective',
+          status: 'open',
+          description: 'Azione correttiva 1',
+          responsible: 'Anna',
+          due_date: '2026-07-01',
+          completed_at: null,
+          verification_note: '',
+        },
+      ],
       [{
         file_name: 'evidenza.pdf',
         category: 'evidence',
@@ -104,11 +117,25 @@ describe('ncWordExport', () => {
 
     expect(data.ncNumber).toBe('NC-2026-001');
     expect(data.statusLabel).toBe(NC_STATUS_LABELS.in_progress);
-    expect(data.noActions).toBe(false);
+    expect(data.corrections).toHaveLength(1);
+    expect(data.corrections[0].typeLabel).toBe(NC_ACTION_TYPE_LABELS.immediate);
+    expect(data.noCorrections).toBe(false);
     expect(data.actions).toHaveLength(1);
     expect(data.actions[0].typeLabel).toBe(NC_ACTION_TYPE_LABELS.corrective);
+    expect(data.noActions).toBe(false);
+    expect(data.correctiveActionNeeded).toMatch(/necessaria/i);
+    expect(data.correctiveActionEvalNotes).toBe('Ripetizione probabile');
     expect(data.attachments).toHaveLength(1);
     expect(data.attachmentsCount).toBe('1');
+  });
+
+  it('buildNcTemplateData gestisce NC senza azioni', () => {
+    const data = buildNcTemplateData({ nc_number: 'NC-EMPTY', status: 'open' }, [], []);
+    expect(data.noCorrections).toBe(true);
+    expect(data.noActions).toBe(true);
+    expect(data.corrections).toHaveLength(0);
+    expect(data.actions).toHaveLength(0);
+    expect(data.correctiveActionNeeded).toBe('Non valutato');
   });
 
   it('buildNcWordFileName sanitizza numero e cliente', () => {

@@ -241,6 +241,7 @@ async function listNonConformities(req, res) {
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
         CASE
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified')
           THEN 1 ELSE 0
@@ -392,6 +393,7 @@ async function getNonConformityById(req, res) {
         cs.section_title,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
         CASE 
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified') 
           THEN 1 
@@ -739,7 +741,9 @@ async function updateNonConformity(req, res) {
             responsible_contact_id,
             verification_contact_id,
             root_cause,
-            reopen_reason
+            reopen_reason,
+            corrective_action_needed,
+            corrective_action_evaluation_notes,
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -853,6 +857,23 @@ async function updateNonConformity(req, res) {
             updates.push('root_cause = @root_cause');
             params.root_cause = root_cause;
         }
+        if (corrective_action_needed !== undefined) {
+            const val = corrective_action_needed
+                ? String(corrective_action_needed).trim().toLowerCase()
+                : null;
+            if (val && !['yes', 'no'].includes(val)) {
+                return res.status(400).json({
+                    error: 'Valore non valido per corrective_action_needed (yes/no)',
+                    code: 'VALIDATION_ERROR',
+                });
+            }
+            updates.push('corrective_action_needed = @corrective_action_needed');
+            params.corrective_action_needed = val;
+        }
+        if (corrective_action_evaluation_notes !== undefined) {
+            updates.push('corrective_action_evaluation_notes = @corrective_action_evaluation_notes');
+            params.corrective_action_evaluation_notes = corrective_action_evaluation_notes;
+        }
 
         // Gestione transizione stato (con validazione workflow)
         if (status !== undefined) {
@@ -882,6 +903,21 @@ async function updateNonConformity(req, res) {
                     currentStatus,
                     allowedTransitions
                 });
+            }
+
+            // Gate ISO 10.2.1 a): almeno una correzione (immediate) completata prima di risolta
+            if (status === 'resolved') {
+                const correctionCheck = await query(`
+                    SELECT COUNT(*) AS cnt FROM nc_actions
+                    WHERE nc_id = @id AND action_type = 'immediate'
+                      AND status IN ('completed', 'verified')
+                `, { id: parseInt(id) });
+                if ((correctionCheck.recordset[0]?.cnt || 0) === 0) {
+                    return res.status(400).json({
+                        error: 'Registrare almeno una Correzione (azione immediata) completata prima di segnare la NC come Risolta (ISO 10.2.1 a)',
+                        code: 'CORRECTION_REQUIRED'
+                    });
+                }
             }
 
             // Gate ISO 10.2: note verifica obbligatorie per verified/closed

@@ -674,6 +674,31 @@ body.sgq-nc-drawer-resizing * {
 .btn-action-del:hover { background: #fff5f5; }
 
 .nc-empty-actions { font-size: 0.85rem; color: #a0aec0; font-style: italic; }
+.nc-correction-empty { color: #c53030; font-weight: 500; }
+
+.nc-actions-group { margin-bottom: 12px; }
+.nc-actions-group-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin: 10px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nc-action-required-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #e53e3e;
+  padding: 1px 7px;
+  border-radius: 8px;
+}
+.nc-action-done-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #38a169;
+}
 
 /* Loading / empty */
 .nc-loading-main { text-align: center; padding: 40px; color: #718096; }
