@@ -134,6 +134,7 @@ describe('ncWordExport', () => {
     expect(data.statusLabel).toBe(NC_STATUS_LABELS.in_progress);
     expect(data.corrections).toHaveLength(1);
     expect(data.corrections[0].typeLabel).toBe(NC_ACTION_TYPE_LABELS.immediate);
+    expect(data.corrections[0].actionDescription).toBe('Correzione immediata');
     expect(data.noCorrections).toBe(false);
     expect(data.actions).toHaveLength(1);
     expect(data.actions[0].typeLabel).toBe(NC_ACTION_TYPE_LABELS.corrective);
@@ -169,12 +170,25 @@ describe('ncWordExport', () => {
         },
       }),
       getNcActions: vi.fn().mockResolvedValue({ data: [] }),
+      getAttachments: vi.fn().mockResolvedValue({ data: [] }),
       getAttachmentViewUrl: vi.fn((id) => `https://example.com/view/${id}`),
+      fetchAttachmentBlob: vi.fn(),
     };
 
     const fileName = await exportNcToWord(42, apiService);
     expect(fileName).toBe('NC-001_Cliente.docx');
     expect(apiService.get).toHaveBeenCalledWith('/non-conformities/42');
     expect(apiService.getNcActions).toHaveBeenCalledWith(42);
+  });
+
+  it('buildNcTemplateData usa actionDescription per evitare conflitto con description NC', () => {
+    const data = buildNcTemplateData(
+      { nc_number: 'NC-1', description: 'Testo NC principale' },
+      [{ action_type: 'immediate', description: 'Testo correzione' }],
+      [],
+    );
+    expect(data.description).toBe('Testo NC principale');
+    expect(data.corrections[0].actionDescription).toBe('Testo correzione');
+    expect(data.corrections[0].description).toBeUndefined();
   });
 });
