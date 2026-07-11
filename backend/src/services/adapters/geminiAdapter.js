@@ -231,7 +231,7 @@ async function generateContent(body, options = {}) {
 
   if (keyOrder.length === 0) {
     throw createNormalizedError(
-      'AI_UPSTREAM_ERROR',
+      'AI_QUOTA_EXHAUSTED',
       'Tutte le chiavi Gemini configurate risultano esaurite (quota). Aggiungere GEMINI_API_KEYS o riavviare il backend dopo reset quota.'
     );
   }
@@ -264,6 +264,13 @@ async function generateContent(body, options = {}) {
         await sleep(waitMs);
       }
     }
+  }
+
+  if (keyPool.buildKeyTryOrder(apiKeys.length).length === 0) {
+    throw createNormalizedError(
+      'AI_QUOTA_EXHAUSTED',
+      'Tutte le chiavi Gemini configurate risultano esaurite (quota). Aggiungere GEMINI_API_KEYS, configurare ANTHROPIC_API_KEY, o riavviare il backend dopo reset quota.'
+    );
   }
 
   throw (

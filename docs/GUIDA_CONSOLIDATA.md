@@ -238,8 +238,12 @@ Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizi
   GEMINI_API_KEY=AIza...account1
   GEMINI_API_KEYS=AIza...account2,AIza...account3
   GEMINI_MODEL=gemini-2.5-flash
+  ANTHROPIC_API_KEY=sk-ant-...account1
+  ANTHROPIC_API_KEYS=sk-ant-...account2
+  ANTHROPIC_MODEL=claude-3-5-haiku-20241022
+  AI_ANTHROPIC_FALLBACK=true
   ```
-  Dopo modifica `.env`: `systemctl restart sgq-backend.service` (+ `.env.test` se serve ambiente test).
+  Se **tutte** le chiavi Gemini sono esaurite e `ANTHROPIC_API_KEY` è presente, `aiProviderAdapter` passa automaticamente a Claude (chat/assistente AI). Gli **embedding** restano solo su Gemini. Dopo modifica `.env`: `systemctl restart sgq-backend.service` (+ `.env.test` se serve ambiente test).
 - **Diagnosi messaggio "non in repo"**: se un endpoint restituisce testo non grep-pabile nel repo backend, controllare `proxy_intercept_errors` + `error_page` in `/etc/nginx/sites-available/`.
 
 #### Tabelle AI
