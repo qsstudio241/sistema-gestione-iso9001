@@ -12,7 +12,6 @@ import RichTextField, {
 } from "./RichTextField";
 import { formatDate } from "../utils/dateHelpers";
 import {
-  canVerifyAction,
   filterActionsByDue,
   getActionDueStatus,
 } from "../utils/ncWorkflow";
@@ -26,13 +25,15 @@ const ACTION_STATUS_CFG = {
   open:        { label: "Aperta",     cls: "act-open" },
   in_progress: { label: "In corso",   cls: "act-in-progress" },
   completed:   { label: "Completata", cls: "act-completed" },
+  // "verified" resta solo per azioni storiche già segnate come tali prima
+  // della semplificazione del workflow (la verifica di efficacia è ora
+  // esclusivamente complessiva, sez. 6 del drawer NC).
   verified:    { label: "Verificata", cls: "act-verified" },
 };
 
 const ACTION_STEP_CFG = {
   in_progress: { label: "Avvia", statusBtn: "partial" },
   completed:   { label: "Completa", statusBtn: "compliant" },
-  verified:    { label: "Verifica", statusBtn: "compliant" },
 };
 
 /**
@@ -62,8 +63,6 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState(null);
   const [contacts, setContacts] = useState([]);
-  const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
-  const [verifyError, setVerifyError] = useState(null);
   const [dueFilter, setDueFilter] = useState("all");
   const [editDraft, setEditDraft] = useState(null);
 
@@ -125,64 +124,12 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   }
 
   async function handleStatus(action, newStatus) {
-    if (newStatus === "verified") {
-      const verifyScope = `${actionDraftScope}:verify:${action.action_id}`;
-      setVerifyDraft({
-        actionId: action.action_id,
-        note: resolveNcFieldInitial(
-          action.verification_note,
-          organizationId,
-          verifyScope,
-          "verification_note",
-        ),
-      });
-      setVerifyError(null);
-      return;
-    }
     try {
       await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
       await load();
     } catch {
       alert("Impossibile aggiornare lo stato dell'azione.");
     }
-  }
-
-  async function handleConfirmVerify(action) {
-    const note = verifyDraft.note.trim();
-    if (!canVerifyAction(note)) {
-      setVerifyError("Inserire la nota verifica prima di segnare l'azione come verificata.");
-      return;
-    }
-    try {
-      await apiService.updateNcAction(ncId, action.action_id, {
-        status: "verified",
-        verification_note: note,
-      });
-      if (organizationId) {
-        clearNcFieldDraftsForScope(
-          organizationId,
-          `${actionDraftScope}:verify:${action.action_id}`,
-          ["verification_note"],
-        );
-      }
-      setVerifyDraft({ actionId: null, note: "" });
-      setVerifyError(null);
-      await load();
-    } catch {
-      alert("Impossibile verificare l'azione.");
-    }
-  }
-
-  function handleCancelVerify() {
-    if (verifyDraft.actionId && organizationId) {
-      clearNcFieldDraftsForScope(
-        organizationId,
-        `${actionDraftScope}:verify:${verifyDraft.actionId}`,
-        ["verification_note"],
-      );
-    }
-    setVerifyDraft({ actionId: null, note: "" });
-    setVerifyError(null);
   }
 
   function handleStartEdit(action) {
@@ -359,7 +306,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
             const nextSteps = {
               open:        ["in_progress"],
               in_progress: ["completed"],
-              completed:   ["verified"],
+              completed:   [],
               verified:    [],
             };
             return (
@@ -440,31 +387,6 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
                   <p className="nc-action-verify-note">
                     <strong>Nota verifica:</strong> {a.verification_note}
                   </p>
-                )}
-                {verifyDraft.actionId === a.action_id && (
-                  <div className="nc-action-verify-form">
-                    <label htmlFor={`act-verif-${a.action_id}`}>Nota verifica azione *</label>
-                    <RichTextField
-                      id={`act-verif-${a.action_id}`}
-                      rows={2}
-                      value={verifyDraft.note}
-                      onChange={(e) => setVerifyDraft((d) => ({ ...d, note: e.target.value }))}
-                      placeholder="Descrivi l'esito della verifica su questa azione..."
-                      draftScopeId={`${actionDraftScope}:verify:${a.action_id}`}
-                      draftFieldId="verification_note"
-                      persistLocalDraft
-                      organizationId={organizationId}
-                    />
-                    {verifyError && <p className="nc-error">{verifyError}</p>}
-                    <div className="nc-form-actions">
-                      <button type="button" className="btn-primary" onClick={() => handleConfirmVerify(a)}>
-                        Conferma verifica
-                      </button>
-                      <button type="button" className="btn-secondary" onClick={handleCancelVerify}>
-                        Annulla
-                      </button>
-                    </div>
-                  </div>
                 )}
                 {!isClosed && (
                   <div className="nc-action-btns nc-workflow-btns">

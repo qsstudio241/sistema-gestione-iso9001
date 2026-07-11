@@ -1286,10 +1286,13 @@ async function updateNcAction(req, res) {
         if (verification_note !== undefined) { updates.push('verification_note = @verification_note'); params.verification_note = verification_note; }
 
         if (status !== undefined) {
+            // Workflow semplificato: la verifica di efficacia è un giudizio complessivo
+            // sulla NC (sez. 6 drawer), non sulla singola azione. Lo stato 'verified'
+            // resta accettato solo per compatibilità con azioni storiche già verificate.
             const validTransitions = {
                 'open': ['in_progress', 'completed'],
                 'in_progress': ['completed', 'open'],
-                'completed': ['verified', 'in_progress'],
+                'completed': ['in_progress'],
                 'verified': []
             };
             const current = check.recordset[0].current_status;
@@ -1299,17 +1302,6 @@ async function updateNcAction(req, res) {
                     code: 'INVALID_STATE_TRANSITION',
                     allowedTransitions: validTransitions[current]
                 });
-            }
-            if (status === 'verified') {
-                const noteCandidate = verification_note !== undefined
-                    ? verification_note
-                    : check.recordset[0].verification_note;
-                if (!noteCandidate || !String(noteCandidate).trim()) {
-                    return res.status(400).json({
-                        error: 'Nota verifica obbligatoria per segnare l\'azione come verificata',
-                        code: 'ACTION_VERIFICATION_NOTE_REQUIRED'
-                    });
-                }
             }
             updates.push('status = @status');
             params.status = status;
@@ -1328,18 +1320,20 @@ async function updateNcAction(req, res) {
             WHERE action_id = @actionId
         `, params);
 
-        // Se tutte le azioni sono verified → auto-chiudi NC
-        if (status === 'verified') {
+        // Se tutte le azioni sono completate (o verificate, dati storici) → la NC passa
+        // a "Risolta": la verifica di efficacia complessiva (sez. 6 drawer) resta un
+        // passaggio manuale del RQ, gated dalle note obbligatorie (vedi updateNc).
+        if (status === 'completed') {
             const openActions = await query(`
                 SELECT COUNT(*) AS cnt FROM nc_actions
-                WHERE nc_id = @nc_id AND status NOT IN ('verified')
+                WHERE nc_id = @nc_id AND status NOT IN ('completed', 'verified')
             `, { nc_id: parseInt(id) });
 
             if (openActions.recordset[0].cnt === 0) {
                 await query(`
                     UPDATE non_conformities
-                    SET status = 'verified', updated_at = GETDATE()
-                    WHERE nc_id = @nc_id AND status NOT IN ('closed', 'verified')
+                    SET status = 'resolved', updated_at = GETDATE()
+                    WHERE nc_id = @nc_id AND status NOT IN ('resolved', 'verified', 'closed')
                 `, { nc_id: parseInt(id) });
             }
         }
@@ -1823,7 +1817,7 @@ async function listAggregateDueNcActions(req, res) {
         const { organization_id } = req.user;
         const { overdue, due_within_days, limit = 100 } = req.query;
 
-        let whereConditions = ['a.organization_id = @organization_id', "na.status NOT IN ('verified')"];
+        let whereConditions = ['a.organization_id = @organization_id', "na.status NOT IN ('completed', 'verified')"];
         const params = { organization_id, limit: parseInt(limit, 10) || 100 };
         const dueWithin = parseInt(due_within_days, 10);
 
