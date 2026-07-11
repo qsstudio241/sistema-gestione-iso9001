@@ -958,7 +958,7 @@ class ApiService {
      */
     getAttachmentDownloadUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
@@ -968,7 +968,7 @@ class ApiService {
      */
     getAttachmentViewUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
