@@ -13,10 +13,14 @@
  */
 
 import { getMaterialGroupSelectOptions } from './materialGroups15608.js';
+import { getWeldingProcessSelectOptions } from './weldingProcesses4063.js';
+import { getWeldingPositionSelectOptions } from './weldingPositions6947.js';
 
 const MATERIAL_GROUP_OPTIONS = getMaterialGroupSelectOptions({
   families: ['steel', 'aluminium', 'copper', 'nickel', 'titanium', 'zirconium', 'cast_iron'],
 });
+const WELDING_PROCESS_OPTIONS = getWeldingProcessSelectOptions();
+const WELDING_POSITION_OPTIONS = getWeldingPositionSelectOptions();
 
 // --- patentino_saldatore (ISO 9606-1) 
 
@@ -73,18 +77,7 @@ const patentino_saldatore = {
       label: "Processo di saldatura",
       type: "select",
       required: true,
-      options: [
-        { value: "111",  label: "111 - Elettrodo rivestito (MMA)" },
-        { value: "121",  label: "121 - Arco sommerso (SAW) filo" },
-        { value: "131",  label: "131 - MIG (GMAW) filo solido" },
-        { value: "135",  label: "135 - MAG (GMAW) filo solido" },
-        { value: "136",  label: "136 - MAG filo animato (FCAW)" },
-        { value: "138",  label: "138 - MAG filo animato metallo (MCAW)" },
-        { value: "141",  label: "141 - TIG (GTAW) elettrodo tungsteno" },
-        { value: "145",  label: "145 - TIG + filo freddo (GTAW-CW)" },
-        { value: "311",  label: "311 - Ossiacetilenica (OAW)" },
-        { value: "outro", label: "Altro" },
-      ],
+      options: WELDING_PROCESS_OPTIONS,
       hint: "Codice processo secondo ISO 4063",
     },
     {
@@ -127,17 +120,7 @@ const patentino_saldatore = {
       label: "Posizioni qualificate",
       type: "multiselect",
       required: false,
-      options: [
-        { value: "PA",     label: "PA - Piana / sotto testa" },
-        { value: "PB",     label: "PB - Orizzontale su verticale" },
-        { value: "PC",     label: "PC - Orizzontale" },
-        { value: "PD",     label: "PD - Sopratesta orizzontale" },
-        { value: "PE",     label: "PE - Sopratesta" },
-        { value: "PF",     label: "PF - Verticale ascendente" },
-        { value: "PG",     label: "PG - Verticale discendente" },
-        { value: "H-L045", label: "H-L045 - Tubo inclinato 45°" },
-        { value: "J-L045", label: "J-L045 - Tubo inclinato 45° discendente" },
-      ],
+      options: WELDING_POSITION_OPTIONS,
       hint: "Posizioni di saldatura secondo ISO 6947 (seleziona tutte quelle incluse)",
     },
     {
