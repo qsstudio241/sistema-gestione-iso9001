@@ -2,6 +2,8 @@
  * Gemini generateContent adapter (native fetch).
  */
 
+const keyPool = require('./geminiKeyPool');
+
 function createNormalizedError(code, message, status) {
   const err = new Error(message);
   err.code = code;
@@ -211,9 +213,12 @@ function resolveMaxAttempts() {
  * @param {number} [options.timeout]
  */
 async function generateContent(body, options = {}) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw createNormalizedError('AI_NOT_CONFIGURED', 'GEMINI_API_KEY is not set');
+  const apiKeys = keyPool.getGeminiApiKeys();
+  if (apiKeys.length === 0) {
+    throw createNormalizedError(
+      'AI_NOT_CONFIGURED',
+      'GEMINI_API_KEY (o GEMINI_API_KEYS) non configurata'
+    );
   }
 
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -222,26 +227,59 @@ async function generateContent(body, options = {}) {
       ? options.timeout
       : 90000;
   const maxAttempts = resolveMaxAttempts();
+  const keyOrder = keyPool.buildKeyTryOrder(apiKeys.length);
+
+  if (keyOrder.length === 0) {
+    throw createNormalizedError(
+      'AI_QUOTA_EXHAUSTED',
+      'Tutte le chiavi Gemini configurate risultano esaurite (quota). Aggiungere GEMINI_API_KEYS o riavviare il backend dopo reset quota.'
+    );
+  }
 
   let lastErr;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    try {
-      return await chatOnce(model, apiKey, body, timeout);
-    } catch (err) {
-      lastErr = err;
-      const isLast = attempt === maxAttempts - 1;
-      const isRetryable =
-        err && err.code === 'AI_UPSTREAM_ERROR' && RETRYABLE_STATUSES.has(err.status);
-      if (isLast || !isRetryable) {
-        throw err;
+  for (const keyIndex of keyOrder) {
+    const apiKey = apiKeys[keyIndex];
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const result = await chatOnce(model, apiKey, body, timeout);
+        keyPool.setPreferredKeyIndex(keyIndex);
+        return result;
+      } catch (err) {
+        lastErr = err;
+
+        if (keyPool.isQuotaExhaustedError(err)) {
+          keyPool.markKeyExhausted(keyIndex);
+          break;
+        }
+
+        const isLast = attempt === maxAttempts - 1;
+        const isRetryable =
+          err && err.code === 'AI_UPSTREAM_ERROR' && RETRYABLE_STATUSES.has(err.status);
+        if (isLast || !isRetryable) {
+          break;
+        }
+        const waitMs =
+          err.retryAfterMs != null ? err.retryAfterMs : computeBackoffMs(attempt);
+        await sleep(waitMs);
       }
-      const waitMs = err.retryAfterMs != null
-        ? err.retryAfterMs
-        : computeBackoffMs(attempt);
-      await sleep(waitMs);
     }
   }
-  throw lastErr;
+
+  if (keyPool.buildKeyTryOrder(apiKeys.length).length === 0) {
+    throw createNormalizedError(
+      'AI_QUOTA_EXHAUSTED',
+      'Tutte le chiavi Gemini configurate risultano esaurite (quota). Aggiungere GEMINI_API_KEYS, configurare ANTHROPIC_API_KEY, o riavviare il backend dopo reset quota.'
+    );
+  }
+
+  throw (
+    lastErr ||
+    createNormalizedError(
+      'AI_UPSTREAM_ERROR',
+      'Nessuna chiave Gemini disponibile per completare la richiesta'
+    )
+  );
 }
 
 function buildGenerationConfig(options = {}) {
@@ -307,88 +345,147 @@ async function generateVision({ systemText, userText, files } = {}, options = {}
  * @param {string[]} texts - Max 100 per call (API limit)
  * @returns {Promise<number[][]>} Array of float vectors (3072-dim for gemini-embedding-001)
  */
+async function embedBatchOnce(apiKey, embedModel, batch, timeoutMs) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(embedModel)}:batchEmbedContents?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    requests: batch.map((t) => ({
+      model: `models/${embedModel}`,
+      content: { parts: [{ text: t }] },
+    })),
+  };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e && e.name === 'AbortError') {
+      throw createNormalizedError(
+        'AI_REQUEST_FAILED',
+        `Gemini embedding timed out after ${timeoutMs}ms`
+      );
+    }
+    throw createNormalizedError(
+      'AI_REQUEST_FAILED',
+      `Gemini embedding network error: ${e.message || 'unknown'}`
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw createNormalizedError(
+      'AI_UPSTREAM_ERROR',
+      'Gemini embedding response is not valid JSON',
+      response.status
+    );
+  }
+
+  if (!response.ok) {
+    const msg =
+      (data && data.error && data.error.message) ||
+      `Gemini embedding HTTP ${response.status}`;
+    const err = createNormalizedError('AI_UPSTREAM_ERROR', msg, response.status);
+    err.retryAfterMs = getRetryAfterMs(response);
+    throw err;
+  }
+
+  if (!data.embeddings || !Array.isArray(data.embeddings)) {
+    throw createNormalizedError(
+      'AI_UPSTREAM_ERROR',
+      'Gemini embedding response missing embeddings array'
+    );
+  }
+
+  return data.embeddings.map((emb) => emb.values);
+}
+
 async function embed(texts) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw createNormalizedError('AI_NOT_CONFIGURED', 'GEMINI_API_KEY is not set');
+  const apiKeys = keyPool.getGeminiApiKeys();
+  if (apiKeys.length === 0) {
+    throw createNormalizedError(
+      'AI_NOT_CONFIGURED',
+      'GEMINI_API_KEY (o GEMINI_API_KEYS) non configurata'
+    );
   }
   if (!texts || texts.length === 0) return [];
 
   const embedModel = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001';
   const BATCH_LIMIT = 100;
   const timeoutMs = embedTimeoutMs();
-  // Cap ai retry su 429 per singolo batch: oltre questa soglia si fallisce in
-  // modo pulito (il chiamante, knowledgeIndexer, degrada saltando i chunk)
-  // invece di restare in un retry-loop potenzialmente infinito.
   const MAX_RATE_LIMIT_RETRIES = 2;
   const allEmbeddings = [];
-  let rateLimitRetries = 0;
 
   for (let i = 0; i < texts.length; i += BATCH_LIMIT) {
     const batch = texts.slice(i, i + BATCH_LIMIT);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(embedModel)}:batchEmbedContents?key=${encodeURIComponent(apiKey)}`;
-    const body = {
-      requests: batch.map(t => ({
-        model: `models/${embedModel}`,
-        content: { parts: [{ text: t }] },
-      })),
-    };
-
-    // Timeout difensivo: aborta la richiesta se il provider non risponde entro timeoutMs.
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } catch (e) {
-      if (e && e.name === 'AbortError') {
-        throw createNormalizedError(
-          'AI_REQUEST_FAILED',
-          `Gemini embedding timed out after ${timeoutMs}ms`
-        );
-      }
+    const keyOrder = keyPool.buildKeyTryOrder(apiKeys.length);
+    if (keyOrder.length === 0) {
       throw createNormalizedError(
-        'AI_REQUEST_FAILED',
-        `Gemini embedding network error: ${e.message || 'unknown'}`
+        'AI_UPSTREAM_ERROR',
+        'Tutte le chiavi Gemini configurate risultano esaurite (quota embedding).'
       );
-    } finally {
-      clearTimeout(timer);
     }
 
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      throw createNormalizedError('AI_UPSTREAM_ERROR', 'Gemini embedding response is not valid JSON', response.status);
-    }
+    let batchDone = false;
+    let lastErr;
 
-    if (!response.ok) {
-      if (response.status === 429 && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
-        rateLimitRetries += 1;
-        const headerVal = response.headers && typeof response.headers.get === 'function'
-          ? response.headers.get('retry-after')
-          : null;
-        const retryAfter = parseInt(headerVal || '5', 10);
-        await sleep(Math.min(Number.isFinite(retryAfter) ? retryAfter : 5, 30) * 1000);
-        i -= BATCH_LIMIT; // retry this batch
-        continue;
+    for (const keyIndex of keyOrder) {
+      const apiKey = apiKeys[keyIndex];
+      let rateLimitRetries = 0;
+
+      while (rateLimitRetries <= MAX_RATE_LIMIT_RETRIES) {
+        try {
+          const vectors = await embedBatchOnce(apiKey, embedModel, batch, timeoutMs);
+          allEmbeddings.push(...vectors);
+          keyPool.setPreferredKeyIndex(keyIndex);
+          batchDone = true;
+          break;
+        } catch (err) {
+          lastErr = err;
+
+          if (keyPool.isQuotaExhaustedError(err)) {
+            keyPool.markKeyExhausted(keyIndex);
+            break;
+          }
+
+          const isRateLimit =
+            err &&
+            err.code === 'AI_UPSTREAM_ERROR' &&
+            err.status === 429 &&
+            !keyPool.isQuotaExhaustedError(err);
+
+          if (isRateLimit && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
+            rateLimitRetries += 1;
+            const waitMs =
+              err.retryAfterMs != null ? err.retryAfterMs : 5000;
+            await sleep(Math.min(waitMs, 30000));
+            continue;
+          }
+
+          break;
+        }
       }
-      const msg = (data && data.error && data.error.message) || `Gemini embedding HTTP ${response.status}`;
-      throw createNormalizedError('AI_UPSTREAM_ERROR', msg, response.status);
-    }
-    rateLimitRetries = 0; // batch riuscito: azzera il contatore retry
 
-    if (!data.embeddings || !Array.isArray(data.embeddings)) {
-      throw createNormalizedError('AI_UPSTREAM_ERROR', 'Gemini embedding response missing embeddings array');
+      if (batchDone) break;
     }
 
-    for (const emb of data.embeddings) {
-      allEmbeddings.push(emb.values);
+    if (!batchDone) {
+      throw (
+        lastErr ||
+        createNormalizedError(
+          'AI_UPSTREAM_ERROR',
+          'Nessuna chiave Gemini disponibile per completare l\u2019embedding'
+        )
+      );
     }
   }
 
@@ -402,5 +499,5 @@ module.exports = {
   generateContent,
   mapMessagesToGemini,
   // Esportati per i test (retry/backoff logic)
-  _internals: { computeBackoffMs, getRetryAfterMs, RETRYABLE_STATUSES },
+  _internals: { computeBackoffMs, getRetryAfterMs, RETRYABLE_STATUSES, keyPool },
 };
