@@ -116,7 +116,8 @@ export function buildNcTemplateData(nc, actions = [], attachments = []) {
         actionIndex: index + 1,
         typeLabel: NC_ACTION_TYPE_LABELS[action.action_type] || action.action_type || 'N/D',
         statusLabel: NC_ACTION_STATUS_LABELS[action.status] || action.status || 'N/D',
-        description: displayOrNd(action.description),
+        // Nome dedicato: evita conflitto con {description} della NC a livello root in docxtemplater
+        actionDescription: displayOrNd(action.description),
         responsible: displayOrNd(action.responsible),
         dueDate: formatDate(action.due_date),
         completedAt: formatDateTime(action.completed_at),
@@ -160,7 +161,7 @@ export function buildNcTemplateData(nc, actions = [], attachments = []) {
 const NC_IMAGE_MAX_W_EMU = 4572000;  // ~12 cm
 const NC_IMAGE_MAX_H_EMU = 5715000; // ~15 cm
 
-const IMAGE_MIME_SET = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/gif']);
+const IMAGE_MIME_SET = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']);
 
 function normMime(m) {
     return String(m || '').split(';')[0].trim().toLowerCase();
@@ -175,8 +176,8 @@ function blobToBase64(blob) {
     });
 }
 
-async function preloadNcAttachmentImages(attachments, getViewUrl) {
-    if (!getViewUrl) return;
+async function preloadNcAttachmentImages(attachments, fetchAttachmentBlob) {
+    if (typeof fetchAttachmentBlob !== 'function') return;
     await Promise.allSettled(
         attachments.map(async (att) => {
             const mime = normMime(att.mime_type);
@@ -184,11 +185,8 @@ async function preloadNcAttachmentImages(attachments, getViewUrl) {
             const id = att.attachment_id;
             if (!id) return;
             try {
-                const url = getViewUrl(id);
-                const resp = await fetch(url);
-                if (!resp.ok) return;
-                const blob = await resp.blob();
-                const realMime = normMime(blob.type || mime);
+                const { blob, mimeType } = await fetchAttachmentBlob(id, 'view');
+                const realMime = normMime(mimeType || blob?.type || mime);
                 if (!IMAGE_MIME_SET.has(realMime)) return;
                 att.imageBase64 = await normalizeImageDataUrlForWordEmbed(
                     await blobToBase64(blob), realMime,
@@ -199,6 +197,20 @@ async function preloadNcAttachmentImages(attachments, getViewUrl) {
             }
         }),
     );
+}
+
+function replaceNcAttachmentsMarker(xml, attachOoxml) {
+    if (!xml || typeof xml !== 'string') return xml;
+    const marker = 'NC_ATTACHMENTS_MARKER';
+    if (!xml.includes(marker)) return xml;
+
+    // Sostituisce solo il paragrafo che contiene il marker (evita regex che
+    // dal primo <w:p> al </w:p> del marker cancellerebbe tutto il documento).
+    const idx = xml.indexOf(marker);
+    const pStart = xml.lastIndexOf('<w:p', idx);
+    const pEnd = xml.indexOf('</w:p>', idx);
+    if (pStart === -1 || pEnd === -1) return xml;
+    return xml.slice(0, pStart) + attachOoxml + xml.slice(pEnd + 6);
 }
 
 function buildNcAttachmentsOoxml(attachments, getViewUrl, imageRegistry) {
@@ -272,6 +284,7 @@ export async function resolveNcTemplateUrl(apiService) {
 export async function generateNcDocxBlob(nc, actions = [], attachments = [], options = {}) {
     const templateUrl = options.templateUrl || NC_WORD_TEMPLATE_URL;
     const getViewUrl = options.getViewUrl || null;
+    const fetchAttachmentBlob = options.fetchAttachmentBlob || null;
     const arrayBuffer = await loadNcWordTemplate(templateUrl);
     const zip = new PizZip(arrayBuffer);
     const docPath = 'word/document.xml';
@@ -284,8 +297,8 @@ export async function generateNcDocxBlob(nc, actions = [], attachments = [], opt
     }
 
     const attList = attachments || [];
-    if (getViewUrl) {
-        await preloadNcAttachmentImages(attList, getViewUrl);
+    if (fetchAttachmentBlob) {
+        await preloadNcAttachmentImages(attList, fetchAttachmentBlob);
     }
 
     const doc = new Docxtemplater(zip, {
@@ -299,11 +312,10 @@ export async function generateNcDocxBlob(nc, actions = [], attachments = [], opt
     const outZip = doc.getZip();
     let xml = outZip.files[docPath]?.asText() || '';
 
-    const markerRe = /<w:p[^>]*>(?:<w:pPr>[\s\S]*?<\/w:pPr>)?<w:r[^>]*>(?:<w:rPr>[\s\S]*?<\/w:rPr>)?<w:t[^>]*>NC_ATTACHMENTS_MARKER<\/w:t><\/w:r><\/w:p>/;
-    if (markerRe.test(xml)) {
+    if (xml.includes('NC_ATTACHMENTS_MARKER')) {
         const imageRegistry = [];
         const attachOoxml = buildNcAttachmentsOoxml(attList, getViewUrl, imageRegistry);
-        xml = xml.replace(markerRe, attachOoxml);
+        xml = replaceNcAttachmentsMarker(xml, attachOoxml);
         outZip.file(docPath, xml);
         if (imageRegistry.length > 0) {
             embedImagesInZip(outZip, imageRegistry);
@@ -311,7 +323,7 @@ export async function generateNcDocxBlob(nc, actions = [], attachments = [], opt
     }
 
     return outZip.generate({
-        type: 'blob',
+        type: options.outputType || 'blob',
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     });
 }
@@ -331,10 +343,26 @@ export async function exportNcToWord(ncId, apiService) {
     if (!nc) throw new Error('Non conformità non trovata');
 
     const actions = actionsRes?.data || [];
-    const attachments = nc.attachments || [];
+    let attachments = nc.attachments || [];
+    if (attachments.length === 0 && typeof apiService.getAttachments === 'function') {
+        try {
+            const attRes = await apiService.getAttachments(null, ncId);
+            attachments = attRes?.data || [];
+        } catch {
+            // fallback silenzioso: usa solo nc.attachments
+        }
+    }
+
     const templateUrl = await resolveNcTemplateUrl(apiService);
     const getViewUrl = (id) => apiService.getAttachmentViewUrl(id);
-    const blob = await generateNcDocxBlob(nc, actions, attachments, { templateUrl, getViewUrl });
+    const fetchAttachmentBlob = typeof apiService.fetchAttachmentBlob === 'function'
+        ? (id, mode) => apiService.fetchAttachmentBlob(id, mode)
+        : null;
+    const blob = await generateNcDocxBlob(nc, actions, attachments, {
+        templateUrl,
+        getViewUrl,
+        fetchAttachmentBlob,
+    });
     const fileName = buildNcWordFileName(nc);
     saveAs(blob, fileName);
     return fileName;
