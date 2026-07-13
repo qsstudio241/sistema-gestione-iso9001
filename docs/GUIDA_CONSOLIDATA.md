@@ -234,6 +234,17 @@ Il modale "Assistente AI — Conclusioni" mostra ripetutamente l'errore "Servizi
 #### Regole consolidate
 - **Errori HTTP nei controller AI**: non usare 503 per errori runtime (Gemini down, timeout, quota). Usare **HTTP 500** con messaggio italiano leggibile. 503 solo per "provider non configurato".
 - **Retry server-side per provider AI**: tutti gli adapter (Gemini/Azure/OpenAI) devono assorbire gli errori transienti del provider prima di propagare al client. Codici retryable: **429, 500, 502, 503, 504**. Non retryable: 400 (richiesta invalida), `AI_REQUEST_FAILED` (rete locale), `AI_EMPTY_RESPONSE`.
+- **Failover chiavi Gemini (multi-abbonamento)**: se una chiave esaurisce quota/token (HTTP **429** con messaggio *quota/exhausted* o **403**), `geminiKeyPool.js` passa automaticamente alla successiva in `GEMINI_API_KEYS` (virgola/punto e virgola/newline). La chiave primaria resta `GEMINI_API_KEY`. Le chiavi segnate esaurite restano saltate fino al **restart** del servizio backend (reset in memoria). Configurazione VPS esempio:
+  ```env
+  GEMINI_API_KEY=AIza...account1
+  GEMINI_API_KEYS=AIza...account2,AIza...account3
+  GEMINI_MODEL=gemini-2.5-flash
+  ANTHROPIC_API_KEY=sk-ant-...account1
+  ANTHROPIC_API_KEYS=sk-ant-...account2
+  ANTHROPIC_MODEL=claude-3-5-haiku-20241022
+  AI_ANTHROPIC_FALLBACK=true
+  ```
+  Se **tutte** le chiavi Gemini sono esaurite e `ANTHROPIC_API_KEY` è presente, `aiProviderAdapter` passa automaticamente a Claude (chat/assistente AI). Gli **embedding** restano solo su Gemini. Dopo modifica `.env`: `systemctl restart sgq-backend.service` (+ `.env.test` se serve ambiente test).
 - **Diagnosi messaggio "non in repo"**: se un endpoint restituisce testo non grep-pabile nel repo backend, controllare `proxy_intercept_errors` + `error_page` in `/etc/nginx/sites-available/`.
 
 #### Tabelle AI
