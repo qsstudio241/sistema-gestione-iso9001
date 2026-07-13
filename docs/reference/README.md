@@ -10,4 +10,14 @@ Riferimenti tecnici da consultare durante sviluppo o debug (non procedure passo-
 | [DATABASE_MAPPING.md](DATABASE_MAPPING.md) | Mapping tabelle / legacy |
 | [LIBRERIA_UI_SGQ.md](LIBRERIA_UI_SGQ.md) | Catalogo componenti UI, duplicati, matrice moduli |
 
+### Cataloghi ingest saldatura (Livello A — ADR-017)
+
+| Guida | Catalogo JS | Campo |
+|-------|-------------|-------|
+| [ISO-TR-15608-gruppi-materiali.md](ISO-TR-15608-gruppi-materiali.md) | `materialGroups15608.js` | `material_group` |
+| [ISO-4063-processi-saldatura.md](ISO-4063-processi-saldatura.md) | `weldingProcesses4063.js` | `welding_process` |
+| [ISO-6947-posizioni-saldatura.md](ISO-6947-posizioni-saldatura.md) | `weldingPositions6947.js` | `welding_positions` |
+
+Piano slice: [PLAN_INGEST_REFERENCE_CATALOGS.md](../agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md).
+
 Deploy: [how-to/deploy.md](../how-to/deploy.md). Esperienza operativa: [GUIDA_CONSOLIDATA.md](../GUIDA_CONSOLIDATA.md).
