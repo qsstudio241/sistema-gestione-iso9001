@@ -112,7 +112,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
                         content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${Object.keys(schema?.aiExpectedSchema || {}).join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
-                { temperature: 0.1, responseFormat: 'json', maxTokens: 1200 }
+                { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }
             );
             const parsed = parseJsonWithRepair(retry.content || '');
             const fields = parsed.type_specific_data && typeof parsed.type_specific_data === 'object'

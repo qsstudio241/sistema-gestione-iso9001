@@ -181,6 +181,7 @@ function rowCase(row) {
     title: row.title,
     status: row.status,
     company_id: row.company_id ?? row.companyId,
+    commercial_customer_id: row.commercial_customer_id ?? row.commercialCustomerId ?? null,
     commercial_customer_name:
       row.commercial_customer_name ?? row.commercialCustomerName ?? null,
     commercial_customer_ref:
@@ -198,6 +199,14 @@ function rowCase(row) {
 function companyLabel(companyId, companiesById) {
   if (companyId == null) return null;
   return companiesById.get(companyId) || `#${companyId}`;
+}
+
+/** Ruoli controparte ammessi come committente commerciale nel riesame §8.2 */
+const COMMITTENTE_COUNTERPARTY_ROLES = new Set(['customer', 'end_customer']);
+
+function filterCommittenteCounterparties(rawList) {
+  const list = Array.isArray(rawList) ? rawList : [];
+  return list.filter((cp) => COMMITTENTE_COUNTERPARTY_ROLES.has(cp.role));
 }
 
 function rowCheck(row) {
@@ -316,16 +325,22 @@ export default function ContractReviewPage() {
   const [createForm, setCreateForm] = useState({
     title: '',
     company_id: '',
+    commercial_customer_id: '',
     commercial_customer_name: '',
     commercial_customer_ref: '',
     external_ref: '',
   });
+  const [createCounterparties, setCreateCounterparties] = useState([]);
+  const [createCounterpartiesLoading, setCreateCounterpartiesLoading] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editCompanyId, setEditCompanyId] = useState('');
+  const [editCommercialCustomerId, setEditCommercialCustomerId] = useState('');
   const [editCommercialCustomerName, setEditCommercialCustomerName] = useState('');
   const [editCommercialCustomerRef, setEditCommercialCustomerRef] = useState('');
+  const [editCounterparties, setEditCounterparties] = useState([]);
+  const [editCounterpartiesLoading, setEditCounterpartiesLoading] = useState(false);
   const [savingCase, setSavingCase] = useState(false);
 
   const [transitionModal, setTransitionModal] = useState(null);
@@ -423,11 +438,12 @@ export default function ContractReviewPage() {
       });
       // Idrata l'analisi capitolato persistita (slice #2): al riapri il risultato è ancora lì.
       if (data.text_analysis?.suggestion) {
-        setServerAiResult(data.text_analysis.suggestion);
+        setAiSuggestion(data.text_analysis.suggestion);
       }
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
       setEditCompanyId(c.company_id != null ? String(c.company_id) : '');
+      setEditCommercialCustomerId(c.commercial_customer_id != null ? String(c.commercial_customer_id) : '');
       setEditCommercialCustomerName(c.commercial_customer_name || '');
       setEditCommercialCustomerRef(c.commercial_customer_ref || '');
       setHandoffRef(c.handoff_ref || '');
@@ -495,6 +511,38 @@ export default function ContractReviewPage() {
     }
   }, [caseId]);
 
+  // Carica controparti (cliente diretto + committente finale) per il form di modifica caso
+  useEffect(() => {
+    if (!editCompanyId) {
+      setEditCounterparties([]);
+      return;
+    }
+    setEditCounterpartiesLoading(true);
+    apiService.getCompanyCounterparties(editCompanyId, { is_active: 'true' })
+      .then((res) => {
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
+        setEditCounterparties(list);
+      })
+      .catch(() => setEditCounterparties([]))
+      .finally(() => setEditCounterpartiesLoading(false));
+  }, [editCompanyId]);
+
+  // Carica controparti per il form di creazione, solo quando il modale è aperto
+  useEffect(() => {
+    if (!createOpen || !createForm.company_id) {
+      setCreateCounterparties([]);
+      return;
+    }
+    setCreateCounterpartiesLoading(true);
+    apiService.getCompanyCounterparties(createForm.company_id, { is_active: 'true' })
+      .then((res) => {
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
+        setCreateCounterparties(list);
+      })
+      .catch(() => setCreateCounterparties([]))
+      .finally(() => setCreateCounterpartiesLoading(false));
+  }, [createOpen, createForm.company_id]);
+
   // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
   // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
   useEffect(() => {
@@ -536,13 +584,19 @@ export default function ContractReviewPage() {
     setSavingCase(true);
     setError(null);
     try {
-      await apiService.updateContractReview(caseId, {
+      const updateBody = {
         title: editTitle.trim(),
         notes: editNotes,
         company_id: editCompanyId ? parseInt(editCompanyId, 10) : null,
-        commercial_customer_name: editCommercialCustomerName.trim() || null,
-        commercial_customer_ref: editCommercialCustomerRef.trim() || null,
-      });
+      };
+      if (editCommercialCustomerId) {
+        updateBody.commercial_customer_id = parseInt(editCommercialCustomerId, 10);
+      } else {
+        updateBody.commercial_customer_id = null;
+        updateBody.commercial_customer_name = editCommercialCustomerName.trim() || null;
+        updateBody.commercial_customer_ref = editCommercialCustomerRef.trim() || null;
+      }
+      await apiService.updateContractReview(caseId, updateBody);
       await loadDetail(caseId);
       await loadList();
     } catch (err) {
@@ -563,11 +617,15 @@ export default function ContractReviewPage() {
       if (createForm.company_id) {
         body.company_id = parseInt(createForm.company_id, 10);
       }
-      if (createForm.commercial_customer_name.trim()) {
-        body.commercial_customer_name = createForm.commercial_customer_name.trim();
-      }
-      if (createForm.commercial_customer_ref.trim()) {
-        body.commercial_customer_ref = createForm.commercial_customer_ref.trim();
+      if (createForm.commercial_customer_id) {
+        body.commercial_customer_id = parseInt(createForm.commercial_customer_id, 10);
+      } else {
+        if (createForm.commercial_customer_name.trim()) {
+          body.commercial_customer_name = createForm.commercial_customer_name.trim();
+        }
+        if (createForm.commercial_customer_ref.trim()) {
+          body.commercial_customer_ref = createForm.commercial_customer_ref.trim();
+        }
       }
       const created = await apiService.createContractReview(body);
       const id = created?.id;
@@ -575,6 +633,7 @@ export default function ContractReviewPage() {
       setCreateForm({
         title: '',
         company_id: '',
+        commercial_customer_id: '',
         commercial_customer_name: '',
         commercial_customer_ref: '',
         external_ref: '',
@@ -1111,7 +1170,18 @@ export default function ContractReviewPage() {
                         <td>
                           {companyLabel(c.company_id, companiesById) || '-'}
                         </td>
-                        <td>{c.commercial_customer_name || '-'}</td>
+                        <td>
+                          {c.commercial_customer_name
+                            ? (
+                              <>
+                                {c.commercial_customer_name}
+                                {!c.commercial_customer_id && (
+                                  <span className="cr-badge cr-badge-draft" style={{ marginLeft: 5, fontSize: '0.7rem' }} title="Committente salvato come testo — collega una controparte per maggiore precisione">legacy</span>
+                                )}
+                              </>
+                            )
+                            : '-'}
+                        </td>
                         <td>
                           {c.updated_at
                             ? new Date(c.updated_at).toLocaleString('it-IT')
@@ -1152,7 +1222,17 @@ export default function ContractReviewPage() {
                     Capacità:{' '}
                     {companyLabel(detail.case.company_id, companiesById) || '-'}
                     {' · '}
-                    Committente: {detail.case.commercial_customer_name || '-'}
+                    Committente:{' '}
+                    {detail.case.commercial_customer_name
+                      ? (
+                        <>
+                          {detail.case.commercial_customer_name}
+                          {!detail.case.commercial_customer_id && (
+                            <span className="cr-badge cr-badge-draft" style={{ marginLeft: 4, fontSize: '0.7rem' }} title="Committente salvato come testo — collega una controparte per maggiore precisione">legacy</span>
+                          )}
+                        </>
+                      )
+                      : '-'}
                     {detail.case.commercial_customer_ref ? (
                       <> (rif. {detail.case.commercial_customer_ref})</>
                     ) : null}
@@ -1219,24 +1299,67 @@ export default function ContractReviewPage() {
                   </select>
                 </div>
                 <div className="cr-form-row">
-                  <label htmlFor="cr-edit-comm-name">Committente commerciale</label>
-                  <input
-                    id="cr-edit-comm-name"
-                    value={editCommercialCustomerName}
-                    onChange={(e) => setEditCommercialCustomerName(e.target.value)}
-                    placeholder="es. PT.MAIDO"
-                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
-                  />
-                </div>
-                <div className="cr-form-row">
-                  <label htmlFor="cr-edit-comm-ref">Rif. committente</label>
-                  <input
-                    id="cr-edit-comm-ref"
-                    value={editCommercialCustomerRef}
-                    onChange={(e) => setEditCommercialCustomerRef(e.target.value)}
-                    placeholder="Codice cliente / ordine"
-                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
-                  />
+                  <label htmlFor="cr-edit-comm-select">Committente commerciale</label>
+                  {editCounterpartiesLoading ? (
+                    <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento controparti…</span>
+                  ) : editCounterparties.length > 0 ? (
+                    <select
+                      id="cr-edit-comm-select"
+                      value={editCommercialCustomerId}
+                      onChange={(e) => {
+                        setEditCommercialCustomerId(e.target.value);
+                        if (e.target.value) {
+                          const cp = editCounterparties.find((c) => String(c.id) === e.target.value);
+                          if (cp) {
+                            setEditCommercialCustomerName(cp.name || '');
+                            setEditCommercialCustomerRef(cp.external_ref || '');
+                          }
+                        }
+                      }}
+                      disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                    >
+                      <option value="">— Altro (testo libero) —</option>
+                      {editCounterparties.map((cp) => (
+                        <option key={cp.id} value={String(cp.id)}>
+                          {cp.name}{cp.external_ref ? ` (${cp.external_ref})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  {!editCommercialCustomerId && (
+                    <>
+                      <input
+                        id="cr-edit-comm-name"
+                        value={editCommercialCustomerName}
+                        onChange={(e) => setEditCommercialCustomerName(e.target.value)}
+                        placeholder="es. PT.MAIDO"
+                        disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        style={editCounterparties.length > 0 ? { marginTop: 6 } : undefined}
+                      />
+                      <div className="cr-form-row" style={{ marginTop: 6 }}>
+                        <label htmlFor="cr-edit-comm-ref" style={{ fontSize: '0.85rem' }}>Rif. committente</label>
+                        <input
+                          id="cr-edit-comm-ref"
+                          value={editCommercialCustomerRef}
+                          onChange={(e) => setEditCommercialCustomerRef(e.target.value)}
+                          placeholder="Codice cliente / ordine"
+                          disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {editCommercialCustomerId && (
+                    <div className="cr-form-row" style={{ marginTop: 4 }}>
+                      <label htmlFor="cr-edit-comm-ref" style={{ fontSize: '0.85rem' }}>Rif. committente</label>
+                      <input
+                        id="cr-edit-comm-ref"
+                        value={editCommercialCustomerRef}
+                        readOnly
+                        disabled
+                        style={{ color: '#6b7280' }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="cr-form-row">
                   <label htmlFor="cr-edit-notes">Note</label>
@@ -1867,14 +1990,51 @@ export default function ContractReviewPage() {
               </div>
               <div className="cr-form-row">
                 <label htmlFor="cr-new-comm">Committente commerciale</label>
-                <input
-                  id="cr-new-comm"
-                  value={createForm.commercial_customer_name}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, commercial_customer_name: e.target.value }))
-                  }
-                  placeholder="es. PT.MAIDO"
-                />
+                {createCounterpartiesLoading ? (
+                  <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento controparti…</span>
+                ) : createCounterparties.length > 0 ? (
+                  <select
+                    id="cr-new-comm-select"
+                    value={createForm.commercial_customer_id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const cp = createCounterparties.find((c) => String(c.id) === val);
+                        setCreateForm((f) => ({
+                          ...f,
+                          commercial_customer_id: val,
+                          commercial_customer_name: cp?.name || '',
+                          commercial_customer_ref: cp?.external_ref || '',
+                        }));
+                      } else {
+                        setCreateForm((f) => ({
+                          ...f,
+                          commercial_customer_id: '',
+                          commercial_customer_name: '',
+                          commercial_customer_ref: '',
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">— Altro (testo libero) —</option>
+                    {createCounterparties.map((cp) => (
+                      <option key={cp.id} value={String(cp.id)}>
+                        {cp.name}{cp.external_ref ? ` (${cp.external_ref})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {!createForm.commercial_customer_id && (
+                  <input
+                    id="cr-new-comm"
+                    value={createForm.commercial_customer_name}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, commercial_customer_name: e.target.value }))
+                    }
+                    placeholder="es. PT.MAIDO"
+                    style={createCounterparties.length > 0 ? { marginTop: 6 } : undefined}
+                  />
+                )}
               </div>
               <div className="cr-form-row">
                 <label htmlFor="cr-new-comm-ref">Rif. committente</label>
@@ -1885,6 +2045,9 @@ export default function ContractReviewPage() {
                     setCreateForm((f) => ({ ...f, commercial_customer_ref: e.target.value }))
                   }
                   placeholder="Codice cliente / ordine"
+                  readOnly={!!createForm.commercial_customer_id}
+                  disabled={!!createForm.commercial_customer_id}
+                  style={createForm.commercial_customer_id ? { color: '#6b7280' } : undefined}
                 />
               </div>
               <div className="cr-form-row">

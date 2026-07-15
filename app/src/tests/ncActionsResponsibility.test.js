@@ -26,11 +26,25 @@ describe('ncWorkflow', () => {
   });
 
   describe('canTransitionNcStatus', () => {
-    const ncWithNotes = { verification_notes: 'Verifica OK' };
+    const ncWithNotes = { verification_notes: 'Verifica OK', correction_completed_count: 1 };
     const ncEmpty = { verification_notes: '' };
+    const ncWithCorrection = { verification_notes: '', correction_completed_count: 1 };
+    const ncNoCorrection = { verification_notes: '', correction_completed_count: 0 };
 
-    it('consente transizione resolved senza note', () => {
-      expect(canTransitionNcStatus(ncEmpty, 'resolved').ok).toBe(true);
+    it('blocca resolved senza correzione completata', () => {
+      const result = canTransitionNcStatus(ncNoCorrection, 'resolved');
+      expect(result.ok).toBe(false);
+      expect(result.message).toMatch(/Correzione/i);
+    });
+
+    it('blocca resolved quando correction_completed_count mancante (legacy)', () => {
+      const result = canTransitionNcStatus(ncEmpty, 'resolved');
+      expect(result.ok).toBe(false);
+      expect(result.message).toMatch(/Correzione/i);
+    });
+
+    it('consente resolved con almeno una correzione completata', () => {
+      expect(canTransitionNcStatus(ncWithCorrection, 'resolved').ok).toBe(true);
     });
 
     it('blocca verified senza note verifica', () => {

@@ -25,7 +25,9 @@
                        "name":  "data",
                        "files":  [
                                      "src/data/documentTypeSchemas.js",
-                                     "src/data/materialGroups15608.js"
+                                     "src/data/materialGroups15608.js",
+                                     "src/data/weldingProcesses4063.js",
+                                     "src/data/weldingPositions6947.js"
                                  ]
                    },
                    {
@@ -106,6 +108,9 @@
                                      "src/services/normValidityChecker.service.js",
                                      "src/services/importAiExtraction.service.js",
                                      "src/services/adapters/geminiAdapter.js",
+                                     "src/services/adapters/geminiKeyPool.js",
+                                     "src/services/adapters/anthropicAdapter.js",
+                                     "src/services/adapters/anthropicKeyPool.js",
                                      "src/services/aiProviderAdapter.js",
                                      "src/services/aiContextBuilder.service.js",
                                      "src/services/commercialCustomerCounterparty.service.js",
