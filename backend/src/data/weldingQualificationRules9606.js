@@ -38,6 +38,39 @@ function computeQualifiedFilletThicknessRange({ testThicknessMm } = {}) {
     return { minMm: t, maxMm: Math.max(t * 2, 3) };
 }
 
+/**
+ * Nota aggiuntiva diametro tubo per provini SOLO piastra (nessun tubo testato), saldati
+ * in posizione con rotazione del pezzo (es. PA/PB/PC/PD "in posizione rotante").
+ *
+ * ATTENZIONE — fonte non verificata in questo catalogo: la Tabella 7 completa (incl. note
+ * su piastra/posizione rotante) e' risultata GAP nell'estrazione automatica del PDF (vedi
+ * docs/reference/ISO-9606-1-range-validita-patentino.md). Questa regola e' stata comunicata
+ * come feedback operativo dal cliente reale Studio Mason (16/07/2026, riscontro su patentini
+ * saldatori in campo) e NON da verifica diretta del testo normativo integrale. Va trattata
+ * come proposta da confermare, non come dato normativo certo — non usarla per popolare
+ * automaticamente record del registro senza revisione umana.
+ *
+ * @param {{ hasPipeDiameter?: boolean, weldingPositions?: string[]|string|null, rotatingPosition?: boolean }} params
+ * @returns {string|null}
+ */
+function describePlateOnlyRotatingPositionDiameterNote({
+    hasPipeDiameter = false,
+    weldingPositions = null,
+    rotatingPosition = false,
+} = {}) {
+    if (hasPipeDiameter) return null;
+
+    const positions = Array.isArray(weldingPositions)
+        ? weldingPositions
+        : String(weldingPositions || '').split(/[,;/\s]+/).filter(Boolean);
+    const hasRelevantPosition = positions.some((p) => ['PA', 'PB', 'PC', 'PD'].includes(String(p).toUpperCase()));
+    if (!hasRelevantPosition) return null;
+
+    return rotatingPosition
+        ? 'Diametro tubo coperto: \u226575 mm (posizione di prova rotante su piastra — nota non verificata su copia integrale norma, da confermare; fonte: feedback cliente Studio Mason)'
+        : 'Diametro tubo coperto: \u2265500 mm (saldatura su piastra, posizioni PA/PB/PC/PD — nota non verificata su copia integrale norma, da confermare; fonte: feedback cliente Studio Mason)';
+}
+
 function buildWelderQualificationRulesPromptSection() {
     return `
 --- REGOLE QUALIFICA SALDATORE ISO 9606-1 ---
@@ -52,5 +85,6 @@ module.exports = {
     CONFIRMATION_INTERVAL_MONTHS,
     computeQualifiedPipeDiameterRange,
     computeQualifiedFilletThicknessRange,
+    describePlateOnlyRotatingPositionDiameterNote,
     buildWelderQualificationRulesPromptSection,
 };

@@ -3,6 +3,7 @@ import {
   CONFIRMATION_INTERVAL_MONTHS,
   computeQualifiedPipeDiameterRange,
   computeQualifiedFilletThicknessRange,
+  describePlateOnlyRotatingPositionDiameterNote,
   buildWelderQualificationRulesPromptSection,
 } from '../data/weldingQualificationRules9606.js';
 
@@ -53,5 +54,40 @@ describe('weldingQualificationRules9606', () => {
     expect(section).toContain('ISO 9606-1');
     expect(section).toContain('6 mesi');
     expect(section).toContain('135');
+  });
+
+  describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, da confermare)', () => {
+    it('nessuna nota se il tubo e\u2019 stato testato direttamente', () => {
+      expect(describePlateOnlyRotatingPositionDiameterNote({
+        hasPipeDiameter: true,
+        weldingPositions: ['PA'],
+      })).toBeNull();
+    });
+
+    it('nessuna nota se le posizioni non includono PA/PB/PC/PD', () => {
+      expect(describePlateOnlyRotatingPositionDiameterNote({
+        hasPipeDiameter: false,
+        weldingPositions: ['PF', 'PG'],
+      })).toBeNull();
+    });
+
+    it('\u2265500 mm per piastra in posizione PA/PB/PC/PD non rotante', () => {
+      const note = describePlateOnlyRotatingPositionDiameterNote({
+        hasPipeDiameter: false,
+        weldingPositions: ['PA'],
+        rotatingPosition: false,
+      });
+      expect(note).toContain('\u2265500 mm');
+      expect(note).toContain('da confermare');
+    });
+
+    it('\u226575 mm quando la posizione di prova e\u2019 rotante', () => {
+      const note = describePlateOnlyRotatingPositionDiameterNote({
+        hasPipeDiameter: false,
+        weldingPositions: 'PC, PD',
+        rotatingPosition: true,
+      });
+      expect(note).toContain('\u226575 mm');
+    });
   });
 });

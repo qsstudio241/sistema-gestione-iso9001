@@ -112,6 +112,23 @@ Allineare schema AI ai campi `wpqr_records`.
 
 ---
 
+## Feedback cliente reale — Studio Mason (16/07/2026)
+
+Primo utilizzo in campo del modulo patentini saldatori (upload batch WQ). 6 punti di feedback, tutti risolti o proposti su branch `fix/feedback-studio-mason-patentini` (PR successiva a #249):
+
+| # | Punto cliente | Stato | Fix |
+|---|----------------|-------|-----|
+| 1 | ODC mancanti (TEC Eurolab, Sidercert) | ✅ Risolto | Aggiunti a `issuing_body` select + prompt AI (`documentTypeSchemas.js` app+backend) |
+| 2 | Patentini reali riportano il gruppo padre (1, 8…), non solo il sottogruppo (1.2, 8.1) | ✅ Risolto | `materialGroups15608.js` (app+backend): aggiunte le opzioni di gruppo padre come selezionabili accanto ai sottogruppi (`PARENT_GROUP_ENTRIES`), senza rimuovere questi ultimi |
+| 3 | Serve il simbolo ≥ per spessori/diametri senza limite superiore + precisione decimale | ✅ Risolto | `weldingDesignation.js` (app+backend) e `deriveRangeString` (`importJobs.controller.js`, `qualifications.controller.js`) mostrano "≥Xmm" quando è noto solo il minimo; il campo numerico UI accetta già decimali (`step="any"`) |
+| 4 | Label "Data scadenza (2 anni da Esame)" errata per 9606-1 (3 anni, non 2) | ✅ Risolto | Label generica "Data di scadenza" in `documentTypeSchemas.js`, dettaglio norma spostato nell'hint |
+| 5 | Auto-testo validità diametro per piastre in posizione rotante (≥500mm / ≥75mm) | 🟡 Proposta (non auto-fill DB) | Funzione advisory `describePlateOnlyRotatingPositionDiameterNote` in `weldingQualificationRules9606.js` (app+backend) + nota in `ISO-9606-1-range-validita-patentino.md` marcata **NON verificata su copia integrale norma, fonte: feedback cliente** — non si inseriscono valori numerici non confermati direttamente in automatico nel DB |
+| 6 | "Errore Sconosciuto" su upload singola WQ | ✅ Rinforzato (non riproducibile senza il file originale) | Nuova utility `backend/src/utils/ingestErrorMessage.js` (`describeIngestFileError`) applicata a tutti i catch dei batch upload (qualifiche, WPQR, WPS, norme) + logging con stack trace in `documentIngestPipeline.service.js` |
+
+**Lezione**: il feedback di un cliente reale in produzione è la fonte di verità più affidabile per i GAP normativi non ancora coperti (punto 2 sembrava in contraddizione con la regola scritta a mano in RC-0, ma il cliente ha ragione: ISO 9606-1 qualifica per gruppo intero, non per sottogruppo — la regola RC-0 valeva solo per il caso "sottogruppo noto e specifico", non doveva escludere il gruppo padre). **Azione futura**: quando si documenta una regola normativa in `docs/reference/*.md` dedotta solo da analisi di codice/norma senza controfirma di un caso reale, marcarla esplicitamente come "da confermare su campione reale" per evitare di bloccare opzioni valide nel form.
+
+---
+
 ## File sorgente utili (Patrimonio / upload)
 
 | File | Uso slice |

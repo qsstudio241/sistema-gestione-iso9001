@@ -108,12 +108,43 @@ const FAMILY_LABELS_IT = {
   cast_iron: 'Ghisa',
 };
 
-/** Codici ordinati per match lungo prima (10.3 prima di 10). */
-const SORTED_CODES = [...ISO_TR_15608_GROUPS]
+/**
+ * Gruppi PADRE sintetici (es. "1", "8", "22") derivati dai sottogruppi con `parent`.
+ *
+ * Motivazione (feedback cliente Studio Mason, 16/07/2026): i patentini saldatori reali
+ * riportano spesso il gruppo padre (es. "1", "8") e NON il sottogruppo (es. "1.2", "8.1"),
+ * perché una qualifica ISO 9606-1 su un sottogruppo coverte tipicamente l'intero gruppo
+ * padre. Questi gruppi padre vengono aggiunti come opzioni selezionabili IN AGGIUNTA ai
+ * sottogruppi (non li sostituiscono): chi conosce il sottogruppo esatto può ancora
+ * selezionarlo per maggiore precisione.
+ *
+ * @type {Array<{ code: string, family: MaterialFamily, labelIt: string, labelEn: string, isParentGroup: true, childCodes: string[] }>}
+ */
+const PARENT_GROUP_ENTRIES = (() => {
+  const byParent = new Map();
+  for (const g of ISO_TR_15608_GROUPS) {
+    if (!g.parent) continue;
+    if (!byParent.has(g.parent)) byParent.set(g.parent, { family: g.family, children: [] });
+    byParent.get(g.parent).children.push(g.code);
+  }
+  return [...byParent.entries()].map(([code, { family, children }]) => ({
+    code,
+    family,
+    labelIt: `${FAMILY_LABELS_IT[family]} — gruppo ${code} (comprende sottogruppi ${children.join(', ')})`,
+    labelEn: `Group ${code} (covers subgroups ${children.join(', ')})`,
+    isParentGroup: true,
+    childCodes: children,
+  }));
+})();
+
+/** Codici ordinati per match lungo prima (10.3 prima di 10, 11 prima di 1). */
+const SORTED_CODES = [...ISO_TR_15608_GROUPS, ...PARENT_GROUP_ENTRIES]
   .map((g) => g.code)
   .sort((a, b) => b.length - a.length || b.localeCompare(a));
 
-const CODE_MAP = new Map(ISO_TR_15608_GROUPS.map((g) => [g.code, g]));
+const CODE_MAP = new Map(
+  [...ISO_TR_15608_GROUPS, ...PARENT_GROUP_ENTRIES].map((g) => [g.code, g]),
+);
 
 /** Euristica designazioni commerciali → gruppo ISO/TR 15608 (acciai comuni). */
 const STEEL_DESIGNATION_HINTS = [
@@ -176,18 +207,31 @@ function inferMaterialGroupFromText(text) {
 
 /**
  * Opzioni select { value, label } per UI.
- * @param {{ families?: MaterialFamily[], includeAltro?: boolean }} [opts]
+ *
+ * Per ogni gruppo con sottogruppi (es. 1, 8, 22...) viene inserita anche l'opzione del
+ * gruppo padre, immediatamente prima dei suoi sottogruppi (vedi PARENT_GROUP_ENTRIES) —
+ * i patentini saldatori spesso riportano solo il gruppo padre, non il sottogruppo.
+ *
+ * @param {{ families?: MaterialFamily[], includeAltro?: boolean, includeParentGroups?: boolean }} [opts]
  */
 function getMaterialGroupSelectOptions(opts = {}) {
-  const { families = null, includeAltro = true } = opts;
+  const { families = null, includeAltro = true, includeParentGroups = true } = opts;
   const list = families
     ? ISO_TR_15608_GROUPS.filter((g) => families.includes(g.family))
     : ISO_TR_15608_GROUPS;
 
-  const options = list.map((g) => ({
-    value: g.code,
-    label: `${g.code} — ${g.labelIt}`,
-  }));
+  const options = [];
+  const emittedParents = new Set();
+  for (const g of list) {
+    if (includeParentGroups && g.parent && !emittedParents.has(g.parent)) {
+      emittedParents.add(g.parent);
+      const parentEntry = PARENT_GROUP_ENTRIES.find((p) => p.code === g.parent);
+      if (parentEntry) {
+        options.push({ value: parentEntry.code, label: `${parentEntry.code} — ${parentEntry.labelIt}` });
+      }
+    }
+    options.push({ value: g.code, label: `${g.code} — ${g.labelIt}` });
+  }
 
   if (includeAltro) {
     options.push({ value: 'altro', label: 'Altro / non in elenco' });
@@ -212,6 +256,7 @@ function buildMaterialGroupPromptSection(opts = {}) {
 --- GRUPPI MATERIALE ISO/TR 15608:2013 (usa SOLO codici elencati per material_group) ---
 Regole:
 - material_group = codice gruppo base (es. "1.2", "8.1", "21") — NON confondere con FM1-FM6 (materiale d'apporto).
+- Se il certificato riporta SOLO il gruppo padre senza sottogruppo (es. "Gruppo 1", "gr. 8"), restituisci il codice del gruppo padre così com'è (es. "1", "8") — è una forma valida e comune sui patentini saldatori.
 - Se il certificato indica solo la designazione acciaio (es. S355, P265GH), mappa al gruppo corretto.
 - Se ambiguo, null + warning nel JSON.
 Codici principali:
@@ -221,6 +266,7 @@ ${lines.join('\n')}${more}
 
 module.exports = {
   ISO_TR_15608_GROUPS,
+  PARENT_GROUP_ENTRIES,
   FAMILY_LABELS_IT,
   findMaterialGroup,
   normalizeMaterialGroupCode,
