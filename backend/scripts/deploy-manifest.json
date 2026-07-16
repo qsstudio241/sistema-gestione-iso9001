@@ -1,4 +1,4 @@
-﻿{
+{
     "manifestVersion": "1.1",
     "description":  "Manifest unico per deploy backend VPS - ordine dependency-aware (services/utils prima di controller/routes). Encoding UTF-8 senza BOM.",
     "remoteBase":  "/var/www/sgq-backend",
@@ -27,7 +27,8 @@
                                      "src/data/documentTypeSchemas.js",
                                      "src/data/materialGroups15608.js",
                                      "src/data/weldingProcesses4063.js",
-                                     "src/data/weldingPositions6947.js"
+                                     "src/data/weldingPositions6947.js",
+                                     "src/data/weldingQualificationRules9606.js"
                                  ]
                    },
                    {
