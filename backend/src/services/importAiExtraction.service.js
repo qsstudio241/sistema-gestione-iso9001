@@ -10,6 +10,7 @@ const { buildIngestLearningPromptSection } = require('./ingestLearning.service')
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses4063');
 const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
+const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -216,6 +217,9 @@ ${schema.aiPrompt}`;
     }
     if (docType === 'patentino_saldatore' || docType === 'wpqr' || docType === 'wps') {
         system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
+    }
+    if (docType === 'patentino_saldatore') {
+        system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
     }
 
     if (organizationId) {
