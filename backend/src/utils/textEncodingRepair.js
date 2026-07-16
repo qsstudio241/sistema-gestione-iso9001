@@ -30,6 +30,150 @@ function repairTextEncoding(input) {
     return s;
 }
 
+/**
+ * Dizionario di parole corrotte da font PDF "anti-copia" o mapping glifo→codice
+ * non standard (osservato su UNI EN ISO 9606-1:2017 e norme UNI analoghe).
+ *
+ * Origine: sessione ingest patentini/WPQR (luglio 2026) — lettura manuale del
+ * .md prodotto da backend/scripts/pdf_to_json su "UNI EN ISO 9606-1_2017.pdf".
+ * Il font sostituisce sistematicamente alcune sequenze di lettere con glifi
+ * visivamente simili ma di codice diverso (es. "m" → "rn", "l" finale → "1",
+ * "tt"/"ti" → "ii" a seconda della pagina). La sostituzione NON è uniforme in
+ * tutto il documento (dipende dal subset di font incorporato per pagina/blocco),
+ * quindi non è affidabile un rimpiazzo a livello di singolo carattere (rischio
+ * alto di falsi positivi su parole reali con "rn", "ti", ecc. — es. "turn",
+ * "modern", "pattern", "action"). Si usa invece un dizionario di **parole intere**
+ * osservate corrotte: nessuna di queste stringhe è una parola inglese valida,
+ * quindi il rischio di falso positivo è marginale.
+ *
+ * @type {Record<string, string>}
+ */
+const FONT_SUBSTITUTION_WORD_MAP = {
+    buii: 'butt',
+    materia1: 'material',
+    materia1s: 'materials',
+    docurnent: 'document',
+    docurnents: 'documents',
+    docurnented: 'documented',
+    docurnentation: 'documentation',
+    frorn: 'from',
+    rnrn: 'mm',
+    specirnen: 'specimen',
+    specirnens: 'specimens',
+    rninirnurn: 'minimum',
+    rnaxirnurn: 'maximum',
+    rnaxirnum: 'maximum',
+    rnnaximum: 'maximum',
+    confirrned: 'confirmed',
+    cornply: 'comply',
+    cornplies: 'complies',
+    cornpletion: 'completion',
+    cornplete: 'complete',
+    rnetal: 'metal',
+    rnetals: 'metals',
+    irnperfedion: 'imperfection',
+    irnperfedions: 'imperfections',
+    penekation: 'penetration',
+    peneiration: 'penetration',
+    diarneter: 'diameter',
+    diarneters: 'diameters',
+    circurnferential: 'circumferential',
+    circurnference: 'circumference',
+    witing: 'writing',
+    wioiout: 'without',
+    qualiiication: 'qualification',
+    qualitication: 'qualification',
+    qualilication: 'qualification',
+    qualiiy: 'qualify',
+    requirernent: 'requirement',
+    requirernents: 'requirements',
+    rernoved: 'removed',
+    rnarked: 'marked',
+    exarniner: 'examiner',
+    exarnining: 'examining',
+    exarnined: 'examined',
+    identitication: 'identification',
+    manufadurer: 'manufacturer',
+    manufadurers: 'manufacturers',
+    destmctive: 'destructive',
+    destrodive: 'destructive',
+    dismntinuity: 'discontinuity',
+    dismntinuities: 'discontinuities',
+    al1: 'all',
+    acmrding: 'according',
+    acmrdance: 'accordance',
+    amrdance: 'accordance',
+    cmrdance: 'accordance',
+    eleckode: 'electrode',
+    eleckd: 'electrode',
+};
+
+const FONT_SUBSTITUTION_REGEX = new RegExp(
+    `\\b(${Object.keys(FONT_SUBSTITUTION_WORD_MAP).join('|')})\\b`,
+    'gi'
+);
+
+/** Applica il "case pattern" della parola originale al rimpiazzo. */
+function applyCasePattern(original, replacement) {
+    if (original === original.toUpperCase() && original !== original.toLowerCase()) {
+        return replacement.toUpperCase();
+    }
+    if (original[0] === original[0].toUpperCase() && original[0] !== original[0].toLowerCase()) {
+        return replacement[0].toUpperCase() + replacement.slice(1);
+    }
+    return replacement;
+}
+
+/**
+ * Conta quante occorrenze di parole del dizionario font-corruption compaiono
+ * nel testo. Usare come euristica per decidere se applicare la correzione
+ * (vedi `detectLikelyFontSubstitutionCorruption`).
+ * @param {string} text
+ * @returns {number}
+ */
+function countFontSubstitutionArtifacts(text) {
+    if (typeof text !== 'string' || !text) return 0;
+    const matches = text.match(FONT_SUBSTITUTION_REGEX);
+    return matches ? matches.length : 0;
+}
+
+/**
+ * Euristica: il testo è probabilmente affetto da corruzione da font
+ * "anti-copia"/OCR di bassa qualità se contiene almeno `threshold` occorrenze
+ * di parole note del dizionario. Da usare come gate prima di applicare
+ * `repairFontSubstitutionArtifacts` in pipeline automatiche (evita di alterare
+ * testo già pulito, dove il rischio — per quanto basso — di falso positivo
+ * non è comunque giustificato).
+ * @param {string} text
+ * @param {{ threshold?: number }} [opts]
+ * @returns {boolean}
+ */
+function detectLikelyFontSubstitutionCorruption(text, opts = {}) {
+    const { threshold = 3 } = opts;
+    return countFontSubstitutionArtifacts(text) >= threshold;
+}
+
+/**
+ * Corregge le parole del testo note per essere corrotte da font PDF
+ * "anti-copia" (sostituzione sistematica di glifi, es. "m"→"rn", "l"→"1").
+ *
+ * ATTENZIONE (falsi positivi): funziona per confronto di **parola intera**
+ * contro un dizionario curato di grafie osservate realmente su documenti
+ * norma UNI/ISO — non è una sostituzione generica carattere-per-carattere.
+ * Non applicare a testo già pulito/non sospetto: usare prima
+ * `detectLikelyFontSubstitutionCorruption` per decidere.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function repairFontSubstitutionArtifacts(text) {
+    if (typeof text !== 'string' || !text) return text;
+    return text.replace(FONT_SUBSTITUTION_REGEX, (match) => {
+        const replacement = FONT_SUBSTITUTION_WORD_MAP[match.toLowerCase()];
+        return replacement ? applyCasePattern(match, replacement) : match;
+    });
+}
+
 function repairDeep(value) {
     if (value == null) return value;
     if (typeof value === 'string') return repairTextEncoding(value);
@@ -110,4 +254,8 @@ module.exports = {
     normalizeIssuingBodyCode,
     normalizeMaterialGroupCode,
     normalizeIngestSelectFields,
+    FONT_SUBSTITUTION_WORD_MAP,
+    countFontSubstitutionArtifacts,
+    detectLikelyFontSubstitutionCorruption,
+    repairFontSubstitutionArtifacts,
 };

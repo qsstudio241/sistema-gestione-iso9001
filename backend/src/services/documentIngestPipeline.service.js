@@ -13,7 +13,12 @@ const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
-const { repairDeep, normalizeIngestSelectFields } = require('../utils/textEncodingRepair');
+const {
+    repairDeep,
+    normalizeIngestSelectFields,
+    detectLikelyFontSubstitutionCorruption,
+    repairFontSubstitutionArtifacts,
+} = require('../utils/textEncodingRepair');
 
 let extractTextWithOCR = null;
 try {
@@ -64,7 +69,17 @@ async function extractDocumentText(pdfBuffer, options = {}) {
         warnings.push('Testo PDF insufficiente; OCR non configurato sul server');
     }
 
-    return { text: String(text || '').trim(), ocrUsed, warnings };
+    text = String(text || '').trim();
+
+    // Font PDF "anti-copia"/non standard (visto su norme UNI/ISO, es. ISO 9606-1:2017):
+    // correzione opzionale e mirata, attivata solo se il testo mostra pattern noti
+    // di corruzione (dizionario in textEncodingRepair.js). Non tocca testo pulito.
+    if (detectLikelyFontSubstitutionCorruption(text)) {
+        text = repairFontSubstitutionArtifacts(text);
+        warnings.push('Rilevati pattern di font non standard (es. "buii"→"butt"); applicata correzione automatica — verificare i campi estratti');
+    }
+
+    return { text, ocrUsed, warnings };
 }
 
 /**
