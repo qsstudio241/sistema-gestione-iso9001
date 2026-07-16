@@ -117,6 +117,26 @@ tipo di seed usato per `norm_requirements`.
   pagine segnalate come `ATTENZIONE`.
 - **Header/footer ripetuti** (nome azienda, watermark, numeri pagina): rimossi
   automaticamente in fase di pulizia se identici su piu' pagine.
+- **Font "anti-copia" con testo presente ma corrotto** (diverso dal caso
+  precedente: qui il testo estratto NON e' spazzatura, ma alcune lettere sono
+  sistematicamente sbagliate, es. `buii`→`butt`, `materia1`→`material`,
+  `docurnent`→`document` — visto su `UNI EN ISO 9606-1:2017`). **Non scartare**
+  il `.md`: il pattern e' spesso ricorrente e correggibile a dizionario. Se il
+  testo va in pipeline di ingest applicativo (non solo digitalizzazione
+  norma), vedi `backend/src/utils/textEncodingRepair.js`
+  (`repairFontSubstitutionArtifacts` + `detectLikelyFontSubstitutionCorruption`,
+  gia' agganciato come step opzionale in `documentIngestPipeline.service.js`).
+  Se compaiono NUOVE grafie corrotte non ancora in dizionario, aggiungerle li'
+  (parola intera, mai sostituzione di singolo carattere: il font non e'
+  uniforme in tutto il documento — rischio falsi positivi su parole reali).
+
+**Lezione (luglio 2026, RC-5/RC-6)**: l'errore di estrazione non e' sempre un
+motivo per scartare il PDF. Prima ipotesi "il PDF e' troppo sporco, uso solo
+cio' che gia' leggibile" era incompleta: la soluzione migliore e' distinguere
+(1) corruzione sistematica ricorrente → dizionario di correzione riutilizzabile,
+da (2) tabelle a griglia distrutte dal layout → GAP onesto (non inventare i
+numeri, documentare cosa manca). Vedi `docs/reference/ISO-9606-1-range-validita-patentino.md`
+e `docs/GUIDA_CONSOLIDATA.md` (sezione Ambiente di lavoro e tooling).
 
 ## Esempi di invocazione
 

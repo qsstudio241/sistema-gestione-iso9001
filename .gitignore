@@ -30,6 +30,10 @@ backend/config/.netlify.local.ps1
 # Evidenze diagnostico UNI Store (screenshot/report locali, possono contenere dati account)
 backend/scripts/uni-store-artifacts/
 
+# Output di prova pdf_to_json (.md/.json possono contenere estratti estesi di testo normativo
+# protetto da copyright — mai committare, solo scratch locale per revisione manuale)
+out/
+
 # IDE
 .vscode/
 .idea/
