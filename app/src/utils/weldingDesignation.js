@@ -32,24 +32,27 @@ export function buildWelderDesignation(f = {}) {
   if (f.joint_type) tokens.push(String(f.joint_type).trim().toUpperCase());
   if (f.filler_material_group) tokens.push(String(f.filler_material_group).trim());
 
+  // Spessore: min+max noti -> range; solo max noto -> valore singolo (prova puntuale);
+  // solo min noto (max vuoto/null) -> "senza limite superiore" (es. t>=3, tipico ISO 9606-1
+  // quando il certificato non riporta un massimo esplicito). Vedi feedback cliente Studio Mason.
   const tMin = num(f.thickness_min_mm);
   const tMax = num(f.thickness_max_mm);
-  if (tMin != null || tMax != null) {
-    if (tMin != null && tMax != null && tMin !== tMax) {
-      tokens.push(`t${fmtNum(tMin)}-${fmtNum(tMax)}`);
-    } else {
-      tokens.push(`t${fmtNum(tMax != null ? tMax : tMin)}`);
-    }
+  if (tMin != null && tMax != null) {
+    tokens.push(tMin === tMax ? `t${fmtNum(tMax)}` : `t${fmtNum(tMin)}-${fmtNum(tMax)}`);
+  } else if (tMax != null) {
+    tokens.push(`t${fmtNum(tMax)}`);
+  } else if (tMin != null) {
+    tokens.push(`t\u2265${fmtNum(tMin)}`);
   }
 
   const dMin = num(f.pipe_diameter_min_mm);
   const dMax = num(f.pipe_diameter_max_mm);
-  if (dMin != null || dMax != null) {
-    if (dMin != null && dMax != null && dMin !== dMax) {
-      tokens.push(`D${fmtNum(dMin)}-${fmtNum(dMax)}`);
-    } else {
-      tokens.push(`D${fmtNum(dMax != null ? dMax : dMin)}`);
-    }
+  if (dMin != null && dMax != null) {
+    tokens.push(dMin === dMax ? `D${fmtNum(dMax)}` : `D${fmtNum(dMin)}-${fmtNum(dMax)}`);
+  } else if (dMax != null) {
+    tokens.push(`D${fmtNum(dMax)}`);
+  } else if (dMin != null) {
+    tokens.push(`D\u2265${fmtNum(dMin)}`);
   }
 
   const positions = normalizePositions(f.welding_positions || f.position_range);

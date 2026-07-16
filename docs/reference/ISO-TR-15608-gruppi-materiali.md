@@ -12,10 +12,22 @@ Sistema uniforme di **raggruppamento materiali metallici** per saldatura (e trat
 
 | Campo | Regola |
 |-------|--------|
-| `material_group` | Codice **sottogruppo** ISO/TR 15608 (es. `1.2`, `8.1`, `21`) — **non** il gruppo padre generico se esiste il sottogruppo |
+| `material_group` | Codice sottogruppo ISO/TR 15608 (es. `1.2`, `8.1`, `21`) **quando è indicato sul certificato**. Se il certificato indica **solo il gruppo padre** (es. "Gruppo 1", "gr. 8"), restituire il codice del gruppo padre così com'è (es. `1`, `8`) — vedi nota sotto. |
 | `filler_material_group` | FM1–FM6 (ISO 14343 / 18274) — **non** confondere con gruppo base |
 | Designazione acciaio | Mappare quando possibile: S235/P235 → `1.1`; S355/P355 → `1.2`; 1.4301/AISI 304 → `8.1`; 1.4404/AISI 316L → `8.2`; 1.4462 → `10.1` |
 | Ambiguità | `null` + warning, mai inventare |
+
+### Nota — gruppo padre vs sottogruppo sui patentini saldatori (aggiornamento 16/07/2026, feedback Studio Mason)
+
+I patentini saldatori reali (ISO 9606-1) riportano spesso **solo il gruppo padre** (es. "1",
+"8") e **non il sottogruppo** (es. "1.2", "8.1"): una qualifica su un sottogruppo copre
+tipicamente l'intero gruppo padre secondo ISO 9606-1, quindi il certificato indica il dato
+più generico. Questo **non contraddice** la regola di fondo (il sottogruppo resta il dato più
+preciso quando disponibile, es. per WPS/WPQR dove serve la granularità fine) — significa
+solo che il campo `material_group` deve accettare **entrambe** le forme. Il catalogo
+`materialGroups15608.js` espone ora anche i gruppi padre come opzioni selezionabili
+(`getMaterialGroupSelectOptions` — i gruppi padre non sostituiscono i sottogruppi, li
+affiancano) e li risolve in `findMaterialGroup`/`normalizeMaterialGroupCode`.
 
 ## Tabella 1 — Acciai (gruppi 1–11)
 

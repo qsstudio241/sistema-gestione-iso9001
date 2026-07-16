@@ -28,6 +28,7 @@ const {
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 const {
     isWelder9606Type,
     addMonthsIso,
@@ -42,14 +43,19 @@ function toNum(v) {
     return Number.isFinite(n) ? n : null;
 }
 
-/** Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max. */
+/**
+ * Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max.
+ * Se e' noto solo il minimo (max vuoto/null) restituisce "\u22653mm" (>=3mm): significa
+ * "nessun limite superiore" (feedback cliente Studio Mason). V. gemella in
+ * importJobs.controller.js — mantenere sincronizzate.
+ */
 function deriveRangeString(min, max, suffix = 'mm') {
     const a = toNum(min);
     const b = toNum(max);
     if (a == null && b == null) return null;
-    if (a != null && b != null && a !== b) return `${a}-${b}${suffix}`;
-    const single = b != null ? b : a;
-    return `${single}${suffix}`;
+    if (a != null && b != null) return a === b ? `${a}${suffix}` : `${a}-${b}${suffix}`;
+    if (a != null) return `\u2265${a}${suffix}`;
+    return `${b}${suffix}`;
 }
 
 /**
@@ -1161,11 +1167,17 @@ async function uploadBatch(req, res) {
                     warnings: extracted.warnings || [],
                 };
             } catch (fileErr) {
+                const errMsg = describeIngestFileError(fileErr);
+                logger.error('[Qualif/batch] Estrazione fallita', {
+                    fileName: file.originalname,
+                    error: errMsg,
+                    stack: fileErr?.stack || null,
+                });
                 entry = {
                     fileName: file.originalname,
                     status: 'error',
-                    error: fileErr.message,
-                    warnings: [fileErr.message],
+                    error: errMsg,
+                    warnings: [errMsg],
                 };
                 try { fs.unlinkSync(file.path); } catch (_) {}
             }
@@ -1176,8 +1188,9 @@ async function uploadBatch(req, res) {
         logger.info(`[Qualif/batch] ${pending}/${req.files.length} file in staging per org ${orgId}`);
         res.json({ results, uploaded: pending, total: req.files.length });
     } catch (err) {
-        logger.error('uploadBatch qualifiche:', err.message);
-        res.status(500).json({ error: err.message });
+        const errMsg = describeIngestFileError(err, "Errore imprevisto durante l'upload batch patentini.");
+        logger.error('uploadBatch qualifiche:', { error: errMsg, stack: err?.stack || null });
+        res.status(500).json({ error: errMsg });
     }
 }
 
