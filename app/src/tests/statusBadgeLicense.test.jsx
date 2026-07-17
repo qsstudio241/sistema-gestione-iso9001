@@ -1,5 +1,5 @@
 /**
- * Test L1 — StatusBadge (type="license")
+ * Test L1 â€” StatusBadge (type="license")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
  * per gli stati licenza modulo usati da LicensesSettingsPage.
@@ -14,7 +14,7 @@ const LICENSE_STATES = [
   { status: 'inactive', label: 'Non attivo' },
 ];
 
-describe('StatusBadge — stato licenza', () => {
+describe('StatusBadge â€” stato licenza', () => {
   it.each(LICENSE_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {

@@ -137,7 +137,7 @@ async function createReview(req, res) {
             input_objectives, input_complaints, input_suppliers,
             input_resources, input_improvements,
             input_context_changes, input_customer_satisfaction,
-            input_process_performance, input_risk_effectiveness,
+            input_process_performance, input_monitoring, input_risk_effectiveness,
             output_improvements, output_sgq_changes, output_resources,
             notes, company_id, status = 'draft',
         } = req.body;
@@ -169,6 +169,7 @@ async function createReview(req, res) {
             .input('input_context_changes',       input_context_changes       || null)
             .input('input_customer_satisfaction', input_customer_satisfaction || null)
             .input('input_process_performance',   input_process_performance   || null)
+            .input('input_monitoring',            input_monitoring            || null)
             .input('input_risk_effectiveness',    input_risk_effectiveness    || null)
             .input('output_improvements',    output_improvements    || null)
             .input('output_sgq_changes',     output_sgq_changes     || null)
@@ -183,7 +184,7 @@ async function createReview(req, res) {
                     input_objectives, input_complaints, input_suppliers,
                     input_resources, input_improvements,
                     input_context_changes, input_customer_satisfaction,
-                    input_process_performance, input_risk_effectiveness,
+                    input_process_performance, input_monitoring, input_risk_effectiveness,
                     output_improvements, output_sgq_changes, output_resources,
                     notes, created_by
                 )
@@ -195,7 +196,7 @@ async function createReview(req, res) {
                     @input_objectives, @input_complaints, @input_suppliers,
                     @input_resources, @input_improvements,
                     @input_context_changes, @input_customer_satisfaction,
-                    @input_process_performance, @input_risk_effectiveness,
+                    @input_process_performance, @input_monitoring, @input_risk_effectiveness,
                     @output_improvements, @output_sgq_changes, @output_resources,
                     @notes, @userId
                 )
@@ -232,7 +233,7 @@ async function updateReview(req, res) {
             'input_objectives', 'input_complaints', 'input_suppliers',
             'input_resources', 'input_improvements',
             'input_context_changes', 'input_customer_satisfaction',
-            'input_process_performance', 'input_risk_effectiveness',
+            'input_process_performance', 'input_monitoring', 'input_risk_effectiveness',
             'output_improvements', 'output_sgq_changes', 'output_resources',
             'notes',
         ];
@@ -599,15 +600,24 @@ async function getInputSummary(req, res) {
 
     // ── COPERTURA NORMATIVA ──────────────────────────────────────────────────────
     try {
-        const normReq = pool.request()
-            .input('orgId', orgId)
-            .input('cutoff', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
-
         if (companyId) {
-            normReq.input('companyId', companyId);
-        }
+            const { getNormCoverageForReview } = require('../services/gapAnalysis.service');
+            const salCoverage = await getNormCoverageForReview(orgId, companyId, {
+                standardCode: 'ISO_9001_2015',
+            });
+            if (salCoverage) {
+                result.norm_coverage = salCoverage;
+                result.norm_coverage_source = 'sal';
+            } else {
+                result.norm_coverage = [];
+                result.norm_coverage_note = 'Matrice SAL non disponibile per questa azienda';
+            }
+        } else {
+            const normReq = pool.request()
+                .input('orgId', orgId)
+                .input('cutoff', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
 
-        const normRes = await normReq.query(`
+            const normRes = await normReq.query(`
             SELECT
                 nr.clause_ref,
                 nr.clause_title,
@@ -618,7 +628,6 @@ async function getInputSummary(req, res) {
                 AND a.is_deleted = 0
                 AND a.status IN ('completed', 'approved')
                 AND CAST(a.audit_date AS DATE) >= CAST(@cutoff AS DATE)
-                ${companyId ? 'AND a.company_id = @companyId' : ''}
             )
             WHERE nr.is_current = 1
               AND nr.standard_code = 'ISO_9001_2015'
@@ -627,14 +636,16 @@ async function getInputSummary(req, res) {
             ORDER BY nr.clause_ref
         `);
 
-        result.norm_coverage = normRes.recordset.map((row) => ({
-            clause:        row.clause_ref,
-            title:         row.clause_title,
-            status:        row.last_verified ? 'ok' : 'gap',
-            last_verified: row.last_verified
-                ? new Date(row.last_verified).toISOString().slice(0, 10)
-                : null,
-        }));
+            result.norm_coverage = normRes.recordset.map((row) => ({
+                clause:        row.clause_ref,
+                title:         row.clause_title,
+                status:        row.last_verified ? 'ok' : 'gap',
+                last_verified: row.last_verified
+                    ? new Date(row.last_verified).toISOString().slice(0, 10)
+                    : null,
+            }));
+            result.norm_coverage_source = 'audit_legacy';
+        }
     } catch (err) {
         logger.error('getInputSummary NormCoverage:', err.message);
         result.norm_coverage = [];
@@ -707,9 +718,13 @@ async function generateDraft(req, res) {
     } catch (_) { /* dati non disponibili — il draft userà 0 */ }
 
     try {
-        const objRes = await pool.request().input('orgId', orgId).query(`
+        // G6: allinea il filtro company_id a getInputSummary (prima la query ignorava l'azienda)
+        const objReq = pool.request().input('orgId', orgId);
+        const objCompanyCond = companyId ? 'AND company_id = @companyId' : '';
+        if (companyId) objReq.input('companyId', companyId);
+        const objRes = await objReq.query(`
             SELECT COUNT(*) AS total, SUM(CASE WHEN status='achieved' THEN 1 ELSE 0 END) AS achieved
-            FROM objectives WHERE organization_id=@orgId AND is_deleted=0
+            FROM objectives WHERE organization_id=@orgId AND is_deleted=0 ${objCompanyCond}
         `);
         const r = objRes.recordset[0];
         const total = r.total || 0; const achieved = r.achieved || 0;
@@ -927,7 +942,8 @@ async function generateOutputs(req, res) {
                 SELECT input_previous_actions, input_context_changes, input_audits,
                        input_nc_corrective, input_objectives, input_complaints,
                        input_customer_satisfaction, input_suppliers, input_resources,
-                       input_improvements, input_process_performance, input_risk_effectiveness
+                       input_improvements, input_process_performance, input_monitoring,
+                       input_risk_effectiveness
                 FROM management_reviews
                 WHERE id=@id AND organization_id=@orgId AND is_deleted=0
             `);
@@ -945,7 +961,8 @@ async function generateOutputs(req, res) {
     const inputFields = [
         'input_previous_actions', 'input_context_changes', 'input_audits', 'input_nc_corrective',
         'input_objectives', 'input_complaints', 'input_customer_satisfaction', 'input_suppliers',
-        'input_resources', 'input_improvements', 'input_process_performance', 'input_risk_effectiveness',
+        'input_resources', 'input_improvements', 'input_process_performance', 'input_monitoring',
+        'input_risk_effectiveness',
     ];
     const inputs = {};
     inputFields.forEach((f) => {
@@ -977,9 +994,13 @@ async function generateOutputs(req, res) {
     } catch (_) { /* fallback a 0 */ }
 
     try {
-        const objRes = await pool.request().input('orgId', orgId).query(`
+        // G6: allinea il filtro company_id a getInputSummary
+        const objReq = pool.request().input('orgId', orgId);
+        const objCompanyCond = companyId ? 'AND company_id = @companyId' : '';
+        if (companyId) objReq.input('companyId', companyId);
+        const objRes = await objReq.query(`
             SELECT COUNT(*) AS total, SUM(CASE WHEN status='achieved' THEN 1 ELSE 0 END) AS achieved
-            FROM objectives WHERE organization_id=@orgId AND is_deleted=0
+            FROM objectives WHERE organization_id=@orgId AND is_deleted=0 ${objCompanyCond}
         `);
         const r = objRes.recordset[0];
         const total = r.total || 0; const achieved = r.achieved || 0;
@@ -1012,6 +1033,7 @@ async function generateOutputs(req, res) {
             `Non conformità e azioni correttive: ${(inputs.input_nc_corrective || 'n.d.').slice(0, 300)}`,
             `Stato obiettivi qualità: ${(inputs.input_objectives || 'n.d.').slice(0, 300)}`,
             `Prestazioni dei processi: ${(inputs.input_process_performance || 'n.d.').slice(0, 300)}`,
+            `Risultati monitoraggio e misurazione: ${(inputs.input_monitoring || 'n.d.').slice(0, 300)}`,
             `Soddisfazione cliente/feedback: ${(inputs.input_customer_satisfaction || 'n.d.').slice(0, 300)}`,
             `Prestazioni fornitori esterni: ${(inputs.input_suppliers || 'n.d.').slice(0, 300)}`,
             `Adeguatezza delle risorse: ${(inputs.input_resources || 'n.d.').slice(0, 300)}`,

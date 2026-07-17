@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/importJobs.controller');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -82,7 +83,7 @@ router.get('/import-jobs/:id', ctrl.getJob);
 router.delete('/import-jobs/:id', ctrl.deleteJob);
 router.post('/import-jobs/:id/files', uploadImportMiddleware, ctrl.uploadFiles);
 router.post('/import-jobs/:id/process', ctrl.processJob);
-router.post('/import-jobs/:id/files/:fileId/ai-extract', aiExtractLimiter, ctrl.suggestAiExtraction);
+router.post('/import-jobs/:id/files/:fileId/ai-extract', aiExtractLimiter, logAiInteraction('import'), ctrl.suggestAiExtraction);
 router.patch('/import-jobs/:id/files/:fileId', ctrl.patchFile);
 // Sprint 10: commit file processato al document_registry
 router.post('/import-jobs/:id/files/:fileId/commit-to-registry',     ctrl.commitToRegistry);

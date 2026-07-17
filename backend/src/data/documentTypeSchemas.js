@@ -80,7 +80,7 @@ validity_status, language, scope_summary, ics_code, technical_committee, is_harm
       issuing_body: 'string|null',
       edition_year: 'number|null',
       supersedes: 'string|null',
-      validity_status: 'vigente|superata|annullata|in_revisione|null',
+      validity_status: 'vigente|superata|annullata|in_revisione|da_verificare|null',
       language: 'it|en|de|fr|es|multi|null',
       scope_summary: 'string|null',
       ics_code: 'string|null',
@@ -194,6 +194,34 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
       test_type: 'string|null',
       component_ref: 'string|null',
       test_date: 'YYYY-MM-DD|null',
+    },
+  },
+
+  dichiarazione_ce: {
+    label: 'Dichiarazione CE',
+    aiPrompt: `Dichiarazione CE di conformita. Estrai: manufacturer, product_name, directive_ref,
+certificate_number, issue_date (YYYY-MM-DD), notified_body.`,
+    aiExpectedSchema: {
+      manufacturer: 'string|null',
+      product_name: 'string|null',
+      directive_ref: 'string|null',
+      certificate_number: 'string|null',
+      issue_date: 'YYYY-MM-DD|null',
+      notified_body: 'string|null',
+    },
+  },
+
+  report_ndt: {
+    label: 'Report NDT',
+    aiPrompt: `Rapporto prove NDT. Estrai: report_number, ndt_method (UT|RT|MT|PT|VT),
+component_ref, test_date (YYYY-MM-DD), operator_name, result_summary.`,
+    aiExpectedSchema: {
+      report_number: 'string|null',
+      ndt_method: 'UT|RT|MT|PT|VT|null',
+      component_ref: 'string|null',
+      test_date: 'YYYY-MM-DD|null',
+      operator_name: 'string|null',
+      result_summary: 'string|null',
     },
   },
 };

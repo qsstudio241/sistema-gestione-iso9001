@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import AiDisclaimer from "../components/AiDisclaimer";
 import { useAuth } from "../contexts/AuthContext";
 import { useStorage } from "../contexts/StorageContext";
 import {
@@ -749,6 +750,7 @@ function AiAssistantPage() {
           {"\u27A4"}
         </button>
       </div>
+      <AiDisclaimer style={{ padding: '0.5rem 1.5rem', borderTop: '1px solid #f0f0f0' }} />
     </div>
   );
 }

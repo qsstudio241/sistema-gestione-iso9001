@@ -1,4 +1,4 @@
-/** Validazione client upload template Word (.docx)  allineata a multer backend (5 MB) */
+/** Validazione client upload template Word (.docx)  -  allineata a multer backend (5 MB) */
 
 import PizZip from "pizzip";
 
@@ -38,7 +38,7 @@ export function validateDocxFile(file) {
 export function validateDuplicateTemplateName(name) {
   const trimmed = name != null ? String(name).trim() : "";
   if (!trimmed) return "Inserisci un nome per il template duplicato.";
-  if (trimmed.length > 255) return "Il nome non pu superare 255 caratteri.";
+  if (trimmed.length > 255) return "Il nome non puÃ²  superare 255 caratteri.";
   return null;
 }
 

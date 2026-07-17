@@ -4,7 +4,7 @@
  * Pattern: NCPage (lista) + ManagementReviewsPage (form sezioni).
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
@@ -66,7 +66,18 @@ const DEFECT_CODES_SELECT = [
 function MarkRow({ item, index, onChange, onRemove, reportId }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
-    const [showPhotos, setShowPhotos] = useState(false);
+    const attRef = useRef(null);
+    const [photoState, setPhotoState] = useState({ count: 0, uploading: false, error: null });
+    const showPhotoPanel = photoState.count > 0 || photoState.uploading || !!photoState.error;
+
+    const handlePhotoClick = () => {
+        if (!item.id) {
+            alert("Salva il verbale con 'Salva bozza' per abilitare le foto su questa riga.");
+            return;
+        }
+        attRef.current?.openFilePicker();
+    };
+
     return (
         <>
         <tr className={`ndt-mark-row${hasDefect ? " ndt-mark-defect" : ""}`}>
@@ -98,30 +109,36 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
                 </div>
             </td>
             <td className="ndt-actions-cell">
-                {/* Pulsante foto — sempre visibile nella riga, senza scroll orizzontale */}
-                {item.id
-                    ? <button
-                        type="button"
-                        className={`ndt-photo-row-btn${showPhotos ? " active" : ""}`}
-                        onClick={() => setShowPhotos(p => !p)}
-                        title="Foto saldatura"
-                      >{"\uD83D\uDCF7"}</button>
-                    : <button
-                        type="button"
-                        className="ndt-photo-row-btn ndt-photo-row-btn-disabled"
-                        title={"Salva prima il verbale per aggiungere foto"}
-                        onClick={() => alert("Salva il verbale con 'Salva bozza' per abilitare le foto su questa riga.")}
-                      >{"\uD83D\uDCF7"}</button>
-                }
+                <button
+                    type="button"
+                    className={`ndt-photo-row-btn${!item.id ? " ndt-photo-row-btn-disabled" : ""}${photoState.count > 0 ? " ndt-photo-row-btn-has-photos" : ""}`}
+                    onClick={handlePhotoClick}
+                    disabled={photoState.uploading}
+                    title={item.id
+                        ? (photoState.count > 0
+                            ? `Aggiungi o scatta foto (${photoState.count} già caricate)`
+                            : "Scatta o aggiungi foto")
+                        : "Salva prima il verbale per aggiungere foto"}
+                >
+                    {"\uD83D\uDCF7"}
+                    {photoState.count > 0 && (
+                        <span className="ndt-photo-count">{photoState.count}</span>
+                    )}
+                </button>
                 <button type="button" className="ndt-row-remove" onClick={() => onRemove(index)} title="Rimuovi riga">&times;</button>
             </td>
         </tr>
-        {/* Pannello foto — si espande sotto la riga quando si preme il bottone 📷 */}
-        {item.id && showPhotos && (
-            <tr className="ndt-mark-photos-row">
+        {/* Galleria foto — visibile solo se ci sono foto, caricamento o errore */}
+        {item.id && (
+            <tr className={`ndt-mark-photos-row${showPhotoPanel ? "" : " ndt-mark-photos-row-collapsed"}`}>
                 <td></td>
                 <td colSpan={9}>
-                    <NdtItemAttachments itemId={item.id} reportId={reportId} />
+                    <NdtItemAttachments
+                        ref={attRef}
+                        itemId={item.id}
+                        reportId={reportId}
+                        onStateChange={setPhotoState}
+                    />
                 </td>
             </tr>
         )}

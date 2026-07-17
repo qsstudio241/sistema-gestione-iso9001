@@ -80,6 +80,13 @@ export const NC_SOURCE_CATEGORIES = {
     requiresAudit: false,
     icon: '\uD83D\uDD0E',
   },
+  sal_gap: {
+    label: 'Gap SAL implementazione',
+    iso: '\u00A74\u201310',
+    defaultSection: 'clause10',
+    requiresAudit: false,
+    icon: '\uD83D\uDCCA',
+  },
 };
 
 export const NC_SOURCE_CATEGORY_OPTIONS = Object.entries(NC_SOURCE_CATEGORIES).map(
@@ -133,10 +140,14 @@ export function buildManualNcPayload(form, auditNumber) {
   }
 
   const ncNumberBase = requiresAudit ? auditNumber : source_category.toUpperCase();
+  const managementReviewId = (form.management_review_id != null && form.management_review_id !== '')
+    ? parseInt(form.management_review_id, 10)
+    : null;
   return {
     ok: true,
     payload: {
       ...(requiresAudit ? { audit_id: parseInt(form.audit_id, 10) } : {}),
+      ...(managementReviewId != null ? { management_review_id: managementReviewId } : {}),
       source_category,
       source_origin_text: (form.source_origin_text || '').trim() || null,
       nc_number: (form.nc_number || '').trim() || buildManualNcNumber(ncNumberBase),

@@ -101,7 +101,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 | 1 | **Scheda NC** | Descrizione, severità, responsabile NC, scadenza; badge origine (audit/reclamo/manuale) |
 | 2 | **Stato workflow** | Pulsanti Avvia lavorazione / Segna risolta / Verifica (sticky in scroll) |
 | 3 | **Cause** | Analisi causa radice |
-| 4 | **Azioni correttive** | Elenco azioni con attuazione e verifica per singola azione |
+| 4 | **Azioni correttive** | Elenco azioni con attuazione (Aperta → In corso → Completata) |
 | 5 | **Evidenze** | Allegati facoltativi |
 | 6 | **Verifica efficacia** | Note e responsabile verifica NC; collassata con hint se NC ancora aperta/in corso |
 | 7 | **Chiusura** | Approva chiusura (RQ), Chiudi NC (dopo approvazione), **Riapri NC** (solo RQ, se già chiusa) |
@@ -248,7 +248,7 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
    - **1. Scheda NC**: descrizione, severità, responsabile, scadenza (+ link audit/reclamo se presenti).
    - **2. Stato workflow**: pulsanti di avanzamento stato (subito sotto la scheda).
    - **3. Cause**: analisi causa radice.
-   - **4. Azioni correttive**: aggiungere e avanzare le singole azioni.
+   - **4. Correzione e azioni**: correzione obbligatoria (Immediata) + azioni correttive/preventive.
    - **5. Evidenze**: allegati facoltativi.
    - **6. Verifica efficacia**: note e responsabile verifica NC (evidenziata da NC risolta in poi; collassata con hint se ancora aperta/in corso).
    - **7. Chiusura**: approvazione RQ e chiusura formale.
@@ -280,31 +280,46 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.7 Azioni correttive — attuazione, responsabile, scadenza, verifica
+### 3.7 Correzione e azioni — attuazione, responsabile, scadenza
 
 **Chi:** Referente processo, auditor, RQ.
 
-**Quando:** Per ogni NC serve tracciare cosa si fa, chi lo fa, entro quando, e se ha funzionato.
+**Quando:** Per ogni NC serve tracciare cosa si fa, chi lo fa, entro quando.
+
+La norma ISO 9001 §10.2.1 distingue due concetti:
+
+| Concetto | Punto norma | Obbligatorio? | Tipo azione nel sistema |
+|---|---|---|---|
+| **Correzione** (reazione immediata) | §10.2.1 a) | **Sì**, sempre | Immediata |
+| **Azione correttiva** (eliminare la causa) | §10.2.1 b)-d) | Condizionata alla valutazione | Correttiva |
+| **Azione preventiva** | — | Facoltativa | Preventiva |
 
 **Passi**
 
-1. Nel drawer NC, sezione **4. Azioni correttive**.
+1. Nel drawer NC, sezione **4. Correzione e azioni**.
 2. Cliccare **+ Aggiungi azione**.
-3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione*** (microfono e storico come nel form NC), **Responsabile attuazione**, **Scadenza**.
+3. Compilare: **Tipo** (Immediata / Correttiva / Preventiva), **Descrizione***, **Responsabile attuazione**, **Scadenza**. Il tipo predefinito è **Immediata** per guidare l'utente a registrare prima la correzione.
 4. **Salva azione**.
-5. Per ogni azione, avanzare lo stato con i pulsanti:
-   - **Avvia** → **Completa** → **Verifica**
-6. Su **Verifica**, compilare **Nota verifica azione** (obbligatoria; stessi strumenti microfono/storico/bozza) e **Conferma verifica**.
-7. Se ci sono azioni scadute o in scadenza entro 7 giorni, usare i filtri **Scadute** / **In scadenza 7 gg** sopra l'elenco azioni.
+5. Per ogni azione, avanzare lo stato con i pulsanti: **Avvia** → **Completa**.
+6. **Gate obbligatorio**: la NC non può passare a **Risolta** senza almeno una correzione (azione Immediata) completata. Se manca, il badge rosso «Obbligatoria» è visibile nella sotto-sezione Correzione.
+7. Quando **tutte** le azioni sono Completate, la NC passa automaticamente a **Risolta**. Il giudizio sull'efficacia è **complessivo**: si compila una sola volta in **6. Verifica efficacia** (vedi §3.6).
+8. Se ci sono azioni scadute o in scadenza entro 7 giorni, usare i filtri **Scadute** / **In scadenza 7 gg** sopra l'elenco azioni.
+
+**Valutazione necessità azione correttiva (§3 Cause)**
+
+Nella sezione **3. Cause e valutazione** è presente il campo «È necessaria un'azione correttiva?» (Sì / No / Non valutato) con motivazione. Questo campo documenta la valutazione richiesta da ISO §10.2.1 b) ed è informativo (non bloccante).
+
+*Nota retrocompatibilità: azioni create prima di questa modifica possono ancora mostrare lo stato storico «Verificata» con relativa nota — resta visibile ma non è più un passaggio richiesto per le nuove azioni.*
 
 **Domande / Risposte**
 
 - *Posso eliminare un'azione?* — Sì, solo se è ancora **Aperta** (pulsante Elimina).
 - *La scadenza azione è quella della NC?* — No: sono indipendenti; la NC ha la sua scadenza nel form principale.
+- *Perché non posso segnare la NC come Risolta?* — Verificare che esista almeno una azione di tipo Immediata con stato Completata.
 
 **Screenshot note**
 
-- Lista azioni con badge tipo (Immediata/Correttiva/Preventiva), stato, eventuale badge rosso «Scaduta».
+- Le azioni sono raggruppate in due blocchi: **Correzione (ISO §10.2.1a)** in alto e **Azioni correttive / preventive** sotto, con badge tipo e stato.
 
 ---
 
@@ -516,7 +531,7 @@ La **rubrica referenti NC** elenca le persone che possono ricevere email di prom
 |-------|-------------------|------|
 | **Responsabile NC** | Solo **rubrica** (dropdown referenti attivi) | Drawer NC → sezione **1. Scheda NC** |
 | **Responsabile verifica efficacia** | Rubrica **oppure** testo libero (retrocompatibilità) | Drawer NC → sezione **6. Verifica efficacia** |
-| **Responsabile attuazione azione** | Rubrica **oppure** testo libero | Drawer NC → sezione **4. Azioni correttive** → form azione |
+| **Responsabile attuazione azione** | Rubrica **oppure** testo libero | Drawer NC → sezione **4. Correzione e azioni** → form azione |
 
 Per il **Responsabile NC** la scelta dalla rubrica è obbligatoria quando la rubrica contiene referenti attivi: abilita le email di escalation verso il referente corretto.
 
@@ -634,6 +649,7 @@ Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su un
 | Allegati non caricano | Rete / permessi | Controllare console rete; riprovare file più piccolo |
 | NC duplicate dopo push | Push ripetuto | Idempotenza salta duplicati; verificare colonna Origine |
 | Export CSV disabilitato | Lista filtrata vuota | Allentare filtri o card **Totale** |
+| Risolta bloccata | Nessuna correzione completata | Aggiungere almeno un'azione di tipo **Immediata** e completarla |
 | Chiusura bloccata | Approvazione RQ | **Approva chiusura (RQ)** poi **Chiudi NC** |
 
 ---
@@ -644,9 +660,9 @@ Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su un
 |-------------------------|-------------------|
 | **8.7** Controllo output non conforme | Registra NC/OSS emerse da audit o reclami. |
 | **10.2** NC e azioni correttive | Workflow stati, cause, azioni, verifica efficacia, tracciabilità. |
-| **10.2.1 a)** Reazione alla NC | Stati Aperta/In corso, azioni immediate. |
-| **10.2.1 b)** Valutazione cause | Campo **Analisi causa radice**. |
-| **10.2.1 c)** Azioni correttive | Sezione **Azioni correttive** con tipi e responsabili. |
+| **10.2.1 a)** Reazione alla NC (Correzione) | Sotto-sezione **Correzione** con gate obbligatorio: almeno un'azione Immediata completata per risolvere la NC. |
+| **10.2.1 b)** Valutazione cause | Campo **Analisi causa radice** + campo **È necessaria un'azione correttiva?** con motivazione. |
+| **10.2.1 c)** Azioni correttive | Sotto-sezione **Azioni correttive / preventive** con tipi e responsabili. |
 | **10.2.1 e)** Verifica efficacia | **Note verifica efficacia** + gate obbligatorio prima di Verificata/Chiusa. |
 | **9.1** Monitoraggio | Filtri scadenze, stats card, export CSV, tab azioni in scadenza. |
 
