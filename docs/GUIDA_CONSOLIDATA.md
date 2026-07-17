@@ -814,6 +814,17 @@ quando il pannello si apre.
 
 ---
 
+### Sessione 17/07/2026 — Feedback loop AI + note audit in produzione (PR #162 / #163)
+
+| Voce | Dettaglio |
+|------|-----------|
+| **Cosa** | Chiusura loop feedback (`processFeedbackChunks` + preferenze nel system prompt chat) e test L1 `audit_response_note`; merge su `main` + deploy VPS |
+| **PR** | [#162](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/162) MERGED (`9dc4d89`), [#163](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/163) MERGED (`6e30d5a`) |
+| **Deploy** | `deploy-to-vps.sh` — PID 10559 → **21477**, health OK; codice live su `/var/www/sgq-backend` |
+| **Chunk prod** | `document_content` 368, `audit_response_note` 22, `document` 641 (i chunk da feedback nascano al primo feedback utente / job notturno) |
+| **Worktree** | Il blocco storico `C:\Dev\wt-drawing-extraction` **non esiste** nell'ambiente cloud; sblocco = allineare i branch a `main` e attendere CI (policy "branch up to date") |
+| **Lezione** | PR draft vecchie (>2 settimane) vanno **merge-main → push → CI verde** prima di `gh pr merge`; rimuovere script `tmp-*` diagnostici prima del merge |
+
 ### Sessione 16 maggio 2026 — Assistente AI: contesto azienda e ottimizzazione knowledge
 
 #### Architettura assistente AI — contesto e ottimizzazione
