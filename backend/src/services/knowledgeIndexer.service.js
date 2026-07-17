@@ -79,7 +79,42 @@ function inferStandardId(row, entityType) {
   return null;
 }
 
+// Soglia minima di testo per note audit: sotto questa lunghezza la nota viene
+// saltata (risposte con note vuote, status puri senza commento).
+const MIN_AUDIT_NOTE_LENGTH = 20;
+
 const INDEXABLE_ENTITIES = [
+  {
+    entity_type: 'audit_response_note',
+    sql: `SELECT ar.response_id AS id, a.company_id,
+            COALESCE(a.standard_id, (
+              SELECT TOP 1 ast.standard_id FROM audit_standards ast
+              WHERE ast.audit_id = a.audit_id ORDER BY ast.standard_id
+            )) AS standard_id,
+            a.audit_number, a.audit_date,
+            ar.conformity_status, ar.notes,
+            cq.section_code, cq.question_text,
+            c.name AS company_name
+          FROM audit_responses ar
+          JOIN audits a ON ar.audit_id = a.audit_id
+          JOIN checklist_questions cq ON ar.question_id = cq.question_id
+          LEFT JOIN companies c ON a.company_id = c.id
+          WHERE a.organization_id = @orgId
+            AND a.status != 'deleted'
+            AND ar.notes IS NOT NULL
+            AND LEN(ar.notes) > ${MIN_AUDIT_NOTE_LENGTH}`,
+    buildText: (r) => {
+      const parts = [];
+      const header = `Audit ${r.audit_number || '?'} del ${r.audit_date || '?'}`;
+      if (r.company_name) parts.push(`${header} (${r.company_name})`);
+      else parts.push(header);
+      if (r.section_code) parts.push(`Clausola ${r.section_code}`);
+      if (r.question_text) parts.push(`Domanda: ${r.question_text}`);
+      if (r.conformity_status) parts.push(`Esito: ${r.conformity_status}`);
+      parts.push(`Note consulente: ${r.notes}`);
+      return parts.join('. ');
+    },
+  },
   {
     entity_type: 'audit_conclusion',
     sql: `SELECT a.audit_id AS id, a.company_id,
@@ -246,6 +281,7 @@ async function tableExists(tableName) {
  * Mappa entity_type ? tabella principale (per il check di esistenza).
  */
 const ENTITY_TABLE_MAP = {
+  audit_response_note: 'audit_responses',
   audit_conclusion: 'audits',
   non_conformity: 'non_conformities',
   nc_action: 'nc_actions',
@@ -610,11 +646,124 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
   return scored.slice(0, topK);
 }
 
+// ---------------------------------------------------------------------------
+// Feedback loop: converte ai_feedback accettati/corretti in knowledge chunks
+// ---------------------------------------------------------------------------
+
+const FEEDBACK_ENTITY_TYPE = 'ai_feedback_accepted';
+
+/**
+ * Processa i feedback AI (accepted/rephrased) e li converte in knowledge chunks
+ * con embedding, cosi' il RAG li recupera naturalmente come contesto.
+ *
+ * Idempotenza: verifica l'esistenza del chunk tramite entity_type + entity_id
+ * (= ai_feedback.id). Un re-run non produce duplicati.
+ *
+ * Multi-tenant: scoped per organization_id.
+ *
+ * @param {number} organizationId
+ * @returns {Promise<number>} numero di nuovi chunk creati
+ */
+async function processFeedbackChunks(organizationId) {
+  if (!(await tableExists('ai_feedback'))) {
+    logger.debug('[KnowledgeIndexer] ai_feedback table not found, skip feedback processing');
+    return 0;
+  }
+
+  let feedbackRows;
+  try {
+    const result = await query(
+      `SELECT f.id, f.feature, f.action, f.ai_text, f.final_text,
+              f.recommendation, f.context_summary, f.audit_id
+       FROM ai_feedback f
+       WHERE f.organization_id = @orgId
+         AND f.action IN ('accepted', 'rephrased')
+         AND f.final_text IS NOT NULL AND LEN(f.final_text) > 30
+         AND NOT EXISTS (
+           SELECT 1 FROM knowledge_chunks kc
+           WHERE kc.organization_id = @orgId
+             AND kc.entity_type = @et
+             AND kc.entity_id = f.id
+         )
+       ORDER BY f.created_at DESC`,
+      { orgId: organizationId, et: FEEDBACK_ENTITY_TYPE }
+    );
+    feedbackRows = result.recordset || [];
+  } catch (err) {
+    logger.warn(`[KnowledgeIndexer] feedback query failed: ${err.message}`);
+    return 0;
+  }
+
+  if (feedbackRows.length === 0) return 0;
+
+  const allChunks = [];
+  for (const row of feedbackRows) {
+    const parts = [];
+    if (row.action === 'rephrased') {
+      parts.push(`[Correzione utente] Feature: ${row.feature}.`);
+      if (row.context_summary) parts.push(`Contesto: ${row.context_summary}.`);
+      if (row.ai_text) parts.push(`L'AI aveva suggerito: ${row.ai_text.substring(0, 500)}`);
+      parts.push(`L'utente ha corretto in: ${row.final_text}`);
+    } else {
+      parts.push(`[Risposta AI approvata] Feature: ${row.feature}.`);
+      if (row.context_summary) parts.push(`Contesto: ${row.context_summary}.`);
+      parts.push(row.final_text);
+    }
+
+    allChunks.push({
+      feedbackId: row.id,
+      text: parts.join(' '),
+    });
+  }
+
+  let created = 0;
+  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
+    const batch = allChunks.slice(i, i + EMBED_BATCH);
+    let vectors;
+    try {
+      vectors = await embed(batch.map(c => c.text));
+    } catch (err) {
+      logger.error(`[KnowledgeIndexer] embed feedback batch ${i} failed:`, err.message);
+      vectors = batch.map(() => null);
+    }
+
+    for (let j = 0; j < batch.length; j++) {
+      const c = batch[j];
+      const vec = vectors[j] || null;
+      try {
+        await query(
+          `INSERT INTO knowledge_chunks
+            (organization_id, entity_type, entity_id, chunk_text, embedding, last_indexed_at)
+           VALUES
+            (@orgId, @et, @eid, @text, @emb, GETDATE())`,
+          {
+            orgId: organizationId,
+            et: FEEDBACK_ENTITY_TYPE,
+            eid: c.feedbackId,
+            text: c.text,
+            emb: vec ? JSON.stringify(vec) : null,
+          }
+        );
+        created++;
+      } catch (err) {
+        logger.warn(`[KnowledgeIndexer] insert feedback chunk ${c.feedbackId} failed:`, err.message);
+      }
+    }
+  }
+
+  if (created > 0) {
+    logger.info(`[KnowledgeIndexer] Feedback loop: ${created} new chunks from feedback for org ${organizationId}`);
+  }
+  return created;
+}
+
 module.exports = {
   indexAllEntities,
   indexDocumentContents,
   searchKnowledge,
+  processFeedbackChunks,
   companyIdForContentScope,
   INDEXABLE_ENTITIES,
   DOCUMENT_CONTENT_ENTITY,
+  FEEDBACK_ENTITY_TYPE,
 };
