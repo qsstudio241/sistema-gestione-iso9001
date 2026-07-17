@@ -69,7 +69,7 @@ const patentino_saldatore = {
         { value: "iqn",         label: "IQNet" },
         { value: "csq",         label: "CSQ / Certiquality" },
         { value: "tec_eurolab", label: "TEC Eurolab" },
-        { value: "sidercert",   label: "Sidercert" },
+        { value: "sideius",     label: "Sideius (Valor)" },
         { value: "altro",       label: "Altro" },
       ],
       hint: "Organismo terzo che ha rilasciato il certificato. Ente non in elenco? Seleziona \u201CAltro\u201D e specificalo nelle note.",
@@ -210,7 +210,7 @@ Se un campo non è presente nel documento, usa null.
 Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
-- issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sidercert, ecc.)
+- issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
 - material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)

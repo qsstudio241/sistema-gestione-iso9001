@@ -118,7 +118,7 @@ Primo utilizzo in campo del modulo patentini saldatori (upload batch WQ). 6 punt
 
 | # | Punto cliente | Stato | Fix |
 |---|----------------|-------|-----|
-| 1 | ODC mancanti (TEC Eurolab, Sidercert) | ✅ Risolto | Aggiunti a `issuing_body` select + prompt AI (`documentTypeSchemas.js` app+backend) |
+| 1 | ODC mancanti (TEC Eurolab, Sideius) | ✅ Risolto | Aggiunti a `issuing_body` select (`documentTypeSchemas.js`) + normalizzazione backend (`textEncodingRepair.js`) |
 | 2 | Patentini reali riportano il gruppo padre (1, 8…), non solo il sottogruppo (1.2, 8.1) | ✅ Risolto | `materialGroups15608.js` (app+backend): aggiunte le opzioni di gruppo padre come selezionabili accanto ai sottogruppi (`PARENT_GROUP_ENTRIES`), senza rimuovere questi ultimi |
 | 3 | Serve il simbolo ≥ per spessori/diametri senza limite superiore + precisione decimale | ✅ Risolto | `weldingDesignation.js` (app+backend) e `deriveRangeString` (`importJobs.controller.js`, `qualifications.controller.js`) mostrano "≥Xmm" quando è noto solo il minimo; il campo numerico UI accetta già decimali (`step="any"`) |
 | 4 | Label "Data scadenza (2 anni da Esame)" errata per 9606-1 (3 anni, non 2) | ✅ Risolto | Label generica "Data di scadenza" in `documentTypeSchemas.js`, dettaglio norma spostato nell'hint |
