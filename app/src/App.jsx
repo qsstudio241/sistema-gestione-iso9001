@@ -39,6 +39,7 @@ const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage")
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
+const GapAnalysisPage = React.lazy(() => import("./pages/GapAnalysisPage"));
 const AiAssistantPage = React.lazy(() => import("./pages/AiAssistantPage"));
 const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage"));
 const SearchPage = React.lazy(() => import("./pages/SearchPage"));
@@ -46,9 +47,11 @@ const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProcedures
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const EquipmentPage  = React.lazy(() => import("./pages/EquipmentPage"));
 const NdtReportsPage = React.lazy(() => import("./pages/NdtReportsPage"));
+const WeldingBooksPage = React.lazy(() => import("./pages/WeldingBooksPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
 const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviewsPage"));
+const SALModule = React.lazy(() => import("./pages/SALModule"));
 const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
@@ -145,14 +148,16 @@ function AppContent() {
         <Route path="/reclami"          element={<LicensedRoute moduleKey="reclami"><ComplaintsPage /></LicensedRoute>} />
         <Route path="/anagrafiche"      element={<LicensedRoute moduleKey="reclami"><AnagrafichePage /></LicensedRoute>} />
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
-        <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_assist"><AiAssistantPage /></LicensedRoute>} />
-        <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_assist"><KnowledgeHealthPage /></LicensedRoute>} />
+        <Route path="/gap-analysis" element={<LicensedRoute moduleKey="ai_norms"><GapAnalysisPage /></LicensedRoute>} />
+        <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
+        <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />
-        <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><ModuleLocked module="sal" /></LicensedRoute>} />
+        <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><SALModule /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/wps" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
+        <Route path="/saldatura/welding-book" element={<LicensedRoute moduleKey="saldatura"><WeldingBooksPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
         <Route path="/cnd/strumenti" element={<LicensedRoute moduleKey="cnd"><EquipmentPage /></LicensedRoute>} />
         <Route path="/cnd/verbali"   element={<LicensedRoute moduleKey="cnd"><NdtReportsPage /></LicensedRoute>} />

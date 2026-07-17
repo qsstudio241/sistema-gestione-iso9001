@@ -1,12 +1,11 @@
 /**
  * NdtItemAttachments — allegati (foto) per singola riga Elenco Marche VT
  *
- * Non usa useAttachmentManager (legato all'audit context).
- * Upload diretto via apiService + compressione foto lato client.
- * Nessun limite al numero di foto per riga.
+ * Il picker si apre dal pulsante 📷 nella riga (ref.openFilePicker).
+ * Mostra galleria miniature + eventuali errori; nessun secondo pulsante upload.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import apiService from "../services/apiService";
 import { compressImageFile } from "../hooks/useAttachmentManager";
 import "./NdtItemAttachments.css";
@@ -14,19 +13,35 @@ import "./NdtItemAttachments.css";
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/heic,image/heif,image/webp";
 const MAX_SIZE_MB = 20;
 
-export default function NdtItemAttachments({ itemId, reportId, readOnly = false }) {
+const NdtItemAttachments = forwardRef(function NdtItemAttachments(
+    { itemId, readOnly = false, onStateChange },
+    ref
+) {
     const [attachments, setAttachments] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
     const inputRef = useRef(null);
 
-    // Carica allegati esistenti
     useEffect(() => {
         if (!itemId) return;
         apiService.get(`/attachments?ndt_report_item_id=${itemId}`)
             .then(res => setAttachments(res?.data || res?.attachments || []))
             .catch(() => setAttachments([]));
     }, [itemId]);
+
+    useEffect(() => {
+        onStateChange?.({
+            count: attachments.length,
+            uploading,
+            error,
+        });
+    }, [attachments.length, uploading, error, onStateChange]);
+
+    useImperativeHandle(ref, () => ({
+        openFilePicker() {
+            if (!readOnly) inputRef.current?.click();
+        },
+    }), [readOnly]);
 
     const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files || []);
@@ -41,7 +56,6 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
                     continue;
                 }
 
-                // Compressione foto (riusa la funzione già in codebase)
                 const fileToUpload = file.type.startsWith("image/")
                     ? await compressImageFile(file).catch(() => file)
                     : file;
@@ -52,12 +66,11 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
                 formData.append("category", "photo");
                 formData.append("description", "Foto componente VT");
 
-                // Upload tramite fetch diretto (apiService non ha helper multipart per ndt)
                 const token = apiService.getToken ? apiService.getToken() : null;
                 const headers = {};
                 if (token) headers["Authorization"] = `Bearer ${token}`;
 
-                const resp = await fetch(`${apiService.baseUrl}/attachments`, {
+                const resp = await fetch(`${apiService.baseUrl}/attachments/upload`, {
                     method: "POST",
                     headers,
                     credentials: "include",
@@ -69,11 +82,9 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
                     throw new Error(err.error || `Upload fallito (${resp.status})`);
                 }
 
-                const result = await resp.json();
-                // Ricarica lista allegati
+                await resp.json();
                 const listResp = await apiService.get(`/attachments?ndt_report_item_id=${itemId}`);
                 setAttachments(listResp?.data || listResp?.attachments || []);
-
             } catch (err) {
                 setError("Upload fallito: " + (err.message || "errore sconosciuto"));
             }
@@ -94,7 +105,6 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
     };
 
     const getPreviewUrl = (att) => {
-        // Usa lo stesso pattern di AttachmentPreview.jsx
         const token = apiService.getToken ? apiService.getToken() : null;
         const base = `${apiService.baseUrl}/attachments/${att.attachment_id}/download`;
         return token ? `${base}?token=${encodeURIComponent(token)}` : base;
@@ -102,9 +112,25 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
 
     if (!itemId) return null;
 
+    const hasContent = attachments.length > 0 || uploading || !!error;
+
     return (
-        <div className="ndt-att-root">
-            {/* Thumbnail gallery */}
+        <div className={`ndt-att-root${hasContent ? "" : " ndt-att-root-hidden"}`}>
+            <input
+                ref={inputRef}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                multiple
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleFileSelect}
+                disabled={readOnly || uploading}
+            />
+
+            {uploading && (
+                <span className="ndt-att-status">{"\u23F3"} Caricamento foto...</span>
+            )}
+
             {attachments.length > 0 && (
                 <div className="ndt-att-gallery">
                     {attachments.map(att => (
@@ -132,34 +158,9 @@ export default function NdtItemAttachments({ itemId, reportId, readOnly = false 
                 </div>
             )}
 
-            {/* Pulsante aggiungi foto */}
-            {!readOnly && (
-                <div className="ndt-att-actions">
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        accept={ACCEPTED_TYPES}
-                        multiple
-                        capture="environment"
-                        style={{ display: "none" }}
-                        onChange={handleFileSelect}
-                    />
-                    <button
-                        type="button"
-                        className={`ndt-att-btn${uploading ? " ndt-att-uploading" : ""}`}
-                        onClick={() => inputRef.current?.click()}
-                        disabled={uploading}
-                        title="Scatta o scegli foto"
-                    >
-                        {uploading
-                            ? "\u23F3 Caricamento..."
-                            : attachments.length === 0
-                                ? "\uD83D\uDCF7 Aggiungi foto"
-                                : `\uD83D\uDCF7 ${attachments.length} foto`}
-                    </button>
-                    {error && <span className="ndt-att-error">{error}</span>}
-                </div>
-            )}
+            {error && <span className="ndt-att-error">{error}</span>}
         </div>
     );
-}
+});
+
+export default NdtItemAttachments;

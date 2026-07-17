@@ -1,6 +1,11 @@
 /* NdtItemAttachments — foto allegate a singola riga Elenco Marche */
 
 .ndt-att-root { display: flex; flex-direction: column; gap: 6px; }
+.ndt-att-root-hidden { display: none; }
+
+.ndt-att-status {
+    font-size: 0.78rem; color: #6b7280; font-weight: 500;
+}
 
 /* Gallery thumbnails */
 .ndt-att-gallery {
@@ -27,21 +32,10 @@
 }
 .ndt-att-thumb:hover .ndt-att-delete { opacity: 1; }
 
-/* Pulsante aggiungi */
-.ndt-att-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ndt-att-btn {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
-    border: 1.5px dashed #d1d5db; background: #f9fafb; cursor: pointer; color: #374151;
-    transition: border-color 0.15s, background 0.15s; white-space: nowrap;
-}
-.ndt-att-btn:hover { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
-.ndt-att-uploading { opacity: 0.6; cursor: wait; }
 .ndt-att-error { font-size: 0.75rem; color: #dc2626; }
 
-/* Mobile: thumbnail pi\u00fa grandi per il tocco */
+/* Mobile: thumbnail più grandi per il tocco */
 @media (max-width: 768px) {
     .ndt-att-thumb { width: 80px; height: 80px; }
     .ndt-att-delete { opacity: 1; width: 22px; height: 22px; font-size: 0.85rem; }
-    .ndt-att-btn { min-height: 44px; padding: 8px 14px; font-size: 0.875rem; }
 }

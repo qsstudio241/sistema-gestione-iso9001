@@ -44,7 +44,25 @@ jest.mock('../services/contractReviewNotification.service', () => ({
   notifyAfterAssigneeChange: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('../services/aiProviderAdapter', () => ({
+  chat: jest.fn(),
+  getActiveProvider: jest.fn(() => 'gemini'),
+}));
+
+jest.mock('../services/aiContextBuilder.service', () => ({
+  buildReviewRequirementsContext: jest.fn().mockResolvedValue({
+    systemPrompt: 'SYS',
+    userPrompt: 'USR',
+    contextSummary: 'ctx',
+  }),
+}));
+
+jest.mock('../services/aiOrganizationContext.service', () => ({
+  enrichSystemPromptWithOrganization: jest.fn(async (p) => p),
+}));
+
 const { query, getPool, sql } = require('../config/database');
+const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const ctrl = require('./contractReview.controller');
 
 const ORG_ID = 42;
@@ -689,5 +707,113 @@ describe('importFromJob', () => {
     await ctrl.importFromJob(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json.mock.calls[0][0].code).toBe('NO_ELIGIBLE_FILES');
+  });
+});
+
+// ─── analyzeRequirements — persistenza analisi capitolato (slice #2) ──────────
+describe('analyzeRequirements — persistenza', () => {
+  const CASE_ID = 30;
+  const suggestion = {
+    identified_requirements: [
+      { ref: 'REQ-01', description: 'Materiale S355', assessment: 'to_verify' },
+      { ref: 'REQ-02', description: 'Consegna 30gg', assessment: 'gap', gap_detail: 'tempi stretti' },
+    ],
+    identified_standards: ['ISO 3834-2'],
+    overall_risk: 'medium',
+    summary: 'Analisi di prova',
+  };
+
+  // Mock "intelligente" per testo SQL: indipendente dall'ordine delle chiamate.
+  function installQueryMock({ caseRows = [{ id: CASE_ID, organization_id: ORG_ID, company_id: 5 }], analysisId = 77 } = {}) {
+    query.mockImplementation((sqlText) => {
+      if (/WHERE cc\.id = @caseId/.test(sqlText)) return Promise.resolve({ recordset: caseRows });
+      if (/INSERT INTO commercial_case_drawing_extractions/.test(sqlText)) return Promise.resolve({ recordset: [{ id: analysisId }] });
+      if (/INSERT INTO commercial_case_extracted_requirements/.test(sqlText)) return Promise.resolve({ recordset: [] });
+      return Promise.resolve({ recordset: [] });
+    });
+  }
+
+  it('persiste job source=text + un requisito per riga e ritorna analysis_id', async () => {
+    getActiveProvider.mockReturnValue('gemini');
+    chat.mockResolvedValue({ content: JSON.stringify(suggestion), model: 'gemini-2.5-flash' });
+    installQueryMock();
+
+    const req = mockReq({ params: { id: String(CASE_ID) }, body: { capitolatoText: 'Capitolato di prova' } });
+    const res = mockRes();
+    await ctrl.analyzeRequirements(req, res);
+
+    const jobInsert = query.mock.calls.find((c) => /INSERT INTO commercial_case_drawing_extractions/.test(c[0]));
+    expect(jobInsert).toBeTruthy();
+    expect(jobInsert[0]).toMatch(/'text'/); // source = 'text'
+    const reqInserts = query.mock.calls.filter((c) => /INSERT INTO commercial_case_extracted_requirements/.test(c[0]));
+    expect(reqInserts).toHaveLength(2);
+    expect(reqInserts[0][1]).toMatchObject({ extractionId: 77, fieldKey: 'REQ-01', valueText: 'Materiale S355' });
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.analysis_id).toBe(77);
+    expect(body.suggestion).toMatchObject({ overall_risk: 'medium' });
+  });
+
+  it('provider AI non configurato → 503', async () => {
+    getActiveProvider.mockReturnValue(null);
+    const req = mockReq({ params: { id: String(CASE_ID) }, body: { capitolatoText: 'x' } });
+    const res = mockRes();
+    await ctrl.analyzeRequirements(req, res);
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json.mock.calls[0][0].code).toBe('AI_NOT_CONFIGURED');
+  });
+
+  it('persistenza fallita non blocca la risposta (analysis_id null)', async () => {
+    getActiveProvider.mockReturnValue('gemini');
+    chat.mockResolvedValue({ content: JSON.stringify(suggestion), model: 'm' });
+    query.mockImplementation((sqlText) => {
+      if (/WHERE cc\.id = @caseId/.test(sqlText)) return Promise.resolve({ recordset: [{ id: CASE_ID, organization_id: ORG_ID, company_id: 5 }] });
+      if (/INSERT INTO commercial_case_drawing_extractions/.test(sqlText)) return Promise.reject(new Error('Invalid column name source'));
+      return Promise.resolve({ recordset: [] });
+    });
+
+    const req = mockReq({ params: { id: String(CASE_ID) }, body: { capitolatoText: 'x' } });
+    const res = mockRes();
+    await ctrl.analyzeRequirements(req, res);
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.analysis_id).toBeNull();
+    expect(body.suggestion).toMatchObject({ overall_risk: 'medium' });
+  });
+});
+
+// ─── getCase — espone l'ultima analisi testo persistita ──────────────────────
+describe('getCase — text_analysis', () => {
+  const CASE_ID = 31;
+
+  it('include text_analysis con suggestion parsata quando presente', async () => {
+    query.mockImplementation((sqlText) => {
+      if (/WHERE cc\.id = @caseId/.test(sqlText)) return Promise.resolve({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] });
+      if (/source = 'text'/.test(sqlText)) return Promise.resolve({ recordset: [{ id: 9, raw_response: '{"summary":"ok","overall_risk":"low"}', created_at: '2026-06-24T10:00:00Z' }] });
+      return Promise.resolve({ recordset: [] });
+    });
+
+    const req = mockReq({ params: { id: String(CASE_ID) } });
+    const res = mockRes();
+    await ctrl.getCase(req, res);
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.text_analysis).toBeTruthy();
+    expect(body.text_analysis.id).toBe(9);
+    expect(body.text_analysis.suggestion).toMatchObject({ overall_risk: 'low' });
+  });
+
+  it('text_analysis null quando nessuna analisi persistita', async () => {
+    query.mockImplementation((sqlText) => {
+      if (/WHERE cc\.id = @caseId/.test(sqlText)) return Promise.resolve({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] });
+      return Promise.resolve({ recordset: [] });
+    });
+
+    const req = mockReq({ params: { id: String(CASE_ID) } });
+    const res = mockRes();
+    await ctrl.getCase(req, res);
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.text_analysis).toBeNull();
   });
 });

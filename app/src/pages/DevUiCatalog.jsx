@@ -1,5 +1,5 @@
 /**
- * DevUiCatalog ù Pagina catalogo componenti UI (solo development)
+ * DevUiCatalog  -  Pagina catalogo componenti UI (solo development)
  *
  * Visibile esclusivamente con import.meta.env.DEV === true.
  * Route: /dev/ui-catalog
@@ -45,7 +45,7 @@ export default function DevUiCatalog() {
   return (
     <div className="uic-page">
       <header className="uic-header">
-        <h1>Catalogo UI ù Design System SGQ</h1>
+        <h1>Catalogo UI  -  Design System SGQ</h1>
         <p>Componenti disponibili con tutte le varianti e stati.</p>
       </header>
 
@@ -69,7 +69,7 @@ export default function DevUiCatalog() {
             </div>
           </SubSection>
 
-          <SubSection title="Stato NC (Non Conformitù)">
+          <SubSection title="Stato NC (non conformit√† )">
             <div className="uic-badge-grid">
               {StatusBadge.getStatuses("nc").map((s) => (
                 <StatusBadge key={s} status={s} type="nc" />
@@ -77,7 +77,7 @@ export default function DevUiCatalog() {
             </div>
           </SubSection>
 
-          <SubSection title="Qualit‡ testo norma">
+          <SubSection title="Qualit√† testo norma">
             <div className="uic-badge-grid">
               {StatusBadge.getStatuses("norm_quality").map((s) => (
                 <StatusBadge key={s} status={s} type="norm_quality" />

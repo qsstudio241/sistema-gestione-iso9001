@@ -958,7 +958,7 @@ class ApiService {
      */
     getAttachmentDownloadUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
@@ -968,7 +968,7 @@ class ApiService {
      */
     getAttachmentViewUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
@@ -1637,6 +1637,30 @@ class ApiService {
         }
     }
 
+    async getIngestStaging(stagingId) {
+        return this.get(`/ingest-staging/${stagingId}`);
+    }
+
+    async getIngestStagingFileBlob(stagingId) {
+        const url = `${this.baseUrl}/ingest-staging/${stagingId}/file`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
+    }
+
+    async confirmIngestStaging(stagingId, fields = {}) {
+        return this.post(`/ingest-staging/${stagingId}/confirm`, { fields });
+    }
+
+    async rejectIngestStaging(stagingId) {
+        return this.post(`/ingest-staging/${stagingId}/reject`, {});
+    }
+
     async commitImportJobFileToQualification(jobId, fileId, data = {}) {
         return this.post(`/import-jobs/${jobId}/files/${fileId}/commit-to-qualification`, data);
     }
@@ -1975,6 +1999,22 @@ class ApiService {
         return this.get(`/cases/${caseId}/extractions/${extractionId}`);
     }
 
+    async listDrawingExtractions(caseId) {
+        return this.get(`/cases/${caseId}/extractions`);
+    }
+
+    async getExtractedRequirementsSummary(caseId) {
+        return this.get(`/cases/${caseId}/extracted-requirements-summary`);
+    }
+
+    async analyzeCaseDocuments(caseId, body = {}) {
+        return this.post(`/cases/${caseId}/analyze-documents`, body, { timeout: 60000 });
+    }
+
+    async getCaseExtractedCoverage(caseId, projectId) {
+        return this.get(`/cases/${caseId}/extracted-coverage?project_id=${encodeURIComponent(projectId)}`);
+    }
+
     async reviewExtractedRequirement(reqId, patch) {
         return this.patch(`/extracted-requirements/${reqId}`, patch);
     }
@@ -1998,6 +2038,45 @@ class ApiService {
         if (opts.questionText) body.questionText = opts.questionText;
         if (opts.standardKey) body.standardKey = opts.standardKey;
         return this.post('/ai/chat', body, { timeout: 120000 });
+    }
+
+    async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
+        const qs = new URLSearchParams();
+        if (companyId) qs.set('companyId', String(companyId));
+        qs.set('standardCode', standardCode);
+        return this.get(`/gap-analysis?${qs.toString()}`);
+    }
+
+    // ─── SAL — Stato Avanzamento Lavori (motore gap operativo, licenza sal) ──
+
+    async getGapMatrix(companyId, { standardCode, dateFrom } = {}) {
+        const qs = new URLSearchParams();
+        if (standardCode) qs.set('standardCode', standardCode);
+        if (dateFrom) qs.set('dateFrom', dateFrom);
+        const query = qs.toString();
+        return this.get(`/companies/${companyId}/gap-matrix${query ? `?${query}` : ''}`);
+    }
+
+    async updateGapStatus(companyId, normRequirementId, payload) {
+        return this.put(`/companies/${companyId}/gap-statuses/${normRequirementId}`, payload);
+    }
+
+    async seedGapMatrix(companyId, { standardCodes } = {}) {
+        const body = {};
+        if (Array.isArray(standardCodes) && standardCodes.length) {
+            body.standardCodes = standardCodes;
+        }
+        return this.post(`/companies/${companyId}/gap-matrix/seed`, body);
+    }
+
+    async getGapStatusHistory(companyId, normRequirementId) {
+        return this.get(`/companies/${companyId}/gap-statuses/${normRequirementId}/history`);
+    }
+
+    async syncSalAuditHints(companyId, { monthsBack } = {}) {
+        const body = {};
+        if (monthsBack != null) body.monthsBack = monthsBack;
+        return this.post(`/companies/${companyId}/gap-matrix/sync-audit-hints`, body);
     }
 
     async globalSearch(params = {}) {
@@ -2066,6 +2145,34 @@ class ApiService {
             throw err;
         }
     }
+    async uploadWpsBatch(files, companyId) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('files', f));
+        if (companyId) fd.append('company_id', String(companyId));
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(`${this.baseUrl}/welding/wps/upload-batch`, {
+                method: 'POST', headers, body: fd, signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `Batch upload WPS fallito (${response.status})`);
+            }
+            return response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('Timeout upload WPS (180s)');
+            throw err;
+        }
+    }
+    async getIngestLearningStats(docType) {
+        const qs = docType ? `?doc_type=${encodeURIComponent(docType)}` : '';
+        return this.get(`/ingest-staging/learning-stats${qs}`);
+    }
     async getWpsCoverage(projectId)    { return this.get(`/welding/wps/coverage?project_id=${projectId}`); }
 
     // ─── CND — Strumenti e Attrezzature ─────────────────────────────────────
@@ -2089,6 +2196,14 @@ class ApiService {
     async updateNdtReport(id, data)      { return this.put(`/ndt-reports/${id}`, data); }
     async deleteNdtReport(id)            { return this.delete(`/ndt-reports/${id}`); }
     async getNdtReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports/stats${qs ? '?' + qs : ''}`); }
+
+    // ─── Saldatura — Welding Book (IOF ISO 3834) ─────────────────────────────
+    async getWeldingBookList(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/welding-books${qs ? '?' + qs : ''}`); }
+    async getWeldingBook(id)               { return this.get(`/welding-books/${id}`); }
+    async createWeldingBook(data)          { return this.post('/welding-books', data); }
+    async updateWeldingBook(id, data)      { return this.put(`/welding-books/${id}`, data); }
+    async deleteWeldingBook(id)            { return this.delete(`/welding-books/${id}`); }
+    async getWeldingBookStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/welding-books/stats${qs ? '?' + qs : ''}`); }
 
     // ─── Projects / Commesse (Modulo Saldatura) ─────────────────────────────
     async getProjects(params = {})   { const qs = new URLSearchParams(params).toString(); return this.get(`/projects${qs ? '?' + qs : ''}`); }

@@ -213,7 +213,7 @@ function buildPendingIssuesOoxml(pendingIssues = []) {
 
 // ─── Hyperlink cliccabile in Word (fldSimple — non richiede modifica rels) ────
 // Produce: <w:p>...<w:fldSimple w:instr=" HYPERLINK "url" ">..link testo..</w:fldSimple></w:p>
-function xmlHyperlinkPara(url, displayText, opts = {}) {
+export function xmlHyperlinkPara(url, displayText, opts = {}) {
     const color = opts.color || '1E40AF';
     const sz = opts.size ? `<w:sz w:val="${opts.size}"/><w:szCs w:val="${opts.size}"/>` : '';
     const escapedUrl = escXml(url);

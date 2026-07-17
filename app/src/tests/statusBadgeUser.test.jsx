@@ -1,5 +1,5 @@
 /**
- * Test L1 — StatusBadge (type="user")
+ * Test L1 â€” StatusBadge (type="user")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
  * per ogni stato utente. UsersAdminPage migra il badge "inactive";
@@ -16,7 +16,7 @@ const USER_STATES = [
   { status: 'orphan', label: 'Incompleto' },
 ];
 
-describe('StatusBadge — stato utente', () => {
+describe('StatusBadge â€” stato utente', () => {
   it.each(USER_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {

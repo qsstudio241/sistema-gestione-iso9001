@@ -39,6 +39,10 @@ async function suggest(req, res) {
     let built;
     switch (feature) {
       case 'review_requirements':
+        logger.warn(
+          '[DEPRECATED] POST /ai/suggest feature=review_requirements — ' +
+          'migrate to POST /contract-reviews/:id/ai/analyze-requirements',
+        );
         built = await contextBuilder.buildReviewRequirementsContext({
           ...context,
           organizationId: req.user.organization_id,
@@ -47,7 +51,7 @@ async function suggest(req, res) {
       case 'audit_conclusions':
         built = await contextBuilder.buildAuditConclusionsContext({
           ...context,
-          userId: req.user.id,
+          userId: req.user.user_id || req.user.id,
           organizationId: req.user.organization_id,
         });
         break;
@@ -131,7 +135,7 @@ async function feedback(req, res) {
        VALUES (@orgId, @userId, @feature, @auditId, @action, @aiText, @finalText, @recommendation, @contextSummary, @modelUsed)`,
       {
         orgId: req.user.organization_id,
-        userId: req.user.id,
+        userId: req.user.user_id || req.user.id,
         feature,
         auditId: auditId || null,
         action,

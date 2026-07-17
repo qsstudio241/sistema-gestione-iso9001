@@ -1,5 +1,9 @@
 /**
- * NcActionsList - elenco azioni correttive/preventive per una NC (ISO 10.2)
+ * NcActionsList - elenco correzione + azioni correttive/preventive per una NC (ISO 10.2)
+ *
+ * Raggruppa in due blocchi:
+ *  - Correzione (action_type === 'immediate') — obbligatoria per risolvere la NC
+ *  - Azioni correttive/preventive — facoltative, condizionate dalla valutazione §10.2.1 b)
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -12,7 +16,6 @@ import RichTextField, {
 } from "./RichTextField";
 import { formatDate } from "../utils/dateHelpers";
 import {
-  canVerifyAction,
   filterActionsByDue,
   getActionDueStatus,
 } from "../utils/ncWorkflow";
@@ -26,13 +29,15 @@ const ACTION_STATUS_CFG = {
   open:        { label: "Aperta",     cls: "act-open" },
   in_progress: { label: "In corso",   cls: "act-in-progress" },
   completed:   { label: "Completata", cls: "act-completed" },
+  // "verified" resta solo per azioni storiche già segnate come tali prima
+  // della semplificazione del workflow (la verifica di efficacia è ora
+  // esclusivamente complessiva, sez. 6 del drawer NC).
   verified:    { label: "Verificata", cls: "act-verified" },
 };
 
 const ACTION_STEP_CFG = {
   in_progress: { label: "Avvia", statusBtn: "partial" },
   completed:   { label: "Completa", statusBtn: "compliant" },
-  verified:    { label: "Verifica", statusBtn: "compliant" },
 };
 
 /**
@@ -47,7 +52,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(() => ({
-    action_type: "corrective",
+    action_type: "immediate",
     description: resolveNcFieldInitial(
       "",
       organizationId,
@@ -62,8 +67,6 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState(null);
   const [contacts, setContacts] = useState([]);
-  const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
-  const [verifyError, setVerifyError] = useState(null);
   const [dueFilter, setDueFilter] = useState("all");
   const [editDraft, setEditDraft] = useState(null);
 
@@ -107,14 +110,14 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
       if (organizationId) {
         clearNcFieldDraftsForScope(organizationId, actionDraftScope, ["new_action_description"]);
       }
-      setForm({
-        action_type: "corrective",
+      setForm((prev) => ({
+        action_type: prev.action_type === "immediate" ? "corrective" : "corrective",
         description: "",
         responsible: "",
         responsible_contact_id: null,
         useExternalResponsible: false,
         due_date: "",
-      });
+      }));
       setShowForm(false);
       await load();
     } catch (err) {
@@ -125,64 +128,12 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
   }
 
   async function handleStatus(action, newStatus) {
-    if (newStatus === "verified") {
-      const verifyScope = `${actionDraftScope}:verify:${action.action_id}`;
-      setVerifyDraft({
-        actionId: action.action_id,
-        note: resolveNcFieldInitial(
-          action.verification_note,
-          organizationId,
-          verifyScope,
-          "verification_note",
-        ),
-      });
-      setVerifyError(null);
-      return;
-    }
     try {
       await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
       await load();
     } catch {
       alert("Impossibile aggiornare lo stato dell'azione.");
     }
-  }
-
-  async function handleConfirmVerify(action) {
-    const note = verifyDraft.note.trim();
-    if (!canVerifyAction(note)) {
-      setVerifyError("Inserire la nota verifica prima di segnare l'azione come verificata.");
-      return;
-    }
-    try {
-      await apiService.updateNcAction(ncId, action.action_id, {
-        status: "verified",
-        verification_note: note,
-      });
-      if (organizationId) {
-        clearNcFieldDraftsForScope(
-          organizationId,
-          `${actionDraftScope}:verify:${action.action_id}`,
-          ["verification_note"],
-        );
-      }
-      setVerifyDraft({ actionId: null, note: "" });
-      setVerifyError(null);
-      await load();
-    } catch {
-      alert("Impossibile verificare l'azione.");
-    }
-  }
-
-  function handleCancelVerify() {
-    if (verifyDraft.actionId && organizationId) {
-      clearNcFieldDraftsForScope(
-        organizationId,
-        `${actionDraftScope}:verify:${verifyDraft.actionId}`,
-        ["verification_note"],
-      );
-    }
-    setVerifyDraft({ actionId: null, note: "" });
-    setVerifyError(null);
   }
 
   function handleStartEdit(action) {
@@ -244,12 +195,148 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
     [actions]
   );
 
+  const immediateActions = useMemo(
+    () => filteredActions.filter(a => a.action_type === "immediate"),
+    [filteredActions]
+  );
+  const otherActions = useMemo(
+    () => filteredActions.filter(a => a.action_type !== "immediate"),
+    [filteredActions]
+  );
+  const hasCompletedCorrection = useMemo(
+    () => actions.some(a => a.action_type === "immediate" && (a.status === "completed" || a.status === "verified")),
+    [actions]
+  );
+
+  function renderActionItem(a) {
+    const cfg = ACTION_STATUS_CFG[a.status] || { label: a.status, cls: "" };
+    const dueStatus = getActionDueStatus(a);
+    const nextSteps = {
+      open:        ["in_progress"],
+      in_progress: ["completed"],
+      completed:   [],
+      verified:    [],
+    };
+    return (
+      <li
+        key={a.action_id}
+        className={`nc-action-item ${cfg.cls}${dueStatus === "overdue" ? " nc-action-overdue" : ""}${dueStatus === "due_soon" ? " nc-action-due-soon" : ""}`}
+      >
+        <div className="nc-action-top">
+          <span className={`act-type-badge at-${a.action_type}`}>
+            {a.action_type === "immediate" ? "Immediata" : a.action_type === "corrective" ? "Correttiva" : "Preventiva"}
+          </span>
+          <span className={`act-status ${cfg.cls}`}>{cfg.label}</span>
+          {dueStatus === "overdue" && (
+            <span className="nc-action-due-badge overdue">Scaduta</span>
+          )}
+          {dueStatus === "due_soon" && (
+            <span className="nc-action-due-badge due-soon">In scadenza</span>
+          )}
+          <span className="nc-action-date">{formatDate(a.created_at)}</span>
+        </div>
+        <p className="nc-action-desc">{a.description}</p>
+        <div className="nc-action-meta">
+          {a.responsible && <span>Attuazione: {a.responsible}</span>}
+          {a.due_date && <span>Scadenza azione: {formatDate(a.due_date)}</span>}
+          {a.completed_at && <span>Completata: {formatDate(a.completed_at)}</span>}
+        </div>
+        {editDraft?.actionId === a.action_id && (
+          <div className="nc-action-edit-form">
+            <div className="nc-form-row nc-form-row-2col">
+              <NcResponsibleSelect
+                contacts={contacts}
+                roleFilter={["attuazione", "generico"]}
+                contactId={editDraft.responsible_contact_id}
+                textValue={editDraft.responsible}
+                useExternal={editDraft.useExternalResponsible}
+                allowExternal
+                onContactIdChange={(id) => setEditDraft(d => ({ ...d, responsible_contact_id: id }))}
+                onTextChange={(v) => setEditDraft(d => ({ ...d, responsible: v }))}
+                onUseExternalChange={(v) => setEditDraft(d => ({
+                  ...d,
+                  useExternalResponsible: v,
+                  responsible_contact_id: v ? null : d.responsible_contact_id,
+                }))}
+                label="Responsabile attuazione"
+                placeholder="Chi esegue l'azione"
+              />
+              <div>
+                <label>Scadenza</label>
+                <input
+                  type="date"
+                  value={editDraft.due_date}
+                  onChange={e => setEditDraft(d => ({ ...d, due_date: e.target.value }))}
+                />
+              </div>
+            </div>
+            {editDraft.error && <p className="nc-error">{editDraft.error}</p>}
+            <div className="nc-form-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={editDraft.saving}
+                onClick={() => handleSaveEdit(a)}
+              >
+                {editDraft.saving ? "Salvataggio..." : "Salva modifiche"}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={editDraft.saving}
+                onClick={handleCancelEdit}
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        )}
+        {a.verification_note && (
+          <p className="nc-action-verify-note">
+            <strong>Nota verifica:</strong> {a.verification_note}
+          </p>
+        )}
+        {!isClosed && (
+          <div className="nc-action-btns nc-workflow-btns">
+            {a.status !== "verified" && editDraft?.actionId !== a.action_id && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => handleStartEdit(a)}
+              >
+                Modifica
+              </button>
+            )}
+            {(nextSteps[a.status] || []).map(ns => {
+              const step = ACTION_STEP_CFG[ns] || { label: ns, statusBtn: "partial" };
+              return (
+                <button
+                  key={ns}
+                  type="button"
+                  className={`status-btn ${step.statusBtn}`}
+                  onClick={() => handleStatus(a, ns)}
+                >
+                  {step.label}
+                </button>
+              );
+            })}
+            {a.status === "open" && (
+              <button type="button" className="btn-secondary btn-action-del" onClick={() => handleDelete(a)}>
+                Elimina
+              </button>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  }
+
   if (loading) return <p className="nc-loading">Caricamento azioni...</p>;
 
   return (
     <div className={`nc-actions-panel${embedded ? " nc-actions-panel--embedded" : ""}`}>
       <div className="nc-actions-header">
-        {!embedded && <h4>Azioni correttive ({actions.length})</h4>}
+        {!embedded && <h4>Correzione e azioni ({actions.length})</h4>}
         {embedded && <span className="nc-actions-count">{actions.length} azioni</span>}
         {!isClosed && (
           <button type="button" className="btn-secondary btn-add-action" onClick={() => setShowForm(v => !v)}>
@@ -348,159 +435,45 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
       )}
 
       {actions.length === 0 ? (
-        <p className="nc-empty-actions">Nessuna azione correttiva registrata.</p>
+        <p className="nc-empty-actions">Nessuna azione registrata.</p>
       ) : filteredActions.length === 0 ? (
         <p className="nc-empty-actions">Nessuna azione con la scadenza selezionata.</p>
       ) : (
-        <ul className="nc-actions-list">
-          {filteredActions.map(a => {
-            const cfg = ACTION_STATUS_CFG[a.status] || { label: a.status, cls: "" };
-            const dueStatus = getActionDueStatus(a);
-            const nextSteps = {
-              open:        ["in_progress"],
-              in_progress: ["completed"],
-              completed:   ["verified"],
-              verified:    [],
-            };
-            return (
-              <li
-                key={a.action_id}
-                className={`nc-action-item ${cfg.cls}${dueStatus === "overdue" ? " nc-action-overdue" : ""}${dueStatus === "due_soon" ? " nc-action-due-soon" : ""}`}
-              >
-                <div className="nc-action-top">
-                  <span className={`act-type-badge at-${a.action_type}`}>
-                    {a.action_type === "immediate" ? "Immediata" : a.action_type === "corrective" ? "Correttiva" : "Preventiva"}
-                  </span>
-                  <span className={`act-status ${cfg.cls}`}>{cfg.label}</span>
-                  {dueStatus === "overdue" && (
-                    <span className="nc-action-due-badge overdue">Scaduta</span>
-                  )}
-                  {dueStatus === "due_soon" && (
-                    <span className="nc-action-due-badge due-soon">In scadenza</span>
-                  )}
-                  <span className="nc-action-date">{formatDate(a.created_at)}</span>
-                </div>
-                <p className="nc-action-desc">{a.description}</p>
-                <div className="nc-action-meta">
-                  {a.responsible && <span>Attuazione: {a.responsible}</span>}
-                  {a.due_date && <span>Scadenza azione: {formatDate(a.due_date)}</span>}
-                  {a.completed_at && <span>Completata: {formatDate(a.completed_at)}</span>}
-                </div>
-                {editDraft?.actionId === a.action_id && (
-                  <div className="nc-action-edit-form">
-                    <div className="nc-form-row nc-form-row-2col">
-                      <NcResponsibleSelect
-                        contacts={contacts}
-                        roleFilter={["attuazione", "generico"]}
-                        contactId={editDraft.responsible_contact_id}
-                        textValue={editDraft.responsible}
-                        useExternal={editDraft.useExternalResponsible}
-                        allowExternal
-                        onContactIdChange={(id) => setEditDraft(d => ({ ...d, responsible_contact_id: id }))}
-                        onTextChange={(v) => setEditDraft(d => ({ ...d, responsible: v }))}
-                        onUseExternalChange={(v) => setEditDraft(d => ({
-                          ...d,
-                          useExternalResponsible: v,
-                          responsible_contact_id: v ? null : d.responsible_contact_id,
-                        }))}
-                        label="Responsabile attuazione"
-                        placeholder="Chi esegue l'azione"
-                      />
-                      <div>
-                        <label>Scadenza</label>
-                        <input
-                          type="date"
-                          value={editDraft.due_date}
-                          onChange={e => setEditDraft(d => ({ ...d, due_date: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    {editDraft.error && <p className="nc-error">{editDraft.error}</p>}
-                    <div className="nc-form-actions">
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        disabled={editDraft.saving}
-                        onClick={() => handleSaveEdit(a)}
-                      >
-                        {editDraft.saving ? "Salvataggio..." : "Salva modifiche"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        disabled={editDraft.saving}
-                        onClick={handleCancelEdit}
-                      >
-                        Annulla
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {a.verification_note && (
-                  <p className="nc-action-verify-note">
-                    <strong>Nota verifica:</strong> {a.verification_note}
-                  </p>
-                )}
-                {verifyDraft.actionId === a.action_id && (
-                  <div className="nc-action-verify-form">
-                    <label htmlFor={`act-verif-${a.action_id}`}>Nota verifica azione *</label>
-                    <RichTextField
-                      id={`act-verif-${a.action_id}`}
-                      rows={2}
-                      value={verifyDraft.note}
-                      onChange={(e) => setVerifyDraft((d) => ({ ...d, note: e.target.value }))}
-                      placeholder="Descrivi l'esito della verifica su questa azione..."
-                      draftScopeId={`${actionDraftScope}:verify:${a.action_id}`}
-                      draftFieldId="verification_note"
-                      persistLocalDraft
-                      organizationId={organizationId}
-                    />
-                    {verifyError && <p className="nc-error">{verifyError}</p>}
-                    <div className="nc-form-actions">
-                      <button type="button" className="btn-primary" onClick={() => handleConfirmVerify(a)}>
-                        Conferma verifica
-                      </button>
-                      <button type="button" className="btn-secondary" onClick={handleCancelVerify}>
-                        Annulla
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {!isClosed && (
-                  <div className="nc-action-btns nc-workflow-btns">
-                    {a.status !== "verified" && editDraft?.actionId !== a.action_id && (
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => handleStartEdit(a)}
-                      >
-                        Modifica
-                      </button>
-                    )}
-                    {(nextSteps[a.status] || []).map(ns => {
-                      const step = ACTION_STEP_CFG[ns] || { label: ns, statusBtn: "partial" };
-                      return (
-                        <button
-                          key={ns}
-                          type="button"
-                          className={`status-btn ${step.statusBtn}`}
-                          onClick={() => handleStatus(a, ns)}
-                        >
-                          {step.label}
-                        </button>
-                      );
-                    })}
-                    {a.status === "open" && (
-                      <button type="button" className="btn-secondary btn-action-del" onClick={() => handleDelete(a)}>
-                        Elimina
-                      </button>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {/* Blocco Correzione (immediate) */}
+          <div className="nc-actions-group">
+            <h5 className="nc-actions-group-title">
+              {"Correzione (ISO \u00A710.2.1a)"}
+              {!hasCompletedCorrection && !isClosed && (
+                <span className="nc-action-required-badge">Obbligatoria</span>
+              )}
+              {hasCompletedCorrection && (
+                <span className="nc-action-done-badge">{"\u2713"}</span>
+              )}
+            </h5>
+            {immediateActions.length === 0 ? (
+              <p className="nc-empty-actions nc-correction-empty">
+                Nessuna correzione registrata. Aggiungere almeno un{"'"}azione immediata.
+              </p>
+            ) : (
+              <ul className="nc-actions-list">
+                {immediateActions.map(a => renderActionItem(a))}
+              </ul>
+            )}
+          </div>
+
+          {/* Blocco Azioni correttive / preventive */}
+          {otherActions.length > 0 && (
+            <div className="nc-actions-group">
+              <h5 className="nc-actions-group-title">
+                {"Azioni correttive / preventive"}
+              </h5>
+              <ul className="nc-actions-list">
+                {otherActions.map(a => renderActionItem(a))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

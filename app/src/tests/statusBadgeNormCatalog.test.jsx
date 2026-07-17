@@ -1,9 +1,9 @@
 /**
- * Test L1 — StatusBadge (type="norm_catalog")
+ * Test L1 â€” StatusBadge (type="norm_catalog")
  *
  * Verifica le etichette per lo stato norma nel catalogo dell'ente,
  * usato da ImportJobsPage (CommitNormStatusBadge). I valori reali
- * emessi dal lookup sono active/withdrawn/superseded/unknown, più lo
+ * emessi dal lookup sono active/withdrawn/superseded/unknown, piÃ¹ lo
  * stato transitorio loading.
  */
 import { describe, it, expect } from 'vitest';
@@ -19,7 +19,7 @@ const NORM_STATES = [
   { status: 'loading', label: 'Verifica in corso\u2026' },
 ];
 
-describe('StatusBadge — stato norma catalogo', () => {
+describe('StatusBadge â€” stato norma catalogo', () => {
   it.each(NORM_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {
