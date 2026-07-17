@@ -51,6 +51,21 @@ Il/i gruppo/i materiale base (ISO/TR 15608) usato/i nella prova va **sempre regi
 
 Codificato in `weldingQualificationRules9606.js::computeQualifiedPipeDiameterRange`.
 
+### Nota aggiuntiva — provino SOLO piastra, posizioni PA/PB/PC/PD (NON verificata, fonte cliente)
+
+> ⚠️ **Da confermare su copia integrale della norma.** Segnalata da Studio Mason (cliente
+> reale, feedback 16/07/2026) sulla base di patentini in campo: quando è stata qualificata
+> solo la piastra (nessun tubo testato) in posizione PA/PB/PC/PD, il campo di validità
+> diametro riportato sui certificati copre tipicamente tubi **≥500 mm**, o **≥75 mm** se la
+> posizione di prova sulla piastra era rotante (il pezzo ruota durante la saldatura,
+> simulando la curvatura di un tubo). Questa nota **non è presente nell'estratto verificato**
+> di questo catalogo (GAP Tabella 7, vedi sezione "Nota sulla fonte" in cima al documento).
+> Codificata come funzione consultiva in `weldingQualificationRules9606.js::describePlateOnlyRotatingPositionDiameterNote`
+> (usata solo come suggerimento/hint, **non** per popolare automaticamente record del
+> registro qualifiche senza revisione umana). Il form attuale non ha un campo dedicato
+> "posizione rotante": va chiesto al committente se serve introdurlo per automatizzare
+> completamente questo calcolo (vedi domande aperte).
+
 ## Range di qualificazione spessore per giunti d'angolo (ISO 9606-1 Tabella 8 — parziale, verificato)
 
 | Spessore provino t | Campo di validità |

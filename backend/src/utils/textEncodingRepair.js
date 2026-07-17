@@ -214,8 +214,9 @@ function normalizeIssuingBodyCode(val) {
     if (/\bimq\b/.test(s)) return 'imq';
     if (/iqnet|\biqn\b/.test(s)) return 'iqn';
     if (/csq|certiquality/.test(s)) return 'csq';
-    if (/tec eurolab|eurolab/.test(s)) return 'altro';
-    const allowed = ['tuv', 'bv', 'dnv', 'rina', 'imq', 'iqn', 'csq', 'altro'];
+    if (/tec eurolab|eurolab/.test(s)) return 'tec_eurolab';
+    if (/sideius|\bvalor\b/.test(s)) return 'sideius';
+    const allowed = ['tuv', 'bv', 'dnv', 'rina', 'imq', 'iqn', 'csq', 'tec_eurolab', 'sideius', 'altro'];
     return allowed.includes(s) ? s : 'altro';
 }
 
