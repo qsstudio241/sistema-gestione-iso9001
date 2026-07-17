@@ -69,6 +69,7 @@ const importJobsRoutes      = require('./routes/importJobs.routes');
 const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.routes');
 const auditEventsRoutes = require('./routes/auditEvents.routes');
 const normBrokerRoutes = require('./routes/normBroker.routes');
+const gapAnalysisRoutes = require('./routes/gapAnalysis.routes');
 const contractReviewRoutes = require('./routes/contractReview.routes');
 const drawingExtractionRoutes = require('./routes/drawingExtraction.routes');
 const aiAssistRoutes = require('./routes/aiAssist.routes');
@@ -78,9 +79,11 @@ const documentTreeRoutes     = require('./routes/documentTree.routes');
 const normUploadRoutes       = require('./routes/normUpload.routes');
 const aiChatRoutes           = require('./routes/aiChat.routes');
 const weldingRoutes          = require('./routes/welding.routes');
+const ingestStagingRoutes    = require('./routes/ingestStaging.routes');
 const projectsRoutes         = require('./routes/projects.routes');
 const equipmentRoutes        = require('./routes/equipment.routes');
 const ndtReportsRoutes       = require('./routes/ndtReports.routes');
+const weldingBooksRoutes     = require('./routes/weldingBooks.routes');
 const searchRoutes           = require('./routes/search.routes');
 const deadlinesRoutes            = require('./routes/deadlines.routes');
 const managementReviewsRoutes    = require('./routes/managementReviews.routes');
@@ -187,16 +190,15 @@ const apiLimiter = rateLimit({
     legacyHeaders:   false,
     skip: () => rateLimitDisabled,
     keyGenerator: (req) => {
-        // JWT non ancora verificato qui (middleware auth viene dopo), ma se il
-        // token è presente in Authorization proviamo a leggere il sub in chiaro.
-        // In caso di token assente/malformato cade sull'IP reale.
+        // JWT non ancora verificato qui (middleware auth viene dopo). Campo SGQ: user_id.
         try {
             const auth = req.headers.authorization || '';
             if (auth.startsWith('Bearer ')) {
                 const payload = JSON.parse(
                     Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
                 );
-                if (payload.id || payload.sub) return `user:${payload.id || payload.sub}`;
+                const uid = payload.user_id || payload.id || payload.sub;
+                if (uid) return `user:${uid}`;
             }
         } catch (_) { /* token assente o malformato: fallback su IP */ }
         return req.ip;
@@ -292,12 +294,14 @@ app.use(API_BASE, alertRoutes);
 app.use(API_BASE, notificationsRoutes);
 app.use(API_BASE, docfileRoutes);
 app.use(API_BASE, qualificationsRoutes);
+app.use(API_BASE, ingestStagingRoutes);
 app.use(API_BASE, risksRoutes);
 app.use(`${API_BASE}/complaints`,   complaintsRoutes);
 app.use(`${API_BASE}/suppliers`,    suppliersRoutes);
 app.use(`${API_BASE}/departments`,  departmentsRoutes);
 app.use(API_BASE, importJobsRoutes);
 app.use(API_BASE, normBrokerRoutes);
+app.use(API_BASE, gapAnalysisRoutes);
 app.use(API_BASE, contractReviewRoutes);
 app.use(API_BASE, drawingExtractionRoutes);
 app.use(API_BASE, aiAssistRoutes);
@@ -306,6 +310,7 @@ app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
 app.use(API_BASE, equipmentRoutes);
 app.use(API_BASE, ndtReportsRoutes);
+app.use(API_BASE, weldingBooksRoutes);
 app.use(API_BASE, searchRoutes);
 app.use(API_BASE, deadlinesRoutes);
 app.use(API_BASE, managementReviewsRoutes);

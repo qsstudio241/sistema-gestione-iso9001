@@ -1,0 +1,33 @@
+# Dipendenze Python per il tool pdf_to_json (ProgettoISO).
+#
+# Installazione (usare il Python locale con le librerie, non lo stub
+# Windows Store):
+#   C:\Users\AI.Project\AppData\Local\Python\bin\python.exe -m pip install -r backend/scripts/pdf_to_json/requirements.txt
+#
+# Nessuna di queste librerie chiama servizi cloud/API esterne: tutta la
+# pipeline (estrazione, OCR incluso) gira in locale.
+
+# Motore primario di estrazione testo/tabelle/metadata font.
+pdfplumber==0.11.9
+
+# Fallback di estrazione testo (ultima rete, molto tollerante su PDF anomali).
+pypdf==6.10.2
+
+# Fallback di estrazione testo/font-size piu' robusto di pypdf su PDF con
+# layout complessi; usato anche per il rendering pagina->immagine richiesto
+# dall'OCR (evita cosi' la dipendenza dal binario esterno poppler).
+pymupdf==1.28.0
+
+# OCR locale opzionale (wrapper Python del binario tesseract). Funziona
+# SOLO se il programma "tesseract" e' installato a parte sul sistema
+# operativo (non e' installabile via pip): vedi README.md, sezione OCR.
+# Se il binario non e' presente, il tool salta l'OCR e segnala l'errore
+# in modo chiaro invece di bloccarsi.
+pytesseract==0.3.13
+
+# Necessaria da pytesseract per manipolare le immagini rasterizzate.
+Pillow>=8.0.0
+
+# Solo per generare PDF sintetici nei test automatici (tests/pdf_fixtures.py):
+# NON e' una dipendenza runtime della pipeline, serve solo in sviluppo/CI.
+reportlab==5.0.0

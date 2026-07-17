@@ -1,6 +1,6 @@
 /**
- * useCompanyLogoUrl � carica logo azienda con JWT.
- * Il tag <img> non pu� inviare Authorization: serve fetch + blob URL.
+ * useCompanyLogoUrl  -  carica logo azienda con JWT.
+ * Il tag <img> non può  inviare Authorization: serve fetch + blob URL.
  */
 import { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";

@@ -1035,7 +1035,7 @@ function injectOoxmlMarkers(zip, audit, getViewUrl, options = {}) {
  * Ogni parte in word/media/ DEVE avere un Default in [Content_Types].xml.
  * Molti template (es. Verbale) hanno solo png: senza jpg/jpeg/gif Word segnala "contenuto illeggibile".
  */
-function ensureImageContentTypesInZip(zip, extensions) {
+export function ensureImageContentTypesInZip(zip, extensions) {
     const ctPath = '[Content_Types].xml';
     let ct = zip.files[ctPath]?.asText();
     if (!ct || !ct.includes('</Types>')) return;
@@ -1069,7 +1069,7 @@ function ensureImageContentTypesInZip(zip, extensions) {
  * @param {PizZip} zip
  * @param {Array<{rId,imgId,base64,mimeType,ext}>} imageRegistry
  */
-function embedImagesInZip(zip, imageRegistry) {
+export function embedImagesInZip(zip, imageRegistry) {
     // Leggi relazioni esistenti
     const relsPath = 'word/_rels/document.xml.rels';
     let relsXml = zip.files[relsPath]?.asText() || '';

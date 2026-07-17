@@ -15,7 +15,7 @@ const SEARCH_ENTITY_ROUTES = {
 };
 
 export const SEARCH_GROUP_LABELS = {
-  non_conformity: 'Non conformitù',
+  non_conformity: 'Non conformit\u00E0',
   document: 'Documenti',
   audit: 'Audit',
   complaint: 'Reclami',

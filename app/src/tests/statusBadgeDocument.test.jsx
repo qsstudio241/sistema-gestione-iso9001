@@ -1,5 +1,5 @@
 /**
- * Test L1 — StatusBadge (type="document")
+ * Test L1 â€” StatusBadge (type="document")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
  * per ogni stato documento usato da DocumentRegistry e DocumentDataGrid.
@@ -18,7 +18,7 @@ const DOCUMENT_STATES = [
   { status: 'obsoleto', label: 'Obsoleto' },
 ];
 
-describe('StatusBadge — stato documento', () => {
+describe('StatusBadge â€” stato documento', () => {
   it.each(DOCUMENT_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {

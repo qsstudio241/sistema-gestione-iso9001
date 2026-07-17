@@ -99,6 +99,37 @@ describe('drawingExtraction.controller — startExtraction', () => {
         expect(res.body.requirements).toHaveLength(1);
     });
 
+    test('idempotenza: re-estrazione rimuove requisiti e job precedenti dello stesso allegato', async () => {
+        installQueryMock({
+            caseRows: [{ id: 5 }],
+            attRows: [{ attachment_id: 99, storage_path: '/tmp/d.png', mime_type: 'image/png', file_name: 'd.png' }],
+            headRow: { id: 10, case_id: 5, status: 'done', organization_id: 1 },
+            reqRows: [{ id: 1, req_type: 'material', value_text: 'S355JR', review_status: 'extracted' }],
+        });
+        fs.readFile.mockResolvedValue(Buffer.from('PNG'));
+        service.extractFromFile.mockResolvedValue({
+            provider: 'gemini',
+            requirements: [{ req_type: 'material', value_text: 'S355JR' }],
+            raw: '{}',
+            model: 'gemini-2.5-flash',
+        });
+
+        const res = createRes();
+        await ctrl.startExtraction(baseReq({ caseId: '5', docId: '99' }), res);
+
+        const delReq = query.mock.calls.find((c) => /DELETE r\s+FROM commercial_case_extracted_requirements r/.test(c[0]));
+        const delJob = query.mock.calls.find((c) => /DELETE FROM commercial_case_drawing_extractions/.test(c[0]));
+        expect(delReq).toBeTruthy();
+        expect(delReq[1]).toMatchObject({ caseId: 5, docId: 99 });
+        expect(delJob).toBeTruthy();
+        // le DELETE devono precedere l'INSERT del nuovo job
+        const idxDelJob = query.mock.calls.findIndex((c) => /DELETE FROM commercial_case_drawing_extractions/.test(c[0]));
+        const idxInsJob = query.mock.calls.findIndex((c) => /INSERT INTO commercial_case_drawing_extractions/.test(c[0]));
+        expect(idxDelJob).toBeGreaterThanOrEqual(0);
+        expect(idxDelJob).toBeLessThan(idxInsJob);
+        expect(res.body.status).toBe('done');
+    });
+
     test('multi-tenant scope: case of another org returns 404', async () => {
         installQueryMock({ caseRows: [], attRows: [] });
         const res = createRes();
@@ -133,6 +164,55 @@ describe('drawingExtraction.controller — startExtraction', () => {
         expect(errUpdate).toBeTruthy();
         expect(res.status).toHaveBeenCalledWith(201);
         expect(res.body.status).toBe('error');
+    });
+});
+
+describe('drawingExtraction.controller — getExtraction', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('returns extraction with requirements when scoped to org', async () => {
+        installQueryMock({
+            caseRows: [{ id: 5 }],
+            headRow: { id: 10, case_id: 5, status: 'done', organization_id: 1, attachment_id: 99 },
+            reqRows: [{ id: 1, req_type: 'material', value_text: 'S355JR', review_status: 'extracted' }],
+        });
+        const res = createRes();
+        await ctrl.getExtraction(baseReq({ caseId: '5', id: '10' }), res);
+        expect(res.body.status).toBe('done');
+        expect(res.body.requirements).toHaveLength(1);
+    });
+});
+
+describe('drawingExtraction.controller — listExtractions', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('returns jobs ordered for case with org scope', async () => {
+        query.mockImplementation((sqlText) => {
+            if (/FROM commercial_cases WHERE id/.test(sqlText)) return { recordset: [{ id: 5 }] };
+            if (/FROM commercial_case_drawing_extractions e/.test(sqlText) && /ORDER BY e.created_at DESC/.test(sqlText)) {
+                return {
+                    recordset: [
+                        { id: 12, attachment_id: 99, status: 'done', case_id: 5 },
+                        { id: 11, attachment_id: 99, status: 'error', case_id: 5 },
+                    ],
+                };
+            }
+            return { recordset: [] };
+        });
+        const res = createRes();
+        await ctrl.listExtractions(baseReq({ caseId: '5' }), res);
+        expect(res.body.extractions).toHaveLength(2);
+        expect(res.body.extractions[0].id).toBe(12);
+    });
+
+    test('multi-tenant scope: case of another org returns 404', async () => {
+        query.mockImplementation((sqlText) => {
+            if (/FROM commercial_cases WHERE id/.test(sqlText)) return { recordset: [] };
+            return { recordset: [] };
+        });
+        const res = createRes();
+        await ctrl.listExtractions(baseReq({ caseId: '5' }), res);
+        expect(res.status).toHaveBeenCalledWith(404);
     });
 });
 

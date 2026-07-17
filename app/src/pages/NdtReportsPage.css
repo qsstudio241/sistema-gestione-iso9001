@@ -89,7 +89,7 @@
 .ndt-instruments-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
 .ndt-instruments-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .ndt-instrument-card {
-    display: flex; align-items: flex-start; gap: 8px;
+    display: flex; flex-direction: column; align-items: stretch; gap: 8px;
     border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
     cursor: pointer; background: #fff;
     flex: 0 0 auto; width: calc(50% - 4px); max-width: 320px;
@@ -357,12 +357,20 @@
 /* Pulsante foto nella riga — sempre visibile nell'ultima colonna */
 .ndt-actions-cell { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ndt-photo-row-btn {
+    position: relative;
     background: none; border: 1.5px solid #d1d5db; border-radius: 4px;
     padding: 4px 6px; cursor: pointer; font-size: 1rem; line-height: 1;
     transition: background 0.15s, border-color 0.15s;
 }
 .ndt-photo-row-btn:hover,
-.ndt-photo-row-btn.active { background: #dbeafe; border-color: #3b82f6; }
+.ndt-photo-row-btn-has-photos { background: #dbeafe; border-color: #3b82f6; }
+.ndt-photo-count {
+    position: absolute; top: -6px; right: -6px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    background: #3b82f6; color: #fff; border-radius: 8px;
+    font-size: 0.65rem; font-weight: 700; line-height: 16px; text-align: center;
+}
+.ndt-mark-photos-row-collapsed { display: none; }
 .ndt-photo-row-btn-disabled {
     opacity: 0.4; cursor: help;
 }

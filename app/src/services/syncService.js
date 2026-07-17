@@ -786,12 +786,20 @@ export class SyncService {
      * @param {string|null} notes
      */
     async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+        const hasStatus =
+            conformityStatus != null &&
+            conformityStatus !== '' &&
+            conformityStatus !== 'NOT_ANSWERED';
+        const hasNotes = notes != null && String(notes).trim() !== '';
         const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
         const event = {
-            event_type: conformityStatus ? 'response_set' : 'response_cleared',
+            event_type: hasStatus || hasNotes ? 'response_set' : 'response_cleared',
             field_path: `responses.${questionId}`,
-            new_value: conformityStatus
-                ? JSON.stringify({ conformity_status: conformityStatus, notes })
+            new_value: hasStatus || hasNotes
+                ? JSON.stringify({
+                    conformity_status: hasStatus ? conformityStatus : null,
+                    notes: hasNotes ? notes : null,
+                })
                 : null,
             client_ts: new Date().toISOString(),
             client_ts_offset_ms: 0,
