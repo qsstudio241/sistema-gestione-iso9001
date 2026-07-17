@@ -26,6 +26,35 @@ function ConfidenceBadge({ level }) {
   return <span className={`ingest-review__confidence ${meta.className}`}>{meta.label}</span>;
 }
 
+/**
+ * Un campo è "confermato dall'AI" (mostrato readonly, minimo intervento umano)
+ * solo se la confidenza della pipeline è alta E c'è un valore non vuoto.
+ * Altrimenti (media/bassa/assente) l'operatore deve vederlo subito editabile.
+ */
+function isFieldConfirmedByAi(confidence, value) {
+  if (confidence !== "high") return false;
+  if (value == null || value === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  return true;
+}
+
+function optionLabelFor(field, rawValue) {
+  if (!Array.isArray(field?.options)) return rawValue;
+  const opt = field.options.find((o) => String(o.value) === String(rawValue));
+  return opt ? opt.label : rawValue;
+}
+
+function formatReadonlyDisplay(field, value) {
+  if (value == null || value === "") return "\u2014";
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "\u2014";
+    return value.map((v) => repairTextEncoding(String(optionLabelFor(field, v)))).join(", ");
+  }
+  if (typeof value === "boolean") return value ? "Sì" : "No";
+  if (field?.type === "select") return repairTextEncoding(String(optionLabelFor(field, value)));
+  return repairTextEncoding(String(value));
+}
+
 function FieldInput({ field, value, onChange }) {
   const common = {
     id: `ingest-field-${field.key}`,
@@ -75,6 +104,8 @@ export default function IngestReviewDialog({
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
   const [expanded, setExpanded] = useState(false);
+  // Campi confermati dall'AI (alta confidenza) che l'operatore ha scelto di modificare a mano.
+  const [editingFields, setEditingFields] = useState(() => new Set());
   const layoutRef = useRef(null);
   const { gridTemplateColumns, startResize, ratio } = useIngestReviewSplit(layoutRef);
 
@@ -86,6 +117,7 @@ export default function IngestReviewDialog({
       }
       setForm(cleaned);
       setExpanded(false);
+      setEditingFields(new Set());
     }
   }, [open, fields]);
 
@@ -105,6 +137,15 @@ export default function IngestReviewDialog({
 
   function handleChange(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleEditField(key) {
+    setEditingFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   async function handleConfirm() {
@@ -186,17 +227,56 @@ export default function IngestReviewDialog({
             )}
 
             <div className="ingest-review__fields">
-              {schemaFields.map((field) => (
-                <label key={field.key} className="ingest-review__field" htmlFor={`ingest-field-${field.key}`}>
-                  <span className="ingest-review__field-label">
-                    {field.label}
-                    {field.required && <span className="ingest-review__required">*</span>}
-                    <ConfidenceBadge level={fieldConfidence[field.key]} />
-                  </span>
-                  <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
-                  {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
-                </label>
-              ))}
+              {schemaFields.map((field) => {
+                const confidence = fieldConfidence[field.key];
+                const confirmedByAi = isFieldConfirmedByAi(confidence, form[field.key]);
+                const manuallyEditing = editingFields.has(field.key);
+                const showEditable = !confirmedByAi || manuallyEditing;
+                const attentionLevel = confirmedByAi ? "confirmed" : (confidence || "low");
+
+                return (
+                  <div
+                    key={field.key}
+                    className={`ingest-review__field ingest-review__field--${attentionLevel}`}
+                  >
+                    <label className="ingest-review__field-label" htmlFor={`ingest-field-${field.key}`}>
+                      {field.label}
+                      {field.required && <span className="ingest-review__required">*</span>}
+                      <ConfidenceBadge level={confidence} />
+                    </label>
+
+                    {showEditable ? (
+                      <>
+                        <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
+                        {confirmedByAi && manuallyEditing && (
+                          <button
+                            type="button"
+                            className="ingest-review__cancel-edit-btn"
+                            onClick={() => toggleEditField(field.key)}
+                          >
+                            Annulla modifica (torna al valore confermato dall'AI)
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="ingest-review__readonly">
+                        <span className="ingest-review__readonly-value">
+                          {"\u2713"} {formatReadonlyDisplay(field, form[field.key])}
+                        </span>
+                        <button
+                          type="button"
+                          className="ingest-review__edit-btn"
+                          onClick={() => toggleEditField(field.key)}
+                        >
+                          Modifica
+                        </button>
+                      </div>
+                    )}
+
+                    {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -232,4 +312,4 @@ export default function IngestReviewDialog({
   );
 }
 
-export { ConfidenceBadge, formatFieldValue };
+export { ConfidenceBadge, formatFieldValue, isFieldConfirmedByAi, formatReadonlyDisplay };
