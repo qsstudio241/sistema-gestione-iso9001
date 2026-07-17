@@ -19,6 +19,7 @@ const {
     detectLikelyFontSubstitutionCorruption,
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
+const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
 try {
@@ -54,7 +55,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     try {
         text = await extractPdfText(pdfBuffer);
     } catch (err) {
-        warnings.push(`pdf-parse: ${err.message}`);
+        const errMsg = describeIngestFileError(err, 'errore non specificato');
+        logger.warn('[IngestPipeline] pdf-parse fallito', { error: errMsg, stack: err?.stack || null });
+        warnings.push(`pdf-parse: ${errMsg}`);
     }
 
     if (text.trim().length < OCR_MIN_CHARS && extractTextWithOCR) {
@@ -107,10 +110,11 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
         if (result.data?.title && !flat.title) flat.title = result.data.title;
         return { fields: flat, model: result.model || null, warnings };
     } catch (err) {
-        warnings.push(`AI extraction: ${err.message}`);
-        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: err.message });
+        const errMsg = describeIngestFileError(err, 'errore non specificato');
+        warnings.push(`AI extraction: ${errMsg}`);
+        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: errMsg, stack: err?.stack || null });
 
-        if (err.code !== 'AI_INVALID_JSON' && !String(err.message).includes('JSON')) {
+        if (err.code !== 'AI_INVALID_JSON' && !String(errMsg).includes('JSON')) {
             return { fields: {}, model: null, warnings };
         }
 
@@ -136,7 +140,9 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
             warnings.push('AI extraction recuperata dopo retry JSON');
             return { fields, model: retry.model || null, warnings };
         } catch (retryErr) {
-            warnings.push(`AI retry fallito: ${retryErr.message}`);
+            const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
+            warnings.push(`AI retry fallito: ${retryMsg}`);
+            logger.warn('[IngestPipeline] AI retry failed', { docType, fileName, error: retryMsg, stack: retryErr?.stack || null });
             return { fields: {}, model: null, warnings };
         }
     }

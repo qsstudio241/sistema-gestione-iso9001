@@ -47,7 +47,8 @@
                                      "src/utils/jsonRepair.js",
                                      "src/utils/ruleFieldExtractors.js",
                                      "src/utils/textEncodingRepair.js",
-                                     "src/utils/ocrExtractor.js"
+                                     "src/utils/ocrExtractor.js",
+                                     "src/utils/ingestErrorMessage.js"
                                  ]
                    },
                    {
