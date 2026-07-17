@@ -1,5 +1,5 @@
 /**
- * BillingDashboardPage � dashboard fatturazione (solo superadmin QS Studio)
+ * BillingDashboardPage  -  dashboard fatturazione (solo superadmin QS Studio)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -15,9 +15,9 @@ const EVENT_LABELS = {
 };
 
 function formatDate(value) {
-  if (!value) return "�";
+  if (!value) return " - ";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "�";
+  if (Number.isNaN(d.getTime())) return " - ";
   return d.toLocaleString("it-IT");
 }
 
@@ -89,7 +89,7 @@ export default function BillingDashboardPage() {
   if (loading) {
     return (
       <div className="billing-page">
-        <p>Caricamento dashboard fatturazione�</p>
+        <p>Caricamento dashboard fatturazione - </p>
       </div>
     );
   }
@@ -104,7 +104,7 @@ export default function BillingDashboardPage() {
         <div>
           <h1>Fatturazione piattaforma</h1>
           <p className="billing-intro">
-            Riepilogo tenant (studi di consulenza), aziende fatturabili e utilizzo AI � periodo{" "}
+            Riepilogo tenant (studi di consulenza), aziende fatturabili e utilizzo AI  -  periodo{" "}
             <strong>{period}</strong>.
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function BillingDashboardPage() {
                 tenants.map((t) => (
                   <tr key={t.organization_id}>
                     <td>{t.organization_name}</td>
-                    <td>{t.vat_number || "�"}</td>
+                    <td>{t.vat_number || " - "}</td>
                     <td>{t.studio_count ?? 0}</td>
                     <td>
                       <span className="billing-badge billing-badge-active">{t.billable_companies ?? 0}</span>
@@ -211,7 +211,7 @@ export default function BillingDashboardPage() {
                         {c.billing_status || "active"}
                       </span>
                     </td>
-                    <td>{c.is_billable ? "S�" : "No"}</td>
+                    <td>{c.is_billable ? "S - " : "No"}</td>
                     <td>{c.ai_usage_count ?? 0}</td>
                   </tr>
                 ))
@@ -268,7 +268,7 @@ export default function BillingDashboardPage() {
         <aside className="billing-export-panel" aria-labelledby="billing-export-heading">
           <h2 id="billing-export-heading">Export CSV</h2>
           <p className="billing-export-intro">
-            Scarica lo snapshot mensile per contabilit� e fatturazione verso gli studi.
+            Scarica lo snapshot mensile per contabilit -  e fatturazione verso gli studi.
           </p>
           <label className="billing-export-label">
             Periodo (YYYY-MM)
@@ -287,7 +287,7 @@ export default function BillingDashboardPage() {
             onClick={handleExport}
             disabled={exporting}
           >
-            {exporting ? "Export in corso�" : "Scarica CSV"}
+            {exporting ? "Export in corso - " : "Scarica CSV"}
           </button>
         </aside>
       </section>

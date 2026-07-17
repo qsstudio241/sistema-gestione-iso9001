@@ -65,7 +65,7 @@ function makeAudit(overrides = {}) {
     };
 }
 
-describe("buildTemplateData � nuovi placeholder", () => {
+describe("buildTemplateData  -  nuovi placeholder", () => {
     it("revisionNumber: espone meta.revisionNumber", () => {
         const d = buildTemplateData(makeAudit());
         expect(d.revisionNumber).toBe("3");

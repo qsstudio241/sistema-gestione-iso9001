@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import ParticipantsList from "../components/ParticipantsList";
+import NcCreateModal from "../components/NcCreateModal";
 import { formatDate } from "../utils/dateHelpers";
 import {
   resolveInitialMgmtReviewCompanyScope,
@@ -43,6 +44,7 @@ const EMPTY_FORM = {
   input_resources: "",
   input_improvements: "",
   input_process_performance: "",
+  input_monitoring: "",
   input_risk_effectiveness: "",
   output_improvements: "",
   output_sgq_changes: "",
@@ -621,6 +623,7 @@ export function OutputsDraftSection({ reviewId, companyId, form, onFill }) {
           input_resources:             form?.input_resources || "",
           input_improvements:          form?.input_improvements || "",
           input_process_performance:   form?.input_process_performance || "",
+          input_monitoring:            form?.input_monitoring || "",
           input_risk_effectiveness:    form?.input_risk_effectiveness || "",
         },
       });
@@ -722,8 +725,22 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showNcModal, setShowNcModal] = useState(false);
+  const [ncCreatedMsg, setNcCreatedMsg] = useState(null);
 
   function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+
+  // Compone una descrizione azione a partire dagli output §9.3.3 compilati
+  function buildActionDescriptionFromOutputs() {
+    const parts = [];
+    if ((form.output_improvements || "").trim())
+      parts.push(`Miglioramenti (\u00A79.3.3 a): ${form.output_improvements.trim()}`);
+    if ((form.output_sgq_changes || "").trim())
+      parts.push(`Modifiche al SGQ (\u00A79.3.3 b): ${form.output_sgq_changes.trim()}`);
+    if ((form.output_resources || "").trim())
+      parts.push(`Fabbisogno di risorse (\u00A79.3.3 c): ${form.output_resources.trim()}`);
+    return parts.join("\n\n");
+  }
 
   // Accoda al testo esistente (pulsanti singoli "Pre-compila campo X")
   function handlePrefill(field, text) {
@@ -849,6 +866,7 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
               { key: "input_nc_corrective",         label: "c.4) Non conformit\u00E0 e azioni correttive" },
               { key: "input_objectives",            label: "c.2) Stato degli obiettivi per la qualit\u00E0" },
               { key: "input_process_performance",   label: "c.3) Prestazioni dei processi e conformit\u00E0 di prodotti/servizi" },
+              { key: "input_monitoring",            label: "c.5) Risultati del monitoraggio e della misurazione" },
               { key: "input_customer_satisfaction", label: "c.1) Soddisfazione del cliente e feedback delle parti interessate" },
               { key: "input_complaints",            label: "e.reclami) Reclami dei clienti (dettaglio)" },
               { key: "input_suppliers",             label: "c.7) Prestazioni dei fornitori esterni" },
@@ -891,6 +909,29 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
                 />
               </div>
             ))}
+
+            {/* Collegamento output → Piano Azioni (§9.3.3 → §10) */}
+            <div className="isw-body" style={{ marginTop: 4 }}>
+              {initial?.id ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => { setNcCreatedMsg(null); setShowNcModal(true); }}
+                    title="Crea una voce nel Piano Azioni a partire dagli output del riesame, collegata a questo riesame"
+                  >
+                    {"\uD83C\uDFE2 Crea azioni dagli output"}
+                  </button>
+                  {ncCreatedMsg && (
+                    <p className="isw-draft-ok" style={{ marginTop: 8 }}>{ncCreatedMsg}</p>
+                  )}
+                </>
+              ) : (
+                <p className="isw-tile-note">
+                  {"Salva il riesame per poter creare azioni collegate nel Piano Azioni."}
+                </p>
+              )}
+            </div>
           </CollapsibleSection>
 
           {/* 5. Note */}
@@ -918,6 +959,23 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
           </div>
         </form>
       </div>
+
+      {showNcModal && (
+        <NcCreateModal
+          open={showNcModal}
+          onClose={() => setShowNcModal(false)}
+          onCreated={(nc) => {
+            setShowNcModal(false);
+            setNcCreatedMsg(
+              `Azione creata nel Piano Azioni${nc?.nc_number ? ` (${nc.nc_number})` : ""} e collegata a questo riesame.`
+            );
+          }}
+          defaultCategory="management_review"
+          managementReviewId={initial?.id || null}
+          initialDescription={buildActionDescriptionFromOutputs()}
+          initialOriginText={initial?.review_number || ""}
+        />
+      )}
     </div>
   );
 }

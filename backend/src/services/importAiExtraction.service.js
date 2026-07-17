@@ -5,6 +5,12 @@
 
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { parseJsonWithRepair } = require('../utils/jsonRepair');
+const { buildIngestLearningPromptSection } = require('./ingestLearning.service');
+const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
+const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses4063');
+const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
+const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -118,8 +124,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;
@@ -149,9 +156,10 @@ ${truncated}
  * @param {object} params
  * @param {string} params.text
  * @param {string|null} params.docType - chiave tipo documento (es. "patentino_saldatore")
+ * @param {number|null} [params.organizationId] - per few-shot IG-5
  * @returns {Promise<{ model: string, data: object, raw_content: string }>}
  */
-async function extractStructuredByDocType({ text, docType }) {
+async function extractStructuredByDocType({ text, docType, organizationId = null }) {
     const schema = getSchemaForDocType(docType);
 
     if (!schema) {
@@ -174,7 +182,7 @@ async function extractStructuredByDocType({ text, docType }) {
         ? `${bodyText.slice(0, MAX_INPUT_CHARS)}\n\n[... testo troncato per limite ${MAX_INPUT_CHARS} caratteri ...]`
         : bodyText;
 
-    const system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
+    let system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
 Analizza il testo estratto da un PDF (può contenere errori di OCR/strato testo).
 Rispondi SOLO con un oggetto JSON valido (nessun testo fuori dal JSON) con questa forma:
 {
@@ -196,6 +204,31 @@ Regole generali:
 
 Istruzioni specifiche per il tipo documento "${schema.label}":
 ${schema.aiPrompt}`;
+
+    const MATERIAL_GROUP_DOC_TYPES = new Set([
+        'patentino_saldatore',
+        'qualifica_operatore',
+        'wpqr',
+        'wps',
+    ]);
+    if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
+        system += `\n\n${buildWeldingProcessPromptSection({ maxLines: 20 })}`;
+    }
+    if (docType === 'patentino_saldatore' || docType === 'wpqr' || docType === 'wps') {
+        system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
+    }
+    if (docType === 'patentino_saldatore') {
+        system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
+    }
+
+    if (organizationId) {
+        try {
+            system += await buildIngestLearningPromptSection(organizationId, docType);
+        } catch (fewShotErr) {
+            // non bloccare estrazione
+        }
+    }
 
     const user = `Tipo documento: ${schema.label}
 
@@ -226,8 +259,9 @@ ${truncated}
 
     let data;
     try {
-        data = JSON.parse(stripCodeFences(content));
+        data = parseJsonWithRepair(content);
     } catch (parseErr) {
+        if (parseErr && parseErr.code === 'AI_BAD_SHAPE') throw parseErr;
         const e = new Error('JSON dalla AI non valido.');
         e.code = 'AI_INVALID_JSON';
         throw e;

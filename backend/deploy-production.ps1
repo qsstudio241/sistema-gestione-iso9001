@@ -118,7 +118,7 @@ ALLOWED_FILE_TYPES=image/jpeg,image/png,image/gif,image/webp,audio/mpeg,audio/mp
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_MAX_REQUESTS=1000
 
 # Logging
 LOG_LEVEL=info

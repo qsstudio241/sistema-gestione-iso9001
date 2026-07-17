@@ -1,8 +1,8 @@
 /**
- * Logica condivisa vigore/stato documento — Registro Documenti SGQ.
- * "vigente" è alias legacy di "rilasciato" (migration 067).
+ * Logica condivisa vigore/stato documento â€” Registro Documenti SGQ.
+ * "vigente" Ã¨ alias legacy di "rilasciato" (migration 067).
  * Le cartelle (doc_type folder / is_system_folder) non hanno lifecycle utente:
- * non vanno contate come vigenti né mostrano badge stato in UI.
+ * non vanno contate come vigenti nÃ© mostrano badge stato in UI.
  */
 
 export const RELEASED_DOC_STATUSES = Object.freeze(["rilasciato", "vigente"]);

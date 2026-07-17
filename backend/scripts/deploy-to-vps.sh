@@ -21,7 +21,8 @@ if [[ ! -f "${MANIFEST}" ]]; then
     exit 1
 fi
 
-REMOTE_BASE="$(python3 -c "import json; print(json.load(open('${MANIFEST}')).get('remoteBase','/var/www/sgq-backend'))")"
+REMOTE_BASE="${SGQ_REMOTE_BASE:-$(python3 -c "import json; print(json.load(open('${MANIFEST}', encoding='utf-8-sig')).get('remoteBase','/var/www/sgq-backend'))")}"
+SYSTEMD_SERVICE="${SGQ_SYSTEMD_SERVICE:-sgq-backend.service}"
 
 echo "=== Deploy SGQ Backend → VPS ==="
 echo "    Backend locale : ${BACKEND_ROOT}"
@@ -94,7 +95,7 @@ echo ""
 echo "Preflight locale (manifest)..."
 MISSING="$(python3 <<PY
 import json, os, sys
-m = json.load(open("${MANIFEST}"))
+m = json.load(open("${MANIFEST}", encoding="utf-8-sig"))
 root = "${BACKEND_ROOT}"
 missing = []
 for g in m.get("groups", []):
@@ -120,7 +121,7 @@ ssh_run "echo OK preflight" || { echo "❌ Connessione SSH fallita."; exit 1; }
 echo "  ✓ SSH OK"
 
 # Directory remote
-DIRS="$(python3 -c "import json; print(' '.join(json.load(open('${MANIFEST}')).get('ensureRemoteDirs',[])))")"
+DIRS="$(python3 -c "import json; print(' '.join(json.load(open('${MANIFEST}', encoding='utf-8-sig')).get('ensureRemoteDirs',[])))")"
 if [[ -n "${DIRS}" ]]; then
     echo ""
     echo "Creazione directory remote..."
@@ -146,7 +147,7 @@ while IFS='|' read -r group rel; do
     scp_file "${local_path}" "${remote_path}"
 done < <(python3 <<PY
 import json
-m = json.load(open("${MANIFEST}"))
+m = json.load(open("${MANIFEST}", encoding="utf-8-sig"))
 for g in m.get("groups", []):
     for rel in g.get("files", []):
         print(f"{g['name']}|{rel}")
@@ -159,22 +160,22 @@ echo "✓ Tutti i file copiati."
 # ── Restart ───────────────────────────────────────────────────────────────────
 
 echo ""
-echo "Riavvio backend (sgq-backend.service)..."
+echo "Riavvio backend (${SYSTEMD_SERVICE})..."
 
 RESTART_CMD='
 set -e
 cd '"${REMOTE_BASE}"'
-OLD_PID=$(systemctl show sgq-backend.service --property=MainPID --value 2>/dev/null || echo 0)
+OLD_PID=$(systemctl show '"${SYSTEMD_SERVICE}"' --property=MainPID --value 2>/dev/null || echo 0)
 echo "  PID attuale: ${OLD_PID}"
 RESTARTED=0
 if [ -n "'"${SGQ_SUDO_PASSWORD:-}"'" ]; then
-    echo "'"${SGQ_SUDO_PASSWORD:-}"'" | sudo -S systemctl restart sgq-backend.service && {
+    echo "'"${SGQ_SUDO_PASSWORD:-}"'" | sudo -S systemctl restart '"${SYSTEMD_SERVICE}"' && {
         echo deploy_systemctl_password_ok
         RESTARTED=1
     }
 fi
 if [ "$RESTARTED" != "1" ]; then
-    sudo -n systemctl restart sgq-backend.service 2>/dev/null && {
+    sudo -n systemctl restart '"${SYSTEMD_SERVICE}"' 2>/dev/null && {
         echo deploy_systemctl_nopass_ok
         RESTARTED=1
     }
@@ -187,11 +188,11 @@ if [ "$RESTARTED" != "1" ]; then
     sleep 4
 fi
 sleep 3
-NEW_PID=$(systemctl show sgq-backend.service --property=MainPID --value 2>/dev/null || echo 0)
+NEW_PID=$(systemctl show '"${SYSTEMD_SERVICE}"' --property=MainPID --value 2>/dev/null || echo 0)
 echo "  PID dopo restart: ${NEW_PID}"
 grep -q normUpload.routes.js '"${REMOTE_BASE}"'/src/server.js && echo deploy_norm_upload_route_ok || echo deploy_norm_upload_route_MISSING
 grep -q ncResponsibleOptions '"${REMOTE_BASE}"'/src/controllers/nc.controller.js && echo deploy_nc_responsible_ok || echo deploy_nc_responsible_MISSING
-systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -10 || true
+systemctl --no-pager --full status '"${SYSTEMD_SERVICE}"' 2>/dev/null | tail -10 || true
 tail -10 '"${REMOTE_BASE}"'/app.log || true
 '
 

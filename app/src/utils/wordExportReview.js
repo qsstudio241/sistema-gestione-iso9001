@@ -95,6 +95,7 @@ export async function exportManagementReviewDocx(review, periodFrom, periodTo) {
     input_nc_corrective:         safe(review.input_nc_corrective),
     input_objectives:            safe(review.input_objectives),
     input_process_performance:   safe(review.input_process_performance),
+    input_monitoring:            safe(review.input_monitoring),
     input_customer_satisfaction: safe(review.input_customer_satisfaction),
     input_complaints:            safe(review.input_complaints),
     input_suppliers:             safe(review.input_suppliers),

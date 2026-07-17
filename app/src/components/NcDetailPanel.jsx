@@ -47,6 +47,7 @@ const NC_TEXT_FIELDS = [
   "root_cause",
   "verification_notes",
   "verification_responsible",
+  "corrective_action_evaluation_notes",
 ];
 
 function normalizeDate(val) {
@@ -81,6 +82,13 @@ function initForm(nc, organizationId) {
     verification_contact_id: nc?.verification_contact_id ?? null,
     useExternalVerification: !nc?.verification_contact_id,
     due_date: normalizeDate(nc?.due_date),
+    corrective_action_needed: nc?.corrective_action_needed || "",
+    corrective_action_evaluation_notes: resolveNcFieldInitial(
+      nc?.corrective_action_evaluation_notes,
+      organizationId,
+      scope,
+      "corrective_action_evaluation_notes",
+    ),
   };
 }
 
@@ -196,6 +204,8 @@ export default function NcDetailPanel({
         responsible_person: form.responsible_person.trim() || null,
         responsible_contact_id: form.responsible_contact_id,
         due_date: form.due_date || null,
+        corrective_action_needed: form.corrective_action_needed || null,
+        corrective_action_evaluation_notes: form.corrective_action_evaluation_notes.trim() || null,
       });
       if (organizationId && draftScope) {
         clearNcFieldDraftsForScope(organizationId, draftScope, NC_TEXT_FIELDS);
@@ -335,10 +345,10 @@ export default function NcDetailPanel({
         </section>
       )}
 
-      {/* 3. Cause */}
+      {/* 3. Cause e valutazione */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-          {"3. Cause"}
+          {"3. Cause e valutazione"}
         </h3>
         <div className="nc-form-row">
           <label htmlFor={`nc-root-${nc.nc_id}`}>
@@ -350,19 +360,55 @@ export default function NcDetailPanel({
             value={form.root_cause}
             readOnly={readOnly}
             onChange={(e) => setField("root_cause", e.target.value)}
-            placeholder="5W, Ishikawa, 8D... Qual è la causa fondamentale del problema?"
+            placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
             draftScopeId={draftScope}
             draftFieldId="root_cause"
             persistLocalDraft
             organizationId={organizationId}
           />
         </div>
+        <div className="nc-form-row">
+          <label htmlFor={`nc-ca-needed-${nc.nc_id}`}>
+            {"\u00C8"} necessaria un{"'"}azione correttiva? <small>(ISO {"\u00A7"}10.2.1b)</small>
+          </label>
+          <select
+            id={`nc-ca-needed-${nc.nc_id}`}
+            value={form.corrective_action_needed}
+            disabled={readOnly}
+            onChange={(e) => setField("corrective_action_needed", e.target.value)}
+          >
+            <option value="">-- Non valutato --</option>
+            <option value="yes">S{"\u00EC"}, necessaria</option>
+            <option value="no">No, non necessaria</option>
+          </select>
+        </div>
+        {form.corrective_action_needed && (
+          <div className="nc-form-row">
+            <label htmlFor={`nc-ca-eval-${nc.nc_id}`}>
+              Motivazione valutazione
+            </label>
+            <RichTextField
+              id={`nc-ca-eval-${nc.nc_id}`}
+              rows={2}
+              value={form.corrective_action_evaluation_notes}
+              readOnly={readOnly}
+              onChange={(e) => setField("corrective_action_evaluation_notes", e.target.value)}
+              placeholder={form.corrective_action_needed === "no"
+                ? "Motivare perch\u00E9 non \u00E8 necessaria un'azione correttiva..."
+                : "Descrivere brevemente la valutazione effettuata..."}
+              draftScopeId={draftScope}
+              draftFieldId="corrective_action_evaluation_notes"
+              persistLocalDraft
+              organizationId={organizationId}
+            />
+          </div>
+        )}
       </section>
 
-      {/* 4. Azioni correttive */}
+      {/* 4. Correzione e azioni */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-azioni-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
-          {"4. Azioni correttive"}
+          {"4. Correzione e azioni"}
         </h3>
         <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} companyId={nc.company_id} embedded />
       </section>

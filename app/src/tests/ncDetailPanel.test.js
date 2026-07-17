@@ -68,8 +68,8 @@ describe('NcDetailPanel', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
-    expect(screen.getByText('3. Cause')).toBeInTheDocument();
-    expect(screen.getByText('4. Azioni correttive')).toBeInTheDocument();
+    expect(screen.getByText('3. Cause e valutazione')).toBeInTheDocument();
+    expect(screen.getByText('4. Correzione e azioni')).toBeInTheDocument();
     expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
     expect(screen.getByText('6. Verifica efficacia')).toBeInTheDocument();
 
@@ -146,6 +146,8 @@ describe('NcDetailPanel', () => {
         responsible_person: 'Mario Rossi',
         responsible_contact_id: null,
         due_date: '2026-06-15',
+        corrective_action_needed: null,
+        corrective_action_evaluation_notes: null,
       });
     });
 

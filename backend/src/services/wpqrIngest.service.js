@@ -1,13 +1,12 @@
-﻿/**
+/**
  * wpqrIngest.service.js
- * Ingestion automatica di record WPQR da PDF.
- * Usato da uploadWPQRBatch in welding.controller.js.
- *
- * Flusso: estrazione testo pdf-parse ? AI extraction ? calcolo range ISO 15614-1 ? validazione ? INSERT
+ * Ingestion automatica WPQR da PDF — pipeline IG-2 + staging IG-3.
  */
 
-const logger   = require('../utils/logger');
+const path = require('path');
+const logger = require('../utils/logger');
 const { query } = require('../config/database');
+const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const {
     classifyDocument,
     WRONG_MODULE_FOR_WPQR,
@@ -15,65 +14,11 @@ const {
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
 
-// AI opzionale: best-effort, non blocca l'ingestion se non disponibile
-let chat = null;
-try {
-    const aiAdapter = require('./aiProviderAdapter');
-    chat = aiAdapter.chat;
-} catch (_) {}
-
-let pdfParse = null;
-try { pdfParse = require('pdf-parse'); } catch (_) {}
-
-let extractTextWithOCR = null;
-try { extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR; } catch (_) {}
-
-// ?? Prompt AI per estrazione WPQR ????????????????????????????????????????????
-
-function buildWPQRExtractionPrompt(text, fileName) {
-    return {
-        systemPrompt: `Sei un sistema esperto di estrazione metadati da certificati WPQR (Welding Procedure Qualification Record) e WPS (Welding Procedure Specification) secondo ISO 15614-1, ISO 9606, EN ISO 15607.
-Rispondi SOLO con JSON valido, senza markdown, senza commenti.`,
-        userPrompt: `Estrai i seguenti campi da questo certificato WPQR/WPS.
-File: ${fileName}
-
-Testo estratto:
----
-${text.substring(0, 4000)}
----
-
-Rispondi con questo schema JSON (usa null per campi non trovati):
-{
-  "reference_number": "numero identificativo WPQR o WPS",
-  "wpqr_code": "codice WPQR (se diverso da reference_number)",
-  "welding_process": "codice ISO 4063 (111, 121, 131, 135, 136, 141, 311...)",
-  "base_material_group": "gruppo materiale base ISO/TR 15608 (1.1, 1.2, 8.1...)",
-  "filler_material": "designazione materiale d'apporto",
-  "thickness_tested": "spessore del provino in mm (solo numero, es. 10.0)",
-  "welding_positions": "posizioni di saldatura (PA, PB, PC, PF...)",
-  "examiner_body": "ente esaminatore (Bureau Veritas, DNV, IIS, Lloyd's...)",
-  "testing_body": "laboratorio o ente di prova",
-  "welder_name": "nome del saldatore qualificato",
-  "issue_date": "YYYY-MM-DD oppure null",
-  "expiry_date": "YYYY-MM-DD oppure null (tipicamente 3 anni dall'emissione)",
-  "certificate_number": "numero certificato",
-  "pwht": true/false (trattamento termico post-saldatura applicato)
-}`,
-    };
-}
-
-// ?? Calcolo range spessori ISO 15614-1 ???????????????????????????????????????
-
-/**
- * Calcola il range di qualificazione spessori secondo ISO 15614-1:2017 Tabella 2.
- * - t ? 3 mm     ? min=t, max=2*t
- * - 3 < t ? 12   ? min=3mm, max=2*t
- * - t > 12       ? min=0.5*t (min 5mm), max=2*t (max 200mm)
- */
 function calcThicknessRange(t) {
     if (!t || t <= 0) return { thickness_min: null, thickness_max: null };
     const tNum = parseFloat(t);
-    let minT, maxT;
+    let minT;
+    let maxT;
     if (tNum <= 3) {
         minT = tNum;
         maxT = 2 * tNum;
@@ -90,8 +35,6 @@ function calcThicknessRange(t) {
     };
 }
 
-// ?? Anti-duplicato ????????????????????????????????????????????????????????????
-
 async function checkDuplicate(referenceNumber, organizationId, companyId) {
     if (!referenceNumber) return false;
     const result = await query(`
@@ -103,134 +46,155 @@ async function checkDuplicate(referenceNumber, organizationId, companyId) {
     return result.recordset.length > 0;
 }
 
-// ?? Funzione principale ???????????????????????????????????????????????????????
+function buildCertificateFileUrl(filePath) {
+    if (!filePath) return null;
+    const uploadBase = process.env.UPLOAD_DIR
+        ? path.resolve(process.env.UPLOAD_DIR)
+        : path.resolve(__dirname, '../../uploads');
+    return '/uploads/' + path.relative(uploadBase, filePath).replace(/\\/g, '/');
+}
 
-/**
- * @param {Buffer} pdfBuffer
- * @param {string} fileName
- * @param {number} organizationId
- * @param {number|null} companyId
- * @param {object} options � { userId, filePath }
- * @returns {Promise<{wpqr_id, reference_number, welding_process, confidence, warnings[]}>}
- */
-async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
-    const { userId = null, filePath = null } = options;
-    const warnings = [];
-    let confidence = 'bassa';
+function mapPipelineFieldsToReview(f, fileName) {
+    const referenceNumber = String(
+        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
+    ).trim();
 
-    // 1. Estrae testo (pdf-parse per PDF digitali, OCR fallback per scansioni)
-    let extractedText = '';
-    let ocrUsed = false;
+    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
+    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
 
-    if (pdfParse) {
-        try {
-            const parsed = await pdfParse(pdfBuffer);
-            extractedText = parsed.text || '';
-        } catch (e) {
-            warnings.push(`Estrazione testo fallita: ${e.message}`);
-        }
-    } else {
-        warnings.push('pdf-parse non disponibile \u2014 metadati estratti manualmente');
-    }
+    return {
+        wpqr_number: referenceNumber,
+        reference_number: referenceNumber,
+        welding_process: f.welding_process || null,
+        material_group: f.material_group || f.base_material_group || null,
+        thickness_test_mm: thickness_tested,
+        approval_date: f.approval_date || f.issue_date || null,
+        standard_reference: f.standard_reference || null,
+        filler_material: f.filler_material || null,
+        welding_positions: f.welding_positions || null,
+        examiner_body: f.issuing_body || f.examiner_body || f.testing_body || null,
+        welder_name: f.welder_name || null,
+        expiry_date: f.expiry_date || null,
+        certificate_number: f.certificate_number || null,
+        pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
+        thickness_min,
+        thickness_max,
+    };
+}
 
-    // 1a. Fallback OCR se il testo e' troppo breve (PDF scansionato)
-    if (extractedText.trim().length < 50 && extractTextWithOCR) {
-        logger.info('[WPQR ingest] Testo breve, tentativo OCR...', { fileName, textLen: extractedText.length });
-        try {
-            extractedText = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
-            ocrUsed = true;
-            logger.info('[WPQR ingest] OCR completato', { fileName, chars: extractedText.length });
-        } catch (ocrErr) {
-            logger.warn('[WPQR ingest] OCR fallito', { fileName, error: ocrErr.message });
-            warnings.push('PDF scansionato non leggibile via OCR \u2014 compilare manualmente');
-        }
-    }
+function mapReviewFieldsToDb(f, fileName) {
+    const referenceNumber = String(
+        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
+    ).trim();
 
-    // 1b. Classificazione tipo documento � blocca moduli sbagliati
-    if (extractedText.length > 30) {
-        const docClass = classifyDocument(extractedText);
-        logger.info('WPQR doc classification', { fileName, detected_type: docClass.detected_type, confidence: docClass.confidence, score: docClass.score });
+    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
+    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
+
+    return {
+        reference_number: referenceNumber,
+        welding_process: f.welding_process || null,
+        base_material_group: f.material_group || f.base_material_group || null,
+        filler_material: f.filler_material || null,
+        thickness_tested,
+        thickness_min: f.thickness_min ?? thickness_min,
+        thickness_max: f.thickness_max ?? thickness_max,
+        welding_positions: f.welding_positions || null,
+        examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
+        welder_name: f.welder_name || null,
+        issue_date: f.approval_date || f.issue_date || null,
+        expiry_date: f.expiry_date || null,
+        certificate_number: f.certificate_number || null,
+        pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
+    };
+}
+
+async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId) {
+    const pipeline = await runDocumentIngest({
+        pdfBuffer,
+        docType: 'wpqr',
+        fileName,
+        organizationId,
+    });
+    const warnings = [...pipeline.warnings];
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, fileName);
+
+    if (pipeline.text.length > 30) {
+        const docClass = classifyDocument(pipeline.text);
+        logger.info('WPQR doc classification', {
+            fileName,
+            detected_type: docClass.detected_type,
+            confidence: docClass.confidence,
+        });
 
         if (WRONG_MODULE_FOR_WPQR.has(docClass.detected_type) && docClass.confidence !== 'low') {
             return {
-                status:           'wrong_module',
-                detected_type:    docClass.detected_type,
-                message:          WRONG_MODULE_MESSAGES[docClass.detected_type],
+                status: 'wrong_module',
+                detected_type: docClass.detected_type,
+                message: WRONG_MODULE_MESSAGES[docClass.detected_type],
                 suggested_module: SUGGESTED_MODULE[docClass.detected_type],
             };
         }
 
         if (docClass.detected_type === 'unknown') {
-            warnings.push('Tipo documento non riconosciuto \u2014 verificare i dati estratti');
+            warnings.push('Tipo documento non riconosciuto — verificare i dati estratti');
         } else if ((docClass.detected_type === 'wpqr' || docClass.detected_type === 'wps') && docClass.confidence === 'low') {
-            warnings.push('Tipo documento incerto \u2014 verificare che sia una WPQR');
+            warnings.push('Tipo documento incerto — verificare che sia una WPQR');
         }
     }
 
-    // 2. AI extraction
-    let aiData = {};
-    if (chat && extractedText.length > 50) {
-        try {
-            const { systemPrompt, userPrompt } = buildWPQRExtractionPrompt(extractedText, fileName);
-            const aiResult = await chat(
-                [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
-                { temperature: 0.1, responseFormat: 'json', maxTokens: 800 }
-            );
-            const raw = (aiResult && aiResult.content ? aiResult.content : '')
-                .replace(/```json\n?|```/g, '').trim();
-            aiData = JSON.parse(raw);
-            confidence = 'alta';
-            logger.info('WPQR AI extraction OK', { fileName, confidence, fields: Object.keys(aiData).length });
-        } catch (e) {
-            warnings.push(`AI extraction fallita: ${e.message}`);
-            logger.warn('WPQR AI extraction failed', { fileName, error: e.message, code: e.code });
-            confidence = 'bassa';
-        }
-    } else if (!chat) {
-        warnings.push('AI provider non configurato \u2014 inserimento con dati minimi');
-    } else {
-        if (ocrUsed) {
-            warnings.push('Estrazione via OCR \u2014 verificare accuratezza dati estratti');
-        } else {
-            warnings.push('Testo PDF insufficiente e OCR non disponibile \u2014 compilare manualmente');
-        }
+    if (!reviewFields.reference_number) {
+        warnings.push('Numero WPQR non trovato — inserirlo manualmente in revisione');
     }
 
-    // 3. Normalizzazione
-    const referenceNumber = aiData.reference_number || aiData.wpqr_code || fileName.replace(/\.[^/.]+$/, '');
-    const welding_process = aiData.welding_process || null;
-    const base_material_group = aiData.base_material_group || null;
-    const filler_material = aiData.filler_material || null;
-    const thickness_tested = aiData.thickness_tested ? parseFloat(aiData.thickness_tested) : null;
-    const welding_positions = aiData.welding_positions || null;
-    const examiner_body = aiData.examiner_body || aiData.testing_body || null;
-    const welder_name = aiData.welder_name || null;
-    const issue_date = aiData.issue_date || null;
-    const expiry_date = aiData.expiry_date || null;
-    const certificate_number = aiData.certificate_number || null;
-    const pwht = aiData.pwht ? 1 : 0;
-
-    // 4. Calcola range spessori
-    const { thickness_min, thickness_max } = calcThicknessRange(thickness_tested);
-    if (thickness_tested && !thickness_min) {
-        warnings.push('Spessore testato non riconoscibile � range non calcolato');
+    if (reviewFields.thickness_test_mm && !reviewFields.thickness_min) {
+        warnings.push('Spessore testato non riconoscibile — range non calcolato');
     }
 
-    // 5. Validazione
-    if (!referenceNumber || referenceNumber.trim().length === 0) {
-        throw new Error('reference_number obbligatorio: non trovato nel documento');
+    if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
+        return {
+            status: 'duplicate',
+            reference_number: reviewFields.reference_number,
+            warnings,
+            fields: reviewFields,
+            field_confidence: pipeline.fieldConfidence,
+        };
     }
 
-    // 6. Anti-duplicato
-    const isDuplicate = await checkDuplicate(referenceNumber.trim(), organizationId, companyId);
-    if (isDuplicate) {
-        return { status: 'duplicate', reference_number: referenceNumber, warnings };
+    const confidence = pipeline.extractionConfidence >= 70 ? 'alta'
+        : pipeline.aiModel ? 'media' : 'bassa';
+
+    return {
+        status: 'pending_review',
+        fields: reviewFields,
+        field_confidence: pipeline.fieldConfidence,
+        confidence,
+        warnings,
+        ai_model: pipeline.aiModel,
+    };
+}
+
+async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
+    const { userId = null, filePath = null, fileName = '' } = options;
+    const mapped = mapReviewFieldsToDb(fields, fileName);
+    const warnings = [];
+
+    if (!mapped.reference_number) {
+        const err = new Error('Numero WPQR obbligatorio');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
     }
 
-    // 7. INSERT in wpqr_records
+    if (await checkDuplicate(mapped.reference_number, organizationId, companyId)) {
+        const err = new Error(`WPQR ${mapped.reference_number} già presente`);
+        err.code = 'DUPLICATE';
+        err.warnings = [`Duplicato: WPQR ${mapped.reference_number} già presente.`];
+        throw err;
+    }
+
+    const certificate_file_url = buildCertificateFileUrl(filePath);
+
     const insertResult = await query(`
         INSERT INTO wpqr_records (
             organization_id, company_id,
@@ -256,39 +220,67 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
             @created_by, GETDATE(), GETDATE()
         )
     `, {
-        organization_id:    organizationId,
-        company_id:         companyId || null,
-        reference_number:   referenceNumber.trim(),
-        welding_process:    welding_process,
-        base_material_group,
-        filler_material,
-        thickness_tested,
-        thickness_min,
-        thickness_max,
-        welding_positions,
-        examiner_body,
-        welder_name,
-        issue_date,
-        expiry_date,
-        certificate_number,
-        certificate_file_url: filePath || null,
-        pwht,
-        created_by:         userId,
+        organization_id: organizationId,
+        company_id: companyId || null,
+        reference_number: mapped.reference_number,
+        welding_process: mapped.welding_process,
+        base_material_group: mapped.base_material_group,
+        filler_material: mapped.filler_material,
+        thickness_tested: mapped.thickness_tested,
+        thickness_min: mapped.thickness_min,
+        thickness_max: mapped.thickness_max,
+        welding_positions: mapped.welding_positions,
+        examiner_body: mapped.examiner_body,
+        welder_name: mapped.welder_name,
+        issue_date: mapped.issue_date,
+        expiry_date: mapped.expiry_date,
+        certificate_number: mapped.certificate_number,
+        certificate_file_url,
+        pwht: mapped.pwht,
+        created_by: userId,
     });
 
     const wpqrId = insertResult.recordset[0].id;
-    logger.info('WPQR ingested from PDF', { wpqrId, reference_number: referenceNumber, organizationId });
+    logger.info('WPQR committed from staging', { wpqrId, reference_number: mapped.reference_number, organizationId });
 
     return {
-        wpqr_id:          wpqrId,
-        reference_number: referenceNumber,
-        welding_process,
-        thickness_tested,
-        thickness_min,
-        thickness_max,
-        confidence,
+        wpqr_id: wpqrId,
+        reference_number: mapped.reference_number,
+        welding_process: mapped.welding_process,
+        thickness_tested: mapped.thickness_tested,
+        thickness_min: mapped.thickness_min,
+        thickness_max: mapped.thickness_max,
         warnings,
     };
 }
 
-module.exports = { ingestWPQRFromPdf, calcThicknessRange };
+async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId, options = {}) {
+    const extracted = await extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId);
+    if (extracted.status === 'wrong_module') return extracted;
+    if (extracted.status === 'duplicate') {
+        return { status: 'duplicate', reference_number: extracted.reference_number, warnings: extracted.warnings };
+    }
+
+    const committed = await commitWPQRFromFields(
+        extracted.fields,
+        organizationId,
+        companyId,
+        { ...options, fileName },
+    );
+
+    return {
+        status: 'ok',
+        ...committed,
+        confidence: extracted.confidence,
+        field_confidence: extracted.field_confidence,
+        warnings: [...(extracted.warnings || []), ...(committed.warnings || [])],
+    };
+}
+
+module.exports = {
+    ingestWPQRFromPdf,
+    extractWPQRFromPdf,
+    commitWPQRFromFields,
+    calcThicknessRange,
+    mapPipelineFieldsToReview,
+};
