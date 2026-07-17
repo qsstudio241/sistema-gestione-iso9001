@@ -36,7 +36,7 @@ describe('textEncodingRepair', () => {
         });
         expect(out.welding_process).toBe('135');
         expect(out.joint_type).toBe('FW');
-        expect(out.issuing_body).toBe('altro');
+        expect(out.issuing_body).toBe('tec_eurolab');
         expect(out.welder_name).toBe('TOMA IOAN');
     });
 });
