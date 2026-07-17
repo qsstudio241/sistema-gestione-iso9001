@@ -61,16 +61,18 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "tuv",   label: "TÜV" },
-        { value: "bv",    label: "Bureau Veritas (BV)" },
-        { value: "dnv",   label: "DNV GL" },
-        { value: "rina",  label: "RINA" },
-        { value: "imq",   label: "IMQ" },
-        { value: "iqn",   label: "IQNet" },
-        { value: "csq",   label: "CSQ / Certiquality" },
-        { value: "altro", label: "Altro" },
+        { value: "tuv",         label: "TÜV" },
+        { value: "bv",          label: "Bureau Veritas (BV)" },
+        { value: "dnv",         label: "DNV GL" },
+        { value: "rina",        label: "RINA" },
+        { value: "imq",         label: "IMQ" },
+        { value: "iqn",         label: "IQNet" },
+        { value: "csq",         label: "CSQ / Certiquality" },
+        { value: "tec_eurolab", label: "TEC Eurolab" },
+        { value: "sideius",     label: "Sideius (Valor)" },
+        { value: "altro",       label: "Altro" },
       ],
-      hint: "Organismo terzo che ha rilasciato il certificato",
+      hint: "Organismo terzo che ha rilasciato il certificato. Ente non in elenco? Seleziona \u201CAltro\u201D e specificalo nelle note.",
     },
     {
       key: "welding_process",
@@ -135,14 +137,14 @@ const patentino_saldatore = {
       label: "Spessore qualificato - massimo (mm)",
       type: "number",
       required: false,
-      hint: "Spessore massimo del range qualificato (es. 2t per piastre)",
+      hint: "Spessore massimo del range qualificato (es. 2t per piastre). Lascia vuoto se non c'è limite superiore: verrà mostrato come \u201C\u2265 spessore minimo\u201D.",
     },
     {
       key: "pipe_diameter_mm",
       label: "Diametro tubi qualificato (mm)",
       type: "number",
       required: false,
-      hint: "Diametro esterno del tubo di prova; lasciare vuoto se solo piastre",
+      hint: "Diametro esterno del tubo di prova; lasciare vuoto se solo piastre. Se piastra in posizioni PA/PB/PC/PD, il campo copre tipicamente tubi \u2265500 mm (\u226575 mm se posizione rotante) \u2014 verificare sul certificato prima di riportarlo (proposta da feedback cliente, non ancora confermata su copia integrale norma).",
     },
     {
       key: "shielding_gas",
@@ -160,10 +162,10 @@ const patentino_saldatore = {
     },
     {
       key: "expiry_date",
-      label: "Data scadenza (2 anni da esame)",
+      label: "Data di scadenza",
       type: "date",
       required: true,
-      hint: "Calcolata automaticamente: data esame + 24 mesi. Modificabile se rinnovo anticipato.",
+      hint: "Dipende dalla norma e dall'opzione di rivalidazione scelta (es. ISO 9606-1: 3 anni con nuova prova, o 2 anni con controllo NDT su 2 saldature; operatori ISO 14732: conferma ogni 6 mesi). Verificare sul certificato, non assumere un valore fisso.",
     },
     {
       key: "last_confirmation_date",
@@ -208,7 +210,7 @@ Se un campo non è presente nel documento, usa null.
 Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
-- issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, ecc.)
+- issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
 - material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
