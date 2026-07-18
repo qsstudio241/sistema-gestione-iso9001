@@ -165,7 +165,7 @@ const patentino_saldatore = {
       label: "Data di scadenza",
       type: "date",
       required: true,
-      hint: "Dipende dalla norma e dall'opzione di rivalidazione scelta (es. ISO 9606-1: 3 anni con nuova prova, o 2 anni con controllo NDT su 2 saldature; operatori ISO 14732: conferma ogni 6 mesi). Verificare sul certificato, non assumere un valore fisso.",
+      hint: "Dipende dalla norma e dall'opzione di rivalidazione scelta sul certificato: ISO 9606-1 (saldatori manuali) — 3 anni con nuova prova, o ciclo 2 anni con controllo NDT; ISO 14732 (operatori saldatura automatica/meccanizzata) — 6 anni con nuova prova, o ciclo 3 anni con controllo NDT (valori diversi, non intercambiabili). Entrambe le norme richiedono comunque conferma ogni 6 mesi. Verificare sempre sul certificato, non assumere un valore fisso.",
     },
     {
       key: "last_confirmation_date",
@@ -554,31 +554,144 @@ calibration_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
   },
 };
 
-// --- qualifica_14732 ---
+// --- qualifica_14732 (ISO 14732 - operatori/preparatori saldatura automatica e meccanizzata)
 
 const qualifica_14732 = {
   id: "qualifica_14732",
   label: "Qualifica operatore (ISO 14732)",
   expiryField: "expiry_date",
-  rangeFields: ["welding_process", "equipment_type"],
+  rangeFields: ["welding_process", "welding_positions", "welding_type"],
   fields: [
-    { key: "operator_name", label: "Nome operatore", type: "text", required: true },
+    { key: "operator_name", label: "Nome operatore/preparatore", type: "text", required: true },
     { key: "certificate_number", label: "Numero qualifica", type: "text", required: true },
-    { key: "welding_process", label: "Processo / equipaggiamento", type: "text", required: false },
-    { key: "equipment_type", label: "Tipo macchina saldatura", type: "text", required: false },
+    {
+      key: "issuing_body",
+      label: "Ente certificatore",
+      type: "select",
+      required: false,
+      options: [
+        { value: "tuv",         label: "TÜV" },
+        { value: "bv",          label: "Bureau Veritas (BV)" },
+        { value: "dnv",         label: "DNV GL" },
+        { value: "rina",        label: "RINA" },
+        { value: "imq",         label: "IMQ" },
+        { value: "tec_eurolab", label: "TEC Eurolab" },
+        { value: "sideius",     label: "Sideius (Valor)" },
+        { value: "altro",       label: "Altro" },
+      ],
+      hint: "Esaminatore/organismo che ha rilasciato la qualifica",
+    },
+    {
+      key: "welding_type",
+      label: "Tipo di saldatura",
+      type: "select",
+      required: false,
+      options: [
+        { value: "automatic",   label: "Automatica (nessun intervento manuale)" },
+        { value: "mechanized",  label: "Meccanizzata (variazione manuale possibile)" },
+      ],
+      hint: "Determina quali variabili essenziali si applicano (ISO 14732 §4.2.2 vs §4.2.3)",
+    },
+    {
+      key: "welding_process",
+      label: "Processo di saldatura",
+      type: "select",
+      required: false,
+      options: WELDING_PROCESS_OPTIONS,
+      hint: "Codice processo secondo ISO 4063",
+    },
+    { key: "equipment_type", label: "Tipo unità/macchina di saldatura", type: "text", required: false },
+    {
+      key: "welding_positions",
+      label: "Posizioni qualificate",
+      type: "multiselect",
+      required: false,
+      options: WELDING_POSITION_OPTIONS,
+      hint: "Solo per saldatura meccanizzata è variabile essenziale esplicita (§4.2.3): una nuova posizione richiede nuova qualifica",
+    },
+    {
+      key: "single_multi_run",
+      label: "Tecnica passata",
+      type: "select",
+      required: false,
+      options: [
+        { value: "single", label: "Mono-passata per lato" },
+        { value: "multi",  label: "Multi-passata per lato" },
+      ],
+      hint: "Da mono a multi-passata richiede nuova qualifica, non viceversa",
+    },
     { key: "exam_date", label: "Data esame", type: "date", required: false },
-    { key: "expiry_date", label: "Data scadenza", type: "date", required: true },
+    {
+      key: "expiry_date",
+      label: "Data di scadenza",
+      type: "date",
+      required: true,
+      hint: "Dipende dal metodo di rivalidazione dichiarato sul certificato (ISO 14732 §5.3: a) nuova prova ogni 6 anni, b) ciclo 3 anni con controllo NDT, c) indefinita se conferma rispettata + fabbricante certificato ISO 3834). Non assumere un valore fisso: verificare sul certificato.",
+    },
+    {
+      key: "last_confirmation_date",
+      label: "Data ultima conferma semestrale",
+      type: "date",
+      required: false,
+      hint: "Il responsabile saldature/esaminatore deve confermare ogni 6 mesi che l'operatore è attivo (identico a ISO 9606-1)",
+    },
+    {
+      key: "next_confirmation_due",
+      label: "Prossima conferma entro",
+      type: "date",
+      required: false,
+      hint: "Calcolata: ultima conferma + 6 mesi",
+    },
+    {
+      key: "qualification_method",
+      label: "Metodo di qualificazione (§4.1)",
+      type: "select",
+      required: false,
+      options: [
+        { value: "iso_15614", label: "a) Prova procedura (ISO 15614)" },
+        { value: "iso_15613", label: "b) Prova pre-produzione (ISO 15613)" },
+        { value: "iso_9606",  label: "c) Provino standard (ISO 9606)" },
+        { value: "production_test", label: "d) Prova/campione di produzione" },
+      ],
+    },
+    {
+      key: "notes",
+      label: "Note",
+      type: "textarea",
+      required: false,
+      hint: "Osservazioni aggiuntive, dettagli backing/inserto consumabile/sensori, ecc.",
+    },
   ],
-  aiPrompt: `Stai analizzando una qualifica operatore saldatura automatica ISO 14732.
-Estrai in type_specific_data: operator_name, certificate_number, welding_process, equipment_type,
-exam_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+  aiPrompt: `Stai analizzando una qualifica operatore/preparatore di saldatura automatica o meccanizzata secondo ISO 14732.
+Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non è presente, usa null.
+
+Campi da estrarre:
+- operator_name: nome e cognome dell'operatore o preparatore
+- certificate_number: numero univoco della qualifica
+- issuing_body: esaminatore/organismo di certificazione
+- welding_type: "automatic" o "mechanized" solo se dichiarato esplicitamente
+- welding_process: codice processo ISO 4063
+- equipment_type: tipo di unità/macchina di saldatura
+- welding_positions: array posizioni secondo ISO 6947, solo se dichiarate
+- single_multi_run: "single" o "multi" se indicato
+- exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD)
+- qualification_method: quale metodo tra §4.1 a/b/c/d è stato usato, se indicato
+
+IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali — estrai solo ciò che è scritto sul certificato.`,
   aiExpectedSchema: {
     operator_name: "string|null",
     certificate_number: "string|null",
+    issuing_body: "string|null",
+    welding_type: "automatic|mechanized|null",
     welding_process: "string|null",
     equipment_type: "string|null",
+    welding_positions: "string[]|null",
+    single_multi_run: "single|multi|null",
     exam_date: "YYYY-MM-DD|null",
     expiry_date: "YYYY-MM-DD|null",
+    last_confirmation_date: "YYYY-MM-DD|null",
+    next_confirmation_due: "YYYY-MM-DD|null",
+    qualification_method: "iso_15614|iso_15613|iso_9606|production_test|null",
   },
 };
 

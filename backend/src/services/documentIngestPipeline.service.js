@@ -26,7 +26,7 @@ try {
     extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
 } catch (_) {}
 
-const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps', 'norma']);
+const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps', 'norma', 'qualifica_14732']);
 
 /** Alias campi AI/schema → campi piatti pipeline */
 const FIELD_ALIASES = {
