@@ -15,6 +15,7 @@ const {
   syncAuditConformityHints,
   SAL_DEFAULT_STANDARD_CODES,
 } = require('../services/gapAnalysis.service');
+const { suggestSalStatus } = require('../services/salAiSuggest.service');
 const {
   assertCompanyRead,
   assertMutatingAllowed,
@@ -226,6 +227,47 @@ async function syncSalAuditHints(req, res) {
   }
 }
 
+// ─── SAL Fase 5-A — suggeritore stato AI (human-in-the-loop) ─────────────────
+
+async function suggestSalGapStatus(req, res) {
+  try {
+    // Lettura: il suggeritore NON scrive lo stato (human-in-the-loop, ISO 7.5).
+    const scope = await resolveCompanyAccess(req, res);
+    if (!scope) return undefined;
+
+    const normRequirementId = req.body?.normRequirementId != null
+      ? parseInt(req.body.normRequirementId, 10)
+      : null;
+    const normRequirementIds = Array.isArray(req.body?.normRequirementIds)
+      ? req.body.normRequirementIds
+      : null;
+
+    const result = await suggestSalStatus({
+      organizationId: scope.organizationId,
+      companyId: scope.companyId,
+      normRequirementId,
+      normRequirementIds,
+    });
+
+    if (result.error === 'NOT_FOUND') {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+    if (result.error === 'VALIDATION') {
+      return res.status(400).json({ error: result.message, code: 'VALIDATION_ERROR' });
+    }
+
+    // _aiMeta consumato e rimosso dal middleware logAiInteraction('sal_suggest').
+    return res.json({
+      success: true,
+      data: result.data,
+      _aiMeta: result.meta || undefined,
+    });
+  } catch (err) {
+    logger.error('[SalGapAiSuggest] Error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   getGapAnalysis,
   getSalGapMatrix,
@@ -234,4 +276,5 @@ module.exports = {
   seedSalGapMatrix,
   getSalGapHistory,
   syncSalAuditHints,
+  suggestSalGapStatus,
 };

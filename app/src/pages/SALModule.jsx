@@ -9,6 +9,7 @@ import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import SgqDataGrid from '../components/SgqDataGrid';
 import SalEvidenceSection from '../components/SalEvidenceSection';
+import SalAiSuggestDialog from '../components/SalAiSuggestDialog';
 import NcCreateModal from '../components/NcCreateModal';
 import { formatDate } from '../utils/dateHelpers';
 import { exportSalTrackerDocx } from '../utils/wordExportSal';
@@ -38,8 +39,11 @@ const GRID_COLUMNS = [
   { id: 'notes', label: 'Note', sortable: false },
   { id: 'responsible', label: 'Responsabile', sortable: true, width: '130px' },
   { id: 'dueDate', label: 'Scadenza', sortable: true, width: '110px' },
-  { id: '_actions', label: '', sortable: false, width: '72px' },
+  { id: '_actions', label: '', sortable: false, width: '150px' },
 ];
+
+/** Numero massimo di clausole per richiesta AI batch (allineato al backend). */
+const AI_BULK_MAX = 25;
 
 function SalConformityHintBadge({ hint }) {
   if (!hint) return <span className="sal-hint-empty">—</span>;
@@ -205,7 +209,10 @@ function SalEditModal({ row, companyId, saving, onClose, onSave, onCreateAction 
 }
 
 export default function SALModule() {
-  const { user } = useAuth() || {};
+  const { user, hasLicensedModule } = useAuth() || {};
+  const aiEnabled = typeof hasLicensedModule === 'function'
+    ? hasLicensedModule('ai_norms')
+    : false;
 
   const [companies, setCompanies] = useState([]);
   const [companyScope, setCompanyScope] = useState(() => resolveInitialSalCompanyScope());
@@ -222,6 +229,9 @@ export default function SALModule() {
   const [showNcModal, setShowNcModal] = useState(false);
   const [ncActionRow, setNcActionRow] = useState(null);
   const [ncSuccessMsg, setNcSuccessMsg] = useState(null);
+  const [aiSuggestOpen, setAiSuggestOpen] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     apiService.getCompanies?.().then((res) => {
@@ -385,6 +395,79 @@ export default function SALModule() {
     setShowNcModal(true);
   }
 
+  const requestAiSuggestions = useCallback(async (payload, contextLabel) => {
+    if (!companyScope) return;
+    setAiLoading(true);
+    setError(null);
+    setNcSuccessMsg(null);
+    try {
+      const res = await apiService.suggestSalGapStatus(companyScope, payload);
+      const data = res?.data ?? res;
+      if (data && data.aiAvailable === false) {
+        setError(data.message || 'Suggeritore AI non disponibile.');
+        return;
+      }
+      const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      if (!list.length) {
+        setError('Nessun suggerimento AI generato.');
+        return;
+      }
+      setAiSuggestions(list);
+      setAiSuggestOpen(true);
+    } catch (err) {
+      setError(err?.message || `Errore suggerimento AI${contextLabel ? ` (${contextLabel})` : ''}`);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [companyScope]);
+
+  function handleAiSuggestRow(row) {
+    if (!row?.normRequirementId) return;
+    setEditRow(null);
+    requestAiSuggestions({ normRequirementId: row.normRequirementId }, row.clauseRef);
+  }
+
+  function handleAiSuggestBulk() {
+    const ids = rows
+      .map((r) => r.normRequirementId)
+      .filter(Boolean)
+      .slice(0, AI_BULK_MAX);
+    if (!ids.length) return;
+    if (rows.length > AI_BULK_MAX) {
+      setNcSuccessMsg(`Analisi AI limitata alle prime ${AI_BULK_MAX} clausole visualizzate.`);
+    }
+    requestAiSuggestions({ normRequirementIds: ids }, 'batch');
+  }
+
+  const dismissAiSuggestion = useCallback((normRequirementId) => {
+    setAiSuggestions((prev) => {
+      const next = prev.filter((s) => s.normRequirementId !== normRequirementId);
+      if (!next.length) setAiSuggestOpen(false);
+      return next;
+    });
+  }, []);
+
+  async function handleAiAccept(suggestion, finalStatus) {
+    const row = rows.find((r) => r.normRequirementId === suggestion.normRequirementId);
+    if (!row || !finalStatus) return;
+    // Tracciabilita' ISO 7.5: se non ci sono note, registra l'origine AI del cambio stato.
+    const aiNote = suggestion.rationale
+      ? `Proposto da AI (confidenza ${suggestion.confidence || 'n/d'}): ${suggestion.rationale}`
+      : null;
+    await saveStatus(row, {
+      status: finalStatus,
+      notes: row.notes || aiNote || null,
+      responsible: row.responsible,
+      dueDate: row.dueDate,
+      evidenceDocumentIds: row.evidenceDocumentIds,
+    });
+    dismissAiSuggestion(suggestion.normRequirementId);
+  }
+
+  function handleAiReject(suggestion) {
+    dismissAiSuggestion(suggestion.normRequirementId);
+  }
+
   function renderCell(row, col) {
     switch (col.id) {
       case 'clauseRef':
@@ -433,14 +516,27 @@ export default function SALModule() {
         return row.dueDate ? formatDate(row.dueDate) : '—';
       case '_actions':
         return (
-          <button
-            type="button"
-            className="sal-btn-edit"
-            onClick={() => setEditRow(row)}
-            title="Modifica dettagli"
-          >
-            Modifica
-          </button>
+          <div className="sal-actions-cell">
+            <button
+              type="button"
+              className="sal-btn-edit"
+              onClick={() => setEditRow(row)}
+              title="Modifica dettagli"
+            >
+              Modifica
+            </button>
+            {aiEnabled && (
+              <button
+                type="button"
+                className="sal-btn-ai"
+                onClick={() => handleAiSuggestRow(row)}
+                disabled={aiLoading || savingId === row.normRequirementId}
+                title="Suggerisci stato dalle evidenze collegate (AI)"
+              >
+                {'\u2728'} AI
+              </button>
+            )}
+          </div>
         );
       default:
         return row[col.id] ?? '—';
@@ -492,6 +588,17 @@ export default function SALModule() {
               title="Aggiorna conformity_hint dall'ultimo audit completato per standard"
             >
               {syncingHints ? 'Sync audit…' : 'Sync hint audit'}
+            </button>
+          )}
+          {aiEnabled && companyScope && rows.length > 0 && (
+            <button
+              type="button"
+              className="sal-btn sal-btn-secondary"
+              disabled={aiLoading || loading}
+              onClick={handleAiSuggestBulk}
+              title="Suggerisci lo stato delle clausole visualizzate dalle evidenze collegate (AI)"
+            >
+              {aiLoading ? 'Analisi AI…' : '\u2728 Suggerisci stato (AI)'}
             </button>
           )}
           {companyScope && rows.length > 0 && (
@@ -590,6 +697,18 @@ export default function SALModule() {
           onClose={() => setEditRow(null)}
           onSave={(form) => saveStatus(editRow, form)}
           onCreateAction={openNcFromGap}
+        />
+      )}
+
+      {aiSuggestOpen && (
+        <SalAiSuggestDialog
+          open={aiSuggestOpen}
+          suggestions={aiSuggestions}
+          busy={aiLoading}
+          savingId={savingId}
+          onAccept={handleAiAccept}
+          onReject={handleAiReject}
+          onClose={() => setAiSuggestOpen(false)}
         />
       )}
 
