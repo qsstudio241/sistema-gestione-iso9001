@@ -1,6 +1,6 @@
 # Piano slice — Cataloghi riferimento normativi per ingest saldatura
 
-> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-5/RC-6 parziali (luglio 2026, vedi sotto) — GAP documentati, non risolti forzando dati.  
+> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-5/RC-6 parziali (luglio 2026, vedi sotto) — GAP documentati, non risolti forzando dati. RC-8 ✅ (17/07/2026, ISO 14732 operatori).  
 > **Obiettivo**: estratti operativi da norme tecniche → `docs/reference/*.md` + cataloghi JS → prompt AI, regex, select UI.  
 > **Pattern di riferimento**: slice ISO/TR 15608 (chat `bc-a539`, PR catalogo 15608, `materialGroups15608.js`).  
 > **Complementa**: [PLAN_INGEST_LEARNING_SLICES.md](PLAN_INGEST_LEARNING_SLICES.md) (IG-1…IG-6 ✅), [ADR-017](../adr/ADR-017-ingest-reference-network.md) (Livello A).
@@ -31,6 +31,7 @@ L'ingest patentini/WPQR/WPS usa campi codificati (processo, posizione, gas, grup
 | RC-5 | ISO 9606-1 | designazione, range validità, date | `ISO-9606-1-range-validita-patentino.md` | `weldingQualificationRules9606.js` | 🔶 parziale (vedi nota) |
 | RC-6 | ISO 15614-1 | campi WPQR | `ISO-15614-1-range-validita-WPQR.md` | non codificato (solo doc, vedi nota) | 🔶 parziale (vedi nota) |
 | RC-7 | ISO 9712 | cert NDT (metodo/livello) | `ISO-9712-ndt.md` | `ndtMethods9712.js` | ⏳ backlog |
+| RC-8 | ISO 14732 | `qualifica_14732` (validità operatori) | `ISO-14732-operatori-saldatura.md` | schema arricchito in `documentTypeSchemas.js` (no catalogo dedicato) | ✅ |
 
 ### Nota RC-5/RC-6 (luglio 2026) — parziale per motivi di qualità fonte, non di tempo
 
@@ -109,6 +110,23 @@ Allineare schema AI ai campi `wpqr_records`.
 - [x] Estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` (Level 1/2, range spessore Tabella 7/8 con avviso di verifica, campi essenziali WPQR)
 - [ ] Codifica JS delle regole (non fatta: valori Tabella 7/8 hanno confidenza media, serve verifica umana prima di trasformarli in logica automatica — vedi avviso nell'estratto)
 - [ ] Matrice compatibilità gruppi materiale (Tabella 5/6) — **GAP**
+
+### RC-8 — ISO 14732 (operatori/preparatori saldatura automatica/meccanizzata) — ✅ 17/07/2026
+
+Fonte: PDF **scansionato** (nessun livello testo) fornito dal committente, convertito con OCR locale Tesseract 5.4 (installato per l'occasione, pacchetto lingua italiana incluso — mai dati caricati su cloud). Qualità ottima sulle clausole normative (28/28 pagine con testo utile), rumore solo su copertina/copyright.
+
+Risolve punto 4 del feedback Studio Mason: "operatori 6" = rivalidazione ISO 14732 opzione a) ogni **6 anni** (contro 3 anni di ISO 9606-1 per saldatori manuali) — non un errore di battitura del cliente.
+
+**DoD**
+
+- [x] Estratto `docs/reference/ISO-14732-operatori-saldatura.md` (metodi qualificazione §4.1, variabili essenziali automatico/meccanizzato §4.2.2/4.2.3, validità §5 con differenze vs 9606-1, bibliografia ufficiale §2)
+- [x] Schema `qualifica_14732` arricchito (app + backend `documentTypeSchemas.js`): da 6 campi stub a schema completo (ente, tipo saldatura, processo, posizioni, conferma/rivalidazione, metodo qualificazione)
+- [x] Fix bug `qualifica_operatore` → `qualifica_14732` in `importAiExtraction.service.js` (il doc type reale non riceveva mai la sezione prompt processo/posizioni)
+- [x] `qualifica_14732` aggiunto a `SUPPORTED_DOC_TYPES` in `documentIngestPipeline.service.js` (gap: la pipeline unificata regole+AI+confidenza non copriva questo tipo documento)
+- [x] Extractor euristico `extractQualifica14732Fields` in `ruleFieldExtractors.js` (fallback/cross-check, riusa utility esistenti)
+- [x] Hint `expiry_date` di `patentino_saldatore` corretto (non più genericamente "6 mesi operatori": ora distingue 3/2 anni saldatori vs 6/3 anni operatori)
+
+**Non in scope (per decisione prodotto futura)**: integrazione `qualifica_14732` nella tabella `qualifications` con alert/conferma semestrale/scadenzario come già fatto per `patentino_saldatore` (ADR pattern "Anagrafica personale ↔ qualifiche") — oggi resta nel registro documentale generico. Da valutare se il cliente userà in volume questo tipo di certificato.
 
 ---
 
