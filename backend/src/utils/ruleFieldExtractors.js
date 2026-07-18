@@ -152,6 +152,25 @@ function extractPatentinoFields(text, fileName) {
     };
 }
 
+/**
+ * @param {string} text
+ * @param {string} fileName
+ * @returns {object}
+ */
+function extractQualifica14732Fields(text, fileName) {
+    const dates = allDates(text);
+    const positions = extractWeldingPositionsFromText(text);
+    return {
+        operator_name: extractPersonName(text),
+        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        issuing_body: extractIssuingBody(text),
+        welding_process: extractWeldingProcess(text),
+        welding_positions: positions.length ? positions : null,
+        exam_date: dates[0] || null,
+        expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
+    };
+}
+
 const { guessStandardCodeFromFilename } = require('../services/documentRegistryNorm.service');
 
 function extractNormFields(text, fileName) {
@@ -188,6 +207,7 @@ function extractNormFields(text, fileName) {
 const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
+    qualifica_14732: extractQualifica14732Fields,
     wps: (text, fileName) => ({
         wps_number: extractWpqrReference(text, fileName),
         welding_process: extractWeldingProcess(text),
@@ -218,6 +238,7 @@ module.exports = {
     extractFieldsByRules,
     extractWpqrFields,
     extractPatentinoFields,
+    extractQualifica14732Fields,
     extractWeldingProcess,
     extractMaterialGroup,
     allDates,
