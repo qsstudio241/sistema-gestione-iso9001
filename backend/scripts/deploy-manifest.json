@@ -137,6 +137,7 @@
                        "files":  [
                                      "src/services/normConnectors/publicLawHttp.js",
                                      "src/services/normConnectors/normativaConnector.js",
+                                     "src/services/normConnectors/localStoreConnector.js",
                                      "src/services/normConnectors/eurLexConnector.js"
                                  ]
                    },
