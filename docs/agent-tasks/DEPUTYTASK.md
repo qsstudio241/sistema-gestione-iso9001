@@ -1,3 +1,7 @@
+> **Nota sessione 18/07/2026 — SAL Fase 5-A CHIUSA (Lead, autonoma):** suggeritore stato AI per clausola SAL dalle evidenze collegate (human-in-the-loop). Backend `salAiSuggest.service.js` + `POST /companies/:id/gap-ai-suggest` (gate `ai_norms`+`sal`), FE pulsante «Suggerisci stato (AI)» riga+bulk + `SalAiSuggestDialog`. L1: backend 14/14, Vitest 10/10, build Vite OK, encoding OK. Branch `feat/sal-ai-suggest-fase5a` (PR). Il brief PR2 qui sotto resta **aperto e invariato**.
+
+---
+
 # DEPUTYTASK — PR2 Controparti nel Riesame Requisiti (§8.2)
 
 > **Creato**: 07/07/2026  
