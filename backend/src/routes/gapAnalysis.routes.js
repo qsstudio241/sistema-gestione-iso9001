@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
+const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/gapAnalysis.controller');
 
 router.get('/gap-analysis', authenticate, requireLicensedModule('ai_norms'), ctrl.getGapAnalysis);
@@ -22,6 +23,14 @@ salRouter.get('/gap-statuses/:normRequirementId/history', ctrl.getSalGapHistory)
 salRouter.put('/gap-statuses/:normRequirementId', ctrl.upsertSalGapStatus);
 salRouter.post('/gap-matrix/seed', ctrl.seedSalGapMatrix);
 salRouter.post('/gap-matrix/sync-audit-hints', ctrl.syncSalAuditHints);
+
+// SAL Fase 5-A: suggeritore stato AI — gate licenza ai_norms SOPRA quello 'sal'.
+salRouter.post(
+  '/gap-ai-suggest',
+  requireLicensedModule('ai_norms'),
+  logAiInteraction('sal_suggest'),
+  ctrl.suggestSalGapStatus,
+);
 
 router.use('/companies/:companyId', salRouter);
 

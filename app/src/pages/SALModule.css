@@ -246,6 +246,32 @@
   background: #f3f4f6;
 }
 
+.sal-actions-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sal-btn-ai {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #90caf9;
+  border-radius: 6px;
+  background: #e3f2fd;
+  cursor: pointer;
+  color: #1565c0;
+  white-space: nowrap;
+}
+
+.sal-btn-ai:hover:not(:disabled) {
+  background: #bbdefb;
+}
+
+.sal-btn-ai:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .sal-modal-backdrop {
   position: fixed;
   inset: 0;
