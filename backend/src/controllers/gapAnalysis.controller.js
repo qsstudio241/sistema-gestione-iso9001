@@ -16,6 +16,7 @@ const {
   SAL_DEFAULT_STANDARD_CODES,
 } = require('../services/gapAnalysis.service');
 const { suggestSalStatus } = require('../services/salAiSuggest.service');
+const { hasSalLegalConformityCapability } = require('../services/moduleLicense.service');
 const {
   assertCompanyRead,
   assertMutatingAllowed,
@@ -242,11 +243,19 @@ async function suggestSalGapStatus(req, res) {
       ? req.body.normRequirementIds
       : null;
 
+    // Capability seam SAL_LEGAL_CONFORMITY (oggi mappata su 'ai_norms'): decide
+    // lato server se calcolare anche l'asse legislativo. Off -> solo asse tecnico.
+    const legalConformityEnabled = await hasSalLegalConformityCapability(
+      scope.organizationId,
+      req.user.role,
+    );
+
     const result = await suggestSalStatus({
       organizationId: scope.organizationId,
       companyId: scope.companyId,
       normRequirementId,
       normRequirementIds,
+      legalConformityEnabled,
     });
 
     if (result.error === 'NOT_FOUND') {

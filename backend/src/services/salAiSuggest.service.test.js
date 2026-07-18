@@ -452,6 +452,61 @@ describe('salAiSuggest.service', () => {
     });
   });
 
+  describe('suggestForClause - capability SAL_LEGAL_CONFORMITY OFF', () => {
+    test('capability off: solo asse tecnico, nessuna lettura articoli di legge', async () => {
+      mockQueryLegalPath();
+      extractDocumentText.mockResolvedValue({ text: 'Il DVR valuta i rischi.' });
+      chat.mockResolvedValue({
+        content: JSON.stringify({ suggestedStatus: 'to_validate', confidence: 'medium', rationale: 'ok', evidenceRefs: [10] }),
+        model: 'gemini', tokens: { input: 40, output: 10 },
+      });
+
+      const out = await suggestForClause(1, 42, 610, false);
+
+      // Asse tecnico invariato, nessuna sezione legale, broker mai interrogato.
+      expect(out.suggestedStatus).toBe('to_validate');
+      expect(out.legal).toBeUndefined();
+      expect(normBroker.getClauseText).not.toHaveBeenCalled();
+    });
+
+    test('capability on (default): asse legislativo presente sulla stessa clausola', async () => {
+      mockQueryLegalPath();
+      extractDocumentText.mockResolvedValue({ text: 'Il DVR valuta i rischi.' });
+      normBroker.getClauseText.mockResolvedValue({ text: 'Art. testo', title: 'T', fullRef: 'x', sourceUrl: null, source: 'local_db' });
+      chat.mockResolvedValue({
+        content: JSON.stringify({
+          suggestedStatus: 'to_validate', confidence: 'medium', rationale: 'ok', evidenceRefs: [10],
+          legalConfidence: 'medium',
+          legalConformity: [{ articleRef: 'D.Lgs. 81/2008 art.28', coverage: 'covered', gap: '', rationale: 'r' }],
+        }),
+        model: 'gemini', tokens: { input: 80, output: 20 },
+      });
+
+      const out = await suggestForClause(1, 42, 610);
+      expect(out.legal).toBeDefined();
+      expect(normBroker.getClauseText).toHaveBeenCalled();
+    });
+  });
+
+  describe('suggestSalStatus - capability OFF end-to-end', () => {
+    test('legalConformityEnabled=false: suggerimento senza legal, broker non chiamato', async () => {
+      mockQueryLegalPath();
+      extractDocumentText.mockResolvedValue({ text: 'Evidenza con testo.' });
+      chat.mockResolvedValue({
+        content: JSON.stringify({ suggestedStatus: 'completed', confidence: 'high', rationale: 'ok', evidenceRefs: [10] }),
+        model: 'gemini', tokens: { input: 50, output: 10 },
+      });
+
+      const res = await suggestSalStatus({
+        organizationId: 1, companyId: 42, normRequirementId: 610, legalConformityEnabled: false,
+      });
+
+      expect(res.data.aiAvailable).toBe(true);
+      expect(res.data.suggestions[0].legal).toBeUndefined();
+      expect(normBroker.getClauseText).not.toHaveBeenCalled();
+    });
+  });
+
   describe('suggestSalStatus - meta legislativa nel context summary', () => {
     test('context_summary segnala conformita legislativa quando valutata', async () => {
       mockQueryLegalPath();

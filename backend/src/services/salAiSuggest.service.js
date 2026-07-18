@@ -319,13 +319,16 @@ async function loadLinkedEvidenceDocuments(organizationId, companyId, normRequir
  * Costruisce il contesto (clausola + testo evidenze estratto) per una clausola.
  * @returns {Promise<{error?:string, clause?:object, evidences?:Array}>}
  */
-async function buildClauseContext(organizationId, companyId, normRequirementId) {
+async function buildClauseContext(organizationId, companyId, normRequirementId, legalConformityEnabled = true) {
   const clause = await loadClause(normRequirementId);
   if (!clause) return { error: 'CLAUSE_NOT_FOUND' };
 
   // Asse legislativo (SAL 5-B): articoli di legge collegati via linked_legislation.
+  // Calcolato SOLO se la capability SAL_LEGAL_CONFORMITY e' attiva (seam in
+  // moduleLicense.service, oggi mappata su 'ai_norms'). Capability off -> nessuna
+  // lettura articoli (zero chiamate al broker), ritorno del solo asse tecnico (5-A).
   // Leggi universali -> nessuno scoping tenant; le evidenze restano scoped org+azienda.
-  const legislation = await loadLegislationArticles(clause);
+  const legislation = legalConformityEnabled ? await loadLegislationArticles(clause) : [];
 
   const docs = await loadLinkedEvidenceDocuments(organizationId, companyId, normRequirementId);
 
@@ -526,8 +529,8 @@ function buildUnevaluatedLegal(legalArticles) {
  *
  * @returns {Promise<object>} proposta { normRequirementId, suggestedStatus, confidence, rationale, evidenceRefs, aiUsed, ... }
  */
-async function suggestForClause(organizationId, companyId, normRequirementId) {
-  const ctx = await buildClauseContext(organizationId, companyId, normRequirementId);
+async function suggestForClause(organizationId, companyId, normRequirementId, legalConformityEnabled = true) {
+  const ctx = await buildClauseContext(organizationId, companyId, normRequirementId, legalConformityEnabled);
   if (ctx.error) {
     return { normRequirementId, error: ctx.error };
   }
@@ -641,6 +644,7 @@ async function suggestForClause(organizationId, companyId, normRequirementId) {
  * @param {number|string} params.companyId
  * @param {number} [params.normRequirementId]        singola clausola
  * @param {Array<number>} [params.normRequirementIds] batch clausole
+ * @param {boolean} [params.legalConformityEnabled]   capability SAL_LEGAL_CONFORMITY (default true)
  * @returns {Promise<{error?:string, data?:object}>}
  */
 async function suggestSalStatus({
@@ -648,6 +652,7 @@ async function suggestSalStatus({
   companyId,
   normRequirementId = null,
   normRequirementIds = null,
+  legalConformityEnabled = true,
 }) {
   const scoped = await assertCompanyInOrganization(organizationId, companyId);
   if (!scoped) return { error: 'NOT_FOUND' };
@@ -692,7 +697,7 @@ async function suggestSalStatus({
 
   for (const reqId of ids) {
     // eslint-disable-next-line no-await-in-loop
-    const suggestion = await suggestForClause(organizationId, scoped.companyId, reqId);
+    const suggestion = await suggestForClause(organizationId, scoped.companyId, reqId, legalConformityEnabled);
     if (suggestion.tokens) {
       tokenTotals.input += suggestion.tokens.input || 0;
       tokenTotals.output += suggestion.tokens.output || 0;
