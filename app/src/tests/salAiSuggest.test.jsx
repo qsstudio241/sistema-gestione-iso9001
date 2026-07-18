@@ -68,6 +68,37 @@ const SUGGESTION = {
   aiUsed: true,
 };
 
+/** Suggerimento con asse legislativo valorizzato (SAL 5-B). */
+const SUGGESTION_LEGAL = {
+  normRequirementId: 101,
+  clauseRef: '8.4',
+  clauseTitle: 'Controllo fornitori',
+  standardCode: 'ISO_45001_2018',
+  suggestedStatus: 'to_validate',
+  confidence: 'medium',
+  rationale: 'Evidenze presenti, da validare.',
+  evidenceRefs: [{ documentId: 42, title: 'DVR', used: true }],
+  aiUsed: true,
+  legal: {
+    evaluated: true,
+    confidence: 'medium',
+    articles: [
+      {
+        articleRef: 'D.Lgs. 81/2008 art.28',
+        standardCode: 'DLgs_81_2008',
+        clauseRef: 'art.28',
+        title: 'Oggetto della valutazione dei rischi',
+        sourceUrl: 'https://www.normattiva.it/dlgs81-art28',
+        source: 'local_db',
+        textAvailable: true,
+        coverage: 'partial',
+        gap: 'Manca aggiornamento periodico del DVR.',
+        rationale: 'Il DVR copre i rischi ma non risulta aggiornato.',
+      },
+    ],
+  },
+};
+
 async function renderSalWithCompany() {
   window.localStorage.setItem(SAL_COMPANY_SCOPE_KEY, '1');
   apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: 'Acme Srl' }] });
@@ -134,6 +165,41 @@ describe('SALModule - suggeritore stato AI (Fase 5-A)', () => {
         expect.objectContaining({ status: 'completed' }),
       );
     });
+  });
+
+  it('mostra la sezione Conformita legislativa quando il suggerimento ha legal', async () => {
+    apiService.suggestSalGapStatus.mockResolvedValue({
+      success: true,
+      data: { aiAvailable: true, suggestions: [SUGGESTION_LEGAL] },
+    });
+
+    await renderSalWithCompany();
+    await waitFor(() => expect(screen.getByText('8.4')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Suggerisci stato \(AI\)/ }));
+    await screen.findByText('Suggerimenti stato (AI)');
+
+    // Due assi distinti + articolo di legge con copertura + gap + link.
+    expect(screen.getByText('Conformit\u00E0 legislativa')).toBeInTheDocument();
+    expect(screen.getByText('Conformit\u00E0 norma tecnica')).toBeInTheDocument();
+    expect(screen.getByText('D.Lgs. 81/2008 art.28')).toBeInTheDocument();
+    expect(screen.getByText('Parziale')).toBeInTheDocument();
+    expect(screen.getByText(/Manca aggiornamento periodico/)).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: 'Vedi articolo' });
+    expect(link).toHaveAttribute('href', 'https://www.normattiva.it/dlgs81-art28');
+  });
+
+  it('nessuna sezione legislativa quando il suggerimento non ha legal (graceful)', async () => {
+    apiService.suggestSalGapStatus.mockResolvedValue({
+      success: true,
+      data: { aiAvailable: true, suggestions: [SUGGESTION] },
+    });
+
+    await renderSalWithCompany();
+    await waitFor(() => expect(screen.getByText('8.4')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Suggerisci stato \(AI\)/ }));
+    await screen.findByText('Suggerimenti stato (AI)');
+
+    expect(screen.queryByText('Conformit\u00E0 legislativa')).not.toBeInTheDocument();
   });
 
   it('graceful degradation: aiAvailable=false non apre il dialog', async () => {

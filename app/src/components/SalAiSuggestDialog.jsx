@@ -20,6 +20,18 @@ import {
 } from '../utils/salConstants';
 import './SalAiSuggestDialog.css';
 
+/** Etichette IT per la copertura legislativa (asse 2, SAL 5-B). */
+const COVERAGE_META = {
+  covered: { label: 'Coperto', className: 'sal-ai-coverage--covered' },
+  partial: { label: 'Parziale', className: 'sal-ai-coverage--partial' },
+  missing: { label: 'Mancante', className: 'sal-ai-coverage--missing' },
+};
+
+function CoverageBadge({ level }) {
+  const meta = COVERAGE_META[level] || { label: 'N/D', className: 'sal-ai-coverage--unknown' };
+  return <span className={`sal-ai-coverage ${meta.className}`}>{meta.label}</span>;
+}
+
 function initItemState(suggestions) {
   const state = {};
   for (const s of suggestions) {
@@ -82,6 +94,8 @@ export default function SalAiSuggestDialog({
             const showEditable = st.editing || !highConfidence;
             const noProposal = !s.suggestedStatus && !s.aiUsed;
             const rowSaving = savingId === s.normRequirementId;
+            const legalArticles = Array.isArray(s.legal?.articles) ? s.legal.articles : [];
+            const hasLegal = legalArticles.length > 0;
             return (
               <li
                 key={s.normRequirementId}
@@ -97,6 +111,9 @@ export default function SalAiSuggestDialog({
                 </div>
 
                 <div className="sal-ai-item-body">
+                  {hasLegal && (
+                    <p className="sal-ai-axis-title">{'Conformit\u00E0 norma tecnica'}</p>
+                  )}
                   <div className="sal-ai-status-block">
                     <span className="sal-ai-label">Stato proposto</span>
                     {noProposal ? (
@@ -153,6 +170,48 @@ export default function SalAiSuggestDialog({
                             title={e.used ? 'Usata dall\u2019AI nella valutazione' : 'Collegata ma non determinante'}
                           >
                             {e.title}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {hasLegal && (
+                    <div className="sal-ai-legal">
+                      <div className="sal-ai-legal-head">
+                        <p className="sal-ai-axis-title">{'Conformit\u00E0 legislativa'}</p>
+                        {s.legal.evaluated
+                          ? <ConfidenceBadge level={s.legal.confidence} />
+                          : (
+                            <span className="sal-ai-legal-note">
+                              {'Articoli collegati (valutazione AI non disponibile)'}
+                            </span>
+                          )}
+                      </div>
+                      <ul className="sal-ai-legal-list">
+                        {legalArticles.map((a) => (
+                          <li key={a.articleRef} className="sal-ai-legal-item">
+                            <div className="sal-ai-legal-item-head">
+                              <span className="sal-ai-legal-ref">{a.articleRef}</span>
+                              {a.textAvailable && <CoverageBadge level={a.coverage} />}
+                              {a.sourceUrl && (
+                                <a
+                                  className="sal-ai-linkbtn"
+                                  href={a.sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {'Vedi articolo'}
+                                </a>
+                              )}
+                            </div>
+                            {a.title && <p className="sal-ai-legal-title">{a.title}</p>}
+                            {a.gap && (
+                              <p className="sal-ai-legal-gap">
+                                <span className="sal-ai-label">Lacuna</span> {a.gap}
+                              </p>
+                            )}
+                            {a.rationale && <p className="sal-ai-rationale">{a.rationale}</p>}
                           </li>
                         ))}
                       </ul>
