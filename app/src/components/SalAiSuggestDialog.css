@@ -154,6 +154,113 @@
   font-weight: 600;
 }
 
+/* --- SAL Fase 5-B: conformita' legislativa (asse 2) --- */
+.sal-ai-axis-title {
+  margin: 0;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #37474f;
+  font-weight: 700;
+}
+
+.sal-ai-legal {
+  border-top: 1px dashed #cfd8dc;
+  padding-top: 0.55rem;
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sal-ai-legal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sal-ai-legal-note {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #90a4ae;
+}
+
+.sal-ai-legal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sal-ai-legal-item {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+}
+
+.sal-ai-legal-item-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sal-ai-legal-ref {
+  font-weight: 700;
+  color: #1a237e;
+  font-size: 0.85rem;
+}
+
+.sal-ai-legal-title {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: #546e7a;
+}
+
+.sal-ai-legal-gap {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #b71c1c;
+  line-height: 1.4;
+}
+
+.sal-ai-coverage {
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 0.1rem 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sal-ai-coverage--covered {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.sal-ai-coverage--partial {
+  background: #fff8e1;
+  color: #f57f17;
+  border: 1px solid #ffe082;
+}
+
+.sal-ai-coverage--missing {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.sal-ai-coverage--unknown {
+  background: #eceff1;
+  color: #78909c;
+  border: 1px solid #cfd8dc;
+}
+
 .sal-ai-item-actions {
   display: flex;
   gap: 0.5rem;
