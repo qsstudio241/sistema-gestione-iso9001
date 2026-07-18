@@ -2079,6 +2079,17 @@ class ApiService {
         return this.post(`/companies/${companyId}/gap-matrix/sync-audit-hints`, body);
     }
 
+    // SAL Fase 5-A: suggeritore stato AI (licenza ai_norms + sal). Non scrive lo stato.
+    async suggestSalGapStatus(companyId, { normRequirementId, normRequirementIds } = {}) {
+        const body = {};
+        if (Array.isArray(normRequirementIds) && normRequirementIds.length) {
+            body.normRequirementIds = normRequirementIds;
+        } else if (normRequirementId != null) {
+            body.normRequirementId = normRequirementId;
+        }
+        return this.post(`/companies/${companyId}/gap-ai-suggest`, body);
+    }
+
     async globalSearch(params = {}) {
         const qs = new URLSearchParams();
         if (params.q) qs.set('q', params.q);
