@@ -8,6 +8,7 @@
 | Sezione | Contenuto |
 |---------|-----------|
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
+| [**Cloud Agent / context window**](#cloud-agent-cursor--ambiente-e-context-window) | environment.json, AGENTS.md, policy costi |
 | [**Lezioni apprese (fonte unica)**](archive/sessions/GUIDA_DIARIO_2026.md#lezioni-apprese-consolidate-fonte-unica) | Indice regole operative + link al dettaglio |
 | [Metodo di lavoro (slice + multitasking)](../.cursor/rules/sgq-workflow-method.mdc) | Regola `.cursor`: slice, parallelizzazione, worktree, triage PR |
 | [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
@@ -77,6 +78,30 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | **Abbonamento consultazione UNI-CNPI — DRM insormontabile, task abortito (06/07/2026)** | Login assistito riutilizzabile + attivazione/rilascio abbonamento (UTILIZZA/TERMINA, API dirette `store.uni.com`) + download del PDF completo: **tutti automatizzabili**. **Lettura del contenuto no**: il PDF scaricato è cifrato con DRM proprietario **FileOpen (`FOPN_foweb`)** — nessuna libreria open source lo apre (pdfplumber/PyMuPDF/pypdf/pikepdf tutte fallite); la stampa da Acrobat Reader è disabilitata per questo tier di sola consultazione (diverso da acquisto definitivo); lo screenshot automatico della GUI è impossibile per **isolamento sessione Windows** (il processo dell'agente non vede finestre del desktop interattivo). **Non riprendere** questo filone. Se in futuro servirà davvero il testo integrale di una norma: valutare l'**acquisto definitivo** (consente stampa) caso per caso — non un meccanismo generale. Script riutilizzabili da mantenere: `uni-store-diagnostic.js` (login, PR #226), `uni-store-download-and-ingest.js`, `uni-store-consult-and-ingest.js`; lookup catalogo pubblico `uniStoreConnector.service.js` resta valido e va tenuto. | [ADR-010 § Stato implementazione](adr/ADR-010-ai-agentic-architecture.md#stato-implementazione-2026-06-hk-harness-hardening) |
 | **Ingest AI commesse — slice #5–#7 (luglio 2026)** | Orchestratore `caseDocumentAnalysis.service.js` + `POST /cases/:id/analyze-documents` (pulsante tab Documenti). Checklist §8.2: pannello suggerimenti applica note preliminare+finale con prefisso `[AI doc]`. Copertura saldatori: `GET /cases/:id/extracted-coverage?project_id=` arricchisce WPS con profilo da requisiti estratti (`extractedRequirementsProfile.js`). Deploy: aggiungere i 3 service + utils al `deploy-manifest.json`. | [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) §E |
 | **Workflow Lead/Deputy** — il deputy esegue slice atomiche, commit per slice, aggiorna `DEPUTYTASK.md` dopo ogni slice. Il Lead prepara il brief in `DEPUTYTASK.md` e `PLAN_…_SLICES.md`. | **Non** usare `.github/agents/` (legacy). Usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo. | [ADR-015](adr/ADR-015-cursor-lead-deputy-workflow.md) |
+| **Cloud Agent — environment + context window (luglio 2026)** | Repo ha `.cursor/environment.json` + `AGENTS.md` + regola `sgq-cloud-agent-env.mdc`. Context **default/basso** per Deputy; **1M solo** per Lead/audit ampi. Non ripristinare 1M come default (costo). | Sezione sotto · [cursor.com/docs/cloud-agent](https://cursor.com/docs/cloud-agent) |
+
+### Cloud Agent Cursor — ambiente e context window
+
+Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente personale dashboard):
+
+| File | Ruolo |
+|------|--------|
+| `.cursor/environment.json` | Install dipendenze all'avvio VM (`app/` + `backend/`) |
+| `.cursor/scripts/cloud-install.sh` | Script idempotente `npm ci` |
+| `AGENTS.md` | Istruzioni Cloud + policy context/costi |
+| `.cursor/rules/sgq-cloud-agent-env.mdc` | Regola sempre attiva per gli agenti |
+
+**Come scegliere il context window** (UI su [cursor.com/agents](https://cursor.com/agents) → **Edit** accanto al modello):
+
+| Tipo run | Context | Perché |
+|----------|---------|--------|
+| Deputy / slice da `DEPUTYTASK.md` | Default o basso | Brief già mirato; 1M spreca budget |
+| Lead / sync / RBAC / multi-modulo | Alto o 1M se serve | Serve tenere molti vincoli insieme |
+| Fix 1–2 file a basso rischio | Default | CI Netlify basta come L1 |
+
+**Secrets** (Dashboard → Cloud Agents → Secrets, non in Git): `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `SGQ_APP_EMAIL`, `SGQ_APP_PASSWORD` — dettaglio in [ACCESSO_DEPLOY_AGENTS.md](how-to/ACCESSO_DEPLOY_AGENTS.md).
+
+**Nota operativa una tantum (dashboard):** impostare modello default Cloud su standard/fast e context **non** 1M; alzare solo per run Lead espliciti. Spend limit: [Dashboard → Spending](https://cursor.com/dashboard/spending).
 
 ### Multi-tenant, RBAC e dati
 
