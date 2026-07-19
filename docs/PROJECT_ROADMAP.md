@@ -634,11 +634,13 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | Dispositivo | Attività | Moduli accessibili |
 |---|---|---|
-| **Mobile Android (PWA)** | Campo: audit, ispezioni VT/MT/PT, foto, checklist offline | Audit, Alert (sola lettura), Documenti (sola consultazione) |
-| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Audit + consultazione |
-| **Desktop** | Gestione documentale, form, report, configurazione | Tutti i moduli |
+| **Mobile Android (PWA)** | Campo: cattura e verifica (checklist, NC, foto, scadenze/qualifiche, CND) + assistente AI citato | **P0**: Audit, NC, Documenti/Scadenze (consultazione), Qualifiche (consultazione), CND se licenza, Home/alert. **P1**: AI Chat / assist, Reclami light. **P2**: SAL riga singola |
+| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Come mobile + più viewport checklist |
+| **Desktop** | Analisi, report Word, SAL completo, riesame, gap, configurazione | Tutti i moduli |
 
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
+
+**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI (citazioni, anti-allucinazione, human-in-the-loop), sequenza slice **M-AI-1…6**. Vantaggio competitivo: risposte **specifiche** (norme studio + dati azienda), non chatbot generico.
 
 ### Architettura UI — Navigation Foundation
 

@@ -72,6 +72,7 @@ I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** p
 
 | Tag | Scopo | File |
 |-----|-------|------|
+| attivo | Check prodotto Mobile + AI | [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) |
 | attivo | Riesame requisiti §8.2 | [specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
 | attivo | Office WebDAV | [specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
 | attivo | Modulo saldatura | [specs/piano_modulo_saldatura_v2.plan.md](specs/piano_modulo_saldatura_v2.plan.md) |
