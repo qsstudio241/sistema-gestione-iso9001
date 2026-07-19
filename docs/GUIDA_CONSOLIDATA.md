@@ -9,6 +9,7 @@
 |---------|-----------|
 | [Inizio sessione](#cosa-leggere-a-inizio-sessione-ordine) | Ordine di lettura file progetto |
 | [**Cloud Agent / context window**](#cloud-agent-cursor--ambiente-e-context-window) | environment.json, AGENTS.md, policy costi |
+| [**Check prodotto Mobile + AI**](specs/PRODUCT_CHECK_MOBILE_AI.md) | Priorità moduli in campo, AI affidabile (citazioni), slice M-AI-1…6 |
 | [**Lezioni apprese (fonte unica)**](archive/sessions/GUIDA_DIARIO_2026.md#lezioni-apprese-consolidate-fonte-unica) | Indice regole operative + link al dettaglio |
 | [Metodo di lavoro (slice + multitasking)](../.cursor/rules/sgq-workflow-method.mdc) | Regola `.cursor`: slice, parallelizzazione, worktree, triage PR |
 | [Deploy (hub)](how-to/deploy.md) | Ingresso unico release Netlify + VPS |
@@ -83,6 +84,7 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | **Ingest AI commesse — slice #5–#7 (luglio 2026)** | Orchestratore `caseDocumentAnalysis.service.js` + `POST /cases/:id/analyze-documents` (pulsante tab Documenti). Checklist §8.2: pannello suggerimenti applica note preliminare+finale con prefisso `[AI doc]`. Copertura saldatori: `GET /cases/:id/extracted-coverage?project_id=` arricchisce WPS con profilo da requisiti estratti (`extractedRequirementsProfile.js`). Deploy: aggiungere i 3 service + utils al `deploy-manifest.json`. | [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) §E |
 | **Workflow Lead/Deputy** — il deputy esegue slice atomiche, commit per slice, aggiorna `DEPUTYTASK.md` dopo ogni slice. Il Lead prepara il brief in `DEPUTYTASK.md` e `PLAN_…_SLICES.md`. | **Non** usare `.github/agents/` (legacy). Usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo. | [ADR-015](adr/ADR-015-cursor-lead-deputy-workflow.md) |
 | **Cloud Agent — environment + context window (luglio 2026)** | Repo ha `.cursor/environment.json` + `AGENTS.md` + regola `sgq-cloud-agent-env.mdc`. Context **default/basso** per Deputy; **1M solo** per Lead/audit ampi. Non ripristinare 1M come default (costo). | Sezione sotto · [cursor.com/docs/cloud-agent](https://cursor.com/docs/cloud-agent) |
+| **Mobile + AI — check prodotto (19/07/2026)** | Telefono = **cattura e verifica** (Audit, NC, scadenze/qualifiche, CND); PC = analisi/report. Vantaggio competitivo AI = risposte **specifiche** (NormBroker + dati azienda + citazioni), non chatbot generico; sempre human-in-the-loop (ISO §7.5). Sequenza slice **M-AI-1…6**. | [`PRODUCT_CHECK_MOBILE_AI.md`](specs/PRODUCT_CHECK_MOBILE_AI.md) · roadmap *Strategia Mobile / Desktop* |
 
 ### Cloud Agent Cursor — ambiente e context window
 
