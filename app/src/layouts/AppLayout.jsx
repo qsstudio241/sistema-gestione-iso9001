@@ -141,7 +141,7 @@ function buildMobileNavItems(user, alerts) {
   // 5° posto: AI (se ai_chat attivo) oppure Documenti/Impostazioni/Aziende come fallback
   const ai = find("/ai-assistant");
   if (ai) {
-    items.push({ to: ai.to, icon: "AI", label: "", iconClass: "bottom-nav-icon--text" });
+    items.push({ to: ai.to, icon: "\uD83E\uDD16", label: "AI" });
   } else if (cnd) {
     const docs = find("/documents");
     if (docs) items.push({ to: docs.to, icon: docs.icon, label: "Documenti" });
@@ -172,8 +172,8 @@ function BottomNav({ user, alerts }) {
             className={`bottom-nav-item${isActive ? " active" : ""}`}
             activeClassName=""
           >
-            <span className={item.iconClass ? `bottom-nav-icon ${item.iconClass}` : "bottom-nav-icon"}>{item.icon}</span>
-            {item.label && <span className="bottom-nav-label">{item.label}</span>}
+            <span className="bottom-nav-icon">{item.icon}</span>
+            <span className="bottom-nav-label">{item.label}</span>
           </NavLink>
         );
       })}
