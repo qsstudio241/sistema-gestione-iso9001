@@ -12,6 +12,8 @@ import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
+import AskAiButton from "../components/AskAiButton";
+import { saveQualContext } from "../utils/aiAssistantContext";
 import {
   resolveInitialQualificationsCompanyScope,
   persistQualificationsCompanyScope,
@@ -756,6 +758,15 @@ function WeldingProceduresPage() {
               {WPS_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
             <button className="wp-btn-reload" onClick={loadWPS} title="Aggiorna">&#x21bb;</button>
+            <AskAiButton
+              label="Chiedi all\u2019AI"
+              onBeforeNavigate={() => saveQualContext({
+                qualType: "wps",
+                qualTypeLabel: "procedure WPS",
+                companyName: companyScopeName || null,
+                companyId: companyScopeId || null,
+              })}
+            />
           </div>
 
           <div className="wp-table-wrap">
