@@ -17,6 +17,7 @@ import RichTextField, {
   clearNcFieldDraftsForScope,
 } from "./RichTextField";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import AskAiButton from "./AskAiButton";
 import {
   getNcWorkflowTransitionButtons,
   getNcClosureButton,
@@ -347,9 +348,12 @@ export default function NcDetailPanel({
 
       {/* 3. Cause e valutazione */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
-        <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-          {"3. Cause e valutazione"}
-        </h3>
+        <div className="nc-drawer-section-heading">
+          <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
+            {"3. Cause e valutazione"}
+          </h3>
+          <AskAiButton label="Chiedi all\u2019AI" />
+        </div>
         <div className="nc-form-row">
           <label htmlFor={`nc-root-${nc.nc_id}`}>
             Analisi causa radice <small>(ISO {"\u00A7"}10.2.1b)</small>
