@@ -10,6 +10,7 @@ import {
   resolveActiveChecklistFocus,
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
+  loadQualContext,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import {
@@ -44,12 +45,22 @@ function buildContextualSuggestions({ checklistFocus, companyContext, standardCo
     currentAudit?.metadata?.generalData?.auditNumber ||
     null;
 
+  const qualCtx = loadQualContext();
+
   if (clauseRef) {
     const normPart = stdLabel ? ` di ${stdLabel}` : "";
     suggestions.push(`Cosa chiede il \u00A7${clauseRef}${normPart}?`);
     suggestions.push(`Cosa devo verificare concretamente per il \u00A7${clauseRef}?`);
     suggestions.push(`Quali documenti coprono il requisito \u00A7${clauseRef}?`);
     if (auditNum) suggestions.push(`Cosa manca per chiudere l\u2019audit ${auditNum}?`);
+  } else if (qualCtx?.qualType) {
+    const qCompany = qualCtx.companyName || company;
+    const qLabel   = qualCtx.qualTypeLabel || qualCtx.qualType;
+    const qSuffix  = qCompany ? ` di ${qCompany}` : "";
+    suggestions.push(`Quali ${qLabel} in scadenza nei prossimi 30 giorni${qSuffix}?`);
+    suggestions.push(`Elenca le ${qLabel} non ancora approvate${qSuffix}`);
+    if (qCompany) suggestions.push(`Riassumi lo stato di tutte le qualifiche di ${qCompany}`);
+    suggestions.push(`Quali qualifiche sono scadute${qSuffix}?`);
   } else if (auditNum) {
     suggestions.push(`Cosa manca per chiudere l\u2019audit ${auditNum}?`);
     suggestions.push(`NC aperte nell\u2019audit ${auditNum}`);
