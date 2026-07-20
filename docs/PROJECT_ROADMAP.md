@@ -640,7 +640,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
 
-**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI (citazioni, anti-allucinazione, human-in-the-loop), sequenza slice **M-AI-1…6**. Vantaggio competitivo: risposte **specifiche** (norme studio + dati azienda), non chatbot generico.
+**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI, sequenza slice M-AI-1…6.  
+**Stato (20/07/2026)**: M-AI-1…5 ✅ completati e mergiati (PR #259–#265). Vantaggio competitivo: risposte **specifiche** (norme studio + dati azienda), non chatbot generico.  
+**Aperto**: M-AI-6 SAL view mobile compatta; M-AI-5b qualifiche Q&A con endpoint dedicato (today: solo navigazione + RAG).
 
 ### Architettura UI — Navigation Foundation
 
