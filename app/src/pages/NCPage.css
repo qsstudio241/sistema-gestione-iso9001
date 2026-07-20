@@ -827,3 +827,49 @@ body.sgq-nc-drawer-resizing * {
   .nc-form-row-2col { grid-template-columns: 1fr; }
   .nc-card-meta { display: none; }
 }
+
+/* ─── AI — suggerisci causa radice ─────────────────────────────────────────── */
+.nc-ai-cause { margin: 8px 0 12px; }
+
+.nc-ai-cause__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.nc-ai-cause__btn:hover:not(:disabled) { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.nc-ai-cause__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nc-ai-cause__error { color: #dc2626; font-size: 0.8rem; margin: 6px 0 0; }
+
+.nc-ai-cause__result {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+.nc-ai-cause__text { font-size: 0.88rem; color: #1e3a5f; margin: 0 0 4px; line-height: 1.5; }
+.nc-ai-cause__meta { font-size: 0.75rem; color: #64748b; margin: 0 0 8px; }
+.nc-ai-cause__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nc-ai-cause__accept  { padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; background: #1d4ed8; color: #fff; }
+.nc-ai-cause__rephrase{ padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid #94a3b8; background: #fff; color: #334155; }
+.nc-ai-cause__discard { padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid #fca5a5; background: #fff; color: #dc2626; }
+.nc-ai-cause__accept:hover:not(:disabled)   { background: #1e40af; }
+.nc-ai-cause__rephrase:hover:not(:disabled) { background: #f1f5f9; }
+.nc-ai-cause__discard:hover                 { background: #fef2f2; }
+
+@media (max-width: 640px) {
+  .nc-ai-cause__actions { gap: 6px; }
+  .nc-ai-cause__accept, .nc-ai-cause__rephrase, .nc-ai-cause__discard {
+    flex: 1; text-align: center;
+  }
+}
