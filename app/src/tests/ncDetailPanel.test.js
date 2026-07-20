@@ -36,6 +36,7 @@ vi.mock('../components/AutoTextarea.css', () => ({}));
 vi.mock('../components/RichTextField.css', () => ({}));
 vi.mock('../contexts/RouterContext', () => ({
   Link: ({ children, to, ...rest }) => React.createElement('a', { href: to, ...rest }, children),
+  useNavigate: () => () => {},
 }));
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { organization_id: 1001, role: 'admin' } }),
