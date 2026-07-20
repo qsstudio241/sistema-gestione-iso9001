@@ -17,14 +17,9 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import "./AppLayout.css";
+import { hasLicensedModule } from "../utils/licenseUtils";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
-
-function hasLicensedModule(user, key) {
-  const m = user?.licensed_modules;
-  if (!m || !Array.isArray(m) || m.length === 0) return true;
-  return m.includes(key);
-}
 
 function buildNavItems(user, alerts = {}) {
   const isCompanyClient = hasCompanyAccess(user);

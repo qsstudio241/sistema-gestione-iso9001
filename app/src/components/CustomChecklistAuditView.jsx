@@ -15,6 +15,8 @@ import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard } from "./QuestionCard";
+import AskAiButton from "./AskAiButton";
+import { saveChecklistFocus } from "../utils/aiAssistantContext";
 import "./CustomChecklistAuditView.css";
 
 
@@ -398,7 +400,21 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 auditId={auditId}
                 auditUuid={auditUuid}
                 customItemId={item.id}
-              />
+              >
+                {!readOnly && (
+                  <AskAiButton
+                    label={`Chiedi all\u2019AI \u2014 ${item.code}`}
+                    onBeforeNavigate={() =>
+                      saveChecklistFocus(auditUuid, {
+                        standardKey: null,
+                        clauseRef: item.code,
+                        questionId: String(item.id),
+                        questionText: item.title || null,
+                      })
+                    }
+                  />
+                )}
+              </QuestionCard>
             );
           })}
 
