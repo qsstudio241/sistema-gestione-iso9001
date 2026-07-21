@@ -47,6 +47,10 @@ router.post('/audits/:id/approve', auditController.approveAudit);
 // DEVE STARE PRIMA DI /audits/:id
 router.post('/audits/check-reaudit', auditController.checkReaudit);
 
+// GET /api/v1/audits/client-history - Storico ultimi audit completati per un cliente (modal re-audit)
+// DEVE STARE PRIMA DI /audits/:id
+router.get('/audits/client-history', auditController.getClientAuditHistory);
+
 // POST /api/v1/audits/sync - Upsert audit (INSERT or UPDATE)
 // Usato da sync service offline-first (DEVE STARE PRIMA DI /audits/:id)
 router.post('/audits/sync', auditController.upsertAudit);
