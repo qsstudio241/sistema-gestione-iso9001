@@ -59,6 +59,7 @@ const NORM_LABELS = {
     'ISO_14001':  'ISO 14001:2015',
     'ISO_45001':  'ISO 45001:2018',
     'ISO_3834_2': 'ISO 3834-2:2021',
+    'RDP_MSN':    'ISO 3834-2:2021 - Rapporto di Prova (Mason)',
 };
 
 // ─── Mappa standard → template ────────────────────────────────────────────────
@@ -69,6 +70,7 @@ const TEMPLATE_MAP = {
     'ISO_14001':  '/templates/ISO14001-audit-report.docx',
     'ISO_45001':  '/templates/ISO45001-audit-report.docx',
     'ISO_3834_2': '/templates/ISO3834-audit-report.docx',
+    'RDP_MSN':    '/templates/ISO3834-audit-report.docx',
     'default':    '/templates/ISO9001-audit-report.docx',
     // Fallback allineato a migration 026 / report_templates (placeholder + sommario)
     'custom_checklist': '/templates/VerbaleVisita-generic.docx',

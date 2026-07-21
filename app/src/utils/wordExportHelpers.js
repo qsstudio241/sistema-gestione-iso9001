@@ -24,7 +24,7 @@ const STANDARD_LABELS = {
     ISO_45001_2018:  'ISO 45001:2018 - Sistema di Gestione per la Salute e Sicurezza',
     ISO_3834_2:      'ISO 3834-2 - Checklist Audit Fornitori in Campo',
     ISO_3834_2_2021: 'ISO 3834-2 - Checklist Audit Fornitori in Campo',
-    RDP_MSN:         'ISO 3834-2:2021 - Requisiti di qualit\u00e0 per la saldatura per fusione (Audit di sistema)',
+    RDP_MSN:         'ISO 3834-2:2021 - Rapporto di Prova (Audit di sistema Mason)',
 };
 
 /**
