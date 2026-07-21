@@ -641,8 +641,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
 
 **Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI, sequenza slice M-AI-1…6.  
-**Stato (20/07/2026)**: M-AI-1…5 ✅ completati e mergiati (PR #259–#265). Vantaggio competitivo: risposte **specifiche** (norme studio + dati azienda), non chatbot generico.  
-**Aperto**: M-AI-6 SAL view mobile compatta; M-AI-5b qualifiche Q&A con endpoint dedicato (today: solo navigazione + RAG).
+**Stato (21/07/2026)**: M-AI-1…5 ✅ completati (PR #259–#265). PR2 Controparti ✅ verificata già in main (commits `565fed3`, `cd93ab1`, `81aae9a`).  
+**Backlog aperto (parcheggiato — riprendere su richiesta)**: M-AI-6 SAL mobile compatto (FE only, bassa priorità) · M-AI-5b qualifiche Q&A strutturata (endpoint backend DB-aware, media priorità Mason) · §9.1 KPI/indicatori (prerequisito Riesame Slice 4, richiede pianificazione schema).
 
 ### Architettura UI — Navigation Foundation
 
