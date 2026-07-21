@@ -24,8 +24,18 @@ const ExportPanel = () => {
   const [exportMessage, setExportMessage] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   // null = auto-detect per standard (ISO 3834 → embed, altri → link)
-  // true/false = scelta esplicita dell'utente
-  const [embedPhotos, setEmbedPhotos] = useState(null);
+  // true/false = scelta esplicita dell'utente, persistita in localStorage
+  const [embedPhotos, setEmbedPhotosRaw] = useState(() => {
+    const stored = localStorage.getItem('sgq:export_embed_photos');
+    if (stored === 'true') return true;
+    if (stored === 'false') return false;
+    return null; // auto
+  });
+  const setEmbedPhotos = (val) => {
+    setEmbedPhotosRaw(val);
+    if (val === null) localStorage.removeItem('sgq:export_embed_photos');
+    else localStorage.setItem('sgq:export_embed_photos', String(val));
+  };
 
   const PHOTO_STANDARDS = ['ISO_3834', 'ISO_3834_2', 'ISO_3834_2_2021', 'RDP_MSN'];
 
@@ -57,6 +67,21 @@ const ExportPanel = () => {
   const showMessage = (message, type = "success") => {
     setExportMessage({ text: message, type });
     setTimeout(() => setExportMessage(null), 5000);
+  };
+
+  /** Controlla i campi critici del template e restituisce la lista di quelli vuoti. */
+  const getIncompleteFieldWarnings = (audit) => {
+    const warnings = [];
+    const meta = audit?.metadata || {};
+    const gd = meta?.generalData || {};
+    const obj = meta?.auditObjective || {};
+    const outcome = meta?.auditOutcome || {};
+    if (!gd.auditObject?.trim()) warnings.push('Oggetto dell\'audit (sezione "Dati generali")');
+    if (!gd.scope?.trim())        warnings.push('Scopo / Ambito (sezione "Dati generali")');
+    if (!obj.description?.trim()) warnings.push('Obiettivo dell\'audit (sezione "Obiettivo")');
+    if (!outcome.conclusions?.trim() && !Object.values(outcome.byStandard || {}).some(s => s?.conclusions?.trim()))
+      warnings.push('Conclusioni (sezione "Esito")');
+    return warnings;
   };
 
   const handleExportCurrent = (format) => {
@@ -122,9 +147,6 @@ const ExportPanel = () => {
             resolutionNotes: p.follow_up_notes || "",
             source_audit_id: p.source_audit_id,
           }));
-          console.log(
-            `📋 [EXPORT] ${list.length} rilievi pendenti da GET /audits/.../pending-issues`
-          );
         }
       }
     } catch (err) {
@@ -172,9 +194,6 @@ const ExportPanel = () => {
                 status: "open",
                 resolutionNotes: i.notes || "",
               }));
-              console.log(
-                `📋 [EXPORT] ${rawIssues.length} rilievi pendenti da audit_responses (fallback)`
-              );
             }
           }
         }
@@ -195,7 +214,6 @@ const ExportPanel = () => {
           `/companies/${companyId}/certification-findings?standard_id=${standardId}`
         );
         auditForExport.certificationFindings = cfRes.data || [];
-        console.log(`📋 [EXPORT] ${auditForExport.certificationFindings.length} rilievi ente certificatore`);
       }
     } catch (err) {
       console.warn('[EXPORT] rilievi ente non disp.:', err.message);
@@ -247,9 +265,6 @@ const ExportPanel = () => {
         });
         auditForExport.customResponses = mergeCustomResponsesForExport(byItem);
         auditForExport.customStatuses = byStatus;
-        console.log(
-          `📋 [EXPORT] Checklist custom: ${Object.keys(byItem).length} righe, ${Object.keys(byStatus).length} esiti, merge locale (${Object.keys(localCustomResponses).length} chiavi)`
-        );
       } catch (err) {
         console.warn('[EXPORT] Checklist custom non disp.:', err.message);
         auditForExport.customResponses = Object.keys(localCustomResponses).length
@@ -288,7 +303,6 @@ const ExportPanel = () => {
           return !serverQuestionIds.has(q);
         });
         auditForExport.attachments = [...normalized, ...localOnly];
-        console.log(`📎 [EXPORT] ${normalized.length} allegati da server + ${localOnly.length} solo locali`);
       }
     } catch (err) {
       console.warn('[EXPORT] allegati server non disp., uso locali:', err.message);
@@ -311,7 +325,6 @@ const ExportPanel = () => {
           if (q.norm_excerpt?.trim()) excMap[q.question_id] = q.norm_excerpt.trim();
         });
         auditForExport.normExcerpts = excMap;
-        console.log(`📋 [EXPORT] ${Object.keys(excMap).length} stralci normativi caricati per standard_id=${standardIdForExcerpts}`);
       } catch (err) {
         console.warn('[EXPORT] norm_excerpts non disponibili:', err.message);
       }
@@ -341,7 +354,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo azienda caricato per embedding Word");
           }
         }
       } catch (err) {
@@ -380,7 +392,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo organizzazione caricato per embedding Word");
           }
         }
       } catch (err) {
@@ -401,6 +412,14 @@ const ExportPanel = () => {
     try {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
 
       // Audit con checklist custom (senza standard ISO) → un solo report Word
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
@@ -466,6 +485,14 @@ const ExportPanel = () => {
     try {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
 
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
