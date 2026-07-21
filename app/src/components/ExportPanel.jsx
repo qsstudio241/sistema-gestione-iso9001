@@ -69,6 +69,21 @@ const ExportPanel = () => {
     setTimeout(() => setExportMessage(null), 5000);
   };
 
+  /** Controlla i campi critici del template e restituisce la lista di quelli vuoti. */
+  const getIncompleteFieldWarnings = (audit) => {
+    const warnings = [];
+    const meta = audit?.metadata || {};
+    const gd = meta?.generalData || {};
+    const obj = meta?.auditObjective || {};
+    const outcome = meta?.auditOutcome || {};
+    if (!gd.auditObject?.trim()) warnings.push('Oggetto dell\'audit (sezione "Dati generali")');
+    if (!gd.scope?.trim())        warnings.push('Scopo / Ambito (sezione "Dati generali")');
+    if (!obj.description?.trim()) warnings.push('Obiettivo dell\'audit (sezione "Obiettivo")');
+    if (!outcome.conclusions?.trim() && !Object.values(outcome.byStandard || {}).some(s => s?.conclusions?.trim()))
+      warnings.push('Conclusioni (sezione "Esito")');
+    return warnings;
+  };
+
   const handleExportCurrent = (format) => {
     if (!currentAudit) return;
 
@@ -398,6 +413,14 @@ const ExportPanel = () => {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
 
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
+
       // Audit con checklist custom (senza standard ISO) → un solo report Word
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       if (customChecklistId && (!auditForExport.metadata?.selectedStandards?.length) && !Object.keys(auditForExport.checklist || {}).length) {
@@ -462,6 +485,14 @@ const ExportPanel = () => {
     try {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
 
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
