@@ -269,8 +269,7 @@ const hasAnyClosedAudit = useMemo(
           <button
             onClick={handleCreateNewAudit}
             className="btn btn-icon btn-success"
-            title="Crea nuovo audit (nuova azienda)"
-            disabled={currentAudit !== null}
+            title="Crea nuovo audit"
           >
             ➕ Nuovo
           </button>
