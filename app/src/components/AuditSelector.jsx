@@ -482,6 +482,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
 
   const [errors, setErrors] = useState({});
   const [pendingInfo, setPendingInfo] = useState(null); // { count, lastAuditId, issues }
+  const [auditHistory, setAuditHistory] = useState([]);  // storico audit completati GAP-13
 
   /**
    * Verifica se il cliente ha rilievi pendenti (NC/OSS/NV) da audit precedenti.
@@ -525,6 +526,20 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       checkPendingIssues(cn, null);
     }
   }, [isReaudit, currentAudit]);
+
+  // Re-audit: carica storico ultimi audit completati per il cliente (GAP-13).
+  React.useEffect(() => {
+    if (!isReaudit) return;
+    const companyId = formData.companyId;
+    const clientName = formData.clientName?.trim();
+    if (!companyId && !clientName) return;
+    const params = companyId
+      ? { company_id: companyId, limit: 5 }
+      : { client_name: clientName, limit: 5 };
+    apiService.getClientAuditHistory(params)
+      .then(res => setAuditHistory(res?.history || []))
+      .catch(() => setAuditHistory([]));
+  }, [isReaudit, formData.companyId, formData.clientName]);
 
   // Nuovo audit: controlla pending quando l'utente lascia il campo clientName (min 3 char)
   const handleClientNameBlur = () => {
@@ -658,6 +673,40 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             ✕
           </button>
         </div>
+
+        {/* Storico audit completati — solo in re-audit, mostra trend NC/OSS nel tempo (GAP-13) */}
+        {isReaudit && auditHistory.length > 0 && (
+          <div className="audit-history-section">
+            <div className="audit-history-header">
+              <span className="audit-history-icon">📊</span>
+              <strong>Storico audit ({auditHistory.length} completati)</strong>
+            </div>
+            <div className="audit-history-list">
+              {auditHistory.map((h) => (
+                <div key={h.audit_id} className="audit-history-item">
+                  <span className="audit-history-number">{h.audit_number}</span>
+                  <span className="audit-history-date">
+                    {new Date(h.audit_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="audit-history-badges">
+                    {h.nc_count > 0 && (
+                      <span className="audit-history-badge badge-nc">{h.nc_count} NC</span>
+                    )}
+                    {h.oss_count > 0 && (
+                      <span className="audit-history-badge badge-oss">{h.oss_count} OSS</span>
+                    )}
+                    {h.nc_count === 0 && h.oss_count === 0 && h.answered_count > 0 && (
+                      <span className="audit-history-badge badge-ok">✓ Conforme</span>
+                    )}
+                    {h.answered_count === 0 && (
+                      <span className="audit-history-badge badge-na">—</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sezione rilievi pendenti - re-audit o nuovo audit con storico cliente */}
         {pendingInfo && pendingInfo.count > 0 && (
