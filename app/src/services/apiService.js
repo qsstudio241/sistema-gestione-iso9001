@@ -486,6 +486,15 @@ class ApiService {
     }
 
     /**
+     * Storico ultimi audit completati per un cliente (modal re-audit — GAP 13)
+     * @param {object} params - { client_name?, company_id?, limit? }
+     */
+    async getClientAuditHistory(params = {}) {
+        const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null)).toString();
+        return this.get(`/audits/client-history${qs ? '?' + qs : ''}`);
+    }
+
+    /**
      * Pending issues associati a un audit corrente
      * :auditId = audit_id INTEGER
      */
