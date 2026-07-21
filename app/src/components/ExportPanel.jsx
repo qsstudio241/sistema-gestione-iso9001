@@ -24,8 +24,18 @@ const ExportPanel = () => {
   const [exportMessage, setExportMessage] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   // null = auto-detect per standard (ISO 3834 → embed, altri → link)
-  // true/false = scelta esplicita dell'utente
-  const [embedPhotos, setEmbedPhotos] = useState(null);
+  // true/false = scelta esplicita dell'utente, persistita in localStorage
+  const [embedPhotos, setEmbedPhotosRaw] = useState(() => {
+    const stored = localStorage.getItem('sgq:export_embed_photos');
+    if (stored === 'true') return true;
+    if (stored === 'false') return false;
+    return null; // auto
+  });
+  const setEmbedPhotos = (val) => {
+    setEmbedPhotosRaw(val);
+    if (val === null) localStorage.removeItem('sgq:export_embed_photos');
+    else localStorage.setItem('sgq:export_embed_photos', String(val));
+  };
 
   const PHOTO_STANDARDS = ['ISO_3834', 'ISO_3834_2', 'ISO_3834_2_2021', 'RDP_MSN'];
 
