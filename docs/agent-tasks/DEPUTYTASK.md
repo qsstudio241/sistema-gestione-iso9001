@@ -1,6 +1,6 @@
 # DEPUTYTASK — GAP P1 Modulo Generazione Report
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (802 test verdi, build Vite OK) — PR #270 mergiata su main 21/07/2026  
 **Priorità:** P1 (media — qualità output, UX, pulizia codice)  
 **Branch di riferimento:** `cursor/fix-report-reaudit-p0-3bea` (P0 già mergiata — lavorare da `main` dopo merge)  
 **Creato da:** Lead 21/07/2026
