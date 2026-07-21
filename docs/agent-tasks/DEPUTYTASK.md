@@ -6,15 +6,16 @@
 >
 > **Nota sessione 18/07/2026 — SAL Fase 5-B CHIUSA (Lead, autonoma):** conformità LEGISLATIVA nel suggeritore AI. Esteso `salAiSuggest.service.js` (ramo legislativo, NO service parallelo): risolve `linked_legislation`→articoli (`parseLinkedLegislation`), carica testo via `normBroker.getClauseText` (leggi universali, non scoped; evidenze scoped org+azienda), output AI per-articolo `{coverage covered/partial/missing, gap, rationale}` + confidenza legale — nessuna scrittura DB. `localStoreConnector.getClauseText` ora ritorna anche `sourceUrl` (permalink). FE `SalAiSuggestDialog` esteso con sezione «Conformità legislativa» (CoverageBadge, link articolo) distinta da «Conformità norma tecnica»; sezione assente se clausola senza leggi (graceful). Audit: `context_summary` di `sal_suggest` segnala l'analisi legale (no nuovo feature/schema). L1: backend salAiSuggest+connettori 40/40, Vitest dialog 6/6 + suite 802/802, build Vite OK, encoding OK. Branch `feat/sal-ai-legal-conformity-5b`. Il brief PR2 qui sotto resta **aperto e invariato**.
 >
-> **Nota sessione 19-20/07/2026 — M-AI-1…5 COMPLETATI (Lead+Deputy, autonomi):** mobile AI da bottom nav a moduli specifici. PR #259–#265 mergiati su `main`. Dettaglio: M-AI-1 slot AI 🤖 bottom nav; M-AI-2 `AskAiButton` checklist ISO+personalizzate; M-AI-3 chip contestuali AI (clausola/audit/qualifiche); M-AI-4a `AskAiButton` drawer NC; M-AI-4b suggestion inline causa NC (`nc_cause` backend, deploy VPS PID 3843); M-AI-5 `AskAiButton` + `saveQualContext` in Qualifiche e WPS. Pattern scalabile: `licenseUtils`, `AskAiButton`, `saveQualContext`, `buildContextualSuggestions`. Il brief PR2 qui sotto resta **aperto e invariato**.
+> **Nota sessione 19-20/07/2026 — M-AI-1…5 COMPLETATI (Lead+Deputy, autonomi):** mobile AI da bottom nav a moduli specifici. PR #259–#265 mergiati su `main`. Dettaglio: M-AI-1 slot AI 🤖 bottom nav; M-AI-2 `AskAiButton` checklist ISO+personalizzate; M-AI-3 chip contestuali AI (clausola/audit/qualifiche); M-AI-4a `AskAiButton` drawer NC; M-AI-4b suggestion inline causa NC (`nc_cause` backend, deploy VPS PID 3843); M-AI-5 `AskAiButton` + `saveQualContext` in Qualifiche e WPS. Pattern scalabile: `licenseUtils`, `AskAiButton`, `saveQualContext`, `buildContextualSuggestions`.
+>
+> **Nota sessione 21/07/2026 — PR2 Controparti VERIFICATA CHIUSA:** la feature era già completamente implementata e su `main` da una sessione precedente (commit `565fed3` + fix `cd93ab1`, `81aae9a`). Verificato: select committente (create+edit), fallback testo libero, badge legacy, payload FK, backend, test 14/14 verdi. Nessuna modifica necessaria. **Brief sotto aggiornato a CHIUSO.**
 
 ---
 
 # DEPUTYTASK — PR2 Controparti nel Riesame Requisiti (§8.2)
 
 > **Creato**: 07/07/2026  
-> **Stato**: APERTO — pronto per deputy  
-> **Nota**: Sessione 08/07/2026 — hotfix companies (PR #237 mergiata): delete FK + lista limit. Questo task rimane aperto per deputy.  
+> **Stato**: ✅ CHIUSO — implementato su `main` (commits `565fed3`, `cd93ab1`, `81aae9a`). Verificato 21/07/2026: 802/802 test L1, badge legacy, select FK, fallback testo libero, backend deployato.  
 > **Priorità**: P1 (dopo chiusura ingest norme #223–#224)  
 > **Contesto**: revisione stato moduli Riesame + SAL — vedi sintesi Lead in chat 07/07/2026
 
