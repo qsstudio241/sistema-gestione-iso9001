@@ -374,7 +374,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       : AVAILABLE_STANDARDS.filter((s) => user.allowed_standard_ids.includes(s.standardId));
   const nextNumber = getNextAuditNumber(audits, currentYear);
 
-  // Pre-popola clientName, companyId, tipologia e fornitore se re-audit
+  // Pre-popola clientName, companyId, tipologia, fornitore, norme e auditor se re-audit
   const initialClientName = isReaudit && currentAudit 
     ? currentAudit.metadata.clientName 
     : "";
@@ -390,6 +390,16 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const initialFornitoreSupplierId = isReaudit && currentAudit?.metadata?.fornitoreSupplierId
     ? currentAudit.metadata.fornitoreSupplierId
     : null;
+  // Re-audit: riporta le stesse norme, auditor e checklist personalizzata
+  const initialNorms = isReaudit && currentAudit?.metadata?.selectedStandards?.length > 0
+    ? currentAudit.metadata.selectedStandards
+    : [];
+  const initialAuditorName = isReaudit && currentAudit?.metadata?.auditorName
+    ? currentAudit.metadata.auditorName
+    : "";
+  const initialCustomChecklistId = isReaudit
+    ? (currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id ?? null)
+    : null;
 
   const [formData, setFormData] = useState({
     auditNumber: nextNumber,
@@ -400,9 +410,9 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     fornitoreSupplierId: initialFornitoreSupplierId,
     auditDate: new Date().toISOString().split("T")[0],
     auditDateEnd: "",
-    auditorName: "",
-    norms: [],
-    customChecklistId: null,
+    auditorName: initialAuditorName,
+    norms: initialNorms,
+    customChecklistId: initialCustomChecklistId,
   });
 
   const [customChecklists, setCustomChecklists] = useState([]);
@@ -477,7 +487,8 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   /**
    * Verifica se il cliente ha rilievi pendenti (NC/OSS/NV) da audit precedenti.
    * @param {string} clientName  - nome cliente da cercare
-   * @param {string|null} excludeUuid - UUID dell'audit corrente da escludere (re-audit)
+   * @param {string|null} excludeUuid - UUID dell'audit da escludere dalla ricerca
+   *   (null per "Nuovo audit" e re-audit: trova l'audit più recente del cliente)
    */
   const checkPendingIssues = async (clientName, excludeUuid = null) => {
     if (!clientName?.trim()) return;
@@ -507,12 +518,12 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     }
   };
 
-  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente)
+  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente).
+  // Si passa null come excludeUuid: vogliamo i rilievi aperti DELL'audit corrente (non del precedente).
   React.useEffect(() => {
     if (isReaudit && currentAudit) {
-      const cn   = currentAudit.metadata?.clientName;
-      const uuid = currentAudit.metadata?.id || null;
-      checkPendingIssues(cn, uuid);
+      const cn = currentAudit.metadata?.clientName;
+      checkPendingIssues(cn, null);
     }
   }, [isReaudit, currentAudit]);
 
