@@ -497,33 +497,76 @@ const ExportPanel = () => {
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
 
-      const stds = auditForExport.metadata?.selectedStandards || [];
-      const firstStd = stds[0] || null;
-      const photoMode = resolvePhotoMode(hasCustomOnly ? null : firstStd, hasCustomOnly ? customChecklistId : null);
-      if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
-      const exportOpts = {
-        auditReportPrefix,
-        ...(photoMode ? { photoMode } : {}),
-        ...(hasCustomOnly
-          ? { customChecklistId, getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId) }
-          : { getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId) }),
-      };
-
-      if (fsProvider?.ready()) {
-        const result = await exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts);
+      // Caso 1: checklist personalizzata pura (nessuno standard ISO) — un solo file
+      if (hasCustomOnly) {
+        const photoMode = resolvePhotoMode(null, customChecklistId);
+        if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
+        const exportOpts = {
+          auditReportPrefix,
+          customChecklistId,
+          ...(photoMode ? { photoMode } : {}),
+          getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
+        };
+        const saveFn = fsProvider?.ready()
+          ? () => exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : () => exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts);
+        const result = await saveFn();
         if (result.fallback) {
           showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
         } else {
-          showMessage(`✅ Report salvato in workspace: ${result.fileName}`, "success");
+          showMessage(`✅ File salvato in: ${result.path || result.fileName}`, "success");
         }
         return;
       }
 
-      const result = await exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts);
-      if (result.fallback) {
-        showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
+      // Caso 2: standard ISO — un file per norma (stesso loop di handleExportWord).
+      // standardKey è passato esplicitamente: la checklist viene filtrata per norma
+      // in generateDocxBlob e le metriche riflettono solo lo standard corrente.
+      const activeStandards = (auditForExport.metadata?.selectedStandards?.length > 0)
+        ? auditForExport.metadata.selectedStandards
+        : Object.keys(auditForExport.checklist || {});
+
+      if (activeStandards.length === 0) {
+        showMessage("⚠️ Nessuno standard selezionato per questo audit", "error");
+        return;
+      }
+
+      const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+      if (activeStandards.length > 1) {
+        showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
+      } else if (willEmbedPhotos) {
+        showMessage("⏳ Caricamento immagini in corso...", "info");
+      }
+
+      const savedFiles = [];
+      for (const stdKey of activeStandards) {
+        if (savedFiles.length > 0) await new Promise(r => setTimeout(r, 900));
+        const photoMode = resolvePhotoMode(stdKey, null);
+        const exportOpts = {
+          auditReportPrefix,
+          standardKey: stdKey,
+          ...(photoMode ? { photoMode } : {}),
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        };
+        const result = await (fsProvider?.ready()
+          ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
+        savedFiles.push({ result, stdKey });
+      }
+
+      const labels = savedFiles.map(({ result }) =>
+        result.fallback ? result.fileName : (result.path || result.fileName)
+      );
+      const allFallback = savedFiles.every(({ result }) => result.fallback);
+      if (allFallback) {
+        showMessage(`📱 Android: ${labels.length === 1 ? `file salvato in Download (${labels[0]})` : `${labels.length} file salvati in Download`}`, "info");
       } else {
-        showMessage(`✅ File salvato in: ${result.path}`, "success");
+        showMessage(
+          labels.length === 1
+            ? `✅ File salvato in: ${labels[0]}`
+            : `✅ ${labels.length} report salvati: ${savedFiles.map(({ result }) => result.fileName || '').join(' + ')}`,
+          "success"
+        );
       }
     } catch (error) {
       console.error("Errore salvataggio file system:", error);
