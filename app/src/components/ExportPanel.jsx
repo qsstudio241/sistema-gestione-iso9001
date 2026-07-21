@@ -122,9 +122,6 @@ const ExportPanel = () => {
             resolutionNotes: p.follow_up_notes || "",
             source_audit_id: p.source_audit_id,
           }));
-          console.log(
-            `📋 [EXPORT] ${list.length} rilievi pendenti da GET /audits/.../pending-issues`
-          );
         }
       }
     } catch (err) {
@@ -172,9 +169,6 @@ const ExportPanel = () => {
                 status: "open",
                 resolutionNotes: i.notes || "",
               }));
-              console.log(
-                `📋 [EXPORT] ${rawIssues.length} rilievi pendenti da audit_responses (fallback)`
-              );
             }
           }
         }
@@ -195,7 +189,6 @@ const ExportPanel = () => {
           `/companies/${companyId}/certification-findings?standard_id=${standardId}`
         );
         auditForExport.certificationFindings = cfRes.data || [];
-        console.log(`📋 [EXPORT] ${auditForExport.certificationFindings.length} rilievi ente certificatore`);
       }
     } catch (err) {
       console.warn('[EXPORT] rilievi ente non disp.:', err.message);
@@ -247,9 +240,6 @@ const ExportPanel = () => {
         });
         auditForExport.customResponses = mergeCustomResponsesForExport(byItem);
         auditForExport.customStatuses = byStatus;
-        console.log(
-          `📋 [EXPORT] Checklist custom: ${Object.keys(byItem).length} righe, ${Object.keys(byStatus).length} esiti, merge locale (${Object.keys(localCustomResponses).length} chiavi)`
-        );
       } catch (err) {
         console.warn('[EXPORT] Checklist custom non disp.:', err.message);
         auditForExport.customResponses = Object.keys(localCustomResponses).length
@@ -288,7 +278,6 @@ const ExportPanel = () => {
           return !serverQuestionIds.has(q);
         });
         auditForExport.attachments = [...normalized, ...localOnly];
-        console.log(`📎 [EXPORT] ${normalized.length} allegati da server + ${localOnly.length} solo locali`);
       }
     } catch (err) {
       console.warn('[EXPORT] allegati server non disp., uso locali:', err.message);
@@ -311,7 +300,6 @@ const ExportPanel = () => {
           if (q.norm_excerpt?.trim()) excMap[q.question_id] = q.norm_excerpt.trim();
         });
         auditForExport.normExcerpts = excMap;
-        console.log(`📋 [EXPORT] ${Object.keys(excMap).length} stralci normativi caricati per standard_id=${standardIdForExcerpts}`);
       } catch (err) {
         console.warn('[EXPORT] norm_excerpts non disponibili:', err.message);
       }
@@ -341,7 +329,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo azienda caricato per embedding Word");
           }
         }
       } catch (err) {
@@ -380,7 +367,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo organizzazione caricato per embedding Word");
           }
         }
       } catch (err) {
