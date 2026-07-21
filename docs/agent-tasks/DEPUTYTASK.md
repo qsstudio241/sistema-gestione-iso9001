@@ -1,109 +1,149 @@
-> **Nota sessione 18/07/2026 — Ingestione LEGISLAZIONE da Normattiva (Lead, autonoma):** ingestione testo verbatim di 30 articoli pertinenti a SGSL/SGA (D.Lgs. 81/2008 → ISO 45001: 19 art.; D.Lgs. 152/2006 → ISO 14001: 11 art.) in `norm_requirements` (source='normattiva' + permalink), matrice `linked_legislation` (26 clausole ISO, nessuna migrazione: colonna già esistente), connettore `normativaConnector.getClauseText` implementato (riattiva step publicLaw del broker già presente su main). Seed `backend/data/legislation_seed.json`, script idempotente `backend/scripts/ingest-legislation-normattiva-vps.js`. L1 backend 29/29 su VPS. Branch `feat/legislation-ingest-normattiva` (PR). **Limite noto**: Normattiva serve il testo via JS (no scraping statico) → harvest one-time con headless browser; live `getClauseText` degrada a null senza inventare. I brief sotto restano **aperti e invariati**.
->
-> **Nota sessione 18/07/2026 — SAL Fase 5-A CHIUSA (Lead, autonoma):** suggeritore stato AI per clausola SAL dalle evidenze collegate (human-in-the-loop). Backend `salAiSuggest.service.js` + `POST /companies/:id/gap-ai-suggest` (gate `ai_norms`+`sal`), FE pulsante «Suggerisci stato (AI)» riga+bulk + `SalAiSuggestDialog`. L1: backend 14/14, Vitest 10/10, build Vite OK, encoding OK. Branch `feat/sal-ai-suggest-fase5a` (PR). Il brief PR2 qui sotto resta **aperto e invariato**.
->
-> **Nota sessione 18/07/2026 — SAL seam capability `SAL_LEGAL_CONFORMITY` CHIUSA (Lead, autonoma):** la conformità legislativa AI resta venduta dentro `ai_norms` ma ora è separabile con un flag pulito, senza refactor. Seam centralizzato in `moduleLicense.service.js` (`SAL_LEGAL_CONFORMITY_MODULE_KEY='ai_norms'` + `hasSalLegalConformityCapability`); `gapAnalysis.controller.js` calcola la capability e passa `legalConformityEnabled` a `suggestSalStatus`; il ramo legislativo di `salAiSuggest.service.js` gira solo se ON (OFF → solo asse tecnico 5-A, zero chiamate `normBroker`, graceful). FE invariato (già graceful, server = fonte di verità). Comportamento utente invariato (oggi ON ⇔ `ai_norms`). **Scorporo in 2 mosse**: (1) chiave `ai_legal` in `KNOWN_MODULE_KEYS`; (2) ripuntare la costante del seam. Nessuna modifica schema/sync/lock. Nota billing futuro: prezzo «per azienda gestita» → prerequisito `company_id` su `ai_interactions` (da fare col billing). L1: backend `moduleLicense`+`salAiSuggest` 41/41, Vitest `salAiSuggest.test.jsx` 6/6, build Vite OK, encoding OK. Branch `feat/sal-legal-capability-flag`. Il brief PR2 qui sotto resta **aperto e invariato**.
->
-> **Nota sessione 18/07/2026 — SAL Fase 5-B CHIUSA (Lead, autonoma):** conformità LEGISLATIVA nel suggeritore AI. Esteso `salAiSuggest.service.js` (ramo legislativo, NO service parallelo): risolve `linked_legislation`→articoli (`parseLinkedLegislation`), carica testo via `normBroker.getClauseText` (leggi universali, non scoped; evidenze scoped org+azienda), output AI per-articolo `{coverage covered/partial/missing, gap, rationale}` + confidenza legale — nessuna scrittura DB. `localStoreConnector.getClauseText` ora ritorna anche `sourceUrl` (permalink). FE `SalAiSuggestDialog` esteso con sezione «Conformità legislativa» (CoverageBadge, link articolo) distinta da «Conformità norma tecnica»; sezione assente se clausola senza leggi (graceful). Audit: `context_summary` di `sal_suggest` segnala l'analisi legale (no nuovo feature/schema). L1: backend salAiSuggest+connettori 40/40, Vitest dialog 6/6 + suite 802/802, build Vite OK, encoding OK. Branch `feat/sal-ai-legal-conformity-5b`. Il brief PR2 qui sotto resta **aperto e invariato**.
->
-> **Nota sessione 19-20/07/2026 — M-AI-1…5 COMPLETATI (Lead+Deputy, autonomi):** mobile AI da bottom nav a moduli specifici. PR #259–#265 mergiati su `main`. Dettaglio: M-AI-1 slot AI 🤖 bottom nav; M-AI-2 `AskAiButton` checklist ISO+personalizzate; M-AI-3 chip contestuali AI (clausola/audit/qualifiche); M-AI-4a `AskAiButton` drawer NC; M-AI-4b suggestion inline causa NC (`nc_cause` backend, deploy VPS PID 3843); M-AI-5 `AskAiButton` + `saveQualContext` in Qualifiche e WPS. Pattern scalabile: `licenseUtils`, `AskAiButton`, `saveQualContext`, `buildContextualSuggestions`.
->
-> **Nota sessione 21/07/2026 — PR2 Controparti VERIFICATA CHIUSA:** la feature era già completamente implementata e su `main` da una sessione precedente (commit `565fed3` + fix `cd93ab1`, `81aae9a`). Verificato: select committente (create+edit), fallback testo libero, badge legacy, payload FK, backend, test 14/14 verdi. Nessuna modifica necessaria. **Brief sotto aggiornato a CHIUSO.**
+# DEPUTYTASK — GAP P1 Modulo Generazione Report
+
+**Stato:** APERTO  
+**Priorità:** P1 (media — qualità output, UX, pulizia codice)  
+**Branch di riferimento:** `cursor/fix-report-reaudit-p0-3bea` (P0 già mergiata — lavorare da `main` dopo merge)  
+**Creato da:** Lead 21/07/2026
 
 ---
 
-# DEPUTYTASK — PR2 Controparti nel Riesame Requisiti (§8.2)
+## Contesto
 
-> **Creato**: 07/07/2026  
-> **Stato**: ✅ CHIUSO — implementato su `main` (commits `565fed3`, `cd93ab1`, `81aae9a`). Verificato 21/07/2026: 802/802 test L1, badge legacy, select FK, fallback testo libero, backend deployato.  
-> **Priorità**: P1 (dopo chiusura ingest norme #223–#224)  
-> **Contesto**: revisione stato moduli Riesame + SAL — vedi sintesi Lead in chat 07/07/2026
+L'analisi dei moduli "Generazione Report" e "Re-Audit" ha identificato **4 gap P1** da risolvere dopo i fix P0 già applicati. I P0 (GAP 1/10/11) sono stati committati sul branch sopra e sono in attesa di merge.
 
----
-
-## Obiettivo
-
-Sostituire i campi testo libero **Committente** / **Rif. committente** in `ContractReviewPage` con un **select controparti** collegato ad `company_counterparties` (ruolo `customer`), usando la FK `commercial_cases.commercial_customer_id` già presente in DB e API.
-
-**Perché ora:** PR1 controparti ✅ (mig. 096–097, tab in scheda azienda, sync backend). L'UI riesame usa ancora solo `commercial_customer_name` / `commercial_customer_ref` testuali → rischio disallineamento e doppia digitazione (es. pilota LM&CO / PT.MAIDO).
+Il deputy deve lavorare su questi 4 slice in sequenza, ognuno con un commit separato.
 
 ---
 
-## Riferimenti obbligatori (leggere prima)
+## Slice 1 — GAP 3: Rimuovere console.log di debug da ExportPanel (basso rischio)
 
-1. `docs/specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`
-2. `docs/GUIDA_CONSOLIDATA.md` — lezione «Controparti azienda ↔ riesame commerciale»
-3. `backend/src/services/commercialCustomerCounterparty.service.js`
-4. `app/src/components/CompanyCounterpartiesPanel.jsx` (pattern UI esistente)
-5. `docs/PROJECT_ROADMAP.md` — riga «Controparti azienda (PR1 ✅)»
+**File:** `app/src/components/ExportPanel.jsx`
 
----
+**Problema:** Presenti ~7 `console.log` con emoji (📋 📎) che appaiono in produzione nella console del browser. Viola le regole di qualità codice del progetto.
 
-## Scope (cosa fare)
+**Cosa fare:**
+1. Rimuovere (non sostituire) tutti i `console.log(...)` con prefisso `[EXPORT]` in `ExportPanel.jsx`.
+   - Lasciare i `console.warn` (sono avvisi di fallback legittimi).
+   - Lasciare i `console.error` (errori da mostrare in dev).
+2. Verificare che nessun `console.log` rimanga nel file tranne eventualmente dentro un blocco `if (process.env.NODE_ENV === 'development')` già esistente (isDev).
 
-| # | Task | Dettaglio |
-|---|------|-----------|
-| 1 | API lista controparti per azienda caso | Riusare `GET /companies/:id/counterparties?role=customer` (o endpoint nested esistente). Verificare filtro `role=customer`. |
-| 2 | Form creazione caso | Select «Committente» popolato dalle controparti dell'azienda SGQ (`company_id` del caso). Opzione «Altro (testo libero)» solo se nessuna controparte o override esplicito. |
-| 3 | Form modifica caso | Stesso select; pre-selezionare da `commercial_customer_id` se valorizzato, altrimenti match per nome su snapshot legacy. |
-| 4 | Payload API | Inviare `commercial_customer_id` su create/update; il backend sincronizza già snapshot name/ref via `commercialCustomerCounterparty.service`. |
-| 5 | Visualizzazione lista/dettaglio | Mostrare nome controparte da FK; badge se solo snapshot legacy (senza FK). |
-| 6 | Test L1 | Vitest mirato su form create/edit + payload; Jest su `updateCase` con `commercial_customer_id` (estendere test esistenti in `contractReview.controller.test.js`). |
-| 7 | Build | `npm run build` in `app/` |
-
-**Fuori scope:** PT.MAIDO multi-livello (cliente del cliente), RAG capitolato, nuove migrazioni DB (schema già pronto).
+**Test:** `npm run test:run` — tutti i test devono restare verdi. Nessuna modifica di logica.
 
 ---
 
-## File probabili
+## Slice 2 — GAP 5: Persistere la scelta "Incorpora foto" in localStorage
 
-- `app/src/pages/ContractReviewPage.jsx`
-- `app/src/services/apiService.js` (se manca helper controparti lato FE)
-- `backend/src/controllers/contractReview.controller.js` (solo se gap su create)
-- `app/src/tests/contractReview*.test.jsx` (nuovo o esteso)
+**File:** `app/src/components/ExportPanel.jsx`
 
----
+**Problema:** Lo stato `embedPhotos` (checkbox "Incorpora foto nel documento") è in `useState` locale e si resetta ad ogni navigazione. Un utente che lavora sempre senza foto deve rifarlo ogni volta.
 
-## Checkpoint
+**Cosa fare:**
+1. Sostituire lo `useState(null)` con un hook personalizzato che persiste in `localStorage`:
+   - Chiave localStorage: `'sgq:export_embed_photos'`  
+   - Valore: `'true'` | `'false'` | `null` (non impostato = auto)
+   - Al primo montaggio legge da localStorage; al cambio scrive.
+2. Usare questo schema:
+   ```js
+   const [embedPhotos, setEmbedPhotosRaw] = useState(() => {
+     const stored = localStorage.getItem('sgq:export_embed_photos');
+     if (stored === 'true') return true;
+     if (stored === 'false') return false;
+     return null; // auto
+   });
+   const setEmbedPhotos = (val) => {
+     setEmbedPhotosRaw(val);
+     if (val === null) localStorage.removeItem('sgq:export_embed_photos');
+     else localStorage.setItem('sgq:export_embed_photos', String(val));
+   };
+   ```
+3. Il comportamento del pulsante "ripristina auto" rimane invariato (chiama `setEmbedPhotos(null)`).
 
-### Agente (obbligatori prima di PR)
-
-- [ ] Test L1 verdi (Vitest + Jest mirati)
-- [ ] Build Vite OK
-- [ ] Nessun `console.log` di debug
-- [ ] PR draft su branch `cursor/riesame-pr2-counterparty-select-5580`
-
-### Committente (smoke L3 — 5 min)
-
-- [ ] Aprire caso riesame esistente LM&CO: committente selezionabile da elenco controparti
-- [ ] Creare nuovo caso: scegliere controparte → salva → nome/ref coerenti in dettaglio
-- [ ] Hard refresh: `commercial_customer_id` persistito
-- [ ] Analisi AI capitolato: nessun errore console (contesto committente invariato)
-
----
-
-## Deploy
-
-- **Frontend:** merge su `main` → Netlify automatico
-- **Backend:** solo se tocchi controller — `deploy-controllers-to-vps.ps1` + verifica PID
-- **DB:** nessuna migrazione prevista
+**Test:** `npm run test:run` — tutti verdi.
 
 ---
 
-## Comando deputy
+## Slice 3 — GAP 4: Validazione campi critici pre-export con avviso non bloccante
 
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+**File:** `app/src/components/ExportPanel.jsx`
+
+**Problema:** L'export Word viene generato senza verificare se i campi obbligatori del template sono valorizzati. Campi come `auditObject`, `scope`, `conclusioni` finiscono con `-` o `N/D` nel documento senza che l'utente lo sappia.
+
+**Cosa fare:**
+1. Aggiungere una funzione `getIncompleteFieldWarnings(audit)` che controlla i campi critici:
+   ```js
+   function getIncompleteFieldWarnings(audit) {
+     const warnings = [];
+     const meta = audit?.metadata || {};
+     const gd = meta?.generalData || {};
+     const obj = meta?.auditObjective || {};
+     const outcome = meta?.auditOutcome || {};
+     if (!gd.auditObject?.trim()) warnings.push('Oggetto dell\'audit (sezione "Dati generali")');
+     if (!gd.scope?.trim())        warnings.push('Scopo / Ambito (sezione "Dati generali")');
+     if (!obj.description?.trim()) warnings.push('Obiettivo dell\'audit (sezione "Obiettivo")');
+     if (!outcome.conclusions?.trim() && !Object.values(outcome.byStandard || {}).some(s => s?.conclusions?.trim()))
+       warnings.push('Conclusioni (sezione "Esito")');
+     return warnings;
+   }
+   ```
+2. In `handleExportWord` (prima di chiamare `prepareAuditForExport`), se `warnings.length > 0`:
+   - Mostrare un warning non bloccante con `showMessage(...)` di tipo `"warning"`:
+     ```
+     ⚠️ Campi incompleti nel report: [lista]. Il documento verrà generato con valori "N/D".
+   - Aggiungere `"warning"` come tipo di notifica nel CSS di `ExportPanel.css` (colore giallo/arancione):
+     ```css
+     .export-notification.warning { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+     ```
+   - NON bloccare l'export: è solo un avviso informativo.
+3. Fare lo stesso in `handleExportToFileSystem`.
+
+**Test:** `npm run test:run` — tutti verdi.
 
 ---
 
-## Note parallele (non in questo task)
+## Slice 4 — GAP 2: Deprecare / nascondere ReportBuilder (componente orfano)
 
-| Voce | Stato | Azione suggerita |
-|------|--------|------------------|
-| SAL Fasi 0–4 | ✅ in `main` | Smoke L3: seed matrice → cambio stato → widget Riesame §9.3 con `norm_coverage_source=sal` |
-| Mig. 117–118 VPS | Da verificare | Se `/sal` o NC `sal_gap` falliscono: `run-migration-117-vps.js` + `118-vps.js` |
-| Riesame Direzione Slice 4 (KPI §9.1) | ⏸️ parcheggiata | Richiede modulo §9.1 strutturato — backlog roadmap |
-| SAL Fase 5 (AI suggerimenti stato) | Opzionale | Dopo smoke Fase 4 stabile |
-| Ingest commesse slice 4 (batch in caso) | ⏳ backlog | Task separato post-PR2 |
+**File:** `app/src/components/ReportBuilder.jsx` e ovunque sia usato
+
+**Problema:** `ReportBuilder.jsx` permette di aggiungere "capitoli" all'audit, ma questi non vengono mai inclusi nell'export Word (`buildTemplateData` non legge `reportChapters`). Il componente è un vicolo cieco.
+
+**Cosa fare:**
+1. Verificare dove `ReportBuilder` è importato/usato con `rg "ReportBuilder" app/src/`.
+2. Se è montato in una tab/pagina:
+   - Aggiungere un banner informativo in cima al componente:
+     ```jsx
+     <div className="report-builder-notice" style={{background:'#FEF3C7',color:'#92400E',padding:'0.75rem 1rem',borderRadius:'0.375rem',marginBottom:'1rem',border:'1px solid #F59E0B'}}>
+       ⚠️ Questa sezione è in sviluppo. I capitoli inseriti qui non sono ancora inclusi nel Report Word.
+     </div>
+     ```
+   - Non rimuovere il componente (potrebbe essere usato in futuro).
+3. Aggiungere un commento in testa al file:
+   ```js
+   // STATO: componente in sviluppo — i reportChapters non sono ancora letti da wordExport.js.
+   // Quando si integra: aggiungere i capitoli a buildTemplateData() in wordExport.js.
+   ```
+
+**Test:** `npm run test:run` — tutti verdi.
+
+---
+
+## Sequenza di lavoro
+
+1. `git pull origin main` (attendere merge P0 o lavorare su `cursor/fix-report-reaudit-p0-3bea`)
+2. `git checkout -b cursor/fix-report-p1-3bea`
+3. Eseguire Slice 1 → commit atomico `fix: GAP3 — rimuovi console.log debug da ExportPanel`
+4. Eseguire Slice 2 → commit atomico `fix: GAP5 — embedPhotos persiste in localStorage`
+5. Eseguire Slice 3 → commit atomico `fix: GAP4 — avviso non bloccante campi incompleti pre-export`
+6. Eseguire Slice 4 → commit atomico `fix: GAP2 — banner sviluppo su ReportBuilder orfano`
+7. Aprire PR su `main`, titolo: `fix: GAP P1 report — console.log, embedPhotos, pre-export warnings, ReportBuilder`
+8. Chiudere con: `TEST OK` (802 test verdi) o `FIX NON APPLICABILI` con motivazione
+
+---
+
+## Definizione di completamento (DoD)
+
+- `npm run test:run` — 802 test verdi (nessun test nuovo richiesto per queste slice)
+- `npm run build` — build Vite senza errori
+- Nessun `console.log` con `[EXPORT]` rimasto in `ExportPanel.jsx`
+- `localStorage.getItem('sgq:export_embed_photos')` persiste tra navigazioni
+- Export Word mostra warning giallo se `auditObject` o `scope` vuoti
+- `ReportBuilder.jsx` mostra banner "in sviluppo"
