@@ -1,0 +1,17 @@
+# Copia questo file in:  backend/config/.netlify.local.ps1
+# Il file .ps1 reale e' in .gitignore: non finira' mai su GitHub.
+#
+# Scopo: permettere a Cursor (sul tuo PC) di usare Netlify CLI senza
+# incollare token in chat. Caricato automaticamente da:
+#   netlify-preflight.ps1
+# Verifica: .\backend\scripts\netlify-preflight.ps1  (deve stampare NETLIFY_ACCESS_OK)
+#
+# Token: Netlify UI -> User settings -> Applications -> Personal access tokens
+# https://app.netlify.com/user/applications#personal-access-tokens
+#
+# Alternativa una tantum: netlify login (salva credenziali in ~/.config/netlify)
+# Il preflight preferisce NETLIFY_AUTH_TOKEN per sessioni non interattive.
+#
+$env:NETLIFY_AUTH_TOKEN = ""
+#
+# Incolla il token tra le virgolette sopra. Non committare il file dopo averlo riempito.

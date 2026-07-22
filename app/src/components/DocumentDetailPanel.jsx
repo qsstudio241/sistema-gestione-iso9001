@@ -19,7 +19,15 @@ const NORM_VALIDITY_LABELS = {
   superata: "Superata",
   annullata: "Annullata",
   in_revisione: "In revisione",
+  da_verificare: "Da verificare",
 };
+
+function mapCatalogLookupStatus(status) {
+  if (status === "active") return "vigente";
+  if (status === "withdrawn" || status === "superseded") return "superata";
+  if (status === "unknown") return "da_verificare";
+  return status;
+}
 
 function parseTypeSpecificData(raw) {
   if (!raw) return null;
@@ -108,6 +116,8 @@ const NORM_VALIDITY_COLORS = {
   superata:    { bg: '#fef3c7', color: '#b45309' },
   annullata:   { bg: '#fee2e2', color: '#b91c1c' },
   in_revisione:{ bg: '#dbeafe', color: '#1d4ed8' },
+  da_verificare: { bg: '#fef9c3', color: '#a16207' },
+  unknown:     { bg: '#fef9c3', color: '#a16207' },
 };
 
 function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
@@ -222,7 +232,9 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
                 )}
               </div>
               {(normData.validityStatus || lookupResult?.status) && (() => {
-                const statusKey = lookupResult?.status || normData.validityStatus;
+                const statusKey = lookupResult?.status
+                  ? mapCatalogLookupStatus(lookupResult.status)
+                  : normData.validityStatus;
                 const colors = NORM_VALIDITY_COLORS[statusKey] || {};
                 return (
                   <div className="doc-detail__info-row">
@@ -292,25 +304,32 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
             <p className="doc-detail__placeholder">Nessuna relazione</p>
           </section>
 
-          {/* File / Versioni */}
+          {/* File / Versioni — mostra solo la versione corrente (la più recente) */}
           <section className="doc-detail__section">
             <h3 className="doc-detail__section-title">File</h3>
             {filesLoading ? (
               <p className="doc-detail__placeholder">Caricamento...</p>
-            ) : files.length > 0 ? (
-              <ul className="doc-detail__file-list">
-                {files.map((f) => (
-                  <li key={f.id ?? f.file_name} className="doc-detail__file-item">
-                    <span className="doc-detail__file-name">{f.file_name}</span>
+            ) : files.length > 0 ? (() => {
+              const current = files[0];
+              const prevCount = files.length - 1;
+              return (
+                <ul className="doc-detail__file-list">
+                  <li className="doc-detail__file-item">
+                    <span className="doc-detail__file-name">{current.file_name}</span>
                     <span className="doc-detail__file-meta">
-                      {f.version && `v${f.version}`}
-                      {(f.uploaded_at || f.created_at) && ` - ${formatDate(f.uploaded_at || f.created_at)}`}
-                      {f.file_size_label && ` - ${f.file_size_label}`}
+                      {current.version && `v${current.version}`}
+                      {(current.uploaded_at || current.created_at) && ` — ${formatDate(current.uploaded_at || current.created_at)}`}
+                      {current.file_size_label && ` — ${current.file_size_label}`}
                     </span>
+                    {prevCount > 0 && (
+                      <span className="doc-detail__file-history-hint">
+                        {`+ ${prevCount} versione${prevCount > 1 ? " precedenti" : " precedente"} — apri la gestione file per vederle`}
+                      </span>
+                    )}
                   </li>
-                ))}
-              </ul>
-            ) : (
+                </ul>
+              );
+            })() : (
               <p className="doc-detail__placeholder">Nessun file allegato</p>
             )}
           </section>

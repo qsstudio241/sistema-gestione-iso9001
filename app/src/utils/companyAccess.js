@@ -1,6 +1,6 @@
 /**
- * Helper frontend RBAC Fase 4 � accesso per singola azienda
- * Fase 4.1 � canWriteModule / isCompanyClient
+ * Helper frontend RBAC Fase 4  -  accesso per singola azienda
+ * Fase 4.1  -  canWriteModule / isCompanyClient
  */
 
 export function hasCompanyAccess(user) {
@@ -30,7 +30,7 @@ export function canEditCompany(user, companyId = null) {
   return ["admin", "auditor", "superadmin"].includes(user.role);
 }
 
-/** Alias semantico Fase 4.1 � write su moduli operativi (doc, qualifiche, �). */
+/** Alias semantico Fase 4.1  -  write su moduli operativi (doc, qualifiche,  - ). */
 export function canWriteModule(user, companyId = null) {
   return canEditCompany(user, companyId);
 }

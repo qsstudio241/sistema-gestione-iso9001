@@ -19,7 +19,7 @@ const {
 async function listSuppliers(req, res) {
     try {
         const { organization_id } = req.user;
-        const { supplier_type, is_active } = req.query;
+        const { supplier_type, is_active, company_id } = req.query;
 
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 's');
@@ -31,6 +31,17 @@ async function listSuppliers(req, res) {
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (supplier_type) { where.push('s.supplier_type = @st'); params.st = supplier_type; }
         if (is_active !== undefined) { where.push('s.is_active = @ia'); params.ia = is_active === 'false' ? 0 : 1; }
+        if (company_id !== undefined && company_id !== '') {
+            const cid = parseInt(company_id, 10);
+            if (Number.isNaN(cid) || cid <= 0) {
+                return res.status(400).json({
+                    error: 'company_id non valido',
+                    code: 'VALIDATION_ERROR',
+                });
+            }
+            where.push('s.company_id = @company_id');
+            params.company_id = cid;
+        }
 
         const result = await query(`
             SELECT

@@ -17,14 +17,9 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import "./AppLayout.css";
+import { hasLicensedModule } from "../utils/licenseUtils";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
-
-function hasLicensedModule(user, key) {
-  const m = user?.licensed_modules;
-  if (!m || !Array.isArray(m) || m.length === 0) return true;
-  return m.includes(key);
-}
 
 function buildNavItems(user, alerts = {}) {
   const isCompanyClient = hasCompanyAccess(user);
@@ -56,14 +51,16 @@ function buildNavItems(user, alerts = {}) {
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
         { to: "/deadlines",   icon: "\uD83D\uDCC5", label: "Scadenzari", licenseKey: "documents" },
         { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
-        { to: "/nc",          icon: "🚨", label: "Non Conformità", licenseKey: "nc" },
-        { to: "/rischi",      icon: "⚠️",  label: "Rischi & Obiettivi", licenseKey: "rischi" },
+        { to: "/nc",                  icon: "🚨", label: "Non Conformità",      licenseKey: "nc" },
+        { to: "/rischi",              icon: "⚠️",  label: "Rischi, Opportunità e Obiettivi",   licenseKey: "rischi" },
+        { to: "/management-reviews",  icon: "📋", label: "Riesame Direzione",     licenseKey: "riesame_direzione" },
         { to: "/reclami",          icon: "📢", label: "Reclami", badge: alerts.complaints > 0 ? alerts.complaints : null, licenseKey: "reclami" },
         { to: "/anagrafiche",      icon: "🗂️",  label: "Anagrafiche",        licenseKey: "reclami" },
         { to: "/contract-reviews", icon: "📑", label: "Riesame Requisiti",   licenseKey: "ai_review" },
-        { to: "/ai-assistant",     icon: "🤖", label: "Assistente AI",      licenseKey: "ai_assist" },
-        ...(isAdmin ? [{ to: "/ai-knowledge-health", icon: "🩺", label: "Knowledge Health", licenseKey: "ai_assist" }] : []),
-        { to: "/sal",              icon: "📊", label: "SAL", locked: true, licenseKey: "sal" },
+        { to: "/gap-analysis",      icon: "📊", label: "Gap Analysis",        licenseKey: "ai_norms" },
+        { to: "/ai-assistant",     icon: "🤖", label: "Assistente AI",      licenseKey: "ai_chat" },
+        ...(isAdmin ? [{ to: "/ai-knowledge-health", icon: "🩺", label: "Knowledge Health", licenseKey: "ai_chat" }] : []),
+        { to: "/sal",              icon: "📊", label: "SAL", licenseKey: "sal" },
       ]),
     },
     // Modulo Saldatura
@@ -73,6 +70,15 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura", icon: "\uD83C\uDFED", label: "Dashboard 3834", licenseKey: "saldatura" },
         { to: "/saldatura/commesse", icon: "\uD83D\uDCCB", label: "Commesse", licenseKey: "saldatura" },
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
+        { to: "/saldatura/welding-book", icon: "\uD83D\uDCD6", label: "Welding Book", licenseKey: "saldatura" },
+      ]),
+    },
+    // Modulo CND (Controlli Non Distruttivi)
+    {
+      group: "CND",
+      items: filterByLicense([
+        { to: "/cnd/strumenti", icon: "\uD83D\uDD2C", label: "Strumenti e Attrezzature", licenseKey: "cnd" },
+        { to: "/cnd/verbali",   icon: "\uD83D\uDCCB", label: "Verbali CND (VT/MT/PT/UT)", licenseKey: "cnd" },
       ]),
     },
     // Gestione (studio admin/auditor o cliente azienda con menu ridotto)
@@ -108,27 +114,38 @@ function buildMobileNavItems(user, alerts) {
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   const items = [
-    { to: "/", icon: "🏠", label: "Home", exact: true },
+    { to: "/", icon: "\uD83C\uDFE0", label: "Home", exact: true },
   ];
 
   const audit = find("/audit");
-  if (audit) items.push({ to: audit.to, icon: audit.icon, label: audit.label });
-
-  const docs = find("/documents");
-  if (docs) items.push({ to: docs.to, icon: docs.icon, label: docs.label });
+  if (audit) items.push({ to: audit.to, icon: audit.icon, label: "Audit" });
 
   const nc = find("/nc");
   if (nc) items.push({ to: nc.to, icon: nc.icon, label: "NC" });
 
-  const settings = find("/settings/users");
-  const companies = find("/companies");
-  if (isAdmin && settings) {
-    items.push({ to: settings.to, icon: "⚙️", label: "Impostazioni" });
-  } else if (companies) {
-    items.push({ to: companies.to, icon: companies.icon, label: companies.label });
+  // CND — priorità sul 4° posto quando il modulo è attivo (ispettori in campo)
+  const cnd = find("/cnd/verbali");
+  if (cnd) {
+    items.push({ to: cnd.to, icon: "\uD83D\uDD2C", label: "CND" });
   } else {
-    const reclami = find("/reclami");
-    if (reclami) items.push({ to: reclami.to, icon: reclami.icon, label: reclami.label });
+    // Se CND non attivo, usa Documenti al 4° posto
+    const docs = find("/documents");
+    if (docs) items.push({ to: docs.to, icon: docs.icon, label: "Documenti" });
+  }
+
+  // 5° posto: AI (se ai_chat attivo) oppure Documenti/Impostazioni/Aziende come fallback
+  const ai = find("/ai-assistant");
+  if (ai) {
+    items.push({ to: ai.to, icon: "\uD83E\uDD16", label: "AI" });
+  } else if (cnd) {
+    const docs = find("/documents");
+    if (docs) items.push({ to: docs.to, icon: docs.icon, label: "Documenti" });
+  } else if (isAdmin) {
+    const settings = find("/settings/users");
+    if (settings) items.push({ to: settings.to, icon: "\u2699\uFE0F", label: "Impostaz" });
+  } else {
+    const companies = find("/companies");
+    if (companies) items.push({ to: companies.to, icon: companies.icon, label: "Aziende" });
   }
 
   return items.slice(0, 5);

@@ -43,7 +43,12 @@ return {
     plugins: [react(), stampServiceWorker()],
     resolve: {
         // Mantiene i path del workspace (C:\ProgettoISO) senza risolvere sul drive reale.
-        preserveSymlinks: true
+        preserveSymlinks: true,
+        // Alias esplicito per react-easy-crop: evita fallimenti di risoluzione Rollup
+        // su percorsi con spazi (Google Drive junction su Windows).
+        alias: {
+            'react-easy-crop': path.resolve(process.cwd(), 'node_modules/react-easy-crop/index.module.mjs')
+        }
     },
     // Strip debugger statements in produzione.
     // console.log/debug/info marcati come "pure" → rimossi da tree-shaking (no side effects).

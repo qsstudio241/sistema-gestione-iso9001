@@ -15,10 +15,18 @@ export function useAiAssist() {
       setSuggestion(result.suggestion);
       return result.suggestion;
     } catch (err) {
-      const msg =
+      let msg =
         (err instanceof ApiError && err.data && err.data.error) ||
         err.message ||
         'Errore AI';
+      if (err instanceof ApiError && err.status === 429) {
+        const waitSec = err.data?.retryAfterMs
+          ? Math.ceil(err.data.retryAfterMs / 1000)
+          : null;
+        msg = waitSec
+          ? `Troppe richieste al server. Attendi circa ${waitSec} secondi e riprova.`
+          : 'Troppe richieste al server. Chiudi schede duplicate, attendi qualche minuto e riprova.';
+      }
       setError(msg);
       return null;
     } finally {

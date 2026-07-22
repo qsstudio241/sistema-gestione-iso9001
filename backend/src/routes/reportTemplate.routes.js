@@ -20,6 +20,9 @@ router.get('/report-templates', reportTemplateController.listTemplates);
 // GET /api/v1/report-template-assignments/standards
 router.get('/report-template-assignments/standards', reportTemplateController.listStandardAssignments);
 
+// GET /api/v1/report-template-assignments/nc
+router.get('/report-template-assignments/nc', reportTemplateController.listNcAssignment);
+
 // POST /api/v1/report-templates (upload .docx) - admin/auditor
 router.post('/report-templates', authorize('admin', 'auditor'), uploadTemplate.single('file'), reportTemplateController.uploadTemplate);
 
@@ -34,5 +37,8 @@ router.put('/report-template-assignments/standard/:standardId', reportTemplateCo
 
 // PUT /api/v1/report-template-assignments/custom-checklist/:customChecklistId
 router.put('/report-template-assignments/custom-checklist/:customChecklistId', reportTemplateController.assignTemplateToCustomChecklist);
+
+// PUT /api/v1/report-template-assignments/nc
+router.put('/report-template-assignments/nc', reportTemplateController.assignTemplateToNc);
 
 module.exports = router;

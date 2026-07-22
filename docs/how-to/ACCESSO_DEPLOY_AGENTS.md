@@ -1,6 +1,6 @@
 # Accesso VPS, API produzione e deploy autonomo (Cursor / agenti)
 
-> **Aggiornato:** 2026-04-28.  
+> **Aggiornato:** 2026-07-18.  
 > Obiettivo: stessa informazione operativa per umano e assistente AI, **senza segreti in repository**.
 
 ---
@@ -78,6 +78,12 @@ Per **migrazioni DB** da script Node (`run-migration*.js`):
 I Cloud Agent girano su macchine Linux remote e **non** hanno accesso al tuo PC né a PuTTY.
 Usano **OpenSSH standard** (`ssh`/`scp`) e leggono le credenziali dalle **Cursor Cloud Secrets** (variabili d'ambiente iniettate automaticamente all'avvio dell'agent).
 
+#### Ambiente Cloud versionato (repo)
+
+All'avvio VM Cursor esegue `.cursor/environment.json` → `bash .cursor/scripts/cloud-install.sh` (`npm ci` in `app/` e `backend/`). Istruzioni agente: root `AGENTS.md` + regola `.cursor/rules/sgq-cloud-agent-env.mdc`.
+
+**Context window** (capability vs cost): su [cursor.com/agents](https://cursor.com/agents) → **Edit** accanto al modello — default/basso per Deputy; 1M solo per Lead/audit ampi. Vedi [GUIDA_CONSOLIDATA — Cloud Agent](../GUIDA_CONSOLIDATA.md#cloud-agent-cursor--ambiente-e-context-window).
+
 #### Segreti da configurare una volta sola
 
 Vai su **cursor.com → Dashboard → Cloud Agents → Secrets** e aggiungi:
@@ -86,6 +92,8 @@ Vai su **cursor.com → Dashboard → Cloud Agents → Secrets** e aggiungi:
 |---------|--------|----------|
 | `SGQ_SSH_KEY_B64` | Chiave privata SSH in base64 (vedi sotto) | `deploy-to-vps.sh` |
 | `SGQ_SUDO_PASSWORD` | Password sudo sul VPS (opzionale, abilita `systemctl restart`) | `deploy-to-vps.sh` |
+| `SGQ_APP_EMAIL` | Email login app (es. `admin@sgq.local`) | Smoke E2E Playwright |
+| `SGQ_APP_PASSWORD` | Password login app di test | Smoke E2E Playwright |
 
 Per migrazioni DB da cloud agent: script Node su VPS — vedi [database-migrations.md](database-migrations.md) (credenziali SQL solo in `database.json`, non in Secrets).
 
@@ -107,7 +115,7 @@ Il valore base64 (una sola riga lunga) va incollato integralmente nel campo `SGQ
 
 #### Runtime Node: Cloud Agent, CI e VPS
 
-Il **Cloud Agent** può non avere `node`/`npm` installati nel workspace Linux. In quel caso non perdere tempo a installarli solo per verificare il frontend: usare la **CI GitHub** della PR (`test-and-build`) e la preview Netlify come prova L1/L3.
+Con `.cursor/environment.json` le dipendenze `app/` e `backend/` vengono installate all'avvio VM (`cloud-install.sh`). Se l'install fallisce o manca Node, non perdere tempo: usare la **CI GitHub** della PR (`test-and-build`) e la preview Netlify come prova L1/L3.
 
 Per operazioni server, deploy e script eseguiti sul backend, usare invece il **VPS via SSH**: su `/var/www/sgq-backend` Node è già installato e il servizio `sgq-backend.service` gira con quel runtime. Le credenziali non interattive per SSH/DB sono le **Cursor Cloud Secrets** elencate sopra.
 

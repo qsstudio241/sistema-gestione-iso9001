@@ -114,4 +114,38 @@ async function getReportTemplate(organizationId, standardId, customChecklistId) 
   throw new Error('Nessun template report configurato');
 }
 
-module.exports = { getReportTemplate, STANDARD_KEY_MAP };
+/**
+ * Risolve template export Word per scheda NC (scope nc).
+ * 1. Assegnazione org (assignment_type = nc)
+ * 2. Template di sistema default
+ *
+ * @param {number} organizationId
+ * @returns {Promise<{id: number, file_path: string, name: string}>}
+ */
+async function getNcReportTemplate(organizationId) {
+  const assign = await query(
+    `SELECT rta.report_template_id, rt.file_path, rt.name
+     FROM report_template_assignments rta
+     JOIN report_templates rt ON rta.report_template_id = rt.id
+     WHERE rta.organization_id = @organization_id
+       AND rta.assignment_type = 'nc'`,
+    { organization_id: organizationId }
+  );
+  if (assign.recordset.length > 0) {
+    const r = assign.recordset[0];
+    return { id: r.report_template_id, file_path: r.file_path, name: r.name };
+  }
+
+  const sysTemplate = await query(
+    `SELECT TOP 1 id, file_path, name FROM report_templates
+     WHERE organization_id IS NULL AND scope = 'nc' AND standard_key = 'default'`
+  );
+  if (sysTemplate.recordset.length > 0) {
+    const r = sysTemplate.recordset[0];
+    return { id: r.id, file_path: r.file_path, name: r.name };
+  }
+
+  throw new Error('Nessun template NC configurato');
+}
+
+module.exports = { getReportTemplate, getNcReportTemplate, STANDARD_KEY_MAP };

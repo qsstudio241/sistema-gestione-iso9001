@@ -1,12 +1,29 @@
 /**
  * documentRegistryNorm.service.js
  * Schema canonico type_specific_data per doc_type=norma nel registro documentale.
- * Contratto unico tra form manuale, upload bulk e job validit? (R1/R3/R6).
+ * Contratto unico tra form manuale, upload bulk e job validità (R1/R3/R6).
  *
  * Allineato a documentTypeSchemas.norma (frontend + backend).
  */
 
-const VALID_VALIDITY_STATUSES = ['vigente', 'superata', 'annullata', 'in_revisione'];
+const { normalizeStandardCodeForStorage } = require('./standardCodeNormalizer.service');
+
+const VALID_VALIDITY_STATUSES = ['vigente', 'superata', 'annullata', 'in_revisione', 'da_verificare'];
+
+/** Allineato a migrazione 119 — norm_document_sources.norm_title */
+const NORM_TITLE_MAX_LEN = 500;
+
+/**
+ * Tronca titolo norma per INSERT SQL (titoli UNI in italiano possono superare 100+ caratteri).
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+function clampNormTitle(value) {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  return s.length > NORM_TITLE_MAX_LEN ? s.substring(0, NORM_TITLE_MAX_LEN) : s;
+}
 
 /** Chiavi canonicali scritte in document_registry.type_specific_data */
 const NORM_TSD_CANONICAL_KEYS = [
@@ -39,18 +56,31 @@ const NORM_TSD_CANONICAL_KEYS = [
 function guessStandardCodeFromFilename(filename) {
   const base = String(filename || '').replace(/\.pdf$/i, '').trim();
   if (!base) return '';
-  const forHint = base.replace(/_/g, ' ');
+
+  const trFile = base.match(/\bISO[\s_-]TR[\s_-](\d+(?:-\d+)?)[\s_-]((?:19|20)\d{2})\b/i);
+  if (trFile) {
+    return normalizeStandardCodeForStorage(`ISO TR ${trFile[1]} ${trFile[2]}`);
+  }
+
+  let forHint = base
+    .replace(/_/g, ' ')
+    .replace(/\bISO[\s_-]TR[\s_-]/gi, 'ISO TR ')
+    .replace(/\bISO[\s_-]TS[\s_-]/gi, 'ISO TS ')
+    .replace(/\s+testo\s+\w+.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const normHint = /\b(ISO|IEC|EN|UNI|BS|DIN|AWS|ASME|CEN|AFNOR|ANSI)\b|D\.?\s*Lgs|decreto/i;
   if (!normHint.test(forHint)) return '';
-  return forHint.replace(/\s+/g, ' ').trim();
+  return normalizeStandardCodeForStorage(forHint);
 }
 
 function normalizeValidityStatus(raw) {
   const value = raw ? String(raw).trim() : '';
   if (VALID_VALIDITY_STATUSES.includes(value)) return value;
-  // "rilasciato" ? status documento, non vigore norma
+  // "rilasciato" è status documento, non vigore norma
   if (value === 'rilasciato') return 'vigente';
-  return 'vigente';
+  if (value === 'unknown') return 'da_verificare';
+  return 'da_verificare';
 }
 
 /**
@@ -59,13 +89,16 @@ function normalizeValidityStatus(raw) {
  * @returns {object|null} null se standard_code assente
  */
 function buildNormTypeSpecificData(raw = {}) {
-  const standardCode = raw.standard_code ? String(raw.standard_code).trim() : '';
-  if (!standardCode) return null;
-
   const editionRaw = raw.edition_year;
   const editionYear = editionRaw != null && editionRaw !== ''
     ? parseInt(editionRaw, 10) || null
     : null;
+
+  const standardCodeRaw = raw.standard_code ? String(raw.standard_code).trim() : '';
+  const standardCode = standardCodeRaw
+    ? normalizeStandardCodeForStorage(standardCodeRaw, editionYear)
+    : '';
+  if (!standardCode) return null;
 
   const scopeRaw = raw.scope_summary ?? raw.abstract ?? null;
   const scopeSummary = scopeRaw != null && String(scopeRaw).trim()
@@ -74,11 +107,13 @@ function buildNormTypeSpecificData(raw = {}) {
 
   const data = {
     standard_code: standardCode,
-    norm_title: raw.norm_title ? String(raw.norm_title).trim() : null,
+    norm_title: clampNormTitle(raw.norm_title),
     issuing_body: raw.issuing_body ? String(raw.issuing_body).trim() : null,
     edition_year: editionYear,
     supersedes: raw.supersedes ? String(raw.supersedes).trim() : null,
-    validity_status: normalizeValidityStatus(raw.validity_status),
+    validity_status: raw.validity_status != null && String(raw.validity_status).trim() !== ''
+      ? normalizeValidityStatus(raw.validity_status)
+      : (raw.last_validity_check ? 'vigente' : 'da_verificare'),
     language: raw.language ? String(raw.language).trim() : null,
     scope_summary: scopeSummary,
     ics_code: raw.ics_code ? String(raw.ics_code).trim() : null,
@@ -168,8 +203,10 @@ function mergeMissingNormTypeSpecificData(existingRaw, sourceRaw = {}) {
 
 module.exports = {
   NORM_TSD_CANONICAL_KEYS,
+  NORM_TITLE_MAX_LEN,
   VALID_VALIDITY_STATUSES,
   guessStandardCodeFromFilename,
+  clampNormTitle,
   normalizeValidityStatus,
   buildNormTypeSpecificData,
   serializeNormTypeSpecificData,

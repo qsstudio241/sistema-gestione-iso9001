@@ -4,14 +4,19 @@
  */
 
 const { query } = require('../config/database');
-const { getReportTemplate } = require('../services/reportTemplate.service');
+const { getReportTemplate, getNcReportTemplate } = require('../services/reportTemplate.service');
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const crypto = require('crypto');
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc']);
+
+function normalizeScope(scope) {
+  const s = String(scope || 'audit').trim().toLowerCase();
+  return ALLOWED_SCOPES.has(s) ? s : 'audit';
+}
 
 /** Risolve path assoluto del file sorgente (sistema /uploads o /templates) */
 async function resolveTemplateSourcePath(filePath) {
@@ -49,6 +54,7 @@ async function resolveTemplateSourcePath(filePath) {
 async function listTemplates(req, res) {
   try {
     const { scope = 'audit' } = req.query;
+    const normalizedScope = normalizeScope(scope);
     const organizationId = req.user.organization_id;
 
     const result = await query(
@@ -56,7 +62,7 @@ async function listTemplates(req, res) {
        FROM report_templates
        WHERE scope = @scope AND (organization_id IS NULL OR organization_id = @organization_id)
        ORDER BY CASE WHEN organization_id IS NULL THEN 0 ELSE 1 END, standard_key`,
-      { scope, organization_id: organizationId }
+      { scope: normalizedScope, organization_id: organizationId }
     );
 
     res.json({ success: true, data: result.recordset });
@@ -89,8 +95,8 @@ async function uploadTemplate(req, res) {
     }
 
     const name = req.body.name || path.basename(req.file.originalname, '.docx');
-    const scope = req.body.scope || 'audit';
-    const standardKey = req.body.standard_key || null;
+    const scope = normalizeScope(req.body.scope);
+    const standardKey = req.body.standard_key || (scope === 'nc' ? 'default' : null);
 
     const uploadDir = process.env.UPLOAD_DIR || './uploads';
     let relPath = path.relative(path.resolve(uploadDir), req.file.path).replace(/\\/g, '/');
@@ -159,12 +165,14 @@ async function assignTemplateToStandard(req, res) {
     const params = { organization_id: organizationId, standard_id: stdId, report_template_id: templateId };
     await query(
       `DELETE FROM report_template_assignments
-       WHERE organization_id = @organization_id AND standard_id = @standard_id AND custom_checklist_id IS NULL`,
+       WHERE organization_id = @organization_id AND standard_id = @standard_id
+         AND custom_checklist_id IS NULL AND assignment_type = 'standard'`,
       params
     );
     await query(
-      `INSERT INTO report_template_assignments (organization_id, standard_id, custom_checklist_id, report_template_id)
-       VALUES (@organization_id, @standard_id, NULL, @report_template_id)`,
+      `INSERT INTO report_template_assignments
+         (organization_id, standard_id, custom_checklist_id, report_template_id, assignment_type)
+       VALUES (@organization_id, @standard_id, NULL, @report_template_id, 'standard')`,
       params
     );
 
@@ -180,13 +188,18 @@ async function assignTemplateToStandard(req, res) {
 /**
  * GET /api/v1/report-templates/resolve?standardId=1
  * GET /api/v1/report-templates/resolve?customChecklistId=5
- * Risolve quale template usare per standard_id O custom_checklist_id + organization_id
- * Usato dal frontend prima di generare report
+ * GET /api/v1/report-templates/resolve?scope=nc
+ * Risolve quale template usare per standard_id, custom_checklist_id o export NC
  */
 async function resolveTemplate(req, res) {
   try {
-    const { standardId, customChecklistId } = req.query;
+    const { standardId, customChecklistId, scope } = req.query;
     const organizationId = req.user.organization_id;
+
+    if (normalizeScope(scope) === 'nc') {
+      const template = await getNcReportTemplate(organizationId);
+      return res.json({ success: true, data: template });
+    }
 
     const stdId = standardId ? parseInt(standardId, 10) : null;
     const customId = customChecklistId ? parseInt(customChecklistId, 10) : null;
@@ -245,13 +258,14 @@ async function assignTemplateToCustomChecklist(req, res) {
     // Rimuovi assegnazioni esistenti per questa checklist
     await query(
       `DELETE FROM report_template_assignments
-       WHERE organization_id = @organization_id AND custom_checklist_id = @custom_checklist_id`,
+       WHERE organization_id = @organization_id AND custom_checklist_id = @custom_checklist_id
+         AND assignment_type = 'custom_checklist'`,
       { organization_id: organizationId, custom_checklist_id: ccId }
     );
-    // Inserisci nuova assegnazione
     await query(
-      `INSERT INTO report_template_assignments (organization_id, standard_id, custom_checklist_id, report_template_id)
-       VALUES (@organization_id, NULL, @custom_checklist_id, @report_template_id)`,
+      `INSERT INTO report_template_assignments
+         (organization_id, standard_id, custom_checklist_id, report_template_id, assignment_type)
+       VALUES (@organization_id, NULL, @custom_checklist_id, @report_template_id, 'custom_checklist')`,
       { organization_id: organizationId, custom_checklist_id: ccId, report_template_id: templateId }
     );
 
@@ -421,13 +435,89 @@ async function deleteTemplate(req, res) {
   }
 }
 
+/**
+ * GET /api/v1/report-template-assignments/nc
+ * Assegnazione template export NC per l'org corrente
+ */
+async function listNcAssignment(req, res) {
+  try {
+    const organizationId = req.user.organization_id;
+    const result = await query(
+      `SELECT report_template_id
+       FROM report_template_assignments
+       WHERE organization_id = @organization_id AND assignment_type = 'nc'`,
+      { organization_id: organizationId }
+    );
+    const reportTemplateId = result.recordset[0]?.report_template_id ?? null;
+    res.json({ success: true, data: { report_template_id: reportTemplateId } });
+  } catch (err) {
+    logger.error('listNcAssignment error', { error: err.message });
+    res.status(500).json({ error: 'Errore recupero assegnazione NC', code: 'ASSIGNMENTS_LIST_ERROR' });
+  }
+}
+
+/**
+ * PUT /api/v1/report-template-assignments/nc
+ * Body: { report_template_id } — null/assente rimuove assegnazione (fallback sistema)
+ */
+async function assignTemplateToNc(req, res) {
+  try {
+    const { report_template_id: reportTemplateIdRaw } = req.body;
+    const organizationId = req.user.organization_id;
+
+    await query(
+      `DELETE FROM report_template_assignments
+       WHERE organization_id = @organization_id AND assignment_type = 'nc'`,
+      { organization_id: organizationId }
+    );
+
+    if (reportTemplateIdRaw == null || reportTemplateIdRaw === '') {
+      return res.json({ success: true, message: 'Assegnazione NC rimossa (modello di sistema)' });
+    }
+
+    const templateId = parseInt(reportTemplateIdRaw, 10);
+    if (Number.isNaN(templateId)) {
+      return res.status(400).json({ error: 'report_template_id non valido', code: 'INVALID_ID' });
+    }
+
+    const tplCheck = await query(
+      `SELECT 1 FROM report_templates
+       WHERE id = @report_template_id
+         AND scope = 'nc'
+         AND (organization_id IS NULL OR organization_id = @organization_id)`,
+      { report_template_id: templateId, organization_id: organizationId }
+    );
+    if (tplCheck.recordset.length === 0) {
+      return res.status(403).json({
+        error: 'Template NC non disponibile per questa organizzazione',
+        code: 'TEMPLATE_FORBIDDEN',
+      });
+    }
+
+    await query(
+      `INSERT INTO report_template_assignments
+         (organization_id, standard_id, custom_checklist_id, report_template_id, assignment_type)
+       VALUES (@organization_id, NULL, NULL, @report_template_id, 'nc')`,
+      { organization_id: organizationId, report_template_id: templateId }
+    );
+
+    logger.info('Template assigned to NC export', { org: organizationId, templateId });
+    res.json({ success: true, message: 'Assegnazione NC salvata' });
+  } catch (err) {
+    logger.error('assignTemplateToNc error', { error: err.message });
+    res.status(500).json({ error: 'Errore assegnazione template NC', code: 'ASSIGN_TEMPLATE_ERROR' });
+  }
+}
+
 module.exports = {
   listTemplates,
   uploadTemplate,
   assignTemplateToStandard,
   assignTemplateToCustomChecklist,
+  assignTemplateToNc,
   resolveTemplate,
   listStandardAssignments,
+  listNcAssignment,
   duplicateTemplate,
   deleteTemplate,
 };

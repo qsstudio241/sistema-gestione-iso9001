@@ -19,6 +19,7 @@ function roleTypeForPersonnel(personnel) {
 
 /**
  * Garantisce un notification_contact collegato al personale azienda.
+ * Usa upsert-by-personnel_id per prevenire duplicati in caso di chiamate concorrenti.
  * @returns {Promise<number|null>} contact id
  */
 async function ensurePersonnelNotificationContact(personnel) {
@@ -32,6 +33,25 @@ async function ensurePersonnelNotificationContact(personnel) {
     if (existing.recordset.length > 0) {
       return personnel.notification_contact_id;
     }
+  }
+
+  // Cerca un contatto bridge già esistente per questo personnel_id (anche se
+  // notification_contact_id non è ancora aggiornato sulla riga company_personnel).
+  const byPersonnelId = await query(`
+    SELECT TOP 1 id FROM notification_contacts
+    WHERE organization_id = @org AND personnel_id = @pid AND company_id = @cid
+    ORDER BY id ASC
+  `, { org: personnel.organization_id, pid: personnel.id, cid: personnel.company_id });
+
+  if (byPersonnelId.recordset.length > 0) {
+    const contactId = byPersonnelId.recordset[0].id;
+    // Allinea notification_contact_id se non era stato aggiornato
+    await query(`
+      UPDATE company_personnel
+      SET notification_contact_id = @contact_id, updated_at = GETDATE()
+      WHERE id = @id AND organization_id = @org AND notification_contact_id IS NULL
+    `, { contact_id: contactId, id: personnel.id, org: personnel.organization_id });
+    return contactId;
   }
 
   const email = bridgeEmailForPersonnel(personnel);

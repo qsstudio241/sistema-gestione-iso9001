@@ -29,7 +29,7 @@ describe('useDocumentTree company scope', () => {
     await act(async () => {
       await result.current.loadTree();
     });
-    expect(apiService.getDocumentTree).toHaveBeenCalledWith(2, null);
+    expect(apiService.getDocumentTree).toHaveBeenCalledWith(2, null, null);
   });
 
   it('loadTree con company_id passa il filtro', async () => {
@@ -37,7 +37,7 @@ describe('useDocumentTree company scope', () => {
     await act(async () => {
       await result.current.loadTree();
     });
-    expect(apiService.getDocumentTree).toHaveBeenCalledWith(2, 42);
+    expect(apiService.getDocumentTree).toHaveBeenCalledWith(2, 42, null);
   });
 
   it('loadChildren propaga company_id', async () => {

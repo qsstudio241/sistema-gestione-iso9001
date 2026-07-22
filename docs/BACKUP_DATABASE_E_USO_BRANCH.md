@@ -95,6 +95,8 @@ Così il branch è disponibile anche su GitHub e puoi riprenderlo da un altro PC
 - Push su `main` → Netlify esegue build e deploy → gli operatori vedono l’aggiornamento in 2–3 minuti
 - Push su un branch di feature (es. `feature/report-templates-and-custom-checklists`) → **nessun deploy** su produzione
 
+**Per testare modifiche UI/feature senza toccare `main`**: apri una **Pull Request** dal branch — Netlify crea un **Deploy Preview** su URL tipo `deploy-preview-N--systemgest.netlify.app`. Procedura completa: [Workflow branch → preview → merge](GUIDA_CONSOLIDATA.md#workflow-sviluppo-branch--preview--merge) in `GUIDA_CONSOLIDATA.md`.
+
 ### Flusso per mettere in produzione le nuove funzionalità
 
 1. **Sviluppo sul branch feature** (locale):

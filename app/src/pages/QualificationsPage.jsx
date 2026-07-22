@@ -3,11 +3,24 @@
  * Tab: Tutti | Saldatori | NDT | Coordinatori | Operatori | Abilitazioni | Generiche
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
+import QualificationUploadButton from "../components/QualificationUploadButton";
 import { formatDate } from "../utils/dateHelpers";
+import {
+    resolveInitialQualificationsCompanyScope,
+    persistQualificationsCompanyScope,
+} from "../utils/qualificationsCompanyScope";
+import AskAiButton from "../components/AskAiButton";
+import { saveQualContext } from "../utils/aiAssistantContext";
+import {
+    QUALIFICATION_SITUAZIONI,
+    STATS_TO_SITUAZIONE,
+    toggleSituazione,
+    situazioneLabel,
+} from "../utils/qualificationsSituazione";
 import "./QualificationsPage.css";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -20,6 +33,7 @@ const TABS = [
     { key: "ndt",           label: "NDT",              qualification_type: "ndt" },
     { key: "iso14731",      label: "Coordinatori",     qualification_type: "iso14731" },
     { key: "pes_pav",       label: "PES/PAV",          qualification_type: "pes_pav" },
+    { key: "salute_mansione", label: "Salute mansione", qualification_type: "salute_mansione" },
     { key: "generico",      label: "Generiche",        qualification_type: "generico" },
 ];
 
@@ -31,6 +45,7 @@ const TAB_COLUMNS = {
     ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Approvazione", "Azioni"],
     iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Approvazione", "Azioni"],
     pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
+    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
     generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Approvazione", "Azioni"],
     tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Approvazione", "Azioni"],
 };
@@ -64,17 +79,47 @@ function ApprovalBadge({ value }) {
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
 
-function StatsBar({ stats }) {
+function StatsBar({ stats, activeSituazione, onStatClick }) {
     if (!stats) return null;
+
+    const items = [
+        { key: "total", cls: "", lbl: "Totale" },
+        { key: "valide", cls: "sq-stat-verde", lbl: "Valide" },
+        { key: "in_scadenza_60", cls: "sq-stat-giallo", lbl: "In scad. 60gg" },
+        { key: "in_scadenza_30", cls: "sq-stat-arancione", lbl: "Urgenti 30gg" },
+        { key: "scadute", cls: "sq-stat-rosso", lbl: "Scadute" },
+    ];
+
     return (
-        <div className="sq-stats-bar">
-            <div className="sq-stat"><span className="sq-stat-num">{stats.total}</span><span className="sq-stat-lbl">Totale</span></div>
-            <div className="sq-stat sq-stat-verde"><span className="sq-stat-num">{stats.valide}</span><span className="sq-stat-lbl">Valide</span></div>
-            <div className="sq-stat sq-stat-giallo"><span className="sq-stat-num">{stats.in_scadenza_60}</span><span className="sq-stat-lbl">In scad. 60gg</span></div>
-            <div className="sq-stat sq-stat-arancione"><span className="sq-stat-num">{stats.in_scadenza_30}</span><span className="sq-stat-lbl">Urgenti 30gg</span></div>
-            <div className="sq-stat sq-stat-rosso"><span className="sq-stat-num">{stats.scadute}</span><span className="sq-stat-lbl">Scadute</span></div>
+        <div className="sq-stats-bar" role="group" aria-label="Filtri rapidi per situazione">
+            {items.map(({ key, cls, lbl }) => {
+                const mapped = STATS_TO_SITUAZIONE[key] ?? "";
+                const isActive = mapped ? activeSituazione === mapped : !activeSituazione;
+                return (
+                    <button
+                        key={key}
+                        type="button"
+                        className={`sq-stat sq-stat-clickable ${cls}${isActive ? " sq-stat-active" : ""}`}
+                        onClick={() => onStatClick(key)}
+                        title={mapped ? `Filtra: ${lbl}` : "Mostra tutte le situazioni"}
+                        aria-pressed={isActive}
+                    >
+                        <span className="sq-stat-num">{stats[key]}</span>
+                        <span className="sq-stat-lbl">{lbl}</span>
+                    </button>
+                );
+            })}
             {stats.da_approvare > 0 && (
-                <div className="sq-stat sq-stat-warning"><span className="sq-stat-num">{stats.da_approvare}</span><span className="sq-stat-lbl">Da approvare</span></div>
+                <button
+                    type="button"
+                    className={`sq-stat sq-stat-clickable sq-stat-warning${activeSituazione === "da_approvare" ? " sq-stat-active" : ""}`}
+                    onClick={() => onStatClick("da_approvare")}
+                    title="Filtra: Da approvare"
+                    aria-pressed={activeSituazione === "da_approvare"}
+                >
+                    <span className="sq-stat-num">{stats.da_approvare}</span>
+                    <span className="sq-stat-lbl">Da approvare</span>
+                </button>
             )}
         </div>
     );
@@ -82,7 +127,7 @@ function StatsBar({ stats }) {
 
 // ── Riga tabella (rendering dinamico per tab) ─────────────────────────────────
 
-function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, deleteId, setDeleteId, canApprove }) {
+function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, onHistory, deleteId, setDeleteId, canApprove }) {
     const sem = SEMAFORO[q.semaforo] || SEMAFORO.grigio;
 
     const actionBtns = (
@@ -97,6 +142,7 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
                 <div className="sq-action-group">
                     <button className="sq-btn-icon" title="Modifica" onClick={() => onEdit(q)}>{"\u270F\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-renew" title="Rinnova" onClick={() => onRenew(q)}>{"\u267B\uFE0F"}</button>
+                    <button className="sq-btn-icon sq-btn-history" title="Storico rinnovi" onClick={() => onHistory(q)}>{"\uD83D\uDCC5"}</button>
                     {canApprove && q.approval_status !== "approvata" && (
                         <button className="sq-btn-icon sq-btn-approve" title="Approva" onClick={() => onApprove(q.id)}>{"\u2705"}</button>
                     )}
@@ -121,7 +167,11 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
 
     const certCell = (
         <td className="sq-col-cert">
-            {q.certificate_number || "\u2014"}
+            {q.certificate_file_url
+                ? <a href={q.certificate_file_url} target="_blank" rel="noopener noreferrer" className="sq-cert-link" title="Apri certificato">
+                    {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
+                  </a>
+                : (q.certificate_number || "\u2014")}
             {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
         </td>
     );
@@ -212,14 +262,14 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, de
         );
     }
 
-    if (tabKey === "generico") {
+    if (tabKey === "salute_mansione" || tabKey === "generico") {
         return (
             <tr className={`sq-row sq-row-${q.semaforo}`}>
                 {personCell}
                 {certCell}
                 <td>{q.qualification_type || "\u2014"}</td>
-                <td>{q.training_hours != null ? `${q.training_hours}h` : "\u2014"}</td>
-                <td>{q.examiner_body || "\u2014"}</td>
+                <td>{tabKey === "generico" && q.training_hours != null ? `${q.training_hours}h` : (q.issuing_body || "\u2014")}</td>
+                <td>{tabKey === "generico" ? (q.examiner_body || "\u2014") : (q.standard_ref || "\u2014")}</td>
                 {expiryCell}
                 {apprCell}
                 {actionBtns}
@@ -262,8 +312,10 @@ function QualificationsPage() {
     const [companies,  setCompanies]  = useState([]);
     const LIMIT = 30;
 
+    const [companyScope, setCompanyScope] = useState(() => resolveInitialQualificationsCompanyScope());
+
     const [filters, setFiltersState] = useState({
-        search: "", stato: "", expiring_days: "", approval_status: "", company_id: "",
+        search: "", situazione: "",
     });
 
     const [formOpen,    setFormOpen]    = useState(false);
@@ -284,6 +336,33 @@ function QualificationsPage() {
         }).catch(() => {});
     }, []);
 
+    useEffect(() => {
+        const access = user?.company_access;
+        if (Array.isArray(access) && access.length === 1 && !companyScope) {
+            const onlyId = String(access[0].company_id);
+            setCompanyScope(onlyId);
+            persistQualificationsCompanyScope(onlyId);
+        }
+    }, [user, companyScope]);
+
+    const scopeCompanyName = useMemo(() => {
+        if (!companyScope) return "Tutto lo studio";
+        const match = companies.find((c) => String(c.id) === String(companyScope));
+        return match?.name || `Azienda #${companyScope}`;
+    }, [companyScope, companies]);
+
+    const handleCompanyScopeChange = useCallback((value) => {
+        setCompanyScope(value);
+        persistQualificationsCompanyScope(value);
+        setPage(1);
+    }, []);
+
+    const handleStatClick = useCallback((statKey) => {
+        const next = STATS_TO_SITUAZIONE[statKey] ?? "";
+        setFiltersState((f) => ({ ...f, situazione: toggleSituazione(f.situazione, next) }));
+        setPage(1);
+    }, []);
+
     const currentTab = TABS.find(t => t.key === activeTab) || TABS[0];
 
     const loadData = useCallback(async () => {
@@ -292,24 +371,15 @@ function QualificationsPage() {
         try {
             const params = { page, limit: LIMIT };
             if (currentTab.qualification_type) params.qualification_type = currentTab.qualification_type;
-            if (filters.search)          params.search          = filters.search;
-            if (filters.approval_status) params.approval_status = filters.approval_status;
-            if (filters.company_id)      params.company_id      = filters.company_id;
+            if (filters.search) params.search = filters.search;
+            if (filters.situazione) params.situazione = filters.situazione;
+            if (companyScope) params.company_id = companyScope;
 
-            // Filtro "stato": mappa su status DB oppure expiring_days
-            if (filters.stato === "valida")          params.status = "valida";
-            else if (filters.stato === "sospesa")    params.status = "sospesa";
-            else if (filters.stato === "revocata")   params.status = "revocata";
-            else if (filters.stato === "in_scadenza_90") params.expiring_days = 90;
-            else if (filters.stato === "scaduta")    params.expiring_days = -1;
-
-            // Filtro scadenze granulare: attivo solo se stato non copre già l'expiry
-            const statoUsesExpiry = filters.stato === "in_scadenza_90" || filters.stato === "scaduta";
-            if (!statoUsesExpiry && filters.expiring_days) params.expiring_days = filters.expiring_days;
+            const statsParams = companyScope ? { company_id: companyScope } : {};
 
             const [res, statsRes] = await Promise.all([
                 apiService.getQualifications(params),
-                apiService.getQualificationsStats(),
+                apiService.getQualificationsStats(statsParams),
             ]);
             const list = Array.isArray(res?.qualifications)
                 ? res.qualifications
@@ -322,11 +392,18 @@ function QualificationsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, filters, currentTab]);
+    }, [page, filters, currentTab, companyScope]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
-    function handleNew()   { setEditingQual(null); setFormOpen(true); }
+    function handleNew() {
+        if (!companyScope) {
+            setError("Seleziona l'ambito azienda prima di creare una nuova qualifica.");
+            return;
+        }
+        setEditingQual(null);
+        setFormOpen(true);
+    }
     function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
     function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
 
@@ -364,6 +441,22 @@ function QualificationsPage() {
         setFormOpen(true);
     }
 
+    const [historyModal, setHistoryModal] = useState(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
+
+    async function handleOpenHistory(q) {
+        setHistoryModal({ id: q.id, person_name: q.person_name, history: [] });
+        setHistoryLoading(true);
+        try {
+            const res = await apiService.getQualificationHistory(q.id);
+            setHistoryModal({ id: q.id, person_name: q.person_name, history: res?.history || [] });
+        } catch (err) {
+            setHistoryModal({ id: q.id, person_name: q.person_name, history: [], error: err.message });
+        } finally {
+            setHistoryLoading(false);
+        }
+    }
+
     const columns = TAB_COLUMNS[activeTab] || TAB_COLUMNS.tutti;
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
@@ -375,11 +468,54 @@ function QualificationsPage() {
                     <h2 className="sq-title">{"\uD83C\uDF93"} Qualifiche Personale</h2>
                     <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
                 </div>
-                <button className="sq-btn-new" onClick={handleNew}>+ Nuova qualifica</button>
+                <div className="sq-header-actions">
+                    {companies.length > 0 && (
+                        <label className="sq-scope-label">
+                            {"Ambito:"}
+                            <select
+                                className="sq-select sq-scope-select"
+                                value={companyScope}
+                                onChange={(e) => handleCompanyScopeChange(e.target.value)}
+                                aria-label="Ambito qualifiche per azienda"
+                            >
+                                <option value="">{"Tutto lo studio"}</option>
+                                {companies.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+                    {companyScope ? (
+                        <QualificationUploadButton
+                            companyId={companyScope}
+                            companyName={scopeCompanyName}
+                            onUploadComplete={loadData}
+                        />
+                    ) : companies.length > 0 && (
+                        <span className="sq-upload-no-scope">
+                            Seleziona un&apos;azienda specifica per caricare i patentini
+                        </span>
+                    )}
+                    <button
+                        className="sq-btn-new"
+                        onClick={handleNew}
+                        disabled={!companyScope}
+                        title={!companyScope ? "Seleziona un'azienda nell'ambito" : ""}
+                    >
+                        + Nuova qualifica
+                    </button>
+                </div>
             </div>
+            {companyScope && (
+                <p className="sq-scope-hint">{"Ambito attivo: "}{scopeCompanyName}</p>
+            )}
 
             {/* Stats */}
-            <StatsBar stats={stats} />
+            <StatsBar
+                stats={stats}
+                activeSituazione={filters.situazione}
+                onStatClick={handleStatClick}
+            />
 
             {/* Tab di tipo */}
             <div className="sq-tabs">
@@ -396,12 +532,6 @@ function QualificationsPage() {
 
             {/* Filtri */}
             <div className="sq-toolbar">
-                {companies.length > 0 && (
-                    <select className="sq-select" value={filters.company_id} onChange={e => setFilter("company_id", e.target.value)}>
-                        <option value="">Tutte le aziende</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                )}
                 <input
                     className="sq-search"
                     type="text"
@@ -409,45 +539,45 @@ function QualificationsPage() {
                     value={filters.search}
                     onChange={e => setFilter("search", e.target.value)}
                 />
-                <select className="sq-select" value={filters.stato} onChange={e => setFilter("stato", e.target.value)}>
-                    <option value="">Tutti gli stati</option>
-                    <option value="valida">Valida</option>
-                    <option value="in_scadenza_90">In scadenza (&le;90gg)</option>
-                    <option value="scaduta">Scaduta</option>
-                    <option value="sospesa">Sospesa</option>
-                    <option value="revocata">Revocata</option>
-                </select>
-                <select className="sq-select" value={filters.approval_status} onChange={e => setFilter("approval_status", e.target.value)}>
-                    <option value="">Qualsiasi approvazione</option>
-                    <option value="bozza">Bozza</option>
-                    <option value="in_revisione">In revisione</option>
-                    <option value="approvata">Approvata</option>
-                    <option value="rifiutata">Rifiutata</option>
-                </select>
                 <select
-                    className="sq-select"
-                    value={filters.expiring_days}
-                    onChange={e => setFilter("expiring_days", e.target.value)}
-                    disabled={filters.stato === "in_scadenza_90" || filters.stato === "scaduta"}
-                    title={filters.stato === "in_scadenza_90" || filters.stato === "scaduta" ? "Disabilitato: lo stato selezionato include già il filtro scadenza" : ""}
+                    className="sq-select sq-situazione-select"
+                    value={filters.situazione}
+                    onChange={e => setFilter("situazione", e.target.value)}
+                    aria-label="Filtra per situazione"
                 >
-                    <option value="">Tutte le scadenze</option>
-                    <option value="30">Scadono entro 30 gg</option>
-                    <option value="60">Scadono entro 60 gg</option>
-                    <option value="90">Scadono entro 90 gg</option>
-                    <option value="-1">Già scadute</option>
+                    <option value="">Tutte le situazioni</option>
+                    {QUALIFICATION_SITUAZIONI.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
                 </select>
-                {(filters.search || filters.stato || filters.expiring_days || filters.approval_status || filters.company_id) && (
+                {(filters.search || filters.situazione) && (
                     <button
                         className="sq-btn-secondary"
-                        onClick={() => { setFiltersState({ search: "", stato: "", expiring_days: "", approval_status: "", company_id: "" }); setPage(1); }}
+                        onClick={() => { setFiltersState({ search: "", situazione: "" }); setPage(1); }}
                         title="Azzera filtri"
                     >
                         Azzera filtri
                     </button>
                 )}
                 <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">{"\u21BB"}</button>
+                <AskAiButton
+                    label="Chiedi all\u2019AI"
+                    onBeforeNavigate={() => saveQualContext({
+                        qualType:      activeTab !== "tutti" ? activeTab : null,
+                        qualTypeLabel: TABS.find(t => t.key === activeTab)?.label || null,
+                        companyName:   scopeCompanyName !== "Tutto lo studio" ? scopeCompanyName : null,
+                        companyId:     companyScope || null,
+                    })}
+                />
             </div>
+
+            {filters.situazione && (
+                <p className="sq-filter-hint">
+                    {"Filtro attivo: "}
+                    <strong>{situazioneLabel(filters.situazione)}</strong>
+                    {" \u2014 clicca di nuovo la statistica o usa Azzera filtri."}
+                </p>
+            )}
 
             {error && (
                 <div className="sq-error">
@@ -482,6 +612,7 @@ function QualificationsPage() {
                                     onApprove={handleApprove}
                                     onReject={handleRejectOpen}
                                     onRenew={handleRenew}
+                                    onHistory={handleOpenHistory}
                                     deleteId={deleteId}
                                     setDeleteId={setDeleteId}
                                     canApprove={canApprove}
@@ -505,9 +636,52 @@ function QualificationsPage() {
             {formOpen && (
                 <QualificationForm
                     qualification={editingQual}
+                    defaultCompanyId={!editingQual && companyScope ? companyScope : undefined}
                     onSave={handleSaved}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />
+            )}
+
+            {/* Modal storico rinnovi */}
+            {historyModal && (
+                <div className="sq-modal-overlay">
+                    <div className="sq-modal">
+                        <h3>Storico rinnovi — {historyModal.person_name}</h3>
+                        {historyLoading ? (
+                            <div className="sq-loading"><div className="sq-spinner" /><span>Caricamento...</span></div>
+                        ) : historyModal.error ? (
+                            <p style={{color:"#b91c1c"}}>{"\u26A0\uFE0F"} {historyModal.error}</p>
+                        ) : historyModal.history.length === 0 ? (
+                            <p>Nessun rinnovo precedente trovato.</p>
+                        ) : (
+                            <table style={{width:"100%", borderCollapse:"collapse", fontSize:13, marginTop:8}}>
+                                <thead>
+                                    <tr style={{borderBottom:"2px solid #e5e7eb"}}>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>ID</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Emissione</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Scadenza</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Certificato</th>
+                                        <th style={{textAlign:"left", padding:"4px 8px"}}>Stato</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {historyModal.history.map((h, i) => (
+                                        <tr key={h.id} style={{background: i === 0 ? "#f0fdf4" : "transparent", borderBottom:"1px solid #f3f4f6"}}>
+                                            <td style={{padding:"4px 8px"}}>#{h.id}{i === 0 ? " (attuale)" : ""}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.issue_date ? formatDate(h.issue_date) : "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.expiry_date ? formatDate(h.expiry_date) : "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}>{h.certificate_number || "\u2014"}</td>
+                                            <td style={{padding:"4px 8px"}}><ApprovalBadge value={h.approval_status || "bozza"} /></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                        <div className="sq-modal-actions">
+                            <button className="sq-btn-secondary" onClick={() => setHistoryModal(null)}>Chiudi</button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Modal rifiuto */}

@@ -4,14 +4,22 @@
 
 /* eslint-env jest */
 
-const { mapMessagesToGemini } = require('./adapters/geminiAdapter');
+const { mapMessagesToGemini, embed: geminiEmbed } = require('./adapters/geminiAdapter');
+const keyPool = require('./adapters/geminiKeyPool');
+const anthropicKeyPool = require('./adapters/anthropicKeyPool');
 const openaiAdapter = require('./adapters/openaiAdapter');
 const aiProviderAdapter = require('./aiProviderAdapter');
 
 const ENV_KEYS = [
   'GEMINI_API_KEY',
+  'GEMINI_API_KEYS',
   'GEMINI_MODEL',
   'GEMINI_MAX_ATTEMPTS',
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_API_KEYS',
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_MAX_ATTEMPTS',
+  'AI_ANTHROPIC_FALLBACK',
   'AZURE_OPENAI_ENDPOINT',
   'AZURE_OPENAI_API_KEY',
   'AZURE_OPENAI_DEPLOYMENT',
@@ -25,12 +33,30 @@ function clearAiEnv() {
   for (const k of ENV_KEYS) {
     delete process.env[k];
   }
+  keyPool.resetKeyPoolState();
+  anthropicKeyPool.resetKeyPoolState();
 }
 
 describe('getActiveProvider cascade', () => {
   beforeEach(() => {
     clearAiEnv();
     jest.restoreAllMocks();
+  });
+
+  test('uses Anthropic when Gemini absent and ANTHROPIC_API_KEY set', () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('anthropic');
+  });
+
+  test('prefers Gemini when both Gemini and Anthropic keys are set', () => {
+    process.env.GEMINI_API_KEY = 'g-key';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('gemini');
+  });
+
+  test('prefers Gemini when GEMINI_API_KEYS is set without primary key', () => {
+    process.env.GEMINI_API_KEYS = 'secondary-key';
+    expect(aiProviderAdapter.getActiveProvider()).toBe('gemini');
   });
 
   test('prefers Gemini when GEMINI_API_KEY is set', () => {
@@ -305,6 +331,87 @@ describe('aiProviderAdapter.chat error handling', () => {
     expect(chunks).toEqual(['full']);
   });
 
+  test('Gemini path: falls back to Anthropic when all Gemini keys are exhausted', async () => {
+    process.env.GEMINI_API_KEY = 'key-primary';
+    process.env.GEMINI_MAX_ATTEMPTS = '1';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-fallback';
+    process.env.ANTHROPIC_MODEL = 'claude-test';
+
+    const quotaError = {
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => ({
+        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+      }),
+    };
+    const anthropicOk = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        model: 'claude-test',
+        content: [{ type: 'text', text: 'risposta-claude' }],
+        usage: { input_tokens: 2, output_tokens: 3 },
+      }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(quotaError)
+      .mockResolvedValueOnce(anthropicOk);
+
+    const res = await aiProviderAdapter.chat(
+      [
+        { role: 'system', content: 'sys' },
+        { role: 'user', content: 'ciao' },
+      ],
+      { timeout: 5000, responseFormat: 'json' }
+    );
+
+    expect(res.content).toBe('risposta-claude');
+    expect(res.provider).toBe('anthropic');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[1][0])).toContain('/v1/messages');
+  });
+
+  test('Gemini path: switches API key when primary quota is exhausted', async () => {
+    process.env.GEMINI_API_KEY = 'key-primary';
+    process.env.GEMINI_API_KEYS = 'key-secondary';
+    process.env.GEMINI_MAX_ATTEMPTS = '1';
+
+    const quotaError = {
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => ({
+        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+      }),
+    };
+    const okResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'ok-secondary' }], role: 'model' } }],
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+      }),
+    };
+
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(quotaError)
+      .mockResolvedValueOnce(okResponse);
+
+    const res = await aiProviderAdapter.chat(
+      [{ role: 'user', content: 'go' }],
+      { timeout: 5000 }
+    );
+
+    expect(res.content).toBe('ok-secondary');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[0][0])).toContain('key=key-primary');
+    expect(String(fetchSpy.mock.calls[1][0])).toContain('key=key-secondary');
+  });
+
   test('Gemini path: retries on 503 then succeeds (model overloaded)', async () => {
     process.env.GEMINI_API_KEY = 'gk';
     process.env.GEMINI_MAX_ATTEMPTS = '3';
@@ -399,4 +506,87 @@ describe('aiProviderAdapter.chat error handling', () => {
     const [, init] = fetchSpy.mock.calls[0];
     expect(init.signal).toBeDefined();
   });
+});
+
+describe('geminiAdapter.embed difensivo (timeout + rate-limit)', () => {
+  beforeEach(() => {
+    clearAiEnv();
+    delete process.env.GEMINI_EMBED_TIMEOUT_MS;
+    delete process.env.GEMINI_EMBED_MODEL;
+    jest.restoreAllMocks();
+  });
+
+  test('passa un AbortSignal e aborta in modo pulito se il provider non risponde', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_EMBED_TIMEOUT_MS = '50';
+
+    // Provider "lento": la fetch si risolve solo quando viene abortita dal timeout.
+    const fetchSpy = jest.spyOn(global, 'fetch').mockImplementation((_url, init) => {
+      return new Promise((_resolve, reject) => {
+        const onAbort = () =>
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        if (init && init.signal) {
+          if (init.signal.aborted) return onAbort();
+          init.signal.addEventListener('abort', onAbort);
+        }
+        // altrimenti non si risolve mai (simula hang)
+      });
+    });
+
+    await expect(geminiEmbed(['testo da indicizzare'])).rejects.toMatchObject({
+      code: 'AI_REQUEST_FAILED',
+    });
+    const [, init] = fetchSpy.mock.calls[0];
+    expect(init.signal).toBeDefined();
+  }, 10000);
+
+  test('skip pulito nel job: chi chiama (try/catch indexer) prosegue dopo il timeout', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+    process.env.GEMINI_EMBED_TIMEOUT_MS = '50';
+
+    jest.spyOn(global, 'fetch').mockImplementation((_url, init) => {
+      return new Promise((_resolve, reject) => {
+        const onAbort = () =>
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        if (init && init.signal) {
+          if (init.signal.aborted) return onAbort();
+          init.signal.addEventListener('abort', onAbort);
+        }
+      });
+    });
+
+    // Replica la gestione errori dell'indexer: in caso di errore embed,
+    // vettori = null e il job prosegue senza bloccarsi.
+    const batch = ['c1', 'c2'];
+    let vectors;
+    let jobContinued = false;
+    try {
+      vectors = await geminiEmbed(batch);
+    } catch {
+      vectors = batch.map(() => null);
+    }
+    jobContinued = true;
+
+    expect(vectors).toEqual([null, null]);
+    expect(jobContinued).toBe(true);
+  }, 10000);
+
+  test('cap ai retry su 429: fallisce pulito invece di ciclare all\u2019infinito', async () => {
+    process.env.GEMINI_API_KEY = 'gk';
+
+    const rateLimited = {
+      ok: false,
+      status: 429,
+      headers: { get: () => '0' }, // retry-after 0 => nessuna attesa reale
+      json: async () => ({ error: { message: 'rate limit exceeded' } }),
+    };
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(rateLimited);
+
+    await expect(geminiEmbed(['x'])).rejects.toMatchObject({
+      code: 'AI_UPSTREAM_ERROR',
+      status: 429,
+    });
+    // 1 tentativo iniziale + 2 retry massimi = 3 chiamate, poi stop.
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  }, 10000);
 });
