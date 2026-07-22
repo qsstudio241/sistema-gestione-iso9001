@@ -20,6 +20,7 @@ import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
+import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
 import {
   resolveInitialRegistryCompanyScope,
   persistRegistryCompanyScope,
@@ -31,10 +32,12 @@ import DocumentDetailPanel from "./DocumentDetailPanel";
 import DocumentBreadcrumb from "./DocumentBreadcrumb";
 import NormUploadButton from "./NormUploadButton";
 import NormCodesImportButton from "./NormCodesImportButton";
-import useDocumentTree from "../hooks/useDocumentTree";
+import useDocumentTree, {
+  resolveNewFolderParentId,
+} from "../hooks/useDocumentTree";
 import useDocumentTags from "../hooks/useDocumentTags";
 import { formatDate } from "../utils/dateHelpers";
-import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
+import { shouldShowDocumentStatusBadge, isDocumentFolder } from "../utils/documentValidity";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
@@ -1046,6 +1049,23 @@ function DocumentRegistry() {
     [filters, scopeCompanyName]
   );
 
+  const formContextScope = useMemo(
+    () =>
+      resolveRegistryFormContextScope({
+        registryCompanyScope,
+        isStudioScope,
+        companies,
+      }),
+    [registryCompanyScope, isStudioScope, companies]
+  );
+
+  const defaultFolderIdForNew = useMemo(() => {
+    if (tree.selectedNode) {
+      return resolveNewFolderParentId(tree.selectedNode);
+    }
+    return tree.selectedNodeId || null;
+  }, [tree.selectedNode, tree.selectedNodeId]);
+
   const syncRegistryUrl = useCallback(
     (tab, selectId = null, companyId = registryCompanyScope) => {
       replace(
@@ -1340,7 +1360,19 @@ function DocumentRegistry() {
   // ─── Azioni ────────────────────────────────────────────────────────────
 
   const handleNew  = () => { setEditingDoc(null);  setModalOpen(true); };
-  const handleEdit = (doc) => { setEditingDoc(doc); setModalOpen(true); };
+  const handleEdit = (doc) => {
+    if (isDocumentFolder(doc)) {
+      setEditBlockedToast(
+        doc.is_system_folder
+          ? "Le cartelle di sistema non si modificano da qui. Usa l'albero per navigare; il nome è protetto."
+          : "Questo elemento è una cartella. Per rinominarla usa Rinomina nell'albero documentale."
+      );
+      setTimeout(() => setEditBlockedToast(null), 5000);
+      return;
+    }
+    setEditingDoc(doc);
+    setModalOpen(true);
+  };
 
   const handleArchive        = (id)  => { setArchiveId(id); setArchiveError(null); };
   const handleCancelArchive  = ()    => setArchiveId(null);
@@ -1396,6 +1428,7 @@ function DocumentRegistry() {
   const [inboxOpen, setInboxOpen] = useState(false);
   const [archivingOrphan, setArchivingOrphan] = useState(false);
   const [inboxToast, setInboxToast] = useState(null);
+  const [editBlockedToast, setEditBlockedToast] = useState(null);
 
   const handleDeleteDoc = async (docId) => {
     setDeleting(true);
@@ -1550,6 +1583,12 @@ function DocumentRegistry() {
         <div className="docregistry-error" style={{ marginBottom: 12 }}>
           ⚠️ {archiveError}
           <button onClick={() => setArchiveError(null)}>✕</button>
+        </div>
+      )}
+
+      {editBlockedToast && (
+        <div className="docregistry-toast" role="status" style={{ marginBottom: 12 }}>
+          {editBlockedToast}
         </div>
       )}
 
@@ -1718,6 +1757,7 @@ function DocumentRegistry() {
                   onCreateFolder={tree.createFolder}
                   onRenameFolder={tree.renameFolder}
                   onDeleteFolder={tree.deleteFolder}
+                  foldersOnly
                 />
               ) : (
                 <StandardTreeView
@@ -1984,9 +2024,16 @@ function DocumentRegistry() {
           doc={editingDoc}
           companies={companies}
           standards={standards}
-          defaultFolderId={!editingDoc ? (tree.selectedNodeId || null) : undefined}
+          defaultFolderId={!editingDoc ? defaultFolderIdForNew : undefined}
           defaultCompanyId={!editingDoc && companyScopeId ? companyScopeId : undefined}
-          defaultContentScope={!editingDoc && isStudioScope ? "studio" : undefined}
+          defaultContentScope={
+            !editingDoc && isStudioScope
+              ? "studio"
+              : !editingDoc && companyScopeId
+                ? "client"
+                : undefined
+          }
+          contextScope={formContextScope}
           onSave={handleSaved}
           onClose={() => { setModalOpen(false); setEditingDoc(null); }}
         />
@@ -1998,6 +2045,10 @@ function DocumentRegistry() {
           doc={fileDialogDoc}
           onClose={async () => {
             setFileDialogDoc(null);
+            await Promise.all([loadStats(), loadPriorityDocs()]);
+            if (activeTab === "catalog") await loadCatalog();
+          }}
+          onDocumentUpdated={async () => {
             await Promise.all([loadStats(), loadPriorityDocs()]);
             if (activeTab === "catalog") await loadCatalog();
           }}
