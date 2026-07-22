@@ -1,10 +1,12 @@
 # DEPUTYTASK1 — Rischi §6.1: campo `nature` (rischio/opportunità) — Slice 1-3
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK, mergiato PR #279 (22/07/2026)  
 **Priorità:** P1 roadmap — §6.1 ISO 9001/14001/45001  
 **Branch base:** `main`  
 **Prossima migrazione disponibile:** 121  
 **Creato da:** Lead 21/07/2026
+
+> **Correzione post-merge (22/07/2026)**: il brief indicava erroneamente `backend/database/migrations/` come cartella destinazione — quella è una **reliquia storica non più attiva** (mai deployata sul VPS). La cartella canonica condivisa è **`database/migrations/`** (root repo). Le 3 migrazioni sono state rinumerate **123/124/125** (121/122 erano già occupati da un'altra sessione parallela: `121_nc_correction_gate.sql`, `122_qualifications_14732_fields.sql`) e spostate nella cartella corretta. Nessun impatto sul DB: gli script `run-migration-*-vps.js` avevano SQL inline, già eseguiti con successo. Vedi lezione in `GUIDA_CONSOLIDATA.md`.
 
 ---
 
