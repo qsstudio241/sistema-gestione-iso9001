@@ -163,6 +163,8 @@
                                      "src/controllers/qualifications.controller.js",
                                      "src/controllers/projects.controller.js",
                                      "src/controllers/risks.controller.js",
+                                     "src/controllers/contextFactors.controller.js",
+                                     "src/controllers/interestedParties.controller.js",
                                      "src/controllers/organization.controller.js",
                                      "src/controllers/auth.controller.js",
                                      "src/controllers/billing.controller.js",
@@ -216,7 +218,8 @@
                                      "src/routes/normBroker.routes.js",
                                      "src/routes/gapAnalysis.routes.js",
                                      "src/routes/aiAssist.routes.js",
-                                     "src/routes/aiChat.routes.js"
+                                     "src/routes/aiChat.routes.js",
+                                     "src/routes/risks.routes.js"
                                  ]
                    },
                    {
