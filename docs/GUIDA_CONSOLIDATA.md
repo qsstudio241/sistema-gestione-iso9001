@@ -1955,7 +1955,9 @@ Questa sezione consolida le decisioni operative per supportare **due flussi** co
 
 **Fase 3 integrazioni audit/NC (02/07/2026)**: `conformity_hint` sincronizzato da ultimo audit completato (`POST .../sync-audit-hints`); azioni Piano Azioni con `source_category='sal_gap'` (mig. 118).
 
-**Fase 4 feed Riesame (02/07/2026)**: widget copertura normativa del Riesame §9.3 legge la matrice SAL per azienda (`norm_coverage_source=sal`). Prossimo opzionale: Fase 5 AI.
+**Fase 4 feed Riesame (02/07/2026)**: widget copertura normativa del Riesame §9.3 legge la matrice SAL per azienda (`norm_coverage_source=sal`).
+
+**Fase 5-A/5-B AI SAL (07–18/07/2026 — completate)**: suggeritore stato da evidenze (human-in-the-loop) + asse conformità legislativa (`linked_legislation`, ingest Normattiva, capability `SAL_LEGAL_CONFORMITY`). Prossimo opzionale: Fase 5-C (assistente AI Riesame §9.3); smoke L3 consigliato su `/sal`.
 
 ### Golden rules (da rispettare sempre)
 
