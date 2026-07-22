@@ -10,6 +10,7 @@ import {
   resolveActiveChecklistFocus,
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
+  loadQualContext,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import {
@@ -20,13 +21,62 @@ import {
 } from "../utils/aiAssistantChatPersist";
 import "./AiAssistantPage.css";
 
-const SUGGESTIONS = [
+const SUGGESTIONS_GENERIC = [
   "Quante NC aperte ci sono?",
   "Quali documenti sono in scadenza?",
   "Riassumi le conclusioni degli ultimi audit",
   "Quali rischi hanno score pi\u00F9 alto?",
   "Stato delle qualifiche in scadenza",
 ];
+
+/**
+ * Costruisce i chip di suggerimento contestuali.
+ * Se c'è un audit aperto con clausola in focus → suggerimenti specifici per campo.
+ * Se c'è un'azienda selezionata → suggerimenti per quell'azienda.
+ * Completa con generici fino a max 5 voci.
+ */
+function buildContextualSuggestions({ checklistFocus, companyContext, standardContext, currentAudit }) {
+  const suggestions = [];
+  const clauseRef  = checklistFocus?.clauseRef;
+  const stdLabel   = standardContext?.label;
+  const company    = companyContext?.companyName;
+  const auditNum   =
+    currentAudit?.metadata?.auditNumber ||
+    currentAudit?.metadata?.generalData?.auditNumber ||
+    null;
+
+  const qualCtx = loadQualContext();
+
+  if (clauseRef) {
+    const normPart = stdLabel ? ` di ${stdLabel}` : "";
+    suggestions.push(`Cosa chiede il \u00A7${clauseRef}${normPart}?`);
+    suggestions.push(`Cosa devo verificare concretamente per il \u00A7${clauseRef}?`);
+    suggestions.push(`Quali documenti coprono il requisito \u00A7${clauseRef}?`);
+    if (auditNum) suggestions.push(`Cosa manca per chiudere l\u2019audit ${auditNum}?`);
+  } else if (qualCtx?.qualType) {
+    const qCompany = qualCtx.companyName || company;
+    const qLabel   = qualCtx.qualTypeLabel || qualCtx.qualType;
+    const qSuffix  = qCompany ? ` di ${qCompany}` : "";
+    suggestions.push(`Quali ${qLabel} in scadenza nei prossimi 30 giorni${qSuffix}?`);
+    suggestions.push(`Elenca le ${qLabel} non ancora approvate${qSuffix}`);
+    if (qCompany) suggestions.push(`Riassumi lo stato di tutte le qualifiche di ${qCompany}`);
+    suggestions.push(`Quali qualifiche sono scadute${qSuffix}?`);
+  } else if (auditNum) {
+    suggestions.push(`Cosa manca per chiudere l\u2019audit ${auditNum}?`);
+    suggestions.push(`NC aperte nell\u2019audit ${auditNum}`);
+    if (company) suggestions.push(`Riassumi le evidenze raccolte per ${company}`);
+  } else if (company) {
+    suggestions.push(`NC aperte di ${company}`);
+    suggestions.push(`Documenti in scadenza per ${company}`);
+    suggestions.push(`Stato qualifiche di ${company}`);
+  }
+
+  for (const g of SUGGESTIONS_GENERIC) {
+    if (suggestions.length >= 5) break;
+    if (!suggestions.includes(g)) suggestions.push(g);
+  }
+  return suggestions.slice(0, 5);
+}
 
 function formatTime(date) {
   return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
@@ -647,7 +697,7 @@ function AiAssistantPage() {
               </p>
             )}
             <div className="ai-assistant-suggestions">
-              {SUGGESTIONS.map((s) => (
+              {buildContextualSuggestions({ checklistFocus, companyContext, standardContext, currentAudit }).map((s) => (
                 <button
                   key={s}
                   className="ai-assistant-suggestion-chip"

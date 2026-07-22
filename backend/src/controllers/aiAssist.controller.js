@@ -16,7 +16,7 @@ function stripCodeFences(raw) {
 
 /**
  * POST /ai/suggest
- * Body: { feature: 'review_requirements' | 'audit_conclusions', context: {...} }
+ * Body: { feature: 'review_requirements' | 'audit_conclusions' | 'nc_cause', context: {...} }
  */
 async function suggest(req, res) {
   try {
@@ -52,6 +52,12 @@ async function suggest(req, res) {
         built = await contextBuilder.buildAuditConclusionsContext({
           ...context,
           userId: req.user.user_id || req.user.id,
+          organizationId: req.user.organization_id,
+        });
+        break;
+      case 'nc_cause':
+        built = await contextBuilder.buildNcCauseContext({
+          ...context,
           organizationId: req.user.organization_id,
         });
         break;

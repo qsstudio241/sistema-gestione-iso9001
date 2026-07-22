@@ -17,6 +17,10 @@ import RichTextField, {
   clearNcFieldDraftsForScope,
 } from "./RichTextField";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import AskAiButton from "./AskAiButton";
+import { useAiAssist } from "../hooks/useAiAssist";
+import AiDisclaimer from "./AiDisclaimer";
+import { hasLicensedModule } from "../utils/licenseUtils";
 import {
   getNcWorkflowTransitionButtons,
   getNcClosureButton,
@@ -131,6 +135,19 @@ export default function NcDetailPanel({
   const [verifExpanded, setVerifExpanded] = useState(!earlyPhase);
   const [contactsAttuazione, setContactsAttuazione] = useState([]);
   const [contactsVerifica, setContactsVerifica] = useState([]);
+
+  const { suggest: suggestCause, suggestion: causeSuggestion, loading: causeLoading, error: causeError, clear: clearCause } = useAiAssist();
+  const hasAiAssist = hasLicensedModule(user, "ai_assist");
+
+  function handleSuggestCause() {
+    clearCause();
+    suggestCause("nc_cause", {
+      description: form.description,
+      severity: form.severity,
+      auditNumber: nc.audit_number || null,
+      clientName: nc.client_name || null,
+    });
+  }
 
   useEffect(() => {
     const companyId = nc?.company_id ?? null;
@@ -347,9 +364,12 @@ export default function NcDetailPanel({
 
       {/* 3. Cause e valutazione */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
-        <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-          {"3. Cause e valutazione"}
-        </h3>
+        <div className="nc-drawer-section-heading">
+          <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
+            {"3. Cause e valutazione"}
+          </h3>
+          <AskAiButton label="Chiedi all\u2019AI" />
+        </div>
         <div className="nc-form-row">
           <label htmlFor={`nc-root-${nc.nc_id}`}>
             Analisi causa radice <small>(ISO {"\u00A7"}10.2.1b)</small>
@@ -367,6 +387,50 @@ export default function NcDetailPanel({
             organizationId={organizationId}
           />
         </div>
+        {/* AI — suggerisci causa radice */}
+        {!readOnly && hasAiAssist && (
+          <div className="nc-ai-cause">
+            <button
+              type="button"
+              className="nc-ai-cause__btn"
+              onClick={handleSuggestCause}
+              disabled={causeLoading || !form.description.trim()}
+              title={!form.description.trim() ? "Inserisci prima la descrizione NC" : ""}
+            >
+              {causeLoading
+                ? "Analisi in corso\u2026"
+                : "\uD83E\uDD16 Suggerisci causa (AI)"}
+            </button>
+            {causeError && <p className="nc-ai-cause__error">{causeError}</p>}
+            {causeSuggestion && !causeLoading && (
+              <div className="nc-ai-cause__result">
+                <p className="nc-ai-cause__text">
+                  {causeSuggestion.suggestion || causeSuggestion.raw || "Nessuna proposta generata."}
+                </p>
+                {causeSuggestion.methodology && (
+                  <p className="nc-ai-cause__meta">Metodologia: {causeSuggestion.methodology}</p>
+                )}
+                <div className="nc-ai-cause__actions">
+                  <button
+                    type="button"
+                    className="nc-ai-cause__accept"
+                    onClick={() => { setForm((f) => ({ ...f, root_cause: causeSuggestion.suggestion || "" })); clearCause(); }}
+                  >
+                    Accetta
+                  </button>
+                  <button type="button" className="nc-ai-cause__rephrase" onClick={handleSuggestCause} disabled={causeLoading}>
+                    Riformula
+                  </button>
+                  <button type="button" className="nc-ai-cause__discard" onClick={clearCause}>
+                    Scarta
+                  </button>
+                </div>
+                <AiDisclaimer style={{ marginTop: "0.5rem" }} />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="nc-form-row">
           <label htmlFor={`nc-ca-needed-${nc.nc_id}`}>
             {"\u00C8"} necessaria un{"'"}azione correttiva? <small>(ISO {"\u00A7"}10.2.1b)</small>
