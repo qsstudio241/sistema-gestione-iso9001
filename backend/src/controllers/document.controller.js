@@ -345,6 +345,7 @@ async function createDocument(req, res) {
             import_status = 'active',
             notes,
             type_specific_data,
+            content_scope: contentScopeRaw,
         } = req.body;
 
         // Validazione campi obbligatori
@@ -354,6 +355,22 @@ async function createDocument(req, res) {
                 code:     'VALIDATION_ERROR',
                 required: ['doc_type', 'title'],
             });
+        }
+
+        // Etichetta esplicita di ambito (decisione di prodotto: "explicit over implicit").
+        // Se non fornita, viene dedotta: norma -> reference; azienda valorizzata -> client;
+        // altrimenti studio (patrimonio dello studio). I valori 'studio'/'reference'
+        // forzano company_id NULL per coerenza.
+        const ALLOWED_SCOPES = ['client', 'studio', 'reference'];
+        let contentScope = ALLOWED_SCOPES.includes(contentScopeRaw) ? contentScopeRaw : null;
+        let effectiveCompanyId = company_id ? parseInt(company_id) : null;
+        if (contentScope == null) {
+            if (doc_type === 'norma') contentScope = 'reference';
+            else if (effectiveCompanyId != null) contentScope = 'client';
+            else contentScope = 'studio';
+        }
+        if (contentScope === 'studio' || contentScope === 'reference') {
+            effectiveCompanyId = null;
         }
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
@@ -409,7 +426,7 @@ async function createDocument(req, res) {
                 doc_type, doc_code, title, revision, status,
                 issue_date, expiry_date, responsible, retention_years,
                 attachment_id, import_status, notes,
-                parent_id, path_cache, type_specific_data,
+                parent_id, path_cache, type_specific_data, content_scope,
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
@@ -419,12 +436,13 @@ async function createDocument(req, res) {
                 @doc_type, @doc_code, @title, @revision, @status,
                 @issue_date, @expiry_date, @responsible, @retention_years,
                 @attachment_id, @import_status, @notes,
-                @parent_id, @path_cache, @type_specific_data,
+                @parent_id, @path_cache, @type_specific_data, @content_scope,
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
             organization_id,
-            company_id:      company_id      ? parseInt(company_id)      : null,
+            company_id:      effectiveCompanyId,
+            content_scope:   contentScope,
             auditor_org_id:  auditor_org_id  ? parseInt(auditor_org_id)  : null,
             standard_id:     standard_id     ? parseInt(standard_id)     : null,
             clause_ref:      clause_ref      || null,
@@ -467,7 +485,7 @@ async function createDocument(req, res) {
 
         res.status(201).json({
             success: true,
-            data:    { id: newId, doc_type, title, status, parent_id, doc_code: finalDocCode },
+            data:    { id: newId, doc_type, title, status, parent_id, doc_code: finalDocCode, content_scope: contentScope, company_id: effectiveCompanyId },
         });
 
     } catch (error) {
@@ -520,8 +538,25 @@ async function updateDocument(req, res) {
             'doc_type', 'doc_code', 'title', 'revision', 'status',
             'issue_date', 'expiry_date', 'responsible', 'retention_years',
             'attachment_id', 'import_status', 'notes', 'parent_id',
-            'type_specific_data',
+            'type_specific_data', 'content_scope',
         ];
+
+        // Validazione etichetta di ambito + coerenza company_id.
+        if (req.body.content_scope !== undefined && req.body.content_scope !== null) {
+            const ALLOWED_SCOPES = ['client', 'studio', 'reference'];
+            if (!ALLOWED_SCOPES.includes(req.body.content_scope)) {
+                return res.status(400).json({
+                    error:   'content_scope non valido',
+                    code:    'VALIDATION_ERROR',
+                    allowed: ALLOWED_SCOPES,
+                });
+            }
+            // studio/reference => documento dello studio, mai legato a un'azienda.
+            if ((req.body.content_scope === 'studio' || req.body.content_scope === 'reference')
+                && req.body.company_id === undefined) {
+                req.body.company_id = null;
+            }
+        }
 
         const updates = [];
         const params  = { id: parseInt(id) };

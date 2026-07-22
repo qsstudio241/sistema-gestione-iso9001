@@ -1,10 +1,10 @@
 /**
- * Regola unica visibilit‡ documenti: albero vs catalogo/priorit‡.
+ * Regola unica visibilit√† documenti: albero vs catalogo/priorit√†.
  *
  * - Foglie albero: figli diretti di parent_id = cartella selezionata, status ? obsoleto.
- * - Catalogo/priorit‡: elenco piatto per filtri API (scadenza, tipo, Ö), senza parent_id;
+ * - Catalogo/priorit√†: elenco piatto per filtri API (scadenza, tipo, ‚Ä¶), senza parent_id;
  *   esclude obsoleti salvo filtro status esplicito.
- * - Orfani (parent_id assente): in Inbox e catalogo, non sotto un ramo albero finchÈ archiviati.
+ * - Orfani (parent_id assente): in Inbox e catalogo, non sotto un ramo albero finch√© archiviati.
  */
 
 /**

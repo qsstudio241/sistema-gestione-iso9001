@@ -60,6 +60,38 @@ const MODULE_INFO = {
     sprint: "Sprint 9+",
     eta: "Contatta l'amministratore",
   },
+  ai_assist: {
+    icon: "🤖",
+    title: "AI Suggerimenti (audit)",
+    description: "Suggerimenti AI durante gli audit: conclusioni, analisi risposte, feedback correttivi.",
+    features: ["Suggerimenti contestuali", "Feedback accettato/rifiutato/riscritto"],
+    sprint: "Sprint 10+",
+    eta: "Contatta l'amministratore",
+  },
+  ai_review: {
+    icon: "📑",
+    title: "AI Riesame Requisiti",
+    description: "Analisi AI del capitolato tecnico per identificare requisiti normativi e gap rispetto alle capacità aziendali.",
+    features: ["Analisi capitolato", "Identificazione requisiti ISO", "Applicazione suggerimenti a checklist"],
+    sprint: "Sprint 11+",
+    eta: "Contatta l'amministratore",
+  },
+  ai_norms: {
+    icon: "📚",
+    title: "AI Norme on-demand",
+    description: "Accesso alle clausole normative (ISO 9001, ISO 3834...) con ricerca semantica integrata.",
+    features: ["Ricerca clausole per codice", "Ricerca semantica full-text"],
+    sprint: "Sprint 11+",
+    eta: "Contatta l'amministratore",
+  },
+  ai_chat: {
+    icon: "💬",
+    title: "AI Chat Assistente",
+    description: "Assistente conversazionale integrato con la knowledge base aziendale e la normativa.",
+    features: ["Chat contestuale all'audit in corso", "Knowledge base personalizzata"],
+    sprint: "Sprint 10+",
+    eta: "Contatta l'amministratore",
+  },
   notifications: {
     icon: "🔔",
     title: "Notifiche email",
@@ -84,7 +116,7 @@ const MODULE_INFO = {
   },
   rischi: {
     icon: "⚠️",
-    title: "Rischi & Obiettivi",
+    title: "Rischi, Opportunità e Obiettivi",
     description: "Registro rischi e opportunità secondo ISO 9001 §6.1 e obiettivi misurabili §6.2. Matrice probabilità × impatto, piani di trattamento, monitoraggio avanzamento.",
     features: [
       "Matrice rischi con valutazione P×I",
@@ -110,13 +142,14 @@ const MODULE_INFO = {
   },
   sal: {
     icon: "📊",
-    title: "SAL - Riesame Direzione",
-    description: "Stato Avanzamento Lavori per il riesame della direzione. Griglia requisiti × stati con codifica colori (discusso / in corso / completato). Export verbale Word.",
+    title: "SAL — Stato Avanzamento Lavori",
+    description:
+      "Tracker per monitorare l'avanzamento di implementazione del SGQ requisito per requisito (clausole §4–10). Griglia requisiti × stati con codifica colori per standard.",
     features: [
       "Griglia requisiti ISO 9001/14001/45001",
-      "Stati: Discusso / In corso / Completato / Non applicabile",
-      "Collegamento automatico a NC, obiettivi, audit recenti",
-      "Export verbale riesame direzione in Word",
+      "Stati: Discusso / In corso / Da validare / Completato",
+      "Motore gap analysis clausola-per-clausola per azienda",
+      "Export Word con legenda colori per standard",
     ],
     sprint: "Sprint 4",
     eta: "Prossimamente",

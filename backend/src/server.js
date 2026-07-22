@@ -35,6 +35,10 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 const { closePool } = require('./config/database');
+const {
+    parseStaticCorsOrigins,
+    corsOriginCallback,
+} = require('./config/corsOrigins');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -65,7 +69,9 @@ const importJobsRoutes      = require('./routes/importJobs.routes');
 const { apiRouter: webdavApiRoutes, webdavRouter } = require('./routes/webdav.routes');
 const auditEventsRoutes = require('./routes/auditEvents.routes');
 const normBrokerRoutes = require('./routes/normBroker.routes');
+const gapAnalysisRoutes = require('./routes/gapAnalysis.routes');
 const contractReviewRoutes = require('./routes/contractReview.routes');
+const drawingExtractionRoutes = require('./routes/drawingExtraction.routes');
 const aiAssistRoutes = require('./routes/aiAssist.routes');
 const documentTagsRoutes     = require('./routes/documentTags.routes');
 const documentRelationsRoutes = require('./routes/documentRelations.routes');
@@ -73,9 +79,15 @@ const documentTreeRoutes     = require('./routes/documentTree.routes');
 const normUploadRoutes       = require('./routes/normUpload.routes');
 const aiChatRoutes           = require('./routes/aiChat.routes');
 const weldingRoutes          = require('./routes/welding.routes');
+const ingestStagingRoutes    = require('./routes/ingestStaging.routes');
 const projectsRoutes         = require('./routes/projects.routes');
+const equipmentRoutes        = require('./routes/equipment.routes');
+const ndtReportsRoutes       = require('./routes/ndtReports.routes');
+const weldingBooksRoutes     = require('./routes/weldingBooks.routes');
 const searchRoutes           = require('./routes/search.routes');
-const deadlinesRoutes        = require('./routes/deadlines.routes');
+const deadlinesRoutes            = require('./routes/deadlines.routes');
+const managementReviewsRoutes    = require('./routes/managementReviews.routes');
+const smokeRoutes                = require('./routes/smoke.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -108,7 +120,7 @@ app.use(helmet({
             // frame-ancestors: permette embedding solo dal frontend Netlify
             // (necessario per DocumentPdfViewer che mostra PDF in iframe).
             // "'none'" bloccherebbe qualsiasi iframe, inclusi i nostri.
-            frameAncestors:  ["'self'", ...(process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean)],
+            frameAncestors:  ["'self'", ...parseStaticCorsOrigins(process.env.CORS_ORIGIN)],
             formAction:      ["'none'"],
             objectSrc:       ["'none'"],
             scriptSrc:       ["'none'"],
@@ -125,9 +137,10 @@ app.use(helmet({
 // Compression
 app.use(compression());
 
-// CORS
+// CORS — statici da env + pattern Netlify Deploy Preview / branch (systemgest)
+const staticCorsOrigins = parseStaticCorsOrigins(process.env.CORS_ORIGIN);
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN.split(','),
+    origin: (origin, callback) => corsOriginCallback(origin, staticCorsOrigins, callback),
     credentials: process.env.CORS_CREDENTIALS === 'true',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Audit-Lock-Token'],
@@ -177,16 +190,15 @@ const apiLimiter = rateLimit({
     legacyHeaders:   false,
     skip: () => rateLimitDisabled,
     keyGenerator: (req) => {
-        // JWT non ancora verificato qui (middleware auth viene dopo), ma se il
-        // token è presente in Authorization proviamo a leggere il sub in chiaro.
-        // In caso di token assente/malformato cade sull'IP reale.
+        // JWT non ancora verificato qui (middleware auth viene dopo). Campo SGQ: user_id.
         try {
             const auth = req.headers.authorization || '';
             if (auth.startsWith('Bearer ')) {
                 const payload = JSON.parse(
                     Buffer.from(auth.split('.')[1], 'base64url').toString('utf8')
                 );
-                if (payload.id || payload.sub) return `user:${payload.id || payload.sub}`;
+                const uid = payload.user_id || payload.id || payload.sub;
+                if (uid) return `user:${uid}`;
             }
         } catch (_) { /* token assente o malformato: fallback su IP */ }
         return req.ip;
@@ -248,6 +260,11 @@ app.get(`${API_BASE}/response-options`, responseController.getResponseOptions);
 const companyController = require('./controllers/company.controller');
 app.get(`${API_BASE}/companies/:id/logo`, companyController.getLogo);
 
+// Smoke test remoto — protetto da X-Smoke-Token, NON da JWT.
+// DEVE stare qui (prima di apiLimiter e dei router autenticati) altrimenti
+// router.use(authenticate) nei router successivi blocca la richiesta senza Bearer.
+app.use(API_BASE, smokeRoutes);
+
 // Rate limiting applicato prima delle route
 app.use(`${API_BASE}/auth`, authLimiter);   // Stretto su login/register
 app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
@@ -277,19 +294,26 @@ app.use(API_BASE, alertRoutes);
 app.use(API_BASE, notificationsRoutes);
 app.use(API_BASE, docfileRoutes);
 app.use(API_BASE, qualificationsRoutes);
+app.use(API_BASE, ingestStagingRoutes);
 app.use(API_BASE, risksRoutes);
 app.use(`${API_BASE}/complaints`,   complaintsRoutes);
 app.use(`${API_BASE}/suppliers`,    suppliersRoutes);
 app.use(`${API_BASE}/departments`,  departmentsRoutes);
 app.use(API_BASE, importJobsRoutes);
 app.use(API_BASE, normBrokerRoutes);
+app.use(API_BASE, gapAnalysisRoutes);
 app.use(API_BASE, contractReviewRoutes);
+app.use(API_BASE, drawingExtractionRoutes);
 app.use(API_BASE, aiAssistRoutes);
 app.use(API_BASE, aiChatRoutes);
 app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
+app.use(API_BASE, equipmentRoutes);
+app.use(API_BASE, ndtReportsRoutes);
+app.use(API_BASE, weldingBooksRoutes);
 app.use(API_BASE, searchRoutes);
 app.use(API_BASE, deadlinesRoutes);
+app.use(API_BASE, managementReviewsRoutes);
 app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsRoutes);
 // Sprint 12-A: WebDAV — endpoint REST (genera link) + endpoint WebDAV (Office R/W)
 app.use(API_BASE, webdavApiRoutes);

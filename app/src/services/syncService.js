@@ -535,6 +535,16 @@ export class SyncService {
             case 'send_audit_event':
                 return await this.syncSendAuditEvent(payload);
 
+            // ── CND: Verbali VT/MT/PT/UT ────────────────────────────────────
+            case 'create_ndt_report':
+                return await this.syncCreateNdtReport(payload);
+
+            case 'update_ndt_report':
+                return await this.syncUpdateNdtReport(payload);
+
+            case 'delete_ndt_report':
+                return await this.syncDeleteNdtReport(payload);
+
             default:
                 throw new Error(`Tipo sync non supportato: ${type}`);
         }
@@ -611,6 +621,7 @@ export class SyncService {
             // Tipologia audit (prima/seconda parte) e fornitore — sempre inviati per coerenza backend
             auditExtraData.auditPartyType = auditData.audit_party_type ?? auditData.metadata?.auditPartyType ?? 'first_party';
             auditExtraData.fornitoreName = auditData.fornitore_name ?? auditData.metadata?.fornitoreName ?? '';
+            auditExtraData.fornitoreSupplierId = auditData.fornitore_supplier_id ?? auditData.metadata?.fornitoreSupplierId ?? null;
 
             const mappedAudit = {
                 ...auditData,
@@ -775,12 +786,20 @@ export class SyncService {
      * @param {string|null} notes
      */
     async enqueueResponseEvent(auditUuid, questionId, conformityStatus, notes = null) {
+        const hasStatus =
+            conformityStatus != null &&
+            conformityStatus !== '' &&
+            conformityStatus !== 'NOT_ANSWERED';
+        const hasNotes = notes != null && String(notes).trim() !== '';
         const idempotencyKey = this.generateResponseEventKey(auditUuid, questionId);
         const event = {
-            event_type: conformityStatus ? 'response_set' : 'response_cleared',
+            event_type: hasStatus || hasNotes ? 'response_set' : 'response_cleared',
             field_path: `responses.${questionId}`,
-            new_value: conformityStatus
-                ? JSON.stringify({ conformity_status: conformityStatus, notes })
+            new_value: hasStatus || hasNotes
+                ? JSON.stringify({
+                    conformity_status: hasStatus ? conformityStatus : null,
+                    notes: hasNotes ? notes : null,
+                })
                 : null,
             client_ts: new Date().toISOString(),
             client_ts_offset_ms: 0,
@@ -909,6 +928,47 @@ export class SyncService {
         } catch (error) {
             if (error.status === 404) {
                 // Già eliminato sul server, va bene
+                return { deleted: true };
+            }
+            throw error;
+        }
+    }
+
+    // ── CND: Verbali — metodi sync ────────────────────────────────────────────
+
+    async syncCreateNdtReport(payload) {
+        try {
+            const result = await apiService.createNdtReport(payload);
+            return { created: true, id: result?.data?.id, report_number: result?.data?.report_number };
+        } catch (error) {
+            if (error.status === 409) {
+                // Già creato — UUID duplicato, ok
+                return { created: true, duplicate: true };
+            }
+            throw error;
+        }
+    }
+
+    async syncUpdateNdtReport(payload) {
+        try {
+            const { id, ...data } = payload;
+            if (!id) throw new Error('syncUpdateNdtReport: id mancante nel payload');
+            await apiService.updateNdtReport(id, data);
+            return { updated: true };
+        } catch (error) {
+            if (error.status === 404) {
+                return { updated: false, notFound: true };
+            }
+            throw error;
+        }
+    }
+
+    async syncDeleteNdtReport(payload) {
+        try {
+            await apiService.deleteNdtReport(payload.id);
+            return { deleted: true };
+        } catch (error) {
+            if (error.status === 404) {
                 return { deleted: true };
             }
             throw error;

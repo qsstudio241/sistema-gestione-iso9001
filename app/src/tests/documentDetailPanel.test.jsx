@@ -205,7 +205,7 @@ describe('DocumentDetailPanel - Norma tecnica', () => {
     expect(screen.getByText('Codice norma')).toBeInTheDocument();
     expect(screen.getByText('Ente emittente')).toBeInTheDocument();
     expect(screen.getByText('Superata')).toBeInTheDocument();
-    expect(screen.getByText('Vedi su catalogo ISO')).toHaveAttribute(
+    expect(screen.getByText('Vedi su catalogo ente')).toHaveAttribute(
       'href',
       'https://www.iso.org/search.html?q=EN%20ISO%205817%3A2014'
     );

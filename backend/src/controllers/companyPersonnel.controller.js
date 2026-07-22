@@ -1,5 +1,5 @@
 /**
- * companyPersonnel.controller.js � CRUD anagrafica personale per azienda (ADR-012)
+ * companyPersonnel.controller.js  -  CRUD anagrafica personale per azienda (ADR-012)
  * RBAC: stesso scope auditor_org di company.controller.js
  */
 
@@ -14,6 +14,11 @@ const {
   sendAccessDenied,
   WRITE_STUDIO_ROLES,
 } = require('../services/companyAccess.service');
+const {
+  importPersonnelFromQualifications,
+  linkQualificationsToPersonnel,
+  listQualificationsForPersonnel,
+} = require('../services/personnelQualificationLink.service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -104,7 +109,7 @@ async function resolveCompanyScope(companyId, auditorOrgId) {
 }
 
 /**
- * GET /api/v1/personnel � overview studio (slice S6)
+ * GET /api/v1/personnel  -  overview studio (slice S6)
  * Query: company_id (opzionale), active, auditor_org_id (superadmin)
  */
 async function listPersonnelStudio(req, res) {
@@ -169,7 +174,8 @@ async function listPersonnelStudio(req, res) {
     const result = await query(`
       SELECT cp.id, cp.organization_id, cp.company_id, c.name AS company_name,
              cp.name, cp.job_title, cp.email, cp.active,
-             cp.can_actuation, cp.can_verify, cp.notification_contact_id,
+             cp.can_actuation, cp.can_verify, cp.is_primary_welding_coordinator,
+             cp.notification_contact_id,
              cp.created_at, cp.updated_at
       FROM company_personnel cp
       INNER JOIN companies c ON c.id = cp.company_id
@@ -200,8 +206,9 @@ async function listPersonnel(req, res) {
     }
 
     const result = await query(`
-      SELECT id, organization_id, company_id, name, job_title, email,
-             active, can_actuation, can_verify, notification_contact_id,
+      SELECT id, organization_id, company_id, name, person_code, job_title, email,
+             active, can_actuation, can_verify, is_primary_welding_coordinator,
+             notification_contact_id,
              created_at, updated_at
       FROM company_personnel
       WHERE ${where.join(' AND ')}
@@ -231,6 +238,7 @@ async function createPersonnel(req, res) {
       active = true,
       can_actuation = false,
       can_verify = false,
+      is_primary_welding_coordinator = false,
     } = req.body;
 
     if (!name || !String(name).trim()) {
@@ -240,15 +248,23 @@ async function createPersonnel(req, res) {
       return res.status(400).json({ error: 'Email non valida', code: 'INVALID_EMAIL' });
     }
 
+    if (is_primary_welding_coordinator) {
+      await query(`
+        UPDATE company_personnel
+        SET is_primary_welding_coordinator = 0, updated_at = GETDATE()
+        WHERE company_id = @company_id AND organization_id = @organization_id
+      `, { company_id: companyId, organization_id: scope.organization_id });
+    }
+
     const result = await query(`
       INSERT INTO company_personnel (
         organization_id, company_id, name, job_title, email,
-        active, can_actuation, can_verify, updated_at
+        active, can_actuation, can_verify, is_primary_welding_coordinator, updated_at
       )
       OUTPUT INSERTED.*
       VALUES (
         @organization_id, @company_id, @name, @job_title, @email,
-        @active, @can_actuation, @can_verify, GETDATE()
+        @active, @can_actuation, @can_verify, @is_primary_welding_coordinator, GETDATE()
       )
     `, {
       organization_id: scope.organization_id,
@@ -259,6 +275,7 @@ async function createPersonnel(req, res) {
       active: active ? 1 : 0,
       can_actuation: can_actuation ? 1 : 0,
       can_verify: can_verify ? 1 : 0,
+      is_primary_welding_coordinator: is_primary_welding_coordinator ? 1 : 0,
     });
 
     res.status(201).json({ success: true, data: result.recordset[0] });
@@ -288,7 +305,7 @@ async function updatePersonnel(req, res) {
       return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
     }
 
-    const { name, job_title, email, active, can_actuation, can_verify } = req.body;
+    const { name, job_title, email, active, can_actuation, can_verify, is_primary_welding_coordinator } = req.body;
     const updates = [];
     const params = { id: personnelId };
 
@@ -321,6 +338,21 @@ async function updatePersonnel(req, res) {
     if (can_verify !== undefined) {
       updates.push('can_verify = @can_verify');
       params.can_verify = can_verify ? 1 : 0;
+    }
+    if (is_primary_welding_coordinator !== undefined) {
+      updates.push('is_primary_welding_coordinator = @is_primary_welding_coordinator');
+      params.is_primary_welding_coordinator = is_primary_welding_coordinator ? 1 : 0;
+      if (is_primary_welding_coordinator) {
+        await query(`
+          UPDATE company_personnel
+          SET is_primary_welding_coordinator = 0, updated_at = GETDATE()
+          WHERE company_id = @company_id AND organization_id = @organization_id AND id <> @id
+        `, {
+          company_id: companyId,
+          organization_id: scope.organization_id,
+          id: personnelId,
+        });
+      }
     }
 
     if (updates.length === 0) {
@@ -375,7 +407,7 @@ async function deletePersonnel(req, res) {
       if (ncRefs.recordset.length > 0) {
         if (!personnel.active) {
           return res.status(409).json({
-            error: 'Personale collegato a NC: gi� disattivato',
+            error: 'Personale collegato a NC: già  disattivato',
             code: 'NC_LINKED',
           });
         }
@@ -405,12 +437,96 @@ async function deletePersonnel(req, res) {
   }
 }
 
+/**
+ * POST /companies/:companyId/personnel/import-from-qualifications
+ */
+async function importFromQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const result = await importPersonnelFromQualifications({
+      organizationId: scope.organization_id,
+      companyId,
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] importFromQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore import da qualifiche', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * POST /companies/:companyId/personnel/link-qualifications
+ */
+async function linkQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const result = await linkQualificationsToPersonnel({
+      organizationId: scope.organization_id,
+      companyId,
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] linkQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore collegamento qualifiche', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * GET /companies/:companyId/personnel/:id/qualifications
+ */
+async function getPersonnelQualifications(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const personnelId = parseInt(req.params.id, 10);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'read');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const check = await query(`
+      SELECT id FROM company_personnel
+      WHERE id = @id AND company_id = @company_id AND organization_id = @organization_id
+    `, { id: personnelId, company_id: companyId, organization_id: scope.organization_id });
+
+    if (check.recordset.length === 0) {
+      return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
+    }
+
+    const data = await listQualificationsForPersonnel({
+      organizationId: scope.organization_id,
+      companyId,
+      personnelId,
+    });
+
+    res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] getPersonnelQualifications error:', err.message);
+    res.status(500).json({ error: 'Errore recupero qualifiche collegate', code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   listPersonnelStudio,
   listPersonnel,
   createPersonnel,
   updatePersonnel,
   deletePersonnel,
+  importFromQualifications,
+  linkQualifications,
+  getPersonnelQualifications,
   resolvePersonnelScope,
   resolveCompanyScope,
   resolveAuditorOrgId,

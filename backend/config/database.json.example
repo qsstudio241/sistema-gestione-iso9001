@@ -38,13 +38,13 @@
     }
   },
   "test": {
-    "server": "localhost",
-    "port": 1433,
-    "database": "SGQ_ISO9001_Test",
-    "user": "sgq_test_user",
-    "password": "YOUR_TEST_SQL_PASSWORD",
+    "server": "YOUR_SQLSERVER_HOST",
+    "port": 11043,
+    "database": "YYYY-MM-DD_SGQ_ISO9001",
+    "user": "YOUR_SQL_USER",
+    "password": "YOUR_SQL_PASSWORD",
     "options": {
-      "encrypt": true,
+      "encrypt": false,
       "trustServerCertificate": true,
       "enableArithAbort": true,
       "connectTimeout": 30000,

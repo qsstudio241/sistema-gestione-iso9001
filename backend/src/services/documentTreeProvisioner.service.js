@@ -58,7 +58,7 @@ async function refreshPathCacheRecursive(nodeId, orgId) {
  * @param {number} baseOrder       - display_order di partenza
  * @returns {Array} nodi creati
  */
-async function createNodesRecursive(nodes, parentId, orgId, companyId, standardCodes, baseOrder) {
+async function createNodesRecursive(nodes, parentId, orgId, companyId, standardCodes, baseOrder, contentScope = null) {
     const created = [];
     let order = baseOrder;
 
@@ -86,17 +86,26 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
         let nodeId;
         if (existing.recordset.length > 0) {
             nodeId = existing.recordset[0].id;
+            // Allinea content_scope se richiesto (es. cartelle Patrimonio Studio create
+            // prima dell'introduzione della colonna): garantisce l'esclusione dalle viste azienda.
+            if (contentScope) {
+                await query(`
+                    UPDATE document_registry SET content_scope = @content_scope
+                    WHERE id = @id AND organization_id = @org_id
+                      AND (content_scope IS NULL OR content_scope <> @content_scope)
+                `, { content_scope: contentScope, id: nodeId, org_id: orgId });
+            }
         } else {
             const result = await query(`
                 INSERT INTO document_registry
                     (organization_id, company_id, doc_type, title, status,
                      is_system_folder, folder_code, parent_id, display_order,
-                     created_by, created_at, updated_at)
+                     content_scope, created_by, created_at, updated_at)
                 OUTPUT INSERTED.id
                 VALUES
                     (@org_id, @company_id, 'folder', @title, 'rilasciato',
                      1, @folder_code, @parent_id, @display_order,
-                     NULL, GETDATE(), GETDATE())
+                     @content_scope, NULL, GETDATE(), GETDATE())
             `, {
                 org_id:        orgId,
                 company_id:    companyId != null ? parseInt(companyId) : null,
@@ -104,6 +113,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
                 folder_code:   folderCode,
                 parent_id:     parentId != null ? parseInt(parentId) : null,
                 display_order: order,
+                content_scope: contentScope || (companyId != null ? 'client' : 'reference'),
             });
             nodeId = result.recordset[0].id;
 
@@ -117,7 +127,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
 
         if (node.children && node.children.length > 0) {
             item.children = await createNodesRecursive(
-                node.children, nodeId, orgId, companyId, standardCodes, 1
+                node.children, nodeId, orgId, companyId, standardCodes, 1, contentScope
             );
         }
 
@@ -136,7 +146,7 @@ async function createNodesRecursive(nodes, parentId, orgId, companyId, standardC
  * @param {string[]} standardCodes   - es. ['ISO9001', 'ISO14001']
  * @returns {Promise<Array>} albero creato
  */
-async function provisionTree(orgId, companyId, templateCode, standardCodes = []) {
+async function provisionTree(orgId, companyId, templateCode, standardCodes = [], contentScope = null) {
     let templateData;
 
     if (templateCode) {
@@ -169,13 +179,58 @@ async function provisionTree(orgId, companyId, templateCode, standardCodes = [])
         orgId, companyId, templateCode, standardCodes,
     });
 
-    const tree = await createNodesRecursive(templateData, null, orgId, companyId, standardCodes, 1);
+    const tree = await createNodesRecursive(templateData, null, orgId, companyId, standardCodes, 1, contentScope);
 
     logger.info('[TreeProvisioner] Provisioning complete', {
-        orgId, companyId, nodesCreated: tree.length,
+        orgId, companyId, contentScope, nodesCreated: tree.length,
     });
 
     return tree;
+}
+
+/** folder_code della radice del Patrimonio Studio (template studio_patrimonio_v1). */
+const STUDIO_ROOT_FOLDER_CODE = 'STD';
+
+/**
+ * Provisioning (idempotente) della radice "Patrimonio Studio" per lo studio.
+ * - company_id NULL (legato allo studio, non a una singola azienda cliente)
+ * - content_scope='studio' su tutti i nodi -> mai visibile nelle viste azienda
+ *
+ * @param {number} orgId
+ * @returns {Promise<{ rootId: number|null, tree: Array }>}
+ */
+async function provisionStudioPatrimony(orgId) {
+    const tree = await provisionTree(orgId, null, 'studio_patrimonio_v1', [], 'studio');
+
+    const rootRes = await query(`
+        SELECT TOP 1 id FROM document_registry
+        WHERE organization_id = @org_id
+          AND company_id IS NULL
+          AND folder_code = @code
+          AND content_scope = 'studio'
+        ORDER BY id ASC
+    `, { org_id: orgId, code: STUDIO_ROOT_FOLDER_CODE });
+
+    const rootId = rootRes.recordset[0]?.id ?? null;
+    logger.info('[TreeProvisioner] Patrimonio Studio provisionato', { orgId, rootId });
+    return { rootId, tree };
+}
+
+/**
+ * Ritorna la radice del Patrimonio Studio per lo studio, se gia' provisionata.
+ * @param {number} orgId
+ * @returns {Promise<number|null>}
+ */
+async function findStudioRoot(orgId) {
+    const res = await query(`
+        SELECT TOP 1 id FROM document_registry
+        WHERE organization_id = @org_id
+          AND company_id IS NULL
+          AND folder_code = @code
+          AND content_scope = 'studio'
+        ORDER BY id ASC
+    `, { org_id: orgId, code: STUDIO_ROOT_FOLDER_CODE });
+    return res.recordset[0]?.id ?? null;
 }
 
 /**
@@ -189,6 +244,9 @@ async function syncTree(orgId, companyId, standardCodes = []) {
 module.exports = {
     provisionTree,
     syncTree,
+    provisionStudioPatrimony,
+    findStudioRoot,
+    STUDIO_ROOT_FOLDER_CODE,
     calculatePathCache,
     refreshPathCacheRecursive,
 };

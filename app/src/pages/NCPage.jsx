@@ -6,14 +6,15 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
-import { Link, useRouter } from "../contexts/RouterContext";
+import { useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
-import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import { NC_SOURCE_TYPE_LABELS, NC_SOURCE_CATEGORIES, NC_SOURCE_CATEGORY_OPTIONS } from "../utils/ncCreateHelpers";
 import { downloadNcCsv } from "../utils/ncExportHelpers";
+import { exportNcToWord } from "../utils/ncWordExport";
 import {
   canTransitionNcStatus,
   canApproveNcClosure,
@@ -68,11 +69,15 @@ export default function NCPage() {
   const [loading, setLoading]       = useState(true);
   const [selectedNcId, setSelectedNcId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createDefaultCategory, setCreateDefaultCategory] = useState("audit");
   const [viewMode, setViewMode] = useState("nc");
   const [dueActions, setDueActions] = useState([]);
   const [dueActionsLoading, setDueActionsLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [exportingWord, setExportingWord] = useState(false);
+  const [exportWordError, setExportWordError] = useState(null);
+  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchNc, setSearchNc] = useState("");
@@ -108,6 +113,7 @@ export default function NCPage() {
       if (filters.overdue)          params.overdue          = filters.overdue;
       if (filters.due_within_days)  params.due_within_days  = filters.due_within_days;
       if (filters.company_id)       params.company_id       = filters.company_id;
+      if (filters.source_category)  params.source_category  = filters.source_category;
 
       const [listRes, statsRes] = await Promise.all([
         apiService.getAllNonConformities(params),
@@ -147,6 +153,19 @@ export default function NCPage() {
   function handleExportCsv() {
     const stamp = new Date().toISOString().slice(0, 10);
     downloadNcCsv(`registro-nc-${stamp}.csv`, filteredList);
+  }
+
+  async function handleExportWord(nc) {
+    if (!nc?.nc_id) return;
+    setExportingWord(true);
+    setExportWordError(null);
+    try {
+      await exportNcToWord(nc.nc_id, apiService);
+    } catch {
+      setExportWordError("Impossibile generare il documento Word. Riprovare.");
+    } finally {
+      setExportingWord(false);
+    }
   }
 
   async function handleApproveClosure(nc) {
@@ -193,7 +212,7 @@ export default function NCPage() {
   }
 
   function resetFilters() {
-    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "" });
+    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
     setSearchNc("");
     setPage(1);
     setSelectedNcId(null);
@@ -208,6 +227,7 @@ export default function NCPage() {
 
   function handleCloseDetail() {
     setSelectedNcId(null);
+    setExportWordError(null);
     replace("/nc");
   }
 
@@ -235,6 +255,11 @@ export default function NCPage() {
     } catch (err) {
       alert(err?.response?.data?.error || "Impossibile aggiornare lo stato della NC.");
     }
+  }
+
+  function openCreateWith(category) {
+    setCreateDefaultCategory(category);
+    setShowCreateModal(true);
   }
 
   function handleCreated() {
@@ -275,7 +300,7 @@ export default function NCPage() {
   const activeCard = getActiveCard();
   const hasActiveFilter = !!(
     filters.status || filters.severity || filters.overdue
-    || filters.due_within_days || filters.company_id || searchNc
+    || filters.due_within_days || filters.company_id || filters.source_category || searchNc
   );
 
   function renderGridCell(row, col) {
@@ -301,8 +326,17 @@ export default function NCPage() {
         );
       case "due_date":
         return row.due_date ? formatDate(row.due_date) : "\u2014";
-      case "source_type":
+      case "source_type": {
+        const catCfg = NC_SOURCE_CATEGORIES[row.source_category];
+        if (catCfg) {
+          return (
+            <span className={`nc-cat-badge nc-cat-${row.source_category}`}>
+              {catCfg.icon} {catCfg.label}
+            </span>
+          );
+        }
         return NC_SOURCE_TYPE_LABELS[row.source_type] || row.source_type || "\u2014";
+      }
       default:
         return row[col.id] ?? "\u2014";
     }
@@ -319,8 +353,8 @@ export default function NCPage() {
     <div className="nc-page">
       <div className="nc-page-header">
         <div>
-          <h1>{"\uD83D\uDEA8 Non Conformit\u00E0 & Azioni Correttive"}</h1>
-          <p className="nc-page-sub">ISO 9001:2015 §8.7 + §10.2 - Registro cross-audit</p>
+          <h1>{"\uD83D\uDEA8 Piano Azioni & Non Conformit\u00E0"}</h1>
+          <p className="nc-page-sub">ISO 9001:2015 \u00A76.1 + \u00A79.3 + \u00A710.2 + \u00A710.3 \u2014 Registro cross-fonte</p>
         </div>
         <div className="nc-page-header-actions">
           <button
@@ -330,13 +364,48 @@ export default function NCPage() {
           >
             {viewMode === "actions_due" ? "Registro NC" : "Azioni in scadenza"}
           </button>
-          <button type="button" className="btn-secondary" onClick={handleExportCsv} disabled={!filteredList.length}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleExportCsv}
+            disabled={!filteredList.length}
+            title="Esporta il registro NC filtrato in CSV (Excel)"
+          >
             Export CSV
           </button>
-          <button type="button" className="btn-primary" onClick={() => setShowCreateModal(true)}>
-            + Nuova NC
+          <button type="button" className="btn-primary" onClick={() => openCreateWith("audit")}>
+            + Nuova azione / NC
           </button>
         </div>
+      </div>
+
+      {/* ── Shortcuts azione rapida (Slice 3) ─────────────────────── */}
+      <div className="nc-shortcuts-bar" role="group" aria-label="Crea azione rapida">
+        <span style={{ fontSize: "0.75rem", color: "#718096", alignSelf: "center", marginRight: 4 }}>
+          Crea azione da:
+        </span>
+        {[
+          { cat: "audit",            label: "Audit interno" },
+          { cat: "management_review",label: "Riesame Direzione" },
+          { cat: "risk_action",      label: "Analisi rischi" },
+          { cat: "improvement",      label: "Miglioramento" },
+          { cat: "complaint",        label: "Reclamo" },
+          { cat: "operational",      label: "Rilievo operativo" },
+          { cat: "external_audit",   label: "Audit esterno" },
+        ].map(({ cat, label }) => {
+          const cfg = NC_SOURCE_CATEGORIES[cat];
+          return (
+            <button
+              key={cat}
+              type="button"
+              className="nc-shortcut-btn"
+              onClick={() => openCreateWith(cat)}
+              title={`Nuova azione — ${cfg.label} (${cfg.iso})`}
+            >
+              {cfg.icon} {label}
+            </button>
+          );
+        })}
       </div>
 
       {stats && (
@@ -391,6 +460,32 @@ export default function NCPage() {
         </div>
       )}
 
+      {stats && Array.isArray(stats.by_category) && stats.by_category.length > 0 && (
+        <div className="nc-stats-breakdown">
+          <button
+            type="button"
+            className="nc-stats-breakdown-toggle"
+            onClick={() => setShowBreakdown(p => !p)}
+          >
+            {showBreakdown ? "\u25B2" : "\u25BC"} Per origine
+          </button>
+          {showBreakdown && (
+            <div className="nc-stats-breakdown-list">
+              {stats.by_category.map(({ source_category, open_count, total }) => {
+                const cfg = NC_SOURCE_CATEGORIES[source_category];
+                const label = cfg ? `${cfg.icon} ${cfg.label}` : source_category;
+                return (
+                  <div key={source_category} className="nc-stats-breakdown-item">
+                    <span className="nc-stats-breakdown-label">{label}</span>
+                    <span className="nc-stats-breakdown-counts">{open_count} aperte / {total} totali</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="nc-filters">
         {companies.length > 0 && (
           <select
@@ -423,10 +518,21 @@ export default function NCPage() {
         </select>
 
         <select value={filters.severity} onChange={e => handleFilter("severity", e.target.value)}>
-          <option value="">Tutte le severità</option>
+          <option value="">Tutte le severit{"\u00E0"}</option>
           <option value="major">Grave</option>
           <option value="minor">Lieve</option>
           <option value="observation">Osservazione</option>
+        </select>
+
+        <select
+          value={filters.source_category}
+          onChange={e => handleFilter("source_category", e.target.value)}
+          title="Filtra per categoria origine"
+        >
+          <option value="">Tutte le origini</option>
+          {Object.entries(NC_SOURCE_CATEGORIES).map(([val, cfg]) => (
+            <option key={val} value={val}>{cfg.icon} {cfg.label}</option>
+          ))}
         </select>
 
         <select
@@ -465,9 +571,13 @@ export default function NCPage() {
               <ul className="nc-due-actions-list">
                 {dueActions.map(a => (
                   <li key={a.action_id} className={a.is_overdue ? "nc-due-overdue" : ""}>
-                    <Link to={`/nc?select=${a.nc_id}`} className="nc-due-link">
+                    <a
+                      href="#"
+                      className="nc-due-link"
+                      onClick={e => { e.preventDefault(); setSelectedNcId(a.nc_id); setViewMode("nc"); }}
+                    >
                       <strong>{a.nc_number}</strong> — {a.description?.slice(0, 120)}
-                    </Link>
+                    </a>
                     <span className="nc-due-meta">
                       {a.responsible || "—"} · scadenza {a.due_date ? formatDate(a.due_date) : "—"}
                       {a.is_overdue ? " · SCADUTA" : ""}
@@ -532,15 +642,29 @@ export default function NCPage() {
                     </span>
                   )}
                 </h2>
-                <button
-                  type="button"
-                  className="doc-detail__close"
-                  onClick={handleCloseDetail}
-                  aria-label="Chiudi dettaglio NC"
-                >
-                  {"\u2715"}
-                </button>
+                <div className="nc-detail-header-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary nc-export-word-btn"
+                    onClick={() => handleExportWord(selectedNc)}
+                    disabled={exportingWord}
+                    title="Scarica scheda NC in formato Word per archiviazione"
+                  >
+                    {exportingWord ? "Generazione..." : "Scarica Word"}
+                  </button>
+                  <button
+                    type="button"
+                    className="doc-detail__close"
+                    onClick={handleCloseDetail}
+                    aria-label="Chiudi dettaglio NC"
+                  >
+                    {"\u2715"}
+                  </button>
+                </div>
               </div>
+              {exportWordError && (
+                <p className="nc-error nc-export-error nc-detail-header-export-error">{exportWordError}</p>
+              )}
             </div>
 
             <div className="doc-detail__body nc-detail-drawer-body">
@@ -570,6 +694,7 @@ export default function NCPage() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreated={handleCreated}
+        defaultCategory={createDefaultCategory}
       />
     </div>
   );

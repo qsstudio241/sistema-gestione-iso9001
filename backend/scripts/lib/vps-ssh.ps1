@@ -130,7 +130,7 @@ function Copy-SgqVpsFile {
         throw "File locale non trovato: $LocalPath"
     }
 
-    $target = "${($Context.Host)}:${RemotePath}"
+    $target = "$($Context.Host):${RemotePath}"
     if ($Context.UseSession) {
         & $Context.Pscp -batch -load $Context.PuttySession $LocalPath $target
     } elseif ($Context.SshPassword) {

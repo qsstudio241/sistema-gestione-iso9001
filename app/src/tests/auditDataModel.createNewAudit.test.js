@@ -27,23 +27,35 @@ describe("createNewAudit", () => {
     expect(audit.metadata.generalData.auditDateEnd).toBe("2026-05-12");
   });
 
-  it("createNewAudit con fornitoreCompanyId → preservato in metadata", () => {
+  it("createNewAudit con fornitoreSupplierId → preservato in metadata", () => {
     const audit = createNewAudit({
       auditPartyType: "second_party",
       fornitoreName: "Acme Srl",
-      fornitoreCompanyId: 42,
+      fornitoreSupplierId: 12,
       clientName: "Committente SpA",
       auditNumber: "2026-TEST",
     });
-    expect(audit.metadata.fornitoreCompanyId).toBe(42);
+    expect(audit.metadata.fornitoreSupplierId).toBe(12);
     expect(audit.metadata.fornitoreName).toBe("Acme Srl");
   });
 
-  it("createNewAudit senza fornitoreCompanyId → default null", () => {
+  it("createNewAudit senza fornitoreSupplierId → default null", () => {
     const audit = createNewAudit({
       clientName: "Acme Srl",
       auditNumber: "2026-01",
     });
-    expect(audit.metadata.fornitoreCompanyId).toBeNull();
+    expect(audit.metadata.fornitoreSupplierId).toBeNull();
+  });
+
+  it("retrocompat: fornitoreCompanyId legacy ancora leggibile", () => {
+    const audit = createNewAudit({
+      auditPartyType: "second_party",
+      fornitoreName: "Legacy Fornitore",
+      fornitoreCompanyId: 42,
+      clientName: "Committente",
+      auditNumber: "2026-LEG",
+    });
+    expect(audit.metadata.fornitoreCompanyId).toBe(42);
+    expect(audit.metadata.fornitoreSupplierId).toBeNull();
   });
 });

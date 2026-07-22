@@ -24,7 +24,7 @@ async function loadOrganizationProfile(organizationId) {
 }
 
 /**
- * Blocco testuale da appendere al system prompt (Livello 1 — studio).
+ * Blocco testuale da appendere al system prompt (Livello 1 â€” studio).
  * @param {object|null} profile
  * @returns {string}
  */

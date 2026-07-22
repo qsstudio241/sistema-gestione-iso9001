@@ -5,7 +5,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useStorage } from "../contexts/StorageContext";
-import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import {
   STANDARDS_LIST,
@@ -45,40 +44,39 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       setShowReadyBanner(false);
     }
   }, [serverDataStatus]);
-  const { user } = useAuth();
 
   const LOCKED_STATUSES = ['completed', 'approved', 'archived'];
   // Read-only se: audit formalmente chiuso/approvato OPPURE lock in uso da altro utente
   const isReadOnly = LOCKED_STATUSES.includes(currentAudit?.metadata?.status) || auditLock?.mode === 'foreign';
 
-  // Caricamento aziende per dropdown "Azienda auditata" (seconda parte)
-  const [companies, setCompanies] = useState([]);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
-  const isSuperadmin = user?.role === 'admin' && !user?.auditor_org_id;
+  // Caricamento fornitori per dropdown "Azienda auditata" (seconda parte)
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const committenteCompanyId = currentAudit?.metadata?.companyId ?? null;
 
-  const loadCompanies = useCallback(async () => {
-    setCompaniesLoading(true);
-    try {
-      let orgId = user?.auditor_org_id ?? null;
-      // Superadmin senza auditor_org_id: carica il primo auditor_org disponibile
-      if (!orgId && isSuperadmin) {
-        const orgsRes = await apiService.getAuditorOrgs();
-        const orgs = orgsRes?.data || orgsRes || [];
-        orgId = Array.isArray(orgs) && orgs.length > 0 ? orgs[0].id : null;
-      }
-      if (!orgId) { setCompanies([]); return; }
-      const res = await apiService.getCompanies({ auditor_org_id: orgId });
-      setCompanies(res.data || []);
-    } catch {
-      setCompanies([]);
-    } finally {
-      setCompaniesLoading(false);
+  const loadSuppliers = useCallback(async (companyId) => {
+    if (!companyId) {
+      setSuppliers([]);
+      return;
     }
-  }, [user?.auditor_org_id, isSuperadmin]);
+    setSuppliersLoading(true);
+    try {
+      const res = await apiService.getSuppliers({ company_id: companyId, is_active: 'true' });
+      setSuppliers(res?.data || []);
+    } catch {
+      setSuppliers([]);
+    } finally {
+      setSuppliersLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadCompanies();
-  }, [loadCompanies]);
+    if ((currentAudit?.metadata?.auditPartyType || 'first_party') === 'second_party' && committenteCompanyId) {
+      loadSuppliers(committenteCompanyId);
+    } else {
+      setSuppliers([]);
+    }
+  }, [currentAudit?.metadata?.auditPartyType, committenteCompanyId, loadSuppliers]);
 
   // Metriche per-norma in tempo reale (ADR-009 Fase 1).
   // Il chip header le legge per mostrare "9001: 2 NC · 14001: 1 NC · totale 3".
@@ -168,6 +166,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
   const handleAuditOutcomeUpdate = (updatedData) => {
     onUpdate("auditOutcome", updatedData);
+  };
+
+  const handleIsIntegratedSystemUpdate = (value) => {
+    onUpdate("isIntegratedSystem", value);
   };
 
   /**
@@ -321,6 +323,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
   // Verifica quali standard sono selezionati
   const selectedStandards = currentAudit.metadata.selectedStandards || [];
+  const isIntegratedSystem = currentAudit.metadata?.isIntegratedSystem ?? null;
 
   // Blocca la deselezione solo se almeno una domanda ha ricevuto una valutazione.
   // Clausole vuote o con sole domande NOT_ANSWERED non contano come "dati".
@@ -477,42 +480,52 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       {(currentAudit.metadata?.auditPartyType || 'first_party') === 'second_party' && (
                         <div className="tipologia-audit-fornitore">
                           <label className="subsection-label">Azienda auditata</label>
-                          {companies.length > 0 ? (
+                          {!committenteCompanyId ? (
+                            <input
+                              type="text"
+                              className="subsection-input"
+                              value={currentAudit.metadata?.fornitoreName || ''}
+                              onChange={(e) => onUpdate('fornitoreName', e.target.value)}
+                              placeholder="es. Fornitore XYZ Srl"
+                              style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
+                              disabled={isReadOnly}
+                            />
+                          ) : suppliers.length > 0 || currentAudit.metadata?.fornitoreName ? (
                             <>
                               <select
                                 className="subsection-input form-control"
                                 style={{ width: '100%', maxWidth: '400px', padding: '0.35rem 0.5rem' }}
                                 value={
-                                  currentAudit.metadata?.fornitoreCompanyId
-                                    ? String(currentAudit.metadata.fornitoreCompanyId)
-                                    : (currentAudit.metadata?.fornitoreName && !currentAudit.metadata?.fornitoreCompanyId
+                                  currentAudit.metadata?.fornitoreSupplierId
+                                    ? String(currentAudit.metadata.fornitoreSupplierId)
+                                    : (currentAudit.metadata?.fornitoreName && !currentAudit.metadata?.fornitoreSupplierId
                                         ? MANUAL_COMPANY_VALUE
                                         : "")
                                 }
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   if (val === MANUAL_COMPANY_VALUE) {
-                                    onUpdate('fornitoreCompanyId', null);
+                                    onUpdate('fornitoreSupplierId', null);
                                   } else if (val === "") {
-                                    onUpdate('fornitoreCompanyId', null);
+                                    onUpdate('fornitoreSupplierId', null);
                                     onUpdate('fornitoreName', "");
                                   } else {
-                                    const found = companies.find(c => String(c.id) === val);
-                                    onUpdate('fornitoreCompanyId', found ? found.id : null);
+                                    const found = suppliers.find(s => String(s.id) === val);
+                                    onUpdate('fornitoreSupplierId', found ? found.id : null);
                                     onUpdate('fornitoreName', found ? found.name : "");
                                   }
                                 }}
-                                disabled={isReadOnly || companiesLoading}
+                                disabled={isReadOnly || suppliersLoading}
                               >
-                                <option value="">- Seleziona azienda auditata -</option>
+                                <option value="">- Seleziona fornitore -</option>
                                 <option value={MANUAL_COMPANY_VALUE}>- Inserimento manuale -</option>
-                                {companies.map(c => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                                {suppliers.map(s => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}{s.vat_number ? ` (P.IVA ${s.vat_number})` : ""}
                                   </option>
                                 ))}
                               </select>
-                              {!currentAudit.metadata?.fornitoreCompanyId && (
+                              {!currentAudit.metadata?.fornitoreSupplierId && (
                                 <input
                                   type="text"
                                   className="subsection-input"
@@ -523,7 +536,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                                   disabled={isReadOnly}
                                 />
                               )}
-                              <small style={{ color: '#6b7280', fontSize: '0.78rem' }}>Scegli dall&apos;anagrafica o inserisci manualmente.</small>
+                              <small style={{ color: '#6b7280', fontSize: '0.78rem' }}>Fornitori collegati al committente o inserimento manuale.</small>
                             </>
                           ) : (
                             <input
@@ -547,6 +560,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       onUpdate={handleGeneralDataUpdate}
                       onStandardsUpdate={handleStandardsUpdate}
                       readOnly={isReadOnly}
+                      isIntegratedSystem={isIntegratedSystem}
+                      onIsIntegratedSystemChange={handleIsIntegratedSystemUpdate}
                     />
                     <button className="accordion-collapse-btn" onClick={() => toggleSubSection("general-data-form")}>▲ Chiudi 1.1</button>
                   </div>
@@ -734,6 +749,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={false}
                 readOnly={isReadOnly}
                 selectedStandards={selectedStandards}
+                isIntegratedSystem={isIntegratedSystem}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("outcome")}>▲ Chiudi sezione 11</button>
             </div>
@@ -763,6 +779,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={true}
                 readOnly={isReadOnly}
                 selectedStandards={selectedStandards}
+                isIntegratedSystem={isIntegratedSystem}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("conclusions")}>▲ Chiudi sezione 12</button>
             </div>
