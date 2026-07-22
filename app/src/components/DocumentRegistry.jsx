@@ -1813,6 +1813,7 @@ function DocumentRegistry() {
                                     <span className={`norm-validity-inline norm-validity-inline--${doc.validity_status}`}>
                                       {doc.validity_status === 'vigente' ? ' · Vigente' :
                                        doc.validity_status === 'superata' ? ' · Superata' :
+                                       doc.validity_status === 'da_verificare' ? ' · Da verificare' :
                                        doc.validity_status === 'ritirata' ? ' · Ritirata' : ` · ${doc.validity_status}`}
                                     </span>
                                   )}

@@ -13,13 +13,20 @@ const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
+const {
+    repairDeep,
+    normalizeIngestSelectFields,
+    detectLikelyFontSubstitutionCorruption,
+    repairFontSubstitutionArtifacts,
+} = require('../utils/textEncodingRepair');
+const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
 try {
     extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
 } catch (_) {}
 
-const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps']);
+const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps', 'norma', 'qualifica_14732']);
 
 /** Alias campi AI/schema → campi piatti pipeline */
 const FIELD_ALIASES = {
@@ -48,7 +55,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     try {
         text = await extractPdfText(pdfBuffer);
     } catch (err) {
-        warnings.push(`pdf-parse: ${err.message}`);
+        const errMsg = describeIngestFileError(err, 'errore non specificato');
+        logger.warn('[IngestPipeline] pdf-parse fallito', { error: errMsg, stack: err?.stack || null });
+        warnings.push(`pdf-parse: ${errMsg}`);
     }
 
     if (text.trim().length < OCR_MIN_CHARS && extractTextWithOCR) {
@@ -63,7 +72,17 @@ async function extractDocumentText(pdfBuffer, options = {}) {
         warnings.push('Testo PDF insufficiente; OCR non configurato sul server');
     }
 
-    return { text: String(text || '').trim(), ocrUsed, warnings };
+    text = String(text || '').trim();
+
+    // Font PDF "anti-copia"/non standard (visto su norme UNI/ISO, es. ISO 9606-1:2017):
+    // correzione opzionale e mirata, attivata solo se il testo mostra pattern noti
+    // di corruzione (dizionario in textEncodingRepair.js). Non tocca testo pulito.
+    if (detectLikelyFontSubstitutionCorruption(text)) {
+        text = repairFontSubstitutionArtifacts(text);
+        warnings.push('Rilevati pattern di font non standard (es. "buii"→"butt"); applicata correzione automatica — verificare i campi estratti');
+    }
+
+    return { text, ocrUsed, warnings };
 }
 
 /**
@@ -91,10 +110,11 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
         if (result.data?.title && !flat.title) flat.title = result.data.title;
         return { fields: flat, model: result.model || null, warnings };
     } catch (err) {
-        warnings.push(`AI extraction: ${err.message}`);
-        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: err.message });
+        const errMsg = describeIngestFileError(err, 'errore non specificato');
+        warnings.push(`AI extraction: ${errMsg}`);
+        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: errMsg, stack: err?.stack || null });
 
-        if (err.code !== 'AI_INVALID_JSON' && !String(err.message).includes('JSON')) {
+        if (err.code !== 'AI_INVALID_JSON' && !String(errMsg).includes('JSON')) {
             return { fields: {}, model: null, warnings };
         }
 
@@ -111,7 +131,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
                         content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${Object.keys(schema?.aiExpectedSchema || {}).join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
-                { temperature: 0.1, responseFormat: 'json', maxTokens: 1200 }
+                { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }
             );
             const parsed = parseJsonWithRepair(retry.content || '');
             const fields = parsed.type_specific_data && typeof parsed.type_specific_data === 'object'
@@ -120,7 +140,9 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
             warnings.push('AI extraction recuperata dopo retry JSON');
             return { fields, model: retry.model || null, warnings };
         } catch (retryErr) {
-            warnings.push(`AI retry fallito: ${retryErr.message}`);
+            const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
+            warnings.push(`AI retry fallito: ${retryMsg}`);
+            logger.warn('[IngestPipeline] AI retry failed', { docType, fileName, error: retryMsg, stack: retryErr?.stack || null });
             return { fields: {}, model: null, warnings };
         }
     }
@@ -202,7 +224,7 @@ function mergeExtractions(ruleFields, aiFields, docType) {
  *
  * @param {object} params
  * @param {Buffer} params.pdfBuffer
- * @param {string} params.docType — wpqr | patentino_saldatore | wps
+ * @param {string} params.docType — wpqr | patentino_saldatore | wps | norma
  * @param {string} [params.fileName]
  * @param {number} [params.organizationId] — riservato IG-5 (few-shot)
  * @returns {Promise<object>}
@@ -236,10 +258,11 @@ async function runDocumentIngest({
     warnings.push(...aiWarnings);
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);
+    const normalizedFields = normalizeIngestSelectFields(repairDeep(fields));
 
-    const filledCount = Object.values(fields).filter((v) => v != null && v !== '').length;
+    const filledCount = Object.values(normalizedFields).filter((v) => v != null && v !== '').length;
     const schemaKeys = getSchemaKeys(docType);
-    const requiredFilled = schemaKeys.filter((k) => fields[k] != null).length;
+    const requiredFilled = schemaKeys.filter((k) => normalizedFields[k] != null).length;
     const extractionConfidence = Math.min(
         100,
         Math.round(
@@ -266,7 +289,7 @@ async function runDocumentIngest({
         text,
         textLength: text.length,
         ocrUsed,
-        fields,
+        fields: normalizedFields,
         fieldConfidence,
         fieldSources,
         ruleFields,

@@ -378,12 +378,21 @@ async function runKnowledgeIndexJob() {
       'SELECT organization_id FROM organizations WHERE is_active = 1'
     );
     const orgs = orgsResult.recordset || [];
+    const { processFeedbackChunks } = require('./knowledgeIndexer.service');
     for (const org of orgs) {
       try {
         const count = await indexAllEntities(org.organization_id);
         logger.info(`[AlertScheduler] Knowledge index org ${org.organization_id}: ${count} chunks`);
       } catch (err) {
         logger.error(`[AlertScheduler] Knowledge index failed org ${org.organization_id}:`, err.message);
+      }
+      try {
+        const fbCount = await processFeedbackChunks(org.organization_id);
+        if (fbCount > 0) {
+          logger.info(`[AlertScheduler] Feedback chunks org ${org.organization_id}: ${fbCount} new`);
+        }
+      } catch (err) {
+        logger.error(`[AlertScheduler] Feedback chunk processing failed org ${org.organization_id}:`, err.message);
       }
     }
     logger.info(`[AlertScheduler] Indicizzazione knowledge completata per ${orgs.length} organizzazioni`);

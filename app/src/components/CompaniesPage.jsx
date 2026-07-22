@@ -81,7 +81,7 @@ function CompaniesPage({ onBack }) {
       setLoading(true);
       setError(null);
       try {
-        const res = await apiService.getCompanies({});
+        const res = await apiService.getCompanies({ limit: 500 });
         setCompanies(res.data || []);
       } catch (err) {
         setError(err.message || "Errore caricamento aziende");
@@ -108,7 +108,7 @@ function CompaniesPage({ onBack }) {
     setLoading(true);
     setError(null);
     try {
-      const params = orgId ? { auditor_org_id: orgId } : {};
+      const params = orgId ? { auditor_org_id: orgId, limit: 500 } : { limit: 500 };
       const res = await apiService.getCompanies(params);
       setCompanies(res.data || []);
       setError(null); // Pulisci eventuale errore da richiesta precedente

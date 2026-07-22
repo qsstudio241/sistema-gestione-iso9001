@@ -32,7 +32,7 @@ function RichTextField({
   /** Scope draft: audit UUID oppure `nc:123` / `nc-create` */
   draftScopeId = null,
   draftFieldId = null,
-  /** @deprecated usare draftScopeId — compat audit */
+  /** @deprecated usare draftScopeId â€” compat audit */
   auditUuid = null,
   /** Persistenza localStorage bozza NC */
   persistLocalDraft = false,

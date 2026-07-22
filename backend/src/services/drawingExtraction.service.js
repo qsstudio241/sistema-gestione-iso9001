@@ -15,6 +15,7 @@
 'use strict';
 
 const geminiAdapter = require('./adapters/geminiAdapter');
+const { buildWeldingSymbolPromptSection } = require('../data/weldingSymbols2553');
 
 const VALID_REQ_TYPES = new Set([
     'dimension', 'tolerance', 'gdt', 'material',
@@ -22,11 +23,14 @@ const VALID_REQ_TYPES = new Set([
 ]);
 
 // Prompt di sistema: vincola Gemini a restituire SOLO JSON strutturato.
+// Include il glossario simboli ISO 2553 per etichettare i weld_symbol con
+// terminologia standard invece di descrivere solo la forma grafica vista.
 const DRAWING_SYSTEM_PROMPT = [
     'Sei un tecnico esperto di disegno meccanico e fabbricazione metallica (ISO 9001 / ISO 3834).',
     'Analizzi un disegno tecnico (immagine o PDF) ed estrai i requisiti tecnici rilevanti per la',
     'pianificazione della produzione e per la verifica delle qualifiche di saldatura.',
     'Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo prima o dopo, senza markdown.',
+    '\n\n' + buildWeldingSymbolPromptSection(),
 ].join(' ');
 
 // Prompt utente: descrive lo schema JSON atteso.

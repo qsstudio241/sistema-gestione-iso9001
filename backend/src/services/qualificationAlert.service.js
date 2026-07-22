@@ -13,6 +13,7 @@ const {
   parseRecipientList,
   uniqueEmails,
 } = require('./alertSchedulerHelpers');
+const { requiresSemiannualConfirmation } = require('./weldingCoordinatorAuth.service');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
@@ -21,13 +22,13 @@ function validEmail(email) {
 }
 
 /**
- * Data guida alert: la piu' imminente tra expiry_date e next_confirmation_due (solo 9606).
+ * Data guida alert: la piu' imminente tra expiry_date e next_confirmation_due
+ * (qualifiche ISO 9606-1 e ISO 14732, entrambe con conferma semestrale).
  * @returns {{ date: string|null, kind: 'expiry'|'confirmation'|null }}
  */
 function effectiveAlertDue(q) {
   const expiry = q.expiry_date || null;
-  const isWelder9606 = /9606/.test(String(q.qualification_type || ''));
-  if (!isWelder9606) {
+  if (!requiresSemiannualConfirmation(q.qualification_type)) {
     return { date: expiry, kind: expiry ? 'expiry' : null };
   }
   const nextConf = q.next_confirmation_due || null;

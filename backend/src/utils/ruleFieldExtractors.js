@@ -5,7 +5,12 @@
  * Complementare all'AI: fornisce fallback e cross-check.
  */
 
-const ISO_4063_CODES = ['111', '121', '131', '135', '136', '138', '141', '145', '311'];
+const {
+    inferWeldingProcessFromText,
+} = require('../data/weldingProcesses4063');
+const {
+    extractWeldingPositionsFromText,
+} = require('../data/weldingPositions6947');
 
 const DATE_PATTERNS = [
     { re: /\b(\d{4})-(\d{2})-(\d{2})\b/g, fmt: (m) => `${m[1]}-${m[2]}-${m[3]}` },
@@ -35,22 +40,23 @@ function allDates(text) {
 }
 
 function extractWeldingProcess(text) {
-    const upper = text.toUpperCase();
-    for (const code of ISO_4063_CODES) {
-        const re = new RegExp(`\\b${code}\\b`);
-        if (re.test(upper) || new RegExp(`ISO\\s*4063[:\\s]*${code}`, 'i').test(text)) {
-            return code;
-        }
-    }
-    const m = text.match(/\bprocess(?:o)?\s*(?:di\s*)?saldatura\s*[:.]?\s*(\d{3})\b/i);
-    return m ? m[1] : null;
+    return inferWeldingProcessFromText(text);
 }
 
+const {
+    normalizeMaterialGroupCode,
+    inferMaterialGroupFromText,
+} = require('../data/materialGroups15608');
+
 function extractMaterialGroup(text) {
-    const m = text.match(/\b(?:gruppo|group|materiale)\s*(?:base\s*)?[:.]?\s*(\d{1,2}\.\d{1,2})\b/i)
-        || text.match(/\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}\.\d{1,2})\b/i)
-        || text.match(/\b(\d{1,2}\.\d{1,2})\s*(?:\/|\||\-)\s*\d{1,2}\.\d{1,2}\b/);
-    return m ? m[1] : null;
+    const direct = text.match(/\b(?:gruppo|group|materiale)\s*(?:base\s*)?[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i)
+        || text.match(/\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i)
+        || text.match(/\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:\/|\||\-)\s*\d{1,2}(?:\.\d{1,2})?\b/);
+    if (direct) {
+        const normalized = normalizeMaterialGroupCode(direct[1]);
+        if (normalized) return normalized;
+    }
+    return inferMaterialGroupFromText(text) || normalizeMaterialGroupCode(text);
 }
 
 function extractReferenceFromFileName(fileName) {
@@ -68,8 +74,12 @@ function extractWpqrReference(text, fileName) {
 }
 
 function extractCertificateNumber(text) {
-    const m = text.match(/\b(?:cert(?:ificato)?|certificate|n[°º.]?\s*)\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
-    return m ? m[1].trim() : null;
+    const m = text.match(/\b(?:cert(?:[\s\r\n]*ificato)?|certificate|n[°º.])\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
+    if (!m) return null;
+    const val = m[1].trim();
+    // Scarta frammenti della parola "certificato" (artefatto split PDF)
+    if (/^ificato$/i.test(val)) return null;
+    return val;
 }
 
 function extractThicknessMm(text) {
@@ -128,27 +138,83 @@ function extractWpqrFields(text, fileName) {
 function extractPatentinoFields(text, fileName) {
     const dates = allDates(text);
     const thickness = extractThicknessMm(text);
+    const positions = extractWeldingPositionsFromText(text);
     return {
         welder_name: extractPersonName(text),
         certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
         issuing_body: extractIssuingBody(text),
         welding_process: extractWeldingProcess(text),
         material_group: extractMaterialGroup(text),
+        welding_positions: positions.length ? positions : null,
         thickness_min_mm: thickness,
         exam_date: dates[0] || null,
         expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
     };
 }
 
+/**
+ * @param {string} text
+ * @param {string} fileName
+ * @returns {object}
+ */
+function extractQualifica14732Fields(text, fileName) {
+    const dates = allDates(text);
+    const positions = extractWeldingPositionsFromText(text);
+    return {
+        operator_name: extractPersonName(text),
+        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        issuing_body: extractIssuingBody(text),
+        welding_process: extractWeldingProcess(text),
+        welding_positions: positions.length ? positions : null,
+        exam_date: dates[0] || null,
+        expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
+    };
+}
+
+const { guessStandardCodeFromFilename } = require('../services/documentRegistryNorm.service');
+
+function extractNormFields(text, fileName) {
+    const fromName = guessStandardCodeFromFilename(fileName);
+    const trMatch = text.match(/\bISO\/TR\s+(\d+(?:-\d+)?)\s*:?\s*((?:19|20)\d{2})?/i);
+    let codeFromText = null;
+    if (trMatch) {
+        codeFromText = `ISO/TR ${trMatch[1]}${trMatch[2] ? `:${trMatch[2]}` : ''}`;
+    } else {
+        codeFromText = firstMatch(
+            /\b((?:UNI\s*)?(?:EN\s*)?(?:ISO\/TR|ISO\s+\d|IEC|EN|BS|DIN|AWS|ASME)\s*[\d]+(?:[-\s/][\d]+)*(?::\d{4})?)\b/i,
+            text,
+        );
+    }
+    let standard_code = codeFromText || fromName || null;
+    if (fromName && codeFromText && /^ISO\s+20\d{2}$/i.test(String(codeFromText).trim())) {
+        standard_code = fromName;
+    }
+    const yearFromCode = standard_code ? String(standard_code).match(/:(\d{4})\b/) : null;
+    const yearInText = text.match(/\b((?:19|20)\d{2})\b/);
+    const edition_year = yearFromCode
+      ? parseInt(yearFromCode[1], 10)
+      : (yearInText ? parseInt(yearInText[1], 10) : null);
+    const issuing_body = standard_code
+        ? (String(standard_code).toUpperCase().startsWith('UNI') ? 'UNI' : /\bISO\b/i.test(standard_code) ? 'ISO' : null)
+        : null;
+    return {
+        standard_code,
+        issuing_body,
+        edition_year,
+    };
+}
+
 const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
+    qualifica_14732: extractQualifica14732Fields,
     wps: (text, fileName) => ({
         wps_number: extractWpqrReference(text, fileName),
         welding_process: extractWeldingProcess(text),
         base_material: extractMaterialGroup(text),
         wpqr_ref: firstMatch(/\bWPQR\s*[:.]?\s*(\d{2}-\d{4,6})\b/i, text),
     }),
+    norma: extractNormFields,
 };
 
 /**
@@ -172,6 +238,7 @@ module.exports = {
     extractFieldsByRules,
     extractWpqrFields,
     extractPatentinoFields,
+    extractQualifica14732Fields,
     extractWeldingProcess,
     extractMaterialGroup,
     allDates,

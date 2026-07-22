@@ -1,8 +1,11 @@
 /**
  * IngestReviewDialog — revisione campi estratti pre-commit (IG-3)
  */
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
+import { repairTextEncoding } from "../utils/textEncodingRepair";
+import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
+import IngestSourcePreview from "./IngestSourcePreview";
 import "./IngestReviewDialog.css";
 
 const CONFIDENCE_LABELS = {
@@ -14,13 +17,42 @@ const CONFIDENCE_LABELS = {
 function formatFieldValue(value) {
   if (value == null || value === "") return "";
   if (typeof value === "boolean") return value ? "Sì" : "No";
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value);
+  if (Array.isArray(value)) return value.map((v) => repairTextEncoding(String(v))).join(", ");
+  return repairTextEncoding(String(value));
 }
 
 function ConfidenceBadge({ level }) {
   const meta = CONFIDENCE_LABELS[level] || { label: "N/D", className: "ingest-review__confidence--unknown" };
   return <span className={`ingest-review__confidence ${meta.className}`}>{meta.label}</span>;
+}
+
+/**
+ * Un campo è "confermato dall'AI" (mostrato readonly, minimo intervento umano)
+ * solo se la confidenza della pipeline è alta E c'è un valore non vuoto.
+ * Altrimenti (media/bassa/assente) l'operatore deve vederlo subito editabile.
+ */
+function isFieldConfirmedByAi(confidence, value) {
+  if (confidence !== "high") return false;
+  if (value == null || value === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  return true;
+}
+
+function optionLabelFor(field, rawValue) {
+  if (!Array.isArray(field?.options)) return rawValue;
+  const opt = field.options.find((o) => String(o.value) === String(rawValue));
+  return opt ? opt.label : rawValue;
+}
+
+function formatReadonlyDisplay(field, value) {
+  if (value == null || value === "") return "\u2014";
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "\u2014";
+    return value.map((v) => repairTextEncoding(String(optionLabelFor(field, v)))).join(", ");
+  }
+  if (typeof value === "boolean") return value ? "Sì" : "No";
+  if (field?.type === "select") return repairTextEncoding(String(optionLabelFor(field, value)));
+  return repairTextEncoding(String(value));
 }
 
 function FieldInput({ field, value, onChange }) {
@@ -57,6 +89,9 @@ export default function IngestReviewDialog({
   open,
   docType,
   fileName,
+  stagingId = null,
+  previewFile = null,
+  mimeType = "application/pdf",
   fields = {},
   fieldConfidence = {},
   warnings = [],
@@ -68,12 +103,32 @@ export default function IngestReviewDialog({
 }) {
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
+  const [expanded, setExpanded] = useState(false);
+  // Campi confermati dall'AI (alta confidenza) che l'operatore ha scelto di modificare a mano.
+  const [editingFields, setEditingFields] = useState(() => new Set());
+  const layoutRef = useRef(null);
+  const { gridTemplateColumns, startResize, ratio } = useIngestReviewSplit(layoutRef);
 
   useEffect(() => {
     if (open) {
-      setForm({ ...fields });
+      const cleaned = {};
+      for (const [k, v] of Object.entries(fields || {})) {
+        cleaned[k] = typeof v === "string" ? repairTextEncoding(v) : v;
+      }
+      setForm(cleaned);
+      setExpanded(false);
+      setEditingFields(new Set());
     }
   }, [open, fields]);
+
+  useEffect(() => {
+    if (!open || !expanded) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, expanded]);
 
   if (!open) return null;
 
@@ -82,6 +137,15 @@ export default function IngestReviewDialog({
 
   function handleChange(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleEditField(key) {
+    setEditingFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   async function handleConfirm() {
@@ -98,36 +162,123 @@ export default function IngestReviewDialog({
   }
 
   return (
-    <div className="ingest-review__overlay" role="dialog" aria-modal="true" aria-labelledby="ingest-review-title">
-      <div className="ingest-review__dialog">
+    <div
+      className={`ingest-review__overlay ${expanded ? "ingest-review__overlay--expanded" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ingest-review-title"
+    >
+      <div className={`ingest-review__dialog ${expanded ? "ingest-review__dialog--expanded" : ""}`}>
         <header className="ingest-review__header">
-          <h2 id="ingest-review-title">Revisione {title}</h2>
+          <div className="ingest-review__header-top">
+            <h2 id="ingest-review-title">Revisione {title}</h2>
+            <button
+              type="button"
+              className="ingest-review__expand-btn"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Riduci" : "Ingrandisci affiancato"}
+            </button>
+          </div>
           <p className="ingest-review__file">File: <strong>{fileName}</strong></p>
           {qualificationType && (
             <p className="ingest-review__meta">Tipo rilevato: {qualificationType}</p>
           )}
+          <p className="ingest-review__meta ingest-review__meta--hint">
+            {expanded
+              ? "Documento e campi a schermo intero: trascina il divisore centrale per dare più spazio al PDF o ai campi."
+              : "Confronta il documento a sinistra con i campi estratti a destra. Trascina il divisore per ridimensionare le aree."}
+          </p>
         </header>
 
-        {warnings.length > 0 && (
-          <div className="ingest-review__warnings">
-            {warnings.map((w, i) => (
-              <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
-            ))}
-          </div>
-        )}
+        <div
+          ref={layoutRef}
+          className="ingest-review__layout"
+          style={{ gridTemplateColumns }}
+        >
+          <aside className="ingest-review__preview-pane">
+            <IngestSourcePreview
+              stagingId={stagingId}
+              fileName={fileName}
+              mimeType={mimeType}
+              previewFile={previewFile}
+              tall={expanded}
+            />
+          </aside>
 
-        <div className="ingest-review__fields">
-          {schemaFields.map((field) => (
-            <label key={field.key} className="ingest-review__field" htmlFor={`ingest-field-${field.key}`}>
-              <span className="ingest-review__field-label">
-                {field.label}
-                {field.required && <span className="ingest-review__required">*</span>}
-                <ConfidenceBadge level={fieldConfidence[field.key]} />
-              </span>
-              <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
-              {field.hint && <span className="ingest-review__hint">{field.hint}</span>}
-            </label>
-          ))}
+          <div
+            className="ingest-review__resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Ridimensiona anteprima e campi"
+            aria-valuenow={Math.round(ratio * 100)}
+            aria-valuemin={28}
+            aria-valuemax={72}
+            onMouseDown={startResize}
+          />
+
+          <div className="ingest-review__form-pane">
+            {warnings.length > 0 && (
+              <div className="ingest-review__warnings">
+                {warnings.map((w, i) => (
+                  <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
+                ))}
+              </div>
+            )}
+
+            <div className="ingest-review__fields">
+              {schemaFields.map((field) => {
+                const confidence = fieldConfidence[field.key];
+                const confirmedByAi = isFieldConfirmedByAi(confidence, form[field.key]);
+                const manuallyEditing = editingFields.has(field.key);
+                const showEditable = !confirmedByAi || manuallyEditing;
+                const attentionLevel = confirmedByAi ? "confirmed" : (confidence || "low");
+
+                return (
+                  <div
+                    key={field.key}
+                    className={`ingest-review__field ingest-review__field--${attentionLevel}`}
+                  >
+                    <label className="ingest-review__field-label" htmlFor={`ingest-field-${field.key}`}>
+                      {field.label}
+                      {field.required && <span className="ingest-review__required">*</span>}
+                      <ConfidenceBadge level={confidence} />
+                    </label>
+
+                    {showEditable ? (
+                      <>
+                        <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
+                        {confirmedByAi && manuallyEditing && (
+                          <button
+                            type="button"
+                            className="ingest-review__cancel-edit-btn"
+                            onClick={() => toggleEditField(field.key)}
+                          >
+                            Annulla modifica (torna al valore confermato dall'AI)
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="ingest-review__readonly">
+                        <span className="ingest-review__readonly-value">
+                          {"\u2713"} {formatReadonlyDisplay(field, form[field.key])}
+                        </span>
+                        <button
+                          type="button"
+                          className="ingest-review__edit-btn"
+                          onClick={() => toggleEditField(field.key)}
+                        >
+                          Modifica
+                        </button>
+                      </div>
+                    )}
+
+                    {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <footer className="ingest-review__actions">
@@ -161,4 +312,4 @@ export default function IngestReviewDialog({
   );
 }
 
-export { ConfidenceBadge, formatFieldValue };
+export { ConfidenceBadge, formatFieldValue, isFieldConfirmedByAi, formatReadonlyDisplay };

@@ -14,11 +14,13 @@ Ogni ADR segue il template standard:
 - **Conseguenze**: Impatti (positivi e negativi)
 - **Rischi & Mitigazioni**: Analisi rischi (ISO 9001:2015 punto 6.1)
 
-## Processo Approvazione
+## Processo Approvazione (workflow corrente Lead/Deputy — ADR-015)
 
-1. **Planner Agent** redige ADR in `/docs/adr/`
-2. **Reviewer Agent** valuta coerenza con style.instructions.md
-3. **Commit ADR** → diventa vincolante per Implementer Agent
+1. **Lead** redige ADR in `docs/adr/`
+2. **Deputy** implementa e verifica coerenza con il codebase
+3. **Commit ADR** → merge PR → diventa vincolante
+
+> I riferimenti a "Planner / Implementer / Reviewer Agent" sono legacy (ADR-001, superato da ADR-015).
 
 ## Indice ADR
 
@@ -53,7 +55,8 @@ Rinumerazione sequenziale univoca: backlog doc Fase 3 (vedi [INDICE_DOCUMENTAZIO
 
 | File | Titolo | Stato |
 |------|--------|-------|
-| [ADR-001-multi-agent-workflow](./ADR-001-multi-agent-workflow.md) | Multi-Agent Workflow con Tool Approval | Accettato |
+| [ADR-001-multi-agent-workflow](./ADR-001-multi-agent-workflow.md) | Multi-Agent Workflow con Tool Approval | **Superato da ADR-015** |
+| [ADR-015-cursor-lead-deputy-workflow](./ADR-015-cursor-lead-deputy-workflow.md) | Cursor Lead/Deputy Workflow | Accettato |
 | [ADR-002-offline-first-sync](./ADR-002-offline-first-sync.md) | Offline-First Sync Strategy | Accettato |
 | [ADR-002-checklist-alignment-strategy](./ADR-002-checklist-alignment-strategy.md) | Checklist Alignment Strategy | Accettato |
 | [ADR-003-pwa-mobile-android-strategy](./ADR-003-pwa-mobile-android-strategy.md) | PWA Mobile Android Strategy | Accettato |

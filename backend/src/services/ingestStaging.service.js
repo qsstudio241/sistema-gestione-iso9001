@@ -3,18 +3,25 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
 const { commitQualificationFromFields } = require('./qualificationIngest.service');
 const { commitWPSFromFields } = require('./wpsIngest.service');
+const { commitNormFromFields } = require('./normIngest.service');
 const { recordFeedback } = require('./ingestFeedback.service');
 
 const DOC_TYPE_MODULES = {
     wpqr: 'saldatura',
     wps: 'saldatura',
     patentino_saldatore: 'qualifiche',
+    qualifica_14732: 'qualifiche',
+    norma: 'documents',
 };
+
+// Tipi documento che confluiscono nella tabella qualifications (stesso commit di patentino_saldatore).
+const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
 
 function parseJson(val, fallback = null) {
     if (val == null) return fallback;
@@ -119,7 +126,7 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
                 row.company_id,
                 { userId, fileName: row.original_name },
             );
-        } else if (row.doc_type === 'patentino_saldatore') {
+        } else if (QUALIFICATION_DOC_TYPES.has(row.doc_type)) {
             commitResult = await commitQualificationFromFields(
                 fields,
                 organizationId,
@@ -129,6 +136,22 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
                     filePath: row.storage_path,
                     fileName: row.original_name,
                     qualificationType: row.qualification_type,
+                },
+            );
+        } else if (row.doc_type === 'norma') {
+            const meta = parseJson(row.staged_fields_json, {});
+            commitResult = await commitNormFromFields(
+                fields,
+                organizationId,
+                {
+                    userId,
+                    filePath: row.storage_path,
+                    fileName: row.original_name,
+                    parentFolderId: meta._parent_folder_id ?? null,
+                    extractedText: meta._extracted_text ?? null,
+                    textQuality: meta._text_quality ?? null,
+                    mimeType: row.mime_type,
+                    fileSize: row.file_size,
                 },
             );
         } else {
@@ -257,11 +280,37 @@ function getModuleForDocType(docType) {
     return DOC_TYPE_MODULES[docType] || null;
 }
 
+function resolveStagingFilePath(storagePath) {
+    if (!storagePath || typeof storagePath !== 'string') {
+        const err = new Error('File staging non disponibile');
+        err.code = 'FILE_NOT_FOUND';
+        throw err;
+    }
+
+    const uploadBase = path.resolve(
+        process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads'),
+    );
+    const resolved = path.resolve(storagePath);
+    const relative = path.relative(uploadBase, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        const err = new Error('Percorso file non valido');
+        err.code = 'FILE_FORBIDDEN';
+        throw err;
+    }
+    if (!fs.existsSync(resolved)) {
+        const err = new Error('File non trovato sul server');
+        err.code = 'FILE_NOT_FOUND';
+        throw err;
+    }
+    return resolved;
+}
+
 module.exports = {
     createStagingRecord,
     getStagingById,
     confirmStaging,
     rejectStaging,
     getModuleForDocType,
+    resolveStagingFilePath,
     parseJson,
 };

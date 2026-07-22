@@ -65,6 +65,10 @@ function repairCommonJsonIssues(s) {
     out = out.replace(/,\s*([}\]])/g, '$1');
     // Apostrofi tipografici
     out = out.replace(/[\u2018\u2019]/g, "'");
+    // Newline/CR letterali dentro stringhe JSON (artefatti da PDF o AI) → spazio
+    out = out.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
+        return match.replace(/\n/g, ' ').replace(/\r/g, '');
+    });
     return out;
 }
 
@@ -95,6 +99,10 @@ function parseJsonWithRepair(raw, options = {}) {
         try {
             const parsed = JSON.parse(candidate);
             if (Array.isArray(parsed)) {
+                // L'AI a volte avvolge la risposta in un array — prova a scartare il primo elemento
+                if (parsed.length === 1 && parsed[0] && typeof parsed[0] === 'object' && !Array.isArray(parsed[0])) {
+                    return parsed[0];
+                }
                 const e = new Error('JSON array non supportato');
                 e.code = 'AI_BAD_SHAPE';
                 throw e;
