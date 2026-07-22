@@ -438,7 +438,7 @@ export default function ContractReviewPage() {
       });
       // Idrata l'analisi capitolato persistita (slice #2): al riapri il risultato è ancora lì.
       if (data.text_analysis?.suggestion) {
-        setServerAiResult(data.text_analysis.suggestion);
+        setAiSuggestion(data.text_analysis.suggestion);
       }
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');

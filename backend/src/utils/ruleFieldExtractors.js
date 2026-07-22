@@ -5,7 +5,12 @@
  * Complementare all'AI: fornisce fallback e cross-check.
  */
 
-const ISO_4063_CODES = ['111', '121', '131', '135', '136', '138', '141', '145', '311'];
+const {
+    inferWeldingProcessFromText,
+} = require('../data/weldingProcesses4063');
+const {
+    extractWeldingPositionsFromText,
+} = require('../data/weldingPositions6947');
 
 const DATE_PATTERNS = [
     { re: /\b(\d{4})-(\d{2})-(\d{2})\b/g, fmt: (m) => `${m[1]}-${m[2]}-${m[3]}` },
@@ -35,15 +40,7 @@ function allDates(text) {
 }
 
 function extractWeldingProcess(text) {
-    const upper = text.toUpperCase();
-    for (const code of ISO_4063_CODES) {
-        const re = new RegExp(`\\b${code}\\b`);
-        if (re.test(upper) || new RegExp(`ISO\\s*4063[:\\s]*${code}`, 'i').test(text)) {
-            return code;
-        }
-    }
-    const m = text.match(/\bprocess(?:o)?\s*(?:di\s*)?saldatura\s*[:.]?\s*(\d{3})\b/i);
-    return m ? m[1] : null;
+    return inferWeldingProcessFromText(text);
 }
 
 const {
@@ -180,13 +177,34 @@ function extractWpqrFields(text, fileName) {
 function extractPatentinoFields(text, fileName) {
     const dates = allDates(text);
     const thickness = extractThicknessMm(text);
+    const positions = extractWeldingPositionsFromText(text);
     return {
         welder_name: extractPersonName(text),
         certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
         issuing_body: extractIssuingBody(text),
         welding_process: extractWeldingProcess(text),
         material_group: extractMaterialGroup(text),
+        welding_positions: positions.length ? positions : null,
         thickness_min_mm: thickness,
+        exam_date: dates[0] || null,
+        expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
+    };
+}
+
+/**
+ * @param {string} text
+ * @param {string} fileName
+ * @returns {object}
+ */
+function extractQualifica14732Fields(text, fileName) {
+    const dates = allDates(text);
+    const positions = extractWeldingPositionsFromText(text);
+    return {
+        operator_name: extractPersonName(text),
+        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        issuing_body: extractIssuingBody(text),
+        welding_process: extractWeldingProcess(text),
+        welding_positions: positions.length ? positions : null,
         exam_date: dates[0] || null,
         expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
     };
@@ -228,6 +246,7 @@ function extractNormFields(text, fileName) {
 const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
+    qualifica_14732: extractQualifica14732Fields,
     wps: (text, fileName) => ({
         wps_number: extractWpqrReference(text, fileName),
         welding_process: extractWeldingProcess(text),
@@ -258,6 +277,7 @@ module.exports = {
     extractFieldsByRules,
     extractWpqrFields,
     extractPatentinoFields,
+    extractQualifica14732Fields,
     extractWeldingProcess,
     extractMaterialGroup,
     allDates,

@@ -15,8 +15,18 @@ alwaysApply: true
 
 ## Convenzione DEPUTYTASK (workflow delegato)
 - Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
-- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` e consegna all'utente questo comando:
-  `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` con **Stato: APERTO** (mai lasciare un task CHIUSO nel file se chiedi al committente di lanciare il deputy).
+
+### Gate obbligatorio prima di chiedere «lancia il deputy»
+**Vietato** consegnare il comando deputy finché **tutti** i passi non sono veri (il deputy legge quasi sempre `main` o una copia non aggiornata):
+
+1. `DEPUTYTASK.md` committato e **pushato su `origin/main`** (merge PR se necessario — **non** lasciare il brief solo su branch feature).
+2. Verifica esplicita: `git fetch origin main` + conferma che `origin/main` contiene il titolo/obiettivo del nuovo task (es. prima riga H1 o riga `Stato: APERTO` coerente).
+3. Solo dopo: consegna all'utente il comando:
+   `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+4. Nel messaggio al committente, indicare **sempre**: «fai `git pull origin main` prima di lanciare il deputy» (o conferma che il cloud/desktop è già allineato).
+
+**Errore da non ripetere (07/07/2026):** brief PR2 scritto su branch + PR draft aperta, comando deputy dato con `main` ancora su task ingest norme **CHIUSO** → deputy risponde correttamente FIX NON APPLICABILI.
 
 - L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
 - **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
@@ -34,6 +44,7 @@ Sollevare al committente SOLO: decisioni di prodotto, breaking change senza roll
 - **Default**: eseguire task in **autonomia** (codice, test, doc, commit/push) quando la soluzione rispetta **golden rules**, `GUIDA_CONSOLIDATA`, `PROJECT_ROADMAP` e i pattern del repo. **Approvazione preventiva obbligatoria** solo per le eccezioni elencate sotto — **non** per chiusure di task limitati (markdown checklist, piccoli fix con test L1 esistenti, allineamento doc) purche' non tocchino schema DB produzione, segreti o contratti API senza piano.
 - **Chiedere conferma prima di procedere** solo se: (1) strategia che **contraddice** best practice note o **abbassa** sicurezza/integrita' dati; (2) **breaking change** (API, schema DB) **senza** migrazione + piano di rollback documentato; (3) decisione **commerciale/legal** non scritta in doc; (4) azione che **non** puo' essere annullata (es. purge dati produzione) o che richiede **credenziali** solo umane.
 - **User rules globali in Cursor**: se una regola chat chiede "sempre approvazione prima di ogni modifica", per **questo repository** prevale questa sezione (`alwaysApply: true`). Per ridurre attriti ripetuti, il committente puo' **restringere o rimuovere** quella user rule duplicata e lasciare qui la policy vincolante.
+- **Commit/push**: vedi [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) — prevale sulla user rule globale Cursor «only commit when requested» per questo repo.
 
 ## Principi trasversali (sempre attivi)
 - **Pulizia e sintesi**: documentazione operativa aggiornata e **minima ma completa** (cosa fare, dove, rischi); niente rumore ne' duplicati inutili tra file `.md`. **Chiarezza da best practice**: seguire la sezione *Principi di documentazione* in `docs/GUIDA_CONSOLIDATA.md` (gerarchia titoli, tabelle per checklist, fonte unica per tipo di informazione, link invece di copia, commit/PR con messaggi chiari anche per `.md`).

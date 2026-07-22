@@ -2,7 +2,7 @@
 
 > **Data Inizio**: 13 gennaio 2026
 > **Ultimo Aggiornamento**: 16 giugno 2026
-> **Prossimo Step**: **ADR-009 Fase 2** (sezione 11 e Close Panel per-norma + flag SGI integrato) — Fase 1 completata il 12/05/2026 (branch `cursor/adr009-fase1-registro-standard-52c5` mergiato su main, deploy Netlify). Sblocca poi Export Word ISO 14001, Modal Re-Audit.
+> **Prossimo Step**: ADR-009 completato (Fasi 1-4, 22/07/2026); Fase 5 superata da decisione 07/06/2026 (PR #52). Vedi sezione "VISION VINCOLANTE" più sotto per lo stato aggiornato e il prossimo passo.
 > **Backlog**: 🔴 ADR-009 Fase 2-5 (multi-standard/document_type/AI-ready) | ✅ **Modulo NC completo** — Fase 1 + Hardening H1–H6 + drawer ISO 10.2 + RichTextField; **attesa feedback utenti** 30/05/2026 ([GUIDA](GUIDA_CONSOLIDATA.md#modulo-nc-organizzativo--fase-1--hardening--ux-drawer-route-nc-30052026), [PROMPT_RIPRESA_NC](agent-tasks/PROMPT_RIPRESA_NC.md), [MANUALE_UTENTE_NC](how-to/MANUALE_UTENTE_NC.md)) | P2 NC: AI CAPA, export PDF, LIBRERIA_UI Fase B/C | ✅ **REG-NORM-SOT R1–R7** — registro documentale SoT norme/leggi, ADR-011, deploy VPS (25/05/2026; [GUIDA](GUIDA_CONSOLIDATA.md#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr)) | ✅ **PR #60/#62** merge template Word audit + fix seed legislativo | ✅ **Fix JSX Unicode Rischi / Qualifiche / Progetti** — escape `\u` solo in espressioni stringa JS (`RisksPage`, `QualificationForm`, `ProjectsPage`; playbook in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md), 22/05/2026) | ✅ **Playbook encoding / caratteri non riconoscibili** — [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) + script `backend/scripts/check-utf8-encoding.js` (16/05/2026) | ✅ **ADR-009 Fase 1** — PendingIssuesCascade UI/UX + badge standard + navigazione accordion (12/05/2026) | ✅ Fix pending-issues filtro NC/OSS/NV + CHECK constraint DB (12/05/2026) | ✅ Fix NC statistics alias SQL riservati (12/05/2026) | ✅ Fix pending-issues lazy-init nc_id post-MERGE (12/05/2026) | ✅ Fix validazione guided close collapse button (09-10/05/2026) | ✅ Fix CORS nginx fallback backend down (08/05/2026) | ✅ Fix licenze admin/superadmin bypass requireLicensedModule (08/05/2026) | ✅ Fix Exception 1 campi testo si svuotano (08/05/2026) | ✅ Fix Exception 4 multi-standard (08/05/2026) | ✅ Fix race rendering checklist multi-device (PR #39, 08/05/2026) | ✅ GAP-B1/B2/B3 custom checklist (PR #37, 08/05/2026) | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | ✅ SYNC-5 allegati offline | ✅ migration 048-049-050 applicate
 > **Riferimenti**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [adr/ADR-009](adr/ADR-009-multi-standard-architettura-per-norma.md) | [adr/ADR-008](adr/ADR-008-event-sourcing-sync.md) | [adr/ADR-006](adr/ADR-006-auto-reconcile-cache-sync.md) | [DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) (schema DB)
 
@@ -25,7 +25,7 @@
 | **Modulo NC — feedback campo** | Sviluppo pianificato **chiuso** 30/05/2026. Monitorare: email 08:05, push custom da audit reale, UX drawer (Camellini). Bug → nuova chat + [PROMPT_RIPRESA_NC](agent-tasks/PROMPT_RIPRESA_NC.md). | [GUIDA — chiusura NC](GUIDA_CONSOLIDATA.md#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti) |
 | **NC — rubrica dual-level Studio/Azienda** | **Epic Personale azienda** approvata 02/06/2026. **S1 ✅** — schema e regole in [ADR-012](adr/ADR-012-company-personnel-anagrafica.md) (`company_personnel` + bridge `notification_contacts`). **Prossimo:** S2 migration 078 → S3 API → S4–S5 UI ([TASK_PERSONALE_AZIENDA_SLICES.md](agent-tasks/TASK_PERSONALE_AZIENDA_SLICES.md)). Non rimuovere «referente esterno» su verifica/azioni finché S8 non è live. | [ADR-012](adr/ADR-012-company-personnel-anagrafica.md); [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
 | **Hardening harness doppio (HK-1…HK-10)** | Audit giugno 2026: allineare governance Cursor (ADR-015), alleggerire GUIDA, collare AI runtime (NormBroker v1, licenze, audit trail, gap analysis MVP). **Brief attivo:** [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) + [PLAN_HARNESS_HARDENING_SLICES.md](agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md). | `.cursor/rules/`, ADR-010/015, `normBroker.service.js`, `gapAnalysis.service.js` |
-| **Controparti azienda (PR1 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; `contractReview` sync FK↔snapshot. **PR2 (parcheggiato):** select committente in UI riesame — dopo chiusura HK o task dedicato. | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx` |
+| **Controparti azienda (PR1 ✅ · PR2 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; select committente in Riesame Requisiti con sync FK↔snapshot (`ContractReviewPage`, PR #230/#233). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx`; `ContractReviewPage.jsx` |
 
 ---
 
@@ -167,7 +167,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
-| Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini — spec Sprint 4: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) (gap engine condiviso) | 🔲 Backlog (spec pronta) |
+| Modulo SAL (Scenario 3) | Tracker requisiti×stati + export Word + AI suggeritore (Fasi 0–5-B) — spec: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) | ✅ Live (smoke L3 consigliato) |
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
@@ -634,11 +634,15 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | Dispositivo | Attività | Moduli accessibili |
 |---|---|---|
-| **Mobile Android (PWA)** | Campo: audit, ispezioni VT/MT/PT, foto, checklist offline | Audit, Alert (sola lettura), Documenti (sola consultazione) |
-| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Audit + consultazione |
-| **Desktop** | Gestione documentale, form, report, configurazione | Tutti i moduli |
+| **Mobile Android (PWA)** | Campo: cattura e verifica (checklist, NC, foto, scadenze/qualifiche, CND) + assistente AI citato | **P0**: Audit, NC, Documenti/Scadenze (consultazione), Qualifiche (consultazione), CND se licenza, Home/alert. **P1**: AI Chat / assist, Reclami light. **P2**: SAL riga singola |
+| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Come mobile + più viewport checklist |
+| **Desktop** | Analisi, report Word, SAL completo, riesame, gap, configurazione | Tutti i moduli |
 
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
+
+**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI, sequenza slice M-AI-1…6.  
+**Stato (21/07/2026)**: M-AI-1…5 ✅ completati (PR #259–#265). PR2 Controparti ✅ verificata già in main (commits `565fed3`, `cd93ab1`, `81aae9a`).  
+**Backlog aperto (parcheggiato — riprendere su richiesta)**: M-AI-6 SAL mobile compatto (FE only, bassa priorità) · M-AI-5b qualifiche Q&A strutturata (endpoint backend DB-aware, media priorità Mason) · §9.1 KPI/indicatori (prerequisito Riesame Slice 4, richiede pianificazione schema).
 
 ### Architettura UI — Navigation Foundation
 
@@ -668,7 +672,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **1** | Document Registry UX | Redesign UX (vista Priorità, wizard form, export Excel) | Sprint 0 |
 | **2** | Qualifiche + Alert Engine | Personnel qualifications, cron email scadenze | Sprint 0 |
 | **3** | NC & Azioni Correttive | Loop audit→azione→verifica, workflow status | Sprint 0 |
-| **4** | SAL (Stato Avanzamento Lavori) | Motore gap analysis operativa clausola-per-clausola + griglia requisiti×stati + report Word. **Spec**: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) — verdetto «gap engine condiviso come ossatura», letto anche dal Riesame di Direzione | Sprint 3 |
+| **4** | SAL (Stato Avanzamento Lavori) | Motore gap analysis operativa clausola-per-clausola + griglia requisiti×stati + report Word. **Spec**: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) — verdetto «gap engine condiviso come ossatura», letto anche dal Riesame di Direzione. **Fase 5-A ✅ (suggeritore stato AI)**: pulsante «Suggerisci stato (AI)» (riga + bulk) su `/sal`; l'AI legge le evidenze documentali collegate e PROPONE stato + confidenza + motivazione (human-in-the-loop ISO §7.5, nessuna scrittura automatica). Backend `salAiSuggest.service.js` + `POST /companies/:id/gap-ai-suggest` (gate licenza `ai_norms` sopra `sal`), riuso `aiProviderAdapter` + `documentTextExtractor`. Nessuna migrazione (proposta runtime). **Fase 5-B ✅ (conformità legislativa)**: il suggeritore AI valuta anche gli obblighi di legge collegati alla clausola via `linked_legislation` (D.Lgs. 81/2008, 152/2006) — testo articoli caricato da `normBroker.getClauseText`, output per-articolo `{coverage covered/partial/missing, gap, rationale}` + confidenza. Due assi distinti in UI («Conformità norma tecnica» vs «Conformità legislativa»). Nessuna migrazione, additivo su 5-A. **Seam capability ✅ (18/07/2026)**: `SAL_LEGAL_CONFORMITY` centralizzata in `moduleLicense.service.js` (oggi mappa su `ai_norms`, helper `hasSalLegalConformityCapability`); il backend calcola l'asse legislativo solo se la capability è ON (OFF → solo asse tecnico, zero chiamate broker, graceful). Scorporo futuro in **2 mosse**: (1) chiave `ai_legal` in `KNOWN_MODULE_KEYS`; (2) ripuntare la costante del seam. **Fatturazione a regime** = «per azienda gestita» → prerequisito futuro `company_id` su `ai_interactions` (non ora). | Sprint 3 |
 | **5** | Saldatura ISO 3834 | WPS/WPQR, qualifiche saldatori, commesse | Sprint 2 |
 | **6** | Rischi + Obiettivi | Risk register §6.1, obiettivi §6.2 | Sprint 3 |
 | **7** | Reclami + Fornitori | Reclami clienti, valutazione fornitori | Sprint 3 |
@@ -773,18 +777,19 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **HOTFIX-08/05** | **6 fix consecutivi 08/05/2026**: Exception 1 (campi testo si svuotavano da `{}` truthy), Exception 4 (hardcoded ISO_9001 multi-standard), CORS nginx fallback (backend down), licenze admin/superadmin bypass, fix race rendering checklist Sighinolfi (PR #39), 3 GAP custom (PR #37) | Lead (08/05/2026) | ✅ Tutti mergiati su main, deploy Netlify ok |
 | **ADR-009** | **Multi-standard / multi-document_type architettura per-norma + AI-ready** — ADR vincolante che chiude il debito strutturale emerso dai 6 hotfix. Modello a 2 assi (`document_type` × `selectedStandards[]`), `byStandard[key]` per dati per-norma, `STANDARDS_REGISTRY` come SoT, flag `isIntegratedSystem` (Annex SL HLS), RDP come specializzazione custom, SAL come modulo gestionale separato, audit pilota di `document_registry`, AI come licenza separata (B-style: nascosta se off) | Lead (08-09/05/2026) | ✅ ADR scritto |
 | **ADR-009 Fase 1** | PendingIssuesCascade UI/UX (badge standard, navigazione accordion, chip sezione, SECTION_LABELS) + fix backend pending-issues/NC (filtro NC/OSS/NV, CHECK constraint DB, nc_id post-MERGE, alias SQL) + collapse clausola mobile | Lead (12/05/2026) | ✅ Completato — branch `cursor/adr009-fase1-registro-standard-52c5` mergiato su main, deploy Netlify |
-| **ADR-009 Fase 2** | Sezione 11 e Close Panel per-norma + flag SGI integrato | Deputy/Lead | ⏳ Prossima priorità |
-| **ADR-009 Fase 3** | Export Word per-norma con opzioni indipendenti (sblocca anche Word ISO 14001) | Deputy/Lead | ⏳ Dopo Fase 2 |
-| **ADR-009 Fase 4** | Custom checklist come "norma virtuale" pari grado a ISO | Deputy/Lead | ⏳ Dopo Fase 3 |
-| **ADR-009 Fase 5** | Audit ↔ document_registry tie-in (audit chiuso = documento del registro con scadenza) | Lead | ⏳ Dopo Fase 4, in concomitanza Sprint A registry |
+| **ADR-009 Fase 2** | Sezione 11 e Close Panel per-norma + flag SGI integrato | Deputy (22/07/2026) | ✅ Completato — PR #275 |
+| **ADR-009 Fase 3** | Export Word integrato SGI + bundle ZIP multi-standard | Lead (22/07/2026) | ✅ Completato — PR #284 |
+| **ADR-009 Fase 4** | Custom checklist come "norma virtuale" pari grado a ISO (audit ibridi ISO+custom: blocco separato Sezione 11/12, export Word aggiuntivo) | Lead (22/07/2026) | ✅ Completato |
+| **ADR-009 Fase 5** | Audit ↔ document_registry tie-in (audit chiuso = documento del registro con scadenza) | — | ❌ **Superata** (decisione 07/06/2026, chiusura PR #52) — vedi ADR-009 sezione Fase 5 |
 | **AI-CTX** | Contesto azienda/studio nell'assistente AI — backend filtra chunk per azienda, frontend chip + dropdown selettore, migrazione 063 | Lead (16/05/2026) | ✅ Completato |
 | **AI-OPT-L1** | Knowledge Optimizer Livello 1: dedup cosine >0.95, prune stale NC >180gg, gap detection per azienda — job notturno 03:00, migrazione 064 | Lead (16/05/2026) | ✅ Completato |
 | **AI-OPT-L2** | Knowledge Optimizer Livello 2: sintesi AI settimanale, condensazione per azienda, pattern cross-company, enrichment chunk deboli — job domenica 04:00, migrazione 065 | Lead (16/05/2026) | ✅ Completato |
 | **AI-KPI** | Dashboard Knowledge Health per admin: `/ai-knowledge-health`, 4 KPI cards, coverage per azienda, gap rilevati, endpoint `GET /ai/knowledge-health` | Lead (16/05/2026) | ✅ Completato |
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
+| **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
 
-**Prossimo Step**: **ADR-009 Fase 2** (Sezione 11 e Close Panel per-norma + flag SGI integrato).
+**Prossimo Step**: ADR-009 completato (Fasi 1-4; Fase 5 superata). Prossima priorità da definire — vedi Backlog parcheggiato.
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

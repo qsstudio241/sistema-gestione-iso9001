@@ -32,4 +32,20 @@ describe('buildWelderQualificationDesignation', () => {
         expect(buildWelderQualificationDesignation({ welding_process: '111' })).toBe('111');
         expect(buildWelderQualificationDesignation({})).toBeNull();
     });
+
+    it('usa il simbolo >= quando e\' noto solo lo spessore minimo (nessun limite superiore)', () => {
+        const out = buildWelderQualificationDesignation({
+            welding_process: '111',
+            thickness_min_mm: 3,
+        });
+        expect(out).toBe('111 t\u22653');
+    });
+
+    it('usa il simbolo >= anche per il diametro tubo quando e\' noto solo il minimo', () => {
+        const out = buildWelderQualificationDesignation({
+            welding_process: '141',
+            pipe_diameter_min_mm: 60,
+        });
+        expect(out).toBe('141 D\u226560');
+    });
 });

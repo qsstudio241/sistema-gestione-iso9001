@@ -7,6 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
 // ?
 // WPS ? Welding Procedure Specifications
@@ -623,7 +624,7 @@ async function assignWpsWelder(req, res) {
         `, { wps_id: parseInt(id), qualification_id: parseInt(qualification_id), organization_id });
 
         if (dupCheck.recordset.length > 0) {
-            return res.status(409).json({ error: 'Saldatore gi? assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
+            return res.status(409).json({ error: 'Saldatore già assegnato a questa WPS', code: 'DUPLICATE_ASSIGNMENT' });
         }
 
         const result = await query(`
@@ -881,10 +882,17 @@ async function uploadWPQRBatch(req, res) {
                     warnings: extracted.warnings || [],
                 };
             } catch (err) {
+                const errMsg = describeIngestFileError(err);
+                logger.error('[WPQR/batch] Estrazione fallita', {
+                    fileName: file.originalname,
+                    error: errMsg,
+                    stack: err?.stack || null,
+                });
                 entry = {
                     fileName: file.originalname,
                     status: 'error',
-                    warnings: [err.message],
+                    error: errMsg,
+                    warnings: [errMsg],
                 };
                 try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
             }
@@ -969,7 +977,13 @@ async function uploadWPSBatch(req, res) {
                     warnings: extracted.warnings || [],
                 };
             } catch (err) {
-                entry = { fileName: file.originalname, status: 'error', warnings: [err.message] };
+                const errMsg = describeIngestFileError(err);
+                logger.error('[WPS/batch] Estrazione fallita', {
+                    fileName: file.originalname,
+                    error: errMsg,
+                    stack: err?.stack || null,
+                });
+                entry = { fileName: file.originalname, status: 'error', error: errMsg, warnings: [errMsg] };
                 try { if (file.path) fs.unlinkSync(file.path); } catch (_) {}
             }
             results.push(entry);

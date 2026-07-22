@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const { extractNormFromPdf, commitNormFromFields } = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
+const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
 /** Campi piatti per UI (NormUploadButton). */
 function flattenNormBatchEntry(entry) {
@@ -152,11 +153,17 @@ async function uploadNorms(req, res) {
         };
       }
     } catch (fileErr) {
+      const errMsg = describeIngestFileError(fileErr);
+      logger.error('[NormUpload/batch] Estrazione fallita', {
+        fileName: file.originalname,
+        error: errMsg,
+        stack: fileErr?.stack || null,
+      });
       entry = {
         fileName: file.originalname,
         status: 'error',
-        error: fileErr.message,
-        warnings: [fileErr.message],
+        error: errMsg,
+        warnings: [errMsg],
       };
       try { await fs.unlink(file.path); } catch (_) {}
     }

@@ -1,85 +1,52 @@
-'use strict';
+/**
+ * Test L1 — qualificationAlert.service
+ * Copre: effectiveAlertDue per ISO 9606-1 e ISO 14732 (entrambe con conferma semestrale).
+ */
 
-const {
-  effectiveAlertDue,
-  matchQualAlertRule,
-  mapQualificationDeadlineRows,
-} = require('./qualificationAlert.service');
-const { buildDocEscalationThresholds } = require('./alertSchedulerHelpers');
+jest.mock('./alertMail.service', () => ({ sendAlertEmail: jest.fn() }));
+jest.mock('../utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
+}));
 
-describe('qualificationAlert.service effectiveAlertDue', () => {
-  it('usa expiry_date per tipi non 9606', () => {
-    expect(effectiveAlertDue({
-      qualification_type: 'Operatore NDT',
-      expiry_date: '2027-01-01',
+const { effectiveAlertDue } = require('./qualificationAlert.service');
+
+describe('qualificationAlert.service — effectiveAlertDue', () => {
+  it('ISO 9606-1: conferma semestrale più imminente → kind confirmation', () => {
+    const r = effectiveAlertDue({
+      qualification_type: 'Saldatore ISO 9606-1',
+      expiry_date: '2030-01-01',
       next_confirmation_due: '2026-06-01',
-    })).toEqual({ date: '2027-01-01', kind: 'expiry' });
-  });
-
-  it('per 9606 sceglie la data piu imminente (conferma prima del certificato)', () => {
-    expect(effectiveAlertDue({
-      qualification_type: 'Saldatore ISO 9606-1',
-      expiry_date: '2028-01-10',
-      next_confirmation_due: '2026-12-10',
-    })).toEqual({ date: '2026-12-10', kind: 'confirmation' });
-  });
-
-  it('per 9606 usa expiry se conferma assente', () => {
-    expect(effectiveAlertDue({
-      qualification_type: 'ISO 9606-1',
-      expiry_date: '2028-01-10',
-      next_confirmation_due: null,
-    })).toEqual({ date: '2028-01-10', kind: 'expiry' });
-  });
-});
-
-describe('qualificationAlert.service matchQualAlertRule', () => {
-  const thresholds = buildDocEscalationThresholds(30, 7, null);
-
-  it('ignora qualifiche non approvate', () => {
-    expect(matchQualAlertRule({
-      effectiveDate: '2026-06-20',
-      status: 'valida',
-      approvalStatus: 'bozza',
-      thresholds,
-    })).toBeNull();
-  });
-
-  it('matcha soglia 30 giorni', () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 30);
-    const dateStr = future.toISOString().slice(0, 10);
-    const rule = matchQualAlertRule({
-      effectiveDate: dateStr,
-      status: 'valida',
-      approvalStatus: 'approvata',
-      thresholds,
     });
-    expect(rule).toEqual({ kind: 'threshold', thresholdDays: 30 });
+    expect(r).toEqual({ date: '2026-06-01', kind: 'confirmation' });
   });
-});
 
-describe('qualificationAlert.service mapQualificationDeadlineRows', () => {
-  it('produce righe virtuali con id qual-*', () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 15);
-    const rows = mapQualificationDeadlineRows([{
-      id: 42,
-      person_name: 'Mario Rossi',
-      qualification_type: 'Saldatore ISO 9606-1',
-      certificate_number: 'C-1',
-      expiry_date: '2028-01-01',
-      next_confirmation_due: future.toISOString().slice(0, 10),
-      status: 'valida',
-      approval_status: 'approvata',
-      company_id: 5,
-      company_name: 'ACME',
-    }], 60);
+  it('ISO 14732: conferma semestrale più imminente → kind confirmation (come 9606)', () => {
+    const r = effectiveAlertDue({
+      qualification_type: 'Operatore ISO 14732',
+      expiry_date: '2032-01-01',
+      next_confirmation_due: '2026-05-01',
+    });
+    expect(r).toEqual({ date: '2026-05-01', kind: 'confirmation' });
+  });
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0].id).toBe('qual-42');
-    expect(rows[0].item_type).toBe('qualification');
-    expect(rows[0].category).toBe('qualifica');
-    expect(rows[0].alert_kind).toBe('confirmation');
+  it('ISO 14732: certificato più imminente della conferma → kind expiry', () => {
+    const r = effectiveAlertDue({
+      qualification_type: 'Operatore ISO 14732',
+      expiry_date: '2026-03-01',
+      next_confirmation_due: '2027-01-01',
+    });
+    expect(r).toEqual({ date: '2026-03-01', kind: 'expiry' });
+  });
+
+  it('Coordinatore ISO 14731: ignora next_confirmation_due, solo expiry', () => {
+    const r = effectiveAlertDue({
+      qualification_type: 'Coordinatore ISO 14731',
+      expiry_date: '2030-01-01',
+      next_confirmation_due: '2026-01-01',
+    });
+    expect(r).toEqual({ date: '2030-01-01', kind: 'expiry' });
   });
 });

@@ -1,4 +1,4 @@
-﻿{
+{
     "manifestVersion": "1.1",
     "description":  "Manifest unico per deploy backend VPS - ordine dependency-aware (services/utils prima di controller/routes). Encoding UTF-8 senza BOM.",
     "remoteBase":  "/var/www/sgq-backend",
@@ -25,7 +25,11 @@
                        "name":  "data",
                        "files":  [
                                      "src/data/documentTypeSchemas.js",
-                                     "src/data/materialGroups15608.js"
+                                     "src/data/materialGroups15608.js",
+                                     "src/data/weldingProcesses4063.js",
+                                     "src/data/weldingPositions6947.js",
+                                     "src/data/weldingQualificationRules9606.js",
+                                     "src/data/weldingSymbols2553.js"
                                  ]
                    },
                    {
@@ -44,7 +48,8 @@
                                      "src/utils/jsonRepair.js",
                                      "src/utils/ruleFieldExtractors.js",
                                      "src/utils/textEncodingRepair.js",
-                                     "src/utils/ocrExtractor.js"
+                                     "src/utils/ocrExtractor.js",
+                                     "src/utils/ingestErrorMessage.js"
                                  ]
                    },
                    {
@@ -106,6 +111,9 @@
                                      "src/services/normValidityChecker.service.js",
                                      "src/services/importAiExtraction.service.js",
                                      "src/services/adapters/geminiAdapter.js",
+                                     "src/services/adapters/geminiKeyPool.js",
+                                     "src/services/adapters/anthropicAdapter.js",
+                                     "src/services/adapters/anthropicKeyPool.js",
                                      "src/services/aiProviderAdapter.js",
                                      "src/services/aiContextBuilder.service.js",
                                      "src/services/commercialCustomerCounterparty.service.js",
@@ -121,7 +129,8 @@
                                      "src/services/weldingCoordinatorAuth.service.js",
                                      "src/services/caseTextAnalysis.service.js",
                                      "src/services/caseDocumentAnalysis.service.js",
-                                     "src/services/caseExtractedCoverage.service.js"
+                                     "src/services/caseExtractedCoverage.service.js",
+                                     "src/services/salAiSuggest.service.js"
                                  ]
                    },
                    {
@@ -129,6 +138,7 @@
                        "files":  [
                                      "src/services/normConnectors/publicLawHttp.js",
                                      "src/services/normConnectors/normativaConnector.js",
+                                     "src/services/normConnectors/localStoreConnector.js",
                                      "src/services/normConnectors/eurLexConnector.js"
                                  ]
                    },
@@ -154,6 +164,8 @@
                                      "src/controllers/qualifications.controller.js",
                                      "src/controllers/projects.controller.js",
                                      "src/controllers/risks.controller.js",
+                                     "src/controllers/contextFactors.controller.js",
+                                     "src/controllers/interestedParties.controller.js",
                                      "src/controllers/organization.controller.js",
                                      "src/controllers/auth.controller.js",
                                      "src/controllers/billing.controller.js",
@@ -207,7 +219,8 @@
                                      "src/routes/normBroker.routes.js",
                                      "src/routes/gapAnalysis.routes.js",
                                      "src/routes/aiAssist.routes.js",
-                                     "src/routes/aiChat.routes.js"
+                                     "src/routes/aiChat.routes.js",
+                                     "src/routes/risks.routes.js"
                                  ]
                    },
                    {

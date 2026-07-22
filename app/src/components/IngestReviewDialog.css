@@ -235,6 +235,65 @@ body.sgq-ingest-review-resizing * {
   color: #64748b;
 }
 
+/* Revisione adattiva per confidenza (minimo intervento umano — vedi GUIDA_CONSOLIDATA) */
+.ingest-review__field--medium .ingest-review__input {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px #fde68a;
+}
+
+.ingest-review__field--low .ingest-review__input,
+.ingest-review__field--unknown .ingest-review__input {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #fecaca;
+}
+
+.ingest-review__readonly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+}
+
+.ingest-review__readonly-value {
+  font-size: 0.95rem;
+  color: #14532d;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.ingest-review__edit-btn {
+  flex-shrink: 0;
+  border: 1px solid #16a34a;
+  background: #fff;
+  color: #15803d;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ingest-review__edit-btn:hover {
+  background: #f0fdf4;
+}
+
+.ingest-review__cancel-edit-btn {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
 .ingest-review__confidence {
   font-size: 0.72rem;
   font-weight: 600;

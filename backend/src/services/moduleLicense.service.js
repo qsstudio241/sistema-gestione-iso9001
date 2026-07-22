@@ -28,6 +28,20 @@ const KNOWN_MODULE_KEYS = [
 
 const ALL_MODULES_DEFAULT = [...KNOWN_MODULE_KEYS];
 
+// --- Capability seam: SAL legal conformity (SAL Fase 5-B) -------------------
+// The AI legal-conformity axis is CURRENTLY sold inside the 'ai_norms' license
+// (layered above module 'sal'), so this capability maps to the exact module key
+// that already gates the gap-ai-suggest endpoint. Behaviour is unchanged: the
+// capability is ON whenever 'ai_norms' is licensed (or the user is admin).
+//
+// To spin the legal axis off into its own paid license in 2 MOVES, with NO
+// refactor of service/UI logic:
+//   1) add the new key (e.g. 'ai_legal') to KNOWN_MODULE_KEYS (and LABELS_IT);
+//   2) repoint SAL_LEGAL_CONFORMITY_MODULE_KEY below to that new key.
+// The service and the frontend already read the capability only through this
+// seam, so nothing else needs to change.
+const SAL_LEGAL_CONFORMITY_MODULE_KEY = 'ai_norms';
+
 const LABELS_IT = {
     audit: 'Audit',
     documents: 'Registro documenti',
@@ -107,6 +121,22 @@ async function setLicensedModulesForOrg(organizationId, modules) {
     return arr;
 }
 
+/**
+ * Capability seam SAL_LEGAL_CONFORMITY: indica se l'organizzazione puo' usare
+ * l'asse "conformita' legislativa" del suggeritore AI del SAL.
+ * Oggi mappa su SAL_LEGAL_CONFORMITY_MODULE_KEY ('ai_norms'); admin/superadmin
+ * hanno sempre la capability (coerente con requireLicensedModule).
+ * @param {number} organizationId
+ * @param {string} [role]
+ * @returns {Promise<boolean>}
+ */
+async function hasSalLegalConformityCapability(organizationId, role) {
+    const r = role ? String(role).trim().toLowerCase() : '';
+    if (r === 'superadmin' || r === 'admin') return true;
+    const keys = await getLicensedModuleKeysForOrg(organizationId);
+    return keys.includes(SAL_LEGAL_CONFORMITY_MODULE_KEY);
+}
+
 /** Ripristina comportamento default (tutti i moduli) */
 async function clearLicensedModulesOverride(organizationId) {
     await query(
@@ -164,6 +194,7 @@ module.exports = {
     KNOWN_MODULE_KEYS,
     ALL_MODULES_DEFAULT,
     LABELS_IT,
+    SAL_LEGAL_CONFORMITY_MODULE_KEY,
     parseLicensedModulesColumn,
     mergeModuleKeys,
     buildAvailableCatalog,
@@ -172,4 +203,5 @@ module.exports = {
     setLicensedModulesForOrg,
     clearLicensedModulesOverride,
     appendLicensedModulesForOrg,
+    hasSalLegalConformityCapability,
 };

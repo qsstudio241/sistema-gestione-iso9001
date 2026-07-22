@@ -486,6 +486,15 @@ class ApiService {
     }
 
     /**
+     * Storico ultimi audit completati per un cliente (modal re-audit — GAP 13)
+     * @param {object} params - { client_name?, company_id?, limit? }
+     */
+    async getClientAuditHistory(params = {}) {
+        const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null)).toString();
+        return this.get(`/audits/client-history${qs ? '?' + qs : ''}`);
+    }
+
+    /**
      * Pending issues associati a un audit corrente
      * :auditId = audit_id INTEGER
      */
@@ -958,7 +967,7 @@ class ApiService {
      */
     getAttachmentDownloadUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/download?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
@@ -968,7 +977,7 @@ class ApiService {
      */
     getAttachmentViewUrl(attachmentId) {
         const token = this.getToken();
-        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${token}`;
+        return `${this.baseUrl}/attachments/${attachmentId}/view?token=${encodeURIComponent(token || '')}`;
     }
 
     /**
@@ -1322,6 +1331,12 @@ class ApiService {
         return this.put(`/documents/${id}`, body);
     }
 
+    /** Configurazione tipi documento (prefissi, scadenza default mesi). */
+    async getDocTypeConfig() {
+        const res = await this.get('/doc-type-config');
+        return Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+    }
+
     /** Alias legacy "vigente" → "rilasciato" (registro documenti, non validity_status norme). */
     _normalizeDocumentRegistryStatus(raw) {
         if (raw == null || String(raw).trim() === '') return 'rilasciato';
@@ -1613,10 +1628,11 @@ class ApiService {
         return response.json();
     }
 
-    async uploadQualificationsBatch(files, companyId) {
+    async uploadQualificationsBatch(files, companyId, docType) {
         const fd = new FormData();
         files.forEach(f => fd.append('files', f));
         if (companyId) fd.append('company_id', String(companyId));
+        if (docType) fd.append('doc_type', String(docType));
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const controller = new AbortController();
@@ -1727,6 +1743,20 @@ class ApiService {
     async createObjective(data)     { return this.post('/objectives', data); }
     async updateObjective(id, data) { return this.put(`/objectives/${id}`, data); }
     async deleteObjective(id)       { return this.delete(`/objectives/${id}`); }
+
+    // ─── Context Factors §4.1 ────────────────────────────────────────────────
+    async getContextFactors(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/context-factors${qs ? '?' + qs : ''}`); }
+    async getContextFactor(id)           { return this.get(`/context-factors/${id}`); }
+    async createContextFactor(data)      { return this.post('/context-factors', data); }
+    async updateContextFactor(id, data)  { return this.put(`/context-factors/${id}`, data); }
+    async deleteContextFactor(id)        { return this.delete(`/context-factors/${id}`); }
+
+    // ─── Interested Parties §4.2 ─────────────────────────────────────────────
+    async getInterestedParties(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/interested-parties${qs ? '?' + qs : ''}`); }
+    async getInterestedParty(id)            { return this.get(`/interested-parties/${id}`); }
+    async createInterestedParty(data)       { return this.post('/interested-parties', data); }
+    async updateInterestedParty(id, data)   { return this.put(`/interested-parties/${id}`, data); }
+    async deleteInterestedParty(id)         { return this.delete(`/interested-parties/${id}`); }
 
     // ─── Complaints (Sprint 7) ───────────────────────────────────────────────
     async getComplaintsStats()      { return this.get('/complaints/stats'); }
@@ -2077,6 +2107,17 @@ class ApiService {
         const body = {};
         if (monthsBack != null) body.monthsBack = monthsBack;
         return this.post(`/companies/${companyId}/gap-matrix/sync-audit-hints`, body);
+    }
+
+    // SAL Fase 5-A: suggeritore stato AI (licenza ai_norms + sal). Non scrive lo stato.
+    async suggestSalGapStatus(companyId, { normRequirementId, normRequirementIds } = {}) {
+        const body = {};
+        if (Array.isArray(normRequirementIds) && normRequirementIds.length) {
+            body.normRequirementIds = normRequirementIds;
+        } else if (normRequirementId != null) {
+            body.normRequirementId = normRequirementId;
+        }
+        return this.post(`/companies/${companyId}/gap-ai-suggest`, body);
     }
 
     async globalSearch(params = {}) {

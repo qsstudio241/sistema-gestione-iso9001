@@ -62,6 +62,11 @@
   background: #fff;
 }
 
+/* Nature badge (rischio / opportunità) */
+.nature-badge        { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; }
+.nature-risk         { background: #fee2e2; color: #991b1b; }
+.nature-opportunity  { background: #d1fae5; color: #065f46; }
+
 /* Score badge */
 .score-badge {
   display: inline-block;
@@ -273,6 +278,45 @@
 .risk-list, .obj-list { display: flex; flex-direction: column; }
 .loading-msg { text-align: center; padding: 40px; color: #718096; }
 .empty-state { text-align: center; padding: 40px; color: #718096; }
+
+/* Contesto §4 subtabs */
+.contesto-subtabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.contesto-sub-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all .2s;
+}
+.contesto-sub-btn:hover { color: #2d3748; }
+.contesto-sub-btn.active { color: #3182ce; border-bottom-color: #3182ce; }
+
+/* Context factor type / impact badges */
+.cf-type-internal { background: #ebf8ff; color: #2b6cb0; }
+.cf-type-external { background: #faf5ff; color: #6b46c1; }
+.cf-positive { background: #d1fae5; color: #065f46; }
+.cf-negative { background: #fee2e2; color: #991b1b; }
+.cf-neutral  { background: #f7fafc; color: #718096; }
+
+/* Action from risk button */
+.btn-action-risk {
+  padding: 5px 12px;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-block;
+}
+.btn-action-risk:hover { background: #bee3f8; }
 
 @media (max-width: 640px) {
   .risks-page { padding: 12px; }

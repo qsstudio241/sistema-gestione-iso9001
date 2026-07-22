@@ -52,7 +52,7 @@ Esistono **tre** moduli ISO che lavorano su «requisiti» ma rispondono a domand
 
 | Modulo | Clausola ISO | Domanda a cui risponde | Stato nel prodotto |
 |---|---|---|---|
-| **SAL — Stato Avanzamento Lavori** | §4–10 (implementazione SGQ) | «A che punto è l'azienda nell'**implementare** ciascun requisito del SGQ?» | **Da costruire** (Sprint 4) — oggetto di questa spec |
+| **SAL — Stato Avanzamento Lavori** | §4–10 (implementazione SGQ) | «A che punto è l'azienda nell'**implementare** ciascun requisito del SGQ?» | **Live** — Fasi 0–5 (UI `/sal`, motore gap, export Word, integrazioni audit/NC/Riesame, suggeritore AI 5-A/5-B). Vedi §C |
 | **Riesame di Direzione** | §9.3 | «La direzione **riesamina periodicamente** input e output del SGQ in un verbale» | **Live** — `ManagementReviewsPage.jsx` + `managementReviews.controller.js` |
 | **Riesame Requisiti (contratto/commessa)** | §8.2.3 | «I requisiti del **cliente/commessa** sono stati riesaminati prima di accettare l'ordine?» | **Live** — `ContractReviewPage.jsx`, modulo commesse |
 
@@ -62,22 +62,38 @@ Esistono **tre** moduli ISO che lavorano su «requisiti» ma rispondono a domand
 
 ## C. Stato attuale (cosa esiste già)
 
-Il SAL oggi è **predisposto ma non funzionale**: scheletro di navigazione, licenza e tipo documento esistono, ma **nessun codice operativo**.
+> **Aggiornamento 20/07/2026** — Fasi 0–5 implementate e in `main` (PR #255–#258). Questa sezione sostituisce il testo storico «predisposto ma non funzionale».
+
+Il SAL è **operativo** come tracker di implementazione clausola-per-clausola. **Non** valuta in automatico la conformità giuridica/tecnica dei singoli documenti aziendali: lo stato resta scritto dall'operatore (o **proposto** dall'AI in Fase 5, con conferma umana).
 
 | Elemento | Stato | Riferimento file |
 |---|---|---|
-| Voce di menu / route `/sal` | Presente → mostra `ModuleLocked` (lucchetto) | `app/src/App.jsx` (riga ~151): `<Route path="/sal" … moduleKey="sal"><ModuleLocked module="sal" /></Route>` |
-| Licenza `sal` | Definita tra i moduli noti | `backend/src/services/moduleLicense.service.js` (`'sal'` in `KNOWN_MODULE_KEYS`, label `'SAL'`) |
-| Tipo documento `sal` | Schema base presente (frontend + backend) | `app/src/data/documentTypeSchemas.js` (`sal`, label «SAL — Stato avanzamento lavori»); `backend/src/data/documentTypeSchemas.js` (`sal`) |
-| Componente funzionale (`SALModule.jsx`, controller, tabella DB) | **Assente** | — |
+| Route `/sal` + UI griglia | **Live** — licenza `sal` | `app/src/pages/SALModule.jsx`, `app/src/App.jsx` |
+| Motore dati gap | **Live** — mig. 117/118 | `requirement_implementation_status`, `gapAnalysis.service.js` |
+| API CRUD + seed + export Word | **Live** | `backend/src/routes/gapAnalysis.routes.js` |
+| Evidenze → registro documenti | **Live** | `SalEvidenceSection`, `evidence_document_ids` |
+| Hint audit + NC `sal_gap` | **Live** | `syncAuditConformityHints`, mig. 118 |
+| Feed Riesame §9.3 | **Live** | `getNormCoverageForReview`, `norm_coverage_source=sal` |
+| **Fase 5-A** — suggeritore stato AI (asse tecnico) | **Live** — licenza `ai_norms` + `sal` | `salAiSuggest.service.js`, `SalAiSuggestDialog`, `POST .../gap-ai-suggest` |
+| **Fase 5-B** — conformità legislativa nel suggeritore | **Live** — `linked_legislation` + `normBroker.getClauseText` | stesso service; seed `backend/data/legislation_seed.json` (Normattiva) |
+| Capability separabile `SAL_LEGAL_CONFORMITY` | **Live** — oggi ON ⇔ `ai_norms` | `moduleLicense.service.js` (`hasSalLegalConformityCapability`) |
+| Tipo documento `sal` in schemi | Schema metadati (non è il motore operativo) | `documentTypeSchemas.js` — il modulo gira sul motore gap dedicato |
+| `ModuleLocked` etichetta SAL | **Corretto** in Fase 1 | `ModuleLocked.jsx` — «SAL — Stato Avanzamento Lavori» |
 
-### C.1 Da correggere: etichetta fuorviante in `ModuleLocked.jsx`
+### C.1 Cosa il SAL **non** fa (aspettative da chiarire)
 
-`app/src/components/ModuleLocked.jsx` (blocco `sal`, righe ~111–123) riporta:
+| Aspettativa | Realtà oggi |
+|---|---|
+| «Il SAL certifica che un documento è conforme a legge/norma» | **No** — collega evidenze e propone stato; nessun motore giuridico automatico su ogni documento |
+| Distinzione tipizzata «legge \| norma tecnica \| entrambe» per documento | **Backlog** — routing euristica in catalogo (`isItalianPublicLaw`), non campo `compliance_kind` |
+| Testo integrale norme UNI da abbonamento | **Scartato** (DRM FileOpen) — vedi ADR-010/GUIDA; lookup catalogo OK |
+| Testo articoli legge live da Normattiva | **Seed locale** + `getClauseText` degrada a null senza inventare se pagina JS-only |
 
-- `title: "SAL - Riesame Direzione"` → **fuorviante**: confonde il SAL (avanzamento implementazione, §4–10) con il Riesame di Direzione (§9.3, modulo separato già live).
+### C.2 Backlog prodotto collegato (non SAL core)
 
-**Azione (Fase 1, fix UX a basso rischio)**: rinominare in **`"SAL — Stato Avanzamento Lavori"`** e allineare la descrizione/feature al concetto di tracker di implementazione (rimuovendo «Export verbale riesame direzione in Word», che appartiene all'altro modulo). Mantenere `sprint: "Sprint 4"`.
+- Modello esplicito `compliance_kind` su `document_registry.type_specific_data` (legge vs norma vs entrambe)
+- Smoke L3 operatore su `/sal` con «Suggerisci stato (AI)» + sezione «Conformità legislativa»
+- PR2 Riesame Requisiti: select controparti (`DEPUTYTASK.md`)
 
 ---
 
@@ -239,11 +255,12 @@ Stile repo: slice verticali (diagnosi → fix minimo → test L1 → deploy → 
 | **Fase 2 — Export Word + storico** | Template SAL Word con legenda colori per standard; vista/uso dello storico revisioni | **~1 sett** | Fase 1 | Basso/Medio |
 | **Fase 3 — Integrazioni** | `conformity_hint` da audit; `evidence_document_ids` ↔ `document_registry`; gap → NC con `source_category='sal_gap'` (+ migrazione constraint) | **~1–2 sett** | Fase 1, modulo NC | Medio |
 | **Fase 4 — Feed al Riesame** | Il Riesame di Direzione legge `requirement_implementation_status` e sostituisce il `norm_coverage` grossolano | **~1 sett** | Fase 0–1 | Basso |
-| **Fase 5 — AI opzionale** | Suggerimento automatico stato/azioni dai documenti azienda (riuso adapter AI / gap engine ADR-010) | da valutare | Fasi 0–4 + licenza AI | Alto |
+| **Fase 5-A — AI suggeritore stato** | Legge evidenze collegate, **propone** stato + confidenza + motivazione (human-in-the-loop, nessuna scrittura automatica) | **✅ Completata** (07/2026) | Fasi 0–4 + `ai_norms` | — |
+| **Fase 5-B — Conformità legislativa AI** | Asse distinto «norma tecnica» vs «legge» via `linked_legislation` + testo articoli in DB | **✅ Completata** (18/07/2026) | 5-A + ingest Normattiva | — |
+| **Fase 5-C — Assistente AI Riesame §9.3** | Consumatore intelligente del motore gap (§K) — verbale riesame assistito | backlog | Fasi 0–5-B | Alto |
 
-**Totale indicativo**: **~4–6 settimane** incrementali (Fase 5 esclusa, opzionale).
-**Quick win**: fix etichetta `ModuleLocked` (Fase 1, 1 file). **Epica**: Fase 5 (AI).
-**Sequenza consigliata**: 0 → 1 → 2 → 3 → 4 → (5 solo se giustificata).
+**Totale indicativo**: Fasi 0–5-B **chiuse**; resta opzionale Fase 5-C (AI Riesame) e backlog modello `compliance_kind` sui documenti.
+**Sequenza consigliata (storica)**: 0 → 1 → 2 → 3 → 4 → 5-A → 5-B — **completata**.
 
 ---
 
@@ -364,15 +381,18 @@ Lo **stile** e gli **esempi** di uno studio non devono **mai** influenzare gli o
 
 - L'AI **consuma le stesse API** del gap engine (es. `GET /companies/:id/gap-matrix`), già scoped multi-tenant: nessuna pipeline dati parallela, nessuna seconda fonte di verità.
 - Il **recupero del contesto** (RAG/few-shot/memoria) è anch'esso scoped per `organization_id` + `company_id`; lo «stile di studio» vive in storage partizionato per tenant.
-- **Collocazione in roadmap**: dopo il **motore gap (Fase 0)** e il **SAL MVP (Fase 1)**, come **fase AI opzionale** — coincide con la **Fase 5 (AI opzionale)** di §H e si appoggia all'architettura AI di [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (adapter multi-provider, `ai_interactions`, licenze AI). Prerequisito: motore gap popolato con dati reali (un'AI senza base fattuale non «ragiona», indovina — §K.1).
+- **Collocazione in roadmap**: Fase **5-A/5-B** (suggeritore SAL) **completata** — vedi §C. Prossimo passo opzionale: **Fase 5-C** (assistente AI del Riesame §9.3, §K), che consuma lo stesso motore gap. Architettura: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md).
 
 ---
 
 ## Allegato — Riferimenti file chiave
 
-- Stato attuale SAL: `app/src/App.jsx` (route `/sal`), `app/src/components/ModuleLocked.jsx` (blocco `sal` — etichetta da correggere), `backend/src/services/moduleLicense.service.js` (`'sal'`), `app/src/data/documentTypeSchemas.js` + `backend/src/data/documentTypeSchemas.js` (`sal`)
-- Motore dati / ancoraggio clausole: `backend/database/migrations/052_norm_requirements.sql`, `checklist_questions.clauseRef`
-- Riesame di Direzione (consumatore in lettura): `backend/src/controllers/managementReviews.controller.js` (`getInputSummary` → `norm_coverage`), `app/src/pages/ManagementReviewsPage.jsx`, `app/src/utils/managementReviewsCompanyScope.js`
-- Modulo NC (azioni da gap): `database/migrations/098_nc_action_plan.sql` (`source_category`, `CK_nc_source_category`), `backend/src/controllers/nc.controller.js`
-- Riuso UI/export: `SgqDataGrid`, `app/src/utils/wordExport.js`, `app/src/utils/wordExportReview.js`
-- Gap engine previsto: ADR-010 §5 + TASK 2-A (`gapAnalysis.service.js`, da implementare)
+- UI SAL: `app/src/pages/SALModule.jsx`, `app/src/components/SalAiSuggestDialog.jsx`, `app/src/App.jsx` (route `/sal`)
+- Motore gap + AI: `backend/src/services/gapAnalysis.service.js`, `backend/src/services/salAiSuggest.service.js`, `backend/src/controllers/gapAnalysis.controller.js`
+- Capability legale: `backend/src/services/moduleLicense.service.js` (`SAL_LEGAL_CONFORMITY`, `hasSalLegalConformityCapability`)
+- Leggi ingestate: `backend/data/legislation_seed.json`, `backend/scripts/ingest-legislation-normattiva-vps.js`, `normConnectors/normativaConnector.js` (`getClauseText`)
+- Migrazioni: `117_requirement_implementation_status.sql`, `118_nc_sal_gap_source.sql`
+- Riesame §9.3 (lettura): `managementReviews.controller.js` (`getNormCoverageForReview`)
+- NC da gap: mig. 118, `nc.controller.js`
+- Export Word SAL: `app/src/utils/wordExportSal.js`
+- Esperienza operativa: `docs/GUIDA_CONSOLIDATA.md` (righe SAL Fase 0–5-B, ingest Normattiva)

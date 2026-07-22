@@ -13,6 +13,11 @@ jest.mock('../utils/logger', () => ({
     debug: jest.fn(),
 }));
 
+jest.mock('../services/companyAccess.service', () => ({
+    assertMutatingAllowed: jest.fn().mockResolvedValue(null),
+    sendAccessDenied: jest.fn(),
+}));
+
 const { query } = require('../config/database');
 const ctrl = require('./document.controller');
 
@@ -150,6 +155,104 @@ describe('deleteDocument', () => {
         await ctrl.deleteDocument(req, res);
 
         expect(query).toHaveBeenCalledTimes(3);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true })
+        );
+    });
+});
+
+describe('updateDocument', () => {
+    const adminUser = { organization_id: ORG_ID, user_id: 1, role: 'admin' };
+
+    it('consente aggiornamento metadati cartella di sistema se il titolo non cambia', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 20,
+                    is_system_folder: 1,
+                    doc_type: 'folder',
+                    title: 'Procedure',
+                    folder_code: '2.1',
+                    issue_date: null,
+                    expiry_date: null,
+                    status: 'rilasciato',
+                    company_id: null,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '20' },
+            body: { title: 'Procedure', notes: 'Nota aggiornata' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        expect(res.status).not.toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true })
+        );
+        const updateSql = query.mock.calls[1][0];
+        expect(updateSql).not.toMatch(/title\s*=/i);
+        expect(updateSql).toMatch(/notes\s*=/i);
+    });
+
+    it('rifiuta rinomina cartella di sistema', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 21,
+                is_system_folder: 1,
+                doc_type: 'folder',
+                title: 'Procedure',
+                folder_code: '2.1',
+                issue_date: null,
+                expiry_date: null,
+                status: 'rilasciato',
+                company_id: null,
+            }],
+        });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '21' },
+            body: { title: 'Nuovo nome' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'SYSTEM_FOLDER_PROTECTED' })
+        );
+    });
+
+    it('consente aggiornamento documento procedura anche con flag is_system_folder legacy', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 22,
+                    is_system_folder: 1,
+                    doc_type: 'procedura',
+                    title: 'MOD_007',
+                    folder_code: null,
+                    issue_date: null,
+                    expiry_date: null,
+                    status: 'rilasciato',
+                    company_id: 5,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '22' },
+            body: { title: 'MOD_007', responsible: 'Mario Rossi' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        expect(res.status).not.toHaveBeenCalledWith(403);
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ success: true })
         );
