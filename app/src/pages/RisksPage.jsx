@@ -240,11 +240,12 @@ function ObjectiveForm({ initial, onSave, onClose }) {
 // ── Tab Rischi ────────────────────────────────────────────────────────────────
 
 function RisksTab() {
-  const [list, setList]         = useState([]);
-  const [stats, setStats]       = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [modal, setModal]       = useState(null); // null | { mode:'new'|'edit', data }
-  const [filterStatus, setFS]   = useState("");
+  const [list, setList]           = useState([]);
+  const [stats, setStats]         = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
+  const [filterStatus, setFS]     = useState("");
+  const [actionRisk, setActionRisk] = useState(null); // risk for which to open NC modal
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -333,6 +334,15 @@ function RisksTab() {
                 {r.treatment_desc && (
                   <p className="risk-treatment">{"\uD83D\uDEE1\uFE0F "}{r.treatment_desc}</p>
                 )}
+                {r.status === "in_treatment" && (
+                  <button
+                    type="button"
+                    className="btn-action-risk"
+                    onClick={() => setActionRisk(r)}
+                  >
+                    {"+ Crea azione nel Piano Azioni"}
+                  </button>
+                )}
               </div>
             );
           })}
@@ -344,6 +354,18 @@ function RisksTab() {
           initial={modal.data}
           onSave={handleSave}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {actionRisk && (
+        <NcCreateModal
+          open={true}
+          onClose={() => setActionRisk(null)}
+          onCreated={() => setActionRisk(null)}
+          defaultCategory="risk_action"
+          initialOriginText={`Rischio: ${actionRisk.title}`}
+          initialSectionCode="clause6"
+          sourceRiskId={actionRisk.risk_id}
         />
       )}
     </div>
