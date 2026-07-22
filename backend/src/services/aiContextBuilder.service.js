@@ -387,4 +387,50 @@ ${snippet}
   };
 }
 
-module.exports = { buildReviewRequirementsContext, buildAuditConclusionsContext, buildExtractNormMetadataContext };
+/**
+ * Build context for NC root-cause suggestion.
+ * @param {object} params
+ * @param {string} params.description      - Testo descrizione NC
+ * @param {string} [params.severity]       - major | minor | observation
+ * @param {string} [params.auditNumber]    - Numero audit di riferimento
+ * @param {string} [params.clientName]     - Nome azienda auditata
+ * @param {number} [params.organizationId] - Tenant scope (per future personalizzazioni)
+ * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
+ */
+async function buildNcCauseContext({ description, severity, auditNumber, clientName }) {
+  const SEVERITY_IT = { major: 'Grave', minor: 'Lieve', observation: 'Osservazione' };
+  const contextParts = [];
+  if (auditNumber) contextParts.push(`Audit: ${auditNumber}`);
+  if (clientName)  contextParts.push(`Azienda: ${clientName}`);
+  if (severity)    contextParts.push(`Severita': ${SEVERITY_IT[severity] || severity}`);
+
+  const systemPrompt = `Sei un esperto di sistemi di gestione qualita' ISO 9001:2015 specializzato nell'analisi delle cause radice delle non conformita'.
+Applica metodologie strutturate (5 Perche', Ishikawa, 8D) per identificare le cause fondamentali.
+Rispondi SEMPRE in italiano. Sii conciso: la proposta deve essere pronta per la compilazione diretta del campo causa radice.
+Rispondi SOLO con JSON valido, senza testo aggiuntivo.`;
+
+  const userPrompt = `Analizza questa non conformita' e proponi le possibili cause radice.
+${contextParts.length > 0 ? '\nContesto: ' + contextParts.join(' | ') : ''}
+
+Descrizione NC: ${description}
+
+Rispondi con JSON:
+{
+  "suggestion": "Proposta causa radice (max 250 caratteri, linguaggio operativo, pronta per copia-incolla)",
+  "methodology": "Metodologia applicata: 5 Perche' / Ishikawa / 8D",
+  "key_factors": ["fattore principale", "fattore secondario"]
+}`;
+
+  return {
+    systemPrompt,
+    userPrompt,
+    contextSummary: `nc_cause — ${contextParts.join('; ') || 'no context'}`,
+  };
+}
+
+module.exports = {
+  buildReviewRequirementsContext,
+  buildAuditConclusionsContext,
+  buildExtractNormMetadataContext,
+  buildNcCauseContext,
+};

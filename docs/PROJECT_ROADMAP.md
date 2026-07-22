@@ -634,11 +634,15 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | Dispositivo | Attività | Moduli accessibili |
 |---|---|---|
-| **Mobile Android (PWA)** | Campo: audit, ispezioni VT/MT/PT, foto, checklist offline | Audit, Alert (sola lettura), Documenti (sola consultazione) |
-| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Audit + consultazione |
-| **Desktop** | Gestione documentale, form, report, configurazione | Tutti i moduli |
+| **Mobile Android (PWA)** | Campo: cattura e verifica (checklist, NC, foto, scadenze/qualifiche, CND) + assistente AI citato | **P0**: Audit, NC, Documenti/Scadenze (consultazione), Qualifiche (consultazione), CND se licenza, Home/alert. **P1**: AI Chat / assist, Reclami light. **P2**: SAL riga singola |
+| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Come mobile + più viewport checklist |
+| **Desktop** | Analisi, report Word, SAL completo, riesame, gap, configurazione | Tutti i moduli |
 
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
+
+**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI, sequenza slice M-AI-1…6.  
+**Stato (21/07/2026)**: M-AI-1…5 ✅ completati (PR #259–#265). PR2 Controparti ✅ verificata già in main (commits `565fed3`, `cd93ab1`, `81aae9a`).  
+**Backlog aperto (parcheggiato — riprendere su richiesta)**: M-AI-6 SAL mobile compatto (FE only, bassa priorità) · M-AI-5b qualifiche Q&A strutturata (endpoint backend DB-aware, media priorità Mason) · §9.1 KPI/indicatori (prerequisito Riesame Slice 4, richiede pianificazione schema).
 
 ### Architettura UI — Navigation Foundation
 

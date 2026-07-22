@@ -303,6 +303,12 @@
   border-left: 4px solid #3b82f6;
 }
 
+.export-notification.warning {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+}
+
 /* Word Export Section */
 .export-word-section {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
