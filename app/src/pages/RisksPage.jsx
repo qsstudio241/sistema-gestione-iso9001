@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import NcCreateModal from "../components/NcCreateModal";
 import "./RisksPage.css";
 
 function scoreColor(score) {
@@ -473,6 +474,249 @@ function ObjectivesTab() {
   );
 }
 
+// ── Tab Contesto §4 ───────────────────────────────────────────────────────────
+
+const EMPTY_CF = { description: "", type: "external", category: "", impact: "neutral" };
+const EMPTY_IP = { name: "", relationship: "", requirements: "" };
+
+const CF_TYPE_LABEL   = { internal: "Interno", external: "Esterno" };
+const CF_IMPACT_LABEL = { positive: "Positivo", negative: "Negativo", neutral: "Neutro" };
+const CF_IMPACT_CLS   = { positive: "cf-positive", negative: "cf-negative", neutral: "cf-neutral" };
+
+function ContextFactorForm({ initial, onSave, onClose }) {
+  const [form, setForm] = useState({ ...EMPTY_CF, ...initial });
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState(null);
+
+  function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!form.description.trim()) return;
+    setSaving(true); setError(null);
+    try { await onSave(form); onClose(); }
+    catch { setError("Errore durante il salvataggio."); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{initial?.id ? "Modifica fattore" : "Nuovo fattore di contesto"}</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
+        </div>
+        <form className="risk-form" onSubmit={submit}>
+          <div className="form-row-3col">
+            <div>
+              <label>Tipo</label>
+              <select value={form.type} onChange={e => upd("type", e.target.value)}>
+                <option value="external">Esterno</option>
+                <option value="internal">Interno</option>
+              </select>
+            </div>
+            <div>
+              <label>Impatto</label>
+              <select value={form.impact} onChange={e => upd("impact", e.target.value)}>
+                <option value="neutral">Neutro</option>
+                <option value="positive">Positivo</option>
+                <option value="negative">Negativo</option>
+              </select>
+            </div>
+            <div>
+              <label>Categoria (PESTLE)</label>
+              <input value={form.category} onChange={e => upd("category", e.target.value)} placeholder="es. Economic" />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>Descrizione *</label>
+            <textarea required rows={3} value={form.description} onChange={e => upd("description", e.target.value)} placeholder="Descrivi il fattore di contesto..." />
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <div className="form-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
+            <button type="submit" className="btn-primary" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function InterestedPartyForm({ initial, onSave, onClose }) {
+  const [form, setForm] = useState({ ...EMPTY_IP, ...initial });
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState(null);
+
+  function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true); setError(null);
+    try { await onSave(form); onClose(); }
+    catch { setError("Errore durante il salvataggio."); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{initial?.id ? "Modifica parte interessata" : "Nuova parte interessata"}</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
+        </div>
+        <form className="risk-form" onSubmit={submit}>
+          <div className="form-row-2col">
+            <div>
+              <label>Nome *</label>
+              <input required value={form.name} onChange={e => upd("name", e.target.value)} placeholder="es. Cliente, Fornitore" />
+            </div>
+            <div>
+              <label>Tipo relazione</label>
+              <input value={form.relationship} onChange={e => upd("relationship", e.target.value)} placeholder="es. Cliente, Regolatore" />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>{"Requisiti/Aspettative rilevanti (\u00A74.2b)"}</label>
+            <textarea rows={3} value={form.requirements} onChange={e => upd("requirements", e.target.value)} placeholder="Descrivi i requisiti o aspettative rilevanti..." />
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <div className="form-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
+            <button type="submit" className="btn-primary" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ContestoTab() {
+  const [factors, setFactors]   = useState([]);
+  const [parties, setParties]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [cfModal, setCfModal]   = useState(null);
+  const [ipModal, setIpModal]   = useState(null);
+  const [section, setSection]   = useState("factors");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [cfRes, ipRes] = await Promise.all([
+        apiService.getContextFactors(),
+        apiService.getInterestedParties(),
+      ]);
+      setFactors(cfRes?.data || []);
+      setParties(ipRes?.data || []);
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSaveCf(form) {
+    if (cfModal.data?.id) await apiService.updateContextFactor(cfModal.data.id, form);
+    else                  await apiService.createContextFactor(form);
+    await load();
+  }
+
+  async function handleDeleteCf(item) {
+    if (!window.confirm(`Eliminare il fattore "${item.description.substring(0, 40)}..."?`)) return;
+    await apiService.deleteContextFactor(item.id);
+    await load();
+  }
+
+  async function handleSaveIp(form) {
+    if (ipModal.data?.id) await apiService.updateInterestedParty(ipModal.data.id, form);
+    else                  await apiService.createInterestedParty(form);
+    await load();
+  }
+
+  async function handleDeleteIp(item) {
+    if (!window.confirm(`Eliminare la parte interessata "${item.name}"?`)) return;
+    await apiService.deleteInterestedParty(item.id);
+    await load();
+  }
+
+  return (
+    <div className="risks-tab">
+      <div className="contesto-subtabs">
+        <button type="button" className={`contesto-sub-btn${section === "factors" ? " active" : ""}`} onClick={() => setSection("factors")}>
+          {"\uD83C\uDF0D Fattori di contesto (\u00A74.1)"}
+        </button>
+        <button type="button" className={`contesto-sub-btn${section === "parties" ? " active" : ""}`} onClick={() => setSection("parties")}>
+          {"\uD83E\uDD1D Parti interessate (\u00A74.2)"}
+        </button>
+      </div>
+
+      {loading ? <p className="loading-msg">Caricamento...</p> : (
+        <>
+          {section === "factors" && (
+            <>
+              <div className="tab-toolbar">
+                <button className="btn-primary" onClick={() => setCfModal({ data: null })}>+ Nuovo fattore</button>
+              </div>
+              {factors.length === 0 ? (
+                <div className="empty-state"><p>{"Nessun fattore di contesto registrato. Analizzare il contesto interno/esterno (\u00A74.1)."}</p></div>
+              ) : (
+                <div className="risk-list">
+                  {factors.map(f => (
+                    <div key={f.id} className="risk-card">
+                      <div className="risk-card-top">
+                        <div className="risk-card-title">
+                          <span className={`nature-badge cf-type-${f.type}`}>{CF_TYPE_LABEL[f.type] || f.type}</span>
+                          {f.category && <span className="risk-cat">{f.category}</span>}
+                          <span className={`nature-badge ${CF_IMPACT_CLS[f.impact] || ""}`}>{CF_IMPACT_LABEL[f.impact] || f.impact}</span>
+                        </div>
+                        <div className="risk-card-actions">
+                          <button type="button" className="btn-icon" onClick={() => setCfModal({ data: f })} title="Modifica">{"\u270F\uFE0F"}</button>
+                          <button type="button" className="btn-icon btn-del" onClick={() => handleDeleteCf(f)} title="Elimina">{"\uD83D\uDDD1\uFE0F"}</button>
+                        </div>
+                      </div>
+                      <p className="risk-desc">{f.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {cfModal && <ContextFactorForm initial={cfModal.data} onSave={handleSaveCf} onClose={() => setCfModal(null)} />}
+            </>
+          )}
+
+          {section === "parties" && (
+            <>
+              <div className="tab-toolbar">
+                <button className="btn-primary" onClick={() => setIpModal({ data: null })}>+ Nuova parte interessata</button>
+              </div>
+              {parties.length === 0 ? (
+                <div className="empty-state"><p>{"Nessuna parte interessata registrata. Identificare le parti rilevanti e i loro requisiti (\u00A74.2)."}</p></div>
+              ) : (
+                <div className="risk-list">
+                  {parties.map(p => (
+                    <div key={p.id} className="risk-card">
+                      <div className="risk-card-top">
+                        <div className="risk-card-title">
+                          <strong>{p.name}</strong>
+                          {p.relationship && <span className="risk-cat">{p.relationship}</span>}
+                        </div>
+                        <div className="risk-card-actions">
+                          <button type="button" className="btn-icon" onClick={() => setIpModal({ data: p })} title="Modifica">{"\u270F\uFE0F"}</button>
+                          <button type="button" className="btn-icon btn-del" onClick={() => handleDeleteIp(p)} title="Elimina">{"\uD83D\uDDD1\uFE0F"}</button>
+                        </div>
+                      </div>
+                      {p.requirements && <p className="risk-desc">{p.requirements}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {ipModal && <InterestedPartyForm initial={ipModal.data} onSave={handleSaveIp} onClose={() => setIpModal(null)} />}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function RisksPage() {
@@ -482,7 +726,7 @@ export default function RisksPage() {
     <div className="risks-page">
       <div className="risks-page-header">
         <h1>{"\u26A0\uFE0F Rischi, Opportunit\u00e0 e Obiettivi"}</h1>
-        <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 6.1 Rischi e opportunit\u00e0 - \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
+        <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 4.1/4.2 Contesto \u2014 \u00A7 6.1 Rischi e opportunit\u00e0 \u2014 \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
       </div>
 
       <div className="risks-tabs">
@@ -492,10 +736,15 @@ export default function RisksPage() {
         <button type="button" className={`risks-tab-btn${activeTab === "objectives" ? " active" : ""}`} onClick={() => setActiveTab("objectives")}>
           {"\uD83C\uDFAF Obiettivi Qualit\u00e0"}
         </button>
+        <button type="button" className={`risks-tab-btn${activeTab === "contesto" ? " active" : ""}`} onClick={() => setActiveTab("contesto")}>
+          {"\uD83C\uDF0D Contesto \u00A74"}
+        </button>
       </div>
 
       <div className="risks-tab-content">
-        {activeTab === "risks" ? <RisksTab /> : <ObjectivesTab />}
+        {activeTab === "risks"      && <RisksTab />}
+        {activeTab === "objectives" && <ObjectivesTab />}
+        {activeTab === "contesto"   && <ContestoTab />}
       </div>
     </div>
   );
