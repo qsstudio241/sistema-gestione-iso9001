@@ -499,6 +499,7 @@ async function createNonConformity(req, res) {
             source_origin_text,
             management_review_id,
             source_complaint_id: rawComplaintId,
+            source_risk_id,
         } = req.body;
 
         const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
@@ -616,6 +617,8 @@ async function createNonConformity(req, res) {
             );
         }
 
+        const safeSourceRiskId = source_risk_id ? parseInt(source_risk_id) || null : null;
+
         // Crea NC con campi Action Plan
         const result = await query(`
       INSERT INTO non_conformities (
@@ -636,6 +639,7 @@ async function createNonConformity(req, res) {
         source_origin_text,
         source_complaint_id,
         management_review_id,
+        source_risk_id,
         created_at,
         updated_at
       )
@@ -658,6 +662,7 @@ async function createNonConformity(req, res) {
         @source_origin_text,
         @source_complaint_id,
         @management_review_id,
+        @source_risk_id,
         GETDATE(),
         GETDATE()
       )
@@ -675,6 +680,7 @@ async function createNonConformity(req, res) {
             source_origin_text: source_origin_text || null,
             source_complaint_id: source_category === 'complaint' ? source_complaint_id : null,
             management_review_id: managementReviewId,
+            source_risk_id: safeSourceRiskId,
             due_date: due_date || null,
             corrective_action: corrective_action || null
         });

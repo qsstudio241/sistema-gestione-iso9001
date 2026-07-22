@@ -1737,6 +1737,20 @@ class ApiService {
     async updateObjective(id, data) { return this.put(`/objectives/${id}`, data); }
     async deleteObjective(id)       { return this.delete(`/objectives/${id}`); }
 
+    // ─── Context Factors §4.1 ────────────────────────────────────────────────
+    async getContextFactors(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/context-factors${qs ? '?' + qs : ''}`); }
+    async getContextFactor(id)           { return this.get(`/context-factors/${id}`); }
+    async createContextFactor(data)      { return this.post('/context-factors', data); }
+    async updateContextFactor(id, data)  { return this.put(`/context-factors/${id}`, data); }
+    async deleteContextFactor(id)        { return this.delete(`/context-factors/${id}`); }
+
+    // ─── Interested Parties §4.2 ─────────────────────────────────────────────
+    async getInterestedParties(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/interested-parties${qs ? '?' + qs : ''}`); }
+    async getInterestedParty(id)            { return this.get(`/interested-parties/${id}`); }
+    async createInterestedParty(data)       { return this.post('/interested-parties', data); }
+    async updateInterestedParty(id, data)   { return this.put(`/interested-parties/${id}`, data); }
+    async deleteInterestedParty(id)         { return this.delete(`/interested-parties/${id}`); }
+
     // ─── Complaints (Sprint 7) ───────────────────────────────────────────────
     async getComplaintsStats()      { return this.get('/complaints/stats'); }
     async getComplaints(params = {}){ const qs = new URLSearchParams(params).toString(); return this.get(`/complaints${qs ? '?' + qs : ''}`); }
