@@ -107,6 +107,47 @@
 .nc-stat-tot   .nc-stat-num { color: #2d3748; }
 .nc-stat-soon.nc-stat-active { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 
+/* Breakdown per categoria */
+.nc-stats-breakdown {
+  margin-bottom: 16px;
+}
+.nc-stats-breakdown-toggle {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  color: #4a5568;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nc-stats-breakdown-toggle:hover {
+  background: #f7fafc;
+}
+.nc-stats-breakdown-list {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nc-stats-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+.nc-stats-breakdown-label {
+  color: #2d3748;
+  font-weight: 500;
+}
+.nc-stats-breakdown-counts {
+  color: #718096;
+}
+
 /* Filtri */
 .nc-filters {
   display: flex;

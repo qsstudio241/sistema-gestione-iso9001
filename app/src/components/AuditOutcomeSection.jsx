@@ -16,7 +16,7 @@ import "./AuditOutcomeSection.css";
  * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
  *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
  */
-function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards }) {
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards, isIntegratedSystem = null }) {
   const { currentAudit } = useStorage();
 
   // Conclusione unica (standard singolo)
@@ -106,6 +106,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     [selectedStandards]
   );
   const isMultiStandard = standardEntries.length > 1;
+  // null = non impostato: default false per multi (comportamento pre-ADR esistente)
+  const effectiveIntegrated = isMultiStandard ? (isIntegratedSystem ?? false) : true;
 
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiModalStdKey, setAiModalStdKey] = useState(null);
@@ -186,8 +188,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           </div>
         )}
 
-        {/* Standard singolo: una textarea */}
-        {!isMultiStandard && (
+        {/* Standard singolo O sistema integrato: una textarea */}
+        {(!isMultiStandard || effectiveIntegrated) && (
           <AutoTextarea
             id="conclusions"
             value={conclusions}
@@ -197,8 +199,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           />
         )}
 
-        {/* Multi-standard: una textarea per norma con intestazione */}
-        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => (
+        {/* Multi-standard NON integrato: una textarea per norma con intestazione */}
+        {isMultiStandard && !effectiveIntegrated && standardEntries.map(({ key, shortLabel, label }) => (
           <div key={key} className="findings-per-standard">
             <div className="findings-per-standard__header">
               <span className="findings-per-standard__label">
@@ -247,7 +249,7 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
 
         {/* Standard singolo: riga totale (è già il dato del report).
             Multi-standard: non ha senso un aggregato — ogni norma ha il suo report. */}
-        {!isMultiStandard && (() => {
+        {(!isMultiStandard || effectiveIntegrated) && (() => {
           const allQuestions = currentAudit?.checklist
             ? Object.values(currentAudit.checklist).flatMap(cl =>
                 Object.values(cl || {}).flatMap(clause => clause.questions || [])
@@ -270,8 +272,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           );
         })()}
 
-        {/* Dettaglio per norma — visibile solo per audit multi-standard */}
-        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => {
+        {/* Dettaglio per norma — visibile solo per audit multi-standard NON integrato */}
+        {isMultiStandard && !effectiveIntegrated && standardEntries.map(({ key, shortLabel, label }) => {
           const m = byStandard[key] || {};
           return (
             <div key={key} className="findings-per-standard">
