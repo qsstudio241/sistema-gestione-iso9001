@@ -31,6 +31,12 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     )
   );
 
+  // ADR-009 Fase 4: conclusioni della checklist personalizzata (norma virtuale "CUSTOM")
+  // — usate solo per audit ibridi ISO+custom, vedi isHybridWithCustom sotto.
+  const [customConclusions, setCustomConclusions] = useState(
+    auditOutcome?.byStandard?.CUSTOM?.conclusions || ""
+  );
+
   // Calcola metriche real-time dalla checklist
   const [metrics, setMetrics] = useState({
     totalNC: 0,
@@ -93,6 +99,18 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     });
   };
 
+  const handleCustomConclusionsChange = (e) => {
+    const value = e.target.value;
+    setCustomConclusions(value);
+    onUpdate({
+      ...auditOutcome,
+      byStandard: {
+        ...auditOutcome?.byStandard,
+        CUSTOM: { ...auditOutcome?.byStandard?.CUSTOM, conclusions: value },
+      },
+    });
+  };
+
   const totalNC = metrics.totalNC;
   const totalOSS = metrics.totalOSS;
   const totalOM = metrics.totalOM;
@@ -108,6 +126,16 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
   const isMultiStandard = standardEntries.length > 1;
   // null = non impostato: default false per multi (comportamento pre-ADR esistente)
   const effectiveIntegrated = isMultiStandard ? (isIntegratedSystem ?? false) : true;
+
+  // ADR-009 Fase 4: checklist personalizzata come "norma virtuale" pari grado.
+  // Ibrido = almeno 1 standard ISO selezionato + checklist personalizzata presente.
+  // Le checklist custom non si integrano MAI con le norme ISO (kind='custom' nel registry):
+  // ottengono sempre un blocco/tab separato, indipendente da isIntegratedSystem.
+  const customChecklistId = currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id;
+  const hasCustomChecklist = !!(customChecklistId && currentAudit?.customChecklist);
+  const hasCustomOutcomeButtons = hasCustomChecklist && !!currentAudit?.customChecklist?.has_outcome_buttons;
+  const customChecklistName = currentAudit?.customChecklist?.name || "Checklist personalizzata";
+  const isHybridWithCustom = hasCustomChecklist && standardEntries.length >= 1;
 
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiModalStdKey, setAiModalStdKey] = useState(null);
@@ -227,6 +255,22 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           </div>
         ))}
 
+        {/* ADR-009 Fase 4: checklist personalizzata pari grado — blocco separato solo per audit ibridi */}
+        {isHybridWithCustom && (
+          <div className="findings-per-standard">
+            <div className="findings-per-standard__header">
+              <span className="findings-per-standard__label">📄 {customChecklistName}</span>
+            </div>
+            <AutoTextarea
+              id="conclusions-custom"
+              value={customConclusions}
+              onChange={handleCustomConclusionsChange}
+              placeholder={`Conclusioni per "${customChecklistName}"…`}
+              disabled={readOnly}
+            />
+          </div>
+        )}
+
         {/* Modale AI */}
         <AiConclusionsModal
           open={aiModalOpen}
@@ -256,7 +300,9 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
               )
             : [];
           const countISO = (s) => allQuestions.filter((q) => q.status === s).length;
-          const customSts = currentAudit?.customChecklist?.has_outcome_buttons
+          // Ibrido ISO+custom: la checklist personalizzata ha un blocco separato sotto
+          // (ADR-009 Fase 4) — qui NON si somma più per evitare doppio conteggio.
+          const customSts = (!isHybridWithCustom && currentAudit?.customChecklist?.has_outcome_buttons)
             ? Object.values(currentAudit.customStatuses || {})
             : [];
           const countCustom = (s) => customSts.filter((v) => v === s).length;
@@ -289,6 +335,24 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
             </div>
           );
         })}
+
+        {/* ADR-009 Fase 4: blocco separato per la checklist personalizzata — pari grado alle norme ISO */}
+        {isHybridWithCustom && hasCustomOutcomeButtons && (() => {
+          const custStatusValues = Object.values(currentAudit?.customStatuses || {});
+          const countCust = (s) => custStatusValues.filter((v) => v === s).length;
+          return (
+            <div className="findings-per-standard">
+              <span className="findings-per-standard__label">📄 {customChecklistName}</span>
+              <div className="findings-metrics-compact">
+                <span className="metric-compact nc"><strong>C:</strong> {countCust("C")}</span>
+                <span className="metric-compact oss"><strong>OSS:</strong> {countCust("OSS")}</span>
+                <span className="metric-compact nc-severe"><strong>NC:</strong> {countCust("NC")}</span>
+                <span className="metric-compact om"><strong>OM:</strong> {countCust("OM")}</span>
+                <span className="metric-compact na"><strong>NA:</strong> {countCust("NA")}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* LEGENDA (spostata da ChecklistModule) */}
         <div className="findings-legend">
