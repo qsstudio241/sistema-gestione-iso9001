@@ -66,7 +66,7 @@ BEGIN
     CREATE INDEX IX_ndt_reports_type_year ON ndt_reports (report_type, report_year);
     CREATE INDEX IX_ndt_reports_status ON ndt_reports (status, is_deleted);
     CREATE UNIQUE INDEX UX_ndt_reports_uuid ON ndt_reports (uuid);
-    CREATE UNIQUE INDEX UX_ndt_reports_number ON ndt_reports (report_number) WHERE report_number IS NOT NULL;
+    CREATE UNIQUE INDEX UX_ndt_reports_org_number ON ndt_reports (organization_id, report_number) WHERE report_number IS NOT NULL;
 
     PRINT 'Tabella ndt_reports creata.';
 END
