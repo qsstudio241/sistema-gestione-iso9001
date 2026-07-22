@@ -239,17 +239,86 @@
   cursor: default;
 }
 
-/* Modal form */
+/* Modal (classi condivise con altre pagine — qui obbligatorie: pagina isolata) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1a202c;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #718096;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.modal-close:hover {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.modal-box > p {
+  margin: 0;
+  padding: 16px 20px 0;
+  color: #2d3748;
+}
+
+.modal-box > .mr-form-actions {
+  padding: 16px 20px 20px;
+  margin-top: 0;
+  border-top: none;
+}
+
+/* Modal form riesame */
 .mr-modal-box {
   max-width: 760px;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 
 .mr-form {
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Sezioni collassabili */
@@ -589,7 +658,9 @@
 
 @media (max-width: 600px) {
   .mr-page { padding: 14px; }
-  .mr-modal-box { max-width: 100%; max-height: 100%; border-radius: 0; }
+  .modal-overlay { padding: 0; align-items: stretch; }
+  .mr-modal-box,
+  .modal-box { max-width: 100%; max-height: 100%; border-radius: 0; }
   .mr-table th:nth-child(3),
   .mr-table td:nth-child(3) { display: none; }
   .isw-grid { grid-template-columns: 1fr; }

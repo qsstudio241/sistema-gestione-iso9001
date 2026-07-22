@@ -1,5 +1,5 @@
 /**
- * Test L1 — documentValidity.js
+ * Test L1 â€” documentValidity.js
  * Vigore documento vs cartelle nel Registro Documenti.
  */
 import { describe, it, expect } from "vitest";
@@ -12,7 +12,7 @@ import {
   registryDocStatusForForm,
 } from "../utils/documentValidity";
 
-describe("documentValidity — normalizeRegistryDocStatusForApi", () => {
+describe("documentValidity â€” normalizeRegistryDocStatusForApi", () => {
   it("mappa vigente legacy a rilasciato", () => {
     expect(normalizeRegistryDocStatusForApi("vigente")).toBe("rilasciato");
   });
@@ -27,7 +27,7 @@ describe("documentValidity — normalizeRegistryDocStatusForApi", () => {
   });
 });
 
-describe("documentValidity — isDocumentFolder", () => {
+describe("documentValidity â€” isDocumentFolder", () => {
   it("ritorna true per doc_type folder", () => {
     expect(isDocumentFolder({ doc_type: "folder", title: "Procedure" })).toBe(true);
   });
@@ -41,7 +41,7 @@ describe("documentValidity — isDocumentFolder", () => {
   });
 });
 
-describe("documentValidity — isReleasedDocStatus", () => {
+describe("documentValidity â€” isReleasedDocStatus", () => {
   it("accetta rilasciato e vigente", () => {
     expect(isReleasedDocStatus("rilasciato")).toBe(true);
     expect(isReleasedDocStatus("vigente")).toBe(true);
@@ -53,7 +53,7 @@ describe("documentValidity — isReleasedDocStatus", () => {
   });
 });
 
-describe("documentValidity — isDocumentVigente", () => {
+describe("documentValidity â€” isDocumentVigente", () => {
   it("documento vigente conta come vigente", () => {
     expect(isDocumentVigente({ doc_type: "procedura", status: "vigente" })).toBe(true);
     expect(isDocumentVigente({ doc_type: "manuale", status: "rilasciato" })).toBe(true);
@@ -64,12 +64,12 @@ describe("documentValidity — isDocumentVigente", () => {
     expect(isDocumentVigente({ doc_type: "folder", status: "rilasciato" })).toBe(false);
   });
 
-  it("documento bozza non è vigente", () => {
+  it("documento bozza non Ã¨ vigente", () => {
     expect(isDocumentVigente({ doc_type: "procedura", status: "bozza" })).toBe(false);
   });
 });
 
-describe("documentValidity — shouldShowDocumentStatusBadge", () => {
+describe("documentValidity â€” shouldShowDocumentStatusBadge", () => {
   it("mostra badge su documento con status", () => {
     expect(shouldShowDocumentStatusBadge({ doc_type: "procedura", status: "vigente" })).toBe(true);
   });

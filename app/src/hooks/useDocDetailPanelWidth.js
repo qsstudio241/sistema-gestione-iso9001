@@ -1,5 +1,5 @@
 /**
- * Larghezza pannello dettaglio documento — persistenza localStorage + drag bordo sinistro.
+ * Larghezza pannello dettaglio documento â€” persistenza localStorage + drag bordo sinistro.
  * Stesso pattern di useNcDrawerWidth.
  */
 import { useState, useCallback, useRef, useEffect } from "react";
