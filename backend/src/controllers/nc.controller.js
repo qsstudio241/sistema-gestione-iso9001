@@ -498,7 +498,12 @@ async function createNonConformity(req, res) {
             source_category: rawCategory,
             source_origin_text,
             management_review_id,
+            source_complaint_id: rawComplaintId,
         } = req.body;
+
+        const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
+            ? parseInt(rawComplaintId, 10)
+            : null;
 
         const source_category = rawCategory || 'audit';
         const managementReviewId = (management_review_id != null && management_review_id !== '')
@@ -629,6 +634,7 @@ async function createNonConformity(req, res) {
         source_type,
         source_category,
         source_origin_text,
+        source_complaint_id,
         management_review_id,
         created_at,
         updated_at
@@ -650,6 +656,7 @@ async function createNonConformity(req, res) {
         'manual',
         @source_category,
         @source_origin_text,
+        @source_complaint_id,
         @management_review_id,
         GETDATE(),
         GETDATE()
@@ -666,6 +673,7 @@ async function createNonConformity(req, res) {
             responsible_contact_id: responsibleResolved.contact_id,
             source_category,
             source_origin_text: source_origin_text || null,
+            source_complaint_id: source_category === 'complaint' ? source_complaint_id : null,
             management_review_id: managementReviewId,
             due_date: due_date || null,
             corrective_action: corrective_action || null
