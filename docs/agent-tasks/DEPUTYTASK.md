@@ -1,6 +1,6 @@
 # DEPUTYTASK — ADR-009 Fase 2: flag `isIntegratedSystem` + comportamento SGI
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — mergiato su `main` con PR [#275](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/275) (22/07/2026, tutte le 4 slice). File lasciato come riferimento storico; sovrascrivere al prossimo task delegato al deputy.
 **Priorità:** P0 roadmap — "Prossimo Step" da settimane  
 **Branch base:** `main` (aggiornato al 21/07/2026)  
 **Creato da:** Lead 21/07/2026
