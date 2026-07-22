@@ -54,13 +54,14 @@ function buildCertificateFileUrl(filePath) {
 }
 
 function mapPipelineFieldsToReview(f, pipelineText, fileName) {
-    const person_name = String(f.welder_name || f.person_name || '').trim();
+    const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
 
     return {
         welder_name: person_name,
+        operator_name: person_name,
         person_name,
         certificate_number: f.certificate_number || null,
         issuing_body: f.issuing_body || null,
@@ -74,9 +75,13 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         thickness_range: f.thickness_min_mm != null && f.thickness_max_mm != null
             ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
             : (f.thickness_range || null),
+        pipe_diameter_min_mm: f.pipe_diameter_min_mm ?? null,
+        pipe_diameter_max_mm: f.pipe_diameter_max_mm ?? null,
         exam_date: normalizeDate(f.exam_date || f.issue_date),
         issue_date: normalizeDate(f.exam_date || f.issue_date),
         expiry_date: normalizeDate(f.expiry_date),
+        last_confirmation_date: normalizeDate(f.last_confirmation_date),
+        next_confirmation_due: normalizeDate(f.next_confirmation_due),
         standard_reference: f.standard_reference || f.standard_ref || null,
         ndt_method: f.ndt_method || null,
         ndt_level: f.ndt_level || null,
@@ -85,6 +90,11 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         patent_type: f.patent_type || null,
         joint_type: f.joint_type || null,
         pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        // Operatori ISO 14732 (saldatura automatica/meccanizzata)
+        equipment_type: f.equipment_type || null,
+        welding_type: f.welding_type || null,
+        single_multi_run: f.single_multi_run || null,
+        qualification_method: f.qualification_method || null,
         qualification_type: classifyQualificationType(pipelineText || fileName),
     };
 }
@@ -110,11 +120,13 @@ async function checkQualificationDuplicate(certificateNumber, organizationId, co
 
 /**
  * Estrae campi senza INSERT (IG-3 staging).
+ * @param {string} docType - 'patentino_saldatore' (default, saldatori ISO 9606-1) o 'qualifica_14732'
+ *                            (operatori/preparatori saldatura automatica/meccanizzata).
  */
-async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId) {
+async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, docType = 'patentino_saldatore') {
     const pipeline = await runDocumentIngest({
         pdfBuffer,
-        docType: 'patentino_saldatore',
+        docType,
         fileName,
         organizationId,
     });
@@ -186,7 +198,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
 
     const f = fields || {};
     const qualificationType = qualTypeOverride || f.qualification_type || classifyQualificationType(fileName);
-    const person_name = String(f.welder_name || f.person_name || '').trim();
+    const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
 
     if (!person_name) {
         const err = new Error('Nome titolare obbligatorio');
@@ -196,6 +208,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
 
     const certificate_number = f.certificate_number || null;
     const issue_date = normalizeDate(f.exam_date || f.issue_date);
+    const exam_date = normalizeDate(f.exam_date || f.issue_date);
     const expiry_date = normalizeDate(f.expiry_date);
     const issuing_body = f.issuing_body || null;
     const standard_ref = f.standard_reference || f.standard_ref || null;
@@ -204,15 +217,25 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
+    const thickness_min_mm = f.thickness_min_mm ?? null;
+    const thickness_max_mm = f.thickness_max_mm ?? null;
+    const pipe_diameter_min_mm = f.pipe_diameter_min_mm ?? null;
+    const pipe_diameter_max_mm = f.pipe_diameter_max_mm ?? null;
     const thickness_range = f.thickness_range
         || (f.thickness_min_mm != null && f.thickness_max_mm != null
             ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
             : null);
+    const last_confirmation_date = normalizeDate(f.last_confirmation_date);
+    const next_confirmation_due = normalizeDate(f.next_confirmation_due);
     const ndt_method = f.ndt_method || null;
     const ndt_level = f.ndt_level ? parseInt(f.ndt_level, 10) : null;
     const coordinator_title = f.coordinator_title || null;
     const cpd_valid_until = normalizeDate(f.cpd_valid_until || f.next_confirmation_due);
     const patent_type = f.patent_type || null;
+    const equipment_type = f.equipment_type || null;
+    const welding_type = f.welding_type || null;
+    const single_multi_run = f.single_multi_run || null;
+    const qualification_method = f.qualification_method || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
     const warnings = [];
 
@@ -247,35 +270,52 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('certNum', certificate_number || null)
         .input('issuer', issuing_body || null)
         .input('issueDate', issue_date || null)
+        .input('examDate', exam_date || null)
         .input('expiryDate', expiry_date || null)
+        .input('lastConfDate', last_confirmation_date || null)
+        .input('nextConfDue', next_confirmation_due || null)
         .input('status', 'valida')
         .input('userId', userId || null)
         .input('weldProc', welding_process || null)
         .input('matGroup', material_group || null)
         .input('posRange', position_range || null)
         .input('thickRange', thickness_range || null)
+        .input('thickMin', thickness_min_mm)
+        .input('thickMax', thickness_max_mm)
+        .input('pipeMin', pipe_diameter_min_mm)
+        .input('pipeMax', pipe_diameter_max_mm)
         .input('ndtMethod', ndt_method || null)
         .input('ndtLevel', ndt_level || null)
         .input('coordTitle', coordinator_title || null)
         .input('cpdUntil', cpd_valid_until || null)
         .input('patentType', patent_type || null)
+        .input('equipType', equipment_type || null)
+        .input('weldingType', welding_type || null)
+        .input('singleMultiRun', single_multi_run || null)
+        .input('qualMethod', qualification_method || null)
         .input('certFileUrl', certificate_file_url || null)
         .query(`
             INSERT INTO qualifications
                 (organization_id, company_id, person_name, personnel_id,
                  qualification_type, standard_ref, certificate_number, issuing_body,
-                 issue_date, expiry_date, status, notes, created_by, approval_status,
+                 issue_date, exam_date, expiry_date, last_confirmation_date, next_confirmation_due,
+                 status, notes, created_by, approval_status,
                  welding_process, material_group, position_range, thickness_range,
+                 thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
-                 patent_type, certificate_file_url)
+                 patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
+                 certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
                 (@orgId, @compId, @personName, @personnelId,
                  @qualType, @stdRef, @certNum, @issuer,
-                 @issueDate, @expiryDate, @status, NULL, @userId, 'bozza',
+                 @issueDate, @examDate, @expiryDate, @lastConfDate, @nextConfDue,
+                 @status, NULL, @userId, 'bozza',
                  @weldProc, @matGroup, @posRange, @thickRange,
+                 @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
-                 @patentType, @certFileUrl)
+                 @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
+                 @certFileUrl)
         `);
 
     const qualification_id = ins.recordset[0].id;
