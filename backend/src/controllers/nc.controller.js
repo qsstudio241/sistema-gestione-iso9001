@@ -498,7 +498,12 @@ async function createNonConformity(req, res) {
             source_category: rawCategory,
             source_origin_text,
             management_review_id,
+            source_complaint_id: rawComplaintId,
         } = req.body;
+
+        const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
+            ? parseInt(rawComplaintId, 10)
+            : null;
 
         const source_category = rawCategory || 'audit';
         const managementReviewId = (management_review_id != null && management_review_id !== '')
@@ -629,6 +634,7 @@ async function createNonConformity(req, res) {
         source_type,
         source_category,
         source_origin_text,
+        source_complaint_id,
         management_review_id,
         created_at,
         updated_at
@@ -650,6 +656,7 @@ async function createNonConformity(req, res) {
         'manual',
         @source_category,
         @source_origin_text,
+        @source_complaint_id,
         @management_review_id,
         GETDATE(),
         GETDATE()
@@ -666,6 +673,7 @@ async function createNonConformity(req, res) {
             responsible_contact_id: responsibleResolved.contact_id,
             source_category,
             source_origin_text: source_origin_text || null,
+            source_complaint_id: source_category === 'complaint' ? source_complaint_id : null,
             management_review_id: managementReviewId,
             due_date: due_date || null,
             corrective_action: corrective_action || null
@@ -1126,11 +1134,28 @@ async function getNonConformitiesStatistics(req, res) {
       WHERE ${whereClause}
     `, params);
 
+        // Breakdown per categoria origine (additive — non breaking)
+        const categoryResult = await query(`
+      SELECT
+        COALESCE(nc.source_category, 'audit') AS source_category,
+        COUNT(*) AS total,
+        SUM(CASE WHEN nc.status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_count,
+        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+      FROM non_conformities nc
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE ${whereClause}
+      GROUP BY COALESCE(nc.source_category, 'audit')
+      ORDER BY COUNT(*) DESC
+    `, params);
+
         logger.info('NC statistics retrieved', { organization_id, company_id });
 
         res.json({
             success: true,
-            data: statsResult.recordset[0]
+            data: {
+                ...statsResult.recordset[0],
+                by_category: categoryResult.recordset,
+            },
         });
 
     } catch (error) {
