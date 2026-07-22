@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// ??? Test 1: Schema norma � campi ???????????????????????????????????????????
+// Test 1: Schema norma  -  campi ?
 
 describe('Schema norma - campi', () => {
   it('lo schema norma contiene tutti i campi attesi', async () => {
@@ -33,7 +33,7 @@ describe('Schema norma - campi', () => {
   });
 });
 
-// ??? Test 2: Mapping tipo ? cartella ????????????????????????????????????????
+// Test 2: Mapping tipo ? cartella ?
 
 describe('Document folder mapping', () => {
   it('norma viene mappata alla cartella 2.3 (Norme e Leggi)', async () => {
@@ -62,7 +62,7 @@ describe('Document folder mapping', () => {
   });
 });
 
-// ??? Test 3: DocumentForm � validazione file upload ?????????????????????????
+// Test 3: DocumentForm  -  validazione file upload ?
 
 describe('DocumentForm - upload unificato', () => {
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -98,28 +98,28 @@ describe('DocumentForm - upload unificato', () => {
   });
 });
 
-// ??? Test 4: OrphanInbox � logica orfano ????????????????????????????????????
+// Test 4: OrphanInbox  -  logica orfano 
 
 describe('OrphanInbox - archiviazione', () => {
   const isOrphan = (doc) => doc.parent_id === null || doc.parent_id === 0;
 
-  it('un documento senza parent_id � considerato orfano', () => {
+  it('un documento senza parent_id è considerato orfano', () => {
     const doc = { id: 1, title: 'Test', parent_id: null, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(true);
   });
 
-  it('un documento con parent_id=0 � considerato orfano', () => {
+  it('un documento con parent_id=0 è considerato orfano', () => {
     const doc = { id: 2, title: 'Test 2', parent_id: 0, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(true);
   });
 
-  it('un documento con parent_id valido NON � orfano', () => {
+  it('un documento con parent_id valido NON è orfano', () => {
     const doc = { id: 3, title: 'Test 3', parent_id: 15, doc_type: 'norma' };
     expect(isOrphan(doc)).toBe(false);
   });
 });
 
-// ??? Test 5: Metadati attesi per BS EN ISO 9606-1:2017 ??????????????????????
+// Test 5: Metadati attesi per BS EN ISO 9606-1:2017 ?
 
 describe('BS EN ISO 9606-1 - metadati attesi', () => {
   it('i metadati attesi per la norma sono corretti', () => {
@@ -156,7 +156,7 @@ describe('BS EN ISO 9606-1 - metadati attesi', () => {
     });
   });
 
-  it('il campo is_harmonized � di tipo boolean', async () => {
+  it('il campo is_harmonized è di tipo boolean', async () => {
     const DOCUMENT_TYPE_SCHEMAS = (await import('../data/documentTypeSchemas.js')).default;
     const isHarmonizedField = DOCUMENT_TYPE_SCHEMAS.norma.fields.find(
       f => f.key === 'is_harmonized'

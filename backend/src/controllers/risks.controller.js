@@ -38,7 +38,11 @@ async function listRisks(req, res) {
 
         const [dataRes, countRes] = await Promise.all([
             req2.query(`
-                SELECT r.*, u.full_name AS created_by_name
+                SELECT r.risk_id, r.organization_id, r.company_id, r.title, r.description,
+                       r.context, r.category, r.probability, r.impact, r.treatment,
+                       r.treatment_desc, r.responsible, r.review_date, r.status,
+                       r.nature, r.created_by, r.created_at, r.updated_at,
+                       u.full_name AS created_by_name
                 FROM risks r
                 LEFT JOIN users u ON u.user_id = r.created_by
                 WHERE ${whereClause}
@@ -97,7 +101,10 @@ async function getOneRisk(req, res) {
         const r = await pool.request()
             .input('id', parseInt(req.params.id))
             .input('orgId', orgId)
-            .query('SELECT * FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+            .query(`SELECT risk_id, organization_id, company_id, title, description, context, category,
+                           probability, impact, treatment, treatment_desc, responsible, review_date,
+                           status, nature, created_by, created_at, updated_at
+                    FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0`);
         if (!r.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
         res.json({ success: true, data: { ...r.recordset[0], score: riskScore(r.recordset[0].probability, r.recordset[0].impact) } });
     } catch (err) {
@@ -110,9 +117,12 @@ async function createRisk(req, res) {
         const pool   = await getPool();
         const orgId  = req.user.organization_id;
         const userId = req.user.user_id;
-        const { title, description, context = 'internal', category, probability = 2, impact = 2, treatment = 'mitigate', treatment_desc, responsible, review_date, company_id } = req.body;
+        const { title, description, context = 'internal', category, probability = 2, impact = 2, treatment = 'mitigate', treatment_desc, responsible, review_date, company_id, nature } = req.body;
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
+
+        const validNature = ['risk', 'opportunity'];
+        const safeNature  = validNature.includes(nature) ? nature : 'risk';
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
@@ -124,13 +134,13 @@ async function createRisk(req, res) {
             .input('probability', parseInt(probability)).input('impact', parseInt(impact))
             .input('treatment', treatment).input('treatment_desc', treatment_desc || null)
             .input('responsible', responsible || null).input('review_date', review_date || null)
-            .input('company_id', company_id || null)
+            .input('company_id', company_id || null).input('nature', safeNature)
             .query(`
                 INSERT INTO risks (organization_id, company_id, title, description, context, category,
-                    probability, impact, treatment, treatment_desc, responsible, review_date, created_by)
+                    probability, impact, treatment, treatment_desc, responsible, review_date, created_by, nature)
                 OUTPUT INSERTED.risk_id
                 VALUES (@orgId, @company_id, @title, @description, @context, @category,
-                    @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId)
+                    @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId, @nature)
             `);
 
         logger.info('Risk created', { risk_id: r.recordset[0].risk_id, orgId });
@@ -146,7 +156,7 @@ async function updateRisk(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const { title, description, context, category, probability, impact, treatment, treatment_desc, responsible, review_date, status } = req.body;
+        const { title, description, context, category, probability, impact, treatment, treatment_desc, responsible, review_date, status, nature } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query('SELECT risk_id, company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
@@ -169,6 +179,12 @@ async function updateRisk(req, res) {
         if (responsible   !== undefined) { sets.push('responsible = @responsible');     req2.input('responsible', responsible); }
         if (review_date   !== undefined) { sets.push('review_date = @review_date');     req2.input('review_date', review_date); }
         if (status        !== undefined) { sets.push('status = @status');               req2.input('status', status); }
+        if (nature        !== undefined) {
+            const validNature = ['risk', 'opportunity'];
+            const safeNature  = validNature.includes(nature) ? nature : 'risk';
+            sets.push('nature = @nature');
+            req2.input('nature', safeNature);
+        }
 
         await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id AND organization_id = @orgId`);
         res.json({ success: true });

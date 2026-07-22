@@ -19,6 +19,7 @@ const {
 const { buildCitationsFromChunks } = require('../utils/aiCitations');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
+const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -159,6 +160,11 @@ async function aiChat(req, res) {
       }
     }
 
+    const weldingContextRe = /3834|9606|15608|15614|gruppo\s*materiale|material\s*group|wps|wpqr|patentino/i;
+    if ((parsedStandardId === 6) || weldingContextRe.test(String(message || ''))) {
+      systemPrompt += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 35 })}`;
+    }
+
     if (parsedCompanyId) {
       const company = await loadCompanyProfile(parsedCompanyId, req.user);
       if (company) {
@@ -180,6 +186,33 @@ async function aiChat(req, res) {
       questionText: questionText || null,
       standardKey: standardKey || null,
     });
+
+    // Feedback loop: inietta correzioni recenti come preferenze apprese
+    try {
+      const fbRes = await query(
+        `SELECT TOP 5 feature, action, ai_text, final_text, context_summary
+         FROM ai_feedback
+         WHERE organization_id = @orgId
+           AND action = 'rephrased'
+           AND final_text IS NOT NULL AND LEN(final_text) > 30
+         ORDER BY created_at DESC`,
+        { orgId: organizationId }
+      );
+      const fbRows = fbRes.recordset || [];
+      if (fbRows.length > 0) {
+        const prefLines = ['\n\n--- PREFERENZE APPRESE ---'];
+        prefLines.push('Correzioni recenti degli utenti di questa organizzazione. Adatta stile e contenuto:');
+        for (const fb of fbRows) {
+          prefLines.push(`- [${fb.feature}] ${fb.context_summary || ''}`);
+          if (fb.ai_text) prefLines.push(`  Prima: ${fb.ai_text.substring(0, 150)}...`);
+          prefLines.push(`  Corretto in: ${fb.final_text.substring(0, 250)}`);
+        }
+        prefLines.push('--- FINE PREFERENZE ---');
+        systemPrompt += prefLines.join('\n');
+      }
+    } catch (err) {
+      logger.debug('[AI_CHAT] Feedback enrichment skipped:', err.message);
+    }
 
     let contextChunks = [];
     try {

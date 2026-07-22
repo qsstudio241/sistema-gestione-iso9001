@@ -1,0 +1,28 @@
+---
+description: Policy ambiente Cloud Agent Cursor — context window, install, secrets, costi. Sempre attiva.
+alwaysApply: true
+---
+
+# Cloud Agent — ambiente e costi (ProgettoISO)
+
+## Config effettiva dal repo
+- Ambiente VM: `.cursor/environment.json` (install idempotente `.cursor/scripts/cloud-install.sh`).
+- Istruzioni Cloud: sezione *Cursor Cloud specific instructions* in `AGENTS.md`.
+- Deploy/SSH/Secrets: `docs/how-to/ACCESSO_DEPLOY_AGENTS.md`.
+
+## Context window (capability vs cost)
+Su cursor.com/agents → **Edit** accanto al modello:
+
+| Run | Context | Nota |
+|-----|---------|------|
+| Deputy / slice da `DEPUTYTASK.md` | **Default o basso** | Non usare 1M |
+| Lead / audit multi-modulo / sync | Alto o **1M solo se necessario** | Preferire brief mirato |
+| Fix 1–2 file | Default | Affidarsi a CI se basso rischio |
+
+**Vietato** ripristinare 1M come default su tutti i run (costo inutile: Cursor lo ha reso opzionale).
+
+## Operatività Cloud
+- Secrets solo da Dashboard Cloud Agents (`SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `SGQ_APP_EMAIL`, `SGQ_APP_PASSWORD`, …).
+- Migrazioni DB: pattern VPS (`run-migration-*-vps.js`), non SQL diretto dal cloud.
+- Test FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build` dopo `cloud-install`.
+- Non chiedere al committente comandi meccanici eseguibili dall'agente.

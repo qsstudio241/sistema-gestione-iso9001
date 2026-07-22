@@ -6,6 +6,10 @@ app/node_modules/
 app/dist/
 app/build/
 
+# Python (script locali, es. backend/scripts/pdf_to_json/)
+__pycache__/
+*.pyc
+
 # Environment variables
 .env
 .env.local
@@ -22,6 +26,13 @@ backend/config/.ssh-deploy.local.ps1
 
 # Netlify CLI token (copiare da .netlify.local.ps1.example — mai committare)
 backend/config/.netlify.local.ps1
+
+# Evidenze diagnostico UNI Store (screenshot/report locali, possono contenere dati account)
+backend/scripts/uni-store-artifacts/
+
+# Output di prova pdf_to_json (.md/.json possono contenere estratti estesi di testo normativo
+# protetto da copyright — mai committare, solo scratch locale per revisione manuale)
+out/
 
 # IDE
 .vscode/
@@ -77,3 +88,11 @@ database/backups/
 .cursorrrules
 
 backend/scripts/patch-test-db-config-vps.js
+
+# Cursor agent artefatti temporanei
+.cursor/_*.cjs
+.cursor/_*.mjs
+.cursor/rbac-smoke-*.txt
+.cursor/*-result.json
+.cursor/_pr-body-*.md
+

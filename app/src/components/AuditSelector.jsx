@@ -269,8 +269,7 @@ const hasAnyClosedAudit = useMemo(
           <button
             onClick={handleCreateNewAudit}
             className="btn btn-icon btn-success"
-            title="Crea nuovo audit (nuova azienda)"
-            disabled={currentAudit !== null}
+            title="Crea nuovo audit"
           >
             ➕ Nuovo
           </button>
@@ -374,7 +373,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       : AVAILABLE_STANDARDS.filter((s) => user.allowed_standard_ids.includes(s.standardId));
   const nextNumber = getNextAuditNumber(audits, currentYear);
 
-  // Pre-popola clientName, companyId, tipologia e fornitore se re-audit
+  // Pre-popola clientName, companyId, tipologia, fornitore, norme e auditor se re-audit
   const initialClientName = isReaudit && currentAudit 
     ? currentAudit.metadata.clientName 
     : "";
@@ -390,6 +389,16 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const initialFornitoreSupplierId = isReaudit && currentAudit?.metadata?.fornitoreSupplierId
     ? currentAudit.metadata.fornitoreSupplierId
     : null;
+  // Re-audit: riporta le stesse norme, auditor e checklist personalizzata
+  const initialNorms = isReaudit && currentAudit?.metadata?.selectedStandards?.length > 0
+    ? currentAudit.metadata.selectedStandards
+    : [];
+  const initialAuditorName = isReaudit && currentAudit?.metadata?.auditorName
+    ? currentAudit.metadata.auditorName
+    : "";
+  const initialCustomChecklistId = isReaudit
+    ? (currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id ?? null)
+    : null;
 
   const [formData, setFormData] = useState({
     auditNumber: nextNumber,
@@ -400,9 +409,9 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     fornitoreSupplierId: initialFornitoreSupplierId,
     auditDate: new Date().toISOString().split("T")[0],
     auditDateEnd: "",
-    auditorName: "",
-    norms: [],
-    customChecklistId: null,
+    auditorName: initialAuditorName,
+    norms: initialNorms,
+    customChecklistId: initialCustomChecklistId,
   });
 
   const [customChecklists, setCustomChecklists] = useState([]);
@@ -473,11 +482,13 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
 
   const [errors, setErrors] = useState({});
   const [pendingInfo, setPendingInfo] = useState(null); // { count, lastAuditId, issues }
+  const [auditHistory, setAuditHistory] = useState([]);  // storico audit completati GAP-13
 
   /**
    * Verifica se il cliente ha rilievi pendenti (NC/OSS/NV) da audit precedenti.
    * @param {string} clientName  - nome cliente da cercare
-   * @param {string|null} excludeUuid - UUID dell'audit corrente da escludere (re-audit)
+   * @param {string|null} excludeUuid - UUID dell'audit da escludere dalla ricerca
+   *   (null per "Nuovo audit" e re-audit: trova l'audit più recente del cliente)
    */
   const checkPendingIssues = async (clientName, excludeUuid = null) => {
     if (!clientName?.trim()) return;
@@ -507,14 +518,28 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     }
   };
 
-  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente)
+  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente).
+  // Si passa null come excludeUuid: vogliamo i rilievi aperti DELL'audit corrente (non del precedente).
   React.useEffect(() => {
     if (isReaudit && currentAudit) {
-      const cn   = currentAudit.metadata?.clientName;
-      const uuid = currentAudit.metadata?.id || null;
-      checkPendingIssues(cn, uuid);
+      const cn = currentAudit.metadata?.clientName;
+      checkPendingIssues(cn, null);
     }
   }, [isReaudit, currentAudit]);
+
+  // Re-audit: carica storico ultimi audit completati per il cliente (GAP-13).
+  React.useEffect(() => {
+    if (!isReaudit) return;
+    const companyId = formData.companyId;
+    const clientName = formData.clientName?.trim();
+    if (!companyId && !clientName) return;
+    const params = companyId
+      ? { company_id: companyId, limit: 5 }
+      : { client_name: clientName, limit: 5 };
+    apiService.getClientAuditHistory(params)
+      .then(res => setAuditHistory(res?.history || []))
+      .catch(() => setAuditHistory([]));
+  }, [isReaudit, formData.companyId, formData.clientName]);
 
   // Nuovo audit: controlla pending quando l'utente lascia il campo clientName (min 3 char)
   const handleClientNameBlur = () => {
@@ -648,6 +673,40 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             ✕
           </button>
         </div>
+
+        {/* Storico audit completati — solo in re-audit, mostra trend NC/OSS nel tempo (GAP-13) */}
+        {isReaudit && auditHistory.length > 0 && (
+          <div className="audit-history-section">
+            <div className="audit-history-header">
+              <span className="audit-history-icon">📊</span>
+              <strong>Storico audit ({auditHistory.length} completati)</strong>
+            </div>
+            <div className="audit-history-list">
+              {auditHistory.map((h) => (
+                <div key={h.audit_id} className="audit-history-item">
+                  <span className="audit-history-number">{h.audit_number}</span>
+                  <span className="audit-history-date">
+                    {new Date(h.audit_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="audit-history-badges">
+                    {h.nc_count > 0 && (
+                      <span className="audit-history-badge badge-nc">{h.nc_count} NC</span>
+                    )}
+                    {h.oss_count > 0 && (
+                      <span className="audit-history-badge badge-oss">{h.oss_count} OSS</span>
+                    )}
+                    {h.nc_count === 0 && h.oss_count === 0 && h.answered_count > 0 && (
+                      <span className="audit-history-badge badge-ok">✓ Conforme</span>
+                    )}
+                    {h.answered_count === 0 && (
+                      <span className="audit-history-badge badge-na">—</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sezione rilievi pendenti - re-audit o nuovo audit con storico cliente */}
         {pendingInfo && pendingInfo.count > 0 && (
