@@ -14,9 +14,9 @@ END
 async function main() {
   try {
     await query(SQL);
-    console.log('Migration 123 OK — source_risk_id aggiunto a non_conformities');
+    console.log('Migration 125 OK — source_risk_id aggiunto a non_conformities');
   } catch (e) {
-    console.error('Migration 123 ERRORE:', e.message);
+    console.error('Migration 125 ERRORE:', e.message);
     process.exit(1);
   } finally {
     process.exit(0);

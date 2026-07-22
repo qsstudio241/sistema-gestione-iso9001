@@ -46,9 +46,9 @@ async function main() {
     console.log('context_factors OK');
     await query(SQL_IP);
     console.log('interested_parties OK');
-    console.log('Migration 122 OK');
+    console.log('Migration 124 OK');
   } catch (e) {
-    console.error('Migration 122 ERRORE:', e.message);
+    console.error('Migration 124 ERRORE:', e.message);
     process.exit(1);
   } finally {
     process.exit(0);
