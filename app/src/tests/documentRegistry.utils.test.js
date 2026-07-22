@@ -1,13 +1,13 @@
 /**
- * Test L1 — DocumentRegistry pure utility functions
+ * Test L1 â€” DocumentRegistry pure utility functions
  *
  * Copre: daysUntil, getExpiryClass, exportToCSV, flattenFolders
- * Queste funzioni gestiscono la logica di priorità, scadenze e navigazione
+ * Queste funzioni gestiscono la logica di prioritÃ , scadenze e navigazione
  * del Registro Documenti SGQ.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// ??? Re-implementazioni delle funzioni pure da DocumentRegistry ?????????????
+//  Re-implementazioni delle funzioni pure da DocumentRegistry ?
 
 function daysUntil(dateStr) {
   if (!dateStr) return null;
@@ -44,10 +44,10 @@ const DOC_STATUS_LABELS = {
   obsoleto:         "Obsoleto",
 };
 
-// ??? daysUntil ??????????????????????????????????????????????????????????????
+//  daysUntil ??
 
-describe('DocumentRegistry — daysUntil', () => {
-  it('ritorna null se dateStr è null/undefined/vuoto', () => {
+describe('DocumentRegistry â€” daysUntil', () => {
+  it('ritorna null se dateStr Ã¨ null/undefined/vuoto', () => {
     expect(daysUntil(null)).toBeNull();
     expect(daysUntil(undefined)).toBeNull();
     expect(daysUntil('')).toBeNull();
@@ -80,14 +80,14 @@ describe('DocumentRegistry — daysUntil', () => {
   });
 });
 
-// ??? getExpiryClass ?????????????????????????????????????????????????????????
+//  getExpiryClass 
 
-describe('DocumentRegistry — getExpiryClass', () => {
+describe('DocumentRegistry â€” getExpiryClass', () => {
   it('documento obsoleto ? "expiry-obsoleto"', () => {
     expect(getExpiryClass({ status: 'obsoleto' })).toBe('expiry-obsoleto');
   });
 
-  it('documento obsoleto ha priorità su is_expired', () => {
+  it('documento obsoleto ha prioritÃ  su is_expired', () => {
     expect(getExpiryClass({ status: 'obsoleto', is_expired: true })).toBe('expiry-obsoleto');
   });
 
@@ -99,7 +99,7 @@ describe('DocumentRegistry — getExpiryClass', () => {
     expect(getExpiryClass({ status: 'rilasciato', expiring_soon: true })).toBe('expiry-warning');
   });
 
-  it('documento scaduto ha priorità su expiring_soon', () => {
+  it('documento scaduto ha prioritÃ  su expiring_soon', () => {
     expect(getExpiryClass({ status: 'vigente', is_expired: true, expiring_soon: true })).toBe('expiry-scaduto');
   });
 
@@ -109,9 +109,9 @@ describe('DocumentRegistry — getExpiryClass', () => {
   });
 });
 
-// ??? DOC_STATUS_LABELS ??????????????????????????????????????????????????????
+//  DOC_STATUS_LABELS 
 
-describe('DocumentRegistry — DOC_STATUS_LABELS', () => {
+describe('DocumentRegistry â€” DOC_STATUS_LABELS', () => {
   it('mappa "rilasciato" a "Rilasciato"', () => {
     expect(DOC_STATUS_LABELS['rilasciato']).toBe('Rilasciato');
   });
@@ -136,9 +136,9 @@ describe('DocumentRegistry — DOC_STATUS_LABELS', () => {
   });
 });
 
-// ??? flattenFolders ?????????????????????????????????????????????????????????
+//  flattenFolders 
 
-describe('DocumentRegistry — flattenFolders', () => {
+describe('DocumentRegistry â€” flattenFolders', () => {
   it('ritorna array vuoto per input vuoto', () => {
     expect(flattenFolders([])).toEqual([]);
   });

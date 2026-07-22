@@ -1,5 +1,5 @@
 /**
- * DeadlineImportDialog — dialog di conferma import scadenzario (ADR-013 §6.5)
+ * DeadlineImportDialog â€” dialog di conferma import scadenzario (ADR-013 Â§6.5)
  *
  * Si apre quando il detector rileva confidence alta/media su un file Excel.
  * Permette all'utente di verificare/modificare il mapping colonne e confermare.

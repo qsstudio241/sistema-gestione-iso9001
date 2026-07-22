@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Organization controller ÔÇö anagrafica tenant (P.IVA, logo)
  */
 

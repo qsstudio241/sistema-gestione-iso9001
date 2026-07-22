@@ -168,6 +168,10 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     onUpdate("auditOutcome", updatedData);
   };
 
+  const handleIsIntegratedSystemUpdate = (value) => {
+    onUpdate("isIntegratedSystem", value);
+  };
+
   /**
    * Deep-link: apre la sezione checklist e la sottosezione dello standard
    * che contiene section_code, poi scrolla alla domanda tramite id DOM.
@@ -319,6 +323,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
 
   // Verifica quali standard sono selezionati
   const selectedStandards = currentAudit.metadata.selectedStandards || [];
+  const isIntegratedSystem = currentAudit.metadata?.isIntegratedSystem ?? null;
 
   // Blocca la deselezione solo se almeno una domanda ha ricevuto una valutazione.
   // Clausole vuote o con sole domande NOT_ANSWERED non contano come "dati".
@@ -555,6 +560,8 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                       onUpdate={handleGeneralDataUpdate}
                       onStandardsUpdate={handleStandardsUpdate}
                       readOnly={isReadOnly}
+                      isIntegratedSystem={isIntegratedSystem}
+                      onIsIntegratedSystemChange={handleIsIntegratedSystemUpdate}
                     />
                     <button className="accordion-collapse-btn" onClick={() => toggleSubSection("general-data-form")}>▲ Chiudi 1.1</button>
                   </div>
@@ -742,6 +749,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={false}
                 readOnly={isReadOnly}
                 selectedStandards={selectedStandards}
+                isIntegratedSystem={isIntegratedSystem}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("outcome")}>▲ Chiudi sezione 11</button>
             </div>
@@ -771,6 +779,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 showConclusions={true}
                 readOnly={isReadOnly}
                 selectedStandards={selectedStandards}
+                isIntegratedSystem={isIntegratedSystem}
               />
               <button className="accordion-collapse-btn" onClick={() => toggleSection("conclusions")}>▲ Chiudi sezione 12</button>
             </div>

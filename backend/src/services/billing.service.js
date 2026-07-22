@@ -1,5 +1,5 @@
 /**
- * billing.service.js � Fatturazione B2B2B (QS Studio ? studi ? aziende)
+ * billing.service.js  -  Fatturazione B2B2B (QS Studio ? studi ? aziende)
  */
 
 const { query } = require('../config/database');

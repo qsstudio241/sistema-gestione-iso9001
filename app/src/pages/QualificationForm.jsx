@@ -51,11 +51,13 @@ const EMPTY = {
   certificate_file_url: "",
   // Saldatore ISO 9606-1 — dettagli e validità
   examiner_body: "", joint_type: "", product_type: "", weld_details: "",
-  filler_material: "", shielding_gas: "",
+  filler_material: "", shielding_gas: "", equipment_type: "",
   thickness_min_mm: "", thickness_max_mm: "",
   pipe_diameter_min_mm: "", pipe_diameter_max_mm: "",
   exam_date: "", last_confirmation_date: "", next_confirmation_due: "",
   revalidation_date: "", qualification_designation: "",
+  // Operatore ISO 14732 (saldatura automatica/meccanizzata)
+  welding_type: "", single_multi_run: "", qualification_method: "",
 };
 
 // Campi obbligatori specifici per i saldatori ISO 9606 (validati su blur/submit).
@@ -83,7 +85,16 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
   const [fieldErrors, setFieldErrors] = useState({});
 
   const isWelder9606 = (form.qualification_type || "").includes("9606");
+  const isOperator14732 = (form.qualification_type || "").includes("14732");
+  // ISO 9606-1 (saldatori manuali) e ISO 14732 (operatori automatica/meccanizzata) condividono
+  // lo stesso obbligo di conferma semestrale — vedi weldingCoordinatorAuth.service.js (backend).
+  const requiresConfirmation = isWelder9606 || isOperator14732;
   const isApproved = form.approval_status === "approvata" || qualification?.approval_status === "approvata";
+  const revalidationLabel = isWelder9606
+    ? "Revalidazione (3 anni)"
+    : isOperator14732
+    ? "Revalidazione (6 anni)"
+    : "Revalidazione";
 
   function validateWelderField(field, value) {
     if (!isWelder9606 || !WELDER_REQUIRED[field]) return null;
@@ -437,6 +448,42 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                   <input type="text" value={form.examiner_body} onChange={handle("examiner_body")} placeholder="se diverso dall'ente" />
                 </div>
               </div>
+              {isOperator14732 && (
+                <>
+                  <div className="qf-row">
+                    <div className="qf-field">
+                      <label>Tipo saldatura (ISO 14732)</label>
+                      <select value={form.welding_type} onChange={handle("welding_type")}>
+                        <option value="">-- seleziona --</option>
+                        <option value="automatic">Automatica</option>
+                        <option value="mechanized">Meccanizzata</option>
+                      </select>
+                    </div>
+                    <div className="qf-field">
+                      <label>Tipo unità/macchina di saldatura</label>
+                      <input type="text" value={form.equipment_type} onChange={handle("equipment_type")} placeholder="es. testa SAW, robot MIG/MAG..." />
+                    </div>
+                    <div className="qf-field">
+                      <label>Tecnica passata</label>
+                      <select value={form.single_multi_run} onChange={handle("single_multi_run")}>
+                        <option value="">-- seleziona --</option>
+                        <option value="single">Passata unica</option>
+                        <option value="multi">Passate multiple</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="qf-field">
+                    <label>Metodo di qualificazione (§4.1)</label>
+                    <select value={form.qualification_method} onChange={handle("qualification_method")}>
+                      <option value="">-- seleziona --</option>
+                      <option value="iso_15614">ISO 15614 (WPS qualificato)</option>
+                      <option value="iso_15613">ISO 15613 (prova di qualificazione)</option>
+                      <option value="iso_9606">ISO 9606 (equiparazione saldatore)</option>
+                      <option value="production_test">Prova di produzione</option>
+                    </select>
+                  </div>
+                </>
+              )}
               {isWelder9606 && (
                 <div className="qf-field">
                   <label>Designazione qualifica (calcolata)</label>
@@ -445,7 +492,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                     placeholder="Compila processo, giunto, spessore, posizioni..." />
                 </div>
               )}
-              {isWelder9606 && !isApproved && (
+              {requiresConfirmation && !isApproved && (
                 <div className="qf-row">
                   <div className="qf-field">
                     <label>Data esame</label>
@@ -460,19 +507,19 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                     <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
                   </div>
                   <div className="qf-field">
-                    <label>Revalidazione (3 anni)</label>
+                    <label>{revalidationLabel}</label>
                     <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
                   </div>
                 </div>
               )}
-              {isWelder9606 && isApproved && (
+              {requiresConfirmation && isApproved && (
                 <div className="qf-row">
                   <div className="qf-field">
                     <label>Data esame</label>
                     <input type="date" value={form.exam_date} onChange={handle("exam_date")} />
                   </div>
                   <div className="qf-field">
-                    <label>Revalidazione (3 anni)</label>
+                    <label>{revalidationLabel}</label>
                     <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
                   </div>
                 </div>
@@ -608,7 +655,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
           )}
           {uploadMsg && <div className="qf-info" style={{marginTop:8, fontSize:13}}>{uploadMsg}</div>}
 
-          {(isEdit || isRenew) && isWelder9606 && isApproved && qualification?.id && (
+          {(isEdit || isRenew) && requiresConfirmation && isApproved && qualification?.id && (
             <SemiannualConfirmationSection
               qualificationId={qualification.id}
               qualificationType={form.qualification_type}

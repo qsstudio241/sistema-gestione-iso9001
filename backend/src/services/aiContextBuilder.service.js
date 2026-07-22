@@ -359,7 +359,7 @@ Analizza il testo estratto da un documento PDF e identifica i metadati della nor
 Rispondi SOLO con JSON valido nel formato:
 {
   "norm_title": "titolo completo della norma (senza codice)",
-  "standard_code": "codice in formato ISO_XXXX_YYYY (es. ISO_19011_2018, UNI_EN_ISO_9001_2015)",
+  "standard_code": "codice catalogo (es. ISO/TR 15608:2013, UNI EN ISO 9001:2015, ISO 9606-1:2017)",
   "issuing_body": "ente emittente principale (ISO, UNI, CEN, IEC, ecc.)",
   "edition_year": 2018,
   "language": "it|en|de|fr",
@@ -367,7 +367,7 @@ Rispondi SOLO con JSON valido nel formato:
 }
 
 Regole:
-- standard_code: usa underscore come separatore, includi l'anno se presente (es. ISO_19011_2018)
+- standard_code: formato catalogo ufficiale con spazi, slash per TR/TS e anno dopo i due punti (es. ISO/TR 15608:2013). Non usare underscore.
 - Se il documento è una traduzione UNI di una norma ISO, includi il prefisso UNI_EN_ (es. UNI_EN_ISO_9001_2015)
 - edition_year: anno di pubblicazione dell'edizione (intero, es. 2018)
 - scope_summary: estrai preferibilmente dal campo "Scopo" / "Scope" / "Campo di applicazione" del documento; se non disponibile, sintetizza in 2-4 frasi di cosa tratta la norma
@@ -387,4 +387,50 @@ ${snippet}
   };
 }
 
-module.exports = { buildReviewRequirementsContext, buildAuditConclusionsContext, buildExtractNormMetadataContext };
+/**
+ * Build context for NC root-cause suggestion.
+ * @param {object} params
+ * @param {string} params.description      - Testo descrizione NC
+ * @param {string} [params.severity]       - major | minor | observation
+ * @param {string} [params.auditNumber]    - Numero audit di riferimento
+ * @param {string} [params.clientName]     - Nome azienda auditata
+ * @param {number} [params.organizationId] - Tenant scope (per future personalizzazioni)
+ * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
+ */
+async function buildNcCauseContext({ description, severity, auditNumber, clientName }) {
+  const SEVERITY_IT = { major: 'Grave', minor: 'Lieve', observation: 'Osservazione' };
+  const contextParts = [];
+  if (auditNumber) contextParts.push(`Audit: ${auditNumber}`);
+  if (clientName)  contextParts.push(`Azienda: ${clientName}`);
+  if (severity)    contextParts.push(`Severita': ${SEVERITY_IT[severity] || severity}`);
+
+  const systemPrompt = `Sei un esperto di sistemi di gestione qualita' ISO 9001:2015 specializzato nell'analisi delle cause radice delle non conformita'.
+Applica metodologie strutturate (5 Perche', Ishikawa, 8D) per identificare le cause fondamentali.
+Rispondi SEMPRE in italiano. Sii conciso: la proposta deve essere pronta per la compilazione diretta del campo causa radice.
+Rispondi SOLO con JSON valido, senza testo aggiuntivo.`;
+
+  const userPrompt = `Analizza questa non conformita' e proponi le possibili cause radice.
+${contextParts.length > 0 ? '\nContesto: ' + contextParts.join(' | ') : ''}
+
+Descrizione NC: ${description}
+
+Rispondi con JSON:
+{
+  "suggestion": "Proposta causa radice (max 250 caratteri, linguaggio operativo, pronta per copia-incolla)",
+  "methodology": "Metodologia applicata: 5 Perche' / Ishikawa / 8D",
+  "key_factors": ["fattore principale", "fattore secondario"]
+}`;
+
+  return {
+    systemPrompt,
+    userPrompt,
+    contextSummary: `nc_cause — ${contextParts.join('; ') || 'no context'}`,
+  };
+}
+
+module.exports = {
+  buildReviewRequirementsContext,
+  buildAuditConclusionsContext,
+  buildExtractNormMetadataContext,
+  buildNcCauseContext,
+};

@@ -5,7 +5,7 @@
 # Segreti GitHub richiesti (Settings → Secrets and variables → Actions):
 #   SMOKE_ENDPOINT  — es. "www.fr-busato.it:8443"
 #   SMOKE_TOKEN     — token segreto da impostare anche nel .env del VPS
-# Aggiornato: 22/06/2026 — trigger manuale per PR docs-only (sessione chiusura)
+# Aggiornato: 27/06/2026 — trigger smoke su PR docs-only (chiusura sessione #172)
 
 name: Smoke test DB test
 
@@ -23,7 +23,9 @@ on:
     paths:
       - 'backend/**'
       - 'app/**'
+      - 'docs/**'
       - '.github/workflows/smoke-test.yml'
+      - '.cursor/**'
   # Esecuzione manuale (utile per debug)
   workflow_dispatch:
 

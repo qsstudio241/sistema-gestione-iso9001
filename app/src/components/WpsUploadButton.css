@@ -1,0 +1,98 @@
+/* WpqrUploadButton.css — analogo a QualificationUploadButton.css */
+
+.wps-upload { position: relative; display: inline-block; }
+
+.wps-upload__no-company {
+  font-size: 13px; color: #92400e; background: #fef3c7;
+  border: 1px solid #fde68a; border-radius: 6px; padding: 7px 12px;
+}
+
+.wps-upload__company-context {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0;
+  font-size: 13px; border-radius: 8px 8px 0 0;
+}
+.wps-upload__company-label { color: #4b5563; font-weight: 500; }
+.wps-upload__company-name  { color: #14532d; font-weight: 700; }
+
+.wps-upload__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; background: #166534; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.wps-upload__btn:hover:not(:disabled) { background: #14532d; }
+.wps-upload__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.wps-upload__icon { font-size: 16px; }
+
+.wps-upload__input-hidden { display: none; }
+
+.wps-upload__panel {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: #fff; border: 1px solid #d1d5db;
+  border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+  min-width: 340px; max-width: 480px; z-index: 300;
+  padding: 14px 16px;
+}
+
+.wps-upload__panel-header { margin-bottom: 10px; }
+.wps-upload__panel-title  { font-size: 13px; font-weight: 700; color: #374151; }
+
+.wps-upload__file-list { list-style: none; margin: 0 0 10px; padding: 0; max-height: 160px; overflow-y: auto; }
+.wps-upload__file-item {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6; font-size: 13px;
+}
+.wps-upload__file-icon { font-size: 16px; }
+.wps-upload__file-name { flex: 1; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wps-upload__file-size { color: #6b7280; font-size: 11px; white-space: nowrap; }
+
+.wps-upload__validation-error {
+  background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;
+  padding: 6px 10px; font-size: 12px; color: #b91c1c; margin-bottom: 8px;
+}
+
+.wps-upload__actions { display: flex; gap: 8px; margin-top: 10px; }
+.wps-upload__action-btn {
+  padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.wps-upload__action-btn--primary  { background: #166534; color: #fff; }
+.wps-upload__action-btn--primary:hover:not(:disabled) { background: #14532d; }
+.wps-upload__action-btn--secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.wps-upload__action-btn--secondary:hover { background: #e5e7eb; }
+.wps-upload__action-btn:disabled   { opacity: 0.55; cursor: not-allowed; }
+
+@keyframes wps-spin { to { transform: rotate(360deg); } }
+.wps-upload__spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%; animation: wps-spin 0.7s linear infinite;
+}
+
+.wps-upload__results { list-style: none; margin: 0 0 10px; padding: 0; max-height: 260px; overflow-y: auto; }
+.wps-upload__result-item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.wps-upload__result-item:last-child { border-bottom: none; }
+
+.wps-upload__result-success,
+.wps-upload__result-duplicate,
+.wps-upload__result-error { display: flex; align-items: flex-start; gap: 8px; }
+
+.wps-upload__result-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+
+.wps-upload__result-item--success   .wps-upload__result-icon { color: #16a34a; }
+.wps-upload__result-item--error     .wps-upload__result-icon { color: #dc2626; }
+.wps-upload__result-item--duplicate .wps-upload__result-icon { color: #d97706; }
+
+.wps-upload__result-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+.wps-upload__warnings { margin-top: 4px; }
+.wps-upload__warning  { font-size: 11px; color: #d97706; }
+
+.wps-upload__result-item--wrong-module .wps-upload__result-icon { color: #d97706; }
+.wps-upload__result-wrong-module { display: flex; align-items: flex-start; gap: 8px; }
+.wps-upload__wrong-module-msg  { font-size: 12px; color: #92400e; margin: 2px 0 4px; }
+.wps-upload__wrong-module-link {
+  display: inline-block; font-size: 12px; font-weight: 600;
+  color: #b45309; text-decoration: underline; cursor: pointer;
+}
+.wps-upload__wrong-module-link:hover { color: #92400e; }

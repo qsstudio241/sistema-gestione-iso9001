@@ -6,13 +6,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
-import { Link, useRouter } from "../contexts/RouterContext";
+import { useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { formatDate } from "../utils/dateHelpers";
-import { NC_SOURCE_TYPE_LABELS, NC_SOURCE_CATEGORIES } from "../utils/ncCreateHelpers";
+import { NC_SOURCE_TYPE_LABELS, NC_SOURCE_CATEGORIES, NC_SOURCE_CATEGORY_OPTIONS } from "../utils/ncCreateHelpers";
 import { downloadNcCsv } from "../utils/ncExportHelpers";
 import { exportNcToWord } from "../utils/ncWordExport";
 import {
@@ -74,6 +74,7 @@ export default function NCPage() {
   const [dueActions, setDueActions] = useState([]);
   const [dueActionsLoading, setDueActionsLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [exportWordError, setExportWordError] = useState(null);
   const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
@@ -459,6 +460,32 @@ export default function NCPage() {
         </div>
       )}
 
+      {stats && Array.isArray(stats.by_category) && stats.by_category.length > 0 && (
+        <div className="nc-stats-breakdown">
+          <button
+            type="button"
+            className="nc-stats-breakdown-toggle"
+            onClick={() => setShowBreakdown(p => !p)}
+          >
+            {showBreakdown ? "\u25B2" : "\u25BC"} Per origine
+          </button>
+          {showBreakdown && (
+            <div className="nc-stats-breakdown-list">
+              {stats.by_category.map(({ source_category, open_count, total }) => {
+                const cfg = NC_SOURCE_CATEGORIES[source_category];
+                const label = cfg ? `${cfg.icon} ${cfg.label}` : source_category;
+                return (
+                  <div key={source_category} className="nc-stats-breakdown-item">
+                    <span className="nc-stats-breakdown-label">{label}</span>
+                    <span className="nc-stats-breakdown-counts">{open_count} aperte / {total} totali</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="nc-filters">
         {companies.length > 0 && (
           <select
@@ -544,9 +571,13 @@ export default function NCPage() {
               <ul className="nc-due-actions-list">
                 {dueActions.map(a => (
                   <li key={a.action_id} className={a.is_overdue ? "nc-due-overdue" : ""}>
-                    <Link to={`/nc?select=${a.nc_id}`} className="nc-due-link">
+                    <a
+                      href="#"
+                      className="nc-due-link"
+                      onClick={e => { e.preventDefault(); setSelectedNcId(a.nc_id); setViewMode("nc"); }}
+                    >
                       <strong>{a.nc_number}</strong> — {a.description?.slice(0, 120)}
-                    </Link>
+                    </a>
                     <span className="nc-due-meta">
                       {a.responsible || "—"} · scadenza {a.due_date ? formatDate(a.due_date) : "—"}
                       {a.is_overdue ? " · SCADUTA" : ""}

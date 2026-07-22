@@ -18,10 +18,10 @@ const { effectiveAlertDue } = require('../services/qualificationAlert.service');
 // Giorni default per alert scadenza documenti
 const DEFAULT_ALERT_DAYS = 30;
 
-/** Espressione SQL: data guida qualifica (min tra expiry e conferma 9606). */
+/** Espressione SQL: data guida qualifica (min tra expiry e conferma semestrale 9606/14732). */
 const SQL_QUAL_EFFECTIVE_DUE = `
   CASE
-    WHEN q.qualification_type LIKE '%9606%'
+    WHEN (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
          AND q.next_confirmation_due IS NOT NULL
          AND (q.expiry_date IS NULL OR q.next_confirmation_due < q.expiry_date)
     THEN q.next_confirmation_due

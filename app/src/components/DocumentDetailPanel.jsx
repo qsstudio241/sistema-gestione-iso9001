@@ -20,7 +20,15 @@ const NORM_VALIDITY_LABELS = {
   superata: "Superata",
   annullata: "Annullata",
   in_revisione: "In revisione",
+  da_verificare: "Da verificare",
 };
+
+function mapCatalogLookupStatus(status) {
+  if (status === "active") return "vigente";
+  if (status === "withdrawn" || status === "superseded") return "superata";
+  if (status === "unknown") return "da_verificare";
+  return status;
+}
 
 function parseTypeSpecificData(raw) {
   if (!raw) return null;
@@ -109,6 +117,8 @@ const NORM_VALIDITY_COLORS = {
   superata:    { bg: '#fef3c7', color: '#b45309' },
   annullata:   { bg: '#fee2e2', color: '#b91c1c' },
   in_revisione:{ bg: '#dbeafe', color: '#1d4ed8' },
+  da_verificare: { bg: '#fef9c3', color: '#a16207' },
+  unknown:     { bg: '#fef9c3', color: '#a16207' },
 };
 
 function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, onClose }) {
@@ -223,7 +233,9 @@ function DocumentDetailPanel({ document: doc, history, tags, onEdit, onArchive, 
                 )}
               </div>
               {(normData.validityStatus || lookupResult?.status) && (() => {
-                const statusKey = lookupResult?.status || normData.validityStatus;
+                const statusKey = lookupResult?.status
+                  ? mapCatalogLookupStatus(lookupResult.status)
+                  : normData.validityStatus;
                 const colors = NORM_VALIDITY_COLORS[statusKey] || {};
                 return (
                   <div className="doc-detail__info-row">
