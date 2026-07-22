@@ -506,7 +506,8 @@ async function updateDocument(req, res) {
         const scopeSql = appendScopeSql(docScope);
 
         const existing = await query(`
-            SELECT id, is_system_folder, doc_type, issue_date, expiry_date, status, company_id
+            SELECT id, is_system_folder, doc_type, title, folder_code,
+                   issue_date, expiry_date, status, company_id
             FROM document_registry dr
             WHERE dr.id = @id AND dr.organization_id = @organization_id
               ${scopeSql}
@@ -524,13 +525,21 @@ async function updateDocument(req, res) {
         });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-        // Protezione cartelle di sistema
+        // Protezione rinomina cartelle di sistema (solo cartelle, solo se il nome cambia)
         const doc = existing.recordset[0];
-        if (doc.is_system_folder && (req.body.title !== undefined || req.body.folder_code !== undefined)) {
-            return res.status(403).json({
-                error: 'Le cartelle di sistema non possono essere rinominate',
-                code:  'SYSTEM_FOLDER_PROTECTED',
-            });
+        if (doc.is_system_folder && doc.doc_type === 'folder') {
+            const titleChanged = req.body.title !== undefined
+                && String(req.body.title ?? '').trim() !== String(doc.title ?? '').trim();
+            const folderCodeChanged = req.body.folder_code !== undefined
+                && String(req.body.folder_code ?? '').trim() !== String(doc.folder_code ?? '').trim();
+            if (titleChanged || folderCodeChanged) {
+                return res.status(403).json({
+                    error: 'Le cartelle di sistema non possono essere rinominate',
+                    code:  'SYSTEM_FOLDER_PROTECTED',
+                });
+            }
+            if (req.body.title !== undefined && !titleChanged) delete req.body.title;
+            if (req.body.folder_code !== undefined && !folderCodeChanged) delete req.body.folder_code;
         }
 
         const allowed = [
