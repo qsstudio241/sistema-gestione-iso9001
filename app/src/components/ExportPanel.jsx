@@ -421,6 +421,42 @@ const ExportPanel = () => {
     return { auditForExport, getViewUrl, auditReportPrefix };
   };
 
+  /**
+   * ADR-009 Fase 4: genera (download) il file Word della checklist personalizzata
+   * per audit IBRIDI (ISO + custom insieme). Prima della Fase 4 la checklist custom
+   * veniva silenziosamente esclusa dall'export se l'audit aveva anche standard ISO.
+   * Ritorna null se l'audit non ha una checklist personalizzata.
+   */
+  const exportHybridCustomWordFile = async (auditForExport, getViewUrl, auditReportPrefix) => {
+    const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
+    if (!customChecklistId || !auditForExport.customChecklist) return null;
+    const photoMode = resolvePhotoMode(null, customChecklistId);
+    if (photoMode === 'preview') showMessage("⏳ Caricamento immagini (checklist personalizzata)...", "info");
+    return exportAuditToWord(auditForExport, getViewUrl, {
+      customChecklistId,
+      photoMode,
+      auditReportPrefix,
+      getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
+    });
+  };
+
+  /** Stessa logica di exportHybridCustomWordFile ma per Salva in File System/Workspace. */
+  const exportHybridCustomToFileSystem = async (auditForExport, getViewUrl, auditReportPrefix) => {
+    const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
+    if (!customChecklistId || !auditForExport.customChecklist) return null;
+    const photoMode = resolvePhotoMode(null, customChecklistId);
+    if (photoMode === 'preview') showMessage("⏳ Caricamento immagini (checklist personalizzata)...", "info");
+    const exportOpts = {
+      auditReportPrefix,
+      customChecklistId,
+      ...(photoMode ? { photoMode } : {}),
+      getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
+    };
+    return fsProvider?.ready()
+      ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+      : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts);
+  };
+
   const handleExportWord = async () => {
     if (!currentAudit) return;
     try {
@@ -475,7 +511,14 @@ const ExportPanel = () => {
           auditReportPrefix,
           getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
         });
-        showMessage(`✅ Report Word integrato (SGI) generato: ${fileName}`, "success");
+        // ADR-009 Fase 4: audit ibrido ISO+custom → genera anche il file della checklist personalizzata
+        const customFileName = await exportHybridCustomWordFile(auditForExport, getViewUrl, auditReportPrefix);
+        showMessage(
+          customFileName
+            ? `✅ Report generati: ${fileName} + ${customFileName}`
+            : `✅ Report Word integrato (SGI) generato: ${fileName}`,
+          "success"
+        );
         return;
       }
 
@@ -496,6 +539,10 @@ const ExportPanel = () => {
         });
         fileNames.push(fileName);
       }
+
+      // ADR-009 Fase 4: audit ibrido ISO+custom → genera anche il file della checklist personalizzata
+      const customFileName = await exportHybridCustomWordFile(auditForExport, getViewUrl, auditReportPrefix);
+      if (customFileName) fileNames.push(customFileName);
 
       showMessage(
         fileNames.length === 1
@@ -610,8 +657,12 @@ const ExportPanel = () => {
         const result = await (fsProvider?.ready()
           ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
           : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
+        // ADR-009 Fase 4: audit ibrido ISO+custom → salva anche il file della checklist personalizzata
+        const customResult = await exportHybridCustomToFileSystem(auditForExport, getViewUrl, auditReportPrefix);
         if (result.fallback) {
           showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
+        } else if (customResult) {
+          showMessage(`✅ Report salvati: ${result.fileName} + ${customResult.fileName}`, "success");
         } else {
           showMessage(`✅ Report integrato (SGI) salvato in: ${result.path || result.fileName}`, "success");
         }
@@ -639,6 +690,10 @@ const ExportPanel = () => {
           : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
         savedFiles.push({ result, stdKey });
       }
+
+      // ADR-009 Fase 4: audit ibrido ISO+custom → salva anche il file della checklist personalizzata
+      const customResult = await exportHybridCustomToFileSystem(auditForExport, getViewUrl, auditReportPrefix);
+      if (customResult) savedFiles.push({ result: customResult, stdKey: 'CUSTOM' });
 
       const labels = savedFiles.map(({ result }) =>
         result.fallback ? result.fileName : (result.path || result.fileName)

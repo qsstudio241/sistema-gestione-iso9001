@@ -147,6 +147,10 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const customTotal       = Object.keys(customStatuses).length;
   const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
+  // ADR-009 Fase 4: checklist personalizzata pari grado — richiede conclusioni proprie
+  // solo per audit ibridi ISO+custom (coerente con il blocco separato in AuditOutcomeSection).
+  const hasCustomOutcomeButtons = hasCustomChecklist && !!currentAudit?.customChecklist?.has_outcome_buttons;
+  const isHybridWithCustom = hasCustomChecklist && standardEntries.length >= 1;
 
   // Per audit mono-standard: target dinamico legacy
   const firstUnanswered = (!isMultiStandard && hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
@@ -182,6 +186,17 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
           fieldId: "conclusions",
           path: [{ type: "section", key: "conclusions" }],
         }]
+    ),
+    // ADR-009 Fase 4: conclusioni della checklist personalizzata — solo per audit ibridi ISO+custom
+    ...(isHybridWithCustom && hasCustomOutcomeButtons
+      ? [{
+          id: "conclusions-custom",
+          text: "Conclusioni checklist personalizzata (Sezione 12)",
+          isMissing: !oc.byStandard?.CUSTOM?.conclusions?.trim(),
+          fieldId: "conclusions-custom",
+          path: [{ type: "section", key: "conclusions" }],
+        }]
+      : []
     ),
     // Completamento per-norma (multi-standard non integrato) o unico (mono o integrato)
     ...(isMultiStandard && !effectiveIntegrated
