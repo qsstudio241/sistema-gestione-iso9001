@@ -18,6 +18,11 @@ router.post(
   authorize('admin', 'auditor'),
   customChecklistController.seedLegislativoAmbientale
 );
+router.post(
+  '/custom-checklists/seed/qtafi-vis001',
+  authorize('admin', 'auditor'),
+  customChecklistController.seedQtafiVis001
+);
 router.get('/custom-checklists/:id', customChecklistController.getChecklist);
 router.put('/custom-checklists/:id', authorize('admin', 'auditor'), customChecklistController.updateChecklist);
 router.delete('/custom-checklists/:id', authorize('admin', 'auditor'), customChecklistController.deleteChecklist);
