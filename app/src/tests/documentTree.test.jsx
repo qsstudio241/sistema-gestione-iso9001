@@ -329,7 +329,7 @@ describe('DocumentTree  -  Loading / Error', () => {
   });
 });
 
-describe('DocumentTree — foldersOnly (sidebar solo cartelle)', () => {
+describe('DocumentTree  -  foldersOnly (sidebar solo cartelle)', () => {
   it('filterTreeSidebarNodes esclude i documenti', () => {
     const filtered = filterTreeSidebarNodes(sampleNodes, true);
     expect(filtered.map((n) => n.title)).toEqual(['Procedure', 'Sistema']);
