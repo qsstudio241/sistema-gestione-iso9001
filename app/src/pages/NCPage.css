@@ -517,15 +517,6 @@ body.sgq-nc-drawer-resizing * {
 .nc-drawer-section--collapsed .nc-drawer-section-body {
   display: none;
 }
-.nc-drawer-section--workflow.nc-workflow-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #fff;
-  padding-top: 4px;
-  margin-top: -4px;
-  box-shadow: 0 6px 8px -6px rgba(0, 0, 0, 0.12);
-}
 .nc-drawer-footer {
   margin-top: 16px;
   padding-top: 12px;
