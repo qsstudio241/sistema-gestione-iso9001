@@ -896,6 +896,10 @@ async function commitToQualification(req, res) {
             filler_material:      filler_material,
             shielding_gas:        body.shielding_gas || tsd.shielding_gas || null,
             equipment_type:       body.equipment_type || tsd.equipment_type || null,
+            // Operatori ISO 14732 (saldatura automatica/meccanizzata)
+            welding_type:         body.welding_type || tsd.welding_type || null,
+            single_multi_run:     body.single_multi_run || tsd.single_multi_run || null,
+            qualification_method: body.qualification_method || tsd.qualification_method || null,
             // NDT
             ndt_sector:           body.ndt_sector || tsd.ndt_sector || null,
             certification_scheme: body.certification_scheme || tsd.certification_scheme || null,
@@ -955,6 +959,7 @@ async function commitToQualification(req, res) {
               joint_type, product_type, weld_details, qualification_designation,
               thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
               thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
+              welding_type, single_multi_run, qualification_method,
               ndt_sector, certification_scheme, coordinator_title, diploma_number, cpd_valid_until,
               patent_type, training_body, course_name, training_hours, examiner_body)
              OUTPUT INSERTED.id
@@ -969,6 +974,7 @@ async function commitToQualification(req, res) {
               @joint_type, @product_type, @weld_details, @qualification_designation,
               @thickness_min_mm, @thickness_max_mm, @pipe_diameter_min_mm, @pipe_diameter_max_mm,
               @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
+              @welding_type, @single_multi_run, @qualification_method,
               @ndt_sector, @certification_scheme, @coordinator_title, @diploma_number, @cpd_valid_until,
               @patent_type, @training_body, @course_name, @training_hours, @examiner_body)`,
             qData
