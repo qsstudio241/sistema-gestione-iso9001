@@ -141,15 +141,27 @@ certificate_number, calibration_date, expiry_date (YYYY-MM-DD).`,
 
   qualifica_14732: {
     label: 'Qualifica operatore (ISO 14732)',
-    aiPrompt: `Qualifica operatore saldatura automatica ISO 14732. Estrai: operator_name, certificate_number,
-welding_process, equipment_type, exam_date, expiry_date (YYYY-MM-DD).`,
+    aiPrompt: `Stai analizzando una qualifica operatore/preparatore di saldatura automatica o meccanizzata secondo ISO 14732.
+Estrai in type_specific_data: operator_name, certificate_number, issuing_body, welding_type (automatic|mechanized),
+welding_process, equipment_type, welding_positions (array), single_multi_run (single|multi),
+exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD),
+qualification_method (iso_15614|iso_15613|iso_9606|production_test). Usa null se assente.
+IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
+ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.`,
     aiExpectedSchema: {
       operator_name: 'string|null',
       certificate_number: 'string|null',
+      issuing_body: 'string|null',
+      welding_type: 'automatic|mechanized|null',
       welding_process: 'string|null',
       equipment_type: 'string|null',
+      welding_positions: 'string[]|null',
+      single_multi_run: 'single|multi|null',
       exam_date: 'YYYY-MM-DD|null',
       expiry_date: 'YYYY-MM-DD|null',
+      last_confirmation_date: 'YYYY-MM-DD|null',
+      next_confirmation_due: 'YYYY-MM-DD|null',
+      qualification_method: 'iso_15614|iso_15613|iso_9606|production_test|null',
     },
   },
 

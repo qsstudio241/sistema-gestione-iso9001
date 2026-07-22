@@ -118,6 +118,7 @@ export function buildManualNcNumber(auditNumber) {
  * @param {string} [form.nc_number]
  * @param {string} [form.responsible_person]
  * @param {string} [form.due_date]
+ * @param {number|null} [form.source_complaint_id] - ID reclamo collegato (solo se source_category='complaint')
  * @param {string|number} [auditNumber]   - usato per generare il nc_number
  */
 export function buildManualNcPayload(form, auditNumber) {
@@ -150,6 +151,9 @@ export function buildManualNcPayload(form, auditNumber) {
       ...(managementReviewId != null ? { management_review_id: managementReviewId } : {}),
       source_category,
       source_origin_text: (form.source_origin_text || '').trim() || null,
+      source_complaint_id: (source_category === 'complaint' && form.source_complaint_id)
+        ? parseInt(form.source_complaint_id, 10)
+        : null,
       nc_number: (form.nc_number || '').trim() || buildManualNcNumber(ncNumberBase),
       section_code: form.section_code,
       description,

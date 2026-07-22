@@ -130,6 +130,23 @@ Upload (batch o import job)
 
 ---
 
+### IG-3b — Revisione adattiva per confidenza (estensione, 17/07/2026)
+
+**Motivazione**: il committente si aspettava minimo intervento umano su campi ad alta confidenza (badge verde già presente, ma sempre renderizzato come select/input editabile identico ai campi dubbi). Gap confermato in `IngestReviewDialog.jsx`.
+
+**Scope**
+- Campo `fieldConfidence=high` **con valore**: mostrato readonly (label opzione leggibile, non codice) + pulsante "Modifica" opzionale, reversibile.
+- Campo media/bassa/assente: sempre editabile, evidenziato (bordo ambra/rosso) — nessun cambiamento di comportamento qui.
+- Nessuna modifica alla pipeline di feedback (IG-4/5) né al form manuale (`QualificationForm.jsx`, rimasto separato).
+- Beneficia automaticamente tutti i doc type che usano `IngestReviewDialog` (patentini, WPQR, WPS, norme), essendo un componente condiviso.
+
+**DoD**
+- [x] Test Vitest su rendering condizionale (alta→readonly, media/bassa→editabile) + toggle Modifica/Annulla
+- [x] Build Vite verde
+- [x] Nessuna modifica a `import_extraction_feedback` / few-shot
+
+---
+
 ### IG-3 — Revisione umana pre-commit (staging UI)
 
 **Scope**

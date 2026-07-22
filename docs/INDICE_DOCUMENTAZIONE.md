@@ -22,6 +22,7 @@
 | Tag | File | Note |
 |-----|------|------|
 | attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, infra, workflow |
+| attivo | [AGENTS.md](../AGENTS.md) | Istruzioni Cloud Agent + policy context/costi |
 | attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
 | attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test, **[Lezioni apprese (fonte unica)](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)** |
 | attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
@@ -71,6 +72,7 @@ I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** p
 
 | Tag | Scopo | File |
 |-----|-------|------|
+| attivo | Check prodotto Mobile + AI | [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) |
 | attivo | Riesame requisiti §8.2 | [specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |
 | attivo | Office WebDAV | [specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md) |
 | attivo | Modulo saldatura | [specs/piano_modulo_saldatura_v2.plan.md](specs/piano_modulo_saldatura_v2.plan.md) |
@@ -152,6 +154,8 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 | Tag | File | Note |
 |-----|------|------|
 | attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI |
+| attivo | [../AGENTS.md](../AGENTS.md) | Cloud Agent / context window |
+| attivo | [../.cursor/environment.json](../.cursor/environment.json) | Install dipendenze VM Cloud |
 | **legacy** | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot — **non usare** (superato da ADR-015) |
 | **legacy** | [../.github/agents/](../.github/agents/) | Planner / Implementer / Reviewer — **non usare** (superato da ADR-015) |
 | attivo | [../app/README.md](../app/README.md), [../backend/README.md](../backend/README.md) | Avvio moduli |

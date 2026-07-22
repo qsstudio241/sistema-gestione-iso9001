@@ -43,12 +43,13 @@ const EMPTY_FORM = {
   responsible_person: "",
   responsible_contact_id: null,
   due_date:           "",
+  source_complaint_id: null,
 };
 
 export default function NcCreateModal({
   open, onClose, onCreated, defaultCategory, initialDescription,
   managementReviewId = null, initialOriginText = "",
-  initialSectionCode = null,
+  initialSectionCode = null, sourceRiskId = null,
 }) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
@@ -62,6 +63,7 @@ export default function NcCreateModal({
   const [error, setError]                 = useState(null);
   const [contacts, setContacts]           = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [complaints, setComplaints]       = useState([]);
 
   const categoryConfig = NC_SOURCE_CATEGORIES[form.source_category] || NC_SOURCE_CATEGORIES.audit;
   const requiresAudit  = categoryConfig.requiresAudit;
@@ -78,6 +80,16 @@ export default function NcCreateModal({
       .catch(() => { if (!cancelled) setContacts([]); });
     return () => { cancelled = true; };
   }, [open, selectedCompanyId]);
+
+  /* ── Carica reclami quando source_category = 'complaint' ─────── */
+  useEffect(() => {
+    if (!open || form.source_category !== 'complaint') { setComplaints([]); return; }
+    let cancelled = false;
+    apiService.getComplaints({ limit: 50, status: '' })
+      .then(res => { if (!cancelled) setComplaints(res?.data || []); })
+      .catch(() => { if (!cancelled) setComplaints([]); });
+    return () => { cancelled = true; };
+  }, [open, form.source_category]);
 
   /* ── Reset form all'apertura ──────────────────────────────────── */
   useEffect(() => {
@@ -160,6 +172,8 @@ export default function NcCreateModal({
       section_code: cfg.defaultSection || f.section_code,
       // Reset audit_id se si passa a categoria non-audit
       audit_id: cfg.requiresAudit ? f.audit_id : "",
+      // Reset complaint se si passa ad altra categoria
+      source_complaint_id: newCat === 'complaint' ? f.source_complaint_id : null,
     }));
     setSectionOptions(NC_MANUAL_SECTIONS);
     setSelectedCompanyId(null);
@@ -174,6 +188,7 @@ export default function NcCreateModal({
       selectedAudit?.audit_number,
     );
     if (!built.ok) { setError(built.message); return; }
+    if (sourceRiskId) built.payload.source_risk_id = sourceRiskId;
     setSaving(true);
     setError(null);
     try {
@@ -276,6 +291,27 @@ export default function NcCreateModal({
                 disabled={saving}
                 onChange={e => setField("source_origin_text", e.target.value)}
               />
+            </div>
+          )}
+
+          {/* ── 2c. Picker reclamo (solo se source_category = 'complaint') ── */}
+          {form.source_category === "complaint" && (
+            <div className="nc-form-row">
+              <label htmlFor="nc-create-complaint">Reclamo collegato</label>
+              <select
+                id="nc-create-complaint"
+                value={form.source_complaint_id || ""}
+                disabled={saving}
+                onChange={e => setField("source_complaint_id", e.target.value || null)}
+              >
+                <option value="">{"\u2014"} Seleziona reclamo (opzionale) {"\u2014"}</option>
+                {complaints.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.complaint_number} {c.description ? `\u2014 ${c.description.substring(0, 60)}` : ""}
+                  </option>
+                ))}
+              </select>
+              <small className="form-hint">Collega questa azione al reclamo di origine.</small>
             </div>
           )}
 

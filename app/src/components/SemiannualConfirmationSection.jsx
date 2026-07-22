@@ -1,6 +1,7 @@
 /**
- * SemiannualConfirmationSection — Registro conferme semestrali ISO 9606-1
- * Visibile solo per qualifiche approvate di tipo saldatore 9606.
+ * SemiannualConfirmationSection — Registro conferme semestrali
+ * Visibile solo per qualifiche approvate ISO 9606-1 (saldatori) o ISO 14732 (operatori
+ * saldatura automatica/meccanizzata) — entrambe le norme richiedono conferma ogni 6 mesi.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -10,6 +11,15 @@ import { formatDate } from "../utils/dateHelpers";
 function isWelder9606Type(type) {
   const t = String(type || "").toLowerCase();
   return t.includes("9606") || t.includes("patentino_saldatore") || t === "9606_1";
+}
+
+function isOperator14732Type(type) {
+  const t = String(type || "").toLowerCase();
+  return t.includes("14732");
+}
+
+function requiresSemiannualConfirmation(type) {
+  return isWelder9606Type(type) || isOperator14732Type(type);
 }
 
 function SemiannualConfirmationSection({
@@ -36,7 +46,10 @@ function SemiannualConfirmationSection({
   const [submitting, setSubmitting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const visible = approvalStatus === "approvata" && isWelder9606Type(qualificationType);
+  const visible = approvalStatus === "approvata" && requiresSemiannualConfirmation(qualificationType);
+  const sectionLabel = isOperator14732Type(qualificationType)
+    ? "Conferma semestrale (ISO 14732)"
+    : "Conferma semestrale (ISO 9606-1)";
 
   const loadConfirmations = useCallback(async () => {
     if (!qualificationId || !visible) return;
@@ -123,7 +136,7 @@ function SemiannualConfirmationSection({
         aria-expanded={expanded}
       >
         <span className="qf-section-title" style={{ margin: 0 }}>
-          Conferma semestrale (ISO 9606-1)
+          {sectionLabel}
         </span>
         <span className="qf-section-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
       </button>

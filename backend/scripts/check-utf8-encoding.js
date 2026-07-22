@@ -26,23 +26,28 @@ const ignoredParts = new Set(['node_modules', 'dist']);
 /** File che contengono intenzionalmente sequenze mojibake da correggere a runtime */
 const MOJIBAKE_ALLOWLIST = new Set([
   'app/src/utils/textEncodingRepair.js',
+  'app/src/utils/wordExport.js',
 ]);
 
+// NB: tutte le regex richiedono il flag "g" — il loop di scansione qui sotto
+// avanza con exec() ripetuti assumendo comportamento globale. Senza "g",
+// exec() su match trovato restituisce sempre lo stesso risultato all'infinito
+// (loop infinito + crescita illimitata di `results`).
 const patterns = [
-  { name: 'U+FFFD replacement char', regex: /\uFFFD/ },
+  { name: 'U+FFFD replacement char', regex: /\uFFFD/g },
   {
     name: 'mojibake A-tilde/A-circumflex',
-    regex: /[\u00C3\u00C2]/,
+    regex: /[\u00C3\u00C2]/g,
     allowLine: (line) => MOJIBAKE_ALLOWLIST.has(line._file)
       || /\.replace\s*\(/.test(line.text)
       || /latin1Utf8PairToChar|mojibake|Conformit/i.test(line.text),
   },
-  { name: 'broken qualita', regex: /\b[Qq]ualit(?:\uFFFD|\?)(?!\\u)/ },
-  { name: 'broken piu', regex: /\bpi\?(?=[\s'"(,;.\]])/i },
-  { name: 'broken pagina', regex: /\bpagina\s+\?(?=\s)/i },
-  { name: 'broken gia', regex: /\bgi\?(?=\s)/i },
-  { name: 'broken estratti dash', regex: /estrattti\s+\?(?=\s)/i },
-  { name: 'broken scartato dash', regex: /Scartato\s+\?(?=\s)/i },
+  { name: 'broken qualita', regex: /\b[Qq]ualit(?:\uFFFD|\?)(?!\\u)/g },
+  { name: 'broken piu', regex: /\bpi\?(?=[\s'"(,;.\]])/gi },
+  { name: 'broken pagina', regex: /\bpagina\s+\?(?=\s)/gi },
+  { name: 'broken gia', regex: /\bgi\?(?=\s)/gi },
+  { name: 'broken estratti dash', regex: /estrattti\s+\?(?=\s)/gi },
+  { name: 'broken scartato dash', regex: /Scartato\s+\?(?=\s)/gi },
 ];
 
 function walk(directory, include, files = []) {

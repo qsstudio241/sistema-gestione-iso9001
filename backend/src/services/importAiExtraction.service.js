@@ -8,6 +8,9 @@ const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const { buildIngestLearningPromptSection } = require('./ingestLearning.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
+const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses4063');
+const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
+const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 /** Documentazione / fallback: il modello effettivo proviene dalla risposta dell'adapter. */
@@ -90,7 +93,7 @@ Regole:
 - extraction_confidence: intero 0-100 (quanto il testo sembra completo e coerente).
 - warnings: elenco problemi (testo frammentario, dati mancanti, ambiguità).
 - Non inventare numeri di certificato o date: se non presenti, null o omesso.
-- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.`;
+- document_type_guess: una tra patentino_saldatore, qualifica_14732, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.`;
 
     const user = `Tipo documento indicato dall'operatore (puo' essere "non specificato"): ${documentTypeHint || 'non specificato'}
 
@@ -197,19 +200,39 @@ Regole generali:
 - extraction_confidence: intero 0-100 (quanto il testo sembra completo e coerente).
 - warnings: elenco problemi (testo frammentario, dati mancanti, ambiguità).
 - Non inventare numeri di certificato o date: se non presenti, null o omesso.
-- document_type_guess: una tra patentino_saldatore, qualifica_operatore, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.
+- document_type_guess: una tra patentino_saldatore, qualifica_14732, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.
 
 Istruzioni specifiche per il tipo documento "${schema.label}":
 ${schema.aiPrompt}`;
 
     const MATERIAL_GROUP_DOC_TYPES = new Set([
         'patentino_saldatore',
-        'qualifica_operatore',
         'wpqr',
         'wps',
     ]);
+    // ISO 14732 (operatori) non ha il gruppo materiale come variabile essenziale (§4.2):
+    // riceve solo processo/posizioni, non il catalogo gruppi materiale.
+    const WELDING_PROCESS_DOC_TYPES = new Set([
+        ...MATERIAL_GROUP_DOC_TYPES,
+        'qualifica_14732',
+    ]);
+    const WELDING_POSITION_DOC_TYPES = new Set([
+        'patentino_saldatore',
+        'wpqr',
+        'wps',
+        'qualifica_14732',
+    ]);
     if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
         system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
+    }
+    if (WELDING_PROCESS_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildWeldingProcessPromptSection({ maxLines: 20 })}`;
+    }
+    if (WELDING_POSITION_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
+    }
+    if (docType === 'patentino_saldatore') {
+        system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
     }
 
     if (organizationId) {

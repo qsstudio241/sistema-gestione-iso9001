@@ -71,6 +71,15 @@ export function canTransitionNcStatus(nc, newStatus) {
       };
     }
   }
+  if (newStatus === 'resolved') {
+    if ((nc?.correction_completed_count || 0) === 0) {
+      return {
+        ok: false,
+        message:
+          'Registrare almeno una Correzione (azione immediata) completata prima di segnare la NC come Risolta (ISO 10.2.1 a).',
+      };
+    }
+  }
   if (!needsVerificationNotesForStatus(newStatus)) {
     return { ok: true };
   }
