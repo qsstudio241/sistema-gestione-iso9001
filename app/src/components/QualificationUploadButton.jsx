@@ -27,6 +27,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
   const [validationErr, setValidationErr] = useState(null);
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [docType, setDocType] = useState("patentino_saldatore");
   const inputRef = useRef(null);
 
   const handleClick = () => inputRef.current?.click();
@@ -50,7 +51,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
     setUploading(true);
     setResults(null);
     try {
-      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt);
+      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt, docType);
       setResults(res.results || []);
     } catch (err) {
       setResults([{ fileName: "tutti i file", status: "error", warnings: [err.message || "Errore upload"] }]);
@@ -122,7 +123,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
     <div className="qual-upload">
       <button className="qual-upload__btn" onClick={handleClick} disabled={uploading}>
         <span className="qual-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica patentini (batch)
+        Carica qualifiche (batch)
       </button>
 
       <input
@@ -143,6 +144,18 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
 
           {!hasResults && (
             <>
+              <div className="qual-upload__doc-type">
+                <label htmlFor="qual-upload-doctype">Tipo documento</label>
+                <select
+                  id="qual-upload-doctype"
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  disabled={uploading}
+                >
+                  <option value="patentino_saldatore">Patentino saldatore (ISO 9606-1)</option>
+                  <option value="qualifica_14732">Qualifica operatore (ISO 14732)</option>
+                </select>
+              </div>
               <div className="qual-upload__panel-header">
                 <span className="qual-upload__panel-title">
                   {selectedFiles.length} file selezionat{selectedFiles.length === 1 ? "o" : "i"}
@@ -268,7 +281,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
 
       <IngestReviewDialog
         open={!!reviewItem}
-        docType="patentino_saldatore"
+        docType={docType}
         fileName={reviewItem?.fileName}
         stagingId={reviewItem?.staging_id}
         previewFile={reviewItem?.previewFile}

@@ -16,8 +16,12 @@ const DOC_TYPE_MODULES = {
     wpqr: 'saldatura',
     wps: 'saldatura',
     patentino_saldatore: 'qualifiche',
+    qualifica_14732: 'qualifiche',
     norma: 'documents',
 };
+
+// Tipi documento che confluiscono nella tabella qualifications (stesso commit di patentino_saldatore).
+const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
 
 function parseJson(val, fallback = null) {
     if (val == null) return fallback;
@@ -122,7 +126,7 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
                 row.company_id,
                 { userId, fileName: row.original_name },
             );
-        } else if (row.doc_type === 'patentino_saldatore') {
+        } else if (QUALIFICATION_DOC_TYPES.has(row.doc_type)) {
             commitResult = await commitQualificationFromFields(
                 fields,
                 organizationId,

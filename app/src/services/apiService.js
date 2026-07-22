@@ -1622,10 +1622,11 @@ class ApiService {
         return response.json();
     }
 
-    async uploadQualificationsBatch(files, companyId) {
+    async uploadQualificationsBatch(files, companyId, docType) {
         const fd = new FormData();
         files.forEach(f => fd.append('files', f));
         if (companyId) fd.append('company_id', String(companyId));
+        if (docType) fd.append('doc_type', String(docType));
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const controller = new AbortController();
