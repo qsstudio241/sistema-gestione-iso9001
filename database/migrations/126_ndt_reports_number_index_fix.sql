@@ -1,4 +1,4 @@
--- Migration 114: indice univoco report_number per organizzazione (non globale)
+-- Migration 126: indice univoco report_number per organizzazione (non globale)
 -- La numerazione VT-YYYY-NNN e' progressiva per organization_id (come RD-YYYY-NNN).
 -- L'indice globale su report_number impediva il salvataggio a tutte le org dopo la prima.
 

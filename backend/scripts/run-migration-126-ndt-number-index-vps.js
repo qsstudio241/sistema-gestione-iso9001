@@ -1,5 +1,5 @@
 /**
- * Migration 114 — fix indice univoco numerazione verbali CND per organizzazione
+ * Migration 126 — fix indice univoco numerazione verbali CND per organizzazione
  */
 
 require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
@@ -49,11 +49,11 @@ async function main() {
         if (messages.length) console.log(messages.join('\n'));
         console.log(`OK: ${step.name}`);
     }
-    console.log('\nMIGRATION_114_OK');
+    console.log('\nMIGRATION_126_OK');
     process.exit(0);
 }
 
 main().catch((err) => {
-    console.error('MIGRATION_114_FAIL', err.message);
+    console.error('MIGRATION_126_FAIL', err.message);
     process.exit(1);
 });
