@@ -48,8 +48,9 @@ function normalizeCompanyId(companyId) {
   return Number.isNaN(n) ? null : n;
 }
 
-export default function useDocumentTree(companyId = null) {
+export default function useDocumentTree(companyId = null, treeScope = null) {
   const scopedCompanyId = normalizeCompanyId(companyId);
+  const studioScope = treeScope === "studio";
 
   const [treeNodes, setTreeNodes] = useState([]);
   const [expandedIds, setExpandedIds] = useState(new Set());
@@ -62,14 +63,14 @@ export default function useDocumentTree(companyId = null) {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiService.getDocumentTree(2, scopedCompanyId);
+      const res = await apiService.getDocumentTree(2, scopedCompanyId, studioScope ? "studio" : null);
       setTreeNodes(res.data ?? res ?? []);
     } catch (err) {
       setError(err.message || "Errore caricamento albero");
     } finally {
       setLoading(false);
     }
-  }, [scopedCompanyId]);
+  }, [scopedCompanyId, studioScope]);
 
   const loadChildren = useCallback(async (parentId, options) => {
     try {
@@ -125,7 +126,10 @@ export default function useDocumentTree(companyId = null) {
         title,
         parent_id: resolvedParent ?? null,
       };
-      if (scopedCompanyId != null) {
+      if (studioScope) {
+        // Cartelle del Patrimonio Studio: etichetta esplicita, mai legate a un'azienda.
+        payload.content_scope = "studio";
+      } else if (scopedCompanyId != null) {
         payload.company_id = scopedCompanyId;
       }
       const res = await apiService.post("/documents/folder", payload);
@@ -135,7 +139,7 @@ export default function useDocumentTree(companyId = null) {
       }
       return res.data ?? res;
     },
-    [loadTree, selectedNode, scopedCompanyId]
+    [loadTree, selectedNode, scopedCompanyId, studioScope]
   );
 
   const renameFolder = useCallback(

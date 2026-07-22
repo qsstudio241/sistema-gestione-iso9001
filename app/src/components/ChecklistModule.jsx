@@ -9,12 +9,12 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { CHECKLIST_STATUS } from "../data/auditDataModel";
 import { calculateNormCompletion } from "../utils/auditUtils";
-import { validateQuestion } from "../utils/checklistValidation";
 import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus } from "../utils/aiAssistantContext";
+import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
 /**
@@ -322,25 +322,29 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     }
 
     // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
-    // Ogni cambio di status genera un evento atomico inviato a POST /audits/:uuid/events.
-    // Il bulk save_responses è disabilitato in StorageContext quando events è attivo.
+    // Status e note generano eventi atomici su POST /audits/:uuid/events.
+    // Il bulk save_responses resta attivo in parallelo (note senza esito incluse).
     if (
-      field === 'status' &&
+      (field === 'status' || field === 'notes') &&
       import.meta.env.VITE_SYNC_MODE === 'events'
     ) {
       const auditUuidForEvent = currentAudit?.metadata?.id || currentAudit?.id;
-      // questionId numerico dal dato della domanda (idratato da hydrateQuestionIds)
-      const numericQId = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-        ?.questions?.find((q) => q.id === questionId)?.questionId ?? null;
+      const questionRow = currentAudit?.checklist?.[checklistKey]?.[clauseId]
+        ?.questions?.find((q) => q.id === questionId);
+      const numericQId = questionRow?.questionId ?? null;
       if (auditUuidForEvent && numericQId != null) {
-        const currentNotes = currentAudit?.checklist?.[checklistKey]?.[clauseId]
-          ?.questions?.find((q) => q.id === questionId)?.notes ?? null;
-        const newStatus = value === 'NOT_ANSWERED' ? null : value;
+        const currentNotes = questionRow?.notes ?? null;
+        const currentStatus = questionRow?.status ?? null;
+        const newStatus =
+          field === 'status'
+            ? (value === 'NOT_ANSWERED' ? null : value)
+            : (currentStatus === 'NOT_ANSWERED' ? null : currentStatus);
+        const newNotes = field === 'notes' ? value : currentNotes;
         syncService.enqueueResponseEvent(
           auditUuidForEvent,
           numericQId,
           newStatus,
-          currentNotes,
+          newNotes,
         ).catch(() => {});
       }
     }
@@ -419,13 +423,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
 
         question[field] = sanitizedValue;
 
-        // Valida solo al cambio di status (non ad ogni tasto nelle note)
-        if (field === "status") {
-          const validation = validateQuestion(question);
-          if (!validation.isValid) {
-            console.warn(`⚠️ Domanda ${questionId}:`, validation.errors);
-          }
-        }
+        // Note NC/OSS: la validazione completa avviene in chiusura audit, non ad ogni click esito
 
         // Aggiorna timestamp
         updatedAudit.metadata.lastModified = new Date().toISOString();
@@ -686,6 +684,9 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
     ? { standard: question.satisfied_by_standard, clause: question.satisfied_by_clause || "", doc_ref: question.satisfied_by_doc_ref || "" }
     : null;
 
+  const clauseRef = question.clauseRef || clauseId;
+  const aiLabel = clauseRef ? `Chiedi all\u2019AI \u2014 \u00A7${clauseRef}` : "Chiedi all\u2019AI";
+
   return (
     <UniversalQuestionCard
       question={question}
@@ -701,7 +702,21 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       auditId={auditId}
       auditUuid={auditUuid}
       readOnly={readOnly}
-    />
+    >
+      {!readOnly && (
+        <AskAiButton
+          label={aiLabel}
+          onBeforeNavigate={() =>
+            saveChecklistFocus(auditUuid, {
+              standardKey: checklistKey,
+              clauseRef,
+              questionId: String(question.id),
+              questionText: question.text || question.title || null,
+            })
+          }
+        />
+      )}
+    </UniversalQuestionCard>
   );
 }
 

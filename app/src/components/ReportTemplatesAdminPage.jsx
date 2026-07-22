@@ -1,6 +1,5 @@
 /**
- * Report Templates Admin — catalogo template Word (griglia + assegnazione ISO)
- * Template generici (5S, sopralluogo): upload/duplica senza standard_key; assegnazione via checklist custom.
+ * Report Templates Admin — catalogo template Word (audit ISO + scheda NC)
  */
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
@@ -9,7 +8,9 @@ import {
   validateDocxFile,
   stripDocxExtension,
   checkDocxMarkers,
+  checkNcDocxMarkers,
   formatMarkerWarning,
+  formatNcMarkerWarning,
   validateDuplicateTemplateName,
   getReportTemplateDownloadUrl,
   isSystemReportTemplate,
@@ -33,12 +34,16 @@ const GRID_COLUMNS = [
 ];
 
 const ReportTemplatesAdminPage = ({ onBack }) => {
+  const [pageTab, setPageTab] = useState("audit");
   const [templates, setTemplates] = useState([]);
+  const [ncTemplates, setNcTemplates] = useState([]);
   const [standards, setStandards] = useState([]);
   const [assignments, setAssignments] = useState({});
+  const [ncAssignment, setNcAssignment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [saving, setSaving] = useState(null);
+  const [savingNc, setSavingNc] = useState(false);
 
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadName, setUploadName] = useState("");
@@ -53,26 +58,51 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const [duplicateError, setDuplicateError] = useState(null);
   const [bannerDuplicateId, setBannerDuplicateId] = useState("");
 
+  const activeScope = pageTab === "nc" ? "nc" : "audit";
+  const currentTemplates = pageTab === "nc" ? ncTemplates : templates;
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setLoadError(null);
-      const [tplRes, stdRes, assignRes] = await Promise.all([
+      const settled = await Promise.allSettled([
         apiService.getReportTemplates("audit"),
+        apiService.getReportTemplates("nc"),
         apiService.getStandards(),
         apiService.getReportTemplateStandardAssignments(),
+        apiService.getNcReportTemplateAssignment(),
       ]);
+
+      const pick = (result) => (result.status === "fulfilled" ? result.value : null);
+      const rejectMsg = (result) =>
+        result.status === "rejected" ? (result.reason?.message || "Errore di rete") : null;
+
+      const tplRes = pick(settled[0]);
+      const ncTplRes = pick(settled[1]);
+      const stdRes = pick(settled[2]);
+      const assignRes = pick(settled[3]);
+      const ncAssignRes = pick(settled[4]);
+
+      const criticalError =
+        rejectMsg(settled[0]) || rejectMsg(settled[2]) || rejectMsg(settled[3]);
+      if (criticalError) {
+        setLoadError(criticalError);
+      }
+
       const tplList = tplRes?.data ?? [];
+      const ncTplList = ncTplRes?.data ?? [];
       const stdList = (stdRes?.data ?? []).filter((s) =>
-        [1, 2, 3, 6, 7].includes(s.standard_id)
+        [1, 2, 3, 6, 7].includes(s.standard_id),
       );
       const assignMap = {};
       (assignRes?.data ?? []).forEach((a) => {
         if (a.standard_id != null) assignMap[a.standard_id] = a.report_template_id;
       });
       setTemplates(Array.isArray(tplList) ? tplList : []);
+      setNcTemplates(Array.isArray(ncTplList) ? ncTplList : []);
       setStandards(stdList);
       setAssignments(assignMap);
+      setNcAssignment(ncAssignRes?.data?.report_template_id ?? null);
     } catch (err) {
       console.error("Errore caricamento template:", err);
       setLoadError(err.message || "Impossibile caricare i template. Riprova tra poco.");
@@ -86,8 +116,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   }, [loadData]);
 
   const systemTemplates = useMemo(
-    () => templates.filter(isSystemReportTemplate),
-    [templates]
+    () => currentTemplates.filter(isSystemReportTemplate),
+    [currentTemplates],
   );
 
   useEffect(() => {
@@ -101,19 +131,28 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     });
   }, [systemTemplates]);
 
-  const refreshTemplates = async () => {
-    const tplRes = await apiService.getReportTemplates("audit");
-    setTemplates(Array.isArray(tplRes?.data) ? tplRes.data : []);
+  const refreshTemplates = async (scope = activeScope) => {
+    const tplRes = await apiService.getReportTemplates(scope);
+    const list = Array.isArray(tplRes?.data) ? tplRes.data : [];
+    if (scope === "nc") setNcTemplates(list);
+    else setTemplates(list);
   };
 
   const gridRows = useMemo(
     () =>
-      templates.map((t) => ({
+      currentTemplates.map((t) => ({
         ...t,
         origin: formatTemplateOrigin(t),
       })),
-    [templates]
+    [currentTemplates],
   );
+
+  const resetUploadForm = () => {
+    setUploadFile(null);
+    setUploadName("");
+    setMarkerWarning(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -134,9 +173,15 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     if (!uploadName.trim()) {
       setUploadName(stripDocxExtension(file.name));
     }
-    const missing = await checkDocxMarkers(file);
-    const warn = formatMarkerWarning(missing);
-    if (warn) setMarkerWarning(warn);
+    if (activeScope === "nc") {
+      const missing = await checkNcDocxMarkers(file);
+      const warn = formatNcMarkerWarning(missing);
+      if (warn) setMarkerWarning(warn);
+    } else {
+      const missing = await checkDocxMarkers(file);
+      const warn = formatMarkerWarning(missing);
+      if (warn) setMarkerWarning(warn);
+    }
   };
 
   const handleUpload = async (e) => {
@@ -151,19 +196,20 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       setUploading(true);
       const res = await apiService.uploadReportTemplate(uploadFile, {
         name: uploadName.trim() || stripDocxExtension(uploadFile.name),
-        scope: "audit",
+        scope: activeScope,
       });
       const created = res?.data;
-      await refreshTemplates();
-      setUploadFile(null);
-      setUploadName("");
-      setMarkerWarning(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      await refreshTemplates(activeScope);
+      resetUploadForm();
       setUploadFeedback({
         type: "success",
-        message: created?.name
-          ? `Template "${created.name}" caricato. Assegnalo agli standard ISO qui sotto o alle checklist custom in Admin → Checklist personalizzate.`
-          : "Template caricato. Assegnalo agli standard ISO o alle checklist custom.",
+        message: activeScope === "nc"
+          ? (created?.name
+            ? `Template NC "${created.name}" caricato. Assegnalo nella sezione sotto per l'export dal registro NC.`
+            : "Template NC caricato. Assegnalo per l'export dal registro NC.")
+          : (created?.name
+            ? `Template "${created.name}" caricato. Assegnalo agli standard ISO qui sotto o alle checklist custom in Admin → Checklist personalizzate.`
+            : "Template caricato. Assegnalo agli standard ISO o alle checklist custom."),
       });
     } catch (err) {
       setUploadFeedback({
@@ -186,6 +232,19 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       window.alert(err.message || "Errore durante il salvataggio dell'assegnazione.");
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleNcAssign = async (templateId) => {
+    try {
+      setSavingNc(true);
+      await apiService.assignReportTemplateToNc(templateId || null);
+      setNcAssignment(templateId || null);
+    } catch (err) {
+      console.error("Errore assegnazione NC:", err);
+      window.alert(err.message || "Errore durante il salvataggio del template NC.");
+    } finally {
+      setSavingNc(false);
     }
   };
 
@@ -225,15 +284,18 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       setDuplicateError(nameErr);
       return;
     }
+    const dupScope = duplicateSource?.scope === "nc" ? "nc" : "audit";
     try {
       setDuplicating(true);
       setDuplicateError(null);
       await apiService.duplicateReportTemplate(duplicateSource.id, duplicateName.trim());
-      await refreshTemplates();
+      await refreshTemplates(dupScope);
       closeDuplicateModal();
       setUploadFeedback({
         type: "success",
-        message: `Template "${duplicateName.trim()}" creato nello studio. Puoi assegnarlo a checklist custom (5S, sopralluogo, ecc.) o agli standard ISO.`,
+        message: dupScope === "nc"
+          ? `Template NC "${duplicateName.trim()}" creato nello studio. Assegnalo per l'export dal registro NC.`
+          : `Template "${duplicateName.trim()}" creato nello studio. Puoi assegnarlo a checklist custom (5S, sopralluogo, ecc.) o agli standard ISO.`,
       });
     } catch (err) {
       setDuplicateError(err.message || "Errore durante la duplicazione.");
@@ -247,9 +309,13 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     if (!window.confirm(`Eliminare il template "${template.name}"? Le assegnazioni collegate verranno rimosse.`)) {
       return;
     }
+    const delScope = template.scope === "nc" ? "nc" : "audit";
     try {
       await apiService.deleteReportTemplate(template.id);
-      await refreshTemplates();
+      await refreshTemplates(delScope);
+      if (delScope === "nc" && ncAssignment === template.id) {
+        setNcAssignment(null);
+      }
       setUploadFeedback({ type: "success", message: "Template eliminato." });
     } catch (err) {
       window.alert(err.message || "Errore durante l'eliminazione.");
@@ -304,6 +370,12 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     return row[colId] ?? "";
   }, []);
 
+  const switchTab = (tab) => {
+    setPageTab(tab);
+    resetUploadForm();
+    setUploadFeedback(null);
+  };
+
   return (
     <div className="report-templates-admin">
       <div className="rt-header">
@@ -312,10 +384,30 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         </button>
         <h2>Template report Word</h2>
         <p className="rt-desc">
-          Catalogo template per export Word: modelli di sistema, upload dello studio e duplicati personalizzati.
-          Per audit non ISO (5S, sopralluogo, checklist custom) carica o duplica un template e assegnalo in{" "}
-          <strong>Checklist personalizzate</strong>; qui sotto resta l&apos;assegnazione per standard ISO.
+          Catalogo template per export Word: report audit ISO, checklist custom e scheda non conformità.
+          Carica o duplica un modello di sistema, poi assegnalo allo standard ISO, alla checklist custom o all&apos;export NC.
         </p>
+      </div>
+
+      <div className="rt-tabs" role="tablist" aria-label="Tipo template">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={pageTab === "audit"}
+          className={`rt-tab${pageTab === "audit" ? " rt-tab--active" : ""}`}
+          onClick={() => switchTab("audit")}
+        >
+          Audit ISO
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={pageTab === "nc"}
+          className={`rt-tab${pageTab === "nc" ? " rt-tab--active" : ""}`}
+          onClick={() => switchTab("nc")}
+        >
+          Non conformità
+        </button>
       </div>
 
       {loadError && (
@@ -326,11 +418,12 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
       <section className="rt-banner" aria-labelledby="rt-banner-title">
         <h3 id="rt-banner-title" className="rt-banner-title">
-          Gestione template
+          {pageTab === "nc" ? "Gestione template scheda NC" : "Gestione template audit"}
         </h3>
         <p className="rt-banner-guide">
-          Scarica dalla griglia, carica un .docx o duplica un modello di sistema; assegna agli standard ISO o alle
-          checklist custom.
+          {pageTab === "nc"
+            ? "Scarica il modello di sistema, personalizzalo in Word mantenendo i segnaposto {ncNumber}, {description}, {#actions}..., poi caricalo o duplicalo."
+            : "Scarica dalla griglia, carica un .docx o duplica un modello di sistema; assegna agli standard ISO o alle checklist custom."}
         </p>
         <div className="rt-banner-cards">
           <div className="rt-banner-card">
@@ -352,7 +445,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
                   type="text"
                   value={uploadName}
                   onChange={(e) => setUploadName(e.target.value)}
-                  placeholder="Es. Verbale 5S, Sopralluogo cantiere"
+                  placeholder={pageTab === "nc" ? "Es. Scheda NC studio" : "Es. Verbale 5S, Sopralluogo cantiere"}
                   disabled={uploading}
                 />
               </label>
@@ -424,7 +517,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
       <section className="rt-grid-section" aria-labelledby="rt-grid-title">
         <h3 id="rt-grid-title" className="rt-section-title">
-          Elenco template (scope audit)
+          {pageTab === "nc" ? "Elenco template scheda NC" : "Elenco template audit"}
         </h3>
         <SgqDataGrid
           rows={gridRows}
@@ -438,45 +531,78 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         />
       </section>
 
-      <section className="rt-assign-section" aria-labelledby="rt-assign-title">
-        <h3 id="rt-assign-title" className="rt-section-title">
-          Assegnazione per standard ISO
-        </h3>
-        <p className="rt-assign-hint">
-          Per checklist custom (5S, sopralluogo, ecc.) usa il dropdown template nell&apos;editor in Checklist personalizzate.
-        </p>
-        <div className="rt-list">
-          {standards.map((std) => (
-            <div key={std.standard_id} className="rt-row">
-              <span className="rt-std-label">
-                {STANDARD_LABELS[std.standard_id] || std.standard_name}
-              </span>
+      {pageTab === "audit" ? (
+        <section className="rt-assign-section" aria-labelledby="rt-assign-title">
+          <h3 id="rt-assign-title" className="rt-section-title">
+            Assegnazione per standard ISO
+          </h3>
+          <p className="rt-assign-hint">
+            Per checklist custom (5S, sopralluogo, ecc.) usa il dropdown template nell&apos;editor in Checklist personalizzate.
+          </p>
+          <div className="rt-list">
+            {standards.map((std) => (
+              <div key={std.standard_id} className="rt-row">
+                <span className="rt-std-label">
+                  {STANDARD_LABELS[std.standard_id] || std.standard_name}
+                </span>
+                <select
+                  className="rt-select"
+                  value={assignments[std.standard_id] ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value, 10) : null;
+                    if (val) handleAssign(std.standard_id, val);
+                    else setAssignments((prev) => {
+                      const next = { ...prev };
+                      delete next[std.standard_id];
+                      return next;
+                    });
+                  }}
+                  disabled={saving === std.standard_id}
+                >
+                  <option value="">Template di sistema (default)</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} {isSystemReportTemplate(t) ? "(sistema)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {saving === std.standard_id && <span className="rt-saving">Salvataggio...</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="rt-assign-section" aria-labelledby="rt-assign-nc-title">
+          <h3 id="rt-assign-nc-title" className="rt-section-title">
+            Template export dal registro NC
+          </h3>
+          <p className="rt-assign-hint">
+            Modello usato dal pulsante <strong>Scarica Word</strong> nel dettaglio di ogni non conformità.
+          </p>
+          <div className="rt-list">
+            <div className="rt-row">
+              <span className="rt-std-label">Scheda NC studio</span>
               <select
                 className="rt-select"
-                value={assignments[std.standard_id] ?? ""}
+                value={ncAssignment ?? ""}
                 onChange={(e) => {
                   const val = e.target.value ? parseInt(e.target.value, 10) : null;
-                  if (val) handleAssign(std.standard_id, val);
-                  else setAssignments((prev) => {
-                    const next = { ...prev };
-                    delete next[std.standard_id];
-                    return next;
-                  });
+                  handleNcAssign(val);
                 }}
-                disabled={saving === std.standard_id}
+                disabled={savingNc}
               >
-                <option value="">Template di sistema (default)</option>
-                {templates.map((t) => (
+                <option value="">Modello di sistema (default)</option>
+                {ncTemplates.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name} {isSystemReportTemplate(t) ? "(sistema)" : ""}
                   </option>
                 ))}
               </select>
-              {saving === std.standard_id && <span className="rt-saving">Salvataggio...</span>}
+              {savingNc && <span className="rt-saving">Salvataggio...</span>}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {duplicateSource && (
         <div className="rt-modal-overlay" onClick={closeDuplicateModal}>
@@ -484,7 +610,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
             <h3 id="rt-dup-title">Duplica template di sistema</h3>
             <p className="rt-modal-desc">
               Crea una copia nello studio a partire da <strong>{duplicateSource.name}</strong>.
-              Puoi rinominarla prima del salvataggio (utile per 5S, sopralluogo, verbali dedicati).
             </p>
             <form onSubmit={handleDuplicateSubmit}>
               <div className="rt-form-group">

@@ -11,6 +11,13 @@ const crNotify = require('../services/contractReviewNotification.service');
 const contextBuilder = require('../services/aiContextBuilder.service');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
+const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
+const {
+    resolveCommercialCustomerFields,
+    CASE_SELECT_SQL,
+    CASE_FROM_SQL,
+} = require('../services/commercialCustomerCounterparty.service');
+const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -58,9 +65,38 @@ function normalizeReason(reason) {
     return String(reason).trim();
 }
 
+function normalizeOptionalText(raw, maxLen) {
+    if (raw === undefined || raw === null) return null;
+    const s = String(raw).trim();
+    if (!s) return null;
+    return maxLen ? s.substring(0, maxLen) : s;
+}
+
+async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
+    if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
+    const companyId = parseCompanyId(rawCompanyId);
+    if (!companyId) {
+        return { ok: false, status: 400, error: 'company_id non valido', code: 'VALIDATION_ERROR' };
+    }
+    const belongsToOrg = await companyBelongsToOrg(companyId, organizationId);
+    if (!belongsToOrg) {
+        return {
+            ok: false,
+            status: 400,
+            error: "L'azienda selezionata non appartiene all'organizzazione.",
+            code: 'VALIDATION_ERROR',
+        };
+    }
+    return { ok: true, companyId };
+}
+
 async function fetchCaseRow(caseId, organizationId) {
     const r = await query(
-        `SELECT * FROM commercial_cases WHERE id = @caseId AND organization_id = @organizationId`,
+        `
+        SELECT ${CASE_SELECT_SQL}
+        ${CASE_FROM_SQL}
+        WHERE cc.id = @caseId AND cc.organization_id = @organizationId
+        `,
         { caseId, organizationId },
     );
     return r.recordset[0] || null;
@@ -99,11 +135,11 @@ async function listCases(req, res) {
 
         const r = await query(
             `
-            SELECT *
-            FROM commercial_cases
-            WHERE organization_id = @organizationId
-              AND (@filterStatus IS NULL OR status = @filterStatus)
-            ORDER BY updated_at DESC
+            SELECT ${CASE_SELECT_SQL}
+            ${CASE_FROM_SQL}
+            WHERE cc.organization_id = @organizationId
+              AND (@filterStatus IS NULL OR cc.status = @filterStatus)
+            ORDER BY cc.updated_at DESC
             `,
             { organizationId, filterStatus },
         );
@@ -128,7 +164,7 @@ async function getCase(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        const [historyRes, checklistRes, clarRes, docRes, attRes] = await Promise.all([
+        const [historyRes, checklistRes, clarRes, docRes, attRes, textAnalysisRes] = await Promise.all([
             query(
                 `
                 SELECT id, case_id, from_status, to_status, changed_by, reason, created_at
@@ -179,7 +215,33 @@ async function getCase(req, res) {
                 `,
                 { caseId },
             ).catch(() => ({ recordset: [] })),
+            // Ultima analisi AI del capitolato persistita (source='text'). .catch difensivo:
+            // se lo schema non è ancora migrato (colonna source assente) NON rompe il dettaglio.
+            query(
+                `
+                SELECT TOP 1 id, raw_response, created_at, completed_at
+                FROM commercial_case_drawing_extractions
+                WHERE case_id = @caseId AND organization_id = @organizationId
+                  AND source = 'text' AND status = 'done'
+                ORDER BY id DESC
+                `,
+                { caseId, organizationId },
+            ).catch(() => ({ recordset: [] })),
         ]);
+
+        let textAnalysis = null;
+        const taRow = textAnalysisRes.recordset[0];
+        if (taRow) {
+            let suggestion = null;
+            try {
+                suggestion = JSON.parse(
+                    String(taRow.raw_response).replace(/^```json\s*/i, '').replace(/\s*```$/i, ''),
+                );
+            } catch {
+                suggestion = { raw: taRow.raw_response };
+            }
+            textAnalysis = { id: taRow.id, created_at: taRow.created_at, suggestion };
+        }
 
         return res.json({
             case: caseRow,
@@ -188,6 +250,7 @@ async function getCase(req, res) {
             clarifications: clarRes.recordset,
             documents: docRes.recordset,
             attachments: attRes.recordset,
+            text_analysis: textAnalysis,
         });
     } catch (err) {
         logger.error('getCase', err.message);
@@ -202,19 +265,35 @@ async function createCase(req, res) {
     try {
         const organizationId = req.user.organization_id;
         const userId = req.user.user_id;
-        const { title, company_id: companyId, external_ref: externalRef, notes } = req.body || {};
+        const {
+            title,
+            company_id: companyId,
+            external_ref: externalRef,
+            notes,
+            commercial_customer_id: commercialCustomerId,
+            commercial_customer_name: commercialCustomerName,
+            commercial_customer_ref: commercialCustomerRef,
+        } = req.body || {};
 
         if (!title || String(title).trim() === '') {
             return sendErr(res, 400, 'Il titolo è obbligatorio', 'VALIDATION_ERROR');
         }
 
-        let companyIdVal = null;
-        if (companyId != null && companyId !== '') {
-            const co = parseInt(companyId, 10);
-            if (!Number.isFinite(co) || co <= 0) {
-                return sendErr(res, 400, 'company_id non valido', 'VALIDATION_ERROR');
-            }
-            companyIdVal = co;
+        const companyScope = await resolveOptionalCompanyId(companyId, organizationId);
+        if (!companyScope.ok) {
+            return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
+        }
+        const companyIdVal = companyScope.companyId;
+
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdVal,
+            commercialCustomerIdRaw: commercialCustomerId,
+            commercialCustomerNameRaw: commercialCustomerName,
+            commercialCustomerRefRaw: commercialCustomerRef,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
         }
 
         await transaction.begin();
@@ -225,15 +304,20 @@ async function createCase(req, res) {
         insertReq.input('title', String(title).trim());
         insertReq.input('externalRef', externalRef != null ? String(externalRef).trim() : null);
         insertReq.input('notes', notes != null ? String(notes) : null);
+        insertReq.input('commercialCustomerId', customerFields.commercialCustomerId);
+        insertReq.input('commercialCustomerName', customerFields.commercialCustomerName);
+        insertReq.input('commercialCustomerRef', customerFields.commercialCustomerRef);
         insertReq.input('userId', userId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
-                organization_id, company_id, title, external_ref, status, notes, created_by
+                organization_id, company_id, title, external_ref, status, notes,
+                commercial_customer_id, commercial_customer_name, commercial_customer_ref, created_by
             )
             OUTPUT INSERTED.*
             VALUES (
-                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId
+                @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes,
+                @commercialCustomerId, @commercialCustomerName, @commercialCustomerRef, @userId
             )
         `);
 
@@ -283,8 +367,16 @@ async function updateCase(req, res) {
             );
         }
 
-        const { title, notes, external_ref: externalRef, current_assignee_id: assigneeRaw } =
-            req.body || {};
+        const {
+            title,
+            notes,
+            external_ref: externalRef,
+            current_assignee_id: assigneeRaw,
+            company_id: companyIdRaw,
+            commercial_customer_id: commercialCustomerId,
+            commercial_customer_name: commercialCustomerName,
+            commercial_customer_ref: commercialCustomerRef,
+        } = req.body || {};
 
         const titleNext =
             title !== undefined ? String(title).trim() : String(existing.title || '').trim();
@@ -314,12 +406,37 @@ async function updateCase(req, res) {
                     : null
                 : existing.external_ref;
 
+        let companyIdNext = existing.company_id;
+        if (companyIdRaw !== undefined) {
+            const companyScope = await resolveOptionalCompanyId(companyIdRaw, organizationId);
+            if (!companyScope.ok) {
+                return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
+            }
+            companyIdNext = companyScope.companyId;
+        }
+
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdNext,
+            commercialCustomerIdRaw: commercialCustomerId,
+            commercialCustomerNameRaw: commercialCustomerName,
+            commercialCustomerRefRaw: commercialCustomerRef,
+            existing,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
+        }
+
         const upd = await query(
             `
             UPDATE commercial_cases
             SET title = @title,
                 notes = @notes,
                 external_ref = @externalRef,
+                company_id = @companyId,
+                commercial_customer_id = @commercialCustomerId,
+                commercial_customer_name = @commercialCustomerName,
+                commercial_customer_ref = @commercialCustomerRef,
                 current_assignee_id = @assigneeId,
                 updated_at = SYSUTCDATETIME()
             OUTPUT INSERTED.*
@@ -329,6 +446,10 @@ async function updateCase(req, res) {
                 title: titleNext,
                 notes: notesNext,
                 externalRef: extNext,
+                companyId: companyIdNext,
+                commercialCustomerId: customerFields.commercialCustomerId,
+                commercialCustomerName: customerFields.commercialCustomerName,
+                commercialCustomerRef: customerFields.commercialCustomerRef,
                 assigneeId,
                 caseId,
                 organizationId,
@@ -897,6 +1018,33 @@ async function listCaseAttachments(req, res) {
     }
 }
 
+/**
+ * Avvia in background (fire-and-forget) l'estrazione AI appropriata per un allegato.
+ * Delega a caseDocumentAnalysis.service (slice #5).
+ *
+ * @returns {Promise<number|null>} extractionId creato, o null se nessuna estrazione applicabile
+ */
+async function _triggerAutoExtraction({ caseId, attachmentId, organizationId, userId, docRole, mimeType }) {
+    if (!caseDocumentAnalysisService.resolveAnalysisSource(docRole, mimeType)) {
+        return null;
+    }
+
+    try {
+        const job = await caseDocumentAnalysisService.analyzeAttachment({
+            caseId,
+            attachmentId,
+            organizationId,
+            userId,
+            mode: 'async',
+            force: true,
+        });
+        return job ? job.extraction_id : null;
+    } catch (dbErr) {
+        logger.error('_triggerAutoExtraction: impossibile avviare analisi', dbErr.message);
+        return null;
+    }
+}
+
 async function uploadCaseAttachment(req, res) {
     try {
         const organizationId = req.user.organization_id;
@@ -948,10 +1096,23 @@ async function uploadCaseAttachment(req, res) {
             },
         );
         const row = result.recordset[0];
+
+        // Avvia estrazione AI in background (fire-and-forget, non blocca la risposta)
+        const analysisJobId = await _triggerAutoExtraction({
+            caseId,
+            attachmentId: row.attachment_id,
+            organizationId,
+            userId,
+            docRole,
+            mimeType: req.file.mimetype,
+            storagePath: req.file.path,
+        });
+
         return res.status(201).json({
             attachment_id: row.attachment_id,
             attachment_uuid: row.attachment_uuid,
             file_name: req.file.originalname,
+            ...(analysisJobId != null ? { analysis_job_id: analysisJobId } : {}),
         });
     } catch (err) {
         if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
@@ -1144,12 +1305,13 @@ async function importFromJob(req, res) {
 
         let companyIdVal = job.company_id;
         if (body.company_id != null && body.company_id !== '') {
-            const co = parseInt(body.company_id, 10);
-            if (!Number.isFinite(co) || co <= 0) {
-                return sendErr(res, 400, 'company_id non valido', 'VALIDATION_ERROR');
-            }
-            companyIdVal = co;
+            companyIdVal = body.company_id;
         }
+        const companyScope = await resolveOptionalCompanyId(companyIdVal, organizationId);
+        if (!companyScope.ok) {
+            return sendErr(res, companyScope.status, companyScope.error, companyScope.code);
+        }
+        companyIdVal = companyScope.companyId;
 
         const titleRaw =
             body.title !== undefined && body.title !== null && String(body.title).trim() !== ''
@@ -1163,6 +1325,16 @@ async function importFromJob(req, res) {
             body.external_ref != null && String(body.external_ref).trim() !== ''
                 ? String(body.external_ref).trim()
                 : null;
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId,
+            companyId: companyIdVal,
+            commercialCustomerIdRaw: body.commercial_customer_id,
+            commercialCustomerNameRaw: body.commercial_customer_name,
+            commercialCustomerRefRaw: body.commercial_customer_ref,
+        });
+        if (!customerFields.ok) {
+            return sendErr(res, customerFields.status, customerFields.error, customerFields.code);
+        }
         const notesVal = buildNotesPrefill(body.notes, job.notes, files);
 
         await transaction.begin();
@@ -1173,18 +1345,23 @@ async function importFromJob(req, res) {
         insertReq.input('title', titleRaw.substring(0, 255));
         insertReq.input('externalRef', externalRef);
         insertReq.input('notes', notesVal);
+        insertReq.input('commercialCustomerId', customerFields.commercialCustomerId);
+        insertReq.input('commercialCustomerName', customerFields.commercialCustomerName);
+        insertReq.input('commercialCustomerRef', customerFields.commercialCustomerRef);
         insertReq.input('userId', userId);
         insertReq.input('sourceImportJobId', jobId);
 
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes, created_by,
-                source_import_job_id
+                source_import_job_id, commercial_customer_id,
+                commercial_customer_name, commercial_customer_ref
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId,
-                @sourceImportJobId
+                @sourceImportJobId, @commercialCustomerId,
+                @commercialCustomerName, @commercialCustomerRef
             )
         `);
         const created = ins.recordset[0];
@@ -1281,6 +1458,51 @@ async function importFromJob(req, res) {
     }
 }
 
+/**
+ * Persiste l'analisi AI del capitolato sul caso, riusando le tabelle della migrazione 101
+ * (job in commercial_case_drawing_extractions con source='text' + requisiti normalizzati in
+ * commercial_case_extracted_requirements). Difensivo: in caso di errore (es. schema non ancora
+ * migrato) NON deve far fallire l'analisi — ritorna null e logga.
+ * @returns {Promise<number|null>} id del job di analisi persistito, oppure null.
+ */
+async function persistTextAnalysis({ caseId, organizationId, userId, provider, suggestion, rawContent }) {
+    try {
+        const rawJson = rawContent != null
+            ? String(rawContent).substring(0, 1000000)
+            : JSON.stringify(suggestion).substring(0, 1000000);
+        const ins = await query(
+            `
+            INSERT INTO commercial_case_drawing_extractions
+              (organization_id, case_id, source, provider, status, raw_response, created_by, completed_at)
+            OUTPUT INSERTED.id
+            VALUES (@organizationId, @caseId, 'text', @provider, 'done', @raw, @userId, SYSDATETIME())
+            `,
+            { organizationId, caseId, provider: String(provider || 'unknown').substring(0, 30), raw: rawJson, userId: userId ?? null },
+        );
+        const analysisId = ins.recordset[0].id;
+
+        const requirements = Array.isArray(suggestion?.identified_requirements)
+            ? suggestion.identified_requirements
+            : [];
+        for (const r of requirements) {
+            const fieldKey = r.ref != null ? String(r.ref).substring(0, 100) : null;
+            const valueText = r.description != null ? String(r.description) : null;
+            await query(
+                `
+                INSERT INTO commercial_case_extracted_requirements
+                  (extraction_id, req_type, field_key, value_text)
+                VALUES (@extractionId, 'spec', @fieldKey, @valueText)
+                `,
+                { extractionId: analysisId, fieldKey, valueText },
+            );
+        }
+        return analysisId;
+    } catch (err) {
+        logger.error('persistTextAnalysis', err.message);
+        return null;
+    }
+}
+
 async function analyzeRequirements(req, res) {
     try {
         const provider = getActiveProvider();
@@ -1288,6 +1510,7 @@ async function analyzeRequirements(req, res) {
             return res.status(503).json({ error: 'Nessun provider AI configurato.', code: 'AI_NOT_CONFIGURED' });
         }
         const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
         const caseId = parseCaseId(req.params.id);
         if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
         const caseRow = await fetchCaseRow(caseId, organizationId);
@@ -1301,10 +1524,16 @@ async function analyzeRequirements(req, res) {
             return sendErr(res, 400, 'Fornire capitolatoText nel body o note sul caso', 'VALIDATION_ERROR');
         }
 
+        const standardCodes = Array.isArray(req.body?.standardCodes) && req.body.standardCodes.length
+            ? req.body.standardCodes
+            : undefined;
         const built = await contextBuilder.buildReviewRequirementsContext({
             capitolatoText,
             companyId: caseRow.company_id,
             organizationId,
+            commercialCustomerName: caseRow.commercial_customer_name,
+            commercialCustomerRef: caseRow.commercial_customer_ref,
+            standardCodes,
         });
         const systemPrompt = await enrichSystemPromptWithOrganization(built.systemPrompt, organizationId);
         const result = await chat(
@@ -1320,11 +1549,28 @@ async function analyzeRequirements(req, res) {
         } catch {
             suggestion = { raw: result.content };
         }
+
+        // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive
+        // al riaccesso e alimenta il riesame definitivo. Difensiva: non blocca la risposta.
+        const analysisId = await persistTextAnalysis({
+            caseId,
+            organizationId,
+            userId,
+            provider,
+            suggestion,
+            rawContent: result.content,
+        });
+
         return res.json({
             feature: 'review_requirements',
             case_id: caseId,
+            analysis_id: analysisId,
             suggestion,
-            _aiMeta: { provider, model: result.model, contextSummary: built.contextSummary },
+            _aiMeta: {
+                provider,
+                model: result.model,
+                contextSummary: (built.contextSummary || '').substring(0, 500),
+            },
         });
     } catch (err) {
         logger.error('analyzeRequirements', err.message);

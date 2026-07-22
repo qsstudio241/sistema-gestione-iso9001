@@ -7,9 +7,18 @@
 const { query } = require('../config/database');
 const { embed } = require('./aiProviderAdapter');
 const { chunkText } = require('./normChunker.service');
+const { extractDocumentText } = require('./documentTextExtractor.service');
 const logger = require('../utils/logger');
 
 const EMBED_BATCH = 20;
+
+// Tipo chunk dedicato al contenuto testuale dei documenti allegati.
+// Distinto da 'document' (solo metadati) per consentire prune/dedup mirati.
+const DOCUMENT_CONTENT_ENTITY = 'document_content';
+
+// Soglia minima di testo utile: sotto questa lunghezza il documento viene
+// saltato (PDF immagine/scansioni senza OCR, file quasi vuoti).
+const MIN_DOC_TEXT_LENGTH = 50;
 
 /** Mappa codici norma → standard_id (allineata a aiStandardContext.service) */
 const CODE_TO_STANDARD_ID = {
@@ -24,6 +33,27 @@ const CODE_TO_STANDARD_ID = {
   ISO_3834_2_2021: 6,
   RDP_MSN: 7,
 };
+
+/**
+ * Deriva il company_id del chunk dall'etichetta esplicita content_scope.
+ * (Decisione di prodotto: non dedurre piu' lo scope dal solo company_id NULL.)
+ *
+ *  - content_scope='client'              -> chunk legato all'azienda (company_id valorizzato)
+ *  - content_scope='studio' | 'reference'-> chunk org-level (company_id NULL, know-how studio)
+ *  - content_scope assente (dati legacy pre-migrazione 111) -> fallback al company_id
+ *
+ * In ogni caso organization_id = @orgId resta il vincolo di isolamento tenant.
+ *
+ * @param {{ content_scope?: string|null, company_id?: number|null }} row
+ * @returns {number|null}
+ */
+function companyIdForContentScope(row) {
+  const scope = row && row.content_scope;
+  if (scope === 'studio' || scope === 'reference') return null;
+  if (scope === 'client') return row.company_id || null;
+  // Legacy / non classificato: comportamento storico (company_id se presente).
+  return (row && row.company_id) || null;
+}
 
 /**
  * Risolve standard_id quando la colonna DB è null (documenti norma, qualifiche).
@@ -49,7 +79,42 @@ function inferStandardId(row, entityType) {
   return null;
 }
 
+// Soglia minima di testo per note audit: sotto questa lunghezza la nota viene
+// saltata (risposte con note vuote, status puri senza commento).
+const MIN_AUDIT_NOTE_LENGTH = 20;
+
 const INDEXABLE_ENTITIES = [
+  {
+    entity_type: 'audit_response_note',
+    sql: `SELECT ar.response_id AS id, a.company_id,
+            COALESCE(a.standard_id, (
+              SELECT TOP 1 ast.standard_id FROM audit_standards ast
+              WHERE ast.audit_id = a.audit_id ORDER BY ast.standard_id
+            )) AS standard_id,
+            a.audit_number, a.audit_date,
+            ar.conformity_status, ar.notes,
+            cq.section_code, cq.question_text,
+            c.name AS company_name
+          FROM audit_responses ar
+          JOIN audits a ON ar.audit_id = a.audit_id
+          JOIN checklist_questions cq ON ar.question_id = cq.question_id
+          LEFT JOIN companies c ON a.company_id = c.id
+          WHERE a.organization_id = @orgId
+            AND a.status != 'deleted'
+            AND ar.notes IS NOT NULL
+            AND LEN(ar.notes) > ${MIN_AUDIT_NOTE_LENGTH}`,
+    buildText: (r) => {
+      const parts = [];
+      const header = `Audit ${r.audit_number || '?'} del ${r.audit_date || '?'}`;
+      if (r.company_name) parts.push(`${header} (${r.company_name})`);
+      else parts.push(header);
+      if (r.section_code) parts.push(`Clausola ${r.section_code}`);
+      if (r.question_text) parts.push(`Domanda: ${r.question_text}`);
+      if (r.conformity_status) parts.push(`Esito: ${r.conformity_status}`);
+      parts.push(`Note consulente: ${r.notes}`);
+      return parts.join('. ');
+    },
+  },
   {
     entity_type: 'audit_conclusion',
     sql: `SELECT a.audit_id AS id, a.company_id,
@@ -170,12 +235,13 @@ const INDEXABLE_ENTITIES = [
   },
   {
     entity_type: 'document',
-    sql: `SELECT dr.id, dr.company_id, dr.standard_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
+    sql: `SELECT dr.id, dr.company_id, dr.content_scope, dr.standard_id, dr.title, dr.doc_type, dr.doc_code, dr.revision,
             dr.status, dr.clause_ref, dr.responsible, dr.type_specific_data,
             c.name AS company_name
           FROM document_registry dr
           LEFT JOIN companies c ON dr.company_id = c.id
           WHERE dr.organization_id = @orgId AND dr.status != 'obsoleto'`,
+    resolveCompanyId: companyIdForContentScope,
     buildText: (r) => {
       const parts = [`Documento ${r.doc_code || ''} "${r.title}" rev.${r.revision || '0'} (${r.doc_type || '?'})`];
       if (r.clause_ref) parts.push(`Clausola: ${r.clause_ref}`);
@@ -215,6 +281,7 @@ async function tableExists(tableName) {
  * Mappa entity_type ? tabella principale (per il check di esistenza).
  */
 const ENTITY_TABLE_MAP = {
+  audit_response_note: 'audit_responses',
   audit_conclusion: 'audits',
   non_conformity: 'non_conformities',
   nc_action: 'nc_actions',
@@ -260,7 +327,9 @@ async function indexAllEntities(organizationId) {
         const text = entity.buildText(row);
         if (!text || text.trim().length < 10) continue;
 
-        const compId = row.company_id || null;
+        const compId = entity.resolveCompanyId
+          ? entity.resolveCompanyId(row)
+          : (row.company_id || null);
         const stdId = inferStandardId(row, entity.entity_type);
         const words = text.split(/\s+/);
         if (words.length > 500) {
@@ -314,8 +383,148 @@ async function indexAllEntities(organizationId) {
     }
   }
 
+  // Indicizza il CONTENUTO testuale dei documenti allegati (PDF/DOCX/testo).
+  try {
+    const docContentChunks = await indexDocumentContents(organizationId);
+    totalChunks += docContentChunks;
+  } catch (err) {
+    logger.error(`[KnowledgeIndexer] Error indexing document_content for org ${organizationId}:`, err.message);
+  }
+
   logger.info(`[KnowledgeIndexer] Finished org ${organizationId}: ${totalChunks} total chunks`);
   return totalChunks;
+}
+
+/**
+ * Indicizza il contenuto testuale dei file allegati ai documenti del registro.
+ *
+ * Scope studio-vs-cliente (vincolo di prodotto, etichetta ESPLICITA content_scope):
+ *  - content_scope='client'               → chunk con company_id (visibile solo
+ *    nel contesto di quell'azienda cliente).
+ *  - content_scope='studio' | 'reference' → chunk org-level (know-how trasversale
+ *    dello studio / norme condivise), company_id NULL.
+ *  - content_scope assente (dati legacy)  → fallback al company_id (vedi
+ *    companyIdForContentScope).
+ * In ogni caso organization_id = @orgId garantisce l'isolamento tenant:
+ * un chunk non è MAI accessibile da un'altra organizzazione.
+ *
+ * Idempotenza: i chunk 'document_content' della org vengono eliminati prima di
+ * reinserire, quindi un re-index non produce duplicati (stessa logica usata per
+ * le altre entità).
+ *
+ * @param {number} organizationId
+ * @returns {Promise<number>} numero di chunk indicizzati
+ */
+async function indexDocumentContents(organizationId) {
+  // Le tabelle/colonne potrebbero non esistere in ambienti vecchi: degrada con grazia.
+  if (!(await tableExists('document_registry')) || !(await tableExists('attachments'))) {
+    logger.warn('[KnowledgeIndexer] document_registry/attachments non presenti, skip document_content');
+    return 0;
+  }
+
+  // Elimina chunk precedenti di questo tipo per questa org (idempotenza).
+  await query(
+    `DELETE FROM knowledge_chunks
+     WHERE organization_id = @orgId AND entity_type = @et`,
+    { orgId: organizationId, et: DOCUMENT_CONTENT_ENTITY }
+  );
+
+  // Documenti con file corrente allegato (una riga per documento).
+  let rows;
+  try {
+    const result = await query(
+      `SELECT dr.id AS document_id, dr.company_id, dr.content_scope, dr.standard_id, dr.title,
+              dr.doc_code, dr.revision, dr.type_specific_data,
+              a.attachment_id, a.storage_path, a.mime_type, a.file_name
+       FROM document_registry dr
+       JOIN attachments a
+            ON a.document_id = dr.id AND a.is_current_doc_version = 1
+       WHERE dr.organization_id = @orgId AND dr.status != 'obsoleto'`,
+      { orgId: organizationId }
+    );
+    rows = result.recordset || [];
+  } catch (err) {
+    logger.warn(`[KnowledgeIndexer] query document_content fallita (colonne mancanti?): ${err.message}`);
+    return 0;
+  }
+
+  if (rows.length === 0) {
+    logger.debug(`[KnowledgeIndexer] document_content: 0 documenti con allegato per org ${organizationId}`);
+    return 0;
+  }
+
+  // Estrazione testo + chunking (mantiene scope per ogni chunk).
+  const allChunks = [];
+  let skipped = 0;
+  for (const row of rows) {
+    let extracted;
+    try {
+      extracted = await extractDocumentText(row.storage_path, row.mime_type, row.file_name);
+    } catch (err) {
+      logger.warn(`[KnowledgeIndexer] estrazione doc ${row.document_id} fallita: ${err.message}`);
+      extracted = { text: null, reason: 'extractor_error' };
+    }
+
+    const text = extracted && extracted.text;
+    if (!text || text.trim().length < MIN_DOC_TEXT_LENGTH) {
+      skipped++;
+      logger.debug(`[KnowledgeIndexer] doc ${row.document_id} saltato (${(extracted && extracted.reason) || 'too_short'})`);
+      continue;
+    }
+
+    const compId = companyIdForContentScope(row);
+    const stdId = inferStandardId(row, 'document');
+    const parts = chunkText(text, 400, 50);
+    for (const part of parts) {
+      if (!part.text || part.text.trim().length < 10) continue;
+      allChunks.push({
+        entityId: row.document_id,
+        companyId: compId,
+        standardId: stdId,
+        text: part.text,
+      });
+    }
+  }
+
+  if (allChunks.length === 0) {
+    logger.info(`[KnowledgeIndexer] document_content org ${organizationId}: 0 chunk (${skipped} doc saltati)`);
+    return 0;
+  }
+
+  // Embed a batch e inserisci (stesso flusso delle altre entità).
+  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
+    const batch = allChunks.slice(i, i + EMBED_BATCH);
+    let vectors;
+    try {
+      vectors = await embed(batch.map(c => c.text));
+    } catch (err) {
+      logger.error(`[KnowledgeIndexer] embed document_content batch ${i} fallito:`, err.message);
+      vectors = batch.map(() => null);
+    }
+
+    for (let j = 0; j < batch.length; j++) {
+      const c = batch[j];
+      const vec = vectors[j] || null;
+      await query(
+        `INSERT INTO knowledge_chunks
+          (organization_id, entity_type, entity_id, company_id, standard_id, chunk_text, embedding, last_indexed_at)
+         VALUES
+          (@orgId, @et, @eid, @cid, @sid, @text, @emb, GETDATE())`,
+        {
+          orgId: organizationId,
+          et: DOCUMENT_CONTENT_ENTITY,
+          eid: c.entityId || null,
+          cid: c.companyId || null,
+          sid: c.standardId || null,
+          text: c.text,
+          emb: vec ? JSON.stringify(vec) : null,
+        }
+      );
+    }
+  }
+
+  logger.info(`[KnowledgeIndexer] document_content org ${organizationId}: ${allChunks.length} chunk da ${rows.length - skipped} documenti (${skipped} saltati)`);
+  return allChunks.length;
 }
 
 // ---------------------------------------------------------------------------
@@ -437,8 +646,124 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
   return scored.slice(0, topK);
 }
 
+// ---------------------------------------------------------------------------
+// Feedback loop: converte ai_feedback accettati/corretti in knowledge chunks
+// ---------------------------------------------------------------------------
+
+const FEEDBACK_ENTITY_TYPE = 'ai_feedback_accepted';
+
+/**
+ * Processa i feedback AI (accepted/rephrased) e li converte in knowledge chunks
+ * con embedding, cosi' il RAG li recupera naturalmente come contesto.
+ *
+ * Idempotenza: verifica l'esistenza del chunk tramite entity_type + entity_id
+ * (= ai_feedback.id). Un re-run non produce duplicati.
+ *
+ * Multi-tenant: scoped per organization_id.
+ *
+ * @param {number} organizationId
+ * @returns {Promise<number>} numero di nuovi chunk creati
+ */
+async function processFeedbackChunks(organizationId) {
+  if (!(await tableExists('ai_feedback'))) {
+    logger.debug('[KnowledgeIndexer] ai_feedback table not found, skip feedback processing');
+    return 0;
+  }
+
+  let feedbackRows;
+  try {
+    const result = await query(
+      `SELECT f.id, f.feature, f.action, f.ai_text, f.final_text,
+              f.recommendation, f.context_summary, f.audit_id
+       FROM ai_feedback f
+       WHERE f.organization_id = @orgId
+         AND f.action IN ('accepted', 'rephrased')
+         AND f.final_text IS NOT NULL AND LEN(f.final_text) > 30
+         AND NOT EXISTS (
+           SELECT 1 FROM knowledge_chunks kc
+           WHERE kc.organization_id = @orgId
+             AND kc.entity_type = @et
+             AND kc.entity_id = f.id
+         )
+       ORDER BY f.created_at DESC`,
+      { orgId: organizationId, et: FEEDBACK_ENTITY_TYPE }
+    );
+    feedbackRows = result.recordset || [];
+  } catch (err) {
+    logger.warn(`[KnowledgeIndexer] feedback query failed: ${err.message}`);
+    return 0;
+  }
+
+  if (feedbackRows.length === 0) return 0;
+
+  const allChunks = [];
+  for (const row of feedbackRows) {
+    const parts = [];
+    if (row.action === 'rephrased') {
+      parts.push(`[Correzione utente] Feature: ${row.feature}.`);
+      if (row.context_summary) parts.push(`Contesto: ${row.context_summary}.`);
+      if (row.ai_text) parts.push(`L'AI aveva suggerito: ${row.ai_text.substring(0, 500)}`);
+      parts.push(`L'utente ha corretto in: ${row.final_text}`);
+    } else {
+      parts.push(`[Risposta AI approvata] Feature: ${row.feature}.`);
+      if (row.context_summary) parts.push(`Contesto: ${row.context_summary}.`);
+      parts.push(row.final_text);
+    }
+
+    allChunks.push({
+      feedbackId: row.id,
+      text: parts.join(' '),
+    });
+  }
+
+  let created = 0;
+  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
+    const batch = allChunks.slice(i, i + EMBED_BATCH);
+    let vectors;
+    try {
+      vectors = await embed(batch.map(c => c.text));
+    } catch (err) {
+      logger.error(`[KnowledgeIndexer] embed feedback batch ${i} failed:`, err.message);
+      vectors = batch.map(() => null);
+    }
+
+    for (let j = 0; j < batch.length; j++) {
+      const c = batch[j];
+      const vec = vectors[j] || null;
+      try {
+        await query(
+          `INSERT INTO knowledge_chunks
+            (organization_id, entity_type, entity_id, chunk_text, embedding, last_indexed_at)
+           VALUES
+            (@orgId, @et, @eid, @text, @emb, GETDATE())`,
+          {
+            orgId: organizationId,
+            et: FEEDBACK_ENTITY_TYPE,
+            eid: c.feedbackId,
+            text: c.text,
+            emb: vec ? JSON.stringify(vec) : null,
+          }
+        );
+        created++;
+      } catch (err) {
+        logger.warn(`[KnowledgeIndexer] insert feedback chunk ${c.feedbackId} failed:`, err.message);
+      }
+    }
+  }
+
+  if (created > 0) {
+    logger.info(`[KnowledgeIndexer] Feedback loop: ${created} new chunks from feedback for org ${organizationId}`);
+  }
+  return created;
+}
+
 module.exports = {
   indexAllEntities,
+  indexDocumentContents,
   searchKnowledge,
+  processFeedbackChunks,
+  companyIdForContentScope,
   INDEXABLE_ENTITIES,
+  DOCUMENT_CONTENT_ENTITY,
+  FEEDBACK_ENTITY_TYPE,
 };

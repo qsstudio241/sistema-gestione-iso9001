@@ -8,6 +8,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+const { getActiveProvider } = require('../services/aiProviderAdapter');
 const {
     buildNormTypeSpecificData,
     serializeNormTypeSpecificData,
@@ -15,14 +16,88 @@ const {
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
+const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+
+/** Converte un valore in numero finito o null (per colonne DECIMAL). */
+function toNum(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max.
+ * Se e' noto solo il minimo (max vuoto/null) restituisce "\u22653mm" (>=3mm): significa
+ * "nessun limite superiore", tipico per gli spessori/diametri ISO 9606-1 (feedback
+ * cliente Studio Mason — un valore singolo senza simbolo avrebbe fatto sembrare
+ * la qualifica valida SOLO per quel valore esatto).
+ */
+function deriveRangeString(min, max, suffix = 'mm') {
+    const a = toNum(min);
+    const b = toNum(max);
+    if (a == null && b == null) return null;
+    if (a != null && b != null) return a === b ? `${a}${suffix}` : `${a}-${b}${suffix}`;
+    if (a != null) return `\u2265${a}${suffix}`;
+    return `${b}${suffix}`;
+}
+
+const QUALIFICATION_DOC_TYPES = new Set([
+    'qualifica',
+    'patentino_saldatore',
+    'qualifica_14732',
+    'qualifica_14731',
+    'pes_pav',
+    'cert_ndt',
+]);
+
+function isQualificationDocType(docType) {
+    return QUALIFICATION_DOC_TYPES.has(String(docType || '').trim());
+}
+
+/** URL pubblico /uploads/... da path filesystem (stesso pattern qualificationIngest). */
+function buildCertificateFileUrl(storagePath) {
+    if (!storagePath) return null;
+    const uploadBase = process.env.UPLOAD_DIR
+        ? path.resolve(process.env.UPLOAD_DIR)
+        : path.resolve(__dirname, '../../uploads');
+    try {
+        const resolved = path.resolve(storagePath);
+        if (!fs.existsSync(resolved)) return null;
+        return '/uploads/' + path.relative(uploadBase, resolved).replace(/\\/g, '/');
+    } catch {
+        return null;
+    }
+}
+
+async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
+    if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
+    const companyId = parseCompanyId(rawCompanyId);
+    if (!companyId) {
+        return { ok: false, status: 400, error: 'company_id non valido', code: 'INVALID_COMPANY_ID' };
+    }
+    const belongsToOrg = await companyBelongsToOrg(companyId, organizationId);
+    if (!belongsToOrg) {
+        return {
+            ok: false,
+            status: 400,
+            error: "L'azienda selezionata non appartiene all'organizzazione.",
+            code: 'COMPANY_NOT_IN_ORG',
+        };
+    }
+    return { ok: true, companyId };
+}
 
 async function listJobs(req, res) {
     try {
         const { organization_id } = req.user;
         const r = await query(
-            `SELECT j.id, j.title, j.status, j.document_type_hint, j.created_at, j.updated_at,
+            `SELECT j.id, j.title, j.status, j.document_type_hint, j.company_id, c.name AS company_name,
+                    j.created_at, j.updated_at,
                     (SELECT COUNT(*) FROM import_job_files f WHERE f.job_id = j.id) AS file_count
              FROM import_jobs j
+             LEFT JOIN companies c ON c.id = j.company_id
              WHERE j.organization_id = @organization_id
              ORDER BY j.created_at DESC`,
             { organization_id }
@@ -39,6 +114,16 @@ async function createJob(req, res) {
         const { organization_id } = req.user;
         const created_by = req.user.user_id != null ? req.user.user_id : null;
         const { title, document_type_hint, notes, company_id } = req.body || {};
+        const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
+        if (!companyScope.ok) {
+            return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
+        }
+        if (isQualificationDocType(document_type_hint) && !companyScope.companyId) {
+            return res.status(400).json({
+                error: "company_id obbligatorio per i job di qualifica.",
+                code: 'COMPANY_REQUIRED_FOR_QUALIFICATION_IMPORT',
+            });
+        }
         const t = (title && String(title).trim()) || 'Import documenti';
         const r = await query(
             `INSERT INTO import_jobs (organization_id, company_id, created_by, title, status, document_type_hint, notes)
@@ -46,7 +131,7 @@ async function createJob(req, res) {
              VALUES (@organization_id, @company_id, @created_by, @title, 'draft', @document_type_hint, @notes)`,
             {
                 organization_id,
-                company_id: company_id || null,
+                company_id: companyScope.companyId,
                 created_by,
                 title: t.substring(0, 255),
                 document_type_hint: document_type_hint || null,
@@ -66,7 +151,10 @@ async function getJob(req, res) {
         const { organization_id } = req.user;
         const id = parseInt(req.params.id, 10);
         const j = await query(
-            `SELECT * FROM import_jobs WHERE id = @id AND organization_id = @organization_id`,
+            `SELECT j.*, c.name AS company_name
+             FROM import_jobs j
+             LEFT JOIN companies c ON c.id = j.company_id
+             WHERE j.id = @id AND j.organization_id = @organization_id`,
             { id, organization_id }
         );
         if (!j.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
@@ -287,6 +375,11 @@ async function suggestAiExtraction(req, res) {
             data: {
                 model: result.model,
                 extraction: result.data,
+            },
+            _aiMeta: {
+                provider: getActiveProvider() || 'unknown',
+                model: result.model,
+                contextSummary: `import ai-extract job=${jobId} file=${fileId} docType=${j.recordset[0].document_type_hint || 'auto'}`.substring(0, 500),
             },
         });
     } catch (err) {
@@ -515,6 +608,12 @@ async function commitToRegistry(req, res) {
             company_id = resolvedNormFolderCompanyId;
         }
 
+        const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
+        if (!companyScope.ok) {
+            return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
+        }
+        company_id = companyScope.companyId;
+
         // Crea record document_registry
         const ins = await query(
             `INSERT INTO document_registry
@@ -657,13 +756,14 @@ async function commitToQualification(req, res) {
         const fileId  = parseInt(req.params.fileId, 10);
 
         const jCheck = await query(
-            `SELECT id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM import_jobs WHERE id=@id AND organization_id=@organization_id`,
             { id: jobId, organization_id }
         );
         if (!jCheck.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+        const jobCompanyId = jCheck.recordset[0].company_id || null;
 
         const fRows = await query(
-            `SELECT id, status, ai_extraction_json, original_name, confidence_score
+            `SELECT id, status, ai_extraction_json, original_name, confidence_score, storage_path
              FROM import_job_files WHERE id=@fid AND job_id=@jid`,
             { fid: fileId, jid: jobId }
         );
@@ -700,10 +800,62 @@ async function commitToQualification(req, res) {
         };
         const qualificationType = body.qualification_type_label || QUAL_TYPES[docTypeHint] || docTypeHint || 'Generica';
 
-        // Costruisce record qualifications
+        // Costruisce record qualifications: l'azienda autorevole è quella del job.
+        if (!jobCompanyId) {
+            return res.status(400).json({
+                error: 'company_id obbligatorio: seleziona l\'azienda del job prima di creare la bozza qualifica.',
+                code: 'MISSING_COMPANY_ID',
+            });
+        }
+        const jobCompanyScope = await resolveOptionalCompanyId(jobCompanyId, organization_id);
+        if (!jobCompanyScope.ok) {
+            return res.status(jobCompanyScope.status).json({ error: jobCompanyScope.error, code: jobCompanyScope.code });
+        }
+        if (body.company_id != null && body.company_id !== '') {
+            const requestedCompanyId = parseCompanyId(body.company_id);
+            if (!requestedCompanyId) {
+                return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
+            }
+            if (requestedCompanyId !== jobCompanyScope.companyId) {
+                return res.status(409).json({
+                    error: "company_id non coerente con l'azienda del job.",
+                    code: 'COMPANY_ID_MISMATCH',
+                });
+            }
+        }
+
+        // Range numerici saldatura (fonte primaria) + derivazione stringa legacy.
+        const thickness_min_mm = toNum(body.thickness_min_mm ?? tsd.thickness_min_mm);
+        const thickness_max_mm = toNum(body.thickness_max_mm ?? tsd.thickness_max_mm);
+        const pipe_diameter_min_mm = toNum(body.pipe_diameter_min_mm ?? tsd.pipe_diameter_min_mm ?? tsd.pipe_diameter_mm);
+        const pipe_diameter_max_mm = toNum(body.pipe_diameter_max_mm ?? tsd.pipe_diameter_max_mm);
+
+        const welding_process = body.welding_process || tsd.welding_process || null;
+        const product_type    = body.product_type || tsd.product_type || null;
+        const joint_type      = body.joint_type || tsd.joint_type || null;
+        const weld_details    = body.weld_details || tsd.weld_details || null;
+        const filler_material = body.filler_material || tsd.filler_material_group || null;
+        const position_range  = body.position_range
+            || (Array.isArray(tsd.welding_positions) ? tsd.welding_positions.join(',') : tsd.welding_positions)
+            || null;
+
+        const qualification_designation = body.qualification_designation
+            || buildWelderQualificationDesignation({
+                welding_process,
+                product_type,
+                joint_type,
+                filler_material_group: filler_material,
+                thickness_min_mm,
+                thickness_max_mm,
+                pipe_diameter_min_mm,
+                pipe_diameter_max_mm,
+                welding_positions: position_range,
+                weld_details,
+            });
+
         const qData = {
             organization_id,
-            company_id:           body.company_id ? parseInt(body.company_id) : null,
+            company_id:           jobCompanyScope.companyId,
             person_name:          body.person_name || tsd.person_name || tsd.welder_name || tsd.operator_name || null,
             person_code:          body.person_code || null,
             department:           body.department || null,
@@ -712,25 +864,42 @@ async function commitToQualification(req, res) {
             scope_detail:         body.scope_detail || null,
             certificate_number:   body.certificate_number || tsd.certificate_number || null,
             issuing_body:         body.issuing_body || tsd.issuing_body || null,
+            // exam_date dedicata; issue_date non piu' sovrascritta ma in transizione popola entrambe.
             issue_date:           body.issue_date || tsd.issue_date || tsd.exam_date || null,
+            exam_date:            body.exam_date || tsd.exam_date || null,
             expiry_date:          body.expiry_date || tsd.expiry_date || null,
             last_renewal_date:    body.last_renewal_date || null,
+            last_confirmation_date: body.last_confirmation_date || tsd.last_confirmation_date || null,
+            next_confirmation_due:  body.next_confirmation_due || tsd.next_confirmation_due || null,
+            revalidation_date:    body.revalidation_date || tsd.revalidation_date || null,
             status:               'valida',
             notes:                body.notes || null,
             approval_status:      'bozza',
             created_by:           user_id,
             // Saldatori
-            welding_process:      body.welding_process || tsd.welding_process || null,
+            welding_process:      welding_process,
             material_group:       body.material_group || tsd.material_group || null,
-            position_range:       body.position_range || (Array.isArray(tsd.welding_positions) ? tsd.welding_positions.join(',') : null) || null,
+            position_range:       position_range,
             ndt_method:           body.ndt_method || tsd.ndt_method || null,
             ndt_level:            body.ndt_level || tsd.certification_level ? parseInt(body.ndt_level || tsd.certification_level) : null,
-            joint_type:           body.joint_type || tsd.joint_type || null,
-            thickness_range:      body.thickness_range || (tsd.thickness_min_mm || tsd.thickness_max_mm ? `${tsd.thickness_min_mm||'?'}-${tsd.thickness_max_mm||'?'}mm` : null),
-            pipe_diameter:        body.pipe_diameter || (tsd.pipe_diameter_mm ? `${tsd.pipe_diameter_mm}mm` : null),
-            filler_material:      body.filler_material || tsd.filler_material_group || null,
+            joint_type:           joint_type,
+            product_type:         product_type,
+            weld_details:         weld_details,
+            qualification_designation: qualification_designation,
+            // Range numerici (fonte primaria) + stringhe legacy derivate (compatibilita').
+            thickness_min_mm:     thickness_min_mm,
+            thickness_max_mm:     thickness_max_mm,
+            pipe_diameter_min_mm: pipe_diameter_min_mm,
+            pipe_diameter_max_mm: pipe_diameter_max_mm,
+            thickness_range:      body.thickness_range || deriveRangeString(thickness_min_mm, thickness_max_mm),
+            pipe_diameter:        body.pipe_diameter || deriveRangeString(pipe_diameter_min_mm, pipe_diameter_max_mm),
+            filler_material:      filler_material,
             shielding_gas:        body.shielding_gas || tsd.shielding_gas || null,
             equipment_type:       body.equipment_type || tsd.equipment_type || null,
+            // Operatori ISO 14732 (saldatura automatica/meccanizzata)
+            welding_type:         body.welding_type || tsd.welding_type || null,
+            single_multi_run:     body.single_multi_run || tsd.single_multi_run || null,
+            qualification_method: body.qualification_method || tsd.qualification_method || null,
             // NDT
             ndt_sector:           body.ndt_sector || tsd.ndt_sector || null,
             certification_scheme: body.certification_scheme || tsd.certification_scheme || null,
@@ -744,45 +913,111 @@ async function commitToQualification(req, res) {
             // Generico
             course_name:          body.course_name || null,
             training_hours:       body.training_hours ? parseInt(body.training_hours) : null,
-            examiner_body:        body.examiner_body || null,
+            examiner_body:        body.examiner_body || tsd.examiner_body || null,
         };
 
         if (!qData.person_name) {
             return res.status(400).json({ error: 'person_name obbligatorio (non estratto dall\'AI).', code: 'MISSING_PERSON_NAME' });
         }
 
+        // Avvisi campi obbligatori mancanti per il saldatore — NON bloccano la creazione bozza.
+        const warnings = [];
+        if (String(docTypeHint) === 'patentino_saldatore') {
+            const requiredChecks = [
+                ['welding_process', qData.welding_process, 'processo di saldatura'],
+                ['material_group', qData.material_group, 'gruppo materiale'],
+                ['position_range', qData.position_range, 'posizioni qualificate'],
+                ['expiry_date', qData.expiry_date, 'data scadenza'],
+            ];
+            for (const [, value, label] of requiredChecks) {
+                if (value == null || value === '') warnings.push(`Campo obbligatorio mancante: ${label}`);
+            }
+            if (warnings.length) {
+                logger.warn(`commitToQualification: bozza saldatore con campi mancanti (file ${fileId})`, { warnings });
+            }
+        }
+
+        // Risolve personnel_id da company_personnel (parametri camelCase come richiesto dal service)
+        const personnelResult = await resolvePersonnelForQualification({
+            personName:     qData.person_name,
+            companyId:      qData.company_id,
+            organizationId: qData.organization_id,
+        });
+        qData.personnel_id = (personnelResult?.ok && personnelResult.personnelId != null)
+            ? personnelResult.personnelId
+            : null;
+
         const ins = await query(
             `INSERT INTO qualifications
              (organization_id, company_id, person_name, person_code, department,
               qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
-              issue_date, expiry_date, last_renewal_date, status, notes, created_by,
-              approval_status,
+              issue_date, exam_date, expiry_date, last_renewal_date,
+              last_confirmation_date, next_confirmation_due, revalidation_date,
+              status, notes, created_by,
+              approval_status, personnel_id,
               welding_process, material_group, position_range, ndt_method, ndt_level,
-              joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
+              joint_type, product_type, weld_details, qualification_designation,
+              thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+              thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
+              welding_type, single_multi_run, qualification_method,
               ndt_sector, certification_scheme, coordinator_title, diploma_number, cpd_valid_until,
               patent_type, training_body, course_name, training_hours, examiner_body)
              OUTPUT INSERTED.id
              VALUES
              (@organization_id, @company_id, @person_name, @person_code, @department,
               @qualification_type, @standard_ref, @scope_detail, @certificate_number, @issuing_body,
-              @issue_date, @expiry_date, @last_renewal_date, @status, @notes, @created_by,
-              @approval_status,
+              @issue_date, @exam_date, @expiry_date, @last_renewal_date,
+              @last_confirmation_date, @next_confirmation_due, @revalidation_date,
+              @status, @notes, @created_by,
+              @approval_status, @personnel_id,
               @welding_process, @material_group, @position_range, @ndt_method, @ndt_level,
-              @joint_type, @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
+              @joint_type, @product_type, @weld_details, @qualification_designation,
+              @thickness_min_mm, @thickness_max_mm, @pipe_diameter_min_mm, @pipe_diameter_max_mm,
+              @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
+              @welding_type, @single_multi_run, @qualification_method,
               @ndt_sector, @certification_scheme, @coordinator_title, @diploma_number, @cpd_valid_until,
               @patent_type, @training_body, @course_name, @training_hours, @examiner_body)`,
             qData
         );
         const qualId = ins.recordset[0].id;
 
-        // Aggiorna file: committed
+        // Collega PDF import al certificato qualifica (certificate_file_url)
+        let certificate_file_url = null;
+        if (file.storage_path) {
+            certificate_file_url = buildCertificateFileUrl(file.storage_path);
+            if (certificate_file_url) {
+                await query(
+                    `UPDATE qualifications
+                     SET certificate_file_url = @url, updated_at = GETDATE()
+                     WHERE id = @qualId AND organization_id = @orgId`,
+                    { url: certificate_file_url, qualId, orgId: organization_id }
+                );
+                logger.info(`commitToQualification: PDF ${file.original_name} collegato a qualification #${qualId}`);
+            } else {
+                logger.warn(`commitToQualification: PDF non trovato o path non valido per file ${fileId}`, {
+                    storage_path: file.storage_path,
+                });
+            }
+        }
+
+        // Aggiorna file: committed + tracciabilità bidirezionale
         await query(
-            `UPDATE import_job_files SET status='committed', updated_at=GETDATE() WHERE id=@fid AND job_id=@jid`,
-            { fid: fileId, jid: jobId }
+            `UPDATE import_job_files
+             SET status = 'committed', qualification_id = @qualId, updated_at = GETDATE()
+             WHERE id = @fid AND job_id = @jid`,
+            { qualId, fid: fileId, jid: jobId }
         );
 
         logger.info(`commitToQualification: file ${fileId} → qualification #${qualId} (org ${organization_id})`);
-        res.status(201).json({ success: true, data: { qualification_id: qualId, approval_status: 'bozza' } });
+        res.status(201).json({
+            success: true,
+            data: {
+                qualification_id: qualId,
+                approval_status: 'bozza',
+                certificate_file_url,
+                warnings,
+            },
+        });
     } catch (err) {
         logger.error('commitToQualification', err);
         res.status(500).json({ error: err.message });

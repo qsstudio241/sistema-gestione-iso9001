@@ -33,6 +33,10 @@ vi.mock("../components/CompanyPersonnelPanel", () => ({
   default: () => <div data-testid="personnel-panel">Personale mock</div>,
 }));
 
+vi.mock("../components/CompanyCounterpartiesPanel", () => ({
+  default: () => <div data-testid="counterparties-panel">Controparti mock</div>,
+}));
+
 const mockGetCompany = vi.fn();
 const mockUpdateCompany = vi.fn();
 
@@ -69,8 +73,8 @@ describe("CompanyDetailPage", () => {
     });
   });
 
-  it("espone tab Anagrafica e Personale", () => {
-    expect(TABS.map((t) => t.id)).toEqual(["anagrafica", "personale"]);
+  it("espone tab Anagrafica, Personale e Controparti", () => {
+    expect(TABS.map((t) => t.id)).toEqual(["anagrafica", "personale", "controparti"]);
   });
 
   it("renderizza scheda con tab e passa al tab Personale", async () => {
@@ -82,12 +86,16 @@ describe("CompanyDetailPage", () => {
 
     expect(screen.getByRole("tab", { name: "Anagrafica" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Personale" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Controparti" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByDisplayValue("Acme Srl")).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByRole("tab", { name: "Personale" }));
     expect(screen.getByTestId("personnel-panel")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Controparti" }));
+    expect(screen.getByTestId("counterparties-panel")).toBeInTheDocument();
   });
 
   it('"Elenco aziende" naviga a /companies', async () => {

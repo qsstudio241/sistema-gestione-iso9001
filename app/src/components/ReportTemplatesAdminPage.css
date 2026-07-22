@@ -35,6 +35,33 @@
   line-height: 1.45;
 }
 
+.rt-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+
+.rt-tab {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rt-tab:hover {
+  background: #f7fafc;
+}
+
+.rt-tab--active {
+  background: #ebf8ff;
+  border-color: #4299e1;
+  color: #2b6cb0;
+}
+
 /* Banner gestione — stile compatto catalogo SGQ (CompaniesPage / ca-toolbar) */
 .rt-banner {
   margin-bottom: 1.5rem;

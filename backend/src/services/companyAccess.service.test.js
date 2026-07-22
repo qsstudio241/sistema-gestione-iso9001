@@ -1,5 +1,5 @@
 /**
- * Test RBAC Fase 4.1 � companyAccess.service guard centralizzate
+ * Test RBAC Fase 4.1  -  companyAccess.service guard centralizzate
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));

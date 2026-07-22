@@ -17,7 +17,7 @@ describe('contractReviewLabels', () => {
 
   it('slide dettaglio in ordine operativo', () => {
     const ids = DETAIL_SLIDES.map((s) => s.id);
-    expect(ids).toEqual(['workflow', 'checklist', 'clarifications', 'documents', 'ai']);
+    expect(ids).toEqual(['workflow', 'checklist', 'clarifications', 'documents', 'drawing', 'ai']);
   });
 
   it('stati terminali', () => {

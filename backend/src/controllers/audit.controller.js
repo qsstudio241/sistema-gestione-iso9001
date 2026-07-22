@@ -251,6 +251,7 @@ async function createAudit(req, res) {
             notes,
             audit_party_type,
             fornitore_name,
+            fornitore_supplier_id,
             company_id
         } = req.body;
 
@@ -375,7 +376,8 @@ async function createAudit(req, res) {
         // Persistenza tipologia audit, fornitore e company_id in audit_extra_data / colonne
         const extraData = {
             auditPartyType: audit_party_type || 'first_party',
-            fornitoreName: fornitore_name || ''
+            fornitoreName: fornitore_name || '',
+            fornitoreSupplierId: fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null,
         };
         await query(`
             UPDATE audits SET audit_extra_data = @audit_extra_data, company_id = @company_id, updated_at = GETDATE()
@@ -448,7 +450,8 @@ async function updateAudit(req, res) {
             standard_ids,
             custom_checklist_id,
             audit_party_type,
-            fornitore_name
+            fornitore_name,
+            fornitore_supplier_id
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -603,7 +606,8 @@ async function updateAudit(req, res) {
             params.custom_checklist_id = custom_checklist_id ? parseInt(custom_checklist_id) : null;
         }
         // Merge tipologia audit e fornitore in audit_extra_data
-        if (audit_party_type !== undefined || fornitore_name !== undefined) {
+        if (audit_party_type !== undefined || fornitore_name !== undefined
+            || fornitore_supplier_id !== undefined || req.body.fornitoreSupplierId !== undefined) {
             let extra = existingAudit.recordset[0].audit_extra_data;
             if (extra && typeof extra === 'string') {
                 try { extra = JSON.parse(extra); } catch (_) { extra = {}; }
@@ -611,6 +615,9 @@ async function updateAudit(req, res) {
             if (!extra || typeof extra !== 'object') extra = {};
             if (audit_party_type !== undefined) extra.auditPartyType = audit_party_type;
             if (fornitore_name !== undefined) extra.fornitoreName = fornitore_name;
+            if (fornitore_supplier_id !== undefined || req.body.fornitoreSupplierId !== undefined) {
+                extra.fornitoreSupplierId = fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null;
+            }
             updates.push('audit_extra_data = @audit_extra_data');
             params.audit_extra_data = JSON.stringify(extra);
         }
@@ -842,6 +849,9 @@ async function upsertAudit(req, res) {
             const base = bodyExtra && typeof bodyExtra === 'object' ? { ...bodyExtra } : (typeof bodyExtra === 'string' ? (() => { try { return JSON.parse(bodyExtra); } catch (_) { return {}; } })() : {});
             base.auditPartyType = audit_party_type ?? base.auditPartyType ?? 'first_party';
             base.fornitoreName = fornitore_name ?? base.fornitoreName ?? '';
+            if (base.fornitoreSupplierId === undefined) {
+                base.fornitoreSupplierId = req.body.fornitore_supplier_id ?? req.body.fornitoreSupplierId ?? null;
+            }
             return base;
         })();
 
@@ -1831,6 +1841,67 @@ async function approveAudit(req, res) {
     }
 }
 
+/**
+ * GET /api/v1/audits/client-history?client_name=X&company_id=N&limit=5
+ * Storico degli ultimi N audit completati/approvati per un cliente.
+ * Usato dalla modal re-audit per mostrare il trend NC/OSS nel tempo.
+ *
+ * @route GET /api/v1/audits/client-history
+ * @access Private (require auth)
+ */
+async function getClientAuditHistory(req, res) {
+    const { client_name, company_id, limit = 5 } = req.query;
+    const { organization_id } = req.user;
+
+    if (!client_name && !company_id) {
+        return res.status(400).json({ error: 'Parametro client_name o company_id richiesto', code: 'MISSING_PARAM' });
+    }
+
+    try {
+        const scope = studioScopeClause(req.user, 'a');
+        const scopeSql = appendScopeSql(scope);
+        const safeLimit = Math.max(1, Math.min(parseInt(limit, 10) || 5, 10));
+
+        const whereClause = company_id
+            ? 'a.company_id = @company_id'
+            : 'a.client_name = @client_name';
+
+        const params = {
+            organization_id,
+            limit: safeLimit,
+            ...(company_id ? { company_id: parseInt(company_id, 10) } : { client_name: String(client_name) }),
+            ...scope.params,
+        };
+
+        const result = await query(
+            `SELECT TOP (@limit)
+                a.audit_id,
+                a.audit_number,
+                CONVERT(varchar(10), a.audit_date, 23) AS audit_date,
+                a.status,
+                ISNULL(SUM(CASE WHEN ar.conformity_status = 'NC'  THEN 1 ELSE 0 END), 0) AS nc_count,
+                ISNULL(SUM(CASE WHEN ar.conformity_status = 'OSS' THEN 1 ELSE 0 END), 0) AS oss_count,
+                ISNULL(SUM(CASE WHEN ar.conformity_status = 'OM'  THEN 1 ELSE 0 END), 0) AS om_count,
+                ISNULL(COUNT(ar.response_id), 0) AS answered_count
+             FROM audits a
+             LEFT JOIN audit_responses ar ON ar.audit_id = a.audit_id
+             WHERE a.organization_id = @organization_id
+               AND ${whereClause}
+               AND a.status IN ('completed', 'approved')
+               ${scopeSql}
+             GROUP BY a.audit_id, a.audit_number, a.audit_date, a.status
+             ORDER BY a.audit_date DESC`,
+            params
+        );
+
+        return res.json({ history: result.recordset || [] });
+
+    } catch (error) {
+        logger.error('[CLIENT_HISTORY] Errore:', error);
+        return res.status(500).json({ error: 'Errore server', code: 'SERVER_ERROR' });
+    }
+}
+
 module.exports = {
     listAudits,
     getAuditById,
@@ -1845,5 +1916,6 @@ module.exports = {
     approveAudit,
     checkReaudit,
     bulkSaveResponses,
-    getNcResponses
+    getNcResponses,
+    getClientAuditHistory
 };

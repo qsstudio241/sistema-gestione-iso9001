@@ -22,12 +22,16 @@ const ALL_MODULE_KEYS = [
   { key: "documents",   label: "Registro documenti" },
   { key: "qualifiche",  label: "Qualifiche personale" },
   { key: "nc",          label: "Non conformità" },
-  { key: "rischi",      label: "Rischi e obiettivi" },
+  { key: "rischi",      label: "Rischi, opportunità e obiettivi" },
   { key: "reclami",     label: "Reclami e fornitori" },
   { key: "notifications", label: "Notifiche" },
   { key: "sal",         label: "SAL" },
   { key: "saldatura",   label: "Saldatura ISO 3834" },
-  { key: "ai_import",   label: "Import AI" },
+  { key: "ai_import",   label: "AI Import PDF" },
+  { key: "ai_assist",   label: "AI Suggerimenti (audit)" },
+  { key: "ai_review",   label: "AI Riesame Requisiti" },
+  { key: "ai_norms",    label: "AI Norme on-demand" },
+  { key: "ai_chat",     label: "AI Chat Assistente" },
 ];
 
 /** Legge licensed_modules da una riga auditorOrg (può essere null = tutti) */

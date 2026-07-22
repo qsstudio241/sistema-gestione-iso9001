@@ -14,9 +14,12 @@ function NotificationsSettingsPage() {
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [testing, setTesting]   = useState(false);
+  const [runningNc, setRunningNc] = useState(false);
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState(null);
   const [testMsg, setTestMsg]   = useState(null);
+  const [ncRunMsg, setNcRunMsg] = useState(null);
+  const [ncPreview, setNcPreview] = useState(null);
 
   const [form, setForm] = useState({
     recipients_email:    "",
@@ -99,6 +102,38 @@ function NotificationsSettingsPage() {
       setTestMsg({ ok: false, text: err.message || "Invio fallito." });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const ncAlertsReady =
+    config?.exists &&
+    form.enabled &&
+    form.alert_nc_open &&
+    form.recipients_email.trim();
+
+  const handleNcAlertsRun = async (dryRun) => {
+    if (!dryRun) {
+      const ok = window.confirm(
+        "Inviare ora i promemoria NC verso i referenti in rubrica?\n\n" +
+        "Verranno rispettate le stesse regole del job giornaliero (soglie scadenza, anti-duplicati)."
+      );
+      if (!ok) return;
+    }
+
+    setRunningNc(true);
+    setNcRunMsg(null);
+    setNcPreview(null);
+    setError(null);
+    try {
+      const res = await apiService.runNcAlertsNow({ dryRun });
+      setNcRunMsg({ ok: true, text: res.message || "Operazione completata." });
+      if (dryRun && Array.isArray(res.recipients)) {
+        setNcPreview(res);
+      }
+    } catch (err) {
+      setNcRunMsg({ ok: false, text: err.message || "Operazione fallita." });
+    } finally {
+      setRunningNc(false);
     }
   };
 
@@ -312,6 +347,41 @@ function NotificationsSettingsPage() {
 
       <NotificationContactsPanel />
 
+      <div className="notif-card">
+        <h3 className="notif-card-title">Smoke test promemoria NC</h3>
+        <p className="notif-hint" style={{ marginBottom: 12 }}>
+          Esegue lo stesso job del cron giornaliero (default alle {form.send_time || "08:00"} + 5 min)
+          per la tua organizzazione. I referenti in rubrica ricevono il promemoria; altrimenti i destinatari globali.
+        </p>
+        <div className="notif-nc-run-actions">
+          <button
+            type="button"
+            className="btn-test"
+            onClick={() => handleNcAlertsRun(true)}
+            disabled={runningNc || !ncAlertsReady}
+            title="Mostra chi riceverebbe email senza inviarle"
+          >
+            {runningNc ? "Elaborazione..." : "Anteprima promemoria NC"}
+          </button>
+          <button
+            type="button"
+            className="btn-nc-run"
+            onClick={() => handleNcAlertsRun(false)}
+            disabled={runningNc || !ncAlertsReady}
+            title="Invia subito i promemoria NC (cooldown 15 min tra un invio e l'altro)"
+          >
+            {runningNc ? "Invio in corso..." : "Esegui promemoria NC ora"}
+          </button>
+        </div>
+        {!ncAlertsReady && (
+          <p className="notif-hint notif-nc-run-hint">
+            {!config?.exists
+              ? "Salva prima la configurazione (destinatari e toggle), poi usa anteprima o invio manuale."
+              : "Abilita notifiche, alert NC aperte e almeno un destinatario globale per usare questa funzione."}
+          </p>
+        )}
+      </div>
+
       {/* Footer azioni */}
       <div className="notif-actions">
         {saved && <span className="notif-saved">? Configurazione salvata</span>}
@@ -335,8 +405,36 @@ function NotificationsSettingsPage() {
       {/* Esito test email */}
       {testMsg && (
         <div className={`notif-test-result ${testMsg.ok ? "test-ok" : "test-fail"}`}>
-          {testMsg.ok ? "?" : "?"} {testMsg.text}
-          <button onClick={() => setTestMsg(null)}>?</button>
+          {testMsg.ok ? "\u2713" : "\u2717"} {testMsg.text}
+          <button type="button" onClick={() => setTestMsg(null)} aria-label="Chiudi">{"\u00D7"}</button>
+        </div>
+      )}
+
+      {ncRunMsg && (
+        <div className={`notif-test-result ${ncRunMsg.ok ? "test-ok" : "test-fail"}`}>
+          {ncRunMsg.ok ? "\u2713" : "\u2717"} {ncRunMsg.text}
+          <button type="button" onClick={() => { setNcRunMsg(null); setNcPreview(null); }} aria-label="Chiudi">{"\u00D7"}</button>
+        </div>
+      )}
+
+      {ncPreview && ncPreview.recipients?.length > 0 && (
+        <div className="notif-nc-preview">
+          <h4>Anteprima destinatari ({ncPreview.wouldSend} email)</h4>
+          {ncPreview.skippedDuplicate > 0 && (
+            <p className="notif-hint">
+              {ncPreview.skippedDuplicate} notifiche già inviate oggi (saltate per anti-duplicati).
+            </p>
+          )}
+          <ul>
+            {ncPreview.recipients.map((r) => (
+              <li key={r.email}>
+                <strong>{r.email}</strong>
+                {r.name ? ` (${r.name})` : ""}
+                {" — "}
+                {r.ncCount} NC, {r.actionCount} azioni
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

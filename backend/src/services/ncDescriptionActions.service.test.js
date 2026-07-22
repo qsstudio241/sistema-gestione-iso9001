@@ -39,7 +39,7 @@ OM3: Migliorare identificazione zone`;
     });
 
     describe('materializeNcActionsFromDescription', () => {
-        it('non inserisce se nc_actions gi� popolata', async () => {
+        it('non inserisce se nc_actions già  popolata', async () => {
             const queryFn = jest.fn()
                 .mockResolvedValueOnce({ recordset: [{ cnt: 2 }] });
             const created = await materializeNcActionsFromDescription(queryFn, {
