@@ -120,12 +120,30 @@ Upload (batch o import job)
 | G-06 | `dichiarazione_ce`, `report_ndt` in catalogo tipi, **senza schema AI** | Import guidato non funziona | **IG-6** ✅ schema base | No |
 | G-07 | `cert_ndt`: schema AI base, senza batch né commit dedicato | Solo import job manuale | **IG-6** | No |
 | G-08 | OCR attivo ma non testato L3 su PDF scansionati reali | Patentini foto/scansione | Smoke post IG-3 | No |
+| G-13 | Revisione ingest senza anteprima PDF affiancata | Operatore non può verificare campi vs documento | **IG-3b** ✅ anteprima split + ingrandisci affiancato (PR #209) | No |
 | G-09 | Feedback correzioni umane non persistito | Nessun apprendimento | **IG-4** ✅ | No |
 | G-10 | Few-shot da feedback org assente | AI non migliora nel tempo | **IG-5** ✅ | No |
 | G-11 | `ImportJobsPage` ha revisione; batch WPQR/qualifiche no — **due UX parallele** | Inconsistenza operatore | **IG-3** (unificare pattern) | **Sì** |
 | G-12 | Migrazione DB staging (`ingest_staging` mig. 114) | Persistenza bozza revisionabile | **IG-3** ✅ | — |
 
 **Strategia consigliata**: IG-3 verticale su **wpqr + patentino_saldatore** (tipi batch attivi), chiudendo G-02, G-03, G-11, G-12 e parte di G-01/G-04. G-05…G-10 restano in coda IG-4→IG-6.
+
+---
+
+### IG-3b — Revisione adattiva per confidenza (estensione, 17/07/2026)
+
+**Motivazione**: il committente si aspettava minimo intervento umano su campi ad alta confidenza (badge verde già presente, ma sempre renderizzato come select/input editabile identico ai campi dubbi). Gap confermato in `IngestReviewDialog.jsx`.
+
+**Scope**
+- Campo `fieldConfidence=high` **con valore**: mostrato readonly (label opzione leggibile, non codice) + pulsante "Modifica" opzionale, reversibile.
+- Campo media/bassa/assente: sempre editabile, evidenziato (bordo ambra/rosso) — nessun cambiamento di comportamento qui.
+- Nessuna modifica alla pipeline di feedback (IG-4/5) né al form manuale (`QualificationForm.jsx`, rimasto separato).
+- Beneficia automaticamente tutti i doc type che usano `IngestReviewDialog` (patentini, WPQR, WPS, norme), essendo un componente condiviso.
+
+**DoD**
+- [x] Test Vitest su rendering condizionale (alta→readonly, media/bassa→editabile) + toggle Modifica/Annulla
+- [x] Build Vite verde
+- [x] Nessuna modifica a `import_extraction_feedback` / few-shot
 
 ---
 

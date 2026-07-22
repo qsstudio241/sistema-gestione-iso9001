@@ -137,6 +137,7 @@ export function applyNormLookupToTypeData(typeData, lookupResult) {
     next.last_validity_check = lookupResult.checkedAt;
   }
   if (!lookupResult || lookupResult.status === 'unknown') {
+    next.validity_status = 'da_verificare';
     return next;
   }
   next.validity_status = lookupResult.status === 'active' ? 'vigente' : 'superata';

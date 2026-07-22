@@ -16,7 +16,7 @@ import "./AuditOutcomeSection.css";
  * showConclusions: true → mostra solo il campo Conclusioni (sezione 12)
  *                  false (default) → mostra solo i Rilievi/metriche (sezione 11)
  */
-function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards }) {
+function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, readOnly = false, selectedStandards, isIntegratedSystem = null }) {
   const { currentAudit } = useStorage();
 
   // Conclusione unica (standard singolo)
@@ -29,6 +29,12 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
         key, auditOutcome?.byStandard?.[key]?.conclusions || ""
       ])
     )
+  );
+
+  // ADR-009 Fase 4: conclusioni della checklist personalizzata (norma virtuale "CUSTOM")
+  // — usate solo per audit ibridi ISO+custom, vedi isHybridWithCustom sotto.
+  const [customConclusions, setCustomConclusions] = useState(
+    auditOutcome?.byStandard?.CUSTOM?.conclusions || ""
   );
 
   // Calcola metriche real-time dalla checklist
@@ -93,6 +99,18 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     });
   };
 
+  const handleCustomConclusionsChange = (e) => {
+    const value = e.target.value;
+    setCustomConclusions(value);
+    onUpdate({
+      ...auditOutcome,
+      byStandard: {
+        ...auditOutcome?.byStandard,
+        CUSTOM: { ...auditOutcome?.byStandard?.CUSTOM, conclusions: value },
+      },
+    });
+  };
+
   const totalNC = metrics.totalNC;
   const totalOSS = metrics.totalOSS;
   const totalOM = metrics.totalOM;
@@ -106,6 +124,18 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
     [selectedStandards]
   );
   const isMultiStandard = standardEntries.length > 1;
+  // null = non impostato: default false per multi (comportamento pre-ADR esistente)
+  const effectiveIntegrated = isMultiStandard ? (isIntegratedSystem ?? false) : true;
+
+  // ADR-009 Fase 4: checklist personalizzata come "norma virtuale" pari grado.
+  // Ibrido = almeno 1 standard ISO selezionato + checklist personalizzata presente.
+  // Le checklist custom non si integrano MAI con le norme ISO (kind='custom' nel registry):
+  // ottengono sempre un blocco/tab separato, indipendente da isIntegratedSystem.
+  const customChecklistId = currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id;
+  const hasCustomChecklist = !!(customChecklistId && currentAudit?.customChecklist);
+  const hasCustomOutcomeButtons = hasCustomChecklist && !!currentAudit?.customChecklist?.has_outcome_buttons;
+  const customChecklistName = currentAudit?.customChecklist?.name || "Checklist personalizzata";
+  const isHybridWithCustom = hasCustomChecklist && standardEntries.length >= 1;
 
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiModalStdKey, setAiModalStdKey] = useState(null);
@@ -186,8 +216,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           </div>
         )}
 
-        {/* Standard singolo: una textarea */}
-        {!isMultiStandard && (
+        {/* Standard singolo O sistema integrato: una textarea */}
+        {(!isMultiStandard || effectiveIntegrated) && (
           <AutoTextarea
             id="conclusions"
             value={conclusions}
@@ -197,8 +227,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           />
         )}
 
-        {/* Multi-standard: una textarea per norma con intestazione */}
-        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => (
+        {/* Multi-standard NON integrato: una textarea per norma con intestazione */}
+        {isMultiStandard && !effectiveIntegrated && standardEntries.map(({ key, shortLabel, label }) => (
           <div key={key} className="findings-per-standard">
             <div className="findings-per-standard__header">
               <span className="findings-per-standard__label">
@@ -225,6 +255,22 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           </div>
         ))}
 
+        {/* ADR-009 Fase 4: checklist personalizzata pari grado — blocco separato solo per audit ibridi */}
+        {isHybridWithCustom && (
+          <div className="findings-per-standard">
+            <div className="findings-per-standard__header">
+              <span className="findings-per-standard__label">📄 {customChecklistName}</span>
+            </div>
+            <AutoTextarea
+              id="conclusions-custom"
+              value={customConclusions}
+              onChange={handleCustomConclusionsChange}
+              placeholder={`Conclusioni per "${customChecklistName}"…`}
+              disabled={readOnly}
+            />
+          </div>
+        )}
+
         {/* Modale AI */}
         <AiConclusionsModal
           open={aiModalOpen}
@@ -247,14 +293,16 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
 
         {/* Standard singolo: riga totale (è già il dato del report).
             Multi-standard: non ha senso un aggregato — ogni norma ha il suo report. */}
-        {!isMultiStandard && (() => {
+        {(!isMultiStandard || effectiveIntegrated) && (() => {
           const allQuestions = currentAudit?.checklist
             ? Object.values(currentAudit.checklist).flatMap(cl =>
                 Object.values(cl || {}).flatMap(clause => clause.questions || [])
               )
             : [];
           const countISO = (s) => allQuestions.filter((q) => q.status === s).length;
-          const customSts = currentAudit?.customChecklist?.has_outcome_buttons
+          // Ibrido ISO+custom: la checklist personalizzata ha un blocco separato sotto
+          // (ADR-009 Fase 4) — qui NON si somma più per evitare doppio conteggio.
+          const customSts = (!isHybridWithCustom && currentAudit?.customChecklist?.has_outcome_buttons)
             ? Object.values(currentAudit.customStatuses || {})
             : [];
           const countCustom = (s) => customSts.filter((v) => v === s).length;
@@ -270,8 +318,8 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
           );
         })()}
 
-        {/* Dettaglio per norma — visibile solo per audit multi-standard */}
-        {isMultiStandard && standardEntries.map(({ key, shortLabel, label }) => {
+        {/* Dettaglio per norma — visibile solo per audit multi-standard NON integrato */}
+        {isMultiStandard && !effectiveIntegrated && standardEntries.map(({ key, shortLabel, label }) => {
           const m = byStandard[key] || {};
           return (
             <div key={key} className="findings-per-standard">
@@ -287,6 +335,24 @@ function AuditOutcomeSection({ auditOutcome, onUpdate, showConclusions = false, 
             </div>
           );
         })}
+
+        {/* ADR-009 Fase 4: blocco separato per la checklist personalizzata — pari grado alle norme ISO */}
+        {isHybridWithCustom && hasCustomOutcomeButtons && (() => {
+          const custStatusValues = Object.values(currentAudit?.customStatuses || {});
+          const countCust = (s) => custStatusValues.filter((v) => v === s).length;
+          return (
+            <div className="findings-per-standard">
+              <span className="findings-per-standard__label">📄 {customChecklistName}</span>
+              <div className="findings-metrics-compact">
+                <span className="metric-compact nc"><strong>C:</strong> {countCust("C")}</span>
+                <span className="metric-compact oss"><strong>OSS:</strong> {countCust("OSS")}</span>
+                <span className="metric-compact nc-severe"><strong>NC:</strong> {countCust("NC")}</span>
+                <span className="metric-compact om"><strong>OM:</strong> {countCust("OM")}</span>
+                <span className="metric-compact na"><strong>NA:</strong> {countCust("NA")}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* LEGENDA (spostata da ChecklistModule) */}
         <div className="findings-legend">

@@ -125,6 +125,8 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const selectedStandards = currentAudit?.metadata?.selectedStandards || [];
   const standardEntries   = getSelectedStandardEntries(selectedStandards);
   const isMultiStandard   = standardEntries.length > 1;
+  const isIntegratedSystem = currentAudit?.metadata?.isIntegratedSystem ?? null;
+  const effectiveIntegrated = isMultiStandard ? (isIntegratedSystem ?? false) : true;
 
   const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
   const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
@@ -145,6 +147,10 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const customTotal       = Object.keys(customStatuses).length;
   const customAnswered    = Object.values(customStatuses).filter((s) => s && s !== "NOT_ANSWERED").length;
   const customPct         = customTotal > 0 ? Math.round((customAnswered / customTotal) * 100) : 0;
+  // ADR-009 Fase 4: checklist personalizzata pari grado — richiede conclusioni proprie
+  // solo per audit ibridi ISO+custom (coerente con il blocco separato in AuditOutcomeSection).
+  const hasCustomOutcomeButtons = hasCustomChecklist && !!currentAudit?.customChecklist?.has_outcome_buttons;
+  const isHybridWithCustom = hasCustomChecklist && standardEntries.length >= 1;
 
   // Per audit mono-standard: target dinamico legacy
   const firstUnanswered = (!isMultiStandard && hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
@@ -166,8 +172,8 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       fieldId: "field-auditDescription",
       path: [{ type: "section", key: "general-data" }, { type: "subsection", key: "objective" }],
     },
-    // Conclusioni: per multi-standard una voce per norma, per singolo una voce unica
-    ...(isMultiStandard
+    // Conclusioni: per multi-standard non integrato una voce per norma, altrimenti una voce unica
+    ...(isMultiStandard && !effectiveIntegrated
       ? standardEntries.map(({ key, shortLabel }) => ({
           id: `conclusions-${key}`,
           text: `Conclusioni ${shortLabel} (Sezione 12)`,
@@ -181,8 +187,19 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
           path: [{ type: "section", key: "conclusions" }],
         }]
     ),
-    // Completamento per-norma (multi-standard) o unico (mono)
-    ...(isMultiStandard
+    // ADR-009 Fase 4: conclusioni della checklist personalizzata — solo per audit ibridi ISO+custom
+    ...(isHybridWithCustom && hasCustomOutcomeButtons
+      ? [{
+          id: "conclusions-custom",
+          text: "Conclusioni checklist personalizzata (Sezione 12)",
+          isMissing: !oc.byStandard?.CUSTOM?.conclusions?.trim(),
+          fieldId: "conclusions-custom",
+          path: [{ type: "section", key: "conclusions" }],
+        }]
+      : []
+    ),
+    // Completamento per-norma (multi-standard non integrato) o unico (mono o integrato)
+    ...(isMultiStandard && !effectiveIntegrated
       ? normCompletions.filter(n => n.hasDomande).map(({ key, shortLabel, pct, firstUnansweredNorm }) => ({
           id: `checklistPct-${key}`,
           text: `${shortLabel}: checklist al ${pct}% (minimo ${COMPLETION_THRESHOLD}%)`,
@@ -474,11 +491,11 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     <div className="close-panel">
       <p className="close-panel__subtitle">Elenco informazioni mancanti. Dopo la chiusura l'audit sarà in sola lettura.</p>
 
-      {/* Barre completamento: una per norma (multi) o unica (mono) */}
-      {hasIsoChecklistForGuide && (isMultiStandard ? normCompletions.filter(n => n.hasDomande) : [{ shortLabel: "Checklist", pct: checklistPct }]).map(({ shortLabel, pct }, i) => (
+      {/* Barre completamento: una per norma (multi non integrato) o unica (mono/integrato) */}
+      {hasIsoChecklistForGuide && (isMultiStandard && !effectiveIntegrated ? normCompletions.filter(n => n.hasDomande) : [{ shortLabel: "Checklist", pct: checklistPct }]).map(({ shortLabel, pct }, i) => (
         <div key={i} className="close-completion">
           <div className="close-completion__label">
-            <span>{isMultiStandard ? shortLabel : "Completamento checklist"}</span>
+            <span>{isMultiStandard && !effectiveIntegrated ? shortLabel : "Completamento checklist"}</span>
             <strong className={pct >= COMPLETION_THRESHOLD ? "ok" : "fail"}>{pct}%</strong>
           </div>
           <div className="close-completion__bar">

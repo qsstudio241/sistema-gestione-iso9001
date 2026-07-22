@@ -14,7 +14,7 @@ function buildLikePattern(keyword) {
 /**
  * @param {string} standardCode
  * @param {string} clauseRef
- * @returns {Promise<{text: string, title: string, fullRef: string} | null>}
+ * @returns {Promise<{text: string, title: string, fullRef: string, sourceUrl: string|null} | null>}
  */
 async function getClauseText(standardCode, clauseRef) {
   try {
@@ -22,7 +22,8 @@ async function getClauseText(standardCode, clauseRef) {
       SELECT TOP (1)
         requirement_text AS requirement_text,
         clause_title AS clause_title,
-        clause_ref AS clause_ref
+        clause_ref AS clause_ref,
+        source_url AS source_url
       FROM norm_requirements
       WHERE standard_code = @standardCode
         AND clause_ref = @clauseRef
@@ -38,6 +39,7 @@ async function getClauseText(standardCode, clauseRef) {
       text: row.requirement_text,
       title: row.clause_title || '',
       fullRef: `${standardCode} ${row.clause_ref}`,
+      sourceUrl: row.source_url || null,
     };
   } catch (err) {
     logger.error('[localStoreConnector] getClauseText failed', { error: err.message });

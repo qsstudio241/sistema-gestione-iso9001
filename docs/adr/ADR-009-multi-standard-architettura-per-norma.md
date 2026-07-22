@@ -1,6 +1,6 @@
-# ADR-009 � Architettura multi-standard / multi-document_type per-norma + AI-ready
+# ADR-009 — Architettura multi-standard / multi-document_type per-norma + AI-ready
 
-> **Stato**: Accettato � 8 maggio 2026
+> **Stato**: Accettato — 8 maggio 2026. **Fasi 1-4 completate (22/07/2026)**. **Fase 5 superata** da decisione di prodotto 07/06/2026 — vedi sezione dedicata.
 > **Autori**: Lead architect (AI), Product owner
 > **Sostituisce parzialmente**: nessun ADR (estende il modello dati senza romperlo)
 > **Vincolante**: ogni nuova feature che tocchi audit/SAL/RDP o aggiunga uno standard deve essere progettata in modo compatibile con questo modello.
@@ -401,41 +401,32 @@ Implementazione **incrementale**. Ogni fase committabile e collaudabile separata
 
 **Rischio**: basso. Localizzato all'export, non tocca compilazione audit.
 
-### Fase 4 � Custom checklist come "norma virtuale" parallela
+### Fase 4 — Custom checklist come "norma virtuale" parallela — ✅ COMPLETATA (22/07/2026)
 
-**Obiettivo**: una checklist custom appare come tab pari grado a ISO nelle sezioni esiti / chiusura / export.
+**Obiettivo**: una checklist custom appare come blocco pari grado a ISO nelle sezioni esiti / chiusura / export.
 
-**File coinvolti**:
-- Modificato: `app/src/data/standardsRegistry.js` (loader `CUSTOM_<id>` runtime)
-- Modificato: `app/src/components/CustomChecklistAuditView.jsx` (consumo modello `byStandard`)
-- Modificato: `app/src/components/sections/AuditOutcomeSection.jsx` (tab custom pari grado)
-- Predisposizione: template Word per audit ibridi (ISO + custom)
+**Implementazione reale (semplificata rispetto al piano originale)**: invece di estendere `standardsRegistry.js` con un loader `CUSTOM_<id>` runtime (approccio più invasivo e a rischio più alto sul modulo condiviso), la parità è stata realizzata con un rilevamento "ibrido" diretto nei 3 componenti coinvolti — stesso risultato del DoD, minor rischio:
+- `app/src/components/AuditOutcomeSection.jsx`: blocco separato "📄 {nome checklist}" in Sezione 11 (Rilievi) e Sezione 12 (Conclusioni, campo `auditOutcome.byStandard.CUSTOM.conclusions`) — visibile solo per audit **ibridi** (1+ standard ISO selezionato + checklist personalizzata presente).
+- `app/src/components/AuditClosePanel.jsx`: blocco chiusura "Conclusioni checklist personalizzata" richiesto per gli audit ibridi con `has_outcome_buttons=true` — parità con il blocco ISO già esistente.
+- `app/src/components/ExportPanel.jsx` + `app/src/utils/wordExport.js`: **bug reale corretto** — per audit ibridi l'export Word ometteva completamente il contenuto della checklist personalizzata (branch "solo custom" richiedeva *zero* standard ISO). Ora sia "Genera Report Word" sia "Salva in File System" generano un file Word aggiuntivo dedicato alla checklist custom, in più rispetto ai file ISO.
 
-**DoD**:
-- Audit ibrido ISO 9001 + Custom: 2 tab in sezione 11, conteggi separati ISO/Custom
-- Audit solo Custom: comportamento invariato rispetto al pre-ADR
-- Export per-norma include custom come "norma" esportabile
-- Test L1 verdi, smoke L3 su audit ibrido
+**DoD (verificato)**:
+- ✅ Audit ibrido ISO 9001 + Custom: blocco separato in sezione 11, conclusioni separate in sezione 12
+- ✅ Audit solo Custom (nessun ISO): comportamento invariato rispetto al pre-ADR
+- ✅ Export Word: audit ibrido genera N file ISO + 1 file custom aggiuntivo (prima veniva silenziosamente perso)
+- ✅ Test L1 verdi (817/817), build OK
 
-**Rischio**: medio. Custom era trattato come "appendice"; portarla a pari grado tocca diverse sezioni.
+**Rischio**: basso (rispetto alla stima "medio" del piano originale) — grazie al rilevamento diretto nei 3 componenti invece di toccare il registry condiviso.
 
-### Fase 5 � Audit ? document_registry tie-in
+### Fase 5 — Audit ↔ document_registry tie-in — ❌ SUPERATA (decisione 07/06/2026)
 
-**Obiettivo**: audit chiuso registrato automaticamente in `document_registry` con scadenza prossima sorveglianza.
+> **Stato**: questa fase **non verrà implementata come descritta**. Una decisione di prodotto presa dopo la scrittura di questo ADR ha scelto un approccio diverso e più prudente per lo stesso obiettivo.
 
-**File coinvolti**:
-- Backend: `audit.controller.completeAudit` ? INSERT in `document_registry`
-- Backend: `audit.controller.updateAudit` ? UPDATE `document_registry.status` se cambia
-- Frontend: `audit.metadata.documentRegistryId` esposto in UI (link "Vai al documento nel registro")
-- Migrazione DB: aggiunta colonna `audits.document_registry_id INT NULL FK` (idempotente, retrocompatibile)
+**Motivo**: la chiusura di [PR #52](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/52) (07/06/2026) ha stabilito che il report Word di un audit **deve restare modificabile e caricato manualmente** nel Registro Documenti — niente automatismo `audit.completeAudit → INSERT document_registry`. Il tipo documento «Verbale di audit» viene caricato dall'auditor con `revision = audit.audit_number` pre-compilato (read-only), non generato/archiviato automaticamente alla chiusura.
 
-**DoD**:
-- Audit ISO 9001 chiuso il 2026-06-01 ? riga in `document_registry` con `expiry_date = 2027-06-01`, `status='vigente'`
-- Audit completato pre-ADR-009 ? backfill manuale opzionale (script migrazione)
-- Allegati audit visibili anche dal `document_registry` (link bidirezionale)
-- Smoke L3 fine ciclo: chiudi audit, verifica comparsa nel registro, verifica scadenza
+**Alternativa attiva** (backlog parcheggiato, non ancora implementata, priorità da definire): vedi `docs/PROJECT_ROADMAP.md` sezione *Backlog parcheggiato* — voce "Caricamento verbale di audit con revisione = numeratore audit".
 
-**Rischio**: medio. Tocca backend (poco) + integrazione cross-modulo. Da fare quando il `document_registry` � confermato come modulo cardine.
+**Nessuna azione richiesta su questo ADR**: il modello dati a due assi (`document_type` × `selectedStandards[]`) resta valido; solo il collegamento *automatico* audit→registry previsto in Fase 5 è superato da una scelta di prodotto più conservativa.
 
 ---
 

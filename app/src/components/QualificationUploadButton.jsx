@@ -1,5 +1,5 @@
 /**
- * QualificationUploadButton — Upload batch patentini con revisione pre-commit (IG-3)
+ * QualificationUploadButton - Upload batch patentini con revisione pre-commit (IG-3)
  */
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
@@ -27,6 +27,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
   const [validationErr, setValidationErr] = useState(null);
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [docType, setDocType] = useState("patentino_saldatore");
   const inputRef = useRef(null);
 
   const handleClick = () => inputRef.current?.click();
@@ -50,7 +51,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
     setUploading(true);
     setResults(null);
     try {
-      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt);
+      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt, docType);
       setResults(res.results || []);
     } catch (err) {
       setResults([{ fileName: "tutti i file", status: "error", warnings: [err.message || "Errore upload"] }]);
@@ -66,8 +67,9 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
   }, []);
 
   const handleOpenReview = useCallback((item) => {
-    setReviewItem(item);
-  }, []);
+    const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
+    setReviewItem({ ...item, previewFile: localFile });
+  }, [selectedFiles]);
 
   const handleConfirmReview = useCallback(async (fields) => {
     if (!reviewItem?.staging_id) return;
@@ -121,7 +123,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
     <div className="qual-upload">
       <button className="qual-upload__btn" onClick={handleClick} disabled={uploading}>
         <span className="qual-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica patentini (batch)
+        Carica qualifiche (batch)
       </button>
 
       <input
@@ -142,6 +144,18 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
 
           {!hasResults && (
             <>
+              <div className="qual-upload__doc-type">
+                <label htmlFor="qual-upload-doctype">Tipo documento</label>
+                <select
+                  id="qual-upload-doctype"
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  disabled={uploading}
+                >
+                  <option value="patentino_saldatore">Patentino saldatore (ISO 9606-1)</option>
+                  <option value="qualifica_14732">Qualifica operatore (ISO 14732)</option>
+                </select>
+              </div>
               <div className="qual-upload__panel-header">
                 <span className="qual-upload__panel-title">
                   {selectedFiles.length} file selezionat{selectedFiles.length === 1 ? "o" : "i"}
@@ -203,7 +217,7 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
                           <span className="qual-upload__result-icon">{"\uD83D\uDD0D"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Campi estratti — revisione obbligatoria prima del salvataggio.</p>
+                            <p>Campi estratti{"\u2014"} revisione obbligatoria prima del salvataggio.</p>
                             {r.warnings?.length > 0 && (
                               <div className="qual-upload__warnings">
                                 {r.warnings.map((w, wi) => <div key={wi} className="qual-upload__warning">{"\u26A0\uFE0F"} {w}</div>)}
@@ -234,13 +248,13 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
                           <span className="qual-upload__result-icon">{"\uD83D\uDD04"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Duplicato: qualifica già presente nel registro.</p>
+                            <p>Duplicato: qualifica gi{"\u00E0"} presente nel registro.</p>
                           </div>
                         </div>
                       ) : isRejected ? (
                         <div className="qual-upload__result-rejected">
                           <span className="qual-upload__result-icon">{"\u274C"}</span>
-                          <div><strong>{r.fileName}</strong><p>Scartato — non salvato.</p></div>
+                          <div><strong>{r.fileName}</strong><p>Scartato{"\u2014"} non salvato.</p></div>
                         </div>
                       ) : (
                         <div className="qual-upload__result-error">
@@ -267,8 +281,11 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
 
       <IngestReviewDialog
         open={!!reviewItem}
-        docType="patentino_saldatore"
+        docType={docType}
         fileName={reviewItem?.fileName}
+        stagingId={reviewItem?.staging_id}
+        previewFile={reviewItem?.previewFile}
+        mimeType={reviewItem?.previewFile?.type || "application/pdf"}
         fields={reviewItem?.fields}
         fieldConfidence={reviewItem?.field_confidence}
         warnings={reviewItem?.warnings}

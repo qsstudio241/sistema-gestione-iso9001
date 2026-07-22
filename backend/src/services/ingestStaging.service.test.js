@@ -20,10 +20,13 @@ jest.mock('../config/database', () => ({
 
 const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
+const { commitQualificationFromFields } = require('./qualificationIngest.service');
 const {
     createStagingRecord,
     confirmStaging,
     rejectStaging,
+    resolveStagingFilePath,
+    getModuleForDocType,
 } = require('./ingestStaging.service');
 
 describe('ingestStaging.service (IG-3)', () => {
@@ -92,5 +95,43 @@ describe('ingestStaging.service (IG-3)', () => {
 
         expect(out.status).toBe('rejected');
         expect(query).toHaveBeenCalledTimes(2);
+    });
+
+    it('resolveStagingFilePath rifiuta path fuori uploads', () => {
+        expect(() => resolveStagingFilePath('/etc/passwd')).toThrow('Percorso file non valido');
+    });
+
+    it('confirmStaging committa qualifica_14732 con lo stesso percorso di patentino_saldatore', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 12,
+                organization_id: 1,
+                company_id: 2,
+                doc_type: 'qualifica_14732',
+                storage_path: '/tmp/op.pdf',
+                original_name: 'op.pdf',
+                staged_fields_json: '{"operator_name":"Luigi Verdi"}',
+                qualification_type: 'Operatore ISO 14732',
+                warnings_json: '[]',
+                review_status: 'pending',
+            }],
+        });
+        commitQualificationFromFields.mockResolvedValueOnce({
+            qualification_id: 321,
+            person_name: 'Luigi Verdi',
+            qualification_type: 'Operatore ISO 14732',
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const out = await confirmStaging(12, 1, 9);
+
+        expect(commitQualificationFromFields).toHaveBeenCalled();
+        expect(out.status).toBe('confirmed');
+        expect(out.qualification_id).toBe(321);
+    });
+
+    it('getModuleForDocType instrada qualifica_14732 al modulo qualifiche', () => {
+        expect(getModuleForDocType('qualifica_14732')).toBe('qualifiche');
+        expect(getModuleForDocType('patentino_saldatore')).toBe('qualifiche');
     });
 });

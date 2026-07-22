@@ -6,6 +6,10 @@ jest.mock('../config/database', () => ({
     query: jest.fn(),
 }));
 
+jest.mock('./ingestReferencePattern.service', () => ({
+    upsertPatternsFromFeedback: jest.fn().mockResolvedValue({ upserted: 0 }),
+}));
+
 const { query } = require('../config/database');
 const { getFieldDiff, recordFeedback, resolveAction } = require('./ingestFeedback.service');
 

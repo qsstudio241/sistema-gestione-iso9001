@@ -1,9 +1,19 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Verifica encoding UTF-8 e testi italiani corrotti in sorgenti app/backend.
+ * Exit 1 se trova problemi. Uso CI: node backend/scripts/check-utf8-encoding.js
+ * Riparazione batch: node backend/scripts/repair-utf8-encoding.js --write
+ */
+
 const fs = require('fs');
 const path = require('path');
 const { TextDecoder } = require('util');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const decoder = new TextDecoder('utf-8', { fatal: true });
+const human = process.argv.includes('--human');
 
 const roots = [
   { root: path.join(repoRoot, 'app', 'src'), include: /\.(jsx|js|css)$/i, label: 'frontend' },
@@ -13,12 +23,31 @@ const roots = [
 
 const ignoredParts = new Set(['node_modules', 'dist']);
 
+/** File che contengono intenzionalmente sequenze mojibake da correggere a runtime */
+const MOJIBAKE_ALLOWLIST = new Set([
+  'app/src/utils/textEncodingRepair.js',
+  'app/src/utils/wordExport.js',
+]);
+
+// NB: tutte le regex richiedono il flag "g" — il loop di scansione qui sotto
+// avanza con exec() ripetuti assumendo comportamento globale. Senza "g",
+// exec() su match trovato restituisce sempre lo stesso risultato all'infinito
+// (loop infinito + crescita illimitata di `results`).
 const patterns = [
-  { name: 'U+FFFD replacement char', regex: /\uFFFD/ },
-  { name: 'mojibake A-tilde/A-circumflex', regex: /[\u00C3\u00C2]/ },
-  { name: 'broken qualita', regex: /\b[Qq]ualit(?:\uFFFD|\\uFFFD|\?)/ },
-  { name: 'broken piu', regex: /\bpi(?:\uFFFD|\\uFFFD|\?)/i },
-  { name: 'broken pagina', regex: /\bpagina\s+(?:\uFFFD|\\uFFFD|\?)/i },
+  { name: 'U+FFFD replacement char', regex: /\uFFFD/g },
+  {
+    name: 'mojibake A-tilde/A-circumflex',
+    regex: /[\u00C3\u00C2]/g,
+    allowLine: (line) => MOJIBAKE_ALLOWLIST.has(line._file)
+      || /\.replace\s*\(/.test(line.text)
+      || /latin1Utf8PairToChar|mojibake|Conformit/i.test(line.text),
+  },
+  { name: 'broken qualita', regex: /\b[Qq]ualit(?:\uFFFD|\?)(?!\\u)/g },
+  { name: 'broken piu', regex: /\bpi\?(?=[\s'"(,;.\]])/gi },
+  { name: 'broken pagina', regex: /\bpagina\s+\?(?=\s)/gi },
+  { name: 'broken gia', regex: /\bgi\?(?=\s)/gi },
+  { name: 'broken estratti dash', regex: /estrattti\s+\?(?=\s)/gi },
+  { name: 'broken scartato dash', regex: /Scartato\s+\?(?=\s)/gi },
 ];
 
 function walk(directory, include, files = []) {
@@ -65,29 +94,53 @@ for (const scope of roots) {
     try {
       text = decoder.decode(buffer);
     } catch (error) {
-      results.push({ file: relativePath, scope: scope.label, issue: 'Invalid UTF-8 sequence', line: 1, column: 1, sample: error.message });
+      results.push({
+        file: relativePath,
+        scope: scope.label,
+        issue: 'Invalid UTF-8 sequence',
+        line: 1,
+        column: 1,
+        sample: error.message,
+      });
       continue;
     }
 
     for (const pattern of patterns) {
       pattern.regex.lastIndex = 0;
-      const match = pattern.regex.exec(text);
-      if (!match) continue;
-
-      const position = lineAndColumn(text, match.index);
-      results.push({
-        file: relativePath,
-        scope: scope.label,
-        issue: pattern.name,
-        line: position.line,
-        column: position.column,
-        sample: contextLine(text, position.line),
-      });
+      let match = pattern.regex.exec(text);
+      while (match) {
+        const position = lineAndColumn(text, match.index);
+        const lineText = contextLine(text, position.line);
+        const lineCtx = { text: lineText, _file: relativePath };
+        if (!pattern.allowLine || !pattern.allowLine(lineCtx)) {
+          results.push({
+            file: relativePath,
+            scope: scope.label,
+            issue: pattern.name,
+            line: position.line,
+            column: position.column,
+            sample: lineText,
+          });
+        }
+        match = pattern.regex.exec(text);
+      }
     }
   }
 }
 
-console.log(JSON.stringify({ scanned, issues: results.length, results }, null, 2));
+if (human) {
+  if (results.length === 0) {
+    console.log(`OK: ${scanned} file verificati, nessun problema encoding.`);
+  } else {
+    console.error(`FAIL: ${results.length} problemi encoding su ${scanned} file:\n`);
+    for (const r of results) {
+      console.error(`  [${r.issue}] ${r.file}:${r.line}:${r.column}`);
+      if (r.sample) console.error(`    ${r.sample.slice(0, 120)}`);
+    }
+  }
+} else {
+  console.log(JSON.stringify({ scanned, issues: results.length, results }, null, 2));
+}
 
 if (results.length > 0) {
   process.exitCode = 1;

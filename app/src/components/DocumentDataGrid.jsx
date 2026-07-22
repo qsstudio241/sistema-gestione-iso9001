@@ -170,7 +170,7 @@ function DocumentDataGrid({
   const [sortCol, setSortCol] = useState("title");
   const [sortDir, setSortDir] = useState("asc");
 
-  // Deseleziona se la riga non esiste pi? (pagina/filtri cambiati)
+  // Deseleziona se la riga non esiste più (pagina/filtri cambiati)
   React.useEffect(() => {
     if (selectedId && !documents.some((d) => d.id === selectedId)) {
       setSelectedId(null);

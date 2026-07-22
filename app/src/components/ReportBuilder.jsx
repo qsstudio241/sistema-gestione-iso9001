@@ -1,3 +1,6 @@
+// STATO: componente in sviluppo — i reportChapters non sono ancora letti da wordExport.js.
+// Quando si integra: aggiungere i capitoli a buildTemplateData() in wordExport.js.
+
 /**
  * Report Builder Component
  * Costruttore report audit con gestione capitoli
@@ -91,6 +94,9 @@ function ReportBuilder() {
 
   return (
     <div className="report-builder">
+      <div className="report-builder-notice" style={{background:'#FEF3C7',color:'#92400E',padding:'0.75rem 1rem',borderRadius:'0.375rem',marginBottom:'1rem',border:'1px solid #F59E0B'}}>
+        {"\u26A0\uFE0F"} Questa sezione è in sviluppo. I capitoli inseriti qui non sono ancora inclusi nel Report Word.
+      </div>
       <div className="report-header">
         <h3>📄 Report Builder</h3>
         <button onClick={handleAddChapter} className="btn btn-primary">
