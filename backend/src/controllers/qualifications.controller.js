@@ -31,6 +31,7 @@ const { buildWelderQualificationDesignation } = require('../utils/weldingDesigna
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 const {
     isWelder9606Type,
+    requiresSemiannualConfirmation,
     addMonthsIso,
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
@@ -182,14 +183,13 @@ function semaforo(expiryDate, status) {
 
 /**
  * Data di scadenza "effettiva" per il semaforo.
- * Per le qualifiche saldatore ISO 9606 la conferma periodica (next_confirmation_due)
- * puo' scadere prima del certificato: si usa la data PIU' IMMINENTE tra le due.
- * Difensivo: se una manca usa l'altra; per gli altri tipi resta solo expiry_date.
+ * Per le qualifiche saldatore ISO 9606 e operatore ISO 14732 la conferma periodica
+ * (next_confirmation_due) puo' scadere prima del certificato: si usa la data PIU' IMMINENTE
+ * tra le due. Difensivo: se una manca usa l'altra; per gli altri tipi resta solo expiry_date.
  */
 function effectiveExpiryDate(q) {
     const expiry = q.expiry_date || null;
-    const isWelder9606 = /9606/.test(String(q.qualification_type || ''));
-    if (!isWelder9606) return expiry;
+    if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
     const nextConf = q.next_confirmation_due || null;
     if (!expiry) return nextConf;
     if (!nextConf) return expiry;
@@ -416,7 +416,7 @@ async function getCoverage(req, res) {
             AND q.approval_status = 'approvata'
             AND q.status NOT IN ('revocata','sospesa')
             AND (q.expiry_date IS NULL OR q.expiry_date >= CAST(GETDATE() AS DATE))
-            AND q.qualification_type LIKE '%9606%'
+            AND (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
         `;
         if (projectCompanyId) {
             qReq.input('projCompId', parseInt(projectCompanyId));
@@ -557,6 +557,8 @@ async function createQualification(req, res) {
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details,
             thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            // operatore 14732 (saldatura automatica/meccanizzata)
+            welding_type, single_multi_run, qualification_method,
         } = body;
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
@@ -664,6 +666,9 @@ async function createQualification(req, res) {
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
             .input('pipeDiamFinal',   pipeDiameterFinal   || null)
+            .input('weldingType',     welding_type      || null)
+            .input('singleMultiRun',  single_multi_run  || null)
+            .input('qualMethod',      qualification_method || null)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
@@ -676,6 +681,7 @@ async function createQualification(req, res) {
                      thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                      thickness_range, pipe_diameter,
                      filler_material, shielding_gas, equipment_type,
+                     welding_type, single_multi_run, qualification_method,
                      ndt_sector, certification_scheme,
                      coordinator_title, diploma_number, cpd_valid_until,
                      patent_type, training_body,
@@ -692,6 +698,7 @@ async function createQualification(req, res) {
                      @thickMin, @thickMax, @pipeMin, @pipeMax,
                      @thickRangeFinal, @pipeDiamFinal,
                      @filler, @shieldGas, @equipType,
+                     @weldingType, @singleMultiRun, @qualMethod,
                      @ndtSector, @certScheme,
                      @coordTitle, @diplomaNum, @cpdUntil,
                      @patentType, @trainBody,
@@ -739,6 +746,8 @@ async function updateQualification(req, res) {
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details,
             thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            // operatore 14732 (saldatura automatica/meccanizzata)
+            welding_type, single_multi_run, qualification_method,
         } = body;
 
         const thickMin = toNum(thickness_min_mm);
@@ -808,6 +817,9 @@ async function updateQualification(req, res) {
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
             .input('pipeDiamFinal',   pipeDiameterFinal   || null)
+            .input('weldingType',     welding_type      || null)
+            .input('singleMultiRun',  single_multi_run  || null)
+            .input('qualMethod',      qualification_method || null)
             .query(`
                 UPDATE qualifications SET
                     company_id=@compId, person_name=@personName, person_code=@personCode,
@@ -824,6 +836,7 @@ async function updateQualification(req, res) {
                     pipe_diameter_min_mm=@pipeMin, pipe_diameter_max_mm=@pipeMax,
                     thickness_range=@thickRangeFinal, pipe_diameter=@pipeDiamFinal,
                     filler_material=@filler, shielding_gas=@shieldGas, equipment_type=@equipType,
+                    welding_type=@weldingType, single_multi_run=@singleMultiRun, qualification_method=@qualMethod,
                     ndt_sector=@ndtSector, certification_scheme=@certScheme,
                     coordinator_title=@coordTitle, diploma_number=@diplomaNum, cpd_valid_until=@cpdUntil,
                     patent_type=@patentType, training_body=@trainBody,
@@ -1093,12 +1106,16 @@ async function renewQualification(req, res) {
     }
 }
 
+// Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
+const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
     try {
         const orgId    = req.user.organization_id;
         const userId   = req.user.user_id;
         const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
+        const docType = UPLOAD_BATCH_DOC_TYPES.has(req.body?.doc_type) ? req.body.doc_type : 'patentino_saldatore';
 
         if (!company_id || isNaN(company_id)) {
             return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
@@ -1116,7 +1133,7 @@ async function uploadBatch(req, res) {
             let entry = { fileName: file.originalname, status: 'error', warnings: [] };
             try {
                 const buffer = fs.readFileSync(file.path);
-                const extracted = await extractQualificationFromPdf(buffer, file.originalname, orgId, company_id);
+                const extracted = await extractQualificationFromPdf(buffer, file.originalname, orgId, company_id, docType);
 
                 if (extracted.status === 'wrong_module') {
                     try { fs.unlinkSync(file.path); } catch (_) {}
@@ -1143,7 +1160,7 @@ async function uploadBatch(req, res) {
                 const stagingId = await createStagingRecord({
                     organizationId: orgId,
                     companyId: company_id,
-                    docType: 'patentino_saldatore',
+                    docType,
                     originalName: file.originalname,
                     storagePath: file.path,
                     mimeType: file.mimetype,
@@ -1309,10 +1326,11 @@ async function getConfirmations(req, res) {
             confirmations: rows.recordset || [],
             can_confirm: auth.allowed
                 && qual.approval_status === 'approvata'
-                && isWelder9606Type(qual.qualification_type),
+                && requiresSemiannualConfirmation(qual.qualification_type),
             last_confirmation_date: qual.last_confirmation_date,
             next_confirmation_due: qual.next_confirmation_due,
             is_welder_9606: isWelder9606Type(qual.qualification_type),
+            requires_confirmation: requiresSemiannualConfirmation(qual.qualification_type),
             approval_status: qual.approval_status,
         });
     } catch (err) {
@@ -1352,9 +1370,9 @@ async function confirmSemiannual(req, res) {
                 code: 'NOT_APPROVED',
             });
         }
-        if (!isWelder9606Type(qual.qualification_type)) {
+        if (!requiresSemiannualConfirmation(qual.qualification_type)) {
             return res.status(400).json({
-                error: 'Tipo qualifica non ammesso per conferma semestrale ISO 9606.',
+                error: 'Tipo qualifica non ammesso per conferma semestrale (solo ISO 9606-1 / ISO 14732).',
                 code: 'NOT_WELDER_9606',
             });
         }
@@ -1563,4 +1581,7 @@ module.exports = {
     getConfirmations,
     confirmSemiannual,
     exportConfirmations,
+    // Esportate per test unitari (calcolo semaforo/scadenza effettiva)
+    effectiveExpiryDate,
+    semaforoForRow,
 };
