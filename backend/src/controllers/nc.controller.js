@@ -1134,11 +1134,28 @@ async function getNonConformitiesStatistics(req, res) {
       WHERE ${whereClause}
     `, params);
 
+        // Breakdown per categoria origine (additive — non breaking)
+        const categoryResult = await query(`
+      SELECT
+        COALESCE(nc.source_category, 'audit') AS source_category,
+        COUNT(*) AS total,
+        SUM(CASE WHEN nc.status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_count,
+        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+      FROM non_conformities nc
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE ${whereClause}
+      GROUP BY COALESCE(nc.source_category, 'audit')
+      ORDER BY COUNT(*) DESC
+    `, params);
+
         logger.info('NC statistics retrieved', { organization_id, company_id });
 
         res.json({
             success: true,
-            data: statsResult.recordset[0]
+            data: {
+                ...statsResult.recordset[0],
+                by_category: categoryResult.recordset,
+            },
         });
 
     } catch (error) {
