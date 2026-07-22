@@ -49,7 +49,7 @@ const EMPTY_FORM = {
 export default function NcCreateModal({
   open, onClose, onCreated, defaultCategory, initialDescription,
   managementReviewId = null, initialOriginText = "",
-  initialSectionCode = null,
+  initialSectionCode = null, sourceRiskId = null,
 }) {
   const { user } = useAuth();
   const organizationId = user?.organization_id ?? null;
@@ -188,6 +188,7 @@ export default function NcCreateModal({
       selectedAudit?.audit_number,
     );
     if (!built.ok) { setError(built.message); return; }
+    if (sourceRiskId) built.payload.source_risk_id = sourceRiskId;
     setSaving(true);
     setError(null);
     try {
