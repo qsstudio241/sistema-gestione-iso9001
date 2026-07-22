@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { fetchStandards } from "../services/standardsService";
-import { getStandardByCode } from "../data/standardsRegistry";
+import { getStandardByCode, isAllHls } from "../data/standardsRegistry";
 import AutoTextarea from "./AutoTextarea";
 import {
   displayAuditDayCount,
@@ -61,10 +61,14 @@ function GeneralDataSection({
   onUpdate,
   onStandardsUpdate,
   readOnly = false,
+  isIntegratedSystem = null,
+  onIsIntegratedSystemChange,
 }) {
   const [availableStandards, setAvailableStandards] =
     useState(FALLBACK_STANDARDS);
   const [loadingStandards, setLoadingStandards] = useState(true);
+
+  const showSgiToggle = selectedStandards.length >= 2 && isAllHls(selectedStandards);
 
   const [formData, setFormData] = useState(
     generalData || {
@@ -199,6 +203,25 @@ function GeneralDataSection({
             </div>
           )}
         </div>
+
+        {/* Toggle SGI: visibile solo per 2+ norme HLS */}
+        {showSgiToggle && (
+          <div className="form-group sgi-toggle-group">
+            <label className="sgi-toggle-label">
+              <input
+                type="checkbox"
+                checked={isIntegratedSystem ?? true}
+                onChange={e => onIsIntegratedSystemChange?.(e.target.checked)}
+                disabled={readOnly}
+              />
+              <span>Sistema di Gestione Integrato (SGI)</span>
+            </label>
+            <small className="form-hint">
+              Attivo: conclusioni e metriche unificate (tutti gli standard insieme).
+              Disattivo: conclusioni e report separati per norma.
+            </small>
+          </div>
+        )}
 
         {/* Oggetto */}
         <div className="form-field">

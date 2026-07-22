@@ -1,5 +1,5 @@
 /**
- * WeldingDashboardPage — Dashboard Coordinatore ISO 3834
+ * WeldingDashboardPage â€” Dashboard Coordinatore ISO 3834
  * Panoramica operativa: commesse, WPS, qualifiche, alert scadenze.
  */
 

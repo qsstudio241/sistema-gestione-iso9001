@@ -1,7 +1,9 @@
 /**
  * NcDetailPanel - drawer dettaglio NC guidato per flusso operativo ISO 10.2
  *
- * Ordine sezioni: Scheda / Stato workflow / Cause / Azioni / Evidenze / Verifica / Chiusura
+ * Ordine sezioni (ISO 10.2.1 a->b->c->d): Scheda / Difetto-Problema / Trattamento
+ * (correzione immediata, 10.2.1a) / Cause (10.2.1b) / Stato workflow / Azioni
+ * correttive-preventive (10.2.1c) / Evidenze / Verifica efficacia (10.2.1d) / Chiusura
  * API: PUT /non-conformities/:id via apiService.updateNcStatus
  */
 
@@ -11,12 +13,18 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NcAttachmentsSection from "./NcAttachmentsSection";
 import NcActionsList from "./NcActionsList";
+import NcCorrectionSection from "./NcCorrectionSection";
+import { useNcActions } from "../hooks/useNcActions";
 import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
   clearNcFieldDraftsForScope,
 } from "./RichTextField";
 import { NC_SOURCE_TYPE_LABELS } from "../utils/ncCreateHelpers";
+import AskAiButton from "./AskAiButton";
+import { useAiAssist } from "../hooks/useAiAssist";
+import AiDisclaimer from "./AiDisclaimer";
+import { hasLicensedModule } from "../utils/licenseUtils";
 import {
   getNcWorkflowTransitionButtons,
   getNcClosureButton,
@@ -47,6 +55,7 @@ const NC_TEXT_FIELDS = [
   "root_cause",
   "verification_notes",
   "verification_responsible",
+  "corrective_action_evaluation_notes",
 ];
 
 function normalizeDate(val) {
@@ -81,6 +90,13 @@ function initForm(nc, organizationId) {
     verification_contact_id: nc?.verification_contact_id ?? null,
     useExternalVerification: !nc?.verification_contact_id,
     due_date: normalizeDate(nc?.due_date),
+    corrective_action_needed: nc?.corrective_action_needed || "",
+    corrective_action_evaluation_notes: resolveNcFieldInitial(
+      nc?.corrective_action_evaluation_notes,
+      organizationId,
+      scope,
+      "corrective_action_evaluation_notes",
+    ),
   };
 }
 
@@ -124,6 +140,19 @@ export default function NcDetailPanel({
   const [contactsAttuazione, setContactsAttuazione] = useState([]);
   const [contactsVerifica, setContactsVerifica] = useState([]);
 
+  const { suggest: suggestCause, suggestion: causeSuggestion, loading: causeLoading, error: causeError, clear: clearCause } = useAiAssist();
+  const hasAiAssist = hasLicensedModule(user, "ai_assist");
+
+  function handleSuggestCause() {
+    clearCause();
+    suggestCause("nc_cause", {
+      description: form.description,
+      severity: form.severity,
+      auditNumber: nc.audit_number || null,
+      clientName: nc.client_name || null,
+    });
+  }
+
   useEffect(() => {
     const companyId = nc?.company_id ?? null;
     let cancelled = false;
@@ -153,6 +182,13 @@ export default function NcDetailPanel({
     setDescError(null);
     setVerifExpanded(!isEarlyPhaseStatus(nc?.status));
   }, [nc?.nc_id, nc?.status, organizationId]);
+
+  const ncActions = useNcActions({
+    ncId: nc?.nc_id,
+    ncStatus: nc?.status,
+    companyId: nc?.company_id ?? null,
+    organizationId,
+  });
 
   const workflowTransitions = useMemo(
     () => getNcWorkflowTransitionButtons(nc),
@@ -196,6 +232,8 @@ export default function NcDetailPanel({
         responsible_person: form.responsible_person.trim() || null,
         responsible_contact_id: form.responsible_contact_id,
         due_date: form.due_date || null,
+        corrective_action_needed: form.corrective_action_needed || null,
+        corrective_action_evaluation_notes: form.corrective_action_evaluation_notes.trim() || null,
       });
       if (organizationId && draftScope) {
         clearNcFieldDraftsForScope(organizationId, draftScope, NC_TEXT_FIELDS);
@@ -248,23 +286,6 @@ export default function NcDetailPanel({
             </Link>
           )}
         </div>
-        <div className="nc-form-row">
-          <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
-          <RichTextField
-            id={`nc-desc-${nc.nc_id}`}
-            rows={3}
-            value={form.description}
-            readOnly={readOnly}
-            onChange={(e) => setField("description", e.target.value)}
-            onBlur={() => { if (!readOnly) validateDescription(); }}
-            placeholder="Descrivi la non conformità riscontrata..."
-            draftScopeId={draftScope}
-            draftFieldId="description"
-            persistLocalDraft
-            organizationId={organizationId}
-          />
-          {descError && <p className="nc-error">{descError}</p>}
-        </div>
         <div className="nc-form-row nc-form-row-2col">
           <div>
             <label htmlFor={`nc-sev-${nc.nc_id}`}>Severit{"\u00E0"}</label>
@@ -308,14 +329,153 @@ export default function NcDetailPanel({
         />
       </section>
 
-      {/* 2. Stato workflow */}
+      {/* 2. Difetto/Problema */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-difetto-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-difetto-${nc.nc_id}`}>
+          {"2. Difetto/Problema"}
+        </h3>
+        <div className="nc-form-row">
+          <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
+          <RichTextField
+            id={`nc-desc-${nc.nc_id}`}
+            rows={3}
+            value={form.description}
+            readOnly={readOnly}
+            onChange={(e) => setField("description", e.target.value)}
+            onBlur={() => { if (!readOnly) validateDescription(); }}
+            placeholder="Descrivi la non conformità riscontrata..."
+            draftScopeId={draftScope}
+            draftFieldId="description"
+            persistLocalDraft
+            organizationId={organizationId}
+          />
+          {descError && <p className="nc-error">{descError}</p>}
+        </div>
+      </section>
+
+      {/* 3. Trattamento (Correzione immediata, ISO 10.2.1a) */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-trattamento-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-trattamento-${nc.nc_id}`}>
+          {"3. Trattamento"}
+        </h3>
+        <NcCorrectionSection ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
+      </section>
+
+      {/* 4. Cause e valutazione */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
+        <div className="nc-drawer-section-heading">
+          <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
+            {"4. Cause e valutazione"}
+          </h3>
+          <AskAiButton label="Chiedi all\u2019AI" />
+        </div>
+        <div className="nc-form-row">
+          <label htmlFor={`nc-root-${nc.nc_id}`}>
+            Analisi causa radice <small>(ISO {"\u00A7"}10.2.1b)</small>
+          </label>
+          <RichTextField
+            id={`nc-root-${nc.nc_id}`}
+            rows={3}
+            value={form.root_cause}
+            readOnly={readOnly}
+            onChange={(e) => setField("root_cause", e.target.value)}
+            placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
+            draftScopeId={draftScope}
+            draftFieldId="root_cause"
+            persistLocalDraft
+            organizationId={organizationId}
+          />
+        </div>
+        {/* AI — suggerisci causa radice */}
+        {!readOnly && hasAiAssist && (
+          <div className="nc-ai-cause">
+            <button
+              type="button"
+              className="nc-ai-cause__btn"
+              onClick={handleSuggestCause}
+              disabled={causeLoading || !form.description.trim()}
+              title={!form.description.trim() ? "Inserisci prima la descrizione NC" : ""}
+            >
+              {causeLoading
+                ? "Analisi in corso\u2026"
+                : "\uD83E\uDD16 Suggerisci causa (AI)"}
+            </button>
+            {causeError && <p className="nc-ai-cause__error">{causeError}</p>}
+            {causeSuggestion && !causeLoading && (
+              <div className="nc-ai-cause__result">
+                <p className="nc-ai-cause__text">
+                  {causeSuggestion.suggestion || causeSuggestion.raw || "Nessuna proposta generata."}
+                </p>
+                {causeSuggestion.methodology && (
+                  <p className="nc-ai-cause__meta">Metodologia: {causeSuggestion.methodology}</p>
+                )}
+                <div className="nc-ai-cause__actions">
+                  <button
+                    type="button"
+                    className="nc-ai-cause__accept"
+                    onClick={() => { setForm((f) => ({ ...f, root_cause: causeSuggestion.suggestion || "" })); clearCause(); }}
+                  >
+                    Accetta
+                  </button>
+                  <button type="button" className="nc-ai-cause__rephrase" onClick={handleSuggestCause} disabled={causeLoading}>
+                    Riformula
+                  </button>
+                  <button type="button" className="nc-ai-cause__discard" onClick={clearCause}>
+                    Scarta
+                  </button>
+                </div>
+                <AiDisclaimer style={{ marginTop: "0.5rem" }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="nc-form-row">
+          <label htmlFor={`nc-ca-needed-${nc.nc_id}`}>
+            {"\u00C8"} necessaria un{"'"}azione correttiva? <small>(ISO {"\u00A7"}10.2.1b)</small>
+          </label>
+          <select
+            id={`nc-ca-needed-${nc.nc_id}`}
+            value={form.corrective_action_needed}
+            disabled={readOnly}
+            onChange={(e) => setField("corrective_action_needed", e.target.value)}
+          >
+            <option value="">-- Non valutato --</option>
+            <option value="yes">S{"\u00EC"}, necessaria</option>
+            <option value="no">No, non necessaria</option>
+          </select>
+        </div>
+        {form.corrective_action_needed && (
+          <div className="nc-form-row">
+            <label htmlFor={`nc-ca-eval-${nc.nc_id}`}>
+              Motivazione valutazione
+            </label>
+            <RichTextField
+              id={`nc-ca-eval-${nc.nc_id}`}
+              rows={2}
+              value={form.corrective_action_evaluation_notes}
+              readOnly={readOnly}
+              onChange={(e) => setField("corrective_action_evaluation_notes", e.target.value)}
+              placeholder={form.corrective_action_needed === "no"
+                ? "Motivare perch\u00E9 non \u00E8 necessaria un'azione correttiva..."
+                : "Descrivere brevemente la valutazione effettuata..."}
+              draftScopeId={draftScope}
+              draftFieldId="corrective_action_evaluation_notes"
+              persistLocalDraft
+              organizationId={organizationId}
+            />
+          </div>
+        )}
+      </section>
+
+      {/* 5. Stato workflow */}
       {workflowTransitions.length > 0 && (
         <section
-          className="nc-drawer-section nc-drawer-section--workflow nc-workflow-sticky"
+          className="nc-drawer-section nc-drawer-section--workflow"
           aria-labelledby={`nc-sec-stato-${nc.nc_id}`}
         >
           <h3 className="nc-drawer-section-title" id={`nc-sec-stato-${nc.nc_id}`}>
-            {"2. Stato workflow"}
+            {"5. Stato workflow"}
           </h3>
           <div className="nc-workflow-btns">
             {workflowTransitions.map((ns) => {
@@ -335,54 +495,30 @@ export default function NcDetailPanel({
         </section>
       )}
 
-      {/* 3. Cause */}
-      <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
-        <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-          {"3. Cause"}
-        </h3>
-        <div className="nc-form-row">
-          <label htmlFor={`nc-root-${nc.nc_id}`}>
-            Analisi causa radice <small>(ISO {"\u00A7"}10.2.1b)</small>
-          </label>
-          <RichTextField
-            id={`nc-root-${nc.nc_id}`}
-            rows={3}
-            value={form.root_cause}
-            readOnly={readOnly}
-            onChange={(e) => setField("root_cause", e.target.value)}
-            placeholder="5W, Ishikawa, 8D... Qual è la causa fondamentale del problema?"
-            draftScopeId={draftScope}
-            draftFieldId="root_cause"
-            persistLocalDraft
-            organizationId={organizationId}
-          />
-        </div>
-      </section>
-
-      {/* 4. Azioni correttive */}
+      {/* 6. Azioni correttive / preventive */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-azioni-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
-          {"4. Azioni correttive"}
+          {"6. Azioni correttive / preventive"}
         </h3>
-        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} companyId={nc.company_id} embedded />
+        <NcActionsList ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
       </section>
 
-      {/* 5. Evidenze */}
+      {/* 7. Evidenze */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-evidenze-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-evidenze-${nc.nc_id}`}>
-          {"5. Evidenze"}
+          {"7. Evidenze"}
         </h3>
         <NcAttachmentsSection ncId={nc.nc_id} readOnly={readOnly} />
       </section>
 
-      {/* 6. Verifica efficacia */}
+      {/* 8. Verifica efficacia */}
       <section
         className={`nc-drawer-section${showVerifHighlight ? " nc-drawer-section--highlight" : ""}${!verifExpanded ? " nc-drawer-section--collapsed" : ""}`}
         aria-labelledby={`nc-sec-verifica-${nc.nc_id}`}
       >
         <div className="nc-drawer-section-heading">
           <h3 className="nc-drawer-section-title" id={`nc-sec-verifica-${nc.nc_id}`}>
-            {"6. Verifica efficacia"}
+            {"8. Verifica efficacia"}
           </h3>
           {earlyPhase && (
             <button
@@ -442,11 +578,11 @@ export default function NcDetailPanel({
         </div>
       </section>
 
-      {/* 7. Chiusura */}
+      {/* 9. Chiusura */}
       {showClosureSection && (
         <section className="nc-drawer-section" aria-labelledby={`nc-sec-chiusura-${nc.nc_id}`}>
           <h3 className="nc-drawer-section-title" id={`nc-sec-chiusura-${nc.nc_id}`}>
-            {"7. Chiusura"}
+            {"9. Chiusura"}
           </h3>
           <div className="nc-workflow-btns">
             {showApproveClosure && (

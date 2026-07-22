@@ -5,8 +5,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const logger = require('../utils/logger');
 const normBroker = require('../services/normBroker.service');
+
+const normGuard = [authenticate, requireLicensedModule('ai_norms')];
 
 function sendNormHttpError(res, err, logPrefix) {
   logger.error(`${logPrefix}`, { error: err.message, code: err.code });
@@ -17,7 +20,7 @@ function sendNormHttpError(res, err, logPrefix) {
   });
 }
 
-router.get('/norms/standards', authenticate, async (req, res) => {
+router.get('/norms/standards', ...normGuard, async (req, res) => {
   try {
     const rows = await normBroker.listAvailableStandards();
     return res.json({ standards: rows });
@@ -26,7 +29,7 @@ router.get('/norms/standards', authenticate, async (req, res) => {
   }
 });
 
-router.get('/norms/search', authenticate, async (req, res) => {
+router.get('/norms/search', ...normGuard, async (req, res) => {
   try {
     const q = req.query.q;
     const standard = req.query.standard || undefined;
@@ -43,7 +46,7 @@ router.get('/norms/search', authenticate, async (req, res) => {
   }
 });
 
-router.get('/norms/:standardCode/clauses', authenticate, async (req, res) => {
+router.get('/norms/:standardCode/clauses', ...normGuard, async (req, res) => {
   try {
     const { standardCode } = req.params;
     const rows = await normBroker.getFullNorm(standardCode);
@@ -53,10 +56,10 @@ router.get('/norms/:standardCode/clauses', authenticate, async (req, res) => {
   }
 });
 
-router.get('/norms/:standardCode/clauses/:clauseRef', authenticate, async (req, res) => {
+router.get('/norms/:standardCode/clauses/:clauseRef', ...normGuard, async (req, res) => {
   try {
     const { standardCode, clauseRef } = req.params;
-    const row = await normBroker.getClauseText(standardCode, clauseRef);
+    const row = await normBroker.getClauseText(standardCode, clauseRef, { organizationId: req.user?.organization_id });
     if (!row) {
       return res.status(404).json({
         error: 'Clausola non trovata',

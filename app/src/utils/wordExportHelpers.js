@@ -24,7 +24,7 @@ const STANDARD_LABELS = {
     ISO_45001_2018:  'ISO 45001:2018 - Sistema di Gestione per la Salute e Sicurezza',
     ISO_3834_2:      'ISO 3834-2 - Checklist Audit Fornitori in Campo',
     ISO_3834_2_2021: 'ISO 3834-2 - Checklist Audit Fornitori in Campo',
-    RDP_MSN:         'ISO 3834-2:2021 - Requisiti di qualit\u00e0 per la saldatura per fusione (Audit di sistema)',
+    RDP_MSN:         'ISO 3834-2:2021 - Rapporto di Prova (Audit di sistema Mason)',
 };
 
 /**
@@ -213,7 +213,7 @@ function buildPendingIssuesOoxml(pendingIssues = []) {
 
 // ─── Hyperlink cliccabile in Word (fldSimple — non richiede modifica rels) ────
 // Produce: <w:p>...<w:fldSimple w:instr=" HYPERLINK "url" ">..link testo..</w:fldSimple></w:p>
-function xmlHyperlinkPara(url, displayText, opts = {}) {
+export function xmlHyperlinkPara(url, displayText, opts = {}) {
     const color = opts.color || '1E40AF';
     const sz = opts.size ? `<w:sz w:val="${opts.size}"/><w:szCs w:val="${opts.size}"/>` : '';
     const escapedUrl = escXml(url);

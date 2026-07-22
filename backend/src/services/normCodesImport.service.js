@@ -193,7 +193,7 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
       if (existing) {
         entry.status = 'duplicate';
         entry.existingDocumentId = existing.id;
-        entry.message = `Codice gi� presente: "${existing.title}" (id ${existing.id})`;
+        entry.message = `Codice già  presente: "${existing.title}" (id ${existing.id})`;
         duplicates += 1;
         results.push(entry);
         continue;

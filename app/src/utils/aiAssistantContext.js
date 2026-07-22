@@ -164,6 +164,46 @@ export function buildAuditContextSeparatorLabel({
   return parts.length > 0 ? parts.join(" \u2014 ") : "Contesto audit aggiornato";
 }
 
+// ── Contesto modulo qualifiche (sessionStorage) ───────────────────────────────
+
+const QUAL_CONTEXT_KEY = "sgq:ai_qual_context";
+
+/**
+ * Salva il contesto attivo della pagina Qualifiche prima di navigare all'AI.
+ * @param {{ qualType: string, qualTypeLabel: string, companyName: string|null, companyId: string|number|null }} ctx
+ */
+export function saveQualContext(ctx) {
+  try {
+    if (!ctx) { sessionStorage.removeItem(QUAL_CONTEXT_KEY); return; }
+    sessionStorage.setItem(QUAL_CONTEXT_KEY, JSON.stringify({
+      qualType:      ctx.qualType || null,
+      qualTypeLabel: ctx.qualTypeLabel || null,
+      companyName:   ctx.companyName || null,
+      companyId:     ctx.companyId != null ? String(ctx.companyId) : null,
+      savedAt:       Date.now(),
+    }));
+  } catch { /* sessionStorage non disponibile */ }
+}
+
+/**
+ * Legge il contesto qualifiche. Scade dopo 10 minuti.
+ * @returns {{ qualType, qualTypeLabel, companyName, companyId }|null}
+ */
+export function loadQualContext() {
+  try {
+    const raw = sessionStorage.getItem(QUAL_CONTEXT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - (parsed.savedAt || 0) > 10 * 60 * 1000) {
+      sessionStorage.removeItem(QUAL_CONTEXT_KEY);
+      return null;
+    }
+    return parsed;
+  } catch { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Payload opzionale per POST /ai/chat.
  */

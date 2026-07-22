@@ -1,24 +1,24 @@
 ---
-description: Regola encoding e caratteri ? prevenzione caratteri corrotti
+description: Regola encoding e caratteri - prevenzione caratteri corrotti
 alwaysApply: true
 ---
 
-# Encoding e qualit? testo
+# Encoding e qualità testo
 
 ## Regola caratteri italiani
 - Tutti i file sorgente DEVONO essere salvati in **UTF-8 senza BOM**
-- I testi in italiano DEVONO usare le lettere accentate corrette: ?, ?, ?, ?, ?, ? (NON sequenze corrotte come ??, ? , ecc.)
-- **Mai** usare apostrofo al posto dell'accento (es. scrivere "qualit?", non "qualita'", nei testi UI visibili all'utente)
+- I testi in italiano DEVONO usare le lettere accentate corrette: à, è, é, ì, ò, ù (NON sequenze corrotte come ÃÂ, ecc.)
+- **Mai** usare apostrofo al posto dell'accento (es. scrivere "qualità", non "qualita'", nei testi UI visibili all'utente)
 
 ## Caratteri proibiti nei sorgenti
 | Carattere | Problema | Sostituzione |
 |-----------|----------|--------------|
 | U+FFFD | Replacement character (tofu / interrogativo) | Determinare il carattere originale |
-| ? / ? / � | UTF-8 letto come Latin1 | ? / ? / ? |
+| Ã / Ã¨ / â€™ | UTF-8 letto come Latin1 | à / è / ' |
 | ?? in mezzo a parola | Encoding perso | Lettera accentata corretta |
 
-## JSX / React ? escape `\u`
-- Fra tag JSX (`<h1>...</h1>`, ecc.) il testo ? **literal**: **`\uXXXX` non viene decodificato** e finisce sullo schermo cos? com'?.
+## JSX / React — escape `\u`
+- Fra tag JSX (`<h1>...</h1>`, ecc.) il testo è **literal**: **`\uXXXX` non viene decodificato** e finisce sullo schermo così com'è.
 - Mettere sempre le `\u`-escape dentro **una stringa JavaScript in espressione**, ad es.: `<h1>{"\u26A0\uFE0F Rischi"}</h1>`; in alternativa `String.fromCodePoint(...)` oppure UTF-8 reale nei sorgenti.
 - Vedere playbook *Caratteri non riconoscibili* in `docs/GUIDA_CONSOLIDATA.md`.
 
@@ -27,5 +27,5 @@ alwaysApply: true
 - Le emoji vanno usate SOLO se esplicitamente richieste dal committente
 
 ## Lista caratteri accentati italiani di riferimento
-? (U+00E0), ? (U+00E8), ? (U+00E9), ? (U+00EC), ? (U+00F2), ? (U+00F9)
-? (U+00C0), ? (U+00C8), ? (U+00C9), ? (U+00CC), ? (U+00D2), ? (U+00D9)
+à (U+00E0), è (U+00E8), é (U+00E9), ì (U+00EC), ò (U+00F2), ù (U+00F9)
+À (U+00C0), È (U+00C8), É (U+00C9), Ì (U+00CC), Ò (U+00D2), Ù (U+00D9)

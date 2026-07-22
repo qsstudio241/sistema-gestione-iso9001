@@ -1,5 +1,5 @@
 /**
- * Billing Controller � dashboard fatturazione (solo superadmin)
+ * Billing Controller  -  dashboard fatturazione (solo superadmin)
  */
 
 const logger = require('../utils/logger');
