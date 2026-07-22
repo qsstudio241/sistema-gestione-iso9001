@@ -1,5 +1,5 @@
 /**
- * NormCodesImportButton — Import batch da lista codici norma/legge (senza PDF).
+ * NormCodesImportButton â€” Import batch da lista codici norma/legge (senza PDF).
  * Mostrato nella cartella "NORME E LEGGI" del DocumentRegistry (vista Albero).
  */
 import React, { useState, useCallback } from "react";
@@ -87,7 +87,7 @@ export default function NormCodesImportButton({ folderId, onImportComplete }) {
               </div>
               <p className="norm-codes-import__hint">
                 Incolla un codice per riga. Il sistema interroga i cataloghi online e crea bozze nel registro.
-                Il PDF è opzionale e può essere allegato in seguito.
+                Il PDF Ã¨ opzionale e puÃ² essere allegato in seguito.
               </p>
               <textarea
                 className="norm-codes-import__textarea"

@@ -1,13 +1,18 @@
 /**
- * Multi-provider AI facade: Gemini, Azure OpenAI, OpenAI.
+ * Multi-provider AI facade: Gemini, Anthropic, Azure OpenAI, OpenAI.
  */
 
 const geminiAdapter = require('./adapters/geminiAdapter');
+const anthropicAdapter = require('./adapters/anthropicAdapter');
 const azureOpenaiAdapter = require('./adapters/azureOpenaiAdapter');
 const openaiAdapter = require('./adapters/openaiAdapter');
 
+const { hasGeminiApiKeys } = require('./adapters/geminiKeyPool');
+const { hasAnthropicApiKeys } = require('./adapters/anthropicKeyPool');
+
 function getActiveProvider() {
-  if (process.env.GEMINI_API_KEY) return 'gemini';
+  if (hasGeminiApiKeys()) return 'gemini';
+  if (hasAnthropicApiKeys()) return 'anthropic';
   if (
     process.env.AZURE_OPENAI_ENDPOINT &&
     process.env.AZURE_OPENAI_API_KEY
@@ -24,6 +29,40 @@ function defaultTimeoutMs() {
   return Number.isFinite(n) && n > 0 ? n : 90000;
 }
 
+function isGeminiQuotaExhausted(err) {
+  return Boolean(
+    err &&
+      (err.code === 'AI_QUOTA_EXHAUSTED' ||
+        String(err.message || '').includes('risultano esaurite'))
+  );
+}
+
+function anthropicFallbackEnabled() {
+  const raw = process.env.AI_ANTHROPIC_FALLBACK;
+  if (raw != null && String(raw).trim() !== '') {
+    return !/^false|0|no|off$/i.test(String(raw).trim());
+  }
+  return hasAnthropicApiKeys();
+}
+
+async function chatWithProvider(provider, messages, merged) {
+  switch (provider) {
+    case 'gemini':
+      return geminiAdapter.chat(messages, merged);
+    case 'anthropic':
+      return anthropicAdapter.chat(messages, merged);
+    case 'azure_openai':
+      return azureOpenaiAdapter.chat(messages, merged);
+    case 'openai':
+      return openaiAdapter.chat(messages, merged);
+    default: {
+      const err = new Error('Unknown AI provider');
+      err.code = 'AI_NOT_CONFIGURED';
+      throw err;
+    }
+  }
+}
+
 /**
  * @param {Array<{role:string, content:string}>} messages
  * @param {object} [options]
@@ -36,7 +75,7 @@ async function chat(messages, options = {}) {
   const provider = getActiveProvider();
   if (!provider) {
     const err = new Error(
-      'No AI provider configured (set GEMINI_API_KEY, or Azure OpenAI env vars, or OPENAI_API_KEY)'
+      'No AI provider configured (set GEMINI_API_KEY, ANTHROPIC_API_KEY, Azure OpenAI env vars, or OPENAI_API_KEY)'
     );
     err.code = 'AI_NOT_CONFIGURED';
     throw err;
@@ -50,19 +89,18 @@ async function chat(messages, options = {}) {
         : defaultTimeoutMs(),
   };
 
-  switch (provider) {
-    case 'gemini':
-      return geminiAdapter.chat(messages, merged);
-    case 'azure_openai':
-      return azureOpenaiAdapter.chat(messages, merged);
-    case 'openai':
-      return openaiAdapter.chat(messages, merged);
-    default:
-      {
-        const err = new Error('Unknown AI provider');
-        err.code = 'AI_NOT_CONFIGURED';
-        throw err;
-      }
+  try {
+    return await chatWithProvider(provider, messages, merged);
+  } catch (err) {
+    if (
+      provider === 'gemini' &&
+      isGeminiQuotaExhausted(err) &&
+      anthropicFallbackEnabled() &&
+      hasAnthropicApiKeys()
+    ) {
+      return anthropicAdapter.chat(messages, merged);
+    }
+    throw err;
   }
 }
 

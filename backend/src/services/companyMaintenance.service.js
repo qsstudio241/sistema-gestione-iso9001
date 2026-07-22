@@ -144,12 +144,15 @@ async function hardDeleteCompany(companyId, auditorOrgId) {
   await deleteCompanyDocuments(companyId, organizationId);
 
   const simpleDeletes = [
+    // Dipendenze foglia: vanno prima delle tabelle che referenziano
+    ['qualification_confirmations', 'DELETE FROM qualification_confirmations WHERE company_id = @company_id'],
+    ['qualifications', 'DELETE FROM qualifications WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['company_personnel', 'DELETE FROM company_personnel WHERE company_id = @company_id AND organization_id = @organization_id'],
+    ['company_counterparties', 'DELETE FROM company_counterparties WHERE company_id = @company_id'],
     ['user_company_access', 'DELETE FROM user_company_access WHERE company_id = @company_id'],
     ['complaints', 'DELETE FROM complaints WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['suppliers', 'DELETE FROM suppliers WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['welding_procedures', 'DELETE FROM welding_procedures WHERE company_id = @company_id AND organization_id = @organization_id'],
-    ['qualifications', 'DELETE FROM qualifications WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['billing_events', 'DELETE FROM billing_events WHERE company_id = @company_id'],
     ['billing_snapshots', 'DELETE FROM billing_snapshots WHERE company_id = @company_id'],
     ['company_billing', 'DELETE FROM company_billing WHERE company_id = @company_id'],

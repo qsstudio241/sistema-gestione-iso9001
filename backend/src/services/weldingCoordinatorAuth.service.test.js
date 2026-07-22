@@ -11,6 +11,20 @@ describe('weldingCoordinatorAuth.service', () => {
     expect(svc.isWelder9606Type('9606_1')).toBe(true);
     expect(svc.isWelder9606Type('patentino_saldatore')).toBe(true);
     expect(svc.isWelder9606Type('Coordinatore ISO 14731')).toBe(false);
+    expect(svc.isWelder9606Type('Operatore ISO 14732')).toBe(false);
+  });
+
+  it('isOperator14732Type riconosce varianti 14732', () => {
+    expect(svc.isOperator14732Type('Operatore ISO 14732')).toBe(true);
+    expect(svc.isOperator14732Type('qualifica_14732')).toBe(true);
+    expect(svc.isOperator14732Type('Saldatore ISO 9606-1')).toBe(false);
+  });
+
+  it('requiresSemiannualConfirmation vale per 9606 e 14732, non per altri tipi', () => {
+    expect(svc.requiresSemiannualConfirmation('Saldatore ISO 9606-1')).toBe(true);
+    expect(svc.requiresSemiannualConfirmation('Operatore ISO 14732')).toBe(true);
+    expect(svc.requiresSemiannualConfirmation('Coordinatore ISO 14731')).toBe(false);
+    expect(svc.requiresSemiannualConfirmation('Operatore NDT VT Livello 2')).toBe(false);
   });
 
   it('addMonthsIso aggiunge 6 mesi', () => {

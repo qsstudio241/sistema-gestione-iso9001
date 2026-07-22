@@ -14,6 +14,7 @@ import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
 import { saveChecklistFocus } from "../utils/aiAssistantContext";
+import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
 /**
@@ -683,6 +684,9 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
     ? { standard: question.satisfied_by_standard, clause: question.satisfied_by_clause || "", doc_ref: question.satisfied_by_doc_ref || "" }
     : null;
 
+  const clauseRef = question.clauseRef || clauseId;
+  const aiLabel = clauseRef ? `Chiedi all\u2019AI \u2014 \u00A7${clauseRef}` : "Chiedi all\u2019AI";
+
   return (
     <UniversalQuestionCard
       question={question}
@@ -698,7 +702,21 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
       auditId={auditId}
       auditUuid={auditUuid}
       readOnly={readOnly}
-    />
+    >
+      {!readOnly && (
+        <AskAiButton
+          label={aiLabel}
+          onBeforeNavigate={() =>
+            saveChecklistFocus(auditUuid, {
+              standardKey: checklistKey,
+              clauseRef,
+              questionId: String(question.id),
+              questionText: question.text || question.title || null,
+            })
+          }
+        />
+      )}
+    </UniversalQuestionCard>
   );
 }
 

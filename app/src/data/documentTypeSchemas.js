@@ -1,18 +1,28 @@
 /**
- * documentTypeSchemas.js � Schemi tipo-specifici per la gestione documentale
+ * documentTypeSchemas.js — Schemi tipo-specifici per la gestione documentale
  *
  * Ogni schema definisce:
  *   - fields: campi UI da mostrare nel form (oltre ai campi base)
  *   - aiPrompt: istruzioni specializzate per l'estrazione AI
  *   - aiExpectedSchema: struttura JSON attesa dall'AI (per validazione)
  *   - expiryField: chiave del campo che contiene la data di scadenza (semaforo)
- *   - rangeFields: campi che descrivono il range di qualifica (per future verifiche idoneit�)
+ *   - rangeFields: campi che descrivono il range di qualifica (per future verifiche idoneità)
  *
  * Importare SEMPRE da qui. Non dichiarare schemi localmente nei componenti.
- * Estende documentTypes.js � i tipi devono essere gi� registrati l�.
+ * Estende documentTypes.js — i tipi devono essere già registrati lì.
  */
 
-// ??? patentino_saldatore (ISO 9606-1) ????????????????????????????????????????
+import { getMaterialGroupSelectOptions } from './materialGroups15608.js';
+import { getWeldingProcessSelectOptions } from './weldingProcesses4063.js';
+import { getWeldingPositionSelectOptions } from './weldingPositions6947.js';
+
+const MATERIAL_GROUP_OPTIONS = getMaterialGroupSelectOptions({
+  families: ['steel', 'aluminium', 'copper', 'nickel', 'titanium', 'zirconium', 'cast_iron'],
+});
+const WELDING_PROCESS_OPTIONS = getWeldingProcessSelectOptions();
+const WELDING_POSITION_OPTIONS = getWeldingPositionSelectOptions();
+
+// --- patentino_saldatore (ISO 9606-1) 
 
 const patentino_saldatore = {
   id: "patentino_saldatore",
@@ -43,7 +53,7 @@ const patentino_saldatore = {
       label: "Numero certificato",
       type: "text",
       required: true,
-      hint: "Es. T�V-IT-9606-2024-00123",
+      hint: "Es. TÜV-IT-9606-2024-00123",
     },
     {
       key: "issuing_body",
@@ -51,34 +61,25 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "tuv",   label: "T�V" },
-        { value: "bv",    label: "Bureau Veritas (BV)" },
-        { value: "dnv",   label: "DNV GL" },
-        { value: "rina",  label: "RINA" },
-        { value: "imq",   label: "IMQ" },
-        { value: "iqn",   label: "IQNet" },
-        { value: "csq",   label: "CSQ / Certiquality" },
-        { value: "altro", label: "Altro" },
+        { value: "tuv",         label: "TÜV" },
+        { value: "bv",          label: "Bureau Veritas (BV)" },
+        { value: "dnv",         label: "DNV GL" },
+        { value: "rina",        label: "RINA" },
+        { value: "imq",         label: "IMQ" },
+        { value: "iqn",         label: "IQNet" },
+        { value: "csq",         label: "CSQ / Certiquality" },
+        { value: "tec_eurolab", label: "TEC Eurolab" },
+        { value: "sideius",     label: "Sideius (Valor)" },
+        { value: "altro",       label: "Altro" },
       ],
-      hint: "Organismo terzo che ha rilasciato il certificato",
+      hint: "Organismo terzo che ha rilasciato il certificato. Ente non in elenco? Seleziona \u201CAltro\u201D e specificalo nelle note.",
     },
     {
       key: "welding_process",
       label: "Processo di saldatura",
       type: "select",
       required: true,
-      options: [
-        { value: "111",  label: "111 � Elettrodo rivestito (MMA)" },
-        { value: "121",  label: "121 � Arco sommerso (SAW) filo" },
-        { value: "131",  label: "131 � MIG (GMAW) filo solido" },
-        { value: "135",  label: "135 � MAG (GMAW) filo solido" },
-        { value: "136",  label: "136 � MAG filo animato (FCAW)" },
-        { value: "138",  label: "138 � MAG filo animato metallo (MCAW)" },
-        { value: "141",  label: "141 � TIG (GTAW) elettrodo tungsteno" },
-        { value: "145",  label: "145 � TIG + filo freddo (GTAW-CW)" },
-        { value: "311",  label: "311 � Ossiacetilenica (OAW)" },
-        { value: "outro", label: "Altro" },
-      ],
+      options: WELDING_PROCESS_OPTIONS,
       hint: "Codice processo secondo ISO 4063",
     },
     {
@@ -87,8 +88,8 @@ const patentino_saldatore = {
       type: "select",
       required: true,
       options: [
-        { value: "BW", label: "BW � Giunto testa a testa (Butt Weld)" },
-        { value: "FW", label: "FW � Giunto a T / angolare (Fillet Weld)" },
+        { value: "BW", label: "BW - Giunto testa a testa (Butt Weld)" },
+        { value: "FW", label: "FW - Giunto a T / angolare (Fillet Weld)" },
       ],
       hint: "BW = full penetration, FW = angolare",
     },
@@ -97,22 +98,8 @@ const patentino_saldatore = {
       label: "Gruppo materiale base (ISO/TR 15608)",
       type: "select",
       required: true,
-      options: [
-        { value: "1.1", label: "1.1 � Acciai con Re ? 275 MPa" },
-        { value: "1.2", label: "1.2 � Acciai con Re 275�360 MPa" },
-        { value: "1.3", label: "1.3 � Acciai con Re > 360 MPa" },
-        { value: "2",   label: "2 � Acciai a grani fini termotrattati" },
-        { value: "3",   label: "3 � Acciai per alte temperature" },
-        { value: "4",   label: "4 � Acciai bassolegati Cr-Mo" },
-        { value: "5",   label: "5 � Acciai inossidabili martensitici/ferritici" },
-        { value: "6",   label: "6 � Acciai inossidabili austenitici" },
-        { value: "7",   label: "7 � Acciai inossidabili duplex" },
-        { value: "8",   label: "8 � Acciai inossidabili austenitici ad alto Ni" },
-        { value: "9",   label: "9 � Nichel e leghe di nichel" },
-        { value: "10",  label: "10 � Rame e leghe di rame" },
-        { value: "altro", label: "Altro" },
-      ],
-      hint: "Gruppo materiale della piastra / tubo qualificato",
+      options: MATERIAL_GROUP_OPTIONS,
+      hint: "Gruppo materiale della piastra / tubo qualificato (catalogo ISO/TR 15608:2013)",
     },
     {
       key: "filler_material_group",
@@ -135,39 +122,29 @@ const patentino_saldatore = {
       label: "Posizioni qualificate",
       type: "multiselect",
       required: false,
-      options: [
-        { value: "PA",     label: "PA � Piana / sotto testa" },
-        { value: "PB",     label: "PB � Orizzontale su verticale" },
-        { value: "PC",     label: "PC � Orizzontale" },
-        { value: "PD",     label: "PD � Sopratesta orizzontale" },
-        { value: "PE",     label: "PE � Sopratesta" },
-        { value: "PF",     label: "PF � Verticale ascendente" },
-        { value: "PG",     label: "PG � Verticale discendente" },
-        { value: "H-L045", label: "H-L045 � Tubo inclinato 45�" },
-        { value: "J-L045", label: "J-L045 � Tubo inclinato 45� discendente" },
-      ],
+      options: WELDING_POSITION_OPTIONS,
       hint: "Posizioni di saldatura secondo ISO 6947 (seleziona tutte quelle incluse)",
     },
     {
       key: "thickness_min_mm",
-      label: "Spessore qualificato � minimo (mm)",
+      label: "Spessore qualificato - minimo (mm)",
       type: "number",
       required: false,
       hint: "Spessore minimo del range qualificato dalla prova",
     },
     {
       key: "thickness_max_mm",
-      label: "Spessore qualificato � massimo (mm)",
+      label: "Spessore qualificato - massimo (mm)",
       type: "number",
       required: false,
-      hint: "Spessore massimo del range qualificato (es. 2t per piastre)",
+      hint: "Spessore massimo del range qualificato (es. 2t per piastre). Lascia vuoto se non c'è limite superiore: verrà mostrato come \u201C\u2265 spessore minimo\u201D.",
     },
     {
       key: "pipe_diameter_mm",
       label: "Diametro tubi qualificato (mm)",
       type: "number",
       required: false,
-      hint: "Diametro esterno del tubo di prova; lasciare vuoto se solo piastre",
+      hint: "Diametro esterno del tubo di prova; lasciare vuoto se solo piastre. Se piastra in posizioni PA/PB/PC/PD, il campo copre tipicamente tubi \u2265500 mm (\u226575 mm se posizione rotante) \u2014 verificare sul certificato prima di riportarlo (proposta da feedback cliente, non ancora confermata su copia integrale norma).",
     },
     {
       key: "shielding_gas",
@@ -181,21 +158,21 @@ const patentino_saldatore = {
       label: "Data esame",
       type: "date",
       required: true,
-      hint: "Data in cui si � svolta la prova di qualifica",
+      hint: "Data in cui si è svolta la prova di qualifica",
     },
     {
       key: "expiry_date",
-      label: "Data scadenza (2 anni da esame)",
+      label: "Data di scadenza",
       type: "date",
       required: true,
-      hint: "Calcolata automaticamente: data esame + 24 mesi. Modificabile se rinnovo anticipato.",
+      hint: "Dipende dalla norma e dall'opzione di rivalidazione scelta sul certificato: ISO 9606-1 (saldatori manuali) — 3 anni con nuova prova, o ciclo 2 anni con controllo NDT; ISO 14732 (operatori saldatura automatica/meccanizzata) — 6 anni con nuova prova, o ciclo 3 anni con controllo NDT (valori diversi, non intercambiabili). Entrambe le norme richiedono comunque conferma ogni 6 mesi. Verificare sempre sul certificato, non assumere un valore fisso.",
     },
     {
       key: "last_confirmation_date",
       label: "Data ultima conferma semestrale",
       type: "date",
       required: false,
-      hint: "Il datore di lavoro deve confermare ogni 6 mesi che il saldatore � attivo",
+      hint: "Il datore di lavoro deve confermare ogni 6 mesi che il saldatore è attivo",
     },
     {
       key: "next_confirmation_due",
@@ -210,9 +187,9 @@ const patentino_saldatore = {
       type: "select",
       required: false,
       options: [
-        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 � Saldatura per fusione, acciai" },
-        { value: "ISO 9606-2",      label: "ISO 9606-2 � Alluminio e leghe di alluminio" },
-        { value: "ISO 14732",       label: "ISO 14732 � Qualifica operatori saldatura automatica" },
+        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 - Saldatura per fusione, acciai" },
+        { value: "ISO 9606-2",      label: "ISO 9606-2 - Alluminio e leghe di alluminio" },
+        { value: "ISO 14732",       label: "ISO 14732 - Qualifica operatori saldatura automatica" },
         { value: "EN 287-1",        label: "EN 287-1 (sostituita da ISO 9606-1)" },
       ],
       hint: "Norma tecnica di riferimento della qualifica",
@@ -228,20 +205,20 @@ const patentino_saldatore = {
 
   aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON.
-Se un campo non � presente nel documento, usa null.
+Se un campo non è presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
-- issuing_body: ente certificatore (T�V, Bureau Veritas, DNV, RINA, IMQ, ecc.)
+- issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
-- joint_type: tipo giunto � "BW" (testa a testa) o "FW" (angolare)
-- material_group: gruppo materiale base ISO/TR 15608 (es. "1.1", "6", "8")
+- joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
+- material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
-- thickness_min_mm: numero � spessore minimo qualificato in mm
-- thickness_max_mm: numero � spessore massimo qualificato in mm
-- pipe_diameter_mm: numero � diametro esterno tubi qualificato in mm (null se solo piastre)
+- thickness_min_mm: numero: spessore minimo qualificato in mm
+- thickness_max_mm: numero: spessore massimo qualificato in mm
+- pipe_diameter_mm: numero: diametro esterno tubi qualificato in mm (null se solo piastre)
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
@@ -270,7 +247,7 @@ Campi da estrarre:
   },
 };
 
-// ??? wps (schema minimo � da sviluppare) ?????????????????????????????????????
+// --- wps (schema minimo - da sviluppare) ?
 
 const wps = {
   id: "wps",
@@ -335,7 +312,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
   },
 };
 
-// ??? norma (Norma tecnica � schema completo) ?????????????????????????????????
+// --- norma (Norma tecnica - schema completo) 
 
 const norma = {
   id: "norma",
@@ -399,6 +376,7 @@ const norma = {
         { value: "superata",     label: "Superata" },
         { value: "annullata",    label: "Annullata" },
         { value: "in_revisione", label: "In revisione" },
+        { value: "da_verificare", label: "Da verificare" },
       ],
     },
     {
@@ -456,7 +434,7 @@ Estrai nell'oggetto "type_specific_data":
 - scope_summary: oggetto/scopo dalla Sezione 1 (max 200 caratteri)
 - ics_code: codice ICS se presente
 - technical_committee: comitato tecnico responsabile
-- is_harmonized: true se � una norma EN armonizzata
+- is_harmonized: true se è una norma EN armonizzata
 Usa null per i campi non trovati.`,
 
   aiExpectedSchema: {
@@ -465,7 +443,7 @@ Usa null per i campi non trovati.`,
     issuing_body: "string|null",
     edition_year: "number|null",
     supersedes: "string|null",
-    validity_status: "vigente|superata|annullata|in_revisione|null",
+    validity_status: "vigente|superata|annullata|in_revisione|da_verificare|null",
     language: "it|en|de|fr|es|multi|null",
     scope_summary: "string|null",
     ics_code: "string|null",
@@ -484,10 +462,10 @@ const certificato_materiale = {
   fields: [
     { key: "certificate_type", label: "Tipo certificato EN 10204", type: "select", required: true,
       options: [
-        { value: "2.1", label: "2.1 � Dichiarazione di conformit�" },
-        { value: "2.2", label: "2.2 � Dichiarazione con ispezione campione" },
-        { value: "3.1", label: "3.1 � Certificato di ispezione 3.1" },
-        { value: "3.2", label: "3.2 � Certificato di ispezione 3.2" },
+        { value: "2.1", label: "2.1 - Dichiarazione di conformità " },
+        { value: "2.2", label: "2.2 - Dichiarazione con ispezione campione" },
+        { value: "3.1", label: "3.1 - Certificato di ispezione 3.1" },
+        { value: "3.2", label: "3.2 - Certificato di ispezione 3.2" },
       ] },
     { key: "material_grade", label: "Grado / designazione materiale", type: "text", required: true },
     { key: "heat_number", label: "Colata / heat number", type: "text", required: false },
@@ -518,11 +496,11 @@ const cert_ndt = {
     { key: "certificate_number", label: "Numero certificato", type: "text", required: true },
     { key: "ndt_method", label: "Metodo NDT", type: "select", required: true,
       options: [
-        { value: "UT", label: "UT � Ultrasoni" },
-        { value: "RT", label: "RT � Raggi X" },
-        { value: "MT", label: "MT � Magnetoscopia" },
-        { value: "PT", label: "PT � Liquidi penetranti" },
-        { value: "VT", label: "VT � Visivo" },
+        { value: "UT", label: "UT - Ultrasoni" },
+        { value: "RT", label: "RT - Raggi X" },
+        { value: "MT", label: "MT - Magnetoscopia" },
+        { value: "PT", label: "PT - Liquidi penetranti" },
+        { value: "VT", label: "VT - Visivo" },
       ] },
     { key: "certification_level", label: "Livello", type: "select", required: false,
       options: [
@@ -576,31 +554,144 @@ calibration_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
   },
 };
 
-// --- qualifica_14732 ---
+// --- qualifica_14732 (ISO 14732 - operatori/preparatori saldatura automatica e meccanizzata)
 
 const qualifica_14732 = {
   id: "qualifica_14732",
   label: "Qualifica operatore (ISO 14732)",
   expiryField: "expiry_date",
-  rangeFields: ["welding_process", "equipment_type"],
+  rangeFields: ["welding_process", "welding_positions", "welding_type"],
   fields: [
-    { key: "operator_name", label: "Nome operatore", type: "text", required: true },
+    { key: "operator_name", label: "Nome operatore/preparatore", type: "text", required: true },
     { key: "certificate_number", label: "Numero qualifica", type: "text", required: true },
-    { key: "welding_process", label: "Processo / equipaggiamento", type: "text", required: false },
-    { key: "equipment_type", label: "Tipo macchina saldatura", type: "text", required: false },
+    {
+      key: "issuing_body",
+      label: "Ente certificatore",
+      type: "select",
+      required: false,
+      options: [
+        { value: "tuv",         label: "TÜV" },
+        { value: "bv",          label: "Bureau Veritas (BV)" },
+        { value: "dnv",         label: "DNV GL" },
+        { value: "rina",        label: "RINA" },
+        { value: "imq",         label: "IMQ" },
+        { value: "tec_eurolab", label: "TEC Eurolab" },
+        { value: "sideius",     label: "Sideius (Valor)" },
+        { value: "altro",       label: "Altro" },
+      ],
+      hint: "Esaminatore/organismo che ha rilasciato la qualifica",
+    },
+    {
+      key: "welding_type",
+      label: "Tipo di saldatura",
+      type: "select",
+      required: false,
+      options: [
+        { value: "automatic",   label: "Automatica (nessun intervento manuale)" },
+        { value: "mechanized",  label: "Meccanizzata (variazione manuale possibile)" },
+      ],
+      hint: "Determina quali variabili essenziali si applicano (ISO 14732 §4.2.2 vs §4.2.3)",
+    },
+    {
+      key: "welding_process",
+      label: "Processo di saldatura",
+      type: "select",
+      required: false,
+      options: WELDING_PROCESS_OPTIONS,
+      hint: "Codice processo secondo ISO 4063",
+    },
+    { key: "equipment_type", label: "Tipo unità/macchina di saldatura", type: "text", required: false },
+    {
+      key: "welding_positions",
+      label: "Posizioni qualificate",
+      type: "multiselect",
+      required: false,
+      options: WELDING_POSITION_OPTIONS,
+      hint: "Solo per saldatura meccanizzata è variabile essenziale esplicita (§4.2.3): una nuova posizione richiede nuova qualifica",
+    },
+    {
+      key: "single_multi_run",
+      label: "Tecnica passata",
+      type: "select",
+      required: false,
+      options: [
+        { value: "single", label: "Mono-passata per lato" },
+        { value: "multi",  label: "Multi-passata per lato" },
+      ],
+      hint: "Da mono a multi-passata richiede nuova qualifica, non viceversa",
+    },
     { key: "exam_date", label: "Data esame", type: "date", required: false },
-    { key: "expiry_date", label: "Data scadenza", type: "date", required: true },
+    {
+      key: "expiry_date",
+      label: "Data di scadenza",
+      type: "date",
+      required: true,
+      hint: "Dipende dal metodo di rivalidazione dichiarato sul certificato (ISO 14732 §5.3: a) nuova prova ogni 6 anni, b) ciclo 3 anni con controllo NDT, c) indefinita se conferma rispettata + fabbricante certificato ISO 3834). Non assumere un valore fisso: verificare sul certificato.",
+    },
+    {
+      key: "last_confirmation_date",
+      label: "Data ultima conferma semestrale",
+      type: "date",
+      required: false,
+      hint: "Il responsabile saldature/esaminatore deve confermare ogni 6 mesi che l'operatore è attivo (identico a ISO 9606-1)",
+    },
+    {
+      key: "next_confirmation_due",
+      label: "Prossima conferma entro",
+      type: "date",
+      required: false,
+      hint: "Calcolata: ultima conferma + 6 mesi",
+    },
+    {
+      key: "qualification_method",
+      label: "Metodo di qualificazione (§4.1)",
+      type: "select",
+      required: false,
+      options: [
+        { value: "iso_15614", label: "a) Prova procedura (ISO 15614)" },
+        { value: "iso_15613", label: "b) Prova pre-produzione (ISO 15613)" },
+        { value: "iso_9606",  label: "c) Provino standard (ISO 9606)" },
+        { value: "production_test", label: "d) Prova/campione di produzione" },
+      ],
+    },
+    {
+      key: "notes",
+      label: "Note",
+      type: "textarea",
+      required: false,
+      hint: "Osservazioni aggiuntive, dettagli backing/inserto consumabile/sensori, ecc.",
+    },
   ],
-  aiPrompt: `Stai analizzando una qualifica operatore saldatura automatica ISO 14732.
-Estrai in type_specific_data: operator_name, certificate_number, welding_process, equipment_type,
-exam_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+  aiPrompt: `Stai analizzando una qualifica operatore/preparatore di saldatura automatica o meccanizzata secondo ISO 14732.
+Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non è presente, usa null.
+
+Campi da estrarre:
+- operator_name: nome e cognome dell'operatore o preparatore
+- certificate_number: numero univoco della qualifica
+- issuing_body: esaminatore/organismo di certificazione
+- welding_type: "automatic" o "mechanized" solo se dichiarato esplicitamente
+- welding_process: codice processo ISO 4063
+- equipment_type: tipo di unità/macchina di saldatura
+- welding_positions: array posizioni secondo ISO 6947, solo se dichiarate
+- single_multi_run: "single" o "multi" se indicato
+- exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD)
+- qualification_method: quale metodo tra §4.1 a/b/c/d è stato usato, se indicato
+
+IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali — estrai solo ciò che è scritto sul certificato.`,
   aiExpectedSchema: {
     operator_name: "string|null",
     certificate_number: "string|null",
+    issuing_body: "string|null",
+    welding_type: "automatic|mechanized|null",
     welding_process: "string|null",
     equipment_type: "string|null",
+    welding_positions: "string[]|null",
+    single_multi_run: "single|multi|null",
     exam_date: "YYYY-MM-DD|null",
     expiry_date: "YYYY-MM-DD|null",
+    last_confirmation_date: "YYYY-MM-DD|null",
+    next_confirmation_due: "YYYY-MM-DD|null",
+    qualification_method: "iso_15614|iso_15613|iso_9606|production_test|null",
   },
 };
 
@@ -632,11 +723,11 @@ approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
   },
 };
 
-// --- sal / rdp (roadmap � schemi base) ---
+// --- sal / rdp (roadmap - schemi base) ---
 
 const sal = {
   id: "sal",
-  label: "SAL � Stato avanzamento lavori",
+  label: "SAL - Stato avanzamento lavori",
   expiryField: null,
   rangeFields: [],
   fields: [
@@ -656,7 +747,7 @@ Estrai in type_specific_data: client_name, standards_tracked, period_label. Usa 
 
 const rdp = {
   id: "rdp",
-  label: "RDP � Rapporto di prova",
+  label: "RDP - Rapporto di prova",
   expiryField: null,
   rangeFields: ["test_type"],
   fields: [
@@ -675,7 +766,7 @@ Estrai in type_specific_data: report_number, test_type, component_ref, test_date
   },
 };
 
-// ??? Registro schemi ??????????????????????????????????????????????????????????
+// --- Registro schemi 
 
 /**
  * Mappa doc_type ? schema.

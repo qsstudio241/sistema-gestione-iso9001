@@ -140,7 +140,7 @@ export default function SearchPage() {
         <h2>Ricerca SGQ</h2>
         <p>
           {user?.organization_name
-            ? `Studio: ${user.organization_name} ù cerca NC, documenti, audit e altro`
+            ? `Studio: ${user.organization_name}  -  cerca NC, documenti, audit e altro`
             : "Cerca nel registro dello studio"}
         </p>
       </div>
@@ -175,7 +175,7 @@ export default function SearchPage() {
           })}
         </select>
 
-        <div className="search-mode-tabs" role="tablist" aria-label="Modalitù ricerca">
+        <div className="search-mode-tabs" role="tablist" aria-label="Modalit -  ricerca">
           <button
             type="button"
             role="tab"
@@ -244,7 +244,7 @@ export default function SearchPage() {
                         <div className="search-result-meta">
                           {item.status && <span>Stato: {item.status}</span>}
                           {item.companyName && (
-                            <span>{item.status ? " ù " : ""}{item.companyName}</span>
+                            <span>{item.status ? "  -  " : ""}{item.companyName}</span>
                           )}
                         </div>
                       </>

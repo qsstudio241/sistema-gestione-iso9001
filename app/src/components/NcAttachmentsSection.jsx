@@ -108,7 +108,7 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
               </button>
               <span className="nc-attachment-meta">
                 {formatSize(att.file_size)}
-                {att.category ? ` � ${att.category}` : ""}
+                {att.category ? ` — ${att.category}` : ""}
               </span>
               {!readOnly && (
                 <button

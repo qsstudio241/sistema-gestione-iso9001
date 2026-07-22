@@ -59,4 +59,26 @@ describe('moduleLicense.service', () => {
     expect(result).toEqual(['audit', 'ai_assist', 'ai_chat']);
     expect(query).toHaveBeenCalledTimes(1);
   });
+
+  describe('hasSalLegalConformityCapability (seam SAL_LEGAL_CONFORMITY)', () => {
+    it('oggi il seam mappa su ai_norms', () => {
+      expect(svc.SAL_LEGAL_CONFORMITY_MODULE_KEY).toBe('ai_norms');
+    });
+
+    it('admin/superadmin hanno sempre la capability senza query DB', async () => {
+      expect(await svc.hasSalLegalConformityCapability(1004, 'admin')).toBe(true);
+      expect(await svc.hasSalLegalConformityCapability(1004, 'SuperAdmin')).toBe(true);
+      expect(query).not.toHaveBeenCalled();
+    });
+
+    it('org con ai_norms licenziato -> capability ON', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: JSON.stringify(['audit', 'sal', 'ai_norms']) }] });
+      expect(await svc.hasSalLegalConformityCapability(1004, 'user')).toBe(true);
+    });
+
+    it('org senza ai_norms -> capability OFF', async () => {
+      query.mockResolvedValueOnce({ recordset: [{ licensed_modules: JSON.stringify(['audit', 'sal']) }] });
+      expect(await svc.hasSalLegalConformityCapability(1004, 'user')).toBe(false);
+    });
+  });
 });

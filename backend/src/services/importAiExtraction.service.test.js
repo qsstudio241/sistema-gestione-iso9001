@@ -8,7 +8,11 @@ jest.mock('./aiProviderAdapter', () => ({
 }));
 
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
-const { extractStructuredFromText, stripCodeFences } = require('./importAiExtraction.service');
+const {
+    extractStructuredFromText,
+    extractStructuredByDocType,
+    stripCodeFences,
+} = require('./importAiExtraction.service');
 
 describe('stripCodeFences', () => {
     it('rimuove fence json', () => {
@@ -129,5 +133,35 @@ describe('extractStructuredFromText', () => {
         await expect(
             extractStructuredFromText({ text: 'x', documentTypeHint: null })
         ).rejects.toMatchObject({ code: 'AI_REQUEST_FAILED' });
+    });
+});
+
+describe('extractStructuredByDocType — qualifica_14732 (RC-8, fix bug qualifica_operatore)', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('include le sezioni processo/posizioni ma NON il gruppo materiale (non è variabile essenziale ISO 14732)', async () => {
+        getActiveProvider.mockReturnValue('gemini');
+        chat.mockResolvedValue({
+            content: JSON.stringify({ type_specific_data: {} }),
+            model: 'gemini-1.5-flash',
+            tokens: { input: 1, output: 1 },
+            cost: 0,
+        });
+
+        await extractStructuredByDocType({ text: 'testo qualifica operatore', docType: 'qualifica_14732' });
+
+        expect(chat).toHaveBeenCalledTimes(1);
+        const [messages] = chat.mock.calls[0];
+        const systemPrompt = messages.find((m) => m.role === 'system').content;
+
+        expect(systemPrompt).toContain('qualifica_14732');
+        expect(systemPrompt).not.toContain('qualifica_operatore');
+        // sezioni catalogo agganciate (build*PromptSection non vuote)
+        expect(systemPrompt.toLowerCase()).toMatch(/processo|4063/);
+        expect(systemPrompt.toLowerCase()).toMatch(/posizion|6947/);
+        // il gruppo materiale non è variabile essenziale per gli operatori ISO 14732
+        expect(systemPrompt).not.toMatch(/ISO\/TR\s*15608/i);
     });
 });

@@ -16,7 +16,7 @@ function stripCodeFences(raw) {
 
 /**
  * POST /ai/suggest
- * Body: { feature: 'review_requirements' | 'audit_conclusions', context: {...} }
+ * Body: { feature: 'review_requirements' | 'audit_conclusions' | 'nc_cause', context: {...} }
  */
 async function suggest(req, res) {
   try {
@@ -39,6 +39,10 @@ async function suggest(req, res) {
     let built;
     switch (feature) {
       case 'review_requirements':
+        logger.warn(
+          '[DEPRECATED] POST /ai/suggest feature=review_requirements — ' +
+          'migrate to POST /contract-reviews/:id/ai/analyze-requirements',
+        );
         built = await contextBuilder.buildReviewRequirementsContext({
           ...context,
           organizationId: req.user.organization_id,
@@ -48,6 +52,12 @@ async function suggest(req, res) {
         built = await contextBuilder.buildAuditConclusionsContext({
           ...context,
           userId: req.user.user_id || req.user.id,
+          organizationId: req.user.organization_id,
+        });
+        break;
+      case 'nc_cause':
+        built = await contextBuilder.buildNcCauseContext({
+          ...context,
           organizationId: req.user.organization_id,
         });
         break;
@@ -144,6 +154,17 @@ async function feedback(req, res) {
     );
 
     res.json({ success: true });
+
+    // Fire-and-forget: converti il feedback in knowledge chunk per il RAG
+    if (action === 'accepted' || action === 'rephrased') {
+      try {
+        const { processFeedbackChunks } = require('../services/knowledgeIndexer.service');
+        processFeedbackChunks(req.user.organization_id)
+          .catch(err => logger.debug('[AI_FEEDBACK] Feedback chunk processing failed:', err.message));
+      } catch (err) {
+        logger.debug('[AI_FEEDBACK] processFeedbackChunks not available:', err.message);
+      }
+    }
   } catch (err) {
     logger.error('[AI_FEEDBACK] Error:', err.message);
     res.status(500).json({ error: 'Errore salvataggio feedback.', code: 'FEEDBACK_ERROR' });
