@@ -21,6 +21,14 @@ router.post('/audits/:auditRef/lock', auditLockController.acquireLock);
 router.put('/audits/:auditRef/lock', auditLockController.renewLock);
 router.delete('/audits/:auditRef/lock', auditLockController.releaseLock);
 
+// POST /api/v1/audits/check-reaudit - Verifica rilievi pendenti da audit precedente stesso cliente
+// DEVE STARE PRIMA DI /audits/:id
+router.post('/audits/check-reaudit', auditController.checkReaudit);
+
+// GET /api/v1/audits/client-history - Storico ultimi audit completati per un cliente (modal re-audit)
+// DEVE STARE PRIMA DI /audits/:id
+router.get('/audits/client-history', auditController.getClientAuditHistory);
+
 // GET /api/v1/audits/:id - Dettagli audit singolo
 router.get('/audits/:id', auditController.getAuditById);
 
@@ -46,10 +54,6 @@ router.post('/audits/:id/approve', auditController.approveAudit);
 // POST /api/v1/audits/check-reaudit - Verifica rilievi pendenti da audit precedente stesso cliente
 // DEVE STARE PRIMA DI /audits/:id
 router.post('/audits/check-reaudit', auditController.checkReaudit);
-
-// GET /api/v1/audits/client-history - Storico ultimi audit completati per un cliente (modal re-audit)
-// DEVE STARE PRIMA DI /audits/:id
-router.get('/audits/client-history', auditController.getClientAuditHistory);
 
 // POST /api/v1/audits/sync - Upsert audit (INSERT or UPDATE)
 // Usato da sync service offline-first (DEVE STARE PRIMA DI /audits/:id)
