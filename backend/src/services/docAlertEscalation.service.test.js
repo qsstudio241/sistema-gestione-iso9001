@@ -33,7 +33,7 @@ describe('docAlertEscalation.service', () => {
   describe('buildDocAlertHtml', () => {
     it('include titolo documento', () => {
       const html = buildDocAlertHtml('Studio Test', 'Mario', [{
-        title: 'Manuale Qualit�',
+        title: 'Manuale qualità ',
         doc_code: 'MQ-001',
         company_name: 'Acme',
         expiry_date: '2026-06-01',

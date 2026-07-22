@@ -1,4 +1,4 @@
-/* QualificationUploadButton.css — analogo a NormUploadButton.css */
+/* QualificationUploadButton.css â€” analogo a NormUploadButton.css */
 
 .qual-upload { position: relative; display: inline-block; }
 
@@ -35,6 +35,15 @@
   border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.13);
   min-width: 340px; max-width: 480px; z-index: 300;
   padding: 14px 16px;
+}
+
+.qual-upload__doc-type {
+  display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;
+}
+.qual-upload__doc-type label { font-size: 12px; font-weight: 600; color: #4b5563; }
+.qual-upload__doc-type select {
+  padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 13px; color: #111827; background: #fff;
 }
 
 .qual-upload__panel-header { margin-bottom: 10px; }

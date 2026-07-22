@@ -1,5 +1,5 @@
 /**
- * Ricerca unificata studio/azienda ù FTS/LIKE su entitù SGQ (Fase C1).
+ * Ricerca unificata studio/azienda  -  FTS/LIKE su entit -  SGQ (Fase C1).
  * Filtro tenant obbligatorio; companyId opzionale con match rigido (no OR NULL).
  */
 
@@ -147,7 +147,7 @@ async function searchDocuments({ organizationId, pattern, companyId, limit }) {
     return (result.recordset || []).map((row) => ({
         entityType: 'document',
         id: row.id,
-        title: row.doc_code ? `${row.doc_code} ù ${row.title}` : row.title,
+        title: row.doc_code ? `${row.doc_code}  -  ${row.title}` : row.title,
         snippet: truncate(row.title),
         status: row.status || null,
         docType: row.doc_type || null,
@@ -305,7 +305,7 @@ async function searchQualifications({ organizationId, pattern, companyId, limit 
         entityType: 'qualification',
         id: row.id,
         title: row.person_name
-            ? `${row.person_name} ù ${row.qualification_type || 'Qualifica'}`
+            ? `${row.person_name}  -  ${row.qualification_type || 'Qualifica'}`
             : (row.qualification_type || `Qualifica #${row.id}`),
         snippet: truncate(row.certificate_number || row.qualification_type),
         status: row.status || null,
@@ -327,7 +327,7 @@ const SEARCH_HANDLERS = {
  * @param {object} options
  * @param {number} options.organizationId
  * @param {object} options.reqUser - JWT user (RBAC studio su audit/NC)
- * @param {string} options.q - testo ricerca (min 2 char, gi‡ validato)
+ * @param {string} options.q - testo ricerca (min 2 char, gi√† validato)
  * @param {number|null} [options.companyId]
  * @param {string|string[]|null} [options.entityTypes]
  * @param {number|string} [options.limit]

@@ -1,5 +1,5 @@
 /**
- * Test L1 — TagFilterBar component
+ * Test L1 â€” TagFilterBar component
  *
  * Copre: rendering chip, stato attivo/inattivo, raggruppamento per categoria,
  * dropdown "Tutti i tag", reset filtri.
@@ -9,14 +9,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import TagFilterBar from '../components/TagFilterBar';
 
 const sampleTags = [
-  { id: 1, name: 'Urgente',   color: '#e53e3e', category_id: 1, category_name: 'Priorità' },
-  { id: 2, name: 'Revisione', color: '#3182ce', category_id: 1, category_name: 'Priorità' },
+  { id: 1, name: 'Urgente',   color: '#e53e3e', category_id: 1, category_name: 'PrioritÃ ' },
+  { id: 2, name: 'Revisione', color: '#3182ce', category_id: 1, category_name: 'PrioritÃ ' },
   { id: 3, name: 'Saldatura', color: '#38a169', category_id: 2, category_name: 'Processo' },
 ];
 
-// ??? Rendering ??????????????????????????????????????????????????????????????
+//  Rendering ??
 
-describe('TagFilterBar — Rendering', () => {
+describe('TagFilterBar â€” Rendering', () => {
   it('renderizza chip per ogni tag', () => {
     render(<TagFilterBar tags={sampleTags} activeTagIds={[]} onToggle={vi.fn()} onReset={vi.fn()} />);
     expect(screen.getByText('Urgente')).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('TagFilterBar — Rendering', () => {
     expect(chips).toHaveLength(0);
   });
 
-  it('mostra pulsante "Tutti i tag" solo se ci sono più di 10 tag', () => {
+  it('mostra pulsante "Tutti i tag" solo se ci sono piÃ¹ di 10 tag', () => {
     render(<TagFilterBar tags={sampleTags} activeTagIds={[]} onToggle={vi.fn()} onReset={vi.fn()} />);
     expect(screen.queryByText(/tutti i tag/i)).toBeNull();
 
@@ -42,9 +42,9 @@ describe('TagFilterBar — Rendering', () => {
   });
 });
 
-// ??? Interazioni ????????????????????????????????????????????????????????????
+//  Interazioni 
 
-describe('TagFilterBar — Interazioni', () => {
+describe('TagFilterBar â€” Interazioni', () => {
   it('chiama onToggle con id del tag cliccato', () => {
     const onToggle = vi.fn();
     render(<TagFilterBar tags={sampleTags} activeTagIds={[]} onToggle={onToggle} onReset={vi.fn()} />);
@@ -80,9 +80,9 @@ describe('TagFilterBar — Interazioni', () => {
   });
 });
 
-// ??? Stile attivo/inattivo ??????????????????????????????????????????????????
+//  Stile attivo/inattivo ??
 
-describe('TagFilterBar — Stile attivo/inattivo', () => {
+describe('TagFilterBar â€” Stile attivo/inattivo', () => {
   it('chip attivo ha classe --active', () => {
     const { container } = render(
       <TagFilterBar tags={sampleTags} activeTagIds={[1]} onToggle={vi.fn()} onReset={vi.fn()} />

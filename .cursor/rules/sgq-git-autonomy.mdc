@@ -1,0 +1,31 @@
+---
+description: Policy commit/push autonomi ProgettoISO — quando procedere senza chiedere e quando fermarsi.
+alwaysApply: true
+---
+
+# Policy git autonomia (ProgettoISO)
+
+## Commit + push SENZA chiedere conferma
+
+Quando **tutti** i criteri sono veri:
+
+- Task completato (doc allineata, fix verificato, test L1 verdi se applicabile)
+- Scope a basso rischio: solo `docs/**/*.md`, `.cursor/rules/**`, typo/fix 1-2 file frontend non sync/auth/DB
+- Nessun segreto in staging; working tree coerente
+- Messaggio commit chiaro (stile repo, focus sul perché)
+- Dopo commit: `git pull origin main` se necessario, poi `git push origin main` — **mai** force push
+
+## Chiedere conferma PRIMA di commit/push
+
+- Backend controller/routes/middleware, sync, auth, JWT
+- Migrazioni SQL o script `run-migration-*`
+- Breaking change API/schema DB
+- Branch feature con PR draft intenzionale (non push diretto su main se il workflow era PR)
+
+## Protocollo commit
+
+1. `git status` + `git diff` + `git log` (stile messaggi)
+2. Stage mirato (no segreti)
+3. Commit con messaggio heredoc-style (focus sul perché)
+4. `git status` post-commit
+5. `git pull origin main` se necessario, poi `git push origin main`

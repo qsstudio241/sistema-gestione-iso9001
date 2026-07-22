@@ -600,15 +600,24 @@ async function getInputSummary(req, res) {
 
     // ── COPERTURA NORMATIVA ──────────────────────────────────────────────────────
     try {
-        const normReq = pool.request()
-            .input('orgId', orgId)
-            .input('cutoff', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
-
         if (companyId) {
-            normReq.input('companyId', companyId);
-        }
+            const { getNormCoverageForReview } = require('../services/gapAnalysis.service');
+            const salCoverage = await getNormCoverageForReview(orgId, companyId, {
+                standardCode: 'ISO_9001_2015',
+            });
+            if (salCoverage) {
+                result.norm_coverage = salCoverage;
+                result.norm_coverage_source = 'sal';
+            } else {
+                result.norm_coverage = [];
+                result.norm_coverage_note = 'Matrice SAL non disponibile per questa azienda';
+            }
+        } else {
+            const normReq = pool.request()
+                .input('orgId', orgId)
+                .input('cutoff', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
 
-        const normRes = await normReq.query(`
+            const normRes = await normReq.query(`
             SELECT
                 nr.clause_ref,
                 nr.clause_title,
@@ -619,7 +628,6 @@ async function getInputSummary(req, res) {
                 AND a.is_deleted = 0
                 AND a.status IN ('completed', 'approved')
                 AND CAST(a.audit_date AS DATE) >= CAST(@cutoff AS DATE)
-                ${companyId ? 'AND a.company_id = @companyId' : ''}
             )
             WHERE nr.is_current = 1
               AND nr.standard_code = 'ISO_9001_2015'
@@ -628,14 +636,16 @@ async function getInputSummary(req, res) {
             ORDER BY nr.clause_ref
         `);
 
-        result.norm_coverage = normRes.recordset.map((row) => ({
-            clause:        row.clause_ref,
-            title:         row.clause_title,
-            status:        row.last_verified ? 'ok' : 'gap',
-            last_verified: row.last_verified
-                ? new Date(row.last_verified).toISOString().slice(0, 10)
-                : null,
-        }));
+            result.norm_coverage = normRes.recordset.map((row) => ({
+                clause:        row.clause_ref,
+                title:         row.clause_title,
+                status:        row.last_verified ? 'ok' : 'gap',
+                last_verified: row.last_verified
+                    ? new Date(row.last_verified).toISOString().slice(0, 10)
+                    : null,
+            }));
+            result.norm_coverage_source = 'audit_legacy';
+        }
     } catch (err) {
         logger.error('getInputSummary NormCoverage:', err.message);
         result.norm_coverage = [];

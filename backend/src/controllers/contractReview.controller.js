@@ -17,6 +17,7 @@ const {
     CASE_SELECT_SQL,
     CASE_FROM_SQL,
 } = require('../services/commercialCustomerCounterparty.service');
+const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -163,7 +164,7 @@ async function getCase(req, res) {
             return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
         }
 
-        const [historyRes, checklistRes, clarRes, docRes, attRes] = await Promise.all([
+        const [historyRes, checklistRes, clarRes, docRes, attRes, textAnalysisRes] = await Promise.all([
             query(
                 `
                 SELECT id, case_id, from_status, to_status, changed_by, reason, created_at
@@ -214,7 +215,33 @@ async function getCase(req, res) {
                 `,
                 { caseId },
             ).catch(() => ({ recordset: [] })),
+            // Ultima analisi AI del capitolato persistita (source='text'). .catch difensivo:
+            // se lo schema non è ancora migrato (colonna source assente) NON rompe il dettaglio.
+            query(
+                `
+                SELECT TOP 1 id, raw_response, created_at, completed_at
+                FROM commercial_case_drawing_extractions
+                WHERE case_id = @caseId AND organization_id = @organizationId
+                  AND source = 'text' AND status = 'done'
+                ORDER BY id DESC
+                `,
+                { caseId, organizationId },
+            ).catch(() => ({ recordset: [] })),
         ]);
+
+        let textAnalysis = null;
+        const taRow = textAnalysisRes.recordset[0];
+        if (taRow) {
+            let suggestion = null;
+            try {
+                suggestion = JSON.parse(
+                    String(taRow.raw_response).replace(/^```json\s*/i, '').replace(/\s*```$/i, ''),
+                );
+            } catch {
+                suggestion = { raw: taRow.raw_response };
+            }
+            textAnalysis = { id: taRow.id, created_at: taRow.created_at, suggestion };
+        }
 
         return res.json({
             case: caseRow,
@@ -223,6 +250,7 @@ async function getCase(req, res) {
             clarifications: clarRes.recordset,
             documents: docRes.recordset,
             attachments: attRes.recordset,
+            text_analysis: textAnalysis,
         });
     } catch (err) {
         logger.error('getCase', err.message);
@@ -990,6 +1018,33 @@ async function listCaseAttachments(req, res) {
     }
 }
 
+/**
+ * Avvia in background (fire-and-forget) l'estrazione AI appropriata per un allegato.
+ * Delega a caseDocumentAnalysis.service (slice #5).
+ *
+ * @returns {Promise<number|null>} extractionId creato, o null se nessuna estrazione applicabile
+ */
+async function _triggerAutoExtraction({ caseId, attachmentId, organizationId, userId, docRole, mimeType }) {
+    if (!caseDocumentAnalysisService.resolveAnalysisSource(docRole, mimeType)) {
+        return null;
+    }
+
+    try {
+        const job = await caseDocumentAnalysisService.analyzeAttachment({
+            caseId,
+            attachmentId,
+            organizationId,
+            userId,
+            mode: 'async',
+            force: true,
+        });
+        return job ? job.extraction_id : null;
+    } catch (dbErr) {
+        logger.error('_triggerAutoExtraction: impossibile avviare analisi', dbErr.message);
+        return null;
+    }
+}
+
 async function uploadCaseAttachment(req, res) {
     try {
         const organizationId = req.user.organization_id;
@@ -1041,10 +1096,23 @@ async function uploadCaseAttachment(req, res) {
             },
         );
         const row = result.recordset[0];
+
+        // Avvia estrazione AI in background (fire-and-forget, non blocca la risposta)
+        const analysisJobId = await _triggerAutoExtraction({
+            caseId,
+            attachmentId: row.attachment_id,
+            organizationId,
+            userId,
+            docRole,
+            mimeType: req.file.mimetype,
+            storagePath: req.file.path,
+        });
+
         return res.status(201).json({
             attachment_id: row.attachment_id,
             attachment_uuid: row.attachment_uuid,
             file_name: req.file.originalname,
+            ...(analysisJobId != null ? { analysis_job_id: analysisJobId } : {}),
         });
     } catch (err) {
         if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
@@ -1390,6 +1458,51 @@ async function importFromJob(req, res) {
     }
 }
 
+/**
+ * Persiste l'analisi AI del capitolato sul caso, riusando le tabelle della migrazione 101
+ * (job in commercial_case_drawing_extractions con source='text' + requisiti normalizzati in
+ * commercial_case_extracted_requirements). Difensivo: in caso di errore (es. schema non ancora
+ * migrato) NON deve far fallire l'analisi — ritorna null e logga.
+ * @returns {Promise<number|null>} id del job di analisi persistito, oppure null.
+ */
+async function persistTextAnalysis({ caseId, organizationId, userId, provider, suggestion, rawContent }) {
+    try {
+        const rawJson = rawContent != null
+            ? String(rawContent).substring(0, 1000000)
+            : JSON.stringify(suggestion).substring(0, 1000000);
+        const ins = await query(
+            `
+            INSERT INTO commercial_case_drawing_extractions
+              (organization_id, case_id, source, provider, status, raw_response, created_by, completed_at)
+            OUTPUT INSERTED.id
+            VALUES (@organizationId, @caseId, 'text', @provider, 'done', @raw, @userId, SYSDATETIME())
+            `,
+            { organizationId, caseId, provider: String(provider || 'unknown').substring(0, 30), raw: rawJson, userId: userId ?? null },
+        );
+        const analysisId = ins.recordset[0].id;
+
+        const requirements = Array.isArray(suggestion?.identified_requirements)
+            ? suggestion.identified_requirements
+            : [];
+        for (const r of requirements) {
+            const fieldKey = r.ref != null ? String(r.ref).substring(0, 100) : null;
+            const valueText = r.description != null ? String(r.description) : null;
+            await query(
+                `
+                INSERT INTO commercial_case_extracted_requirements
+                  (extraction_id, req_type, field_key, value_text)
+                VALUES (@extractionId, 'spec', @fieldKey, @valueText)
+                `,
+                { extractionId: analysisId, fieldKey, valueText },
+            );
+        }
+        return analysisId;
+    } catch (err) {
+        logger.error('persistTextAnalysis', err.message);
+        return null;
+    }
+}
+
 async function analyzeRequirements(req, res) {
     try {
         const provider = getActiveProvider();
@@ -1397,6 +1510,7 @@ async function analyzeRequirements(req, res) {
             return res.status(503).json({ error: 'Nessun provider AI configurato.', code: 'AI_NOT_CONFIGURED' });
         }
         const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
         const caseId = parseCaseId(req.params.id);
         if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
         const caseRow = await fetchCaseRow(caseId, organizationId);
@@ -1410,12 +1524,16 @@ async function analyzeRequirements(req, res) {
             return sendErr(res, 400, 'Fornire capitolatoText nel body o note sul caso', 'VALIDATION_ERROR');
         }
 
+        const standardCodes = Array.isArray(req.body?.standardCodes) && req.body.standardCodes.length
+            ? req.body.standardCodes
+            : undefined;
         const built = await contextBuilder.buildReviewRequirementsContext({
             capitolatoText,
             companyId: caseRow.company_id,
             organizationId,
             commercialCustomerName: caseRow.commercial_customer_name,
             commercialCustomerRef: caseRow.commercial_customer_ref,
+            standardCodes,
         });
         const systemPrompt = await enrichSystemPromptWithOrganization(built.systemPrompt, organizationId);
         const result = await chat(
@@ -1431,11 +1549,28 @@ async function analyzeRequirements(req, res) {
         } catch {
             suggestion = { raw: result.content };
         }
+
+        // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive
+        // al riaccesso e alimenta il riesame definitivo. Difensiva: non blocca la risposta.
+        const analysisId = await persistTextAnalysis({
+            caseId,
+            organizationId,
+            userId,
+            provider,
+            suggestion,
+            rawContent: result.content,
+        });
+
         return res.json({
             feature: 'review_requirements',
             case_id: caseId,
+            analysis_id: analysisId,
             suggestion,
-            _aiMeta: { provider, model: result.model, contextSummary: built.contextSummary },
+            _aiMeta: {
+                provider,
+                model: result.model,
+                contextSummary: (built.contextSummary || '').substring(0, 500),
+            },
         });
     } catch (err) {
         logger.error('analyzeRequirements', err.message);
