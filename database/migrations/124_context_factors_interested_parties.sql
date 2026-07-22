@@ -1,4 +1,4 @@
--- Migration 122: §4.1 Fattori di contesto e §4.2 Parti interessate
+-- Migration 124: §4.1 Fattori di contesto e §4.2 Parti interessate
 -- Idempotente: verifica esistenza tabelle prima di crearle
 
 -- §4.1 Fattori di contesto (interni/esterni)

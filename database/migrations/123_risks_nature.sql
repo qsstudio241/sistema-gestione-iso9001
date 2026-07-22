@@ -1,4 +1,4 @@
--- Migration 121: campo nature su tabella risks (rischio vs opportunità §6.1)
+-- Migration 123: campo nature su tabella risks (rischio vs opportunità §6.1)
 -- Idempotente: verifica esistenza colonna prima di aggiungerla
 IF NOT EXISTS (
   SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
