@@ -13,6 +13,7 @@ import {
   exportAuditToWord,
   exportAuditToFileSystem,
   exportAuditToWorkspace,
+  exportAuditToWordZip,
 } from "../utils/wordExport";
 import "./ExportPanel.css";
 
@@ -60,6 +61,19 @@ const ExportPanel = () => {
 
   /** Valore effettivo del checkbox (considerando anche null = auto). */
   const embedPhotosEffective = embedPhotos !== null ? embedPhotos : auditHasPhotoStandard();
+
+  // ADR-009 Fase 3: standard attivi ISO per l'audit corrente (per UI + hint export).
+  // Un audit con checklist custom pura ha activeStandards vuoto (gestito da un ramo separato).
+  const activeStandardsForAudit = (() => {
+    const stds = currentAudit?.metadata?.selectedStandards;
+    if (stds?.length > 0) return stds;
+    return Object.keys(currentAudit?.checklist || {});
+  })();
+  const isMultiStandardIso = activeStandardsForAudit.length > 1;
+  const isIntegratedSystem = currentAudit?.metadata?.isIntegratedSystem ?? null;
+  // Sistema Integrato: UN file combinato con tutte le norme (nessun filtro checklist).
+  // Non integrato/legacy (isIntegratedSystem null/false): comportamento invariato — N file separati.
+  const useIntegratedExport = isMultiStandardIso && isIntegratedSystem === true;
 
   // Development mode - mostra formati avanzati JSON/CSV
   const isDev = process.env.NODE_ENV === "development";
@@ -448,6 +462,23 @@ const ExportPanel = () => {
       }
 
       const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+
+      // ADR-009 Fase 3: Sistema Integrato con 2+ norme ISO → UN SOLO file combinato.
+      // La checklist non viene filtrata (nessun standardKey): buildTemplateData usa
+      // metriche aggregate e conclusioni unificate, buildChecklistSectionOoxml
+      // itera già su tutti gli standard presenti nell'audit.checklist.
+      const auditIsIntegrated = auditForExport.metadata?.isIntegratedSystem === true;
+      if (auditIsIntegrated && activeStandards.length > 1) {
+        if (willEmbedPhotos) showMessage("⏳ Caricamento immagini in corso...", "info");
+        const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
+          ...(willEmbedPhotos ? { photoMode: 'preview' } : {}),
+          auditReportPrefix,
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        });
+        showMessage(`✅ Report Word integrato (SGI) generato: ${fileName}`, "success");
+        return;
+      }
+
       if (activeStandards.length > 1) {
         showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
       } else if (willEmbedPhotos) {
@@ -474,6 +505,40 @@ const ExportPanel = () => {
       );
     } catch (error) {
       console.error("Errore export Word:", error);
+      showMessage(`❌ Errore: ${error.message}`, "error");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  /** ADR-009 Fase 3: bundle ZIP — un solo download con N report separati (audit non integrato). */
+  const handleExportZip = async () => {
+    if (!currentAudit) return;
+    try {
+      setIsExporting(true);
+      const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const activeStandards = (auditForExport.metadata?.selectedStandards?.length > 0)
+        ? auditForExport.metadata.selectedStandards
+        : Object.keys(auditForExport.checklist || {});
+
+      if (activeStandards.length < 2) {
+        showMessage("⚠️ Il file ZIP richiede almeno 2 standard", "error");
+        return;
+      }
+
+      const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+      showMessage(`⏳ Generazione ${activeStandards.length} report in un unico ZIP${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
+
+      const fileName = await exportAuditToWordZip(auditForExport, getViewUrl, activeStandards, {
+        auditReportPrefix,
+        getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        photoModeResolver: (stdKey) => resolvePhotoMode(stdKey, null),
+      });
+
+      showMessage(`✅ ZIP generato: ${fileName}`, "success");
+    } catch (error) {
+      console.error("Errore export ZIP:", error);
       showMessage(`❌ Errore: ${error.message}`, "error");
     } finally {
       setIsExporting(false);
@@ -532,6 +597,27 @@ const ExportPanel = () => {
       }
 
       const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+
+      // ADR-009 Fase 3: Sistema Integrato con 2+ norme ISO → UN SOLO file combinato (stesso ramo di handleExportWord).
+      const auditIsIntegrated = auditForExport.metadata?.isIntegratedSystem === true;
+      if (auditIsIntegrated && activeStandards.length > 1) {
+        if (willEmbedPhotos) showMessage("⏳ Caricamento immagini in corso...", "info");
+        const exportOpts = {
+          auditReportPrefix,
+          ...(willEmbedPhotos ? { photoMode: 'preview' } : {}),
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        };
+        const result = await (fsProvider?.ready()
+          ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
+        if (result.fallback) {
+          showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
+        } else {
+          showMessage(`✅ Report integrato (SGI) salvato in: ${result.path || result.fileName}`, "success");
+        }
+        return;
+      }
+
       if (activeStandards.length > 1) {
         showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
       } else if (willEmbedPhotos) {
@@ -637,15 +723,23 @@ const ExportPanel = () => {
         {/* Export Audit Corrente - WORD */}
         <div className="export-section export-word-section">
           <h4>📄 Report Word{(() => {
-            const stds = currentAudit?.metadata?.selectedStandards || [];
+            const stds = activeStandardsForAudit;
             if (stds.length === 0) return '';
             const label = stds.map(k =>
               String(k).replace('ISO_', 'ISO ').replace(/_\d{4}$/, '')
             ).join(' + ');
+            if (useIntegratedExport) return ` - 1 file integrato SGI (${label})`;
             return stds.length > 1
               ? ` - ${stds.length} file (${label})`
               : ` (${label})`;
           })()}</h4>
+          {useIntegratedExport && (
+            <p className="export-sgi-hint">
+              🔗 <strong>Sistema di Gestione Integrato</strong>: viene generato un unico report Word
+              con tutte le norme, conclusioni e conteggi combinati. Per disattivare, modifica la
+              spunta "Sistema di Gestione Integrato (SGI)" nella tab Dati Generali.
+            </p>
+          )}
           {!currentAudit ? (
             <p className="export-info">
               Seleziona un audit per abilitare export
@@ -714,6 +808,16 @@ const ExportPanel = () => {
                     ? "✅ Salva in Workspace"
                     : "💾 Salva in File System"}
                 </button>
+                {isMultiStandardIso && !useIntegratedExport && (
+                  <button
+                    onClick={handleExportZip}
+                    disabled={isExporting}
+                    className="btn btn-secondary"
+                    title="Scarica tutti i report delle norme in un unico file ZIP"
+                  >
+                    {isExporting ? "⏳ Generazione in corso..." : "📦 Tutti in un ZIP"}
+                  </button>
+                )}
               </div>
               <p className="export-hint">
                 {fsProvider?.ready() ? (
