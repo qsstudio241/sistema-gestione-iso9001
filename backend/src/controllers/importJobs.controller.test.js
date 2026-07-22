@@ -234,6 +234,51 @@ describe('importJobs.controller commitToQualification', () => {
         expect(payload.data.warnings).toEqual([]);
     });
 
+    it('usa il simbolo >= per spessore/diametro quando e\' noto solo il minimo (feedback cliente Studio Mason)', async () => {
+        const aiMinOnly = JSON.stringify({
+            document_type_guess: 'patentino_saldatore',
+            type_specific_data: {
+                welder_name: 'Luigi Bianchi',
+                certificate_number: 'CERT-888',
+                welding_process: '141',
+                joint_type: 'BW',
+                material_group: '8.1',
+                welding_positions: ['PA'],
+                thickness_min_mm: 3,
+                pipe_diameter_min_mm: 60,
+                exam_date: '2026-01-10',
+                expiry_date: '2029-01-10',
+                standard_reference: 'ISO 9606-1:2017',
+            },
+        });
+
+        let insertParams = null;
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44 }] })
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 9, status: 'reviewed', ai_extraction_json: aiMinOnly,
+                    original_name: 'patentino.pdf', confidence_score: 90,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ id: 44 }] })
+            .mockImplementationOnce(async (_sql, params) => {
+                insertParams = params;
+                return { recordset: [{ id: 555 }] };
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToQualification(makeReq(), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(insertParams.thickness_min_mm).toBe(3);
+        expect(insertParams.thickness_max_mm).toBeNull();
+        expect(insertParams.thickness_range).toBe('\u22653mm');
+        expect(insertParams.pipe_diameter).toBe('\u226560mm');
+        expect(insertParams.qualification_designation).toBe('141 BW t\u22653 D\u226560 PA');
+    });
+
     it('non blocca la bozza se mancano campi obbligatori saldatore, ma li elenca nei warning', async () => {
         let insertParams = null;
         query

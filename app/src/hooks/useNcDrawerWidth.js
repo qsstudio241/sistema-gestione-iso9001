@@ -1,5 +1,5 @@
 /**
- * Larghezza drawer dettaglio NC � persistenza localStorage + drag bordo sinistro.
+ * Larghezza drawer dettaglio NC  -  persistenza localStorage + drag bordo sinistro.
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 

@@ -1,5 +1,5 @@
 /**
- * Test L1 — StatusBadge (type="nc")
+ * Test L1 â€” StatusBadge (type="nc")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
  * per ogni stato NC usato da PendingIssuesCascade.
@@ -17,7 +17,7 @@ const NC_STATES = [
   { status: 'closed', label: 'Chiusa' },
 ];
 
-describe('StatusBadge — stato NC', () => {
+describe('StatusBadge â€” stato NC', () => {
   it.each(NC_STATES)(
     'renderizza "$label" per lo stato "$status"',
     ({ status, label }) => {

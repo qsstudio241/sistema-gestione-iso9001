@@ -72,6 +72,12 @@ describe('drawingExtraction.service — parseRequirementsResponse', () => {
     });
 });
 
+describe('drawingExtraction.service — DRAWING_SYSTEM_PROMPT', () => {
+    test('include il glossario simboli ISO 2553 per etichettare i weld_symbol', () => {
+        expect(service.DRAWING_SYSTEM_PROMPT).toContain('SIMBOLI DI SALDATURA ISO 2553');
+    });
+});
+
 describe('drawingExtraction.service — extractFromFile (provider gemini mockato)', () => {
     beforeEach(() => {
         jest.clearAllMocks();

@@ -1,6 +1,6 @@
 /**
  * Storico locale versioni testo (ultime N snapshot su blur).
- * Stesso pattern usato per campi audit ricchi — audit_events lato server; qui UI ripristino rapido.
+ * Stesso pattern usato per campi audit ricchi â€” audit_events lato server; qui UI ripristino rapido.
  */
 
 const HISTORY_PREFIX = "sgq_text_field_history_v1";
@@ -25,8 +25,8 @@ export function getTextFieldHistory(scopeId, fieldId, max = DEFAULT_MAX) {
 }
 
 /**
- * Registra una versione se il testo è cambiato rispetto all'ultima entry.
- * @param {string} scopeId — es. audit uuid o `nc:42` o `nc-create`
+ * Registra una versione se il testo Ã¨ cambiato rispetto all'ultima entry.
+ * @param {string} scopeId â€” es. audit uuid o `nc:42` o `nc-create`
  */
 export function appendTextFieldHistory(scopeId, fieldId, text, max = DEFAULT_MAX) {
   const key = textHistoryStorageKey(scopeId, fieldId);

@@ -28,7 +28,7 @@ function idxConclusionsAfterRilievi(texts) {
     return { ril, concHead, concBody };
 }
 
-describe("wordExport � ordine capitoli e sommario", () => {
+describe("wordExport  -  ordine capitoli e sommario", () => {
     it("reorderConclusionsAfterRilievi sposta Conclusioni dopo RILIEVI (XML minimale)", () => {
         const xml =
             "<w:body>" +
@@ -104,7 +104,7 @@ describe("wordExport � ordine capitoli e sommario", () => {
         expect(concHead).toBeGreaterThan(ril);
     });
 
-    it("ISO9001: conclusioni gi� dopo rilievi (invariato)", () => {
+    it("ISO9001: conclusioni già  dopo rilievi (invariato)", () => {
         const fp = path.join(templatesDir, "ISO9001-audit-report.docx");
         const z = new PizZip(fs.readFileSync(fp));
         const raw = z.files["word/document.xml"].asText();

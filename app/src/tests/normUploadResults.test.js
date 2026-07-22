@@ -25,14 +25,14 @@ describe('normUploadResults', () => {
     expect(row.fileName).toBe('iso.pdf');
   });
 
-  it('mantiene campi gi� piatti', () => {
+  it('mantiene campi già  piatti', () => {
     const [row] = normalizeNormUploadResults([{
       success: true,
-      norm_title: 'Gi� piatto',
+      norm_title: 'Già piatto',
       standard_code: 'UNI EN 1',
       fileName: 'a.pdf',
     }]);
-    expect(row.norm_title).toBe('Gi� piatto');
+    expect(row.norm_title).toBe('Già piatto');
   });
 
   it('countNormUploadSuccesses richiede documentId e ignora errori', () => {

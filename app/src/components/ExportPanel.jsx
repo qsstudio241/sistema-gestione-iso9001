@@ -13,6 +13,7 @@ import {
   exportAuditToWord,
   exportAuditToFileSystem,
   exportAuditToWorkspace,
+  exportAuditToWordZip,
 } from "../utils/wordExport";
 import "./ExportPanel.css";
 
@@ -24,8 +25,18 @@ const ExportPanel = () => {
   const [exportMessage, setExportMessage] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   // null = auto-detect per standard (ISO 3834 → embed, altri → link)
-  // true/false = scelta esplicita dell'utente
-  const [embedPhotos, setEmbedPhotos] = useState(null);
+  // true/false = scelta esplicita dell'utente, persistita in localStorage
+  const [embedPhotos, setEmbedPhotosRaw] = useState(() => {
+    const stored = localStorage.getItem('sgq:export_embed_photos');
+    if (stored === 'true') return true;
+    if (stored === 'false') return false;
+    return null; // auto
+  });
+  const setEmbedPhotos = (val) => {
+    setEmbedPhotosRaw(val);
+    if (val === null) localStorage.removeItem('sgq:export_embed_photos');
+    else localStorage.setItem('sgq:export_embed_photos', String(val));
+  };
 
   const PHOTO_STANDARDS = ['ISO_3834', 'ISO_3834_2', 'ISO_3834_2_2021', 'RDP_MSN'];
 
@@ -51,12 +62,40 @@ const ExportPanel = () => {
   /** Valore effettivo del checkbox (considerando anche null = auto). */
   const embedPhotosEffective = embedPhotos !== null ? embedPhotos : auditHasPhotoStandard();
 
+  // ADR-009 Fase 3: standard attivi ISO per l'audit corrente (per UI + hint export).
+  // Un audit con checklist custom pura ha activeStandards vuoto (gestito da un ramo separato).
+  const activeStandardsForAudit = (() => {
+    const stds = currentAudit?.metadata?.selectedStandards;
+    if (stds?.length > 0) return stds;
+    return Object.keys(currentAudit?.checklist || {});
+  })();
+  const isMultiStandardIso = activeStandardsForAudit.length > 1;
+  const isIntegratedSystem = currentAudit?.metadata?.isIntegratedSystem ?? null;
+  // Sistema Integrato: UN file combinato con tutte le norme (nessun filtro checklist).
+  // Non integrato/legacy (isIntegratedSystem null/false): comportamento invariato — N file separati.
+  const useIntegratedExport = isMultiStandardIso && isIntegratedSystem === true;
+
   // Development mode - mostra formati avanzati JSON/CSV
   const isDev = process.env.NODE_ENV === "development";
 
   const showMessage = (message, type = "success") => {
     setExportMessage({ text: message, type });
     setTimeout(() => setExportMessage(null), 5000);
+  };
+
+  /** Controlla i campi critici del template e restituisce la lista di quelli vuoti. */
+  const getIncompleteFieldWarnings = (audit) => {
+    const warnings = [];
+    const meta = audit?.metadata || {};
+    const gd = meta?.generalData || {};
+    const obj = meta?.auditObjective || {};
+    const outcome = meta?.auditOutcome || {};
+    if (!gd.auditObject?.trim()) warnings.push('Oggetto dell\'audit (sezione "Dati generali")');
+    if (!gd.scope?.trim())        warnings.push('Scopo / Ambito (sezione "Dati generali")');
+    if (!obj.description?.trim()) warnings.push('Obiettivo dell\'audit (sezione "Obiettivo")');
+    if (!outcome.conclusions?.trim() && !Object.values(outcome.byStandard || {}).some(s => s?.conclusions?.trim()))
+      warnings.push('Conclusioni (sezione "Esito")');
+    return warnings;
   };
 
   const handleExportCurrent = (format) => {
@@ -122,9 +161,6 @@ const ExportPanel = () => {
             resolutionNotes: p.follow_up_notes || "",
             source_audit_id: p.source_audit_id,
           }));
-          console.log(
-            `📋 [EXPORT] ${list.length} rilievi pendenti da GET /audits/.../pending-issues`
-          );
         }
       }
     } catch (err) {
@@ -172,9 +208,6 @@ const ExportPanel = () => {
                 status: "open",
                 resolutionNotes: i.notes || "",
               }));
-              console.log(
-                `📋 [EXPORT] ${rawIssues.length} rilievi pendenti da audit_responses (fallback)`
-              );
             }
           }
         }
@@ -195,7 +228,6 @@ const ExportPanel = () => {
           `/companies/${companyId}/certification-findings?standard_id=${standardId}`
         );
         auditForExport.certificationFindings = cfRes.data || [];
-        console.log(`📋 [EXPORT] ${auditForExport.certificationFindings.length} rilievi ente certificatore`);
       }
     } catch (err) {
       console.warn('[EXPORT] rilievi ente non disp.:', err.message);
@@ -247,9 +279,6 @@ const ExportPanel = () => {
         });
         auditForExport.customResponses = mergeCustomResponsesForExport(byItem);
         auditForExport.customStatuses = byStatus;
-        console.log(
-          `📋 [EXPORT] Checklist custom: ${Object.keys(byItem).length} righe, ${Object.keys(byStatus).length} esiti, merge locale (${Object.keys(localCustomResponses).length} chiavi)`
-        );
       } catch (err) {
         console.warn('[EXPORT] Checklist custom non disp.:', err.message);
         auditForExport.customResponses = Object.keys(localCustomResponses).length
@@ -288,7 +317,6 @@ const ExportPanel = () => {
           return !serverQuestionIds.has(q);
         });
         auditForExport.attachments = [...normalized, ...localOnly];
-        console.log(`📎 [EXPORT] ${normalized.length} allegati da server + ${localOnly.length} solo locali`);
       }
     } catch (err) {
       console.warn('[EXPORT] allegati server non disp., uso locali:', err.message);
@@ -311,7 +339,6 @@ const ExportPanel = () => {
           if (q.norm_excerpt?.trim()) excMap[q.question_id] = q.norm_excerpt.trim();
         });
         auditForExport.normExcerpts = excMap;
-        console.log(`📋 [EXPORT] ${Object.keys(excMap).length} stralci normativi caricati per standard_id=${standardIdForExcerpts}`);
       } catch (err) {
         console.warn('[EXPORT] norm_excerpts non disponibili:', err.message);
       }
@@ -341,7 +368,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo azienda caricato per embedding Word");
           }
         }
       } catch (err) {
@@ -380,7 +406,6 @@ const ExportPanel = () => {
                 fr.readAsDataURL(blob);
               }),
             };
-            console.log("📋 [EXPORT] Logo organizzazione caricato per embedding Word");
           }
         }
       } catch (err) {
@@ -401,6 +426,14 @@ const ExportPanel = () => {
     try {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
 
       // Audit con checklist custom (senza standard ISO) → un solo report Word
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
@@ -429,6 +462,23 @@ const ExportPanel = () => {
       }
 
       const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+
+      // ADR-009 Fase 3: Sistema Integrato con 2+ norme ISO → UN SOLO file combinato.
+      // La checklist non viene filtrata (nessun standardKey): buildTemplateData usa
+      // metriche aggregate e conclusioni unificate, buildChecklistSectionOoxml
+      // itera già su tutti gli standard presenti nell'audit.checklist.
+      const auditIsIntegrated = auditForExport.metadata?.isIntegratedSystem === true;
+      if (auditIsIntegrated && activeStandards.length > 1) {
+        if (willEmbedPhotos) showMessage("⏳ Caricamento immagini in corso...", "info");
+        const fileName = await exportAuditToWord(auditForExport, getViewUrl, {
+          ...(willEmbedPhotos ? { photoMode: 'preview' } : {}),
+          auditReportPrefix,
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        });
+        showMessage(`✅ Report Word integrato (SGI) generato: ${fileName}`, "success");
+        return;
+      }
+
       if (activeStandards.length > 1) {
         showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
       } else if (willEmbedPhotos) {
@@ -461,42 +511,148 @@ const ExportPanel = () => {
     }
   };
 
+  /** ADR-009 Fase 3: bundle ZIP — un solo download con N report separati (audit non integrato). */
+  const handleExportZip = async () => {
+    if (!currentAudit) return;
+    try {
+      setIsExporting(true);
+      const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
+
+      const activeStandards = (auditForExport.metadata?.selectedStandards?.length > 0)
+        ? auditForExport.metadata.selectedStandards
+        : Object.keys(auditForExport.checklist || {});
+
+      if (activeStandards.length < 2) {
+        showMessage("⚠️ Il file ZIP richiede almeno 2 standard", "error");
+        return;
+      }
+
+      const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+      showMessage(`⏳ Generazione ${activeStandards.length} report in un unico ZIP${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
+
+      const fileName = await exportAuditToWordZip(auditForExport, getViewUrl, activeStandards, {
+        auditReportPrefix,
+        getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        photoModeResolver: (stdKey) => resolvePhotoMode(stdKey, null),
+      });
+
+      showMessage(`✅ ZIP generato: ${fileName}`, "success");
+    } catch (error) {
+      console.error("Errore export ZIP:", error);
+      showMessage(`❌ Errore: ${error.message}`, "error");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExportToFileSystem = async () => {
     if (!currentAudit) return;
     try {
       setIsExporting(true);
       const { auditForExport, getViewUrl, auditReportPrefix } = await prepareAuditForExport();
 
+      const fieldWarnings = getIncompleteFieldWarnings(auditForExport);
+      if (fieldWarnings.length > 0) {
+        showMessage(
+          `\u26A0\uFE0F Campi incompleti nel report: ${fieldWarnings.join(', ')}. Il documento verrà generato con valori "N/D".`,
+          "warning"
+        );
+      }
+
       const customChecklistId = auditForExport.metadata?.customChecklistId ?? auditForExport.custom_checklist_id;
       const hasCustomOnly = customChecklistId && !auditForExport.metadata?.selectedStandards?.length && !Object.keys(auditForExport.checklist || {}).length;
 
-      const stds = auditForExport.metadata?.selectedStandards || [];
-      const firstStd = stds[0] || null;
-      const photoMode = resolvePhotoMode(hasCustomOnly ? null : firstStd, hasCustomOnly ? customChecklistId : null);
-      if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
-      const exportOpts = {
-        auditReportPrefix,
-        ...(photoMode ? { photoMode } : {}),
-        ...(hasCustomOnly
-          ? { customChecklistId, getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId) }
-          : { getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId) }),
-      };
-
-      if (fsProvider?.ready()) {
-        const result = await exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts);
+      // Caso 1: checklist personalizzata pura (nessuno standard ISO) — un solo file
+      if (hasCustomOnly) {
+        const photoMode = resolvePhotoMode(null, customChecklistId);
+        if (photoMode === 'preview') showMessage("⏳ Caricamento immagini in corso...", "info");
+        const exportOpts = {
+          auditReportPrefix,
+          customChecklistId,
+          ...(photoMode ? { photoMode } : {}),
+          getTemplateResolver: () => apiService.getReportTemplate(null, customChecklistId),
+        };
+        const saveFn = fsProvider?.ready()
+          ? () => exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : () => exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts);
+        const result = await saveFn();
         if (result.fallback) {
           showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
         } else {
-          showMessage(`✅ Report salvato in workspace: ${result.fileName}`, "success");
+          showMessage(`✅ File salvato in: ${result.path || result.fileName}`, "success");
         }
         return;
       }
 
-      const result = await exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts);
-      if (result.fallback) {
-        showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
+      // Caso 2: standard ISO — un file per norma (stesso loop di handleExportWord).
+      // standardKey è passato esplicitamente: la checklist viene filtrata per norma
+      // in generateDocxBlob e le metriche riflettono solo lo standard corrente.
+      const activeStandards = (auditForExport.metadata?.selectedStandards?.length > 0)
+        ? auditForExport.metadata.selectedStandards
+        : Object.keys(auditForExport.checklist || {});
+
+      if (activeStandards.length === 0) {
+        showMessage("⚠️ Nessuno standard selezionato per questo audit", "error");
+        return;
+      }
+
+      const willEmbedPhotos = activeStandards.some(s => resolvePhotoMode(s, null) === 'preview');
+
+      // ADR-009 Fase 3: Sistema Integrato con 2+ norme ISO → UN SOLO file combinato (stesso ramo di handleExportWord).
+      const auditIsIntegrated = auditForExport.metadata?.isIntegratedSystem === true;
+      if (auditIsIntegrated && activeStandards.length > 1) {
+        if (willEmbedPhotos) showMessage("⏳ Caricamento immagini in corso...", "info");
+        const exportOpts = {
+          auditReportPrefix,
+          ...(willEmbedPhotos ? { photoMode: 'preview' } : {}),
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        };
+        const result = await (fsProvider?.ready()
+          ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
+        if (result.fallback) {
+          showMessage(`📱 Android: file salvato in Download (${result.fileName})`, "info");
+        } else {
+          showMessage(`✅ Report integrato (SGI) salvato in: ${result.path || result.fileName}`, "success");
+        }
+        return;
+      }
+
+      if (activeStandards.length > 1) {
+        showMessage(`⏳ Generazione ${activeStandards.length} report${willEmbedPhotos ? ' (foto incluse)' : ''}...`, "info");
+      } else if (willEmbedPhotos) {
+        showMessage("⏳ Caricamento immagini in corso...", "info");
+      }
+
+      const savedFiles = [];
+      for (const stdKey of activeStandards) {
+        if (savedFiles.length > 0) await new Promise(r => setTimeout(r, 900));
+        const photoMode = resolvePhotoMode(stdKey, null);
+        const exportOpts = {
+          auditReportPrefix,
+          standardKey: stdKey,
+          ...(photoMode ? { photoMode } : {}),
+          getTemplateResolver: (stdId) => apiService.getReportTemplate(stdId),
+        };
+        const result = await (fsProvider?.ready()
+          ? exportAuditToWorkspace(auditForExport, fsProvider, getViewUrl, exportOpts)
+          : exportAuditToFileSystem(auditForExport, getViewUrl, exportOpts));
+        savedFiles.push({ result, stdKey });
+      }
+
+      const labels = savedFiles.map(({ result }) =>
+        result.fallback ? result.fileName : (result.path || result.fileName)
+      );
+      const allFallback = savedFiles.every(({ result }) => result.fallback);
+      if (allFallback) {
+        showMessage(`📱 Android: ${labels.length === 1 ? `file salvato in Download (${labels[0]})` : `${labels.length} file salvati in Download`}`, "info");
       } else {
-        showMessage(`✅ File salvato in: ${result.path}`, "success");
+        showMessage(
+          labels.length === 1
+            ? `✅ File salvato in: ${labels[0]}`
+            : `✅ ${labels.length} report salvati: ${savedFiles.map(({ result }) => result.fileName || '').join(' + ')}`,
+          "success"
+        );
       }
     } catch (error) {
       console.error("Errore salvataggio file system:", error);
@@ -567,15 +723,23 @@ const ExportPanel = () => {
         {/* Export Audit Corrente - WORD */}
         <div className="export-section export-word-section">
           <h4>📄 Report Word{(() => {
-            const stds = currentAudit?.metadata?.selectedStandards || [];
+            const stds = activeStandardsForAudit;
             if (stds.length === 0) return '';
             const label = stds.map(k =>
               String(k).replace('ISO_', 'ISO ').replace(/_\d{4}$/, '')
             ).join(' + ');
+            if (useIntegratedExport) return ` - 1 file integrato SGI (${label})`;
             return stds.length > 1
               ? ` - ${stds.length} file (${label})`
               : ` (${label})`;
           })()}</h4>
+          {useIntegratedExport && (
+            <p className="export-sgi-hint">
+              🔗 <strong>Sistema di Gestione Integrato</strong>: viene generato un unico report Word
+              con tutte le norme, conclusioni e conteggi combinati. Per disattivare, modifica la
+              spunta "Sistema di Gestione Integrato (SGI)" nella tab Dati Generali.
+            </p>
+          )}
           {!currentAudit ? (
             <p className="export-info">
               Seleziona un audit per abilitare export
@@ -644,6 +808,16 @@ const ExportPanel = () => {
                     ? "✅ Salva in Workspace"
                     : "💾 Salva in File System"}
                 </button>
+                {isMultiStandardIso && !useIntegratedExport && (
+                  <button
+                    onClick={handleExportZip}
+                    disabled={isExporting}
+                    className="btn btn-secondary"
+                    title="Scarica tutti i report delle norme in un unico file ZIP"
+                  >
+                    {isExporting ? "⏳ Generazione in corso..." : "📦 Tutti in un ZIP"}
+                  </button>
+                )}
               </div>
               <p className="export-hint">
                 {fsProvider?.ready() ? (

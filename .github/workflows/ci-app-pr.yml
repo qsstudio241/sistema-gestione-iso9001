@@ -8,6 +8,10 @@ on:
       - main
     paths:
       - 'app/**'
+      - 'backend/scripts/check-utf8-encoding.js'
+      - 'backend/scripts/repair-utf8-encoding.js'
+      - 'backend/src/controllers/**'
+      - 'backend/src/services/**'
       - 'netlify.toml'
       - 'docs/agent-tasks/**'
       - '.github/workflows/ci-app-pr.yml'
@@ -22,6 +26,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Encoding UTF-8 sorgenti (app + backend ingest)
+        run: node backend/scripts/check-utf8-encoding.js --human
+        working-directory: .
 
       - name: Node.js 20
         uses: actions/setup-node@v4

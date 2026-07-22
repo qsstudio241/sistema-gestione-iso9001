@@ -87,7 +87,9 @@ describe("SearchPage", () => {
       );
     });
 
-    expect(screen.getByText(/Non conformit \(1\)/)).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText(/Non conformit\u00E0 \(1\)/)).toBeTruthy();
+    });
     expect(screen.getByText("NC-2024-001")).toBeTruthy();
     expect(screen.getByText("NC-2024-001").closest("a")).toHaveAttribute(
       "href",

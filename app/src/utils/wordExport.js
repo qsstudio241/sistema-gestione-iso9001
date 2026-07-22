@@ -59,6 +59,7 @@ const NORM_LABELS = {
     'ISO_14001':  'ISO 14001:2015',
     'ISO_45001':  'ISO 45001:2018',
     'ISO_3834_2': 'ISO 3834-2:2021',
+    'RDP_MSN':    'ISO 3834-2:2021 - Rapporto di Prova (Mason)',
 };
 
 // ─── Mappa standard → template ────────────────────────────────────────────────
@@ -69,6 +70,7 @@ const TEMPLATE_MAP = {
     'ISO_14001':  '/templates/ISO14001-audit-report.docx',
     'ISO_45001':  '/templates/ISO45001-audit-report.docx',
     'ISO_3834_2': '/templates/ISO3834-audit-report.docx',
+    'RDP_MSN':    '/templates/ISO3834-audit-report.docx',
     'default':    '/templates/ISO9001-audit-report.docx',
     // Fallback allineato a migration 026 / report_templates (placeholder + sommario)
     'custom_checklist': '/templates/VerbaleVisita-generic.docx',
@@ -1035,7 +1037,7 @@ function injectOoxmlMarkers(zip, audit, getViewUrl, options = {}) {
  * Ogni parte in word/media/ DEVE avere un Default in [Content_Types].xml.
  * Molti template (es. Verbale) hanno solo png: senza jpg/jpeg/gif Word segnala "contenuto illeggibile".
  */
-function ensureImageContentTypesInZip(zip, extensions) {
+export function ensureImageContentTypesInZip(zip, extensions) {
     const ctPath = '[Content_Types].xml';
     let ct = zip.files[ctPath]?.asText();
     if (!ct || !ct.includes('</Types>')) return;
@@ -1069,7 +1071,7 @@ function ensureImageContentTypesInZip(zip, extensions) {
  * @param {PizZip} zip
  * @param {Array<{rId,imgId,base64,mimeType,ext}>} imageRegistry
  */
-function embedImagesInZip(zip, imageRegistry) {
+export function embedImagesInZip(zip, imageRegistry) {
     // Leggi relazioni esistenti
     const relsPath = 'word/_rels/document.xml.rels';
     let relsXml = zip.files[relsPath]?.asText() || '';
@@ -1355,4 +1357,55 @@ export async function exportAuditToWorkspace(audit, fsProvider, getViewUrl = nul
     } catch (error) {
         throw new Error('Errore salvataggio report: ' + error.message);
     }
+}
+
+// ─── ADR-009 Fase 3: bundle ZIP multi-standard ────────────────────────────────
+
+function buildZipFileName(audit) {
+    const client = (audit.metadata?.clientName  || 'Cliente').replace(/[^a-z0-9]/gi, '_');
+    const number = (audit.metadata?.auditNumber || 'N-A').replace(/[^a-z0-9]/gi, '_');
+    return client + '_' + number + '_TUTTI.zip';
+}
+
+/**
+ * Genera UN file ZIP contenente un report Word per ciascuno standard richiesto.
+ * Usato per audit multi-standard NON "Sistema Integrato" (isIntegratedSystem=false):
+ * l'utente ottiene un unico download invece di N download separati con ritardo tra loro.
+ *
+ * @param {object}   audit         - audit pronto per export (stesso shape di exportAuditToWord)
+ * @param {Function} getViewUrl    - risolutore URL allegati (vedi exportAuditToWord)
+ * @param {string[]} standardKeys  - chiavi standard da includere (es. ['ISO_9001','ISO_14001'])
+ * @param {object}   options       - auditReportPrefix, getTemplateResolver,
+ *                                    photoModeResolver?: (stdKey) => 'preview'|undefined
+ * @returns {Promise<string>} nome del file ZIP generato
+ */
+export async function exportAuditToWordZip(audit, getViewUrl = null, standardKeys = [], options = {}) {
+    if (!audit?.metadata) throw new Error('Audit non valido: metadata mancante');
+    if (!Array.isArray(standardKeys) || standardKeys.length < 2) {
+        throw new Error('Il file ZIP richiede almeno 2 standard');
+    }
+
+    const zip = new PizZip();
+    for (const stdKey of standardKeys) {
+        const photoMode = typeof options.photoModeResolver === 'function'
+            ? options.photoModeResolver(stdKey)
+            : options.photoMode;
+        const blob = await generateDocxBlob(audit, getViewUrl, {
+            auditReportPrefix:  options.auditReportPrefix,
+            getTemplateResolver: options.getTemplateResolver,
+            ...(photoMode ? { photoMode } : {}),
+            standardKey: stdKey,
+        });
+        // blob.arrayBuffer() non è garantito in tutti gli ambienti (jsdom/test):
+        // riusa blobToBase64 (FileReader), già collaudato per l'embedding immagini.
+        const dataUrl = await blobToBase64(blob);
+        const base64Data = dataUrl.split(',')[1] || dataUrl;
+        const fileName = buildFileName(audit, stdKey, options.auditReportPrefix || null);
+        zip.file(fileName, base64Data, { base64: true });
+    }
+
+    const zipBlob = zip.generate({ type: 'blob', mimeType: 'application/zip' });
+    const zipFileName = buildZipFileName(audit);
+    saveAs(zipBlob, zipFileName);
+    return zipFileName;
 }

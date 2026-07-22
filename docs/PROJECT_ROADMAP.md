@@ -24,7 +24,8 @@
 | **Tooling Cursor / MCP / Node** | ✅ Completato 30/05/2026 — estensioni, GitHub MCP (43 tools), Playwright MCP (23 tools), `.editorconfig`, script sync PAT. **Prossimo**: fix 2 test `importNormCommit` + smoke circuito Registro Norme. | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#sessione-30052026--tooling-cursor--mcp--node--vitest-chiusura-sessione) |
 | **Modulo NC — feedback campo** | Sviluppo pianificato **chiuso** 30/05/2026. Monitorare: email 08:05, push custom da audit reale, UX drawer (Camellini). Bug → nuova chat + [PROMPT_RIPRESA_NC](agent-tasks/PROMPT_RIPRESA_NC.md). | [GUIDA — chiusura NC](GUIDA_CONSOLIDATA.md#sessione-30052026--modulo-nc-chiusura-sessione--attesa-feedback-utenti) |
 | **NC — rubrica dual-level Studio/Azienda** | **Epic Personale azienda** approvata 02/06/2026. **S1 ✅** — schema e regole in [ADR-012](adr/ADR-012-company-personnel-anagrafica.md) (`company_personnel` + bridge `notification_contacts`). **Prossimo:** S2 migration 078 → S3 API → S4–S5 UI ([TASK_PERSONALE_AZIENDA_SLICES.md](agent-tasks/TASK_PERSONALE_AZIENDA_SLICES.md)). Non rimuovere «referente esterno» su verifica/azioni finché S8 non è live. | [ADR-012](adr/ADR-012-company-personnel-anagrafica.md); [ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md) |
-| **Controparti azienda (PR1 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; `contractReview` sync FK↔snapshot. **PR2 (in coda):** select committente in UI riesame — brief in [DEPUTYTASK — Coda](agent-tasks/DEPUTYTASK.md#coda-prossimi-task). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx` |
+| **Hardening harness doppio (HK-1…HK-10)** | Audit giugno 2026: allineare governance Cursor (ADR-015), alleggerire GUIDA, collare AI runtime (NormBroker v1, licenze, audit trail, gap analysis MVP). **Brief attivo:** [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) + [PLAN_HARNESS_HARDENING_SLICES.md](agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md). | `.cursor/rules/`, ADR-010/015, `normBroker.service.js`, `gapAnalysis.service.js` |
+| **Controparti azienda (PR1 ✅ · PR2 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; select committente in Riesame Requisiti con sync FK↔snapshot (`ContractReviewPage`, PR #230/#233). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx`; `ContractReviewPage.jsx` |
 
 ---
 
@@ -166,7 +167,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
-| Modulo SAL (Scenario 3) | Nuovo tipo documento per Camellini — spec Sprint 4: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) (gap engine condiviso) | 🔲 Backlog (spec pronta) |
+| Modulo SAL (Scenario 3) | Tracker requisiti×stati + export Word + AI suggeritore (Fasi 0–5-B) — spec: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) | ✅ Live (smoke L3 consigliato) |
 | Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
@@ -633,11 +634,15 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | Dispositivo | Attività | Moduli accessibili |
 |---|---|---|
-| **Mobile Android (PWA)** | Campo: audit, ispezioni VT/MT/PT, foto, checklist offline | Audit, Alert (sola lettura), Documenti (sola consultazione) |
-| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Audit + consultazione |
-| **Desktop** | Gestione documentale, form, report, configurazione | Tutti i moduli |
+| **Mobile Android (PWA)** | Campo: cattura e verifica (checklist, NC, foto, scadenze/qualifiche, CND) + assistente AI citato | **P0**: Audit, NC, Documenti/Scadenze (consultazione), Qualifiche (consultazione), CND se licenza, Home/alert. **P1**: AI Chat / assist, Reclami light. **P2**: SAL riga singola |
+| **Tablet** | Audit con più spazio, consultazione documenti in cantiere | Come mobile + più viewport checklist |
+| **Desktop** | Analisi, report Word, SAL completo, riesame, gap, configurazione | Tutti i moduli |
 
 **Regola progettuale**: le schermate di gestione dati (form, tabelle complesse, configurazione) sono **desktop-first**. Il mobile rimane ottimizzato per il **campo**.
+
+**Check di prodotto (fonte)**: [specs/PRODUCT_CHECK_MOBILE_AI.md](specs/PRODUCT_CHECK_MOBILE_AI.md) — matrice moduli × mobile × AI, contratto di affidabilità AI, sequenza slice M-AI-1…6.  
+**Stato (21/07/2026)**: M-AI-1…5 ✅ completati (PR #259–#265). PR2 Controparti ✅ verificata già in main (commits `565fed3`, `cd93ab1`, `81aae9a`).  
+**Backlog aperto (parcheggiato — riprendere su richiesta)**: M-AI-6 SAL mobile compatto (FE only, bassa priorità) · M-AI-5b qualifiche Q&A strutturata (endpoint backend DB-aware, media priorità Mason) · §9.1 KPI/indicatori (prerequisito Riesame Slice 4, richiede pianificazione schema).
 
 ### Architettura UI — Navigation Foundation
 
@@ -667,7 +672,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **1** | Document Registry UX | Redesign UX (vista Priorità, wizard form, export Excel) | Sprint 0 |
 | **2** | Qualifiche + Alert Engine | Personnel qualifications, cron email scadenze | Sprint 0 |
 | **3** | NC & Azioni Correttive | Loop audit→azione→verifica, workflow status | Sprint 0 |
-| **4** | SAL (Stato Avanzamento Lavori) | Motore gap analysis operativa clausola-per-clausola + griglia requisiti×stati + report Word. **Spec**: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) — verdetto «gap engine condiviso come ossatura», letto anche dal Riesame di Direzione | Sprint 3 |
+| **4** | SAL (Stato Avanzamento Lavori) | Motore gap analysis operativa clausola-per-clausola + griglia requisiti×stati + report Word. **Spec**: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) — verdetto «gap engine condiviso come ossatura», letto anche dal Riesame di Direzione. **Fase 5-A ✅ (suggeritore stato AI)**: pulsante «Suggerisci stato (AI)» (riga + bulk) su `/sal`; l'AI legge le evidenze documentali collegate e PROPONE stato + confidenza + motivazione (human-in-the-loop ISO §7.5, nessuna scrittura automatica). Backend `salAiSuggest.service.js` + `POST /companies/:id/gap-ai-suggest` (gate licenza `ai_norms` sopra `sal`), riuso `aiProviderAdapter` + `documentTextExtractor`. Nessuna migrazione (proposta runtime). **Fase 5-B ✅ (conformità legislativa)**: il suggeritore AI valuta anche gli obblighi di legge collegati alla clausola via `linked_legislation` (D.Lgs. 81/2008, 152/2006) — testo articoli caricato da `normBroker.getClauseText`, output per-articolo `{coverage covered/partial/missing, gap, rationale}` + confidenza. Due assi distinti in UI («Conformità norma tecnica» vs «Conformità legislativa»). Nessuna migrazione, additivo su 5-A. **Seam capability ✅ (18/07/2026)**: `SAL_LEGAL_CONFORMITY` centralizzata in `moduleLicense.service.js` (oggi mappa su `ai_norms`, helper `hasSalLegalConformityCapability`); il backend calcola l'asse legislativo solo se la capability è ON (OFF → solo asse tecnico, zero chiamate broker, graceful). Scorporo futuro in **2 mosse**: (1) chiave `ai_legal` in `KNOWN_MODULE_KEYS`; (2) ripuntare la costante del seam. **Fatturazione a regime** = «per azienda gestita» → prerequisito futuro `company_id` su `ai_interactions` (non ora). | Sprint 3 |
 | **5** | Saldatura ISO 3834 | WPS/WPQR, qualifiche saldatori, commesse | Sprint 2 |
 | **6** | Rischi + Obiettivi | Risk register §6.1, obiettivi §6.2 | Sprint 3 |
 | **7** | Reclami + Fornitori | Reclami clienti, valutazione fornitori | Sprint 3 |
@@ -782,6 +787,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **AI-KPI** | Dashboard Knowledge Health per admin: `/ai-knowledge-health`, 4 KPI cards, coverage per azienda, gap rilevati, endpoint `GET /ai/knowledge-health` | Lead (16/05/2026) | ✅ Completato |
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
+| **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
 
 **Prossimo Step**: **ADR-009 Fase 2** (Sezione 11 e Close Panel per-norma + flag SGI integrato).
 
@@ -830,10 +836,26 @@ La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origin
 | **P1** | **Collegamento Reclami**: picker complaint nel form quando `source_category='complaint'`; mostra `source_complaint_number` nel dettaglio NC | \u00a78.2.1 | FK `source_complaint_id` gi\u00e0 esiste nel DB (migration 055); solo UI da collegare |
 | **P1** | **Statistiche per categoria**: breakdown `source_category` nei contatori stats bar (badge separati per NC da audit vs azioni da riesame, ecc.) | \u00a79.1 | Estendere `getNonConformitiesStatistics` + card UI |
 | **P2** | **Modulo Riesame di Direzione**: pagina dedicata `RiesameDirectionPage` con campi strutturati (partecipanti, punti ordine del giorno, output) che genera automaticamente azioni nel Piano Azioni | \u00a79.3 | Nuova tabella `management_reviews` + FK verso `action_plan_items` o NC |
-| **P2** | **Registro Rischi**: tabella `risks` (contesto, probabilit\u00e0, impatto, trattamento) con generazione automatica azioni `risk_action` nel Piano Azioni | \u00a76.1 | Il modulo `RisksPage` gi\u00e0 esiste nel frontend ma \u00e8 stub — verificare stato |
+| **P2** | **Registro Rischi \u2192 Piano Azioni**: generazione automatica azione `risk_action` quando un rischio/opportunit\u00e0 passa a `in_treatment` | \u00a76.1 | `RisksPage` \u00e8 gi\u00e0 implementato (non pi\u00f9 stub) — vedi piano dedicato sotto *Rischi, Opportunit\u00e0 e Obiettivi* |
 | **P3** | **Dashboard Action Plan**: vista aggregata cross-categoria con KPI (% azioni chiuse per categoria, trend mese, scadute per responsabile) | \u00a79.1 | Nuova sezione in Dashboard o tab dedicata in NCPage |
 | **P3** | **Notifiche azioni non-audit**: il servizio `ncAlertEscalation` usa gi\u00e0 la tabella NC — verificare che le azioni da riesame/rischi ricevano promemoria scadenza | \u00a710.2 | Potrebbe funzionare gi\u00e0 — smoke test da fare |
 | **P4** | **Export Word Action Plan**: template `.docx` separato per le azioni non legate ad audit (senza sezione checklist, con campo origine) | \u00a77.5 | Estendere `ncWordExport.js` |
+
+---
+
+## Rischi, Opportunit\u00e0 e Obiettivi — piano allineamento \u00a74.1/\u00a74.2/\u00a76.1/\u00a76.2 (07/07/2026)
+
+**Gap analysis** (skill `gap-analysis-normativa`): il modulo `RisksPage` coprisse gi\u00e0 bene il \u00a76.2 (Obiettivi con KPI), ma tratta \u00a76.1 come solo "rischi" (manca distinzione rischio/opportunit\u00e0) e non ha nessun registro per \u00a74.1 (contesto) e \u00a74.2 (parti interessate), da cui la norma richiede che rischi/opportunit\u00e0 derivino esplicitamente.
+
+**Ambiente TEST dedicato disponibile** (attivo dal 19/06/2026): DB `2026-06-18_SGQ_ISO9001` separato da produzione (`SGQ_ISO9001`), servizio `sgq-backend-test` (porta 3001), API `https://www.fr-busato.it:8443/test-api/api/v1`, Netlify Deploy Preview per-PR punta gi\u00e0 in automatico al test-api. Regola agente: ogni migrazione/deploy backend va fatto **prima su TEST senza chiedere conferma** (pattern `run-migration-NNN-test-vps.js` + `deploy-to-vps-test.sh`), poi verificato via Deploy Preview + smoke, **poi** produzione solo dopo TEST OK o merge su `main`.
+
+| Slice | Voce | ISO ref | Rischio tecnico | Stato |
+|-------|------|---------|------------------|-------|
+| **1 (P0)** | Campo `nature` (`risk`\|`opportunity`) su tabella `risks`, default `risk` (retrocompatibile); UI: selettore natura + trattamenti differenziati (rischio: Accetta/Mitiga/Trasferisci/Evita — opportunit\u00e0: Persegui/Investi/Non perseguire, nota 2 \u00a76.1.2) | \u00a76.1 | Basso — solo `ALTER TABLE ADD COLUMN` con default | \u23f3 Pianificato |
+| **2 (P1)** | Nuove tabelle `context_factors` (\u00a74.1, fattori esterni/interni, tag PESTLE opzionale) e `interested_parties` (\u00a74.2, parte + requisiti); nuova tab "Contesto" in `RisksPage`; FK opzionale da `risks` verso le nuove tabelle (traccia \u00a76.1.1) | \u00a74.1, \u00a74.2 | Medio — nuovo schema, nessuna modifica a tabelle esistenti | \u23f3 Pianificato |
+| **3 (P2)** | Collegamento Rischi/Opportunit\u00e0 \u2194 Piano Azioni (`action_plan_items`, categoria `rischi` gi\u00e0 esistente) quando `status='in_treatment'`; opzionale FK obiettivo \u2190 rischio/opportunit\u00e0 di origine | \u00a76.1, \u00a710.2 | Medio — join con modulo NC/Piano Azioni esistente | \u23f3 Pianificato |
+
+Riferimento: `.cursor/skills/gap-analysis-normativa/`. Prossima migrazione da usare: **121** (sequenza condivisa, ultima esistente: 120).
 
 ### Analisi architetturale conservata
 Vedi sezione *Sessione 18/06/2026* in `docs/GUIDA_CONSOLIDATA.md` per pattern SQL, RBAC e considerazioni su source_type vs source_category.

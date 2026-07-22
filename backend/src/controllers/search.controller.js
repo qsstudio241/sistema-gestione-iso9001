@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/search — Ricerca unificata studio/azienda (Fase C1).
+ * GET /api/v1/search â€” Ricerca unificata studio/azienda (Fase C1).
  */
 
 const logger = require('../utils/logger');

@@ -107,6 +107,47 @@
 .nc-stat-tot   .nc-stat-num { color: #2d3748; }
 .nc-stat-soon.nc-stat-active { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 
+/* Breakdown per categoria */
+.nc-stats-breakdown {
+  margin-bottom: 16px;
+}
+.nc-stats-breakdown-toggle {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  color: #4a5568;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nc-stats-breakdown-toggle:hover {
+  background: #f7fafc;
+}
+.nc-stats-breakdown-list {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nc-stats-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+.nc-stats-breakdown-label {
+  color: #2d3748;
+  font-weight: 500;
+}
+.nc-stats-breakdown-counts {
+  color: #718096;
+}
+
 /* Filtri */
 .nc-filters {
   display: flex;
@@ -476,15 +517,6 @@ body.sgq-nc-drawer-resizing * {
 .nc-drawer-section--collapsed .nc-drawer-section-body {
   display: none;
 }
-.nc-drawer-section--workflow.nc-workflow-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #fff;
-  padding-top: 4px;
-  margin-top: -4px;
-  box-shadow: 0 6px 8px -6px rgba(0, 0, 0, 0.12);
-}
 .nc-drawer-footer {
   margin-top: 16px;
   padding-top: 12px;
@@ -674,6 +706,31 @@ body.sgq-nc-drawer-resizing * {
 .btn-action-del:hover { background: #fff5f5; }
 
 .nc-empty-actions { font-size: 0.85rem; color: #a0aec0; font-style: italic; }
+.nc-correction-empty { color: #c53030; font-weight: 500; }
+
+.nc-actions-group { margin-bottom: 12px; }
+.nc-actions-group-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin: 10px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nc-action-required-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #e53e3e;
+  padding: 1px 7px;
+  border-radius: 8px;
+}
+.nc-action-done-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #38a169;
+}
 
 /* Loading / empty */
 .nc-loading-main { text-align: center; padding: 40px; color: #718096; }
@@ -801,4 +858,50 @@ body.sgq-nc-drawer-resizing * {
   .nc-filters select { width: 100%; }
   .nc-form-row-2col { grid-template-columns: 1fr; }
   .nc-card-meta { display: none; }
+}
+
+/* ─── AI — suggerisci causa radice ─────────────────────────────────────────── */
+.nc-ai-cause { margin: 8px 0 12px; }
+
+.nc-ai-cause__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.nc-ai-cause__btn:hover:not(:disabled) { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.nc-ai-cause__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nc-ai-cause__error { color: #dc2626; font-size: 0.8rem; margin: 6px 0 0; }
+
+.nc-ai-cause__result {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+.nc-ai-cause__text { font-size: 0.88rem; color: #1e3a5f; margin: 0 0 4px; line-height: 1.5; }
+.nc-ai-cause__meta { font-size: 0.75rem; color: #64748b; margin: 0 0 8px; }
+.nc-ai-cause__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nc-ai-cause__accept  { padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; background: #1d4ed8; color: #fff; }
+.nc-ai-cause__rephrase{ padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid #94a3b8; background: #fff; color: #334155; }
+.nc-ai-cause__discard { padding: 4px 12px; border-radius: 5px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid #fca5a5; background: #fff; color: #dc2626; }
+.nc-ai-cause__accept:hover:not(:disabled)   { background: #1e40af; }
+.nc-ai-cause__rephrase:hover:not(:disabled) { background: #f1f5f9; }
+.nc-ai-cause__discard:hover                 { background: #fef2f2; }
+
+@media (max-width: 640px) {
+  .nc-ai-cause__actions { gap: 6px; }
+  .nc-ai-cause__accept, .nc-ai-cause__rephrase, .nc-ai-cause__discard {
+    flex: 1; text-align: center;
+  }
 }

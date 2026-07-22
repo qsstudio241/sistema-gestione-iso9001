@@ -8,6 +8,7 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
+const { getActiveProvider } = require('../services/aiProviderAdapter');
 const {
     buildNormTypeSpecificData,
     serializeNormTypeSpecificData,
@@ -26,14 +27,20 @@ function toNum(v) {
     return Number.isFinite(n) ? n : null;
 }
 
-/** Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max. */
+/**
+ * Deriva la stringa legacy di range (es. "3-10mm") dai valori numerici min/max.
+ * Se e' noto solo il minimo (max vuoto/null) restituisce "\u22653mm" (>=3mm): significa
+ * "nessun limite superiore", tipico per gli spessori/diametri ISO 9606-1 (feedback
+ * cliente Studio Mason — un valore singolo senza simbolo avrebbe fatto sembrare
+ * la qualifica valida SOLO per quel valore esatto).
+ */
 function deriveRangeString(min, max, suffix = 'mm') {
     const a = toNum(min);
     const b = toNum(max);
     if (a == null && b == null) return null;
-    if (a != null && b != null && a !== b) return `${a}-${b}${suffix}`;
-    const single = b != null ? b : a;
-    return `${single}${suffix}`;
+    if (a != null && b != null) return a === b ? `${a}${suffix}` : `${a}-${b}${suffix}`;
+    if (a != null) return `\u2265${a}${suffix}`;
+    return `${b}${suffix}`;
 }
 
 const QUALIFICATION_DOC_TYPES = new Set([
@@ -368,6 +375,11 @@ async function suggestAiExtraction(req, res) {
             data: {
                 model: result.model,
                 extraction: result.data,
+            },
+            _aiMeta: {
+                provider: getActiveProvider() || 'unknown',
+                model: result.model,
+                contextSummary: `import ai-extract job=${jobId} file=${fileId} docType=${j.recordset[0].document_type_hint || 'auto'}`.substring(0, 500),
             },
         });
     } catch (err) {
@@ -884,6 +896,10 @@ async function commitToQualification(req, res) {
             filler_material:      filler_material,
             shielding_gas:        body.shielding_gas || tsd.shielding_gas || null,
             equipment_type:       body.equipment_type || tsd.equipment_type || null,
+            // Operatori ISO 14732 (saldatura automatica/meccanizzata)
+            welding_type:         body.welding_type || tsd.welding_type || null,
+            single_multi_run:     body.single_multi_run || tsd.single_multi_run || null,
+            qualification_method: body.qualification_method || tsd.qualification_method || null,
             // NDT
             ndt_sector:           body.ndt_sector || tsd.ndt_sector || null,
             certification_scheme: body.certification_scheme || tsd.certification_scheme || null,
@@ -943,6 +959,7 @@ async function commitToQualification(req, res) {
               joint_type, product_type, weld_details, qualification_designation,
               thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
               thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
+              welding_type, single_multi_run, qualification_method,
               ndt_sector, certification_scheme, coordinator_title, diploma_number, cpd_valid_until,
               patent_type, training_body, course_name, training_hours, examiner_body)
              OUTPUT INSERTED.id
@@ -957,6 +974,7 @@ async function commitToQualification(req, res) {
               @joint_type, @product_type, @weld_details, @qualification_designation,
               @thickness_min_mm, @thickness_max_mm, @pipe_diameter_min_mm, @pipe_diameter_max_mm,
               @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
+              @welding_type, @single_multi_run, @qualification_method,
               @ndt_sector, @certification_scheme, @coordinator_title, @diploma_number, @cpd_valid_until,
               @patent_type, @training_body, @course_name, @training_hours, @examiner_body)`,
             qData
