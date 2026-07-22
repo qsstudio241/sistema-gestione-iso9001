@@ -1737,10 +1737,12 @@ export function StorageProvider({ children, useMockData = false }) {
               };
             }
 
-            // Valida schema
-            const validation = validateAuditSchema(updated);
-            if (!validation.valid) {
-              console.warn("⚠️ Schema validation errors:", validation.errors);
+            // Valida schema (salta durante logout/reset sessione per evitare falsi positivi)
+            if (!sessionResetInProgressRef.current) {
+              const validation = validateAuditSchema(updated);
+              if (!validation.valid) {
+                console.warn("⚠️ Schema validation errors:", validation.errors);
+              }
             }
 
             // Calcola metriche da checklist per sync accurato.

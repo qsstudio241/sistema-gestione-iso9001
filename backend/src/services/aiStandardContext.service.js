@@ -1,5 +1,5 @@
 /**
- * aiStandardContext.service.js — contesto norma attiva per assistente AI (slice 1 ADR-010)
+ * aiStandardContext.service.js â€” contesto norma attiva per assistente AI (slice 1 ADR-010)
  */
 
 const { query } = require('../config/database');
@@ -65,7 +65,7 @@ function buildStandardContextBlock(standard) {
   lines.push(
     'Le domande dell\'utente si riferiscono a questa norma. '
     + 'Filtra audit, NC, documenti e riferimenti di conseguenza; '
-    + 'se un dato non è legato a questa norma, non presentarlo come pertinente.'
+    + 'se un dato non Ã¨ legato a questa norma, non presentarlo come pertinente.'
   );
   return lines.join('\n');
 }

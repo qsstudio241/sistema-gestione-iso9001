@@ -20,13 +20,14 @@ describe('localStoreConnector', () => {
   });
 
   describe('getClauseText', () => {
-    it('returns { text, title, fullRef } when a row exists', async () => {
+    it('returns { text, title, fullRef, sourceUrl } when a row exists', async () => {
       query.mockResolvedValue({
         recordset: [
           {
             requirement_text: 'Org shall determine risks.',
             clause_title: 'Risk',
             clause_ref: '6.1',
+            source_url: 'https://example.test/6.1',
           },
         ],
       });
@@ -37,6 +38,7 @@ describe('localStoreConnector', () => {
         text: 'Org shall determine risks.',
         title: 'Risk',
         fullRef: 'ISO_9001_2015 6.1',
+        sourceUrl: 'https://example.test/6.1',
       });
       expect(query).toHaveBeenCalledWith(
         expect.stringContaining('FROM norm_requirements'),

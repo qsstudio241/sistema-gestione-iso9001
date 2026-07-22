@@ -1,5 +1,5 @@
 /**
- * Test RBAC Fase 4.1 � guard write su controller (viewer read ? 403)
+ * Test RBAC Fase 4.1  -  guard write su controller (viewer read ? 403)
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));
