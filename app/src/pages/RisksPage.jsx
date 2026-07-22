@@ -40,7 +40,7 @@ const IMP_LABELS  = { 1: "Basso", 2: "Medio", 3: "Alto" };
 
 // ── Modali form ──────────────────────────────────────────────────────────────
 
-const EMPTY_RISK = { title: "", description: "", context: "internal", category: "", probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "", responsible: "", review_date: "", status: "open" };
+const EMPTY_RISK = { title: "", description: "", context: "internal", category: "", probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "", responsible: "", review_date: "", status: "open", nature: "risk" };
 const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active" };
 
 function RiskForm({ initial, onSave, onClose }) {
@@ -76,7 +76,14 @@ function RiskForm({ initial, onSave, onClose }) {
             <label>Descrizione</label>
             <textarea rows={2} value={form.description} onChange={e => upd("description", e.target.value)} />
           </div>
-          <div className="form-row-3col">
+          <div className="form-row-2col">
+            <div>
+              <label>Tipo</label>
+              <select value={form.nature || "risk"} onChange={e => upd("nature", e.target.value)}>
+                <option value="risk">Rischio</option>
+                <option value="opportunity">{"Opportunit\u00e0"}</option>
+              </select>
+            </div>
             <div>
               <label>Contesto</label>
               <select value={form.context} onChange={e => upd("context", e.target.value)}>
@@ -85,6 +92,8 @@ function RiskForm({ initial, onSave, onClose }) {
                 <option value="interested_party">Parte interessata</option>
               </select>
             </div>
+          </div>
+          <div className="form-row-3col">
             <div>
               <label>Categoria</label>
               <input value={form.category} onChange={e => upd("category", e.target.value)} placeholder="es. operativo" />
@@ -93,6 +102,7 @@ function RiskForm({ initial, onSave, onClose }) {
               <label>Responsabile</label>
               <input value={form.responsible} onChange={e => upd("responsible", e.target.value)} />
             </div>
+            <div />
           </div>
           <div className="form-row-3col">
             <div>
@@ -300,6 +310,9 @@ function RisksTab() {
                 <div className="risk-card-top">
                   <div className="risk-card-title">
                     <span className={`score-badge ${scoreColor(sc)}`}>{sc}</span>
+                    <span className={`nature-badge nature-${r.nature || "risk"}`}>
+                      {r.nature === "opportunity" ? "\uD83D\uDFE2 Opportunit\u00e0" : "\uD83D\uDD34 Rischio"}
+                    </span>
                     <strong>{r.title}</strong>
                     {r.category && <span className="risk-cat">{r.category}</span>}
                   </div>
