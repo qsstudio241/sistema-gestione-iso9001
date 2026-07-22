@@ -39,28 +39,31 @@ describe('parseJsonWithRepair', () => {
         expect(out.welding_process).toBe('135');
     });
 
-    it('lancia AI_INVALID_JSON se irrecuperabile', () => {
-        expect(() => parseJsonWithRepair('{"broken": ')).toThrow();
+    it('recupera JSON troncato dopo la chiave (chiude con null)', () => {
+        const out = parseJsonWithRepair('{"broken": ');
+        expect(out).toEqual({ broken: null });
+    });
+
+    it('lancia AI_INVALID_JSON se input non è JSON', () => {
+        expect(() => parseJsonWithRepair('non json puro')).toThrow();
         try {
-            parseJsonWithRepair('{"broken": ');
+            parseJsonWithRepair('non json puro');
         } catch (e) {
             expect(e.code).toBe('AI_INVALID_JSON');
         }
     });
 
-    it('scarta array a elemento singolo — unwrap primo oggetto', () => {
+    it('unwrap array a elemento singolo', () => {
         const out = parseJsonWithRepair('[{"welder_name":"Mario Rossi","certificate_number":"TUV-2024-001"}]');
         expect(out.welder_name).toBe('Mario Rossi');
         expect(out.certificate_number).toBe('TUV-2024-001');
     });
 
-    it('lancia AI_BAD_SHAPE per array con più elementi', () => {
-        expect(() => parseJsonWithRepair('[{"a":1},{"b":2}]')).toThrow();
-        try {
-            parseJsonWithRepair('[{"a":1},{"b":2}]');
-        } catch (e) {
-            expect(e.code).toBe('AI_BAD_SHAPE');
-        }
+    it('unisce array multi-elemento — prima riga vince per chiave', () => {
+        const out = parseJsonWithRepair('[{"welder_name":"Mario Rossi","welding_process":"135"},{"welding_process":"141","welding_position":"PA"}]');
+        expect(out.welder_name).toBe('Mario Rossi');
+        expect(out.welding_process).toBe('135'); // prima riga vince
+        expect(out.welding_position).toBe('PA'); // riempita da seconda
     });
 
     it('ripara newline letterale dentro un valore stringa', () => {
@@ -68,6 +71,25 @@ describe('parseJsonWithRepair', () => {
         const out = parseJsonWithRepair(broken);
         expect(out.welder_name).toBe('Mario Rossi');
         expect(out.certificate_number).toBe('TUV-2024-001');
+    });
+
+    it('ripara JSON troncato con stringa non chiusa', () => {
+        const truncated = '{"welder_name":"MARIANO A.G.","certificate_number":"26-0597';
+        const out = parseJsonWithRepair(truncated);
+        expect(out.welder_name).toBe('MARIANO A.G.');
+        expect(out.certificate_number).toBe('26-0597');
+    });
+
+    it('ripara JSON troncato con oggetto/array non chiusi', () => {
+        const truncated = '{"welder_name":"MARIANO","details":{"process":"135","position":';
+        const out = parseJsonWithRepair(truncated);
+        expect(out.welder_name).toBe('MARIANO');
+    });
+
+    it('ripara response con TAB dentro stringhe (artefatto PDF)', () => {
+        const broken = '{"welder_name":"Mario\tRossi","cert":"X-01"}';
+        const out = parseJsonWithRepair(broken);
+        expect(out.welder_name).toBe('Mario Rossi');
     });
 });
 
@@ -95,6 +117,24 @@ describe('extractFieldsByRules', () => {
         const text = 'NUMERO DI CERTIFICATO: TUV-9606-2024-0123 saldatore Mario Rossi processo 135';
         const fields = extractFieldsByRules(text, 'patentino_saldatore', 'patentino.pdf');
         expect(fields.certificate_number).toBe('TUV-9606-2024-0123');
+    });
+
+    it('estrae nome MAIUSCOLO da testo OCR (Nome e cognome: MARIO ROSSI)', () => {
+        const text = 'CERTIFICATO SALDATORE ISO 9606-1\nNome e cognome: MARIO ROSSI\nNumero certificato: X-01 processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'scan.pdf');
+        expect(fields.welder_name).toBe('MARIO ROSSI');
+    });
+
+    it('estrae nome Titlecase classico (Nome: Mario Rossi)', () => {
+        const text = 'Nome: Mario Rossi processo 135';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'p.pdf');
+        expect(fields.welder_name).toBe('Mario Rossi');
+    });
+
+    it('non confonde parole-etichetta con nomi', () => {
+        const text = 'Processo di saldatura 135 gruppo materiale 1.1';
+        const fields = extractFieldsByRules(text, 'patentino_saldatore', 'p.pdf');
+        expect(fields.welder_name).toBeFalsy();
     });
 });
 
