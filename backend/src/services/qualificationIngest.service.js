@@ -45,6 +45,21 @@ function normalizeDate(val) {
     return null;
 }
 
+/**
+ * Aggiunge N mesi a una data ISO (YYYY-MM-DD).
+ * Gestisce i mesi a fine anno (es. 2024-10 + 6 = 2025-04).
+ * @param {string} isoDate
+ * @param {number} months
+ * @returns {string|null}
+ */
+function addMonths(isoDate, months) {
+    if (!isoDate) return null;
+    const d = new Date(isoDate + 'T00:00:00Z');
+    if (isNaN(d.getTime())) return null;
+    d.setUTCMonth(d.getUTCMonth() + months);
+    return d.toISOString().slice(0, 10);
+}
+
 function buildCertificateFileUrl(filePath) {
     if (!filePath) return null;
     const uploadBase = process.env.UPLOAD_DIR
@@ -58,6 +73,21 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
+
+    const exam_date    = normalizeDate(f.exam_date || f.issue_date);
+    const expiry_date  = normalizeDate(f.expiry_date);
+
+    // Conferma semestrale (ISO 9606-1 §9.2): se il PDF non ha ancora registrato
+    // alcuna conferma (tabella 9.2 vuota su nuovo certificato), l'ultima conferma
+    // coincide con l'esame e la prossima scade 6 mesi dopo l'esame.
+    const last_confirmation_date = normalizeDate(
+        f.last_confirmation_date || null
+    );
+    const next_confirmation_due = normalizeDate(
+        f.next_confirmation_due || f.cpd_valid_until
+    ) || (last_confirmation_date
+        ? addMonths(last_confirmation_date, 6)
+        : addMonths(exam_date, 6));
 
     return {
         welder_name: person_name,
@@ -77,16 +107,16 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
             : (f.thickness_range || null),
         pipe_diameter_min_mm: f.pipe_diameter_min_mm ?? null,
         pipe_diameter_max_mm: f.pipe_diameter_max_mm ?? null,
-        exam_date: normalizeDate(f.exam_date || f.issue_date),
-        issue_date: normalizeDate(f.exam_date || f.issue_date),
-        expiry_date: normalizeDate(f.expiry_date),
-        last_confirmation_date: normalizeDate(f.last_confirmation_date),
-        next_confirmation_due: normalizeDate(f.next_confirmation_due),
+        exam_date,
+        issue_date: exam_date,
+        expiry_date,
+        last_confirmation_date,
+        next_confirmation_due,
+        cpd_valid_until: next_confirmation_due,
         standard_reference: f.standard_reference || f.standard_ref || null,
         ndt_method: f.ndt_method || null,
         ndt_level: f.ndt_level || null,
         coordinator_title: f.coordinator_title || null,
-        cpd_valid_until: normalizeDate(f.cpd_valid_until || f.next_confirmation_due),
         patent_type: f.patent_type || null,
         joint_type: f.joint_type || null,
         pipe_diameter_mm: f.pipe_diameter_mm ?? null,

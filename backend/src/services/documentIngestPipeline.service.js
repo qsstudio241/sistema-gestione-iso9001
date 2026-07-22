@@ -66,7 +66,9 @@ async function extractDocumentText(pdfBuffer, options = {}) {
             text = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
             ocrUsed = true;
         } catch (ocrErr) {
-            warnings.push(`OCR non disponibile o fallito: ${ocrErr.message}`);
+            const ocrMsg = (ocrErr && ocrErr.message) ? ocrErr.message : String(ocrErr);
+            warnings.push(`OCR non disponibile o fallito: ${ocrMsg}`);
+            logger.warn('[IngestPipeline] OCR fallito', { error: ocrMsg });
         }
     } else if (text.trim().length < OCR_MIN_CHARS) {
         warnings.push('Testo PDF insufficiente; OCR non configurato sul server');
@@ -142,7 +144,18 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
-            logger.warn('[IngestPipeline] AI retry failed', { docType, fileName, error: retryMsg, stack: retryErr?.stack || null });
+            // Log raw response per diagnosi (max 400 char per non intasare log)
+            const raw = String(err.rawContent || err.raw_content || '').slice(0, 400);
+            const retryRaw = String(retryErr.rawContent || retryErr.raw_content || '').slice(0, 400);
+            logger.warn('[IngestPipeline] AI retry fallito — dump risposte AI', {
+                docType,
+                fileName,
+                primaryError: err.message,
+                retryError: retryMsg,
+                primaryRawSample: raw,
+                retryRawSample: retryRaw,
+                stack: retryErr?.stack || null,
+            });
             return { fields: {}, model: null, warnings };
         }
     }

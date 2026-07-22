@@ -17,7 +17,15 @@ Campi da estrarre:
 - welder_name, certificate_number, issuing_body, welding_process, joint_type (BW|FW),
 - material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
 - pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
-- next_confirmation_due, standard_reference (YYYY-MM-DD per le date)`,
+- next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
+
+Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
+- I certificati ISO 9606-1 hanno una tabella in seconda pagina intitolata
+  "Conferma della validita / Confirmation of the validity" con colonne Data/Date e Data di scadenza/Expiry Date.
+- last_confirmation_date: ultima data presente in quella tabella (la piu recente). Se vuota, usa null.
+- next_confirmation_due: "Data di scadenza" dell ultima riga compilata della tabella 9.2. Se la
+  tabella e vuota, usa null (il sistema calcolera exam_date + 6 mesi in automatico).
+- expiry_date: data "Valid until" dalla sezione 9.3 a) del certificato (rinnovo da ente esaminatore).`,
     aiExpectedSchema: {
       welder_name: 'string|null',
       certificate_number: 'string|null',
